@@ -85,4 +85,4 @@ module Constants =
 
     // data
     let AttackName = "Attack"
-    let ActionTickMax = 20L
+    let ActionTicksMax = 20L

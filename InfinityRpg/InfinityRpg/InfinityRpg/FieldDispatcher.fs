@@ -25,13 +25,13 @@ module FieldDispatcherModule =
         static let DefaultFieldMap = fst <| FieldMap.make FieldTileSheetImage DefaultSizeM DefaultPathEdgesM DefaultRand
 
         static let getOptTileInset (tileSheetPositionM : Vector2i) =
-            let tileOffsetM = Vector2i.Multiply (tileSheetPositionM, TileSizeI)
+            let tileOffset = vmtovf tileSheetPositionM
             let tileInset =
                 Vector4 (
-                    single tileOffsetM.X,
-                    single tileOffsetM.Y,
-                    single <| tileOffsetM.X + TileSizeI.X,
-                    single <| tileOffsetM.Y + TileSizeI.Y)
+                    tileOffset.X,
+                    tileOffset.Y,
+                    tileOffset.X + TileSize.X,
+                    tileOffset.Y + TileSize.Y)
             Some tileInset
 
         static member FieldDefinitions =
@@ -43,15 +43,16 @@ module FieldDispatcherModule =
                 if Camera.inView3 field.ViewType field.Position size world.Camera then
                     let sprites =
                         Map.fold
-                            (fun sprites tileCoords tile ->
-                                let tileOffset = Vector2i.Multiply (tileCoords, TileSizeI)
-                                let tilePosition = Vector2i field.Position + tileOffset
+                            (fun sprites tilePositionM tile ->
+                                let tileOffset = vmtovf tilePositionM
+                                let tilePosition = field.Position + tileOffset
+                                let optTileInset = getOptTileInset tile.TileSheetPositionM
                                 let sprite =
-                                    { Position = tilePosition.Vector2
+                                    { Position = tilePosition
                                       Size = TileSize
                                       Rotation = field.Rotation
                                       ViewType = field.ViewType
-                                      OptInset = getOptTileInset tile.TileSheetPositionM
+                                      OptInset = optTileInset
                                       Image = field.FieldMapNp.FieldTileSheet
                                       Color = Vector4.One }
                                 sprite :: sprites)
@@ -62,5 +63,4 @@ module FieldDispatcherModule =
             else []
 
         override dispatcher.GetQuickSize (field, _) =
-            let fieldMap = field.FieldMapNp
-            Vector2.Multiply (TileSize, fieldMap.FieldSizeM.Vector2)
+            vmtovf field.FieldMapNp.FieldSizeM

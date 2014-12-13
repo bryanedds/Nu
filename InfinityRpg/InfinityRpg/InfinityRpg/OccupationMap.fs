@@ -11,21 +11,20 @@ module OccupationMap =
         match desiredTurn with
         | ActionTurn _ -> occupationMap
         | NavigationTurn navigationDescriptor ->
-            let characterOriginM = navigationDescriptor.WalkDescriptor.WalkOriginM
-            let characterNextPositionM = characterOriginM + Direction.toVector2i navigationDescriptor.WalkDescriptor.WalkDirection
-            Map.add characterNextPositionM true occupationMap
+            let nextPositionM = NavigationDescriptor.nextPositionM navigationDescriptor
+            Map.add nextPositionM true occupationMap
         | CancelTurn -> occupationMap
         | NoTurn -> occupationMap
-            
+
     let occupyByCharacter (character : Entity) occupationMap =
-        let characterPositionM = Vector2i (Vector2.Divide (character.Position, TileSize))
+        let characterPositionM = vftovm character.Position
         Map.add characterPositionM true occupationMap
 
     let occupyByCharacters characters occupationMap =
         List.fold (flip occupyByCharacter) occupationMap characters
 
     let occupyByAdjacentCharacter positionM (character : Entity) occupationMap =
-        let characterPositionM = Vector2i (Vector2.Divide (character.Position, TileSize))
+        let characterPositionM = vftovm character.Position
         if Math.arePositionMsAdjacent characterPositionM positionM
         then Map.add characterPositionM true occupationMap
         else occupationMap
@@ -34,7 +33,7 @@ module OccupationMap =
         List.fold (flip <| occupyByAdjacentCharacter positionM) occupationMap characters
 
     let unoccupyByCharacter (character : Entity) occupationMap =
-        let characterPositionM = Vector2i (Vector2.Divide (character.Position, TileSize))
+        let characterPositionM = vftovm character.Position
         Map.add characterPositionM false occupationMap
 
     let unoccupyByCharacters characters occupationMap =

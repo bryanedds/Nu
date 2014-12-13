@@ -13,54 +13,12 @@ module MetamapModule =
     let mutable DebugTryStumbleCounter = 0
     let mutable DebugWanderCounter = 0
 
-    type MapBounds =
-        { CornerNegative : Vector2i
-          CornerPositive : Vector2i }
-
-        static member isPointInBounds (point : Vector2i) bounds =
-            not
-                (point.X < bounds.CornerNegative.X ||
-                 point.X > bounds.CornerPositive.X ||
-                 point.Y < bounds.CornerNegative.Y ||
-                 point.Y > bounds.CornerPositive.Y)
-
     type Tracking =
         | BackTracking
         | NoBackTracking
         | NoAdjacentTracking
 
     type Direction with
-
-        static member fromInt n =
-            match n with
-            | 0 -> Upward
-            | 1 -> Rightward
-            | 2 -> Downward
-            | 3 -> Leftward
-            | _ -> failwith <| "Invalid conversion to Direction from int '" + acstring n + "'."
-
-        static member fromVector2 v =
-            if v <> Vector2.Zero then
-                let atan2 = Math.Atan2 (float v.Y, float v.X)
-                let angle = if atan2 < 0.0 then atan2 + Math.PI * 2.0 else atan2
-                if angle < Math.PI * 0.75 && angle >= Math.PI * 0.25 then Upward
-                elif angle < Math.PI * 0.25 || angle >= Math.PI * 1.75 then Rightward
-                elif angle < Math.PI * 1.75 && angle >= Math.PI * 1.25 then Downward
-                else Leftward
-            else failwith "Direction cannot be derived from Vector2.Zero."
-
-        static member fromVector2i (v : Vector2i) =
-            Direction.fromVector2 v.Vector2
-
-        static member toVector2i direction =
-            match direction with
-            | Upward -> Vector2i.Up
-            | Rightward -> Vector2i.Right
-            | Downward -> Vector2i.Down
-            | Leftward -> Vector2i.Left
-
-        static member toVector2 direction =
-            let v = Direction.toVector2i direction in v.Vector2
 
         static member next rand =
             let randMax = 4

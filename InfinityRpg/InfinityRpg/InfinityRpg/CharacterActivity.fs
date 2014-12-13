@@ -42,12 +42,11 @@ module CharacterActivity =
                 if isTilePassable occupationMap (positionM + Vector2i.Left) then yield Leftward }
 
     let private getOpenDirectionsFromPosition (position : Vector2) occupationMap =
-        let positionM = Vector2i (int <| position.X / TileSize.X, int <| position.Y / TileSize.Y)
-        getOpenDirectionsFromPositionM positionM occupationMap
+        getOpenDirectionsFromPositionM (vftovm position) occupationMap
 
     let private getOpenNeighborPositionMsFromPositionM occupationMap positionM =
         let openDirections = getOpenDirectionsFromPositionM positionM occupationMap
-        Set.map (fun direction -> positionM + Direction.toVector2i direction) openDirections
+        Set.map (fun direction -> positionM + dtovm direction) openDirections
 
     let determineTurnFromDirection direction occupationMap (character : Entity) opponents =
         match character.ActivityState with
@@ -56,23 +55,22 @@ module CharacterActivity =
         | NoActivity ->
             let openDirections = getOpenDirectionsFromPosition character.Position occupationMap
             if Set.contains direction openDirections then
-                let currentPositionM = Vector2i (Vector2.Divide (character.Position, TileSize))
-                let walkDescriptor = { WalkDirection = direction; WalkOriginM = currentPositionM }
+                let walkDescriptor = { WalkDirection = direction; WalkOriginM = vftovm character.Position }
                 NavigationTurn { WalkDescriptor = walkDescriptor; OptNavigationPath = None }
             else
-                let targetPosition = character.Position + Vector2.Multiply (Direction.toVector2 direction, TileSize)
+                let targetPosition = character.Position + dtovf direction
                 if List.exists (fun (opponent : Entity) -> opponent.Position = targetPosition) opponents
                 then makeAttackTurn targetPosition
                 else NoTurn
 
     let private advanceNavigationAfterWalkFinished navigationDescriptor (character : Entity) =
-        let characterPositionM = Vector2i.Divide (Vector2i character.Position, TileSizeI)
         match navigationDescriptor.OptNavigationPath with
         | Some [] -> failwith "NavigationPath should never be empty here."
         | Some (_ :: []) -> Entity.setActivityState NoActivity character
         | Some (currentNode :: navigationPath) ->
-            let walkDirection = Direction.fromVector2i <| (List.head navigationPath).PositionM - currentNode.PositionM
-            let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = characterPositionM }
+            let walkDescriptor =
+                { WalkDirection = vmtod <| (List.head navigationPath).PositionM - currentNode.PositionM
+                  WalkOriginM = vftovm character.Position }
             let navigationDescriptor = { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
             Entity.setActivityState (Navigation navigationDescriptor) character
         | None -> Entity.setActivityState NoActivity character
@@ -80,9 +78,8 @@ module CharacterActivity =
     let private advanceNavigation navigationDescriptor (character : Entity) =
         let walkDescriptor = navigationDescriptor.WalkDescriptor
         let walkDirection = walkDescriptor.WalkDirection
-        let walkDistanceI = match walkDirection with Upward | Downward -> TileSizeI.Y | Rightward | Leftward -> TileSizeI.X
-        let walkDestinationI = walkDistanceI * (walkDescriptor.WalkOriginM + Direction.toVector2i walkDirection)
-        let walkDestination = walkDestinationI.Vector2
+        let walkOrigin = vmtovf walkDescriptor.WalkOriginM
+        let walkDestination = walkOrigin + dtovf walkDirection
         let (newPosition, walkState) =
             match walkDirection with
             | Upward -> let (newY, arrival) = walk true character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
@@ -97,12 +94,12 @@ module CharacterActivity =
         | WalkContinuing -> character
 
     let private advanceAction actionDescriptor (character : Entity) =
-        if actionDescriptor.ActionTicks < ActionTickMax then
+        if actionDescriptor.ActionTicks < ActionTicksMax then
             let character =
                 let rotation =
-                    if actionDescriptor.ActionTicks < ActionTickMax / 2L
+                    if actionDescriptor.ActionTicks < ActionTicksMax / 2L
                     then (single Math.PI * -0.03f * single actionDescriptor.ActionTicks)
-                    else (single Math.PI * -0.03f * single (ActionTickMax - actionDescriptor.ActionTicks - 1L))
+                    else (single Math.PI * -0.03f * single (ActionTicksMax - actionDescriptor.ActionTicks - 1L))
                 Entity.setRotation rotation character
             Entity.setActivityState (Action { actionDescriptor with ActionTicks = inc actionDescriptor.ActionTicks }) character
         else Entity.setActivityState NoActivity character
@@ -117,10 +114,7 @@ module CharacterActivity =
         match character.ActivityState with
         | Action _ -> NoTurn
         | Navigation navigationDescriptor ->
-            let walkDescriptor = navigationDescriptor.WalkDescriptor
-            let walkOriginM = walkDescriptor.WalkOriginM
-            let walkOrigin = Vector2.Multiply (walkOriginM.Vector2, TileSize)
-            if character.Position = walkOrigin then
+            if character.Position = vmtovf navigationDescriptor.WalkDescriptor.WalkOriginM then
                 match navigationDescriptor.OptNavigationPath with
                 | Some _ -> NavigationTurn navigationDescriptor
                 | None -> NoTurn
@@ -152,10 +146,8 @@ module CharacterActivity =
 
     let private tryGetNavigationPath touchPosition occupationMap (character : Entity) =
         let nodes = makeNodes occupationMap
-        let touchPositionM = Vector2i (Vector2.Divide (touchPosition, TileSize))
-        let goalNode = Map.find touchPositionM nodes
-        let characterPositionM = Vector2i (Vector2.Divide (character.Position, TileSize))
-        let currentNode = Map.find characterPositionM nodes
+        let goalNode = Map.find (vftovm touchPosition) nodes
+        let currentNode = Map.find (vftovm character.Position) nodes
         let optNavigationPath =
             AStar.FindPath (
                 currentNode,
@@ -176,13 +168,12 @@ module CharacterActivity =
                 match navigationPath with
                 | [] -> NoTurn
                 | _ ->
-                    let currentPositionM = Vector2i (Vector2.Divide (character.Position, TileSize))
-                    let walkDirection = Direction.fromVector2i <| (List.head navigationPath).PositionM - currentPositionM
-                    let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = currentPositionM }
+                    let characterPositionM = vftovm character.Position
+                    let walkDirection = vmtod <| (List.head navigationPath).PositionM - characterPositionM
+                    let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = characterPositionM }
                     NavigationTurn { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
             | None ->
-                let touchPositionM = Vector2i (Vector2.Divide (touchPosition, TileSize))
-                let targetPosition = Vector2.Multiply (touchPositionM.Vector2, TileSize)
+                let targetPosition = touchPosition |> vftovm |> vmtovf
                 if Math.arePositionsAdjacent targetPosition character.Position then
                     if List.exists (fun (opponent : Entity) -> opponent.Position = targetPosition) opponents
                     then makeAttackTurn targetPosition

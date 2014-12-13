@@ -72,10 +72,10 @@ module GameplayDispatcherModule =
 
         static let makeEnemies world rand =
             let (randResult, rand) = Rand.nextIntUnder 5 rand
-            let enemyCount = randResult + 0
+            let enemyCount = randResult + 1
             List.fold
-                (fun (enemies, rand) positionM ->
-                    let enemyPosition = single positionM * TileSize * 2.0f
+                (fun (enemies, rand) i ->
+                    let enemyPosition = single i * TileSize * 2.0f
                     let enemy = World.makeEntity typeof<EnemyDispatcher>.Name None world
                     let enemy = Entity.setDepth CharacterDepth enemy
                     let enemy = Entity.setPosition enemyPosition enemy
@@ -180,14 +180,19 @@ module GameplayDispatcherModule =
             let (_, player, enemies) = getParticipants gameplayAddress world
             anyTurnsInProgress2 player enemies
 
-        static let determineDesiredEnemyTurn occupationMap (player : Entity) (enemy : Entity) rand =
+        static let determineDesiredEnemyTurn playerActivity occupationMap (player : Entity) (enemy : Entity) rand =
             match enemy.ControlType with
             | Player ->
                 debug <| "Invalid ControlType '" + acstring enemy.ControlType + "' for enemy"
                 (NoTurn, rand)
             | Chaos ->
-                if Math.arePositionsAdjacent enemy.Position player.Position then
-                    let enemyTurn = makeAttackTurn player.Position
+                let nextPlayerPosition =
+                    match playerActivity with
+                    | Action _ -> player.Position
+                    | Navigation navigationDescriptor -> NavigationDescriptor.nextPosition navigationDescriptor
+                    | NoActivity -> player.Position
+                if Math.arePositionsAdjacent enemy.Position nextPlayerPosition then
+                    let enemyTurn = makeAttackTurn nextPlayerPosition
                     (enemyTurn, rand)
                 else
                     let (randResult, rand) = Rand.nextIntUnder 4 rand
@@ -196,11 +201,11 @@ module GameplayDispatcherModule =
                     (enemyTurn, rand)
             | Uncontrolled -> (NoTurn, rand)
 
-        static let determineDesiredEnemyTurns occupationMap player enemies rand =
+        static let determineDesiredEnemyTurns playerActivity occupationMap player enemies rand =
             let (_, enemyTurns, rand) =
                 List.foldBack
                     (fun (enemy : Entity) (occupationMap, enemyTurns, rand) ->
-                        let (enemyTurn, rand) = determineDesiredEnemyTurn occupationMap player enemy rand
+                        let (enemyTurn, rand) = determineDesiredEnemyTurn playerActivity occupationMap player enemy rand
                         let occupationMap = OccupationMap.transferByDesiredTurn enemyTurn enemy occupationMap
                         (occupationMap, enemyTurn :: enemyTurns, rand))
                     enemies
@@ -211,8 +216,11 @@ module GameplayDispatcherModule =
             let (field, player, enemies) = getParticipants gameplayAddress world
             if not <| anyTurnsInProgress2 player enemies then
                 let touchPositionW = Camera.mouseToWorld Relative touchPosition world.Camera
-                let playerPositionM = Vector2i (Vector2.Divide (player.Position, TileSize))
-                let occupationMapWithAdjacentEnemies = OccupationMap.makeFromFieldTilesAndAdjacentCharacters playerPositionM field.FieldMapNp.FieldTiles enemies
+                let occupationMapWithAdjacentEnemies =
+                    OccupationMap.makeFromFieldTilesAndAdjacentCharacters
+                        (vftovm player.Position)
+                        field.FieldMapNp.FieldTiles
+                        enemies
                 match CharacterActivity.determineTurnFromTouch touchPositionW occupationMapWithAdjacentEnemies player enemies with
                 | ActionTurn _ as actionTurn -> actionTurn
                 | NavigationTurn navigationDescriptor as navigationTurn ->
@@ -240,10 +248,10 @@ module GameplayDispatcherModule =
         static let determinePlayerTurnFromNavigationState navigationDescriptor gameplayAddress world =
             let (field, player, enemies) = getParticipants gameplayAddress world
             let walkDescriptor = navigationDescriptor.WalkDescriptor
-            let playerPositionM = Vector2i (Vector2.Divide (player.Position, TileSize))
+            let playerPositionM = vftovm player.Position
             if playerPositionM = walkDescriptor.WalkOriginM then
-                let walkDestinationM = walkDescriptor.WalkOriginM + Direction.toVector2i walkDescriptor.WalkDirection
                 let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles enemies
+                let walkDestinationM = walkDescriptor.WalkOriginM + dtovm walkDescriptor.WalkDirection
                 if Map.find walkDestinationM occupationMapWithEnemies then CancelTurn
                 else NavigationTurn navigationDescriptor
             else NavigationTurn navigationDescriptor
@@ -342,7 +350,7 @@ module GameplayDispatcherModule =
                 match optNewPlayerActivity with
                 | Some newPlayerActivity ->
                     if newPlayerActivity <> NoActivity then
-                        let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns occupationMap player enemies rand
+                        let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns newPlayerActivity occupationMap player enemies rand
                         let enemies = List.map2 Entity.setDesiredTurn enemyDesiredTurns enemies
                         (enemies, rand)
                     else (enemies, rand)
