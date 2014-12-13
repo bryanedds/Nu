@@ -192,7 +192,7 @@ module GameplayDispatcherModule =
                     | Navigation navigationDescriptor -> NavigationDescriptor.nextPosition navigationDescriptor
                     | NoActivity -> player.Position
                 if Math.arePositionsAdjacent enemy.Position nextPlayerPosition then
-                    let enemyTurn = makeAttackTurn nextPlayerPosition
+                    let enemyTurn = makeAttackTurn <| vftovm nextPlayerPosition
                     (enemyTurn, rand)
                 else
                     let (randResult, rand) = Rand.nextIntUnder 4 rand
