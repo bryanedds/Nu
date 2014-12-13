@@ -25,13 +25,6 @@ module DirectionModule =
             | _ -> failwith <| "Invalid conversion to Direction from int '" + acstring n + "'."
 
 [<AutoOpen>]
-module AnimationModule =
-
-    type AnimationData =
-        { FrameCount : int
-          FrameStutter : int }
-
-[<AutoOpen>]
 module Math =
 
     let vmtovi vm =

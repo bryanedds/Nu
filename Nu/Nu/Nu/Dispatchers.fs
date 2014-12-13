@@ -132,22 +132,22 @@ module AnimatedSpriteFacetModule =
 
     type Entity with
 
-        member entity.Stutter = entity?Stutter : int
-        static member setStutter (value : int) (entity : Entity) = entity?Stutter <- value
         member entity.TileCount = entity?TileCount : int
         static member setTileCount (value : int) (entity : Entity) = entity?TileCount <- value
         member entity.TileRun = entity?TileRun : int
         static member setTileRun (value : int) (entity : Entity) = entity?TileRun <- value
         member entity.TileSize = entity?TileSize : Vector2
         static member setTileSize (value : Vector2) (entity : Entity) = entity?TileSize <- value
-        member entity.AnimatedSpriteImage = entity?AnimatedSpriteImage : Image // TODO: be nice to rename this to AnimationSheet?
-        static member setAnimatedSpriteImage (value : Image) (entity : Entity) = entity?AnimatedSpriteImage <- value
+        member entity.AnimationStutter = entity?AnimationStutter : int64
+        static member setAnimationStutter (value : int64) (entity : Entity) = entity?AnimationStutter <- value
+        member entity.AnimationSheet = entity?AnimationSheet : Image
+        static member setAnimationSheet (value : Image) (entity : Entity) = entity?AnimationSheet <- value
 
     type AnimatedSpriteFacet () =
         inherit Facet ()
 
         static let getOptSpriteInset (entity : Entity) world =
-            let tile = (int world.State.TickTime / entity.Stutter) % entity.TileCount
+            let tile = int (world.State.TickTime / entity.AnimationStutter) % entity.TileCount
             let tileI = tile % entity.TileRun
             let tileJ = tile / entity.TileRun
             let tileX = single tileI * entity.TileSize.X
@@ -156,11 +156,11 @@ module AnimatedSpriteFacetModule =
             Some inset
 
         static member FieldDefinitions =
-            [define? Stutter 4
-             define? TileCount 16 
+            [define? TileCount 16 
              define? TileRun 4
              define? TileSize <| Vector2 (16.0f, 16.0f)
-             define? AnimatedSpriteImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image7" }]
+             define? AnimationStutter 4L
+             define? AnimationSheet { ImagePackageName = DefaultPackageName; ImageAssetName = "Image7" }]
 
         override facet.GetRenderDescriptors (entity : Entity, world) =
             if entity.Visible && Camera.inView3 entity.ViewType entity.Position entity.Size world.Camera then
@@ -173,7 +173,7 @@ module AnimatedSpriteFacetModule =
                               Rotation = entity.Rotation
                               ViewType = entity.ViewType
                               OptInset = getOptSpriteInset entity world
-                              Image = entity.AnimatedSpriteImage
+                              Image = entity.AnimationSheet
                               Color = Vector4.One }}]
             else []
 

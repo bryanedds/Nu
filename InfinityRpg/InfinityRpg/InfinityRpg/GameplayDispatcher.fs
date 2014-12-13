@@ -308,7 +308,7 @@ module GameplayDispatcherModule =
                 Entity.setDesiredTurn NoTurn enemy
             else enemy
 
-        static let updateEnemyNaviagationActivities enemies =
+        static let updateEnemyNavigationActivities enemies =
             let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
             let anyEnemyNavigationActivity = List.exists ActivityState.isNavigating newEnemyNavigationActivities
             if anyEnemyNavigationActivity then List.map2 tryUpdateEnemyActivity newEnemyNavigationActivities enemies
@@ -347,25 +347,27 @@ module GameplayDispatcherModule =
 
             // determine (and set) enemy desired turns when applicable
             let (enemies, rand) =
-                match player.ActivityState with
-                | Action _ | Navigation _ ->
+                match optNewPlayerActivity with
+                | Some (Action _)
+                | Some (Navigation _) ->
                     let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns occupationMap player enemies rand
                     let enemies = List.map2 Entity.setDesiredTurn enemyDesiredTurns enemies
                     (enemies, rand)
-                | NoActivity -> (enemies, rand)
+                | Some NoActivity
+                | None -> (enemies, rand)
 
             // update enemy activities in accordance with the player's current activity
             let enemies =
                 match player.ActivityState with
                 | Action _ -> enemies
-                | Navigation _ -> updateEnemyNaviagationActivities enemies
+                | Navigation _ -> updateEnemyNavigationActivities enemies
                 | NoActivity -> updateEnemyActivities enemies
 
             // advance player activity
-            let player = CharacterActivity.advanceActivity player
+            let player = CharacterActivity.advanceActivity world.State.TickTime player
 
             // advance enemies activities
-            let enemies = List.map CharacterActivity.advanceActivity enemies
+            let enemies = List.map (CharacterActivity.advanceActivity world.State.TickTime) enemies
             
             // update local context
             let world = setParticipants gameplayAddress field player enemies world

@@ -71,10 +71,10 @@ module CharacterAnimationFacetModule =
         | CharacterAnimationActing
 
     type CharacterAnimationState =
-        { CharacterAnimationType : CharacterAnimationType
-          CharacterAnimationDirection : Direction
-          CharacterAnimationStutter : int
-          ChangeTime : int64 }
+        { AnimationType : CharacterAnimationType
+          Direction : Direction
+          Stutter : int64
+          StartTime : int64 }
 
     type Entity with
     
@@ -92,18 +92,19 @@ module CharacterAnimationFacetModule =
             let spriteSize = imageSize * 0.25f
             let animationState = entity.CharacterAnimationState
             let animationTypeCoordsOffset =
-                match animationState.CharacterAnimationType with
+                match animationState.AnimationType with
                 | CharacterAnimationFacing -> Vector2i (0, 0)
                 | CharacterAnimationActing -> Vector2i (0, 2)
             let directionCoordsOffset =
-                match animationState.CharacterAnimationDirection with
+                match animationState.Direction with
                 | Upward -> Vector2i (0, 0)
                 | Rightward -> Vector2i (2, 0)
                 | Downward -> Vector2i (0, 1)
                 | Leftward -> Vector2i (2, 1)
             let frameXOffset =
-                (int world.State.TickTime - int animationState.ChangeTime) /
-                animationState.CharacterAnimationStutter % 2
+                Math.Abs (world.State.TickTime - animationState.StartTime) /
+                animationState.Stutter % 2L |>
+                int
             let frameCoordsOffset = Vector2i (frameXOffset, 0)
             let spriteCoordsinates = animationTypeCoordsOffset + directionCoordsOffset + frameCoordsOffset
             let spriteOffset =
@@ -121,10 +122,10 @@ module CharacterAnimationFacetModule =
         static member FieldDefinitions =
             [define?
                 CharacterAnimationState
-                { CharacterAnimationType = CharacterAnimationFacing
-                  CharacterAnimationDirection = Upward
-                  CharacterAnimationStutter = 16
-                  ChangeTime = 0L }
+                { AnimationType = CharacterAnimationFacing
+                  Direction = Upward
+                  Stutter = CharacterAnimationStutter
+                  StartTime = 0L }
              define? CharacterAnimationSheet PlayerImage]
 
         override facet.GetRenderDescriptors (entity, world) =

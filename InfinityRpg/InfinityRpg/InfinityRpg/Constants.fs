@@ -85,4 +85,5 @@ module Constants =
 
     // data
     let AttackName = "Attack"
-    let ActionTicksMax = 20L
+    let CharacterAnimationStutter = 16L
+    let ActionTicksMax = CharacterAnimationStutter * 3L
