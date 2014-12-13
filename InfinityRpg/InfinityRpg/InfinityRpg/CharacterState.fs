@@ -218,7 +218,7 @@ module CharacterStateModule =
 
     type [<StructuralEquality; NoComparison>] ActionDescriptor =
         { ActionTicks : int64 // an arbitrary number to show a hacky action animation
-          ActionTarget : Vector2 option // TODO: change to Vector2i (for m)!
+          ActionTargetPositionM : Vector2i option
           ActionDataName : string }
 
     type [<StructuralEquality; NoComparison>] ActivityState =
@@ -253,8 +253,8 @@ module CharacterStateModule =
         | CancelTurn
         | NoTurn
 
-    let makeAttackTurn target =
+    let makeAttackTurn targetPositionM =
         ActionTurn
             { ActionTicks = 0L
-              ActionTarget = Some target
+              ActionTargetPositionM = Some targetPositionM
               ActionDataName = AttackName }

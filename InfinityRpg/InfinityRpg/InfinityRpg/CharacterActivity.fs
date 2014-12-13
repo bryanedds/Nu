@@ -60,7 +60,7 @@ module CharacterActivity =
             else
                 let targetPosition = character.Position + dtovf direction
                 if List.exists (fun (opponent : Entity) -> opponent.Position = targetPosition) opponents
-                then makeAttackTurn targetPosition
+                then makeAttackTurn <| vftovm targetPosition
                 else NoTurn
 
     let private advanceNavigationAfterWalkFinished navigationDescriptor (character : Entity) =
@@ -176,7 +176,7 @@ module CharacterActivity =
                 let targetPosition = touchPosition |> vftovm |> vmtovf
                 if Math.arePositionsAdjacent targetPosition character.Position then
                     if List.exists (fun (opponent : Entity) -> opponent.Position = targetPosition) opponents
-                    then makeAttackTurn targetPosition
+                    then makeAttackTurn <| vftovm targetPosition
                     else NoTurn
                 else NoTurn
 
