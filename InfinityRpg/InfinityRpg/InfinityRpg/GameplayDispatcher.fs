@@ -180,14 +180,14 @@ module GameplayDispatcherModule =
             let (_, player, enemies) = getParticipants gameplayAddress world
             anyTurnsInProgress2 player enemies
 
-        static let determineDesiredEnemyTurn playerActivity occupationMap (player : Entity) (enemy : Entity) rand =
+        static let determineDesiredEnemyTurn occupationMap (player : Entity) (enemy : Entity) rand =
             match enemy.ControlType with
             | Player ->
                 debug <| "Invalid ControlType '" + acstring enemy.ControlType + "' for enemy"
                 (NoTurn, rand)
             | Chaos ->
                 let nextPlayerPosition =
-                    match playerActivity with
+                    match player.ActivityState with
                     | Action _ -> player.Position
                     | Navigation navigationDescriptor -> NavigationDescriptor.nextPosition navigationDescriptor
                     | NoActivity -> player.Position
@@ -201,11 +201,11 @@ module GameplayDispatcherModule =
                     (enemyTurn, rand)
             | Uncontrolled -> (NoTurn, rand)
 
-        static let determineDesiredEnemyTurns playerActivity occupationMap player enemies rand =
+        static let determineDesiredEnemyTurns occupationMap player enemies rand =
             let (_, enemyTurns, rand) =
                 List.foldBack
                     (fun (enemy : Entity) (occupationMap, enemyTurns, rand) ->
-                        let (enemyTurn, rand) = determineDesiredEnemyTurn playerActivity occupationMap player enemy rand
+                        let (enemyTurn, rand) = determineDesiredEnemyTurn occupationMap player enemy rand
                         let occupationMap = OccupationMap.transferByDesiredTurn enemyTurn enemy occupationMap
                         (occupationMap, enemyTurn :: enemyTurns, rand))
                     enemies
@@ -347,14 +347,12 @@ module GameplayDispatcherModule =
 
             // determine (and set) enemy desired turns when applicable
             let (enemies, rand) =
-                match optNewPlayerActivity with
-                | Some newPlayerActivity ->
-                    if newPlayerActivity <> NoActivity then
-                        let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns newPlayerActivity occupationMap player enemies rand
-                        let enemies = List.map2 Entity.setDesiredTurn enemyDesiredTurns enemies
-                        (enemies, rand)
-                    else (enemies, rand)
-                | None -> (enemies, rand)
+                match player.ActivityState with
+                | Action _ | Navigation _ ->
+                    let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns occupationMap player enemies rand
+                    let enemies = List.map2 Entity.setDesiredTurn enemyDesiredTurns enemies
+                    (enemies, rand)
+                | NoActivity -> (enemies, rand)
 
             // update enemy activities in accordance with the player's current activity
             let enemies =
