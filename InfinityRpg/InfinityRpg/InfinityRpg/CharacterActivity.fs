@@ -87,26 +87,41 @@ module CharacterActivity =
             | Downward -> let (newY, arrival) = walk false character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
             | Leftward -> let (newX, arrival) = walk false character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
         let character = Entity.setPosition newPosition character
-        let characterAnimationState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDirection }
+        let characterAnimationState = { character.CharacterAnimationState with Direction = walkDirection }
         let character = Entity.setCharacterAnimationState characterAnimationState character
         match walkState with
         | WalkFinished -> advanceNavigationAfterWalkFinished navigationDescriptor character
         | WalkContinuing -> character
 
-    let private advanceAction actionDescriptor (character : Entity) =
-        if actionDescriptor.ActionTicks < ActionTicksMax then
-            let character =
-                let rotation =
-                    if actionDescriptor.ActionTicks < ActionTicksMax / 2L
-                    then (single Math.PI * -0.03f * single actionDescriptor.ActionTicks)
-                    else (single Math.PI * -0.03f * single (ActionTicksMax - actionDescriptor.ActionTicks - 1L))
-                Entity.setRotation rotation character
-            Entity.setActivityState (Action { actionDescriptor with ActionTicks = inc actionDescriptor.ActionTicks }) character
-        else Entity.setActivityState NoActivity character
+    let private getCharacterAnimationStateByActionBegin tickTime characterPosition characterAnimationState actionDescriptor =
+        let currentDirection = characterAnimationState.Direction
+        let direction = ActionDescriptor.getActionDirection characterPosition currentDirection actionDescriptor
+        { characterAnimationState with
+            Direction = direction
+            AnimationType = CharacterAnimationActing
+            StartTime = tickTime + 1L }
 
-    let advanceActivity (character : Entity) =
+    let private getCharacterAnimationStateByActionEnd tickTime characterAnimationState =
+        { characterAnimationState with
+            AnimationType = CharacterAnimationFacing
+            StartTime = tickTime }
+
+    let private advanceAction tickTime actionDescriptor (character : Entity) =
+        if actionDescriptor.ActionTicks = 0L then
+            character |>
+                Entity.setCharacterAnimationState (getCharacterAnimationStateByActionBegin tickTime character.Position character.CharacterAnimationState actionDescriptor) |>
+                Entity.setActivityState (Action <| ActionDescriptor.incActionTicks actionDescriptor)
+        elif actionDescriptor.ActionTicks > 0L && actionDescriptor.ActionTicks < ActionTicksMax then
+            character |>
+                Entity.setActivityState (Action <| ActionDescriptor.incActionTicks actionDescriptor)
+        else
+            character |>
+                Entity.setActivityState NoActivity |>
+                Entity.setCharacterAnimationState (getCharacterAnimationStateByActionEnd tickTime character.CharacterAnimationState)
+
+    let advanceActivity tickTime (character : Entity) =
         match character.ActivityState with
-        | Action actionDescriptor -> advanceAction actionDescriptor character
+        | Action actionDescriptor -> advanceAction tickTime actionDescriptor character
         | Navigation navigationDescriptor -> advanceNavigation navigationDescriptor character
         | NoActivity -> character
 

@@ -2,6 +2,7 @@
 open System
 open AStar
 open OpenTK
+open Prime
 open Nu
 open InfinityRpg
 open InfinityRpg.Constants
@@ -218,8 +219,16 @@ module CharacterStateModule =
 
     type [<StructuralEquality; NoComparison>] ActionDescriptor =
         { ActionTicks : int64 // an arbitrary number to show a hacky action animation
-          ActionTargetPositionM : Vector2i option
+          ActionOptTargetPositionM : Vector2i option
           ActionDataName : string }
+
+        static member getActionDirection currentPosition currentDirection actionDescriptor =
+            match actionDescriptor.ActionOptTargetPositionM with
+            | Some targetPositionM -> targetPositionM - vftovm currentPosition |> vmtod
+            | None -> currentDirection
+
+        static member incActionTicks actionDescriptor =
+            { actionDescriptor with ActionTicks = inc actionDescriptor.ActionTicks }
 
     type [<StructuralEquality; NoComparison>] ActivityState =
         | Action of ActionDescriptor
@@ -256,5 +265,5 @@ module CharacterStateModule =
     let makeAttackTurn targetPositionM =
         ActionTurn
             { ActionTicks = 0L
-              ActionTargetPositionM = Some targetPositionM
+              ActionOptTargetPositionM = Some targetPositionM
               ActionDataName = AttackName }
