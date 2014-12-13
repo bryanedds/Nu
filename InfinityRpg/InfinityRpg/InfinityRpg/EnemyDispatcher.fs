@@ -13,7 +13,7 @@ module EnemyDispatcherModule =
 
     type Entity with
 
-        member entity.DesiredTurn = entity?DesiredTurn : Turn // TODO: move into enemy dispatcher
+        member entity.DesiredTurn = entity?DesiredTurn : Turn
         static member setDesiredTurn (value : Turn) (entity : Entity) = entity?DesiredTurn <- value
 
     type EnemyDispatcher () =

@@ -200,13 +200,25 @@ module CharacterStateModule =
         { WalkDirection : Direction
           WalkOriginM : Vector2i }
 
+        static member nextPositionM walkDescriptor =
+            walkDescriptor.WalkOriginM + dtovm walkDescriptor.WalkDirection
+
     type [<StructuralEquality; NoComparison>] NavigationDescriptor =
         { WalkDescriptor : WalkDescriptor
           OptNavigationPath : NavigationNode list option }
 
+        static member nextPositionM navigationDescriptor =
+            WalkDescriptor.nextPositionM navigationDescriptor.WalkDescriptor
+
+        static member nextPositionI navigationDescriptor =
+            navigationDescriptor |> NavigationDescriptor.nextPositionM |> vmtovi
+
+        static member nextPosition navigationDescriptor =
+            navigationDescriptor |> NavigationDescriptor.nextPositionI |> vitovf
+
     type [<StructuralEquality; NoComparison>] ActionDescriptor =
         { ActionTicks : int64 // an arbitrary number to show a hacky action animation
-          ActionTarget : Vector2 option
+          ActionTarget : Vector2 option // TODO: change to Vector2i (for m)!
           ActionDataName : string }
 
     type [<StructuralEquality; NoComparison>] ActivityState =
