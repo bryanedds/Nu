@@ -99,7 +99,7 @@ module CharacterActivity =
         { characterAnimationState with
             Direction = direction
             AnimationType = CharacterAnimationActing
-            StartTime = tickTime + 1L }
+            StartTime = tickTime }
 
     let private getCharacterAnimationStateByActionEnd tickTime characterAnimationState =
         { characterAnimationState with
