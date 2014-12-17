@@ -24,10 +24,6 @@ Blasting away in BlazeVector!
 Editing a section of a BlazeVector stage.
 
 
-![Screenshot](BlazeVector/Promotional/EditingACreditsScreen.png?raw=true)
-Editing BlazeVector's Credits screen.
-
-
 Finally, here's a video of some of BlazeVector's gameplay - https://github.com/bryanedds/FPWorks/blob/master/BlazeVector/Promotional/BlazeVector.mp4?raw=true
 
 Getting Started
