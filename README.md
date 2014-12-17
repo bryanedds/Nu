@@ -3,13 +3,7 @@ FP Works repository featuring the Nu Game Engine!
 
 What is the **Nu Game Engine**?
 
-*"The Nu Game Engine is a game development platform that aims to drastically improve lives of programmers by providing a vastly superior programming model for games.*
-
-*"The author believes that there are only two ways to solve a programming problem; a) through human intellect, and b) through human suffering. The game industry has become a nightmare for programmers because it more and more leverages the latter to achieve its goals. There's a reason that the average burn rate for game developers is 5 years.*
-
-*"However, the author also believes there is a real, practical path back to the former - and that is through functional programming. The Nu Game Engine is the first practical game engine to fully leverage functional programming. Once Nu achieves its aims, not only will incalculable man-hours of misery be allieviated, but the cost of developing games will be reduced to a fraction of what they are today.*
-
-*"Of course, there's still much work to be done, and with the help of your sponsorship (see below), Nu will become the premiere functional game development engine!"*
+*"The Nu Game Engine is a game development platform that aims to drastically reduce the cost of game delopment by providing a vastly superior programming model for games through functional programming.*
 
 ![Screenshot](BlazeVector/Promotional/BlastingAwayInBlazeVector.png?raw=true "Nu Game Engine demo game BlazeVector")
 
