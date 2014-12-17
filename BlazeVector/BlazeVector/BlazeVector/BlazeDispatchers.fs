@@ -110,11 +110,11 @@ module EnemyModule =
              define? LinearDamping 3.0f
              define? GravityScale 0.0f
              define? CollisionExpr "Capsule"
-             define? Stutter 8
              define? TileCount 6
              define? TileRun 4
              define? TileSize <| Vector2 (48.0f, 96.0f)
-             define? AnimatedSpriteImage EnemyImage
+             define? AnimationStutter 8L
+             define? AnimationSheet EnemyImage
              define? Health 6]
 
         static member IntrinsicFacetNames =
@@ -229,11 +229,11 @@ module PlayerModule =
              define? LinearDamping 3.0f
              define? GravityScale 0.0f
              define? CollisionExpr "Capsule"
-             define? Stutter 3
              define? TileCount 16
              define? TileRun 4
              define? TileSize <| Vector2 (48.0f, 96.0f)
-             define? AnimatedSpriteImage PlayerImage
+             define? AnimationStutter 3L
+             define? AnimationSheet PlayerImage
              define? LastTimeOnGroundNp Int64.MinValue
              define? LastTimeJumpNp Int64.MinValue]
 

@@ -9,7 +9,7 @@
         <Position>-456, -40</Position>
         <Size>512, 128</Size>
         <Xtension>
-          <LabelImage type="Nu.RenderModule+Image">[Gui | ProgrammingLabel]</LabelImage>
+          <LabelImage type="Nu.AssetsModule+AssetTag">[Gui | ProgrammingLabel]</LabelImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -17,8 +17,8 @@
         <Position>-184, -224</Position>
         <Size>384, 64</Size>
         <Xtension>
-          <DownImage type="Nu.RenderModule+Image">[Gui | BackDown]</DownImage>
-          <UpImage type="Nu.RenderModule+Image">[Gui | BackUp]</UpImage>
+          <DownImage type="Nu.AssetsModule+AssetTag">[Gui | BackDown]</DownImage>
+          <UpImage type="Nu.AssetsModule+AssetTag">[Gui | BackUp]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
@@ -27,28 +27,28 @@
         <Depth>-1</Depth>
         <Size>1024, 256</Size>
         <Xtension>
-          <LabelImage type="Nu.RenderModule+Image">[Gui | CreditsLabel]</LabelImage>
+          <LabelImage type="Nu.AssetsModule+AssetTag">[Gui | CreditsLabel]</LabelImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Position>32, -144</Position>
         <Size>512, 128</Size>
         <Xtension>
-          <LabelImage type="Nu.RenderModule+Image">[Gui | BryanEddsLabel]</LabelImage>
+          <LabelImage type="Nu.AssetsModule+AssetTag">[Gui | BryanEddsLabel]</LabelImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Position>-424, -144</Position>
         <Size>512, 128</Size>
         <Xtension>
-          <LabelImage type="Nu.RenderModule+Image">[Gui | MusicAndArtLabel]</LabelImage>
+          <LabelImage type="Nu.AssetsModule+AssetTag">[Gui | MusicAndArtLabel]</LabelImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Position>64, -40</Position>
         <Size>512, 128</Size>
         <Xtension>
-          <LabelImage type="Nu.RenderModule+Image">[Gui | BryanEddsLabel]</LabelImage>
+          <LabelImage type="Nu.AssetsModule+AssetTag">[Gui | BryanEddsLabel]</LabelImage>
         </Xtension>
       </Entity>
     </Entities>

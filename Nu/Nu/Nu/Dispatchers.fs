@@ -97,14 +97,14 @@ module SpriteFacetModule =
 
     type Entity with
 
-        member entity.SpriteImage = entity?SpriteImage : Image
-        static member setSpriteImage (value : Image) (entity : Entity) = entity?SpriteImage <- value
+        member entity.SpriteImage = entity?SpriteImage : AssetTag
+        static member setSpriteImage (value : AssetTag) (entity : Entity) = entity?SpriteImage <- value
 
     type SpriteFacet () =
         inherit Facet ()
 
         static member FieldDefinitions =
-            [define? SpriteImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image3" }]
+            [define? SpriteImage { PackageName = DefaultPackageName; AssetName = "Image3" }]
 
         override facet.GetRenderDescriptors (entity : Entity, world) =
             if entity.Visible && Camera.inView3 entity.ViewType entity.Position entity.Size world.Camera then
@@ -122,8 +122,7 @@ module SpriteFacetModule =
             else []
 
         override facet.GetQuickSize (entity : Entity, world) =
-            let imageAssetTag = Image.toAssetTag entity.SpriteImage
-            match Metadata.tryGetTextureSizeAsVector2 imageAssetTag world.State.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 entity.SpriteImage world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
 
@@ -140,8 +139,8 @@ module AnimatedSpriteFacetModule =
         static member setTileSize (value : Vector2) (entity : Entity) = entity?TileSize <- value
         member entity.AnimationStutter = entity?AnimationStutter : int64
         static member setAnimationStutter (value : int64) (entity : Entity) = entity?AnimationStutter <- value
-        member entity.AnimationSheet = entity?AnimationSheet : Image
-        static member setAnimationSheet (value : Image) (entity : Entity) = entity?AnimationSheet <- value
+        member entity.AnimationSheet = entity?AnimationSheet : AssetTag
+        static member setAnimationSheet (value : AssetTag) (entity : Entity) = entity?AnimationSheet <- value
 
     type AnimatedSpriteFacet () =
         inherit Facet ()
@@ -160,7 +159,7 @@ module AnimatedSpriteFacetModule =
              define? TileRun 4
              define? TileSize <| Vector2 (16.0f, 16.0f)
              define? AnimationStutter 4L
-             define? AnimationSheet { ImagePackageName = DefaultPackageName; ImageAssetName = "Image7" }]
+             define? AnimationSheet { PackageName = DefaultPackageName; AssetName = "Image7" }]
 
         override facet.GetRenderDescriptors (entity : Entity, world) =
             if entity.Visible && Camera.inView3 entity.ViewType entity.Position entity.Size world.Camera then
@@ -268,12 +267,12 @@ module ButtonDispatcherModule =
     
         member button.Down = button?Down : bool
         static member setDown (value : bool) (button : Entity) = button?Down <- value
-        member button.UpImage = button?UpImage : Image
-        static member setUpImage (value : Image) (button : Entity) = button?UpImage <- value
-        member button.DownImage = button?DownImage : Image
-        static member setDownImage (value : Image) (button : Entity) = button?DownImage <- value
-        member button.OptClickSound = button?OptClickSound : Sound option
-        static member setOptClickSound (value : Sound option) (button : Entity) = button?OptClickSound <- value
+        member button.UpImage = button?UpImage : AssetTag
+        static member setUpImage (value : AssetTag) (button : Entity) = button?UpImage <- value
+        member button.DownImage = button?DownImage : AssetTag
+        static member setDownImage (value : AssetTag) (button : Entity) = button?DownImage <- value
+        member button.OptClickSound = button?OptClickSound : AssetTag option
+        static member setOptClickSound (value : AssetTag option) (button : Entity) = button?OptClickSound <- value
 
     type ButtonDispatcher () =
         inherit GuiDispatcher ()
@@ -315,9 +314,9 @@ module ButtonDispatcherModule =
         static member FieldDefinitions =
             [define? SwallowMouseLeft false
              define? Down false
-             define? UpImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image" }
-             define? DownImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image2" }
-             define? OptClickSound <| Some { SoundPackageName = DefaultPackageName; SoundAssetName = "Sound" }]
+             define? UpImage { PackageName = DefaultPackageName; AssetName = "Image" }
+             define? DownImage { PackageName = DefaultPackageName; AssetName = "Image2" }
+             define? OptClickSound <| Some { PackageName = DefaultPackageName; AssetName = "Sound" }]
 
         override dispatcher.Register (address, button, world) =
             let world =
@@ -342,8 +341,7 @@ module ButtonDispatcherModule =
             else []
 
         override dispatcher.GetQuickSize (button, world) =
-            let imageAssetTag = Image.toAssetTag button.UpImage
-            match Metadata.tryGetTextureSizeAsVector2 imageAssetTag world.State.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 button.UpImage world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
 
@@ -352,15 +350,15 @@ module LabelDispatcherModule =
 
     type Entity with
 
-        member label.LabelImage = label?LabelImage : Image
-        static member setLabelImage (value : Image) (label : Entity) = label?LabelImage <- value
+        member label.LabelImage = label?LabelImage : AssetTag
+        static member setLabelImage (value : AssetTag) (label : Entity) = label?LabelImage <- value
 
     type LabelDispatcher () =
         inherit GuiDispatcher ()
 
         static member FieldDefinitions =
             [define? SwallowMouseLeft true
-             define? LabelImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image4" }]
+             define? LabelImage { PackageName = DefaultPackageName; AssetName = "Image4" }]
 
         override dispatcher.GetRenderDescriptors (label, _) =
             if label.Visible then
@@ -378,8 +376,7 @@ module LabelDispatcherModule =
             else []
 
         override dispatcher.GetQuickSize (label, world) =
-            let imageAssetTag = Image.toAssetTag label.LabelImage
-            match Metadata.tryGetTextureSizeAsVector2 imageAssetTag world.State.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 label.LabelImage world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
 
@@ -390,14 +387,14 @@ module TextDispatcherModule =
 
         member text.Text : string = text?Text
         static member setText (value : string) (text : Entity) = text?Text <- value
-        member text.TextFont = text?TextFont : Font
-        static member setTextFont (value : Font) (text : Entity) = text?TextFont <- value
+        member text.TextFont = text?TextFont : AssetTag
+        static member setTextFont (value : AssetTag) (text : Entity) = text?TextFont <- value
         member text.TextOffset = text?TextOffset : Vector2
         static member setTextOffset (value : Vector2) (text : Entity) = text?TextOffset <- value
         member text.TextColor = text?TextColor : Vector4
         static member setTextColor (value : Vector4) (text : Entity) = text?TextColor <- value
-        member text.BackgroundImage = text?BackgroundImage : Image
-        static member setBackgroundImage (value : Image) (text : Entity) = text?BackgroundImage <- value
+        member text.BackgroundImage = text?BackgroundImage : AssetTag
+        static member setBackgroundImage (value : AssetTag) (text : Entity) = text?BackgroundImage <- value
 
     type TextDispatcher () =
         inherit GuiDispatcher ()
@@ -405,10 +402,10 @@ module TextDispatcherModule =
         static member FieldDefinitions =
             [define? SwallowMouseLeft true
              define? Text String.Empty
-             define? TextFont { FontPackageName = DefaultPackageName; FontAssetName = "Font" }
+             define? TextFont { PackageName = DefaultPackageName; AssetName = "Font" }
              define? TextOffset Vector2.Zero
              define? TextColor Vector4.One
-             define? BackgroundImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image4" }]
+             define? BackgroundImage { PackageName = DefaultPackageName; AssetName = "Image4" }]
 
         override dispatcher.GetRenderDescriptors (text, _) =
             if text.Visible then
@@ -436,8 +433,7 @@ module TextDispatcherModule =
             else []
 
         override dispatcher.GetQuickSize (text, world) =
-            let imageAssetTag = Image.toAssetTag text.BackgroundImage
-            match Metadata.tryGetTextureSizeAsVector2 imageAssetTag world.State.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 text.BackgroundImage world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
 
@@ -450,12 +446,12 @@ module ToggleDispatcherModule =
         static member setOn (value : bool) (toggle : Entity) = toggle?On <- value
         member toggle.Pressed = toggle?Pressed : bool
         static member setPressed (value : bool) (toggle : Entity) = toggle?Pressed <- value
-        member toggle.OffImage = toggle?OffImage : Image
-        static member setOffImage (value : Image) (toggle : Entity) = toggle?OffImage <- value
-        member toggle.OnImage = toggle?OnImage : Image
-        static member setOnImage (value : Image) (toggle : Entity) = toggle?OnImage <- value
-        member toggle.OptToggleSound = toggle?OptToggleSound : Sound option
-        static member setOptToggleSound (value : Sound option) (toggle : Entity) = toggle?OptToggleSound <- value
+        member toggle.OffImage = toggle?OffImage : AssetTag
+        static member setOffImage (value : AssetTag) (toggle : Entity) = toggle?OffImage <- value
+        member toggle.OnImage = toggle?OnImage : AssetTag
+        static member setOnImage (value : AssetTag) (toggle : Entity) = toggle?OnImage <- value
+        member toggle.OptToggleSound = toggle?OptToggleSound : AssetTag option
+        static member setOptToggleSound (value : AssetTag option) (toggle : Entity) = toggle?OptToggleSound <- value
 
     type ToggleDispatcher () =
         inherit GuiDispatcher ()
@@ -499,9 +495,9 @@ module ToggleDispatcherModule =
             [define? SwallowMouseLeft false
              define? On false
              define? Pressed false
-             define? OffImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image" }
-             define? OnImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image2" }
-             define? OptToggleSound <| Some { SoundPackageName = DefaultPackageName; SoundAssetName = "Sound" }]
+             define? OffImage { PackageName = DefaultPackageName; AssetName = "Image" }
+             define? OnImage { PackageName = DefaultPackageName; AssetName = "Image2" }
+             define? OptToggleSound <| Some { PackageName = DefaultPackageName; AssetName = "Sound" }]
 
         override dispatcher.Register (address, toggle, world) =
             let world =
@@ -526,8 +522,7 @@ module ToggleDispatcherModule =
             else []
 
         override dispatcher.GetQuickSize (toggle, world) =
-            let imageAssetTag = Image.toAssetTag toggle.OffImage
-            match Metadata.tryGetTextureSizeAsVector2 imageAssetTag world.State.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 toggle.OffImage world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
 
@@ -590,10 +585,10 @@ module FillBarDispatcherModule =
         static member setFill (value : single) (fillBar : Entity) = fillBar?Fill <- value
         member fillBar.FillInset = fillBar?FillInset : single
         static member setFillInset (value : single) (fillBar : Entity) = fillBar?FillInset <- value
-        member fillBar.FillImage = fillBar?FillImage : Image
-        static member setFillImage (value : Image) (fillBar : Entity) = fillBar?FillImage <- value
-        member fillBar.BorderImage = fillBar?BorderImage : Image
-        static member setBorderImage (value : Image) (fillBar : Entity) = fillBar?BorderImage <- value
+        member fillBar.FillImage = fillBar?FillImage : AssetTag
+        static member setFillImage (value : AssetTag) (fillBar : Entity) = fillBar?FillImage <- value
+        member fillBar.BorderImage = fillBar?BorderImage : AssetTag
+        static member setBorderImage (value : AssetTag) (fillBar : Entity) = fillBar?BorderImage <- value
 
     type FillBarDispatcher () =
         inherit GuiDispatcher ()
@@ -609,8 +604,8 @@ module FillBarDispatcherModule =
             [define? SwallowMouseLeft true
              define? Fill 0.0f
              define? FillInset 0.0f
-             define? FillImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image9" }
-             define? BorderImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image10" }]
+             define? FillImage { PackageName = DefaultPackageName; AssetName = "Image9" }
+             define? BorderImage { PackageName = DefaultPackageName; AssetName = "Image10" }]
 
         override dispatcher.GetRenderDescriptors (fillBar, _) =
             if fillBar.Visible then
@@ -640,8 +635,7 @@ module FillBarDispatcherModule =
             else []
 
         override dispatcher.GetQuickSize (fillBar, world) =
-            let imageAssetTag = Image.toAssetTag fillBar.BorderImage
-            match Metadata.tryGetTextureSizeAsVector2 imageAssetTag world.State.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 fillBar.BorderImage world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
 
@@ -653,7 +647,7 @@ module BlockDispatcherModule =
 
         static member FieldDefinitions =
             [define? BodyType Static
-             define? SpriteImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image3" }]
+             define? SpriteImage { PackageName = DefaultPackageName; AssetName = "Image3" }]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -666,7 +660,7 @@ module BoxDispatcherModule =
         inherit EntityDispatcher ()
 
         static member FieldDefinitions =
-            [define? SpriteImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image3" }]
+            [define? SpriteImage { PackageName = DefaultPackageName; AssetName = "Image3" }]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -683,7 +677,7 @@ module TopViewCharacterDispatcherModule =
              define? LinearDamping 10.0f
              define? GravityScale 0.0f
              define? CollisionExpr "Circle"
-             define? SpriteImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image7" }]
+             define? SpriteImage { PackageName = DefaultPackageName; AssetName = "Image7" }]
         
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -699,7 +693,7 @@ module SideViewCharacterDispatcherModule =
             [define? FixedRotation true
              define? LinearDamping 3.0f
              define? CollisionExpr "Capsule"
-             define? SpriteImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image6" }]
+             define? SpriteImage { PackageName = DefaultPackageName; AssetName = "Image6" }]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -710,14 +704,13 @@ module TileMapDispatcherModule =
 
     type Entity with
 
-        member entity.TileMapAsset = entity?TileMapAsset : TileMapAsset
-        static member setTileMapAsset (value : TileMapAsset) (entity : Entity) = entity?TileMapAsset <- value
+        member entity.TileMapAsset = entity?TileMapAsset : AssetTag
+        static member setTileMapAsset (value : AssetTag) (entity : Entity) = entity?TileMapAsset <- value
         member entity.Parallax = entity?Parallax : single
         static member setParallax (value : single) (entity : Entity) = entity?Parallax <- value
 
-        static member makeTileMapData (tileMapAsset : TileMapAsset) world =
-            let tileMapAssetTag = TileMapAsset.toAssetTag tileMapAsset
-            let map = __c <| Metadata.getTileMapMetadata tileMapAssetTag world.State.AssetMetadataMap
+        static member makeTileMapData (tileMapAsset : AssetTag) world =
+            let map = __c <| Metadata.getTileMapMetadata tileMapAsset world.State.AssetMetadataMap
             let mapSize = Vector2i (map.Width, map.Height)
             let tileSize = Vector2i (map.TileWidth, map.TileHeight)
             let tileSizeF = Vector2 (single tileSize.X, single tileSize.Y)
@@ -834,7 +827,7 @@ module TileMapDispatcherModule =
              define? Restitution 0.0f
              define? CollisionCategories "1"
              define? CollisionMask "*"
-             define? TileMapAsset { TileMapPackageName = DefaultPackageName; TileMapAssetName = "TileMap" }
+             define? TileMapAsset { PackageName = DefaultPackageName; AssetName = "TileMap" }
              define? Parallax 0.0f]
 
         override dispatcher.Register (address, tileMap, world) =
@@ -852,8 +845,7 @@ module TileMapDispatcherModule =
 
         override dispatcher.GetRenderDescriptors (tileMap, world) =
             if tileMap.Visible then
-                let tileMapAssetTag = TileMapAsset.toAssetTag tileMap.TileMapAsset
-                match Metadata.tryGetTileMapMetadata tileMapAssetTag world.State.AssetMetadataMap with
+                match Metadata.tryGetTileMapMetadata tileMap.TileMapAsset world.State.AssetMetadataMap with
                 | Some (_, images, map) ->
                     let layers = List.ofSeq map.Layers
                     let tileSourceSize = Vector2i (map.TileWidth, map.TileHeight)
@@ -891,7 +883,6 @@ module TileMapDispatcherModule =
             else []
 
         override dispatcher.GetQuickSize (tileMap, world) =
-            let tileMapAssetTag = TileMapAsset.toAssetTag tileMap.TileMapAsset
-            match Metadata.tryGetTileMapMetadata tileMapAssetTag world.State.AssetMetadataMap with
+            match Metadata.tryGetTileMapMetadata tileMap.TileMapAsset world.State.AssetMetadataMap with
             | Some (_, _, map) -> Vector2 (single <| map.Width * map.TileWidth, single <| map.Height * map.TileHeight)
             | None -> DefaultEntitySize

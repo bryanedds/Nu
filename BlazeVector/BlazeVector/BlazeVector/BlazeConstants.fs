@@ -20,18 +20,18 @@ module BlazeConstants =
     let SectionCount = 32
 
     // asset constants
-    let NuSplashSound = { SoundPackageName = GuiPackageName; SoundAssetName = "Nu" }
-    let MachinerySong = { SongPackageName = GuiPackageName; SongAssetName = "Machinery" }
-    let DeadBlazeSong = { SongPackageName = StagePackageName; SongAssetName = "DeadBlaze" }
-    let HitSound = { SoundPackageName = StagePackageName; SoundAssetName = "Hit" }
-    let ExplosionSound = { SoundPackageName = StagePackageName; SoundAssetName = "Explosion" }
-    let ShotSound = { SoundPackageName = StagePackageName; SoundAssetName = "Shot" }
-    let JumpSound = { SoundPackageName = StagePackageName; SoundAssetName = "Jump" }
-    let DeathSound = { SoundPackageName = StagePackageName; SoundAssetName = "Death" }
-    let EnemyBulletImage = { ImagePackageName = StagePackageName; ImageAssetName = "EnemyBullet" }
-    let PlayerBulletImage = { ImagePackageName = StagePackageName; ImageAssetName = "PlayerBullet" }
-    let EnemyImage = { ImagePackageName = StagePackageName; ImageAssetName = "Enemy" }
-    let PlayerImage = { ImagePackageName = StagePackageName; ImageAssetName = "Player" }
+    let NuSplashSound = { PackageName = GuiPackageName; AssetName = "Nu" }
+    let MachinerySong = { PackageName = GuiPackageName; AssetName = "Machinery" }
+    let DeadBlazeSong = { PackageName = StagePackageName; AssetName = "DeadBlaze" }
+    let HitSound = { PackageName = StagePackageName; AssetName = "Hit" }
+    let ExplosionSound = { PackageName = StagePackageName; AssetName = "Explosion" }
+    let ShotSound = { PackageName = StagePackageName; AssetName = "Shot" }
+    let JumpSound = { PackageName = StagePackageName; AssetName = "Jump" }
+    let DeathSound = { PackageName = StagePackageName; AssetName = "Death" }
+    let EnemyBulletImage = { PackageName = StagePackageName; AssetName = "EnemyBullet" }
+    let PlayerBulletImage = { PackageName = StagePackageName; AssetName = "PlayerBullet" }
+    let EnemyImage = { PackageName = StagePackageName; AssetName = "Enemy" }
+    let PlayerImage = { PackageName = StagePackageName; AssetName = "Player" }
 
     // dissolve constants
     let DissolveData =
@@ -44,7 +44,7 @@ module BlazeConstants =
     let SplashData =
         { DissolveData = DissolveData
           IdlingTime = 60L
-          SplashImage = { ImagePackageName = DefaultPackageName; ImageAssetName = "Image5" }}
+          SplashImage = { PackageName = DefaultPackageName; AssetName = "Image5" }}
 
     // title constants
     let TitleAddress = stoa<Screen> "Title"

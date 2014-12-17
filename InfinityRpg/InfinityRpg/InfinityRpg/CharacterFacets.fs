@@ -80,14 +80,14 @@ module CharacterAnimationFacetModule =
     
         member entity.CharacterAnimationState = entity?CharacterAnimationState : CharacterAnimationState
         static member setCharacterAnimationState (value : CharacterAnimationState) (entity : Entity) = entity?CharacterAnimationState <- value
-        member entity.CharacterAnimationSheet = entity?CharacterAnimationSheet : Image
-        static member setCharacterAnimationSheet (value : Image) (entity : Entity) = entity?CharacterAnimationSheet <- value
+        member entity.CharacterAnimationSheet = entity?CharacterAnimationSheet : AssetTag
+        static member setCharacterAnimationSheet (value : AssetTag) (entity : Entity) = entity?CharacterAnimationSheet <- value
 
     type CharacterAnimationFacet () =
         inherit Facet ()
         
         static let getOptSpriteInset (entity : Entity) world =
-            let imageAssetTag = Image.toAssetTag entity.CharacterAnimationSheet
+            let imageAssetTag = entity.CharacterAnimationSheet
             let imageSize = Metadata.getTextureSizeAsVector2 imageAssetTag world.State.AssetMetadataMap
             let spriteSize = imageSize * 0.25f
             let animationState = entity.CharacterAnimationState

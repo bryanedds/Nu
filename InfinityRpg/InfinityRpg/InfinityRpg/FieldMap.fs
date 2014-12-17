@@ -18,7 +18,7 @@ module FieldMapModule =
     type [<NoEquality; NoComparison>] FieldMap =
         { FieldSizeM : Vector2i
           FieldTiles : Map<Vector2i, FieldTile>
-          FieldTileSheet : Image }
+          FieldTileSheet : AssetTag }
 
         static member PathTile = { TileSheetPositionM = Vector2i (3, 0); TileType = Passable }
         static member GrassTile = { TileSheetPositionM = Vector2i (3, 3); TileType = Passable }
