@@ -122,10 +122,10 @@ module CharacterAnimationFacetModule =
         static member FieldDefinitions =
             [define?
                 CharacterAnimationState
-                { AnimationType = CharacterAnimationFacing
-                  Direction = Upward
-                  Stutter = CharacterAnimationStutter
-                  StartTime = 0L }
+                    { AnimationType = CharacterAnimationFacing
+                      Direction = Upward
+                      Stutter = CharacterAnimationStutter
+                      StartTime = 0L }
              define? CharacterAnimationSheet PlayerImage]
 
         override facet.GetRenderDescriptors (entity, world) =

@@ -202,6 +202,10 @@ module WorldGroupModule =
             File.Delete filePath
             File.Move (filePathTmp, filePath)
 
+        // TODO: implement these.
+        //static member writeGroupHierarchyToAsset (assetTag : AssetTag) groupHierarchy world =
+        //static member readGroupHierarchyFromAsset (assetTag : AssetTag) groupHierarchy world =
+
         static member writeGroupHierarchies (writer : XmlWriter) groupHierarchies world =
             let groupHierarchies =
                 List.sortBy
