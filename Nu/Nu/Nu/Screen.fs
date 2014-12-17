@@ -13,12 +13,12 @@ module ScreenModule =
     type [<StructuralEquality; NoComparison>] DissolveData =
         { IncomingTime : int64
           OutgoingTime : int64
-          DissolveImage : Image }
+          DissolveImage : AssetTag }
 
     type [<StructuralEquality; NoComparison>] SplashData =
         { DissolveData : DissolveData
           IdlingTime : int64
-          SplashImage : Image }
+          SplashImage : AssetTag }
 
     type Screen with
 

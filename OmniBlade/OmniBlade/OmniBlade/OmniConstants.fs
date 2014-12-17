@@ -24,10 +24,10 @@ module OmniConstants =
     let SplashData =
         { DissolveData = DissolveData
           IdlingTime = 60L
-          SplashImage = { ImagePackageName = DefaultPackageName; ImageAssetName = "Image5" }}
+          SplashImage = { PackageName = DefaultPackageName; AssetName = "Image5" }}
 
     // asset constants
-    let GameSong = { SongPackageName = DefaultPackageName; SongAssetName = "Song" }
+    let GameSong = { PackageName = DefaultPackageName; AssetName = "Song" }
 
     // title constants
     let TitleAddress = stoa<Screen> "Title"

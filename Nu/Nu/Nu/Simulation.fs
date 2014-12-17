@@ -64,7 +64,7 @@ module SimulationModule =
     type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
         { TransitionLifetime : int64
           TransitionType : TransitionType
-          OptDissolveImage : Image option }
+          OptDissolveImage : AssetTag option }
 
         static member make transitionType =
             { TransitionLifetime = 0L

@@ -9,8 +9,8 @@
         <Size>256, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderModule+Image">[Gui | BackButtonDown]</DownImage>
-          <UpImage type="Nu.RenderModule+Image">[Gui | BackButtonUp]</UpImage>
+          <DownImage type="Nu.AssetsModule+AssetTag">[Gui | BackButtonDown]</DownImage>
+          <UpImage type="Nu.AssetsModule+AssetTag">[Gui | BackButtonUp]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="TextDispatcher">
@@ -18,7 +18,7 @@
         <Size>640, 128</Size>
         <OptOverlayName>[Some | TextDispatcher]</OptOverlayName>
         <Xtension>
-          <BackgroundImage type="Nu.RenderModule+Image">[Default | Image4]</BackgroundImage>
+          <BackgroundImage type="Nu.AssetsModule+AssetTag">[Default | Image4]</BackgroundImage>
           <Text type="System.String">Load a Game</Text>
         </Xtension>
       </Entity>
@@ -28,7 +28,7 @@
         <Size>960, 544</Size>
         <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
         <Xtension>
-          <LabelImage type="Nu.RenderModule+Image">[Default | Image8]</LabelImage>
+          <LabelImage type="Nu.AssetsModule+AssetTag">[Default | Image8]</LabelImage>
         </Xtension>
       </Entity>
     </Entities>

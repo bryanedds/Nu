@@ -53,4 +53,4 @@ module WorldConstants =
     let KeyboardKeyChangeEventAddress = MouseEventAddress -<- stoa<KeyboardKeyData> "Change"
     let CollisionEventAddress = stoa<CollisionData> "Collision"
     let EntityChangeEventAddress = stoa<EntityChangeData> "EntityChange"
-    let DefaultDissolveImage = { ImagePackageName = DefaultPackageName; ImageAssetName = "Image8" }
+    let DefaultDissolveImage = { PackageName = DefaultPackageName; AssetName = "Image8" }

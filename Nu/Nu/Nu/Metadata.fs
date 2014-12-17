@@ -19,7 +19,7 @@ module MetadataModule =
     /// full asset loaded into memory.
     type [<StructuralEquality; NoComparison>] AssetMetadata =
         | TextureMetadata of Vector2i
-        | TileMapMetadata of string * Image list * TmxMap
+        | TileMapMetadata of string * AssetTag list * TmxMap
         | SoundMetadata
         | SongMetadata
         | OtherMetadata of obj
@@ -36,10 +36,10 @@ module Metadata =
 
     let private getTileSetProperties (tileSet : TmxTileset) =
         let properties = tileSet.Properties
-        try { ImagePackageName = properties.["PackageName"]
-              ImageAssetName = properties.["ImageAssetName"] }
+        try { PackageName = properties.["PackageName"]
+              AssetName = properties.["ImageAssetName"] }
         with :? KeyNotFoundException ->
-            let errorMessage = "TileSet '" + tileSet.Name + "' missing one or more properties (PackageName or ImageAssetName)."
+            let errorMessage = "TileSet '" + tileSet.Name + "' missing one or more properties (PackageName or AssetName)."
             raise <| TileSetPropertyNotFoundException errorMessage
 
     let private generateTextureMetadata asset =

@@ -11,8 +11,8 @@
         <Depth>10</Depth>
         <Size>384, 64</Size>
         <Xtension>
-          <DownImage type="Nu.RenderModule+Image">[Gui | SaveGameDown]</DownImage>
-          <UpImage type="Nu.RenderModule+Image">[Gui | SaveGameUp]</UpImage>
+          <DownImage type="Nu.AssetsModule+AssetTag">[Gui | SaveGameDown]</DownImage>
+          <UpImage type="Nu.AssetsModule+AssetTag">[Gui | SaveGameUp]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -21,9 +21,9 @@
         <Depth>10</Depth>
         <Size>384, 64</Size>
         <Xtension>
-          <DownImage type="Nu.RenderModule+Image">[Gui | HaltDown]</DownImage>
+          <DownImage type="Nu.AssetsModule+AssetTag">[Gui | HaltDown]</DownImage>
           <Enabled type="System.Boolean">False</Enabled>
-          <UpImage type="Nu.RenderModule+Image">[Gui | HaltUp]</UpImage>
+          <UpImage type="Nu.AssetsModule+AssetTag">[Gui | HaltUp]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -32,8 +32,8 @@
         <Depth>10</Depth>
         <Size>384, 64</Size>
         <Xtension>
-          <DownImage type="Nu.RenderModule+Image">[Gui | BackDown]</DownImage>
-          <UpImage type="Nu.RenderModule+Image">[Gui | BackUp]</UpImage>
+          <DownImage type="Nu.AssetsModule+AssetTag">[Gui | BackDown]</DownImage>
+          <UpImage type="Nu.AssetsModule+AssetTag">[Gui | BackUp]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
@@ -42,7 +42,7 @@
         <Depth>9</Depth>
         <Size>224, 224</Size>
         <Xtension>
-          <LabelImage type="Nu.RenderModule+Image">[Gui | DetailBacking]</LabelImage>
+          <LabelImage type="Nu.AssetsModule+AssetTag">[Gui | DetailBacking]</LabelImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="FeelerDispatcher">
@@ -57,9 +57,9 @@
         <Position>-368, -232</Position>
         <Depth>10</Depth>
         <Xtension>
-          <DownImage type="Nu.RenderModule+Image">[Gui | DetailDownwardDown]</DownImage>
-          <OptClickSound type="Microsoft.FSharp.Core.FSharpOption`1[[Nu.AudioModule+Sound, Nu, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]">None</OptClickSound>
-          <UpImage type="Nu.RenderModule+Image">[Gui | DetailDownwardUp]</UpImage>
+          <DownImage type="Nu.AssetsModule+AssetTag">[Gui | DetailDownwardDown]</DownImage>
+          <OptClickSound type="Microsoft.FSharp.Core.FSharpOption`1[[Nu.AssetsModule+AssetTag, Nu, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]">None</OptClickSound>
+          <UpImage type="Nu.AssetsModule+AssetTag">[Gui | DetailDownwardUp]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -67,9 +67,9 @@
         <Position>-440, -160</Position>
         <Depth>10</Depth>
         <Xtension>
-          <DownImage type="Nu.RenderModule+Image">[Gui | DetailLeftwardDown]</DownImage>
-          <OptClickSound type="Microsoft.FSharp.Core.FSharpOption`1[[Nu.AudioModule+Sound, Nu, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]">None</OptClickSound>
-          <UpImage type="Nu.RenderModule+Image">[Gui | DetailLeftwardUp]</UpImage>
+          <DownImage type="Nu.AssetsModule+AssetTag">[Gui | DetailLeftwardDown]</DownImage>
+          <OptClickSound type="Microsoft.FSharp.Core.FSharpOption`1[[Nu.AssetsModule+AssetTag, Nu, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]">None</OptClickSound>
+          <UpImage type="Nu.AssetsModule+AssetTag">[Gui | DetailLeftwardUp]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -77,9 +77,9 @@
         <Position>-296, -160</Position>
         <Depth>10</Depth>
         <Xtension>
-          <DownImage type="Nu.RenderModule+Image">[Gui | DetailRightwardDown]</DownImage>
-          <OptClickSound type="Microsoft.FSharp.Core.FSharpOption`1[[Nu.AudioModule+Sound, Nu, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]">None</OptClickSound>
-          <UpImage type="Nu.RenderModule+Image">[Gui | DetailRightwardUp]</UpImage>
+          <DownImage type="Nu.AssetsModule+AssetTag">[Gui | DetailRightwardDown]</DownImage>
+          <OptClickSound type="Microsoft.FSharp.Core.FSharpOption`1[[Nu.AssetsModule+AssetTag, Nu, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]">None</OptClickSound>
+          <UpImage type="Nu.AssetsModule+AssetTag">[Gui | DetailRightwardUp]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -87,9 +87,9 @@
         <Position>-368, -88</Position>
         <Depth>10</Depth>
         <Xtension>
-          <DownImage type="Nu.RenderModule+Image">[Gui | DetailUpwardDown]</DownImage>
-          <OptClickSound type="Microsoft.FSharp.Core.FSharpOption`1[[Nu.AudioModule+Sound, Nu, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]">None</OptClickSound>
-          <UpImage type="Nu.RenderModule+Image">[Gui | DetailUpwardUp]</UpImage>
+          <DownImage type="Nu.AssetsModule+AssetTag">[Gui | DetailUpwardDown]</DownImage>
+          <OptClickSound type="Microsoft.FSharp.Core.FSharpOption`1[[Nu.AssetsModule+AssetTag, Nu, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]">None</OptClickSound>
+          <UpImage type="Nu.AssetsModule+AssetTag">[Gui | DetailUpwardUp]</UpImage>
         </Xtension>
       </Entity>
     </Entities>

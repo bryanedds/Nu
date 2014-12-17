@@ -28,7 +28,7 @@ module Constants =
     let DissolveData =
         { IncomingTime = 20L
           OutgoingTime = 30L
-          DissolveImage = { ImagePackageName = GuiPackageName; ImageAssetName = "Dissolve" }}
+          DissolveImage = { PackageName = GuiPackageName; AssetName = "Dissolve" }}
 
     // splash constants
     let NuSplashName = "Splash"
@@ -36,12 +36,12 @@ module Constants =
     let NuSplashData =
         { DissolveData = DissolveData
           IdlingTime = 60L
-          SplashImage = { ImagePackageName = GuiPackageName; ImageAssetName = "Nu" }}
+          SplashImage = { PackageName = GuiPackageName; AssetName = "Nu" }}
 
     // asset constants
-    let PlayerImage = { ImagePackageName = GameplayPackageName; ImageAssetName = "Player" }
-    let ZommieImage = { ImagePackageName = GameplayPackageName; ImageAssetName = "Zommie" }
-    let FieldTileSheetImage = { ImagePackageName = GameplayPackageName; ImageAssetName = "FieldTileSheet" }
+    let PlayerImage = { PackageName = GameplayPackageName; AssetName = "Player" }
+    let ZommieImage = { PackageName = GameplayPackageName; AssetName = "Zommie" }
+    let FieldTileSheetImage = { PackageName = GameplayPackageName; AssetName = "FieldTileSheet" }
 
     // title constants
     let TitleName = "Title"
