@@ -100,7 +100,7 @@ module SimulationModule =
     /// An event used by Nu's purely functional event system.
     and [<ReferenceEquality>] Event<'d, 's when 's :> Simulant> =
         { SubscriberAddress : 's Address
-          PublisherAddress : Simulant Address
+          PublisherAddress : Simulant Address // TODO: consider making this a list so that Observer can provide all useful addresses
           EventAddress : 'd Address
           Subscriber : 's
           Data : 'd }
