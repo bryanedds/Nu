@@ -41,6 +41,8 @@ module Constants =
     // asset constants
     let PlayerImage = { PackageName = GameplayPackageName; AssetName = "Player" }
     let ZommieImage = { PackageName = GameplayPackageName; AssetName = "Zommie" }
+    let BatImage = { PackageName = GameplayPackageName; AssetName = "Bat" }
+    let GoopyImage = { PackageName = GameplayPackageName; AssetName = "Goopy" }
     let FieldTileSheetImage = { PackageName = GameplayPackageName; AssetName = "FieldTileSheet" }
 
     // title constants

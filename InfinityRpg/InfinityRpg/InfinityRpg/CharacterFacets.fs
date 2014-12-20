@@ -87,9 +87,6 @@ module CharacterAnimationFacetModule =
         inherit Facet ()
         
         static let getOptSpriteInset (entity : Entity) world =
-            let imageAssetTag = entity.CharacterAnimationSheet
-            let imageSize = Metadata.getTextureSizeAsVector2 imageAssetTag world.State.AssetMetadataMap
-            let spriteSize = imageSize * 0.25f
             let animationState = entity.CharacterAnimationState
             let animationTypeCoordsOffset =
                 match animationState.AnimationType with
@@ -109,14 +106,14 @@ module CharacterAnimationFacetModule =
             let spriteCoordsinates = animationTypeCoordsOffset + directionCoordsOffset + frameCoordsOffset
             let spriteOffset =
                 Vector2 (
-                    spriteSize.X * single spriteCoordsinates.X,
-                    spriteSize.Y * single spriteCoordsinates.Y)
+                    TileSize.X * single spriteCoordsinates.X,
+                    TileSize.Y * single spriteCoordsinates.Y)
             let spriteInset =
                 Vector4 (
                     spriteOffset.X,
                     spriteOffset.Y,
-                    spriteOffset.X + spriteSize.X,
-                    spriteOffset.Y + spriteSize.Y)
+                    spriteOffset.X + TileSize.X,
+                    spriteOffset.Y + TileSize.Y)
             Some spriteInset
 
         static member FieldDefinitions =
