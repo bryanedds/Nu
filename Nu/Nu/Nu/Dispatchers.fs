@@ -239,7 +239,7 @@ module GuiDispatcherModule =
         inherit EntityDispatcher ()
 
         static let handleMouseLeft event world =
-            let (address, gui : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
+            let (address, gui, mouseButtonData) = World.unwrapASD<MouseButtonData, Entity> event world
             let eventHandling =
                 if World.isAddressSelected address world && gui.Visible then
                     let mousePositionWorld = Camera.mouseToWorld gui.ViewType mouseButtonData.Position world.Camera
@@ -278,7 +278,7 @@ module ButtonDispatcherModule =
         inherit GuiDispatcher ()
 
         let handleMouseLeftDown event world =
-            let (address, button : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
+            let (address, button, mouseButtonData) = World.unwrapASD<MouseButtonData, Entity> event world
             if World.isAddressSelected address world then
                 let mousePositionWorld = Camera.mouseToWorld button.ViewType mouseButtonData.Position world.Camera
                 if Math.isPointInBounds3 mousePositionWorld button.Position button.Size && button.Visible then
@@ -292,7 +292,7 @@ module ButtonDispatcherModule =
             else (Cascade, world)
 
         let handleMouseLeftUp event world =
-            let (address, button : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
+            let (address, button, mouseButtonData) = World.unwrapASD<MouseButtonData, Entity> event world
             if World.isAddressSelected address world then
                 let wasDown = button.Down
                 let button = Entity.setDown false button
@@ -457,7 +457,7 @@ module ToggleDispatcherModule =
         inherit GuiDispatcher ()
         
         let handleMouseLeftDown event world =
-            let (address, toggle : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
+            let (address, toggle, mouseButtonData) = World.unwrapASD<MouseButtonData, Entity> event world
             if World.isAddressSelected address world then
                 let mousePositionWorld = Camera.mouseToWorld toggle.ViewType mouseButtonData.Position world.Camera
                 if Math.isPointInBounds3 mousePositionWorld toggle.Position toggle.Size && toggle.Visible then
@@ -470,7 +470,7 @@ module ToggleDispatcherModule =
             else (Cascade, world)
 
         let handleMouseLeftUp event world =
-            let (address, toggle : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
+            let (address, toggle, mouseButtonData) = World.unwrapASD<MouseButtonData, Entity> event world
             if World.isAddressSelected address world then
                 let wasPressed = toggle.Pressed
                 let toggle = Entity.setPressed false toggle
@@ -538,7 +538,7 @@ module FeelerDispatcherModule =
         inherit GuiDispatcher ()
 
         let handleMouseLeftDown event world =
-            let (address, feeler : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
+            let (address, feeler, mouseButtonData) = World.unwrapASD<MouseButtonData, Entity> event world
             if World.isAddressSelected address world then
                 let mousePositionWorld = Camera.mouseToWorld feeler.ViewType mouseButtonData.Position world.Camera
                 if Math.isPointInBounds3 mousePositionWorld feeler.Position feeler.Size && feeler.Visible then
@@ -552,7 +552,7 @@ module FeelerDispatcherModule =
             else (Cascade, world)
     
         let handleMouseLeftUp event world =
-            let (address, feeler : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
+            let (address, feeler, mouseButtonData) = World.unwrapASD<MouseButtonData, Entity> event world
             if World.isAddressSelected address world && feeler.Visible then
                 if feeler.Enabled then
                     let feeler = Entity.setTouched false feeler

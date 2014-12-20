@@ -12,7 +12,7 @@ module Constants =
     let TileSheetSizeI = Vector2i.Multiply (TileSheetSizeM, TileSizeI)
     let TileSheetSize = let t = TileSheetSizeI in t.Vector2
     let CharacterDepth = 1.0f
-    let CharacterWalkSpeed = 4.0f
+    let CharacterWalkSpeed = 3.0f
 
     // file paths
     let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
@@ -40,9 +40,9 @@ module Constants =
 
     // asset constants
     let PlayerImage = { PackageName = GameplayPackageName; AssetName = "Player" }
-    let ZommieImage = { PackageName = GameplayPackageName; AssetName = "Zommie" }
-    let BatImage = { PackageName = GameplayPackageName; AssetName = "Bat" }
     let GoopyImage = { PackageName = GameplayPackageName; AssetName = "Goopy" }
+    let BatsyImage = { PackageName = GameplayPackageName; AssetName = "Batsy" }
+    let ZommieImage = { PackageName = GameplayPackageName; AssetName = "Zommie" }
     let FieldTileSheetImage = { PackageName = GameplayPackageName; AssetName = "FieldTileSheet" }
 
     // title constants
@@ -87,5 +87,6 @@ module Constants =
 
     // data
     let AttackName = "Attack"
-    let CharacterAnimationStutter = 16L
-    let ActionTicksMax = CharacterAnimationStutter * 3L
+    let CharacterAnimationFacingStutter = 16L
+    let CharacterAnimationActingStutter = 24L
+    let ActionTicksMax = CharacterAnimationActingStutter * 3L

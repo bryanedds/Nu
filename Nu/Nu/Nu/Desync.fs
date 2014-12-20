@@ -73,9 +73,9 @@ module Desync =
     let updateGame expr : Desync<'e, World, unit> =
         updateGameW <| flip (fun _ -> expr)
 
-    let private runDesync4 makeSubscription (observable : Observable<'a, 'o>) (desync : Desync<'a Event, World, unit>) world =
+    let private runDesync4 makeSubscription (observable : Observable<'a, 'o>) (desync : Desync<Event<'a, 'o>, World, unit>) world =
         let callbackKey = World.makeCallbackKey ()
-        let world = World.addCallbackState callbackKey (fun (_ : 'a Event) -> desync) world
+        let world = World.addCallbackState callbackKey (fun (_ : Event<'a, 'o>) -> desync) world
         let subscriptionKey = World.makeSubscriptionKey ()
         let (eventAddress, unsubscribe, world) = observable.Subscribe world
         let unsubscribe = fun world ->
@@ -86,10 +86,10 @@ module Desync =
         let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observable.ObserverAddress world
         (unsubscribe, world)
 
-    let runDesync4' eventHandling (observable : Observable<'a, 'o>) (desync : Desync<'a Event, World, unit>) world =
+    let runDesync4' eventHandling (observable : Observable<'a, 'o>) (desync : Desync<Event<'a, 'o>, World, unit>) world =
         let makeSubscription unsubscribe callbackKey =
             fun event world ->
-                let desync = World.getCallbackState callbackKey world : 'a Event -> Desync<'a Event, World, unit>
+                let desync = World.getCallbackState callbackKey world : Event<'a, 'o> -> Desync<Event<'a, 'o>, World, unit>
                 let (world, advanceResult) = advance desync event world
                 match advanceResult with
                 | Left desyncNext ->
