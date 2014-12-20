@@ -286,14 +286,11 @@ module World =
         let optSubLists = Map.tryFind eventAddress world.Callbacks.Subscriptions :: optSubLists
         let subLists = List.definitize optSubLists
         let subList = List.concat subLists
-        publishSorter subList world
+        let subListRev = List.rev subList
+        publishSorter subListRev world
 
     let private publishEvent<'d, 'p, 's when 'p :> Simulant and 's :> Simulant>
-        (subscriberAddress : obj Address)
-        (publisherAddress : 'p Address)
-        (eventAddress : 'd Address)
-        (eventData : 'd)
-        subscription world =
+        (subscriberAddress : obj Address) (publisherAddress : 'p Address) (eventAddress : 'd Address) (eventData : 'd) subscription world =
         let event =
             { SubscriberAddress = Address.changeType<obj, 's> subscriberAddress
               PublisherAddress = Address.changeType<'p, Simulant> publisherAddress
@@ -329,7 +326,8 @@ module World =
         publish sortSubscriptionsByHierarchy eventData eventAddress publisherAddress world
 
     /// Subscribe to an event.
-    let subscribe<'d, 's when 's :> Simulant> subscriptionKey (subscription : Subscription<'d, 's>) (eventAddress : 'd Address) (subscriberAddress : 's Address) world =
+    let subscribe<'d, 's when 's :> Simulant>
+        subscriptionKey (subscription : Subscription<'d, 's>) (eventAddress : 'd Address) (subscriberAddress : 's Address) world =
         if not <| Address.isEmpty eventAddress then
             let objEventAddress = atooa eventAddress
             let subscriptions =
@@ -343,7 +341,8 @@ module World =
         else failwith "Event name cannot be empty."
 
     /// Subscribe to an event.
-    let subscribe4<'d, 's when 's :> Simulant> (subscription : Subscription<'d, 's>) (eventAddress : 'd Address) (subscriberAddress : 's Address) world =
+    let subscribe4<'d, 's when 's :> Simulant>
+        (subscription : Subscription<'d, 's>) (eventAddress : 'd Address) (subscriberAddress : 's Address) world =
         subscribe (makeSubscriptionKey ()) subscription eventAddress subscriberAddress world
 
     /// Unsubscribe from an event.
@@ -369,7 +368,8 @@ module World =
         | None -> world
 
     /// Keep active a subscription for the lifetime of a simulant.
-    let monitor<'d, 's when 's :> Simulant> (subscription : Subscription<'d, 's>) (eventAddress : 'd Address) (subscriberAddress : 's Address) world =
+    let monitor<'d, 's when 's :> Simulant>
+        (subscription : Subscription<'d, 's>) (eventAddress : 'd Address) (subscriberAddress : 's Address) world =
         if not <| Address.isEmpty subscriberAddress then
             let monitorKey = makeSubscriptionKey ()
             let removalKey = makeSubscriptionKey ()

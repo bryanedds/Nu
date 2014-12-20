@@ -121,10 +121,10 @@ module SimulationModule =
     and SubscriptionEntry = Guid * obj Address * obj
 
     /// A map of event subscriptions.
-    and SubscriptionEntries = Map<obj Address, SubscriptionEntry list>
+    and SubscriptionEntries = Map<obj Address, SubscriptionEntry rQueue>
 
     /// Abstracts over a subscription sorting procedure.
-    and SubscriptionSorter = SubscriptionEntry list -> World -> SubscriptionEntry list
+    and SubscriptionSorter = SubscriptionEntry rQueue -> World -> SubscriptionEntry rQueue
 
     /// A map of subscription keys to unsubscription data.
     and UnsubscriptionEntries = Map<Guid, obj Address * obj Address>
