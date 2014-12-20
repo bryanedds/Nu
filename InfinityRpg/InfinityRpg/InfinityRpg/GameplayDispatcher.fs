@@ -79,7 +79,7 @@ module GameplayDispatcherModule =
                     let enemy = World.makeEntity typeof<EnemyDispatcher>.Name None world
                     let enemy = Entity.setDepth CharacterDepth enemy
                     let enemy = Entity.setPosition enemyPosition enemy
-                    let enemy = Entity.setCharacterAnimationSheet ZommieImage enemy
+                    let enemy = Entity.setCharacterAnimationSheet GoopyImage enemy
                     (Map.add enemy.Name enemy enemies, rand))
                 (Map.empty, rand)
                 [0 .. enemyCount - 1]

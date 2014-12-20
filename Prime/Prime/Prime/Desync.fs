@@ -90,7 +90,7 @@ module Desync =
             let s = expr s
             do! set s }
 
-    // TODO: figure out how to make this tail-recursive or iterative.
+    // TODO: figure out how to make this tail-recursive or iterative if it already isn't.
     let rec loop (i : 'i) (next : 'i -> 'i) (pred : 'i -> 's -> bool) (m : 'i -> Desync<'e, 's, unit>) =
         desync {
             let! s = get
