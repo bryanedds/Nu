@@ -94,7 +94,7 @@ module Observer =
             (subscriptionAddress'', unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
-    let filter (pred : 'a Event -> World -> bool) (observable : Observable<'a, 'o>) =
+    let filter (pred : Event<'a, 'o> -> World -> bool) (observable : Observable<'a, 'o>) =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
             let subscriptionAddress = ltoa<'a> [acstring subscriptionKey]
@@ -110,7 +110,7 @@ module Observer =
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
-    let map (mapper : 'a Event -> World -> 'b) (observable : Observable<'a, 'o>) : Observable<'b, 'o> =
+    let map (mapper : Event<'a, 'o> -> World -> 'b) (observable : Observable<'a, 'o>) : Observable<'b, 'o> =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
             let subscriptionAddress = ltoa<'b> [acstring subscriptionKey]
@@ -124,7 +124,7 @@ module Observer =
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
     let track4
-        (tracker : 'c -> 'a Event -> World -> 'c * bool)
+        (tracker : 'c -> Event<'a, 'o> -> World -> 'c * bool)
         (transformer : 'c -> 'b)
         (state : 'c)
         (observable : Observable<'a, 'o>) :
@@ -154,7 +154,7 @@ module Observer =
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
     let track2
-        (tracker : 'a -> 'a Event -> World -> 'a * bool)
+        (tracker : 'a -> Event<'a, 'o> -> World -> 'a * bool)
         (observable : Observable<'a, 'o>) :
         Observable<'a, 'o> =
         let subscribe = fun world ->
@@ -244,13 +244,13 @@ module Observer =
 
     (* Advanced Combinators *)
 
-    let scan4 (f : 'b -> 'a Event -> World -> 'b) g s (o : Observable<'a, 'o>) : Observable<'c, 'o> =
+    let scan4 (f : 'b -> Event<'a, 'o> -> World -> 'b) g s (o : Observable<'a, 'o>) : Observable<'c, 'o> =
         track4 (fun b a w -> (f b a w, true)) g s o
 
-    let scan2 (f : 'a -> 'a Event -> World -> 'a) (o : Observable<'a, 'o>) : Observable<'a, 'o> =
+    let scan2 (f : 'a -> Event<'a, 'o> -> World -> 'a) (o : Observable<'a, 'o>) : Observable<'a, 'o> =
         track2 (fun a a2 w -> (f a a2 w, true)) o
 
-    let scan (f : 'b -> 'a Event -> World -> 'b) s (o : Observable<'a, 'o>) : Observable<'b, 'o> =
+    let scan (f : 'b -> Event<'a, 'o> -> World -> 'b) s (o : Observable<'a, 'o>) : Observable<'b, 'o> =
         scan4 f id s o
 
     let inline average (observable : Observable<'a, 'o>) : Observable<'a, 'o> =

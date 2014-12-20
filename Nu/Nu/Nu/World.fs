@@ -102,7 +102,7 @@ module WorldModule =
                 match World.getOptScreen selectedScreenAddress world with
                 | Some selectedScreen ->
                     let subscriptionKey = World.makeSubscriptionKey ()
-                    let subscription = fun (_ : unit Event) world ->
+                    let subscription = fun (_ : Event<unit, Screen>) world ->
                         match world.State.OptScreenTransitionDestinationAddress with
                         | Some address ->
                             let world = World.unsubscribe subscriptionKey world
@@ -118,19 +118,19 @@ module WorldModule =
             | None -> None
 
         // TODO: replace this with more sophisticated use of handleAsScreenTransition4, and so on for its brethren.
-        static member private handleAsScreenTransitionFromSplash4<'d> eventHandling destinationAddress (_ : 'd Event) world =
+        static member private handleAsScreenTransitionFromSplash4<'d, 's when 's :> Simulant> eventHandling destinationAddress (_ : Event<'d, 's>) world =
             let destinationScreen = World.getScreen destinationAddress world
             let world = snd <| World.selectScreen destinationAddress destinationScreen world
             (eventHandling, world)
 
-        static member handleAsScreenTransitionFromSplash<'d> destinationAddress event world =
-            World.handleAsScreenTransitionFromSplash4<'d> Cascade destinationAddress event world
+        static member handleAsScreenTransitionFromSplash<'d, 's when 's :> Simulant> destinationAddress event world =
+            World.handleAsScreenTransitionFromSplash4<'d, 's> Cascade destinationAddress event world
 
-        static member handleAsScreenTransitionFromSplashBy<'d> by destinationAddress event  (world : World) =
+        static member handleAsScreenTransitionFromSplashBy<'d, 's when 's :> Simulant> by destinationAddress event  (world : World) =
             let (eventHandling, world) = by event world
-            World.handleAsScreenTransitionFromSplash4<'d> eventHandling destinationAddress event world
+            World.handleAsScreenTransitionFromSplash4<'d, 's> eventHandling destinationAddress event world
 
-        static member private handleAsScreenTransition4<'d> eventHandling destinationAddress (_ : 'd Event) world =
+        static member private handleAsScreenTransition4<'d, 's when 's :> Simulant> eventHandling destinationAddress (_ : Event<'d, 's>) world =
             let destinationScreen = World.getScreen destinationAddress world
             match World.tryTransitionScreen destinationAddress destinationScreen world with
             | Some world -> (eventHandling, world)
@@ -138,12 +138,12 @@ module WorldModule =
                 trace <| "Program Error: Invalid screen transition for destination address '" + acstring destinationAddress + "'."
                 (eventHandling, world)
 
-        static member handleAsScreenTransition<'d> destinationAddress event world =
-            World.handleAsScreenTransition4<'d> Cascade destinationAddress event world
+        static member handleAsScreenTransition<'d, 's when 's :> Simulant> destinationAddress event world =
+            World.handleAsScreenTransition4<'d, 's> Cascade destinationAddress event world
 
-        static member handleAsScreenTransitionBy<'d> by destinationAddress event (world : World) =
+        static member handleAsScreenTransitionBy<'d, 's when 's :> Simulant> by destinationAddress event (world : World) =
             let (eventHandling, world) = by event world
-            World.handleAsScreenTransition4<'d> eventHandling destinationAddress event world
+            World.handleAsScreenTransition4<'d, 's> eventHandling destinationAddress event world
 
         static member private updateScreenTransition1 screen transition =
             if screen.TransitionTicksNp = transition.TransitionLifetime then (true, { screen with TransitionTicksNp = 0L })

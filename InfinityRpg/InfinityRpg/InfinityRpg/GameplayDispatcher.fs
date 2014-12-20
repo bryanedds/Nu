@@ -224,7 +224,7 @@ module GameplayDispatcherModule =
                 match CharacterActivity.determineTurnFromTouch touchPositionW occupationMapWithAdjacentEnemies player enemies with
                 | ActionTurn _ as actionTurn -> actionTurn
                 | NavigationTurn navigationDescriptor as navigationTurn ->
-                    let firstNavigationNode = List.head <| Option.get ^| navigationDescriptor.OptNavigationPath
+                    let firstNavigationNode = List.head <| Option.get ^^ navigationDescriptor.OptNavigationPath
                     let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles enemies
                     if Map.find firstNavigationNode.PositionM occupationMapWithEnemies then CancelTurn
                     else navigationTurn

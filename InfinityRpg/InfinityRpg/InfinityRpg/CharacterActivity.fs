@@ -167,7 +167,7 @@ module CharacterActivity =
             AStar.FindPath (
                 currentNode,
                 goalNode,
-                (fun n n2 -> if (n2.PositionM.Y <> n.PositionM.Y) then 2.0f else 1.0f), // prefer horizontal walk to vertical for predictability
+                (fun n n2 -> if n2.PositionM.Y <> n.PositionM.Y then 2.0f else 1.0f), // prefer horizontal walk to vertical for predictability
                 (fun n -> 0.0f))
         match optNavigationPath with
         | null -> None

@@ -69,11 +69,13 @@ module CharacterAnimationFacetModule =
     type CharacterAnimationType =
         | CharacterAnimationFacing
         | CharacterAnimationActing
+        | CharacterAnimationDefending
+        | CharacterAnimationSpecial // works for jump, cast magic, being healed, and perhaps others!
+        | CharacterAnimationSlain
 
     type CharacterAnimationState =
         { AnimationType : CharacterAnimationType
           Direction : Direction
-          Stutter : int64
           StartTime : int64 }
 
     type Entity with
@@ -88,22 +90,39 @@ module CharacterAnimationFacetModule =
         
         static let getOptSpriteInset (entity : Entity) world =
             let animationState = entity.CharacterAnimationState
-            let animationTypeCoordsOffset =
+            let animationFrames =
+                match animationState.AnimationType with
+                | CharacterAnimationFacing -> 2
+                | CharacterAnimationActing -> 2
+                | CharacterAnimationDefending -> 1
+                | CharacterAnimationSpecial -> 1
+                | CharacterAnimationSlain -> 1
+            let animationOffsetM =
                 match animationState.AnimationType with
                 | CharacterAnimationFacing -> Vector2i (0, 0)
                 | CharacterAnimationActing -> Vector2i (0, 2)
+                | CharacterAnimationDefending -> Vector2i (4, 0)
+                | CharacterAnimationSpecial -> Vector2i (6, 0)
+                | CharacterAnimationSlain -> Vector2i (4, 2)
+            let animationStutter =
+                match animationState.AnimationType with
+                | CharacterAnimationFacing -> CharacterAnimationFacingStutter
+                | CharacterAnimationActing -> CharacterAnimationActingStutter
+                | CharacterAnimationDefending -> 1L // doesn't matter - no animation frames
+                | CharacterAnimationSpecial -> 1L // doesn't matter - no animation frames
+                | CharacterAnimationSlain -> 1L // doesn't matter - no animation frames
             let directionCoordsOffset =
                 match animationState.Direction with
                 | Upward -> Vector2i (0, 0)
-                | Rightward -> Vector2i (2, 0)
+                | Rightward -> Vector2i (animationFrames, 0)
                 | Downward -> Vector2i (0, 1)
-                | Leftward -> Vector2i (2, 1)
-            let frameXOffset =
+                | Leftward -> Vector2i (animationFrames, 1)
+            let animatedXOffsetM =
                 Math.Abs (world.State.TickTime - animationState.StartTime) /
-                animationState.Stutter % 2L |>
+                animationStutter % int64 animationFrames |>
                 int
-            let frameCoordsOffset = Vector2i (frameXOffset, 0)
-            let spriteCoordsinates = animationTypeCoordsOffset + directionCoordsOffset + frameCoordsOffset
+            let animatedOffsetM = Vector2i (animatedXOffsetM, 0)
+            let spriteCoordsinates = animationOffsetM + directionCoordsOffset + animatedOffsetM
             let spriteOffset =
                 Vector2 (
                     TileSize.X * single spriteCoordsinates.X,
@@ -121,7 +140,6 @@ module CharacterAnimationFacetModule =
                 CharacterAnimationState
                     { AnimationType = CharacterAnimationFacing
                       Direction = Upward
-                      Stutter = CharacterAnimationStutter
                       StartTime = 0L }
              define? CharacterAnimationSheet PlayerImage]
 

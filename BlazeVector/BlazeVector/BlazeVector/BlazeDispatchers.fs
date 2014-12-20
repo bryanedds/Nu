@@ -216,8 +216,7 @@ module PlayerModule =
 
         let handleJumpByKeyboardKey event world =
             if World.isSelectedScreenIdling world then
-                let keyboardKeyData = World.unwrapD event world
-                match (enum<SDL.SDL_Scancode> keyboardKeyData.ScanCode, keyboardKeyData.Repeated) with
+                match (enum<SDL.SDL_Scancode> event.Data.ScanCode, event.Data.Repeated) with
                 | (SDL.SDL_Scancode.SDL_SCANCODE_SPACE, false) -> handleJump event world
                 | _ -> (Cascade, world)
             else (Cascade, world)
@@ -268,13 +267,11 @@ module StagePlayModule =
             else world
 
         let handleAdjustCamera event world =
-            let address = World.unwrapA event world
-            (Cascade, adjustCamera address world)
+            (Cascade, adjustCamera event.SubscriberAddress world)
 
         let handlePlayerFall event world =
-            let address = World.unwrapA event world
             if World.isGamePlaying world then
-                let player = getPlayer address world
+                let player = getPlayer event.SubscriberAddress world
                 match World.getOptScreen TitleAddress world with
                 | Some titleScreen ->
                     if Entity.hasFallen player && World.isSelectedScreenIdling world then
@@ -312,7 +309,6 @@ module StageScreenModule =
             (sectionName, (sectionGroup, sectionEntities))
 
         let handleStartPlay event world =
-            let address = World.unwrapA event world
             let random = Random ()
             let sectionFilePaths = List.toArray SectionFilePaths
             let sectionHierarchies =
@@ -322,7 +318,7 @@ module StageScreenModule =
                     yield makeSectionFromFile sectionFilePaths.[sectionFilePathIndex] (SectionName + acstring i) (xShift * single i) world]
             let stagePlayHierarchy = (StagePlayName, World.readGroupHierarchyFromFile StagePlayFilePath world)
             let groupHierarchies = Map.ofList <| stagePlayHierarchy :: sectionHierarchies
-            let world = snd <| World.addGroups address groupHierarchies world
+            let world = snd <| World.addGroups event.SubscriberAddress groupHierarchies world
             let world = World.playSong 0 1.0f DeadBlazeSong world
             (Cascade, world)
 
@@ -331,11 +327,10 @@ module StageScreenModule =
             (Cascade, world)
 
         let handleStopPlay event world =
-            let address = World.unwrapA event world
             let sectionNames = [for i in 0 .. SectionCount do yield SectionName + acstring i]
             let groupNames = StagePlayName :: sectionNames
-            let groupMap = World.getGroupMap3 groupNames address world
-            let world = snd <| World.removeGroups address groupMap world
+            let groupMap = World.getGroupMap3 groupNames event.SubscriberAddress world
+            let world = snd <| World.removeGroups event.SubscriberAddress groupMap world
             (Cascade, world)
 
         override dispatcher.Register (address, screen, world) =

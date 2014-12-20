@@ -98,11 +98,12 @@ module SimulationModule =
         { OldEntity : Entity }
 
     /// An event used by Nu's purely functional event system.
-    and [<ReferenceEquality>] 'a Event =
-        { SubscriberAddress : Simulant Address
+    and [<ReferenceEquality>] Event<'d, 's when 's :> Simulant> =
+        { SubscriberAddress : 's Address
           PublisherAddress : Simulant Address
-          EventAddress : 'a Address
-          Data : 'a }
+          EventAddress : 'd Address
+          Subscriber : 's
+          Data : 'd }
 
     /// Describes whether an event has been resolved or should cascade.
     and EventHandling =
@@ -110,7 +111,8 @@ module SimulationModule =
         | Cascade
 
     /// Describes a game event subscription.
-    and 'd Subscription = 'd Event -> World -> EventHandling * World
+    and Subscription<'d, 's when 's :> Simulant> =
+        Event<'d, 's> -> World -> EventHandling * World
 
     /// Describes a game event subscription that can be boxed / unboxed.
     and BoxableSubscription = obj -> World -> EventHandling * World
@@ -132,6 +134,36 @@ module SimulationModule =
     and [<ReferenceEquality>] Task =
         { ScheduledTime : int64
           Operation : World -> World }
+
+    /// The default dispatcher for games.
+    and GameDispatcher () =
+
+        abstract member Register : Game * World -> Game * World
+        default dispatcher.Register (game, world) = (game, world)
+
+    /// The default dispatcher for screens.
+    and ScreenDispatcher () =
+
+        static member FieldDefinitions =
+            [define? Persistent true]
+
+        abstract member Register : Screen Address * Screen * World -> Screen * World
+        default dispatcher.Register (_, screen, world) = (screen, world)
+
+        abstract member Unregister : Screen Address * Screen * World -> Screen * World
+        default dispatcher.Unregister (_, screen, world) = (screen, world)
+
+    /// The default dispatcher for groups.
+    and GroupDispatcher () =
+
+        static member FieldDefinitions =
+            [define? Persistent true]
+
+        abstract member Register : Group Address * Group * World -> Group * World
+        default dispatcher.Register (_, group, world) = (group, world)
+
+        abstract member Unregister : Group Address * Group * World -> Group * World
+        default dispatcher.Unregister (_, group, world) = (group, world)
 
     /// The default dispatcher for entities.
     and EntityDispatcher () =
@@ -164,36 +196,6 @@ module SimulationModule =
         abstract member GetPickingPriority : Entity * World -> single
         default dispatcher.GetPickingPriority (entity, _) = entity.Depth
 
-    /// The default dispatcher for groups.
-    and GroupDispatcher () =
-
-        static member FieldDefinitions =
-            [define? Persistent true]
-
-        abstract member Register : Group Address * Group * World -> Group * World
-        default dispatcher.Register (_, group, world) = (group, world)
-
-        abstract member Unregister : Group Address * Group * World -> Group * World
-        default dispatcher.Unregister (_, group, world) = (group, world)
-
-    /// The default dispatcher for screens.
-    and ScreenDispatcher () =
-
-        static member FieldDefinitions =
-            [define? Persistent true]
-
-        abstract member Register : Screen Address * Screen * World -> Screen * World
-        default dispatcher.Register (_, screen, world) = (screen, world)
-
-        abstract member Unregister : Screen Address * Screen * World -> Screen * World
-        default dispatcher.Unregister (_, screen, world) = (screen, world)
-
-    /// The default dispatcher for games.
-    and GameDispatcher () =
-
-        abstract member Register : Game * World -> Game * World
-        default dispatcher.Register (game, world) = (game, world)
-
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
 
@@ -224,6 +226,64 @@ module SimulationModule =
 
     /// A marker interface for simulation types (Game, Screen, Group, Entity).
     and Simulant = interface end
+
+    /// The game type that hosts the various screens used to navigate through a game.
+    and [<CLIMutable; StructuralEquality; NoComparison>] Game =
+        { Id : Guid
+          OptSelectedScreenAddress : Screen Address option
+          CreationTimeNp : DateTime
+          DispatcherNp : GameDispatcher
+          Xtension : Xtension }
+
+        interface Simulant
+
+        static member (?) (this : Game, memberName) =
+            Xtension.(?) (this.Xtension, memberName)
+
+        static member (?<-) (this : Game, memberName, value) =
+            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
+            { this with Xtension = xtension }
+
+    /// The screen type that allows transitioning to and fro other screens, and also hosts the
+    /// currently interactive groups of entities.
+    and [<CLIMutable; StructuralEquality; NoComparison>] Screen =
+        { Id : Guid
+          Name : string
+          ScreenStateNp : ScreenState
+          TransitionTicksNp : int64
+          Incoming : Transition
+          Outgoing : Transition
+          Persistent : bool
+          CreationTimeNp : DateTime
+          DispatcherNp : ScreenDispatcher
+          Xtension : Xtension }
+
+        interface Simulant
+
+        static member (?) (this : Screen, memberName) =
+            Xtension.(?) (this.Xtension, memberName)
+
+        static member (?<-) (this : Screen, memberName, value) =
+            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
+            { this with Xtension = xtension }
+
+    /// Forms logical groups of entities.
+    and [<CLIMutable; StructuralEquality; NoComparison>] Group =
+        { Id : Guid
+          Name : string
+          Persistent : bool
+          CreationTimeNp : DateTime
+          DispatcherNp : GroupDispatcher
+          Xtension : Xtension }
+
+        interface Simulant
+
+        static member (?) (this : Group, memberName) =
+            Xtension.(?) (this.Xtension, memberName)
+
+        static member (?<-) (this : Group, memberName, value) =
+            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
+            { this with Xtension = xtension }
 
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, characters, blocks, and things of that sort.
@@ -257,64 +317,6 @@ module SimulationModule =
             Xtension.(?) (this.Xtension, memberName)
 
         static member (?<-) (this : Entity, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
-            { this with Xtension = xtension }
-
-    /// Forms logical groups of entities.
-    and [<CLIMutable; StructuralEquality; NoComparison>] Group =
-        { Id : Guid
-          Name : string
-          Persistent : bool
-          CreationTimeNp : DateTime
-          DispatcherNp : GroupDispatcher
-          Xtension : Xtension }
-
-        interface Simulant
-
-        static member (?) (this : Group, memberName) =
-            Xtension.(?) (this.Xtension, memberName)
-
-        static member (?<-) (this : Group, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
-            { this with Xtension = xtension }
-
-    /// The screen type that allows transitioning to and fro other screens, and also hosts the
-    /// currently interactive groups of entities.
-    and [<CLIMutable; StructuralEquality; NoComparison>] Screen =
-        { Id : Guid
-          Name : string
-          ScreenStateNp : ScreenState
-          TransitionTicksNp : int64
-          Incoming : Transition
-          Outgoing : Transition
-          Persistent : bool
-          CreationTimeNp : DateTime
-          DispatcherNp : ScreenDispatcher
-          Xtension : Xtension }
-
-        interface Simulant
-
-        static member (?) (this : Screen, memberName) =
-            Xtension.(?) (this.Xtension, memberName)
-
-        static member (?<-) (this : Screen, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
-            { this with Xtension = xtension }
-
-    /// The game type that hosts the various screens used to navigate through a game.
-    and [<CLIMutable; StructuralEquality; NoComparison>] Game =
-        { Id : Guid
-          OptSelectedScreenAddress : Screen Address option
-          CreationTimeNp : DateTime
-          DispatcherNp : GameDispatcher
-          Xtension : Xtension }
-
-        interface Simulant
-
-        static member (?) (this : Game, memberName) =
-            Xtension.(?) (this.Xtension, memberName)
-
-        static member (?<-) (this : Game, memberName, value) =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
