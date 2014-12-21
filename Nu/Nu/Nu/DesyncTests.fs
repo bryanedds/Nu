@@ -21,7 +21,7 @@ module DesyncTests =
         // build everything
         World.init ()
         let world = World.makeEmpty 0
-        let proc =
+        let desync =
             desync {
                 let! e = nextE ()
                 do! update <| incUserState e
@@ -30,17 +30,14 @@ module DesyncTests =
                 do! next ()
                 do! loop 0 inc (fun i _ -> i < 2) (fun _ -> update incUserStateTwiceNoEvent) }
         let obs = observe IntEventAddress GameAddress
-        let world = snd <| Desync.runDesyncAssumingCascade obs proc world
-
-        // assert the first publish executes the first desync'd operation
-        let world = World.publish4 0 IntEventAddress GameAddress world
+        let world = snd <| Desync.runDesyncAssumingCascade desync obs world
         Assert.Equal (0, World.getUserState world)
 
-        // assert the second publish executes the second desync'd operation
+        // assert the first publish executes the first desync'd operation
         let world = World.publish4 1 IntEventAddress GameAddress world
         Assert.Equal (1, World.getUserState world)
 
-        // and so on...
+        // assert the second publish executes the second desync'd operation
         let world = World.publish4 2 IntEventAddress GameAddress world
         Assert.Equal (2, World.getUserState world)
         
