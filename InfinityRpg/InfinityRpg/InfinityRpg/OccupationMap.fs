@@ -12,7 +12,7 @@ module OccupationMap =
         | Some occupied -> not occupied
         | None -> false
 
-    let getOpenDirectionsFromPositionM positionM occupationMap =
+    let getOpenDirectionsAtPositionM positionM occupationMap =
         Set.ofSeq <|
             seq {
                 if isOpenAtPositionM (positionM + Vector2i.Up) occupationMap then yield Upward
@@ -20,8 +20,8 @@ module OccupationMap =
                 if isOpenAtPositionM (positionM + Vector2i.Down) occupationMap then yield Downward
                 if isOpenAtPositionM (positionM + Vector2i.Left) occupationMap then yield Leftward }
 
-    let getOpenNeighborPositionMsFromPositionM positionM occupationMap =
-        let openDirections = getOpenDirectionsFromPositionM positionM occupationMap
+    let getOpenNeighborPositionMsAtPositionM positionM occupationMap =
+        let openDirections = getOpenDirectionsAtPositionM positionM occupationMap
         Set.map (fun direction -> positionM + dtovm direction) openDirections
 
     let occupyByDesiredTurn desiredTurn occupationMap =
@@ -92,7 +92,7 @@ module OccupationMap =
         // OPTIMIZATION: populate node neghbors imperatively for speed
         Map.iter
             (fun positionM node -> 
-                let neighborPositionMs = List.ofSeq <| getOpenNeighborPositionMsFromPositionM positionM occupationMap
+                let neighborPositionMs = List.ofSeq <| getOpenNeighborPositionMsAtPositionM positionM occupationMap
                 let neighbors =
                     List.fold
                         (fun neighbors neighborPositionM ->
