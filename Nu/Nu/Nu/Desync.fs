@@ -73,7 +73,7 @@ module Desync =
     let updateGame expr : Desync<'e, World, unit> =
         updateGameW <| flip (fun _ -> expr)
 
-    let private runDesync4 makeSubscription (observable : Observable<'a, 'o>) (desync : Desync<Event<'a, 'o>, World, unit>) world =
+    let private runDesync4 eventHandling (desync : Desync<Event<'a, 'o>, World, unit>) (observable : Observable<'a, 'o>) world =
         let callbackKey = World.makeCallbackKey ()
         let world = World.addCallbackState callbackKey (fun (_ : Event<'a, 'o>) -> desync) world
         let subscriptionKey = World.makeSubscriptionKey ()
@@ -82,32 +82,27 @@ module Desync =
             let world = World.removeCallbackState callbackKey world
             let world = unsubscribe world
             World.unsubscribe subscriptionKey world
-        let subscription = makeSubscription unsubscribe callbackKey
+        let advance = fun event world ->
+            let desync = World.getCallbackState callbackKey world : Event<'a, 'o> -> Desync<Event<'a, 'o>, World, unit>
+            let (world, advanceResult) = advance desync event world
+            match advanceResult with
+            | Left desyncNext -> World.addCallbackState callbackKey desyncNext world
+            | Right () -> unsubscribe world
+        let subscription = fun event world ->
+            let world = advance event world
+            (eventHandling, world)
+        let world = advance Unchecked.defaultof<Event<'a, 'o>> world
         let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observable.ObserverAddress world
         (unsubscribe, world)
-
-    let runDesync4' eventHandling (observable : Observable<'a, 'o>) (desync : Desync<Event<'a, 'o>, World, unit>) world =
-        let makeSubscription unsubscribe callbackKey =
-            fun event world ->
-                let desync = World.getCallbackState callbackKey world : Event<'a, 'o> -> Desync<Event<'a, 'o>, World, unit>
-                let (world, advanceResult) = advance desync event world
-                match advanceResult with
-                | Left desyncNext ->
-                    let world = World.addCallbackState callbackKey desyncNext world
-                    (eventHandling, world)
-                | Right () ->
-                    let world = unsubscribe world
-                    (eventHandling, world)
-        runDesync4 makeSubscription observable desync world
 
     /// Run the given desynchronized process on top of Nu's event system.
     /// Allows each desynchronized operation to run without referencing its source event, and
     /// without specifying its event handling approach by assuming Cascade.
-    let runDesyncAssumingCascade (observable : Observable<'a, 'o>) desync world =
-        runDesync4' Cascade observable desync world
+    let runDesyncAssumingCascade desync (observable : Observable<'a, 'o>) world =
+        runDesync4 Cascade desync observable world
 
     /// Run the given desynchronized process on top of Nu's event system.
     /// Allows each desynchronized operation to run without referencing its source event, and
     /// without specifying its event handling approach by assuming Resolve.
-    let runDesyncAssumingResolve (observable : Observable<'a, 'o>) desync world =
-        runDesync4' Resolve observable desync world
+    let runDesyncAssumingResolve desync (observable : Observable<'a, 'o>) world =
+        runDesync4 Resolve desync observable world

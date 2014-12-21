@@ -139,16 +139,15 @@ module Observer =
                 let world = World.removeCallbackState callbackKey world
                 let world = unsubscribe world
                 World.unsubscribe subscriptionKey world
-            let subscription =
-                fun event world ->
-                    let state = World.getCallbackState callbackKey world
-                    let (state, tracked) = tracker state event world
-                    let world = World.addCallbackState callbackKey state world
-                    let world =
-                        if tracked
-                        then World.publish<'b, Simulant> World.sortSubscriptionsNone (transformer state) subscriptionAddress event.PublisherAddress world
-                        else world
-                    (Cascade, world)
+            let subscription = fun event world ->
+                let state = World.getCallbackState callbackKey world
+                let (state, tracked) = tracker state event world
+                let world = World.addCallbackState callbackKey state world
+                let world =
+                    if tracked
+                    then World.publish<'b, Simulant> World.sortSubscriptionsNone (transformer state) subscriptionAddress event.PublisherAddress world
+                    else world
+                (Cascade, world)
             let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observable.ObserverAddress world
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
@@ -167,17 +166,16 @@ module Observer =
                 let world = World.removeCallbackState callbackKey world
                 let world = unsubscribe world
                 World.unsubscribe subscriptionKey world
-            let subscription =
-                fun event world ->
-                    let optState = World.getCallbackState callbackKey world
-                    let state = match optState with Some state -> state | None -> event.Data
-                    let (state, tracked) = tracker state event world
-                    let world = World.addCallbackState callbackKey state world
-                    let world =
-                        if tracked
-                        then World.publish<'a, Simulant> World.sortSubscriptionsNone state subscriptionAddress event.PublisherAddress world
-                        else world
-                    (Cascade, world)
+            let subscription = fun event world ->
+                let optState = World.getCallbackState callbackKey world
+                let state = match optState with Some state -> state | None -> event.Data
+                let (state, tracked) = tracker state event world
+                let world = World.addCallbackState callbackKey state world
+                let world =
+                    if tracked
+                    then World.publish<'a, Simulant> World.sortSubscriptionsNone state subscriptionAddress event.PublisherAddress world
+                    else world
+                (Cascade, world)
             let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observable.ObserverAddress world
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
@@ -197,16 +195,15 @@ module Observer =
                 let world = World.removeCallbackState callbackKey world
                 let world = unsubscribe world
                 World.unsubscribe subscriptionKey world
-            let subscription =
-                fun event world ->
-                    let state = World.getCallbackState callbackKey world
-                    let (state, tracked) = tracker state world
-                    let world = World.addCallbackState callbackKey state world
-                    let world =
-                        if tracked
-                        then World.publish<'a, Simulant> World.sortSubscriptionsNone event.Data subscriptionAddress event.PublisherAddress world
-                        else world
-                    (Cascade, world)
+            let subscription = fun event world ->
+                let state = World.getCallbackState callbackKey world
+                let (state, tracked) = tracker state world
+                let world = World.addCallbackState callbackKey state world
+                let world =
+                    if tracked
+                    then World.publish<'a, Simulant> World.sortSubscriptionsNone event.Data subscriptionAddress event.PublisherAddress world
+                    else world
+                (Cascade, world)
             let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observable.ObserverAddress world
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }

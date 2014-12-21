@@ -10,11 +10,17 @@ open Nu.Constants
 open Nu.WorldConstants
 open Nu.Observer
 open Nu.Desync
+open AStar
 open InfinityRpg
 open InfinityRpg.Constants
 
 [<AutoOpen>]
 module GameplayDispatcherModule =
+
+    type [<StructuralEquality; NoComparison>] PlayerInput =
+        | TouchInput of Vector2
+        | DetailInput of Direction
+        | NoInput
 
     type Screen with
     
@@ -44,23 +50,19 @@ module GameplayDispatcherModule =
 
         // scene addresses
         static let getSceneAddress gameplayAddress = satoga gameplayAddress SceneName
-        static let getFieldAddress gameplayAddress = gatoea (getSceneAddress gameplayAddress) FieldName 
-        static let getPlayerAddress gameplayAddress = gatoea (getSceneAddress gameplayAddress) PlayerName 
+        static let getFieldAddress gameplayAddress = gatoea (getSceneAddress gameplayAddress) FieldName
+        static let getPlayerAddress gameplayAddress = gatoea (getSceneAddress gameplayAddress) PlayerName
+        static let getEnemyAddress gameplayAddress enemyName = gatoea (getSceneAddress gameplayAddress) enemyName
+        static let getEnemyAddresses gameplayAddress enemies = List.map (fun (enemy : Entity) -> getEnemyAddress gameplayAddress enemy.Name) enemies
         
         // scene entities
         static let getField gameplayAddress world = World.getEntity (getFieldAddress gameplayAddress) world
-        static let setField gameplayAddress field world = World.setEntity (getFieldAddress gameplayAddress) field world
         static let getPlayer gameplayAddress world = World.getEntity (getPlayerAddress gameplayAddress) world
-        static let setPlayer gameplayAddress player world = World.setEntity (getPlayerAddress gameplayAddress) player world
-        static let getEnemies gameplayAddress world = World.getEntities (getSceneAddress gameplayAddress) world |> Seq.filter (Entity.dispatchesAs typeof<EnemyDispatcher>)
-        static let setEnemies gameplayAddress enemies world = World.setEntities (getSceneAddress gameplayAddress) enemies world
+        static let getEnemies gameplayAddress world = World.getEntities (getSceneAddress gameplayAddress) world |> Seq.filter (Entity.dispatchesAs typeof<EnemyDispatcher>) |> List.ofSeq
 
         static let getParticipants gameplayAddress world =
-            (getField gameplayAddress world, getPlayer gameplayAddress world, List.ofSeq <| getEnemies gameplayAddress world)
+            (getField gameplayAddress world, getPlayer gameplayAddress world, getEnemies gameplayAddress world)
         
-        static let setParticipants gameplayAddress field player enemies world =
-            world |> setField gameplayAddress field |> setPlayer gameplayAddress player |> setEnemies gameplayAddress enemies
-
         static let makeField rand world =
             let pathEdgesM = [(Vector2i (1, 10), Vector2i (20, 10))]
             let (fieldMap, rand) = FieldMap.make FieldTileSheetImage (Vector2i 22) pathEdgesM rand
@@ -180,6 +182,214 @@ module GameplayDispatcherModule =
             let (_, player, enemies) = getParticipants gameplayAddress world
             anyTurnsInProgress2 player enemies
 
+        static let walk positive current destination =
+            let walkSpeed = if positive then CharacterWalkSpeed else -CharacterWalkSpeed
+            let next = current + walkSpeed
+            let delta = if positive then destination - next else next - destination
+            if delta < CharacterWalkSpeed then (destination, WalkFinished) else (next, WalkContinuing)
+
+        static let isTilePassable occupationMap positionM =
+            match Map.tryFind positionM occupationMap with
+            | Some occupied -> not occupied
+            | None -> false
+
+        static let getOpenDirectionsFromPositionM positionM occupationMap =
+            Set.ofSeq <|
+                seq {
+                    if isTilePassable occupationMap (positionM + Vector2i.Up) then yield Upward
+                    if isTilePassable occupationMap (positionM + Vector2i.Right) then yield Rightward
+                    if isTilePassable occupationMap (positionM + Vector2i.Down) then yield Downward
+                    if isTilePassable occupationMap (positionM + Vector2i.Left) then yield Leftward }
+
+        static let getOpenDirectionsFromPosition (position : Vector2) occupationMap =
+            getOpenDirectionsFromPositionM (vftovm position) occupationMap
+
+        static let getOpenNeighborPositionMsFromPositionM occupationMap positionM =
+            let openDirections = getOpenDirectionsFromPositionM positionM occupationMap
+            Set.map (fun direction -> positionM + dtovm direction) openDirections
+
+        static let runCharacterNavigation newNavigationDescriptor gameplayAddress characterAddress world =
+            let desync = desync {
+                do! updateEntity characterAddress (Entity.setActivityState <| Navigation newNavigationDescriptor)
+                do! during
+                        (fun world ->
+                            match (World.getEntity characterAddress world).ActivityState with
+                            | Navigation currentNavigationDescriptor ->
+                                newNavigationDescriptor.WalkDescriptor.WalkOriginM =
+                                    currentNavigationDescriptor.WalkDescriptor.WalkOriginM
+                            | Action _ | NoActivity -> false) ^^
+                        desync {
+                            do! updateEntity characterAddress <| fun character ->
+                                let navigationDescriptor =
+                                    match character.ActivityState with
+                                    | Navigation navigationDescriptor -> navigationDescriptor
+                                    | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
+                                let walkDescriptor = navigationDescriptor.WalkDescriptor
+                                let walkDirection = walkDescriptor.WalkDirection
+                                let walkOrigin = vmtovf walkDescriptor.WalkOriginM
+                                let walkDestination = walkOrigin + dtovf walkDirection
+                                let (newPosition, walkState) =
+                                    match walkDirection with
+                                    | Upward -> let (newY, arrival) = walk true character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
+                                    | Rightward -> let (newX, arrival) = walk true character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
+                                    | Downward -> let (newY, arrival) = walk false character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
+                                    | Leftward -> let (newX, arrival) = walk false character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
+                                let character = Entity.setPosition newPosition character
+                                let characterAnimationState = { character.CharacterAnimationState with Direction = walkDirection }
+                                let character = Entity.setCharacterAnimationState characterAnimationState character
+                                match walkState with
+                                | WalkFinished ->
+                                    match navigationDescriptor.OptNavigationPath with
+                                    | Some [] -> failwith "NavigationPath should never be empty here."
+                                    | Some (_ :: []) -> Entity.setActivityState NoActivity character
+                                    | Some (currentNode :: navigationPath) ->
+                                        let walkDescriptor =
+                                            { WalkDirection = vmtod <| (List.head navigationPath).PositionM - currentNode.PositionM
+                                              WalkOriginM = vftovm character.Position }
+                                        let navigationDescriptor = { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
+                                        Entity.setActivityState (Navigation navigationDescriptor) character
+                                    | None -> Entity.setActivityState NoActivity character
+                                | WalkContinuing -> character
+                            do! next () }}
+            let obs = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- gameplayAddress)
+            snd <| runDesyncAssumingCascade desync obs world
+
+        static let getCharacterAnimationStateByActionBegin tickTime characterPosition characterAnimationState actionDescriptor =
+            let currentDirection = characterAnimationState.Direction
+            let direction = ActionDescriptor.getActionDirection characterPosition currentDirection actionDescriptor
+            { characterAnimationState with
+                Direction = direction
+                AnimationType = CharacterAnimationActing
+                StartTime = tickTime }
+
+        static let getCharacterAnimationStateByActionEnd tickTime characterAnimationState =
+            { characterAnimationState with
+                AnimationType = CharacterAnimationFacing
+                StartTime = tickTime }
+
+        static let runCharacterAction newActionDescriptor gameplayAddress characterAddress world =
+            let desync = desync {
+                do! updateEntity characterAddress (Entity.setActivityState <| Action newActionDescriptor)
+                do! during
+                        (fun world ->
+                            let character = World.getEntity characterAddress world
+                            ActivityState.isActing character.ActivityState) ^^
+                        desync {
+                            do! updateEntityW characterAddress <| fun character world ->
+                                let tickTime = world.State.TickTime
+                                let actionDescriptor =
+                                    match character.ActivityState with
+                                    | Action actionDescriptor -> actionDescriptor
+                                    | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterAction."
+                                if actionDescriptor.ActionTicks = 0L then
+                                    character |>
+                                        Entity.setCharacterAnimationState (getCharacterAnimationStateByActionBegin tickTime character.Position character.CharacterAnimationState actionDescriptor) |>
+                                        Entity.setActivityState (Action <| ActionDescriptor.incActionTicks actionDescriptor)
+                                elif actionDescriptor.ActionTicks > 0L && actionDescriptor.ActionTicks < ActionTicksMax then
+                                    character |>
+                                        Entity.setActivityState (Action <| ActionDescriptor.incActionTicks actionDescriptor)
+                                else
+                                    character |>
+                                        Entity.setActivityState NoActivity |>
+                                        Entity.setCharacterAnimationState (getCharacterAnimationStateByActionEnd tickTime character.CharacterAnimationState)
+                            do! next () }}
+            let obs = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- gameplayAddress)
+            snd <| runDesyncAssumingCascade desync obs world
+
+        static let runCharacterNoActivity characterAddress world =
+            let character = World.getEntity characterAddress world
+            let character = Entity.setActivityState NoActivity character
+            World.setEntity characterAddress character world
+
+        static let runCharacterActivity newActivity gameplayAddress characterAddress world =
+            match newActivity with
+            | Action newActionDescriptor -> runCharacterAction newActionDescriptor gameplayAddress characterAddress world
+            | Navigation newNavigationDescriptor -> runCharacterNavigation newNavigationDescriptor gameplayAddress characterAddress world
+            | NoActivity -> runCharacterNoActivity characterAddress world
+
+        static let determineCharacterTurnFromDirection direction occupationMap (character : Entity) opponents =
+            match character.ActivityState with
+            | Action _ -> NoTurn
+            | Navigation _ -> NoTurn
+            | NoActivity ->
+                let openDirections = getOpenDirectionsFromPosition character.Position occupationMap
+                if Set.contains direction openDirections then
+                    let walkDescriptor = { WalkDirection = direction; WalkOriginM = vftovm character.Position }
+                    NavigationTurn { WalkDescriptor = walkDescriptor; OptNavigationPath = None }
+                else
+                    let targetPosition = character.Position + dtovf direction
+                    if List.exists (fun (opponent : Entity) -> opponent.Position = targetPosition) opponents
+                    then makeAttackTurn <| vftovm targetPosition
+                    else NoTurn
+
+        static let makeNavigationNodes occupationMap =
+        
+            // make the nodes without neighbors
+            let nodes = Map.map (fun positionM _ -> { PositionM = positionM; Neighbors = [] }) occupationMap
+
+            // OPTIMIZATION: populate node neghbors imperatively for speed
+            Map.iter
+                (fun positionM node -> 
+                    let neighborPositionMs = List.ofSeq <| getOpenNeighborPositionMsFromPositionM occupationMap positionM
+                    let neighbors =
+                        List.fold
+                            (fun neighbors neighborPositionM ->
+                                match Map.tryFind neighborPositionM nodes with
+                                | Some node -> node :: neighbors
+                                | None -> neighbors)
+                            []
+                            neighborPositionMs
+                    node.Neighbors <- neighbors)
+                nodes
+
+            // teh nodes
+            nodes
+
+        static let tryGetNavigationPath touchPosition occupationMap (character : Entity) =
+            let nodes = makeNavigationNodes occupationMap
+            let goalNode = Map.find (vftovm touchPosition) nodes
+            let currentNode = Map.find (vftovm character.Position) nodes
+            let optNavigationPath =
+                AStar.FindPath (
+                    currentNode,
+                    goalNode,
+                    (fun n n2 -> if n2.PositionM.Y <> n.PositionM.Y then 2.0f else 1.0f), // prefer horizontal walk to vertical for predictability
+                    (fun n -> 0.0f))
+            match optNavigationPath with
+            | null -> None
+            | navigationPath -> Some (navigationPath |> List.ofSeq |> List.rev |> List.tail)
+
+        static let determineCharacterTurnFromTouch touchPosition occupationMap (character : Entity) opponents =
+            match character.ActivityState with
+            | Action _ -> NoTurn
+            | Navigation _ -> NoTurn
+            | NoActivity ->
+                match tryGetNavigationPath touchPosition occupationMap character with
+                | Some navigationPath ->
+                    match navigationPath with
+                    | [] -> NoTurn
+                    | _ ->
+                        let characterPositionM = vftovm character.Position
+                        let walkDirection = vmtod <| (List.head navigationPath).PositionM - characterPositionM
+                        let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = characterPositionM }
+                        NavigationTurn { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
+                | None ->
+                    let targetPosition = touchPosition |> vftovm |> vmtovf
+                    if Math.arePositionsAdjacent targetPosition character.Position then
+                        if List.exists (fun (opponent : Entity) -> opponent.Position = targetPosition) opponents
+                        then makeAttackTurn <| vftovm targetPosition
+                        else NoTurn
+                    else NoTurn
+
+        static let cancelNavigation (character : Entity) =
+            let characterActivity = character.ActivityState
+            let characterActivity =
+                match characterActivity with
+                | Action _ as action -> action
+                | NoActivity -> NoActivity
+                | Navigation navDescriptor -> Navigation { navDescriptor with OptNavigationPath = None }
+            Entity.setActivityState characterActivity character
+
         static let determineDesiredEnemyTurn occupationMap (player : Entity) (enemy : Entity) rand =
             match enemy.ControlType with
             | Player ->
@@ -197,7 +407,7 @@ module GameplayDispatcherModule =
                 else
                     let (randResult, rand) = Rand.nextIntUnder 4 rand
                     let direction = Direction.fromInt randResult
-                    let enemyTurn = CharacterActivity.determineTurnFromDirection direction occupationMap enemy [player]
+                    let enemyTurn = determineCharacterTurnFromDirection direction occupationMap enemy [player]
                     (enemyTurn, rand)
             | Uncontrolled -> (NoTurn, rand)
 
@@ -212,7 +422,7 @@ module GameplayDispatcherModule =
                     (occupationMap, [], rand)
             (enemyTurns, rand)
 
-        static let determinePlayerTurnFromTouch touchPosition gameplayAddress world =
+        static let determinePlayerTurnFromTouch gameplayAddress touchPosition world =
             let (field, player, enemies) = getParticipants gameplayAddress world
             if not <| anyTurnsInProgress2 player enemies then
                 let touchPositionW = Camera.mouseToWorld Relative touchPosition world.Camera
@@ -221,7 +431,7 @@ module GameplayDispatcherModule =
                         (vftovm player.Position)
                         field.FieldMapNp.FieldTiles
                         enemies
-                match CharacterActivity.determineTurnFromTouch touchPositionW occupationMapWithAdjacentEnemies player enemies with
+                match determineCharacterTurnFromTouch touchPositionW occupationMapWithAdjacentEnemies player enemies with
                 | ActionTurn _ as actionTurn -> actionTurn
                 | NavigationTurn navigationDescriptor as navigationTurn ->
                     let firstNavigationNode = List.head <| Option.get ^^ navigationDescriptor.OptNavigationPath
@@ -232,36 +442,34 @@ module GameplayDispatcherModule =
                 | NoTurn -> NoTurn
             else NoTurn
 
-        static let determinePlayerTurnFromDetailNavigation direction gameplayAddress world =
+        static let determinePlayerTurnFromDetailNavigation gameplayAddress direction world =
             let (field, player, enemies) = getParticipants gameplayAddress world
             if not <| anyTurnsInProgress2 player enemies then
                 let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles enemies
-                CharacterActivity.determineTurnFromDirection direction occupationMapWithEnemies player enemies
+                determineCharacterTurnFromDirection direction occupationMapWithEnemies player enemies
             else NoTurn
 
-        static let determinePlayerTurnFromInput playerInput gameplayAddress world =
+        static let determinePlayerTurnFromInput gameplayAddress playerInput world =
             match playerInput with
-            | TouchInput touchPosition -> determinePlayerTurnFromTouch touchPosition gameplayAddress world
-            | DetailInput direction -> determinePlayerTurnFromDetailNavigation direction gameplayAddress world
+            | TouchInput touchPosition -> determinePlayerTurnFromTouch gameplayAddress touchPosition world
+            | DetailInput direction -> determinePlayerTurnFromDetailNavigation gameplayAddress direction world
             | NoInput -> NoTurn
 
-        static let determinePlayerTurnFromNavigationState navigationDescriptor gameplayAddress world =
-            let (field, player, enemies) = getParticipants gameplayAddress world
-            let walkDescriptor = navigationDescriptor.WalkDescriptor
-            let playerPositionM = vftovm player.Position
-            if playerPositionM = walkDescriptor.WalkOriginM then
-                let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles enemies
-                let walkDestinationM = walkDescriptor.WalkOriginM + dtovm walkDescriptor.WalkDirection
-                if Map.find walkDestinationM occupationMapWithEnemies then CancelTurn
-                else NavigationTurn navigationDescriptor
-            else NavigationTurn navigationDescriptor
-
-        static let determinePlayerTurn playerInput gameplayAddress world =
-            match CharacterActivity.determineTurnFromActivityState <| getPlayer gameplayAddress world with
-            | ActionTurn _ as actionTurn -> actionTurn
-            | NavigationTurn navigationDescriptor -> determinePlayerTurnFromNavigationState navigationDescriptor gameplayAddress world
-            | CancelTurn -> CancelTurn
-            | NoTurn -> determinePlayerTurnFromInput playerInput gameplayAddress world
+        static let determinePlayerTurn gameplayAddress world =
+            let player = getPlayer gameplayAddress world
+            match player.ActivityState with
+            | Action _ -> NoTurn
+            | Navigation navigationDescriptor ->
+                let walkDescriptor = navigationDescriptor.WalkDescriptor
+                if player.Position = vmtovf walkDescriptor.WalkOriginM then
+                    let field = getField gameplayAddress world
+                    let enemies = getEnemies gameplayAddress world
+                    let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles enemies
+                    let walkDestinationM = walkDescriptor.WalkOriginM + dtovm walkDescriptor.WalkDirection
+                    if Map.find walkDestinationM occupationMapWithEnemies then CancelTurn
+                    else NavigationTurn navigationDescriptor
+                else NoTurn
+            | NoActivity -> NoTurn
 
         static let determineEnemyActionActivities enemies =
             List.foldBack
@@ -302,34 +510,33 @@ module GameplayDispatcherModule =
                 enemies
                 []
 
-        static let tryUpdateEnemyActivity newActivity enemy =
+        static let tryRunEnemyActivity gameplayAddress world newActivity enemyAddress =
             if newActivity <> NoActivity then
-                let enemy = Entity.setActivityState newActivity enemy
-                Entity.setDesiredTurn NoTurn enemy
-            else enemy
+                let enemy = World.getEntity enemyAddress world
+                let enemy = Entity.setDesiredTurn NoTurn enemy
+                let world = World.setEntity enemyAddress enemy world
+                runCharacterActivity newActivity gameplayAddress enemyAddress world
+            else world
 
-        static let updateEnemyNavigationActivities enemies =
-            let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
-            let anyEnemyNavigationActivity = List.exists ActivityState.isNavigating newEnemyNavigationActivities
-            if anyEnemyNavigationActivity then List.map2 tryUpdateEnemyActivity newEnemyNavigationActivities enemies
-            else enemies
+        static let runEnemyNavigationActivities gameplayAddress enemyAddresses enemyNavigationActivities world =
+            if List.exists ActivityState.isNavigating enemyNavigationActivities
+            then List.fold2 (tryRunEnemyActivity gameplayAddress) world enemyNavigationActivities enemyAddresses
+            else world
 
-        static let updateEnemyActivities enemies =
-            let newEnemyActionActivities = determineEnemyActionActivities enemies 
-            let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
-            let anyEnemyActionActivity = List.exists ActivityState.isActing newEnemyActionActivities
-            let newEnemyActivities = if anyEnemyActionActivity then newEnemyActionActivities else newEnemyNavigationActivities
-            List.map2 tryUpdateEnemyActivity newEnemyActivities enemies
+        static let runEnemyActivities gameplayAddress enemyAddresses enemyActionActivities enemyNavigationActivities world =
+            let anyEnemyActionActivity = List.exists ActivityState.isActing enemyActionActivities
+            let newEnemyActivities = if anyEnemyActionActivity then enemyActionActivities else enemyNavigationActivities
+            List.fold2 (tryRunEnemyActivity gameplayAddress) world newEnemyActivities enemyAddresses
 
-        static let advanceCharacters gameplayAddress playerTurn world =
-
-            // construct gameplay context
-            let gameplay = World.getScreen gameplayAddress world
-            let rand = Rand.make gameplay.OngoingRandState
+        static let runPlayerTurn gameplayAddress playerTurn world =
 
             // construct local context
-            let (field, player, enemies) = getParticipants gameplayAddress world
-            let occupationMap = OccupationMap.makeFromFieldTilesAndCharactersAndDesiredTurn field.FieldMapNp.FieldTiles enemies playerTurn
+            let gameplay = World.getScreen gameplayAddress world
+            let rand = Rand.make gameplay.OngoingRandState
+            let occupationMap =
+                let field = getField gameplayAddress world
+                let enemies = getEnemies gameplayAddress world
+                OccupationMap.makeFromFieldTilesAndCharactersAndDesiredTurn field.FieldMapNp.FieldTiles enemies playerTurn
 
             // determine player activity state
             let optNewPlayerActivity =
@@ -340,68 +547,74 @@ module GameplayDispatcherModule =
                 | NoTurn -> None
 
             // update player activity
-            let player =
+            let world =
                 match optNewPlayerActivity with
-                | Some newPlayerActivity -> Entity.setActivityState newPlayerActivity player
-                | None -> player
+                | Some newPlayerActivity ->
+                    runCharacterActivity newPlayerActivity gameplayAddress (getPlayerAddress gameplayAddress) world
+                | None -> world
 
             // determine (and set) enemy desired turns when applicable
-            let (enemies, rand) =
+            let (rand, world) =
                 match optNewPlayerActivity with
                 | Some (Action _)
                 | Some (Navigation _) ->
+                    let player = getPlayer gameplayAddress world
+                    let enemies = getEnemies gameplayAddress world
                     let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns occupationMap player enemies rand
                     let enemies = List.map2 Entity.setDesiredTurn enemyDesiredTurns enemies
-                    (enemies, rand)
+                    let world = World.setEntities (getSceneAddress gameplayAddress) enemies world
+                    (rand, world)
                 | Some NoActivity
-                | None -> (enemies, rand)
-
-            // update enemy activities in accordance with the player's current activity
-            let enemies =
-                match player.ActivityState with
-                | Action _ -> enemies
-                | Navigation _ -> updateEnemyNavigationActivities enemies
-                | NoActivity -> updateEnemyActivities enemies
-
-            // advance player activity
-            let player = CharacterActivity.advanceActivity world.State.TickTime player
-
-            // advance enemies activities
-            let enemies = List.map (CharacterActivity.advanceActivity world.State.TickTime) enemies
-            
-            // update local context
-            let world = setParticipants gameplayAddress field player enemies world
+                | None -> (rand, world)
 
             // update gameplay context
             let gameplay = Screen.setOngoingRandState (Rand.getState rand) gameplay
-            World.setScreen gameplayAddress gameplay world
+            let world = World.setScreen gameplayAddress gameplay world
 
-        static let tryAdvanceTurn playerInput gameplayAddress world =
+            // update enemy activities in accordance with the player's current activity
+            let world =
+                let player = getPlayer gameplayAddress world
+                let enemies = getEnemies gameplayAddress world
+                match player.ActivityState with
+                | Action _ -> world
+                | Navigation _ ->
+                    let enemyAddresses = getEnemyAddresses gameplayAddress enemies
+                    let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
+                    runEnemyNavigationActivities gameplayAddress enemyAddresses newEnemyNavigationActivities world
+                | NoActivity ->
+                    let enemyAddresses = getEnemyAddresses gameplayAddress enemies
+                    let newEnemyActionActivities = determineEnemyActionActivities enemies
+                    let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
+                    runEnemyActivities gameplayAddress enemyAddresses newEnemyActionActivities newEnemyNavigationActivities world
+
+            // teh world
+            world
+
+        static let tryRunPlayerTurn playerInput gameplayAddress world =
             if not <| anyTurnsInProgress gameplayAddress world then
-                let playerTurn = determinePlayerTurn playerInput gameplayAddress world
-                if playerTurn <> NoTurn then
-                    let hudSaveGameAddress = getHudSaveGameAddress gameplayAddress
-                    let hudHaltAddress = getHudHaltAddress gameplayAddress
-                    let playerAddress = getPlayerAddress gameplayAddress
-                    let advancer = desync {
-                        do! updateEntity hudSaveGameAddress <| Entity.setEnabled false
-                        do! update <| advanceCharacters gameplayAddress playerTurn
-                        do! during (anyTurnsInProgress gameplayAddress) <| desync {
-                            let! event = nextE ()
-                            do! match event.Data with
-                                | Left _ -> updateEntity playerAddress CharacterActivity.cancelNavigation
-                                | Right _ -> updateBy (determinePlayerTurn NoInput gameplayAddress) (advanceCharacters gameplayAddress) } 
-                        do! updateEntity hudSaveGameAddress <| Entity.setEnabled true }
-                    let obs =
-                        observe (ClickEventAddress ->>- hudHaltAddress) gameplayAddress |>
-                        sum TickEventAddress |>
-                        until (DeselectEventAddress ->>- gameplayAddress)
-                    snd <| runDesyncAssumingCascade obs advancer world
-                else world
+                let hudSaveGameAddress = getHudSaveGameAddress gameplayAddress
+                let hudHaltAddress = getHudHaltAddress gameplayAddress
+                let playerAddress = getPlayerAddress gameplayAddress
+                let desync = desync {
+                    do! updateEntity hudSaveGameAddress <| Entity.setEnabled false
+                    do! loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress gameplayAddress world) <| fun i -> desync {
+                        let! event = nextE ()
+                        do! match event.Data with
+                            | Left _ -> updateEntity playerAddress cancelNavigation
+                            | Right _ ->
+                                if i = 0
+                                then updateBy (determinePlayerTurnFromInput gameplayAddress playerInput) (runPlayerTurn gameplayAddress)
+                                else updateBy (determinePlayerTurn gameplayAddress) (runPlayerTurn gameplayAddress) }
+                    do! updateEntity hudSaveGameAddress <| Entity.setEnabled true }
+                let obs =
+                    observe (ClickEventAddress ->>- hudHaltAddress) gameplayAddress |>
+                    sum TickEventAddress |>
+                    until (DeselectEventAddress ->>- gameplayAddress)
+                snd <| runDesyncAssumingCascade desync obs world
             else world
 
         static let handlePlayerChange event world =
-            let gameplayAddress = World.unwrapA event world
+            let gameplayAddress = event.SubscriberAddress
             let player = getPlayer gameplayAddress world
             let hudHalt = getHudHalt gameplayAddress world
             let isPlayerNavigatingPath = ActivityState.isNavigatingPath player.ActivityState
@@ -410,15 +623,13 @@ module GameplayDispatcherModule =
             (Cascade, world)
 
         static let handleTouchFeeler event world =
-            let gameplayAddress = World.unwrapA event world
             let playerInput = TouchInput event.Data
-            let world = tryAdvanceTurn playerInput gameplayAddress world
+            let world = tryRunPlayerTurn playerInput event.SubscriberAddress world
             (Cascade, world)
 
         static let handleDownDetail direction event world =
-            let gameplayAddress = World.unwrapA event world
             let playerInput = DetailInput direction
-            let world = tryAdvanceTurn playerInput gameplayAddress world
+            let world = tryRunPlayerTurn playerInput event.SubscriberAddress world
             (Cascade, world)
 
         static member FieldDefinitions =
