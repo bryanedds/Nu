@@ -7,6 +7,23 @@ open InfinityRpg.Constants
 
 module OccupationMap =
 
+    let isOpenAtPositionM positionM occupationMap =
+        match Map.tryFind positionM occupationMap with
+        | Some occupied -> not occupied
+        | None -> false
+
+    let getOpenDirectionsFromPositionM positionM occupationMap =
+        Set.ofSeq <|
+            seq {
+                if isOpenAtPositionM (positionM + Vector2i.Up) occupationMap then yield Upward
+                if isOpenAtPositionM (positionM + Vector2i.Right) occupationMap then yield Rightward
+                if isOpenAtPositionM (positionM + Vector2i.Down) occupationMap then yield Downward
+                if isOpenAtPositionM (positionM + Vector2i.Left) occupationMap then yield Leftward }
+
+    let getOpenNeighborPositionMsFromPositionM positionM occupationMap =
+        let openDirections = getOpenDirectionsFromPositionM positionM occupationMap
+        Set.map (fun direction -> positionM + dtovm direction) openDirections
+
     let occupyByDesiredTurn desiredTurn occupationMap =
         match desiredTurn with
         | ActionTurn _ -> occupationMap
@@ -66,3 +83,26 @@ module OccupationMap =
     let makeFromFieldTilesAndAdjacentCharacters positionM fieldTiles characters =
         let occupationMap = makeFromFieldTiles fieldTiles
         occupyByAdjacentCharacters positionM characters occupationMap
+
+    let makeNavigationNodes occupationMap =
+        
+        // make the nodes without neighbors
+        let nodes = Map.map (fun positionM _ -> { PositionM = positionM; Neighbors = [] }) occupationMap
+
+        // OPTIMIZATION: populate node neghbors imperatively for speed
+        Map.iter
+            (fun positionM node -> 
+                let neighborPositionMs = List.ofSeq <| getOpenNeighborPositionMsFromPositionM positionM occupationMap
+                let neighbors =
+                    List.fold
+                        (fun neighbors neighborPositionM ->
+                            match Map.tryFind neighborPositionM nodes with
+                            | Some node -> node :: neighbors
+                            | None -> neighbors)
+                        []
+                        neighborPositionMs
+                node.Neighbors <- neighbors)
+            nodes
+
+        // teh nodes
+        nodes
