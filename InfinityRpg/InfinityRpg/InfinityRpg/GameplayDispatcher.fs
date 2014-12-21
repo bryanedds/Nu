@@ -86,102 +86,6 @@ module GameplayDispatcherModule =
                 (Map.empty, rand)
                 [0 .. enemyCount - 1]
 
-        static let handleNewGame gameplayAddress gameplay world =
-
-            // get common addresses
-            let sceneAddress = getSceneAddress gameplayAddress
-
-            // generate non-deterministic random numbers
-            let sysrandom = Random ()
-            let contentSeedState = uint64 <| sysrandom.Next ()
-            let ongoingSeedState = uint64 <| sysrandom.Next ()
-
-            // initialize gameplay screen
-            let gameplay = Screen.setContentRandState contentSeedState gameplay
-            let gameplay = Screen.setOngoingRandState ongoingSeedState gameplay
-            let world = World.setScreen gameplayAddress gameplay world
-
-            // make rand from gameplay
-            let rand = Rand.make gameplay.ContentRandState
-
-            // make field
-            let (field, rand) = makeField rand world
-
-            // make player
-            let player = World.makeEntity typeof<PlayerDispatcher>.Name (Some PlayerName) world
-            let player = Entity.setDepth CharacterDepth player
-            let player = Entity.setPublishChanges true player
-
-            // make enemies
-            let (enemies, _) = makeEnemies world rand
-            let world = snd <| World.addEntities sceneAddress enemies world
-
-            // make scene hierarchy
-            let entityMap = Map.ofList [(field.Name, field); (player.Name, player)]
-            let scene = World.makeGroup typeof<GroupDispatcher>.Name (Some SceneName) world
-            let sceneHierarchy = (scene, entityMap)
-
-            // add scene hierarchy to world
-            snd <| World.addGroup sceneAddress sceneHierarchy world
-
-        static let handleLoadGame gameplayAddress gameplay world =
-
-            // get common addresses
-            let sceneAddress = getSceneAddress gameplayAddress
-
-            // get and initialize gameplay screen from read
-            let gameplayHierarchy = World.readScreenHierarchyFromFile SaveFilePath world
-            let (gameplayFromRead, groupHierarchies) = gameplayHierarchy
-            let gameplay = Screen.setContentRandState gameplayFromRead.ContentRandState gameplay
-            let gameplay = Screen.setOngoingRandState gameplayFromRead.OngoingRandState gameplay
-            let world = World.setScreen gameplayAddress gameplay world
-
-            // make rand from gameplay
-            let rand = Rand.make gameplay.ContentRandState
-
-            // make field frome rand (field is not serialized, but generated deterministically with ContentRandState)
-            let (field, _) = makeField rand world
-
-            // find scene hierarchy and add field to it
-            let sceneHierarchy = Map.find SceneName groupHierarchies
-            let (scene, entities) = sceneHierarchy
-            let entityMap = Map.add field.Name field entities
-            let sceneHierarchy = (scene, entityMap)
-
-            // add scene hierarchy to world
-            snd <| World.addGroup sceneAddress sceneHierarchy world
-
-        static let handleSelectGameplay event world =
-            let (gameplayAddress, gameplay : Screen) = World.unwrapAS event world
-            let world =
-                // NOTE: doing a File.Exists then loading the file is dangerous since the file can
-                // always be deleted / moved between the two operations!
-                if gameplay.ShallLoadGame && File.Exists SaveFilePath
-                then handleLoadGame gameplayAddress gameplay world
-                else handleNewGame gameplayAddress gameplay world
-            (Cascade, world)
-            
-        static let handleClickSaveGame event world =
-            let gameplayAddress = World.unwrapA event world
-            let gameplayHierarchy = World.getScreenHierarchy gameplayAddress world
-            World.writeScreenHierarchyToFile SaveFilePath gameplayHierarchy world
-            (Cascade, world)
-
-        static let handleDeselectGameplay event world =
-            let gameplayAddress = World.unwrapA event world
-            let sceneAddress = getSceneAddress gameplayAddress
-            let scene = World.getGroup sceneAddress world
-            let world = snd <| World.removeGroup sceneAddress scene world
-            (Cascade, world)
-
-        static let anyTurnsInProgress2 (player : Entity) enemies =
-            player.ActivityState <> NoActivity ||
-            List.exists (fun (enemy : Entity) -> enemy.DesiredTurn <> NoTurn || enemy.ActivityState <> NoActivity) enemies
-
-        static let anyTurnsInProgress gameplayAddress world =
-            let (_, player, enemies) = getParticipants gameplayAddress world
-            anyTurnsInProgress2 player enemies
-
         static let walk positive current destination =
             let walkSpeed = if positive then CharacterWalkSpeed else -CharacterWalkSpeed
             let next = current + walkSpeed
@@ -224,12 +128,21 @@ module GameplayDispatcherModule =
                 | Navigation navDescriptor -> Navigation { navDescriptor with OptNavigationPath = None }
             Entity.setActivityState characterActivity character
 
+        static let anyTurnsInProgress2 (player : Entity) enemies =
+            player.ActivityState <> NoActivity ||
+            List.exists (fun (enemy : Entity) -> enemy.DesiredTurn <> NoTurn || enemy.ActivityState <> NoActivity) enemies
+
+        static let anyTurnsInProgress gameplayAddress world =
+            let player = getPlayer gameplayAddress world
+            let enemies = getEnemies gameplayAddress world
+            anyTurnsInProgress2 player enemies
+
         static let determineCharacterTurnFromDirection direction occupationMap (character : Entity) opponents =
             match character.ActivityState with
             | Action _ -> NoTurn
             | Navigation _ -> NoTurn
             | NoActivity ->
-                let openDirections = OccupationMap.getOpenDirectionsFromPositionM (vftovm character.Position) occupationMap
+                let openDirections = OccupationMap.getOpenDirectionsAtPositionM (vftovm character.Position) occupationMap
                 if Set.contains direction openDirections then
                     let walkDescriptor = { WalkDirection = direction; WalkOriginM = vftovm character.Position }
                     NavigationTurn { WalkDescriptor = walkDescriptor; OptNavigationPath = None }
@@ -240,10 +153,7 @@ module GameplayDispatcherModule =
                     else NoTurn
 
         static let determineCharacterTurnFromTouch touchPosition occupationMap (character : Entity) opponents =
-            match character.ActivityState with
-            | Action _ -> NoTurn
-            | Navigation _ -> NoTurn
-            | NoActivity ->
+            if character.ActivityState = NoActivity then
                 match tryGetNavigationPath touchPosition occupationMap character with
                 | Some navigationPath ->
                     match navigationPath with
@@ -260,6 +170,7 @@ module GameplayDispatcherModule =
                         then makeAttackTurn <| vftovm targetPosition
                         else NoTurn
                     else NoTurn
+            else NoTurn
 
         static let determineDesiredEnemyTurn occupationMap (player : Entity) (enemy : Entity) rand =
             match enemy.ControlType with
@@ -299,15 +210,13 @@ module GameplayDispatcherModule =
                 let touchPositionW = Camera.mouseToWorld Relative touchPosition world.Camera
                 let occupationMapWithAdjacentEnemies =
                     OccupationMap.makeFromFieldTilesAndAdjacentCharacters
-                        (vftovm player.Position)
-                        field.FieldMapNp.FieldTiles
-                        enemies
+                        (vftovm player.Position) field.FieldMapNp.FieldTiles enemies
                 match determineCharacterTurnFromTouch touchPositionW occupationMapWithAdjacentEnemies player enemies with
                 | ActionTurn _ as actionTurn -> actionTurn
                 | NavigationTurn navigationDescriptor as navigationTurn ->
-                    let firstNavigationNode = List.head <| Option.get ^^ navigationDescriptor.OptNavigationPath
+                    let headNavigationNode = navigationDescriptor.OptNavigationPath |> Option.get |> List.head
                     let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles enemies
-                    if Map.find firstNavigationNode.PositionM occupationMapWithEnemies then CancelTurn
+                    if Map.find headNavigationNode.PositionM occupationMapWithEnemies then CancelTurn
                     else navigationTurn
                 | CancelTurn -> CancelTurn
                 | NoTurn -> NoTurn
@@ -346,12 +255,9 @@ module GameplayDispatcherModule =
             List.foldBack
                 (fun (enemy : Entity) precedingEnemyActivities ->
                     let enemyActivity =
-                        let noPrecedingEnemyActionActivity =
-                            List.notExists ActivityState.isActing precedingEnemyActivities
-                        let noCurrentEnemyActionActivity =
-                            List.notExists (fun (enemy : Entity) -> ActivityState.isActing enemy.ActivityState) enemies
-                        if  noPrecedingEnemyActionActivity &&
-                            noCurrentEnemyActionActivity then
+                        let noPrecedingEnemyActionActivity = List.notExists ActivityState.isActing precedingEnemyActivities
+                        let noCurrentEnemyActionActivity = List.notExists (fun (enemy : Entity) -> ActivityState.isActing enemy.ActivityState) enemies
+                        if noPrecedingEnemyActionActivity && noCurrentEnemyActionActivity then
                             match enemy.DesiredTurn with
                             | ActionTurn actionDescriptor -> Action actionDescriptor
                             | NavigationTurn _ -> NoActivity
@@ -365,10 +271,7 @@ module GameplayDispatcherModule =
         static let determineEnemyNavigationActivities enemies =
             List.foldBack
                 (fun (enemy : Entity) enemyActivities ->
-                    let noCurrentEnemyActionActivity =
-                        List.notExists
-                            (fun (enemy : Entity) -> ActivityState.isActing enemy.ActivityState)
-                            enemies
+                    let noCurrentEnemyActionActivity = List.notExists (fun (enemy : Entity) -> ActivityState.isActing enemy.ActivityState) enemies
                     let enemyActivity =
                         if noCurrentEnemyActionActivity then
                             match enemy.DesiredTurn with
@@ -387,9 +290,9 @@ module GameplayDispatcherModule =
                 do! during
                         (fun world ->
                             match (World.getEntity characterAddress world).ActivityState with
-                            | Navigation currentNavigationDescriptor ->
+                            | Navigation navigationDescriptor ->
                                 newNavigationDescriptor.WalkDescriptor.WalkOriginM =
-                                    currentNavigationDescriptor.WalkDescriptor.WalkOriginM
+                                    navigationDescriptor.WalkDescriptor.WalkOriginM
                             | Action _ | NoActivity -> false) ^^
                         desync {
                             do! updateEntity characterAddress <| fun character ->
@@ -397,19 +300,21 @@ module GameplayDispatcherModule =
                                     match character.ActivityState with
                                     | Navigation navigationDescriptor -> navigationDescriptor
                                     | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
-                                let walkDescriptor = navigationDescriptor.WalkDescriptor
-                                let walkDirection = walkDescriptor.WalkDirection
-                                let walkOrigin = vmtovf walkDescriptor.WalkOriginM
-                                let walkDestination = walkOrigin + dtovf walkDirection
-                                let (newPosition, walkState) =
-                                    match walkDirection with
-                                    | Upward -> let (newY, arrival) = walk true character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
-                                    | Rightward -> let (newX, arrival) = walk true character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
-                                    | Downward -> let (newY, arrival) = walk false character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
-                                    | Leftward -> let (newX, arrival) = walk false character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
-                                let character = Entity.setPosition newPosition character
-                                let characterAnimationState = { character.CharacterAnimationState with Direction = walkDirection }
-                                let character = Entity.setCharacterAnimationState characterAnimationState character
+                                let (character, walkState) =
+                                    let walkDescriptor = navigationDescriptor.WalkDescriptor
+                                    let (newPosition, walkState) =
+                                        let walkOrigin = vmtovf walkDescriptor.WalkOriginM
+                                        let walkVector = dtovf walkDescriptor.WalkDirection
+                                        let walkDestination = walkOrigin + walkVector
+                                        match walkDescriptor.WalkDirection with
+                                        | Upward -> let (newY, arrival) = walk true character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
+                                        | Rightward -> let (newX, arrival) = walk true character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
+                                        | Downward -> let (newY, arrival) = walk false character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
+                                        | Leftward -> let (newX, arrival) = walk false character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
+                                    let characterAnimationState = { character.CharacterAnimationState with Direction = walkDescriptor.WalkDirection }
+                                    let character = Entity.setPosition newPosition character
+                                    let character = Entity.setCharacterAnimationState characterAnimationState character
+                                    (character, walkState)
                                 match walkState with
                                 | WalkFinished ->
                                     match navigationDescriptor.OptNavigationPath with
@@ -585,6 +490,94 @@ module GameplayDispatcherModule =
         static let handleDownDetail direction event world =
             let playerInput = DetailInput direction
             let world = tryRunPlayerTurn playerInput event.SubscriberAddress world
+            (Cascade, world)
+
+        static let handleNewGame gameplayAddress gameplay world =
+
+            // get common addresses
+            let sceneAddress = getSceneAddress gameplayAddress
+
+            // generate non-deterministic random numbers
+            let sysrandom = Random ()
+            let contentSeedState = uint64 <| sysrandom.Next ()
+            let ongoingSeedState = uint64 <| sysrandom.Next ()
+
+            // initialize gameplay screen
+            let gameplay = Screen.setContentRandState contentSeedState gameplay
+            let gameplay = Screen.setOngoingRandState ongoingSeedState gameplay
+            let world = World.setScreen gameplayAddress gameplay world
+
+            // make rand from gameplay
+            let rand = Rand.make gameplay.ContentRandState
+
+            // make field
+            let (field, rand) = makeField rand world
+
+            // make player
+            let player = World.makeEntity typeof<PlayerDispatcher>.Name (Some PlayerName) world
+            let player = Entity.setDepth CharacterDepth player
+            let player = Entity.setPublishChanges true player
+
+            // make enemies
+            let (enemies, _) = makeEnemies world rand
+            let world = snd <| World.addEntities sceneAddress enemies world
+
+            // make scene hierarchy
+            let entityMap = Map.ofList [(field.Name, field); (player.Name, player)]
+            let scene = World.makeGroup typeof<GroupDispatcher>.Name (Some SceneName) world
+            let sceneHierarchy = (scene, entityMap)
+
+            // add scene hierarchy to world
+            snd <| World.addGroup sceneAddress sceneHierarchy world
+
+        static let handleLoadGame gameplayAddress gameplay world =
+
+            // get common addresses
+            let sceneAddress = getSceneAddress gameplayAddress
+
+            // get and initialize gameplay screen from read
+            let gameplayHierarchy = World.readScreenHierarchyFromFile SaveFilePath world
+            let (gameplayFromRead, groupHierarchies) = gameplayHierarchy
+            let gameplay = Screen.setContentRandState gameplayFromRead.ContentRandState gameplay
+            let gameplay = Screen.setOngoingRandState gameplayFromRead.OngoingRandState gameplay
+            let world = World.setScreen gameplayAddress gameplay world
+
+            // make rand from gameplay
+            let rand = Rand.make gameplay.ContentRandState
+
+            // make field frome rand (field is not serialized, but generated deterministically with ContentRandState)
+            let (field, _) = makeField rand world
+
+            // find scene hierarchy and add field to it
+            let sceneHierarchy = Map.find SceneName groupHierarchies
+            let (scene, entities) = sceneHierarchy
+            let entityMap = Map.add field.Name field entities
+            let sceneHierarchy = (scene, entityMap)
+
+            // add scene hierarchy to world
+            snd <| World.addGroup sceneAddress sceneHierarchy world
+
+        static let handleSelectGameplay event world =
+            let (gameplayAddress, gameplay : Screen) = World.unwrapAS event world
+            let world =
+                // NOTE: doing a File.Exists then loading the file is dangerous since the file can
+                // always be deleted / moved between the two operations!
+                if gameplay.ShallLoadGame && File.Exists SaveFilePath
+                then handleLoadGame gameplayAddress gameplay world
+                else handleNewGame gameplayAddress gameplay world
+            (Cascade, world)
+            
+        static let handleClickSaveGame event world =
+            let gameplayAddress = World.unwrapA event world
+            let gameplayHierarchy = World.getScreenHierarchy gameplayAddress world
+            World.writeScreenHierarchyToFile SaveFilePath gameplayHierarchy world
+            (Cascade, world)
+
+        static let handleDeselectGameplay event world =
+            let gameplayAddress = World.unwrapA event world
+            let sceneAddress = getSceneAddress gameplayAddress
+            let scene = World.getGroup sceneAddress world
+            let world = snd <| World.removeGroup sceneAddress scene world
             (Cascade, world)
 
         static member FieldDefinitions =
