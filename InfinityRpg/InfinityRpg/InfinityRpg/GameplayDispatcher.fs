@@ -188,26 +188,6 @@ module GameplayDispatcherModule =
             let delta = if positive then destination - next else next - destination
             if delta < CharacterWalkSpeed then (destination, WalkFinished) else (next, WalkContinuing)
 
-        static let isTilePassable occupationMap positionM =
-            match Map.tryFind positionM occupationMap with
-            | Some occupied -> not occupied
-            | None -> false
-
-        static let getOpenDirectionsFromPositionM positionM occupationMap =
-            Set.ofSeq <|
-                seq {
-                    if isTilePassable occupationMap (positionM + Vector2i.Up) then yield Upward
-                    if isTilePassable occupationMap (positionM + Vector2i.Right) then yield Rightward
-                    if isTilePassable occupationMap (positionM + Vector2i.Down) then yield Downward
-                    if isTilePassable occupationMap (positionM + Vector2i.Left) then yield Leftward }
-
-        static let getOpenDirectionsFromPosition (position : Vector2) occupationMap =
-            getOpenDirectionsFromPositionM (vftovm position) occupationMap
-
-        static let getOpenNeighborPositionMsFromPositionM occupationMap positionM =
-            let openDirections = getOpenDirectionsFromPositionM positionM occupationMap
-            Set.map (fun direction -> positionM + dtovm direction) openDirections
-
         static let getCharacterAnimationStateByActionBegin tickTime characterPosition characterAnimationState actionDescriptor =
             let currentDirection = characterAnimationState.Direction
             let direction = ActionDescriptor.getActionDirection characterPosition currentDirection actionDescriptor
@@ -221,31 +201,8 @@ module GameplayDispatcherModule =
                 AnimationType = CharacterAnimationFacing
                 StartTime = tickTime }
 
-        static let makeNavigationNodes occupationMap =
-        
-            // make the nodes without neighbors
-            let nodes = Map.map (fun positionM _ -> { PositionM = positionM; Neighbors = [] }) occupationMap
-
-            // OPTIMIZATION: populate node neghbors imperatively for speed
-            Map.iter
-                (fun positionM node -> 
-                    let neighborPositionMs = List.ofSeq <| getOpenNeighborPositionMsFromPositionM occupationMap positionM
-                    let neighbors =
-                        List.fold
-                            (fun neighbors neighborPositionM ->
-                                match Map.tryFind neighborPositionM nodes with
-                                | Some node -> node :: neighbors
-                                | None -> neighbors)
-                            []
-                            neighborPositionMs
-                    node.Neighbors <- neighbors)
-                nodes
-
-            // teh nodes
-            nodes
-
         static let tryGetNavigationPath touchPosition occupationMap (character : Entity) =
-            let nodes = makeNavigationNodes occupationMap
+            let nodes = OccupationMap.makeNavigationNodes occupationMap
             let goalNode = Map.find (vftovm touchPosition) nodes
             let currentNode = Map.find (vftovm character.Position) nodes
             let optNavigationPath =
@@ -272,7 +229,7 @@ module GameplayDispatcherModule =
             | Action _ -> NoTurn
             | Navigation _ -> NoTurn
             | NoActivity ->
-                let openDirections = getOpenDirectionsFromPosition character.Position occupationMap
+                let openDirections = OccupationMap.getOpenDirectionsFromPositionM (vftovm character.Position) occupationMap
                 if Set.contains direction openDirections then
                     let walkDescriptor = { WalkDirection = direction; WalkOriginM = vftovm character.Position }
                     NavigationTurn { WalkDescriptor = walkDescriptor; OptNavigationPath = None }
