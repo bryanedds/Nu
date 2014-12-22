@@ -148,6 +148,11 @@ module WorldScreenModule =
             let world = World.addTask task world
             (screen, world)
 
+        static member removeScreenIf address pred world =
+            let screen = World.getScreen address world
+            if pred screen then World.removeScreen address screen world
+            else (screen, world)
+
         static member addScreen address screenHierarchy world =
             let (screen, groupHierarchies) = screenHierarchy
             if not <| World.containsScreen address world then
