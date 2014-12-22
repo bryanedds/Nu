@@ -76,7 +76,7 @@ module GameplayDispatcherModule =
             let field = Entity.setPersistent false field
             (field, rand)
 
-        static let makeEnemies world rand =
+        static let makeEnemies rand world =
             let (randResult, rand) = Rand.nextIntUnder 5 rand
             let enemyCount = randResult + 1
             List.fold
@@ -554,7 +554,7 @@ module GameplayDispatcherModule =
             let player = Entity.setPublishChanges true player
 
             // make enemies
-            let (enemies, _) = makeEnemies world rand
+            let (enemies, _) = makeEnemies rand world
             let world = snd <| World.addEntities enemies sceneAddress world
 
             // make scene hierarchy
