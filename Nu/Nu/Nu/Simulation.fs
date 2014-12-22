@@ -147,11 +147,11 @@ module SimulationModule =
         static member FieldDefinitions =
             [define? Persistent true]
 
-        abstract member Register : Screen Address * Screen * World -> Screen * World
-        default dispatcher.Register (_, screen, world) = (screen, world)
+        abstract member Register : Screen * Screen Address * World -> Screen * World
+        default dispatcher.Register (screen, _, world) = (screen, world)
 
-        abstract member Unregister : Screen Address * Screen * World -> Screen * World
-        default dispatcher.Unregister (_, screen, world) = (screen, world)
+        abstract member Unregister : Screen * Screen Address * World -> Screen * World
+        default dispatcher.Unregister (screen, _, world) = (screen, world)
 
     /// The default dispatcher for groups.
     and GroupDispatcher () =
@@ -159,11 +159,11 @@ module SimulationModule =
         static member FieldDefinitions =
             [define? Persistent true]
 
-        abstract member Register : Group Address * Group * World -> Group * World
-        default dispatcher.Register (_, group, world) = (group, world)
+        abstract member Register : Group * Group Address * World -> Group * World
+        default dispatcher.Register (group, _, world) = (group, world)
 
-        abstract member Unregister : Group Address * Group * World -> Group * World
-        default dispatcher.Unregister (_, group, world) = (group, world)
+        abstract member Unregister : Group * Group Address * World -> Group * World
+        default dispatcher.Unregister (group, _, world) = (group, world)
 
     /// The default dispatcher for entities.
     and EntityDispatcher () =
@@ -178,13 +178,13 @@ module SimulationModule =
              define? PublishChanges false
              define? Persistent true]
 
-        abstract member Register : Entity Address * Entity * World -> Entity * World
-        default dispatcher.Register (_, entity, world) = (entity, world)
+        abstract member Register : Entity * Entity Address * World -> Entity * World
+        default dispatcher.Register (entity, _, world) = (entity, world)
 
-        abstract member Unregister : Entity Address * Entity * World -> Entity * World
-        default dispatcher.Unregister (_, entity, world) = (entity, world)
+        abstract member Unregister : Entity * Entity Address * World -> Entity * World
+        default dispatcher.Unregister (entity, _, world) = (entity, world)
 
-        abstract member PropagatePhysics : Entity Address * Entity * World -> World
+        abstract member PropagatePhysics : Entity * Entity Address * World -> World
         default dispatcher.PropagatePhysics (_, _, world) = world
 
         abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
@@ -199,23 +199,23 @@ module SimulationModule =
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
 
-        abstract member Register : Entity Address * Entity * World -> Entity * World
-        default facet.Register (address, entity, world) =
-            let world = facet.RegisterPhysics (address, entity, world)
+        abstract member Register : Entity * Entity Address * World -> Entity * World
+        default facet.Register (entity, address, world) =
+            let world = facet.RegisterPhysics (entity, address, world)
             (entity, world)
 
-        abstract member Unregister : Entity Address * Entity * World -> Entity * World
-        default facet.Unregister (address, entity, world) =
-            let world = facet.UnregisterPhysics (address, entity, world)
+        abstract member Unregister : Entity * Entity Address * World -> Entity * World
+        default facet.Unregister (entity, address, world) =
+            let world = facet.UnregisterPhysics (entity, address, world)
             (entity, world)
 
-        abstract member RegisterPhysics : Entity Address * Entity * World -> World
+        abstract member RegisterPhysics : Entity * Entity Address * World -> World
         default facet.RegisterPhysics (_, _, world) = world
 
-        abstract member UnregisterPhysics : Entity Address * Entity * World -> World
+        abstract member UnregisterPhysics : Entity * Entity Address * World -> World
         default facet.UnregisterPhysics (_, _, world) = world
 
-        abstract member PropagatePhysics : Entity Address * Entity * World -> World
+        abstract member PropagatePhysics : Entity * Entity Address * World -> World
         default facet.PropagatePhysics (_, _, world) = world
 
         abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list

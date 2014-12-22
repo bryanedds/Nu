@@ -5,56 +5,56 @@ open Nu
 
 module Desync =
 
-    let updateByEntity address expr : Desync<'e, World, unit> =
+    let updateByEntity expr address : Desync<'e, World, unit> =
         desync {
             let! world = get
             let entity = World.getEntity address world
             let world = expr entity world
             do! set world }
 
-    let updateEntityW address expr : Desync<'e, World, unit> =
+    let updateEntityW expr address : Desync<'e, World, unit> =
         desync {
             let! world = get
             let entity = World.getEntity address world
             let entity = expr entity world
-            do! update <| World.setEntity address entity }
+            do! update <| World.setEntity entity address }
 
-    let updateEntity address expr : Desync<'e, World, unit> =
-        updateEntityW address <| flip (fun _ -> expr)
+    let updateEntity expr address : Desync<'e, World, unit> =
+        updateEntityW (flip (fun _ -> expr)) address
 
-    let updateByGroup address expr : Desync<'e, World, unit> =
+    let updateByGroup expr address : Desync<'e, World, unit> =
         desync {
             let! world = get
             let group = World.getGroup address world
             let world = expr group world
             do! set world }
 
-    let updateGroupW address expr : Desync<'e, World, unit> =
+    let updateGroupW expr address : Desync<'e, World, unit> =
         desync {
             let! world = get
             let group = World.getGroup address world
             let group = expr group world
-            do! update <| World.setGroup address group }
+            do! update <| World.setGroup group address }
 
-    let updateGroup address expr : Desync<'e, World, unit> =
-        updateGroupW address <| flip (fun _ -> expr)
+    let updateGroup expr address : Desync<'e, World, unit> =
+        updateGroupW (flip (fun _ -> expr)) address
 
-    let updateByScreen address expr : Desync<'e, World, unit> =
+    let updateByScreen expr address : Desync<'e, World, unit> =
         desync {
             let! world = get
             let screen = World.getScreen address world
             let world = expr screen world
             do! set world }
 
-    let updateScreenW address expr : Desync<'e, World, unit> =
+    let updateScreenW expr address : Desync<'e, World, unit> =
         desync {
             let! world = get
             let screen = World.getScreen address world
             let screen = expr screen world
-            do! update <| World.setScreen address screen }
+            do! update <| World.setScreen screen address }
 
-    let updateScreen address expr : Desync<'e, World, unit> =
-        updateScreenW address <| flip (fun _ -> expr)
+    let updateScreen expr address : Desync<'e, World, unit> =
+        updateScreenW (flip (fun _ -> expr)) address
 
     let updateByGame expr : Desync<'e, World, unit> =
         desync {

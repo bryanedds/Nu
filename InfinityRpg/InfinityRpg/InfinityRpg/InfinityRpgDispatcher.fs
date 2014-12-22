@@ -19,23 +19,23 @@ module InfinityRpgModule =
         static let handleAsScreenTransitionToGameplay shallLoadGame event world =
             let gameplay = World.getScreen GameplayAddress world
             let gameplay = Screen.setShallLoadGame shallLoadGame gameplay
-            let world = World.setScreen GameplayAddress gameplay world
+            let world = World.setScreen gameplay GameplayAddress world
             World.handleAsScreenTransition GameplayAddress event world
 
         static let addTitle world =
-            let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleAddress TitleGroupFilePath world
+            let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleGroupFilePath TitleAddress world
             let world = World.subscribe4 ClickTitleCreditsEventAddress GameAddress (World.handleAsScreenTransition CreditsAddress) world
             let world = World.subscribe4 ClickTitleNewGameEventAddress GameAddress (handleAsScreenTransitionToGameplay false) world
             let world = World.subscribe4 ClickTitleLoadGameEventAddress GameAddress (handleAsScreenTransitionToGameplay true) world
             World.subscribe4 ClickTitleExitEventAddress GameAddress World.handleAsExit world
 
         static let addCredits world =
-            let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name CreditsAddress CreditsGroupFilePath world
+            let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name CreditsGroupFilePath CreditsAddress world
             World.subscribe4 ClickCreditsBackEventAddress GameAddress (World.handleAsScreenTransition TitleAddress) world
 
         static let addGameplay world =
-            let world = snd <| World.addDissolveScreenFromGroupFile true DissolveData typeof<GameplayDispatcher>.Name GameplayAddress HudFilePath world
-            let world = World.setGroup HudAddress (Group.setPersistent false <| World.getGroup HudAddress world) world
+            let world = snd <| World.addDissolveScreenFromGroupFile true DissolveData typeof<GameplayDispatcher>.Name HudFilePath GameplayAddress world
+            let world = World.setGroup (Group.setPersistent false <| World.getGroup HudAddress world) HudAddress world
             World.subscribe4 (ClickEventAddress ->>- HudBackAddress) GameAddress (World.handleAsScreenTransition TitleAddress) world
 
         override dispatcher.Register (game, world) =
@@ -44,6 +44,6 @@ module InfinityRpgModule =
             let world = addTitle world
             let world = addCredits world
             let world = addGameplay world
-            let (splashScreen, world) = World.addSplashScreen false NuSplashData typeof<ScreenDispatcher>.Name NuSplashAddress TitleAddress world
-            let world = snd <| World.selectScreen NuSplashAddress splashScreen world
+            let (splashScreen, world) = World.addSplashScreen false NuSplashData typeof<ScreenDispatcher>.Name TitleAddress NuSplashAddress world
+            let world = snd <| World.selectScreen splashScreen NuSplashAddress world
             (game, world)

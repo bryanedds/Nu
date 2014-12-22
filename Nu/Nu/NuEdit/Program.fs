@@ -101,12 +101,12 @@ module Program =
                     let oldFacetNames = entity.FacetNames
                     let overlayer = world.Subsystems.Overlayer
                     Overlayer.applyOverlayToFacetNames oldOverlayName overlayName entity overlayer overlayer
-                    match World.trySynchronizeFacets oldFacetNames (Some address) entity world with
+                    match World.trySynchronizeFacets oldFacetNames entity (Some address) world with
                     | Right (entity, world) -> (entity, world)
                     | Left error -> debug error; (entity, world)
                 let facetNames = Entity.getFacetNames entity
                 Overlayer.applyOverlay oldOverlayName overlayName facetNames entity world.Subsystems.Overlayer
-                let world = World.setEntity address entity world
+                let world = World.setEntity entity address world
                 (entity, world)
             | (_, _) -> (entity, world)
 
@@ -142,11 +142,11 @@ module Program =
                         world
                     else
                         let entity = World.getEntity entityTds.Address world
-                        let (entity, world) = World.removeEntityImmediate entityTds.Address entity world
+                        let (entity, world) = World.removeEntityImmediate entity entityTds.Address world
                         let entity = { entity with Name = valueStr }
                         let groupAddress = (World.getUserState world).GroupAddress
                         let entityAddress = gatoea groupAddress valueStr
-                        let world = snd <| World.addEntity entityAddress entity world
+                        let world = snd <| World.addEntity entity entityAddress world
                         entityTds.RefWorld := world // must be set for property grid
                         entityTds.Form.propertyGrid.SelectedObject <- { entityTds with Address = entityAddress }
                         world
@@ -154,7 +154,7 @@ module Program =
                     let facetNames = value :?> string list
                     let entity = World.getEntity entityTds.Address world
                     let world =
-                        match World.trySetFacetNames entity.FacetNames facetNames (Some entityTds.Address) entity world with
+                        match World.trySetFacetNames entity.FacetNames facetNames entity (Some entityTds.Address) world with
                         | Right (_, world) -> world
                         | Left error -> trace error; world
                     entityTds.RefWorld := world // must be set for property grid
@@ -168,13 +168,13 @@ module Program =
                             let optOldOverlayName = entity.OptOverlayName
                             let entity = setEntityPropertyValue property value entity
                             let (entity, world) = synchronizeEntity optOldOverlayName entityTds.Address entity world
-                            let world = World.setEntity entityTds.Address entity world
+                            let world = World.setEntity entity entityTds.Address world
                             (entity, world)
                         | _ ->
                             let entity = setEntityPropertyValue property value entity
-                            let world = World.setEntity entityTds.Address entity world
+                            let world = World.setEntity entity entityTds.Address world
                             (entity, world)
-                    let world = Entity.propagatePhysics entityTds.Address entity world
+                    let world = Entity.propagatePhysics entity entityTds.Address world
                     entityTds.RefWorld := world // must be set for property grid
                     entityTds.Form.propertyGrid.Refresh ()
                     world)
@@ -443,14 +443,14 @@ module Program =
             let world = unsubscribeFromEntityEvents world
             let groupAddress = editorState.GroupAddress
             let group = World.getGroup groupAddress world
-            let world = snd <| World.removeGroupImmediate groupAddress group world
+            let world = snd <| World.removeGroupImmediate group groupAddress world
             
             // load and add group
             let groupHierarchy = World.readGroupHierarchyFromFile filePath world
             let groupAddress = satoga EditorScreenAddress <| (fst groupHierarchy).Name
             let editorState = { editorState with GroupAddress = groupAddress }
             let world = World.setUserState editorState world
-            let world = snd <| World.addGroup groupAddress groupHierarchy world
+            let world = snd <| World.addGroup groupHierarchy groupAddress world
             let world = subscribeToEntityEvents form world
 
             // refresh tree view
@@ -507,7 +507,7 @@ module Program =
                 let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = entity.Size; Rotation = entity.Rotation }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let entityAddress = gatoea groupAddress entity.Name
-                let world = snd <| World.addEntity entityAddress entity world
+                let world = snd <| World.addEntity entity entityAddress world
                 refWorld := world // must be set for property grid
                 form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
                 world
@@ -520,7 +520,7 @@ module Program =
             match selectedObject with
             | :? EntityTypeDescriptorSource as entityTds ->
                 let entity = World.getEntity entityTds.Address world
-                let world = snd <| World.removeEntity entityTds.Address entity world
+                let world = snd <| World.removeEntity entity entityTds.Address world
                 form.propertyGrid.SelectedObject <- null
                 world
             | _ -> world)
@@ -589,7 +589,7 @@ module Program =
             | :? EntityTypeDescriptorSource as entityTds ->
                 let world = pushPastWorld world world
                 let entity = World.getEntity entityTds.Address world
-                let (entity, world) = World.removeEntity entityTds.Address entity world
+                let (entity, world) = World.removeEntity entity entityTds.Address world
                 let world = World.updateUserState (fun editorState -> editorState.Clipboard := Some entity; editorState) world
                 form.propertyGrid.SelectedObject <- null
                 world
@@ -621,7 +621,7 @@ module Program =
                 let entityTransform = { Entity.getTransform entity with Position = entityPosition }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let entityAddress = gatoea editorState.GroupAddress entity.Name
-                let world = snd <| World.addEntity entityAddress entity world
+                let world = snd <| World.addEntity entity entityAddress world
                 selectEntity form entityAddress worldChangers refWorld world
                 world
             | None -> world)
@@ -635,8 +635,8 @@ module Program =
                 let world = pushPastWorld world world
                 let entity = World.getEntity entityTds.Address world
                 let entity = Entity.setSize (Entity.getQuickSize entity world) entity
-                let world = World.setEntity entityTds.Address entity world
-                let world = Entity.propagatePhysics entityTds.Address entity world
+                let world = World.setEntity entity entityTds.Address world
+                let world = Entity.propagatePhysics entity entityTds.Address world
                 entityTds.RefWorld := world // must be set for property grid
                 form.propertyGrid.Refresh ()
                 world
@@ -664,7 +664,7 @@ module Program =
                         let xField = { FieldValue = xFieldValue; FieldType = aType }
                         let xFields = Map.add xFieldName xField entity.Xtension.XFields
                         let entity = { entity with Xtension = { entity.Xtension with XFields = xFields }}
-                        let world = World.setEntity entityTds.Address entity world
+                        let world = World.setEntity entity entityTds.Address world
                         entityTds.RefWorld := world // must be set for property grid
                         form.propertyGrid.Refresh ()
                         form.propertyGrid.Select ()
@@ -685,7 +685,7 @@ module Program =
                     let entity = World.getEntity entityTds.Address world
                     let xFields = Map.remove xFieldName entity.Xtension.XFields
                     let entity = { entity with Xtension = { entity.Xtension with XFields = xFields }}
-                    let world = World.setEntity entityTds.Address entity world
+                    let world = World.setEntity entity entityTds.Address world
                     entityTds.RefWorld := world // must be set for property grid
                     form.propertyGrid.Refresh ()
                     world
@@ -699,7 +699,7 @@ module Program =
                 let world = pushPastWorld world world
                 let entity = World.getEntity entityTds.Address world
                 let entity = { entity with Xtension = { entity.Xtension with XFields = Map.empty }}
-                let world = World.setEntity entityTds.Address entity world
+                let world = World.setEntity entity entityTds.Address world
                 entityTds.RefWorld := world // must be set for property grid
                 form.propertyGrid.Refresh ()
                 world
@@ -751,10 +751,10 @@ module Program =
                 let mousePositionWorld = Camera.mouseToWorld entity.ViewType mousePosition world.Camera
                 let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                 let entity = Entity.setPositionSnapped positionSnap entityPosition entity
-                let world = World.setEntity address entity world
+                let world = World.setEntity entity address world
                 let editorState = { editorState with DragEntityState = DragEntityPosition (pickOffset, mousePositionWorldOrig, address) }
                 let world = World.setUserState editorState world
-                let world = Entity.propagatePhysics address entity world
+                let world = Entity.propagatePhysics entity address world
                 form.propertyGrid.Refresh ()
                 world
             | DragEntityRotation _ -> world
@@ -883,7 +883,7 @@ module Program =
             let group = World.makeGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) world
             let groupHierarchies = Map.singleton group.Name (group, Map.empty)
             let screenHierarchy = (screen, groupHierarchies)
-            let world = snd <| World.addScreen EditorScreenAddress screenHierarchy world
+            let world = snd <| World.addScreen screenHierarchy EditorScreenAddress world
             let world = World.setOptSelectedScreenAddress (Some EditorScreenAddress) world 
             let world = World.subscribe4 MouseRightDownEventAddress GameAddress (handleNuMouseRightDown form worldChangers refWorld) world
             let world = World.subscribe4 MouseLeftDownEventAddress GameAddress (handleNuEntityDragBegin form worldChangers refWorld) world
