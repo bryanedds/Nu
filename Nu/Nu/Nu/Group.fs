@@ -47,7 +47,7 @@ module WorldGroupModule =
                 | None -> None
             | _ -> failwith <| "Invalid group address '" + acstring address + "'."
 
-        static member private groupAdder (address : Group Address) world child =
+        static member private groupAdder (address : Group Address) child world =
             match address.Names with
             | [screenName; groupName] ->
                 match Map.tryFind screenName world.Groups with
@@ -71,7 +71,7 @@ module WorldGroupModule =
 
         static member getGroupBy by address world = by ^^ Option.get ^^ World.optGroupFinder address world
         static member getGroup address world = World.getGroupBy id address world
-        static member setGroup address group world = World.groupAdder address world group
+        static member setGroup address group world = World.groupAdder address group world
         static member updateGroupW address updater world =
             let group = World.getGroup address world
             let group = updater group world
