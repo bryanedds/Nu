@@ -63,7 +63,7 @@ module WorldScreenModule =
             | [screenName] -> Map.tryFind screenName world.Screens
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
-        static member private screenAdder (address : Screen Address) world child =
+        static member private screenAdder (address : Screen Address) child world =
             match address.Names with
             | [screenName] -> { world with Screens = Map.add screenName child world.Screens }
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
@@ -75,7 +75,7 @@ module WorldScreenModule =
 
         static member getScreenBy by address world = by ^^ Option.get ^^ World.optScreenFinder address world
         static member getScreen address world = World.getScreenBy id address world
-        static member setScreen address screen world = World.screenAdder address world screen
+        static member setScreen address screen world = World.screenAdder address screen world
         static member updateScreenW address updater world =
             let screen = World.getScreen address world
             let screen = updater screen world

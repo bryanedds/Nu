@@ -145,7 +145,7 @@ module WorldEntityModule =
                 | None -> None
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
 
-        static member private entityAdder (address : Entity Address) world (entity : Entity) =
+        static member private entityAdder (address : Entity Address) (entity : Entity) world =
             match address.Names with
             | [screenName; groupName; entityName] ->
                 match Map.tryFind screenName world.Entities with
@@ -184,10 +184,10 @@ module WorldEntityModule =
         static member getEntityBy by address world = by ^^ Option.get ^^ World.optEntityFinder address world
         static member getEntity address world = World.getEntityBy id address world
 
-        static member private setEntityWithoutEvent address entity world = World.entityAdder address world entity
+        static member private setEntityWithoutEvent address entity world = World.entityAdder address entity world
         static member setEntity address entity world =
             let oldEntity = Option.get <| World.optEntityFinder address world
-            let world = World.entityAdder address world entity
+            let world = World.entityAdder address entity world
             if entity.PublishChanges
             then World.publish4 { OldEntity = oldEntity } (EntityChangeEventAddress ->>- address) address world
             else world
@@ -203,7 +203,7 @@ module WorldEntityModule =
         static member containsEntity address world = Option.isSome <| World.getOptEntity address world
         static member private setOptEntityWithoutEvent address optEntity world =
             match optEntity with 
-            | Some entity -> World.entityAdder address world entity
+            | Some entity -> World.entityAdder address entity world
             | None -> World.entityRemover address world
 
         static member getEntityMap (groupAddress : Group Address) world =
