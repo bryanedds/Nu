@@ -196,8 +196,7 @@ module WorldEntityModule =
             let entity = World.getEntity address world
             let entity = updater entity world
             World.setEntity address entity world
-        static member updateEntity address updater world =
-            World.updateEntityW address (fun entity _ -> updater entity) world
+        static member updateEntity address updater world = World.updateEntityW address (fun entity _ -> updater entity) world
 
         static member getOptEntity address world = World.optEntityFinder address world
         static member containsEntity address world = Option.isSome <| World.getOptEntity address world

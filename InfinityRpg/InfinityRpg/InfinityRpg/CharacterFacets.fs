@@ -39,8 +39,6 @@ module CharacterStateFacetModule =
         static member setEquippedArmor (value : ArmorType option) (entity : Entity) = entity?EquippedArmor <- value
         member entity.EquippedRelics = entity?EquippedRelics : RelicType list
         static member setEquippedRelics (value : RelicType list) (entity : Entity) = entity?EquippedRelics <- value
-        member entity.AddedExperience = entity?AddedExperience : int
-        static member setAddedExperience (value : int) (entity : Entity) = entity?AddedExperience <- value
         member entity.ControlType = entity?ControlType : ControlType
         static member setControlType (value : ControlType) (entity : Entity) = entity?ControlType <- value
 
@@ -60,7 +58,6 @@ module CharacterStateFacetModule =
              define? EquippedWeapon Option<WeaponType>.None
              define? EquippedArmor Option<ArmorType>.None
              define? EquippedRelics list<RelicType>.Empty
-             define? AddedExperience 0
              define? ControlType Uncontrolled] // level is calculated from base experience + added experience
 
 [<AutoOpen>]

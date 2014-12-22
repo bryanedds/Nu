@@ -272,16 +272,11 @@ module StagePlayModule =
         let handlePlayerFall event world =
             if World.isGamePlaying world then
                 let player = getPlayer event.SubscriberAddress world
-                match World.getOptScreen TitleAddress world with
-                | Some titleScreen ->
-                    if Entity.hasFallen player && World.isSelectedScreenIdling world then
-                        let oldWorld = world
-                        let world = World.playSound 1.0f DeathSound world
-                        match World.tryTransitionScreen TitleAddress titleScreen world with
-                        | Some world -> (Cascade, world)
-                        | None -> (Cascade, oldWorld)
-                    else (Cascade, world)
-                | None -> (Cascade, world)
+                if Entity.hasFallen player && World.isSelectedScreenIdling world then
+                    let world = World.playSound 1.0f DeathSound world
+                    let world = World.transitionScreen TitleAddress world
+                    (Cascade, world)
+                else (Cascade, world)
             else (Cascade, world)
 
         override dispatcher.Register (address, group, world) =

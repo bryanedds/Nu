@@ -38,12 +38,9 @@ module BlazeProgression =
 
     // this function handles playing the stage
     let handlePlayStage _ world =
-        let oldWorld = world
         let world = World.fadeOutSong DefaultTimeToFadeOutSongMs world
-        let stageScreen = World.getScreen StageAddress world
-        match World.tryTransitionScreen StageAddress stageScreen world with
-        | Some world -> (Cascade, world)
-        | None -> (Cascade, oldWorld)
+        let world = World.transitionScreen StageAddress world
+        (Cascade, world)
 
     // this function adds the BlazeVector title screen to the world
     let addTitleScreen world =
