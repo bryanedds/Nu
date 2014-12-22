@@ -149,6 +149,11 @@ module WorldGroupModule =
             let world = World.addTask task world
             (group, world)
 
+        static member removeGroupIf address pred world =
+            let group = World.getGroup address world
+            if pred group then World.removeGroup address group world
+            else (group, world)
+
         static member removeGroupsImmediate (screenAddress : Screen Address) groups world =
             World.transformSimulants World.removeGroupImmediate satoga screenAddress groups world
 

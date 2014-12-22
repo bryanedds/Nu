@@ -257,6 +257,11 @@ module WorldEntityModule =
             let world = World.addTask task world
             (entity, world)
 
+        static member removeEntityIf address pred world =
+            let entity = World.getEntity address world
+            if pred entity then World.removeEntity address entity world
+            else (entity, world)
+
         static member removeEntitiesImmediate (groupAddress : Group Address) entities world =
             World.transformSimulants World.removeEntityImmediate gatoea groupAddress entities world
 
