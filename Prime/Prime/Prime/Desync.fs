@@ -47,9 +47,6 @@ module Desync =
     let set s : Desync<'e, 's, unit> =
         Desync (fun _ -> (s, Right ()))
 
-    let setBy by : Desync<'e, 's, unit> =
-        Desync (fun s -> (by s, Right ()))
-
     let advance (m : 'e -> Desync<'e, 's, 'a>) (e : 'e) (s : 's) : 's * Either<'e -> Desync<'e, 's, 'a>, 'a> =
         step (m e) s
 
@@ -79,16 +76,10 @@ module Desync =
             do! set s }
 
     let updateBy by expr : Desync<'e, 's, unit> =
-        desync {
-            let! s = get
-            let s = expr (by s) s
-            do! set s }
+        Desync (fun s -> (expr (by s) s, Right ()))
 
     let update expr : Desync<'e, 's, unit> =
-        desync {
-            let! s = get
-            let s = expr s
-            do! set s }
+        Desync (fun s -> (expr s, Right ()))
 
     // TODO: figure out how to make this tail-recursive or iterative if it already isn't.
     let rec loop (i : 'i) (next : 'i -> 'i) (pred : 'i -> 's -> bool) (m : 'i -> Desync<'e, 's, unit>) =

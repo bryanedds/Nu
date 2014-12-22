@@ -69,8 +69,16 @@ module WorldGroupModule =
                 | None -> world
             | _ -> failwith <| "Invalid group address '" + acstring address + "'."
 
-        static member getGroup address world = Option.get <| World.optGroupFinder address world
+        static member getGroupBy by address world = by ^^ Option.get ^^ World.optGroupFinder address world
+        static member getGroup address world = World.getGroupBy id address world
         static member setGroup address group world = World.groupAdder address world group
+        static member updateGroupW address updater world =
+            let group = World.getGroup address world
+            let group = updater group world
+            World.setGroup address group world
+        static member updateGroup address updater world =
+            World.updateGroupW address (fun group _ -> updater group) world
+
         static member getOptGroup address world = World.optGroupFinder address world
         static member containsGroup address world = Option.isSome <| World.getOptGroup address world
         static member private setOptGroup address optGroup world =
