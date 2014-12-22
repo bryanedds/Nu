@@ -204,7 +204,7 @@ module GameplayDispatcherModule =
                     (occupationMap, [], rand)
             (enemyTurns, rand)
 
-        static let determinePlayerTurnFromTouch gameplayAddress touchPosition world =
+        static let determinePlayerTurnFromTouch touchPosition gameplayAddress world =
             let (field, player, enemies) = getParticipants gameplayAddress world
             if not <| anyTurnsInProgress2 player enemies then
                 let touchPositionW = Camera.mouseToWorld Relative touchPosition world.Camera
@@ -222,17 +222,17 @@ module GameplayDispatcherModule =
                 | NoTurn -> NoTurn
             else NoTurn
 
-        static let determinePlayerTurnFromDetailNavigation gameplayAddress direction world =
+        static let determinePlayerTurnFromDetailNavigation direction gameplayAddress world =
             let (field, player, enemies) = getParticipants gameplayAddress world
             if not <| anyTurnsInProgress2 player enemies then
                 let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles enemies
                 determineCharacterTurnFromDirection direction occupationMapWithEnemies player enemies
             else NoTurn
 
-        static let determinePlayerTurnFromInput gameplayAddress playerInput world =
+        static let determinePlayerTurnFromInput playerInput gameplayAddress world =
             match playerInput with
-            | TouchInput touchPosition -> determinePlayerTurnFromTouch gameplayAddress touchPosition world
-            | DetailInput direction -> determinePlayerTurnFromDetailNavigation gameplayAddress direction world
+            | TouchInput touchPosition -> determinePlayerTurnFromTouch touchPosition gameplayAddress world
+            | DetailInput direction -> determinePlayerTurnFromDetailNavigation direction gameplayAddress world
             | NoInput -> NoTurn
 
         static let determinePlayerTurn gameplayAddress world =
@@ -284,7 +284,7 @@ module GameplayDispatcherModule =
                 enemies
                 []
 
-        static let runCharacterNavigation newNavigationDescriptor gameplayAddress characterAddress world =
+        static let runCharacterNavigation newNavigationDescriptor characterAddress gameplayAddress world =
             let desync = desync {
                 do! updateEntity characterAddress (Entity.setActivityState <| Navigation newNavigationDescriptor)
                 do! during
@@ -332,7 +332,7 @@ module GameplayDispatcherModule =
             let obs = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- gameplayAddress)
             snd <| runDesyncAssumingCascade desync obs world
 
-        static let runCharacterAction newActionDescriptor gameplayAddress characterAddress world =
+        static let runCharacterAction newActionDescriptor characterAddress gameplayAddress world =
             let desync = desync {
                 do! updateEntity characterAddress (Entity.setActivityState <| Action newActionDescriptor)
                 do! during
@@ -364,10 +364,10 @@ module GameplayDispatcherModule =
         static let runCharacterNoActivity characterAddress world =
             World.updateEntity characterAddress (Entity.setActivityState NoActivity) world
 
-        static let runCharacterActivity newActivity gameplayAddress characterAddress world =
+        static let runCharacterActivity newActivity characterAddress gameplayAddress world =
             match newActivity with
-            | Action newActionDescriptor -> runCharacterAction newActionDescriptor gameplayAddress characterAddress world
-            | Navigation newNavigationDescriptor -> runCharacterNavigation newNavigationDescriptor gameplayAddress characterAddress world
+            | Action newActionDescriptor -> runCharacterAction newActionDescriptor characterAddress gameplayAddress world
+            | Navigation newNavigationDescriptor -> runCharacterNavigation newNavigationDescriptor characterAddress gameplayAddress world
             | NoActivity -> runCharacterNoActivity characterAddress world
 
         static let tryRunEnemyActivity gameplayAddress world newActivity enemyAddress =
@@ -375,15 +375,15 @@ module GameplayDispatcherModule =
                 let enemy = World.getEntity enemyAddress world
                 let enemy = Entity.setDesiredTurn NoTurn enemy
                 let world = World.setEntity enemyAddress enemy world
-                runCharacterActivity newActivity gameplayAddress enemyAddress world
+                runCharacterActivity newActivity enemyAddress gameplayAddress world
             else world
 
-        static let runEnemyNavigationActivities gameplayAddress enemyAddresses enemyNavigationActivities world =
+        static let runEnemyNavigationActivities enemyNavigationActivities enemyAddresses gameplayAddress world =
             if List.exists ActivityState.isNavigating enemyNavigationActivities
             then List.fold2 (tryRunEnemyActivity gameplayAddress) world enemyNavigationActivities enemyAddresses
             else world
 
-        static let runEnemyActivities gameplayAddress enemyAddresses enemyActionActivities enemyNavigationActivities world =
+        static let runEnemyActivities enemyActionActivities enemyNavigationActivities enemyAddresses gameplayAddress world =
             let anyEnemyActionActivity = List.exists ActivityState.isActing enemyActionActivities
             let newEnemyActivities = if anyEnemyActionActivity then enemyActionActivities else enemyNavigationActivities
             List.fold2 (tryRunEnemyActivity gameplayAddress) world newEnemyActivities enemyAddresses
@@ -409,7 +409,7 @@ module GameplayDispatcherModule =
                 match optNewPlayerActivity with
                 | Some newPlayerActivity ->
                     let playerAddress = getPlayerAddress gameplayAddress
-                    runCharacterActivity newPlayerActivity gameplayAddress playerAddress world
+                    runCharacterActivity newPlayerActivity playerAddress gameplayAddress world
                 | None -> world
 
             // determine (and set) enemy desired turns if applicable
@@ -438,12 +438,12 @@ module GameplayDispatcherModule =
                 | Navigation _ ->
                     let enemyAddresses = getEnemyAddresses gameplayAddress enemies
                     let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
-                    runEnemyNavigationActivities gameplayAddress enemyAddresses newEnemyNavigationActivities world
+                    runEnemyNavigationActivities newEnemyNavigationActivities enemyAddresses gameplayAddress world
                 | NoActivity ->
                     let enemyAddresses = getEnemyAddresses gameplayAddress enemies
                     let newEnemyActionActivities = determineEnemyActionActivities enemies
                     let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
-                    runEnemyActivities gameplayAddress enemyAddresses newEnemyActionActivities newEnemyNavigationActivities world
+                    runEnemyActivities newEnemyActionActivities newEnemyNavigationActivities enemyAddresses gameplayAddress world
 
             // teh world
             world
@@ -461,7 +461,7 @@ module GameplayDispatcherModule =
                             | Left _ -> updateEntity playerAddress cancelNavigation
                             | Right _ ->
                                 if i = 0
-                                then updateBy (determinePlayerTurnFromInput gameplayAddress playerInput) (runPlayerTurn gameplayAddress)
+                                then updateBy (determinePlayerTurnFromInput playerInput gameplayAddress) (runPlayerTurn gameplayAddress)
                                 else updateBy (determinePlayerTurn gameplayAddress) (runPlayerTurn gameplayAddress) }
                     do! updateEntity hudSaveGameAddress <| Entity.setEnabled true }
                 let obs =
