@@ -69,8 +69,8 @@ module WorldGroupModule =
                 | None -> world
             | _ -> failwith <| "Invalid group address '" + acstring address + "'."
 
-        static member getGroupBy by address world = by ^^ Option.get ^^ World.optGroupFinder address world
-        static member getGroup address world = World.getGroupBy id address world
+        static member getGroupBy address by world = by ^^ Option.get ^^ World.optGroupFinder address world
+        static member getGroup address world = World.getGroupBy address id world
         static member setGroup address group world = World.groupAdder address group world
         static member updateGroupW address updater world =
             let group = World.getGroup address world

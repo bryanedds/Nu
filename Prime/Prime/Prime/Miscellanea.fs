@@ -37,6 +37,9 @@ module Miscellanea =
     /// TODO: curry and uncurry.
     let flip f x y = f y x
 
+    /// Fail with an unexpected match failure.
+    let failwithumf () = failwith "Unexpected match failure."
+
     /// Convert any value to its type.
     let getType x = x.GetType ()
 

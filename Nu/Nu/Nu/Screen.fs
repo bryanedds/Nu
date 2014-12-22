@@ -73,8 +73,8 @@ module WorldScreenModule =
             | [screenName] -> { world with Screens = Map.remove screenName world.Screens }
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
-        static member getScreenBy by address world = by ^^ Option.get ^^ World.optScreenFinder address world
-        static member getScreen address world = World.getScreenBy id address world
+        static member getScreenBy address by world = by ^^ Option.get ^^ World.optScreenFinder address world
+        static member getScreen address world = World.getScreenBy address id world
         static member setScreen address screen world = World.screenAdder address screen world
         static member updateScreenW address updater world =
             let screen = World.getScreen address world

@@ -181,8 +181,8 @@ module WorldEntityModule =
                 | None -> world
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
 
-        static member getEntityBy by address world = by ^^ Option.get ^^ World.optEntityFinder address world
-        static member getEntity address world = World.getEntityBy id address world
+        static member getEntityBy address by world = by ^^ Option.get ^^ World.optEntityFinder address world
+        static member getEntity address world = World.getEntityBy address id world
 
         static member private setEntityWithoutEvent address entity world = World.entityAdder address entity world
         static member setEntity address entity world =
