@@ -208,11 +208,17 @@ module Observer =
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
-    let subscribe2 world observable =
+    let subscribeWithUnsub2 observable world =
         observable.Subscribe world |> _bc
 
-    let subscribe handleEvent world observable =
-        observable |> using handleEvent |> subscribe2 world
+    let subscribe2 observable world =
+        subscribeWithUnsub2 observable world |> snd
+
+    let subscribeWithUnsub handleEvent observable world =
+        observable |> using handleEvent |> subscribeWithUnsub2 <| world
+
+    let subscribe handleEvent observable world =
+        subscribeWithUnsub handleEvent observable world |> snd
 
     let until eventAddress (observable : Observable<'a, 'o>) : Observable<'a, 'o> =
         let subscribe = fun world ->
@@ -236,9 +242,12 @@ module Observer =
     let lifetime (observable : Observable<'a, 'o>) : Observable<'a, 'o> =
         until (RemovingEventAddress ->>- observable.ObserverAddress) observable
 
-    let monitor eventAddress world observable =
-        observable |> lifetime |> subscribe eventAddress world
+    let monitorWithUnsub eventAddress observable world =
+        (observable |> lifetime |> subscribeWithUnsub eventAddress) world
 
+    let monitor eventAddress observable world =
+        monitorWithUnsub eventAddress observable world |> snd
+    
     (* Advanced Combinators *)
 
     let scan4 (f : 'b -> Event<'a, 'o> -> World -> 'b) g s (o : Observable<'a, 'o>) : Observable<'c, 'o> =
