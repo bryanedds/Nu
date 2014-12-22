@@ -590,7 +590,7 @@ module GameplayDispatcherModule =
             let world = observe (DownEventAddress ->>- getHudDetailRightAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail Rightward) world |> snd
             let world = observe (DownEventAddress ->>- getHudDetailDownAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail Downward) world |> snd
             let world = observe (DownEventAddress ->>- getHudDetailLeftAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail Leftward) world |> snd
-            let world = World.subscribe4 handleSelectGameplay (SelectEventAddress ->>- gameplayAddress) gameplayAddress world
-            let world = World.subscribe4 handleClickSaveGame (ClickEventAddress ->>- getHudSaveGameAddress gameplayAddress) gameplayAddress world
-            let world = World.subscribe4 handleDeselectGameplay (DeselectEventAddress ->>- gameplayAddress) gameplayAddress world
+            let world = World.subscribe4 (SelectEventAddress ->>- gameplayAddress) gameplayAddress handleSelectGameplay world
+            let world = World.subscribe4 (ClickEventAddress ->>- getHudSaveGameAddress gameplayAddress) gameplayAddress handleClickSaveGame world
+            let world = World.subscribe4 (DeselectEventAddress ->>- gameplayAddress) gameplayAddress handleDeselectGameplay world
             (gameplay, world)
