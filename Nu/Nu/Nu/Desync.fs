@@ -17,7 +17,7 @@ module Desync =
             let! world = get
             let entity = World.getEntity address world
             let entity = expr entity world
-            do! setBy <| World.setEntity address entity }
+            do! update <| World.setEntity address entity }
 
     let updateEntity address expr : Desync<'e, World, unit> =
         updateEntityW address <| flip (fun _ -> expr)
@@ -34,7 +34,7 @@ module Desync =
             let! world = get
             let group = World.getGroup address world
             let group = expr group world
-            do! setBy <| World.setGroup address group }
+            do! update <| World.setGroup address group }
 
     let updateGroup address expr : Desync<'e, World, unit> =
         updateGroupW address <| flip (fun _ -> expr)
@@ -51,7 +51,7 @@ module Desync =
             let! world = get
             let screen = World.getScreen address world
             let screen = expr screen world
-            do! setBy <| World.setScreen address screen }
+            do! update <| World.setScreen address screen }
 
     let updateScreen address expr : Desync<'e, World, unit> =
         updateScreenW address <| flip (fun _ -> expr)
@@ -68,7 +68,7 @@ module Desync =
             let! world = get
             let game = World.getGame world
             let game = expr game world
-            do! setBy <| World.setGame game }
+            do! update <| World.setGame game }
 
     let updateGame expr : Desync<'e, World, unit> =
         updateGameW <| flip (fun _ -> expr)

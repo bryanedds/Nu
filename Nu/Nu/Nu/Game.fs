@@ -32,8 +32,15 @@ module WorldGameModule =
 
     type World with
 
-        static member getGame world = world.Game
+        static member getGameBy by world = by world.Game
+        static member getGame world = World.getGameBy id world
         static member setGame game world = { world with Game = game }
+        static member updateGameW updater world =
+            let game = World.getGame world
+            let game = updater game world
+            World.setGame game world
+        static member updateGame updater world =
+            World.updateGameW (fun game _ -> updater game) world
 
         static member getGameHierarchy world =
             let game = world.Game

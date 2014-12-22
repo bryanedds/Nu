@@ -362,9 +362,7 @@ module GameplayDispatcherModule =
             snd <| runDesyncAssumingCascade desync obs world
 
         static let runCharacterNoActivity characterAddress world =
-            let character = World.getEntity characterAddress world
-            let character = Entity.setActivityState NoActivity character
-            World.setEntity characterAddress character world
+            World.updateEntity characterAddress (Entity.setActivityState NoActivity) world
 
         static let runCharacterActivity newActivity gameplayAddress characterAddress world =
             match newActivity with

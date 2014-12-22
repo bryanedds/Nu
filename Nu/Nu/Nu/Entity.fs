@@ -181,7 +181,9 @@ module WorldEntityModule =
                 | None -> world
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
 
-        static member getEntity address world = Option.get <| World.optEntityFinder address world
+        static member getEntityBy by address world = by ^^ Option.get ^^ World.optEntityFinder address world
+        static member getEntity address world = World.getEntityBy id address world
+
         static member private setEntityWithoutEvent address entity world = World.entityAdder address world entity
         static member setEntity address entity world =
             let oldEntity = Option.get <| World.optEntityFinder address world
@@ -189,6 +191,13 @@ module WorldEntityModule =
             if entity.PublishChanges
             then World.publish4 { OldEntity = oldEntity } (EntityChangeEventAddress ->>- address) address world
             else world
+
+        static member updateEntityW address updater world =
+            let entity = World.getEntity address world
+            let entity = updater entity world
+            World.setEntity address entity world
+        static member updateEntity address updater world =
+            World.updateEntityW address (fun entity _ -> updater entity) world
 
         static member getOptEntity address world = World.optEntityFinder address world
         static member containsEntity address world = Option.isSome <| World.getOptEntity address world
