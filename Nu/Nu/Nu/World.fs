@@ -77,12 +77,12 @@ module WorldModule =
                         World.unsubscribe ScreenTransitionKeyboardKeyKey
                 | IncomingState | OutgoingState ->
                     world |>
-                        World.subscribe ScreenTransitionMouseLeftKey World.handleAsSwallow (MouseLeftEventAddress ->- AnyEventAddress) GameAddress |>
-                        World.subscribe ScreenTransitionMouseCenterKey World.handleAsSwallow (MouseCenterEventAddress ->- AnyEventAddress) GameAddress |>
-                        World.subscribe ScreenTransitionMouseRightKey World.handleAsSwallow (MouseRightEventAddress ->- AnyEventAddress) GameAddress |>
-                        World.subscribe ScreenTransitionMouseX1Key World.handleAsSwallow (MouseX1EventAddress ->- AnyEventAddress) GameAddress |>
-                        World.subscribe ScreenTransitionMouseX2Key World.handleAsSwallow (MouseX2EventAddress ->- AnyEventAddress) GameAddress |>
-                        World.subscribe ScreenTransitionKeyboardKeyKey World.handleAsSwallow (KeyboardKeyEventAddress ->- AnyEventAddress) GameAddress 
+                        World.subscribe ScreenTransitionMouseLeftKey (MouseLeftEventAddress ->- AnyEventAddress) GameAddress World.handleAsSwallow |>
+                        World.subscribe ScreenTransitionMouseCenterKey (MouseCenterEventAddress ->- AnyEventAddress) GameAddress World.handleAsSwallow |>
+                        World.subscribe ScreenTransitionMouseRightKey (MouseRightEventAddress ->- AnyEventAddress) GameAddress World.handleAsSwallow |>
+                        World.subscribe ScreenTransitionMouseX1Key (MouseX1EventAddress ->- AnyEventAddress) GameAddress World.handleAsSwallow |>
+                        World.subscribe ScreenTransitionMouseX2Key (MouseX2EventAddress ->- AnyEventAddress) GameAddress World.handleAsSwallow |>
+                        World.subscribe ScreenTransitionKeyboardKeyKey (KeyboardKeyEventAddress ->- AnyEventAddress) GameAddress World.handleAsSwallow
             let world = World.setScreen address screen world
             (screen, world)
 
@@ -112,7 +112,7 @@ module WorldModule =
                         | None -> failwith "No valid OptScreenTransitionDestinationAddress during screen transition!"
                     let world = World.setOptScreenTransitionDestinationAddress (Some destinationAddress) world
                     let world = snd <| World.setScreenState OutgoingState selectedScreenAddress selectedScreen world
-                    let world = World.subscribe<unit, Screen> subscriptionKey subscription (OutgoingFinishEventAddress ->>- selectedScreenAddress) selectedScreenAddress world
+                    let world = World.subscribe<unit, Screen> subscriptionKey (OutgoingFinishEventAddress ->>- selectedScreenAddress) selectedScreenAddress subscription world
                     Some world
                 | None -> None
             | None -> None
@@ -194,7 +194,7 @@ module WorldModule =
             let world = World.unsubscribe SplashScreenTickKey world
             if ticks < idlingTime then
                 let subscription = World.handleSplashScreenIdleTick idlingTime (inc ticks)
-                let world = World.subscribe SplashScreenTickKey subscription event.EventAddress event.SubscriberAddress world
+                let world = World.subscribe SplashScreenTickKey event.EventAddress event.SubscriberAddress subscription world
                 (Cascade, world)
             else
                 match World.getOptSelectedScreenAddress world with
@@ -211,7 +211,7 @@ module WorldModule =
                     (Resolve, World.exit world)
 
         static member internal handleSplashScreenIdle idlingTime event world =
-            let world = World.subscribe SplashScreenTickKey (World.handleSplashScreenIdleTick idlingTime 0L) TickEventAddress event.SubscriberAddress world
+            let world = World.subscribe SplashScreenTickKey TickEventAddress event.SubscriberAddress (World.handleSplashScreenIdleTick idlingTime 0L) world
             (Resolve, world)
 
         static member addSplashScreen persistent splashData dispatcherName address destination world =
@@ -224,8 +224,8 @@ module WorldModule =
             let splashGroupHierarchies = Map.singleton splashGroup.Name (splashGroup, Map.singleton splashLabel.Name splashLabel)
             let splashScreenHierarchy = (splashScreen, splashGroupHierarchies)
             let world = snd <| World.addScreen address splashScreenHierarchy world
-            let world = World.monitor (World.handleSplashScreenIdle splashData.IdlingTime) (IncomingFinishEventAddress ->>- address) address world
-            let world = World.monitor (World.handleAsScreenTransitionFromSplash destination) (OutgoingFinishEventAddress ->>- address) address world
+            let world = World.monitor (IncomingFinishEventAddress ->>- address) address (World.handleSplashScreenIdle splashData.IdlingTime) world
+            let world = World.monitor (OutgoingFinishEventAddress ->>- address) address (World.handleAsScreenTransitionFromSplash destination) world
             (splashScreen, world)
 
         static member addDissolveScreen persistent dissolveData dispatcherName address world =

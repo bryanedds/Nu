@@ -327,7 +327,7 @@ module World =
 
     /// Subscribe to an event.
     let subscribe<'d, 's when 's :> Simulant>
-        subscriptionKey (subscription : Subscription<'d, 's>) (eventAddress : 'd Address) (subscriberAddress : 's Address) world =
+        subscriptionKey (eventAddress : 'd Address) (subscriberAddress : 's Address) (subscription : Subscription<'d, 's>) world =
         if not <| Address.isEmpty eventAddress then
             let objEventAddress = atooa eventAddress
             let subscriptions =
@@ -342,8 +342,8 @@ module World =
 
     /// Subscribe to an event.
     let subscribe4<'d, 's when 's :> Simulant>
-        (subscription : Subscription<'d, 's>) (eventAddress : 'd Address) (subscriberAddress : 's Address) world =
-        subscribe (makeSubscriptionKey ()) subscription eventAddress subscriberAddress world
+        (eventAddress : 'd Address) (subscriberAddress : 's Address) (subscription : Subscription<'d, 's>) world =
+        subscribe (makeSubscriptionKey ()) eventAddress subscriberAddress subscription world
 
     /// Unsubscribe from an event.
     let unsubscribe subscriptionKey world =
@@ -369,17 +369,17 @@ module World =
 
     /// Keep active a subscription for the lifetime of a simulant.
     let monitor<'d, 's when 's :> Simulant>
-        (subscription : Subscription<'d, 's>) (eventAddress : 'd Address) (subscriberAddress : 's Address) world =
+        (eventAddress : 'd Address) (subscriberAddress : 's Address) (subscription : Subscription<'d, 's>) world =
         if not <| Address.isEmpty subscriberAddress then
             let monitorKey = makeSubscriptionKey ()
             let removalKey = makeSubscriptionKey ()
-            let world = subscribe<'d, 's> monitorKey subscription eventAddress subscriberAddress world
+            let world = subscribe<'d, 's> monitorKey eventAddress subscriberAddress subscription world
             let subscription' = fun _ world ->
                 let world = unsubscribe removalKey world
                 let world = unsubscribe monitorKey world
                 (Cascade, world)
             let removingEventAddress = WorldConstants.RemovingEventAddress ->- atooa subscriberAddress
-            subscribe<unit, 's> removalKey subscription' removingEventAddress subscriberAddress world
+            subscribe<unit, 's> removalKey removingEventAddress subscriberAddress subscription' world
         else failwith "Cannot monitor events with an anonymous subscriber."
 
 [<AutoOpen>]
