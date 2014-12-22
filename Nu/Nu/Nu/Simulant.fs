@@ -11,7 +11,7 @@ module Simulant =
         | Some child -> Some child
         | None -> None
 
-    let setOptChild addChild removeChild address parent optChild =
+    let setOptChild addChild removeChild optChild address parent =
         match optChild with
         | Some child -> addChild address parent child
         | None -> removeChild address parent
@@ -19,8 +19,8 @@ module Simulant =
     let getChild optChildFinder address parent =
         Option.get <| optChildFinder address parent
 
-    let setChild childAdder childRemover address parent child =
-        setOptChild childAdder childRemover address parent (Some child)
+    let setChild childAdder childRemover child address parent =
+        setOptChild childAdder childRemover (Some child) address parent
 
 [<AutoOpen>]
 module SimulantAddressModule =

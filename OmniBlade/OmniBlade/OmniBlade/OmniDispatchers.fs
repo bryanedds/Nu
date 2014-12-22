@@ -49,7 +49,7 @@ module OmniDispatchersModule =
                 let world = World.applyBodyLinearImpulse impulse character.PhysicsId world 
                 (Cascade, world)
 
-        override dispatcher.Register (address, character, world) =
+        override dispatcher.Register (character, address, world) =
             let world = World.monitor TickEventAddress address handleMoveFieldCharacter world
             let world = World.monitor TickEventAddress address handleAdjustFieldCamera world
             let world = World.addPhysicsMessage (SetGravityMessage Vector2.Zero) world
@@ -59,7 +59,7 @@ module OmniDispatchersModule =
     type BattleGroupDispatcher () =
         inherit GroupDispatcher ()
 
-        override dispatcher.Register (_, group, world) =
+        override dispatcher.Register (group, _, world) =
             let world = World.addPhysicsMessage (SetGravityMessage Vector2.Zero) world
             (group, world)
 

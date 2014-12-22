@@ -26,24 +26,24 @@ module EntityModule =
         static member setPublishChanges value (entity : Entity) = { entity with PublishChanges = value }
         static member setPersistent value (entity : Entity) = { entity with Persistent = value }
 
-        static member register address (entity : Entity) world =
-            let (entity, world) = entity.DispatcherNp.Register (address, entity, world)
+        static member register (entity : Entity) address world =
+            let (entity, world) = entity.DispatcherNp.Register (entity, address, world)
             List.fold
-                (fun (entity, world) (facet : Facet) -> facet.Register (address, entity, world))
+                (fun (entity, world) (facet : Facet) -> facet.Register (entity, address, world))
                 (entity, world)
                 entity.FacetsNp
         
-        static member unregister address (entity : Entity) world =
-            let (entity, world) = entity.DispatcherNp.Unregister (address, entity, world)
+        static member unregister (entity : Entity) address world =
+            let (entity, world) = entity.DispatcherNp.Unregister (entity, address, world)
             List.fold
-                (fun (entity, world) (facet : Facet) -> facet.Unregister (address, entity, world))
+                (fun (entity, world) (facet : Facet) -> facet.Unregister (entity, address, world))
                 (entity, world)
                 entity.FacetsNp
         
-        static member propagatePhysics address (entity : Entity) world =
-            let world = entity.DispatcherNp.PropagatePhysics (address, entity, world)
+        static member propagatePhysics (entity : Entity) address world =
+            let world = entity.DispatcherNp.PropagatePhysics (entity, address, world)
             List.fold
-                (fun world (facet : Facet) -> facet.PropagatePhysics (address, entity, world))
+                (fun world (facet : Facet) -> facet.PropagatePhysics (entity, address, world))
                 world
                 entity.FacetsNp
         
@@ -145,7 +145,7 @@ module WorldEntityModule =
                 | None -> None
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
 
-        static member private entityAdder (address : Entity Address) (entity : Entity) world =
+        static member private entityAdder (entity : Entity) (address : Entity Address) world =
             match address.Names with
             | [screenName; groupName; entityName] ->
                 match Map.tryFind screenName world.Entities with
@@ -165,7 +165,7 @@ module WorldEntityModule =
                     { world with Entities = Map.add screenName groupMap world.Entities }
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
 
-        static member private entityRemover (address : Entity Address)  world =
+        static member private entityRemover (address : Entity Address) world =
             match address.Names with
             | [screenName; groupName; entityName] ->
                 let optGroupMap = Map.tryFind screenName world.Entities
@@ -181,28 +181,28 @@ module WorldEntityModule =
                 | None -> world
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
 
-        static member getEntityBy address by world = by ^^ Option.get ^^ World.optEntityFinder address world
-        static member getEntity address world = World.getEntityBy address id world
+        static member getEntityBy by address world = by ^^ Option.get ^^ World.optEntityFinder address world
+        static member getEntity address world = World.getEntityBy id address world
 
-        static member private setEntityWithoutEvent address entity world = World.entityAdder address entity world
-        static member setEntity address entity world =
+        static member private setEntityWithoutEvent entity address world = World.entityAdder entity address world
+        static member setEntity entity address world =
             let oldEntity = Option.get <| World.optEntityFinder address world
-            let world = World.entityAdder address entity world
+            let world = World.entityAdder entity address world
             if entity.PublishChanges
             then World.publish4 { OldEntity = oldEntity } (EntityChangeEventAddress ->>- address) address world
             else world
 
-        static member updateEntityW address updater world =
+        static member updateEntityW updater address world =
             let entity = World.getEntity address world
             let entity = updater entity world
-            World.setEntity address entity world
-        static member updateEntity address updater world = World.updateEntityW address (fun entity _ -> updater entity) world
+            World.setEntity entity address world
+        static member updateEntity updater address world = World.updateEntityW (fun entity _ -> updater entity) address world
 
         static member getOptEntity address world = World.optEntityFinder address world
         static member containsEntity address world = Option.isSome <| World.getOptEntity address world
-        static member private setOptEntityWithoutEvent address optEntity world =
+        static member private setOptEntityWithoutEvent optEntity address world =
             match optEntity with 
-            | Some entity -> World.entityAdder address entity world
+            | Some entity -> World.entityAdder entity address world
             | None -> World.entityRemover address world
 
         static member getEntityMap (groupAddress : Group Address) world =
@@ -231,57 +231,57 @@ module WorldEntityModule =
 
         static member setEntities groupAddress entities world =
             Seq.fold
-                (fun world (entity : Entity) -> World.setEntity (gatoea groupAddress entity.Name) entity world)
+                (fun world (entity : Entity) -> World.setEntity entity (gatoea groupAddress entity.Name) world)
                 world
                 entities
 
-        static member private registerEntity address entity world =
-            Entity.register address entity world
+        static member private registerEntity entity address world =
+            Entity.register entity address world
 
-        static member private unregisterEntity address entity world =
-            Entity.unregister address entity world
+        static member private unregisterEntity entity address world =
+            Entity.unregister entity address world
 
-        static member removeEntityImmediate (address : Entity Address) entity world =
+        static member removeEntityImmediate entity (address : Entity Address) world =
             let world = World.publish4 () (RemovingEventAddress ->>- address) address world
-            let (entity, world) = World.unregisterEntity address entity world
-            let world = World.setOptEntityWithoutEvent address None world
+            let (entity, world) = World.unregisterEntity entity address world
+            let world = World.setOptEntityWithoutEvent None address world
             (entity, world)
 
-        static member removeEntity address (entity : Entity) world =
+        static member removeEntity (entity : Entity) address world =
             let task =
                 { ScheduledTime = world.State.TickTime
                   Operation = fun world ->
                     match World.getOptEntity address world with
-                    | Some entity -> snd <| World.removeEntityImmediate address entity world
+                    | Some entity -> snd <| World.removeEntityImmediate entity address world
                     | None -> world }
             let world = World.addTask task world
             (entity, world)
 
-        static member removeEntityIf address pred world =
+        static member removeEntityIf pred address world =
             let entity = World.getEntity address world
-            if pred entity then World.removeEntity address entity world
+            if pred entity then World.removeEntity entity address world
             else (entity, world)
 
-        static member removeEntitiesImmediate (groupAddress : Group Address) entities world =
-            World.transformSimulants World.removeEntityImmediate gatoea groupAddress entities world
+        static member removeEntitiesImmediate entities (groupAddress : Group Address) world =
+            World.transformSimulants World.removeEntityImmediate gatoea entities groupAddress world
 
-        static member removeEntities (groupAddress : Group Address) entities world =
-            World.transformSimulants World.removeEntity gatoea groupAddress entities world
+        static member removeEntities entities (groupAddress : Group Address) world =
+            World.transformSimulants World.removeEntity gatoea entities groupAddress world
 
-        static member addEntity address entity world =
+        static member addEntity entity address world =
             if not <| World.containsEntity address world then
                 let (entity, world) =
                     match World.getOptEntity address world with
-                    | Some _ -> World.removeEntityImmediate address entity world
+                    | Some _ -> World.removeEntityImmediate entity address world
                     | None -> (entity, world)
-                let world = World.setEntityWithoutEvent address entity world
-                let (entity, world) = World.registerEntity address entity world
+                let world = World.setEntityWithoutEvent entity address world
+                let (entity, world) = World.registerEntity entity address world
                 let world = World.publish4 () (AddEventAddress ->>- address) address world
                 (entity, world)
             else failwith <| "Adding an entity that the world already contains at address '" + acstring address + "'."
 
-        static member addEntities (groupAddress : Group Address) entities world =
-            World.transformSimulants World.addEntity gatoea groupAddress entities world
+        static member addEntities entities (groupAddress : Group Address) world =
+            World.transformSimulants World.addEntity gatoea entities groupAddress world
 
         static member makeEntity dispatcherName optName world =
             
@@ -306,7 +306,7 @@ module WorldEntityModule =
                     Overlayer.applyOverlayToFacetNames intrinsicOverlayName defaultOverlayName entity overlayer overlayer
                         
                     // synchronize the entity's facets (and attach their fields)
-                    match World.trySynchronizeFacets [] None entity world with
+                    match World.trySynchronizeFacets [] entity None world with
                     | Right (entity, _) -> entity
                     | Left error -> debug error; entity
                 | None -> entity
@@ -377,12 +377,12 @@ module WorldEntityModule =
                 Set.empty
                 finalFieldDefinitionNameCounts
 
-        static member tryRemoveFacet syncing facetName optAddress entity world =
+        static member tryRemoveFacet syncing facetName entity optAddress world =
             match List.tryFind (fun facet -> Reflection.getTypeName facet = facetName) entity.FacetsNp with
             | Some facet ->
                 let (entity, world) =
                     match optAddress with
-                    | Some address -> facet.Unregister (address, entity, world)
+                    | Some address -> facet.Unregister (entity, address, world)
                     | None -> (entity, world)
                 let entity = { entity with Id = entity.Id } // hacky copy
                 let fieldNames = World.getEntityFieldDefinitionNamesToDetach entity facet
@@ -393,12 +393,12 @@ module WorldEntityModule =
                 let entity = { entity with FacetsNp = List.remove ((=) facet) entity.FacetsNp }
                 let world =
                     match optAddress with
-                    | Some address -> World.setEntity address entity world
+                    | Some address -> World.setEntity entity address world
                     | None -> world
                 Right (entity, world)
             | None -> Left <| "Failure to remove facet '" + facetName + "' from entity."
 
-        static member tryAddFacet syncing facetName optAddress (entity : Entity) world =
+        static member tryAddFacet syncing facetName (entity : Entity) optAddress world =
             match World.tryGetFacet facetName world with
             | Right facet ->
                 if Entity.isFacetCompatible world.Components.EntityDispatchers facet entity then
@@ -409,43 +409,43 @@ module WorldEntityModule =
                         else { entity with FacetNames = Reflection.getTypeName facet :: entity.FacetNames }
                     match optAddress with
                     | Some address ->
-                        let (entity, world) = facet.Register (address, entity, world)
-                        let world = World.setEntity address entity world
+                        let (entity, world) = facet.Register (entity, address, world)
+                        let world = World.setEntity entity address world
                         Right (entity, world)
                     | None -> Right (entity, world)
                 else Left <| "Facet '" + Reflection.getTypeName facet + "' is incompatible with entity '" + entity.Name + "'."
             | Left error -> Left error
 
-        static member tryRemoveFacets syncing facetNamesToRemove optAddress entity world =
+        static member tryRemoveFacets syncing facetNamesToRemove entity optAddress world =
             List.fold
                 (fun eitherEntityWorld facetName ->
                     match eitherEntityWorld with
-                    | Right (entity, world) -> World.tryRemoveFacet syncing facetName optAddress entity world
+                    | Right (entity, world) -> World.tryRemoveFacet syncing facetName entity optAddress world
                     | Left _ as left -> left)
                 (Right (entity, world))
                 facetNamesToRemove
 
-        static member tryAddFacets syncing facetNamesToAdd optAddress entity world =
+        static member tryAddFacets syncing facetNamesToAdd entity optAddress world =
             List.fold
                 (fun eitherEntityWorld facetName ->
                     match eitherEntityWorld with
-                    | Right (entity, world) -> World.tryAddFacet syncing facetName optAddress entity world
+                    | Right (entity, world) -> World.tryAddFacet syncing facetName entity optAddress world
                     | Left _ as left -> left)
                 (Right (entity, world))
                 facetNamesToAdd
 
-        static member trySetFacetNames oldFacetNames newFacetNames optAddress entity world =
+        static member trySetFacetNames oldFacetNames newFacetNames entity optAddress world =
             let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames newFacetNames
             let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames newFacetNames
-            match World.tryRemoveFacets false facetNamesToRemove optAddress entity world with
-            | Right (entity, world) -> World.tryAddFacets false facetNamesToAdd optAddress entity world
+            match World.tryRemoveFacets false facetNamesToRemove entity optAddress world with
+            | Right (entity, world) -> World.tryAddFacets false facetNamesToAdd entity optAddress world
             | Left _ as left -> left
 
-        static member trySynchronizeFacets oldFacetNames optAddress entity world =
+        static member trySynchronizeFacets oldFacetNames entity optAddress world =
             let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames entity.FacetNames
             let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames entity.FacetNames
-            match World.tryRemoveFacets true facetNamesToRemove optAddress entity world with
-            | Right (entity, world) -> World.tryAddFacets true facetNamesToAdd optAddress entity world
+            match World.tryRemoveFacets true facetNamesToRemove entity optAddress world with
+            | Right (entity, world) -> World.tryAddFacets true facetNamesToAdd entity optAddress world
             | Left _ as left -> left
 
         static member private attachIntrinsicFacetsViaNames (entity : Entity) world =
@@ -454,7 +454,7 @@ module WorldEntityModule =
             Reflection.attachIntrinsicFacets components.EntityDispatchers components.Facets entity.DispatcherNp entity
             entity
         
-        static member internal handleBodyTransformMessage (message : BodyTransformMessage) address (entity : Entity) world =
+        static member internal handleBodyTransformMessage (message : BodyTransformMessage) (entity : Entity) address world =
             // OPTIMIZATION: entity is not changed (avoiding a change entity event) if position and rotation haven't changed.
             if entity.Position <> message.Position || entity.Rotation <> message.Rotation then
                 let entity =
@@ -462,7 +462,7 @@ module WorldEntityModule =
                         // TODO: see if the following center-offsetting can be encapsulated within the Physics module!
                         Entity.setPosition (message.Position - entity.Size * 0.5f) |>
                         Entity.setRotation message.Rotation
-                let world = World.setEntity address entity world
+                let world = World.setEntity entity address world
                 (entity, world)
             else (entity, world)
 
@@ -524,7 +524,7 @@ module WorldEntityModule =
             
             // synchronize the entity's facets (and attach their fields)
             let entity =
-                match World.trySynchronizeFacets [] None entity world with
+                match World.trySynchronizeFacets [] entity None world with
                 | Right (entity, _) -> entity
                 | Left error -> debug error; entity
 

@@ -16,10 +16,10 @@ module World =
         { world with Camera = camera }
 
     /// Transform a bunch of simulants in the context of a world.
-    let transformSimulants transform patoca parentAddress simulants world =
+    let transformSimulants transform patoca simulants parentAddress world =
         Map.fold
             (fun (simulants, world) simulantName simulant ->
-                let (simulant, world) = transform (patoca parentAddress simulantName) simulant world
+                let (simulant, world) = transform simulant (patoca parentAddress simulantName) world
                 (Map.add simulantName simulant simulants, world))
             (Map.empty, world)
             simulants

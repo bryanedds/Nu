@@ -83,10 +83,10 @@ module WorldModule =
                         World.subscribe ScreenTransitionMouseX1Key (MouseX1EventAddress ->- AnyEventAddress) GameAddress World.handleAsSwallow |>
                         World.subscribe ScreenTransitionMouseX2Key (MouseX2EventAddress ->- AnyEventAddress) GameAddress World.handleAsSwallow |>
                         World.subscribe ScreenTransitionKeyboardKeyKey (KeyboardKeyEventAddress ->- AnyEventAddress) GameAddress World.handleAsSwallow
-            let world = World.setScreen address screen world
+            let world = World.setScreen screen address world
             (screen, world)
 
-        static member selectScreen screenAddress screen world =
+        static member selectScreen screen screenAddress world =
             let world =
                 match World.getOptSelectedScreenAddress world with
                 | Some selectedScreenAddress ->  World.publish4 () (DeselectEventAddress ->>- selectedScreenAddress) selectedScreenAddress world
@@ -108,7 +108,7 @@ module WorldModule =
                             let destinationScreen = World.getScreen destinationAddress world
                             let world = World.unsubscribe subscriptionKey world
                             let world = World.setOptScreenTransitionDestinationAddress None world
-                            let world = snd <| World.selectScreen address destinationScreen world
+                            let world = snd <| World.selectScreen destinationScreen address world
                             (Cascade, world)
                         | None -> failwith "No valid OptScreenTransitionDestinationAddress during screen transition!"
                     let world = World.setOptScreenTransitionDestinationAddress (Some destinationAddress) world
@@ -124,7 +124,7 @@ module WorldModule =
         // TODO: replace this with more sophisticated use of handleAsScreenTransition4, and so on for its brethren.
         static member private handleAsScreenTransitionFromSplash4<'d, 's when 's :> Simulant> eventHandling destinationAddress (_ : Event<'d, 's>) world =
             let destinationScreen = World.getScreen destinationAddress world
-            let world = snd <| World.selectScreen destinationAddress destinationScreen world
+            let world = snd <| World.selectScreen destinationScreen destinationAddress world
             (eventHandling, world)
 
         static member handleAsScreenTransitionFromSplash<'d, 's when 's :> Simulant> destinationAddress event world =
@@ -168,7 +168,7 @@ module WorldModule =
                         match world.State.Liveness with
                         | Running ->
                             let (finished, selectedScreen) = World.updateScreenTransition1 selectedScreen selectedScreen.Incoming
-                            let world = World.setScreen selectedScreenAddress selectedScreen world
+                            let world = World.setScreen selectedScreen selectedScreenAddress world
                             if finished then
                                 let world = snd <| World.setScreenState IdlingState selectedScreenAddress selectedScreen world
                                 World.publish4 () (IncomingFinishEventAddress ->>- selectedScreenAddress) selectedScreenAddress world
@@ -182,7 +182,7 @@ module WorldModule =
                     match world.State.Liveness with
                     | Running ->
                         let (finished, selectedScreen) = World.updateScreenTransition1 selectedScreen selectedScreen.Outgoing
-                        let world = World.setScreen selectedScreenAddress selectedScreen world
+                        let world = World.setScreen selectedScreen selectedScreenAddress world
                         if finished then
                             let world = snd <| World.setScreenState IdlingState selectedScreenAddress selectedScreen world
                             match world.State.Liveness with
@@ -217,7 +217,7 @@ module WorldModule =
             let world = World.subscribe SplashScreenTickKey TickEventAddress event.SubscriberAddress (World.handleSplashScreenIdleTick idlingTime 0L) world
             (Resolve, world)
 
-        static member addSplashScreen persistent splashData dispatcherName address destination world =
+        static member addSplashScreen persistent splashData dispatcherName destination address world =
             let splashScreen = { World.makeDissolveScreen splashData.DissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }
             let splashGroup = { World.makeGroup typeof<GroupDispatcher>.Name (Some "SplashGroup") world with Persistent = persistent }
             let splashLabel = { World.makeEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") world with Persistent = persistent }
@@ -226,7 +226,7 @@ module WorldModule =
             let splashLabel = Entity.setLabelImage splashData.SplashImage splashLabel
             let splashGroupHierarchies = Map.singleton splashGroup.Name (splashGroup, Map.singleton splashLabel.Name splashLabel)
             let splashScreenHierarchy = (splashScreen, splashGroupHierarchies)
-            let world = snd <| World.addScreen address splashScreenHierarchy world
+            let world = snd <| World.addScreen splashScreenHierarchy address world
             let world = World.monitor (IncomingFinishEventAddress ->>- address) address (World.handleSplashScreenIdle splashData.IdlingTime) world
             let world = World.monitor (OutgoingFinishEventAddress ->>- address) address (World.handleAsScreenTransitionFromSplash destination) world
             (splashScreen, world)
@@ -234,14 +234,14 @@ module WorldModule =
         static member addDissolveScreen persistent dissolveData dispatcherName address world =
             let dissolveScreen = { World.makeDissolveScreen dissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }
             let dissolveScreenHierarchy = (dissolveScreen, Map.empty)
-            World.addScreen address dissolveScreenHierarchy world
+            World.addScreen dissolveScreenHierarchy address world
 
-        static member addDissolveScreenFromGroupFile persistent dissolveData dispatcherName address groupFilePath world =
+        static member addDissolveScreenFromGroupFile persistent dissolveData dispatcherName groupFilePath address world =
             let dissolveScreen = { World.makeDissolveScreen dissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }
             let (group, entities) = World.readGroupHierarchyFromFile groupFilePath world
             let dissolveGroupHierarchies = Map.singleton group.Name (group, entities)
             let dissolveScreenHierarchy = (dissolveScreen, dissolveGroupHierarchies)
-            World.addScreen address dissolveScreenHierarchy world
+            World.addScreen dissolveScreenHierarchy address world
 
         static member private createIntrinsicOverlays entityDispatchers facets =
             let hasFacetNamesField = fun sourceType -> sourceType = typeof<EntityDispatcher>
@@ -281,11 +281,11 @@ module WorldModule =
                             | Some overlayName ->
                                 let oldFacetNames = entity.FacetNames
                                 Overlayer.applyOverlayToFacetNames overlayName overlayName entity oldOverlayer world.Subsystems.Overlayer
-                                match World.trySynchronizeFacets oldFacetNames (Some address) entity world with
+                                match World.trySynchronizeFacets oldFacetNames entity (Some address) world with
                                 | Right (entity, world) ->
                                     let facetNames = Entity.getFacetNames entity
                                     Overlayer.applyOverlay6 overlayName overlayName facetNames entity oldOverlayer world.Subsystems.Overlayer
-                                    World.setEntity address entity world
+                                    World.setEntity entity address world
                                 | Left error -> note <| "There was an issue in applying a reloaded overlay: " + error; world
                             | None -> world)
                         world
@@ -336,7 +336,7 @@ module WorldModule =
             Map.fold
                 (fun world _ (entity : Entity) ->
                     let entityAddress = gatoea groupAddress entity.Name
-                    Entity.propagatePhysics entityAddress entity world)
+                    Entity.propagatePhysics entity entityAddress world)
                 world
                 entityMap
 
@@ -401,7 +401,7 @@ module WorldModule =
                 match integrationMessage with
                 | BodyTransformMessage bodyTransformMessage ->
                     match World.getOptEntity (atoea bodyTransformMessage.SourceAddress) world with
-                    | Some entity -> snd <| World.handleBodyTransformMessage bodyTransformMessage (atoea bodyTransformMessage.SourceAddress) entity world
+                    | Some entity -> snd <| World.handleBodyTransformMessage bodyTransformMessage entity (atoea bodyTransformMessage.SourceAddress) world
                     | None -> world
                 | BodyCollisionMessage bodyCollisionMessage ->
                     match World.getOptEntity (atoea bodyCollisionMessage.SourceAddress) world with

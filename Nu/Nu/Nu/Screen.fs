@@ -28,11 +28,11 @@ module ScreenModule =
         static member setOutgoing value screen = { screen with Outgoing = value }
         static member setPersistent value (screen : Screen) = { screen with Persistent = value }
 
-        static member register address (screen : Screen) (world : World) : Screen * World =
-            screen.DispatcherNp.Register (address, screen, world)
+        static member register (screen : Screen) address world =
+            screen.DispatcherNp.Register (screen, address, world)
 
-        static member unregister address (screen : Screen) (world : World) : Screen * World =
-            screen.DispatcherNp.Unregister (address, screen, world)
+        static member unregister (screen : Screen) address world =
+            screen.DispatcherNp.Unregister (screen, address, world)
 
         static member isIdling screen =
             screen.ScreenStateNp = IdlingState
@@ -63,7 +63,7 @@ module WorldScreenModule =
             | [screenName] -> Map.tryFind screenName world.Screens
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
-        static member private screenAdder (address : Screen Address) child world =
+        static member private screenAdder child (address : Screen Address) world =
             match address.Names with
             | [screenName] -> { world with Screens = Map.add screenName child world.Screens }
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
@@ -73,20 +73,20 @@ module WorldScreenModule =
             | [screenName] -> { world with Screens = Map.remove screenName world.Screens }
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
-        static member getScreenBy address by world = by ^^ Option.get ^^ World.optScreenFinder address world
-        static member getScreen address world = World.getScreenBy address id world
-        static member setScreen address screen world = World.screenAdder address screen world
-        static member updateScreenW address updater world =
+        static member getScreenBy by address world = by ^^ Option.get ^^ World.optScreenFinder address world
+        static member getScreen address world = World.getScreenBy id address world
+        static member setScreen screen address world = World.screenAdder screen address world
+        static member updateScreenW updater address world =
             let screen = World.getScreen address world
             let screen = updater screen world
-            World.setScreen address screen world
-        static member updateScreen address updater world = World.updateScreenW address (fun screen _ -> updater screen) world
+            World.setScreen screen address world
+        static member updateScreen updater address world = World.updateScreenW (fun screen _ -> updater screen) address world
 
         static member getOptScreen address world = World.optScreenFinder address world
         static member containsScreen address world = Option.isSome <| World.getOptScreen address world
-        static member private setOptScreen address optScreen world =
+        static member private setOptScreen optScreen address world =
             match optScreen with
-            | Some screen -> World.setScreen address screen world
+            | Some screen -> World.setScreen screen address world
             | None -> World.screenRemover address world
 
         static member getOptScreenHierarchy address world =
@@ -124,45 +124,45 @@ module WorldScreenModule =
                     (screen, groupHierarchies))
                 screens
 
-        static member private registerScreen address screen world =
-            Screen.register address screen world
+        static member private registerScreen screen address world =
+            Screen.register screen address world
 
-        static member private unregisterScreen address screen world =
-            Screen.unregister address screen world
+        static member private unregisterScreen screen address world =
+            Screen.unregister screen address world
 
-        static member removeScreenImmediate address screen world =
+        static member removeScreenImmediate screen address world =
             let world = World.publish4 () (RemovingEventAddress ->>- address) address world
             let groupMap = World.getGroupMap address world
-            let world = snd <| World.removeGroupsImmediate address groupMap world
-            let (screen, world) = World.unregisterScreen address screen world
-            let world = World.setOptScreen address None world
+            let world = snd <| World.removeGroupsImmediate groupMap address world
+            let (screen, world) = World.unregisterScreen screen address world
+            let world = World.setOptScreen None address world
             (screen, world)
 
-        static member removeScreen address (screen : Screen) world =
+        static member removeScreen (screen : Screen) address world =
             let task =
                 { ScheduledTime = world.State.TickTime
                   Operation = fun world ->
                     match World.getOptScreen address world with
-                    | Some screen -> snd <| World.removeScreenImmediate address screen world
+                    | Some screen -> snd <| World.removeScreenImmediate screen address world
                     | None -> world }
             let world = World.addTask task world
             (screen, world)
 
-        static member removeScreenIf address pred world =
+        static member removeScreenIf pred address world =
             let screen = World.getScreen address world
-            if pred screen then World.removeScreen address screen world
+            if pred screen then World.removeScreen screen address world
             else (screen, world)
 
-        static member addScreen address screenHierarchy world =
+        static member addScreen screenHierarchy address world =
             let (screen, groupHierarchies) = screenHierarchy
             if not <| World.containsScreen address world then
                 let (screen, world) =
                     match World.getOptScreen address world with
-                    | Some _ -> World.removeScreenImmediate address screen world
+                    | Some _ -> World.removeScreenImmediate screen address world
                     | None -> (screen, world)
-                let world = World.setScreen address screen world
-                let world = snd <| World.addGroups address groupHierarchies world
-                let (screen, world) = World.registerScreen address screen world
+                let world = World.setScreen screen address world
+                let world = snd <| World.addGroups groupHierarchies address world
+                let (screen, world) = World.registerScreen screen address world
                 let world = World.publish4 () (AddEventAddress ->>- address) address world
                 (screen, world)
             else failwith <| "Adding a screen that the world already contains at address '" + acstring address + "'."

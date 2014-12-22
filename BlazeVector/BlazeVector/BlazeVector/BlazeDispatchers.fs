@@ -29,15 +29,15 @@ module BulletModule =
             if World.isGamePlaying world then
                 let bullet = Entity.setAge (bullet.Age + 1L) bullet
                 let world =
-                    if bullet.Age < 28L then World.setEntity address bullet world
-                    else snd <| World.removeEntity address bullet world
+                    if bullet.Age < 28L then World.setEntity bullet address world
+                    else snd <| World.removeEntity bullet address world
                 (Cascade, world)
             else (Cascade, world)
 
         let handleCollision event world =
             let (address, bullet : Entity) = World.unwrapAS event world
             if World.isGamePlaying world then
-                let world = snd <| World.removeEntity address bullet world
+                let world = snd <| World.removeEntity bullet address world
                 (Cascade, world)
             else (Cascade, world)
 
@@ -56,7 +56,7 @@ module BulletModule =
             [typeof<RigidBodyFacet>.Name
              typeof<SpriteFacet>.Name]
 
-        override dispatcher.Register (address, bullet, world) =
+        override dispatcher.Register (bullet, address, world) =
             let world = World.monitor TickEventAddress address handleTick world
             let world = World.monitor (CollisionEventAddress ->>- address) address handleCollision world
             (bullet, world)
@@ -79,15 +79,15 @@ module EnemyModule =
             let force = Vector2 (-2000.0f, -20000.0f)
             World.applyBodyForce force enemy.PhysicsId world
 
-        let die address (enemy : Entity) world =
-            let world = snd <| World.removeEntity address enemy world
+        let die (enemy : Entity) address world =
+            let world = snd <| World.removeEntity enemy address world
             World.playSound 1.0f ExplosionSound world
 
         let handleTick event world =
             let (address, enemy : Entity) = World.unwrapAS event world
             if World.isGamePlaying world then
                 let world = if hasAppeared world.Camera enemy then move enemy world else world
-                let world = if enemy.Health <= 0 then die address enemy world else world
+                let world = if enemy.Health <= 0 then die enemy address world else world
                 (Cascade, world)
             else (Cascade, world)
 
@@ -98,7 +98,7 @@ module EnemyModule =
                 let isBullet = Entity.dispatchesAs typeof<BulletDispatcher> collidee
                 if isBullet then
                     let enemy = Entity.setHealth (enemy.Health - 1) enemy
-                    let world = World.setEntity address enemy world
+                    let world = World.setEntity enemy address world
                     let world = World.playSound 1.0f HitSound world
                     (Cascade, world)
                 else (Cascade, world)
@@ -121,7 +121,7 @@ module EnemyModule =
             [typeof<RigidBodyFacet>.Name
              typeof<AnimatedSpriteFacet>.Name]
 
-        override dispatcher.Register (address, enemy, world) =
+        override dispatcher.Register (enemy, address, world) =
             let world =
                 world |>
                 World.monitor TickEventAddress address handleTick |>
@@ -148,23 +148,23 @@ module PlayerModule =
         let [<Literal>] FallForce = -30000.0f
         let [<Literal>] ClimbForce = 12000.0f
 
-        let createBullet bulletAddress (playerTransform : Transform) world =
+        let createBullet (playerTransform : Transform) bulletAddress world =
             let bullet = World.makeEntity typeof<BulletDispatcher>.Name (Some <| Address.last bulletAddress) world
             let bullet =
                 bullet |>
                     Entity.setPosition (playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)) |>
                     Entity.setDepth playerTransform.Depth
-            World.addEntity bulletAddress bullet world
+            World.addEntity bullet bulletAddress world
 
         let propelBullet (bullet : Entity) world =
             let world = World.applyBodyLinearImpulse (Vector2 (50.0f, 0.0f)) bullet.PhysicsId world
             let world = World.playSound 1.0f ShotSound world
             (bullet, world)
 
-        let shootBullet playerAddress (player : Entity) world =
+        let shootBullet (player : Entity) playerAddress world =
             let bulletAddress = gatoea (eatoga playerAddress) (acstring <| Core.makeId ())
             let playerTransform = Entity.getTransform player
-            let (bullet, world) = createBullet bulletAddress playerTransform world
+            let (bullet, world) = createBullet playerTransform bulletAddress world
             propelBullet bullet world
 
         let handleSpawnBullet event world =
@@ -172,7 +172,7 @@ module PlayerModule =
             if World.isGamePlaying world then
                 if not <| Entity.hasFallen player then
                     if world.State.TickTime % 6L = 0L then
-                        let world = snd <| shootBullet address player world
+                        let world = snd <| shootBullet player address world
                         (Cascade, world)
                     else (Cascade, world)
                 else (Cascade, world)
@@ -197,7 +197,7 @@ module PlayerModule =
                         Vector2.Multiply (groundTangent, Vector2 (WalkForce, downForce))
                     | None -> Vector2 (WalkForce, FallForce)
                 let world = World.applyBodyForce force physicsId world
-                let world = World.setEntity address player world
+                let world = World.setEntity player address world
                 (Cascade, world)
             else (Cascade, world)
 
@@ -209,7 +209,7 @@ module PlayerModule =
                     let player = Entity.setLastTimeJumpNp world.State.TickTime player
                     let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 18000.0f)) player.PhysicsId world
                     let world = World.playSound 1.0f JumpSound world
-                    let world = World.setEntity address player world
+                    let world = World.setEntity player address world
                     (Cascade, world)
                 else (Cascade, world)
             else (Cascade, world)
@@ -240,7 +240,7 @@ module PlayerModule =
             [typeof<RigidBodyFacet>.Name
              typeof<AnimatedSpriteFacet>.Name]
 
-        override dispatcher.Register (address, player, world) =
+        override dispatcher.Register (player, address, world) =
             let world =
                 world |>
                 World.monitor TickEventAddress address handleSpawnBullet |>
@@ -279,7 +279,7 @@ module StagePlayModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        override dispatcher.Register (address, group, world) =
+        override dispatcher.Register (group, address, world) =
             let world =
                 world |>
                 World.monitor TickEventAddress address handleAdjustCamera |>
@@ -313,7 +313,7 @@ module StageScreenModule =
                     yield makeSectionFromFile sectionFilePaths.[sectionFilePathIndex] (SectionName + acstring i) (xShift * single i) world]
             let stagePlayHierarchy = (StagePlayName, World.readGroupHierarchyFromFile StagePlayFilePath world)
             let groupHierarchies = Map.ofList <| stagePlayHierarchy :: sectionHierarchies
-            let world = snd <| World.addGroups event.SubscriberAddress groupHierarchies world
+            let world = snd <| World.addGroups groupHierarchies event.SubscriberAddress world
             let world = World.playSong 0 1.0f DeadBlazeSong world
             (Cascade, world)
 
@@ -325,10 +325,10 @@ module StageScreenModule =
             let sectionNames = [for i in 0 .. SectionCount do yield SectionName + acstring i]
             let groupNames = StagePlayName :: sectionNames
             let groupMap = World.getGroupMap3 groupNames event.SubscriberAddress world
-            let world = snd <| World.removeGroups event.SubscriberAddress groupMap world
+            let world = snd <| World.removeGroups groupMap event.SubscriberAddress world
             (Cascade, world)
 
-        override dispatcher.Register (address, screen, world) =
+        override dispatcher.Register (screen, address, world) =
             let world =
                 world |>
                 World.monitor (SelectEventAddress ->>- address) address handleStartPlay |>

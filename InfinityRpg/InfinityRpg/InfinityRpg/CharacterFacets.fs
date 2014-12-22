@@ -187,6 +187,6 @@ module CharacterCameraFacetModule =
             let camera = { world.Camera with EyeCenter = eyeCenter }
             (Cascade, World.setCamera camera world)
 
-        override facet.Register (address, entity, world) =
+        override facet.Register (entity, address, world) =
             let world = observe TickEventAddress address |> monitor handleTick <| world
             (entity, world)

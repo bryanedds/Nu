@@ -65,7 +65,7 @@ module RigidBodyFacetModule =
              define? IsBullet false
              define? IsSensor false]
 
-        override facet.RegisterPhysics (address, entity, world) =
+        override facet.RegisterPhysics (entity, address, world) =
             let bodyProperties = 
                 { BodyId = entity.PhysicsId.BodyId
                   Position = entity.Position + entity.Size * 0.5f
@@ -85,7 +85,7 @@ module RigidBodyFacetModule =
                   IsSensor = entity.IsSensor }
             World.createBody address entity.Id bodyProperties world
 
-        override facet.UnregisterPhysics (_, entity, world) =
+        override facet.UnregisterPhysics (entity, _, world) =
             World.destroyBody entity.PhysicsId world
 
         override facet.PropagatePhysics (address, entity, world) =
@@ -253,7 +253,7 @@ module GuiDispatcherModule =
              define? DisabledColor <| Vector4 0.75f
              define? SwallowMouseLeft true]
 
-        override dispatcher.Register (address, gui, world) =
+        override dispatcher.Register (gui, address, world) =
             let world =
                 world |>
                 World.monitor MouseLeftDownEventAddress address handleMouseLeft |>
@@ -284,7 +284,7 @@ module ButtonDispatcherModule =
                 if Math.isPointInBounds3 mousePositionWorld button.Position button.Size && button.Visible then
                     if button.Enabled then
                         let button = Entity.setDown true button
-                        let world = World.setEntity address button world
+                        let world = World.setEntity button address world
                         let world = World.publish4 () (DownEventAddress ->>- address) address world
                         (Resolve, world)
                     else (Resolve, world)
@@ -296,7 +296,7 @@ module ButtonDispatcherModule =
             if World.isAddressSelected address world then
                 let wasDown = button.Down
                 let button = Entity.setDown false button
-                let world = World.setEntity address button world
+                let world = World.setEntity button address world
                 let mousePositionWorld = Camera.mouseToWorld button.ViewType mouseButtonData.Position world.Camera
                 if Math.isPointInBounds3 mousePositionWorld button.Position button.Size && button.Visible then
                     if button.Enabled && wasDown then
@@ -318,7 +318,7 @@ module ButtonDispatcherModule =
              define? DownImage { PackageName = DefaultPackageName; AssetName = "Image2" }
              define? OptClickSound <| Some { PackageName = DefaultPackageName; AssetName = "Sound" }]
 
-        override dispatcher.Register (address, button, world) =
+        override dispatcher.Register (button, address, world) =
             let world =
                 world |>
                 World.monitor MouseLeftDownEventAddress address handleMouseLeftDown |>
@@ -463,7 +463,7 @@ module ToggleDispatcherModule =
                 if Math.isPointInBounds3 mousePositionWorld toggle.Position toggle.Size && toggle.Visible then
                     if toggle.Enabled then
                         let toggle = Entity.setPressed true toggle
-                        let world = World.setEntity address toggle world
+                        let world = World.setEntity toggle address world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -474,12 +474,12 @@ module ToggleDispatcherModule =
             if World.isAddressSelected address world then
                 let wasPressed = toggle.Pressed
                 let toggle = Entity.setPressed false toggle
-                let world = World.setEntity address toggle world
+                let world = World.setEntity toggle address world
                 let mousePositionWorld = Camera.mouseToWorld toggle.ViewType mouseButtonData.Position world.Camera
                 if Math.isPointInBounds3 mousePositionWorld toggle.Position toggle.Size && toggle.Visible then
                     if toggle.Enabled && wasPressed then
                         let toggle = Entity.setOn (not toggle.On) toggle
-                        let world = World.setEntity address toggle world
+                        let world = World.setEntity toggle address world
                         let eventAddress = if toggle.On then OnEventAddress else OffEventAddress
                         let world = World.publish4 () (eventAddress ->>- address) address world
                         let world =
@@ -499,7 +499,7 @@ module ToggleDispatcherModule =
              define? OnImage { PackageName = DefaultPackageName; AssetName = "Image2" }
              define? OptToggleSound <| Some { PackageName = DefaultPackageName; AssetName = "Sound" }]
 
-        override dispatcher.Register (address, toggle, world) =
+        override dispatcher.Register (toggle, address, world) =
             let world =
                 world |>
                 World.monitor MouseLeftDownEventAddress address handleMouseLeftDown |>
@@ -544,7 +544,7 @@ module FeelerDispatcherModule =
                 if Math.isPointInBounds3 mousePositionWorld feeler.Position feeler.Size && feeler.Visible then
                     if feeler.Enabled then
                         let feeler = Entity.setTouched true feeler
-                        let world = World.setEntity address feeler world
+                        let world = World.setEntity feeler address world
                         let world = World.publish4 mouseButtonData.Position (TouchEventAddress ->>- address) address world
                         (Resolve, world)
                     else (Resolve, world)
@@ -556,7 +556,7 @@ module FeelerDispatcherModule =
             if World.isAddressSelected address world && feeler.Visible then
                 if feeler.Enabled then
                     let feeler = Entity.setTouched false feeler
-                    let world = World.setEntity address feeler world
+                    let world = World.setEntity feeler address world
                     let world = World.publish4 mouseButtonData.Position (UntouchEventAddress ->>- address) address world
                     (Resolve, world)
                 else (Resolve, world)
@@ -566,7 +566,7 @@ module FeelerDispatcherModule =
             [define? SwallowMouseLeft false
              define? Touched false]
 
-        override dispatcher.Register (address, feeler, world) =
+        override dispatcher.Register (feeler, address, world) =
             let world =
                 world |>
                 World.monitor MouseLeftDownEventAddress address handleMouseLeftDown |>
@@ -786,14 +786,14 @@ module TileMapDispatcherModule =
                     tileLayer.Tiles
             else []
         
-        let registerTileLayerPhysics address tileMap tileMapData tileLayerIndex world tileLayer =
+        let registerTileLayerPhysics tileMap tileMapData address tileLayerIndex world tileLayer =
             let bodyPropertyList = getTileLayerBodyPropertyList tileMap tileMapData tileLayerIndex tileLayer
             World.createBodies address tileMap.Id bodyPropertyList world
 
-        let registerTileMapPhysics address (tileMap : Entity) world =
+        let registerTileMapPhysics (tileMap : Entity) address world =
             let tileMapData = Entity.makeTileMapData tileMap.TileMapAsset world
             Seq.foldi
-                (registerTileLayerPhysics address tileMap tileMapData)
+                (registerTileLayerPhysics tileMap tileMapData address)
                 world
                 tileMapData.Map.Layers
 
@@ -830,18 +830,18 @@ module TileMapDispatcherModule =
              define? TileMapAsset { PackageName = DefaultPackageName; AssetName = "TileMap" }
              define? Parallax 0.0f]
 
-        override dispatcher.Register (address, tileMap, world) =
-            let world = registerTileMapPhysics address tileMap world
+        override dispatcher.Register (tileMap, address, world) =
+            let world = registerTileMapPhysics tileMap address world
             (tileMap, world)
 
-        override dispatcher.Unregister (_, tileMap, world) =
+        override dispatcher.Unregister (tileMap, _, world) =
             let world = unregisterTileMapPhysics tileMap world
             (tileMap, world)
             
-        override dispatcher.PropagatePhysics (address, tileMap, world) =
+        override dispatcher.PropagatePhysics (tileMap, address, world) =
             world |>
                 unregisterTileMapPhysics tileMap |>
-                registerTileMapPhysics address tileMap
+                registerTileMapPhysics tileMap address
 
         override dispatcher.GetRenderDescriptors (tileMap, world) =
             if tileMap.Visible then

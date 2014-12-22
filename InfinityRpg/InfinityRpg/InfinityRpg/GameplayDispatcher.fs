@@ -46,7 +46,7 @@ module GameplayDispatcherModule =
         
         // hud entities
         static let getHudHalt gameplayAddress world = World.getEntity (getHudHaltAddress gameplayAddress) world
-        static let setHudHalt field gameplayAddress world = World.setEntity (getHudHaltAddress gameplayAddress) field world
+        static let setHudHalt field gameplayAddress world = World.setEntity field (getHudHaltAddress gameplayAddress) world
 
         // scene addresses
         static let getSceneAddress gameplayAddress = satoga gameplayAddress SceneName
@@ -172,7 +172,7 @@ module GameplayDispatcherModule =
                         Entity.setActivityState (Navigation navigationDescriptor) character
                     | None -> Entity.setActivityState NoActivity character
                 | WalkContinuing -> character
-            World.setEntity characterAddress character world
+            World.setEntity character characterAddress world
 
         static let updateCharacterByAction actionDescriptor characterAddress world =
             let tickTime = world.State.TickTime
@@ -189,7 +189,7 @@ module GameplayDispatcherModule =
                     character |>
                         Entity.setActivityState NoActivity |>
                         Entity.setCharacterAnimationState (getCharacterAnimationStateByActionEnd tickTime character.CharacterAnimationState)
-            World.setEntity characterAddress character world
+            World.setEntity character characterAddress world
 
         static let determineCharacterTurnFromDirection direction occupationMap (character : Entity) opponents =
             match character.ActivityState with
@@ -338,7 +338,7 @@ module GameplayDispatcherModule =
                 enemies
                 []
 
-        static let runCharacterReaction initiatorAddress actionDescriptor gameplayAddress world =
+        static let runCharacterReaction actionDescriptor initiatorAddress gameplayAddress world =
             // TODO: implement animations
             let initiator = World.getEntity initiatorAddress world
             if actionDescriptor.ActionTicks = ActionTicksMax then
@@ -347,26 +347,26 @@ module GameplayDispatcherModule =
                 let reactorDamage = initiator.PowerBuff * 5.0f - reactor.ShieldBuff |> int
                 let reactorHitPoints = reactor.HitPoints - reactorDamage
                 let reactor = Entity.setHitPoints reactorHitPoints reactor
-                let world = World.setEntity reactorAddress reactor world
+                let world = World.setEntity reactor reactorAddress world
                 if reactor.HitPoints <= 0 then
                     if reactor.Name = PlayerName
                     then World.transitionScreen TitleAddress world
-                    else snd <| World.removeEntity reactorAddress reactor world
+                    else snd <| World.removeEntity reactor reactorAddress world
                 else world
             else world
 
-        static let runCharacterNavigation characterAddress newNavigationDescriptor gameplayAddress world =
+        static let runCharacterNavigation newNavigationDescriptor characterAddress gameplayAddress world =
             let desync = desync {
-                do! updateEntity characterAddress (Entity.setActivityState <| Navigation newNavigationDescriptor)
+                do! updateEntity (Entity.setActivityState <| Navigation newNavigationDescriptor) characterAddress
                 do! during
                         (fun world ->
-                            match World.getEntityBy characterAddress (fun entity -> entity.ActivityState) world  with
+                            match World.getEntityBy (fun entity -> entity.ActivityState) characterAddress world with
                             | Navigation nd -> newNavigationDescriptor.WalkDescriptor.WalkOriginM = nd.WalkDescriptor.WalkOriginM
                             | Action _ | NoActivity -> false) ^^
                         desync {
                             do! update <| fun world ->
                                 let navigationDescriptor =
-                                    match World.getEntityBy characterAddress (fun entity -> entity.ActivityState) world with
+                                    match World.getEntityBy (fun entity -> entity.ActivityState) characterAddress world with
                                     | Navigation navigationDescriptor -> navigationDescriptor
                                     | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
                                 updateCharacterByNavigation navigationDescriptor characterAddress world
@@ -374,52 +374,52 @@ module GameplayDispatcherModule =
             let obs = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- gameplayAddress)
             snd <| runDesyncAssumingCascade desync obs world
 
-        static let runCharacterAction characterAddress newActionDescriptor gameplayAddress world =
+        static let runCharacterAction newActionDescriptor characterAddress gameplayAddress world =
             // NOTE: currently just implements attack
             let desync = desync {
-                do! updateEntity characterAddress (Entity.setActivityState <| Action newActionDescriptor)
+                do! updateEntity (Entity.setActivityState <| Action newActionDescriptor) characterAddress
                 do! during
                         (fun world ->
-                            let activityState = World.getEntityBy characterAddress (fun entity -> entity.ActivityState) world 
+                            let activityState = World.getEntityBy (fun entity -> entity.ActivityState) characterAddress world 
                             ActivityState.isActing activityState) ^^
                         desync {
                             do! update <| fun world ->
                                 let actionDescriptor =
-                                    match World.getEntityBy characterAddress (fun entity -> entity.ActivityState) world  with
+                                    match World.getEntityBy (fun entity -> entity.ActivityState) characterAddress world  with
                                     | Action actionDescriptor -> actionDescriptor
                                     | _ -> failwithumf ()
                                 let world = updateCharacterByAction actionDescriptor characterAddress world
-                                runCharacterReaction characterAddress actionDescriptor gameplayAddress world
+                                runCharacterReaction actionDescriptor characterAddress gameplayAddress world
                             do! next () }}
             let obs = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- gameplayAddress)
             snd <| runDesyncAssumingCascade desync obs world
 
         static let runCharacterNoActivity characterAddress world =
-            World.updateEntity characterAddress (Entity.setActivityState NoActivity) world
+            World.updateEntity (Entity.setActivityState NoActivity) characterAddress world
 
-        static let runCharacterActivity characterAddress newActivity gameplayAddress world =
+        static let runCharacterActivity newActivity characterAddress gameplayAddress world =
             match newActivity with
-            | Action newActionDescriptor -> runCharacterAction characterAddress newActionDescriptor gameplayAddress world
-            | Navigation newNavigationDescriptor -> runCharacterNavigation characterAddress newNavigationDescriptor gameplayAddress world
+            | Action newActionDescriptor -> runCharacterAction newActionDescriptor characterAddress gameplayAddress world
+            | Navigation newNavigationDescriptor -> runCharacterNavigation newNavigationDescriptor characterAddress gameplayAddress world
             | NoActivity -> runCharacterNoActivity characterAddress world
 
-        static let tryRunEnemyActivity gameplayAddress world enemyAddress newActivity =
+        static let tryRunEnemyActivity gameplayAddress world newActivity enemyAddress =
             if newActivity <> NoActivity then
                 let enemy = World.getEntity enemyAddress world
                 let enemy = Entity.setDesiredTurn NoTurn enemy
-                let world = World.setEntity enemyAddress enemy world
-                runCharacterActivity enemyAddress newActivity gameplayAddress world
+                let world = World.setEntity enemy enemyAddress world
+                runCharacterActivity newActivity enemyAddress gameplayAddress world
             else world
 
-        static let runEnemyNavigationActivities enemyAddresses enemyNavigationActivities gameplayAddress world =
+        static let runEnemyNavigationActivities enemyNavigationActivities enemyAddresses gameplayAddress world =
             if List.exists ActivityState.isNavigating enemyNavigationActivities
-            then List.fold2 (tryRunEnemyActivity gameplayAddress) world enemyAddresses enemyNavigationActivities
+            then List.fold2 (tryRunEnemyActivity gameplayAddress) world enemyNavigationActivities enemyAddresses
             else world
 
-        static let runEnemyActivities enemyAddresses enemyActionActivities enemyNavigationActivities gameplayAddress world =
+        static let runEnemyActivities enemyActionActivities enemyNavigationActivities enemyAddresses gameplayAddress world =
             let anyEnemyActionActivity = List.exists ActivityState.isActing enemyActionActivities
             let newEnemyActivities = if anyEnemyActionActivity then enemyActionActivities else enemyNavigationActivities
-            List.fold2 (tryRunEnemyActivity gameplayAddress) world enemyAddresses newEnemyActivities
+            List.fold2 (tryRunEnemyActivity gameplayAddress) world newEnemyActivities enemyAddresses
 
         static let runPlayerTurn playerTurn gameplayAddress world =
 
@@ -442,7 +442,7 @@ module GameplayDispatcherModule =
                 match optNewPlayerActivity with
                 | Some newPlayerActivity ->
                     let playerAddress = getPlayerAddress gameplayAddress
-                    runCharacterActivity playerAddress newPlayerActivity gameplayAddress world
+                    runCharacterActivity newPlayerActivity playerAddress gameplayAddress world
                 | None -> world
 
             // determine (and set) enemy desired turns if applicable
@@ -458,7 +458,7 @@ module GameplayDispatcherModule =
                     let enemies = List.map2 Entity.setDesiredTurn enemyDesiredTurns enemies
                     let world = World.setEntities (getSceneAddress gameplayAddress) enemies world
                     let gameplay = Screen.setOngoingRandState (Rand.getState rand) gameplay
-                    World.setScreen gameplayAddress gameplay world
+                    World.setScreen gameplay gameplayAddress world
                 | Some NoActivity
                 | None -> world
 
@@ -471,12 +471,12 @@ module GameplayDispatcherModule =
                 | Navigation _ ->
                     let enemyAddresses = getCharacterAddresses enemies gameplayAddress
                     let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
-                    runEnemyNavigationActivities enemyAddresses newEnemyNavigationActivities gameplayAddress world
+                    runEnemyNavigationActivities newEnemyNavigationActivities enemyAddresses gameplayAddress world
                 | NoActivity ->
                     let enemyAddresses = getCharacterAddresses enemies gameplayAddress
                     let newEnemyActionActivities = determineEnemyActionActivities enemies
                     let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
-                    runEnemyActivities enemyAddresses newEnemyActionActivities newEnemyNavigationActivities gameplayAddress world
+                    runEnemyActivities newEnemyActionActivities newEnemyNavigationActivities enemyAddresses gameplayAddress world
 
             // teh world
             world
@@ -487,11 +487,11 @@ module GameplayDispatcherModule =
                 let hudHaltAddress = getHudHaltAddress gameplayAddress
                 let playerAddress = getPlayerAddress gameplayAddress
                 let desync = desync {
-                    do! updateEntity hudSaveGameAddress <| Entity.setEnabled false
+                    do! updateEntity (Entity.setEnabled false) hudSaveGameAddress
                     do! loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress gameplayAddress world) <| fun i -> desync {
                         let! event = nextE ()
                         do! match event.Data with
-                            | Left _ -> updateEntity playerAddress cancelNavigation
+                            | Left _ -> updateEntity cancelNavigation playerAddress
                             | Right _ ->
                                 if i = 0
                                 then updateBy
@@ -500,7 +500,7 @@ module GameplayDispatcherModule =
                                 else updateBy
                                         (determinePlayerTurn gameplayAddress)
                                         (fun playerTurn -> runPlayerTurn playerTurn gameplayAddress) }
-                    do! updateEntity hudSaveGameAddress <| Entity.setEnabled true }
+                    do! updateEntity (Entity.setEnabled true) hudSaveGameAddress }
                 let obs =
                     observe (ClickEventAddress ->>- hudHaltAddress) gameplayAddress |>
                     sum TickEventAddress |>
@@ -527,7 +527,7 @@ module GameplayDispatcherModule =
             let world = tryRunPlayerTurn playerInput event.SubscriberAddress world
             (Cascade, world)
 
-        static let handleNewGame gameplayAddress gameplay world =
+        static let handleNewGame gameplay gameplayAddress world =
 
             // get common addresses
             let sceneAddress = getSceneAddress gameplayAddress
@@ -540,7 +540,7 @@ module GameplayDispatcherModule =
             // initialize gameplay screen
             let gameplay = Screen.setContentRandState contentSeedState gameplay
             let gameplay = Screen.setOngoingRandState ongoingSeedState gameplay
-            let world = World.setScreen gameplayAddress gameplay world
+            let world = World.setScreen gameplay gameplayAddress world
 
             // make rand from gameplay
             let rand = Rand.make gameplay.ContentRandState
@@ -555,7 +555,7 @@ module GameplayDispatcherModule =
 
             // make enemies
             let (enemies, _) = makeEnemies world rand
-            let world = snd <| World.addEntities sceneAddress enemies world
+            let world = snd <| World.addEntities enemies sceneAddress world
 
             // make scene hierarchy
             let entityMap = Map.ofList [(field.Name, field); (player.Name, player)]
@@ -563,9 +563,9 @@ module GameplayDispatcherModule =
             let sceneHierarchy = (scene, entityMap)
 
             // add scene hierarchy to world
-            snd <| World.addGroup sceneAddress sceneHierarchy world
+            snd <| World.addGroup sceneHierarchy sceneAddress world
 
-        static let handleLoadGame gameplayAddress gameplay world =
+        static let handleLoadGame gameplay gameplayAddress world =
 
             // get common addresses
             let sceneAddress = getSceneAddress gameplayAddress
@@ -575,7 +575,7 @@ module GameplayDispatcherModule =
             let (gameplayFromRead, groupHierarchies) = gameplayHierarchy
             let gameplay = Screen.setContentRandState gameplayFromRead.ContentRandState gameplay
             let gameplay = Screen.setOngoingRandState gameplayFromRead.OngoingRandState gameplay
-            let world = World.setScreen gameplayAddress gameplay world
+            let world = World.setScreen gameplay gameplayAddress world
 
             // make rand from gameplay
             let rand = Rand.make gameplay.ContentRandState
@@ -590,7 +590,7 @@ module GameplayDispatcherModule =
             let sceneHierarchy = (scene, entityMap)
 
             // add scene hierarchy to world
-            snd <| World.addGroup sceneAddress sceneHierarchy world
+            snd <| World.addGroup sceneHierarchy sceneAddress world
 
         static let handleSelectGameplay event world =
             let (gameplayAddress, gameplay : Screen) = World.unwrapAS event world
@@ -598,8 +598,8 @@ module GameplayDispatcherModule =
                 // NOTE: doing a File.Exists then loading the file is dangerous since the file can
                 // always be deleted / moved between the two operations!
                 if gameplay.ShallLoadGame && File.Exists SaveFilePath
-                then handleLoadGame gameplayAddress gameplay world
-                else handleNewGame gameplayAddress gameplay world
+                then handleLoadGame gameplay gameplayAddress world
+                else handleNewGame gameplay gameplayAddress world
             (Cascade, world)
             
         static let handleClickSaveGame event world =
@@ -612,7 +612,7 @@ module GameplayDispatcherModule =
             let gameplayAddress = World.unwrapA event world
             let sceneAddress = getSceneAddress gameplayAddress
             let scene = World.getGroup sceneAddress world
-            let world = snd <| World.removeGroup sceneAddress scene world
+            let world = snd <| World.removeGroup scene sceneAddress world
             (Cascade, world)
 
         static member FieldDefinitions =
@@ -620,7 +620,7 @@ module GameplayDispatcherModule =
              define? OngoingRandState Rand.DefaultSeedState
              define? ShallLoadGame false]
 
-        override dispatcher.Register (gameplayAddress, gameplay, world) =
+        override dispatcher.Register (gameplay, gameplayAddress, world) =
             let world =
                 world |>
                 (observe (EntityChangeEventAddress ->>- getPlayerAddress gameplayAddress) gameplayAddress |> subscribe handlePlayerChange) |>

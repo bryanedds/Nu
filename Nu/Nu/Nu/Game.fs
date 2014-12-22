@@ -61,7 +61,7 @@ module WorldGameModule =
         static member setOptSelectedScreen optScreen world =
             let optSelectedScreenAddress = World.getOptSelectedScreenAddress world
             match optSelectedScreenAddress with
-            | Some selectedScreenAddress -> World.setScreen selectedScreenAddress (Option.get optScreen) world
+            | Some selectedScreenAddress -> World.setScreen (Option.get optScreen) selectedScreenAddress world
             | None -> failwith "Cannot set a non-existent screen."
 
         static member getSelectedScreen world = Option.get <| World.getOptSelectedScreen world
