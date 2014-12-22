@@ -52,17 +52,21 @@ module GameplayDispatcherModule =
         static let getSceneAddress gameplayAddress = satoga gameplayAddress SceneName
         static let getFieldAddress gameplayAddress = gatoea (getSceneAddress gameplayAddress) FieldName
         static let getPlayerAddress gameplayAddress = gatoea (getSceneAddress gameplayAddress) PlayerName
-        static let getEnemyAddress gameplayAddress enemyName = gatoea (getSceneAddress gameplayAddress) enemyName
-        static let getEnemyAddresses gameplayAddress enemies = List.map (fun (enemy : Entity) -> getEnemyAddress gameplayAddress enemy.Name) enemies
-        
+        static let getCharacterAddress (character : Entity) gameplayAddress = gatoea (getSceneAddress gameplayAddress) character.Name
+        static let getCharacterAddresses characters gameplayAddress = List.map (fun character -> getCharacterAddress character gameplayAddress) characters
+
         // scene entities
         static let getField gameplayAddress world = World.getEntity (getFieldAddress gameplayAddress) world
+        static let getOptCharacterAtPosition position gameplayAddress world =
+            let characters = world |> World.getEntities (getSceneAddress gameplayAddress) |> Seq.filter (Entity.dispatchesAs typeof<CharacterDispatcher>)
+            Seq.tryFind (fun (character : Entity) -> character.Position = position) characters
+        //static let getCharacterAtPosition position gameplayAddress world = Option.get <| getOptCharacterAtPosition position gameplayAddress world
+        static let getOptCharacterInDirection position direction gameplayAddress world = getOptCharacterAtPosition (position + dtovf direction) gameplayAddress world
+        static let getCharacterInDirection position direction gameplayAddress world = Option.get <| getOptCharacterInDirection position direction gameplayAddress world
         static let getPlayer gameplayAddress world = World.getEntity (getPlayerAddress gameplayAddress) world
-        static let getEnemies gameplayAddress world =
-            World.getEntities (getSceneAddress gameplayAddress) world |> Seq.filter (Entity.dispatchesAs typeof<EnemyDispatcher>) |> List.ofSeq
-        static let getParticipants gameplayAddress world =
-            (getField gameplayAddress world, getPlayer gameplayAddress world, getEnemies gameplayAddress world)
-        
+        static let getEnemies gameplayAddress world = World.getEntities (getSceneAddress gameplayAddress) world |> Seq.filter (Entity.dispatchesAs typeof<EnemyDispatcher>) |> List.ofSeq
+        static let getParticipants gameplayAddress world = (getField gameplayAddress world, getPlayer gameplayAddress world, getEnemies gameplayAddress world)
+
         static let makeField rand world =
             let pathEdgesM = [(Vector2i (1, 10), Vector2i (20, 10))]
             let (fieldMap, rand) = FieldMap.make FieldTileSheetImage (Vector2i 22) pathEdgesM rand
@@ -333,6 +337,7 @@ module GameplayDispatcherModule =
             snd <| runDesyncAssumingCascade desync obs world
 
         static let runCharacterAction newActionDescriptor characterAddress gameplayAddress world =
+            // NOTE: currently just implements attack
             let desync = desync {
                 do! updateEntity characterAddress (Entity.setActivityState <| Action newActionDescriptor)
                 do! during
@@ -340,23 +345,39 @@ module GameplayDispatcherModule =
                             let character = World.getEntity characterAddress world
                             ActivityState.isActing character.ActivityState) ^^
                         desync {
-                            do! updateEntityW characterAddress <| fun character world ->
+                            do! update <| fun world ->
                                 let tickTime = world.State.TickTime
+                                let character = World.getEntity characterAddress world
                                 let actionDescriptor =
                                     match character.ActivityState with
                                     | Action actionDescriptor -> actionDescriptor
                                     | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterAction."
-                                if actionDescriptor.ActionTicks = 0L then
-                                    character |>
-                                        Entity.setCharacterAnimationState (getCharacterAnimationStateByActionBegin tickTime character.Position character.CharacterAnimationState actionDescriptor) |>
-                                        Entity.setActivityState (Action <| ActionDescriptor.incActionTicks actionDescriptor)
-                                elif actionDescriptor.ActionTicks > 0L && actionDescriptor.ActionTicks < ActionTicksMax then
-                                    character |>
-                                        Entity.setActivityState (Action <| ActionDescriptor.incActionTicks actionDescriptor)
-                                else
-                                    character |>
-                                        Entity.setActivityState NoActivity |>
-                                        Entity.setCharacterAnimationState (getCharacterAnimationStateByActionEnd tickTime character.CharacterAnimationState)
+                                let character =
+                                    if actionDescriptor.ActionTicks = 0L then
+                                        character |>
+                                            Entity.setCharacterAnimationState (getCharacterAnimationStateByActionBegin tickTime character.Position character.CharacterAnimationState actionDescriptor) |>
+                                            Entity.setActivityState (Action <| ActionDescriptor.incActionTicks actionDescriptor)
+                                    elif actionDescriptor.ActionTicks > 0L && actionDescriptor.ActionTicks < ActionTicksMax then
+                                        character |>
+                                            Entity.setActivityState (Action <| ActionDescriptor.incActionTicks actionDescriptor)
+                                    else
+                                        character |>
+                                            Entity.setActivityState NoActivity |>
+                                            Entity.setCharacterAnimationState (getCharacterAnimationStateByActionEnd tickTime character.CharacterAnimationState)
+                                let world = World.setEntity characterAddress character world
+                                if actionDescriptor.ActionTicks = ActionTicksMax then
+                                    let opponent = getCharacterInDirection character.Position character.CharacterAnimationState.Direction gameplayAddress world
+                                    let opponentAddress = getCharacterAddress opponent gameplayAddress
+                                    let opponentDamage = character.PowerBuff * 5.0f - opponent.ShieldBuff |> int
+                                    let opponentHitPoints = opponent.HitPoints - opponentDamage
+                                    let opponent = Entity.setHitPoints opponentHitPoints opponent
+                                    let world = World.setEntity opponentAddress opponent world
+                                    if opponent.HitPoints <= 0 then
+                                        if opponent.Name = PlayerName
+                                        then World.transitionScreen TitleAddress world
+                                        else snd <| World.removeEntity opponentAddress opponent world
+                                    else world
+                                else world
                             do! next () }}
             let obs = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- gameplayAddress)
             snd <| runDesyncAssumingCascade desync obs world
@@ -436,11 +457,11 @@ module GameplayDispatcherModule =
                 match player.ActivityState with
                 | Action _ -> world
                 | Navigation _ ->
-                    let enemyAddresses = getEnemyAddresses gameplayAddress enemies
+                    let enemyAddresses = getCharacterAddresses enemies gameplayAddress
                     let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
                     runEnemyNavigationActivities newEnemyNavigationActivities enemyAddresses gameplayAddress world
                 | NoActivity ->
-                    let enemyAddresses = getEnemyAddresses gameplayAddress enemies
+                    let enemyAddresses = getCharacterAddresses enemies gameplayAddress
                     let newEnemyActionActivities = determineEnemyActionActivities enemies
                     let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
                     runEnemyActivities newEnemyActionActivities newEnemyNavigationActivities enemyAddresses gameplayAddress world

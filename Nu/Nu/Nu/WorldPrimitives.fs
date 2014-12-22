@@ -217,7 +217,7 @@ module World =
             with
             | :? InvalidCastException ->
                 // NOTE: If you've reached this exception, then you've probably inadvertantly mixed
-                // up an event data type parameter for some form of World.publish or subscribe.
+                // up an event type parameter for some form of World.publish or subscribe.
                 reraise ()
             | _ -> reraise ()
         box boxableSubscription

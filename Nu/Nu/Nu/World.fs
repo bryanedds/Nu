@@ -96,7 +96,7 @@ module WorldModule =
             let world = World.publish4 () (SelectEventAddress ->>- screenAddress) screenAddress world
             (screen, world)
 
-        static member tryTransitionScreen destinationAddress destinationScreen world =
+        static member tryTransitionScreen destinationAddress world =
             match World.getOptSelectedScreenAddress world with
             | Some selectedScreenAddress ->
                 match World.getOptScreen selectedScreenAddress world with
@@ -105,6 +105,7 @@ module WorldModule =
                     let subscription = fun (_ : Event<unit, Screen>) world ->
                         match world.State.OptScreenTransitionDestinationAddress with
                         | Some address ->
+                            let destinationScreen = World.getScreen destinationAddress world
                             let world = World.unsubscribe subscriptionKey world
                             let world = World.setOptScreenTransitionDestinationAddress None world
                             let world = snd <| World.selectScreen address destinationScreen world
@@ -117,6 +118,9 @@ module WorldModule =
                 | None -> None
             | None -> None
 
+        static member transitionScreen destinationAddress world =
+            Option.get <| World.tryTransitionScreen destinationAddress world
+            
         // TODO: replace this with more sophisticated use of handleAsScreenTransition4, and so on for its brethren.
         static member private handleAsScreenTransitionFromSplash4<'d, 's when 's :> Simulant> eventHandling destinationAddress (_ : Event<'d, 's>) world =
             let destinationScreen = World.getScreen destinationAddress world
@@ -131,8 +135,7 @@ module WorldModule =
             World.handleAsScreenTransitionFromSplash4<'d, 's> eventHandling destinationAddress event world
 
         static member private handleAsScreenTransition4<'d, 's when 's :> Simulant> eventHandling destinationAddress (_ : Event<'d, 's>) world =
-            let destinationScreen = World.getScreen destinationAddress world
-            match World.tryTransitionScreen destinationAddress destinationScreen world with
+            match World.tryTransitionScreen destinationAddress world with
             | Some world -> (eventHandling, world)
             | None ->
                 trace <| "Program Error: Invalid screen transition for destination address '" + acstring destinationAddress + "'."

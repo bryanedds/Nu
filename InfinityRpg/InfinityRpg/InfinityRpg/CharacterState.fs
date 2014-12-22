@@ -98,8 +98,8 @@ module CharacterStateModule =
     type CharacterType =
         | Player
         | Goopy
-        | Skelebone
-        | Dargon
+        | Batsy
+        | Zommie
 
     type SpecialData =
         { SpecialType : SpecialType
@@ -113,8 +113,7 @@ module CharacterStateModule =
           TargetType : TargetType }
 
     type EquipmentRatingData =
-        { Level : int
-          PhysicalRating : single // physical power = Level * PhysicalRating
+        { PhysicalRating : single // physical power = Level * PhysicalRating
           MagicalRating : single } // magical power = Level * MagicalRating
 
     type WeaponData =
@@ -152,15 +151,13 @@ module CharacterStateModule =
           ActionType : ActionType }
 
     type CharacterRatingData =
-        { BaseExperience : int // used to calculate base level for all instances of character
-          PhysicalRating : int // physical power is calculated based on level
+        { PhysicalRating : int // physical power is calculated based on level
           MagicRating : int // magic power is calculated based on level
           StaminaRating : int // hp max is calculated based on level
           WillRating : int } // sp max is calculated based on level
 
     type RewardData =
-        { Experience : int
-          Gold : int }
+        { Gold : int }
 
     type CharacterData =
         { Name : string

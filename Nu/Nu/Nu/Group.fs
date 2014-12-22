@@ -76,8 +76,7 @@ module WorldGroupModule =
             let group = World.getGroup address world
             let group = updater group world
             World.setGroup address group world
-        static member updateGroup address updater world =
-            World.updateGroupW address (fun group _ -> updater group) world
+        static member updateGroup address updater world = World.updateGroupW address (fun group _ -> updater group) world
 
         static member getOptGroup address world = World.optGroupFinder address world
         static member containsGroup address world = Option.isSome <| World.getOptGroup address world

@@ -80,8 +80,7 @@ module WorldScreenModule =
             let screen = World.getScreen address world
             let screen = updater screen world
             World.setScreen address screen world
-        static member updateScreen address updater world =
-            World.updateScreenW address (fun screen _ -> updater screen) world
+        static member updateScreen address updater world = World.updateScreenW address (fun screen _ -> updater screen) world
 
         static member getOptScreen address world = World.optScreenFinder address world
         static member containsScreen address world = Option.isSome <| World.getOptScreen address world
