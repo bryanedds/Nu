@@ -24,6 +24,7 @@ System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Deb
 #load "Math.fs"
 #load "Xtension.fs"
 #load "Overlayer.fs"
+#load "OverlayRouter.fs"
 #load "Serialization.fs"
 #load "Reflection.fs"
 #load "Camera.fs"
@@ -35,6 +36,9 @@ System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Deb
 #load "Input.fs"
 #load "Sdl.fs"
 #load "Simulation.fs"
+#load "Simulant.fs"
+#load "WorldConstants.fs"
+#load "WorldPrimitives.fs"
 #load "Entity.fs"
 #load "Group.fs"
 #load "Screen.fs"
@@ -42,6 +46,7 @@ System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Deb
 #load "Dispatchers.fs"
 #load "World.fs"
 #load "Observer.fs"
+#load "Desync.fs"
 
 open System
 open FParsec
@@ -52,3 +57,6 @@ open Prime
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
+open Nu.Observer
+open Nu.Desync
+
