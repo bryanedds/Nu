@@ -83,10 +83,7 @@ module WorldTests =
         let groupHierarchies = Map.singleton group.Name (group, Map.singleton entity.Name entity)
         let screenHierarchy = (screen, groupHierarchies)
         let world = snd <| World.addScreen screenHierarchy TestScreenAddress world
-        let handleEvent = fun event world ->
-            let entity = World.unwrapS<string, Entity> event world
-            let world = World.setUserState entity.Name world
-            (Cascade, world)
+        let handleEvent = fun event world -> (Cascade, World.setUserState event.Subscriber.Name world)
         let world = World.subscribe4 handleEvent StringEventAddress TestEntityAddress world
         let world = World.publish4 String.Empty StringEventAddress GameAddress world
         Assert.Equal<string> (TestEntityName, World.getUserState world)

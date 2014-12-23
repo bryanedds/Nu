@@ -569,69 +569,6 @@ module WorldEventModule =
 
     type World with
 
-        /// Unwrap commonly-useful values of an event.
-        static member unwrapDSAE<'d, 's when 's :> Simulant> (event : Event<'d, 's>) world =
-            let subscriber = World.getSimulant (Address.changeType<'s, Simulant> event.SubscriberAddress) world :?> 's
-            (event.Data, subscriber, event.SubscriberAddress, event)
-
-        /// Unwrap commonly-useful values of an event.
-        static member unwrapDSA<'d, 's when 's :> Simulant> (event : Event<'d, 's>) world =
-            let subscriber = World.getSimulant (Address.changeType<'s, Simulant> event.SubscriberAddress) world :?> 's
-            (event.Data, subscriber, event.SubscriberAddress)
-
-        /// Unwrap commonly-useful values of an event.
-        static member unwrapSAE<'d, 's when 's :> Simulant> (event : Event<'d, 's>) world =
-            let subscriber = World.getSimulant (Address.changeType<'s, Simulant> event.SubscriberAddress) world :?> 's
-            (event.SubscriberAddress, subscriber, event)
-
-        /// Unwrap commonly-useful values of an event.
-        static member unwrapDAE<'d, 's when 's :> Simulant> (event : Event<'d, 's>) (_ : World) =
-            (event.Data, event.SubscriberAddress, event)
-
-        /// Unwrap commonly-useful values of an event.
-        static member unwrapDSE<'d, 's when 's :> Simulant> (event : Event<'d, 's>) world =
-            let subscriber = World.getSimulant (Address.changeType<'s, Simulant> event.SubscriberAddress) world :?> 's
-            (event.Data, subscriber, event)
-
-        /// Unwrap commonly-useful values of an event.
-        static member unwrapSA<'d, 's when 's :> Simulant> (event : Event<'d, 's>) world =
-            let subscriber = World.getSimulant (Address.changeType<'s, Simulant> event.SubscriberAddress) world :?> 's
-            (subscriber, event.SubscriberAddress)
-
-        /// Unwrap commonly-useful values of an event.
-        static member unwrapDA<'d, 's when 's :> Simulant> (event : Event<'d, 's>) (_ : World) =
-            (event.Data, event.SubscriberAddress)
-
-        /// Unwrap commonly-useful values of an event.
-        static member unwrapAE<'d, 's when 's :> Simulant> (event : Event<'d, 's>) (_ : World) =
-            (event.SubscriberAddress, event)
-
-        /// Unwrap commonly-useful values of an event.
-        static member unwrapDS<'d, 's when 's :> Simulant> (event : Event<'d, 's>) world =
-            let subscriber = World.getSimulant (Address.changeType<'s, Simulant> event.SubscriberAddress) world :?> 's
-            (event.Data, subscriber)
-
-        /// Unwrap commonly-useful values of an event.
-        static member unwrapSE<'d, 's when 's :> Simulant> (event : Event<'d, 's>) world =
-            let subscriber = World.getSimulant (Address.changeType<'s, Simulant> event.SubscriberAddress) world :?> 's
-            (subscriber, event)
-
-        /// Unwrap commonly-useful values of an event.
-        static member unwrapDE<'d, 's when 's :> Simulant> (event : Event<'d, 's>) (_ : World) =
-            (event.Data, event)
-
-        /// Unwrap commonly-useful values of an event.
-        static member unwrapA<'d, 's when 's :> Simulant> (event : Event<'d, 's>) (_ : World) =
-            event.SubscriberAddress
-
-        /// Unwrap commonly-useful values of an event.
-        static member unwrapS<'d, 's when 's :> Simulant> (event : Event<'d, 's>) world =
-            World.getSimulant (Address.changeType<'s, Simulant> event.SubscriberAddress) world :?> 's
-
-        /// Unwrap commonly-useful values of an event.
-        static member unwrapD<'d, 's when 's :> Simulant> (event : Event<'d, 's>) (_ : World) =
-            event.Data
-            
         /// Ignore all handled events.
         static member handleAsPass<'d, 's when 's :> Simulant> (_ : Event<'d, 's>) (world : World) =
             (Cascade, world)
