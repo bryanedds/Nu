@@ -24,8 +24,8 @@ module BulletModule =
     type BulletDispatcher () =
         inherit EntityDispatcher ()
 
-        let handleTick (event : Event<unit, Entity>) world =
-            let (bullet, address) = (event.Subscriber, event.SubscriberAddress)
+        let handleTick event world =
+            let (bullet : Entity, address) = (event.Subscriber, event.SubscriberAddress)
             if World.isGamePlaying world then
                 let bullet = Entity.setAge (bullet.Age + 1L) bullet
                 let world =
@@ -34,8 +34,8 @@ module BulletModule =
                 (Cascade, world)
             else (Cascade, world)
 
-        let handleCollision (event : Event<CollisionData, Entity>) world =
-            let (bullet, address) = (event.Subscriber, event.SubscriberAddress)
+        let handleCollision event world =
+            let (bullet : Entity, address) = (event.Subscriber, event.SubscriberAddress)
             if World.isGamePlaying world then
                 let world = snd <| World.removeEntity bullet address world
                 (Cascade, world)
@@ -83,16 +83,16 @@ module EnemyModule =
             let world = snd <| World.removeEntity enemy address world
             World.playSound 1.0f ExplosionSound world
 
-        let handleTick (event : Event<unit, Entity>) world =
-            let (enemy, address) = (event.Subscriber, event.SubscriberAddress)
+        let handleTick event world =
+            let (enemy : Entity, address) = (event.Subscriber, event.SubscriberAddress)
             if World.isGamePlaying world then
                 let world = if hasAppeared world.Camera enemy then move enemy world else world
                 let world = if enemy.Health <= 0 then die enemy address world else world
                 (Cascade, world)
             else (Cascade, world)
 
-        let handleCollision (event : Event<CollisionData, Entity>) world =
-            let (enemy, address) = (event.Subscriber, event.SubscriberAddress)
+        let handleCollision event world =
+            let (enemy : Entity, address) = (event.Subscriber, event.SubscriberAddress)
             if World.isGamePlaying world then
                 let collidee = World.getEntity event.Data.Collidee world
                 let isBullet = Entity.dispatchesAs typeof<BulletDispatcher> collidee
@@ -167,8 +167,8 @@ module PlayerModule =
             let (bullet, world) = createBullet playerTransform bulletAddress world
             propelBullet bullet world
 
-        let handleSpawnBullet (event : Event<unit, Entity>) world =
-            let (player, address) = (event.Subscriber, event.SubscriberAddress)
+        let handleSpawnBullet event world =
+            let (player : Entity, address) = (event.Subscriber, event.SubscriberAddress)
             if World.isGamePlaying world then
                 if not <| Entity.hasFallen player then
                     if world.State.TickTime % 6L = 0L then
@@ -183,8 +183,8 @@ module PlayerModule =
             then player.LastTimeOnGroundNp
             else world.State.TickTime
 
-        let handleMovement (event : Event<unit, Entity>) world =
-            let (player, address) = (event.Subscriber, event.SubscriberAddress)
+        let handleMovement event world =
+            let (player : Entity, address) = (event.Subscriber, event.SubscriberAddress)
             if World.isGamePlaying world then
                 let lastTimeOnGround = getLastTimeOnGround player world
                 let player = Entity.setLastTimeOnGroundNp lastTimeOnGround player
@@ -201,8 +201,8 @@ module PlayerModule =
                 (Cascade, world)
             else (Cascade, world)
 
-        let handleJump (event : Event<MouseButtonData, Entity>) world =
-            let (player, address) = (event.Subscriber, event.SubscriberAddress)
+        let handleJump event world =
+            let (player : Entity, address) = (event.Subscriber, event.SubscriberAddress)
             if World.isGamePlaying world then
                 if  world.State.TickTime >= player.LastTimeJumpNp + 12L &&
                     world.State.TickTime <= player.LastTimeOnGroundNp + 10L then
@@ -212,6 +212,13 @@ module PlayerModule =
                     let world = World.setEntity player address world
                     (Cascade, world)
                 else (Cascade, world)
+            else (Cascade, world)
+
+        let handleJumpByKeyboardKey event world =
+            if World.isSelectedScreenIdling world then
+                match (enum<SDL.SDL_Scancode> event.Data.ScanCode, event.Data.Repeated) with
+                | (SDL.SDL_Scancode.SDL_SCANCODE_SPACE, false) -> handleJump event world
+                | _ -> (Cascade, world)
             else (Cascade, world)
 
         static member FieldDefinitions =
@@ -237,7 +244,8 @@ module PlayerModule =
                 world |>
                 World.monitor handleSpawnBullet TickEventAddress address |>
                 World.monitor handleMovement TickEventAddress address |>
-                World.monitor handleJump MouseLeftDownEventAddress address
+                World.monitor handleJump MouseLeftDownEventAddress address |>
+                World.monitor handleJumpByKeyboardKey KeyboardKeyDownEventAddress address
             (player, world)
 
 [<AutoOpen>]
