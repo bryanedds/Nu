@@ -324,7 +324,7 @@ module StageScreenModule =
         let handleStopPlay event world =
             let sectionNames = [for i in 0 .. SectionCount do yield SectionName + acstring i]
             let groupNames = StagePlayName :: sectionNames
-            let groupMap = World.getGroupMap3 groupNames event.SubscriberAddress world
+            let groupMap = World.getGroupMapInScreen3 groupNames event.SubscriberAddress world
             let world = snd <| World.removeGroups groupMap event.SubscriberAddress world
             (Cascade, world)
 

@@ -20,6 +20,11 @@ let inline headOrDefault seq aDefault =
 let inline definitize opts =
     Seq.choose id opts
 
+/// Fold with two inputs (plus state).
+let fold2 folder state seq seq2 =
+    let zipped = Seq.zip seq seq2
+    Seq.fold (fun state (a, b) -> folder state a b) state zipped
+
 /// Fold, now with a counter!
 let foldi folder state seq =
     let (_, result) =

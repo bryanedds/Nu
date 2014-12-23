@@ -332,7 +332,7 @@ module WorldModule =
             let world = World.clearAudioMessages world
             let world = World.clearPhysicsMessages world
             let world = World.addPhysicsMessage RebuildPhysicsHackMessage world
-            let entityMap = World.getEntityMap groupAddress world
+            let entityMap = World.getEntityMapInGroup groupAddress world
             Map.fold
                 (fun world _ (entity : Entity) ->
                     let entityAddress = gatoea groupAddress entity.Name

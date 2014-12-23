@@ -64,7 +64,7 @@ module Program =
 
     let getPickableEntities world =
         let groupAddress = (World.getUserState world).GroupAddress
-        let entityMap = World.getEntityMap groupAddress world
+        let entityMap = World.getEntityMapInGroup groupAddress world
         Map.toValueList entityMap
 
     let pushPastWorld pastWorld world =
@@ -287,7 +287,7 @@ module Program =
 
     let populateTreeViewNodes (form : NuEditForm) world =
         let groupAddress = (World.getUserState world).GroupAddress
-        for entityKvp in World.getEntityMap groupAddress world do
+        for entityKvp in World.getEntityMapInGroup groupAddress world do
         let entityAddress = gatoea groupAddress entityKvp.Key
         addTreeViewNode form entityAddress world
 
@@ -425,7 +425,7 @@ module Program =
     let trySaveFile filePath world =
         try let groupAddress = (World.getUserState world).GroupAddress
             let group = World.getGroup groupAddress world
-            let entityMap = World.getEntityMap groupAddress world
+            let entityMap = World.getEntityMapInGroup groupAddress world
             let groupHierarchy = (group, entityMap)
             World.writeGroupHierarchyToFile filePath groupHierarchy world
         with exn ->

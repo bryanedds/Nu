@@ -32,13 +32,20 @@ module WorldGameModule =
 
     type World with
 
-        static member getGameBy by world = by world.Game
-        static member getGame world = World.getGameBy id world
-        static member setGame game world = { world with Game = game }
+        static member getGameBy by world =
+            by world.Game
+
+        static member getGame world =
+            World.getGameBy id world
+
+        static member setGame game world =
+            { world with Game = game }
+
         static member updateGameW updater world =
             let game = World.getGame world
             let game = updater game world
             World.setGame game world
+
         static member updateGame updater world =
             World.updateGameW (fun game _ -> updater game) world
 
@@ -47,10 +54,17 @@ module WorldGameModule =
             let screenHierarchies = World.getScreenHierarchies world
             (game, screenHierarchies)
 
-        static member getOptSelectedScreenAddress world = world.Game.OptSelectedScreenAddress
-        static member setOptSelectedScreenAddress optAddress world = World.setGame (Game.setOptSelectedScreenAddress optAddress world.Game) world
-        static member getSelectedScreenAddress world = Option.get <| World.getOptSelectedScreenAddress world
-        static member setSelectedScreenAddress address world = World.setOptSelectedScreenAddress (Some address) world
+        static member getOptSelectedScreenAddress world =
+            world.Game.OptSelectedScreenAddress
+        
+        static member setOptSelectedScreenAddress optAddress world =
+            World.setGame (Game.setOptSelectedScreenAddress optAddress world.Game) world
+        
+        static member getSelectedScreenAddress world =
+            Option.get <| World.getOptSelectedScreenAddress world
+        
+        static member setSelectedScreenAddress address world =
+            World.setOptSelectedScreenAddress (Some address) world
         
         static member getOptSelectedScreen world =
             let optSelectedScreenAddress = World.getOptSelectedScreenAddress world
@@ -64,8 +78,11 @@ module WorldGameModule =
             | Some selectedScreenAddress -> World.setScreen (Option.get optScreen) selectedScreenAddress world
             | None -> failwith "Cannot set a non-existent screen."
 
-        static member getSelectedScreen world = Option.get <| World.getOptSelectedScreen world
-        static member setSelectedScreen screen world = World.setOptSelectedScreen (Some screen) world
+        static member getSelectedScreen world =
+            Option.get <| World.getOptSelectedScreen world
+        
+        static member setSelectedScreen screen world =
+            World.setOptSelectedScreen (Some screen) world
 
         static member isAddressSelected address world =
             let optScreenAddress = World.getOptSelectedScreenAddress world
@@ -103,12 +120,7 @@ module WorldGameModule =
             File.Move (filePathTmp, filePath)
 
         static member readGameHierarchy
-            (gameNode : XmlNode)
-            defaultDispatcherName
-            defaultScreenDispatcherName
-            defaultGroupDispatcherName
-            defaultEntityDispatcherName
-            world =
+            (gameNode : XmlNode) defaultDispatcherName defaultScreenDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
             let dispatcherName = Serialization.readDispatcherName defaultDispatcherName gameNode
             let dispatcher =
                 match Map.tryFind dispatcherName world.Components.GameDispatchers with

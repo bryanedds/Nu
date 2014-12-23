@@ -73,26 +73,43 @@ module WorldScreenModule =
             | [screenName] -> { world with Screens = Map.remove screenName world.Screens }
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
-        static member getScreenBy by address world = by ^^ Option.get ^^ World.optScreenFinder address world
-        static member getScreen address world = World.getScreenBy id address world
-        static member setScreen screen address world = World.screenAdder screen address world
-        static member updateScreenW updater address world =
-            let screen = World.getScreen address world
-            let screen = updater screen world
-            World.setScreen screen address world
-        static member updateScreen updater address world = World.updateScreenW (fun screen _ -> updater screen) address world
+        static member containsScreen address world =
+            Option.isSome <| World.optScreenFinder address world
 
-        static member getOptScreen address world = World.optScreenFinder address world
-        static member containsScreen address world = Option.isSome <| World.getOptScreen address world
+        static member getOptScreen address world =
+            World.optScreenFinder address world
+
+        static member getScreenBy by address world =
+            by ^^ Option.get ^^ World.getOptScreen address world
+        
+        static member getScreen address world =
+            World.getScreenBy id address world
+
+        static member getScreenAddress screenName world =
+            let address = ltoa<Screen> [screenName]
+            ignore <| World.getScreen address world // ensure address is valid
+            address
+
+        static member setScreen screen address world =
+            World.screenAdder screen address world
+
         static member private setOptScreen optScreen address world =
             match optScreen with
             | Some screen -> World.setScreen screen address world
             | None -> World.screenRemover address world
 
+        static member updateScreenW updater address world =
+            let screen = World.getScreen address world
+            let screen = updater screen world
+            World.setScreen screen address world
+
+        static member updateScreen updater address world =
+            World.updateScreenW (fun screen _ -> updater screen) address world
+
         static member getOptScreenHierarchy address world =
             match World.getOptScreen address world with
             | Some screen ->
-                let groupHierarchies = World.getGroupHierarchies address world
+                let groupHierarchies = World.getGroupHierarchiesInScreen address world
                 Some (screen, groupHierarchies)
             | None -> None
         
@@ -106,13 +123,14 @@ module WorldScreenModule =
             let screenMap = World.getScreenMap world
             Map.toValueSeq screenMap
 
-        static member getScreenMap2 screenNames world =
-            let screenNames = Set.ofSeq screenNames
-            let screenMap = World.getScreenMap world
-            Map.filter (fun screenName _ -> Set.contains screenName screenNames) screenMap
+        static member getScreenMap2 addresses world =
+            let screenNames = Set.ofSeq <| Seq.map Address.head addresses
+            Map.filter
+                (fun screenName _ -> Set.contains screenName screenNames)
+                (World.getScreenMap world)
 
-        static member getScreens2 screenNames world =
-            let screenMap = World.getScreenMap2 screenNames world
+        static member getScreens2 addresses world =
+            let screenMap = World.getScreenMap2 addresses world
             Map.toValueSeq screenMap
 
         static member getScreenHierarchies world =
@@ -120,9 +138,24 @@ module WorldScreenModule =
             Map.map
                 (fun screenName screen ->
                     let screenAddress = ltoa<Screen> [screenName]
-                    let groupHierarchies = World.getGroupHierarchies screenAddress world
+                    let groupHierarchies = World.getGroupHierarchiesInScreen screenAddress world
                     (screen, groupHierarchies))
                 screens
+
+        static member getScreenAddresses world =
+            Map.fold (fun addresses screenName _ -> ltoa<Screen> [screenName] :: addresses) [] world.Screens
+
+        static member updateScreensW updater addresses world =
+            Seq.fold (fun world address -> World.updateScreenW updater address world) world addresses
+        
+        static member updateScreens updater addresses world =
+            World.updateScreenW (fun screen _ -> updater screen) addresses world
+
+        static member filterScreenAddressesW pred addresses world =
+            Seq.filter (fun address -> World.getScreenBy (fun screen -> pred screen world) address world) addresses
+
+        static member filterScreenAddresses pred addresses world =
+            World.filterScreenAddressesW (fun screen _ -> pred screen) addresses world
 
         static member private registerScreen screen address world =
             Screen.register screen address world
@@ -132,7 +165,7 @@ module WorldScreenModule =
 
         static member removeScreenImmediate screen address world =
             let world = World.publish4 () (RemovingEventAddress ->>- address) address world
-            let groupMap = World.getGroupMap address world
+            let groupMap = World.getGroupMapInScreen address world
             let world = snd <| World.removeGroupsImmediate groupMap address world
             let (screen, world) = World.unregisterScreen screen address world
             let world = World.setOptScreen None address world
@@ -147,11 +180,6 @@ module WorldScreenModule =
                     | None -> world }
             let world = World.addTask task world
             (screen, world)
-
-        static member removeScreenIf pred address world =
-            let screen = World.getScreen address world
-            if pred screen then World.removeScreen screen address world
-            else (screen, world)
 
         static member addScreen screenHierarchy address world =
             let (screen, groupHierarchies) = screenHierarchy
@@ -214,11 +242,7 @@ module WorldScreenModule =
             File.Move (filePathTmp, filePath)
 
         static member readScreenHierarchy
-            (screenNode : XmlNode)
-            defaultDispatcherName
-            defaultGroupDispatcherName
-            defaultEntityDispatcherName
-            world =
+            (screenNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
             let dispatcherName = Serialization.readDispatcherName defaultDispatcherName screenNode
             let dispatcher =
                 match Map.tryFind dispatcherName world.Components.ScreenDispatchers with
@@ -234,11 +258,7 @@ module WorldScreenModule =
             (screen, groupHierarchies)
 
         static member readScreenHierarchies
-            (parentNode : XmlNode)
-            defaultDispatcherName
-            defaultGroupDispatcherName
-            defaultEntityDispatcherName
-            world =
+            (parentNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
             match parentNode.SelectSingleNode ScreensNodeName with
             | null -> Map.empty
             | screensNode ->

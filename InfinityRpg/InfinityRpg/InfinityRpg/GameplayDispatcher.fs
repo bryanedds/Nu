@@ -49,23 +49,41 @@ module GameplayDispatcherModule =
         static let setHudHalt field gameplayAddress world = World.setEntity field (getHudHaltAddress gameplayAddress) world
 
         // scene addresses
-        static let getSceneAddress gameplayAddress = satoga gameplayAddress SceneName
-        static let getFieldAddress gameplayAddress = gatoea (getSceneAddress gameplayAddress) FieldName
-        static let getPlayerAddress gameplayAddress = gatoea (getSceneAddress gameplayAddress) PlayerName
-        static let getCharacterAddress (character : Entity) gameplayAddress = gatoea (getSceneAddress gameplayAddress) character.Name
-        static let getCharacterAddresses characters gameplayAddress = List.map (fun character -> getCharacterAddress character gameplayAddress) characters
+        static let getSceneAddress gameplayAddress =
+            satoga gameplayAddress SceneName
+        
+        static let getFieldAddress gameplayAddress =
+            gatoea (getSceneAddress gameplayAddress) FieldName
+        
+        static let getCharacterAddresses gameplayAddress world =
+            let entityAddresses = World.getEntityAddressesInGroup (getSceneAddress gameplayAddress) world
+            World.filterEntityAddresses (Entity.dispatchesAs typeof<CharacterDispatcher>) entityAddresses world
+
+        static let getOptCharacterAddressAtPosition position gameplayAddress world =
+            let characterAddresses = getCharacterAddresses gameplayAddress world
+            Seq.tryFind (fun address -> World.getEntityBy (fun character -> character.Position = position) address world) characterAddresses
+        
+        //static let getCharacterAddressAtPosition position gameplayAddress world =
+        //    Option.get <| getOptCharacterAddressAtPosition position gameplayAddress world
+        
+        static let getOptCharacterAddressInDirection position direction gameplayAddress world =
+            getOptCharacterAddressAtPosition (position + dtovf direction) gameplayAddress world
+        
+        static let getCharacterAddressInDirection position direction gameplayAddress world =
+            Option.get <| getOptCharacterAddressInDirection position direction gameplayAddress world
+
+        static let getEnemyAddresses gameplayAddress world =
+            let entityAddresses = World.getEntityAddressesInGroup (getSceneAddress gameplayAddress) world
+            World.filterEntityAddresses (Entity.dispatchesAs typeof<EnemyDispatcher>) entityAddresses world
+        
+        static let getPlayerAddress gameplayAddress =
+            gatoea (getSceneAddress gameplayAddress) PlayerName
 
         // scene entities
         static let getField gameplayAddress world = World.getEntity (getFieldAddress gameplayAddress) world
-        static let getOptCharacterAtPosition position gameplayAddress world =
-            let characters = world |> World.getEntities (getSceneAddress gameplayAddress) |> Seq.filter (Entity.dispatchesAs typeof<CharacterDispatcher>)
-            Seq.tryFind (fun (character : Entity) -> character.Position = position) characters
-        //static let getCharacterAtPosition position gameplayAddress world = Option.get <| getOptCharacterAtPosition position gameplayAddress world
-        static let getOptCharacterInDirection position direction gameplayAddress world = getOptCharacterAtPosition (position + dtovf direction) gameplayAddress world
-        static let getCharacterInDirection position direction gameplayAddress world = Option.get <| getOptCharacterInDirection position direction gameplayAddress world
+        //static let getCharacters gameplayAddress world = World.getEntities (getCharacterAddresses gameplayAddress world) world
+        static let getEnemies gameplayAddress world = World.getEntities (getEnemyAddresses gameplayAddress world) world
         static let getPlayer gameplayAddress world = World.getEntity (getPlayerAddress gameplayAddress) world
-        static let getEnemies gameplayAddress world = World.getEntities (getSceneAddress gameplayAddress) world |> Seq.filter (Entity.dispatchesAs typeof<EnemyDispatcher>) |> List.ofSeq
-        static let getParticipants gameplayAddress world = (getField gameplayAddress world, getPlayer gameplayAddress world, getEnemies gameplayAddress world)
 
         static let makeField rand world =
             let pathEdgesM = [(Vector2i (1, 10), Vector2i (20, 10))]
@@ -134,7 +152,7 @@ module GameplayDispatcherModule =
 
         static let anyTurnsInProgress2 (player : Entity) enemies =
             player.ActivityState <> NoActivity ||
-            List.exists (fun (enemy : Entity) -> enemy.DesiredTurn <> NoTurn || enemy.ActivityState <> NoActivity) enemies
+            Seq.exists (fun (enemy : Entity) -> enemy.DesiredTurn <> NoTurn || enemy.ActivityState <> NoActivity) enemies
 
         static let anyTurnsInProgress gameplayAddress world =
             let player = getPlayer gameplayAddress world
@@ -202,7 +220,7 @@ module GameplayDispatcherModule =
                     NavigationTurn { WalkDescriptor = walkDescriptor; OptNavigationPath = None }
                 else
                     let targetPosition = character.Position + dtovf direction
-                    if List.exists (fun (opponent : Entity) -> opponent.Position = targetPosition) opponents
+                    if Seq.exists (fun (opponent : Entity) -> opponent.Position = targetPosition) opponents
                     then makeAttackTurn <| vftovm targetPosition
                     else NoTurn
 
@@ -220,7 +238,7 @@ module GameplayDispatcherModule =
                 | None ->
                     let targetPosition = touchPosition |> vftovm |> vmtovf
                     if Math.arePositionsAdjacent targetPosition character.Position then
-                        if List.exists (fun (opponent : Entity) -> opponent.Position = targetPosition) opponents
+                        if Seq.exists (fun (opponent : Entity) -> opponent.Position = targetPosition) opponents
                         then makeAttackTurn <| vftovm targetPosition
                         else NoTurn
                     else NoTurn
@@ -249,17 +267,19 @@ module GameplayDispatcherModule =
 
         static let determineDesiredEnemyTurns occupationMap player enemies rand =
             let (_, enemyTurns, rand) =
-                List.foldBack
+                List.foldBack // NOTE: had to convert to list since there is no Seq.foldBack yet...
                     (fun (enemy : Entity) (occupationMap, enemyTurns, rand) ->
                         let (enemyTurn, rand) = determineDesiredEnemyTurn occupationMap player enemy rand
                         let occupationMap = OccupationMap.transferByDesiredTurn enemyTurn enemy occupationMap
                         (occupationMap, enemyTurn :: enemyTurns, rand))
-                    enemies
+                    (List.ofSeq enemies)
                     (occupationMap, [], rand)
             (enemyTurns, rand)
 
         static let determinePlayerTurnFromTouch touchPosition gameplayAddress world =
-            let (field, player, enemies) = getParticipants gameplayAddress world
+            let field = getField gameplayAddress world
+            let player = getPlayer gameplayAddress world
+            let enemies = getEnemies gameplayAddress world
             if not <| anyTurnsInProgress2 player enemies then
                 let touchPositionW = Camera.mouseToWorld Relative touchPosition world.Camera
                 let occupationMapWithAdjacentEnemies =
@@ -277,7 +297,9 @@ module GameplayDispatcherModule =
             else NoTurn
 
         static let determinePlayerTurnFromDetailNavigation direction gameplayAddress world =
-            let (field, player, enemies) = getParticipants gameplayAddress world
+            let field = getField gameplayAddress world
+            let player = getPlayer gameplayAddress world
+            let enemies = getEnemies gameplayAddress world
             if not <| anyTurnsInProgress2 player enemies then
                 let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles enemies
                 determineCharacterTurnFromDirection direction occupationMapWithEnemies player enemies
@@ -306,11 +328,11 @@ module GameplayDispatcherModule =
             | NoActivity -> NoTurn
 
         static let determineEnemyActionActivities enemies =
-            List.foldBack
+            List.foldBack // NOTE: had to convert to list since there is no Seq.foldBack yet...
                 (fun (enemy : Entity) precedingEnemyActivities ->
                     let enemyActivity =
-                        let noPrecedingEnemyActionActivity = List.notExists ActivityState.isActing precedingEnemyActivities
-                        let noCurrentEnemyActionActivity = List.notExists (fun (enemy : Entity) -> ActivityState.isActing enemy.ActivityState) enemies
+                        let noPrecedingEnemyActionActivity = Seq.notExists ActivityState.isActing precedingEnemyActivities
+                        let noCurrentEnemyActionActivity = Seq.notExists (fun (enemy : Entity) -> ActivityState.isActing enemy.ActivityState) enemies
                         if noPrecedingEnemyActionActivity && noCurrentEnemyActionActivity then
                             match enemy.DesiredTurn with
                             | ActionTurn actionDescriptor -> Action actionDescriptor
@@ -319,13 +341,13 @@ module GameplayDispatcherModule =
                             | NoTurn -> NoActivity
                         else NoActivity
                     enemyActivity :: precedingEnemyActivities)
-                enemies
+                (List.ofSeq enemies)
                 []
 
         static let determineEnemyNavigationActivities enemies =
-            List.foldBack
+            List.foldBack // NOTE: had to convert to list since there is no Seq.foldBack yet...
                 (fun (enemy : Entity) enemyActivities ->
-                    let noCurrentEnemyActionActivity = List.notExists (fun (enemy : Entity) -> ActivityState.isActing enemy.ActivityState) enemies
+                    let noCurrentEnemyActionActivity = Seq.notExists (fun (enemy : Entity) -> ActivityState.isActing enemy.ActivityState) enemies
                     let enemyActivity =
                         if noCurrentEnemyActionActivity then
                             match enemy.DesiredTurn with
@@ -335,15 +357,15 @@ module GameplayDispatcherModule =
                             | NoTurn -> NoActivity
                         else NoActivity
                     enemyActivity :: enemyActivities)
-                enemies
+                (List.ofSeq enemies)
                 []
 
         static let runCharacterReaction actionDescriptor initiatorAddress gameplayAddress world =
             // TODO: implement animations
             let initiator = World.getEntity initiatorAddress world
             if actionDescriptor.ActionTicks = ActionTicksMax then
-                let reactor = getCharacterInDirection initiator.Position initiator.CharacterAnimationState.Direction gameplayAddress world
-                let reactorAddress = getCharacterAddress reactor gameplayAddress
+                let reactorAddress = getCharacterAddressInDirection initiator.Position initiator.CharacterAnimationState.Direction gameplayAddress world
+                let reactor = World.getEntity reactorAddress world
                 let reactorDamage = initiator.PowerBuff * 5.0f - reactor.ShieldBuff |> int
                 let reactorHitPoints = reactor.HitPoints - reactorDamage
                 let reactor = Entity.setHitPoints reactorHitPoints reactor
@@ -412,14 +434,14 @@ module GameplayDispatcherModule =
             else world
 
         static let runEnemyNavigationActivities enemyNavigationActivities enemyAddresses gameplayAddress world =
-            if List.exists ActivityState.isNavigating enemyNavigationActivities
-            then List.fold2 (tryRunEnemyActivity gameplayAddress) world enemyNavigationActivities enemyAddresses
+            if Seq.exists ActivityState.isNavigating enemyNavigationActivities
+            then Seq.fold2 (tryRunEnemyActivity gameplayAddress) world enemyNavigationActivities enemyAddresses
             else world
 
         static let runEnemyActivities enemyActionActivities enemyNavigationActivities enemyAddresses gameplayAddress world =
-            let anyEnemyActionActivity = List.exists ActivityState.isActing enemyActionActivities
+            let anyEnemyActionActivity = Seq.exists ActivityState.isActing enemyActionActivities
             let newEnemyActivities = if anyEnemyActionActivity then enemyActionActivities else enemyNavigationActivities
-            List.fold2 (tryRunEnemyActivity gameplayAddress) world newEnemyActivities enemyAddresses
+            Seq.fold2 (tryRunEnemyActivity gameplayAddress) world newEnemyActivities enemyAddresses
 
         static let runPlayerTurn playerTurn gameplayAddress world =
 
@@ -453,10 +475,11 @@ module GameplayDispatcherModule =
                     let gameplay = World.getScreen gameplayAddress world
                     let rand = Rand.make gameplay.OngoingRandState
                     let player = getPlayer gameplayAddress world
-                    let enemies = getEnemies gameplayAddress world
+                    let enemyAddresses = getEnemyAddresses gameplayAddress world
+                    let enemies = World.getEntities enemyAddresses world
                     let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns occupationMap player enemies rand
-                    let enemies = List.map2 Entity.setDesiredTurn enemyDesiredTurns enemies
-                    let world = World.setEntities (getSceneAddress gameplayAddress) enemies world
+                    let enemies = Seq.map2 Entity.setDesiredTurn enemyDesiredTurns enemies
+                    let world = World.setEntities enemies enemyAddresses world
                     let gameplay = Screen.setOngoingRandState (Rand.getState rand) gameplay
                     World.setScreen gameplay gameplayAddress world
                 | Some NoActivity
@@ -465,15 +488,14 @@ module GameplayDispatcherModule =
             // run enemy activities in accordance with the player's current activity
             let world =
                 let player = getPlayer gameplayAddress world
-                let enemies = getEnemies gameplayAddress world
+                let enemyAddresses = getEnemyAddresses gameplayAddress world
+                let enemies = World.getEntities enemyAddresses world
                 match player.ActivityState with
                 | Action _ -> world
                 | Navigation _ ->
-                    let enemyAddresses = getCharacterAddresses enemies gameplayAddress
                     let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
                     runEnemyNavigationActivities newEnemyNavigationActivities enemyAddresses gameplayAddress world
                 | NoActivity ->
-                    let enemyAddresses = getCharacterAddresses enemies gameplayAddress
                     let newEnemyActionActivities = determineEnemyActionActivities enemies
                     let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
                     runEnemyActivities newEnemyActionActivities newEnemyNavigationActivities enemyAddresses gameplayAddress world
