@@ -25,7 +25,7 @@ module BulletModule =
         inherit EntityDispatcher ()
 
         let handleTick event world =
-            let (address, bullet : Entity) = World.unwrapAS event world
+            let (bullet : Entity, address) = World.unwrapSA event world
             if World.isGamePlaying world then
                 let bullet = Entity.setAge (bullet.Age + 1L) bullet
                 let world =
@@ -35,7 +35,7 @@ module BulletModule =
             else (Cascade, world)
 
         let handleCollision event world =
-            let (address, bullet : Entity) = World.unwrapAS event world
+            let (bullet : Entity, address) = World.unwrapSA event world
             if World.isGamePlaying world then
                 let world = snd <| World.removeEntity bullet address world
                 (Cascade, world)
@@ -84,7 +84,7 @@ module EnemyModule =
             World.playSound 1.0f ExplosionSound world
 
         let handleTick event world =
-            let (address, enemy : Entity) = World.unwrapAS event world
+            let (enemy : Entity, address) = World.unwrapSA event world
             if World.isGamePlaying world then
                 let world = if hasAppeared world.Camera enemy then move enemy world else world
                 let world = if enemy.Health <= 0 then die enemy address world else world
@@ -92,7 +92,7 @@ module EnemyModule =
             else (Cascade, world)
 
         let handleCollision event world =
-            let (address, enemy : Entity, collisionData) = World.unwrapASD event world
+            let (collisionData, enemy : Entity, address) = World.unwrapDSA event world
             if World.isGamePlaying world then
                 let collidee = World.getEntity collisionData.Collidee world
                 let isBullet = Entity.dispatchesAs typeof<BulletDispatcher> collidee
@@ -168,7 +168,7 @@ module PlayerModule =
             propelBullet bullet world
 
         let handleSpawnBullet event world =
-            let (address, player : Entity) = World.unwrapAS event world
+            let (player : Entity, address) = World.unwrapSA event world
             if World.isGamePlaying world then
                 if not <| Entity.hasFallen player then
                     if world.State.TickTime % 6L = 0L then
@@ -184,7 +184,7 @@ module PlayerModule =
             else world.State.TickTime
 
         let handleMovement event world =
-            let (address, player : Entity) = World.unwrapAS event world
+            let (player : Entity, address) = World.unwrapSA event world
             if World.isGamePlaying world then
                 let lastTimeOnGround = getLastTimeOnGround player world
                 let player = Entity.setLastTimeOnGroundNp lastTimeOnGround player
@@ -202,7 +202,7 @@ module PlayerModule =
             else (Cascade, world)
 
         let handleJump event world =
-            let (address, player : Entity) = World.unwrapAS event world
+            let (player : Entity, address) = World.unwrapSA event world
             if World.isGamePlaying world then
                 if  world.State.TickTime >= player.LastTimeJumpNp + 12L &&
                     world.State.TickTime <= player.LastTimeOnGroundNp + 10L then

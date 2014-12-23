@@ -362,7 +362,7 @@ module GameplayDispatcherModule =
                         (fun world ->
                             match World.getEntityBy (fun entity -> entity.ActivityState) characterAddress world with
                             | Navigation nd -> newNavigationDescriptor.WalkDescriptor.WalkOriginM = nd.WalkDescriptor.WalkOriginM
-                            | Action _ | NoActivity -> false) ^^
+                            | Action _ | NoActivity -> false) <|
                         desync {
                             do! update <| fun world ->
                                 let navigationDescriptor =
@@ -381,7 +381,7 @@ module GameplayDispatcherModule =
                 do! during
                         (fun world ->
                             let activityState = World.getEntityBy (fun entity -> entity.ActivityState) characterAddress world 
-                            ActivityState.isActing activityState) ^^
+                            ActivityState.isActing activityState) <|
                         desync {
                             do! update <| fun world ->
                                 let actionDescriptor =
@@ -593,7 +593,7 @@ module GameplayDispatcherModule =
             snd <| World.addGroup sceneHierarchy sceneAddress world
 
         static let handleSelectGameplay event world =
-            let (gameplayAddress, gameplay : Screen) = World.unwrapAS event world
+            let (gameplay : Screen, gameplayAddress) = World.unwrapSA event world
             let world =
                 // NOTE: doing a File.Exists then loading the file is dangerous since the file can
                 // always be deleted / moved between the two operations!
