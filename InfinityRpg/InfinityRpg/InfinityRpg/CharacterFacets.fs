@@ -161,8 +161,8 @@ module CharacterCameraFacetModule =
     type CharacterCameraFacet () =
         inherit Facet ()
 
-        static let handleTick event world =
-            let (character : Entity, address) = World.unwrapSA event world
+        static let handleTick (event : Event<unit, Entity>) world =
+            let (character, address) = (event.Subscriber, event.SubscriberAddress)
             let eyeCenter = character.Position + character.Size * 0.5f
             let eyeCenter =
                 match World.getOptEntity (gatoea (Address.allButLast address) FieldName) world with

@@ -23,11 +23,10 @@ module OmniDispatchersModule =
             World.setCamera camera world
 
         let handleAdjustFieldCamera event world =
-            let address = World.unwrapA event world
-            (Cascade, adjustFieldCamera address world)
+            (Cascade, adjustFieldCamera event.SubscriberAddress world)
 
         let handleMoveFieldCharacter event world =
-            let address = World.unwrapA event world
+            let address = event.SubscriberAddress
             let characterAddress = gatoea address FieldCharacterName
             let feelerAddress = gatoea address FieldFeelerName
             let character = World.getEntity characterAddress world
