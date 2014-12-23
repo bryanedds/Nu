@@ -29,7 +29,7 @@ module Observer =
             let subscription = fun event world ->
                 let world = World.publish<'a, Simulant> World.sortSubscriptionsNone event.Data subscriptionAddress event.PublisherAddress world
                 (Cascade, world)
-            let world = World.subscribe<'a, 'o> subscriptionKey eventAddress observerAddress subscription world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observerAddress world
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observerAddress; Subscribe = subscribe }
 
@@ -39,7 +39,7 @@ module Observer =
             let subscriptionAddress = ltoa<'a> [acstring subscriptionKey]
             let (address, unsubscribe, world) = observable.Subscribe world
             let unsubscribe = fun world -> let world = unsubscribe world in World.unsubscribe subscriptionKey world
-            let world = World.subscribe<'a, 'o> subscriptionKey address observable.ObserverAddress handleEvent world
+            let world = World.subscribe<'a, 'o> subscriptionKey handleEvent address observable.ObserverAddress world
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
@@ -62,9 +62,9 @@ module Observer =
                     let world = World.publish<'a * 'b, Simulant> World.sortSubscriptionsNone eventData subscriptionAddress'' event.PublisherAddress world
                     let world = World.unsubscribe subscriptionKey' world
                     (Cascade, world)
-                let world = World.subscribe<'b, 'o> subscriptionKey' subscriptionAddress' observable.ObserverAddress subscription' world
+                let world = World.subscribe<'b, 'o> subscriptionKey' subscription' subscriptionAddress' observable.ObserverAddress world
                 (Cascade, world)
-            let world = World.subscribe<'a, 'o> subscriptionKey subscriptionAddress observable.ObserverAddress subscription world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription subscriptionAddress observable.ObserverAddress world
             (subscriptionAddress'', unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
@@ -89,8 +89,8 @@ module Observer =
                 let eventData = Right event.Data
                 let world = World.publish<Either<'a, 'b>, Simulant> World.sortSubscriptionsNone eventData subscriptionAddress'' event.PublisherAddress world
                 (Cascade, world)
-            let world = World.subscribe<'b, 'o> subscriptionKey' subscriptionAddress' observable.ObserverAddress subscription' world
-            let world = World.subscribe<'a, 'o> subscriptionKey subscriptionAddress observable.ObserverAddress subscription world
+            let world = World.subscribe<'b, 'o> subscriptionKey' subscription' subscriptionAddress' observable.ObserverAddress world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription subscriptionAddress observable.ObserverAddress world
             (subscriptionAddress'', unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
@@ -106,7 +106,7 @@ module Observer =
                     then World.publish<'a, Simulant> World.sortSubscriptionsNone event.Data subscriptionAddress event.PublisherAddress world
                     else world
                 (Cascade, world)
-            let world = World.subscribe<'a, 'o> subscriptionKey eventAddress observable.ObserverAddress subscription world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observable.ObserverAddress world
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
@@ -119,7 +119,7 @@ module Observer =
             let subscription = fun event world ->
                 let world = World.publish<'b, Simulant> World.sortSubscriptionsNone (mapper event world) subscriptionAddress event.PublisherAddress world
                 (Cascade, world)
-            let world = World.subscribe<'a, 'o> subscriptionKey eventAddress observable.ObserverAddress subscription world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observable.ObserverAddress world
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
@@ -148,7 +148,7 @@ module Observer =
                     then World.publish<'b, Simulant> World.sortSubscriptionsNone (transformer state) subscriptionAddress event.PublisherAddress world
                     else world
                 (Cascade, world)
-            let world = World.subscribe<'a, 'o> subscriptionKey eventAddress observable.ObserverAddress subscription world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observable.ObserverAddress world
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
@@ -176,7 +176,7 @@ module Observer =
                     then World.publish<'a, Simulant> World.sortSubscriptionsNone state subscriptionAddress event.PublisherAddress world
                     else world
                 (Cascade, world)
-            let world = World.subscribe<'a, 'o> subscriptionKey eventAddress observable.ObserverAddress subscription world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observable.ObserverAddress world
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
@@ -204,7 +204,7 @@ module Observer =
                     then World.publish<'a, Simulant> World.sortSubscriptionsNone event.Data subscriptionAddress event.PublisherAddress world
                     else world
                 (Cascade, world)
-            let world = World.subscribe<'a, 'o> subscriptionKey eventAddress observable.ObserverAddress subscription world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observable.ObserverAddress world
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
@@ -231,11 +231,11 @@ module Observer =
                 let world = World.unsubscribe subscriptionKey world
                 World.unsubscribe eventKey world
             let handleEvent = fun _ world -> let world = unsubscribe world in (Cascade, world)
-            let world = World.subscribe eventKey eventAddress observable.ObserverAddress handleEvent world
+            let world = World.subscribe eventKey handleEvent eventAddress observable.ObserverAddress world
             let subscription = fun event world ->
                 let world = World.publish<'a, Simulant> World.sortSubscriptionsNone event.Data subscriptionAddress event.PublisherAddress world
                 (Cascade, world)
-            let world = World.subscribe<'a, 'o> subscriptionKey eventAddress' observable.ObserverAddress subscription world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress' observable.ObserverAddress world
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 

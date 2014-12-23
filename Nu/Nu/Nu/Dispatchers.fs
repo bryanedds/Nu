@@ -256,8 +256,8 @@ module GuiDispatcherModule =
         override dispatcher.Register (gui, address, world) =
             let world =
                 world |>
-                World.monitor MouseLeftDownEventAddress address handleMouseLeft |>
-                World.monitor MouseLeftUpEventAddress address handleMouseLeft
+                World.monitor handleMouseLeft MouseLeftDownEventAddress address |>
+                World.monitor handleMouseLeft MouseLeftUpEventAddress address
             (gui, world)
 
 [<AutoOpen>]
@@ -321,8 +321,8 @@ module ButtonDispatcherModule =
         override dispatcher.Register (button, address, world) =
             let world =
                 world |>
-                World.monitor MouseLeftDownEventAddress address handleMouseLeftDown |>
-                World.monitor MouseLeftUpEventAddress address handleMouseLeftUp
+                World.monitor handleMouseLeftDown MouseLeftDownEventAddress address |>
+                World.monitor handleMouseLeftUp MouseLeftUpEventAddress address
             (button, world)
 
         override dispatcher.GetRenderDescriptors (button, _) =
@@ -502,8 +502,8 @@ module ToggleDispatcherModule =
         override dispatcher.Register (toggle, address, world) =
             let world =
                 world |>
-                World.monitor MouseLeftDownEventAddress address handleMouseLeftDown |>
-                World.monitor MouseLeftUpEventAddress address handleMouseLeftUp
+                World.monitor handleMouseLeftDown MouseLeftDownEventAddress address |>
+                World.monitor handleMouseLeftUp MouseLeftUpEventAddress address
             (toggle, world)
 
         override dispatcher.GetRenderDescriptors (toggle, _) =
@@ -569,8 +569,8 @@ module FeelerDispatcherModule =
         override dispatcher.Register (feeler, address, world) =
             let world =
                 world |>
-                World.monitor MouseLeftDownEventAddress address handleMouseLeftDown |>
-                World.monitor MouseLeftUpEventAddress address handleMouseLeftUp
+                World.monitor handleMouseLeftDown MouseLeftDownEventAddress address |>
+                World.monitor handleMouseLeftUp MouseLeftUpEventAddress address
             (feeler, world)
 
         override dispatcher.GetQuickSize (_, _) =

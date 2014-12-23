@@ -629,7 +629,7 @@ module GameplayDispatcherModule =
                 (observe (DownEventAddress ->>- getHudDetailRightAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail Rightward)) |>
                 (observe (DownEventAddress ->>- getHudDetailDownAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail Downward)) |>
                 (observe (DownEventAddress ->>- getHudDetailLeftAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail Leftward)) |>
-                (World.subscribe4 (SelectEventAddress ->>- gameplayAddress) gameplayAddress handleSelectGameplay) |>
-                (World.subscribe4 (ClickEventAddress ->>- getHudSaveGameAddress gameplayAddress) gameplayAddress handleClickSaveGame) |>
-                (World.subscribe4 (DeselectEventAddress ->>- gameplayAddress) gameplayAddress handleDeselectGameplay)
+                (World.subscribe4 handleSelectGameplay (SelectEventAddress ->>- gameplayAddress) gameplayAddress) |>
+                (World.subscribe4 handleClickSaveGame (ClickEventAddress ->>- getHudSaveGameAddress gameplayAddress) gameplayAddress) |>
+                (World.subscribe4 handleDeselectGameplay (DeselectEventAddress ->>- gameplayAddress) gameplayAddress)
             (gameplay, world)

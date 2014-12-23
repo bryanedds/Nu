@@ -24,19 +24,19 @@ module InfinityRpgModule =
 
         static let addTitle world =
             let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleGroupFilePath TitleAddress world
-            let world = World.subscribe4 ClickTitleCreditsEventAddress GameAddress (World.handleAsScreenTransition CreditsAddress) world
-            let world = World.subscribe4 ClickTitleNewGameEventAddress GameAddress (handleAsScreenTransitionToGameplay false) world
-            let world = World.subscribe4 ClickTitleLoadGameEventAddress GameAddress (handleAsScreenTransitionToGameplay true) world
-            World.subscribe4 ClickTitleExitEventAddress GameAddress World.handleAsExit world
+            let world = World.subscribe4 (World.handleAsScreenTransition CreditsAddress) ClickTitleCreditsEventAddress GameAddress world
+            let world = World.subscribe4 (handleAsScreenTransitionToGameplay false) ClickTitleNewGameEventAddress GameAddress world
+            let world = World.subscribe4 (handleAsScreenTransitionToGameplay true) ClickTitleLoadGameEventAddress GameAddress world
+            World.subscribe4 World.handleAsExit ClickTitleExitEventAddress GameAddress world
 
         static let addCredits world =
             let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name CreditsGroupFilePath CreditsAddress world
-            World.subscribe4 ClickCreditsBackEventAddress GameAddress (World.handleAsScreenTransition TitleAddress) world
+            World.subscribe4 (World.handleAsScreenTransition TitleAddress) ClickCreditsBackEventAddress GameAddress world
 
         static let addGameplay world =
             let world = snd <| World.addDissolveScreenFromGroupFile true DissolveData typeof<GameplayDispatcher>.Name HudFilePath GameplayAddress world
             let world = World.setGroup (Group.setPersistent false <| World.getGroup HudAddress world) HudAddress world
-            World.subscribe4 (ClickEventAddress ->>- HudBackAddress) GameAddress (World.handleAsScreenTransition TitleAddress) world
+            World.subscribe4 (World.handleAsScreenTransition TitleAddress) (ClickEventAddress ->>- HudBackAddress) GameAddress world
 
         override dispatcher.Register (game, world) =
             let world = World.hintRenderPackageUse GuiPackageName world

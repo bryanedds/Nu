@@ -415,8 +415,8 @@ module Program =
 
     let subscribeToEntityEvents form world =
         let groupAddress = (World.getUserState world).GroupAddress
-        let world = World.subscribe AddEntityKey (AddEventAddress ->>- groupAddress ->- AnyEventAddress) GameAddress (handleNuEntityAdd form) world
-        World.subscribe RemovingEntityKey (RemovingEventAddress ->>- groupAddress ->- AnyEventAddress) GameAddress (handleNuEntityRemoving form) world
+        let world = World.subscribe AddEntityKey (handleNuEntityAdd form) (AddEventAddress ->>- groupAddress ->- AnyEventAddress) GameAddress world
+        World.subscribe RemovingEntityKey (handleNuEntityRemoving form) (RemovingEventAddress ->>- groupAddress ->- AnyEventAddress) GameAddress world
 
     let unsubscribeFromEntityEvents world =
         let world = World.unsubscribe AddEntityKey world
@@ -885,11 +885,11 @@ module Program =
             let screenHierarchy = (screen, groupHierarchies)
             let world = snd <| World.addScreen screenHierarchy EditorScreenAddress world
             let world = World.setOptSelectedScreenAddress (Some EditorScreenAddress) world 
-            let world = World.subscribe4 MouseRightDownEventAddress GameAddress (handleNuMouseRightDown form worldChangers refWorld) world
-            let world = World.subscribe4 MouseLeftDownEventAddress GameAddress (handleNuEntityDragBegin form worldChangers refWorld) world
-            let world = World.subscribe4 MouseLeftUpEventAddress GameAddress (handleNuEntityDragEnd form) world
-            let world = World.subscribe4 MouseCenterDownEventAddress GameAddress (handleNuCameraDragBegin form) world
-            let world = World.subscribe4 MouseCenterUpEventAddress GameAddress (handleNuCameraDragEnd form) world
+            let world = World.subscribe4 (handleNuMouseRightDown form worldChangers refWorld) MouseRightDownEventAddress GameAddress world
+            let world = World.subscribe4 (handleNuEntityDragBegin form worldChangers refWorld) MouseLeftDownEventAddress GameAddress world
+            let world = World.subscribe4 (handleNuEntityDragEnd form) MouseLeftUpEventAddress GameAddress world
+            let world = World.subscribe4 (handleNuCameraDragBegin form) MouseCenterDownEventAddress GameAddress world
+            let world = World.subscribe4 (handleNuCameraDragEnd form) MouseCenterUpEventAddress GameAddress world
             let world = subscribeToEntityEvents form world
             Right world
         | Left errorMsg -> Left errorMsg
