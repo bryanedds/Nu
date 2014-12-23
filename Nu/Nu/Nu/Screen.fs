@@ -106,6 +106,10 @@ module WorldScreenModule =
         static member updateScreen updater address world =
             World.updateScreenW (fun screen _ -> updater screen) address world
 
+        static member updateByScreen updater address world : World =
+            let screen = World.getScreen address world
+            updater screen world
+
         static member getOptScreenHierarchy address world =
             match World.getOptScreen address world with
             | Some screen ->

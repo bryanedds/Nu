@@ -102,6 +102,10 @@ module WorldGroupModule =
         static member updateGroup updater address world =
             World.updateGroupW (fun group _ -> updater group) address world
 
+        static member updateByGroup updater address world : World =
+            let group = World.getGroup address world
+            updater group world
+
         static member getOptGroupHierarchy address world =
             match World.getOptGroup address world with
             | Some group ->
