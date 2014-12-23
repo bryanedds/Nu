@@ -606,8 +606,8 @@ module GameplayDispatcherModule =
             // add scene hierarchy to world
             snd <| World.addGroup sceneHierarchy sceneAddress world
 
-        static let handleSelectGameplay (event : Event<unit, Screen>) world =
-            let (gameplay, address) = (event.Subscriber, event.SubscriberAddress)
+        static let handleSelectGameplay event world =
+            let (gameplay : Screen, address) = (event.Subscriber, event.SubscriberAddress)
             let world =
                 // NOTE: doing a File.Exists then loading the file is dangerous since the file can
                 // always be deleted / moved between the two operations!
