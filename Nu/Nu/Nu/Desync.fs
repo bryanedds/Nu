@@ -92,7 +92,7 @@ module Desync =
             let world = advance event world
             (eventHandling, world)
         let world = advance Unchecked.defaultof<Event<'a, 'o>> world
-        let world = World.subscribe<'a, 'o> subscriptionKey eventAddress observable.ObserverAddress subscription world
+        let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observable.ObserverAddress world
         (unsubscribe, world)
 
     /// Run the given desynchronized process on top of Nu's event system.

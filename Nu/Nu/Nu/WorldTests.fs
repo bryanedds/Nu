@@ -37,14 +37,14 @@ module WorldTests =
     let [<Fact>] subscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 UnitEventAddress GameAddress incUserStateAndCascade world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameAddress world
         let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeAndPublishTwiceWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 UnitEventAddress GameAddress incUserStateAndCascade world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameAddress world
         let world = World.publish4 () UnitEventAddress GameAddress world
         let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (2, World.getUserState world)
@@ -52,16 +52,16 @@ module WorldTests =
     let [<Fact>] subscribeTwiceAndPublishWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 UnitEventAddress GameAddress incUserStateAndCascade world
-        let world = World.subscribe4 UnitEventAddress GameAddress incUserStateAndCascade world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameAddress world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameAddress world
         let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeWithResolutionWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 UnitEventAddress GameAddress incUserStateAndCascade world
-        let world = World.subscribe4 UnitEventAddress GameAddress incUserStateAndResolve world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameAddress world
+        let world = World.subscribe4 incUserStateAndResolve UnitEventAddress GameAddress world
         let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (1, World.getUserState world)
 
@@ -69,7 +69,7 @@ module WorldTests =
         World.init ()
         let key = World.makeSubscriptionKey ()
         let world = World.makeEmpty 0
-        let world = World.subscribe key UnitEventAddress GameAddress incUserStateAndResolve world
+        let world = World.subscribe key incUserStateAndResolve UnitEventAddress GameAddress world
         let world = World.unsubscribe key world
         let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (0, World.getUserState world)
@@ -87,7 +87,7 @@ module WorldTests =
             let entity = World.unwrapS<string, Entity> event world
             let world = World.setUserState entity.Name world
             (Cascade, world)
-        let world = World.subscribe4 StringEventAddress TestEntityAddress handleEvent world
+        let world = World.subscribe4 handleEvent StringEventAddress TestEntityAddress world
         let world = World.publish4 String.Empty StringEventAddress GameAddress world
         Assert.Equal<string> (TestEntityName, World.getUserState world)
 
