@@ -322,7 +322,8 @@ module GameplayDispatcherModule =
                 else NoTurn
             | NoActivity -> NoTurn
 
-        static let determineEnemyActionActivities enemies =
+        static let determineEnemyActionActivities enemyAddresses world =
+            let enemies = World.getEntities enemyAddresses world
             List.foldBack // NOTE: had to convert to list since there is no Seq.foldBack yet...
                 (fun (enemy : Entity) precedingEnemyActivities ->
                     let enemyActivity =
@@ -339,7 +340,8 @@ module GameplayDispatcherModule =
                 (List.ofSeq enemies)
                 []
 
-        static let determineEnemyNavigationActivities enemies =
+        static let determineEnemyNavigationActivities enemyAddresses world =
+            let enemies = World.getEntities enemyAddresses world
             List.foldBack // NOTE: had to convert to list since there is no Seq.foldBack yet...
                 (fun (enemy : Entity) enemyActivities ->
                     let noCurrentEnemyActionActivity = Seq.notExists (fun (enemy : Entity) -> ActivityState.isActing enemy.ActivityState) enemies
@@ -464,6 +466,7 @@ module GameplayDispatcherModule =
 
             // determine (and set) enemy desired turns if applicable
             let world =
+                // TODO: raise the level of abstraction up here (use addresses only instead of raw entity values)
                 match optNewPlayerActivity with
                 | Some (Action _)
                 | Some (Navigation _) ->
@@ -482,17 +485,16 @@ module GameplayDispatcherModule =
 
             // run enemy activities in accordance with the player's current activity
             let world =
-                let player = World.getEntity (getPlayerAddress address) world
                 let enemyAddresses = getEnemyAddresses address world
-                let enemies = World.getEntities enemyAddresses world
-                match player.ActivityState with
+                let playerActivity = World.getEntityBy (fun player -> player.ActivityState) (getPlayerAddress address) world
+                match playerActivity with
                 | Action _ -> world
                 | Navigation _ ->
-                    let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
+                    let newEnemyNavigationActivities = determineEnemyNavigationActivities enemyAddresses world
                     runEnemyNavigationActivities newEnemyNavigationActivities enemyAddresses address world
                 | NoActivity ->
-                    let newEnemyActionActivities = determineEnemyActionActivities enemies
-                    let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
+                    let newEnemyActionActivities = determineEnemyActionActivities enemyAddresses world
+                    let newEnemyNavigationActivities = determineEnemyNavigationActivities enemyAddresses world
                     runEnemyActivities newEnemyActionActivities newEnemyNavigationActivities enemyAddresses address world
 
             // teh world
@@ -568,7 +570,7 @@ module GameplayDispatcherModule =
             let player = Entity.setPublishChanges true player
 
             // make enemies
-            let (enemies, _) = makeEnemies rand world
+            let enemies = fst <| makeEnemies rand world
             let world = snd <| World.addEntities enemies sceneAddress world
 
             // make scene hierarchy
@@ -595,7 +597,7 @@ module GameplayDispatcherModule =
             let rand = Rand.make gameplay.ContentRandState
 
             // make field frome rand (field is not serialized, but generated deterministically with ContentRandState)
-            let (field, _) = makeField rand world
+            let field = fst <| makeField rand world
 
             // find scene hierarchy and add field to it
             let sceneHierarchy = Map.find SceneName groupHierarchies
@@ -606,14 +608,13 @@ module GameplayDispatcherModule =
             // add scene hierarchy to world
             snd <| World.addGroup sceneHierarchy sceneAddress world
 
-        static let handleSelectGameplay event world =
-            let (gameplay : Screen, address) = (event.Subscriber, event.SubscriberAddress)
+        static let handleSelectGameplay (event : Event<_, Screen>) world =
             let world =
                 // NOTE: doing a File.Exists then loading the file is dangerous since the file can
                 // always be deleted / moved between the two operations!
-                if gameplay.ShallLoadGame && File.Exists SaveFilePath
-                then handleLoadGame gameplay address world
-                else handleNewGame gameplay address world
+                if event.Subscriber.ShallLoadGame && File.Exists SaveFilePath
+                then handleLoadGame event.Subscriber event.SubscriberAddress world
+                else handleNewGame event.Subscriber event.SubscriberAddress world
             (Cascade, world)
 
         static let handleClickSaveGame event world =

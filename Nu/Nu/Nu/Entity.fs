@@ -224,6 +224,10 @@ module WorldEntityModule =
         static member updateEntity updater address world =
             World.updateEntityW (fun entity _ -> updater entity) address world
 
+        static member updateByEntity updater address world : World =
+            let entity = World.getEntity address world
+            updater entity world
+
         static member getEntities addresses world =
             Seq.map (fun address -> World.getEntity address world) addresses
 

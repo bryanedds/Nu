@@ -49,6 +49,10 @@ module WorldGameModule =
         static member updateGame updater world =
             World.updateGameW (fun game _ -> updater game) world
 
+        static member updateByGame updater world : World =
+            let game = World.getGame world
+            updater game world
+
         static member getGameHierarchy world =
             let game = world.Game
             let screenHierarchies = World.getScreenHierarchies world
