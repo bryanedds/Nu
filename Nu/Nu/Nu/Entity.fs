@@ -181,10 +181,29 @@ module WorldEntityModule =
                 | None -> world
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
 
-        static member getEntityBy by address world = by ^^ Option.get ^^ World.optEntityFinder address world
-        static member getEntity address world = World.getEntityBy id address world
+        static member containsEntity address world =
+            Option.isSome <| World.optEntityFinder address world
 
-        static member private setEntityWithoutEvent entity address world = World.entityAdder entity address world
+        static member getOptEntity address world =
+            World.optEntityFinder address world
+
+        static member getEntityBy by address world =
+            by ^^ Option.get ^^ World.getOptEntity address world
+
+        static member getEntity address world =
+            World.getEntityBy id address world
+
+        static member getEntityInGroup entityName groupAddress world =
+            World.getEntity (gatoea groupAddress entityName) world
+
+        static member getEntityAddressInGroup entityName groupAddress world =
+            let address = gatoea groupAddress entityName
+            ignore <| World.getEntity address world // ensure address is valid
+            address
+
+        static member private setEntityWithoutEvent entity address world =
+            World.entityAdder entity address world
+        
         static member setEntity entity address world =
             let oldEntity = Option.get <| World.optEntityFinder address world
             let world = World.entityAdder entity address world
@@ -192,20 +211,23 @@ module WorldEntityModule =
             then World.publish4 { OldEntity = oldEntity } (EntityChangeEventAddress ->>- address) address world
             else world
 
-        static member updateEntityW updater address world =
-            let entity = World.getEntity address world
-            let entity = updater entity world
-            World.setEntity entity address world
-        static member updateEntity updater address world = World.updateEntityW (fun entity _ -> updater entity) address world
-
-        static member getOptEntity address world = World.optEntityFinder address world
-        static member containsEntity address world = Option.isSome <| World.getOptEntity address world
         static member private setOptEntityWithoutEvent optEntity address world =
             match optEntity with 
             | Some entity -> World.entityAdder entity address world
             | None -> World.entityRemover address world
+        
+        static member updateEntityW updater address world =
+            let entity = World.getEntity address world
+            let entity = updater entity world
+            World.setEntity entity address world
+        
+        static member updateEntity updater address world =
+            World.updateEntityW (fun entity _ -> updater entity) address world
 
-        static member getEntityMap (groupAddress : Group Address) world =
+        static member getEntities addresses world =
+            Seq.map (fun address -> World.getEntity address world) addresses
+
+        static member getEntityMapInGroup (groupAddress : Group Address) world =
             match groupAddress.Names with
             | [screenName; groupName] ->
                 match Map.tryFind screenName world.Entities with
@@ -216,24 +238,47 @@ module WorldEntityModule =
                 | None -> Map.empty
             | _ -> failwith <| "Invalid group address '" + acstring groupAddress + "'."
 
-        static member getEntities groupAddress world =
-            let entityMap = World.getEntityMap groupAddress world
+        static member getEntitiesInGroup groupAddress world =
+            let entityMap = World.getEntityMapInGroup groupAddress world
             Map.toValueSeq entityMap
 
-        static member getEntityMap3 entityNames (groupAddress : Group Address) world =
+        static member getEntityMapInGroup3 entityNames (groupAddress : Group Address) world =
             let entityNames = Set.ofSeq entityNames
-            let entityMap = World.getEntityMap groupAddress world
+            let entityMap = World.getEntityMapInGroup groupAddress world
             Map.filter (fun entityName _ -> Set.contains entityName entityNames) entityMap
 
-        static member getEntities3 entityNames groupAddress world =
-            let entityMap = World.getEntityMap3 groupAddress entityNames world
+        static member getEntitiesInGroup3 entityNames groupAddress world =
+            let entityMap = World.getEntityMapInGroup3 groupAddress entityNames world
             Map.toValueSeq entityMap
 
-        static member setEntities groupAddress entities world =
-            Seq.fold
-                (fun world (entity : Entity) -> World.setEntity entity (gatoea groupAddress entity.Name) world)
-                world
-                entities
+        static member getEntityAddressesInGroup groupAddress world =
+            let entities = World.getEntitiesInGroup groupAddress world
+            Seq.map (fun entity -> gatoea groupAddress entity.Name) entities
+
+        static member setEntities entities addresses world =
+            Seq.fold2 (fun world entity address -> World.setEntity entity address world) world entities addresses
+
+        static member setEntitiesInGroup groupAddress entities world =
+            Seq.fold (fun world (entity : Entity) -> World.setEntity entity (gatoea groupAddress entity.Name) world) world entities
+
+        static member updateEntitiesW updater addresses world =
+            Seq.fold (fun world address -> World.updateEntityW updater address world) world addresses
+        
+        static member updateEntities updater addresses world =
+            World.updateEntitiesW (fun entity _ -> updater entity) addresses world
+
+        static member updateEntitiesInGroupW updater groupAddress world =
+            let addresses = World.getEntityAddressesInGroup groupAddress world
+            Seq.fold (fun world address -> World.updateEntityW updater address world) world addresses
+
+        static member updateEntitiesInGroup updater addresses world =
+            World.updateEntitiesInGroupW (fun entity _ -> updater entity) addresses world
+
+        static member filterEntityAddressesW pred addresses world =
+            Seq.filter (fun address -> World.getEntityBy (fun entity -> pred entity world) address world) addresses
+
+        static member filterEntityAddresses pred addresses world =
+            World.filterEntityAddressesW (fun entity _ -> pred entity) addresses world
 
         static member private registerEntity entity address world =
             Entity.register entity address world
@@ -256,11 +301,6 @@ module WorldEntityModule =
                     | None -> world }
             let world = World.addTask task world
             (entity, world)
-
-        static member removeEntityIf pred address world =
-            let entity = World.getEntity address world
-            if pred entity then World.removeEntity entity address world
-            else (entity, world)
 
         static member removeEntitiesImmediate entities (groupAddress : Group Address) world =
             World.transformSimulants World.removeEntityImmediate gatoea entities groupAddress world

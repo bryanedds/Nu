@@ -38,7 +38,7 @@ module OccupationMap =
         Map.add characterPositionM true occupationMap
 
     let occupyByCharacters characters occupationMap =
-        List.fold (flip occupyByCharacter) occupationMap characters
+        Seq.fold (flip occupyByCharacter) occupationMap characters
 
     let occupyByAdjacentCharacter positionM (character : Entity) occupationMap =
         let characterPositionM = vftovm character.Position
@@ -47,14 +47,14 @@ module OccupationMap =
         else occupationMap
 
     let occupyByAdjacentCharacters positionM characters occupationMap =
-        List.fold (flip <| occupyByAdjacentCharacter positionM) occupationMap characters
+        Seq.fold (flip <| occupyByAdjacentCharacter positionM) occupationMap characters
 
     let unoccupyByCharacter (character : Entity) occupationMap =
         let characterPositionM = vftovm character.Position
         Map.add characterPositionM false occupationMap
 
     let unoccupyByCharacters characters occupationMap =
-        List.fold (flip unoccupyByCharacter) occupationMap characters
+        Seq.fold (flip unoccupyByCharacter) occupationMap characters
 
     let transferByDesiredTurn desiredTurn character occupationMap =
         match desiredTurn with
