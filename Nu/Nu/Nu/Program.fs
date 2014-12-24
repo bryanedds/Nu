@@ -4,7 +4,7 @@ open Nu
 module Program =
 
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
-    scaled to a back-buffer of a varying size, render each component unscalws to a off-screen
+    scaled to a back-buffer of a varying size, render each component unscaled to a off-screen
     buffer of a static size and then blit that with scaling to the back-buffer. *)
 
     (* WISDOM: From benchmarks. it looks like our mobile target will cost us anywhere from a 25% to
