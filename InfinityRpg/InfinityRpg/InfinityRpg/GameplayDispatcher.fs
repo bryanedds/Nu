@@ -99,11 +99,21 @@ module GameplayDispatcherModule =
                 (Map.empty, rand)
                 [0 .. enemyCount - 1]
 
-        static let walk positive current destination =
+        static let walk3 positive current destination =
             let walkSpeed = if positive then CharacterWalkSpeed else -CharacterWalkSpeed
             let next = current + walkSpeed
             let delta = if positive then destination - next else next - destination
             if delta < CharacterWalkSpeed then (destination, WalkFinished) else (next, WalkContinuing)
+
+        static let walk walkDescriptor (position : Vector2) =
+            let walkOrigin = vmtovf walkDescriptor.WalkOriginM
+            let walkVector = dtovf walkDescriptor.WalkDirection
+            let walkDestination = walkOrigin + walkVector
+            match walkDescriptor.WalkDirection with
+            | Upward -> let (newY, arrival) = walk3 true position.Y walkDestination.Y in (Vector2 (position.X, newY), arrival)
+            | Rightward -> let (newX, arrival) = walk3 true position.X walkDestination.X in (Vector2 (newX, position.Y), arrival)
+            | Downward -> let (newY, arrival) = walk3 false position.Y walkDestination.Y in (Vector2 (position.X, newY), arrival)
+            | Leftward -> let (newX, arrival) = walk3 false position.X walkDestination.X in (Vector2 (newX, position.Y), arrival)
 
         static let getCharacterAnimationStateByActionBegin tickTime characterPosition characterAnimationState actionDescriptor =
             let currentDirection = characterAnimationState.Direction
@@ -154,37 +164,31 @@ module GameplayDispatcherModule =
             let enemies = World.getEntities (getEnemyAddresses address world) world
             anyTurnsInProgress2 player enemies
 
+        static let updateCharacterByWalk walkDescriptor (character : Entity) =
+            let (newPosition, walkState) = walk walkDescriptor character.Position
+            let character = Entity.setPosition newPosition character
+            let characterAnimationState = { character.CharacterAnimationState with Direction = walkDescriptor.WalkDirection }
+            let character = Entity.setCharacterAnimationState characterAnimationState character
+            (character, walkState)
+
+        static let updateCharacterByWalkState walkState navigationDescriptor (character : Entity) =
+            match walkState with
+            | WalkFinished ->
+                match navigationDescriptor.OptNavigationPath with
+                | Some [] -> failwith "NavigationPath should never be empty here."
+                | Some (_ :: []) -> Entity.setActivityState NoActivity character
+                | Some (currentNode :: navigationPath) ->
+                    let walkDirection = vmtod <| (List.head navigationPath).PositionM - currentNode.PositionM
+                    let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = vftovm character.Position }
+                    let navigationDescriptor = { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
+                    Entity.setActivityState (Navigation navigationDescriptor) character
+                | None -> Entity.setActivityState NoActivity character
+            | WalkContinuing -> character
+
         static let updateCharacterByNavigation navigationDescriptor characterAddress world =
             let character = World.getEntity characterAddress world
-            let (character, walkState) =
-                let walkDescriptor = navigationDescriptor.WalkDescriptor
-                let (newPosition, walkState) =
-                    let walkOrigin = vmtovf walkDescriptor.WalkOriginM
-                    let walkVector = dtovf walkDescriptor.WalkDirection
-                    let walkDestination = walkOrigin + walkVector
-                    match walkDescriptor.WalkDirection with
-                    | Upward -> let (newY, arrival) = walk true character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
-                    | Rightward -> let (newX, arrival) = walk true character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
-                    | Downward -> let (newY, arrival) = walk false character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
-                    | Leftward -> let (newX, arrival) = walk false character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
-                let characterAnimationState = { character.CharacterAnimationState with Direction = walkDescriptor.WalkDirection }
-                let character = Entity.setPosition newPosition character
-                let character = Entity.setCharacterAnimationState characterAnimationState character
-                (character, walkState)
-            let character =
-                match walkState with
-                | WalkFinished ->
-                    match navigationDescriptor.OptNavigationPath with
-                    | Some [] -> failwith "NavigationPath should never be empty here."
-                    | Some (_ :: []) -> Entity.setActivityState NoActivity character
-                    | Some (currentNode :: navigationPath) ->
-                        let walkDescriptor =
-                            { WalkDirection = vmtod <| (List.head navigationPath).PositionM - currentNode.PositionM
-                              WalkOriginM = vftovm character.Position }
-                        let navigationDescriptor = { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
-                        Entity.setActivityState (Navigation navigationDescriptor) character
-                    | None -> Entity.setActivityState NoActivity character
-                | WalkContinuing -> character
+            let (character, walkState) = updateCharacterByWalk navigationDescriptor.WalkDescriptor character
+            let character = updateCharacterByWalkState walkState navigationDescriptor character
             World.setEntity character characterAddress world
 
         static let updateCharacterByAction actionDescriptor characterAddress world =
@@ -262,7 +266,7 @@ module GameplayDispatcherModule =
 
         static let determineDesiredEnemyTurns occupationMap player enemies rand =
             let (_, enemyTurns, rand) =
-                List.foldBack // NOTE: had to convert to list since there is no Seq.foldBack yet...
+                List.foldBack
                     (fun (enemy : Entity) (occupationMap, enemyTurns, rand) ->
                         let (enemyTurn, rand) = determineDesiredEnemyTurn occupationMap player enemy rand
                         let occupationMap = OccupationMap.transferByDesiredTurn enemyTurn enemy occupationMap
@@ -324,7 +328,7 @@ module GameplayDispatcherModule =
 
         static let determineEnemyActionActivities enemyAddresses world =
             let enemies = World.getEntities enemyAddresses world
-            List.foldBack // NOTE: had to convert to list since there is no Seq.foldBack yet...
+            List.foldBack
                 (fun (enemy : Entity) precedingEnemyActivities ->
                     let enemyActivity =
                         let noPrecedingEnemyActionActivity = Seq.notExists ActivityState.isActing precedingEnemyActivities
@@ -342,7 +346,7 @@ module GameplayDispatcherModule =
 
         static let determineEnemyNavigationActivities enemyAddresses world =
             let enemies = World.getEntities enemyAddresses world
-            List.foldBack // NOTE: had to convert to list since there is no Seq.foldBack yet...
+            List.foldBack
                 (fun (enemy : Entity) enemyActivities ->
                     let noCurrentEnemyActionActivity = Seq.notExists (fun (enemy : Entity) -> ActivityState.isActing enemy.ActivityState) enemies
                     let enemyActivity =

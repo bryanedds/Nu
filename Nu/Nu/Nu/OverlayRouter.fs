@@ -4,8 +4,7 @@
 module OverlayRouterModule =
 
     /// Maps from dispatcher names to opt overlay names.
-    type OverlayRouter =
-        Map<string, string option>
+    type OverlayRouter = Map<string, string option>
 
 [<AutoOpen>]
 module OverlayRouter =
