@@ -27,7 +27,6 @@ Editing a section of a BlazeVector stage.
 ![Screenshot](InfinityRpg/Promotional/InfinityRpg.png?raw=true)
 Screenshot of Nu's new game in progress, InfinityRpg.
 
-Finally, here's a video of some of BlazeVector's gameplay - https://github.com/bryanedds/FPWorks/blob/master/BlazeVector/Promotional/BlazeVector.mp4?raw=true
 
 Getting Started
 ===============
