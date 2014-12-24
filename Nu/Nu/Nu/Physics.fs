@@ -219,10 +219,7 @@ module PhysicsModule =
             | Dynamic -> Dynamics.BodyType.Dynamic
 
         static member private handleCollision
-            integrator
-            (fixture : Dynamics.Fixture)
-            (fixture2 : Dynamics.Fixture)
-            (contact : Dynamics.Contacts.Contact) =
+            integrator (fixture : Dynamics.Fixture) (fixture2 : Dynamics.Fixture) (contact : Dynamics.Contacts.Contact) =
             let normal = fst <| contact.GetWorldManifold ()
             let bodyCollisionMessage =
                 { SourceAddress = fixture.Body.UserData :?> obj Address
