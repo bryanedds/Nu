@@ -457,18 +457,18 @@ module WorldModule =
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton <| uint32 event.button.button
-                    let mouseButtonEventAddress = ltoa [MouseButton.toEventName mouseButton]
-                    let mouseButtonDownEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ltoa<MouseButtonData> ["Down"]
-                    let mouseButtonChangeEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ltoa<MouseButtonData> ["Change"]
+                    let mouseButtonEventAddress = ntoa <| MouseButton.toEventName mouseButton
+                    let mouseButtonDownEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Down"
+                    let mouseButtonChangeEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
                     let world = World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonDownEventAddress GameAddress world
                     World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress GameAddress world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton <| uint32 event.button.button
-                    let mouseButtonEventAddress = ltoa [MouseButton.toEventName mouseButton]
-                    let mouseButtonUpEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ltoa<MouseButtonData> ["Up"]
-                    let mouseButtonChangeEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ltoa<MouseButtonData> ["Change"]
+                    let mouseButtonEventAddress = ntoa <| MouseButton.toEventName mouseButton
+                    let mouseButtonUpEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Up"
+                    let mouseButtonChangeEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
                     let world = World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEventAddress GameAddress world
                     World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress GameAddress world

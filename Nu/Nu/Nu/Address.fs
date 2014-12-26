@@ -137,6 +137,10 @@ module AddressModule =
     let ltoa<'t> list =
         Address<'t>.make list
 
+    /// Convert a single name into an address.
+    let ntoa<'t> name =
+        ltoa<'t> [name]
+
     /// Convert any address to an obj Address.
     let atooa<'t> (address : 't Address) =
         { Names = address.Names; NamesRev = address.NamesRev; NameKeys = address.NameKeys; Hash = address.Hash; TypeCarrier = fun (_ : obj) -> () }

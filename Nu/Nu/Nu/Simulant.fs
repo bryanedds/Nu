@@ -41,10 +41,10 @@ module SimulantAddressModule =
         Address.changeType<'t, Simulant> address
 
     let gatoea groupAddress entityName =
-        Address.changeType<Group, Entity> groupAddress ->- ltoa [entityName]
+        Address.changeType<Group, Entity> groupAddress ->- ntoa entityName
 
     let satoga screenAddress groupName =
-        Address.changeType<Screen, Group> screenAddress ->- ltoa [groupName]
+        Address.changeType<Screen, Group> screenAddress ->- ntoa groupName
 
     let satoea screenAddress groupName entityName =
         gatoea (satoga screenAddress groupName) entityName
