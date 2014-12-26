@@ -32,7 +32,7 @@ module Constants =
 
     // splash constants
     let NuSplashName = "Splash"
-    let NuSplashAddress = ltoa<Screen> [NuSplashName]
+    let NuSplashAddress = ntoa<Screen> NuSplashName
     let NuSplashData =
         { DissolveData = DissolveData
           IdlingTime = 60L
@@ -47,24 +47,24 @@ module Constants =
 
     // title constants
     let TitleName = "Title"
-    let TitleAddress = ltoa<Screen> [TitleName]
+    let TitleAddress = ntoa<Screen> TitleName
     let TitleGroupName = DefaultGroupName
     let TitleGroupAddress = satoga TitleAddress TitleGroupName
-    let ClickTitleNewGameEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ltoa ["NewGame"]
-    let ClickTitleLoadGameEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ltoa ["LoadGame"]
-    let ClickTitleCreditsEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ltoa ["Credits"]
-    let ClickTitleExitEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ltoa ["Exit"]
+    let ClickTitleNewGameEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ntoa "NewGame"
+    let ClickTitleLoadGameEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ntoa "LoadGame"
+    let ClickTitleCreditsEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ntoa "Credits"
+    let ClickTitleExitEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ntoa "Exit"
 
     // credits constants
     let CreditsName = "Credits"
-    let CreditsAddress = ltoa<Screen> [CreditsName]
+    let CreditsAddress = ntoa<Screen> CreditsName
     let CreditsGroupName = DefaultGroupName
     let CreditsGroupAddress = satoga CreditsAddress CreditsGroupName
-    let ClickCreditsBackEventAddress = ClickEventAddress ->>- CreditsGroupAddress ->- ltoa ["Back"]
+    let ClickCreditsBackEventAddress = ClickEventAddress ->>- CreditsGroupAddress ->- ntoa "Back"
 
     // gameplay constants
     let GameplayName = "Gameplay"
-    let GameplayAddress = ltoa<Screen> [GameplayName]
+    let GameplayAddress = ntoa<Screen> GameplayName
     
     // hud constants
     let HudName = "Hud"

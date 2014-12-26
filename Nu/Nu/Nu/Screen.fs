@@ -86,7 +86,7 @@ module WorldScreenModule =
             World.getScreenBy id address world
 
         static member getScreenAddress screenName world =
-            let address = ltoa<Screen> [screenName]
+            let address = ntoa<Screen> screenName
             ignore <| World.getScreen address world // ensure address is valid
             address
 
@@ -141,13 +141,13 @@ module WorldScreenModule =
             let screens = World.getScreenMap world
             Map.map
                 (fun screenName screen ->
-                    let screenAddress = ltoa<Screen> [screenName]
+                    let screenAddress = ntoa<Screen> screenName
                     let groupHierarchies = World.getGroupHierarchiesInScreen screenAddress world
                     (screen, groupHierarchies))
                 screens
 
         static member getScreenAddresses world =
-            Map.fold (fun addresses screenName _ -> ltoa<Screen> [screenName] :: addresses) [] world.Screens
+            Map.fold (fun addresses screenName _ -> ntoa<Screen> screenName :: addresses) [] world.Screens
 
         static member updateScreensW updater addresses world =
             Seq.fold (fun world address -> World.updateScreenW updater address world) world addresses
