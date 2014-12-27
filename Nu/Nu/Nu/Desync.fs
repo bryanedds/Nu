@@ -54,8 +54,8 @@ module Desync =
             let desync = World.getCallbackState callbackKey world : Event<'a, 'o> -> Desync<Event<'a, 'o>, World, unit>
             let (world, advanceResult) = advance desync event world
             match advanceResult with
-            | Left desyncNext -> World.addCallbackState callbackKey desyncNext world
             | Right () -> unsubscribe world
+            | Left desyncNext -> World.addCallbackState callbackKey desyncNext world
         let subscription = fun event world ->
             let world = advance event world
             (eventHandling, world)

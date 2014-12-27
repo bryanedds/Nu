@@ -514,15 +514,13 @@ module GameplayDispatcherModule =
                     do! loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress address world) <| fun i -> desync {
                         let! event = nextE ()
                         do! match event.Data with
-                            | Left _ -> updateEntity cancelNavigation playerAddress
-                            | Right _ ->
-                                if i = 0
-                                then updateBy
-                                        (determinePlayerTurnFromInput playerInput address)
-                                        (fun playerTurn -> runPlayerTurn playerTurn address)
-                                else updateBy
-                                        (determinePlayerTurn address)
-                                        (fun playerTurn -> runPlayerTurn playerTurn address) }
+                            | Right _ -> desync {
+                                let! playerTurn =
+                                    if i = 0
+                                    then getBy <| determinePlayerTurnFromInput playerInput address
+                                    else getBy <| determinePlayerTurn address
+                                do! update <| runPlayerTurn playerTurn address }
+                            | Left _ -> updateEntity cancelNavigation playerAddress }
                     do! updateEntity (Entity.setEnabled true) hudSaveGameAddress }
                 let obs =
                     observe (ClickEventAddress ->>- hudHaltAddress) address |>
