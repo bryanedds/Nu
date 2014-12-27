@@ -318,3 +318,31 @@ module Observer =
     let isSelected event world = World.isAddressSelected event.SubscriberAddress world
     let isSelectedScreenIdling _ world = World.isSelectedScreenIdling world
     let isSelectedScreenTransitioning _ world = World.isSelectedScreenTransitioning world
+
+open Observer
+module HigherOrderExperiment =
+
+    let observeEntity valueGetter entityAddress observerAddress =
+        observe (EntityChangeEventAddress ->>- entityAddress) observerAddress |>
+        filter (fun a w ->
+            let oldValue = valueGetter a.Data.OldEntity
+            let newValue = valueGetter (World.getEntity (atoea a.PublisherAddress) w)
+            oldValue <> newValue)
+
+    let updateEntity valueSetter o =
+        subscribe (fun a w -> (Cascade, World.updateEntity (valueSetter a.Data) a.SubscriberAddress w)) o
+
+    let updateGroup valueSetter o =
+        subscribe (fun a w -> (Cascade, World.updateGroup (valueSetter a.Data) a.SubscriberAddress w)) o
+
+    let updateScreen valueSetter o =
+        subscribe (fun a w -> (Cascade, World.updateScreen (valueSetter a.Data) a.SubscriberAddress w)) o
+
+    let updateGame valueSetter o =
+        subscribe (fun a w -> (Cascade, World.updateGame (valueSetter a.Data) w)) o
+
+    let connectEntities valueGetter sourceEntityAddress valueSetter observerEntityAddress =
+        observeEntity valueGetter sourceEntityAddress observerEntityAddress |>
+        updateEntity valueSetter
+
+    // let world = connectEntities (fun e -> e.Enabled) joeAddress Entity.setEnabled bobAddress world

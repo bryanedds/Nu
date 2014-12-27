@@ -220,7 +220,7 @@ module WorldEntityModule =
             let entity = World.getEntity address world
             let entity = updater entity world
             World.setEntity entity address world
-        
+
         static member updateEntity updater address world =
             World.updateEntityW (fun entity _ -> updater entity) address world
 
