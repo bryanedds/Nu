@@ -54,6 +54,29 @@ module Program =
     players and messages for rendering / audio will go back to them.
 
     Perhaps not realistic, but just an idea. *)
+
+    (* IDEA: it was suggested that time-travel debugging a la Elm or http://vimeo.com/36579366
+    would be appropriate to this engine given its pure functional nature. However, due to the
+    imperative nature of the physics system, it could be problematic. However again, that doesn't
+    mean the idea isn't worth pursuing for while it might not work perfectly in all usage
+    scenarios, it may well be of sufficient value. Additionally, on the possible occasion that the
+    current physics engine be replaceable with pure functional one, improvements to the feature may
+    be implementable in time. *)
+
+    (* IDEA: Faster feedback / iteration times with Edit & Continue.
+    
+    Edit & Continue is a God-send to languages that support it. Unfortunately, F# does not.
+    
+    However, it was pointed out to me by Andrea Magnorsky that some amount of hot-swapping of F#
+    code is currently acheived in the Onikira: Demon Killer by cardoning F# code behind dynamically
+    loaded .NET assemibles. This seems like it would also be applicable with Nu currently since
+    it also uses a plug-in model. On the other hand, I was informed that step-debugging for this
+    hot-loaded code was not yet working (and I'm not sure if it could without further
+    investigation.
+    
+    To me, the real solution is a proper implementation of Edit & Continue in F#. However, that is
+    something over which I have very little control over its implementation barring spending months
+    (at least) on implementing it in the F# compiler myself. *)
     
     // apparently a side-effect is needed to avoid the empty program warning
     Console.Write "Running Nu.exe"

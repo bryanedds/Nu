@@ -13,6 +13,8 @@ module RigidBodyFacetModule =
 
     type Entity with
 
+        // TODO: implement angular and linear velocity fields to make physics resets less discrete.
+
         member entity.MinorId = entity?MinorId : Guid
         static member setMinorId (value : Guid) (entity : Entity) = entity?MinorId <- value
         member entity.BodyType = entity?BodyType : BodyType
