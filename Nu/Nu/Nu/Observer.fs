@@ -317,11 +317,7 @@ module Observer =
     let distinctBy by o = o |> organize by |> toFst |> choose
     let distinct o = distinctBy (fun a -> a.Data) o
 
-    (* Map Combinators *)
-
-    // TODO - more of these?
-
-    (* Filter Combinators *)
+    (* Special Combinators *)
 
     let isGamePlaying _ world = World.isGamePlaying world
     let isPhysicsRunning _ world = World.isPhysicsRunning world
@@ -329,22 +325,23 @@ module Observer =
     let isSelectedScreenIdling _ world = World.isSelectedScreenIdling world
     let isSelectedScreenTransitioning _ world = World.isSelectedScreenTransitioning world
 
-open Observer
-module HofrpExperiment =
-
-    let observeEntity valueGetter entityAddress observerAddress =
-        observe (EntityChangeEventAddress ->>- entityAddress) observerAddress |>
+    let entityValueChange valueGetter =
         filter (fun a w ->
             let oldValue = valueGetter a.Data.OldEntity
             let newValue = valueGetter (World.getEntity (atoea a.PublisherAddress) w)
             oldValue <> newValue)
 
-    // breaks cyclic depdendencies
+    let noMoreThanOncePerTick o =
+        o |> organize (fun _ w -> w.State.TickTime) |> toFst |> choose
+
+open Observer
+module HofrpExperiment =
+
+    let observeEntity valueGetter entityAddress observerAddress =
+        observe (EntityChangeEventAddress ->>- entityAddress) observerAddress |> entityValueChange valueGetter
+
     let observeEntityCyclic valueGetter entityAddress observerAddress =
-        observeEntity valueGetter entityAddress observerAddress |>
-        organize (fun _ w -> w.State.TickTime) |>
-        toFst |>
-        choose
+        observeEntity valueGetter entityAddress observerAddress |> noMoreThanOncePerTick
 
     let updateOptEntity valueSetter o =
         subscribe (fun a w -> (Cascade, World.updateOptEntity (valueSetter a.Data) a.SubscriberAddress w)) o
