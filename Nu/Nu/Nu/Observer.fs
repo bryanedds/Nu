@@ -10,7 +10,7 @@ open Nu.WorldConstants
 module ObservableModule =
 
     /// An observable event in the reactive style.
-    /// TODO: I bet there's a monad in here somewhere...
+    /// TODO: I bet there's either a monad or arrow in here...
     type [<ReferenceEquality>] Observable<'a, 'o> =
         { ObserverAddress : 'o Address
           Subscribe : World -> 'a Address * (World -> World) * World }
@@ -68,7 +68,6 @@ module Observer =
             (subscriptionAddress'', unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
-    // NOTE: this could also be called coproduct.
     let sum (eventAddress : 'b Address) (observable : Observable<'a, 'o>) : Observable<Either<'a, 'b>, 'o> =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
@@ -269,24 +268,29 @@ module Observer =
             (zero (), zero (), zero ())
             observable
 
-    let organize (observable : Observable<'a, 'o>) : Observable<'a option * 'a Set, 'o> =
+    let organize f (observable : Observable<'a, 'o>) : Observable<('a * 'b) option * Map<'b, 'a>, 'o> =
         scan
-            (fun (_, s) a _ ->
-                if Set.contains a.Data s
-                then (None, s)
-                else (Some a.Data, Set.add a.Data s))
-            (None, Set.empty)
+            (fun (_, m) a w ->
+                let b = f a w
+                if Map.containsKey b m
+                then (None, m)
+                else (Some (a.Data, b), Map.add b a.Data m))
+            (None, Map.empty)
+            observable
+
+    let groupBy by (observable : Observable<'a, 'o>) : Observable<'b * bool * 'b Set, 'o> =
+        scan
+            (fun (_, _, s) a w ->
+                let b = by a w
+                if Set.contains b s
+                then (b, false, s)
+                else (b, true, Set.add b s))
+            (Unchecked.defaultof<'b>, false, Set.empty)
             observable
 
     let group (observable : Observable<'a, 'o>) : Observable<'a * bool * 'a Set, 'o> =
-        scan
-            (fun (_, _, s) a _ ->
-                if Set.contains a.Data s
-                then (a.Data, false, s)
-                else (a.Data, true, Set.add a.Data s))
-            (Unchecked.defaultof<'a>, false, Set.empty)
-            observable
-    
+        groupBy (fun a _ -> a.Data) observable
+
     let pairwise (observable : Observable<'a, 'o>) : Observable<'a * 'a, 'o> =
         track4
             (fun (o, _) a _ -> ((o, a.Data), Option.isSome o))
@@ -294,18 +298,24 @@ module Observer =
             (None, Unchecked.defaultof<'a>)
             observable
 
-    let inline sumOf o = scan2 (fun m n _ -> m + n) o
-    let inline productOf o = scan2 (fun m n _ -> m * n) o
+    let inline sumN o = scan2 (fun n a _ -> n + a.Data) o
+    let inline productN o = scan2 (fun n a _ -> n * a.Data) o
+    let toFst o = map (fun a _ -> fst a.Data) o
+    let toSnd o = map (fun a _ -> snd a.Data) o
+    let withFst mapper o = map (fun a _ -> (mapper <| fst a.Data, snd a.Data)) o
+    let withSnd mapper o = map (fun a _ -> (fst a.Data, mapper <| snd a.Data)) o
+    let duplicate o = map (fun a _ -> (a.Data, a.Data)) o
     let take n o = track (fun m _ -> (m + 1, m < n)) 0 o
     let skip n o = track (fun m _ -> (m + 1, m >= n)) 0 o
     let head o = take 1 o
     let tail o = skip 1 o
     let nth n o = o |> skip n |> head
     let search p o = o |> filter p |> head
-    let choose (o : Observable<'a option, 'o>) = o |> filter (fun o _ -> Option.isSome o.Data) |> map (fun a _ -> Option.get a.Data)
-    let max o = scan2 (fun m n _ -> if m < n.Data then n.Data else m) o
-    let min o = scan2 (fun m n _ -> if n.Data < m then n.Data else m) o
-    let distinct o = o |> choose |> map (fun a _ -> fst a.Data) |> organize
+    let choose (o : Observable<'a option, 'o>) = o |> filter (fun opt _ -> Option.isSome opt.Data) |> map (fun a _ -> Option.get a.Data)
+    let max o = scan2 (fun n a _ -> if n < a.Data then a.Data else n) o
+    let min o = scan2 (fun n a _ -> if a.Data < n then a.Data else n) o
+    let distinctBy by o = o |> organize by |> toFst |> choose
+    let distinct o = distinctBy (fun a -> a.Data) o
 
     (* Map Combinators *)
 
@@ -320,7 +330,7 @@ module Observer =
     let isSelectedScreenTransitioning _ world = World.isSelectedScreenTransitioning world
 
 open Observer
-module HigherOrderExperiment =
+module HofrpExperiment =
 
     let observeEntity valueGetter entityAddress observerAddress =
         observe (EntityChangeEventAddress ->>- entityAddress) observerAddress |>
@@ -329,11 +339,27 @@ module HigherOrderExperiment =
             let newValue = valueGetter (World.getEntity (atoea a.PublisherAddress) w)
             oldValue <> newValue)
 
+    // breaks cyclic depdendencies
+    let observeEntityCyclic valueGetter entityAddress observerAddress =
+        observeEntity valueGetter entityAddress observerAddress |>
+        organize (fun _ w -> w.State.TickTime) |>
+        toFst |>
+        choose
+
+    let updateOptEntity valueSetter o =
+        subscribe (fun a w -> (Cascade, World.updateOptEntity (valueSetter a.Data) a.SubscriberAddress w)) o
+
     let updateEntity valueSetter o =
         subscribe (fun a w -> (Cascade, World.updateEntity (valueSetter a.Data) a.SubscriberAddress w)) o
 
+    let updateOptGroup valueSetter o =
+        subscribe (fun a w -> (Cascade, World.updateOptGroup (valueSetter a.Data) a.SubscriberAddress w)) o
+
     let updateGroup valueSetter o =
         subscribe (fun a w -> (Cascade, World.updateGroup (valueSetter a.Data) a.SubscriberAddress w)) o
+
+    let updateOptScreen valueSetter o =
+        subscribe (fun a w -> (Cascade, World.updateOptScreen (valueSetter a.Data) a.SubscriberAddress w)) o
 
     let updateScreen valueSetter o =
         subscribe (fun a w -> (Cascade, World.updateScreen (valueSetter a.Data) a.SubscriberAddress w)) o
@@ -341,8 +367,4 @@ module HigherOrderExperiment =
     let updateGame valueSetter o =
         subscribe (fun a w -> (Cascade, World.updateGame (valueSetter a.Data) w)) o
 
-    let connectEntities valueGetter sourceEntityAddress valueSetter observerEntityAddress =
-        observeEntity valueGetter sourceEntityAddress observerEntityAddress |>
-        updateEntity valueSetter
-
-    // let world = connectEntities (fun e -> e.Enabled) joeAddress Entity.setEnabled bobAddress world
+    // let world = observeEntity (fun e -> e.Enabled) joeAddress bobAddress |> updateEntity Entity.setEnabled world

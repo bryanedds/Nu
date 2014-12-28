@@ -215,7 +215,22 @@ module WorldEntityModule =
             match optEntity with 
             | Some entity -> World.entityAdder entity address world
             | None -> World.entityRemover address world
-        
+
+        static member updateOptEntityW updater address world =
+            match World.getOptEntity address world with
+            | Some entity ->
+                let entity = updater entity world
+                World.setEntity entity address world
+            | None -> world
+
+        static member updateOptEntity updater address world =
+            World.updateOptEntityW (fun entity _ -> updater entity) address world
+
+        static member updateByOptEntity updater address world : World =
+            match World.getOptEntity address world with
+            | Some entity -> updater entity world
+            | None -> world
+
         static member updateEntityW updater address world =
             let entity = World.getEntity address world
             let entity = updater entity world

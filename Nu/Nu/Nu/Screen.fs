@@ -98,6 +98,21 @@ module WorldScreenModule =
             | Some screen -> World.setScreen screen address world
             | None -> World.screenRemover address world
 
+        static member updateOptScreenW updater address world =
+            match World.getOptScreen address world with
+            | Some screen ->
+                let screen = updater screen world
+                World.setScreen screen address world
+            | None -> world
+
+        static member updateOptScreen updater address world =
+            World.updateOptScreenW (fun screen _ -> updater screen) address world
+
+        static member updateByOptScreen updater address world : World =
+            match World.getOptScreen address world with
+            | Some screen -> updater screen world
+            | None -> world
+
         static member updateScreenW updater address world =
             let screen = World.getScreen address world
             let screen = updater screen world

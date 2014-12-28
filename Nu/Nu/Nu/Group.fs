@@ -93,7 +93,22 @@ module WorldGroupModule =
             match optGroup with
             | Some group -> World.setGroup group address world
             | None -> World.groupRemover address world
-        
+
+        static member updateOptGroupW updater address world =
+            match World.getOptGroup address world with
+            | Some group ->
+                let group = updater group world
+                World.setGroup group address world
+            | None -> world
+
+        static member updateOptGroup updater address world =
+            World.updateOptGroupW (fun group _ -> updater group) address world
+
+        static member updateByOptGroup updater address world : World =
+            match World.getOptGroup address world with
+            | Some group -> updater group world
+            | None -> world
+
         static member updateGroupW updater address world =
             let group = World.getGroup address world
             let group = updater group world
