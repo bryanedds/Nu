@@ -57,6 +57,7 @@ module ReactTests =
         let world =
             observe IntEventAddress GameAddress |>
             map (fun event _ -> event.Data * 2) |>
+            scan (fun _ world -> World.getUserState world = 0) |>
             subscribe (fun event world -> (Cascade, World.setUserState event.Data world)) <|
             world
         let world = World.publish4 1 IntEventAddress GameAddress world

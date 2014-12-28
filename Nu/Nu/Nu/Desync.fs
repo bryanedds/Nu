@@ -5,8 +5,14 @@ open Nu
 
 module Desync =
 
-    let updateByEntity expr address : Desync<'e, World, unit> =
-        desync { do! update <| World.updateByEntity expr address } // TODO: see if these can be more concise
+    let updateOptEntityW expr address : Desync<'e, World, unit> =
+        desync { do! update <| World.updateOptEntityW expr address } // TODO: see if these can be more concise
+
+    let updateOptEntity expr address : Desync<'e, World, unit> =
+        updateOptEntityW (flip (fun _ -> expr)) address
+
+    let updateByOptEntity expr address : Desync<'e, World, unit> =
+        desync { do! update <| World.updateByOptEntity expr address }
 
     let updateEntityW expr address : Desync<'e, World, unit> =
         desync { do! update <| World.updateEntityW expr address }
@@ -14,8 +20,17 @@ module Desync =
     let updateEntity expr address : Desync<'e, World, unit> =
         updateEntityW (flip (fun _ -> expr)) address
 
-    let updateByGroup expr address : Desync<'e, World, unit> =
-        desync { do! update <| World.updateByGroup expr address }
+    let updateByEntity expr address : Desync<'e, World, unit> =
+        desync { do! update <| World.updateByEntity expr address }
+
+    let updateOptGroupW expr address : Desync<'e, World, unit> =
+        desync { do! update <| World.updateOptGroupW expr address }
+
+    let updateOptGroup expr address : Desync<'e, World, unit> =
+        updateOptGroupW (flip (fun _ -> expr)) address
+
+    let updateByOptGroup expr address : Desync<'e, World, unit> =
+        desync { do! update <| World.updateByOptGroup expr address }
 
     let updateGroupW expr address : Desync<'e, World, unit> =
         desync { do! update <| World.updateGroupW expr address }
@@ -23,8 +38,17 @@ module Desync =
     let updateGroup expr address : Desync<'e, World, unit> =
         updateGroupW (flip (fun _ -> expr)) address
 
-    let updateByScreen expr address : Desync<'e, World, unit> =
-        desync { do! update <| World.updateByScreen expr address }
+    let updateByGroup expr address : Desync<'e, World, unit> =
+        desync { do! update <| World.updateByGroup expr address }
+
+    let updateOptScreenW expr address : Desync<'e, World, unit> =
+        desync { do! update <| World.updateOptScreenW expr address }
+
+    let updateOptScreen expr address : Desync<'e, World, unit> =
+        updateOptScreenW (flip (fun _ -> expr)) address
+
+    let updateByOptScreen expr address : Desync<'e, World, unit> =
+        desync { do! update <| World.updateByOptScreen expr address }
 
     let updateScreenW expr address : Desync<'e, World, unit> =
         desync { do! update <| World.updateScreenW expr address }
@@ -32,14 +56,17 @@ module Desync =
     let updateScreen expr address : Desync<'e, World, unit> =
         updateScreenW (flip (fun _ -> expr)) address
 
-    let updateByGame expr : Desync<'e, World, unit> =
-        desync { do! update <| World.updateByGame expr }
+    let updateByScreen expr address : Desync<'e, World, unit> =
+        desync { do! update <| World.updateByScreen expr address }
 
     let updateGameW expr : Desync<'e, World, unit> =
         desync { do! update <| World.updateGameW expr }
 
     let updateGame expr : Desync<'e, World, unit> =
         updateGameW <| flip (fun _ -> expr)
+
+    let updateByGame expr : Desync<'e, World, unit> =
+        desync { do! update <| World.updateByGame expr }
 
     let private runDesync4 eventHandling (desync : Desync<Event<'a, 'o>, World, unit>) (observable : Observable<'a, 'o>) world =
         let callbackKey = World.makeCallbackKey ()
