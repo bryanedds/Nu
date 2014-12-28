@@ -335,7 +335,7 @@ module Observer =
         o |> organize (fun _ w -> w.State.TickTime) |> toFst |> choose
 
 open Observer
-module HofrpExperiment =
+module DfrpExperiment =
 
     let observeEntity valueGetter entityAddress observerAddress =
         observe (EntityChangeEventAddress ->>- entityAddress) observerAddress |> entityValueChange valueGetter
