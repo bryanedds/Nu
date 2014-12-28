@@ -30,14 +30,14 @@ module BulletModule =
                 let bullet = Entity.setAge (bullet.Age + 1L) bullet
                 let world =
                     if bullet.Age < 28L then World.setEntity bullet address world
-                    else snd <| World.removeEntity bullet address world
+                    else World.removeEntity address world
                 (Cascade, world)
             else (Cascade, world)
 
         let handleCollision event world =
-            let (bullet : Entity, address) = (event.Subscriber, event.SubscriberAddress)
+            let address = event.SubscriberAddress
             if World.isGamePlaying world then
-                let world = snd <| World.removeEntity bullet address world
+                let world = World.removeEntity address world
                 (Cascade, world)
             else (Cascade, world)
 
@@ -79,15 +79,15 @@ module EnemyModule =
             let force = Vector2 (-2000.0f, -20000.0f)
             World.applyBodyForce force enemy.PhysicsId world
 
-        let die (enemy : Entity) address world =
-            let world = snd <| World.removeEntity enemy address world
+        let die address world =
+            let world = World.removeEntity address world
             World.playSound 1.0f ExplosionSound world
 
         let handleTick event world =
             let (enemy : Entity, address) = (event.Subscriber, event.SubscriberAddress)
             if World.isGamePlaying world then
                 let world = if hasAppeared world.Camera enemy then move enemy world else world
-                let world = if enemy.Health <= 0 then die enemy address world else world
+                let world = if enemy.Health <= 0 then die address world else world
                 (Cascade, world)
             else (Cascade, world)
 
@@ -323,8 +323,8 @@ module StageScreenModule =
         let handleStopPlay event world =
             let sectionNames = [for i in 0 .. SectionCount do yield SectionName + acstring i]
             let groupNames = StagePlayName :: sectionNames
-            let groupMap = World.getGroupMapInScreen3 groupNames event.SubscriberAddress world
-            let world = snd <| World.removeGroups groupMap event.SubscriberAddress world
+            let groupAddresses = List.map (fun groupName -> event.SubscriberAddress -<<- ntoa<Group> groupName) groupNames
+            let world = World.removeGroups groupAddresses world
             (Cascade, world)
 
         override dispatcher.Register (screen, address, world) =

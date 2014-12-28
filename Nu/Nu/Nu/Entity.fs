@@ -135,12 +135,10 @@ module WorldEntityModule =
         static member private optEntityFinder (address : Entity Address) world =
             match address.Names with
             | [screenName; groupName; entityName] ->
-                let optGroupMap = Map.tryFind screenName world.Entities
-                match optGroupMap with
-                | Some groupMap ->
-                    let optEntityMap = Map.tryFind groupName groupMap
-                    match optEntityMap with
-                    | Some entityMap -> Map.tryFind entityName entityMap
+                match Map.tryFind screenName world.Simulants with
+                | Some (_, groupMap) ->
+                    match Map.tryFind groupName groupMap with
+                    | Some (_, entityMap) -> Map.tryFind entityName entityMap
                     | None -> None
                 | None -> None
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
@@ -148,35 +146,27 @@ module WorldEntityModule =
         static member private entityAdder (entity : Entity) (address : Entity Address) world =
             match address.Names with
             | [screenName; groupName; entityName] ->
-                match Map.tryFind screenName world.Entities with
-                | Some groupMap ->
+                match Map.tryFind screenName world.Simulants with
+                | Some (screen, groupMap) ->
                     match Map.tryFind groupName groupMap with
-                    | Some entityMap ->
+                    | Some (group, entityMap) ->
                         let entityMap = Map.add entityName entity entityMap
-                        let groupMap = Map.add groupName entityMap groupMap
-                        { world with Entities = Map.add screenName groupMap world.Entities }
-                    | None ->
-                        let entityMap = Map.singleton entityName entity
-                        let groupMap = Map.add groupName entityMap groupMap
-                        { world with Entities = Map.add screenName groupMap world.Entities }
-                | None ->
-                    let entityMap = Map.singleton entityName entity
-                    let groupMap = Map.singleton groupName entityMap
-                    { world with Entities = Map.add screenName groupMap world.Entities }
+                        let groupMap = Map.add groupName (group, entityMap) groupMap
+                        { world with Simulants = Map.add screenName (screen, groupMap) world.Simulants }
+                    | None -> failwith <| "Cannot add entity '" + acstring address + "' to non-existent group."
+                | None -> failwith <| "Cannot add entity '" + acstring address + "' to non-existent screen."
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
 
         static member private entityRemover (address : Entity Address) world =
             match address.Names with
             | [screenName; groupName; entityName] ->
-                let optGroupMap = Map.tryFind screenName world.Entities
-                match optGroupMap with
-                | Some groupMap ->
-                    let optEntityMap = Map.tryFind groupName groupMap
-                    match optEntityMap with
-                    | Some entityMap ->
+                match Map.tryFind screenName world.Simulants with
+                | Some (screen, groupMap) ->
+                    match Map.tryFind groupName groupMap with
+                    | Some (group, entityMap) ->
                         let entityMap = Map.remove entityName entityMap
-                        let groupMap = Map.add groupName entityMap groupMap
-                        { world with Entities = Map.add screenName groupMap world.Entities }
+                        let groupMap = Map.add groupName (group, entityMap) groupMap
+                        { world with Simulants = Map.add screenName (screen, groupMap) world.Simulants }
                     | None -> world
                 | None -> world
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
@@ -243,32 +233,25 @@ module WorldEntityModule =
             let entity = World.getEntity address world
             updater entity world
 
+        static member getEntitiesBy by addresses world =
+            Seq.map (fun address -> by <| World.getEntity address world) addresses
+
         static member getEntities addresses world =
-            Seq.map (fun address -> World.getEntity address world) addresses
+            World.getEntitiesBy id addresses world
 
         static member getEntityMapInGroup (groupAddress : Group Address) world =
             match groupAddress.Names with
             | [screenName; groupName] ->
-                match Map.tryFind screenName world.Entities with
-                | Some groupMap ->
+                match Map.tryFind screenName world.Simulants with
+                | Some (_, groupMap) ->
                     match Map.tryFind groupName groupMap with
-                    | Some entityMap -> entityMap
+                    | Some (_, entityMap) -> entityMap
                     | None -> Map.empty
                 | None -> Map.empty
             | _ -> failwith <| "Invalid group address '" + acstring groupAddress + "'."
 
-        static member getEntitiesInGroup groupAddress world =
-            let entityMap = World.getEntityMapInGroup groupAddress world
-            Map.toValueSeq entityMap
-
-        static member getEntityMapInGroup3 entityNames (groupAddress : Group Address) world =
-            let entityNames = Set.ofSeq entityNames
-            let entityMap = World.getEntityMapInGroup groupAddress world
-            Map.filter (fun entityName _ -> Set.contains entityName entityNames) entityMap
-
-        static member getEntitiesInGroup3 entityNames groupAddress world =
-            let entityMap = World.getEntityMapInGroup3 groupAddress entityNames world
-            Map.toValueSeq entityMap
+        static member getEntitiesInGroup (groupAddress : Group Address) world =
+            Map.toValueSeq <| World.getEntityMapInGroup groupAddress world
 
         static member getEntityAddressesInGroup groupAddress world =
             let entities = World.getEntitiesInGroup groupAddress world
@@ -305,34 +288,34 @@ module WorldEntityModule =
         static member private unregisterEntity entity address world =
             Entity.unregister entity address world
 
-        static member removeEntityImmediate entity (address : Entity Address) world =
+        static member removeEntityImmediate (address : Entity Address) world =
             let world = World.publish4 () (RemovingEventAddress ->>- address) address world
-            let (entity, world) = World.unregisterEntity entity address world
-            let world = World.setOptEntityWithoutEvent None address world
-            (entity, world)
+            match World.getOptEntity address world with
+            | Some entity ->
+                let (entity, world) = World.unregisterEntity entity address world
+                let world = World.setOptEntityWithoutEvent None address world
+                (Some entity, world)
+            | None -> (None, world)
 
-        static member removeEntity (entity : Entity) address world =
+        static member removeEntity address world =
             let task =
                 { ScheduledTime = world.State.TickTime
-                  Operation = fun world ->
-                    match World.getOptEntity address world with
-                    | Some entity -> snd <| World.removeEntityImmediate entity address world
-                    | None -> world }
-            let world = World.addTask task world
-            (entity, world)
+                  Operation = fun world -> snd <| World.removeEntityImmediate address world }
+            World.addTask task world
 
-        static member removeEntitiesImmediate entities (groupAddress : Group Address) world =
-            World.transformSimulants World.removeEntityImmediate gatoea entities groupAddress world
+        static member removeEntitiesImmediate addresses world =
+            List.foldBack
+                (fun address (entities, world) ->
+                    let (entity, world) = World.removeEntityImmediate address world
+                    (entity :: entities, world))
+                (List.ofSeq addresses)
+                ([], world)
 
-        static member removeEntities entities (groupAddress : Group Address) world =
-            World.transformSimulants World.removeEntity gatoea entities groupAddress world
+        static member removeEntities addresses world =
+            snd <| World.removeEntitiesImmediate addresses world
 
         static member addEntity entity address world =
             if not <| World.containsEntity address world then
-                let (entity, world) =
-                    match World.getOptEntity address world with
-                    | Some _ -> World.removeEntityImmediate entity address world
-                    | None -> (entity, world)
                 let world = World.setEntityWithoutEvent entity address world
                 let (entity, world) = World.registerEntity entity address world
                 let world = World.publish4 () (AddEventAddress ->>- address) address world

@@ -266,9 +266,9 @@ module WorldModule =
 
                 // get all the entities in the world
                 let entities =
-                    [for screenKvp in world.Entities do
-                        for groupKvp in screenKvp.Value do
-                            for entityKvp in groupKvp.Value do
+                    [for screenKvp in world.Simulants do
+                        for groupKvp in snd screenKvp.Value do
+                            for entityKvp in snd groupKvp.Value do
                                 let address = Address<Entity>.make [screenKvp.Key; groupKvp.Key; entityKvp.Key]
                                 yield (address, entityKvp.Value)]
 
@@ -373,11 +373,9 @@ module WorldModule =
         static member private getRenderDescriptors world =
             match World.getOptSelectedScreenAddress world with
             | Some selectedScreenAddress ->
-                let optGroupMap = Map.tryFind (Address.head selectedScreenAddress) world.Entities
-                match optGroupMap with
-                | Some groupMap ->
-                    let groupValues = Map.toValueList groupMap
-                    let entityMaps = List.fold List.flipCons [] groupValues
+                match Map.tryFind (Address.head selectedScreenAddress) world.Simulants with
+                | Some (_, groupMap) ->
+                    let entityMaps = Map.toValueListBy snd groupMap
                     let descriptors = List.map (World.getGroupRenderDescriptors world) entityMaps
                     let descriptors = List.concat <| List.concat descriptors
                     let selectedScreen = World.getScreen selectedScreenAddress world
@@ -660,9 +658,7 @@ module WorldModule =
                 // make the world itself
                 let world =
                     { Game = game
-                      Screens = Map.empty
-                      Groups = Map.empty
-                      Entities = Map.empty
+                      Simulants = Map.empty
                       Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                       Components = components
                       Subsystems = subsystems
@@ -729,9 +725,7 @@ module WorldModule =
             // make the world itself
             let world =
                 { Game = game
-                  Screens = Map.empty
-                  Groups = Map.empty
-                  Entities = Map.empty
+                  Simulants = Map.empty
                   Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single ResolutionXDefault, single ResolutionYDefault) }
                   Components = components
                   Subsystems = subsystems

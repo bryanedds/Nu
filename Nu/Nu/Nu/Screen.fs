@@ -60,17 +60,29 @@ module WorldScreenModule =
 
         static member private optScreenFinder (address : Screen Address) world =
             match address.Names with
-            | [screenName] -> Map.tryFind screenName world.Screens
+            | [screenName] ->
+                match Map.tryFind screenName world.Simulants with
+                | Some (screen, _) -> Some screen
+                | None -> None
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
-        static member private screenAdder child (address : Screen Address) world =
+        static member private screenAdder (screen : Screen) (address : Screen Address) world =
             match address.Names with
-            | [screenName] -> { world with Screens = Map.add screenName child world.Screens }
+            | [screenName] ->
+                match Map.tryFind screenName world.Simulants with
+                | Some (_, groupMap) -> { world with Simulants = Map.add screenName (screen, groupMap) world.Simulants }
+                | None -> { world with Simulants = Map.add screenName (screen, Map.empty) world.Simulants }
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
         static member private screenRemover (address : Screen Address) world =
             match address.Names with
-            | [screenName] -> { world with Screens = Map.remove screenName world.Screens }
+            | [screenName] ->
+                match Map.tryFind screenName world.Simulants with
+                | Some (_, groupMap) ->
+                    if Map.isEmpty groupMap
+                    then { world with Simulants = Map.remove screenName world.Simulants }
+                    else failwith <| "Cannot remove screen " + acstring address + ", which still contains groups."
+                | None -> world
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
         static member containsScreen address world =
@@ -85,9 +97,19 @@ module WorldScreenModule =
         static member getScreen address world =
             World.getScreenBy id address world
 
+        static member getOptScreenHierarchy address world =
+            match World.getOptScreen address world with
+            | Some screen ->
+                let groupMap = World.getGroupMapInScreen address world
+                Some (screen, groupMap)
+            | None -> None
+        
+        static member getScreenHierarchy address world =
+            Option.get <| World.getOptScreenHierarchy address world
+
         static member getScreenAddress screenName world =
             let address = ntoa<Screen> screenName
-            ignore <| World.getScreen address world // ensure address is valid
+            ignore <| World.getScreen address world // ensures address is valid
             address
 
         static member setScreen screen address world =
@@ -125,44 +147,20 @@ module WorldScreenModule =
             let screen = World.getScreen address world
             updater screen world
 
-        static member getOptScreenHierarchy address world =
-            match World.getOptScreen address world with
-            | Some screen ->
-                let groupHierarchies = World.getGroupHierarchiesInScreen address world
-                Some (screen, groupHierarchies)
-            | None -> None
-        
-        static member getScreenHierarchy address world =
-            Option.get <| World.getOptScreenHierarchy address world
+        static member getScreenHierarchies addresses world =
+            Seq.map (fun address -> World.getScreenHierarchy address world) addresses
 
         static member getScreenMap world =
-            world.Screens
+            world.Simulants
 
-        static member getScreens world =
-            let screenMap = World.getScreenMap world
-            Map.toValueSeq screenMap
+        static member getScreensBy by addresses world =
+            Seq.map (fst >> by) <| World.getScreenHierarchies addresses world
 
-        static member getScreenMap2 addresses world =
-            let screenNames = Set.ofSeq <| Seq.map Address.head addresses
-            Map.filter
-                (fun screenName _ -> Set.contains screenName screenNames)
-                (World.getScreenMap world)
-
-        static member getScreens2 addresses world =
-            let screenMap = World.getScreenMap2 addresses world
-            Map.toValueSeq screenMap
-
-        static member getScreenHierarchies world =
-            let screens = World.getScreenMap world
-            Map.map
-                (fun screenName screen ->
-                    let screenAddress = ntoa<Screen> screenName
-                    let groupHierarchies = World.getGroupHierarchiesInScreen screenAddress world
-                    (screen, groupHierarchies))
-                screens
+        static member getScreens addresses world =
+            World.getScreensBy id addresses world
 
         static member getScreenAddresses world =
-            Map.fold (fun addresses screenName _ -> ntoa<Screen> screenName :: addresses) [] world.Screens
+            Map.fold (fun addresses screenName _ -> ntoa<Screen> screenName :: addresses) [] world.Simulants
 
         static member updateScreensW updater addresses world =
             Seq.fold (fun world address -> World.updateScreenW updater address world) world addresses
@@ -182,31 +180,26 @@ module WorldScreenModule =
         static member private unregisterScreen screen address world =
             Screen.unregister screen address world
 
-        static member removeScreenImmediate screen address world =
+        static member removeScreenImmediate address world =
             let world = World.publish4 () (RemovingEventAddress ->>- address) address world
-            let groupMap = World.getGroupMapInScreen address world
-            let world = snd <| World.removeGroupsImmediate groupMap address world
-            let (screen, world) = World.unregisterScreen screen address world
-            let world = World.setOptScreen None address world
-            (screen, world)
+            match World.getOptScreen address world with
+            | Some screen ->
+                let (screen, world) = World.unregisterScreen screen address world
+                let groupAddresses = World.getGroupAddressesInScreen address world
+                let world = snd <| World.removeGroupsImmediate groupAddresses world
+                let world = World.setOptScreen None address world
+                (Some screen, world)
+            | None -> (None, world)
 
-        static member removeScreen (screen : Screen) address world =
+        static member removeScreen address world =
             let task =
                 { ScheduledTime = world.State.TickTime
-                  Operation = fun world ->
-                    match World.getOptScreen address world with
-                    | Some screen -> snd <| World.removeScreenImmediate screen address world
-                    | None -> world }
-            let world = World.addTask task world
-            (screen, world)
+                  Operation = fun world -> snd <| World.removeScreenImmediate address world }
+            World.addTask task world
 
         static member addScreen screenHierarchy address world =
             let (screen, groupHierarchies) = screenHierarchy
             if not <| World.containsScreen address world then
-                let (screen, world) =
-                    match World.getOptScreen address world with
-                    | Some _ -> World.removeScreenImmediate screen address world
-                    | None -> (screen, world)
                 let world = World.setScreen screen address world
                 let world = snd <| World.addGroups groupHierarchies address world
                 let (screen, world) = World.registerScreen screen address world

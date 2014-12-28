@@ -38,6 +38,11 @@ module WorldGameModule =
         static member getGame world =
             World.getGameBy id world
 
+        static member getGameHierarchy world =
+            let game = world.Game
+            let screenMap = World.getScreenMap world
+            (game, screenMap)
+
         static member setGame game world =
             { world with Game = game }
 
@@ -52,11 +57,6 @@ module WorldGameModule =
         static member updateByGame updater world : World =
             let game = World.getGame world
             updater game world
-
-        static member getGameHierarchy world =
-            let game = world.Game
-            let screenHierarchies = World.getScreenHierarchies world
-            (game, screenHierarchies)
 
         static member getOptSelectedScreenAddress world =
             world.Game.OptSelectedScreenAddress
