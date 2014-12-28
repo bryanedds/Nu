@@ -95,8 +95,8 @@ module GameplayDispatcherModule =
                     let enemy = Entity.setDepth CharacterDepth enemy
                     let enemy = Entity.setPosition enemyPosition enemy
                     let enemy = Entity.setCharacterAnimationSheet GoopyImage enemy
-                    (Map.add enemy.Name enemy enemies, rand))
-                (Map.empty, rand)
+                    ((enemy.Name, enemy) :: enemies, rand))
+                ([], rand)
                 [0 .. enemyCount - 1]
 
         static let walk3 positive current destination =
@@ -374,7 +374,7 @@ module GameplayDispatcherModule =
                 if reactor.HitPoints <= 0 then
                     if reactor.Name = PlayerName
                     then World.transitionScreen TitleAddress world
-                    else snd <| World.removeEntity reactor reactorAddress world
+                    else World.removeEntity reactorAddress world
                 else world
             else world
 
@@ -572,11 +572,10 @@ module GameplayDispatcherModule =
             let player = Entity.setPublishChanges true player
 
             // make enemies
-            let enemies = fst <| makeEnemies rand world
-            let world = snd <| World.addEntities enemies sceneAddress world
+            let (enemies, _) = makeEnemies rand world
 
             // make scene hierarchy
-            let entityMap = Map.ofList [(field.Name, field); (player.Name, player)]
+            let entityMap = Map.ofList <| [(field.Name, field); (player.Name, player)] @ enemies
             let scene = World.makeGroup typeof<GroupDispatcher>.Name (Some SceneName) world
             let sceneHierarchy = (scene, entityMap)
 
@@ -626,8 +625,7 @@ module GameplayDispatcherModule =
 
         static let handleDeselectGameplay event world =
             let sceneAddress = getSceneAddress event.SubscriberAddress
-            let scene = World.getGroup sceneAddress world
-            let world = snd <| World.removeGroup scene sceneAddress world
+            let world = World.removeGroup sceneAddress world
             (Cascade, world)
 
         static member FieldDefinitions =

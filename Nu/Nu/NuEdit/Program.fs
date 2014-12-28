@@ -141,8 +141,8 @@ module Program =
                         trace <| "Invalid entity name '" + valueStr + "' (must not be a number)."
                         world
                     else
-                        let entity = World.getEntity entityTds.Address world
-                        let (entity, world) = World.removeEntityImmediate entity entityTds.Address world
+                        let (optEntity, world) = World.removeEntityImmediate entityTds.Address world
+                        let entity = Option.get optEntity
                         let entity = { entity with Name = valueStr }
                         let groupAddress = (World.getUserState world).GroupAddress
                         let entityAddress = gatoea groupAddress valueStr
@@ -442,8 +442,7 @@ module Program =
             let editorState = World.getUserState world
             let world = unsubscribeFromEntityEvents world
             let groupAddress = editorState.GroupAddress
-            let group = World.getGroup groupAddress world
-            let world = snd <| World.removeGroupImmediate group groupAddress world
+            let world = snd <| World.removeGroupImmediate groupAddress world
             
             // load and add group
             let groupHierarchy = World.readGroupHierarchyFromFile filePath world
@@ -519,8 +518,7 @@ module Program =
             let world = pushPastWorld world world
             match selectedObject with
             | :? EntityTypeDescriptorSource as entityTds ->
-                let entity = World.getEntity entityTds.Address world
-                let world = snd <| World.removeEntity entity entityTds.Address world
+                let world = World.removeEntity entityTds.Address world
                 form.propertyGrid.SelectedObject <- null
                 world
             | _ -> world)
@@ -589,7 +587,7 @@ module Program =
             | :? EntityTypeDescriptorSource as entityTds ->
                 let world = pushPastWorld world world
                 let entity = World.getEntity entityTds.Address world
-                let (entity, world) = World.removeEntity entity entityTds.Address world
+                let world = World.removeEntity entityTds.Address world
                 let world = World.updateUserState (fun editorState -> editorState.Clipboard := Some entity; editorState) world
                 form.propertyGrid.SelectedObject <- null
                 world

@@ -367,9 +367,7 @@ module SimulationModule =
     /// TODO: attempt to implement with Fsharpx.PersistentHashMap with hash cached in Address type.
     and [<ReferenceEquality>] World =
         { Game : Game
-          Screens : Map<string, Screen>
-          Groups : Map<string, Map<string, Group>>
-          Entities : Map<string, Map<string, Map<string, Entity>>>
+          Simulants : Map<string, Screen * Map<string, Group * Map<string, Entity>>>
           Camera : Camera
           Components : Components
           Subsystems : Subsystems

@@ -41,31 +41,41 @@ module WorldGroupModule =
         static member private optGroupFinder (address : Group Address) world =
             match address.Names with
             | [screenName; groupName] ->
-                let optGroupMap = Map.tryFind screenName world.Groups
-                match optGroupMap with
-                | Some groupMap -> Map.tryFind groupName groupMap
+                match Map.tryFind screenName world.Simulants with
+                | Some (_, groupMap) ->
+                    match Map.tryFind groupName groupMap with
+                    | Some (group, _) -> Some group
+                    | None -> None
                 | None -> None
             | _ -> failwith <| "Invalid group address '" + acstring address + "'."
 
-        static member private groupAdder child (address : Group Address) world =
+        static member private groupAdder (group : Group) (address : Group Address) world =
             match address.Names with
             | [screenName; groupName] ->
-                match Map.tryFind screenName world.Groups with
-                | Some groupMap ->
-                    let groupMap = Map.add groupName child groupMap
-                    { world with Groups = Map.add screenName groupMap world.Groups }
-                | None ->
-                    let groupMap = Map.add screenName (Map.singleton groupName child) world.Groups
-                    { world with Groups = groupMap }
+                match Map.tryFind screenName world.Simulants with
+                | Some (screen, groupMap) ->
+                    match Map.tryFind groupName groupMap with
+                    | Some (_, entityMap) ->
+                        let groupMap = Map.add groupName (group, entityMap) groupMap
+                        { world with Simulants = Map.add screenName (screen, groupMap) world.Simulants }
+                    | None ->
+                        let groupMap = Map.add groupName (group, Map.empty) groupMap
+                        { world with Simulants = Map.add screenName (screen, groupMap) world.Simulants }
+                | None -> failwith <| "Cannot add group '" + acstring address + "' to non-existent screen."
             | _ -> failwith <| "Invalid group address '" + acstring address + "'."
 
         static member private groupRemover (address : Group Address) world =
             match address.Names with
             | [screenName; groupName] ->
-                match Map.tryFind screenName world.Groups with
-                | Some groupMap ->
-                    let groupMap = Map.remove groupName groupMap
-                    { world with Groups = Map.add screenName groupMap world.Groups }
+                match Map.tryFind screenName world.Simulants with
+                | Some (screen, groupMap) ->
+                    match Map.tryFind groupName groupMap with
+                    | Some (_, entityMap) ->
+                        if Map.isEmpty entityMap then
+                            let groupMap = Map.remove groupName groupMap
+                            { world with Simulants = Map.add screenName (screen, groupMap) world.Simulants }
+                        else failwith <| "Cannot remove group " + acstring address + ", which still contains entities."
+                    | None -> world
                 | None -> world
             | _ -> failwith <| "Invalid group address '" + acstring address + "'."
 
@@ -81,9 +91,19 @@ module WorldGroupModule =
         static member getGroup address world =
             World.getGroupBy id address world
 
+        static member getOptGroupHierarchy address world =
+            match World.getOptGroup address world with
+            | Some group ->
+                let entityMap = World.getEntityMapInGroup address world
+                Some (group, entityMap)
+            | None -> None
+        
+        static member getGroupHierarchy address world =
+            Option.get <| World.getOptGroupHierarchy address world
+
         static member getGroupAddressInScreen groupName screenAddress world =
             let address = satoga screenAddress groupName
-            ignore <| World.getGroup address world // ensure address is valid
+            ignore <| World.getGroup address world // ensures address is valid
             address
 
         static member setGroup group address world =
@@ -121,55 +141,30 @@ module WorldGroupModule =
             let group = World.getGroup address world
             updater group world
 
-        static member getOptGroupHierarchy address world =
-            match World.getOptGroup address world with
-            | Some group ->
-                let entityMap = World.getEntityMapInGroup address world
-                Some (group, entityMap)
-            | None -> None
-        
-        static member getGroupHierarchy address world =
-            Option.get <| World.getOptGroupHierarchy address world
-
-        static member getGroups addresses world =
-            Seq.map (fun address -> World.getGroup address world) addresses
-
         static member getGroupHierarchies addresses world =
             Seq.map (fun address -> World.getGroupHierarchy address world) addresses
+
+        static member getGroupsBy by addresses world =
+            Seq.map (fst >> by) <| World.getGroupHierarchies addresses world
+
+        static member getGroups addresses world =
+            World.getGroupsBy id addresses world
 
         static member getGroupMapInScreen (screenAddress : Screen Address) world =
             match screenAddress.Names with
             | [screenName] ->
-                match Map.tryFind screenName world.Groups with
-                | Some groupMap -> groupMap
+                match Map.tryFind screenName world.Simulants with
+                | Some (_, groupMap) -> groupMap
                 | None -> Map.empty
             | _ -> failwith <| "Invalid screen address '" + acstring screenAddress + "'."
 
         static member getGroupsInScreen screenAddress world =
-            let groupMap = World.getGroupMapInScreen screenAddress world
-            Map.toValueSeq groupMap
-
-        static member getGroupMapInScreen3 groupNames (screenAddress : Screen Address) world =
-            let groupNames = Set.ofSeq groupNames
-            let groupMap = World.getGroupMapInScreen screenAddress world
-            Map.filter (fun groupName _ -> Set.contains groupName groupNames) groupMap
-
-        static member getGroupsInScreen3 groupNames screenAddress world =
-            let groups = World.getGroupMapInScreen3 screenAddress groupNames world
-            Map.toValueSeq groups
-
-        static member getGroupHierarchiesInScreen screenAddress world =
-            let groupMap = World.getGroupMapInScreen screenAddress world
-            Map.map
-                (fun groupName group ->
-                    let groupAddress = satoga screenAddress groupName
-                    let entityMap = World.getEntityMapInGroup groupAddress world
-                    (group, entityMap))
-                groupMap
+            let groupHierarchies = World.getGroupMapInScreen screenAddress world
+            Map.toValueSeqBy fst groupHierarchies
 
         static member getGroupAddressesInScreen screenAddress world =
-            let groups = World.getGroupsInScreen screenAddress world
-            Seq.map (fun (group : Group) -> satoga screenAddress group.Name) groups
+            let groupHierarchies = World.getGroupMapInScreen screenAddress world
+            Map.toValueListBy (fun (group : Group, _) -> satoga screenAddress group.Name) groupHierarchies
 
         static member updateGroupsW updater addresses world =
             Seq.fold (fun world address -> World.updateGroupW updater address world) world addresses
@@ -196,37 +191,37 @@ module WorldGroupModule =
         static member private unregisterGroup group address world =
             Group.unregister group address world
 
-        static member removeGroupImmediate group address world =
+        static member removeGroupImmediate address world =
             let world = World.publish4 () (RemovingEventAddress ->>- address) address world
-            let (group, world) = World.unregisterGroup group address world
-            let entityMap = World.getEntityMapInGroup address world
-            let world = snd <| World.removeEntitiesImmediate entityMap address world
-            let world = World.setOptGroup None address world
-            (group, world)
+            match World.getOptGroup address world with
+            | Some group ->
+                let (group, world) = World.unregisterGroup group address world
+                let entityAddresses = World.getEntityAddressesInGroup address world
+                let world = snd <| World.removeEntitiesImmediate entityAddresses world
+                let world = World.setOptGroup None address world
+                (Some group, world)
+            | None -> (None, world)
 
-        static member removeGroup (group : Group) address world =
+        static member removeGroup address world =
             let task =
                 { ScheduledTime = world.State.TickTime
-                  Operation = fun world ->
-                    match World.getOptGroup address world with
-                    | Some group -> snd <| World.removeGroupImmediate group address world
-                    | None -> world }
-            let world = World.addTask task world
-            (group, world)
+                  Operation = fun world -> snd <| World.removeGroupImmediate address world }
+            World.addTask task world
 
-        static member removeGroupsImmediate groups (screenAddress : Screen Address) world =
-            World.transformSimulants World.removeGroupImmediate satoga groups screenAddress world
+        static member removeGroupsImmediate addresses world =
+            List.foldBack
+                (fun address (groups, world) ->
+                    let (group, world) = World.removeGroupImmediate address world
+                    (group :: groups, world))
+                addresses
+                ([], world)
 
-        static member removeGroups groups (screenAddress : Screen Address) world =
-            World.transformSimulants World.removeGroup satoga groups screenAddress world
+        static member removeGroups addresses world =
+            snd <| World.removeGroupsImmediate addresses world
 
         static member addGroup groupHierarchy address world =
             let (group, entities) = groupHierarchy
             if not <| World.containsGroup address world then
-                let (group, world) =
-                    match World.getOptGroup address world with
-                    | Some _ -> World.removeGroupImmediate group address world
-                    | None -> (group, world)
                 let world = World.setGroup group address world
                 let world = snd <| World.addEntities entities address world
                 let (group, world) = World.registerGroup group address world
@@ -234,7 +229,7 @@ module WorldGroupModule =
                 (group, world)
             else failwith <| "Adding a group that the world already contains at address '" + acstring address + "'."
 
-        static member addGroups groupHierarchies screenAddress world =
+        static member addGroups groupHierarchies (screenAddress : Screen Address) world =
             Map.fold
                 (fun (groups, world) groupName groupHierarchy ->
                     let (group, world) = World.addGroup groupHierarchy (satoga screenAddress groupName) world
