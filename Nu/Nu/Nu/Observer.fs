@@ -335,9 +335,6 @@ module Observer =
     let noMoreThanOncePerTick o =
         o |> organize (fun _ w -> w.State.TickTime) |> toFst |> choose
 
-open Observer
-module FofrpExperiment =
-
     let observeEntityValue valueGetter entityAddress observerAddress =
         observe (EntityChangeEventAddress ->>- entityAddress) observerAddress |> entityValue valueGetter
 
@@ -369,4 +366,16 @@ module FofrpExperiment =
         (sourceEntityAddress : Entity Address, valueGetter : Entity -> 'a)
         (destinationEntityAddress : Entity Address, valueSetter : 'a -> Entity -> Entity) =
         observeEntityValue valueGetter sourceEntityAddress destinationEntityAddress |>
-        updateEntityValue (fun _ world -> valueSetter (valueGetter (World.getEntity sourceEntityAddress world)))
+        updateEntityValue (fun _ world ->
+            let sourceEntity = World.getEntity sourceEntityAddress world
+            let sourceEntityValue = valueGetter sourceEntity
+            valueSetter sourceEntityValue)
+
+    let (-|>)
+        (sourceEntityAddress : Entity Address, valueGetter : Entity -> 'a)
+        (destinationEntityAddress : Entity Address, valueSetter : 'a -> Entity -> Entity) =
+        observeEntityValueCyclic valueGetter sourceEntityAddress destinationEntityAddress |>
+        updateEntityValue (fun _ world ->
+            let sourceEntity = World.getEntity sourceEntityAddress world
+            let sourceEntityValue = valueGetter sourceEntity
+            valueSetter sourceEntityValue)
