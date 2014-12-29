@@ -325,57 +325,61 @@ module Observer =
     let isSelectedScreenIdling _ world = World.isSelectedScreenIdling world
     let isSelectedScreenTransitioning _ world = World.isSelectedScreenTransitioning world
 
-    let entityValue valueGetter o =
-        filter (fun a w ->
-            let oldValue = valueGetter a.Data.OldEntity
-            let newValue = valueGetter (World.getEntity (atoea a.PublisherAddress) w)
-            oldValue <> newValue)
-            o
-
     let noMoreThanOncePerTick o =
         o |> organize (fun _ w -> w.State.TickTime) |> toFst |> choose
 
-    let observeEntityValue valueGetter entityAddress observerAddress =
-        observe (EntityChangeEventAddress ->>- entityAddress) observerAddress |> entityValue valueGetter
+    let simulantValue<'a, 's, 't when 'a : equality and 's :> Simulant and 't :> Simulant>
+        (valueGetter : 's -> 'a)
+        (o : Observable<'s SimulantChangeData, 't>) =
+        filter (fun a w ->
+            let oldValue = valueGetter a.Data.OldSimulant
+            let newValue = valueGetter (World.getSimulant (Address.changeType<Simulant, 's> a.PublisherAddress) w)
+            oldValue <> newValue)
+            o
 
-    let observeEntityValueCyclic valueGetter entityAddress observerAddress =
-        observeEntityValue valueGetter entityAddress observerAddress |> noMoreThanOncePerTick
+    let observeSimulantValue<'a, 's, 't when 'a : equality and 's :> Simulant and 't :> Simulant>
+        (valueGetter : 's -> 'a)
+        (simulantAddress : 's Address)
+        (observerAddress : 't Address) =
+        let changeEventAddress = Address.changeType<Simulant SimulantChangeData, 's SimulantChangeData> SimulantChangeEventAddress ->>- simulantAddress
+        let o = observe<'s SimulantChangeData, 't> changeEventAddress observerAddress
+        simulantValue valueGetter o
 
-    let updateOptEntityValue valueSetter o =
-        subscribe (fun a w -> (Cascade, World.updateOptEntity (valueSetter a w) a.SubscriberAddress w)) o
+    let observeSimulantValueCyclic valueGetter simulantAddress observerAddress =
+        observeSimulantValue valueGetter simulantAddress observerAddress |> noMoreThanOncePerTick
 
-    let updateEntityValue valueSetter o =
-        subscribe (fun a w -> (Cascade, World.updateEntity (valueSetter a w) a.SubscriberAddress w)) o
+    let updateOptSimulantValue valueSetter o =
+        subscribe (fun a w -> (Cascade, World.updateOptSimulant (valueSetter a w) a.SubscriberAddress w)) o
 
-    let updateOptGroupValue valueSetter o =
-        subscribe (fun a w -> (Cascade, World.updateOptGroup (valueSetter a w) a.SubscriberAddress w)) o
+    let updateSimulantValue valueSetter o =
+        subscribe (fun a w -> (Cascade, World.updateSimulant (valueSetter a w) a.SubscriberAddress w)) o
 
-    let updateGroupValue valueSetter o =
-        subscribe (fun a w -> (Cascade, World.updateGroup (valueSetter a w) a.SubscriberAddress w)) o
+    let propagateSimulantValue<'a, 's, 't when 'a : equality and 's :> Simulant and 't :> Simulant>
+        (sourceAddress : 's Address)
+        (valueGetter : 's -> 'a)
+        (destinationAddress : 't Address)
+        (valueSetter : 'a -> 't -> 't) =
+        let o = observeSimulantValue valueGetter sourceAddress destinationAddress
+        updateSimulantValue (fun _ world ->
+            let sourceSimulant = World.getSimulant sourceAddress world
+            let sourceSimulantValue = valueGetter sourceSimulant
+            valueSetter sourceSimulantValue)
+            o
 
-    let updateOptScreenValue valueSetter o =
-        subscribe (fun a w -> (Cascade, World.updateOptScreen (valueSetter a w) a.SubscriberAddress w)) o
+    let propagateSimulantValueCyclic<'a, 's, 't when 'a : equality and 's :> Simulant and 't :> Simulant>
+        (sourceAddress : 's Address)
+        (valueGetter : 's -> 'a)
+        (destinationAddress : 't Address)
+        (valueSetter : 'a -> 't -> 't) =
+        let o = observeSimulantValueCyclic valueGetter sourceAddress destinationAddress
+        updateSimulantValue (fun _ world ->
+            let sourceSimulant = World.getSimulant sourceAddress world
+            let sourceSimulantValue = valueGetter sourceSimulant
+            valueSetter sourceSimulantValue)
+            o
 
-    let updateScreenValue valueSetter o =
-        subscribe (fun a w -> (Cascade, World.updateScreen (valueSetter a w) a.SubscriberAddress w)) o
+    let inline (-->) (sourceAddress, valueGetter) (destinationAddress, valueSetter) =
+        propagateSimulantValue sourceAddress valueGetter destinationAddress valueSetter
 
-    let updateGameValue valueSetter o =
-        subscribe (fun a w -> (Cascade, World.updateGame (valueSetter a w) w)) o
-
-    let (-->)
-        (sourceEntityAddress : Entity Address, valueGetter : Entity -> 'a)
-        (destinationEntityAddress : Entity Address, valueSetter : 'a -> Entity -> Entity) =
-        observeEntityValue valueGetter sourceEntityAddress destinationEntityAddress |>
-        updateEntityValue (fun _ world ->
-            let sourceEntity = World.getEntity sourceEntityAddress world
-            let sourceEntityValue = valueGetter sourceEntity
-            valueSetter sourceEntityValue)
-
-    let (-|>)
-        (sourceEntityAddress : Entity Address, valueGetter : Entity -> 'a)
-        (destinationEntityAddress : Entity Address, valueSetter : 'a -> Entity -> Entity) =
-        observeEntityValueCyclic valueGetter sourceEntityAddress destinationEntityAddress |>
-        updateEntityValue (fun _ world ->
-            let sourceEntity = World.getEntity sourceEntityAddress world
-            let sourceEntityValue = valueGetter sourceEntity
-            valueSetter sourceEntityValue)
+    let inline (-|>) (sourceAddress, valueGetter) (destinationAddress, valueSetter) =
+        propagateSimulantValueCyclic sourceAddress valueGetter destinationAddress valueSetter

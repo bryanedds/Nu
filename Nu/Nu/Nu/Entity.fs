@@ -206,7 +206,7 @@ module WorldEntityModule =
             let oldEntity = Option.get <| World.optEntityFinder address world
             let world = World.entityAdder entity address world
             if entity.PublishChanges
-            then World.publish4 { OldEntity = oldEntity } (EntityChangeEventAddress ->>- address) address world
+            then World.publish4 { OldSimulant = oldEntity } (EntityChangeEventAddress ->>- address) address world
             else world
 
         static member private setOptEntityWithoutEvent optEntity address world =

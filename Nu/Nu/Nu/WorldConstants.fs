@@ -55,5 +55,9 @@ module WorldConstants =
     let KeyboardKeyUpEventAddress = MouseEventAddress -<- stoa<KeyboardKeyData> "Up"
     let KeyboardKeyChangeEventAddress = MouseEventAddress -<- stoa<KeyboardKeyData> "Change"
     let CollisionEventAddress = stoa<CollisionData> "Collision"
-    let EntityChangeEventAddress = stoa<EntityChangeData> "EntityChange"
+    let SimulantChangeEventAddress = stoa<Simulant SimulantChangeData> "Change"
+    let GameChangeEventAddress = Address.changeType<Simulant SimulantChangeData, Game SimulantChangeData> SimulantChangeEventAddress
+    let ScreenChangeEventAddress = Address.changeType<Simulant SimulantChangeData, Screen SimulantChangeData> SimulantChangeEventAddress
+    let GroupChangeEventAddress = Address.changeType<Simulant SimulantChangeData, Group SimulantChangeData> SimulantChangeEventAddress
+    let EntityChangeEventAddress = Address.changeType<Simulant SimulantChangeData, Entity SimulantChangeData> SimulantChangeEventAddress
     let DefaultDissolveImage = { PackageName = DefaultPackageName; AssetName = "Image8" }

@@ -31,21 +31,63 @@ module WorldModule =
 
     type World with
 
-        static member getSimulantDefinition (address : Simulant Address) world =
+        static member getOptSimulant<'t when 't :> Simulant> (address : 't Address) world =
             match address.Names with
-            | [] -> world.Game :> Simulant
-            | [_] -> World.getScreen (atosa address) world :> Simulant
-            | [_; _] -> World.getGroup (atoga address) world :> Simulant
-            | [_; _; _] -> World.getEntity (atoea address) world :> Simulant
+            | [] -> Some (world.Game :> Simulant :?> 't)
+            | [_] -> World.getOptScreen (atosa address) world |> Option.map (fun s -> s :> Simulant :?> 't)
+            | [_; _] -> World.getOptGroup (atoga address) world |> Option.map (fun g -> g :> Simulant :?> 't)
+            | [_; _; _] -> World.getOptEntity (atoea address) world |> Option.map (fun e -> e :> Simulant :?> 't)
             | _ -> failwith <| "Invalid simulant address '" + acstring address + "'."
 
-        static member getOptSimulantDefinition address world =
+        static member containsSimulant address world =
+            Option.isSome <| World.getOptSimulant address world
+
+        static member getSimulantBy by address world =
+            by ^^ Option.get ^^ World.getOptSimulant address world
+
+        static member getSimulant address world =
+            World.getSimulantBy id address world
+
+        static member setSimulant<'t when 't :> Simulant> (simulant : 't) (address : 't Address) world =
             match address.Names with
-            | [] -> Some (world.Game :> Simulant)
-            | [_] -> Option.map (fun s -> s :> Simulant) <| World.getOptScreen (atosa address) world
-            | [_; _] -> Option.map (fun g -> g :> Simulant) <| World.getOptGroup (atoga address) world
-            | [_; _; _] -> Option.map (fun e -> e :> Simulant) <| World.getOptEntity (atoea address) world
+            | [] -> { world with Game = simulant :> obj :?> Game }
+            | [_] -> World.setScreen (simulant :> obj :?> Screen) (Address.changeType<'t, Screen> address) world
+            | [_; _] -> World.setGroup (simulant :> obj :?> Group) (Address.changeType<'t, Group> address) world
+            | [_; _; _] -> World.setEntity (simulant :> obj :?> Entity) (Address.changeType<'t, Entity> address) world
             | _ -> failwith <| "Invalid simulant address '" + acstring address + "'."
+
+        static member updateOptSimulantW updater address world =
+            match World.getOptSimulant address world with
+            | Some simulant ->
+                let simulant = updater simulant world
+                World.setSimulant simulant address world
+            | None -> world
+
+        static member updateOptSimulant updater address world =
+            World.updateOptSimulantW (fun simulant _ -> updater simulant) address world
+
+        static member updateByOptSimulant updater address world : World =
+            match World.getOptSimulant address world with
+            | Some simulant -> updater simulant world
+            | None -> world
+
+        static member updateSimulantW updater address world =
+            let simulant = World.getSimulant address world
+            let simulant = updater simulant world
+            World.setSimulant simulant address world
+
+        static member updateSimulant updater address world =
+            World.updateSimulantW (fun simulant _ -> updater simulant) address world
+
+        static member updateBySimulant updater address world : World =
+            let simulant = World.getSimulant address world
+            updater simulant world
+
+        static member getOptSimulantSpecialDefinition (address : Simulant Address) world =
+            World.getOptSimulant address world
+
+        static member getSimulantSpecialDefinition (address : Simulant Address) world =
+            World.getSimulant address world
 
         static member tryGetIsSelectedScreenIdling world =
             match World.getOptSelectedScreen world with
@@ -122,31 +164,31 @@ module WorldModule =
             Option.get <| World.tryTransitionScreen destinationAddress world
             
         // TODO: replace this with more sophisticated use of handleAsScreenTransition4, and so on for its brethren.
-        static member private handleAsScreenTransitionFromSplash4<'d, 's when 's :> Simulant> eventHandling destinationAddress (_ : Event<'d, 's>) world =
+        static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> Simulant> eventHandling destinationAddress (_ : Event<'a, 's>) world =
             let destinationScreen = World.getScreen destinationAddress world
             let world = snd <| World.selectScreen destinationScreen destinationAddress world
             (eventHandling, world)
 
-        static member handleAsScreenTransitionFromSplash<'d, 's when 's :> Simulant> destinationAddress event world =
-            World.handleAsScreenTransitionFromSplash4<'d, 's> Cascade destinationAddress event world
+        static member handleAsScreenTransitionFromSplash<'a, 's when 's :> Simulant> destinationAddress event world =
+            World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destinationAddress event world
 
-        static member handleAsScreenTransitionFromSplashBy<'d, 's when 's :> Simulant> by destinationAddress event  (world : World) =
+        static member handleAsScreenTransitionFromSplashBy<'a, 's when 's :> Simulant> by destinationAddress event  (world : World) =
             let (eventHandling, world) = by event world
-            World.handleAsScreenTransitionFromSplash4<'d, 's> eventHandling destinationAddress event world
+            World.handleAsScreenTransitionFromSplash4<'a, 's> eventHandling destinationAddress event world
 
-        static member private handleAsScreenTransition4<'d, 's when 's :> Simulant> eventHandling destinationAddress (_ : Event<'d, 's>) world =
+        static member private handleAsScreenTransition4<'a, 's when 's :> Simulant> eventHandling destinationAddress (_ : Event<'a, 's>) world =
             match World.tryTransitionScreen destinationAddress world with
             | Some world -> (eventHandling, world)
             | None ->
                 trace <| "Program Error: Invalid screen transition for destination address '" + acstring destinationAddress + "'."
                 (eventHandling, world)
 
-        static member handleAsScreenTransition<'d, 's when 's :> Simulant> destinationAddress event world =
-            World.handleAsScreenTransition4<'d, 's> Cascade destinationAddress event world
+        static member handleAsScreenTransition<'a, 's when 's :> Simulant> destinationAddress event world =
+            World.handleAsScreenTransition4<'a, 's> Cascade destinationAddress event world
 
-        static member handleAsScreenTransitionBy<'d, 's when 's :> Simulant> by destinationAddress event (world : World) =
+        static member handleAsScreenTransitionBy<'a, 's when 's :> Simulant> by destinationAddress event (world : World) =
             let (eventHandling, world) = by event world
-            World.handleAsScreenTransition4<'d, 's> eventHandling destinationAddress event world
+            World.handleAsScreenTransition4<'a, 's> eventHandling destinationAddress event world
 
         static member private updateScreenTransition1 screen transition =
             if screen.TransitionTicksNp = transition.TransitionLifetime then (true, { screen with TransitionTicksNp = 0L })
@@ -751,5 +793,5 @@ module WorldModule =
             Math.initTypeConverters ()
 
             // assign functions to the pub / sub vars
-            World.getSimulant <- World.getSimulantDefinition
-            World.getOptSimulant <- World.getOptSimulantDefinition
+            World.getSimulantSpecial <- World.getSimulantSpecialDefinition
+            World.getOptSimulantSpecial <- World.getOptSimulantSpecialDefinition

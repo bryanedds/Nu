@@ -198,11 +198,11 @@ module World =
         Guid.NewGuid ()
 
     /// Get a simulant at the given address from the world.
-    let mutable getSimulant =
+    let mutable getSimulantSpecial =
         Unchecked.defaultof<Simulant Address -> World -> Simulant>
 
     /// Try to get a simulant at the given address from the world.
-    let mutable getOptSimulant =
+    let mutable getOptSimulantSpecial =
         Unchecked.defaultof<Simulant Address -> World -> Simulant option>
 
     // OPTIMIZATION: priority annotated as single to decrease GC pressure.
@@ -211,9 +211,9 @@ module World =
         elif priority < priority2 then 1
         else 0
     
-    let private boxSubscription<'d, 's when 's :> Simulant> (subscription : Subscription<'d, 's>) =
+    let private boxSubscription<'a, 's when 's :> Simulant> (subscription : Subscription<'a, 's>) =
         let boxableSubscription = fun (event : obj) world ->
-            try subscription (event :?> Event<'d, 's>) world
+            try subscription (event :?> Event<'a, 's>) world
             with
             | :? InvalidCastException ->
                 // NOTE: If you've reached this exception, then you've probably inadvertantly mixed
@@ -222,21 +222,12 @@ module World =
             | _ -> reraise ()
         box boxableSubscription
 
-    let private getSimulantPublishingPriority getEntityPublishingPriority (simulant : Simulant) world =
-        // TODO: move into Simulant interface
-        match simulant with
-        | :? Game -> GamePublishingPriority
-        | :? Screen -> ScreenPublishingPriority
-        | :? Group -> GroupPublishingPriority
-        | :? Entity as entity -> getEntityPublishingPriority entity world
-        | _ -> failwith "Unexpected match failure in Nu.World.getSimulantPublishingPriority."
-
     let private getSortableSubscriptions getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world : (single * SubscriptionEntry) list =
         List.fold
             (fun subscriptions (key, address, subscription) ->
-                match getOptSimulant (atoua address) world with
+                match getOptSimulantSpecial (atoua address) world with
                 | Some simulant ->
-                    let priority = getSimulantPublishingPriority getEntityPublishingPriority simulant world
+                    let priority = simulant.GetPublishingPriority getEntityPublishingPriority world
                     let subscription = (priority, (key, address, subscription))
                     subscription :: subscriptions
                 | None -> (0.0f, (key, address, subscription)) :: subscriptions)
@@ -289,20 +280,20 @@ module World =
         let subListRev = List.rev subList
         publishSorter subListRev world
 
-    let private publishEvent<'d, 'p, 's when 'p :> Simulant and 's :> Simulant>
-        (subscriberAddress : obj Address) (publisherAddress : 'p Address) (eventAddress : 'd Address) (eventData : 'd) subscription world =
+    let private publishEvent<'a, 'p, 's when 'p :> Simulant and 's :> Simulant>
+        (subscriberAddress : obj Address) (publisherAddress : 'p Address) (eventAddress : 'a Address) (eventData : 'a) subscription world =
         let event =
             { SubscriberAddress = Address.changeType<obj, 's> subscriberAddress
               PublisherAddress = Address.changeType<'p, Simulant> publisherAddress
               EventAddress = eventAddress
-              Subscriber = getSimulant (Address.changeType<obj, Simulant> subscriberAddress) world :?> 's
+              Subscriber = getSimulantSpecial (Address.changeType<obj, Simulant> subscriberAddress) world :?> 's
               Data = eventData }
         let callableSubscription = unbox<BoxableSubscription> subscription
         let result = callableSubscription event world
         Some result
 
     /// Publish an event.
-    let publish<'d, 'p when 'p :> Simulant> publishSorter (eventData : 'd) (eventAddress : 'd Address) (publisherAddress : 'p Address) world =
+    let publish<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) (publisherAddress : 'p Address) world =
         let objEventAddress = atooa eventAddress
         let subscriptions = getSubscriptionsSorted publishSorter objEventAddress world
         let (_, world) =
@@ -311,10 +302,10 @@ module World =
                     if  (match eventHandling with Cascade -> true | Resolve -> false) &&
                         (match world.State.Liveness with Running -> true | Exiting -> false) then
                         match subscriberAddress.Names with
-                        | [] -> publishEvent<'d, 'p, Game> subscriberAddress publisherAddress eventAddress eventData subscription world
-                        | [_] -> publishEvent<'d, 'p, Screen> subscriberAddress publisherAddress eventAddress eventData subscription world
-                        | [_; _] -> publishEvent<'d, 'p, Group> subscriberAddress publisherAddress eventAddress eventData subscription world
-                        | [_; _; _] -> publishEvent<'d, 'p, Entity> subscriberAddress publisherAddress eventAddress eventData subscription world
+                        | [] -> publishEvent<'a, 'p, Game> subscriberAddress publisherAddress eventAddress eventData subscription world
+                        | [_] -> publishEvent<'a, 'p, Screen> subscriberAddress publisherAddress eventAddress eventData subscription world
+                        | [_; _] -> publishEvent<'a, 'p, Group> subscriberAddress publisherAddress eventAddress eventData subscription world
+                        | [_; _; _] -> publishEvent<'a, 'p, Entity> subscriberAddress publisherAddress eventAddress eventData subscription world
                         | _ -> failwith "Unexpected match failure in 'Nu.World.publish.'"
                     else None)
                 (Cascade, world)
@@ -322,12 +313,12 @@ module World =
         world
 
     /// Publish an event.
-    let publish4<'d, 'p when 'p :> Simulant> (eventData : 'd) (eventAddress : 'd Address) (publisherAddress : 'p Address) world =
+    let publish4<'a, 'p when 'p :> Simulant> (eventData : 'a) (eventAddress : 'a Address) (publisherAddress : 'p Address) world =
         publish sortSubscriptionsByHierarchy eventData eventAddress publisherAddress world
 
     /// Subscribe to an event.
-    let subscribe<'d, 's when 's :> Simulant>
-        subscriptionKey (subscription : Subscription<'d, 's>) (eventAddress : 'd Address) (subscriberAddress : 's Address) world =
+    let subscribe<'a, 's when 's :> Simulant>
+        subscriptionKey (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriberAddress : 's Address) world =
         if not <| Address.isEmpty eventAddress then
             let objEventAddress = atooa eventAddress
             let subscriptions =
@@ -341,8 +332,8 @@ module World =
         else failwith "Event name cannot be empty."
 
     /// Subscribe to an event.
-    let subscribe4<'d, 's when 's :> Simulant>
-        (subscription : Subscription<'d, 's>) (eventAddress : 'd Address) (subscriberAddress : 's Address) world =
+    let subscribe4<'a, 's when 's :> Simulant>
+        (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriberAddress : 's Address) world =
         subscribe (makeSubscriptionKey ()) subscription eventAddress subscriberAddress world
 
     /// Unsubscribe from an event.
@@ -368,12 +359,12 @@ module World =
         | None -> world
 
     /// Keep active a subscription for the lifetime of a simulant.
-    let monitor<'d, 's when 's :> Simulant>
-        (subscription : Subscription<'d, 's>) (eventAddress : 'd Address) (subscriberAddress : 's Address) world =
+    let monitor<'a, 's when 's :> Simulant>
+        (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriberAddress : 's Address) world =
         if not <| Address.isEmpty subscriberAddress then
             let monitorKey = makeSubscriptionKey ()
             let removalKey = makeSubscriptionKey ()
-            let world = subscribe<'d, 's> monitorKey subscription eventAddress subscriberAddress world
+            let world = subscribe<'a, 's> monitorKey subscription eventAddress subscriberAddress world
             let subscription' = fun _ world ->
                 let world = unsubscribe removalKey world
                 let world = unsubscribe monitorKey world
@@ -570,13 +561,13 @@ module WorldEventModule =
     type World with
 
         /// Ignore all handled events.
-        static member handleAsPass<'d, 's when 's :> Simulant> (_ : Event<'d, 's>) (world : World) =
+        static member handleAsPass<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
             (Cascade, world)
 
         /// Swallow all handled events.
-        static member handleAsSwallow<'d, 's when 's :> Simulant> (_ : Event<'d, 's>) (world : World) =
+        static member handleAsSwallow<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
             (Resolve, world)
         
         /// Handle event by exiting app.
-        static member handleAsExit<'d, 's when 's :> Simulant> (_ : Event<'d, 's>) (world : World) =
+        static member handleAsExit<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
             (Resolve, World.exit world)

@@ -94,16 +94,16 @@ module SimulationModule =
           Collidee : Entity Address }
 
     /// The data for an entity change event.
-    and [<StructuralEquality; NoComparison>] EntityChangeData =
-        { OldEntity : Entity }
+    and [<StructuralEquality; NoComparison>] SimulantChangeData<'t when 't :> Simulant> =
+        { OldSimulant : 't }
 
     /// An event used by Nu's purely functional event system.
-    and [<ReferenceEquality>] Event<'d, 's when 's :> Simulant> =
+    and [<ReferenceEquality>] Event<'a, 's when 's :> Simulant> =
         { SubscriberAddress : 's Address
           PublisherAddress : Simulant Address // TODO: consider making this a list so that Observer can provide all useful addresses
-          EventAddress : 'd Address
+          EventAddress : 'a Address
           Subscriber : 's
-          Data : 'd }
+          Data : 'a }
 
     /// Describes whether an event has been resolved or should cascade.
     and EventHandling =
@@ -111,8 +111,8 @@ module SimulationModule =
         | Cascade
 
     /// Describes a game event subscription.
-    and Subscription<'d, 's when 's :> Simulant> =
-        Event<'d, 's> -> World -> EventHandling * World
+    and Subscription<'a, 's when 's :> Simulant> =
+        Event<'a, 's> -> World -> EventHandling * World
 
     /// Describes a game event subscription that can be boxed / unboxed.
     and BoxableSubscription = obj -> World -> EventHandling * World
@@ -225,7 +225,10 @@ module SimulationModule =
         default facet.GetQuickSize (_, _) = DefaultEntitySize
 
     /// A marker interface for simulation types (Game, Screen, Group, Entity).
-    and Simulant = interface end
+    and Simulant =
+        interface
+            abstract member GetPublishingPriority : (Entity -> World -> single) -> World -> single
+            end
 
     /// The game type that hosts the various screens used to navigate through a game.
     and [<CLIMutable; StructuralEquality; NoComparison>] Game =
@@ -235,7 +238,8 @@ module SimulationModule =
           DispatcherNp : GameDispatcher
           Xtension : Xtension }
 
-        interface Simulant
+        interface Simulant with
+            member this.GetPublishingPriority _ _ = GamePublishingPriority
 
         static member (?) (this : Game, memberName) =
             Xtension.(?) (this.Xtension, memberName)
@@ -258,7 +262,8 @@ module SimulationModule =
           DispatcherNp : ScreenDispatcher
           Xtension : Xtension }
 
-        interface Simulant
+        interface Simulant with
+            member this.GetPublishingPriority _ _ = ScreenPublishingPriority
 
         static member (?) (this : Screen, memberName) =
             Xtension.(?) (this.Xtension, memberName)
@@ -276,7 +281,8 @@ module SimulationModule =
           DispatcherNp : GroupDispatcher
           Xtension : Xtension }
 
-        interface Simulant
+        interface Simulant with
+            member this.GetPublishingPriority _ _ = GroupPublishingPriority
 
         static member (?) (this : Group, memberName) =
             Xtension.(?) (this.Xtension, memberName)
@@ -311,7 +317,9 @@ module SimulationModule =
           OptOverlayName : string option
           Xtension : Xtension }
 
-        interface Simulant
+        interface Simulant with
+            member this.GetPublishingPriority getEntityPublishingPriority world =
+                getEntityPublishingPriority this world
 
         static member (?) (this : Entity, memberName) =
             Xtension.(?) (this.Xtension, memberName)
