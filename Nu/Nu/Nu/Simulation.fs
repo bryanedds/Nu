@@ -225,6 +225,7 @@ module SimulationModule =
         default facet.GetQuickSize (_, _) = DefaultEntitySize
 
     /// A marker interface for simulation types (Game, Screen, Group, Entity).
+    /// The only methods that have a place in here are those used internally by Nu's event system.
     and Simulant =
         interface
             abstract member GetPublishingPriority : (Entity -> World -> single) -> World -> single

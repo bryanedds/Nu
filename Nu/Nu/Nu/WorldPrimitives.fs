@@ -198,11 +198,11 @@ module World =
         Guid.NewGuid ()
 
     /// Get a simulant at the given address from the world.
-    let mutable getSimulantSpecial =
+    let mutable private getSimulantForPublishing =
         Unchecked.defaultof<Simulant Address -> World -> Simulant>
 
     /// Try to get a simulant at the given address from the world.
-    let mutable getOptSimulantSpecial =
+    let mutable private getOptSimulantForPublishing =
         Unchecked.defaultof<Simulant Address -> World -> Simulant option>
 
     // OPTIMIZATION: priority annotated as single to decrease GC pressure.
@@ -225,7 +225,7 @@ module World =
     let private getSortableSubscriptions getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world : (single * SubscriptionEntry) list =
         List.fold
             (fun subscriptions (key, address, subscription) ->
-                match getOptSimulantSpecial (atoua address) world with
+                match getOptSimulantForPublishing (atoua address) world with
                 | Some simulant ->
                     let priority = simulant.GetPublishingPriority getEntityPublishingPriority world
                     let subscription = (priority, (key, address, subscription))
@@ -286,7 +286,7 @@ module World =
             { SubscriberAddress = Address.changeType<obj, 's> subscriberAddress
               PublisherAddress = Address.changeType<'p, Simulant> publisherAddress
               EventAddress = eventAddress
-              Subscriber = getSimulantSpecial (Address.changeType<obj, Simulant> subscriberAddress) world :?> 's
+              Subscriber = getSimulantForPublishing (Address.changeType<obj, Simulant> subscriberAddress) world :?> 's
               Data = eventData }
         let callableSubscription = unbox<BoxableSubscription> subscription
         let result = callableSubscription event world
