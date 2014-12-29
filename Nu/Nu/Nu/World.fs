@@ -83,10 +83,10 @@ module WorldModule =
             let simulant = World.getSimulant address world
             updater simulant world
 
-        static member getOptSimulantSpecialDefinition (address : Simulant Address) world =
+        static member getOptSimulantForPublishingDefinition (address : Simulant Address) world =
             World.getOptSimulant address world
 
-        static member getSimulantSpecialDefinition (address : Simulant Address) world =
+        static member getSimulantForPublishingDefinition (address : Simulant Address) world =
             World.getSimulant address world
 
         static member tryGetIsSelectedScreenIdling world =
@@ -255,7 +255,7 @@ module WorldModule =
                     trace "Program Error: Could not handle splash screen tick due to no selected screen."
                     (Resolve, World.exit world)
 
-        static member internal handleSplashScreenIdle idlingTime event world =
+        static member private handleSplashScreenIdle idlingTime event world =
             let world = World.subscribe SplashScreenTickKey (World.handleSplashScreenIdleTick idlingTime 0L) TickEventAddress event.SubscriberAddress world
             (Resolve, world)
 
@@ -793,5 +793,5 @@ module WorldModule =
             Math.initTypeConverters ()
 
             // assign functions to the pub / sub vars
-            World.getSimulantSpecial <- World.getSimulantSpecialDefinition
-            World.getOptSimulantSpecial <- World.getOptSimulantSpecialDefinition
+            World.getSimulantForPublishing <- World.getSimulantForPublishingDefinition
+            World.getOptSimulantForPublishing <- World.getOptSimulantForPublishingDefinition

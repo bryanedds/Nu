@@ -239,8 +239,9 @@ module Reflection =
         | facetsNpProperty ->
             List.iter
                 (fun facet ->
-                    if not <| isFacetCompatibleWithDispatcher dispatcherMap facet target then
-                        failwith <| "Facet of type '" + getTypeName facet + "' is not compatible with target '" + acstring target + "'.")
+                    if not <| isFacetCompatibleWithDispatcher dispatcherMap facet target
+                    then failwith <| "Facet of type '" + getTypeName facet + "' is not compatible with target '" + acstring target + "'."
+                    else ())
                 facets
             facetsNpProperty.SetValue (target, facets)
             List.iter (fun facet -> attachFields facet target) facets

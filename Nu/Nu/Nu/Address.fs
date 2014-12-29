@@ -55,10 +55,10 @@ module AddressModule =
           Hash : int
           TypeCarrier : 't -> unit }
 
-        static member internal join (list : string list) =
+        static member private join (list : string list) =
             String.Join ("/", list)
 
-        static member internal split (str : string) =
+        static member private split (str : string) =
             List.ofArray <| str.Split '/'
 
         /// Make an address from a list of strings.

@@ -61,7 +61,8 @@ module XtensionModule =
             else failwith <| "Xtension field '" + memberName + "' does not exist and no default is permitted because CanDefault is false."
 
         /// The dynamic look-up operator for an Xtension.
-        /// Example -   let parallax = entity?Parallax : single
+        /// Example:
+        ///     let parallax = entity?Parallax : single
         static member (?) (xtension, memberName) : 'r =
 
             // check if dynamic member is an existing field
@@ -79,7 +80,8 @@ module XtensionModule =
                 Xtension.tryGetDefaultValue xtension memberName
 
         /// The dynamic assignment operator for an Xtension.
-        /// Example - let entity = entity.Position <- Vector2 (4.0, 5.0).
+        /// Example:
+        ///     let entity = entity.Position <- Vector2 (4.0, 5.0).
         static member (?<-) (xtension, fieldName, value : 'a) =
     #if DEBUG
             // nop'ed outside of debug mode for efficiency

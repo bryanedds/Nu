@@ -54,6 +54,7 @@ open SDL2
 open OpenTK
 open TiledSharp
 open Prime
+open Prime.Desync
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
