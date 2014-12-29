@@ -68,6 +68,24 @@ module Desync =
     let updateByGame expr : Desync<'e, World, unit> =
         desync { do! update <| World.updateByGame expr }
 
+    let updateOptSimulantW expr address : Desync<'e, World, unit> =
+        desync { do! update <| World.updateOptSimulantW expr address }
+
+    let updateOptSimulant expr address : Desync<'e, World, unit> =
+        updateOptSimulantW (flip (fun _ -> expr)) address
+
+    let updateByOptSimulant expr address : Desync<'e, World, unit> =
+        desync { do! update <| World.updateByOptSimulant expr address }
+
+    let updateSimulantW expr address : Desync<'e, World, unit> =
+        desync { do! update <| World.updateSimulantW expr address }
+
+    let updateSimulant expr address : Desync<'e, World, unit> =
+        updateSimulantW (flip (fun _ -> expr)) address
+
+    let updateBySimulant expr address : Desync<'e, World, unit> =
+        desync { do! update <| World.updateBySimulant expr address }
+
     let private runDesync4 eventHandling (desync : Desync<Event<'a, 'o>, World, unit>) (observable : Observable<'a, 'o>) world =
         let callbackKey = World.makeCallbackKey ()
         let world = World.addCallbackState callbackKey (fun (_ : Event<'a, 'o>) -> desync) world
