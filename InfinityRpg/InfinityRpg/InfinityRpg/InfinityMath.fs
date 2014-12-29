@@ -8,7 +8,7 @@ open InfinityRpg
 open InfinityRpg.Constants
 
 [<AutoOpen>]
-module DirectionModule =
+module Math =
 
     type Direction =
         | Upward
@@ -23,9 +23,6 @@ module DirectionModule =
             | 2 -> Downward
             | 3 -> Leftward
             | _ -> failwith <| "Invalid conversion to Direction from int '" + acstring n + "'."
-
-[<AutoOpen>]
-module Math =
 
     let vmtovi vm =
         Vector2i.Multiply (vm, TileSizeI)
