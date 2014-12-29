@@ -16,30 +16,55 @@ module CharacterStateFacetModule =
     type Entity with
     
         member entity.CharacterType = entity?CharacterType : CharacterType
+        static member getCharacterType (entity : Entity) = entity.CharacterType
         static member setCharacterType (value : CharacterType) (entity : Entity) = entity?CharacterType <- value
+        
         member entity.ActivityState = entity?ActivityState : ActivityState
+        static member getActivityState (entity : Entity) = entity.ActivityState
         static member setActivityState (value : ActivityState) (entity : Entity) = entity?ActivityState <- value
+        
         member entity.HitPoints = entity?HitPoints : int
+        static member getHitPoints (entity : Entity) = entity.HitPoints
         static member setHitPoints (value : int) (entity : Entity) = entity?HitPoints <- value
+        
         member entity.SpecialPoints = entity?SpecialPoints : int
+        static member getSpecialPoints (entity : Entity) = entity.SpecialPoints
         static member setSpecialPoints (value : int) (entity : Entity) = entity?SpecialPoints <- value
+        
         member entity.PowerBuff = entity?PowerBuff : single
+        static member getPowerBuff (entity : Entity) = entity.PowerBuff
         static member setPowerBuff (value : single) (entity : Entity) = entity?PowerBuff <- value
+        
         member entity.ShieldBuff = entity?ShieldBuff : single
+        static member getShieldBuff (entity : Entity) = entity.ShieldBuff
         static member setShieldBuff (value : single) (entity : Entity) = entity?ShieldBuff <- value
+        
         member entity.MindBuff = entity?MindBuff : single
+        static member getMindBuff (entity : Entity) = entity.MindBuff
         static member setMindBuff (value : single) (entity : Entity) = entity?MindBuff <- value
+        
         member entity.CounterBuff = entity?CounterBuff : single
+        static member getCounterBuff (entity : Entity) = entity.CounterBuff
         static member setCounterBuff (value : single) (entity : Entity) = entity?CounterBuff <- value
+        
         member entity.Statuses = entity?Statuses : StatusType Set
+        static member getStatuses (entity : Entity) = entity.Statuses
         static member setStatuses (value : StatusType Set) (entity : Entity) = entity?Statuses <- value
+        
         member entity.EquippedWeapon = entity?EquippedWeapon : WeaponType option
+        static member getEquippedWeapon (entity : Entity) = entity.EquippedWeapon
         static member setEquippedWeapon (value : WeaponType option) (entity : Entity) = entity?EquippedWeapon <- value
+        
         member entity.EquippedArmor = entity?EquippedArmor : ArmorType option
+        static member getEquippedArmor (entity : Entity) = entity.EquippedArmor
         static member setEquippedArmor (value : ArmorType option) (entity : Entity) = entity?EquippedArmor <- value
+        
         member entity.EquippedRelics = entity?EquippedRelics : RelicType list
+        static member getEquippedRelics (entity : Entity) = entity.EquippedRelics
         static member setEquippedRelics (value : RelicType list) (entity : Entity) = entity?EquippedRelics <- value
+        
         member entity.ControlType = entity?ControlType : ControlType
+        static member getControlType (entity : Entity) = entity.ControlType
         static member setControlType (value : ControlType) (entity : Entity) = entity?ControlType <- value
 
     type CharacterStateFacet () =
@@ -78,8 +103,11 @@ module CharacterAnimationFacetModule =
     type Entity with
     
         member entity.CharacterAnimationState = entity?CharacterAnimationState : CharacterAnimationState
+        static member getCharacterAnimationState (entity : Entity) = entity.CharacterAnimationState
         static member setCharacterAnimationState (value : CharacterAnimationState) (entity : Entity) = entity?CharacterAnimationState <- value
+    
         member entity.CharacterAnimationSheet = entity?CharacterAnimationSheet : AssetTag
+        static member getCharacterAnimationSheet (entity : Entity) = entity.CharacterAnimationSheet
         static member setCharacterAnimationSheet (value : AssetTag) (entity : Entity) = entity?CharacterAnimationSheet <- value
 
     type CharacterAnimationFacet () =

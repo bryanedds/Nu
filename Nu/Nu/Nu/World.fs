@@ -64,7 +64,7 @@ module WorldModule =
             not <| World.isSelectedScreenIdling world
 
         static member private setScreenState state address screen world =
-            let screen = Screen.setScreenState state screen
+            let screen = Screen.setScreenStateNp state screen
             let world =
                 match state with
                 | IdlingState ->

@@ -7,6 +7,9 @@ open Nu.Constants
 module WorldConstants =
 
     let GameAddress = Address<Game>.empty
+    let DefaultScreenAddress = ntoa<Screen> DefaultGroupName
+    let DefaultGroupAddress = satoga DefaultScreenAddress DefaultGroupName
+    let DefaultEntityAddress = gatoea DefaultGroupAddress DefaultEntityName
     let AnyEventAddress = stoa<obj> "*"
     let TickEventAddress = stoa<unit> "Tick"
     let AddEventAddress = stoa<unit> "Add"

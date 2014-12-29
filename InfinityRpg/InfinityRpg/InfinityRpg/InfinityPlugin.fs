@@ -27,7 +27,7 @@ module PluginModule =
             [GameplayDispatcher () :> ScreenDispatcher]
 
         override this.MakeOptGameDispatcher () =
-            Some (InfinityRpgDispatcher () :> GameDispatcher)
+            Some (InfinityDispatcher () :> GameDispatcher)
 
         override this.MakeOverlayRoutes () =
             [typeof<ButtonDispatcher>.Name, Some "InfinityButtonDispatcher"]

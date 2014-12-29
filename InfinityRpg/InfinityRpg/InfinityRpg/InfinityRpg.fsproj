@@ -63,8 +63,8 @@
     <PostBuildEvent>"$(ProjectDir)..\..\..\Nu\Nu\NuPipe\bin\$(ConfigurationName)\NuPipe.exe" "$(ProjectDir)\" "$(TargetDir)\" "$(ProjectDir)Refinement" False</PostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Constants.fs" />
-    <Compile Include="Core.fs" />
+    <Compile Include="InfinityConstants.fs" />
+    <Compile Include="InfinityCore.fs" />
     <Compile Include="MetaMap.fs" />
     <Compile Include="FieldMap.fs" />
     <Compile Include="FieldDispatcher.fs" />
@@ -75,8 +75,8 @@
     <Compile Include="PlayerDispatcher.fs" />
     <Compile Include="OccupationMap.fs" />
     <Compile Include="GameplayDispatcher.fs" />
-    <Compile Include="InfinityRpgDispatcher.fs" />
-    <Compile Include="ComponentFactory.fs" />
+    <Compile Include="InfinityDispatcher.fs" />
+    <Compile Include="InfinityPlugin.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="AssetGraph.xml">

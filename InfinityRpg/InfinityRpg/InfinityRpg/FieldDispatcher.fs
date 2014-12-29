@@ -14,6 +14,7 @@ module FieldDispatcherModule =
     type Entity with
     
         member entity.FieldMapNp = entity?FieldMapNp : FieldMap
+        static member getFieldMapNp (entity : Entity) = entity.FieldMapNp
         static member setFieldMapNp (value : FieldMap) (entity : Entity) = entity?FieldMapNp <- value
 
     type FieldDispatcher () =

@@ -10,15 +10,9 @@ open Nu.Constants
 open Nu.WorldConstants
 module WorldTests =
 
-    let UnitEventAddress = stoa<unit> "Test"
-    let StringEventAddress = stoa<string> "Test"
-    let TestEntityName = "TestEntity"
-    let TestGroupName = "TestGroup"
-    let TestScreenName = "TestScreen"
-    let TestEntityAddress = ltoa<Entity> [TestScreenName; TestGroupName; TestEntityName]
-    let TestGroupAddress = ltoa<Group> [TestScreenName; TestGroupName]
-    let TestScreenAddress = ltoa<Screen> [TestScreenName]
-    let TestFilePath = "Test.xml"
+    let UnitEventAddress = stoa<unit> "Unit"
+    let StringEventAddress = stoa<string> "String"
+    let TestFilePath = "TestFile.xml"
     let incUserStateAndCascade (_ : Event<unit, Game>) world = (Cascade, World.updateUserState inc world)
     let incUserStateAndResolve (_ : Event<unit, Game>) world = (Resolve, World.updateUserState inc world)
 
@@ -77,24 +71,24 @@ module WorldTests =
     let [<Fact>] entitySubscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let entity = World.makeEntity typeof<EntityDispatcher>.Name (Some TestEntityName) world
-        let group = World.makeGroup typeof<GroupDispatcher>.Name (Some TestGroupName) world
-        let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some TestScreenName) world
+        let entity = World.makeEntity typeof<EntityDispatcher>.Name (Some DefaultEntityName) world
+        let group = World.makeGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) world
+        let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some DefaultScreenName) world
         let groupHierarchies = Map.singleton group.Name (group, Map.singleton entity.Name entity)
         let screenHierarchy = (screen, groupHierarchies)
-        let world = snd <| World.addScreen screenHierarchy TestScreenAddress world
+        let world = snd <| World.addScreen screenHierarchy DefaultScreenAddress world
         let handleEvent = fun event world -> (Cascade, World.setUserState event.Subscriber.Name world)
-        let world = World.subscribe4 handleEvent StringEventAddress TestEntityAddress world
+        let world = World.subscribe4 handleEvent StringEventAddress DefaultEntityAddress world
         let world = World.publish4 String.Empty StringEventAddress GameAddress world
-        Assert.Equal<string> (TestEntityName, World.getUserState world)
+        Assert.Equal<string> (DefaultEntityName, World.getUserState world)
 
     let [<Fact>] gameSerializationWorks () =
         // TODO: make stronger assertions in here!!!
         World.init ()
         let world = World.makeEmpty 0
-        let entity = World.makeEntity typeof<EntityDispatcher>.Name (Some TestEntityName) world
-        let group = World.makeGroup typeof<GroupDispatcher>.Name (Some TestGroupName) world
-        let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some TestScreenName) world
+        let entity = World.makeEntity typeof<EntityDispatcher>.Name (Some DefaultEntityName) world
+        let group = World.makeGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) world
+        let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some DefaultScreenName) world
         let game = world.Game
         let screenHierarchies =
             Map.singleton screen.Name <|
@@ -103,9 +97,9 @@ module WorldTests =
         let gameHierarchy = (game, screenHierarchies)
         World.writeGameHierarchyToFile TestFilePath gameHierarchy world
         let (_, screenHierarchies) = World.readGameHierarchyFromFile TestFilePath world
-        let (screen', groupHierarchies) = Map.find TestScreenName screenHierarchies
+        let (screen', groupHierarchies) = Map.find DefaultScreenName screenHierarchies
         Assert.Equal<string> (screen.Name, screen'.Name)
-        let (group', entities) = Map.find TestGroupName groupHierarchies
+        let (group', entities) = Map.find DefaultGroupName groupHierarchies
         Assert.Equal<string> (group.Name, group'.Name)
-        let entity' = Map.find TestEntityName entities
+        let entity' = Map.find DefaultEntityName entities
         Assert.Equal<string> (entity.Name, entity'.Name)

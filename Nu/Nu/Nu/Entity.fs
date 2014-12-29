@@ -17,13 +17,21 @@ module EntityModule =
 
     type Entity with
 
+        static member getPosition (entity : Entity) = entity.Position
         static member setPosition value (entity : Entity) = { entity with Position = value }
+        static member getDepth (entity : Entity) = entity.Depth
         static member setDepth value (entity : Entity) = { entity with Depth = value }
+        static member getSize (entity : Entity) = entity.Size
         static member setSize value (entity : Entity) = { entity with Size = value }
+        static member getRotation (entity : Entity) = entity.Rotation
         static member setRotation value (entity : Entity) = { entity with Rotation = value }
+        static member getVisible (entity : Entity) = entity.Visible
         static member setVisible value (entity : Entity) = { entity with Visible = value }
+        static member getViewType (entity : Entity) = entity.ViewType
         static member setViewType value (entity : Entity) = { entity with ViewType = value }
+        static member getPublishChanges (entity : Entity) = entity.PublishChanges
         static member setPublishChanges value (entity : Entity) = { entity with PublishChanges = value }
+        static member getPersistent (entity : Entity) = entity.Persistent
         static member setPersistent value (entity : Entity) = { entity with Persistent = value }
 
         static member register (entity : Entity) address world =

@@ -13,6 +13,7 @@ module GroupModule =
 
     type Group with
 
+        static member getPersistent (group : Group) = group.Persistent
         static member setPersistent value (group : Group) = { group with Persistent = value }
 
         static member register (group : Group) address world =

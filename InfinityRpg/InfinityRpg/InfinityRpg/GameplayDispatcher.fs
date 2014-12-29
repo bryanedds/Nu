@@ -25,10 +25,15 @@ module GameplayDispatcherModule =
     type Screen with
     
         member screen.ContentRandState = screen?ContentRandState : uint64
+        static member getContentRandState (screen : Screen) = screen.ContentRandState
         static member setContentRandState (value : uint64) (screen : Screen) = screen?ContentRandState <- value
+    
         member screen.OngoingRandState = screen?OngoingRandState : uint64
+        static member getOngoingRandState (screen : Screen) = screen.OngoingRandState
         static member setOngoingRandState (value : uint64) (screen : Screen) = screen?OngoingRandState <- value
+    
         member screen.ShallLoadGame = screen?ShallLoadGame : bool
+        static member getShallLoadGame (screen : Screen) = screen.ShallLoadGame
         static member setShallLoadGame (value : bool) (screen : Screen) = screen?ShallLoadGame <- value
 
     type GameplayDispatcher () =
@@ -383,13 +388,13 @@ module GameplayDispatcherModule =
                 do! updateEntity (Entity.setActivityState <| Navigation newNavigationDescriptor) characterAddress
                 do! during
                         (fun world ->
-                            match World.getEntityBy (fun entity -> entity.ActivityState) characterAddress world with
+                            match World.getEntityBy Entity.getActivityState characterAddress world with
                             | Navigation nd -> newNavigationDescriptor.WalkDescriptor.WalkOriginM = nd.WalkDescriptor.WalkOriginM
                             | Action _ | NoActivity -> false) <|
                         desync {
                             do! update <| fun world ->
                                 let navigationDescriptor =
-                                    match World.getEntityBy (fun entity -> entity.ActivityState) characterAddress world with
+                                    match World.getEntityBy Entity.getActivityState characterAddress world with
                                     | Navigation navigationDescriptor -> navigationDescriptor
                                     | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
                                 updateCharacterByNavigation navigationDescriptor characterAddress world
@@ -403,12 +408,12 @@ module GameplayDispatcherModule =
                 do! updateEntity (Entity.setActivityState <| Action newActionDescriptor) characterAddress
                 do! during
                         (fun world ->
-                            let activityState = World.getEntityBy (fun entity -> entity.ActivityState) characterAddress world 
+                            let activityState = World.getEntityBy Entity.getActivityState characterAddress world 
                             ActivityState.isActing activityState) <|
                         desync {
                             do! update <| fun world ->
                                 let actionDescriptor =
-                                    match World.getEntityBy (fun entity -> entity.ActivityState) characterAddress world  with
+                                    match World.getEntityBy Entity.getActivityState characterAddress world  with
                                     | Action actionDescriptor -> actionDescriptor
                                     | _ -> failwithumf ()
                                 let world = updateCharacterByAction actionDescriptor characterAddress world
