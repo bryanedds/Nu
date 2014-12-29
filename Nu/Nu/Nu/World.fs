@@ -117,7 +117,8 @@ module WorldModule =
                         World.unsubscribe ScreenTransitionMouseX1Key |>
                         World.unsubscribe ScreenTransitionMouseX2Key |>
                         World.unsubscribe ScreenTransitionKeyboardKeyKey
-                | IncomingState | OutgoingState ->
+                | IncomingState
+                | OutgoingState ->
                     world |>
                         World.subscribe ScreenTransitionMouseLeftKey World.handleAsSwallow (MouseLeftEventAddress ->- AnyEventAddress) GameAddress |>
                         World.subscribe ScreenTransitionMouseCenterKey World.handleAsSwallow (MouseCenterEventAddress ->- AnyEventAddress) GameAddress |>
@@ -578,13 +579,7 @@ module WorldModule =
         static member private pairWithNames sources =
             Map.ofListBy World.pairWithName sources
 
-        static member tryMake
-            farseerCautionMode
-            useLoadedGameDispatcher
-            interactivity
-            userState
-            (nuPlugin : NuPlugin)
-            sdlDeps =
+        static member tryMake farseerCautionMode useLoadedGameDispatcher interactivity userState (nuPlugin : NuPlugin) sdlDeps =
 
             // attempt to generate asset metadata so the rest of the world can be created
             match Metadata.tryGenerateAssetMetadataMap AssetGraphFilePath with
