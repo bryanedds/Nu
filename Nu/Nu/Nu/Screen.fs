@@ -98,7 +98,7 @@ module WorldScreenModule =
 
         static member getScreenBy by address world =
             by ^^ Option.get ^^ World.getOptScreen address world
-        
+
         static member getScreen address world =
             World.getScreenBy id address world
 
