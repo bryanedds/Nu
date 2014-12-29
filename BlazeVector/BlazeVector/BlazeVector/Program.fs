@@ -82,7 +82,7 @@ module Program =
         // design. The World type is almost entirely immutable, and thus the only way to update it
         // is by making a new copy of an existing instance. Since we need no special update
         // behavior in this program, we simply return the world as it was received.
-        let updateWorld = id
+        let updateWorld world = world
 
         // after some configuration it is time to run the game. We're off and running!
         World.run tryMakeWorld updateWorld sdlConfig

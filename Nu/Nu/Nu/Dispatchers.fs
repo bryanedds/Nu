@@ -34,7 +34,7 @@ module RigidBodyFacetModule =
         member entity.Restitution = entity?Restitution : single
         static member getRestitution (entity : Entity) = entity.Restitution
         static member setRestitution (value : single) (entity : Entity) = entity?Restitution <- value
-        
+        // remaining members elided for space
         member entity.FixedRotation = entity?FixedRotation : bool
         static member getFixedRotation (entity : Entity) = entity.FixedRotation
         static member setFixedRotation (value : bool) (entity : Entity) = entity?FixedRotation <- value
