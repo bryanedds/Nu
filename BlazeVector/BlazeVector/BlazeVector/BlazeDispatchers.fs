@@ -25,7 +25,7 @@ module BulletModule =
     type BulletDispatcher () =
         inherit EntityDispatcher ()
 
-        let handleTick event world =
+        static let handleTick event world =
             let (bullet : Entity, address) = (event.Subscriber, event.SubscriberAddress)
             if World.isGamePlaying world then
                 let bullet = Entity.setAge (bullet.Age + 1L) bullet
@@ -35,7 +35,7 @@ module BulletModule =
                 (Cascade, world)
             else (Cascade, world)
 
-        let handleCollision event world =
+        static let handleCollision event world =
             let address = event.SubscriberAddress
             if World.isGamePlaying world then
                 let world = World.removeEntity address world
@@ -74,18 +74,18 @@ module EnemyModule =
     type EnemyDispatcher () =
         inherit EntityDispatcher ()
         
-        let hasAppeared camera (enemy : Entity) =
+        static let hasAppeared camera (enemy : Entity) =
             enemy.Position.X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f
 
-        let move (enemy : Entity) world =
+        static let move (enemy : Entity) world =
             let force = Vector2 (-2000.0f, -20000.0f)
             World.applyBodyForce force enemy.PhysicsId world
 
-        let die address world =
+        static let die address world =
             let world = World.removeEntity address world
             World.playSound 1.0f ExplosionSound world
 
-        let handleTick event world =
+        static let handleTick event world =
             let (enemy : Entity, address) = (event.Subscriber, event.SubscriberAddress)
             if World.isGamePlaying world then
                 let world = if hasAppeared world.Camera enemy then move enemy world else world
@@ -93,7 +93,7 @@ module EnemyModule =
                 (Cascade, world)
             else (Cascade, world)
 
-        let handleCollision event world =
+        static let handleCollision event world =
             let (enemy : Entity, address) = (event.Subscriber, event.SubscriberAddress)
             if World.isGamePlaying world then
                 let collidee = World.getEntity event.Data.Collidee world
@@ -149,11 +149,11 @@ module PlayerModule =
     type PlayerDispatcher () =
         inherit EntityDispatcher ()
 
-        let [<Literal>] WalkForce = 8000.0f
-        let [<Literal>] FallForce = -30000.0f
-        let [<Literal>] ClimbForce = 12000.0f
+        static let [<Literal>] WalkForce = 8000.0f
+        static let [<Literal>] FallForce = -30000.0f
+        static let [<Literal>] ClimbForce = 12000.0f
 
-        let createBullet (playerTransform : Transform) bulletAddress world =
+        static let createBullet (playerTransform : Transform) bulletAddress world =
             let bullet = World.makeEntity typeof<BulletDispatcher>.Name (Some <| Address.last bulletAddress) world
             let bullet =
                 bullet |>
@@ -161,18 +161,18 @@ module PlayerModule =
                     Entity.setDepth playerTransform.Depth
             World.addEntity bullet bulletAddress world
 
-        let propelBullet (bullet : Entity) world =
+        static let propelBullet (bullet : Entity) world =
             let world = World.applyBodyLinearImpulse (Vector2 (50.0f, 0.0f)) bullet.PhysicsId world
             let world = World.playSound 1.0f ShotSound world
             (bullet, world)
 
-        let shootBullet (player : Entity) playerAddress world =
+        static let shootBullet (player : Entity) playerAddress world =
             let bulletAddress = gatoea (eatoga playerAddress) (acstring <| Core.makeId ())
             let playerTransform = Entity.getTransform player
             let (bullet, world) = createBullet playerTransform bulletAddress world
             propelBullet bullet world
 
-        let handleSpawnBullet event world =
+        static let handleSpawnBullet event world =
             let (player : Entity, address) = (event.Subscriber, event.SubscriberAddress)
             if World.isGamePlaying world then
                 if not <| Entity.hasFallen player then
@@ -183,12 +183,12 @@ module PlayerModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        let getLastTimeOnGround (player : Entity) world =
+        static let getLastTimeOnGround (player : Entity) world =
             if not <| World.isBodyOnGround player.PhysicsId world
             then player.LastTimeOnGroundNp
             else world.State.TickTime
 
-        let handleMovement event world =
+        static let handleMovement event world =
             let (player : Entity, address) = (event.Subscriber, event.SubscriberAddress)
             if World.isGamePlaying world then
                 let lastTimeOnGround = getLastTimeOnGround player world
@@ -206,7 +206,7 @@ module PlayerModule =
                 (Cascade, world)
             else (Cascade, world)
 
-        let handleJump event world =
+        static let handleJump event world =
             let (player : Entity, address) = (event.Subscriber, event.SubscriberAddress)
             if World.isGamePlaying world then
                 if  world.State.TickTime >= player.LastTimeJumpNp + 12L &&
@@ -219,7 +219,7 @@ module PlayerModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        let handleJumpByKeyboardKey event world =
+        static let handleJumpByKeyboardKey event world =
             if World.isSelectedScreenIdling world then
                 match (enum<SDL.SDL_Scancode> event.Data.ScanCode, event.Data.Repeated) with
                 | (SDL.SDL_Scancode.SDL_SCANCODE_SPACE, false) -> handleJump event world
@@ -259,21 +259,21 @@ module StagePlayModule =
     type StagePlayDispatcher () =
         inherit GroupDispatcher ()
 
-        let getPlayer groupAddress world =
+        static let getPlayer groupAddress world =
             let playerAddress = gatoea groupAddress StagePlayerName
             World.getEntity playerAddress world
 
-        let adjustCamera groupAddress world =
+        static let adjustCamera groupAddress world =
             if World.isGamePlaying world then
                 let player = getPlayer groupAddress world
                 let eyeCenter = Vector2 (player.Position.X + player.Size.X * 0.5f + world.Camera.EyeSize.X * 0.33f, world.Camera.EyeCenter.Y)
                 World.setCamera { world.Camera with EyeCenter = eyeCenter } world
             else world
 
-        let handleAdjustCamera event world =
+        static let handleAdjustCamera event world =
             (Cascade, adjustCamera event.SubscriberAddress world)
 
-        let handlePlayerFall event world =
+        static let handlePlayerFall event world =
             if World.isGamePlaying world then
                 let player = getPlayer event.SubscriberAddress world
                 if Entity.hasFallen player && World.isSelectedScreenIdling world then
@@ -297,17 +297,17 @@ module StageScreenModule =
     type StageScreenDispatcher () =
         inherit ScreenDispatcher ()
 
-        let shiftEntities xShift entities =
+        static let shiftEntities xShift entities =
             Map.map
                 (fun _ (entity : Entity) -> Entity.setPosition (entity.Position + Vector2 (xShift, 0.0f)) entity)
                 entities
 
-        let makeSectionFromFile filePath sectionName xShift world =
+        static let makeSectionFromFile filePath sectionName xShift world =
             let (sectionGroup, sectionEntities) = World.readGroupHierarchyFromFile filePath world
             let sectionEntities = shiftEntities xShift sectionEntities
             (sectionName, (sectionGroup, sectionEntities))
 
-        let handleStartPlay event world =
+        static let handleStartPlay event world =
             let random = Random ()
             let sectionFilePaths = List.toArray SectionFilePaths
             let sectionHierarchies =
@@ -321,11 +321,11 @@ module StageScreenModule =
             let world = World.playSong 0 1.0f DeadBlazeSong world
             (Cascade, world)
 
-        let handleStoppingPlay _ world =
+        static let handleStoppingPlay _ world =
             let world = World.fadeOutSong DefaultTimeToFadeOutSongMs world
             (Cascade, world)
 
-        let handleStopPlay event world =
+        static let handleStopPlay event world =
             let sectionNames = [for i in 0 .. SectionCount do yield SectionName + acstring i]
             let groupNames = StagePlayName :: sectionNames
             let groupAddresses = List.map (fun groupName -> event.SubscriberAddress -<<- ntoa<Group> groupName) groupNames
@@ -339,72 +339,3 @@ module StageScreenModule =
                 World.monitor handleStoppingPlay (OutgoingStartEventAddress ->>- address) address |>
                 World.monitor handleStopPlay (DeselectEventAddress ->>- address) address
             (screen, world)
-
-[<AutoOpen>]
-module BlazeVectorModule =
-
-    /// The custom type for BlazeVector's game dispatcher.
-    type BlazeDispatcher () =
-        inherit GameDispatcher ()
-
-        // this function handles playing the song "Machinery"
-        static let handlePlaySongMachinery _ world =
-            let world = World.playSong 0 1.0f MachinerySong world
-            (Cascade, world)
-    
-        // this function handles playing the stage
-        static let handlePlayStage _ world =
-            let world = World.fadeOutSong DefaultTimeToFadeOutSongMs world
-            let world = World.transitionScreen StageAddress world
-            (Cascade, world)
-    
-        // this function adds the BlazeVector title screen to the world
-        static let addTitleScreen world =
-    
-            // this adds a dissolve screen from the specified file with the given parameters
-            let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleGroupFilePath TitleAddress world
-    
-            // this subscribes to the event that is raised when the Title screen is selected for
-            // display and interaction, and handles the event by playing the song "Machinery"
-            let world = World.subscribe4 handlePlaySongMachinery SelectTitleEventAddress GameAddress world
-    
-            // subscribes to the event that is raised when the Title screen's Play button is
-            // clicked, and handles the event by transitioning to the Stage screen
-            let world = World.subscribe4 handlePlayStage ClickTitlePlayEventAddress GameAddress world
-    
-            // subscribes to the event that is raised when the Title screen's Credits button is
-            // clicked, and handles the event by transitioning to the Credits screen
-            let world = World.subscribe4 (World.handleAsScreenTransition CreditsAddress) ClickTitleCreditsEventAddress GameAddress world
-    
-            // subscribes to the event that is raised when the Title screen's Exit button is clicked,
-            // and handles the event by exiting the game
-            World.subscribe4 World.handleAsExit ClickTitleExitEventAddress GameAddress world
-    
-        // pretty much the same as above, but for the Credits screen
-        static let addCreditsScreen world =
-            let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name CreditsGroupFilePath CreditsAddress world
-            World.subscribe4 (World.handleAsScreenTransition TitleAddress) ClickCreditsBackEventAddress GameAddress world
-    
-        // and so on.
-        static let addStageScreen world =
-            let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<StageScreenDispatcher>.Name StageGroupFilePath StageAddress world
-            World.subscribe4 (World.handleAsScreenTransition TitleAddress) ClickStageBackEventAddress GameAddress world
-
-        // game registration is where the game's high-level logic is set up!
-        override dispatcher.Register (game, world) =
-
-            // hint to the renderer that the Gui package should be loaded up front
-            let world = World.hintRenderPackageUse GuiPackageName world
-            
-            // add our Gui screens to the world
-            let world = addTitleScreen world
-            let world = addCreditsScreen world
-            let world = addStageScreen world
-
-            // add to the world a splash screen that automatically transitions to the Title screen
-            let (splashScreen, world) = World.addSplashScreen false SplashData typeof<ScreenDispatcher>.Name TitleAddress SplashAddress world
-
-            // play a neat sound effect, select the splash screen, and we're off!
-            let world = World.playSound 1.0f NuSplashSound world
-            let world = snd <| World.selectScreen splashScreen SplashAddress world
-            (game, world)
