@@ -325,43 +325,48 @@ module Observer =
     let isSelectedScreenIdling _ world = World.isSelectedScreenIdling world
     let isSelectedScreenTransitioning _ world = World.isSelectedScreenTransitioning world
 
-    let entityValueChange valueGetter =
+    let entityValue valueGetter o =
         filter (fun a w ->
             let oldValue = valueGetter a.Data.OldEntity
             let newValue = valueGetter (World.getEntity (atoea a.PublisherAddress) w)
             oldValue <> newValue)
+            o
 
     let noMoreThanOncePerTick o =
         o |> organize (fun _ w -> w.State.TickTime) |> toFst |> choose
 
 open Observer
-module DfrpExperiment =
+module FofrpExperiment =
 
-    let observeEntity valueGetter entityAddress observerAddress =
-        observe (EntityChangeEventAddress ->>- entityAddress) observerAddress |> entityValueChange valueGetter
+    let observeEntityValue valueGetter entityAddress observerAddress =
+        observe (EntityChangeEventAddress ->>- entityAddress) observerAddress |> entityValue valueGetter
 
-    let observeEntityCyclic valueGetter entityAddress observerAddress =
-        observeEntity valueGetter entityAddress observerAddress |> noMoreThanOncePerTick
+    let observeEntityValueCyclic valueGetter entityAddress observerAddress =
+        observeEntityValue valueGetter entityAddress observerAddress |> noMoreThanOncePerTick
 
-    let updateOptEntity valueSetter o =
-        subscribe (fun a w -> (Cascade, World.updateOptEntity (valueSetter a.Data) a.SubscriberAddress w)) o
+    let updateOptEntityValue valueSetter o =
+        subscribe (fun a w -> (Cascade, World.updateOptEntity (valueSetter a w) a.SubscriberAddress w)) o
 
-    let updateEntity valueSetter o =
-        subscribe (fun a w -> (Cascade, World.updateEntity (valueSetter a.Data) a.SubscriberAddress w)) o
+    let updateEntityValue valueSetter o =
+        subscribe (fun a w -> (Cascade, World.updateEntity (valueSetter a w) a.SubscriberAddress w)) o
 
-    let updateOptGroup valueSetter o =
-        subscribe (fun a w -> (Cascade, World.updateOptGroup (valueSetter a.Data) a.SubscriberAddress w)) o
+    let updateOptGroupValue valueSetter o =
+        subscribe (fun a w -> (Cascade, World.updateOptGroup (valueSetter a w) a.SubscriberAddress w)) o
 
-    let updateGroup valueSetter o =
-        subscribe (fun a w -> (Cascade, World.updateGroup (valueSetter a.Data) a.SubscriberAddress w)) o
+    let updateGroupValue valueSetter o =
+        subscribe (fun a w -> (Cascade, World.updateGroup (valueSetter a w) a.SubscriberAddress w)) o
 
-    let updateOptScreen valueSetter o =
-        subscribe (fun a w -> (Cascade, World.updateOptScreen (valueSetter a.Data) a.SubscriberAddress w)) o
+    let updateOptScreenValue valueSetter o =
+        subscribe (fun a w -> (Cascade, World.updateOptScreen (valueSetter a w) a.SubscriberAddress w)) o
 
-    let updateScreen valueSetter o =
-        subscribe (fun a w -> (Cascade, World.updateScreen (valueSetter a.Data) a.SubscriberAddress w)) o
+    let updateScreenValue valueSetter o =
+        subscribe (fun a w -> (Cascade, World.updateScreen (valueSetter a w) a.SubscriberAddress w)) o
 
-    let updateGame valueSetter o =
-        subscribe (fun a w -> (Cascade, World.updateGame (valueSetter a.Data) w)) o
+    let updateGameValue valueSetter o =
+        subscribe (fun a w -> (Cascade, World.updateGame (valueSetter a w) w)) o
 
-    // let world = observeEntity (fun e -> e.Enabled) joeAddress bobAddress |> updateEntity Entity.setEnabled world
+    let (-->)
+        (sourceEntityAddress : Entity Address, valueGetter : Entity -> 'a)
+        (destinationEntityAddress : Entity Address, valueSetter : 'a -> Entity -> Entity) =
+        observeEntityValue valueGetter sourceEntityAddress destinationEntityAddress |>
+        updateEntityValue (fun _ world -> valueSetter (valueGetter (World.getEntity sourceEntityAddress world)))

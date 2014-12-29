@@ -13,7 +13,7 @@ open InfinityRpg.Constants
 [<AutoOpen>]
 module InfinityRpgModule =
 
-    type InfinityRpgDispatcher () =
+    type InfinityDispatcher () =
         inherit GameDispatcher ()
 
         static let handleAsScreenTransitionToGameplay shallLoadGame event world =

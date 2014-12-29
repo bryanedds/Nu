@@ -10,6 +10,10 @@ module ReactTests =
 
     let IntEventAddress = stoa<int> "Test"
     let UnitEventAddress = stoa<unit> "Test"
+    let JimName = "Jim"
+    let JimAddress = gatoea DefaultGroupAddress JimName
+    let BobName = "Bob"
+    let BobAddress = gatoea DefaultGroupAddress BobName
     let incUserStateAndCascade _ world = (Cascade, World.updateUserState inc world)
     let incUserStateAndResolve _ world = (Resolve, World.updateUserState inc world)
 
@@ -81,3 +85,18 @@ module ReactTests =
         let world = World.publish4 0 IntEventAddress GameAddress world
         let world = unsubscribe world
         Assert.True <| Map.isEmpty world.Callbacks.CallbackStates
+
+    open FofrpExperiment
+
+    let f () =
+        World.init ()
+        let world = World.makeEmpty 0
+        let forwarder = (BobAddress, Entity.getEnabled) --> (JimAddress, Entity.setEnabled)
+        let world = forwarder world
+        let world = World.updateEntity (Entity.setEnabled false) BobAddress world
+        let jim = World.makeEntity typeof<EntityDispatcher>.Name (Some JimName) world
+        let bob = World.makeEntity typeof<EntityDispatcher>.Name (Some BobName) world
+        let group = World.makeGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) world
+        let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some DefaultScreenName) world
+        let world = snd <| World.addScreen (screen, Map.singleton group.Name (group, Map.ofList [(jim.Name, jim); (bob.Name, bob)])) DefaultScreenAddress world
+        Assert.True <| World.getEntityBy (not << Entity.getEnabled) JimAddress world

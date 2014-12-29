@@ -22,10 +22,15 @@ module ScreenModule =
 
     type Screen with
 
-        static member setScreenState value screen = { screen with ScreenStateNp = value }
-        static member setTransitionTicks value screen = { screen with TransitionTicksNp = value }
+        static member getScreenStateNp (screen : Screen) = screen.ScreenStateNp
+        static member setScreenStateNp value screen = { screen with ScreenStateNp = value }
+        static member getTransitionTicksNp (screen : Screen) = screen.TransitionTicksNp
+        static member setTransitionTicksNp value screen = { screen with TransitionTicksNp = value }
+        static member getIncoming (screen : Screen) = screen.Incoming
         static member setIncoming value screen = { screen with Incoming = value }
+        static member getOutgoing (screen : Screen) = screen.Outgoing
         static member setOutgoing value screen = { screen with Outgoing = value }
+        static member getPersistent (screen : Screen) = screen.Persistent
         static member setPersistent value (screen : Screen) = { screen with Persistent = value }
 
         static member register (screen : Screen) address world =

@@ -16,33 +16,61 @@ module RigidBodyFacetModule =
         // TODO: implement angular and linear velocity fields to make physics resets less discrete.
 
         member entity.MinorId = entity?MinorId : Guid
+        static member getMinorId (entity : Entity) = entity.MinorId
         static member setMinorId (value : Guid) (entity : Entity) = entity?MinorId <- value
+        
         member entity.BodyType = entity?BodyType : BodyType
+        static member getBodyType (entity : Entity) = entity.BodyType
         static member setBodyType (value : BodyType) (entity : Entity) = entity?BodyType <- value
+        
         member entity.Density = entity?Density : single
+        static member getDensity (entity : Entity) = entity.Density
         static member setDensity (value : single) (entity : Entity) = entity?Density <- value
+        
         member entity.Friction = entity?Friction : single
+        static member getFriction (entity : Entity) = entity.Friction
         static member setFriction (value : single) (entity : Entity) = entity?Friction <- value
+        
         member entity.Restitution = entity?Restitution : single
+        static member getRestitution (entity : Entity) = entity.Restitution
         static member setRestitution (value : single) (entity : Entity) = entity?Restitution <- value
+        
         member entity.FixedRotation = entity?FixedRotation : bool
+        static member getFixedRotation (entity : Entity) = entity.FixedRotation
         static member setFixedRotation (value : bool) (entity : Entity) = entity?FixedRotation <- value
+        
         member entity.LinearDamping = entity?LinearDamping : single
+        static member getLinearDamping (entity : Entity) = entity.LinearDamping
         static member setLinearDamping (value : single) (entity : Entity) = entity?LinearDamping <- value
+        
         member entity.AngularDamping = entity?AngularDamping : single
+        static member getAngularDamping (entity : Entity) = entity.AngularDamping
         static member setAngularDamping (value : single) (entity : Entity) = entity?AngularDamping <- value
+        
         member entity.GravityScale = entity?GravityScale : single
+        static member getGravityScale (entity : Entity) = entity.GravityScale
         static member setGravityScale (value : single) (entity : Entity) = entity?GravityScale <- value
+        
         member entity.CollisionCategories = entity?CollisionCategories : string
+        static member getCollisionCategories (entity : Entity) = entity.CollisionCategories
         static member setCollisionCategories (value : string) (entity : Entity) = entity?CollisionCategories <- value
+        
         member entity.CollisionMask = entity?CollisionMask : string
+        static member getCollisionMask (entity : Entity) = entity.CollisionMask
         static member setCollisionMask (value : string) (entity : Entity) = entity?CollisionMask <- value
+        
         member entity.CollisionExpr = entity?CollisionExpr : string
+        static member getCollisionExpr (entity : Entity) = entity.CollisionExpr
         static member setCollisionExpr (value : string) (entity : Entity) = entity?CollisionExpr <- value
+        
         member entity.IsBullet = entity?IsBullet : bool
+        static member getIsBullet (entity : Entity) = entity.IsBullet
         static member setIsBullet (value : bool) (entity : Entity) = entity?IsBullet <- value
+        
         member entity.IsSensor = entity?IsSensor : bool
+        static member getIsSensor (entity : Entity) = entity.IsSensor
         static member setIsSensor (value : bool) (entity : Entity) = entity?IsSensor <- value
+        
         member entity.PhysicsId = { SourceId = entity.Id; BodyId = entity.MinorId }
 
     type RigidBodyFacet () =
@@ -100,6 +128,7 @@ module SpriteFacetModule =
     type Entity with
 
         member entity.SpriteImage = entity?SpriteImage : AssetTag
+        static member getSpriteImage (entity : Entity) = entity.SpriteImage
         static member setSpriteImage (value : AssetTag) (entity : Entity) = entity?SpriteImage <- value
 
     type SpriteFacet () =
@@ -134,14 +163,23 @@ module AnimatedSpriteFacetModule =
     type Entity with
 
         member entity.TileCount = entity?TileCount : int
+        static member getTileCount (entity : Entity) = entity.TileCount
         static member setTileCount (value : int) (entity : Entity) = entity?TileCount <- value
+        
         member entity.TileRun = entity?TileRun : int
+        static member getTileRun (entity : Entity) = entity.TileRun
         static member setTileRun (value : int) (entity : Entity) = entity?TileRun <- value
+        
         member entity.TileSize = entity?TileSize : Vector2
+        static member getTileSize (entity : Entity) = entity.TileSize
         static member setTileSize (value : Vector2) (entity : Entity) = entity?TileSize <- value
+        
         member entity.AnimationStutter = entity?AnimationStutter : int64
+        static member getAnimationStutter (entity : Entity) = entity.AnimationStutter
         static member setAnimationStutter (value : int64) (entity : Entity) = entity?AnimationStutter <- value
+        
         member entity.AnimationSheet = entity?AnimationSheet : AssetTag
+        static member getAnimationSheet (entity : Entity) = entity.AnimationSheet
         static member setAnimationSheet (value : AssetTag) (entity : Entity) = entity?AnimationSheet <- value
 
     type AnimatedSpriteFacet () =
@@ -231,10 +269,15 @@ module GuiDispatcherModule =
     type Entity with
         
         member gui.Enabled = gui?Enabled : bool
+        static member getEnabled (gui : Entity) = gui.Enabled
         static member setEnabled (value : bool) (gui : Entity) = gui?Enabled <- value
+
         member gui.DisabledColor = gui?DisabledColor : Vector4
+        static member getDisabledColor (gui : Entity) = gui.DisabledColor
         static member setDisabledColor (value : Vector4) (gui : Entity) = gui?DisabledColor <- value
+
         member gui.SwallowMouseLeft = gui?SwallowMouseLeft : bool
+        static member getSwallowMouseLeft (gui : Entity) = gui.SwallowMouseLeft
         static member setSwallowMouseLeft (value : bool) (gui : Entity) = gui?SwallowMouseLeft <- value
 
     type GuiDispatcher () =
@@ -269,12 +312,19 @@ module ButtonDispatcherModule =
     type Entity with
     
         member button.Down = button?Down : bool
+        static member getDown (entity : Entity) = entity.Down
         static member setDown (value : bool) (button : Entity) = button?Down <- value
+        
         member button.UpImage = button?UpImage : AssetTag
+        static member getUpImage (entity : Entity) = entity.UpImage
         static member setUpImage (value : AssetTag) (button : Entity) = button?UpImage <- value
+        
         member button.DownImage = button?DownImage : AssetTag
+        static member getDownImage (entity : Entity) = entity.DownImage
         static member setDownImage (value : AssetTag) (button : Entity) = button?DownImage <- value
+        
         member button.OptClickSound = button?OptClickSound : AssetTag option
+        static member getOptClickSound (entity : Entity) = entity.OptClickSound
         static member setOptClickSound (value : AssetTag option) (button : Entity) = button?OptClickSound <- value
 
     type ButtonDispatcher () =
@@ -356,6 +406,7 @@ module LabelDispatcherModule =
     type Entity with
 
         member label.LabelImage = label?LabelImage : AssetTag
+        static member getLabelImage (entity : Entity) = entity.LabelImage
         static member setLabelImage (value : AssetTag) (label : Entity) = label?LabelImage <- value
 
     type LabelDispatcher () =
@@ -391,14 +442,23 @@ module TextDispatcherModule =
     type Entity with
 
         member text.Text : string = text?Text
+        static member getText (entity : Entity) = entity.Text
         static member setText (value : string) (text : Entity) = text?Text <- value
+        
         member text.TextFont = text?TextFont : AssetTag
+        static member getTextFont (entity : Entity) = entity.TextFont
         static member setTextFont (value : AssetTag) (text : Entity) = text?TextFont <- value
+        
         member text.TextOffset = text?TextOffset : Vector2
+        static member getTextOffset (entity : Entity) = entity.TextOffset
         static member setTextOffset (value : Vector2) (text : Entity) = text?TextOffset <- value
+        
         member text.TextColor = text?TextColor : Vector4
+        static member getTextColor (entity : Entity) = entity.TextColor
         static member setTextColor (value : Vector4) (text : Entity) = text?TextColor <- value
+        
         member text.BackgroundImage = text?BackgroundImage : AssetTag
+        static member getBackgroundImage (entity : Entity) = entity.BackgroundImage
         static member setBackgroundImage (value : AssetTag) (text : Entity) = text?BackgroundImage <- value
 
     type TextDispatcher () =
@@ -448,14 +508,23 @@ module ToggleDispatcherModule =
     type Entity with
 
         member toggle.On = toggle?On : bool
+        static member getOn (entity : Entity) = entity.On
         static member setOn (value : bool) (toggle : Entity) = toggle?On <- value
+        
         member toggle.Pressed = toggle?Pressed : bool
+        static member getPressed (entity : Entity) = entity.Pressed
         static member setPressed (value : bool) (toggle : Entity) = toggle?Pressed <- value
+        
         member toggle.OffImage = toggle?OffImage : AssetTag
+        static member getOffImage (entity : Entity) = entity.OffImage
         static member setOffImage (value : AssetTag) (toggle : Entity) = toggle?OffImage <- value
+        
         member toggle.OnImage = toggle?OnImage : AssetTag
+        static member getOnImage (entity : Entity) = entity.OnImage
         static member setOnImage (value : AssetTag) (toggle : Entity) = toggle?OnImage <- value
+        
         member toggle.OptToggleSound = toggle?OptToggleSound : AssetTag option
+        static member getOptToggleSound (entity : Entity) = entity.OptToggleSound
         static member setOptToggleSound (value : AssetTag option) (toggle : Entity) = toggle?OptToggleSound <- value
 
     type ToggleDispatcher () =
@@ -539,6 +608,7 @@ module FeelerDispatcherModule =
     type Entity with
 
         member feeler.Touched = feeler?Touched : bool
+        static member getTouched (entity : Entity) = entity.Touched
         static member setTouched (value : bool) (feeler : Entity) = feeler?Touched <- value
 
     type FeelerDispatcher () =
@@ -591,12 +661,19 @@ module FillBarDispatcherModule =
     type Entity with
     
         member fillBar.Fill = fillBar?Fill : single
+        static member getFill (entity : Entity) = entity.Fill
         static member setFill (value : single) (fillBar : Entity) = fillBar?Fill <- value
+        
         member fillBar.FillInset = fillBar?FillInset : single
+        static member getFillInset (entity : Entity) = entity.FillInset
         static member setFillInset (value : single) (fillBar : Entity) = fillBar?FillInset <- value
+        
         member fillBar.FillImage = fillBar?FillImage : AssetTag
+        static member getFillImage (entity : Entity) = entity.FillImage
         static member setFillImage (value : AssetTag) (fillBar : Entity) = fillBar?FillImage <- value
+        
         member fillBar.BorderImage = fillBar?BorderImage : AssetTag
+        static member getBorderImage (entity : Entity) = entity.BorderImage
         static member setBorderImage (value : AssetTag) (fillBar : Entity) = fillBar?BorderImage <- value
 
     type FillBarDispatcher () =
@@ -714,8 +791,11 @@ module TileMapDispatcherModule =
     type Entity with
 
         member entity.TileMapAsset = entity?TileMapAsset : AssetTag
+        static member getTileMapAsset (entity : Entity) = entity.TileMapAsset
         static member setTileMapAsset (value : AssetTag) (entity : Entity) = entity?TileMapAsset <- value
+        
         member entity.Parallax = entity?Parallax : single
+        static member getParallax (entity : Entity) = entity.Parallax
         static member setParallax (value : single) (entity : Entity) = entity?Parallax <- value
 
         static member makeTileMapData (tileMapAsset : AssetTag) world =
