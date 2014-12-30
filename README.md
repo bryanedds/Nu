@@ -3,7 +3,7 @@ FP Works repository featuring the Nu Game Engine!
 
 What is the **Nu Game Engine**?
 
-*"The Nu Game Engine is a game development platform that aims to drastically reduce the cost of game development by providing a vastly superior programming model for games via Discrete Reactive Functional Programming (DRFP). While the engine is still pre-1.0, the implementation has matured enough to prove both the efficacy and viability of pure functional programming in indie games in terms of performance, programmability, and reliability."*
+*"The Nu Game Engine is a game development platform that aims to drastically reduce the cost of game development by providing a vastly superior programming model for games via Discrete Functional Reactive Programming (DFRP). While the engine is still pre-1.0, the implementation has matured enough to prove both the efficacy and viability of pure functional programming in indie games in terms of performance, programmability, and reliability."*
 
 ![Screenshot](BlazeVector/Promotional/BlastingAwayInBlazeVector.png?raw=true "Nu Game Engine demo game BlazeVector")
 
