@@ -12,10 +12,6 @@ module World =
     let private AnyEventAddressesCache =
         Dictionary<obj Address, obj Address list> HashIdentity.Structural
 
-    /// Set the Camera field of the world.
-    let setCamera camera world =
-        { world with Camera = camera }
-
     /// Transform a bunch of simulants in the context of a world.
     let transformSimulants transform patoca simulants parentAddress world =
         Map.fold
@@ -354,15 +350,6 @@ module WorldStateModule =
             let state = { world.State with TickTime = world.State.TickTime + 1L }
             World.setState state world
 
-        /// Get the OptScreenTransitionDestinationAddress field of the world.
-        static member getOptScreenTransitionDestinationAddress world =
-            world.State.OptScreenTransitionDestinationAddress
-
-        /// Set the OptScreenTransitionDestinationAddress field of the world.
-        static member internal setOptScreenTransitionDestinationAddress address world =
-            let state = { world.State with OptScreenTransitionDestinationAddress = address  }
-            World.setState state world
-
         /// Get the the liveness state of the world.
         static member getLiveness world =
             world.State.Liveness
@@ -387,6 +374,34 @@ module WorldStateModule =
         /// Set the level of the world's interactivity.
         static member setInteractivity interactivity world =
             let state = { world.State with Interactivity = interactivity }
+            World.setState state world
+
+        /// Update the the level of the world's interactivity.
+        static member updateInteractivity updater world =
+            let interactivity = updater <| World.getInteractivity world
+            World.setInteractivity interactivity world
+
+        /// Get the camera used to view the world.
+        static member getCamera world =
+            world.State.Camera
+
+        /// Set the camera used to view the world.
+        static member setCamera camera world =
+            let state = { world.State with Camera = camera }
+            World.setState state world
+
+        /// Update the camera used to view the world.
+        static member updateCamera updater world =
+            let camera = updater <| World.getCamera world
+            World.setCamera camera world
+
+        /// Get the OptScreenTransitionDestinationAddress field of the world.
+        static member getOptScreenTransitionDestinationAddress world =
+            world.State.OptScreenTransitionDestinationAddress
+
+        /// Set the OptScreenTransitionDestinationAddress field of the world.
+        static member internal setOptScreenTransitionDestinationAddress address world =
+            let state = { world.State with OptScreenTransitionDestinationAddress = address  }
             World.setState state world
 
         /// Get the asset metadata map.

@@ -143,7 +143,8 @@ module WorldEntityModule =
         static member private optEntityFinder (address : Entity Address) world =
             match address.Names with
             | [screenName; groupName; entityName] ->
-                match Map.tryFind screenName world.Simulants with
+                let (_, screenMap) = world.Simulants 
+                match Map.tryFind screenName screenMap with
                 | Some (_, groupMap) ->
                     match Map.tryFind groupName groupMap with
                     | Some (_, entityMap) -> Map.tryFind entityName entityMap
@@ -154,13 +155,15 @@ module WorldEntityModule =
         static member private entityAdder (entity : Entity) (address : Entity Address) world =
             match address.Names with
             | [screenName; groupName; entityName] ->
-                match Map.tryFind screenName world.Simulants with
+                let (game, screenMap) = world.Simulants 
+                match Map.tryFind screenName screenMap with
                 | Some (screen, groupMap) ->
                     match Map.tryFind groupName groupMap with
                     | Some (group, entityMap) ->
                         let entityMap = Map.add entityName entity entityMap
                         let groupMap = Map.add groupName (group, entityMap) groupMap
-                        { world with Simulants = Map.add screenName (screen, groupMap) world.Simulants }
+                        let screenMap = Map.add screenName (screen, groupMap) screenMap
+                        { world with Simulants = (game, screenMap) }
                     | None -> failwith <| "Cannot add entity '" + acstring address + "' to non-existent group."
                 | None -> failwith <| "Cannot add entity '" + acstring address + "' to non-existent screen."
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
@@ -168,13 +171,15 @@ module WorldEntityModule =
         static member private entityRemover (address : Entity Address) world =
             match address.Names with
             | [screenName; groupName; entityName] ->
-                match Map.tryFind screenName world.Simulants with
+                let (game, screenMap) = world.Simulants 
+                match Map.tryFind screenName screenMap with
                 | Some (screen, groupMap) ->
                     match Map.tryFind groupName groupMap with
                     | Some (group, entityMap) ->
                         let entityMap = Map.remove entityName entityMap
                         let groupMap = Map.add groupName (group, entityMap) groupMap
-                        { world with Simulants = Map.add screenName (screen, groupMap) world.Simulants }
+                        let screenMap = Map.add screenName (screen, groupMap) screenMap
+                        { world with Simulants = (game, screenMap) }
                     | None -> world
                 | None -> world
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
@@ -250,7 +255,8 @@ module WorldEntityModule =
         static member getEntityMapInGroup (groupAddress : Group Address) world =
             match groupAddress.Names with
             | [screenName; groupName] ->
-                match Map.tryFind screenName world.Simulants with
+                let (_, screenMap) = world.Simulants
+                match Map.tryFind screenName screenMap with
                 | Some (_, groupMap) ->
                     match Map.tryFind groupName groupMap with
                     | Some (_, entityMap) -> entityMap

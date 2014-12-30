@@ -66,7 +66,8 @@ module WorldScreenModule =
         static member private optScreenFinder (address : Screen Address) world =
             match address.Names with
             | [screenName] ->
-                match Map.tryFind screenName world.Simulants with
+                let (_, screenMap) = world.Simulants 
+                match Map.tryFind screenName screenMap with
                 | Some (screen, _) -> Some screen
                 | None -> None
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
@@ -74,18 +75,25 @@ module WorldScreenModule =
         static member private screenAdder (screen : Screen) (address : Screen Address) world =
             match address.Names with
             | [screenName] ->
-                match Map.tryFind screenName world.Simulants with
-                | Some (_, groupMap) -> { world with Simulants = Map.add screenName (screen, groupMap) world.Simulants }
-                | None -> { world with Simulants = Map.add screenName (screen, Map.empty) world.Simulants }
+                let (game, screenMap) = world.Simulants 
+                match Map.tryFind screenName screenMap with
+                | Some (_, groupMap) ->
+                    let screenMap = Map.add screenName (screen, groupMap) screenMap
+                    { world with Simulants = (game, screenMap) }
+                | None ->
+                    let screenMap = Map.add screenName (screen, Map.empty) screenMap
+                    { world with Simulants = (game, screenMap) }
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
         static member private screenRemover (address : Screen Address) world =
             match address.Names with
             | [screenName] ->
-                match Map.tryFind screenName world.Simulants with
+                let (game, screenMap) = world.Simulants 
+                match Map.tryFind screenName screenMap with
                 | Some (_, groupMap) ->
-                    if Map.isEmpty groupMap
-                    then { world with Simulants = Map.remove screenName world.Simulants }
+                    if Map.isEmpty groupMap then
+                        let screenMap = Map.remove screenName screenMap
+                        { world with Simulants = (game, screenMap) }
                     else failwith <| "Cannot remove screen " + acstring address + ", which still contains groups."
                 | None -> world
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
@@ -156,7 +164,7 @@ module WorldScreenModule =
             Seq.map (fun address -> World.getScreenHierarchy address world) addresses
 
         static member getScreenMap world =
-            world.Simulants
+            snd world.Simulants
 
         static member getScreensBy by addresses world =
             Seq.map (fst >> by) <| World.getScreenHierarchies addresses world
@@ -165,7 +173,7 @@ module WorldScreenModule =
             World.getScreensBy id addresses world
 
         static member getScreenAddresses world =
-            Map.fold (fun addresses screenName _ -> ntoa<Screen> screenName :: addresses) [] world.Simulants
+            Map.fold (fun addresses screenName _ -> ntoa<Screen> screenName :: addresses) [] (World.getScreenMap world)
 
         static member updateScreensW updater addresses world =
             Seq.fold (fun world address -> World.updateScreenW updater address world) world addresses

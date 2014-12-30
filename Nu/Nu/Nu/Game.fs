@@ -33,18 +33,19 @@ module WorldGameModule =
     type World with
 
         static member getGameBy by world =
-            by world.Game
+            by <| fst world.Simulants
 
         static member getGame world =
             World.getGameBy id world
 
         static member getGameHierarchy world =
-            let game = world.Game
+            let game = World.getGame world
             let screenMap = World.getScreenMap world
             (game, screenMap)
 
         static member setGame game world =
-            { world with Game = game }
+            let screenMap = World.getScreenMap world
+            { world with Simulants = (game, screenMap) }
 
         static member updateGameW updater world =
             let game = World.getGame world
@@ -59,10 +60,11 @@ module WorldGameModule =
             updater game world
 
         static member getOptSelectedScreenAddress world =
-            world.Game.OptSelectedScreenAddress
+            let game = World.getGame world
+            game.OptSelectedScreenAddress
         
         static member setOptSelectedScreenAddress optAddress world =
-            World.setGame (Game.setOptSelectedScreenAddress optAddress world.Game) world
+            World.updateGame (Game.setOptSelectedScreenAddress optAddress) world
         
         static member getSelectedScreenAddress world =
             Option.get <| World.getOptSelectedScreenAddress world

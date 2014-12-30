@@ -285,7 +285,7 @@ module GameplayDispatcherModule =
             let player = World.getEntity (getPlayerAddress address) world
             let enemies = World.getEntities (getEnemyAddresses address world) world
             if not <| anyTurnsInProgress2 player enemies then
-                let touchPositionW = Camera.mouseToWorld Relative touchPosition world.Camera
+                let touchPositionW = Camera.mouseToWorld Relative touchPosition world.State.Camera
                 let occupationMapWithAdjacentEnemies =
                     OccupationMap.makeFromFieldTilesAndAdjacentCharacters
                         (vftovm player.Position) field.FieldMapNp.FieldTiles enemies

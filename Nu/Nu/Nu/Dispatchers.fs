@@ -138,7 +138,7 @@ module SpriteFacetModule =
             [define? SpriteImage { PackageName = DefaultPackageName; AssetName = "Image3" }]
 
         override facet.GetRenderDescriptors (entity : Entity, world) =
-            if entity.Visible && Camera.inView3 entity.ViewType entity.Position entity.Size world.Camera then
+            if entity.Visible && Camera.inView3 entity.ViewType entity.Position entity.Size world.State.Camera then
                 [LayerableDescriptor
                     { Depth = entity.Depth
                       LayeredDescriptor =
@@ -202,7 +202,7 @@ module AnimatedSpriteFacetModule =
              define? AnimationSheet { PackageName = DefaultPackageName; AssetName = "Image7" }]
 
         override facet.GetRenderDescriptors (entity : Entity, world) =
-            if entity.Visible && Camera.inView3 entity.ViewType entity.Position entity.Size world.Camera then
+            if entity.Visible && Camera.inView3 entity.ViewType entity.Position entity.Size world.State.Camera then
                 [LayerableDescriptor
                     { Depth = entity.Depth
                       LayeredDescriptor =
@@ -257,7 +257,7 @@ module EntityDispatcherModule =
             let entitiesSorted = Entity.pickingSort entities world
             List.tryFind
                 (fun entity ->
-                    let positionWorld = Camera.mouseToWorld entity.ViewType position world.Camera
+                    let positionWorld = Camera.mouseToWorld entity.ViewType position world.State.Camera
                     let transform = Entity.getTransform entity
                     let picked = Math.isPointInBounds3 positionWorld transform.Position transform.Size
                     picked)
@@ -288,7 +288,7 @@ module GuiDispatcherModule =
                 (event.Data, event.Subscriber, event.SubscriberAddress)
             let eventHandling =
                 if World.isAddressSelected address world && gui.Visible then
-                    let mousePositionWorld = Camera.mouseToWorld gui.ViewType data.Position world.Camera
+                    let mousePositionWorld = Camera.mouseToWorld gui.ViewType data.Position world.State.Camera
                     if event.Subscriber.SwallowMouseLeft && Math.isPointInBounds3 mousePositionWorld gui.Position gui.Size then Resolve else Cascade
                 else Cascade
             (eventHandling, world)
@@ -334,7 +334,7 @@ module ButtonDispatcherModule =
             let (data : MouseButtonData, button : Entity, address) =
                 (event.Data, event.Subscriber, event.SubscriberAddress)
             if World.isAddressSelected address world then
-                let mousePositionWorld = Camera.mouseToWorld button.ViewType data.Position world.Camera
+                let mousePositionWorld = Camera.mouseToWorld button.ViewType data.Position world.State.Camera
                 if Math.isPointInBounds3 mousePositionWorld button.Position button.Size && button.Visible then
                     if button.Enabled then
                         let button = Entity.setDown true button
@@ -352,7 +352,7 @@ module ButtonDispatcherModule =
                 let wasDown = button.Down
                 let button = Entity.setDown false button
                 let world = World.setEntity button address world
-                let mousePositionWorld = Camera.mouseToWorld button.ViewType data.Position world.Camera
+                let mousePositionWorld = Camera.mouseToWorld button.ViewType data.Position world.State.Camera
                 if Math.isPointInBounds3 mousePositionWorld button.Position button.Size && button.Visible then
                     if button.Enabled && wasDown then
                         let world = World.publish4 () (UpEventAddress ->>- address) address world
@@ -534,7 +534,7 @@ module ToggleDispatcherModule =
             let (data : MouseButtonData, toggle : Entity, address) =
                 (event.Data, event.Subscriber, event.SubscriberAddress)
             if World.isAddressSelected address world then
-                let mousePositionWorld = Camera.mouseToWorld toggle.ViewType data.Position world.Camera
+                let mousePositionWorld = Camera.mouseToWorld toggle.ViewType data.Position world.State.Camera
                 if Math.isPointInBounds3 mousePositionWorld toggle.Position toggle.Size && toggle.Visible then
                     if toggle.Enabled then
                         let toggle = Entity.setPressed true toggle
@@ -551,7 +551,7 @@ module ToggleDispatcherModule =
                 let wasPressed = toggle.Pressed
                 let toggle = Entity.setPressed false toggle
                 let world = World.setEntity toggle address world
-                let mousePositionWorld = Camera.mouseToWorld toggle.ViewType data.Position world.Camera
+                let mousePositionWorld = Camera.mouseToWorld toggle.ViewType data.Position world.State.Camera
                 if Math.isPointInBounds3 mousePositionWorld toggle.Position toggle.Size && toggle.Visible then
                     if toggle.Enabled && wasPressed then
                         let toggle = Entity.setOn (not toggle.On) toggle
@@ -618,7 +618,7 @@ module FeelerDispatcherModule =
             let (data : MouseButtonData, feeler : Entity, address) =
                 (event.Data, event.Subscriber, event.SubscriberAddress)
             if World.isAddressSelected address world then
-                let mousePositionWorld = Camera.mouseToWorld feeler.ViewType data.Position world.Camera
+                let mousePositionWorld = Camera.mouseToWorld feeler.ViewType data.Position world.State.Camera
                 if Math.isPointInBounds3 mousePositionWorld feeler.Position feeler.Size && feeler.Visible then
                     if feeler.Enabled then
                         let feeler = Entity.setTouched true feeler
@@ -941,14 +941,15 @@ module TileMapDispatcherModule =
                     let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
                     List.foldi
                         (fun i descriptors (layer : TmxLayer) ->
+                            let camera = world.State.Camera
                             let depth = tileMap.Depth + single i * 2.0f // MAGIC_VALUE: assumption
                             let parallaxTranslation =
                                 match tileMap.ViewType with
                                 | Absolute -> Vector2.Zero
-                                | Relative -> tileMap.Parallax * depth * -world.Camera.EyeCenter
+                                | Relative -> tileMap.Parallax * depth * -camera.EyeCenter
                             let parallaxPosition = tileMap.Position + parallaxTranslation
                             let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
-                            if Camera.inView3 tileMap.ViewType parallaxPosition size world.Camera then
+                            if Camera.inView3 tileMap.ViewType parallaxPosition size camera then
                                 let descriptor =
                                     LayerableDescriptor 
                                         { Depth = depth

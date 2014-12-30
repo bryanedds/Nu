@@ -89,7 +89,7 @@ module WorldTests =
         let entity = World.makeEntity typeof<EntityDispatcher>.Name (Some DefaultEntityName) world
         let group = World.makeGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) world
         let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some DefaultScreenName) world
-        let game = world.Game
+        let game = World.getGame world
         let screenHierarchies =
             Map.singleton screen.Name <|
                 (screen, Map.singleton group.Name <|
