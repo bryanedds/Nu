@@ -86,9 +86,6 @@ module WorldModule =
         static member getOptSimulantForPublishingDefinition (address : Simulant Address) world =
             World.getOptSimulant address world
 
-        static member getSimulantForPublishingDefinition (address : Simulant Address) world =
-            World.getSimulant address world
-
         static member tryGetIsSelectedScreenIdling world =
             match World.getOptSelectedScreen world with
             | Some selectedScreen -> Some <| Screen.isIdling selectedScreen
@@ -585,6 +582,10 @@ module WorldModule =
             match Metadata.tryGenerateAssetMetadataMap AssetGraphFilePath with
             | Right assetMetadataMap ->
 
+                // make the camera
+                let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH)
+                let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
+
                 // make user-defined values
                 let userFacets = World.pairWithNames <| nuPlugin.MakeFacets ()
                 let userEntityDispatchers = World.pairWithNames <| nuPlugin.MakeEntityDispatchers ()
@@ -696,7 +697,7 @@ module WorldModule =
                 let world =
                     { Game = game
                       Simulants = Map.empty
-                      Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
+                      Camera = camera
                       Components = components
                       Subsystems = subsystems
                       MessageQueues = messageQueues
@@ -787,6 +788,5 @@ module WorldModule =
             // init type converters
             Math.initTypeConverters ()
 
-            // assign functions to the pub / sub vars
-            World.getSimulantForPublishing <- World.getSimulantForPublishingDefinition
+            // assign this crazy function
             World.getOptSimulantForPublishing <- World.getOptSimulantForPublishingDefinition

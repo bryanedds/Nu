@@ -150,13 +150,13 @@ module World =
     let makeCallbackKey () =
         Guid.NewGuid ()
 
-    /// Get a simulant at the given address from the world.
-    let mutable private getSimulantForPublishing =
-        Unchecked.defaultof<Simulant Address -> World -> Simulant>
-
     /// Try to get a simulant at the given address from the world.
     let mutable private getOptSimulantForPublishing =
         Unchecked.defaultof<Simulant Address -> World -> Simulant option>
+
+    /// Get a simulant at the given address from the world.
+    let private getSimulantForPublishing address world =
+        Option.get <| getOptSimulantForPublishing address world
 
     // OPTIMIZATION: priority annotated as single to decrease GC pressure.
     let private sortFstDesc (priority : single, _) (priority2 : single, _) =
