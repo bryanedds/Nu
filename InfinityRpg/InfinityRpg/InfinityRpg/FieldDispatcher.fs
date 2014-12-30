@@ -41,7 +41,7 @@ module FieldDispatcherModule =
         override dispatcher.GetRenderDescriptors (field, world) =
             if field.Visible then
                 let size = Vector2.Multiply (TileSize, TileSheetSize)
-                if Camera.inView3 field.ViewType field.Position size world.Camera then
+                if Camera.inView3 field.ViewType field.Position size world.State.Camera then
                     let sprites =
                         Map.fold
                             (fun sprites tilePositionM tile ->

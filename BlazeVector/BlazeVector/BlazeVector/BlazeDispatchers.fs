@@ -88,7 +88,7 @@ module EnemyModule =
         static let handleTick event world =
             let (enemy : Entity, address) = (event.Subscriber, event.SubscriberAddress)
             if World.isGamePlaying world then
-                let world = if hasAppeared world.Camera enemy then move enemy world else world
+                let world = if hasAppeared world.State.Camera enemy then move enemy world else world
                 let world = if enemy.Health <= 0 then die address world else world
                 (Cascade, world)
             else (Cascade, world)
@@ -259,15 +259,17 @@ module StagePlayModule =
     type StagePlayDispatcher () =
         inherit GroupDispatcher ()
 
-        static let getPlayer groupAddress world =
-            let playerAddress = gatoea groupAddress StagePlayerName
-            World.getEntity playerAddress world
+        static let getPlayerAddress address =
+            gatoea address StagePlayerName
 
-        static let adjustCamera groupAddress world =
+        static let adjustCamera address world =
             if World.isGamePlaying world then
-                let player = getPlayer groupAddress world
-                let eyeCenter = Vector2 (player.Position.X + player.Size.X * 0.5f + world.Camera.EyeSize.X * 0.33f, world.Camera.EyeCenter.Y)
-                World.setCamera { world.Camera with EyeCenter = eyeCenter } world
+                World.updateCamera
+                    (fun camera -> 
+                        let player = World.getEntity (getPlayerAddress address) world
+                        let eyeCenter = Vector2 (player.Position.X + player.Size.X * 0.5f + camera.EyeSize.X * 0.33f, camera.EyeCenter.Y)
+                        { camera with EyeCenter = eyeCenter })
+                    world
             else world
 
         static let handleAdjustCamera event world =
@@ -275,7 +277,7 @@ module StagePlayModule =
 
         static let handlePlayerFall event world =
             if World.isGamePlaying world then
-                let player = getPlayer event.SubscriberAddress world
+                let player = World.getEntity (getPlayerAddress event.SubscriberAddress) world
                 if Entity.hasFallen player && World.isSelectedScreenIdling world then
                     let world = World.playSound 1.0f DeathSound world
                     let world = World.transitionScreen TitleAddress world

@@ -169,7 +169,7 @@ module CharacterAnimationFacetModule =
              define? CharacterAnimationSheet PlayerImage]
 
         override facet.GetRenderDescriptors (entity, world) =
-            if entity.Visible && Camera.inView3 entity.ViewType entity.Position entity.Size world.Camera then
+            if entity.Visible && Camera.inView3 entity.ViewType entity.Position entity.Size world.State.Camera then
                 [LayerableDescriptor
                     { Depth = entity.Depth
                       LayeredDescriptor =
@@ -191,29 +191,32 @@ module CharacterCameraFacetModule =
 
         static let handleTick event world =
             let (character : Entity, address) = (event.Subscriber, event.SubscriberAddress)
-            let eyeCenter = character.Position + character.Size * 0.5f
-            let eyeCenter =
-                match World.getOptEntity (gatoea (Address.allButLast address) FieldName) world with
-                | Some field ->
-                    let eyeSize = world.Camera.EyeSize
-                    let eyeCornerNegative = eyeCenter - eyeSize * 0.5f
-                    let eyeCornerPositive = eyeCenter + eyeSize * 0.5f
-                    let fieldCornerNegative = field.Position
-                    let fieldCornerPositive = field.Position + field.Size
-                    let fieldBoundsNegative = fieldCornerNegative + eyeSize * 0.5f
-                    let fieldBoundsPositive = fieldCornerPositive - eyeSize * 0.5f
-                    let eyeCenterX =
-                        if eyeCornerNegative.X < fieldCornerNegative.X then fieldBoundsNegative.X
-                        elif eyeCornerPositive.X > fieldCornerPositive.X then fieldBoundsPositive.X
-                        else eyeCenter.X
-                    let eyeCenterY =
-                        if eyeCornerNegative.Y < fieldCornerNegative.Y then fieldBoundsNegative.Y
-                        elif eyeCornerPositive.Y > fieldCornerPositive.Y then fieldBoundsPositive.Y
-                        else eyeCenter.Y
-                    Vector2 (eyeCenterX, eyeCenterY)
-                | None -> eyeCenter
-            let camera = { world.Camera with EyeCenter = eyeCenter }
-            (Cascade, World.setCamera camera world)
+            let world =
+                World.updateCamera (fun camera ->
+                    let eyeCenter = character.Position + character.Size * 0.5f
+                    let eyeCenter =
+                        match World.getOptEntity (gatoea (Address.allButLast address) FieldName) world with
+                        | Some field ->
+                            let eyeSize = camera.EyeSize
+                            let eyeCornerNegative = eyeCenter - eyeSize * 0.5f
+                            let eyeCornerPositive = eyeCenter + eyeSize * 0.5f
+                            let fieldCornerNegative = field.Position
+                            let fieldCornerPositive = field.Position + field.Size
+                            let fieldBoundsNegative = fieldCornerNegative + eyeSize * 0.5f
+                            let fieldBoundsPositive = fieldCornerPositive - eyeSize * 0.5f
+                            let eyeCenterX =
+                                if eyeCornerNegative.X < fieldCornerNegative.X then fieldBoundsNegative.X
+                                elif eyeCornerPositive.X > fieldCornerPositive.X then fieldBoundsPositive.X
+                                else eyeCenter.X
+                            let eyeCenterY =
+                                if eyeCornerNegative.Y < fieldCornerNegative.Y then fieldBoundsNegative.Y
+                                elif eyeCornerPositive.Y > fieldCornerPositive.Y then fieldBoundsPositive.Y
+                                else eyeCenter.Y
+                            Vector2 (eyeCenterX, eyeCenterY)
+                        | None -> eyeCenter
+                    { camera with EyeCenter = eyeCenter })
+                    world
+            (Cascade, world)
 
         override facet.Register (entity, address, world) =
             let world = observe TickEventAddress address |> monitor handleTick <| world

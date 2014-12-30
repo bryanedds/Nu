@@ -33,7 +33,7 @@ module WorldModule =
 
         static member getOptSimulant<'a when 'a :> Simulant> (address : 'a Address) world =
             match address.Names with
-            | [] -> Some (world.Game :> Simulant :?> 'a)
+            | [] -> World.getGame world :> Simulant :?> 'a |> Some
             | [_] -> World.getOptScreen (atosa address) world |> Option.map (fun s -> s :> Simulant :?> 'a)
             | [_; _] -> World.getOptGroup (atoga address) world |> Option.map (fun g -> g :> Simulant :?> 'a)
             | [_; _; _] -> World.getOptEntity (atoea address) world |> Option.map (fun e -> e :> Simulant :?> 'a)
@@ -50,7 +50,7 @@ module WorldModule =
 
         static member setSimulant<'a when 'a :> Simulant> (simulant : 'a) (address : 'a Address) world =
             match address.Names with
-            | [] -> { world with Game = simulant :> obj :?> Game }
+            | [] -> World.setGame (simulant :> obj :?> Game) world
             | [_] -> World.setScreen (simulant :> obj :?> Screen) (Address.changeType<'a, Screen> address) world
             | [_; _] -> World.setGroup (simulant :> obj :?> Group) (Address.changeType<'a, Group> address) world
             | [_; _; _] -> World.setEntity (simulant :> obj :?> Entity) (Address.changeType<'a, Entity> address) world
@@ -261,8 +261,8 @@ module WorldModule =
             let splashScreen = { World.makeDissolveScreen splashData.DissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }
             let splashGroup = { World.makeGroup typeof<GroupDispatcher>.Name (Some "SplashGroup") world with Persistent = persistent }
             let splashLabel = { World.makeEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") world with Persistent = persistent }
-            let splashLabel = Entity.setSize world.Camera.EyeSize splashLabel
-            let splashLabel = Entity.setPosition (-world.Camera.EyeSize * 0.5f) splashLabel
+            let splashLabel = Entity.setSize world.State.Camera.EyeSize splashLabel
+            let splashLabel = Entity.setPosition (-world.State.Camera.EyeSize * 0.5f) splashLabel
             let splashLabel = Entity.setLabelImage splashData.SplashImage splashLabel
             let splashGroupHierarchies = Map.singleton splashGroup.Name (splashGroup, Map.singleton splashLabel.Name splashLabel)
             let splashScreenHierarchy = (splashScreen, splashGroupHierarchies)
@@ -306,7 +306,7 @@ module WorldModule =
 
                 // get all the entities in the world
                 let entities =
-                    [for screenKvp in world.Simulants do
+                    [for screenKvp in snd world.Simulants do
                         for groupKvp in snd screenKvp.Value do
                             for entityKvp in snd groupKvp.Value do
                                 let address = Address<Entity>.make [screenKvp.Key; groupKvp.Key; entityKvp.Key]
@@ -413,15 +413,15 @@ module WorldModule =
         static member private getRenderDescriptors world =
             match World.getOptSelectedScreenAddress world with
             | Some selectedScreenAddress ->
-                match Map.tryFind (Address.head selectedScreenAddress) world.Simulants with
+                match Map.tryFind (Address.head selectedScreenAddress) (World.getScreenMap world) with
                 | Some (_, groupMap) ->
                     let entityMaps = Map.toValueListBy snd groupMap
                     let descriptors = List.map (World.getGroupRenderDescriptors world) entityMaps
                     let descriptors = List.concat <| List.concat descriptors
                     let selectedScreen = World.getScreen selectedScreenAddress world
                     match selectedScreen.ScreenStateNp with
-                    | IncomingState -> descriptors @ World.getScreenTransitionRenderDescriptors world.Camera selectedScreen selectedScreen.Incoming
-                    | OutgoingState -> descriptors @ World.getScreenTransitionRenderDescriptors world.Camera selectedScreen selectedScreen.Outgoing
+                    | IncomingState -> descriptors @ World.getScreenTransitionRenderDescriptors world.State.Camera selectedScreen selectedScreen.Incoming
+                    | OutgoingState -> descriptors @ World.getScreenTransitionRenderDescriptors world.State.Camera selectedScreen selectedScreen.Outgoing
                     | IdlingState -> descriptors
                 | None -> []
             | None -> []
@@ -430,7 +430,7 @@ module WorldModule =
             let renderDescriptors = World.getRenderDescriptors world
             let renderingMessages = world.MessageQueues.RenderMessages
             let world = World.clearRenderMessages world
-            let renderer = world.Subsystems.Renderer.Render (world.Camera, renderingMessages, renderDescriptors)
+            let renderer = world.Subsystems.Renderer.Render (world.State.Camera, renderingMessages, renderDescriptors)
             World.setRenderer renderer world
 
         static member private handleIntegrationMessage world integrationMessage =
@@ -684,6 +684,7 @@ module WorldModule =
                       Liveness = Running
                       Interactivity = interactivity
                       OptScreenTransitionDestinationAddress = None
+                      Camera = camera
                       AssetMetadataMap = assetMetadataMap
                       AssetGraphFilePath = AssetGraphFilePath
                       OverlayRouter = OverlayRouter.make entityDispatchers userOverlayRoutes
@@ -695,9 +696,7 @@ module WorldModule =
 
                 // make the world itself
                 let world =
-                    { Game = game
-                      Simulants = Map.empty
-                      Camera = camera
+                    { Simulants = (game, Map.empty)
                       Components = components
                       Subsystems = subsystems
                       MessageQueues = messageQueues
@@ -705,7 +704,7 @@ module WorldModule =
                       State = state }
 
                 // and finally, register the game
-                let world = snd <| Game.register world.Game world
+                let world = snd <| Game.register (World.getGame world) world
                 Right world
             | Left errorMsg -> Left errorMsg
 
@@ -751,6 +750,7 @@ module WorldModule =
                   Liveness = Running
                   Interactivity = GuiOnly
                   OptScreenTransitionDestinationAddress = None
+                  Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single ResolutionXDefault, single ResolutionYDefault) }
                   AssetMetadataMap = Map.empty
                   AssetGraphFilePath = String.Empty
                   OverlayRouter = OverlayRouter.make (Map.ofList [World.pairWithName entityDispatcher]) []
@@ -762,9 +762,7 @@ module WorldModule =
 
             // make the world itself
             let world =
-                { Game = game
-                  Simulants = Map.empty
-                  Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single ResolutionXDefault, single ResolutionYDefault) }
+                { Simulants = (game, Map.empty)
                   Components = components
                   Subsystems = subsystems
                   MessageQueues = messageQueues
@@ -772,7 +770,7 @@ module WorldModule =
                   State = state }
 
             // and finally, register the game
-            snd <| Game.register world.Game world
+            snd <| Game.register (World.getGame world) world
 
         static member init () =
 

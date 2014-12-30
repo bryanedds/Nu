@@ -367,6 +367,7 @@ module SimulationModule =
           Liveness : Liveness
           Interactivity : Interactivity
           OptScreenTransitionDestinationAddress : Screen Address option
+          Camera : Camera
           AssetMetadataMap : AssetMetadataMap
           AssetGraphFilePath : string
           OverlayRouter : OverlayRouter
@@ -379,9 +380,7 @@ module SimulationModule =
     ///
     /// TODO: attempt to implement with Fsharpx.PersistentHashMap with hash cached in Address type.
     and [<ReferenceEquality>] World =
-        { Game : Game
-          Simulants : Map<string, Screen * Map<string, Group * Map<string, Entity>>>
-          Camera : Camera
+        { Simulants : Game * Map<string, Screen * Map<string, Group * Map<string, Entity>>>
           Components : Components
           Subsystems : Subsystems
           MessageQueues : MessageQueues

@@ -377,7 +377,7 @@ module Program =
             match tryMousePick form mousePosition worldChangers refWorld world with
             | Some (entity, entityAddress) ->
                 let world = pushPastWorld world world
-                let mousePositionWorld = Camera.mouseToWorld entity.ViewType mousePosition world.Camera
+                let mousePositionWorld = Camera.mouseToWorld entity.ViewType mousePosition world.State.Camera
                 let dragState = DragEntityPosition (entity.Position + mousePositionWorld, mousePositionWorld, entityAddress)
                 let world = World.updateUserState (fun editorState -> { editorState with DragEntityState = dragState }) world
                 (handled, world)
@@ -400,8 +400,8 @@ module Program =
 
     let handleNuCameraDragBegin (_ : NuEditForm) (_ : Event<MouseButtonData, Game>) world =
         let mousePosition = World.getMousePositionF world
-        let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
-        let dragState = DragCameraPosition (world.Camera.EyeCenter + mousePositionScreen, mousePositionScreen)
+        let mousePositionScreen = Camera.mouseToScreen mousePosition world.State.Camera
+        let dragState = DragCameraPosition (world.State.Camera.EyeCenter + mousePositionScreen, mousePositionScreen)
         let world = World.updateUserState (fun editorState -> { editorState with DragCameraState = dragState }) world
         (Resolve, world)
 
@@ -500,9 +500,10 @@ module Program =
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
                 let entityPosition =
+                    let camera = world.State.Camera
                     if atMouse
-                    then Camera.mouseToWorld entity.ViewType mousePosition world.Camera
-                    else Camera.mouseToWorld entity.ViewType (world.Camera.EyeSize * 0.5f) world.Camera
+                    then Camera.mouseToWorld entity.ViewType mousePosition camera
+                    else Camera.mouseToWorld entity.ViewType (camera.EyeSize * 0.5f) camera
                 let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = entity.Size; Rotation = entity.Rotation }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let entityAddress = gatoea groupAddress entity.Name
@@ -613,9 +614,10 @@ module Program =
                 let id = Core.makeId ()
                 let entity = { entity with Id = id; Name = acstring id }
                 let entityPosition =
+                    let camera = world.State.Camera
                     if atMouse
-                    then Camera.mouseToWorld entity.ViewType editorState.RightClickPosition world.Camera
-                    else Camera.mouseToWorld entity.ViewType (world.Camera.EyeSize * 0.5f) world.Camera
+                    then Camera.mouseToWorld entity.ViewType editorState.RightClickPosition camera
+                    else Camera.mouseToWorld entity.ViewType (camera.EyeSize * 0.5f) camera
                 let entityTransform = { Entity.getTransform entity with Position = entityPosition }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let entityAddress = gatoea editorState.GroupAddress entity.Name
@@ -641,9 +643,8 @@ module Program =
             | _ -> trace <| "Invalid quick size operation (likely a code issue in NuEdit)."; world)
 
     let handleFormResetCamera (_ : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
-        ignore <| worldChangers.Add (fun world -> // XXX
-            let camera = { world.Camera with EyeCenter = Vector2.Zero } // XXX
-            World.setCamera camera world)
+        ignore <| worldChangers.Add (fun world ->
+            World.updateCamera (fun camera -> { camera with EyeCenter = Vector2.Zero }) world)
 
     let handleFormAddXField (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
@@ -746,7 +747,7 @@ module Program =
                 let (positionSnap, _) = getSnaps form
                 let entity = World.getEntity address world
                 let mousePosition = World.getMousePositionF world
-                let mousePositionWorld = Camera.mouseToWorld entity.ViewType mousePosition world.Camera
+                let mousePositionWorld = Camera.mouseToWorld entity.ViewType mousePosition world.State.Camera
                 let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                 let entity = Entity.setPositionSnapped positionSnap entityPosition entity
                 let world = World.setEntity entity address world
@@ -763,11 +764,13 @@ module Program =
         let editorState = World.getUserState world
         match editorState.DragCameraState with
         | DragCameraPosition (pickOffset, mousePositionScreenOrig) ->
-            let mousePosition = World.getMousePositionF world
-            let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
-            let eyeCenter = (pickOffset - mousePositionScreenOrig) + -CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
-            let camera = { world.Camera with EyeCenter = eyeCenter }
-            let world = World.setCamera camera world
+            let world =
+                World.updateCamera (fun camera ->
+                    let mousePosition = World.getMousePositionF world
+                    let mousePositionScreen = Camera.mouseToScreen mousePosition camera
+                    let eyeCenter = (pickOffset - mousePositionScreenOrig) + -CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
+                    { camera with EyeCenter = eyeCenter })
+                    world
             let editorState = { editorState with DragCameraState = DragCameraPosition (pickOffset, mousePositionScreenOrig) }
             World.setUserState editorState world
         | DragCameraNone -> world
