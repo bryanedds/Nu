@@ -4,6 +4,7 @@ open System.Collections.Generic
 open Prime
 open Nu
 open Nu.Constants
+open Nu.WorldConstants
 
 [<RequireQualifiedAccess>]
 module World =
@@ -141,54 +142,6 @@ module World =
         let state = Map.find key world.Callbacks.CallbackStates
         state :?> 'a
 
-    /// Increment the TickTime field of the world.
-    let internal incrementTickTime world =
-        let state = { world.State with TickTime = world.State.TickTime + 1L }
-        { world with State = state }
-
-    /// Set the OptScreenTransitionDestinationAddress field of the world.
-    let internal setOptScreenTransitionDestinationAddress address world =
-        let state = { world.State with OptScreenTransitionDestinationAddress = address  }
-        { world with State = state }
-
-    /// Place the world into a state such that the app will exit at the end of the current frame.
-    let exit world =
-        let state = { world.State with Liveness = Exiting }
-        { world with State = state }
-
-    /// Query that the engine is in game-playing mode.
-    let isGamePlaying world =
-        Interactivity.isGamePlaying world.State.Interactivity
-
-    /// Query that the physics system is running.
-    let isPhysicsRunning world =
-        Interactivity.isPhysicsRunning world.State.Interactivity
-
-    /// Set the level of the world's interactivity.
-    let setInteractivity interactivity world =
-        let state = { world.State with Interactivity = interactivity }
-        { world with State = state }
-
-    /// Set the AssetMetadataMap field of the world.
-    let setAssetMetadataMap assetMetadataMap world =
-        let state = { world.State with AssetMetadataMap = assetMetadataMap }
-        { world with State = state }
-
-    /// Get the UserState field of the world, casted to 'u.
-    let getUserState world : 'u =
-        world.State.UserState :?> 'u
-
-    /// Set the UserState field of the world.
-    let setUserState (userState : 'u) world =
-        let state = { world.State with UserState = userState }
-        { world with State = state }
-
-    /// Transform the UserState field of the world.
-    let updateUserState (transformer : 'u -> 'v) world =
-        let state = getUserState world
-        let state = transformer state
-        setUserState state world
-
     /// Make a key used to track an unsubscription with a subscription.
     let makeSubscriptionKey () =
         Guid.NewGuid ()
@@ -262,7 +215,7 @@ module World =
             | (true, anyEventAddresses) -> anyEventAddresses
             | (false, _) ->
                 let eventAddressList = eventAddress.Names
-                let anyEventAddressList = WorldConstants.AnyEventAddress.Names
+                let anyEventAddressList = AnyEventAddress.Names
                 let anyEventAddresses =
                     [for i in 0 .. List.length eventAddressList - 1 do
                         let subNameList = List.take i eventAddressList @ anyEventAddressList
@@ -369,9 +322,96 @@ module World =
                 let world = unsubscribe removalKey world
                 let world = unsubscribe monitorKey world
                 (Cascade, world)
-            let removingEventAddress = WorldConstants.RemovingEventAddress ->- atooa subscriberAddress
+            let removingEventAddress = RemovingEventAddress ->- atooa subscriberAddress
             subscribe<unit, 's> removalKey subscription' removingEventAddress subscriberAddress world
         else failwith "Cannot monitor events with an anonymous subscriber."
+
+[<AutoOpen>]
+module WorldStateModule =
+
+    type World with
+
+        /// Get the state of the world.
+        static member getState world =
+            world.State
+
+        /// Set the state of the world.
+        static member setState state world =
+            let oldState = world.State
+            let world = { world with State = state }
+            World.publish4 { OldWorldState = oldState } WorldStateChangeEventAddress GameAddress world
+
+        /// Update the state of the world.
+        static member updateState updater world =
+            World.setState (updater world.State) world
+
+        /// Get the tick time.
+        static member getTickTime world =
+            world.State.TickTime
+
+        /// Increment the tick time.
+        static member internal incrementTickTime world =
+            let state = { world.State with TickTime = world.State.TickTime + 1L }
+            World.setState state world
+
+        /// Get the OptScreenTransitionDestinationAddress field of the world.
+        static member getOptScreenTransitionDestinationAddress world =
+            world.State.OptScreenTransitionDestinationAddress
+
+        /// Set the OptScreenTransitionDestinationAddress field of the world.
+        static member internal setOptScreenTransitionDestinationAddress address world =
+            let state = { world.State with OptScreenTransitionDestinationAddress = address  }
+            World.setState state world
+
+        /// Get the the liveness state of the world.
+        static member getLiveness world =
+            world.State.Liveness
+
+        /// Place the world into a state such that the app will exit at the end of the current frame.
+        static member exit world =
+            let state = { world.State with Liveness = Exiting }
+            World.setState state world
+
+        /// Query that the engine is in game-playing mode.
+        static member isGamePlaying world =
+            Interactivity.isGamePlaying world.State.Interactivity
+
+        /// Query that the physics system is running.
+        static member isPhysicsRunning world =
+            Interactivity.isPhysicsRunning world.State.Interactivity
+
+        /// Get the interactivity state of the world.
+        static member getInteractivity world =
+            world.State.Interactivity
+
+        /// Set the level of the world's interactivity.
+        static member setInteractivity interactivity world =
+            let state = { world.State with Interactivity = interactivity }
+            World.setState state world
+
+        /// Get the asset metadata map.
+        static member getAssetMetadataMap world =
+            world.State.AssetMetadataMap
+
+        /// Set the asset metadata map.
+        static member internal setAssetMetadataMap assetMetadataMap world =
+            let state = { world.State with AssetMetadataMap = assetMetadataMap }
+            World.setState state world
+
+        /// Get the user state of the world, casted to 'u.
+        static member getUserState world : 'u =
+            world.State.UserState :?> 'u
+
+        /// Set the user state of the world.
+        static member setUserState (userState : 'u) world =
+            let state = { world.State with UserState = userState }
+            World.setState state world
+
+        /// Update the user state of the world.
+        static member updateUserState (updater : 'u -> 'v) world =
+            let state = World.getUserState world
+            let state = updater state
+            World.setUserState state world
 
 [<AutoOpen>]
 module WorldInputModule =

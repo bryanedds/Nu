@@ -110,7 +110,7 @@ module ObserverTests =
         let world =
             world |>
             (BobAddress, Entity.getVisible) --> (JimAddress, Entity.setVisible) |>
-            (JimAddress, Entity.getVisible) -|> (BobAddress, not >> Entity.setVisible)
+            (JimAddress, Entity.getVisible) -/> (BobAddress, not >> Entity.setVisible)
         let world = World.updateEntity (Entity.setVisible false) BobAddress world
         Assert.True <| World.getEntityBy Entity.getVisible BobAddress world
         Assert.True <| World.getEntityBy Entity.getVisible JimAddress world

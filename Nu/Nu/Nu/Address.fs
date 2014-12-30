@@ -48,12 +48,12 @@ module AddressModule =
     /// NameKeys field available for faster look-ups.
     /// OPTIMIZATION: At little cost, I've also added the Hash field for fast keying directly
     /// on addresses.
-    type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 't Address =
+    type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
         { Names : string list
           NamesRev : string list
           NameKeys : NameKey list
           Hash : int
-          TypeCarrier : 't -> unit }
+          TypeCarrier : 'a -> unit }
 
         static member private join (list : string list) =
             String.Join ("/", list)
@@ -61,45 +61,45 @@ module AddressModule =
         static member private split (str : string) =
             List.ofArray <| str.Split '/'
 
-        /// Make an address from a list of strings.
+        /// Make an address from a list of names.
         static member make list =
             let keys = List.map NameKey.make list
             let hash = List.fold (fun hash (key : NameKey) -> hash ^^^ key.Hash) 0 keys
-            { Names = list; NamesRev = List.rev list; NameKeys = keys; Hash = hash; TypeCarrier = fun (_ : 't) -> () }
+            { Names = list; NamesRev = List.rev list; NameKeys = keys; Hash = hash; TypeCarrier = fun (_ : 'a) -> () }
 
         /// Convert a string into a list.
         static member stoa (str : string) =
-            let list = Address<'t>.split str
-            Address<'t>.make list
+            let list = Address<'a>.split str
+            Address<'a>.make list
 
         /// The empty address.
         static member empty =
-            Address<'t>.make []
+            Address<'a>.make []
 
-        interface 't Address IComparable with
+        interface 'a Address IComparable with
             member this.CompareTo that =
                 List.compareStrings this.NamesRev that.NamesRev
 
         interface IComparable with
             member this.CompareTo that =
                 match that with
-                | :? ('t Address) as that -> List.compareStrings this.NamesRev that.NamesRev
+                | :? ('a Address) as that -> List.compareStrings this.NamesRev that.NamesRev
                 | _ -> failwith "Invalid Address comparison (comparee not of type Address)."
 
-        interface 't Address IEquatable with
+        interface 'a Address IEquatable with
             member this.Equals that =
                 this.Names = that.Names
 
         override this.Equals that =
             match that with
-            | :? ('t Address) as that -> this.Names = that.Names
+            | :? ('a Address) as that -> this.Names = that.Names
             | _ -> false
 
         override this.GetHashCode () =
             this.Hash
         
         override this.ToString () =
-            Address<'t>.join this.Names
+            Address<'a>.join this.Names
 
     /// Converts Address types.
     and AddressConverter (targetType : Type) =
@@ -130,19 +130,19 @@ module AddressModule =
                 else failwith "Invalid AddressConverter conversion from source."
 
     /// Convert a string into a list.
-    let stoa<'t> str =
-        Address<'t>.stoa str
+    let stoa<'a> str =
+        Address<'a>.stoa str
 
     /// Convert a list into an address.
-    let ltoa<'t> list =
-        Address<'t>.make list
+    let ltoa<'a> list =
+        Address<'a>.make list
 
     /// Convert a single name into an address.
-    let ntoa<'t> name =
-        ltoa<'t> [name]
+    let ntoa<'a> name =
+        ltoa<'a> [name]
 
     /// Convert any address to an obj Address.
-    let atooa<'t> (address : 't Address) =
+    let atooa<'a> (address : 'a Address) =
         { Names = address.Names; NamesRev = address.NamesRev; NameKeys = address.NameKeys; Hash = address.Hash; TypeCarrier = fun (_ : obj) -> () }
 
     /// Concatenate two addresses of the same type.
@@ -187,25 +187,25 @@ module AddressModule =
 module Address =
 
     /// Change the type of an address.
-    let changeType<'t, 'u> (address : 't Address) =
-        { Names = address.Names; NamesRev = address.NamesRev; NameKeys = address.NameKeys; Hash = address.Hash; TypeCarrier = fun (_ : 'u) -> () }
+    let changeType<'a, 'b> (address : 'a Address) =
+        { Names = address.Names; NamesRev = address.NamesRev; NameKeys = address.NameKeys; Hash = address.Hash; TypeCarrier = fun (_ : 'b) -> () }
 
     /// Take the head of an address.
     let head address =
         List.head address.Names
         
     /// Take the tail of an address.
-    let tail<'t> address =
-        Address<'t>.make <| List.tail address.Names
+    let tail<'a> address =
+        Address<'a>.make <| List.tail address.Names
 
     /// Take a name of an address.
     let at index address =
         List.at index address.Names
 
     /// Map over an address.
-    let map<'t> mapper (address : 't Address) =
+    let map<'a> mapper (address : 'a Address) =
         let list = List.map mapper address.Names
-        Address<'t>.make list
+        Address<'a>.make list
 
     /// Filter the names of an address.
     /// NOTE: This doesn't seem to be a sensible operation for an address?
@@ -218,20 +218,20 @@ module Address =
         List.fold folder state address.Names
 
     /// Take an address composed of the names of an address minus a skipped amount of names.
-    let skip<'t, 'u> n (address : 't Address)=
-        Address<'u>.make <| List.skip n address.Names
+    let skip<'a, 'b> n (address : 'a Address) =
+        Address<'b>.make <| List.skip n address.Names
 
     /// Take an address composed of the given number of names of an address.
-    let take<'t, 'u> n (address : 't Address) =
-        Address<'u>.make <| List.take n address.Names
+    let take<'a, 'b> n (address : 'a Address) =
+        Address<'b>.make <| List.take n address.Names
 
     /// Take the last name of an address.
     let last address =
         List.last address.Names
 
     /// Take an address composed of all but the last name of an address.
-    let allButLast<'t, 'u> (address : 't Address) =
-        Address<'u>.make <| List.allButLast address.Names
+    let allButLast<'a, 'b> (address : 'a Address) =
+        Address<'b>.make <| List.allButLast address.Names
 
     /// Get the length of an address by its names.
     let length address =

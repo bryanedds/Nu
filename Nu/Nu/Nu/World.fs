@@ -31,12 +31,12 @@ module WorldModule =
 
     type World with
 
-        static member getOptSimulant<'t when 't :> Simulant> (address : 't Address) world =
+        static member getOptSimulant<'a when 'a :> Simulant> (address : 'a Address) world =
             match address.Names with
-            | [] -> Some (world.Game :> Simulant :?> 't)
-            | [_] -> World.getOptScreen (atosa address) world |> Option.map (fun s -> s :> Simulant :?> 't)
-            | [_; _] -> World.getOptGroup (atoga address) world |> Option.map (fun g -> g :> Simulant :?> 't)
-            | [_; _; _] -> World.getOptEntity (atoea address) world |> Option.map (fun e -> e :> Simulant :?> 't)
+            | [] -> Some (world.Game :> Simulant :?> 'a)
+            | [_] -> World.getOptScreen (atosa address) world |> Option.map (fun s -> s :> Simulant :?> 'a)
+            | [_; _] -> World.getOptGroup (atoga address) world |> Option.map (fun g -> g :> Simulant :?> 'a)
+            | [_; _; _] -> World.getOptEntity (atoea address) world |> Option.map (fun e -> e :> Simulant :?> 'a)
             | _ -> failwith <| "Invalid simulant address '" + acstring address + "'."
 
         static member containsSimulant address world =
@@ -48,12 +48,12 @@ module WorldModule =
         static member getSimulant address world =
             World.getSimulantBy id address world
 
-        static member setSimulant<'t when 't :> Simulant> (simulant : 't) (address : 't Address) world =
+        static member setSimulant<'a when 'a :> Simulant> (simulant : 'a) (address : 'a Address) world =
             match address.Names with
             | [] -> { world with Game = simulant :> obj :?> Game }
-            | [_] -> World.setScreen (simulant :> obj :?> Screen) (Address.changeType<'t, Screen> address) world
-            | [_; _] -> World.setGroup (simulant :> obj :?> Group) (Address.changeType<'t, Group> address) world
-            | [_; _; _] -> World.setEntity (simulant :> obj :?> Entity) (Address.changeType<'t, Entity> address) world
+            | [_] -> World.setScreen (simulant :> obj :?> Screen) (Address.changeType<'a, Screen> address) world
+            | [_; _] -> World.setGroup (simulant :> obj :?> Group) (Address.changeType<'a, Group> address) world
+            | [_; _; _] -> World.setEntity (simulant :> obj :?> Entity) (Address.changeType<'a, Entity> address) world
             | _ -> failwith <| "Invalid simulant address '" + acstring address + "'."
 
         static member updateOptSimulantW updater address world =

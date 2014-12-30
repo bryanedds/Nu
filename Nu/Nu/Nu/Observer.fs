@@ -328,58 +328,79 @@ module Observer =
     let noMoreThanOncePerTick o =
         o |> organize (fun _ w -> w.State.TickTime) |> toFst |> choose
 
-    let simulantValue<'a, 's, 't when 'a : equality and 's :> Simulant and 't :> Simulant>
-        (valueGetter : 's -> 'a)
-        (o : Observable<'s SimulantChangeData, 't>) =
-        filter (fun a w ->
-            let oldValue = valueGetter a.Data.OldSimulant
-            let newValue = valueGetter (World.getSimulant (Address.changeType<Simulant, 's> a.PublisherAddress) w)
-            oldValue <> newValue)
-            o
-
-    let observeSimulantValue<'a, 's, 't when 'a : equality and 's :> Simulant and 't :> Simulant>
-        (valueGetter : 's -> 'a)
-        (simulantAddress : 's Address)
-        (observerAddress : 't Address) =
-        let changeEventAddress = Address.changeType<Simulant SimulantChangeData, 's SimulantChangeData> SimulantChangeEventAddress ->>- simulantAddress
-        let o = observe<'s SimulantChangeData, 't> changeEventAddress observerAddress
-        simulantValue valueGetter o
-
-    let observeSimulantValueCyclic valueGetter simulantAddress observerAddress =
-        observeSimulantValue valueGetter simulantAddress observerAddress |> noMoreThanOncePerTick
+    let updateWorldStateValue valueSetter o =
+        subscribe (fun a w -> (Cascade, World.updateState (valueSetter a w) w)) o
 
     let updateOptSimulantValue valueSetter o =
         subscribe (fun a w -> (Cascade, World.updateOptSimulant (valueSetter a w) a.SubscriberAddress w)) o
 
-    let updateSimulantValue valueSetter o =
-        subscribe (fun a w -> (Cascade, World.updateSimulant (valueSetter a w) a.SubscriberAddress w)) o
+    let worldStateValue (valueGetter : WorldState -> 'b) (o : Observable<WorldStateChangeData, 'o>) =
+        filter (fun a w ->
+            let oldValue = valueGetter a.Data.OldWorldState
+            let newValue = valueGetter (World.getState w)
+            oldValue <> newValue)
+            o
 
-    let propagateSimulantValue<'a, 's, 't when 'a : equality and 's :> Simulant and 't :> Simulant>
-        (sourceAddress : 's Address)
-        (valueGetter : 's -> 'a)
-        (destinationAddress : 't Address)
-        (valueSetter : 'a -> 't -> 't) =
-        let o = observeSimulantValue valueGetter sourceAddress destinationAddress
-        updateSimulantValue (fun _ world ->
+    let simulantValue (valueGetter : 'a -> 'b) (o : Observable<'a SimulantChangeData, 'o>) =
+        filter (fun a w ->
+            let oldValue = valueGetter a.Data.OldSimulant
+            let newValue = valueGetter (World.getSimulant (Address.changeType<Simulant, 'a> a.PublisherAddress) w)
+            oldValue <> newValue)
+            o
+
+    let observeWorldStateValue valueGetter observerAddress =
+        observe WorldStateChangeEventAddress observerAddress |>
+        worldStateValue valueGetter
+
+    let observeWorldStateValueCyclic valueGetter observerAddress =
+        observeWorldStateValue valueGetter observerAddress |>
+        noMoreThanOncePerTick
+
+    let observeSimulantValue (valueGetter : 'a -> 'b) (simulantAddress : 'a Address) (observerAddress : 'o Address) =
+        let changeEventAddress = Address.changeType<Simulant SimulantChangeData, 'a SimulantChangeData> SimulantChangeEventAddress ->>- simulantAddress
+        observe changeEventAddress observerAddress |>
+        simulantValue valueGetter
+
+    let observeSimulantValueCyclic valueGetter simulantAddress observerAddress =
+        observeSimulantValue valueGetter simulantAddress observerAddress |>
+        noMoreThanOncePerTick
+
+    let (+->) (valueGetter : WorldState -> 'b) (destinationAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
+        observeWorldStateValue valueGetter destinationAddress |>
+        updateOptSimulantValue (fun _ world ->
+            let sourceValue = valueGetter world.State
+            valueSetter sourceValue)
+
+    let (+/>) (valueGetter : WorldState -> 'b) (destinationAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
+        observeWorldStateValueCyclic valueGetter destinationAddress |>
+        updateOptSimulantValue (fun _ world ->
+            let sourceValue = valueGetter world.State
+            valueSetter sourceValue)
+
+    let ( *-> ) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (observerAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
+        observeSimulantValue valueGetter sourceAddress observerAddress |>
+        updateOptSimulantValue (fun _ world ->
             let sourceSimulant = World.getSimulant sourceAddress world
             let sourceSimulantValue = valueGetter sourceSimulant
             valueSetter sourceSimulantValue)
-            o
 
-    let propagateSimulantValueCyclic<'a, 's, 't when 'a : equality and 's :> Simulant and 't :> Simulant>
-        (sourceAddress : 's Address)
-        (valueGetter : 's -> 'a)
-        (destinationAddress : 't Address)
-        (valueSetter : 'a -> 't -> 't) =
-        let o = observeSimulantValueCyclic valueGetter sourceAddress destinationAddress
-        updateSimulantValue (fun _ world ->
+    let ( */> ) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (observerAddress : 'o Address, valueSetter : 'b -> WorldState -> WorldState) =
+        observeSimulantValueCyclic valueGetter sourceAddress observerAddress |>
+        updateWorldStateValue (fun _ world ->
             let sourceSimulant = World.getSimulant sourceAddress world
             let sourceSimulantValue = valueGetter sourceSimulant
             valueSetter sourceSimulantValue)
-            o
 
-    let inline (-->) (sourceAddress, valueGetter) (destinationAddress, valueSetter) =
-        propagateSimulantValue sourceAddress valueGetter destinationAddress valueSetter
+    let (-->) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (destinationAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
+        observeSimulantValue valueGetter sourceAddress destinationAddress |>
+        updateOptSimulantValue (fun _ world ->
+            let sourceSimulant = World.getSimulant sourceAddress world
+            let sourceSimulantValue = valueGetter sourceSimulant
+            valueSetter sourceSimulantValue)
 
-    let inline (-|>) (sourceAddress, valueGetter) (destinationAddress, valueSetter) =
-        propagateSimulantValueCyclic sourceAddress valueGetter destinationAddress valueSetter
+    let (-/>) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (destinationAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
+        observeSimulantValueCyclic valueGetter sourceAddress destinationAddress |>
+        updateOptSimulantValue (fun _ world ->
+            let sourceSimulant = World.getSimulant sourceAddress world
+            let sourceSimulantValue = valueGetter sourceSimulant
+            valueSetter sourceSimulantValue)
