@@ -28,7 +28,7 @@ module RduTree =
         | Leaf -> empty
         | Branch (parent, children) -> Branch (mapper parent, List.map (map mapper) children)
 
-    let rec fold (folder : 's -> 't -> 't RduTree list -> 's) (state : 's) (tree : 't RduTree) =
+    let rec fold (folder : 's -> 'a -> 'a RduTree list -> 's) (state : 's) (tree : 'a RduTree) =
         match tree with
         | Leaf -> state
         | Branch (parent, children) ->
@@ -36,7 +36,7 @@ module RduTree =
             let subtreeFolded = List.fold subtreeFolder state children
             folder subtreeFolded parent children
 
-    let rec foldSimple (folder : 's -> 't -> 's) (state : 's) (tree : 't RduTree) =
+    let rec foldSimple (folder : 's -> 'a -> 's) (state : 's) (tree : 'a RduTree) =
         match tree with
         | Leaf -> state
         | Branch (parent, children) ->
@@ -45,12 +45,12 @@ module RduTree =
             folder listFolded parent
 
     // TODO: test this!
-    let rec foldParent (getChildren : 't -> 't list) (folder : 't -> 't list -> 's) (state : 's) (parent : 't) : 's =
+    let rec foldParent (getChildren : 'a -> 'a list) (folder : 'a -> 'a list -> 's) (state : 's) (parent : 'a) : 's =
         let children = getChildren parent
         let listFolder = fun child -> foldParent getChildren folder child
         List.fold listFolder state children
 
-    let rec filter (pred : 't -> bool) (tree : 't RduTree) : 't option RduTree =
+    let rec filter (pred : 'a -> bool) (tree : 'a RduTree) : 'a option RduTree =
         match tree with
         | Leaf -> empty
         | Branch (parent, children) ->
@@ -58,7 +58,7 @@ module RduTree =
             if pred parent then Branch (Some parent, mappedChildren)
             else Branch (None, mappedChildren)
 
-    let rec skim (pred : 't -> bool) (tree : 't RduTree) : 't list =
+    let rec skim (pred : 'a -> bool) (tree : 'a RduTree) : 'a list =
         match tree with
         | Leaf -> []
         | Branch (parent, children) -> if pred parent then [parent] else List.concat (List.map (skim pred) children)

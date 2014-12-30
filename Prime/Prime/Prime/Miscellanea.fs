@@ -78,8 +78,8 @@ module Miscellanea =
         ignore <| TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>)
 
     /// Short-hand for linq enumerable cast.
-    let enumerable<'t> enumeratable =
-        System.Linq.Enumerable.Cast<'t> enumeratable
+    let enumerable<'a> enumeratable =
+        System.Linq.Enumerable.Cast<'a> enumeratable
 
     /// Convert a couple of ints to a Guid value.
     /// It is the user's responsibility to ensure uniqueness when using the resulting Guids.

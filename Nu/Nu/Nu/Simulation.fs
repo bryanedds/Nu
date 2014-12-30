@@ -93,9 +93,13 @@ module SimulationModule =
           Speed : single
           Collidee : Entity Address }
 
-    /// The data for an entity change event.
-    and [<StructuralEquality; NoComparison>] SimulantChangeData<'t when 't :> Simulant> =
-        { OldSimulant : 't }
+    /// The data for a world state change event.
+    and [<StructuralEquality; NoComparison>] WorldStateChangeData =
+        { OldWorldState : WorldState }
+
+    /// The data for a simulant change event.
+    and [<StructuralEquality; NoComparison>] SimulantChangeData<'a when 'a :> Simulant> =
+        { OldSimulant : 'a }
 
     /// An event used by Nu's purely functional event system.
     and [<ReferenceEquality>] Event<'a, 's when 's :> Simulant> =
@@ -358,7 +362,7 @@ module SimulationModule =
           CallbackStates : Map<Guid, obj> }
 
     /// The world's state.
-    and [<ReferenceEquality>] State =
+    and [<ReferenceEquality>] WorldState =
         { TickTime : int64
           Liveness : Liveness
           Interactivity : Interactivity
@@ -382,7 +386,7 @@ module SimulationModule =
           Subsystems : Subsystems
           MessageQueues : MessageQueues
           Callbacks : Callbacks
-          State : State }
+          State : WorldState }
 
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
     /// specific values.

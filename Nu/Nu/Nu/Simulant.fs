@@ -26,19 +26,19 @@ module Simulant =
 module SimulantAddressModule =
 
     let atoea address =
-        Address.changeType<'t, Entity> address
+        Address.changeType<'a, Entity> address
 
     let atoga address =
-        Address.changeType<'t, Group> address
+        Address.changeType<'a, Group> address
 
     let atosa address =
-        Address.changeType<'t, Screen> address
+        Address.changeType<'a, Screen> address
 
     let atoma address =
-        Address.changeType<'t, Game> address
+        Address.changeType<'a, Game> address
 
     let atoua address =
-        Address.changeType<'t, Simulant> address
+        Address.changeType<'a, Simulant> address
 
     let gatoea groupAddress entityName =
         Address.changeType<Group, Entity> groupAddress ->- ntoa entityName
