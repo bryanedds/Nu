@@ -13,7 +13,8 @@ module RigidBodyFacetModule =
 
     type Entity with
 
-        // TODO: implement angular and linear velocity fields to make physics resets less destructive.
+        // TODO: consider implementing Awake, AngularVelocity, and LinearVelocity fields to make
+        // physics resets less destructive.
 
         member entity.MinorId = entity?MinorId : Guid
         static member getMinorId (entity : Entity) = entity.MinorId
