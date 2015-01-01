@@ -5,7 +5,8 @@ module Program =
 
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
     scaled to a back-buffer of a varying size, render each component unscaled to a off-screen
-    buffer of a static size and then blit that with scaling to the back-buffer. *)
+    buffer of a static size and then blit that with scaling to the back-buffer. NOTE: this only
+    applies to 2D ~ will not apply to 3D once implemented in Nu (for obvious reasons). *)
 
     (* WISDOM: From benchmarks. it looks like our mobile target will cost us anywhere from a 25% to
     50% decrease in speed as compared to the dev machine. However, this can be mitigated in a few
@@ -21,8 +22,6 @@ module Program =
     1.2x gain - optimize locality of address usage
     1.2x gain - render tiles layers to their own buffer so that each whole layer can be blitted directly with a single draw call (though this might cause overdraw).
     ? gain - avoid rendering clear tiles! *)
-
-    (* WISDOM: Program types and behavior should be closed where possible and open where necessary. *)
 
     (* WISDOM: On avoiding threads where possible...
     
@@ -45,7 +44,9 @@ module Program =
     (* WISDOM: On threading physics...
     
     A simulation that would put physics on another thread should likely do so in a different app
-    domain with communication via .NET remoting to make 100% sure that no sharing is happening. *)
+    domain with communication via .NET remoting to make 100% sure that no sharing is happening.
+    This should keep debugging easy and even possibly give a boost to GC latency what with
+    spreading collection pauses across two separate collectors. *)
 
     (* IDEA: Simplified networking...
 

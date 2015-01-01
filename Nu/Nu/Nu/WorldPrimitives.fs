@@ -16,7 +16,8 @@ module World =
     let transformSimulants transform patoca simulants parentAddress world =
         Map.fold
             (fun (simulants, world) simulantName simulant ->
-                let (simulant, world) = transform simulant (patoca parentAddress simulantName) world
+                let childAddress = patoca parentAddress simulantName
+                let (simulant, world) = transform simulant childAddress world
                 (Map.add simulantName simulant simulants, world))
             (Map.empty, world)
             simulants

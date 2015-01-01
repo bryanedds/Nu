@@ -344,7 +344,7 @@ module WorldEntityModule =
             // find the entity's dispatcher
             let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
             
-            // compute the opt overlay name
+            // compute the default opt overlay name
             let intrinsicOverlayName = dispatcherName
             let defaultOptOverlayName = Map.find intrinsicOverlayName world.State.OverlayRouter
             

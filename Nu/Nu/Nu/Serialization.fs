@@ -125,7 +125,7 @@ module Serialization =
                 tryReadPropertyToTarget node target
 
     /// Write an Xtension to Xml.
-    // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
+    /// NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
     /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
     let writeXtension shouldWriteProperty (writer : XmlWriter) xtension =
         for xFieldKvp in xtension.XFields do

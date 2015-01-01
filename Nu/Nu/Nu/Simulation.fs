@@ -253,7 +253,7 @@ module SimulationModule =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
-    /// The screen type that allows transitioning to and fro other screens, and also hosts the
+    /// The screen type that allows transitioning to and from other screens, and also hosts the
     /// currently interactive groups of entities.
     and [<CLIMutable; StructuralEquality; NoComparison>] Screen =
         { Id : Guid
