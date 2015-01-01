@@ -24,6 +24,7 @@ module XtensionModule =
         { FieldName : string
           FieldType : Type }
 
+    /// An Xtension field.
     type [<StructuralEquality; NoComparison>] XField =
         { FieldValue : obj
           FieldType : Type }
@@ -84,7 +85,7 @@ module XtensionModule =
         ///     let entity = entity.Position <- Vector2 (4.0, 5.0).
         static member (?<-) (xtension, fieldName, value : 'a) =
     #if DEBUG
-            // nop'ed outside of debug mode for efficiency
+            // NOTE: nop'ed outside of debug mode for efficiency
             // TODO: consider writing a 'Map.addDidContainKey' function to efficently add and return a
             // result that the key was already contained.
             if xtension.Sealed && not <| Map.containsKey fieldName xtension.XFields

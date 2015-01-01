@@ -39,7 +39,8 @@ module GameplayDispatcherModule =
     type GameplayDispatcher () =
         inherit ScreenDispatcher ()
 
-        // hud addresses
+        (* Hud Addresses *)
+
         static let getHudAddress address = satoga address HudName
         static let getHudHaltAddress address = gatoea (getHudAddress address) HudHaltName
         static let getHudSaveGameAddress address = gatoea (getHudAddress address) HudSaveGameName
@@ -49,7 +50,8 @@ module GameplayDispatcherModule =
         static let getHudDetailDownAddress address = gatoea (getHudAddress address) HudDetailDownName
         static let getHudDetailLeftAddress address = gatoea (getHudAddress address) HudDetailLeftName
 
-        // scene addresses
+        (* Scene Addresses *)
+
         static let getSceneAddress address =
             satoga address SceneName
         
@@ -80,6 +82,8 @@ module GameplayDispatcherModule =
         static let getEnemyAddresses address world =
             let entityAddresses = World.getEntityAddressesInGroup (getSceneAddress address) world
             World.filterEntityAddresses (Entity.dispatchesAs typeof<EnemyDispatcher>) entityAddresses world
+
+        (* End of Addresses *)
 
         static let makeField rand world =
             let pathEdgesM = [(Vector2i (1, 10), Vector2i (20, 10))]
