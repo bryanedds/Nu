@@ -16,7 +16,7 @@ module DesyncModule =
     let rec internal bind (m : Desync<'e, 's, 'a>) (cont : 'a -> Desync<'e, 's, 'b>) : Desync<'e, 's, 'b> =
         Desync (fun s ->
             match (match m with Desync f -> f s) with
-//                                          ^--- unbounded recursion here
+            //                              ^--- unbounded recursion here
             | (s', Left m') -> (s', Left (fun e -> bind (m' e) cont))
             | (s', Right v) -> match cont v with Desync f -> f s')
 

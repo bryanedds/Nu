@@ -6,7 +6,7 @@ open Prime
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
-open Nu.EventStream
+open Nu.Observation
 open InfinityRpg
 open InfinityRpg.Constants
 

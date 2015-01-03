@@ -9,7 +9,7 @@ open Prime
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
-open Nu.EventStream
+open Nu.Observation
 open BlazeVector
 open BlazeVector.BlazeConstants
 

@@ -6,7 +6,7 @@ open Prime.Desync
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
-open Nu.EventStream
+open Nu.Observation
 open Nu.Desync
 module DesyncTests =
 
@@ -29,8 +29,8 @@ module DesyncTests =
                 do! reactE incUserState
                 do! next ()
                 do! loop 0 inc (fun i _ -> i < 2) (fun _ -> update incUserStateTwiceNoEvent) }
-        let stream = observe IntEventAddress GameAddress
-        let world = snd <| Desync.runDesyncAssumingCascade desync stream world
+        let observation = observe IntEventAddress GameAddress
+        let world = snd <| Desync.runDesyncAssumingCascade desync observation world
         Assert.Equal (0, World.getUserState world)
 
         // assert the first publish executes the first desync'd operation

@@ -6,7 +6,7 @@ open Prime.Desync
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
-open Nu.EventStream
+open Nu.Observation
 open Nu.Desync
 
 // this is the main module for our program.

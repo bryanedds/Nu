@@ -5,8 +5,8 @@ open Prime
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
-open Nu.EventStream
-module EventStreamTests =
+open Nu.Observation
+module ObservationTests =
 
     let IntEventAddress = stoa<int> "Test"
     let UnitEventAddress = stoa<unit> "Test"
@@ -27,9 +27,9 @@ module EventStreamTests =
     let [<Fact>] subscribeTwiceUnsubscribeOnceWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let stream = observe UnitEventAddress GameAddress |> using incUserStateAndCascade
-        let world = subscribe2 stream world
-        let (unsubscribe, world) = subscribeWithUnsub2 stream world
+        let observation = observe UnitEventAddress GameAddress |> using incUserStateAndCascade
+        let world = subscribe2 observation world
+        let (unsubscribe, world) = subscribeWithUnsub2 observation world
         let world = unsubscribe world
         let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (1, World.getUserState world)
