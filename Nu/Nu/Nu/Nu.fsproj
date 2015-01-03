@@ -89,12 +89,12 @@
     <Compile Include="Game.fs" />
     <Compile Include="Dispatchers.fs" />
     <Compile Include="World.fs" />
-    <Compile Include="EventStream.fs" />
+    <Compile Include="Observation.fs" />
     <Compile Include="Desync.fs" />
     <Compile Include="AddressTests.fs" />
     <Compile Include="XtensionTests.fs" />
     <Compile Include="WorldTests.fs" />
-    <Compile Include="EventStreamTests.fs" />
+    <Compile Include="ObservationTests.fs" />
     <Compile Include="DesyncTests.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />

@@ -86,11 +86,11 @@ module Desync =
     let updateByGame expr : Desync<'e, World, unit> =
         desync { do! update <| World.updateByGame expr }
 
-    let private runDesync4 eventHandling (desync : Desync<Event<'a, 'o>, World, unit>) (stream : EventStream<'a, 'o>) world =
+    let private runDesync4 eventHandling (desync : Desync<Event<'a, 'o>, World, unit>) (observation : Observation<'a, 'o>) world =
         let callbackKey = World.makeCallbackKey ()
         let world = World.addCallbackState callbackKey (fun (_ : Event<'a, 'o>) -> desync) world
         let subscriptionKey = World.makeSubscriptionKey ()
-        let (eventAddress, unsubscribe, world) = stream.Subscribe world
+        let (eventAddress, unsubscribe, world) = observation.Subscribe world
         let unsubscribe = fun world ->
             let world = World.removeCallbackState callbackKey world
             let world = unsubscribe world
@@ -105,17 +105,17 @@ module Desync =
             let world = advance event world
             (eventHandling, world)
         let world = advance Unchecked.defaultof<Event<'a, 'o>> world
-        let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress stream.ObserverAddress world
+        let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observation.ObserverAddress world
         (unsubscribe, world)
 
     /// Run the given desynchronized process on top of Nu's event system.
     /// Allows each desynchronized operation to run without referencing its source event, and
     /// without specifying its event handling approach by assuming Cascade.
-    let runDesyncAssumingCascade desync (stream : EventStream<'a, 'o>) world =
-        runDesync4 Cascade desync stream world
+    let runDesyncAssumingCascade desync (observation : Observation<'a, 'o>) world =
+        runDesync4 Cascade desync observation world
 
     /// Run the given desynchronized process on top of Nu's event system.
     /// Allows each desynchronized operation to run without referencing its source event, and
     /// without specifying its event handling approach by assuming Resolve.
-    let runDesyncAssumingResolve desync (stream : EventStream<'a, 'o>) world =
-        runDesync4 Resolve desync stream world
+    let runDesyncAssumingResolve desync (observation : Observation<'a, 'o>) world =
+        runDesync4 Resolve desync observation world
