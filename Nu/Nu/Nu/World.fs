@@ -31,6 +31,7 @@ module WorldModule =
 
     type World with
 
+        /// Try to get a simulant at the given address.
         static member getOptSimulant<'a when 'a :> Simulant> (address : 'a Address) world =
             match address.Names with
             | [] -> World.getGame world :> Simulant :?> 'a |> Some
@@ -39,15 +40,20 @@ module WorldModule =
             | [_; _; _] -> World.getOptEntity (atoea address) world |> Option.map (fun e -> e :> Simulant :?> 'a)
             | _ -> failwith <| "Invalid simulant address '" + acstring address + "'."
 
+        /// Query that the world contains a simulant at the given address.
         static member containsSimulant address world =
             Option.isSome <| World.getOptSimulant address world
 
+        /// Get a simulant at the given address (failing with an exception otherwise), then
+        /// transform it with the 'by' procudure.
         static member getSimulantBy by address world =
             by ^^ Option.get ^^ World.getOptSimulant address world
 
+        /// Get a simulant at the given address (failing with an exception otherwise).
         static member getSimulant address world =
             World.getSimulantBy id address world
 
+        /// Set a simulant at the given address (failing with an exception if one doesn't exist).
         static member setSimulant<'a when 'a :> Simulant> (simulant : 'a) (address : 'a Address) world =
             match address.Names with
             | [] -> World.setGame (simulant :> obj :?> Game) world
@@ -56,6 +62,8 @@ module WorldModule =
             | [_; _; _] -> World.setEntity (simulant :> obj :?> Entity) (Address.changeType<'a, Entity> address) world
             | _ -> failwith <| "Invalid simulant address '" + acstring address + "'."
 
+        /// Try to update a simulant with the given 'updater' procedure at the given address. Also
+        /// passes the current world value to the procedure.
         static member updateOptSimulantW updater address world =
             match World.getOptSimulant address world with
             | Some simulant ->
@@ -63,42 +71,57 @@ module WorldModule =
                 World.setSimulant simulant address world
             | None -> world
 
+        /// Try to update a simulant with the given 'updater' procedure at the given addres
         static member updateOptSimulant updater address world =
             World.updateOptSimulantW (fun simulant _ -> updater simulant) address world
 
+        /// Try to update the world with the given 'updater' procedure that uses the simulant at
+        /// given address in its computation.
         static member updateByOptSimulant updater address world : World =
             match World.getOptSimulant address world with
             | Some simulant -> updater simulant world
             | None -> world
 
+        /// Update a simulant with the given 'updater' procedure at the given address. Also passes
+        /// the current world value to the procedure.
         static member updateSimulantW updater address world =
             let simulant = World.getSimulant address world
             let simulant = updater simulant world
             World.setSimulant simulant address world
 
+        /// Update a simulant with the given 'updater' procedure at the given address.
         static member updateSimulant updater address world =
             World.updateSimulantW (fun simulant _ -> updater simulant) address world
 
+        /// Update the world with the given 'updater' procedure that uses the simulant at given
+        /// address in its computation.
         static member updateBySimulant updater address world : World =
             let simulant = World.getSimulant address world
             updater simulant world
 
-        static member getOptSimulantForPublishingDefinition (address : Simulant Address) world =
+        static member private getOptSimulantForPublishingDefinition (address : Simulant Address) world =
             World.getOptSimulant address world
 
+        /// Try to query that the selected screen is idling; that is, neither transitioning in or
+        /// out via another screen.
         static member tryGetIsSelectedScreenIdling world =
             match World.getOptSelectedScreen world with
             | Some selectedScreen -> Some <| Screen.isIdling selectedScreen
             | None -> None
 
+        /// Query that the selected screen is idling; that is, neither transitioning in or
+        /// out via another screen (failing with an exception if no screen is selected).
         static member isSelectedScreenIdling world =
             match World.tryGetIsSelectedScreenIdling world with
             | Some answer -> answer
             | None -> failwith <| "Cannot query state of non-existent selected screen."
 
+        /// Try to query that the selected screen is transitioning.
         static member tryGetIsSelectedScreenTransitioning world =
             Option.map not <| World.tryGetIsSelectedScreenIdling world
 
+        /// Query that the selected screen is transitioning (failing with an exception if no screen
+        /// is selected).
         static member isSelectedScreenTransitioning world =
             not <| World.isSelectedScreenIdling world
 
@@ -126,6 +149,7 @@ module WorldModule =
             let world = World.setScreen screen address world
             (screen, world)
 
+        /// Select the given screen without transitioning.
         static member selectScreen screen screenAddress world =
             let world =
                 match World.getOptSelectedScreenAddress world with
@@ -136,6 +160,8 @@ module WorldModule =
             let world = World.publish4 () (SelectEventAddress ->>- screenAddress) screenAddress world
             (screen, world)
 
+        /// Try to transition to the screen at the destination address if no other transition is in
+        /// progress.
         static member tryTransitionScreen destinationAddress world =
             match World.getOptSelectedScreenAddress world with
             | Some selectedScreenAddress ->
@@ -158,6 +184,8 @@ module WorldModule =
                 | None -> None
             | None -> None
 
+        /// Transition to the screen at the destination address (failing with an exception if
+        /// another transition is in progress).
         static member transitionScreen destinationAddress world =
             Option.get <| World.tryTransitionScreen destinationAddress world
             
@@ -167,9 +195,14 @@ module WorldModule =
             let world = snd <| World.selectScreen destinationScreen destinationAddress world
             (eventHandling, world)
 
+        /// A procedure that can be passed to an event handler to specify that an event is to
+        /// result in a transition to the screen at the given destination address.
         static member handleAsScreenTransitionFromSplash<'a, 's when 's :> Simulant> destinationAddress event world =
             World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destinationAddress event world
 
+        /// A procedure that can be passed to an event handler to specify that an event is to
+        /// result in a transition to the screen at the given destination address, as well as
+        /// with additional provided via the 'by' procedure.
         static member handleAsScreenTransitionFromSplashBy<'a, 's when 's :> Simulant> by destinationAddress event  (world : World) =
             let (eventHandling, world) = by event world
             World.handleAsScreenTransitionFromSplash4<'a, 's> eventHandling destinationAddress event world
@@ -181,9 +214,14 @@ module WorldModule =
                 trace <| "Program Error: Invalid screen transition for destination address '" + acstring destinationAddress + "'."
                 (eventHandling, world)
 
+        /// A procedure that can be passed to an event handler to specify that an event is to
+        /// result in a transition to the screen at the given destination address.
         static member handleAsScreenTransition<'a, 's when 's :> Simulant> destinationAddress event world =
             World.handleAsScreenTransition4<'a, 's> Cascade destinationAddress event world
 
+        /// A procedure that can be passed to an event handler to specify that an event is to
+        /// result in a transition to the screen at the given destination address, as well as
+        /// with additional provided via the 'by' procedure.
         static member handleAsScreenTransitionBy<'a, 's when 's :> Simulant> by destinationAddress event (world : World) =
             let (eventHandling, world) = by event world
             World.handleAsScreenTransition4<'a, 's> eventHandling destinationAddress event world
@@ -192,8 +230,8 @@ module WorldModule =
             if screen.TransitionTicksNp = transition.TransitionLifetime then (true, { screen with TransitionTicksNp = 0L })
             else (false, { screen with TransitionTicksNp = screen.TransitionTicksNp + 1L })
 
-        // TODO: split this function up...
         static member private updateScreenTransition world =
+            // TODO: split this function up...
             match World.getOptSelectedScreenAddress world with
             | Some selectedScreenAddress ->
                 let selectedScreen = World.getScreen selectedScreenAddress world
@@ -257,6 +295,8 @@ module WorldModule =
             let world = World.subscribe SplashScreenTickKey (World.handleSplashScreenIdleTick idlingTime 0L) TickEventAddress event.SubscriberAddress world
             (Resolve, world)
 
+        /// Add a splash screen to the world at the given address that transitions to the given
+        /// destination upon completion.
         static member addSplashScreen persistent splashData dispatcherName destination address world =
             let splashScreen = { World.makeDissolveScreen splashData.DissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }
             let splashGroup = { World.makeGroup typeof<GroupDispatcher>.Name (Some "SplashGroup") world with Persistent = persistent }
@@ -271,11 +311,14 @@ module WorldModule =
             let world = World.monitor (World.handleAsScreenTransitionFromSplash destination) (OutgoingFinishEventAddress ->>- address) address world
             (splashScreen, world)
 
+        /// Add a screen to the world at the given address that uses a dissolve transition.
         static member addDissolveScreen persistent dissolveData dispatcherName address world =
             let dissolveScreen = { World.makeDissolveScreen dissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }
             let dissolveScreenHierarchy = (dissolveScreen, Map.empty)
             World.addScreen dissolveScreenHierarchy address world
 
+        /// Add a dissolve screen to the world at the given address whose contents is loaded from
+        /// the given group file.
         static member addDissolveScreenFromGroupFile persistent dissolveData dispatcherName groupFilePath address world =
             let dissolveScreen = { World.makeDissolveScreen dissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }
             let (group, entities) = World.readGroupHierarchyFromFile groupFilePath world
@@ -291,6 +334,7 @@ module WorldModule =
             let sourceTypes = List.map (fun source -> source.GetType ()) sources
             Reflection.createIntrinsicOverlays hasFacetNamesField sourceTypes
 
+        /// Try to reload the overlays currently in use by the world.
         static member tryReloadOverlays inputDirectory outputDirectory world =
             
             // try to reload overlay file
@@ -337,6 +381,8 @@ module WorldModule =
             // propagate error
             with exn -> Left <| acstring exn
 
+        /// Try to release the assets in use by the world. Currently does not support reloading
+        /// of song assets, and possible others.
         static member tryReloadAssets inputDirectory outputDirectory refinementDirectory world =
             
             // try to reload asset graph file
@@ -363,6 +409,8 @@ module WorldModule =
                 | Left error -> Left error
             with exn -> Left <| acstring exn
 
+        /// A hack for the physics subsystem that allows an old world value to displace the current
+        /// one and have its physics values propagated to the imperative physics subsystem.
         static member continueHack groupAddress world =
             // NOTE: since messages may be invalid upon continuing a world (especially physics
             // messages), all messages are eliminated. If this poses an issue, the editor will have
@@ -480,6 +528,7 @@ module WorldModule =
             let tasksNotRun = List.rev tasksNotRun
             World.restoreTasks tasksNotRun world
 
+        /// Process an input event from SDL and ultimately publish any related Nu engine events.
         static member processInput (event : SDL.SDL_Event) world =
             let world =
                 match event.``type`` with
@@ -525,6 +574,8 @@ module WorldModule =
                 | _ -> world
             (world.State.Liveness, world)
 
+        /// Update the Nu game engine once per frame, updating its subsystems and publishing the
+        /// global tick event.
         static member processUpdate handleUpdate world =
             let world = handleUpdate world
             match world.State.Liveness with
@@ -576,6 +627,8 @@ module WorldModule =
         static member private pairWithNames sources =
             Map.ofListBy World.pairWithName sources
 
+        /// Try to make the world, returning either a Right World on success, or a Left string
+        /// (with an error message) on failure.
         static member tryMake farseerCautionMode useLoadedGameDispatcher interactivity userState (nuPlugin : NuPlugin) sdlDeps =
 
             // attempt to generate asset metadata so the rest of the world can be created
@@ -708,6 +761,7 @@ module WorldModule =
                 Right world
             | Left errorMsg -> Left errorMsg
 
+        /// Make an empty world. Useful for unit-testing.
         static member makeEmpty (userState : 'u) =
 
             // the default dispatchers
@@ -772,6 +826,9 @@ module WorldModule =
             // and finally, register the game
             snd <| Game.register (World.getGame world) world
 
+        /// Initialize the Nu game engine. Basically calls all the unavoidable imperative stuff
+        /// needed to set up the .NET environment appropriately. MUST be called before making the
+        /// world.
         static member init () =
 
             // make types load reflectively from pathed (non-static) assemblies
