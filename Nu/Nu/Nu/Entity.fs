@@ -34,6 +34,7 @@ module EntityModule =
         static member getPersistent (entity : Entity) = entity.Persistent
         static member setPersistent value (entity : Entity) = { entity with Persistent = value }
 
+        /// Register an entity when adding it to a group.
         static member register (entity : Entity) address world =
             let (entity, world) = entity.DispatcherNp.Register (entity, address, world)
             List.fold
@@ -41,6 +42,7 @@ module EntityModule =
                 (entity, world)
                 entity.FacetsNp
         
+        /// Unregister an entity when removing it from a group.
         static member unregister (entity : Entity) address world =
             let (entity, world) = entity.DispatcherNp.Unregister (entity, address, world)
             List.fold
@@ -48,6 +50,7 @@ module EntityModule =
                 (entity, world)
                 entity.FacetsNp
         
+        /// Propagate an entity's physics properties from the physics subsystem.
         static member propagatePhysics (entity : Entity) address world =
             let world = entity.DispatcherNp.PropagatePhysics (entity, address, world)
             List.fold
@@ -55,6 +58,7 @@ module EntityModule =
                 world
                 entity.FacetsNp
         
+        /// Get the render descriptors needed to render an entity.
         static member getRenderDescriptors (entity : Entity) world =
             let renderDescriptors = entity.DispatcherNp.GetRenderDescriptors (entity, world)
             List.fold
@@ -64,6 +68,7 @@ module EntityModule =
                 renderDescriptors
                 entity.FacetsNp
         
+        /// Get the quick size of an entity (the appropriate user-define size for an entity).
         static member getQuickSize  (entity : Entity) world =
             let quickSize = entity.DispatcherNp.GetQuickSize (entity, world)
             List.fold
@@ -75,12 +80,17 @@ module EntityModule =
                 quickSize
                 entity.FacetsNp
         
+        /// Get the priority with which an entity is picked in the editor.
         static member getPickingPriority (entity : Entity) world =
             entity.DispatcherNp.GetPickingPriority (entity, world)
 
+        /// Get the names of all facets used by an entity.
         static member getFacetNames entity =
             List.map Reflection.getTypeName entity.FacetsNp
 
+        /// Query that a facet is compatible with those already being used by an entity.
+        /// Note a facet is incompatible with any other facet if it contains any fields that has
+        /// the same name but a different type.
         static member isFacetCompatible entityDispatcherMap facet (entity : Entity) =
             let facetType = facet.GetType ()
             let facetFieldDefinitions = Reflection.getFieldDefinitions facetType
@@ -93,9 +103,11 @@ module EntityModule =
                     facetFieldDefinitions
             else false
 
+        /// Query that an entity dispatches in the same manner as the dispatcher with the target type.
         static member dispatchesAs (dispatcherTargetType : Type) (entity : Entity) =
             Reflection.dispatchesAs dispatcherTargetType entity.DispatcherNp
 
+        /// Make an entity.
         static member make dispatcher optOverlayName optName =
             let id = Core.makeId ()
             { Id = id
@@ -115,6 +127,7 @@ module EntityModule =
               OptOverlayName = optOverlayName
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true } }
 
+    /// The data needed to describe a Tiled tile map.
     type [<StructuralEquality; NoComparison>] TileMapData =
         { Map : TmxMap
           MapSize : Vector2i
@@ -125,6 +138,7 @@ module EntityModule =
           TileSet : TmxTileset
           TileSetSize : Vector2i }
 
+    /// The data needed to describe a Tiled tile.
     type [<StructuralEquality; NoComparison>] TileData =
         { Tile : TmxLayerTile
           I : int
@@ -184,21 +198,30 @@ module WorldEntityModule =
                 | None -> world
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
 
+        /// Query that the world contains an entity at the given address.
         static member containsEntity address world =
             Option.isSome <| World.optEntityFinder address world
 
+        /// Try to get an entity at the given address.
         static member getOptEntity address world =
             World.optEntityFinder address world
 
+        /// Get an entity at the given address (failing with an exception otherwise), then
+        /// transform it with the 'by' procudure.
         static member getEntityBy by address world =
             by ^^ Option.get ^^ World.getOptEntity address world
 
+        /// Get an entity at the given address (failing with an exception otherwise).
         static member getEntity address world =
             World.getEntityBy id address world
 
+        /// Get an entity with the given name in a group with the given address (failing with an
+        /// exception if there isn't one).
         static member getEntityInGroup entityName groupAddress world =
             World.getEntity (gatoea groupAddress entityName) world
 
+        /// Get an entity's address with the given name in the group with the given address
+        /// (failing with an exception if there isn't one).
         static member getEntityAddressInGroup entityName groupAddress world =
             let address = gatoea groupAddress entityName
             ignore <| World.getEntity address world // ensure address is valid
@@ -212,6 +235,7 @@ module WorldEntityModule =
             | Some entity -> World.entityAdder entity address world
             | None -> World.entityRemover address world
 
+        /// Set an entity at the given address (failing with an exception if one doesn't exist).
         static member setEntity entity address world =
             let oldEntity = Option.get <| World.optEntityFinder address world
             let world = World.entityAdder entity address world
@@ -219,39 +243,53 @@ module WorldEntityModule =
             then World.publish4 { OldSimulant = oldEntity } (EntityChangeEventAddress ->>- address) address world
             else world
 
+        /// Try to update an entity with the given 'updater' procedure at the given address. Also
+        /// passes the current world value to the procedure.
         static member updateOptEntityW updater address world =
             match World.getOptEntity address world with
             | Some entity ->
                 let entity = updater entity world
                 World.setEntity entity address world
             | None -> world
-
+            
+        /// Try to update an entity with the given 'updater' procedure at the given addres
         static member updateOptEntity updater address world =
             World.updateOptEntityW (fun entity _ -> updater entity) address world
-
-        static member updateByOptEntity updater address world : World =
+            
+        /// Try to update the world with the given 'updater' procedure that uses the entity at
+        /// given address in its computation.
+        static member updateByOptEntity updater address world =
             match World.getOptEntity address world with
             | Some entity -> updater entity world
             | None -> world
-
+            
+        /// Update an entity with the given 'updater' procedure at the given address. Also passes
+        /// the current world value to the procedure.
         static member updateEntityW updater address world =
             let entity = World.getEntity address world
             let entity = updater entity world
             World.setEntity entity address world
-
+            
+        /// Update an entity with the given 'updater' procedure at the given address.
         static member updateEntity updater address world =
             World.updateEntityW (fun entity _ -> updater entity) address world
-
+            
+        /// Update the world with the given 'updater' procedure that uses the entity at given
+        /// address in its computation.
         static member updateByEntity updater address world : World =
             let entity = World.getEntity address world
             updater entity world
 
+        /// Get all the entities at the given addresses as transformed them with the 'by'
+        /// procedure.
         static member getEntitiesBy by addresses world =
             Seq.map (fun address -> by <| World.getEntity address world) addresses
-
+            
+        /// Get all the entities at the given addresses.
         static member getEntities addresses world =
             World.getEntitiesBy id addresses world
 
+        /// Get all the entities in the group at the given address as mapped by their names.
         static member getEntityMapInGroup (groupAddress : Group Address) world =
             match groupAddress.Names with
             | [screenName; groupName] ->
@@ -264,35 +302,53 @@ module WorldEntityModule =
                 | None -> Map.empty
             | _ -> failwith <| "Invalid group address '" + acstring groupAddress + "'."
 
+        /// Get all the entities in the group at the given address.
         static member getEntitiesInGroup (groupAddress : Group Address) world =
             Map.toValueSeq <| World.getEntityMapInGroup groupAddress world
 
+        /// Get all the entity addresses in the group at the given address.
         static member getEntityAddressesInGroup groupAddress world =
             let entities = World.getEntitiesInGroup groupAddress world
             Seq.map (fun entity -> gatoea groupAddress entity.Name) entities
 
+        /// Set the given entities to the respective addresses. Note, each address must already
+        /// have an existing entity, otherwise will fail with an exception.
         static member setEntities entities addresses world =
             Seq.fold2 (fun world entity address -> World.setEntity entity address world) world entities addresses
 
+        /// Set the given entities to the addresses as calculated by
+        /// (fun entity -> gatoea groupAddress entity.Name) in the group with the given address.
+        /// Note, each address must already have an existing entity, otherwise will fail with an
+        /// exception.
         static member setEntitiesInGroup groupAddress entities world =
             Seq.fold (fun world (entity : Entity) -> World.setEntity entity (gatoea groupAddress entity.Name) world) world entities
 
+        /// Update the entities at the given address with the given 'updater' procedure. Also
+        /// passes the current world value to the procedure.
         static member updateEntitiesW updater addresses world =
             Seq.fold (fun world address -> World.updateEntityW updater address world) world addresses
-        
+
+        /// Update the entities at the given address with the given 'updater' procedure.
         static member updateEntities updater addresses world =
             World.updateEntitiesW (fun entity _ -> updater entity) addresses world
 
+        /// Update all entities in the group at the given address with then given the 'updater'
+        /// procedure. Also passes the current world value to the procedure.
         static member updateEntitiesInGroupW updater groupAddress world =
             let addresses = World.getEntityAddressesInGroup groupAddress world
             Seq.fold (fun world address -> World.updateEntityW updater address world) world addresses
-
+            
+        /// Update all entities in the group at the given address with then given the 'updater' procedure.
         static member updateEntitiesInGroup updater addresses world =
             World.updateEntitiesInGroupW (fun entity _ -> updater entity) addresses world
 
+        /// Filter the given entity addresses by applying the 'pred' procedure to each entity at
+        /// its respected address. Also passes the current world value to the procedure.
         static member filterEntityAddressesW pred addresses world =
             Seq.filter (fun address -> World.getEntityBy (fun entity -> pred entity world) address world) addresses
-
+            
+        /// Filter the given entity addresses by applying the 'pred' procedure to each entity at
+        /// its respected address.
         static member filterEntityAddresses pred addresses world =
             World.filterEntityAddressesW (fun entity _ -> pred entity) addresses world
 
@@ -302,6 +358,8 @@ module WorldEntityModule =
         static member private unregisterEntity entity address world =
             Entity.unregister entity address world
 
+        /// Remove an entity from the world immediately. Can be dangerous if existing in-flight
+        /// subscriptions depend on the entity's existence. Use with caution.
         static member removeEntityImmediate (address : Entity Address) world =
             let world = World.publish4 () (RemovingEventAddress ->>- address) address world
             match World.getOptEntity address world with
@@ -311,12 +369,16 @@ module WorldEntityModule =
                 (Some entity, world)
             | None -> (None, world)
 
+        /// Remove an entity from the world on the next tick. Use this rather than
+        /// removeEntityImmediate unless you need the latter's specific behavior.
         static member removeEntity address world =
             let task =
                 { ScheduledTime = world.State.TickTime
                   Operation = fun world -> snd <| World.removeEntityImmediate address world }
             World.addTask task world
-
+            
+        /// Remove multiple entities from the world immediately. Can be dangerous if existing
+        /// in-flight subscriptions depend on any of the entities' existences. Use with caution.
         static member removeEntitiesImmediate addresses world =
             List.foldBack
                 (fun address (entities, world) ->
@@ -324,10 +386,13 @@ module WorldEntityModule =
                     (entity :: entities, world))
                 (List.ofSeq addresses)
                 ([], world)
-
+                
+        /// Remove multiple entities from the world. Use this rather than removeEntitiesImmediate
+        /// unless you need the latter's specific behavior.
         static member removeEntities addresses world =
             snd <| World.removeEntitiesImmediate addresses world
 
+        /// Add an entity at the given address to the world.
         static member addEntity entity address world =
             if not <| World.containsEntity address world then
                 let world = World.setEntityWithoutEvent entity address world
@@ -336,9 +401,11 @@ module WorldEntityModule =
                 (entity, world)
             else failwith <| "Adding an entity that the world already contains at address '" + acstring address + "'."
 
+        /// Add multiple entities to the group at the given address.
         static member addEntities entities (groupAddress : Group Address) world =
             World.transformSimulants World.addEntity gatoea entities groupAddress world
 
+        /// Make an entity (does NOT add the entity to the world!)
         static member makeEntity dispatcherName optName world =
             
             // find the entity's dispatcher
@@ -433,6 +500,7 @@ module WorldEntityModule =
                 Set.empty
                 finalFieldDefinitionNameCounts
 
+        /// Try to remove a facet with the given name from an entity.
         static member tryRemoveFacet syncing facetName entity optAddress world =
             match List.tryFind (fun facet -> Reflection.getTypeName facet = facetName) entity.FacetsNp with
             | Some facet ->
@@ -454,6 +522,7 @@ module WorldEntityModule =
                 Right (entity, world)
             | None -> Left <| "Failure to remove facet '" + facetName + "' from entity."
 
+        /// Try to add a facet with the given name to an entity.
         static member tryAddFacet syncing facetName (entity : Entity) optAddress world =
             match World.tryGetFacet facetName world with
             | Right facet ->
@@ -472,6 +541,7 @@ module WorldEntityModule =
                 else Left <| "Facet '" + Reflection.getTypeName facet + "' is incompatible with entity '" + entity.Name + "'."
             | Left error -> Left error
 
+        /// Try to remove multiple facets from an entity.
         static member tryRemoveFacets syncing facetNamesToRemove entity optAddress world =
             List.fold
                 (fun eitherEntityWorld facetName ->
@@ -481,6 +551,7 @@ module WorldEntityModule =
                 (Right (entity, world))
                 facetNamesToRemove
 
+        /// Try to add multiple facets to an entity.
         static member tryAddFacets syncing facetNamesToAdd entity optAddress world =
             List.fold
                 (fun eitherEntityWorld facetName ->
@@ -490,6 +561,7 @@ module WorldEntityModule =
                 (Right (entity, world))
                 facetNamesToAdd
 
+        /// Try to set the facet names of an entity, synchronizing facet as needed.
         static member trySetFacetNames oldFacetNames newFacetNames entity optAddress world =
             let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames newFacetNames
             let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames newFacetNames
@@ -497,6 +569,7 @@ module WorldEntityModule =
             | Right (entity, world) -> World.tryAddFacets false facetNamesToAdd entity optAddress world
             | Left _ as left -> left
 
+        /// Try to synchronize the facets of an entity to its current facet names.
         static member trySynchronizeFacets oldFacetNames entity optAddress world =
             let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames entity.FacetNames
             let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames entity.FacetNames
@@ -522,6 +595,7 @@ module WorldEntityModule =
                 (entity, world)
             else (entity, world)
 
+        /// Write an entity to an xml writer.
         static member writeEntity (writer : XmlWriter) (entity : Entity) world =
             writer.WriteAttributeString (DispatcherNameAttributeName, (entity.DispatcherNp.GetType ()).Name)
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
@@ -533,6 +607,7 @@ module WorldEntityModule =
                     Overlayer.shouldPropertySerialize5 facetNames propertyName propertyType entity world.Subsystems.Overlayer
             Serialization.writePropertiesFromTarget shouldWriteProperty writer entity
 
+        /// Write multiple entities to an xml writer.
         static member writeEntities (writer : XmlWriter) entities world =
             let entitiesSorted =
                 List.sortBy
@@ -544,6 +619,7 @@ module WorldEntityModule =
                 World.writeEntity writer entity world
                 writer.WriteEndElement ()
 
+        /// Read an entity from an xml node.
         static member readEntity (entityNode : XmlNode) defaultDispatcherName world =
 
             // read in the dispatcher name and create the dispatcher
@@ -604,6 +680,7 @@ module WorldEntityModule =
             // return the initialized entity
             entity
 
+        /// Read multiple entities from an xml node.
         static member readEntities (parentNode : XmlNode) defaultDispatcherName world =
             match parentNode.SelectSingleNode EntitiesNodeName with
             | null -> Map.empty

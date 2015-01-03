@@ -184,28 +184,32 @@ module World =
             []
             subscriptions
 
+    /// Sort subscriptions using categorization via the 'by' procedure.
     let sortSubscriptionsBy by (subscriptions : SubscriptionEntry list) world =
         let subscriptions = getSortableSubscriptions by subscriptions world
         let subscriptions = List.sortWith sortFstDesc subscriptions
         List.map snd subscriptions
 
+    /// Sort subscriptions by their editor picking priority.
     let sortSubscriptionsByPickingPriority subscriptions world =
         sortSubscriptionsBy
             (fun (entity : Entity) world -> entity.DispatcherNp.GetPickingPriority (entity, world))
             subscriptions
             world
 
+    /// Sort subscriptions by their place in the world's simulant hierarchy.
     let sortSubscriptionsByHierarchy subscriptions world =
         sortSubscriptionsBy
             (fun _ _ -> EntityPublishingPriority)
             subscriptions
             world
 
-    let sortSubscriptionsNone (subscriptions : SubscriptionEntry list) _ =
+    /// A 'no-op' for subscription sorting - that is, performs no sorting at all.
+    let sortSubscriptionsNone (subscriptions : SubscriptionEntry list) (_ : World) =
         subscriptions
 
-    // OPTIMIZATION: uses memoization.
     let private getAnyEventAddresses eventAddress =
+        // OPTIMIZATION: uses memoization.
         if not <| Address.isEmpty eventAddress then
             let anyEventAddressesKey = Address.allButLast eventAddress
             match AnyEventAddressesCache.TryGetValue anyEventAddressesKey with
@@ -242,8 +246,9 @@ module World =
         let result = callableSubscription event world
         Some result
 
-    /// Publish an event.
-    let publish<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) (publisherAddress : 'p Address) world =
+    /// Publish an event, using the given publishSorter procedure to arranging the order to which subscriptions are published.
+    let publish<'a, 'p when 'p :> Simulant>
+        publishSorter (eventData : 'a) (eventAddress : 'a Address) (publisherAddress : 'p Address) world =
         let objEventAddress = atooa eventAddress
         let subscriptions = getSubscriptionsSorted publishSorter objEventAddress world
         let (_, world) =
@@ -263,7 +268,8 @@ module World =
         world
 
     /// Publish an event.
-    let publish4<'a, 'p when 'p :> Simulant> (eventData : 'a) (eventAddress : 'a Address) (publisherAddress : 'p Address) world =
+    let publish4<'a, 'p when 'p :> Simulant>
+        (eventData : 'a) (eventAddress : 'a Address) (publisherAddress : 'p Address) world =
         publish sortSubscriptionsByHierarchy eventData eventAddress publisherAddress world
 
     /// Subscribe to an event.

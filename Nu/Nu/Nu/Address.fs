@@ -34,6 +34,7 @@ module NameKeyModule =
 [<RequireQualifiedAccess>]
 module NameKey =
 
+    /// Make a name key from a single address name string.
     let make addressName =
         { Hash = hash addressName
           Name = addressName }

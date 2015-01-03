@@ -34,6 +34,7 @@ module ReflectionModule =
                     "Generic field definition lacking type information for field '" + fieldName + "'. " +
                     "Use explicit typing on all values that carry incomplete type information such as empty lists, empty sets, and none options,."
 
+        /// Make a field definition.
         static member make fieldName fieldType fieldExpr =
             FieldDefinition.validate fieldName fieldType fieldExpr
             { FieldName = fieldName; FieldType = fieldType; FieldExpr = fieldExpr }
@@ -41,6 +42,8 @@ module ReflectionModule =
     /// In tandem with the define literal, grants a nice syntax to define constant fields.
     type DefineConstant =
         { DefineConstant : unit }
+        
+        /// Some magic syntax for composing constant fields.
         static member (?) (_, fieldName) =
             fun (constant : 'c) ->
                 FieldDefinition.make fieldName typeof<'c> <| Constant constant
@@ -48,6 +51,8 @@ module ReflectionModule =
     /// In tandem with the variable literal, grants a nice syntax to define variable fields.
     type DefineVariable =
         { DefineVariable : unit }
+
+        /// Some magic syntax for composing variable fields.
         static member (?) (_, fieldName) =
             fun (variable : unit -> 'v) ->
                 FieldDefinition.make fieldName typeof<'v> <| Variable (fun () -> variable () :> obj)
