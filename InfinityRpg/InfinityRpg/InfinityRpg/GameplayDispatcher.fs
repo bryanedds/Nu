@@ -8,7 +8,7 @@ open Prime.Desync
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
-open Nu.Observer
+open Nu.EventStream
 open Nu.Desync
 open AStar
 open InfinityRpg
@@ -403,8 +403,8 @@ module GameplayDispatcherModule =
                                     | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
                                 updateCharacterByNavigation navigationDescriptor characterAddress world
                             do! next () }}
-            let obs = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- address)
-            snd <| runDesyncAssumingCascade desync obs world
+            let stream = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- address)
+            snd <| runDesyncAssumingCascade desync stream world
 
         static let runCharacterAction newActionDescriptor characterAddress address world =
             // NOTE: currently just implements attack
@@ -423,8 +423,8 @@ module GameplayDispatcherModule =
                                 let world = updateCharacterByAction actionDescriptor characterAddress world
                                 runCharacterReaction actionDescriptor characterAddress address world
                             do! next () }}
-            let obs = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- address)
-            snd <| runDesyncAssumingCascade desync obs world
+            let stream = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- address)
+            snd <| runDesyncAssumingCascade desync stream world
 
         static let runCharacterNoActivity characterAddress world =
             World.updateEntity (Entity.setActivityState NoActivity) characterAddress world
@@ -531,11 +531,11 @@ module GameplayDispatcherModule =
                                 do! update <| runPlayerTurn playerTurn address }
                             | Left _ -> updateEntity cancelNavigation playerAddress }
                     do! updateEntity (Entity.setEnabled true) hudSaveGameAddress }
-                let obs =
+                let stream =
                     observe (ClickEventAddress ->>- hudHaltAddress) address |>
                     sum TickEventAddress |>
                     until (DeselectEventAddress ->>- address)
-                snd <| runDesyncAssumingCascade desync obs world
+                snd <| runDesyncAssumingCascade desync stream world
             else world
 
         static let handlePlayerChange event world =
