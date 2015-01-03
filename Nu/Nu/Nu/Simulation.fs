@@ -145,6 +145,8 @@ module SimulationModule =
         static member FieldDefinitions =
             [define? PublishChanges true]
 
+        /// Register a game when adding it to the world. Note that there is not corresponding
+        /// Unregister method due to the inability to remove a game from the world.
         abstract member Register : Game * World -> Game * World
         default dispatcher.Register (game, world) = (game, world)
 
@@ -155,9 +157,11 @@ module SimulationModule =
             [define? PublishChanges true
              define? Persistent true]
 
+        /// Register a screen when adding it to the world.
         abstract member Register : Screen * Screen Address * World -> Screen * World
         default dispatcher.Register (screen, _, world) = (screen, world)
 
+        /// Unregister a screen when removing it from the world.
         abstract member Unregister : Screen * Screen Address * World -> Screen * World
         default dispatcher.Unregister (screen, _, world) = (screen, world)
 
@@ -168,9 +172,11 @@ module SimulationModule =
             [define? PublishChanges true
              define? Persistent true]
 
+        /// Register a group when adding it to a screen.
         abstract member Register : Group * Group Address * World -> Group * World
         default dispatcher.Register (group, _, world) = (group, world)
 
+        /// Unregister a group when removing it from a screen.
         abstract member Unregister : Group * Group Address * World -> Group * World
         default dispatcher.Unregister (group, _, world) = (group, world)
 
@@ -187,49 +193,62 @@ module SimulationModule =
              define? PublishChanges true
              define? Persistent true]
 
+        /// Register an entity when adding it to a group.
         abstract member Register : Entity * Entity Address * World -> Entity * World
         default dispatcher.Register (entity, _, world) = (entity, world)
 
+        /// Unregister an entity when removing it from a group.
         abstract member Unregister : Entity * Entity Address * World -> Entity * World
         default dispatcher.Unregister (entity, _, world) = (entity, world)
 
+        /// Propagate an entity's physics properties from the physics subsystem.
         abstract member PropagatePhysics : Entity * Entity Address * World -> World
         default dispatcher.PropagatePhysics (_, _, world) = world
 
+        /// Get the render descriptors needed to render an entity.
         abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
         default dispatcher.GetRenderDescriptors (_, _) = []
 
+        /// Get the quick size of an entity (the appropriate user-define size for an entity).
         abstract member GetQuickSize : Entity * World -> Vector2
         default dispatcher.GetQuickSize (_, _) = Vector2.One
 
+        /// Get the priority with which an entity is picked in the editor.
         abstract member GetPickingPriority : Entity * World -> single
         default dispatcher.GetPickingPriority (entity, _) = entity.Depth
 
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
 
+        /// Register a facet when adding it to an entity.
         abstract member Register : Entity * Entity Address * World -> Entity * World
         default facet.Register (entity, address, world) =
             let world = facet.RegisterPhysics (entity, address, world)
             (entity, world)
 
+        /// Unregister a facet when removing it from an entity.
         abstract member Unregister : Entity * Entity Address * World -> Entity * World
         default facet.Unregister (entity, address, world) =
             let world = facet.UnregisterPhysics (entity, address, world)
             (entity, world)
 
+        /// Participate in the registration of an entity's physics with the physics subsystem.
         abstract member RegisterPhysics : Entity * Entity Address * World -> World
         default facet.RegisterPhysics (_, _, world) = world
 
+        /// Participate in the unregistration of an entity's physics from the physics subsystem.
         abstract member UnregisterPhysics : Entity * Entity Address * World -> World
         default facet.UnregisterPhysics (_, _, world) = world
 
+        /// Participate in the propagation an entity's physics properties from the physics subsystem.
         abstract member PropagatePhysics : Entity * Entity Address * World -> World
         default facet.PropagatePhysics (_, _, world) = world
 
+        /// Participate in getting the render descriptors needed to render an entity.
         abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
         default facet.GetRenderDescriptors (_, _) = []
 
+        /// Participate in getting the priority with which an entity is picked in the editor.
         abstract member GetQuickSize : Entity * World -> Vector2
         default facet.GetQuickSize (_, _) = DefaultEntitySize
 
@@ -252,9 +271,11 @@ module SimulationModule =
         interface Simulant with
             member this.GetPublishingPriority _ _ = GamePublishingPriority
 
+        /// Access a game's dynamic member.
         static member (?) (this : Game, memberName) =
             Xtension.(?) (this.Xtension, memberName)
 
+        /// Update a game's dynamic member.
         static member (?<-) (this : Game, memberName, value) =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
@@ -277,9 +298,11 @@ module SimulationModule =
         interface Simulant with
             member this.GetPublishingPriority _ _ = ScreenPublishingPriority
 
+        /// Access screen's dynamic member.
         static member (?) (this : Screen, memberName) =
             Xtension.(?) (this.Xtension, memberName)
 
+        /// Update screen's dynamic member.
         static member (?<-) (this : Screen, memberName, value) =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
@@ -297,9 +320,11 @@ module SimulationModule =
         interface Simulant with
             member this.GetPublishingPriority _ _ = GroupPublishingPriority
 
+        /// Access a group's dynamic member.
         static member (?) (this : Group, memberName) =
             Xtension.(?) (this.Xtension, memberName)
 
+        /// Update a group's dynamic member.
         static member (?<-) (this : Group, memberName, value) =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
@@ -334,9 +359,11 @@ module SimulationModule =
             member this.GetPublishingPriority getEntityPublishingPriority world =
                 getEntityPublishingPriority this world
 
+        /// Access an entity's dynamic member.
         static member (?) (this : Entity, memberName) =
             Xtension.(?) (this.Xtension, memberName)
 
+        /// Update an entity's dynamic member.
         static member (?<-) (this : Entity, memberName, value) =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
@@ -398,15 +425,30 @@ module SimulationModule =
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
     /// specific values.
     and NuPlugin () =
+        
+        /// Make user-defined assets such that Nu can utililize them at run-time.
         abstract MakeFacets : unit -> Facet list
         default this.MakeFacets () = []
+        
+        /// Make user-defined entity dispatchers such that Nu can utililize them at run-time.
         abstract MakeEntityDispatchers : unit -> EntityDispatcher list
         default this.MakeEntityDispatchers () = []
+        
+        /// Make user-defined group dispatchers such that Nu can utililize them at run-time.
         abstract MakeGroupDispatchers : unit -> GroupDispatcher list
         default this.MakeGroupDispatchers () = []
+        
+        /// Make user-defined screen dispatchers such that Nu can utililize them at run-time.
         abstract MakeScreenDispatchers : unit -> ScreenDispatcher list
         default this.MakeScreenDispatchers () = []
+        
+        /// Optionally make a user-defined game dispatchers such that Nu can utililize it at run-time.
         abstract MakeOptGameDispatcher : unit -> GameDispatcher option
         default this.MakeOptGameDispatcher () = None
+        
+        /// Make the overlay routes that will allow Nu to use different overlays for the specified
+        /// types. For example, a returned router of (typeof<ButtonDispatcher>.Name, Some "CustomButtonOverlay")
+        /// will cause all buttons to use the overlay with the name "CustomButtonOverlay" rather
+        /// than the default "ButtonDispatcher" overlay.
         abstract MakeOverlayRoutes : unit -> (string * string option) list
         default this.MakeOverlayRoutes () = []
