@@ -45,7 +45,7 @@ System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Deb
 #load "Game.fs"
 #load "Dispatchers.fs"
 #load "World.fs"
-#load "Observer.fs"
+#load "EventStream.fs"
 #load "Desync.fs"
 
 open System
@@ -58,6 +58,6 @@ open Prime.Desync
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
-open Nu.Observer
+open Nu.EventStream
 open Nu.Desync
 
