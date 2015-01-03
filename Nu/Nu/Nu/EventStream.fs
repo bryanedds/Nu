@@ -101,7 +101,7 @@ module EventStream =
             (subscriptionAddress'', unsubscribe, world)
         { ObserverAddress = stream.ObserverAddress; Subscribe = subscribe }
 
-    /// Filter event stream by the 'pred' procedure.
+    /// Filter an event stream's events by 'pred'.
     let filter (pred : Event<'a, 'o> -> World -> bool) (stream : EventStream<'a, 'o>) =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
@@ -118,7 +118,7 @@ module EventStream =
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = stream.ObserverAddress; Subscribe = subscribe }
 
-    /// Map event stream by the 'mapper' procedure.
+    /// Map an event stream's events by the 'mapper' procedure.
     let map (mapper : Event<'a, 'o> -> World -> 'b) (stream : EventStream<'a, 'o>) : EventStream<'b, 'o> =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
@@ -132,6 +132,7 @@ module EventStream =
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = stream.ObserverAddress; Subscribe = subscribe }
 
+    /// TODO: document!
     let track4
         (tracker : 'c -> Event<'a, 'o> -> World -> 'c * bool)
         (transformer : 'c -> 'b)
@@ -161,6 +162,7 @@ module EventStream =
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = stream.ObserverAddress; Subscribe = subscribe }
 
+    /// TODO: document!
     let track2
         (tracker : 'a -> Event<'a, 'o> -> World -> 'a * bool)
         (stream : EventStream<'a, 'o>) :
@@ -189,6 +191,7 @@ module EventStream =
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = stream.ObserverAddress; Subscribe = subscribe }
 
+    /// TODO: document!
     let track
         (tracker : 'b -> World -> 'b * bool)
         (state : 'b)
@@ -408,6 +411,7 @@ module EventStream =
     let updateOptSimulantValue valueSetter stream =
         subscribe (fun a w -> (Cascade, World.updateOptSimulant (valueSetter a w) a.SubscriberAddress w)) stream
 
+    /// Filter out world state change events that do not relate to those returned by 'valueGetter'.
     let worldStateValue (valueGetter : WorldState -> 'b) (stream : EventStream<WorldStateChangeData, 'o>) =
         filter (fun a w ->
             let oldValue = valueGetter a.Data.OldWorldState
@@ -415,6 +419,7 @@ module EventStream =
             oldValue <> newValue)
             stream
 
+    /// Filter out simulant change events that do not relate to those returned by 'valueGetter'.
     let simulantValue (valueGetter : 'a -> 'b) (stream : EventStream<'a SimulantChangeData, 'o>) =
         filter (fun a w ->
             let oldValue = valueGetter a.Data.OldSimulant
@@ -422,19 +427,25 @@ module EventStream =
             oldValue <> newValue)
             stream
 
+    /// Make an event stream from an observer address and change events from the world's state.
     let observeWorldStateValue valueGetter observerAddress =
         observe WorldStateChangeEventAddress observerAddress |>
         worldStateValue valueGetter
 
+    /// Make an event stream from an observer address and one change event from the world's state
+    /// per frame.
     let observeWorldStateValueCyclic valueGetter observerAddress =
         observeWorldStateValue valueGetter observerAddress |>
         noMoreThanOncePerTick
 
+    /// Make an event stream from an observer address and the observer's change events.
     let observeSimulantValue (valueGetter : 'a -> 'b) (simulantAddress : 'a Address) (observerAddress : 'o Address) =
         let changeEventAddress = Address.changeType<Simulant SimulantChangeData, 'a SimulantChangeData> SimulantChangeEventAddress ->>- simulantAddress
         observe changeEventAddress observerAddress |>
         simulantValue valueGetter
 
+    /// Make an event stream from an observer address and one of the observer's change events per
+    /// frame.
     let observeSimulantValueCyclic valueGetter simulantAddress observerAddress =
         observeSimulantValue valueGetter simulantAddress observerAddress |>
         noMoreThanOncePerTick
