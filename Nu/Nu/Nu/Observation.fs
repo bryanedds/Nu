@@ -209,7 +209,7 @@ module Observation =
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observation.ObserverAddress; Subscribe = subscribe }
 
-    /// Subscribe an observation, handling each event with the given 'handleEvent' procedure,
+    /// Subscribe to an observation, handling each event with the given 'handleEvent' procedure,
     /// returning both an unsubscription procedure as well as the world as augmented with said
     /// subscription.
     let subscribeWithUnsub handleEvent observation world =
@@ -223,7 +223,7 @@ module Observation =
         let observation = { ObserverAddress = observation.ObserverAddress; Subscribe = subscribe }
         observation.Subscribe world |> _bc
 
-    /// Subscribe an observation, handling each event with the given 'handleEvent' procedure.
+    /// Subscribe to an observation, handling each event with the given 'handleEvent' procedure.
     let subscribe handleEvent observation world =
         subscribeWithUnsub handleEvent observation world |> snd
 
@@ -247,17 +247,17 @@ module Observation =
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observation.ObserverAddress; Subscribe = subscribe }
 
-    /// Terminate an observation when the observing simulant is removed from the world.
+    /// Terminate an observation when the observer is removed from the world.
     let lifetime (observation : Observation<'a, 'o>) : Observation<'a, 'o> =
         until (RemovingEventAddress ->>- observation.ObserverAddress) observation
 
-    /// Subscribe to an observation until the observing simulant is removed from the world,
+    /// Subscribe to an observation until the observer is removed from the world,
     /// returning both an unsubscription procedure as well as the world as augmented with said
     /// subscription.
     let monitorWithUnsub eventAddress observation world =
         (observation |> lifetime |> subscribeWithUnsub eventAddress) world
 
-    /// Subscribe an observation until the observing simulant is removed from the world.
+    /// Subscribe to an observation until the observer is removed from the world.
     let monitor eventAddress observation world =
         monitorWithUnsub eventAddress observation world |> snd
     
