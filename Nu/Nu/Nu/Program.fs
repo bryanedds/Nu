@@ -3,6 +3,11 @@ open System
 open Nu
 module Program =
 
+    (* TODO: investigate a general subsystem interface for the plug-in, and maybe make existing
+    subsystems conform to it. *)
+
+    (* TODO: investigate NuEdit extensibility mechanism. *)
+
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
     scaled to a back-buffer of a varying size, render each component unscaled to a off-screen
     buffer of a static size and then blit that with scaling to the back-buffer. NOTE: this only

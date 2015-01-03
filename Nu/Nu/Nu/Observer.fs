@@ -7,7 +7,7 @@ open Nu.Constants
 open Nu.WorldConstants
 
 [<AutoOpen>]
-module ObservableModule =
+module ObserverModule =
 
     /// An observable event in the reactive style.
     /// TODO: I bet there's either a monad or arrow in here...
@@ -365,42 +365,65 @@ module Observer =
         observeSimulantValue valueGetter simulantAddress observerAddress |>
         noMoreThanOncePerTick
 
+[<AutoOpen>]
+module ObserverArrowsModule =
+
+    /// Propagate a value from the world's state to another value in the world's state.
+    let (%->) (valueGetter : WorldState -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
+        Observer.observeWorldStateValue valueGetter GameAddress |>
+        Observer.updateWorldStateValue (fun _ world ->
+            let sourceValue = valueGetter world.State
+            valueSetter sourceValue)
+
+    /// Propagate a value from the world's state to another value in the world's state, but with frame-based cycle-breaking.
+    let (%/>) (valueGetter : WorldState -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
+        Observer.observeWorldStateValueCyclic valueGetter GameAddress |>
+        Observer.updateWorldStateValue (fun _ world ->
+            let sourceValue = valueGetter world.State
+            valueSetter sourceValue)
+
+    /// Propagate a value from the world's state to a value in the given simulant.
     let (+->) (valueGetter : WorldState -> 'b) (destinationAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
-        observeWorldStateValue valueGetter destinationAddress |>
-        updateOptSimulantValue (fun _ world ->
+        Observer.observeWorldStateValue valueGetter destinationAddress |>
+        Observer.updateOptSimulantValue (fun _ world ->
             let sourceValue = valueGetter world.State
             valueSetter sourceValue)
 
+    /// Propagate a value from the world's state to a value in the given simulant, but with frame-based cycle-breaking.
     let (+/>) (valueGetter : WorldState -> 'b) (destinationAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
-        observeWorldStateValueCyclic valueGetter destinationAddress |>
-        updateOptSimulantValue (fun _ world ->
+        Observer.observeWorldStateValueCyclic valueGetter destinationAddress |>
+        Observer.updateOptSimulantValue (fun _ world ->
             let sourceValue = valueGetter world.State
             valueSetter sourceValue)
 
-    let ( *-> ) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (observerAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
-        observeSimulantValue valueGetter sourceAddress observerAddress |>
-        updateOptSimulantValue (fun _ world ->
+    /// Propagate a value from the given simulant to a value in the world's state.
+    let ( *-> ) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
+        Observer.observeSimulantValueCyclic valueGetter sourceAddress GameAddress |>
+        Observer.updateWorldStateValue (fun _ world ->
             let sourceSimulant = World.getSimulant sourceAddress world
             let sourceSimulantValue = valueGetter sourceSimulant
             valueSetter sourceSimulantValue)
 
-    let ( */> ) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (observerAddress : 'o Address, valueSetter : 'b -> WorldState -> WorldState) =
-        observeSimulantValueCyclic valueGetter sourceAddress observerAddress |>
-        updateWorldStateValue (fun _ world ->
+    /// Propagate a value from the given simulant to a value in the world's state, but with frame-based cycle-breaking.
+    let ( */> ) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
+        Observer.observeSimulantValueCyclic valueGetter sourceAddress GameAddress |>
+        Observer.updateWorldStateValue (fun _ world ->
             let sourceSimulant = World.getSimulant sourceAddress world
             let sourceSimulantValue = valueGetter sourceSimulant
             valueSetter sourceSimulantValue)
 
+    // Propagate a value from the given source simulant to a value in the given destination simulant.
     let (-->) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (destinationAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
-        observeSimulantValue valueGetter sourceAddress destinationAddress |>
-        updateOptSimulantValue (fun _ world ->
+        Observer.observeSimulantValue valueGetter sourceAddress destinationAddress |>
+        Observer.updateOptSimulantValue (fun _ world ->
             let sourceSimulant = World.getSimulant sourceAddress world
             let sourceSimulantValue = valueGetter sourceSimulant
             valueSetter sourceSimulantValue)
 
+    // Propagate a value from the given source simulant to a value in the given destination simulant, but with frame-based cycle-breaking.
     let (-/>) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (destinationAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
-        observeSimulantValueCyclic valueGetter sourceAddress destinationAddress |>
-        updateOptSimulantValue (fun _ world ->
+        Observer.observeSimulantValueCyclic valueGetter sourceAddress destinationAddress |>
+        Observer.updateOptSimulantValue (fun _ world ->
             let sourceSimulant = World.getSimulant sourceAddress world
             let sourceSimulantValue = valueGetter sourceSimulant
             valueSetter sourceSimulantValue)
