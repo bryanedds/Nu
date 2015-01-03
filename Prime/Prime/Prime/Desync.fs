@@ -82,7 +82,6 @@ module Desync =
     let update expr : Desync<'e, 's, unit> =
         Desync (fun s -> (expr s, Right ()))
 
-    // TODO: figure out how to make this tail-recursive or iterative if it already isn't.
     let rec loop (i : 'i) (next : 'i -> 'i) (pred : 'i -> 's -> bool) (m : 'i -> Desync<'e, 's, unit>) =
         desync {
             let! s = get
