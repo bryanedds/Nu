@@ -27,9 +27,9 @@ module ObservationTests =
     let [<Fact>] subscribeTwiceUnsubscribeOnceWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let observation = observe UnitEventAddress GameAddress |> using incUserStateAndCascade
-        let world = subscribe2 observation world
-        let (unsubscribe, world) = subscribeWithUnsub2 observation world
+        let observation = observe UnitEventAddress GameAddress
+        let world = subscribe incUserStateAndCascade observation world
+        let (unsubscribe, world) = subscribeWithUnsub incUserStateAndCascade observation world
         let world = unsubscribe world
         let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (1, World.getUserState world)
@@ -81,7 +81,11 @@ module ObservationTests =
     let [<Fact>] scanDoesntLeaveGarbage () =
         World.init ()
         let world = World.makeEmpty 0
-        let (unsubscribe, world) = observe IntEventAddress GameAddress |> scan2 (fun a _ _ -> a) |> subscribeWithUnsub2 <| world
+        let (unsubscribe, world) =
+            observe IntEventAddress GameAddress |>
+            scan2 (fun a _ _ -> a) |>
+            subscribeWithUnsub incUserStateAndCascade <|
+            world
         let world = World.publish4 0 IntEventAddress GameAddress world
         let world = unsubscribe world
         Assert.True <| Map.isEmpty world.Callbacks.CallbackStates

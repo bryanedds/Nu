@@ -34,17 +34,6 @@ module Observation =
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observerAddress; Subscribe = subscribe }
 
-    /// Handle events in an observation with the given 'handleEvent' procedure.
-    let using handleEvent (observation : Observation<'a, 'o>) =
-        let subscribe = fun world ->
-            let subscriptionKey = World.makeSubscriptionKey ()
-            let subscriptionAddress = ntoa<'a> <| acstring subscriptionKey
-            let (address, unsubscribe, world) = observation.Subscribe world
-            let unsubscribe = fun world -> let world = unsubscribe world in World.unsubscribe subscriptionKey world
-            let world = World.subscribe<'a, 'o> subscriptionKey handleEvent address observation.ObserverAddress world
-            (subscriptionAddress, unsubscribe, world)
-        { ObserverAddress = observation.ObserverAddress; Subscribe = subscribe }
-
     /// Combine an observation with the events from the given address. Combination is in 'product
     /// form', which is defined as a pair of the data of the combined events. Think of it as 'zip'
     /// for event streams.
@@ -220,20 +209,19 @@ module Observation =
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observation.ObserverAddress; Subscribe = subscribe }
 
-    /// Subscribe to an observation, returning both an unsubscription procedure as well as the
-    /// world as augmented with said subscription.
-    let subscribeWithUnsub2 observation world =
-        observation.Subscribe world |> _bc
-
-    /// Subscribe to an observation.
-    let subscribe2 observation world =
-        subscribeWithUnsub2 observation world |> snd
-
     /// Subscribe an observation, handling each event with the given 'handleEvent' procedure,
     /// returning both an unsubscription procedure as well as the world as augmented with said
     /// subscription.
     let subscribeWithUnsub handleEvent observation world =
-        observation |> using handleEvent |> subscribeWithUnsub2 <| world
+        let subscribe = fun world ->
+            let subscriptionKey = World.makeSubscriptionKey ()
+            let subscriptionAddress = ntoa<'a> <| acstring subscriptionKey
+            let (address, unsubscribe, world) = observation.Subscribe world
+            let unsubscribe = fun world -> let world = unsubscribe world in World.unsubscribe subscriptionKey world
+            let world = World.subscribe<'a, 'o> subscriptionKey handleEvent address observation.ObserverAddress world
+            (subscriptionAddress, unsubscribe, world)
+        let observation = { ObserverAddress = observation.ObserverAddress; Subscribe = subscribe }
+        observation.Subscribe world |> _bc
 
     /// Subscribe an observation, handling each event with the given 'handleEvent' procedure.
     let subscribe handleEvent observation world =
