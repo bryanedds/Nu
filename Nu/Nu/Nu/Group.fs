@@ -122,27 +122,6 @@ module WorldGroupModule =
             ignore <| World.getGroup address world // ensure address is valid
             address
 
-        /// Try to get a group hierarchy (that is, a group with a map to all of its entities) at
-        /// the given address.
-        static member getOptGroupHierarchy address world =
-            match World.getOptGroup address world with
-            | Some group ->
-                let entityMap = World.getEntityMapInGroup address world
-                Some (group, entityMap)
-            | None -> None
-
-        /// Get a group hierarchy (that is, a group with a map to all of its entities) at the given
-        /// address (failing with an exception if there isn't one).
-        static member getGroupHierarchy address world =
-            Option.get <| World.getOptGroupHierarchy address world
-
-        /// Get a group's address with the given name in the screen with the given address (failing
-        /// with an exception if there isn't one).
-        static member getGroupAddressInScreen groupName screenAddress world =
-            let address = satoga screenAddress groupName
-            ignore <| World.getGroup address world // ensures address is valid
-            address
-
         static member private setGroupWithoutEvent group address world =
             World.groupAdder group address world
 
@@ -196,6 +175,20 @@ module WorldGroupModule =
             let group = World.getGroup address world
             updater group world
 
+        /// Try to get a group hierarchy (that is, a group with a map to all of its entities) at
+        /// the given address.
+        static member getOptGroupHierarchy address world =
+            match World.getOptGroup address world with
+            | Some group ->
+                let entityMap = World.getEntityMapInGroup address world
+                Some (group, entityMap)
+            | None -> None
+
+        /// Get a group hierarchy (that is, a group with a map to all of its entities) at the given
+        /// address (failing with an exception if there isn't one).
+        static member getGroupHierarchy address world =
+            Option.get <| World.getOptGroupHierarchy address world
+
         /// Get the group hierarches at the given addresses.
         static member getGroupHierarchies addresses world =
             Seq.map (fun address -> World.getGroupHierarchy address world) addresses
@@ -228,7 +221,7 @@ module WorldGroupModule =
         static member getGroupAddressesInScreen screenAddress world =
             let groupHierarchies = World.getGroupMapInScreen screenAddress world
             Map.toValueListBy (fun (group : Group, _) -> satoga screenAddress group.Name) groupHierarchies
-            
+
         /// Update the groups at the given address with the given 'updater' procedure. Also
         /// passes the current world value to the procedure.
         static member updateGroupsW updater addresses world =
