@@ -89,8 +89,8 @@ module ObserverTests =
     let [<Fact>] discreteFrpWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let jim = { World.makeEntity typeof<EntityDispatcher>.Name (Some JimName) world with PublishChanges = true }
-        let bob = { World.makeEntity typeof<EntityDispatcher>.Name (Some BobName) world with PublishChanges = true }
+        let jim = World.makeEntity typeof<EntityDispatcher>.Name (Some JimName) world
+        let bob = World.makeEntity typeof<EntityDispatcher>.Name (Some BobName) world
         let group = World.makeGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) world
         let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some DefaultScreenName) world
         let world = snd <| World.addScreen (screen, Map.singleton group.Name (group, Map.ofList [(jim.Name, jim); (bob.Name, bob)])) DefaultScreenAddress world
@@ -102,8 +102,8 @@ module ObserverTests =
     let [<Fact>] discreteFrpCyclicWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let jim = { World.makeEntity typeof<EntityDispatcher>.Name (Some JimName) world with PublishChanges = true }
-        let bob = { World.makeEntity typeof<EntityDispatcher>.Name (Some BobName) world with PublishChanges = true }
+        let jim = World.makeEntity typeof<EntityDispatcher>.Name (Some JimName) world
+        let bob = World.makeEntity typeof<EntityDispatcher>.Name (Some BobName) world
         let group = World.makeGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) world
         let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some DefaultScreenName) world
         let world = snd <| World.addScreen (screen, Map.singleton group.Name (group, Map.ofList [(jim.Name, jim); (bob.Name, bob)])) DefaultScreenAddress world

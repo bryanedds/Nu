@@ -142,6 +142,9 @@ module SimulationModule =
     /// The default dispatcher for games.
     and GameDispatcher () =
 
+        static member FieldDefinitions =
+            [define? PublishChanges true]
+
         abstract member Register : Game * World -> Game * World
         default dispatcher.Register (game, world) = (game, world)
 
@@ -149,7 +152,8 @@ module SimulationModule =
     and ScreenDispatcher () =
 
         static member FieldDefinitions =
-            [define? Persistent true]
+            [define? PublishChanges true
+             define? Persistent true]
 
         abstract member Register : Screen * Screen Address * World -> Screen * World
         default dispatcher.Register (screen, _, world) = (screen, world)
@@ -161,7 +165,8 @@ module SimulationModule =
     and GroupDispatcher () =
 
         static member FieldDefinitions =
-            [define? Persistent true]
+            [define? PublishChanges true
+             define? Persistent true]
 
         abstract member Register : Group * Group Address * World -> Group * World
         default dispatcher.Register (group, _, world) = (group, world)
@@ -179,7 +184,7 @@ module SimulationModule =
              define? Rotation 0.0f
              define? Visible true
              define? ViewType Relative
-             define? PublishChanges false
+             define? PublishChanges true
              define? Persistent true]
 
         abstract member Register : Entity * Entity Address * World -> Entity * World
@@ -239,6 +244,7 @@ module SimulationModule =
     and [<CLIMutable; StructuralEquality; NoComparison>] Game =
         { Id : Guid
           OptSelectedScreenAddress : Screen Address option
+          PublishChanges : bool
           CreationTimeNp : DateTime
           DispatcherNp : GameDispatcher
           Xtension : Xtension }
@@ -262,6 +268,7 @@ module SimulationModule =
           TransitionTicksNp : int64
           Incoming : Transition
           Outgoing : Transition
+          PublishChanges : bool
           Persistent : bool
           CreationTimeNp : DateTime
           DispatcherNp : ScreenDispatcher
@@ -281,6 +288,7 @@ module SimulationModule =
     and [<CLIMutable; StructuralEquality; NoComparison>] Group =
         { Id : Guid
           Name : string
+          PublishChanges : bool
           Persistent : bool
           CreationTimeNp : DateTime
           DispatcherNp : GroupDispatcher

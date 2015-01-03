@@ -30,6 +30,8 @@ module ScreenModule =
         static member setIncoming value screen = { screen with Incoming = value }
         static member getOutgoing (screen : Screen) = screen.Outgoing
         static member setOutgoing value screen = { screen with Outgoing = value }
+        static member getPublishChanges (screen : Screen) = screen.PublishChanges
+        static member setPublishChanges value (screen : Screen) = { screen with PublishChanges = value }
         static member getPersistent (screen : Screen) = screen.Persistent
         static member setPersistent value (screen : Screen) = { screen with Persistent = value }
 
@@ -53,6 +55,7 @@ module ScreenModule =
               TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
+              PublishChanges = true
               Persistent = true
               CreationTimeNp = DateTime.UtcNow
               DispatcherNp = dispatcher
@@ -125,13 +128,20 @@ module WorldScreenModule =
             ignore <| World.getScreen address world // ensures address is valid
             address
 
-        static member setScreen screen address world =
+        static member private setScreenWithoutEvent screen address world =
             World.screenAdder screen address world
 
-        static member private setOptScreen optScreen address world =
-            match optScreen with
-            | Some screen -> World.setScreen screen address world
+        static member private setOptScreenWithoutEvent optScreen address world =
+            match optScreen with 
+            | Some screen -> World.screenAdder screen address world
             | None -> World.screenRemover address world
+
+        static member setScreen screen address world =
+            let oldScreen = Option.get <| World.optScreenFinder address world
+            let world = World.screenAdder screen address world
+            if screen.PublishChanges
+            then World.publish4 { OldSimulant = oldScreen } (ScreenChangeEventAddress ->>- address) address world
+            else world
 
         static member updateOptScreenW updater address world =
             match World.getOptScreen address world with
@@ -200,7 +210,7 @@ module WorldScreenModule =
                 let (screen, world) = World.unregisterScreen screen address world
                 let groupAddresses = World.getGroupAddressesInScreen address world
                 let world = snd <| World.removeGroupsImmediate groupAddresses world
-                let world = World.setOptScreen None address world
+                let world = World.setOptScreenWithoutEvent None address world
                 (Some screen, world)
             | None -> (None, world)
 
@@ -213,7 +223,7 @@ module WorldScreenModule =
         static member addScreen screenHierarchy address world =
             let (screen, groupHierarchies) = screenHierarchy
             if not <| World.containsScreen address world then
-                let world = World.setScreen screen address world
+                let world = World.setScreenWithoutEvent screen address world
                 let world = snd <| World.addGroups groupHierarchies address world
                 let (screen, world) = World.registerScreen screen address world
                 let world = World.publish4 () (AddEventAddress ->>- address) address world

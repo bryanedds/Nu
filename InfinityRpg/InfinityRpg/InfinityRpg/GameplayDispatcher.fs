@@ -578,7 +578,6 @@ module GameplayDispatcherModule =
             // make player
             let player = World.makeEntity typeof<PlayerDispatcher>.Name (Some PlayerName) world
             let player = Entity.setDepth CharacterDepth player
-            let player = Entity.setPublishChanges true player
 
             // make enemies
             let (enemies, _) = makeEnemies rand world

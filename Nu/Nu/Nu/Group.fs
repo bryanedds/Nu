@@ -13,6 +13,8 @@ module GroupModule =
 
     type Group with
 
+        static member getPublishChanges (group : Group) = group.PublishChanges
+        static member setPublishChanges value (group : Group) = { group with PublishChanges = value }
         static member getPersistent (group : Group) = group.Persistent
         static member setPersistent value (group : Group) = { group with Persistent = value }
 
@@ -29,6 +31,7 @@ module GroupModule =
             let id = Core.makeId ()
             { Group.Id = id
               Name = match optName with None -> acstring id | Some name -> name
+              PublishChanges = true
               Persistent = true
               CreationTimeNp = DateTime.UtcNow
               DispatcherNp = dispatcher
@@ -113,13 +116,20 @@ module WorldGroupModule =
             ignore <| World.getGroup address world // ensures address is valid
             address
 
-        static member setGroup group address world =
+        static member private setGroupWithoutEvent group address world =
             World.groupAdder group address world
 
-        static member private setOptGroup optGroup address world =
-            match optGroup with
-            | Some group -> World.setGroup group address world
+        static member private setOptGroupWithoutEvent optGroup address world =
+            match optGroup with 
+            | Some group -> World.groupAdder group address world
             | None -> World.groupRemover address world
+
+        static member setGroup group address world =
+            let oldGroup = Option.get <| World.optGroupFinder address world
+            let world = World.groupAdder group address world
+            if group.PublishChanges
+            then World.publish4 { OldSimulant = oldGroup } (GroupChangeEventAddress ->>- address) address world
+            else world
 
         static member updateOptGroupW updater address world =
             match World.getOptGroup address world with
@@ -206,7 +216,7 @@ module WorldGroupModule =
                 let (group, world) = World.unregisterGroup group address world
                 let entityAddresses = World.getEntityAddressesInGroup address world
                 let world = snd <| World.removeEntitiesImmediate entityAddresses world
-                let world = World.setOptGroup None address world
+                let world = World.setOptGroupWithoutEvent None address world
                 (Some group, world)
             | None -> (None, world)
 
@@ -230,7 +240,7 @@ module WorldGroupModule =
         static member addGroup groupHierarchy address world =
             let (group, entities) = groupHierarchy
             if not <| World.containsGroup address world then
-                let world = World.setGroup group address world
+                let world = World.setGroupWithoutEvent group address world
                 let world = snd <| World.addEntities entities address world
                 let (group, world) = World.registerGroup group address world
                 let world = World.publish4 () (AddEventAddress ->>- address) address world
