@@ -106,7 +106,7 @@ module EntityModule =
               Rotation = 0.0f
               Visible = true
               ViewType = Relative
-              PublishChanges = false
+              PublishChanges = true
               Persistent = true
               CreationTimeNp = DateTime.UtcNow
               DispatcherNp = dispatcher
@@ -206,18 +206,18 @@ module WorldEntityModule =
 
         static member private setEntityWithoutEvent entity address world =
             World.entityAdder entity address world
-        
+
+        static member private setOptEntityWithoutEvent optEntity address world =
+            match optEntity with 
+            | Some entity -> World.entityAdder entity address world
+            | None -> World.entityRemover address world
+
         static member setEntity entity address world =
             let oldEntity = Option.get <| World.optEntityFinder address world
             let world = World.entityAdder entity address world
             if entity.PublishChanges
             then World.publish4 { OldSimulant = oldEntity } (EntityChangeEventAddress ->>- address) address world
             else world
-
-        static member private setOptEntityWithoutEvent optEntity address world =
-            match optEntity with 
-            | Some entity -> World.entityAdder entity address world
-            | None -> World.entityRemover address world
 
         static member updateOptEntityW updater address world =
             match World.getOptEntity address world with

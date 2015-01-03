@@ -5,17 +5,20 @@ open System.Xml
 open Prime
 open Nu
 open Nu.Constants
+open Nu.WorldConstants
 
 [<AutoOpen>]
 module GameModule =
 
     type Game with
 
+        static member getPublishChanges (game : Game) = game.PublishChanges
+        static member setPublishChanges value (game : Game) = { game with PublishChanges = value }
+        static member getOptSelectedScreenAddress game = game.OptSelectedScreenAddress
+        static member setOptSelectedScreenAddress optSelectedScreenAddress game = { game with OptSelectedScreenAddress = optSelectedScreenAddress }
+
         static member register (game : Game) (world : World) : Game * World =
             game.DispatcherNp.Register (game, world)
-
-        static member setOptSelectedScreenAddress optSelectedScreenAddress game =
-            { game with OptSelectedScreenAddress = optSelectedScreenAddress }
 
         static member dispatchesAs (dispatcherTargetType : Type) (game : Game) =
             Reflection.dispatchesAs dispatcherTargetType game.DispatcherNp
@@ -23,6 +26,7 @@ module GameModule =
         static member make dispatcher =
             { Id = Core.makeId ()
               OptSelectedScreenAddress = None
+              PublishChanges = true
               CreationTimeNp = DateTime.UtcNow
               DispatcherNp = dispatcher
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
@@ -44,8 +48,12 @@ module WorldGameModule =
             (game, screenMap)
 
         static member setGame game world =
+            let oldGame = World.getGame world
             let screenMap = World.getScreenMap world
-            { world with Simulants = (game, screenMap) }
+            let world = { world with Simulants = (game, screenMap) }
+            if game.PublishChanges
+            then World.publish4 { OldSimulant = oldGame } (GameChangeEventAddress ->>- GameAddress) GameAddress world
+            else world
 
         static member updateGameW updater world =
             let game = World.getGame world
