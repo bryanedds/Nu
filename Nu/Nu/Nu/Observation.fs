@@ -34,8 +34,8 @@ module Observation =
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observerAddress; Subscribe = subscribe }
 
-    /// React to an observation with the given 'handleEvent' procedure.
-    let react handleEvent (observation : Observation<'a, 'o>) =
+    /// Handle events in an observation with the given 'handleEvent' procedure.
+    let using handleEvent (observation : Observation<'a, 'o>) =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
             let subscriptionAddress = ntoa<'a> <| acstring subscriptionKey
@@ -233,7 +233,7 @@ module Observation =
     /// returning both an unsubscription procedure as well as the world as augmented with said
     /// subscription.
     let subscribeWithUnsub handleEvent observation world =
-        observation |> react handleEvent |> subscribeWithUnsub2 <| world
+        observation |> using handleEvent |> subscribeWithUnsub2 <| world
 
     /// Subscribe an observation, handling each event with the given 'handleEvent' procedure.
     let subscribe handleEvent observation world =
