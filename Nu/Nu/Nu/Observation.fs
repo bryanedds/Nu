@@ -369,10 +369,10 @@ module Observation =
 
     (* Special Combinators *)
 
-    /// Take events from an observation only while World.isGamePlaying returns true.
+    /// Take events from an observation only while World.isGamePlaying evaluates to true.
     let isGamePlaying _ world = World.isGamePlaying world
 
-    /// Take events from an observation only while World.isPhysicsRunning returns true.
+    /// Take events from an observation only while World.isPhysicsRunning evaluates to true.
     let isPhysicsRunning _ world = World.isPhysicsRunning world
     
     /// Take events from an observation only when the observer is selected in the world (see
