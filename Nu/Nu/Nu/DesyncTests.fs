@@ -23,11 +23,11 @@ module DesyncTests =
         let world = World.makeEmpty 0
         let desync =
             desync {
-                let! e = nextE ()
+                let! e = next
                 do! update <| incUserState e
                 do! react incUserStateNoEvent
                 do! reactE incUserState
-                do! next ()
+                do! pass
                 do! loop 0 inc (fun i _ -> i < 2) (fun _ -> update incUserStateTwiceNoEvent) }
         let observation = observe IntEventAddress GameAddress
         let world = snd <| Desync.runDesyncAssumingCascade desync observation world

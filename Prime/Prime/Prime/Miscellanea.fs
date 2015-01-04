@@ -11,23 +11,23 @@ open System.Reflection
 module Miscellanea =
 
     /// The tautology function.
-    /// No matter what you pass it, it returns true.
+    /// No matter what you pass it, it evaluates to true.
     let tautology _ = true
 
     /// The tautology function with two arguments.
-    /// No matter what you pass it, it returns true.
+    /// No matter what you pass it, it evaluates to true.
     let tautology2 _ _ = true
 
     /// The tautology function with three arguments.
-    /// No matter what you pass it, it returns true.
+    /// No matter what you pass it, it evaluates to true.
     let tautology3 _ _ _ = true
 
     /// The absurdity function.
-    /// No matter what you pass it, it returns false.
+    /// No matter what you pass it, it evaluates to false.
     let absurdity _ = false
 
     /// The absurdity function with two arguments.
-    /// No matter what you pass it, it returns false.
+    /// No matter what you pass it, it evaluates to false.
     let absurdity2 _ _ = false
 
     /// Convert any value to an obj.
