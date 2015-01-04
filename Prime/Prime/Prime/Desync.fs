@@ -4,85 +4,80 @@ open Prime
 [<AutoOpen>]
 module DesyncModule =
 
-    type [<NoComparison; NoEquality>] Desync<'e, 's, 'a> =
-        Desync of ('s -> 's * Either<'e -> Desync<'e, 's, 'a>, 'a>)
+    /// The Desync monad. Allows the user to define in a sequential style an operation that takes
+    /// place across multiple events.
+    type [<NoComparison; NoEquality>] Desync<'r, 'e, 's, 'a> =
+        Desync of ('s -> ('s -> ('e -> Desync<'r, 'e, 's, 'a>) -> 'r) -> ('s -> 'a -> 'r) -> 'r)
 
-    let internal step (m : Desync<'e, 's, 'a>) (s : 's) : 's * Either<'e -> Desync<'e, 's, 'a>, 'a> =
-        match m with Desync f -> f s
+    /// Monadic return for the Desync monad.
+    let internal returnM (a : 'a) : Desync<'r, 'e, 's, 'a> = Desync <| fun s _ dunn -> dunn s a
 
-    let internal returnM (a : 'a) : Desync<'e, 's, 'a> =
-        Desync (fun s -> (s, Right a))
-        
-    let rec internal bind (m : Desync<'e, 's, 'a>) (cont : 'a -> Desync<'e, 's, 'b>) : Desync<'e, 's, 'b> =
-        Desync (fun s ->
-            match (match m with Desync f -> f s) with
-            //                              ^--- unbounded recursion here
-            | (s', Left m') -> (s', Left (fun e -> bind (m' e) cont))
-            | (s', Right v) -> match cont v with Desync f -> f s')
+    /// Monadic bind for the Desync monad.
+    let rec internal bind (m : Desync<'r, 'e, 's, 'a>) (cont : 'a -> Desync<'r, 'e, 's, 'b>) : Desync<'r, 'e, 's, 'b> =
+        let h = match m with Desync h -> h
+        Desync
+            (fun s wait dunn ->
+                h s (fun s w ->
+                    wait
+                        s
+                        (fun e -> bind (w e) cont))
+                        (fun s a -> match cont a with Desync h -> h s wait dunn))
 
+    /// Builds the Desync monad.
     type DesyncBuilder () =
-
-        member this.Return op = returnM op
+        member this.Return a = returnM a
         member this.Bind (m, cont) = bind m cont
 
-    let desync =
-        DesyncBuilder ()
+    /// The Desync builder.
+    let desync = DesyncBuilder ()
 
 module Desync =
 
-    let returnM =
-        returnM
+    /// Monadic return for the Desync monad.
+    let returnM = returnM
 
-    let waitE (m : 'e -> Desync<'e, 's, 'a>) : Desync<'e, 's, 'a> =
-        Desync (fun s -> (s, Left m))
+    /// Monadic bind for the Desync monad.
+    let bind = bind
 
-    let wait (m : Desync<'e, 's, 'a>) =
-        Desync (fun s -> (s, Left (fun _ -> m)))
+    let wait : Desync<'r, 'e, 's, 'e> =
+        Desync (fun s w _ -> w s (fun e -> returnM e))
 
-    let get : Desync<'e, 's, 's> =
-        Desync (fun s -> (s, Right s))
+    let wait_ : Desync<'r, 'e, 's, unit> =
+        Desync (fun s w _ -> w s (fun _ -> returnM ()))
 
-    let getBy by : Desync<'e, 's, 'a> =
-        Desync (fun s -> (s, Right <| by s))
+    let get : Desync<'r, 'e, 's, 's> =
+        Desync (fun s _ d -> d s s)
 
-    let set s : Desync<'e, 's, unit> =
-        Desync (fun _ -> (s, Right ()))
+    let getBy by : Desync<'r, 'e, 's, 'a> =
+        Desync (fun s _ d -> d s (by s))
 
-    let advance (m : 'e -> Desync<'e, 's, 'a>) (e : 'e) (s : 's) : 's * Either<'e -> Desync<'e, 's, 'a>, 'a> =
-        step (m e) s
+    let set (s : 's) : Desync<'r, 'e, 's, unit> =
+        Desync (fun _ _ d -> d s ())
 
-    let rec run (m : Desync<'e, 's, 'a>) (e : 'e) (s : 's) : ('s * 'a) =
-        match step m s with
-        | (s', Left m') -> run (m' e) e s'
-        | (s', Right v) -> (s', v)
+    let setBy by (s : 's) : Desync<'r, 'e, 's, unit> =
+        Desync (fun _ _ d -> d (by s) ())
 
-    let nextE () : Desync<'e, 's, 'e> =
-        Desync (fun s -> (s, Left returnM))
+    let updateBy by updater : Desync<'r, 'e, 's, unit> =
+        Desync (fun s _ d -> d (updater (by s) s) ())
 
-    let next () : Desync<'e, 's, unit> =
-        Desync (fun s -> (s, Left (fun _ -> returnM ())))
+    let update updater : Desync<'r, 'e, 's, unit> =
+        Desync (fun s _ d -> d (updater s) ())
 
-    let reactE expr : Desync<'e, 's, unit> =
+    let react expr : Desync<'r, 'e, 's, unit> =
         desync {
-            let! e = nextE ()
+            let! e = wait
             let! s = get
             let s = expr e s
             do! set s }
-
-    let react expr : Desync<'e, 's, unit> =
+    
+    let react_ expr : Desync<'r, 'e, 's, unit> =
         desync {
-            do! next ()
+            let! _ = wait
             let! s = get
             let s = expr s
             do! set s }
 
-    let updateBy by expr : Desync<'e, 's, unit> =
-        Desync (fun s -> (expr (by s) s, Right ()))
-
-    let update expr : Desync<'e, 's, unit> =
-        Desync (fun s -> (expr s, Right ()))
-
-    let rec loop (i : 'i) (next : 'i -> 'i) (pred : 'i -> 's -> bool) (m : 'i -> Desync<'e, 's, unit>) =
+    let rec loop (i : 'i) (next : 'i -> 'i) (pred : 'i -> 's -> bool) (m : 'i -> Desync<'r, 'e, 's, unit>) =
         desync {
             let! s = get
             do! if pred i s then
@@ -92,5 +87,20 @@ module Desync =
                         do! loop i next pred m }
                 else returnM () }
 
-    let during (pred : 's -> bool) (m : Desync<'e, 's, unit>) =
+    let during (pred : 's -> bool) (m : Desync<'r, 'e, 's, unit>) =
         loop () id (fun _ -> pred) (fun _ -> m)
+
+    let advanceDesync
+        (s : 's)
+        (wait : 's -> ('e -> Desync<'r, 'e, 's, 'a>) -> 'r)
+        (dunn : 's -> 'a -> 'r)
+        (m : Desync<'r, 'e, 's, 'a>) :
+        'r =
+        match m with Desync h -> h s wait dunn
+
+    let rec runDesync
+        (e : 'e)
+        (s : 's)
+        (m : Desync<'s * 'a, 'e, 's, 'a>) :
+        's * 'a =
+        advanceDesync s (fun s f -> runDesync e s (f e)) (fun s a -> (s, a)) m

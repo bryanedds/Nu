@@ -23,21 +23,25 @@ module DesyncTests =
         let world = World.makeEmpty 0
         let desync =
             desync {
-                let! e = nextE ()
+                let! e = wait
                 do! update <| incUserState e
-                do! react incUserStateNoEvent
-                do! reactE incUserState
-                do! next ()
+                do! react_ incUserStateNoEvent
+                do! react incUserState
+                do! wait_
                 do! loop 0 inc (fun i _ -> i < 2) (fun _ -> update incUserStateTwiceNoEvent) }
         let observation = observe IntEventAddress GameAddress
         let world = snd <| Desync.runDesyncAssumingCascade desync observation world
         Assert.Equal (0, World.getUserState world)
 
         // assert the first publish executes the first desync'd operation
-        let world = World.publish4 1 IntEventAddress GameAddress world
-        Assert.Equal (1, World.getUserState world)
+        let world = World.publish4 0 IntEventAddress GameAddress world
+        Assert.Equal (0, World.getUserState world)
 
         // assert the second publish executes the second desync'd operation
+        let world = World.publish4 1 IntEventAddress GameAddress world
+        Assert.Equal (1, World.getUserState world)
+        
+        // and so on...
         let world = World.publish4 2 IntEventAddress GameAddress world
         Assert.Equal (2, World.getUserState world)
         

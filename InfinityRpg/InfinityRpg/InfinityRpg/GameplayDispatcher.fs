@@ -402,7 +402,7 @@ module GameplayDispatcherModule =
                                     | Navigation navigationDescriptor -> navigationDescriptor
                                     | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
                                 updateCharacterByNavigation navigationDescriptor characterAddress world
-                            do! next () }}
+                            do! wait_ }}
             let observation = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- address)
             snd <| runDesyncAssumingCascade desync observation world
 
@@ -422,7 +422,7 @@ module GameplayDispatcherModule =
                                     | _ -> failwithumf ()
                                 let world = updateCharacterByAction actionDescriptor characterAddress world
                                 runCharacterReaction actionDescriptor characterAddress address world
-                            do! next () }}
+                            do! wait_ }}
             let observation = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- address)
             snd <| runDesyncAssumingCascade desync observation world
 
@@ -514,14 +514,14 @@ module GameplayDispatcherModule =
             world
 
         static let tryRunPlayerTurn playerInput address world =
-            if not <| anyTurnsInProgress address world then
+            if not <| anyTurnsInProgress address world then 
                 let hudSaveGameAddress = getHudSaveGameAddress address
                 let hudHaltAddress = getHudHaltAddress address
                 let playerAddress = getPlayerAddress address
                 let desync = desync {
                     do! updateEntity (Entity.setEnabled false) hudSaveGameAddress
                     do! loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress address world) <| fun i -> desync {
-                        let! event = nextE ()
+                        let! event = wait
                         do! match event.Data with
                             | Right _ -> desync {
                                 let! playerTurn =
