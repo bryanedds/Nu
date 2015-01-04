@@ -98,16 +98,16 @@ module Desync =
     let during (pred : 's -> bool) (m : Desync<'e, 's, unit>) =
         loop () id (fun _ -> pred) (fun _ -> m)
 
-    /// TODO: document.
+    /// Step once into a desync.
     let step (m : Desync<'e, 's, 'a>) (s : 's) : 's * Either<'e -> Desync<'e, 's, 'a>, 'a> =
         match m with Desync f -> f s
 
-    /// Advance a desync value by one step.
-    let advance (m : 'e -> Desync<'e, 's, 'a>) (e : 'e) (s : 's) : 's * Either<'e -> Desync<'e, 's, 'a>, 'a> =
+    /// Advance a desync value by one step with the given event 'e'.
+    let advanceDesync (m : 'e -> Desync<'e, 's, 'a>) (e : 'e) (s : 's) : 's * Either<'e -> Desync<'e, 's, 'a>, 'a> =
         step (m e) s
-
-    /// TODO: document.
-    let rec run (m : Desync<'e, 's, 'a>) (e : 'e) (s : 's) : ('s * 'a) =
+        
+    /// Run a desync to its end, providing the event 'e' for all its steps.
+    let rec runDesync (m : Desync<'e, 's, 'a>) (e : 'e) (s : 's) : ('s * 'a) =
         match step m s with
-        | (s', Left m') -> run (m' e) e s'
+        | (s', Left m') -> runDesync (m' e) e s'
         | (s', Right v) -> (s', v)
