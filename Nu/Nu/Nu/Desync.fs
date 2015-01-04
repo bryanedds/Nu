@@ -97,7 +97,7 @@ module Desync =
             World.unsubscribe subscriptionKey world
         let advance = fun event world ->
             let desync = World.getCallbackState callbackKey world : Event<'a, 'o> -> Desync<Event<'a, 'o>, World, unit>
-            let (world, advanceResult) = advance desync event world
+            let (world, advanceResult) = advanceDesync desync event world
             match advanceResult with
             | Right () -> unsubscribe world
             | Left desyncNext -> World.addCallbackState callbackKey desyncNext world
