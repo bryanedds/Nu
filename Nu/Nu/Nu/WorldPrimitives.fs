@@ -325,7 +325,7 @@ module World =
                 let world = unsubscribe removalKey world
                 let world = unsubscribe monitorKey world
                 (Cascade, world)
-            let removingEventAddress = RemovingEventAddress ->- atooa subscriberAddress
+            let removingEventAddress = stoa<unit> (typeof<'s>.Name + "/" + "Removing") ->>- subscriberAddress
             subscribe<unit, 's> removalKey subscription' removingEventAddress subscriberAddress world
         else failwith "Cannot monitor events with an anonymous subscriber."
 

@@ -19,8 +19,7 @@ module DesyncTests =
     let [<Fact>] desyncWorks () =
         
         // build everything
-        World.init ()
-        let world = World.makeEmpty 0
+        let world = World.initAndMakeEmpty 0
         let desync =
             desync {
                 let! e = next

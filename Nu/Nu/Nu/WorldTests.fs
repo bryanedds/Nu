@@ -17,8 +17,7 @@ module WorldTests =
     let incUserStateAndResolve (_ : Event<unit, Game>) world = (Resolve, World.updateUserState inc world)
 
     let [<Fact>] emptyWorldDoesntExplode () =
-        World.init ()
-        let world = World.makeEmpty ()
+        let world = World.initAndMakeEmpty ()
         match World.processInput (SDL.SDL_Event ()) world with
         | (Running, world) ->
             match World.processUpdate id world with
@@ -29,48 +28,42 @@ module WorldTests =
         | (Exiting, _) -> failwith "Test should not reach here."
 
     let [<Fact>] subscribeWorks () =
-        World.init ()
-        let world = World.makeEmpty 0
+        let world = World.initAndMakeEmpty 0
         let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameAddress world
         let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeAndPublishTwiceWorks () =
-        World.init ()
-        let world = World.makeEmpty 0
+        let world = World.initAndMakeEmpty 0
         let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameAddress world
         let world = World.publish4 () UnitEventAddress GameAddress world
         let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeTwiceAndPublishWorks () =
-        World.init ()
-        let world = World.makeEmpty 0
+        let world = World.initAndMakeEmpty 0
         let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameAddress world
         let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameAddress world
         let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeWithResolutionWorks () =
-        World.init ()
-        let world = World.makeEmpty 0
+        let world = World.initAndMakeEmpty 0
         let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameAddress world
         let world = World.subscribe4 incUserStateAndResolve UnitEventAddress GameAddress world
         let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
-        World.init ()
+        let world = World.initAndMakeEmpty 0
         let key = World.makeSubscriptionKey ()
-        let world = World.makeEmpty 0
         let world = World.subscribe key incUserStateAndResolve UnitEventAddress GameAddress world
         let world = World.unsubscribe key world
         let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (0, World.getUserState world)
 
     let [<Fact>] entitySubscribeWorks () =
-        World.init ()
-        let world = World.makeEmpty 0
+        let world = World.initAndMakeEmpty 0
         let entity = World.makeEntity typeof<EntityDispatcher>.Name (Some DefaultEntityName) world
         let group = World.makeGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) world
         let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some DefaultScreenName) world
@@ -84,8 +77,7 @@ module WorldTests =
 
     let [<Fact>] gameSerializationWorks () =
         // TODO: make stronger assertions in here!!!
-        World.init ()
-        let world = World.makeEmpty 0
+        let world = World.initAndMakeEmpty 0
         let entity = World.makeEntity typeof<EntityDispatcher>.Name (Some DefaultEntityName) world
         let group = World.makeGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) world
         let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some DefaultScreenName) world
