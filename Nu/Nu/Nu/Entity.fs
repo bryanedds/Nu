@@ -17,6 +17,9 @@ module EntityModule =
 
     type Entity with
 
+        static member getName (entity : Entity) = entity.Name
+        static member getFacetNames (entity : Entity) = entity.FacetNames
+        static member getOptOverlayName (entity : Entity) = entity.OptOverlayName
         static member getPosition (entity : Entity) = entity.Position
         static member setPosition value (entity : Entity) = { entity with Position = value }
         static member getDepth (entity : Entity) = entity.Depth
@@ -84,8 +87,10 @@ module EntityModule =
         static member getPickingPriority (entity : Entity) world =
             entity.DispatcherNp.GetPickingPriority (entity, world)
 
-        /// Get the names of all facets used by an entity.
-        static member getFacetNames entity =
+        /// Get the names of all facets used by an entity via reflection.
+        /// TODO: see if this should be used as often as it is, and if it is needed in only one or
+        /// two cases, just inline it.
+        static member getFacetNamesReflectively entity =
             List.map Reflection.getTypeName entity.FacetsNp
 
         /// Query that a facet is compatible with those already being used by an entity.
@@ -443,7 +448,7 @@ module WorldEntityModule =
 
                 // OPTIMIZATION: apply overlay only when it will change something (EG - when it's not the intrinsic overlay)
                 if intrinsicOverlayName <> overlayName then
-                    let facetNames = Entity.getFacetNames entity
+                    let facetNames = Entity.getFacetNamesReflectively entity
                     Overlayer.applyOverlay intrinsicOverlayName overlayName facetNames entity world.Subsystems.Overlayer
                     entity
                 else entity
@@ -603,7 +608,7 @@ module WorldEntityModule =
                     let defaultOptOverlayName = Map.find (Reflection.getTypeName entity.DispatcherNp) world.State.OverlayRouter
                     defaultOptOverlayName <> (propertyValue :?> string option)
                 else
-                    let facetNames = Entity.getFacetNames entity
+                    let facetNames = Entity.getFacetNamesReflectively entity
                     Overlayer.shouldPropertySerialize5 facetNames propertyName propertyType entity world.Subsystems.Overlayer
             Serialization.writePropertiesFromTarget shouldWriteProperty writer entity
 
@@ -669,7 +674,7 @@ module WorldEntityModule =
 
                 // OPTIMIZATION: applying overlay only when it will change something (EG - when it's not the default overlay)
                 if intrinsicOverlayName <> overlayName then
-                    let facetNames = Entity.getFacetNames entity
+                    let facetNames = Entity.getFacetNamesReflectively entity
                     Overlayer.applyOverlay intrinsicOverlayName overlayName facetNames entity world.Subsystems.Overlayer
                 else ()
             | None -> ()
