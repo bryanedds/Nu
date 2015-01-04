@@ -367,7 +367,7 @@ module WorldModule =
                                 Overlayer.applyOverlayToFacetNames overlayName overlayName entity oldOverlayer world.Subsystems.Overlayer
                                 match World.trySynchronizeFacets oldFacetNames entity (Some address) world with
                                 | Right (entity, world) ->
-                                    let facetNames = Entity.getFacetNames entity
+                                    let facetNames = Entity.getFacetNamesReflectively entity
                                     Overlayer.applyOverlay6 overlayName overlayName facetNames entity oldOverlayer world.Subsystems.Overlayer
                                     World.setEntity entity address world
                                 | Left error -> note <| "There was an issue in applying a reloaded overlay: " + error; world

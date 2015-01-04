@@ -13,6 +13,7 @@ module GroupModule =
 
     type Group with
 
+        static member getName (group : Group) = group.Name
         static member getPublishChanges (group : Group) = group.PublishChanges
         static member setPublishChanges value (group : Group) = { group with PublishChanges = value }
         static member getPersistent (group : Group) = group.Persistent

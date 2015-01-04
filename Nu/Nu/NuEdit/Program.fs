@@ -104,7 +104,7 @@ module Program =
                     match World.trySynchronizeFacets oldFacetNames entity (Some address) world with
                     | Right (entity, world) -> (entity, world)
                     | Left error -> debug error; (entity, world)
-                let facetNames = Entity.getFacetNames entity
+                let facetNames = Entity.getFacetNamesReflectively entity
                 Overlayer.applyOverlay oldOverlayName overlayName facetNames entity world.Subsystems.Overlayer
                 let world = World.setEntity entity address world
                 (entity, world)

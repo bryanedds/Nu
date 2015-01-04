@@ -24,6 +24,7 @@ module ScreenModule =
 
     type Screen with
 
+        static member getName (screen : Screen) = screen.Name
         static member getScreenStateNp (screen : Screen) = screen.ScreenStateNp
         static member setScreenStateNp value screen = { screen with ScreenStateNp = value }
         static member getTransitionTicksNp (screen : Screen) = screen.TransitionTicksNp
