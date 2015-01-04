@@ -366,7 +366,7 @@ module WorldEntityModule =
         /// Remove an entity from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the entity's existence. Use with caution.
         static member removeEntityImmediate (address : Entity Address) world =
-            let world = World.publish4 () (RemovingEventAddress ->>- address) address world
+            let world = World.publish4 () (EntityRemovingEventAddress ->>- address) address world
             match World.getOptEntity address world with
             | Some entity ->
                 let (entity, world) = World.unregisterEntity entity address world
@@ -402,7 +402,7 @@ module WorldEntityModule =
             if not <| World.containsEntity address world then
                 let world = World.setEntityWithoutEvent entity address world
                 let (entity, world) = World.registerEntity entity address world
-                let world = World.publish4 () (AddEventAddress ->>- address) address world
+                let world = World.publish4 () (EntityAddEventAddress ->>- address) address world
                 (entity, world)
             else failwith <| "Adding an entity that the world already contains at address '" + acstring address + "'."
 

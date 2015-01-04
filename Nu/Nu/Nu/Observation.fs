@@ -249,7 +249,8 @@ module Observation =
 
     /// Terminate an observation when the observer is removed from the world.
     let lifetime (observation : Observation<'a, 'o>) : Observation<'a, 'o> =
-        until (RemovingEventAddress ->>- observation.ObserverAddress) observation
+        let removingEventAddress = stoa<unit> (typeof<'o>.Name + "/" + "Removing") ->>- observation.ObserverAddress
+        until removingEventAddress observation
 
     /// Subscribe to an observation until the observer is removed from the world,
     /// returning both an unsubscription procedure as well as the world as augmented with said
@@ -428,7 +429,8 @@ module Observation =
 
     /// Make an observation from an observer address and the observer's change events.
     let observeSimulantValue (valueGetter : 'a -> 'b) (simulantAddress : 'a Address) (observerAddress : 'o Address) =
-        let changeEventAddress = Address.changeType<Simulant SimulantChangeData, 'a SimulantChangeData> SimulantChangeEventAddress ->>- simulantAddress
+        let simulantChangeEventAddress = stoa<'a SimulantChangeData> (typeof<'a>.Name + "/Change")
+        let changeEventAddress = simulantChangeEventAddress ->>- simulantAddress
         observe changeEventAddress observerAddress |>
         simulantValue valueGetter
 

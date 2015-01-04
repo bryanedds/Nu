@@ -261,7 +261,7 @@ module WorldGroupModule =
         /// Remove a group from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the group's existence. Use with caution.
         static member removeGroupImmediate address world =
-            let world = World.publish4 () (RemovingEventAddress ->>- address) address world
+            let world = World.publish4 () (GroupRemovingEventAddress ->>- address) address world
             match World.getOptGroup address world with
             | Some group ->
                 let (group, world) = World.unregisterGroup group address world
@@ -301,7 +301,7 @@ module WorldGroupModule =
                 let world = World.setGroupWithoutEvent group address world
                 let world = snd <| World.addEntities entities address world
                 let (group, world) = World.registerGroup group address world
-                let world = World.publish4 () (AddEventAddress ->>- address) address world
+                let world = World.publish4 () (GroupAddEventAddress ->>- address) address world
                 (group, world)
             else failwith <| "Adding a group that the world already contains at address '" + acstring address + "'."
 

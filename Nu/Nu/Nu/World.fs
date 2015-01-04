@@ -528,7 +528,7 @@ module WorldModule =
             let tasksNotRun = List.rev tasksNotRun
             World.restoreTasks tasksNotRun world
 
-        /// Process an input event from SDL and ultimately publish any related Nu engine events.
+        /// Process an input event from SDL and ultimately publish any related game events.
         static member processInput (event : SDL.SDL_Event) world =
             let world =
                 match event.``type`` with
@@ -575,7 +575,7 @@ module WorldModule =
             (world.State.Liveness, world)
 
         /// Update the Nu game engine once per frame, updating its subsystems and publishing the
-        /// global tick event.
+        /// game tick event.
         static member processUpdate handleUpdate world =
             let world = handleUpdate world
             match world.State.Liveness with
@@ -845,3 +845,14 @@ module WorldModule =
 
             // assign this crazy function
             World.getOptSimulantForPublishing <- World.getOptSimulantForPublishingDefinition
+
+        /// Initialize the Nu game engine, and make an empty world. Useful for unit-testing.
+        static member initAndMakeEmpty (userState : 'u) =
+            World.init ()
+            World.makeEmpty userState
+
+        /// Initialize the Nu game engine and try to make the world, returning either a Right
+        //// World on success, or a Left string (with an error message) on failure.
+        static member initAndTryMake farseerCautionMode useLoadedGameDispatcher interactivity userState nuPlugin sdlDeps =
+            World.init ()
+            World.tryMake farseerCautionMode useLoadedGameDispatcher interactivity userState nuPlugin sdlDeps

@@ -249,7 +249,7 @@ module WorldScreenModule =
         /// Remove a screen from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the screen's existence. Use with caution.
         static member removeScreenImmediate address world =
-            let world = World.publish4 () (RemovingEventAddress ->>- address) address world
+            let world = World.publish4 () (ScreenRemovingEventAddress ->>- address) address world
             match World.getOptScreen address world with
             | Some screen ->
                 let (screen, world) = World.unregisterScreen screen address world
@@ -274,7 +274,7 @@ module WorldScreenModule =
                 let world = World.setScreenWithoutEvent screen address world
                 let world = snd <| World.addGroups groupHierarchies address world
                 let (screen, world) = World.registerScreen screen address world
-                let world = World.publish4 () (AddEventAddress ->>- address) address world
+                let world = World.publish4 () (ScreenAddEventAddress ->>- address) address world
                 (screen, world)
             else failwith <| "Adding a screen that the world already contains at address '" + acstring address + "'."
 
