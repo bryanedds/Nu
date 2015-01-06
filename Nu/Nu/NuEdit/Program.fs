@@ -646,64 +646,6 @@ module Program =
         ignore <| worldChangers.Add (fun world ->
             World.updateCamera (fun camera -> { camera with EyeCenter = Vector2.Zero }) world)
 
-    let handleFormAddXField (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
-        ignore <| worldChangers.Add (fun world ->
-            match (form.xFieldNameTextBox.Text, form.typeNameTextBox.Text) with
-            | ("", _) -> ignore <| MessageBox.Show "Enter an XField name."; world
-            | (_, "") -> ignore <| MessageBox.Show "Enter a type name."; world
-            | (xFieldName, typeName) ->
-                match Type.TryGetTypeUnqualified typeName with
-                | Some aType ->
-                    let selectedObject = form.propertyGrid.SelectedObject
-                    match selectedObject with
-                    | :? EntityTypeDescriptorSource as entityTds ->
-                        let world = pushPastWorld world world
-                        let entity = World.getEntity entityTds.Address world
-                        let xFieldValue = if aType = typeof<string> then String.Empty :> obj else Activator.CreateInstance aType
-                        let xField = { FieldValue = xFieldValue; FieldType = aType }
-                        let xFields = Map.add xFieldName xField entity.Xtension.XFields
-                        let entity = { entity with Xtension = { entity.Xtension with XFields = xFields }}
-                        let world = World.setEntity entity entityTds.Address world
-                        entityTds.RefWorld := world // must be set for property grid
-                        form.propertyGrid.Refresh ()
-                        form.propertyGrid.Select ()
-                        form.propertyGrid.SelectedGridItem <- form.propertyGrid.SelectedGridItem.Parent.GridItems.[xFieldName]
-                        world
-                    | _ -> ignore <| MessageBox.Show "Select an entity to add the XField to."; world
-                | None -> ignore <| MessageBox.Show "Enter a valid type name."; world)
-
-    let handleFormRemoveSelectedXField (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
-        ignore <| worldChangers.Add (fun world ->
-            let selectedObject = form.propertyGrid.SelectedObject
-            match selectedObject with
-            | :? EntityTypeDescriptorSource as entityTds ->
-                match form.propertyGrid.SelectedGridItem.Label with
-                | "" -> ignore <| MessageBox.Show "Select an XField."; world
-                | xFieldName ->
-                    let world = pushPastWorld world world
-                    let entity = World.getEntity entityTds.Address world
-                    let xFields = Map.remove xFieldName entity.Xtension.XFields
-                    let entity = { entity with Xtension = { entity.Xtension with XFields = xFields }}
-                    let world = World.setEntity entity entityTds.Address world
-                    entityTds.RefWorld := world // must be set for property grid
-                    form.propertyGrid.Refresh ()
-                    world
-            | _ -> ignore <| MessageBox.Show "Select an entity to remove an XField from."; world)
-
-    let handleClearAllXFields (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
-        ignore <| worldChangers.Add (fun world ->
-            let selectedObject = form.propertyGrid.SelectedObject
-            match selectedObject with
-            | :? EntityTypeDescriptorSource as entityTds ->
-                let world = pushPastWorld world world
-                let entity = World.getEntity entityTds.Address world
-                let entity = { entity with Xtension = { entity.Xtension with XFields = Map.empty }}
-                let world = World.setEntity entity entityTds.Address world
-                entityTds.RefWorld := world // must be set for property grid
-                form.propertyGrid.Refresh ()
-                world
-            | _ -> ignore <| MessageBox.Show "Select an entity to clear all XFields from."; world)
-
     let handleFormReloadAssets (_ : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
             let editorState = world.State.UserState :?> EditorState
@@ -858,8 +800,6 @@ module Program =
         form.pasteContextMenuItem.Click.Add (handleFormPaste true form worldChangers refWorld)
         form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form worldChangers)
         form.resetCameraButton.Click.Add (handleFormResetCamera form worldChangers)
-        form.addXFieldButton.Click.Add (handleFormAddXField form worldChangers)
-        form.removeSelectedXFieldButton.Click.Add (handleFormRemoveSelectedXField form worldChangers)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form worldChangers)
         form.reloadOverlaysButton.Click.Add (handleFormReloadOverlays form worldChangers)
         form.Show ()
