@@ -3,52 +3,41 @@
   <Group dispatcherName="GroupDispatcher">
     <Name>Group</Name>
     <Persistent>True</Persistent>
-    <Xtension />
     <Entities>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Credits</Name>
         <Position>-416, -200</Position>
         <Size>384, 64</Size>
-        <Xtension>
-          <DownImage type="Nu.AssetsModule+AssetTag">[Gui | CreditsDown]</DownImage>
-          <UpImage type="Nu.AssetsModule+AssetTag">[Gui | CreditsUp]</UpImage>
-        </Xtension>
+        <DownImage>[Gui | CreditsDown]</DownImage>
+        <UpImage>[Gui | CreditsUp]</UpImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Exit</Name>
         <Position>32, -200</Position>
         <Size>384, 64</Size>
-        <Xtension>
-          <DownImage type="Nu.AssetsModule+AssetTag">[Gui | ExitDown]</DownImage>
-          <UpImage type="Nu.AssetsModule+AssetTag">[Gui | ExitUp]</UpImage>
-        </Xtension>
+        <DownImage>[Gui | ExitDown]</DownImage>
+        <UpImage>[Gui | ExitUp]</UpImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>LoadGame</Name>
         <Position>32, -80</Position>
         <Size>384, 64</Size>
-        <Xtension>
-          <DownImage type="Nu.AssetsModule+AssetTag">[Gui | LoadGameDown]</DownImage>
-          <UpImage type="Nu.AssetsModule+AssetTag">[Gui | LoadGameUp]</UpImage>
-        </Xtension>
+        <DownImage>[Gui | LoadGameDown]</DownImage>
+        <UpImage>[Gui | LoadGameUp]</UpImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>NewGame</Name>
         <Position>-416, -80</Position>
         <Size>384, 64</Size>
-        <Xtension>
-          <DownImage type="Nu.AssetsModule+AssetTag">[Gui | NewGameDown]</DownImage>
-          <UpImage type="Nu.AssetsModule+AssetTag">[Gui | NewGameUp]</UpImage>
-        </Xtension>
+        <DownImage>[Gui | NewGameDown]</DownImage>
+        <UpImage>[Gui | NewGameUp]</UpImage>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Name>Title</Name>
         <Position>-504, 0</Position>
         <Depth>-1</Depth>
         <Size>1024, 256</Size>
-        <Xtension>
-          <LabelImage type="Nu.AssetsModule+AssetTag">[Gui | TitleLabel]</LabelImage>
-        </Xtension>
+        <LabelImage>[Gui | TitleLabel]</LabelImage>
       </Entity>
     </Entities>
   </Group>

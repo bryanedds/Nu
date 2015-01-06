@@ -13,7 +13,6 @@ module Constants =
     let [<Literal>] DefaultEntityName = "Entity"
     let [<Literal>] NameFieldName = "Name"
     let [<Literal>] RootNodeName = "Root"
-    let [<Literal>] TypeAttributeName = "type"
     let [<Literal>] DispatcherNameAttributeName = "dispatcherName"
     let [<Literal>] AssetGraphFilePath = "AssetGraph.xml"
     let [<Literal>] OverlayFilePath = "Overlay.xml"

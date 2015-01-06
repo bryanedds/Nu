@@ -325,7 +325,7 @@ module WorldGroupModule =
         static member writeGroupHierarchy (writer : XmlWriter) groupHierarchy world =
             let (group : Group, entities) = groupHierarchy
             writer.WriteAttributeString (DispatcherNameAttributeName, (group.DispatcherNp.GetType ()).Name)
-            Serialization.writePropertiesFromTarget tautology3 writer group
+            Reflection.writePropertiesFromTarget tautology3 writer group
             writer.WriteStartElement EntitiesNodeName
             World.writeEntities writer entities world
             writer.WriteEndElement ()
@@ -365,7 +365,7 @@ module WorldGroupModule =
         static member readGroupHierarchy (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
 
             // read in the dispatcher name and create the dispatcher
-            let dispatcherName = Serialization.readDispatcherName defaultDispatcherName groupNode
+            let dispatcherName = Reflection.readDispatcherName defaultDispatcherName groupNode
             let dispatcher =
                 match Map.tryFind dispatcherName world.Components.GroupDispatchers with
                 | Some dispatcher -> dispatcher
@@ -381,7 +381,7 @@ module WorldGroupModule =
             Reflection.attachFields group.DispatcherNp group
 
             // read the groups's properties
-            Serialization.readPropertiesToTarget groupNode group
+            Reflection.readPropertiesToTarget groupNode group
             
             // read the group's entities
             let entities = World.readEntities (groupNode : XmlNode) defaultEntityDispatcherName world

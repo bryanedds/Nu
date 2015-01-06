@@ -3,53 +3,40 @@
   <Group dispatcherName="GroupDispatcher">
     <Name>Group</Name>
     <Persistent>True</Persistent>
-    <Xtension />
     <Entities>
       <Entity dispatcherName="LabelDispatcher">
         <Position>-456, -40</Position>
         <Size>512, 128</Size>
-        <Xtension>
-          <LabelImage type="Nu.AssetsModule+AssetTag">[Gui | ProgrammingLabel]</LabelImage>
-        </Xtension>
+        <LabelImage>[Gui | ProgrammingLabel]</LabelImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Back</Name>
         <Position>-184, -224</Position>
         <Size>384, 64</Size>
-        <Xtension>
-          <DownImage type="Nu.AssetsModule+AssetTag">[Gui | BackDown]</DownImage>
-          <UpImage type="Nu.AssetsModule+AssetTag">[Gui | BackUp]</UpImage>
-        </Xtension>
+        <DownImage>[Gui | BackDown]</DownImage>
+        <UpImage>[Gui | BackUp]</UpImage>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Name>Credits</Name>
         <Position>-512, 32</Position>
         <Depth>-1</Depth>
         <Size>1024, 256</Size>
-        <Xtension>
-          <LabelImage type="Nu.AssetsModule+AssetTag">[Gui | CreditsLabel]</LabelImage>
-        </Xtension>
+        <LabelImage>[Gui | CreditsLabel]</LabelImage>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Position>32, -144</Position>
         <Size>512, 128</Size>
-        <Xtension>
-          <LabelImage type="Nu.AssetsModule+AssetTag">[Gui | BryanEddsLabel]</LabelImage>
-        </Xtension>
+        <LabelImage>[Gui | BryanEddsLabel]</LabelImage>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Position>-424, -144</Position>
         <Size>512, 128</Size>
-        <Xtension>
-          <LabelImage type="Nu.AssetsModule+AssetTag">[Gui | MusicAndArtLabel]</LabelImage>
-        </Xtension>
+        <LabelImage>[Gui | MusicAndArtLabel]</LabelImage>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Position>64, -40</Position>
         <Size>512, 128</Size>
-        <Xtension>
-          <LabelImage type="Nu.AssetsModule+AssetTag">[Gui | BryanEddsLabel]</LabelImage>
-        </Xtension>
+        <LabelImage>[Gui | BryanEddsLabel]</LabelImage>
       </Entity>
     </Entities>
   </Group>

@@ -25,7 +25,6 @@ System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Deb
 #load "Xtension.fs"
 #load "Overlayer.fs"
 #load "OverlayRouter.fs"
-#load "Serialization.fs"
 #load "Reflection.fs"
 #load "Camera.fs"
 #load "Assets.fs"
