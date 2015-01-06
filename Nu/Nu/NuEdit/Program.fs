@@ -415,8 +415,8 @@ module Program =
 
     let subscribeToEntityEvents form world =
         let groupAddress = (World.getUserState world).GroupAddress
-        let world = World.subscribe AddEntityKey (handleNuEntityAdd form) (GroupAddEventAddress ->>- groupAddress ->- AnyEventAddress) GameAddress world
-        World.subscribe RemovingEntityKey (handleNuEntityRemoving form) (GroupRemovingEventAddress ->>- groupAddress ->- AnyEventAddress) GameAddress world
+        let world = World.subscribe AddEntityKey (handleNuEntityAdd form) (EntityAddEventAddress ->>- groupAddress ->- AnyEventAddress) GameAddress world
+        World.subscribe RemovingEntityKey (handleNuEntityRemoving form) (EntityRemovingEventAddress ->>- groupAddress ->- AnyEventAddress) GameAddress world
 
     let unsubscribeFromEntityEvents world =
         let world = World.unsubscribe AddEntityKey world
