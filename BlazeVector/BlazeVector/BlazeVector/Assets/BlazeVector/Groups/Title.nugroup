@@ -1,55 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Root>
-  <Group>
+  <Group dispatcherName="GroupDispatcher">
     <Name>Group</Name>
-    <Xtension optXDispatcherName="[Some | GroupDispatcher]" />
     <Entities>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Credits</Name>
         <Position>-128, -160</Position>
         <Size>256, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
-        <Xtension>
-          <DownImage type="Nu.AssetsModule+AssetTag">[Gui | CreditsButtonDown]</DownImage>
-          <UpImage type="Nu.AssetsModule+AssetTag">[Gui | CreditsButtonUp]</UpImage>
-        </Xtension>
+        <DownImage>[Gui | CreditsButtonDown]</DownImage>
+        <UpImage>[Gui | CreditsButtonUp]</UpImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Exit</Name>
         <Position>-128, -224</Position>
         <Size>256, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
-        <Xtension>
-          <DownImage type="Nu.AssetsModule+AssetTag">[Gui | ExitButtonDown]</DownImage>
-          <UpImage type="Nu.AssetsModule+AssetTag">[Gui | ExitButtonUp]</UpImage>
-        </Xtension>
+        <DownImage>[Gui | ExitButtonDown]</DownImage>
+        <UpImage>[Gui | ExitButtonUp]</UpImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Play</Name>
         <Position>-128, -96</Position>
         <Size>256, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
-        <Xtension>
-          <DownImage type="Nu.AssetsModule+AssetTag">[Gui | PlayButtonDown]</DownImage>
-          <UpImage type="Nu.AssetsModule+AssetTag">[Gui | PlayButtonUp]</UpImage>
-        </Xtension>
+        <DownImage>[Gui | PlayButtonDown]</DownImage>
+        <UpImage>[Gui | PlayButtonUp]</UpImage>
       </Entity>
       <Entity dispatcherName="TextDispatcher">
         <Position>-320, 96</Position>
         <Size>640, 128</Size>
         <OptOverlayName>[Some | TextDispatcher]</OptOverlayName>
-        <Xtension>
-          <Text type="System.String">BlazeVector</Text>
-        </Xtension>
+        <Text>BlazeVector</Text>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Position>-480, -272</Position>
         <Depth>-1</Depth>
         <Size>960, 544</Size>
         <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
-        <Xtension>
-          <LabelImage type="Nu.AssetsModule+AssetTag">[Default | Image8]</LabelImage>
-        </Xtension>
+        <LabelImage>[Default | Image8]</LabelImage>
       </Entity>
     </Entities>
   </Group>

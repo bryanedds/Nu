@@ -130,7 +130,7 @@ module EntityModule =
               FacetNames = []
               FacetsNp = []
               OptOverlayName = optOverlayName
-              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true } }
+              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
 
     /// The data needed to describe a Tiled tile map.
     type [<StructuralEquality; NoComparison>] TileMapData =
@@ -471,15 +471,10 @@ module WorldEntityModule =
             let facetNamesToRemove = Set.difference oldFacetNames newFacetNames
             List.ofSeq facetNamesToRemove
 
-        static member private getEntityFieldDefinitions (entity : Entity) =
-            let containers = objectify entity.DispatcherNp :: List.map objectify entity.FacetsNp
-            let containerTypes = List.map getType containers
-            Map.ofListBy (fun (aType : Type) -> (aType.Name, Reflection.getFieldDefinitions aType)) containerTypes
-
         static member private getEntityFieldDefinitionNamesToDetach entity facetToRemove =
 
             // get the field definition name counts of the current, complete entity
-            let fieldDefinitions = World.getEntityFieldDefinitions entity
+            let fieldDefinitions = Reflection.getReflectiveFieldDefinitionMap entity
             let fieldDefinitionNameCounts = Reflection.getFieldDefinitionNameCounts fieldDefinitions
 
             // get the field definition name counts of the facet to remove
@@ -610,7 +605,7 @@ module WorldEntityModule =
                 else
                     let facetNames = Entity.getFacetNamesReflectively entity
                     Overlayer.shouldPropertySerialize5 facetNames propertyName propertyType entity world.Subsystems.Overlayer
-            Serialization.writePropertiesFromTarget shouldWriteProperty writer entity
+            Reflection.writePropertiesFromTarget shouldWriteProperty writer entity
 
         /// Write multiple entities to an xml writer.
         static member writeEntities (writer : XmlWriter) entities world =
@@ -628,7 +623,7 @@ module WorldEntityModule =
         static member readEntity (entityNode : XmlNode) defaultDispatcherName world =
 
             // read in the dispatcher name and create the dispatcher
-            let dispatcherName = Serialization.readDispatcherName defaultDispatcherName entityNode
+            let dispatcherName = Reflection.readDispatcherName defaultDispatcherName entityNode
             let (dispatcherName, dispatcher) =
                 match Map.tryFind dispatcherName world.Components.EntityDispatchers with
                 | Some dispatcher -> (dispatcherName, dispatcher)
@@ -649,7 +644,7 @@ module WorldEntityModule =
             let entity = World.attachIntrinsicFacetsViaNames entity world
 
             // read the entity's overlay and apply it to its facet names if applicable
-            Serialization.tryReadOptOverlayNameToTarget entityNode entity
+            Reflection.tryReadOptOverlayNameToTarget entityNode entity
             match (defaultOptOverlayName, entity.OptOverlayName) with
             | (Some defaultOverlayName, Some overlayName) ->
                 let overlayer = world.Subsystems.Overlayer
@@ -657,7 +652,7 @@ module WorldEntityModule =
             | (_, _) -> ()
 
             // read the entity's facet names
-            Serialization.readFacetNamesToTarget entityNode entity
+            Reflection.readFacetNamesToTarget entityNode entity
             
             // synchronize the entity's facets (and attach their fields)
             let entity =
@@ -680,7 +675,7 @@ module WorldEntityModule =
             | None -> ()
 
             // read the entity's properties
-            Serialization.readPropertiesToTarget entityNode entity
+            Reflection.readPropertiesToTarget entityNode entity
 
             // return the initialized entity
             entity

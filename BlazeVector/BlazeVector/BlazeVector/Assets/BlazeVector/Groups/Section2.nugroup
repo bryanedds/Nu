@@ -12,19 +12,15 @@
         <Position>-480, -304</Position>
         <Depth>-8</Depth>
         <OptOverlayName>[Some | TileMapDispatcher]</OptOverlayName>
-        <Xtension>
-          <Parallax type="System.Single">0.1</Parallax>
-          <TileMapAsset type="Nu.AssetsModule+AssetTag">[Stage | BackgroundA]</TileMapAsset>
-        </Xtension>
+        <Parallax>0.1</Parallax>
+        <TileMapAsset>[Stage | BackgroundA]</TileMapAsset>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
         <Position>-480, -304</Position>
         <Depth>-4</Depth>
         <OptOverlayName>[Some | TileMapDispatcher]</OptOverlayName>
-        <Xtension>
-          <Parallax type="System.Single">0.1</Parallax>
-          <TileMapAsset type="Nu.AssetsModule+AssetTag">[Stage | BackgroundB]</TileMapAsset>
-        </Xtension>
+        <Parallax>0.1</Parallax>
+        <TileMapAsset>[Stage | BackgroundB]</TileMapAsset>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>-424, -175.68</Position>
@@ -44,9 +40,7 @@
       <Entity dispatcherName="TileMapDispatcher">
         <Position>-480, -304</Position>
         <OptOverlayName>[Some | TileMapDispatcher]</OptOverlayName>
-        <Xtension>
-          <TileMapAsset type="Nu.AssetsModule+AssetTag">[Stage | Section2]</TileMapAsset>
-        </Xtension>
+        <TileMapAsset>[Stage | Section2]</TileMapAsset>
       </Entity>
     </Entities>
   </Group>

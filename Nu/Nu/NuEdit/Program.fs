@@ -118,7 +118,7 @@ module Program =
 
         override this.IsReadOnly =
             not propertyCanWrite ||
-            not <| Serialization.isPropertyPersistentByName propertyName
+            not <| Reflection.isPropertyPersistentByName propertyName
 
         override this.GetValue source =
             match source with
@@ -192,7 +192,7 @@ module Program =
             let optXtensionProperty = Seq.tryFind (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension>) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.PropertyType <> typeof<Xtension>) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty <| property.GetCustomAttributes<ExtensionAttribute> ()) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> Serialization.isPropertyPersistentByName property.Name) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> Reflection.isPropertyPersistentByName property.Name) properties
             let propertyDescriptors = Seq.map (fun property -> EntityPropertyDescriptor (EntityPropertyInfo property, [|typeConverterAttribute|]) :> PropertyDescriptor) properties
             let propertyDescriptors =
                 match (optXtensionProperty, optSource) with
@@ -205,7 +205,7 @@ module Program =
                             (fun xFieldDescriptors (xFieldKvp : KeyValuePair<string, XField>) ->
                                 let fieldName = xFieldKvp.Key
                                 let fieldType = xFieldKvp.Value.FieldType
-                                if Serialization.isPropertyPersistentByName fieldName then
+                                if Reflection.isPropertyPersistentByName fieldName then
                                     let xFieldDescriptor = EntityXFieldDescriptor { FieldName = fieldName; FieldType = fieldType }
                                     let xFieldDescriptor = EntityPropertyDescriptor (xFieldDescriptor, [|typeConverterAttribute|])
                                     xFieldDescriptor :> PropertyDescriptor :: xFieldDescriptors
