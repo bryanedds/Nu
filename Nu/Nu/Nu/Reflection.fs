@@ -381,8 +381,9 @@ module Reflection =
     /// Read all of a target's .NET properties from Xml (except OptOverlayName and FacetNames).
     let readDotNetPropertiesToTarget (targetNode : XmlNode) target =
         for node in targetNode.ChildNodes do
-            if  node.Name <> "OptOverlayName" &&
-                node.Name <> "FacetNames" then
+            if  node.Name <> "FacetNames" &&
+                node.Name <> "OptOverlayName" &&
+                node.Name <> "Xtension" then
                 tryReadDotNetPropertyToTarget node target
 
     /// Read one of a target's XFields.
@@ -436,7 +437,6 @@ module Reflection =
                 shouldWriteProperty xFieldName xFieldType xFieldValue then
                 let xFieldValueStr = (AlgebraicConverter xFieldType).ConvertToString xFieldValue
                 writer.WriteStartElement xFieldName
-                writer.WriteAttributeString (TypeAttributeName, xFieldType.FullName)
                 writer.WriteString xFieldValueStr
                 writer.WriteEndElement ()
 
