@@ -1,6 +1,7 @@
 ﻿namespace Nu
 open System
 open System.ComponentModel
+open System.Collections
 open System.Collections.Generic
 open System.Reflection
 open System.Xml
@@ -66,13 +67,35 @@ module ReflectionModule =
 [<RequireQualifiedAccess>]
 module Reflection =
 
-    let private fieldDefinitionsCache =
+    let private FieldDefinitionsCache =
         Dictionary<Type, FieldDefinition list> ()
 
     /// Get the type name of a target.
     let getTypeName target =
         let targetType = target.GetType ()
         targetType.Name
+
+    /// Is a property with the given name persistent?
+    let isPropertyPersistentByName (propertyName : string) =
+        not <| propertyName.EndsWith "Id" && // don't write an Id
+        not <| propertyName.EndsWith "Ids" && // don't write multiple Ids
+        not <| propertyName.EndsWith "Np" // don't write non-persistent properties
+
+    /// Is a property with the given name persistent?
+    let isPropertyPersistent target (property : PropertyInfo) =
+        isPropertyPersistentByName property.Name &&
+        not (
+            property.Name = NameFieldName &&
+            property.PropertyType = typeof<string> &&
+            fst <| Guid.TryParse (property.GetValue target :?> string))
+
+    /// Query that the dispatcher has behavior congruent to the given type.
+    let dispatchesAs (dispatcherTargetType : Type) dispatcher =
+        let dispatcherType = dispatcher.GetType ()
+        let result =
+            dispatcherTargetType = dispatcherType ||
+            dispatcherType.IsSubclassOf dispatcherTargetType
+        result
 
     /// Get the concrete base types of a type excepting the object type.
     let rec getBaseTypesExceptObject (aType : Type) =
@@ -83,13 +106,134 @@ module Reflection =
             then baseType :: getBaseTypesExceptObject baseType
             else []
 
-    /// Query that the dispatcher has behavior congruent to the given type.
-    let dispatchesAs (dispatcherTargetType : Type) dispatcher =
-        let dispatcherType = dispatcher.GetType ()
-        let result =
-            dispatcherTargetType = dispatcherType ||
-            dispatcherType.IsSubclassOf dispatcherTargetType
-        result
+    /// Get the field definitions of a target type not considering inheritance.
+    /// OPTIMIZATION: Memoized for efficiency since FieldDefinitions properties will likely return
+    /// a newly constructed list.
+    let getFieldDefinitionsNoInherit (targetType : Type) =
+        match FieldDefinitionsCache.TryGetValue targetType with
+        | (true, fieldDefinitions) -> fieldDefinitions
+        | (false, _) ->
+            let fieldDefinitions =
+                match targetType.GetProperty ("FieldDefinitions", BindingFlags.Static ||| BindingFlags.Public) with
+                | null -> []
+                | fieldDefinitionsProperty ->
+                    match fieldDefinitionsProperty.GetValue null with
+                    | :? (obj list) as definitions when List.isEmpty definitions -> []
+                    | :? (FieldDefinition list) as definitions -> definitions
+                    | _ -> failwith <| "FieldDefinitions property for type '" + targetType.Name + "' must be of type FieldDefinition list."
+            FieldDefinitionsCache.Add (targetType, fieldDefinitions)
+            fieldDefinitions
+
+    /// Get the field definitions of a target type.
+    let getFieldDefinitions (targetType : Type) =
+        let targetTypes = targetType :: getBaseTypesExceptObject targetType
+        let fieldDefinitionLists = List.map (fun aType -> getFieldDefinitionsNoInherit aType) targetTypes
+        let fieldDefinitionLists = List.rev fieldDefinitionLists
+        List.concat fieldDefinitionLists
+
+    /// Get the names of the field definitions of a target type.
+    let getFieldDefinitionNames targetType =
+        let fieldDefinitions = getFieldDefinitions targetType
+        List.map (fun fieldDefinition -> fieldDefinition.FieldName) fieldDefinitions
+
+    /// Get a map of the counts of the field definitions names.
+    let getFieldDefinitionNameCounts fieldDefinitions =
+        Map.fold
+            (fun map _ definitions ->
+                List.fold
+                    (fun map definition ->
+                        let definitionName = definition.FieldName
+                        match Map.tryFind definitionName map with
+                        | Some count -> Map.add definitionName (count + 1) map
+                        | None -> Map.add definitionName 1 map)
+                    map
+                    definitions)
+            Map.empty
+            fieldDefinitions
+
+    /// Check for facet compatibility with the target's dispatcher.
+    let isFacetTypeCompatibleWithDispatcher dispatcherMap (facetType : Type) (target : obj) =
+        let targetType = target.GetType ()
+        match facetType.GetProperty ("RequiredDispatcherName", BindingFlags.Static ||| BindingFlags.Public) with
+        | null -> true
+        | reqdDispatcherNameProperty ->
+            match reqdDispatcherNameProperty.GetValue null with
+            | :? string as reqdDispatcherName ->
+                match Map.tryFind reqdDispatcherName dispatcherMap with
+                | Some reqdDispatcher ->
+                    let reqdDispatcherType = reqdDispatcher.GetType ()
+                    match targetType.GetProperty "DispatcherNp" with
+                    | null -> failwith <| "Target '" + acstring target + "' does not implement dispatching in a compatible way."
+                    | dispatcherNpProperty ->
+                        let dispatcher = dispatcherNpProperty.GetValue target
+                        dispatchesAs reqdDispatcherType dispatcher
+                | None -> failwith <| "Could not find required dispatcher '" + reqdDispatcherName + "' in dispatcher map."
+            | _ -> failwith <| "Static member 'RequiredDispatcherName' for facet '" + facetType.Name + "' is not of type string."
+
+    /// Check for facet compatibility with the target's dispatcher.
+    let isFacetCompatibleWithDispatcher dispatcherMap (facet : obj) (target : obj) =
+        let facetType = facet.GetType ()
+        let facetTypes = facetType :: getBaseTypesExceptObject facetType
+        List.forall
+            (fun facetType -> isFacetTypeCompatibleWithDispatcher dispatcherMap facetType target)
+            facetTypes
+
+    /// Get all the reflective field containers of a target, including dispatcher and / or facets.
+    let getReflectiveFieldContainers target =
+        let targetType = target.GetType ()
+        let optDispatcher =
+            match targetType.GetProperty "DispatcherNp" with
+            | null -> None
+            | dispatcherNpProperty -> Some <| objectify ^^ dispatcherNpProperty.GetValue target
+        let optFacets =
+            match targetType.GetProperty "FacetsNp" with
+            | null -> None
+            | facetsNpProperty ->
+                let facets = facetsNpProperty.GetValue target :?> IEnumerable |> enumerable<obj> |> List.ofSeq
+                Some facets
+        match (optDispatcher, optFacets) with
+        | (Some dispatcher, Some facets) -> dispatcher :: facets
+        | (Some dispatcher, None) -> [dispatcher]
+        | (None, Some facets) -> facets
+        | (None, None) -> []
+
+    /// Get all the reflective container types of a target, including dispatcher and / or facet types.
+    let getReflectiveFieldContainerTypes target =
+        let fieldContainers = getReflectiveFieldContainers target
+        List.map getType fieldContainers
+
+    /// Get all the reflective field definitions of a type, including those of its dispatcher and /
+    /// or facets, organized in a map from the containing type's name to the field definition.
+    let getReflectiveFieldDefinitionMap target =
+        let containerTypes = getReflectiveFieldContainerTypes target
+        Map.ofListBy (fun (aType : Type) -> (aType.Name, getFieldDefinitions aType)) containerTypes
+
+    /// Get all the unique reflective field definitions of a type, including those of its
+    /// dispatcher and / or facets.
+    let getReflectiveFieldDefinitions target =
+        let types = getReflectiveFieldContainerTypes target
+        let fieldDefinitionLists = List.map getFieldDefinitions types
+        let fieldDefinitions = List.concat fieldDefinitionLists
+        let fieldDefinitions = Map.ofListBy (fun field -> (field.FieldName, field)) fieldDefinitions
+        Map.toValueList fieldDefinitions
+
+    /// Get the intrinsic facet names of a target type not considering inheritance.
+    let getIntrinsicFacetNamesNoInherit (targetType : Type) =
+        match targetType.GetProperty ("IntrinsicFacetNames", BindingFlags.Static ||| BindingFlags.Public) with
+        | null -> []
+        | intrinsicFacetNamesProperty ->
+            let intrinsicFacetNames = intrinsicFacetNamesProperty.GetValue null
+            match intrinsicFacetNames with
+            | :? (obj list) as intrinsicFacetNames when List.isEmpty intrinsicFacetNames -> []
+            | :? (string list) as intrinsicFacetNames -> intrinsicFacetNames
+            | _ -> failwith <| "IntrinsicFacetNames property for type '" + targetType.Name + "' must be of type string list."
+
+    /// Get the intrinsic facet names of a target type.
+    let getIntrinsicFacetNames (targetType : Type) =
+        let targetTypes = targetType :: getBaseTypesExceptObject targetType
+        let intrinsicFacetNamesLists = List.map (fun aType -> getIntrinsicFacetNamesNoInherit aType) targetTypes
+        let intrinsicFacetNamesLists = List.rev intrinsicFacetNamesLists
+        List.concat intrinsicFacetNamesLists
 
     /// Attach fields from the given definitions to a target.
     let attachFieldsViaDefinitions fieldDefinitions target =
@@ -127,69 +271,6 @@ module Reflection =
                     | _ -> failwith <| "Invalid field '" + fieldName + "' for target type '" + targetType.Name + "'."
             | _ -> ()
 
-    /// Get the field definitions of a target type not considering inheritance.
-    /// OPTIMIZATION: Memoized for efficiency since FieldDefinitions properties will likely return
-    /// a newly constructed list.
-    let getFieldDefinitionsNoInherit (targetType : Type) =
-        match fieldDefinitionsCache.TryGetValue targetType with
-        | (true, fieldDefinitions) -> fieldDefinitions
-        | (false, _) ->
-            let fieldDefinitions =
-                match targetType.GetProperty ("FieldDefinitions", BindingFlags.Static ||| BindingFlags.Public) with
-                | null -> []
-                | fieldDefinitionsProperty ->
-                    match fieldDefinitionsProperty.GetValue null with
-                    | :? (obj list) as definitions when List.isEmpty definitions -> []
-                    | :? (FieldDefinition list) as definitions -> definitions
-                    | _ -> failwith <| "FieldDefinitions property for type '" + targetType.Name + "' must be of type FieldDefinition list."
-            fieldDefinitionsCache.Add (targetType, fieldDefinitions)
-            fieldDefinitions
-
-    /// Get the intrinsic facet names of a target type not considering inheritance.
-    let getIntrinsicFacetNamesNoInherit (targetType : Type) =
-        match targetType.GetProperty ("IntrinsicFacetNames", BindingFlags.Static ||| BindingFlags.Public) with
-        | null -> []
-        | intrinsicFacetNamesProperty ->
-            let intrinsicFacetNames = intrinsicFacetNamesProperty.GetValue null
-            match intrinsicFacetNames with
-            | :? (obj list) as intrinsicFacetNames when List.isEmpty intrinsicFacetNames -> []
-            | :? (string list) as intrinsicFacetNames -> intrinsicFacetNames
-            | _ -> failwith <| "IntrinsicFacetNames property for type '" + targetType.Name + "' must be of type string list."
-
-    /// Get the field definitions of a target type.
-    let getFieldDefinitions (targetType : Type) =
-        let targetTypes = targetType :: getBaseTypesExceptObject targetType
-        let fieldDefinitionLists = List.map (fun aType -> getFieldDefinitionsNoInherit aType) targetTypes
-        let fieldDefinitionLists = List.rev fieldDefinitionLists
-        List.concat fieldDefinitionLists
-
-    /// Get the intrinsic facet names of a target type.
-    let getIntrinsicFacetNames (targetType : Type) =
-        let targetTypes = targetType :: getBaseTypesExceptObject targetType
-        let intrinsicFacetNamesLists = List.map (fun aType -> getIntrinsicFacetNamesNoInherit aType) targetTypes
-        let intrinsicFacetNamesLists = List.rev intrinsicFacetNamesLists
-        List.concat intrinsicFacetNamesLists
-
-    /// Get the names of the field definitions of a target type.
-    let getFieldDefinitionNames targetType =
-        let fieldDefinitions = getFieldDefinitions targetType
-        List.map (fun fieldDefinition -> fieldDefinition.FieldName) fieldDefinitions
-
-    /// Get a map of the counts of the field definitions names.
-    let getFieldDefinitionNameCounts fieldDefinitions =
-        Map.fold
-            (fun map _ definitions ->
-                List.fold
-                    (fun map definition ->
-                        let definitionName = definition.FieldName
-                        match Map.tryFind definitionName map with
-                        | Some count -> Map.add definitionName (count + 1) map
-                        | None -> Map.add definitionName 1 map)
-                    map
-                    definitions)
-            Map.empty
-            fieldDefinitions
-
     /// Attach source's fields to a target.
     let attachFields source target =
         let sourceType = source.GetType ()
@@ -201,33 +282,6 @@ module Reflection =
         let sourceType = source.GetType ()
         let fieldNames = getFieldDefinitionNames sourceType
         detachFieldsViaNames fieldNames target
-
-    /// Check for facet compatibility with the target's dispatcher.
-    let isFacetTypeCompatibleWithDispatcher dispatcherMap (facetType : Type) (target : obj) =
-        let targetType = target.GetType ()
-        match facetType.GetProperty ("RequiredDispatcherName", BindingFlags.Static ||| BindingFlags.Public) with
-        | null -> true
-        | reqdDispatcherNameProperty ->
-            match reqdDispatcherNameProperty.GetValue null with
-            | :? string as reqdDispatcherName ->
-                match Map.tryFind reqdDispatcherName dispatcherMap with
-                | Some reqdDispatcher ->
-                    let reqdDispatcherType = reqdDispatcher.GetType ()
-                    match targetType.GetProperty "DispatcherNp" with
-                    | null -> failwith <| "Target '" + acstring target + "' does not implement dispatching in a compatible way."
-                    | dispatcherNpProperty ->
-                        let dispatcher = dispatcherNpProperty.GetValue target
-                        dispatchesAs reqdDispatcherType dispatcher
-                | None -> failwith <| "Could not find required dispatcher '" + reqdDispatcherName + "' in dispatcher map."
-            | _ -> failwith <| "Static member 'RequiredDispatcherName' for facet '" + facetType.Name + "' is not of type string."
-
-    /// Check for facet compatibility with the target's dispatcher.
-    let isFacetCompatibleWithDispatcher dispatcherMap (facet : obj) (target : obj) =
-        let facetType = facet.GetType ()
-        let facetTypes = facetType :: getBaseTypesExceptObject facetType
-        List.forall
-            (fun facetType -> isFacetTypeCompatibleWithDispatcher dispatcherMap facetType target)
-            facetTypes
 
     /// Attach intrinsic facets to a target by their names.
     let attachIntrinsicFacetsViaNames dispatcherMap facetMap facetNames (target : obj) =
@@ -256,6 +310,152 @@ module Reflection =
         let sourceType = source.GetType ()
         let instrinsicFacetNames = getIntrinsicFacetNames sourceType
         attachIntrinsicFacetsViaNames dispatcherMap facetMap instrinsicFacetNames target
+
+    /// Read dispatcherName from an xml node.
+    let readDispatcherName defaultDispatcherName (node : XmlNode) =
+        match node.Attributes.[DispatcherNameAttributeName] with
+        | null -> defaultDispatcherName
+        | dispatcherNameAttribute -> dispatcherNameAttribute.InnerText
+
+    /// Read opt overlay name from an xml node.
+    let readOptOverlayName (node : XmlNode) =
+        let optOverlayNameStr = node.InnerText
+        AlgebraicDescriptor.convertFromString optOverlayNameStr typeof<string option> :?> string option
+
+    /// Read facet names from an xml node.
+    let readFacetNames (node : XmlNode) =
+        let facetNamesStr = node.InnerText
+        AlgebraicDescriptor.convertFromString facetNamesStr typeof<string list> :?> string list
+
+    /// Try to read just the target's OptOverlayName from Xml.
+    let tryReadOptOverlayNameToTarget (targetNode : XmlNode) target =
+        let targetType = target.GetType ()
+        let targetProperties = targetType.GetProperties ()
+        let optOptOverlayNameProperty =
+            Array.tryFind
+                (fun (property : PropertyInfo) ->
+                    property.Name = "OptOverlayName" &&
+                    property.PropertyType = typeof<string option> &&
+                    property.CanWrite)
+                targetProperties
+        match optOptOverlayNameProperty with
+        | Some optOverlayNameProperty ->
+            match targetNode.[optOverlayNameProperty.Name] with
+            | null -> ()
+            | optOverlayNameNode ->
+                let optOverlayName = readOptOverlayName optOverlayNameNode
+                optOverlayNameProperty.SetValue (target, optOverlayName)
+        | None -> ()
+
+    /// Read just the target's FacetNames from Xml.
+    let readFacetNamesToTarget (targetNode : XmlNode) target =
+        let targetType = target.GetType ()
+        let targetProperties = targetType.GetProperties ()
+        let facetNamesProperty =
+            Array.find
+                (fun (property : PropertyInfo) ->
+                    property.Name = "FacetNames" &&
+                    property.PropertyType = typeof<string list> &&
+                    property.CanWrite)
+                targetProperties
+        match targetNode.[facetNamesProperty.Name] with
+        | null -> ()
+        | facetNamesNode ->
+            let facetNames = readFacetNames facetNamesNode
+            facetNamesProperty.SetValue (target, facetNames)
+
+    /// Attempt to read a target's .NET property from Xml.
+    let tryReadDotNetPropertyToTarget3 (property : PropertyInfo) (valueNode : XmlNode) (target : 'a) =
+        let valueStr = valueNode.InnerText
+        let converter = AlgebraicConverter property.PropertyType
+        if converter.CanConvertFrom typeof<string> then
+            let value = converter.ConvertFromString valueStr
+            property.SetValue (target, value)
+
+    /// Try to read a target's .NET property from Xml.
+    let tryReadDotNetPropertyToTarget (fieldNode : XmlNode) (target : 'a) =
+        match typeof<'a>.GetPropertyWritable fieldNode.Name with
+        | null -> ()
+        | property -> tryReadDotNetPropertyToTarget3 property fieldNode target
+
+    /// Read all of a target's .NET properties from Xml (except OptOverlayName and FacetNames).
+    let readDotNetPropertiesToTarget (targetNode : XmlNode) target =
+        for node in targetNode.ChildNodes do
+            if  node.Name <> "OptOverlayName" &&
+                node.Name <> "FacetNames" then
+                tryReadDotNetPropertyToTarget node target
+
+    /// Read one of a target's XFields.
+    let readXField (targetNode : XmlNode) (target : obj) targetXFields fieldDefinition =
+        let targetType = target.GetType ()
+        if Seq.notExists
+            (fun (property : PropertyInfo) -> property.Name = fieldDefinition.FieldName)
+            (targetType.GetProperties ()) then
+            match targetNode.SelectSingleNode fieldDefinition.FieldName with
+            | null -> targetXFields
+            | fieldNode ->
+                let converter = AlgebraicConverter fieldDefinition.FieldType
+                if converter.CanConvertFrom typeof<string> then
+                    let xField = { FieldValue = converter.ConvertFromString fieldNode.InnerText; FieldType = fieldDefinition.FieldType }
+                    Map.add fieldDefinition.FieldName xField targetXFields
+                else debug <| "Cannot convert string '" + fieldNode.InnerText + "' to type '" + fieldDefinition.FieldType.Name + "'."; targetXFields
+        else targetXFields
+
+    /// Read a target's XFields.
+    let readXFields targetXFields (targetNode : XmlNode) (target : obj) =
+        let fieldDefinitions = getReflectiveFieldDefinitions target
+        List.fold (readXField targetNode target) targetXFields fieldDefinitions
+
+    /// Read a target's Xtension.
+    let readXtensionToTarget (targetNode : XmlNode) (target : obj) =
+        let targetType = target.GetType ()
+        match targetType.GetProperty "Xtension" with
+        | null -> debug "Target does not support xtensions due to missing Xtension field."
+        | xtensionProperty ->
+            match xtensionProperty.GetValue target with
+            | :? Xtension as xtension ->
+                let xFields = readXFields xtension.XFields targetNode target
+                let xtension = { xtension with XFields = xFields }
+                xtensionProperty.SetValue (target, xtension)
+            | _ -> debug "Target does not support xtensions due to Xtension field having unexpected type."
+
+    /// Read all of a target's properties from Xml (except OptOverlayName and FacetNames).
+    let readPropertiesToTarget targetNode target =
+        readDotNetPropertiesToTarget targetNode target
+        readXtensionToTarget targetNode target
+
+    /// Write an Xtension to Xml.
+    /// NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
+    /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
+    let writeXtension shouldWriteProperty (writer : XmlWriter) xtension =
+        for xFieldKvp in xtension.XFields do
+            let xFieldName = xFieldKvp.Key
+            let xFieldType = xFieldKvp.Value.FieldType
+            let xFieldValue = xFieldKvp.Value.FieldValue
+            if  isPropertyPersistentByName xFieldName &&
+                shouldWriteProperty xFieldName xFieldType xFieldValue then
+                let xFieldValueStr = (AlgebraicConverter xFieldType).ConvertToString xFieldValue
+                writer.WriteStartElement xFieldName
+                writer.WriteAttributeString (TypeAttributeName, xFieldType.FullName)
+                writer.WriteString xFieldValueStr
+                writer.WriteEndElement ()
+
+    /// Write all of a target's properties to Xml.
+    /// NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
+    /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
+    let writePropertiesFromTarget shouldWriteProperty (writer : XmlWriter) (target : 'a) =
+        let targetType = target.GetType ()
+        let properties = targetType.GetProperties ()
+        for property in properties do
+            let propertyValue = property.GetValue target
+            match propertyValue with
+            | :? Xtension as xtension -> writeXtension shouldWriteProperty writer xtension
+            | _ ->
+                if  isPropertyPersistent target property &&
+                    shouldWriteProperty property.Name property.PropertyType propertyValue then
+                    let converter = AlgebraicConverter property.PropertyType
+                    let valueStr = converter.ConvertToString propertyValue
+                    writer.WriteElementString (property.Name, valueStr)
 
     /// Create intrinsic overlays.
     let createIntrinsicOverlays hasFacetNamesField sourceTypes =

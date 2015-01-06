@@ -140,7 +140,7 @@ module WorldGameModule =
         static member writeGameHierarchy (writer : XmlWriter) gameHierarchy world =
             let (game : Game, screenHierarchies) = gameHierarchy
             writer.WriteAttributeString (DispatcherNameAttributeName, (game.DispatcherNp.GetType ()).Name)
-            Serialization.writePropertiesFromTarget tautology3 writer game
+            Reflection.writePropertiesFromTarget tautology3 writer game
             writer.WriteStartElement ScreensNodeName
             World.writeScreenHierarchies writer screenHierarchies world
             writer.WriteEndElement ()
@@ -163,7 +163,7 @@ module WorldGameModule =
         /// Read a game hierarchy from an xml node.
         static member readGameHierarchy
             (gameNode : XmlNode) defaultDispatcherName defaultScreenDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
-            let dispatcherName = Serialization.readDispatcherName defaultDispatcherName gameNode
+            let dispatcherName = Reflection.readDispatcherName defaultDispatcherName gameNode
             let dispatcher =
                 match Map.tryFind dispatcherName world.Components.GameDispatchers with
                 | Some dispatcher -> dispatcher
@@ -172,7 +172,7 @@ module WorldGameModule =
                     let dispatcherName = typeof<GameDispatcher>.Name
                     Map.find dispatcherName world.Components.GameDispatchers
             let game = World.makeGame dispatcher
-            Serialization.readPropertiesToTarget gameNode game
+            Reflection.readPropertiesToTarget gameNode game
             let screenHierarchies =
                 World.readScreenHierarchies
                     (gameNode : XmlNode)

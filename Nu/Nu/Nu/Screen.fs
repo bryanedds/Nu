@@ -297,7 +297,7 @@ module WorldScreenModule =
         static member writeScreenHierarchy (writer : XmlWriter) screenHierarchy world =
             let (screen : Screen, groupHierarchies) = screenHierarchy
             writer.WriteAttributeString (DispatcherNameAttributeName, (screen.DispatcherNp.GetType ()).Name)
-            Serialization.writePropertiesFromTarget tautology3 writer screen
+            Reflection.writePropertiesFromTarget tautology3 writer screen
             writer.WriteStartElement GroupsNodeName
             World.writeGroupHierarchies writer groupHierarchies world
             writer.WriteEndElement ()
@@ -332,7 +332,7 @@ module WorldScreenModule =
         /// Read a screen hierarchy from an xml node.
         static member readScreenHierarchy
             (screenNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
-            let dispatcherName = Serialization.readDispatcherName defaultDispatcherName screenNode
+            let dispatcherName = Reflection.readDispatcherName defaultDispatcherName screenNode
             let dispatcher =
                 match Map.tryFind dispatcherName world.Components.ScreenDispatchers with
                 | Some dispatcher -> dispatcher
@@ -342,7 +342,7 @@ module WorldScreenModule =
                     Map.find dispatcherName world.Components.ScreenDispatchers
             let screen = Screen.make dispatcher None
             Reflection.attachFields screen.DispatcherNp screen
-            Serialization.readPropertiesToTarget screenNode screen
+            Reflection.readPropertiesToTarget screenNode screen
             let groupHierarchies = World.readGroupHierarchies (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName world
             (screen, groupHierarchies)
 
