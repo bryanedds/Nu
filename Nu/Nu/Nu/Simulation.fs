@@ -331,12 +331,6 @@ module SimulationModule =
 
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, characters, blocks, and things of that sort.
-    /// TODO: now that there are field descriptors, consider making their persistence configurable
-    /// with data instead of name-suffixing.
-    /// TODO: also now that there is sufficient type metadata in field descriptors, consider
-    /// removing type names from serialized xfields as well as removing the ability to dynamically
-    /// add and remove xfields in the editor. ALSO, this would allow xfields to be removed from the
-    /// Xtension tag as well - so that could also happen!
     and [<CLIMutable; StructuralEquality; NoComparison>] Entity =
         { Id : Guid
           Name : string
