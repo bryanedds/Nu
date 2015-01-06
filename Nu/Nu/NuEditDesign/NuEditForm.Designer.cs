@@ -57,14 +57,8 @@
             this.copyContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pasteContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.displayPanel = new NuEditDesign.SelectablePanel();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
             this.propertyGrid = new System.Windows.Forms.PropertyGrid();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.typeNameTextBox = new System.Windows.Forms.ComboBox();
-            this.xFieldNameTextBox = new System.Windows.Forms.TextBox();
-            this.removeSelectedXFieldButton = new System.Windows.Forms.Button();
-            this.addXFieldButton = new System.Windows.Forms.Button();
             this.treeView = new System.Windows.Forms.TreeView();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
@@ -97,6 +91,7 @@
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.interactivityButton = new System.Windows.Forms.ToolStripButton();
             this.editWhileInteractiveCheckBox = new System.Windows.Forms.ToolStripButton();
+            this.displayPanel = new NuEditDesign.SelectablePanel();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -107,7 +102,6 @@
             this.splitContainer3.Panel1.SuspendLayout();
             this.splitContainer3.Panel2.SuspendLayout();
             this.splitContainer3.SuspendLayout();
-            this.groupBox1.SuspendLayout();
             this.toolStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -321,20 +315,9 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer3);
             this.splitContainer1.Size = new System.Drawing.Size(1334, 685);
-            this.splitContainer1.SplitterDistance = 967;
+            this.splitContainer1.SplitterDistance = 968;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
-            // 
-            // displayPanel
-            // 
-            this.displayPanel.ContextMenuStrip = this.contextMenuStrip;
-            this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.displayPanel.Location = new System.Drawing.Point(0, 0);
-            this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
-            this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(967, 685);
-            this.displayPanel.TabIndex = 0;
-            this.displayPanel.TabStop = true;
             // 
             // splitContainer3
             // 
@@ -346,98 +329,30 @@
             // splitContainer3.Panel1
             // 
             this.splitContainer3.Panel1.Controls.Add(this.propertyGrid);
-            this.splitContainer3.Panel1.Controls.Add(this.groupBox1);
             // 
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.treeView);
-            this.splitContainer3.Size = new System.Drawing.Size(364, 685);
-            this.splitContainer3.SplitterDistance = 449;
+            this.splitContainer3.Size = new System.Drawing.Size(363, 685);
+            this.splitContainer3.SplitterDistance = 452;
             this.splitContainer3.TabIndex = 2;
             // 
             // propertyGrid
             // 
             this.propertyGrid.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.propertyGrid.Location = new System.Drawing.Point(0, 73);
+            this.propertyGrid.Location = new System.Drawing.Point(0, 0);
             this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(364, 376);
+            this.propertyGrid.Size = new System.Drawing.Size(363, 452);
             this.propertyGrid.TabIndex = 0;
             this.propertyGrid.ToolbarVisible = false;
-            // 
-            // groupBox1
-            // 
-            this.groupBox1.Controls.Add(this.typeNameTextBox);
-            this.groupBox1.Controls.Add(this.xFieldNameTextBox);
-            this.groupBox1.Controls.Add(this.removeSelectedXFieldButton);
-            this.groupBox1.Controls.Add(this.addXFieldButton);
-            this.groupBox1.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBox1.Location = new System.Drawing.Point(0, 0);
-            this.groupBox1.Margin = new System.Windows.Forms.Padding(2);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Padding = new System.Windows.Forms.Padding(2);
-            this.groupBox1.Size = new System.Drawing.Size(364, 73);
-            this.groupBox1.TabIndex = 0;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "XFields";
-            // 
-            // typeNameTextBox
-            // 
-            this.typeNameTextBox.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
-            this.typeNameTextBox.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
-            this.typeNameTextBox.FormattingEnabled = true;
-            this.typeNameTextBox.Items.AddRange(new object[] {
-            "System.String",
-            "System.Boolean",
-            "System.Int32",
-            "System.Int64",
-            "System.Single",
-            "System.Double",
-            "OpenTK.Vector2",
-            "OpenTK.Vector3",
-            "OpenTK.Vector4"});
-            this.typeNameTextBox.Location = new System.Drawing.Point(118, 43);
-            this.typeNameTextBox.Margin = new System.Windows.Forms.Padding(2);
-            this.typeNameTextBox.Name = "typeNameTextBox";
-            this.typeNameTextBox.Size = new System.Drawing.Size(244, 21);
-            this.typeNameTextBox.TabIndex = 2;
-            this.typeNameTextBox.Text = "System.String";
-            // 
-            // xFieldNameTextBox
-            // 
-            this.xFieldNameTextBox.Location = new System.Drawing.Point(118, 17);
-            this.xFieldNameTextBox.Margin = new System.Windows.Forms.Padding(2);
-            this.xFieldNameTextBox.Name = "xFieldNameTextBox";
-            this.xFieldNameTextBox.Size = new System.Drawing.Size(244, 20);
-            this.xFieldNameTextBox.TabIndex = 1;
-            this.xFieldNameTextBox.Text = "MyField";
-            // 
-            // removeSelectedXFieldButton
-            // 
-            this.removeSelectedXFieldButton.Location = new System.Drawing.Point(4, 41);
-            this.removeSelectedXFieldButton.Margin = new System.Windows.Forms.Padding(2);
-            this.removeSelectedXFieldButton.Name = "removeSelectedXFieldButton";
-            this.removeSelectedXFieldButton.Size = new System.Drawing.Size(110, 23);
-            this.removeSelectedXFieldButton.TabIndex = 3;
-            this.removeSelectedXFieldButton.Text = "Remove Selected";
-            this.removeSelectedXFieldButton.UseVisualStyleBackColor = true;
-            // 
-            // addXFieldButton
-            // 
-            this.addXFieldButton.Location = new System.Drawing.Point(4, 17);
-            this.addXFieldButton.Margin = new System.Windows.Forms.Padding(2);
-            this.addXFieldButton.Name = "addXFieldButton";
-            this.addXFieldButton.Size = new System.Drawing.Size(110, 20);
-            this.addXFieldButton.TabIndex = 0;
-            this.addXFieldButton.Text = "Add";
-            this.addXFieldButton.UseVisualStyleBackColor = true;
             // 
             // treeView
             // 
             this.treeView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeView.Location = new System.Drawing.Point(0, 0);
             this.treeView.Name = "treeView";
-            this.treeView.Size = new System.Drawing.Size(364, 232);
+            this.treeView.Size = new System.Drawing.Size(363, 229);
             this.treeView.TabIndex = 1;
             // 
             // openFileDialog
@@ -484,7 +399,7 @@
             this.editWhileInteractiveCheckBox});
             this.toolStrip.Location = new System.Drawing.Point(92, 2);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1240, 25);
+            this.toolStrip.Size = new System.Drawing.Size(1209, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -692,6 +607,17 @@
             this.editWhileInteractiveCheckBox.Size = new System.Drawing.Size(72, 22);
             this.editWhileInteractiveCheckBox.Text = "(Edit While)";
             // 
+            // displayPanel
+            // 
+            this.displayPanel.ContextMenuStrip = this.contextMenuStrip;
+            this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.displayPanel.Location = new System.Drawing.Point(0, 0);
+            this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
+            this.displayPanel.Name = "displayPanel";
+            this.displayPanel.Size = new System.Drawing.Size(968, 685);
+            this.displayPanel.TabIndex = 0;
+            this.displayPanel.TabStop = true;
+            // 
             // NuEditForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -715,8 +641,6 @@
             this.splitContainer3.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).EndInit();
             this.splitContainer3.ResumeLayout(false);
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
             this.toolStrip.ResumeLayout(false);
             this.toolStrip.PerformLayout();
             this.ResumeLayout(false);
@@ -776,12 +700,7 @@
         public System.Windows.Forms.ToolStripSeparator toolStripSeparator6;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
         public System.Windows.Forms.ToolStripButton quickSizeToolStripButton;
-        private System.Windows.Forms.GroupBox groupBox1;
         public System.Windows.Forms.PropertyGrid propertyGrid;
-        public System.Windows.Forms.Button addXFieldButton;
-        public System.Windows.Forms.TextBox xFieldNameTextBox;
-        public System.Windows.Forms.ComboBox typeNameTextBox;
-        public System.Windows.Forms.Button removeSelectedXFieldButton;
         public System.Windows.Forms.ToolStripButton editWhileInteractiveCheckBox;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
         public System.Windows.Forms.ToolStripButton reloadOverlaysButton;
