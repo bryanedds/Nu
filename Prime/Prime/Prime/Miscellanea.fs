@@ -179,7 +179,7 @@ module TypeModule =
                 (fun (property : PropertyInfo) -> property.Name = propertyName)
                 (this.GetProperties ())
 
-        member this.GetPropertiesWritable =
+        member this.GetPropertiesWritable () =
             Seq.filter
                 (fun (property : PropertyInfo) -> property.CanWrite)
                 (this.GetProperties ())

@@ -365,26 +365,24 @@ module Reflection =
             facetNamesProperty.SetValue (target, facetNames)
 
     /// Attempt to read a target's .NET property from Xml.
-    let tryReadDotNetPropertyToTarget3 (property : PropertyInfo) (valueNode : XmlNode) (target : 'a) =
-        let valueStr = valueNode.InnerText
-        let converter = AlgebraicConverter property.PropertyType
-        if converter.CanConvertFrom typeof<string> then
-            let value = converter.ConvertFromString valueStr
-            property.SetValue (target, value)
-
-    /// Try to read a target's .NET property from Xml.
-    let tryReadDotNetPropertyToTarget (fieldNode : XmlNode) (target : 'a) =
-        match typeof<'a>.GetPropertyWritable fieldNode.Name with
+    let tryReadDotNetPropertyToTarget (property : PropertyInfo) (targetNode : XmlNode) (target : 'a) =
+        match targetNode.SelectSingleNode property.Name with
         | null -> ()
-        | property -> tryReadDotNetPropertyToTarget3 property fieldNode target
+        | fieldNode ->
+            let fieldValueStr = fieldNode.InnerText
+            let converter = AlgebraicConverter property.PropertyType
+            if converter.CanConvertFrom typeof<string> then
+                let fieldValue = converter.ConvertFromString fieldValueStr
+                property.SetValue (target, fieldValue)
 
     /// Read all of a target's .NET properties from Xml (except OptOverlayName and FacetNames).
     let readDotNetPropertiesToTarget (targetNode : XmlNode) target =
-        for node in targetNode.ChildNodes do
-            if  node.Name <> "FacetNames" &&
-                node.Name <> "OptOverlayName" &&
-                node.Name <> "Xtension" then
-                tryReadDotNetPropertyToTarget node target
+        let properties = (target.GetType ()).GetPropertiesWritable ()
+        for property in properties do
+            if  property.Name <> "FacetNames" &&
+                property.Name <> "OptOverlayName" &&
+                isPropertyPersistentByName property.Name then
+                tryReadDotNetPropertyToTarget property targetNode target
 
     /// Read one of a target's XFields.
     let readXField (targetNode : XmlNode) (target : obj) targetXFields fieldDefinition =

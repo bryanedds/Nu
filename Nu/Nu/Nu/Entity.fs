@@ -130,7 +130,7 @@ module EntityModule =
               FacetNames = []
               FacetsNp = []
               OptOverlayName = optOverlayName
-              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true } }
+              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
 
     /// The data needed to describe a Tiled tile map.
     type [<StructuralEquality; NoComparison>] TileMapData =
