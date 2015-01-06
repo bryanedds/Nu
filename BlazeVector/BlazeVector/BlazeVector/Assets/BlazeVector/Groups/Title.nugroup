@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Root>
-  <Group>
+  <Group dispatcherName="GroupDispatcher">
     <Name>Group</Name>
-    <Xtension optXDispatcherName="[Some | GroupDispatcher]" />
     <Entities>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Credits</Name>
