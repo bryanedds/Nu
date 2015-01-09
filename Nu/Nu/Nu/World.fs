@@ -743,8 +743,8 @@ module WorldModule =
                 // make the world itself
                 let world =
                     { Simulants = (game, Map.empty)
-                      Components = components
                       Subsystems = subsystems
+                      Components = components
                       Callbacks = callbacks
                       State = state }
 
@@ -803,8 +803,8 @@ module WorldModule =
             // make the world itself
             let world =
                 { Simulants = (game, Map.empty)
-                  Components = components
                   Subsystems = subsystems
+                  Components = components
                   Callbacks = callbacks
                   State = state }
 

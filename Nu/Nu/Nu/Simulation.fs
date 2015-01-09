@@ -379,6 +379,12 @@ module SimulationModule =
 
     and Subsystems' = Map<string, Subsystem>
 
+    /// The world's subsystems.
+    and [<ReferenceEquality>] Subsystems =
+        { AudioPlayer : IAudioPlayer
+          Renderer : IRenderer
+          Integrator : IIntegrator }
+
     /// The world's components.
     and [<ReferenceEquality>] Components =
         { EntityDispatchers : Map<string, EntityDispatcher>
@@ -386,12 +392,6 @@ module SimulationModule =
           ScreenDispatchers : Map<string, ScreenDispatcher>
           GameDispatchers : Map<string, GameDispatcher>
           Facets : Map<string, Facet> }
-
-    /// The world's subsystems.
-    and [<ReferenceEquality>] Subsystems =
-        { AudioPlayer : IAudioPlayer
-          Renderer : IRenderer
-          Integrator : IIntegrator }
 
     /// The world's higher order facilities.
     and [<ReferenceEquality>] Callbacks =
@@ -421,8 +421,8 @@ module SimulationModule =
     /// TODO: attempt to implement with Fsharpx.PersistentHashMap with hash cached in Address type.
     and [<ReferenceEquality>] World =
         { Simulants : Game * Map<string, Screen * Map<string, Group * Map<string, Entity>>>
-          Components : Components
           Subsystems : Subsystems
+          Components : Components
           Callbacks : Callbacks
           State : WorldState }
 

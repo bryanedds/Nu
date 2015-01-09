@@ -29,31 +29,6 @@ module World =
         Map.map Map.objectify world.Components.ScreenDispatchers @@
         Map.map Map.objectify world.Components.GameDispatchers
 
-    /// Set the EntityDispatchers field of the world.
-    let internal setEntityDispatchers dispatchers world =
-        let components = { world.Components with EntityDispatchers = dispatchers }
-        { world with Components = components }
-
-    /// Set the GroupDispatchers field of the world.
-    let internal setGroupDispatchers dispatchers world =
-        let components = { world.Components with GroupDispatchers = dispatchers }
-        { world with Components = components }
-
-    /// Set the ScreenDispatchers field of the world.
-    let internal setScreenDispatchers dispatchers world =
-        let components = { world.Components with ScreenDispatchers = dispatchers }
-        { world with Components = components }
-
-    /// Set the GameDispatchers field of the world.
-    let internal setGameDispatchers dispatchers world =
-        let components = { world.Components with GameDispatchers = dispatchers }
-        { world with Components = components }
-
-    /// Set the Facets field of the world.
-    let internal setFacets facets world =
-        let components = { world.Components with Facets = facets }
-        { world with Components = components }
-
     /// Set the AudioPlayer field of the world.
     let internal setAudioPlayer audioPlayer world =
         let subsystems = { world.Subsystems with AudioPlayer = audioPlayer }
@@ -98,6 +73,31 @@ module World =
     let addPhysicsMessage message world =
         let integrator = world.Subsystems.Integrator.ReceiveMessage message
         setIntegrator integrator world
+
+    /// Set the EntityDispatchers field of the world.
+    let internal setEntityDispatchers dispatchers world =
+        let components = { world.Components with EntityDispatchers = dispatchers }
+        { world with Components = components }
+
+    /// Set the GroupDispatchers field of the world.
+    let internal setGroupDispatchers dispatchers world =
+        let components = { world.Components with GroupDispatchers = dispatchers }
+        { world with Components = components }
+
+    /// Set the ScreenDispatchers field of the world.
+    let internal setScreenDispatchers dispatchers world =
+        let components = { world.Components with ScreenDispatchers = dispatchers }
+        { world with Components = components }
+
+    /// Set the GameDispatchers field of the world.
+    let internal setGameDispatchers dispatchers world =
+        let components = { world.Components with GameDispatchers = dispatchers }
+        { world with Components = components }
+
+    /// Set the Facets field of the world.
+    let internal setFacets facets world =
+        let components = { world.Components with Facets = facets }
+        { world with Components = components }
 
     /// Add a task to be executed by the engine at the specified task tick.
     let addTask task world =
