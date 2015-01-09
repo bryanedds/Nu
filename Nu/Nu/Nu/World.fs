@@ -708,7 +708,7 @@ module WorldModule =
 
                 // make the world's renderer
                 let renderer = Renderer.make sdlDeps.RenderContext AssetGraphFilePath
-                let renderer = renderer.ReceiveMessage <| HintRenderPackageUseMessage { PackageName = DefaultPackageName }
+                let renderer = renderer.EnqueueMessage <| HintRenderPackageUseMessage { PackageName = DefaultPackageName }
 
                 // make the world's subsystems
                 let subsystems =
