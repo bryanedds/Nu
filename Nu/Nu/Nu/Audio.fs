@@ -51,8 +51,8 @@ module AudioModule =
     type IAudioPlayer =
         /// Clear all of the audio messages that have been enqueued.
         abstract ClearMessages : unit -> IAudioPlayer
-        /// Recieve a message from an external source.
-        abstract ReceiveMessage : AudioMessage -> IAudioPlayer
+        /// Enqueue a message from an external source.
+        abstract EnqueueMessage : AudioMessage -> IAudioPlayer
         /// 'Play' the audio system. Must be called once per frame.
         abstract Play : unit -> IAudioPlayer
 
@@ -241,7 +241,7 @@ module AudioModule =
                 let audioPlayer = { audioPlayer with AudioMessages = Queue.empty }
                 audioPlayer :> IAudioPlayer
 
-            member audioPlayer.ReceiveMessage audioMessage =
+            member audioPlayer.EnqueueMessage audioMessage =
                 let audioMessages = Queue.conj audioMessage audioPlayer.AudioMessages
                 let audioPlayer = { audioPlayer with AudioMessages = audioMessages }
                 audioPlayer :> IAudioPlayer
@@ -258,5 +258,5 @@ module AudioModule =
         { MockAudioPlayer : unit }
         interface IAudioPlayer with
             member audioPlayer.ClearMessages () = audioPlayer :> IAudioPlayer
-            member audioPlayer.ReceiveMessage _ = audioPlayer :> IAudioPlayer
+            member audioPlayer.EnqueueMessage _ = audioPlayer :> IAudioPlayer
             member audioPlayer.Play () = audioPlayer :> IAudioPlayer

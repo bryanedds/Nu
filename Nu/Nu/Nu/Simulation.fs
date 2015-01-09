@@ -256,8 +256,9 @@ module SimulationModule =
     /// The only methods that have a place in here are those used internally by Nu's event system.
     and Simulant =
         interface
+            /// Get the entity's publishing priority.
             abstract member GetPublishingPriority : (Entity -> World -> single) -> World -> single
-            end
+        end
 
     /// The game type that hosts the various screens used to navigate through a game.
     and [<CLIMutable; StructuralEquality; NoComparison>] Game =
@@ -362,20 +363,31 @@ module SimulationModule =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
+    /// Represents an untyped message to a subsystem.
     and SubsystemMessage = obj
 
+    /// Represents an untype result of a subsystem.
     and SubsystemResult = obj
 
+    /// Represents a subsystem by which additional engine-level subsystems such as AI, optimized
+    /// special FX, and the like can be added.
     and Subsystem =
         interface
+            /// The ordering priority by which the subsystem will be processed.
             abstract member Priority : single
+            /// Set the ordering priority by which the subsystem will be processed.
             abstract member SetPriority : single -> Subsystem
+            /// Clear the messages queued by subsystem.
             abstract member ClearMessages : unit -> Subsystem
-            abstract member ReceiveMessage : SubsystemMessage -> Subsystem
+            /// Enqueue a message for the subsystem.
+            abstract member EnqueueMessage : SubsystemMessage -> Subsystem
+            /// Processed the queued messages with the subsystem.
             abstract member ProcessMessages : World -> SubsystemResult * Subsystem
+            /// Apply the result of the message processing to the world.
             abstract member ApplyResult : SubsystemResult * World -> World
+            /// Clean up any resources used by the subsystem.
             abstract member CleanUp : World -> World
-            end
+        end
 
     and Subsystems' = Map<string, Subsystem>
 

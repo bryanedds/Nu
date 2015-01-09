@@ -61,17 +61,17 @@ module World =
 
     /// Add a rendering message to the world.
     let addRenderMessage message world =
-        let renderer = world.Subsystems.Renderer.ReceiveMessage message
+        let renderer = world.Subsystems.Renderer.EnqueueMessage message
         setRenderer renderer world
 
     /// Add an audio message to the world.
     let addAudioMessage message world =
-        let audioPlayer = world.Subsystems.AudioPlayer.ReceiveMessage message
+        let audioPlayer = world.Subsystems.AudioPlayer.EnqueueMessage message
         setAudioPlayer audioPlayer world
 
     /// Add a physics message to the world.
     let addPhysicsMessage message world =
-        let integrator = world.Subsystems.Integrator.ReceiveMessage message
+        let integrator = world.Subsystems.Integrator.EnqueueMessage message
         setIntegrator integrator world
 
     /// Set the EntityDispatchers field of the world.

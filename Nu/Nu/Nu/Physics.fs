@@ -183,8 +183,8 @@ module PhysicsModule =
         abstract IsBodyOnGround : PhysicsId -> bool
         /// Clear all of the physics messages that have been enqueued.
         abstract ClearMessages : unit -> IIntegrator
-        /// Recieve a message from an external source.
-        abstract ReceiveMessage : PhysicsMessage -> IIntegrator
+        /// Enqueue a message from an external source.
+        abstract EnqueueMessage : PhysicsMessage -> IIntegrator
         /// Integrate (or 'tick') the physics system one frame.
         abstract Integrate : unit -> IntegrationMessage list * IIntegrator
 
@@ -479,7 +479,7 @@ module PhysicsModule =
                 let integrator = { integrator with PhysicsMessages = Queue.empty }
                 integrator :> IIntegrator
 
-            member integrator.ReceiveMessage physicsMessage =
+            member integrator.EnqueueMessage physicsMessage =
                 let physicsMessages = Queue.conj physicsMessage integrator.PhysicsMessages
                 let integrator = { integrator with PhysicsMessages = physicsMessages }
                 integrator :> IIntegrator
@@ -506,7 +506,7 @@ module PhysicsModule =
             member integrator.GetBodyOptGroundContactTangent _ = failwith "No bodies in MockIntegrator"
             member integrator.IsBodyOnGround _ = failwith "No bodies in MockIntegrator"
             member integrator.ClearMessages () = integrator :> IIntegrator
-            member integrator.ReceiveMessage _ = integrator :> IIntegrator
+            member integrator.EnqueueMessage _ = integrator :> IIntegrator
             member integrator.Integrate () = ([], integrator :> IIntegrator)
 
 [<RequireQualifiedAccess>]

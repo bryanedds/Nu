@@ -88,8 +88,8 @@ module RenderModule =
     type IRenderer =
         /// Clear all of the render messages that have been enqueued.
         abstract ClearMessages : unit -> IRenderer
-        /// Recieve a message from an external source.
-        abstract ReceiveMessage : RenderMessage -> IRenderer
+        /// Enqueue a message from an external source.
+        abstract EnqueueMessage : RenderMessage -> IRenderer
         /// Handle render clean up by freeing all loaded render assets.
         abstract CleanUp : unit -> IRenderer
         /// Render a frame of the game.
@@ -388,7 +388,7 @@ module RenderModule =
                 let renderer = { renderer with RenderMessages = Queue.empty }
                 renderer :> IRenderer
 
-            member renderer.ReceiveMessage renderMessage =
+            member renderer.EnqueueMessage renderMessage =
                 let renderMessages = Queue.conj renderMessage renderer.RenderMessages
                 let renderer = { renderer with RenderMessages = renderMessages }
                 renderer :> IRenderer
@@ -412,6 +412,6 @@ module RenderModule =
         { MockRenderer : unit }
         interface IRenderer with
             member renderer.ClearMessages () = renderer :> IRenderer
-            member renderer.ReceiveMessage _ = renderer :> IRenderer
+            member renderer.EnqueueMessage _ = renderer :> IRenderer
             member renderer.Render (_, _) = renderer :> IRenderer
             member renderer.CleanUp () = renderer :> IRenderer
