@@ -3,6 +3,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.ComponentModel
+open FSharpx.Collections
 open OpenTK
 open SDL2
 open TiledSharp
@@ -85,18 +86,21 @@ module RenderModule =
 
     /// The renderer. Represents the rendering system in Nu generally.
     type IRenderer =
-
-        /// Handle render exit by freeing all loaded render assets.
-        abstract HandleRenderExit : unit -> IRenderer
-
+        /// Clear all of the render messages that have been enqueued.
+        abstract ClearMessages : unit -> IRenderer
+        /// Recieve a message from an external source.
+        abstract ReceiveMessage : RenderMessage -> IRenderer
+        /// Handle render clean up by freeing all loaded render assets.
+        abstract CleanUp : unit -> IRenderer
         /// Render a frame of the game.
-        abstract Render : Camera * RenderMessage rQueue * RenderDescriptor list -> IRenderer
+        abstract Render : Camera * RenderDescriptor list -> IRenderer
 
     /// The primary implementation of IRenderer.
     type [<ReferenceEquality>] Renderer =
         private
             { RenderContext : nativeint
               RenderAssetMap : RenderAsset AssetMap
+              RenderMessages : RenderMessage Queue
               AssetGraphFilePath : string }
 
         static member private freeRenderAsset renderAsset =
@@ -184,8 +188,8 @@ module RenderModule =
             | HintRenderPackageDisuseMessage hintPackageDisuse -> Renderer.handleHintRenderPackageDisuse hintPackageDisuse renderer
             | ReloadRenderAssetsMessage  -> Renderer.handleReloadRenderAssets renderer
 
-        static member private handleRenderMessages (renderMessages : RenderMessage rQueue) renderer =
-            List.fold Renderer.handleRenderMessage renderer (List.rev renderMessages)
+        static member private handleRenderMessages renderMessages renderer =
+            Queue.fold Renderer.handleRenderMessage renderer renderMessages
 
         static member private renderSprite (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (sprite : Sprite) renderer =
             let view = match sprite.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
@@ -374,26 +378,40 @@ module RenderModule =
             let renderer =
                 { RenderContext = renderContext
                   RenderAssetMap = Map.empty
+                  RenderMessages = Queue.empty
                   AssetGraphFilePath = assetGraphFilePath }
             renderer :> IRenderer
 
         interface IRenderer with
 
-            member renderer.HandleRenderExit () =
+            member renderer.ClearMessages () =
+                let renderer = { renderer with RenderMessages = Queue.empty }
+                renderer :> IRenderer
+
+            member renderer.ReceiveMessage renderMessage =
+                let renderMessages = Queue.conj renderMessage renderer.RenderMessages
+                let renderer = { renderer with RenderMessages = renderMessages }
+                renderer :> IRenderer
+
+            member renderer.Render (camera, renderDescriptors) =
+                let renderMessages = renderer.RenderMessages
+                let renderer = { renderer with RenderMessages = Queue.empty }
+                let renderer = Renderer.handleRenderMessages renderMessages renderer
+                let renderer = Renderer.renderDescriptors camera renderDescriptors renderer
+                renderer :> IRenderer
+
+            member renderer.CleanUp () =
                 let renderAssetMaps = Map.toValueSeq renderer.RenderAssetMap
                 let renderAssets = Seq.collect Map.toValueSeq renderAssetMaps
                 for renderAsset in renderAssets do Renderer.freeRenderAsset renderAsset
                 let renderer = { renderer with RenderAssetMap = Map.empty }
                 renderer :> IRenderer
 
-            member renderer.Render (camera, renderMessages, renderDescriptors) =
-                let renderer = Renderer.handleRenderMessages renderMessages renderer
-                let renderer = Renderer.renderDescriptors camera renderDescriptors renderer
-                renderer :> IRenderer
-
     /// The mock implementation of IRenderer.
     type [<ReferenceEquality>] MockRenderer =
         { MockRenderer : unit }
         interface IRenderer with
-            member renderer.HandleRenderExit () = renderer :> IRenderer
-            member renderer.Render (_, _, _) = renderer :> IRenderer
+            member renderer.ClearMessages () = renderer :> IRenderer
+            member renderer.ReceiveMessage _ = renderer :> IRenderer
+            member renderer.Render (_, _) = renderer :> IRenderer
+            member renderer.CleanUp () = renderer :> IRenderer

@@ -368,9 +368,13 @@ module SimulationModule =
 
     and Subsystem =
         interface
-            abstract member PushMessage : Subsystem * SubsystemMessage -> Subsystem
-            abstract member ProcessMessages : Subsystem * World -> SubsystemResult * Subsystem
-            abstract member ApplyResult : Subsystem * SubsystemResult * World -> World
+            abstract member Priority : single
+            abstract member SetPriority : single -> Subsystem
+            abstract member ClearMessages : unit -> Subsystem
+            abstract member ReceiveMessage : SubsystemMessage -> Subsystem
+            abstract member ProcessMessages : World -> SubsystemResult * Subsystem
+            abstract member ApplyResult : SubsystemResult * World -> World
+            abstract member CleanUp : World -> World
             end
 
     and Subsystems' = Map<string, Subsystem>
@@ -388,12 +392,6 @@ module SimulationModule =
         { AudioPlayer : IAudioPlayer
           Renderer : IRenderer
           Integrator : IIntegrator }
-
-    /// The world's message queues.
-    and [<ReferenceEquality>] MessageQueues =
-        { AudioMessages : AudioMessage rQueue
-          RenderMessages : RenderMessage rQueue
-          PhysicsMessages : PhysicsMessage rQueue }
 
     /// The world's higher order facilities.
     and [<ReferenceEquality>] Callbacks =
@@ -425,7 +423,6 @@ module SimulationModule =
         { Simulants : Game * Map<string, Screen * Map<string, Group * Map<string, Entity>>>
           Components : Components
           Subsystems : Subsystems
-          MessageQueues : MessageQueues
           Callbacks : Callbacks
           State : WorldState }
 

@@ -2,6 +2,7 @@
 open System
 open System.IO
 open System.ComponentModel
+open FSharpx.Collections
 open SDL2
 open Prime
 open Nu
@@ -48,14 +49,19 @@ module AudioModule =
 
     /// The audio player. Represents the audio system of Nu generally.
     type IAudioPlayer =
+        /// Clear all of the audio messages that have been enqueued.
+        abstract ClearMessages : unit -> IAudioPlayer
+        /// Recieve a message from an external source.
+        abstract ReceiveMessage : AudioMessage -> IAudioPlayer
         /// 'Play' the audio system. Must be called once per frame.
-        abstract Play : AudioMessage list -> IAudioPlayer
+        abstract Play : unit -> IAudioPlayer
 
     /// The primary implementation of IAudioPlayer.
     type [<ReferenceEquality>] AudioPlayer =
         private
             { AudioContext : unit // audio context, interestingly, is global. Good luck encapsulating that!
               AudioAssetMap : AudioAsset AssetMap
+              AudioMessages : AudioMessage Queue
               OptCurrentSong : PlaySongMessage option
               OptNextPlaySong : PlaySongMessage option
               AssetGraphFilePath : string }
@@ -197,8 +203,8 @@ module AudioModule =
             | StopSongMessage -> AudioPlayer.handleStopSong audioPlayer
             | ReloadAudioAssetsMessage -> AudioPlayer.handleReloadAudioAssets audioPlayer
     
-        static member private handleAudioMessages (audioMessages : AudioMessage rQueue) audioPlayer =
-            List.fold AudioPlayer.handleAudioMessage audioPlayer (List.rev audioMessages)
+        static member private handleAudioMessages audioMessages audioPlayer =
+            Queue.fold AudioPlayer.handleAudioMessage audioPlayer audioMessages
     
         static member private tryUpdateCurrentSong audioPlayer =
             if SDL_mixer.Mix_PlayingMusic () = 1 then audioPlayer
@@ -223,6 +229,7 @@ module AudioModule =
             let audioPlayer =
                 { AudioContext = ()
                   AudioAssetMap = Map.empty
+                  AudioMessages = Queue.empty
                   OptCurrentSong = None
                   OptNextPlaySong = None
                   AssetGraphFilePath = assetGraphFilePath }
@@ -230,7 +237,18 @@ module AudioModule =
 
         interface IAudioPlayer with
 
-            member audioPlayer.Play audioMessages =
+            member audioPlayer.ClearMessages () =
+                let audioPlayer = { audioPlayer with AudioMessages = Queue.empty }
+                audioPlayer :> IAudioPlayer
+
+            member audioPlayer.ReceiveMessage audioMessage =
+                let audioMessages = Queue.conj audioMessage audioPlayer.AudioMessages
+                let audioPlayer = { audioPlayer with AudioMessages = audioMessages }
+                audioPlayer :> IAudioPlayer
+
+            member audioPlayer.Play () =
+                let audioMessages = audioPlayer.AudioMessages
+                let audioPlayer = { audioPlayer with AudioMessages = Queue.empty }
                 let audioPlayer = AudioPlayer.handleAudioMessages audioMessages audioPlayer
                 let audioPlayer = AudioPlayer.updateAudioPlayer audioPlayer
                 audioPlayer :> IAudioPlayer
@@ -239,4 +257,6 @@ module AudioModule =
     type [<ReferenceEquality>] MockAudioPlayer =
         { MockAudioPlayer : unit }
         interface IAudioPlayer with
-            member audioPlayer.Play _ = audioPlayer :> IAudioPlayer
+            member audioPlayer.ClearMessages () = audioPlayer :> IAudioPlayer
+            member audioPlayer.ReceiveMessage _ = audioPlayer :> IAudioPlayer
+            member audioPlayer.Play () = audioPlayer :> IAudioPlayer
