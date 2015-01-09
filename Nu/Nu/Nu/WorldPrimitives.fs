@@ -69,11 +69,6 @@ module World =
         let subsystems = { world.Subsystems with Integrator = integrator }
         { world with Subsystems = subsystems }
 
-    /// Set the Overlayer field of the world.
-    let internal setOverlayer overlayer world =
-        let subsystems = { world.Subsystems with Overlayer = overlayer }
-        { world with Subsystems = subsystems }
-
     /// Clear the audio messages.
     let internal clearAudioMessages world =
         let messageQueues = { world.MessageQueues with AudioMessages = [] }
@@ -418,6 +413,11 @@ module WorldStateModule =
         /// Set the asset metadata map.
         static member internal setAssetMetadataMap assetMetadataMap world =
             let state = { world.State with AssetMetadataMap = assetMetadataMap }
+            World.setState state world
+
+        /// Set the Overlayer field of the world.
+        static member internal setOverlayer overlayer world =
+            let state = { world.State with Overlayer = overlayer }
             World.setState state world
 
         /// Get the user state of the world, casted to 'u.
