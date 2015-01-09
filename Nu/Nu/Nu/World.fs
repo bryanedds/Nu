@@ -343,7 +343,7 @@ module WorldModule =
             try File.Copy (inputOverlayFilePath, outputOverlayFilePath, true)
 
                 // cache old overlayer and make new one
-                let oldOverlayer = world.Subsystems.Overlayer
+                let oldOverlayer = world.State.Overlayer
                 let intrinsicOverlays = World.createIntrinsicOverlays world.Components.EntityDispatchers world.Components.Facets
                 let overlayer = Overlayer.make outputOverlayFilePath intrinsicOverlays
                 let world = World.setOverlayer overlayer world
@@ -364,11 +364,11 @@ module WorldModule =
                             match entity.OptOverlayName with
                             | Some overlayName ->
                                 let oldFacetNames = entity.FacetNames
-                                Overlayer.applyOverlayToFacetNames overlayName overlayName entity oldOverlayer world.Subsystems.Overlayer
+                                Overlayer.applyOverlayToFacetNames overlayName overlayName entity oldOverlayer world.State.Overlayer
                                 match World.trySynchronizeFacets oldFacetNames entity (Some address) world with
                                 | Right (entity, world) ->
                                     let facetNames = Entity.getFacetNamesReflectively entity
-                                    Overlayer.applyOverlay6 overlayName overlayName facetNames entity oldOverlayer world.Subsystems.Overlayer
+                                    Overlayer.applyOverlay6 overlayName overlayName facetNames entity oldOverlayer world.State.Overlayer
                                     World.setEntity entity address world
                                 | Left error -> note <| "There was an issue in applying a reloaded overlay: " + error; world
                             | None -> world)
@@ -715,8 +715,7 @@ module WorldModule =
                 let subsystems =
                     { AudioPlayer = AudioPlayer.make AssetGraphFilePath
                       Renderer = Renderer.make sdlDeps.RenderContext AssetGraphFilePath
-                      Integrator = Integrator.make farseerCautionMode Gravity 
-                      Overlayer = Overlayer.make OverlayFilePath intrinsicOverlays }
+                      Integrator = Integrator.make farseerCautionMode Gravity }
 
                 // make the world's message queues
                 let messageQueues =
@@ -740,6 +739,7 @@ module WorldModule =
                       Camera = camera
                       AssetMetadataMap = assetMetadataMap
                       AssetGraphFilePath = AssetGraphFilePath
+                      Overlayer = Overlayer.make OverlayFilePath intrinsicOverlays
                       OverlayRouter = OverlayRouter.make entityDispatchers userOverlayRoutes
                       OverlayFilePath = OverlayFilePath
                       UserState = userState }
@@ -782,8 +782,7 @@ module WorldModule =
             let subsystems =
                 { AudioPlayer = { MockAudioPlayer  = () }
                   Renderer = { MockRenderer = () }
-                  Integrator = { MockIntegrator = () }
-                  Overlayer = { Overlays = XmlDocument () }}
+                  Integrator = { MockIntegrator = () }}
 
             // make the world's message queues
             let messageQueues =
@@ -809,6 +808,7 @@ module WorldModule =
                   AssetGraphFilePath = String.Empty
                   OverlayRouter = OverlayRouter.make (Map.ofList [World.pairWithName entityDispatcher]) []
                   OverlayFilePath = String.Empty
+                  Overlayer = { Overlays = XmlDocument () }
                   UserState = userState }
 
             // make the game

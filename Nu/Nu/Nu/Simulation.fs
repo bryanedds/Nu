@@ -362,6 +362,19 @@ module SimulationModule =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
+    and SubsystemMessage = obj
+
+    and SubsystemResult = obj
+
+    and Subsystem =
+        interface
+            abstract member PushMessage : Subsystem * SubsystemMessage -> Subsystem
+            abstract member ProcessMessages : Subsystem * World -> SubsystemResult * Subsystem
+            abstract member ApplyResult : Subsystem * SubsystemResult * World -> World
+            end
+
+    and Subsystems' = Map<string, Subsystem>
+
     /// The world's components.
     and [<ReferenceEquality>] Components =
         { EntityDispatchers : Map<string, EntityDispatcher>
@@ -374,8 +387,7 @@ module SimulationModule =
     and [<ReferenceEquality>] Subsystems =
         { AudioPlayer : IAudioPlayer
           Renderer : IRenderer
-          Integrator : IIntegrator
-          Overlayer : Overlayer }
+          Integrator : IIntegrator }
 
     /// The world's message queues.
     and [<ReferenceEquality>] MessageQueues =
@@ -399,6 +411,7 @@ module SimulationModule =
           Camera : Camera
           AssetMetadataMap : AssetMetadataMap
           AssetGraphFilePath : string
+          Overlayer : Overlayer
           OverlayRouter : OverlayRouter
           OverlayFilePath : string
           UserState : obj }
