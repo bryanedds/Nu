@@ -429,9 +429,7 @@ module WorldModule =
                 entityMap
 
         static member private play world =
-            let audioMessages = world.MessageQueues.AudioMessages
-            let world = World.clearAudioMessages world
-            let audioPlayer = world.Subsystems.AudioPlayer.Play audioMessages 
+            let audioPlayer = world.Subsystems.AudioPlayer.Play ()
             World.setAudioPlayer audioPlayer world
 
         static member private getGroupRenderDescriptors world entities =
@@ -476,9 +474,7 @@ module WorldModule =
 
         static member private render world =
             let renderDescriptors = World.getRenderDescriptors world
-            let renderingMessages = world.MessageQueues.RenderMessages
-            let world = World.clearRenderMessages world
-            let renderer = world.Subsystems.Renderer.Render (world.State.Camera, renderingMessages, renderDescriptors)
+            let renderer = world.Subsystems.Renderer.Render (world.State.Camera, renderDescriptors)
             World.setRenderer renderer world
 
         static member private handleIntegrationMessage world integrationMessage =
@@ -506,9 +502,8 @@ module WorldModule =
 
         static member private integrate world =
             if World.isPhysicsRunning world then
-                let physicsMessages = world.MessageQueues.PhysicsMessages
-                let world = World.clearPhysicsMessages world
-                let integrationMessages = world.Subsystems.Integrator.Integrate physicsMessages
+                let (integrationMessages, integrator) = world.Subsystems.Integrator.Integrate ()
+                let world = World.setIntegrator integrator world
                 World.handleIntegrationMessages integrationMessages world
             else world
 
@@ -605,7 +600,7 @@ module WorldModule =
             World.incrementTickTime world
 
         static member exitRender world =
-            let renderer = world.Subsystems.Renderer.HandleRenderExit () 
+            let renderer = world.Subsystems.Renderer.CleanUp () 
             World.setRenderer renderer world
 
         static member run4 tryMakeWorld handleUpdate handleRender sdlConfig =
@@ -711,17 +706,15 @@ module WorldModule =
                       GameDispatchers = gameDispatchers
                       Facets = facets }
 
+                // make the world's renderer
+                let renderer = Renderer.make sdlDeps.RenderContext AssetGraphFilePath
+                let renderer = renderer.ReceiveMessage <| HintRenderPackageUseMessage { PackageName = DefaultPackageName }
+
                 // make the world's subsystems
                 let subsystems =
                     { AudioPlayer = AudioPlayer.make AssetGraphFilePath
-                      Renderer = Renderer.make sdlDeps.RenderContext AssetGraphFilePath
+                      Renderer = renderer
                       Integrator = Integrator.make farseerCautionMode Gravity }
-
-                // make the world's message queues
-                let messageQueues =
-                    { AudioMessages = [HintAudioPackageUseMessage { PackageName = DefaultPackageName }]
-                      RenderMessages = [HintRenderPackageUseMessage { PackageName = DefaultPackageName }]
-                      PhysicsMessages = [] }
 
                 // make the world's callbacks
                 let callbacks =
@@ -752,7 +745,6 @@ module WorldModule =
                     { Simulants = (game, Map.empty)
                       Components = components
                       Subsystems = subsystems
-                      MessageQueues = messageQueues
                       Callbacks = callbacks
                       State = state }
 
@@ -784,12 +776,6 @@ module WorldModule =
                   Renderer = { MockRenderer = () }
                   Integrator = { MockIntegrator = () }}
 
-            // make the world's message queues
-            let messageQueues =
-                { AudioMessages = []
-                  RenderMessages = []
-                  PhysicsMessages = [] }
-
             // make the world's callbacks
             let callbacks =
                 { Tasks = []
@@ -819,7 +805,6 @@ module WorldModule =
                 { Simulants = (game, Map.empty)
                   Components = components
                   Subsystems = subsystems
-                  MessageQueues = messageQueues
                   Callbacks = callbacks
                   State = state }
 

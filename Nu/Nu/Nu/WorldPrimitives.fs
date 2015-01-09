@@ -69,35 +69,35 @@ module World =
         let subsystems = { world.Subsystems with Integrator = integrator }
         { world with Subsystems = subsystems }
 
-    /// Clear the audio messages.
-    let internal clearAudioMessages world =
-        let messageQueues = { world.MessageQueues with AudioMessages = [] }
-        { world with MessageQueues = messageQueues }
-
     /// Clear the rendering messages.
     let internal clearRenderMessages world =
-        let messageQueues = { world.MessageQueues with RenderMessages = [] }
-        { world with MessageQueues = messageQueues }
+        let renderer = world.Subsystems.Renderer.ClearMessages ()
+        setRenderer renderer world
+
+    /// Clear the audio messages.
+    let internal clearAudioMessages world =
+        let audioPlayer = world.Subsystems.AudioPlayer.ClearMessages ()
+        setAudioPlayer audioPlayer world
 
     /// Clear the physics messages.
     let internal clearPhysicsMessages world =
-        let messageQueues = { world.MessageQueues with PhysicsMessages = [] }
-        { world with MessageQueues = messageQueues }
-
-    /// Add a physics message to the world.
-    let addPhysicsMessage message world =
-        let messageQueues = { world.MessageQueues with PhysicsMessages = message :: world.MessageQueues.PhysicsMessages }
-        { world with MessageQueues = messageQueues }
+        let integrator = world.Subsystems.Integrator.ClearMessages ()
+        setIntegrator integrator world
 
     /// Add a rendering message to the world.
     let addRenderMessage message world =
-        let messageQueues = { world.MessageQueues with RenderMessages = message :: world.MessageQueues.RenderMessages }
-        { world with MessageQueues = messageQueues }
+        let renderer = world.Subsystems.Renderer.ReceiveMessage message
+        setRenderer renderer world
 
     /// Add an audio message to the world.
     let addAudioMessage message world =
-        let messageQueues = { world.MessageQueues with AudioMessages = message :: world.MessageQueues.AudioMessages }
-        { world with MessageQueues = messageQueues }
+        let audioPlayer = world.Subsystems.AudioPlayer.ReceiveMessage message
+        setAudioPlayer audioPlayer world
+
+    /// Add a physics message to the world.
+    let addPhysicsMessage message world =
+        let integrator = world.Subsystems.Integrator.ReceiveMessage message
+        setIntegrator integrator world
 
     /// Add a task to be executed by the engine at the specified task tick.
     let addTask task world =
