@@ -3,9 +3,6 @@ open System
 open Nu
 module Program =
 
-    (* TODO: investigate a general subsystem interface to allowed user-defined subsystems to be
-    plugged-in, and try to make existing subsystems conform to it. *)
-
     (* TODO: investigate NuEdit extensibility mechanism. *)
 
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
