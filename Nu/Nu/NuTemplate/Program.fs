@@ -1,4 +1,5 @@
 ﻿namespace $safeprojectname$
+open System
 open SDL2
 open OpenTK
 open Prime
