@@ -428,84 +428,16 @@ module WorldModule =
                 world
                 entityMap
 
-        static member private play world =
-            let audioPlayer = world.Subsystems.AudioPlayer.Play ()
-            World.setAudioPlayer audioPlayer world
-
-        static member private getGroupRenderDescriptors world entities =
-            Map.toValueListBy
-                (fun entity -> Entity.getRenderDescriptors entity world)
-                entities
-
-        static member private getScreenTransitionRenderDescriptors camera screen transition =
-            match transition.OptDissolveImage with
-            | Some dissolveImage ->
-                let progress = single screen.TransitionTicksNp / single transition.TransitionLifetime
-                let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
-                let color = Vector4 (Vector3.One, alpha)
-                [LayerableDescriptor
-                    { Depth = Single.MaxValue
-                      LayeredDescriptor =
-                        SpriteDescriptor
-                            { Position = -camera.EyeSize * 0.5f // negation for right-handedness
-                              Size = camera.EyeSize
-                              Rotation = 0.0f
-                              ViewType = Absolute
-                              OptInset = None
-                              Image = dissolveImage
-                              Color = color }}]
-            | None -> []
-
-        static member private getRenderDescriptors world =
-            match World.getOptSelectedScreenAddress world with
-            | Some selectedScreenAddress ->
-                match Map.tryFind (Address.head selectedScreenAddress) (World.getScreenMap world) with
-                | Some (_, groupMap) ->
-                    let entityMaps = Map.toValueListBy snd groupMap
-                    let descriptors = List.map (World.getGroupRenderDescriptors world) entityMaps
-                    let descriptors = List.concat <| List.concat descriptors
-                    let selectedScreen = World.getScreen selectedScreenAddress world
-                    match selectedScreen.ScreenStateNp with
-                    | IncomingState -> descriptors @ World.getScreenTransitionRenderDescriptors world.State.Camera selectedScreen selectedScreen.Incoming
-                    | OutgoingState -> descriptors @ World.getScreenTransitionRenderDescriptors world.State.Camera selectedScreen selectedScreen.Outgoing
-                    | IdlingState -> descriptors
-                | None -> []
-            | None -> []
-
-        static member private render world =
-            let renderDescriptors = World.getRenderDescriptors world
-            let renderer = world.Subsystems.Renderer.Render (world.State.Camera, renderDescriptors)
-            World.setRenderer renderer world
-
-        static member private handleIntegrationMessage world integrationMessage =
-            match world.State.Liveness with
-            | Running ->
-                match integrationMessage with
-                | BodyTransformMessage bodyTransformMessage ->
-                    match World.getOptEntity (atoea bodyTransformMessage.SourceAddress) world with
-                    | Some entity -> snd <| World.handleBodyTransformMessage bodyTransformMessage entity (atoea bodyTransformMessage.SourceAddress) world
-                    | None -> world
-                | BodyCollisionMessage bodyCollisionMessage ->
-                    match World.getOptEntity (atoea bodyCollisionMessage.SourceAddress) world with
-                    | Some _ ->
-                        let collisionAddress = CollisionEventAddress ->- bodyCollisionMessage.SourceAddress
-                        let collisionData =
-                            { Normal = bodyCollisionMessage.Normal
-                              Speed = bodyCollisionMessage.Speed
-                              Collidee = (atoea bodyCollisionMessage.Source2Address) }
-                        World.publish4 collisionData collisionAddress GameAddress world
-                    | None -> world
-            | Exiting -> world
-
-        static member private handleIntegrationMessages integrationMessages world =
-            List.fold World.handleIntegrationMessage world integrationMessages
-
-        static member private integrate world =
-            if World.isPhysicsRunning world then
-                let (integrationMessages, integrator) = world.Subsystems.Integrator.Integrate ()
-                let world = World.setIntegrator integrator world
-                World.handleIntegrationMessages integrationMessages world
-            else world
+        static member private processSubsystems subsystemType world =
+            world.Subsystems |>
+            Map.toList |>
+            List.filter (fun (_, subsystem) -> subsystem.SubsystemType = subsystemType) |>
+            List.sortBy (fun (_, subsystem) -> -subsystem.SubsystemPriority) |>
+            List.fold (fun world (subsystemName, subsystem) ->
+                let (subsystemResult, subsystem) = subsystem.ProcessMessages world
+                let world = subsystem.ApplyResult (subsystemResult, world)
+                World.setSubsystem subsystem subsystemName world)
+                world
 
         static member private processTask (tasksNotRun, world) task =
             if task.ScheduledTime < world.State.TickTime then
@@ -578,7 +510,7 @@ module WorldModule =
                 let world = World.updateScreenTransition world
                 match world.State.Liveness with
                 | Running ->
-                    let world = World.integrate world
+                    let world = World.processSubsystems UpdateType world
                     match world.State.Liveness with
                     | Running ->
                         let world = World.publish4 () TickEventAddress GameAddress world
@@ -592,16 +524,17 @@ module WorldModule =
             | Exiting -> (Exiting, world)
 
         static member processRender handleRender world =
-            let world = World.render world
+            let world = World.processSubsystems RenderType world
             handleRender world
 
         static member processPlay world =
-            let world = World.play world
+            let world = World.processSubsystems AudioType world
             World.incrementTickTime world
 
         static member exitRender world =
-            let renderer = world.Subsystems.Renderer.CleanUp () 
-            World.setRenderer renderer world
+            let rs = World.getSubsystem RendererSubsystemName world
+            let (rs, world) = rs.CleanUp world
+            World.setSubsystem rs RendererSubsystemName world
 
         static member run4 tryMakeWorld handleUpdate handleRender sdlConfig =
             Sdl.run
@@ -706,15 +639,21 @@ module WorldModule =
                       GameDispatchers = gameDispatchers
                       Facets = facets }
 
-                // make the world's renderer
+                // make the world's subsystems
+                let integrator = Integrator.make farseerCautionMode Gravity
+                let integratorSubsystem = { SubsystemType = UpdateType; SubsystemPriority = 1.0f; Integrator = integrator } :> Subsystem
                 let renderer = Renderer.make sdlDeps.RenderContext AssetGraphFilePath
                 let renderer = renderer.EnqueueMessage <| HintRenderPackageUseMessage { PackageName = DefaultPackageName }
-
-                // make the world's subsystems
+                let rendererSubsystem = { SubsystemType = RenderType; SubsystemPriority = 1.0f; Renderer = renderer } :> Subsystem
+                let audioPlayer = AudioPlayer.make AssetGraphFilePath
+                let audioPlayerSubsystem = { SubsystemType = AudioType; SubsystemPriority = 1.0f; AudioPlayer = audioPlayer } :> Subsystem
                 let subsystems =
-                    { AudioPlayer = AudioPlayer.make AssetGraphFilePath
-                      Renderer = renderer
-                      Integrator = Integrator.make farseerCautionMode Gravity }
+                    Map.ofList
+                        [(IntegratorSubsystemName, integratorSubsystem)
+                         (RendererSubsystemName, rendererSubsystem)
+                         (AudioPlayerSubsystemName, audioPlayerSubsystem)]
+
+                // make the world's renderer
 
                 // make the world's callbacks
                 let callbacks =
@@ -771,11 +710,15 @@ module WorldModule =
                   Facets = Map.empty }
 
             // make the world's subsystems
+            let integratorSubsystem = { SubsystemType = UpdateType; SubsystemPriority = 1.0f; Integrator = { MockIntegrator = () }} :> Subsystem
+            let rendererSubsystem = { SubsystemType = RenderType; SubsystemPriority = 1.0f; Renderer = { MockRenderer = () }} :> Subsystem
+            let audioPlayerSubsystem = { SubsystemType = AudioType; SubsystemPriority = 1.0f; AudioPlayer = { MockAudioPlayer = () }} :> Subsystem
             let subsystems =
-                { AudioPlayer = { MockAudioPlayer  = () }
-                  Renderer = { MockRenderer = () }
-                  Integrator = { MockIntegrator = () }}
-
+                Map.ofList
+                    [(IntegratorSubsystemName, integratorSubsystem)
+                     (RendererSubsystemName, rendererSubsystem)
+                     (AudioPlayerSubsystemName, audioPlayerSubsystem)]
+            
             // make the world's callbacks
             let callbacks =
                 { Tasks = []

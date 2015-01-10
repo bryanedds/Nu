@@ -408,7 +408,13 @@ module WorldEntityModule =
 
         /// Add multiple entities to the group at the given address.
         static member addEntities entities (groupAddress : Group Address) world =
-            World.transformSimulants World.addEntity gatoea entities groupAddress world
+            Map.fold
+                (fun (entities, world) entityName entity ->
+                    let entityAddress = gatoea groupAddress entityName
+                    let (entity, world) = World.addEntity entity entityAddress world
+                    (Map.add entityName entity entities, world))
+                (Map.empty, world)
+                entities
 
         /// Make an entity (does NOT add the entity to the world!)
         static member makeEntity dispatcherName optName world =
@@ -681,8 +687,8 @@ module WorldEntityModule =
             entity
 
         /// Read multiple entities from an xml node.
-        static member readEntities (parentNode : XmlNode) defaultDispatcherName world =
-            match parentNode.SelectSingleNode EntitiesNodeName with
+        static member readEntities (groupNode : XmlNode) defaultDispatcherName world =
+            match groupNode.SelectSingleNode EntitiesNodeName with
             | null -> Map.empty
             | entitiesNode ->
                 let entityNodes = entitiesNode.SelectNodes EntityNodeName

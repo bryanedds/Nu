@@ -11,7 +11,7 @@ module ImmutableSubclass =
         member this.F = f
         member this.SetF f = this.Clone f
 
-        abstract member Clone : int -> Class
+        abstract Clone : int -> Class
         default this.Clone f = Class f
 
     type Subclass (f : int, g : int) =
@@ -21,5 +21,5 @@ module ImmutableSubclass =
         member this.SetG g = this.Clone (f, g)
 
         override this.Clone f = Subclass (f, g) :> Class
-        abstract member Clone : int * int -> Subclass
+        abstract Clone : int * int -> Subclass
         default this.Clone (f, g) = Subclass (f, g)

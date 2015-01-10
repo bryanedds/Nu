@@ -398,8 +398,8 @@ module WorldGroupModule =
             World.readGroupHierarchy groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
 
         /// Read multiple group hierarchies from an xml node.
-        static member readGroupHierarchies (parentNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
-            match parentNode.SelectSingleNode GroupsNodeName with
+        static member readGroupHierarchies (screenNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
+            match screenNode.SelectSingleNode GroupsNodeName with
             | null -> Map.empty
             | groupsNode ->
                 let groupNodes = groupsNode.SelectNodes GroupNodeName
