@@ -361,8 +361,8 @@ module WorldScreenModule =
 
         /// Read multiple screen hierarchies from an xml node.
         static member readScreenHierarchies
-            (parentNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
-            match parentNode.SelectSingleNode ScreensNodeName with
+            (gameNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
+            match gameNode.SelectSingleNode ScreensNodeName with
             | null -> Map.empty
             | screensNode ->
                 let screenNodes = screensNode.SelectNodes ScreenNodeName

@@ -180,7 +180,7 @@ module PhysicsModule =
         /// Try to get a contact tangent where the body with the given physics id is touching the ground.
         abstract GetBodyOptGroundContactTangent : PhysicsId -> Vector2 option
         /// Query that the body with the give physics id is on the ground.
-        abstract IsBodyOnGround : PhysicsId -> bool
+        abstract BodyOnGround : PhysicsId -> bool
         /// Clear all of the physics messages that have been enqueued.
         abstract ClearMessages : unit -> IIntegrator
         /// Enqueue a message from an external source.
@@ -471,7 +471,7 @@ module PhysicsModule =
                 | Some normal -> Some <| Vector2 (normal.Y, -normal.X)
                 | None -> None
 
-            member integrator.IsBodyOnGround physicsId =
+            member integrator.BodyOnGround physicsId =
                 let groundNormals = (integrator :> IIntegrator).GetBodyGroundContactNormals physicsId
                 not <| List.isEmpty groundNormals
 
@@ -504,7 +504,7 @@ module PhysicsModule =
             member integrator.GetBodyGroundContactNormals _ = failwith "No bodies in MockIntegrator"
             member integrator.GetBodyOptGroundContactNormal _ = failwith "No bodies in MockIntegrator"
             member integrator.GetBodyOptGroundContactTangent _ = failwith "No bodies in MockIntegrator"
-            member integrator.IsBodyOnGround _ = failwith "No bodies in MockIntegrator"
+            member integrator.BodyOnGround _ = failwith "No bodies in MockIntegrator"
             member integrator.ClearMessages () = integrator :> IIntegrator
             member integrator.EnqueueMessage _ = integrator :> IIntegrator
             member integrator.Integrate () = ([], integrator :> IIntegrator)

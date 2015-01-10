@@ -147,7 +147,7 @@ module SimulationModule =
 
         /// Register a game when adding it to the world. Note that there is not corresponding
         /// Unregister method due to the inability to remove a game from the world.
-        abstract member Register : Game * World -> Game * World
+        abstract Register : Game * World -> Game * World
         default dispatcher.Register (game, world) = (game, world)
 
     /// The default dispatcher for screens.
@@ -158,11 +158,11 @@ module SimulationModule =
              define? Persistent true]
 
         /// Register a screen when adding it to the world.
-        abstract member Register : Screen * Screen Address * World -> Screen * World
+        abstract Register : Screen * Screen Address * World -> Screen * World
         default dispatcher.Register (screen, _, world) = (screen, world)
 
         /// Unregister a screen when removing it from the world.
-        abstract member Unregister : Screen * Screen Address * World -> Screen * World
+        abstract Unregister : Screen * Screen Address * World -> Screen * World
         default dispatcher.Unregister (screen, _, world) = (screen, world)
 
     /// The default dispatcher for groups.
@@ -173,11 +173,11 @@ module SimulationModule =
              define? Persistent true]
 
         /// Register a group when adding it to a screen.
-        abstract member Register : Group * Group Address * World -> Group * World
+        abstract Register : Group * Group Address * World -> Group * World
         default dispatcher.Register (group, _, world) = (group, world)
 
         /// Unregister a group when removing it from a screen.
-        abstract member Unregister : Group * Group Address * World -> Group * World
+        abstract Unregister : Group * Group Address * World -> Group * World
         default dispatcher.Unregister (group, _, world) = (group, world)
 
     /// The default dispatcher for entities.
@@ -194,62 +194,62 @@ module SimulationModule =
              define? Persistent true]
 
         /// Register an entity when adding it to a group.
-        abstract member Register : Entity * Entity Address * World -> Entity * World
+        abstract Register : Entity * Entity Address * World -> Entity * World
         default dispatcher.Register (entity, _, world) = (entity, world)
 
         /// Unregister an entity when removing it from a group.
-        abstract member Unregister : Entity * Entity Address * World -> Entity * World
+        abstract Unregister : Entity * Entity Address * World -> Entity * World
         default dispatcher.Unregister (entity, _, world) = (entity, world)
 
         /// Propagate an entity's physics properties from the physics subsystem.
-        abstract member PropagatePhysics : Entity * Entity Address * World -> World
+        abstract PropagatePhysics : Entity * Entity Address * World -> World
         default dispatcher.PropagatePhysics (_, _, world) = world
 
         /// Get the render descriptors needed to render an entity.
-        abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
+        abstract GetRenderDescriptors : Entity * World -> RenderDescriptor list
         default dispatcher.GetRenderDescriptors (_, _) = []
 
         /// Get the quick size of an entity (the appropriate user-define size for an entity).
-        abstract member GetQuickSize : Entity * World -> Vector2
+        abstract GetQuickSize : Entity * World -> Vector2
         default dispatcher.GetQuickSize (_, _) = Vector2.One
 
         /// Get the priority with which an entity is picked in the editor.
-        abstract member GetPickingPriority : Entity * World -> single
+        abstract GetPickingPriority : Entity * World -> single
         default dispatcher.GetPickingPriority (entity, _) = entity.Depth
 
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
 
         /// Register a facet when adding it to an entity.
-        abstract member Register : Entity * Entity Address * World -> Entity * World
+        abstract Register : Entity * Entity Address * World -> Entity * World
         default facet.Register (entity, address, world) =
             let world = facet.RegisterPhysics (entity, address, world)
             (entity, world)
 
         /// Unregister a facet when removing it from an entity.
-        abstract member Unregister : Entity * Entity Address * World -> Entity * World
+        abstract Unregister : Entity * Entity Address * World -> Entity * World
         default facet.Unregister (entity, address, world) =
             let world = facet.UnregisterPhysics (entity, address, world)
             (entity, world)
 
         /// Participate in the registration of an entity's physics with the physics subsystem.
-        abstract member RegisterPhysics : Entity * Entity Address * World -> World
+        abstract RegisterPhysics : Entity * Entity Address * World -> World
         default facet.RegisterPhysics (_, _, world) = world
 
         /// Participate in the unregistration of an entity's physics from the physics subsystem.
-        abstract member UnregisterPhysics : Entity * Entity Address * World -> World
+        abstract UnregisterPhysics : Entity * Entity Address * World -> World
         default facet.UnregisterPhysics (_, _, world) = world
 
         /// Participate in the propagation an entity's physics properties from the physics subsystem.
-        abstract member PropagatePhysics : Entity * Entity Address * World -> World
+        abstract PropagatePhysics : Entity * Entity Address * World -> World
         default facet.PropagatePhysics (_, _, world) = world
 
         /// Participate in getting the render descriptors needed to render an entity.
-        abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
+        abstract GetRenderDescriptors : Entity * World -> RenderDescriptor list
         default facet.GetRenderDescriptors (_, _) = []
 
         /// Participate in getting the priority with which an entity is picked in the editor.
-        abstract member GetQuickSize : Entity * World -> Vector2
+        abstract GetQuickSize : Entity * World -> Vector2
         default facet.GetQuickSize (_, _) = DefaultEntitySize
 
     /// A marker interface for simulation types (Game, Screen, Group, Entity).
@@ -257,7 +257,7 @@ module SimulationModule =
     and Simulant =
         interface
             /// Get the entity's publishing priority.
-            abstract member GetPublishingPriority : (Entity -> World -> single) -> World -> single
+            abstract GetPublishingPriority : (Entity -> World -> single) -> World -> single
         end
 
     /// The game type that hosts the various screens used to navigate through a game.
@@ -369,33 +369,34 @@ module SimulationModule =
     /// Represents an untype result of a subsystem.
     and SubsystemResult = obj
 
+    /// The type of subsystem. Dictates where subsystem's processing happens in the game loop.
+    and SubsystemType =
+        | UpdateType
+        | RenderType
+        | AudioType
+
     /// Represents a subsystem by which additional engine-level subsystems such as AI, optimized
     /// special FX, and the like can be added.
     and Subsystem =
         interface
-            /// The ordering priority by which the subsystem will be processed.
-            abstract member Priority : single
-            /// Set the ordering priority by which the subsystem will be processed.
-            abstract member SetPriority : single -> Subsystem
+            /// The type of subsystem. Dictates where its processing happens in the game loop.
+            abstract SubsystemType : SubsystemType
+            /// The ordering priority by which the subsystem will be processed relative to other subsystems of the same type.
+            abstract SubsystemPriority : single
             /// Clear the messages queued by subsystem.
-            abstract member ClearMessages : unit -> Subsystem
+            abstract ClearMessages : unit -> Subsystem
             /// Enqueue a message for the subsystem.
-            abstract member EnqueueMessage : SubsystemMessage -> Subsystem
+            abstract EnqueueMessage : SubsystemMessage -> Subsystem
             /// Processed the queued messages with the subsystem.
-            abstract member ProcessMessages : World -> SubsystemResult * Subsystem
+            abstract ProcessMessages : World -> SubsystemResult * Subsystem
             /// Apply the result of the message processing to the world.
-            abstract member ApplyResult : SubsystemResult * World -> World
+            abstract ApplyResult : SubsystemResult * World -> World
             /// Clean up any resources used by the subsystem.
-            abstract member CleanUp : World -> World
+            abstract CleanUp : World -> Subsystem * World
         end
 
-    and Subsystems' = Map<string, Subsystem>
-
     /// The world's subsystems.
-    and [<ReferenceEquality>] Subsystems =
-        { AudioPlayer : IAudioPlayer
-          Renderer : IRenderer
-          Integrator : IIntegrator }
+    and Subsystems = Map<string, Subsystem>
 
     /// The world's components.
     and [<ReferenceEquality>] Components =
