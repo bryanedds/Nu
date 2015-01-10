@@ -184,7 +184,7 @@ module Reflection =
         let optDispatcher =
             match targetType.GetProperty "DispatcherNp" with
             | null -> None
-            | dispatcherNpProperty -> Some <| objectify ^^ dispatcherNpProperty.GetValue target
+            | dispatcherNpProperty -> Some ^^ objectify ^^ dispatcherNpProperty.GetValue target
         let optFacets =
             match targetType.GetProperty "FacetsNp" with
             | null -> None
