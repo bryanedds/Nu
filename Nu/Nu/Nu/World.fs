@@ -429,13 +429,20 @@ module WorldModule =
                 entityMap
 
         static member private processSubsystems subsystemType world =
-            world.Subsystems |>
-            Map.toList |>
+            Map.toList world.Subsystems |>
             List.filter (fun (_, subsystem) -> subsystem.SubsystemType = subsystemType) |>
             List.sortBy (fun (_, subsystem) -> -subsystem.SubsystemPriority) |>
             List.fold (fun world (subsystemName, subsystem) ->
                 let (subsystemResult, subsystem) = subsystem.ProcessMessages world
                 let world = subsystem.ApplyResult (subsystemResult, world)
+                World.setSubsystem subsystem subsystemName world)
+                world
+
+        static member private cleanUpSubsystems world =
+            Map.toList world.Subsystems |>
+            List.sortBy (fun (_, subsystem) -> -subsystem.SubsystemPriority) |>
+            List.fold (fun world (subsystemName, subsystem) ->
+                let (subsystem, world) = subsystem.CleanUp world
                 World.setSubsystem subsystem subsystemName world)
                 world
 
@@ -531,11 +538,6 @@ module WorldModule =
             let world = World.processSubsystems AudioType world
             World.incrementTickTime world
 
-        static member exitRender world =
-            let rs = World.getSubsystem RendererSubsystemName world
-            let (rs, world) = rs.CleanUp world
-            World.setSubsystem rs RendererSubsystemName world
-
         static member run4 tryMakeWorld handleUpdate handleRender sdlConfig =
             Sdl.run
                 tryMakeWorld
@@ -543,7 +545,7 @@ module WorldModule =
                 (World.processUpdate handleUpdate)
                 (World.processRender handleRender)
                 World.processPlay
-                World.exitRender
+                World.cleanUpSubsystems
                 sdlConfig
 
         static member run tryMakeWorld handleUpdate sdlConfig =
@@ -563,17 +565,29 @@ module WorldModule =
             match Metadata.tryGenerateAssetMetadataMap AssetGraphFilePath with
             | Right assetMetadataMap ->
 
-                // make the camera
-                let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH)
-                let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
+                // make the world's subsystems
+                let subsystems =
+                    let userSubsystems = Map.ofList <| nuPlugin.MakeSubsystems ()
+                    let integrator = Integrator.make farseerCautionMode Gravity
+                    let integratorSubsystem = { SubsystemType = UpdateType; SubsystemPriority = 1.0f; Integrator = integrator } :> Subsystem
+                    let renderer = Renderer.make sdlDeps.RenderContext AssetGraphFilePath
+                    let renderer = renderer.EnqueueMessage <| HintRenderPackageUseMessage { PackageName = DefaultPackageName }
+                    let rendererSubsystem = { SubsystemType = RenderType; SubsystemPriority = 1.0f; Renderer = renderer } :> Subsystem
+                    let audioPlayer = AudioPlayer.make AssetGraphFilePath
+                    let audioPlayerSubsystem = { SubsystemType = AudioType; SubsystemPriority = 1.0f; AudioPlayer = audioPlayer } :> Subsystem
+                    let defaultSubsystems =
+                        Map.ofList
+                            [(IntegratorSubsystemName, integratorSubsystem)
+                             (RendererSubsystemName, rendererSubsystem)
+                             (AudioPlayerSubsystemName, audioPlayerSubsystem)]
+                    defaultSubsystems @@ userSubsystems
 
-                // make user-defined values
+                // make user-defined components
                 let userFacets = World.pairWithNames <| nuPlugin.MakeFacets ()
                 let userEntityDispatchers = World.pairWithNames <| nuPlugin.MakeEntityDispatchers ()
                 let userGroupDispatchers = World.pairWithNames <| nuPlugin.MakeGroupDispatchers ()
                 let userScreenDispatchers = World.pairWithNames <| nuPlugin.MakeScreenDispatchers ()
                 let userOptGameDispatcher = nuPlugin.MakeOptGameDispatcher ()
-                let userOverlayRoutes = nuPlugin.MakeOverlayRoutes ()
 
                 // infer the active game dispatcher
                 let defaultGameDispatcher = GameDispatcher ()
@@ -587,10 +601,10 @@ module WorldModule =
                 // make facets
                 let defaultFacets =
                     Map.ofList
-                        [typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet
-                         typeof<SpriteFacet>.Name, SpriteFacet () :> Facet
-                         typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet]
-                let facets = Map.addMany (Map.toSeq userFacets) defaultFacets
+                        [(typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet)
+                         (typeof<SpriteFacet>.Name, SpriteFacet () :> Facet)
+                         (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
+                let facets = defaultFacets @@ userFacets
 
                 // make entity dispatchers
                 // TODO: see if we can reflectively generate these
@@ -609,15 +623,15 @@ module WorldModule =
                      SideViewCharacterDispatcher () :> EntityDispatcher
                      TileMapDispatcher () :> EntityDispatcher]
                 let defaultEntityDispatchers = World.pairWithNames defaultEntityDispatcherList
-                let entityDispatchers = Map.addMany (Map.toSeq userEntityDispatchers) defaultEntityDispatchers
+                let entityDispatchers = defaultEntityDispatchers @@ userEntityDispatchers
 
                 // make group dispatchers
                 let defaultGroupDispatchers = Map.ofList [World.pairWithName <| GroupDispatcher ()]
-                let groupDispatchers = Map.addMany (Map.toSeq userGroupDispatchers) defaultGroupDispatchers
+                let groupDispatchers = defaultGroupDispatchers @@ userGroupDispatchers
 
                 // make screen dispatchers
                 let defaultScreenDispatchers = Map.ofList [World.pairWithName <| ScreenDispatcher ()]
-                let screenDispatchers = Map.addMany (Map.toSeq userScreenDispatchers) defaultScreenDispatchers
+                let screenDispatchers = defaultScreenDispatchers @@ userScreenDispatchers
 
                 // make game dispatchers
                 let defaultGameDispatchers = Map.ofList [World.pairWithName <| defaultGameDispatcher]
@@ -628,9 +642,6 @@ module WorldModule =
                         Map.add gameDispatcherName gameDispatcher defaultGameDispatchers
                     | None -> defaultGameDispatchers
 
-                // make intrinsic overlays
-                let intrinsicOverlays = World.createIntrinsicOverlays entityDispatchers facets
-
                 // make the world's components
                 let components =
                     { EntityDispatchers = entityDispatchers
@@ -638,22 +649,6 @@ module WorldModule =
                       ScreenDispatchers = screenDispatchers
                       GameDispatchers = gameDispatchers
                       Facets = facets }
-
-                // make the world's subsystems
-                let integrator = Integrator.make farseerCautionMode Gravity
-                let integratorSubsystem = { SubsystemType = UpdateType; SubsystemPriority = 1.0f; Integrator = integrator } :> Subsystem
-                let renderer = Renderer.make sdlDeps.RenderContext AssetGraphFilePath
-                let renderer = renderer.EnqueueMessage <| HintRenderPackageUseMessage { PackageName = DefaultPackageName }
-                let rendererSubsystem = { SubsystemType = RenderType; SubsystemPriority = 1.0f; Renderer = renderer } :> Subsystem
-                let audioPlayer = AudioPlayer.make AssetGraphFilePath
-                let audioPlayerSubsystem = { SubsystemType = AudioType; SubsystemPriority = 1.0f; AudioPlayer = audioPlayer } :> Subsystem
-                let subsystems =
-                    Map.ofList
-                        [(IntegratorSubsystemName, integratorSubsystem)
-                         (RendererSubsystemName, rendererSubsystem)
-                         (AudioPlayerSubsystemName, audioPlayerSubsystem)]
-
-                // make the world's renderer
 
                 // make the world's callbacks
                 let callbacks =
@@ -664,6 +659,10 @@ module WorldModule =
 
                 // make the world's state
                 let state =
+                    let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH)
+                    let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
+                    let intrinsicOverlays = World.createIntrinsicOverlays entityDispatchers facets
+                    let userOverlayRoutes = nuPlugin.MakeOverlayRoutes ()
                     { TickTime = 0L
                       Liveness = Running
                       Interactivity = interactivity
@@ -695,7 +694,17 @@ module WorldModule =
         /// Make an empty world. Useful for unit-testing.
         static member makeEmpty (userState : 'u) =
 
-            // the default dispatchers
+            // make the world's subsystems
+            let subsystems =
+                let integratorSubsystem = { SubsystemType = UpdateType; SubsystemPriority = 1.0f; Integrator = { MockIntegrator = () }} :> Subsystem
+                let rendererSubsystem = { SubsystemType = RenderType; SubsystemPriority = 1.0f; Renderer = { MockRenderer = () }} :> Subsystem
+                let audioPlayerSubsystem = { SubsystemType = AudioType; SubsystemPriority = 1.0f; AudioPlayer = { MockAudioPlayer = () }} :> Subsystem
+                Map.ofList
+                    [(IntegratorSubsystemName, integratorSubsystem)
+                     (RendererSubsystemName, rendererSubsystem)
+                     (AudioPlayerSubsystemName, audioPlayerSubsystem)]
+
+            // make the default dispatchers
             let entityDispatcher = EntityDispatcher ()
             let groupDispatcher = GroupDispatcher ()
             let screenDispatcher = ScreenDispatcher ()
@@ -708,16 +717,6 @@ module WorldModule =
                   ScreenDispatchers = Map.singleton (Reflection.getTypeName screenDispatcher) screenDispatcher
                   GameDispatchers = Map.singleton (Reflection.getTypeName gameDispatcher) gameDispatcher
                   Facets = Map.empty }
-
-            // make the world's subsystems
-            let integratorSubsystem = { SubsystemType = UpdateType; SubsystemPriority = 1.0f; Integrator = { MockIntegrator = () }} :> Subsystem
-            let rendererSubsystem = { SubsystemType = RenderType; SubsystemPriority = 1.0f; Renderer = { MockRenderer = () }} :> Subsystem
-            let audioPlayerSubsystem = { SubsystemType = AudioType; SubsystemPriority = 1.0f; AudioPlayer = { MockAudioPlayer = () }} :> Subsystem
-            let subsystems =
-                Map.ofList
-                    [(IntegratorSubsystemName, integratorSubsystem)
-                     (RendererSubsystemName, rendererSubsystem)
-                     (AudioPlayerSubsystemName, audioPlayerSubsystem)]
             
             // make the world's callbacks
             let callbacks =

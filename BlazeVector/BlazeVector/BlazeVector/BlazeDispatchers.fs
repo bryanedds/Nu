@@ -126,8 +126,8 @@ module EnemyModule =
         override dispatcher.Register (enemy, address, world) =
             let world =
                 world |>
-                World.monitor handleTick TickEventAddress address |>
-                World.monitor handleCollision (CollisionEventAddress ->>- address) address
+                    World.monitor handleTick TickEventAddress address |>
+                    World.monitor handleCollision (CollisionEventAddress ->>- address) address
             (enemy, world)
 
 [<AutoOpen>]
@@ -247,10 +247,10 @@ module PlayerModule =
         override dispatcher.Register (player, address, world) =
             let world =
                 world |>
-                World.monitor handleSpawnBullet TickEventAddress address |>
-                World.monitor handleMovement TickEventAddress address |>
-                World.monitor handleJump MouseLeftDownEventAddress address |>
-                World.monitor handleJumpByKeyboardKey KeyboardKeyDownEventAddress address
+                    World.monitor handleSpawnBullet TickEventAddress address |>
+                    World.monitor handleMovement TickEventAddress address |>
+                    World.monitor handleJump MouseLeftDownEventAddress address |>
+                    World.monitor handleJumpByKeyboardKey KeyboardKeyDownEventAddress address
             (player, world)
 
 [<AutoOpen>]
@@ -288,8 +288,8 @@ module StagePlayModule =
         override dispatcher.Register (group, address, world) =
             let world =
                 world |>
-                World.monitor handleAdjustCamera TickEventAddress address |>
-                World.monitor handlePlayerFall TickEventAddress address
+                    World.monitor handleAdjustCamera TickEventAddress address |>
+                    World.monitor handlePlayerFall TickEventAddress address
             let world = adjustCamera address world
             (group, world)
 
@@ -337,7 +337,7 @@ module StageScreenModule =
         override dispatcher.Register (screen, address, world) =
             let world =
                 world |>
-                World.monitor handleStartPlay (SelectEventAddress ->>- address) address |>
-                World.monitor handleStoppingPlay (OutgoingStartEventAddress ->>- address) address |>
-                World.monitor handleStopPlay (DeselectEventAddress ->>- address) address
+                    World.monitor handleStartPlay (SelectEventAddress ->>- address) address |>
+                    World.monitor handleStoppingPlay (OutgoingStartEventAddress ->>- address) address |>
+                    World.monitor handleStopPlay (DeselectEventAddress ->>- address) address
             (screen, world)

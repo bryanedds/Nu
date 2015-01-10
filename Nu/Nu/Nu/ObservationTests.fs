@@ -104,8 +104,8 @@ module ObservationTests =
         let world = snd <| World.addScreen (screen, Map.singleton group.Name (group, Map.ofList [(jim.Name, jim); (bob.Name, bob)])) DefaultScreenAddress world
         let world =
             world |>
-            (BobAddress, Entity.getVisible) --> (JimAddress, Entity.setVisible) |>
-            (JimAddress, Entity.getVisible) -/> (BobAddress, not >> Entity.setVisible)
+                (BobAddress, Entity.getVisible) --> (JimAddress, Entity.setVisible) |>
+                (JimAddress, Entity.getVisible) -/> (BobAddress, not >> Entity.setVisible)
         let world = World.updateEntity (Entity.setVisible false) BobAddress world
         Assert.True <| World.getEntityBy Entity.getVisible BobAddress world
         Assert.True <| World.getEntityBy Entity.getVisible JimAddress world
