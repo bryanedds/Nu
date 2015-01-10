@@ -394,9 +394,9 @@ module GameplayDispatcherModule =
                         (fun world ->
                             match World.getEntityBy Entity.getActivityState characterAddress world with
                             | Navigation nd -> newNavigationDescriptor.WalkDescriptor.WalkOriginM = nd.WalkDescriptor.WalkOriginM
-                            | Action _ | NoActivity -> false) <|
+                            | Action _ | NoActivity -> false) ^^
                         desync {
-                            do! update <| fun world ->
+                            do! update ^^ fun world ->
                                 let navigationDescriptor =
                                     match World.getEntityBy Entity.getActivityState characterAddress world with
                                     | Navigation navigationDescriptor -> navigationDescriptor
@@ -413,9 +413,9 @@ module GameplayDispatcherModule =
                 do! during
                         (fun world ->
                             let activityState = World.getEntityBy Entity.getActivityState characterAddress world 
-                            ActivityState.isActing activityState) <|
+                            ActivityState.isActing activityState) ^^
                         desync {
-                            do! update <| fun world ->
+                            do! update ^^ fun world ->
                                 let actionDescriptor =
                                     match World.getEntityBy Entity.getActivityState characterAddress world  with
                                     | Action actionDescriptor -> actionDescriptor
@@ -520,7 +520,7 @@ module GameplayDispatcherModule =
                 let playerAddress = getPlayerAddress address
                 let desync = desync {
                     do! updateEntity (Entity.setEnabled false) hudSaveGameAddress
-                    do! loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress address world) <| fun i -> desync {
+                    do! loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress address world) ^^ fun i -> desync {
                         let! event = next
                         do! match event.Data with
                             | Right _ -> desync {
