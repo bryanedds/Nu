@@ -1,6 +1,7 @@
 ﻿namespace Nu
 open System
 open Nu
+open Nu.Constants
 module Program =
 
     (* TODO: investigate NuEdit extensibility mechanism. *)
@@ -81,5 +82,6 @@ module Program =
     something over which I have very little control over its implementation barring spending months
     (at least) on implementing it in the F# compiler myself. *)
     
-    // apparently a side-effect is needed to avoid the empty program warning
-    Console.Write "Running Nu.exe"
+    let [<EntryPoint; STAThread>] main _ =
+        Console.Write "Running Nu.exe"
+        SuccessExitCode
