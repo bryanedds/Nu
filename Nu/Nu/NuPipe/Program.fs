@@ -6,7 +6,7 @@ open Nu
 open Nu.Constants
 module Program =
 
-    let [<EntryPoint>] main argv =
+    let [<EntryPoint; STAThread>] main argv =
         World.init ()
         match argv with
         | [|inputDirectory; outputDirectory; refinementDirectory; fullBuildStr|] ->

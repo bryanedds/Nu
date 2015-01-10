@@ -6,7 +6,7 @@ open Nu.Constants
 module Program =
 
     // this the entry point for the InfinityRpg application
-    let [<EntryPoint>] main _ =
+    let [<EntryPoint; STAThread>] main _ =
     
         // this initializes miscellaneous values required by the engine. This should always be the
         // first line in your game program.
