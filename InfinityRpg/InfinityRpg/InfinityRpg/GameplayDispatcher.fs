@@ -644,13 +644,13 @@ module GameplayDispatcherModule =
         override dispatcher.Register (gameplay, address, world) =
             let world =
                 world |>
-                (observe (EntityChangeEventAddress ->>- getPlayerAddress address) address |> subscribe handlePlayerChange) |>
-                (observe (TouchEventAddress ->>- getHudFeelerAddress address) address |> filter isSelected |> monitor handleTouchFeeler) |>
-                (observe (DownEventAddress ->>- getHudDetailUpAddress address) address |> filter isSelected |> monitor (handleDownDetail Upward)) |>
-                (observe (DownEventAddress ->>- getHudDetailRightAddress address) address |> filter isSelected |> monitor (handleDownDetail Rightward)) |>
-                (observe (DownEventAddress ->>- getHudDetailDownAddress address) address |> filter isSelected |> monitor (handleDownDetail Downward)) |>
-                (observe (DownEventAddress ->>- getHudDetailLeftAddress address) address |> filter isSelected |> monitor (handleDownDetail Leftward)) |>
-                (World.subscribe4 handleSelectGameplay (SelectEventAddress ->>- address) address) |>
-                (World.subscribe4 handleClickSaveGame (ClickEventAddress ->>- getHudSaveGameAddress address) address) |>
-                (World.subscribe4 handleDeselectGameplay (DeselectEventAddress ->>- address) address)
+                    (observe (EntityChangeEventAddress ->>- getPlayerAddress address) address |> subscribe handlePlayerChange) |>
+                    (observe (TouchEventAddress ->>- getHudFeelerAddress address) address |> filter isSelected |> monitor handleTouchFeeler) |>
+                    (observe (DownEventAddress ->>- getHudDetailUpAddress address) address |> filter isSelected |> monitor (handleDownDetail Upward)) |>
+                    (observe (DownEventAddress ->>- getHudDetailRightAddress address) address |> filter isSelected |> monitor (handleDownDetail Rightward)) |>
+                    (observe (DownEventAddress ->>- getHudDetailDownAddress address) address |> filter isSelected |> monitor (handleDownDetail Downward)) |>
+                    (observe (DownEventAddress ->>- getHudDetailLeftAddress address) address |> filter isSelected |> monitor (handleDownDetail Leftward)) |>
+                    (World.subscribe4 handleSelectGameplay (SelectEventAddress ->>- address) address) |>
+                    (World.subscribe4 handleClickSaveGame (ClickEventAddress ->>- getHudSaveGameAddress address) address) |>
+                    (World.subscribe4 handleDeselectGameplay (DeselectEventAddress ->>- address) address)
             (gameplay, world)

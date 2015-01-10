@@ -12,10 +12,11 @@ module PluginModule =
     type InfinityRpgPlugin () =
         inherit NuPlugin ()
 
-        override this.MakeFacets () =
-            [CharacterStateFacet () :> Facet
-             CharacterAnimationFacet () :> Facet
-             CharacterCameraFacet () :> Facet]
+        override this.MakeOptGameDispatcher () =
+            Some (InfinityDispatcher () :> GameDispatcher)
+
+        override this.MakeScreenDispatchers () =
+            [GameplayDispatcher () :> ScreenDispatcher]
 
         override this.MakeEntityDispatchers () =
             [FieldDispatcher () :> EntityDispatcher
@@ -23,11 +24,10 @@ module PluginModule =
              CharacterDispatcher () :> EntityDispatcher
              PlayerDispatcher () :> EntityDispatcher]
 
-        override this.MakeScreenDispatchers () =
-            [GameplayDispatcher () :> ScreenDispatcher]
-
-        override this.MakeOptGameDispatcher () =
-            Some (InfinityDispatcher () :> GameDispatcher)
+        override this.MakeFacets () =
+            [CharacterStateFacet () :> Facet
+             CharacterAnimationFacet () :> Facet
+             CharacterCameraFacet () :> Facet]
 
         override this.MakeOverlayRoutes () =
             [typeof<ButtonDispatcher>.Name, Some "InfinityButtonDispatcher"]

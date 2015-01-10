@@ -152,12 +152,11 @@ module Math =
 
     /// Snap an radian value to an offset.
     let snapR offset value =
-        value |>
-            mul RadiansToDegreesF |>
-            int |>
-            snap offset |>
-            single |>
-            mul DegreesToRadiansF
+        mul RadiansToDegreesF value |>
+        int |>
+        snap offset |>
+        single |>
+        mul DegreesToRadiansF
 
     /// Snap an single float value to an offset.
     let snapF offset (value : single) =

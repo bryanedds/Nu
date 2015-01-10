@@ -442,26 +442,30 @@ module SimulationModule =
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
     /// specific values.
     and NuPlugin () =
+
+        /// Make user-defined subsystems such that Nu can utilitze them at run-time.
+        abstract MakeSubsystems : unit -> (string * Subsystem) list
+        default this.MakeSubsystems () = []
         
-        /// Make user-defined assets such that Nu can utililize them at run-time.
-        abstract MakeFacets : unit -> Facet list
-        default this.MakeFacets () = []
-        
-        /// Make user-defined entity dispatchers such that Nu can utililize them at run-time.
-        abstract MakeEntityDispatchers : unit -> EntityDispatcher list
-        default this.MakeEntityDispatchers () = []
-        
-        /// Make user-defined group dispatchers such that Nu can utililize them at run-time.
-        abstract MakeGroupDispatchers : unit -> GroupDispatcher list
-        default this.MakeGroupDispatchers () = []
+        /// Optionally make a user-defined game dispatchers such that Nu can utililize it at run-time.
+        abstract MakeOptGameDispatcher : unit -> GameDispatcher option
+        default this.MakeOptGameDispatcher () = None
         
         /// Make user-defined screen dispatchers such that Nu can utililize them at run-time.
         abstract MakeScreenDispatchers : unit -> ScreenDispatcher list
         default this.MakeScreenDispatchers () = []
         
-        /// Optionally make a user-defined game dispatchers such that Nu can utililize it at run-time.
-        abstract MakeOptGameDispatcher : unit -> GameDispatcher option
-        default this.MakeOptGameDispatcher () = None
+        /// Make user-defined group dispatchers such that Nu can utililize them at run-time.
+        abstract MakeGroupDispatchers : unit -> GroupDispatcher list
+        default this.MakeGroupDispatchers () = []
+        
+        /// Make user-defined entity dispatchers such that Nu can utililize them at run-time.
+        abstract MakeEntityDispatchers : unit -> EntityDispatcher list
+        default this.MakeEntityDispatchers () = []
+        
+        /// Make user-defined assets such that Nu can utililize them at run-time.
+        abstract MakeFacets : unit -> Facet list
+        default this.MakeFacets () = []
         
         /// Make the overlay routes that will allow Nu to use different overlays for the specified
         /// types. For example, a returned router of (typeof<ButtonDispatcher>.Name, Some "CustomButtonOverlay")

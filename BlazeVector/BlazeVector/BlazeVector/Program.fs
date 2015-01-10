@@ -14,23 +14,23 @@ module Program =
     type BlazePlugin () =
         inherit NuPlugin ()
 
-        // make our game-specific entity dispatchers...
-        override this.MakeEntityDispatchers () =
-            [BulletDispatcher () :> EntityDispatcher
-             PlayerDispatcher () :> EntityDispatcher
-             EnemyDispatcher () :> EntityDispatcher]
-
-        // make our game-specific group dispatchers...
-        override this.MakeGroupDispatchers () =
-            [StagePlayDispatcher () :> GroupDispatcher]
+        // make our game-specific game dispatcher...
+        override this.MakeOptGameDispatcher () =
+            Some (BlazeDispatcher () :> GameDispatcher)
 
         // make our game-specific screen dispatchers...
         override this.MakeScreenDispatchers () =
             [StageScreenDispatcher () :> ScreenDispatcher]
 
-        // make our game-specific game dispatcher...
-        override this.MakeOptGameDispatcher () =
-            Some (BlazeDispatcher () :> GameDispatcher)
+        // make our game-specific group dispatchers...
+        override this.MakeGroupDispatchers () =
+            [StagePlayDispatcher () :> GroupDispatcher]
+
+        // make our game-specific entity dispatchers...
+        override this.MakeEntityDispatchers () =
+            [BulletDispatcher () :> EntityDispatcher
+             PlayerDispatcher () :> EntityDispatcher
+             EnemyDispatcher () :> EntityDispatcher]
 
     // this the entry point for the BlazeVector application
     let [<EntryPoint>] main _ =
