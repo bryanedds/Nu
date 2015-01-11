@@ -49,6 +49,7 @@ module WorldGameModule =
         static member getGame world =
             World.getGameBy id world
 
+        /// Get the game hierarchy.
         static member getGameHierarchy world =
             let game = World.getGame world
             let screenMap = World.getScreenMap world
@@ -88,10 +89,12 @@ module WorldGameModule =
             { Get = World.getGame
               Set = World.setGame }
 
+        /// TODO: document!
         static member getOptSelectedScreenAddress world =
             let game = World.getGame world
             game.OptSelectedScreenAddress
         
+        /// TODO: document!
         static member setOptSelectedScreenAddress optAddress world =
             World.updateGame (Game.setOptSelectedScreenAddress optAddress) world
         

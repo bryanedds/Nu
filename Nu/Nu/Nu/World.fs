@@ -760,9 +760,3 @@ module WorldModule =
         static member initAndMakeEmpty (userState : 'u) =
             World.init ()
             World.makeEmpty userState
-
-        /// Initialize the Nu game engine and try to make the world, returning either a Right
-        //// World on success, or a Left string (with an error message) on failure.
-        static member initAndTryMake farseerCautionMode useLoadedGameDispatcher interactivity userState nuPlugin sdlDeps =
-            World.init ()
-            World.tryMake farseerCautionMode useLoadedGameDispatcher interactivity userState nuPlugin sdlDeps
