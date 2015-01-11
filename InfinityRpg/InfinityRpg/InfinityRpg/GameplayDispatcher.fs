@@ -618,6 +618,10 @@ module GameplayDispatcherModule =
             // add scene hierarchy to world
             snd <| World.addGroup sceneHierarchy sceneAddress world
 
+        static let handleSelectTitle _ world =
+            let world = World.playSong DefaultTimeToFadeOutSongMs 1.0f { PackageName = GuiPackageName; AssetName = "ButterflyGirl" } world
+            (Cascade, world)
+
         static let handleSelectGameplay (event : Event<_, Screen>) world =
             let world =
                 // NOTE: doing a File.Exists then loading the file is dangerous since the file can
@@ -625,6 +629,7 @@ module GameplayDispatcherModule =
                 if event.Subscriber.ShallLoadGame && File.Exists SaveFilePath
                 then handleLoadGame event.Subscriber event.SubscriberAddress world
                 else handleNewGame event.Subscriber event.SubscriberAddress world
+            let world = World.playSong DefaultTimeToFadeOutSongMs 1.0f { PackageName = GameplayPackageName; AssetName = "Hero'sVengeance" } world
             (Cascade, world)
 
         static let handleClickSaveGame event world =
@@ -651,6 +656,7 @@ module GameplayDispatcherModule =
                     (observe (DownEventAddress ->>- getHudDetailRightAddress address) address |> filter isSelected |> monitor (handleDownDetail Rightward)) |>
                     (observe (DownEventAddress ->>- getHudDetailDownAddress address) address |> filter isSelected |> monitor (handleDownDetail Downward)) |>
                     (observe (DownEventAddress ->>- getHudDetailLeftAddress address) address |> filter isSelected |> monitor (handleDownDetail Leftward)) |>
+                    (World.subscribe4 handleSelectTitle (SelectEventAddress ->>- TitleAddress) address) |>
                     (World.subscribe4 handleSelectGameplay (SelectEventAddress ->>- address) address) |>
                     (World.subscribe4 handleClickSaveGame (ClickEventAddress ->>- getHudSaveGameAddress address) address) |>
                     (World.subscribe4 handleDeselectGameplay (DeselectEventAddress ->>- address) address)
