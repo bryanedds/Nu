@@ -222,14 +222,17 @@ module WorldScreenModule =
         static member setScreensInGame screens world =
             Seq.fold (fun world (screen : Screen) -> World.setScreen screen (ntoa screen.Name) world) world screens
 
-        /// Update the screens at the given addresses with the given 'updater' procedure. Also
-        /// passes the current world value to the procedure.
+        /// Update the screens at the given addresses and the world with the given 'updater' procedure.
+        static member updateScreensAndW updater addresses world =
+            Seq.fold (fun world address -> World.updateScreenAndW updater address world) world addresses
+
+        /// Update the screens at the given addresses with the given 'updater' procedure.
         static member updateScreensW updater addresses world =
             Seq.fold (fun world address -> World.updateScreenW updater address world) world addresses
         
         /// Update the screens at the given addresses with the given 'updater' procedure.
         static member updateScreens updater addresses world =
-            World.updateScreensW (fun screen _ -> updater screen) addresses world
+            Seq.fold (fun world address -> World.updateScreen updater address world) world addresses
 
         /// Lens the screens at the given addresses.
         static member lensScreens addresses =
