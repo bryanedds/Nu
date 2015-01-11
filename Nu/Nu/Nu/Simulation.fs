@@ -381,8 +381,8 @@ module SimulationModule =
         interface
             /// The type of subsystem. Dictates where its processing happens in the game loop.
             abstract SubsystemType : SubsystemType
-            /// The ordering priority by which the subsystem will be processed relative to other subsystems of the same type.
-            abstract SubsystemPriority : single
+            /// The ordering by which the subsystem will be processed relative to other subsystems of the same type.
+            abstract SubsystemOrder : single
             /// Clear the messages queued by subsystem.
             abstract ClearMessages : unit -> Subsystem
             /// Enqueue a message for the subsystem.
