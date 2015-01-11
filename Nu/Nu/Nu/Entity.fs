@@ -317,24 +317,33 @@ module WorldEntityModule =
         static member setEntitiesInGroup entities groupAddress world =
             Seq.fold (fun world (entity : Entity) -> World.setEntity entity (gatoea groupAddress entity.Name) world) world entities
 
-        /// Update the entities at the given addresses with the given 'updater' procedure. Also
-        /// passes the current world value to the procedure.
+        /// Update the entities at the given addresses and the world with the given 'updater' procedure.
+        static member updateEntitiesAndW updater addresses world =
+            Seq.fold (fun world address -> World.updateEntityAndW updater address world) world addresses
+
+        /// Update the entities at the given addresses with the given 'updater' procedure.
         static member updateEntitiesW updater addresses world =
             Seq.fold (fun world address -> World.updateEntityW updater address world) world addresses
 
         /// Update the entities at the given addresses with the given 'updater' procedure.
         static member updateEntities updater addresses world =
-            World.updateEntitiesW (fun entity _ -> updater entity) addresses world
+            Seq.fold (fun world address -> World.updateEntity updater address world) world addresses
+
+        /// Update all entities in the group at the given address and the world using the given 'updater' procedure.
+        static member updateEntitiesInGroupAndW updater groupAddress world =
+            let addresses = World.getEntityAddressesInGroup groupAddress world
+            Seq.fold (fun world address -> World.updateEntityAndW updater address world) world addresses
 
         /// Update all entities in the group at the given address using the given 'updater'
         /// procedure. Also passes the current world value to the procedure.
         static member updateEntitiesInGroupW updater groupAddress world =
             let addresses = World.getEntityAddressesInGroup groupAddress world
             Seq.fold (fun world address -> World.updateEntityW updater address world) world addresses
-            
+
         /// Update all entities in the group at the given address using the given 'updater' procedure.
-        static member updateEntitiesInGroup updater addresses world =
-            World.updateEntitiesInGroupW (fun entity _ -> updater entity) addresses world
+        static member updateEntitiesInGroup updater groupAddress world =
+            let addresses = World.getEntityAddressesInGroup groupAddress world
+            Seq.fold (fun world address -> World.updateEntity updater address world) world addresses
 
         /// Lens the entities at the given addresses.
         static member lensEntities addresses =

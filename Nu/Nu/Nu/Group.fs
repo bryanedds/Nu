@@ -220,24 +220,32 @@ module WorldGroupModule =
         static member setGroupsInScreen groups screenAddress world =
             Seq.fold (fun world (group : Group) -> World.setGroup group (satoga screenAddress group.Name) world) world groups
 
-        /// Update the groups at the given addresses with the given 'updater' procedure. Also
-        /// passes the current world value to the procedure.
+        /// Update the groups at the given addresses and the world with the given 'updater' procedure.
+        static member updateGroupsAndW updater addresses world =
+            Seq.fold (fun world address -> World.updateGroupAndW updater address world) world addresses
+
+        /// Update the groups at the given addresses with the given 'updater' procedure.
         static member updateGroupsW updater addresses world =
             Seq.fold (fun world address -> World.updateGroupW updater address world) world addresses
         
         /// Update the groups at the given addresses with the given 'updater' procedure.
         static member updateGroups updater addresses world =
-            World.updateGroupsW (fun group _ -> updater group) addresses world
+            Seq.fold (fun world address -> World.updateGroup updater address world) world addresses
+
+        /// Update all groups in the screen at the given address and the world using the given 'updater'
+        static member updateGroupsInScreenAndW updater screenAddress world =
+            let addresses = World.getGroupAddressesInScreen screenAddress world
+            Seq.fold (fun world address -> World.updateGroupAndW updater address world) world addresses
 
         /// Update all groups in the screen at the given address using the given 'updater'
-        /// procedure. Also passes the current world value to the procedure.
         static member updateGroupsInScreenW updater screenAddress world =
             let addresses = World.getGroupAddressesInScreen screenAddress world
             Seq.fold (fun world address -> World.updateGroupW updater address world) world addresses
-            
+
         /// Update all groups in the screen at the given address using the given 'updater' procedure.
-        static member updateGroupsInScreen updater addresses world =
-            World.updateGroupsInScreenW (fun group _ -> updater group) addresses world
+        static member updateGroupsInScreen updater screenAddress world =
+            let addresses = World.getGroupAddressesInScreen screenAddress world
+            Seq.fold (fun world address -> World.updateGroup updater address world) world addresses
 
         /// Lens the groups at the given addresses.
         static member lensGroups addresses =
