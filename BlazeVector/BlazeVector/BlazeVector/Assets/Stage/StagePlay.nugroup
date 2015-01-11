@@ -1,7 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group dispatcherName="StagePlayDispatcher">
     <Name>Group</Name>
+    <PublishChanges>True</PublishChanges>
+    <Persistent>True</Persistent>
     <Entities>
       <Entity dispatcherName="PlayerDispatcher">
         <Name>Player</Name>
