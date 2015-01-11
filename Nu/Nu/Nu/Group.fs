@@ -140,12 +140,15 @@ module WorldGroupModule =
             then World.publish4 { OldSimulant = oldGroup } (GroupChangeEventAddress ->>- address) address world
             else world
 
-        /// Update a group with the given 'updater' procedure at the given address. Also passes
-        /// the current world value to the procedure.
-        static member updateGroupW updater address world =
+        /// Update a group at the given address and the world with the given 'updater' procedure.
+        static member updateGroupAndW updater address world =
             let group = World.getGroup address world
-            let group = updater group world
+            let (group, world) = updater group world
             World.setGroup group address world
+
+        /// Update a group with the given 'updater' procedure at the given address.
+        static member updateGroupW updater address world =
+            World.updateGroupAndW (fun group world -> (updater group world, world)) address world
         
         /// Update a group with the given 'updater' procedure at the given address.
         static member updateGroup updater address world =

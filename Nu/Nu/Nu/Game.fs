@@ -2,6 +2,7 @@
 open System
 open System.IO
 open System.Xml
+open FSharpx
 open Prime
 open Nu
 open Nu.Constants
@@ -62,12 +63,15 @@ module WorldGameModule =
             then World.publish4 { OldSimulant = oldGame } (GameChangeEventAddress ->>- GameAddress) GameAddress world
             else world
 
-        /// Update the game with the given 'updater' procedure. Also passes the current world value
-        /// to the procedure.
-        static member updateGameW updater world =
+        /// Update the game with the given 'updater' procedure.
+        static member updateGameAndW updater world =
             let game = World.getGame world
-            let game = updater game world
+            let (game, world) = updater game world
             World.setGame game world
+
+        /// Update the game with the given 'updater' procedure.
+        static member updateGameW updater world =
+            World.updateGameAndW (fun game world -> (updater game world, world)) world
 
         /// Update the game with the given 'updater' procedure.
         static member updateGame updater world =
@@ -78,6 +82,11 @@ module WorldGameModule =
         static member updateByGame updater world : World =
             let game = World.getGame world
             updater game world
+
+        /// Lens the game.
+        static member lensGame =
+            { Get = World.getGame
+              Set = World.setGame }
 
         static member getOptSelectedScreenAddress world =
             let game = World.getGame world

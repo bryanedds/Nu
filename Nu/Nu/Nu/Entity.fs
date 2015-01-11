@@ -248,18 +248,16 @@ module WorldEntityModule =
             if entity.PublishChanges
             then World.publish4 { OldSimulant = oldEntity } (EntityChangeEventAddress ->>- address) address world
             else world
-
-        /// Lens an entity at the given address.
-        static member lensEntity address =
-            { Get = World.getEntity address
-              Set = fun entity -> World.setEntity entity address }
             
-        /// Update an entity with the given 'updater' procedure at the given address. Also passes
-        /// the current world value to the procedure.
-        static member updateEntityW updater address world =
+        /// Update an entity at the given address and the world with the given 'updater' procedure.
+        static member updateEntityAndW updater address world =
             let entity = World.getEntity address world
-            let entity = updater entity world
+            let (entity, world) = updater entity world
             World.setEntity entity address world
+
+        /// Update an entity with the given 'updater' procedure at the given address.
+        static member updateEntityW updater address world =
+            World.updateEntityAndW (fun entity world -> (updater entity world, world)) address world
             
         /// Update an entity with the given 'updater' procedure at the given address.
         static member updateEntity updater address world =
@@ -270,6 +268,11 @@ module WorldEntityModule =
         static member updateByEntity updater address world : World =
             let entity = World.getEntity address world
             updater entity world
+
+        /// Lens an entity at the given address.
+        static member lensEntity address =
+            { Get = World.getEntity address
+              Set = fun entity -> World.setEntity entity address }
 
         /// Get all the entities at the given addresses as transformed them with the 'by'
         /// procedure.
