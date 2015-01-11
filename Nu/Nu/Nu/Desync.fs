@@ -53,11 +53,14 @@ module Desync =
     let updateByEntity expr address : Desync<'e, World, unit> =
         desync { do! update <| World.updateByEntity expr address }
 
-    let updateByLensW expr lens =
+    let updateLensedW expr lens =
         desync { do! update (fun (world : World) -> Lens.updateS expr lens world) }
 
+    let updateLensed expr lens =
+        updateLensedW (flip (fun _ -> expr)) lens
+
     let updateByLens expr lens =
-        updateByLensW (flip (fun _ -> expr)) lens
+        desync { do! update (fun (world : World) -> Lens.update expr (lens @-> World.lens) world) }
 
     let private runDesync4 eventHandling (desync : Desync<Event<'a, 'o>, World, unit>) (observation : Observation<'a, 'o>) world =
         let callbackKey = World.makeCallbackKey ()
