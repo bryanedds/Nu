@@ -5,8 +5,41 @@ open Prime.Desync
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
-
 module Desync =
+
+    let private runDesync4 eventHandling (desync : Desync<Event<'a, 'o>, World, unit>) (observation : Observation<'a, 'o>) world =
+        let callbackKey = World.makeCallbackKey ()
+        let world = World.addCallbackState callbackKey (fun (_ : Event<'a, 'o>) -> desync) world
+        let subscriptionKey = World.makeSubscriptionKey ()
+        let (eventAddress, unsubscribe, world) = observation.Subscribe world
+        let unsubscribe = fun world ->
+            let world = World.removeCallbackState callbackKey world
+            let world = unsubscribe world
+            World.unsubscribe subscriptionKey world
+        let advance = fun event world ->
+            let desync = World.getCallbackState callbackKey world : Event<'a, 'o> -> Desync<Event<'a, 'o>, World, unit>
+            let (world, advanceResult) = advanceDesync desync event world
+            match advanceResult with
+            | Right () -> unsubscribe world
+            | Left desyncNext -> World.addCallbackState callbackKey desyncNext world
+        let subscription = fun event world ->
+            let world = advance event world
+            (eventHandling, world)
+        let world = advance Unchecked.defaultof<Event<'a, 'o>> world
+        let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observation.ObserverAddress world
+        (unsubscribe, world)
+
+    /// Run the given desynchronized process on top of Nu's event system.
+    /// Allows each desynchronized operation to run without referencing its source event, and
+    /// without specifying its event handling approach by assuming Cascade.
+    let runDesyncAssumingCascade desync (observation : Observation<'a, 'o>) world =
+        runDesync4 Cascade desync observation world
+
+    /// Run the given desynchronized process on top of Nu's event system.
+    /// Allows each desynchronized operation to run without referencing its source event, and
+    /// without specifying its event handling approach by assuming Resolve.
+    let runDesyncAssumingResolve desync (observation : Observation<'a, 'o>) world =
+        runDesync4 Resolve desync observation world
 
     /// Update the state of the world and the world.
     let updateStateAndW expr : Desync<'e, World, unit> =
@@ -125,37 +158,3 @@ module Desync =
     /// address in its computation.
     let updateByLensed expr lens =
         desync { do! update (fun (world : World) -> expr (Lens.get world lens) world) }
-
-    let private runDesync4 eventHandling (desync : Desync<Event<'a, 'o>, World, unit>) (observation : Observation<'a, 'o>) world =
-        let callbackKey = World.makeCallbackKey ()
-        let world = World.addCallbackState callbackKey (fun (_ : Event<'a, 'o>) -> desync) world
-        let subscriptionKey = World.makeSubscriptionKey ()
-        let (eventAddress, unsubscribe, world) = observation.Subscribe world
-        let unsubscribe = fun world ->
-            let world = World.removeCallbackState callbackKey world
-            let world = unsubscribe world
-            World.unsubscribe subscriptionKey world
-        let advance = fun event world ->
-            let desync = World.getCallbackState callbackKey world : Event<'a, 'o> -> Desync<Event<'a, 'o>, World, unit>
-            let (world, advanceResult) = advanceDesync desync event world
-            match advanceResult with
-            | Right () -> unsubscribe world
-            | Left desyncNext -> World.addCallbackState callbackKey desyncNext world
-        let subscription = fun event world ->
-            let world = advance event world
-            (eventHandling, world)
-        let world = advance Unchecked.defaultof<Event<'a, 'o>> world
-        let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observation.ObserverAddress world
-        (unsubscribe, world)
-
-    /// Run the given desynchronized process on top of Nu's event system.
-    /// Allows each desynchronized operation to run without referencing its source event, and
-    /// without specifying its event handling approach by assuming Cascade.
-    let runDesyncAssumingCascade desync (observation : Observation<'a, 'o>) world =
-        runDesync4 Cascade desync observation world
-
-    /// Run the given desynchronized process on top of Nu's event system.
-    /// Allows each desynchronized operation to run without referencing its source event, and
-    /// without specifying its event handling approach by assuming Resolve.
-    let runDesyncAssumingResolve desync (observation : Observation<'a, 'o>) world =
-        runDesync4 Resolve desync observation world
