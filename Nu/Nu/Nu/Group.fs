@@ -3,6 +3,7 @@ open System
 open System.IO
 open System.Xml
 open System.Reflection
+open FSharpx
 open Prime
 open Nu
 open Nu.Constants
@@ -139,26 +140,6 @@ module WorldGroupModule =
             then World.publish4 { OldSimulant = oldGroup } (GroupChangeEventAddress ->>- address) address world
             else world
 
-        /// Try to update a group with the given 'updater' procedure at the given address. Also
-        /// passes the current world value to the procedure.
-        static member updateOptGroupW updater address world =
-            match World.getOptGroup address world with
-            | Some group ->
-                let group = updater group world
-                World.setGroup group address world
-            | None -> world
-
-        /// Try to update a group with the given 'updater' procedure at the given addres
-        static member updateOptGroup updater address world =
-            World.updateOptGroupW (fun group _ -> updater group) address world
-            
-        /// Try to update the world with the given 'updater' procedure that uses the group at
-        /// given address in its computation.
-        static member updateByOptGroup updater address world : World =
-            match World.getOptGroup address world with
-            | Some group -> updater group world
-            | None -> world
-            
         /// Update a group with the given 'updater' procedure at the given address. Also passes
         /// the current world value to the procedure.
         static member updateGroupW updater address world =
@@ -175,6 +156,11 @@ module WorldGroupModule =
         static member updateByGroup updater address world : World =
             let group = World.getGroup address world
             updater group world
+
+        /// Lens a group at the given address.
+        static member lensGroup address =
+            { Get = World.getGroup address
+              Set = fun group -> World.setGroup group address }
 
         /// Try to get a group hierarchy (that is, a group with a map to all of its entities) at
         /// the given address.
@@ -221,27 +207,45 @@ module WorldGroupModule =
         /// Get all the group addresses in the screen at the given address.
         static member getGroupAddressesInScreen screenAddress world =
             let groupHierarchies = World.getGroupMapInScreen screenAddress world
-            Map.toValueListBy (fun (group : Group, _) -> satoga screenAddress group.Name) groupHierarchies
+            Map.toValueSeqBy (fun (group : Group, _) -> satoga screenAddress group.Name) groupHierarchies
 
-        /// Update the groups at the given address with the given 'updater' procedure. Also
+        /// Set the groups at the given addresses.
+        static member setGroups groups addresses world =
+            Seq.fold2 (fun world group address -> World.setGroup group address world) world groups addresses
+        
+        /// Set the groups in the screen at the given addresses.
+        static member setGroupsInScreen groups screenAddress world =
+            Seq.fold (fun world (group : Group) -> World.setGroup group (satoga screenAddress group.Name) world) world groups
+
+        /// Update the groups at the given addresses with the given 'updater' procedure. Also
         /// passes the current world value to the procedure.
         static member updateGroupsW updater addresses world =
             Seq.fold (fun world address -> World.updateGroupW updater address world) world addresses
         
-        /// Update the groups at the given address with the given 'updater' procedure.
+        /// Update the groups at the given addresses with the given 'updater' procedure.
         static member updateGroups updater addresses world =
             World.updateGroupsW (fun group _ -> updater group) addresses world
-            
-        /// Update all groups in the screen at the given address with then given the 'updater'
+
+        /// Update all groups in the screen at the given address using the given 'updater'
         /// procedure. Also passes the current world value to the procedure.
         static member updateGroupsInScreenW updater screenAddress world =
             let addresses = World.getGroupAddressesInScreen screenAddress world
             Seq.fold (fun world address -> World.updateGroupW updater address world) world addresses
             
-        /// Update all groups in the screen at the given address with then given the 'updater' procedure.
+        /// Update all groups in the screen at the given address using the given 'updater' procedure.
         static member updateGroupsInScreen updater addresses world =
             World.updateGroupsInScreenW (fun group _ -> updater group) addresses world
-            
+
+        /// Lens the groups at the given addresses.
+        static member lensGroups addresses =
+            { Get = World.getGroups addresses
+              Set = fun groups -> World.setGroups groups addresses }
+
+        /// Lens all groups in the screen at the given address.
+        static member lensGroupsInScreen screenAddress =
+            { Get = World.getGroupsInScreen screenAddress
+              Set = fun groups -> World.setGroupsInScreen groups screenAddress }
+
         /// Filter the given group addresses by applying the 'pred' procedure to each group at
         /// its respected address. Also passes the current world value to the procedure.
         static member filterGroupAddressesW pred addresses world =
@@ -286,7 +290,7 @@ module WorldGroupModule =
                 (fun address (groups, world) ->
                     let (group, world) = World.removeGroupImmediate address world
                     (group :: groups, world))
-                addresses
+                (List.ofSeq addresses)
                 ([], world)
                 
         /// Remove multiple groups from the world. Use this rather than removeEntitiesImmediate

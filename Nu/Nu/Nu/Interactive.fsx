@@ -2,14 +2,12 @@
 #r "System.Configuration"
 
 (* IMPORTANT NOTE: change these paths to make this script run with your Nu installation! *)
-#r "C:/Development/FPWorks/Prime/xUnit/xunit.dll"
-#r "C:/Development/FPWorks/Prime/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
-#r "C:/Development/FPWorks/Prime/FParsec/FParsec.dll"
-#r "C:/Development/FPWorks/Prime/FSharpx.Core/FSharpx.Core.dll"
-#r "C:/Development/FPWorks/Prime/Prime/Prime/bin/Debug/Prime.exe"
 #r "C:/Development/FPWorks/Prime/FSharpx.Core/FSharpx.Core.dll"
 #r "C:/Development/FPWorks/Prime/FSharpx.Collections/FSharpx.Collections.dll"
-#r "C:/Development/FPWorks/Nu/xUnit/xunit.dll"
+#r "C:/Development/FPWorks/Prime/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
+#r "C:/Development/FPWorks/Prime/FParsec/FParsec.dll"
+#r "C:/Development/FPWorks/Prime/xUnit/xunit.dll"
+#r "C:/Development/FPWorks/Prime/Prime/Prime/bin/Debug/Prime.exe"
 #r "C:/Development/FPWorks/Nu/Farseer/FarseerPhysics.dll"
 #r "C:/Development/FPWorks/Nu/Magick.NET/Magick.NET-AnyCPU.dll"
 #r "C:/Development/FPWorks/Nu/SDL2#/Debug/SDL2#.dll"
@@ -18,9 +16,9 @@
 System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Debug"
 
 #load "RQueue.fs"
-#load "Address.fs"
 #load "Core.fs"
 #load "Constants.fs"
+#load "Address.fs"
 #load "Math.fs"
 #load "Xtension.fs"
 #load "Overlayer.fs"
@@ -38,16 +36,21 @@ System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Deb
 #load "Simulant.fs"
 #load "WorldConstants.fs"
 #load "WorldPrimitives.fs"
+#load "WorldInput.fs"
 #load "Entity.fs"
 #load "Group.fs"
 #load "Screen.fs"
 #load "Game.fs"
+#load "WorldPhysics.fs"
+#load "WorldRender.fs"
+#load "WorldAudio.fs"
 #load "Dispatchers.fs"
 #load "World.fs"
 #load "Observation.fs"
 #load "Desync.fs"
 
 open System
+open FSharpx
 open FParsec
 open SDL2
 open OpenTK

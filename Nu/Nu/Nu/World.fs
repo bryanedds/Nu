@@ -62,26 +62,6 @@ module WorldModule =
             | [_; _; _] -> World.setEntity (simulant :> obj :?> Entity) (Address.changeType<'a, Entity> address) world
             | _ -> failwith <| "Invalid simulant address '" + acstring address + "'."
 
-        /// Try to update a simulant with the given 'updater' procedure at the given address. Also
-        /// passes the current world value to the procedure.
-        static member updateOptSimulantW updater address world =
-            match World.getOptSimulant address world with
-            | Some simulant ->
-                let simulant = updater simulant world
-                World.setSimulant simulant address world
-            | None -> world
-
-        /// Try to update a simulant with the given 'updater' procedure at the given addres
-        static member updateOptSimulant updater address world =
-            World.updateOptSimulantW (fun simulant _ -> updater simulant) address world
-
-        /// Try to update the world with the given 'updater' procedure that uses the simulant at
-        /// given address in its computation.
-        static member updateByOptSimulant updater address world : World =
-            match World.getOptSimulant address world with
-            | Some simulant -> updater simulant world
-            | None -> world
-
         /// Update a simulant with the given 'updater' procedure at the given address. Also passes
         /// the current world value to the procedure.
         static member updateSimulantW updater address world =

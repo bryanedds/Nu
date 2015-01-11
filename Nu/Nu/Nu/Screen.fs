@@ -2,6 +2,7 @@
 open System
 open System.IO
 open System.Xml
+open FSharpx
 open Prime
 open Nu
 open Nu.Constants
@@ -163,26 +164,6 @@ module WorldScreenModule =
             then World.publish4 { OldSimulant = oldScreen } (ScreenChangeEventAddress ->>- address) address world
             else world
 
-        /// Try to update a screen with the given 'updater' procedure at the given address. Also
-        /// passes the current world value to the procedure.
-        static member updateOptScreenW updater address world =
-            match World.getOptScreen address world with
-            | Some screen ->
-                let screen = updater screen world
-                World.setScreen screen address world
-            | None -> world
-
-        /// Try to update a screen with the given 'updater' procedure at the given addres
-        static member updateOptScreen updater address world =
-            World.updateOptScreenW (fun screen _ -> updater screen) address world
-
-        /// Try to update the world with the given 'updater' procedure that uses the screen at
-        /// given address in its computation.
-        static member updateByOptScreen updater address world : World =
-            match World.getOptScreen address world with
-            | Some screen -> updater screen world
-            | None -> world
-
         /// Update a screen with the given 'updater' procedure at the given address. Also passes
         /// the current world value to the procedure.
         static member updateScreenW updater address world =
@@ -200,6 +181,11 @@ module WorldScreenModule =
             let screen = World.getScreen address world
             updater screen world
 
+        /// Lens a screen at the given address.
+        static member lensScreen address =
+            { Get = World.getScreen address
+              Set = fun screen -> World.setScreen screen address }
+
         /// Get the screen hierarches at the given addresses.
         static member getScreenHierarchies addresses world =
             Seq.map (fun address -> World.getScreenHierarchy address world) addresses
@@ -213,22 +199,44 @@ module WorldScreenModule =
         static member getScreens addresses world =
             World.getScreensBy id addresses world
 
-        /// Get all the world's screens.
+        /// Get all the screens in the game as mapped by their names.
         static member getScreenMap world =
             snd world.Simulants
+
+        /// Get all the screens in the game.
+        static member getScreensInGame world =
+            Map.toValueSeqBy fst <| World.getScreenMap world
             
         /// Get the addresses of all the world's screens.
         static member getScreenAddresses world =
             Map.fold (fun addresses screenName _ -> ntoa<Screen> screenName :: addresses) [] (World.getScreenMap world)
 
-        /// Update the screens at the given address with the given 'updater' procedure. Also
+        /// Set the screens at the given addresses.
+        static member setScreens screens addresses world =
+            Seq.fold2 (fun world screen address -> World.setScreen screen address world) world screens addresses
+        
+        /// Set all the screens in the game.
+        static member setScreensInGame screens world =
+            Seq.fold (fun world (screen : Screen) -> World.setScreen screen (ntoa screen.Name) world) world screens
+
+        /// Update the screens at the given addresses with the given 'updater' procedure. Also
         /// passes the current world value to the procedure.
         static member updateScreensW updater addresses world =
             Seq.fold (fun world address -> World.updateScreenW updater address world) world addresses
         
-        /// Update the screens at the given address with the given 'updater' procedure.
+        /// Update the screens at the given addresses with the given 'updater' procedure.
         static member updateScreens updater addresses world =
-            World.updateScreenW (fun screen _ -> updater screen) addresses world
+            World.updateScreensW (fun screen _ -> updater screen) addresses world
+
+        /// Lens the screens at the given addresses.
+        static member lensScreens addresses =
+            { Get = World.getScreens addresses
+              Set = fun screens -> World.setScreens screens addresses }
+
+        /// Lens all screens in the game at the given address.
+        static member lensScreensInGame =
+            { Get = World.getScreensInGame
+              Set = fun screens -> World.setScreensInGame screens }
 
         /// Filter the given screen addresses by applying the 'pred' procedure to each screen at
         /// its respected address. Also passes the current world value to the procedure.

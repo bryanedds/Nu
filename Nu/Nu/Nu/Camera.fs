@@ -8,8 +8,8 @@ module CameraModule =
     /// The camera used to dictate what is rendered on the screen.
     ///
     /// Due to the complexity of implementing view scaling using the SDL drawing primitives, Nu has
-    /// opted to be a pixel-perfect game engine without scaling. Once Nu's renderer is replaced
-    /// with direct calls to OpenGL, scaling will likely be implemented.
+    /// opted to be a pixel-perfect game engine without zooming. Once Nu's renderer is replaced
+    /// with direct calls to OpenGL, zooming will likely be implemented.
     ///
     /// If 3D is implemented in Nu, Camera will have to be changed to be 3D instead of 2D.
     type [<StructuralEquality; NoComparison>] Camera =

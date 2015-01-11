@@ -1,5 +1,6 @@
 ﻿namespace $safeprojectname$
 open System
+open FSharpx
 open SDL2
 open OpenTK
 open Prime

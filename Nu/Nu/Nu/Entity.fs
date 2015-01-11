@@ -5,6 +5,7 @@ open System.ComponentModel
 open System.Reflection
 open System.Xml
 open System.Xml.Serialization
+open FSharpx
 open OpenTK
 open TiledSharp
 open Prime
@@ -248,25 +249,10 @@ module WorldEntityModule =
             then World.publish4 { OldSimulant = oldEntity } (EntityChangeEventAddress ->>- address) address world
             else world
 
-        /// Try to update an entity with the given 'updater' procedure at the given address. Also
-        /// passes the current world value to the procedure.
-        static member updateOptEntityW updater address world =
-            match World.getOptEntity address world with
-            | Some entity ->
-                let entity = updater entity world
-                World.setEntity entity address world
-            | None -> world
-            
-        /// Try to update an entity with the given 'updater' procedure at the given addres
-        static member updateOptEntity updater address world =
-            World.updateOptEntityW (fun entity _ -> updater entity) address world
-            
-        /// Try to update the world with the given 'updater' procedure that uses the entity at
-        /// given address in its computation.
-        static member updateByOptEntity updater address world =
-            match World.getOptEntity address world with
-            | Some entity -> updater entity world
-            | None -> world
+        /// Lens an entity at the given address.
+        static member lensEntity address =
+            { Get = World.getEntity address
+              Set = fun entity -> World.setEntity entity address }
             
         /// Update an entity with the given 'updater' procedure at the given address. Also passes
         /// the current world value to the procedure.
@@ -278,7 +264,7 @@ module WorldEntityModule =
         /// Update an entity with the given 'updater' procedure at the given address.
         static member updateEntity updater address world =
             World.updateEntityW (fun entity _ -> updater entity) address world
-            
+
         /// Update the world with the given 'updater' procedure that uses the entity at given
         /// address in its computation.
         static member updateByEntity updater address world : World =
@@ -325,27 +311,37 @@ module WorldEntityModule =
         /// (fun entity -> gatoea groupAddress entity.Name) in the group with the given address.
         /// Note, each address must already have an existing entity, otherwise will fail with an
         /// exception.
-        static member setEntitiesInGroup groupAddress entities world =
+        static member setEntitiesInGroup entities groupAddress world =
             Seq.fold (fun world (entity : Entity) -> World.setEntity entity (gatoea groupAddress entity.Name) world) world entities
 
-        /// Update the entities at the given address with the given 'updater' procedure. Also
+        /// Update the entities at the given addresses with the given 'updater' procedure. Also
         /// passes the current world value to the procedure.
         static member updateEntitiesW updater addresses world =
             Seq.fold (fun world address -> World.updateEntityW updater address world) world addresses
 
-        /// Update the entities at the given address with the given 'updater' procedure.
+        /// Update the entities at the given addresses with the given 'updater' procedure.
         static member updateEntities updater addresses world =
             World.updateEntitiesW (fun entity _ -> updater entity) addresses world
 
-        /// Update all entities in the group at the given address with then given the 'updater'
+        /// Update all entities in the group at the given address using the given 'updater'
         /// procedure. Also passes the current world value to the procedure.
         static member updateEntitiesInGroupW updater groupAddress world =
             let addresses = World.getEntityAddressesInGroup groupAddress world
             Seq.fold (fun world address -> World.updateEntityW updater address world) world addresses
             
-        /// Update all entities in the group at the given address with then given the 'updater' procedure.
+        /// Update all entities in the group at the given address using the given 'updater' procedure.
         static member updateEntitiesInGroup updater addresses world =
             World.updateEntitiesInGroupW (fun entity _ -> updater entity) addresses world
+
+        /// Lens the entities at the given addresses.
+        static member lensEntities addresses =
+            { Get = World.getEntities addresses
+              Set = fun entities -> World.setEntities entities addresses }
+
+        /// Lens all entities in the group at the given address.
+        static member lensEntitiesInGroup groupAddress =
+            { Get = World.getEntitiesInGroup groupAddress
+              Set = fun entities -> World.setEntitiesInGroup entities groupAddress }
 
         /// Filter the given entity addresses by applying the 'pred' procedure to each entity at
         /// its respected address. Also passes the current world value to the procedure.
