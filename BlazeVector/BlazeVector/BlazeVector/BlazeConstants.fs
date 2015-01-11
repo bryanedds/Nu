@@ -10,12 +10,12 @@ module BlazeConstants =
     let StagePackageName = "Stage"
     let StagePlayerName = "Player"
     let StagePlayName = "StagePlay"
-    let StagePlayFilePath = "Assets/BlazeVector/Stage/StagePlay.nugroup"
+    let StagePlayFilePath = "Assets/Stage/StagePlay.nugroup"
     let SectionName = "Section"
-    let Section0FilePath = "Assets/BlazeVector/Stage/Section0.nugroup"
-    let Section1FilePath = "Assets/BlazeVector/Stage/Section1.nugroup"
-    let Section2FilePath = "Assets/BlazeVector/Stage/Section2.nugroup"
-    let Section3FilePath = "Assets/BlazeVector/Stage/Section3.nugroup"
+    let Section0FilePath = "Assets/Stage/Section0.nugroup"
+    let Section1FilePath = "Assets/Stage/Section1.nugroup"
+    let Section2FilePath = "Assets/Stage/Section2.nugroup"
+    let Section3FilePath = "Assets/Stage/Section3.nugroup"
     let SectionFilePaths = [Section0FilePath; Section1FilePath; Section2FilePath; Section3FilePath]
     let SectionCount = 32
 
@@ -48,7 +48,7 @@ module BlazeConstants =
 
     // title constants
     let TitleAddress = stoa<Screen> "Title"
-    let TitleGroupFilePath = "Assets/BlazeVector/Gui/Title.nugroup"
+    let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
     let SelectTitleEventAddress = stoa<unit> "Select/Title"
     let ClickTitlePlayEventAddress = stoa<unit> "Click/Title/Group/Play"
     let ClickTitleCreditsEventAddress = stoa<unit> "Click/Title/Group/Credits"
@@ -56,10 +56,10 @@ module BlazeConstants =
 
     // stage constants
     let StageAddress = stoa<Screen> "Stage"
-    let StageGroupFilePath = "Assets/BlazeVector/Gui/StageGui.nugroup"
+    let StageGroupFilePath = "Assets/Gui/StageGui.nugroup"
     let ClickStageBackEventAddress = stoa<unit> "Click/Stage/Group/Back"
 
     // credits constants
     let CreditsAddress = stoa<Screen> "Credits"
-    let CreditsGroupFilePath = "Assets/BlazeVector/Gui/Credits.nugroup"
+    let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
     let ClickCreditsBackEventAddress = stoa<unit> "Click/Credits/Group/Back"

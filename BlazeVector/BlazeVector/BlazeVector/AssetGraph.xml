@@ -8,17 +8,17 @@
     <Assets directory="Assets/Default" extension="tmx"/>
   </Package>
   <Package name="Gui">
-    <Assets directory="Assets/BlazeVector/Gui" extension="png" associations="[Render]"/>
-    <Assets directory="Assets/BlazeVector/Gui" extension="wav" associations="[Audio]"/>
-    <Assets directory="Assets/BlazeVector/Gui" extension="ogg" associations="[Audio]"/>
-    <Assets directory="Assets/BlazeVector/Gui" extension="nugroup"/>
+    <Assets directory="Assets/Gui" extension="png" associations="[Render]"/>
+    <Assets directory="Assets/Gui" extension="wav" associations="[Audio]"/>
+    <Assets directory="Assets/Gui" extension="ogg" associations="[Audio]"/>
+    <Assets directory="Assets/Gui" extension="nugroup"/>
   </Package>
   <Package name="Stage">
-    <Assets directory="Assets/BlazeVector/Stage" extension="png" associations="[Render]"/>
-    <Assets directory="Assets/BlazeVector/Stage" extension="wav" associations="[Audio]"/>
-    <Assets directory="Assets/BlazeVector/Stage" extension="ogg" associations="[Audio]"/>
-    <Assets directory="Assets/BlazeVector/Stage" extension="nugroup"/>
-    <Assets directory="Assets/BlazeVector/Stage" extension="tsx"/>
-    <Assets directory="Assets/BlazeVector/Stage" extension="tmx"/>
+    <Assets directory="Assets/Stage" extension="png" associations="[Render]"/>
+    <Assets directory="Assets/Stage" extension="wav" associations="[Audio]"/>
+    <Assets directory="Assets/Stage" extension="ogg" associations="[Audio]"/>
+    <Assets directory="Assets/Stage" extension="tsx"/>
+    <Assets directory="Assets/Stage" extension="tmx"/>
+    <Assets directory="Assets/Stage" extension="nugroup"/>
   </Package>
 </Root>
