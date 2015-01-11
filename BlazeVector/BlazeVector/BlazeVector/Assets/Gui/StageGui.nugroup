@@ -1,14 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group dispatcherName="GroupDispatcher">
     <Name>Group</Name>
+    <PublishChanges>True</PublishChanges>
+    <Persistent>True</Persistent>
     <Entities>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Back</Name>
-        <Position>-128, -224</Position>
+        <Position>216, -264</Position>
         <Depth>10</Depth>
         <Size>256, 64</Size>
-        <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <DownImage>[Gui | BackButtonDown]</DownImage>
         <UpImage>[Gui | BackButtonUp]</UpImage>
       </Entity>
@@ -16,7 +17,6 @@
         <Position>-480, -272</Position>
         <Depth>-100</Depth>
         <Size>960, 544</Size>
-        <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
         <LabelImage>[Default | Image8]</LabelImage>
       </Entity>
     </Entities>

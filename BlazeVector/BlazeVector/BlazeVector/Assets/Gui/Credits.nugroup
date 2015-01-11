@@ -2,38 +2,35 @@
 <Root>
   <Group dispatcherName="GroupDispatcher">
     <Name>Group</Name>
+    <PublishChanges>True</PublishChanges>
+    <Persistent>True</Persistent>
     <Entities>
       <Entity dispatcherName="LabelDispatcher">
         <Position>-480, -272</Position>
         <Depth>-1</Depth>
         <Size>960, 544</Size>
-        <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
         <LabelImage>[Default | Image8]</LabelImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Back</Name>
         <Position>-128, -224</Position>
         <Size>256, 64</Size>
-        <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <DownImage>[Gui | BackButtonDown]</DownImage>
         <UpImage>[Gui | BackButtonUp]</UpImage>
       </Entity>
       <Entity dispatcherName="TextDispatcher">
         <Position>-320, 96</Position>
         <Size>640, 128</Size>
-        <OptOverlayName>[Some | TextDispatcher]</OptOverlayName>
         <Text>Credits</Text>
       </Entity>
       <Entity dispatcherName="TextDispatcher">
         <Position>-320, 0</Position>
         <Size>640, 64</Size>
-        <OptOverlayName>[Some | TextDispatcher]</OptOverlayName>
         <Text>Code + Music + SFX: Bryan Edds</Text>
       </Entity>
       <Entity dispatcherName="TextDispatcher">
         <Position>-320, -96</Position>
         <Size>640, 64</Size>
-        <OptOverlayName>[Some | TextDispatcher]</OptOverlayName>
         <Text>Art: MindChamber</Text>
       </Entity>
     </Entities>

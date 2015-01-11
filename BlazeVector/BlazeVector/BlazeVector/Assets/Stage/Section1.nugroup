@@ -1,56 +1,49 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group dispatcherName="GroupDispatcher">
     <Name>Group</Name>
+    <PublishChanges>True</PublishChanges>
+    <Persistent>True</Persistent>
     <Entities>
       <Entity dispatcherName="TileMapDispatcher">
         <Position>-480, -304</Position>
-        <OptOverlayName>[Some | TileMapDispatcher]</OptOverlayName>
         <TileMapAsset>[Stage | Section1TileMap]</TileMapAsset>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>1114.274, -207.68</Position>
         <Depth>1</Depth>
-        <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>1472, -175.68</Position>
         <Depth>1</Depth>
-        <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
         <Position>-480, -304</Position>
         <Depth>-4</Depth>
-        <OptOverlayName>[Some | TileMapDispatcher]</OptOverlayName>
         <Parallax>0.1</Parallax>
         <TileMapAsset>[Stage | BackgroundB]</TileMapAsset>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
         <Position>-480, -304</Position>
         <Depth>-8</Depth>
-        <OptOverlayName>[Some | TileMapDispatcher]</OptOverlayName>
         <Parallax>0.1</Parallax>
         <TileMapAsset>[Stage | BackgroundA]</TileMapAsset>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>416, -79.68001</Position>
         <Depth>1</Depth>
-        <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>1328, -175.68</Position>
         <Depth>1</Depth>
-        <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>96, -79.68001</Position>
         <Depth>1</Depth>
-        <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>-159.8438, -175.68</Position>
         <Depth>1</Depth>
-        <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
       </Entity>
     </Entities>
   </Group>
