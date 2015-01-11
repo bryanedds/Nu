@@ -170,7 +170,7 @@ module RenderModule =
             let optAssets = Map.tryFind packageName renderer.RenderAssetMap
             match optAssets with
             | Some assets ->
-                for asset in Map.toValueList assets do Renderer.freeRenderAsset asset
+                for asset in assets do Renderer.freeRenderAsset asset.Value
                 { renderer with RenderAssetMap = Map.remove packageName renderer.RenderAssetMap }
             | None -> renderer
 

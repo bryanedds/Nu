@@ -1,6 +1,7 @@
 ﻿namespace Nu
 open System
 open System.Collections.Generic
+open FSharpx
 open Prime
 open Nu
 open Nu.Constants
@@ -418,3 +419,6 @@ module World =
     /// Handle event by exiting app.
     let handleAsExit<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
         (Resolve, exit world)
+
+    /// Lens the world.
+    let lens = Lens.id

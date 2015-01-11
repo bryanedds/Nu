@@ -169,6 +169,9 @@
     <Reference Include="FSharpx.Collections">
       <HintPath>..\..\..\Prime\FSharpx.Collections\FSharpx.Collections.dll</HintPath>
     </Reference>
+    <Reference Include="FSharpx.Core">
+      <HintPath>..\..\..\Prime\FSharpx.Core\FSharpx.Core.dll</HintPath>
+    </Reference>
     <Reference Include="Magick.NET-AnyCPU">
       <HintPath>..\..\Magick.NET\Magick.NET-AnyCPU.dll</HintPath>
     </Reference>
@@ -187,14 +190,14 @@
     <Reference Include="TiledSharp">
       <HintPath>..\..\TiledSharp\Release\TiledSharp.dll</HintPath>
     </Reference>
-    <Reference Include="xunit">
-      <HintPath>..\..\xUnit\xunit.dll</HintPath>
-    </Reference>
     <ProjectReference Include="..\..\..\Prime\Prime\Prime\Prime.fsproj">
       <Name>Prime</Name>
       <Project>{fe09ae81-b66b-42e0-8192-eadecefc9893}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <Reference Include="xunit">
+      <HintPath>..\..\..\Prime\xUnit\xunit.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

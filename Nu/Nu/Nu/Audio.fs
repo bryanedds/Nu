@@ -142,8 +142,8 @@ module AudioModule =
                 // all sounds / music must be halted because one of them might be playing during unload
                 // (which is very bad according to the API docs).
                 AudioPlayer.haltSound ()
-                for asset in Map.toValueList assets do
-                    match asset with
+                for asset in assets do
+                    match asset.Value with
                     | WavAsset wavAsset -> SDL_mixer.Mix_FreeChunk wavAsset
                     | OggAsset oggAsset -> SDL_mixer.Mix_FreeMusic oggAsset
                 { audioPlayer with AudioAssetMap = Map.remove packageName audioPlayer.AudioAssetMap }
