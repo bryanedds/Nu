@@ -502,13 +502,14 @@ module GameplayDispatcherModule =
                 let playerActivity = World.getEntityBy (fun player -> player.ActivityState) (getPlayerAddress address) world
                 match playerActivity with
                 | Action _ -> world
-                | Navigation _ ->
-                    let newEnemyNavigationActivities = determineEnemyNavigationActivities enemyAddresses world
-                    runEnemyNavigationActivities newEnemyNavigationActivities enemyAddresses address world
+                | Navigation _ 
                 | NoActivity ->
                     let newEnemyActionActivities = determineEnemyActionActivities enemyAddresses world
                     let newEnemyNavigationActivities = determineEnemyNavigationActivities enemyAddresses world
-                    runEnemyActivities newEnemyActionActivities newEnemyNavigationActivities enemyAddresses address world
+                    if List.exists ActivityState.isActing newEnemyActionActivities then
+                        let world = runEnemyActivities newEnemyActionActivities newEnemyNavigationActivities enemyAddresses address world
+                        World.updateEntity cancelNavigation (getPlayerAddress address) world
+                    else runEnemyNavigationActivities newEnemyNavigationActivities enemyAddresses address world
 
             // teh world
             world
