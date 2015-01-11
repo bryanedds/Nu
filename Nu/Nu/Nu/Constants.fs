@@ -29,6 +29,7 @@ module Constants =
     let [<Literal>] PackageNodeName = "Package"
     let [<Literal>] AssetNodeName = "Asset"
     let [<Literal>] AssetsNodeName = "Assets"
+    let [<Literal>] CommentNodeName = "#comment"
     let [<Literal>] GameNodeName = "Game"
     let [<Literal>] ScreenNodeName = DefaultScreenName
     let [<Literal>] ScreensNodeName = DefaultScreenName + "s"

@@ -3,35 +3,13 @@
   <Group dispatcherName="GroupDispatcher">
     <Name>Group</Name>
     <Entities>
-      <Entity dispatcherName="EnemyDispatcher">
-        <Position>168, -175.68</Position>
-        <Depth>1</Depth>
-        <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
-      </Entity>
-      <Entity dispatcherName="EnemyDispatcher">
-        <Position>680, 112.32</Position>
-        <Depth>1</Depth>
-        <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
-      </Entity>
-      <Entity dispatcherName="EnemyDispatcher">
-        <Position>-152, -15.68001</Position>
-        <Depth>1</Depth>
-        <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
-      </Entity>
-      <Entity dispatcherName="TileMapDispatcher">
-        <Position>-480, -304</Position>
-        <Depth>-4</Depth>
-        <OptOverlayName>[Some | TileMapDispatcher]</OptOverlayName>
-        <Parallax>0.1</Parallax>
-        <TileMapAsset>[Stage | BackgroundB]</TileMapAsset>
-      </Entity>
       <Entity dispatcherName="TileMapDispatcher">
         <Position>-480, -304</Position>
         <OptOverlayName>[Some | TileMapDispatcher]</OptOverlayName>
-        <TileMapAsset>[Stage | Section3]</TileMapAsset>
+        <TileMapAsset>[Stage | Section2TileMap]</TileMapAsset>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
-        <Position>96, 48.31998</Position>
+        <Position>-160, -15.68001</Position>
         <Depth>1</Depth>
         <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
       </Entity>
@@ -42,8 +20,25 @@
         <Parallax>0.1</Parallax>
         <TileMapAsset>[Stage | BackgroundA]</TileMapAsset>
       </Entity>
+      <Entity dispatcherName="TileMapDispatcher">
+        <Position>-480, -304</Position>
+        <Depth>-4</Depth>
+        <OptOverlayName>[Some | TileMapDispatcher]</OptOverlayName>
+        <Parallax>0.1</Parallax>
+        <TileMapAsset>[Stage | BackgroundB]</TileMapAsset>
+      </Entity>
       <Entity dispatcherName="EnemyDispatcher">
-        <Position>-415.7759, -175.68</Position>
+        <Position>-424, -175.68</Position>
+        <Depth>1</Depth>
+        <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
+      </Entity>
+      <Entity dispatcherName="EnemyDispatcher">
+        <Position>160, 48.31998</Position>
+        <Depth>1</Depth>
+        <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
+      </Entity>
+      <Entity dispatcherName="EnemyDispatcher">
+        <Position>1256, 112.32</Position>
         <Depth>1</Depth>
         <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
       </Entity>

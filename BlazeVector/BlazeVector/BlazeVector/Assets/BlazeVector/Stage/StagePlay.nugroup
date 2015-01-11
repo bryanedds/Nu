@@ -7,9 +7,6 @@
         <Name>Player</Name>
         <Position>-300, -175.6805</Position>
         <Depth>1</Depth>
-        <OptOverlayName>[Some | PlayerDispatcher]</OptOverlayName>
-        <LastTimeJump>-9223372036854775808</LastTimeJump>
-        <LastTimeOnGround>-9223372036854775808</LastTimeOnGround>
       </Entity>
     </Entities>
   </Group>

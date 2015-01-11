@@ -7,7 +7,7 @@
         <Position>-480, -304</Position>
         <FacetNames>[]</FacetNames>
         <OptOverlayName>[Some | TileMapDispatcher]</OptOverlayName>
-        <TileMapAsset>[Stage | Section0]</TileMapAsset>
+        <TileMapAsset>[Stage | Section0TileMap]</TileMapAsset>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
         <Position>-480, -304</Position>
