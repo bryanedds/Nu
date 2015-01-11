@@ -15,7 +15,7 @@ module WorldPhysicsModule =
     /// The subsystem for the world's integrator.
     type [<ReferenceEquality>] IntegratorSubsystem =
         { SubsystemType : SubsystemType
-          SubsystemPriority : single
+          SubsystemOrder : single
           Integrator : IIntegrator }
 
         static member private handleIntegrationMessage world integrationMessage =
@@ -48,7 +48,7 @@ module WorldPhysicsModule =
 
         interface Subsystem with
             member this.SubsystemType = this.SubsystemType
-            member this.SubsystemPriority = this.SubsystemPriority
+            member this.SubsystemOrder = this.SubsystemOrder
             member this.ClearMessages () = { this with Integrator = this.Integrator.ClearMessages () } :> Subsystem
             member this.EnqueueMessage message = { this with Integrator = this.Integrator.EnqueueMessage (message :?> PhysicsMessage) } :> Subsystem
             

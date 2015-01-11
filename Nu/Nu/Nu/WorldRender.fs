@@ -15,7 +15,7 @@ module WorldRenderModule =
     /// The subsystem for the world's renderer.
     type [<ReferenceEquality>] RendererSubsystem =
         { SubsystemType : SubsystemType
-          SubsystemPriority : single
+          SubsystemOrder : single
           Renderer : IRenderer }
 
         static member private getGroupRenderDescriptors world entities =
@@ -60,7 +60,7 @@ module WorldRenderModule =
 
         interface Subsystem with
             member this.SubsystemType = this.SubsystemType
-            member this.SubsystemPriority = this.SubsystemPriority
+            member this.SubsystemOrder = this.SubsystemOrder
             member this.ClearMessages () = { this with Renderer = this.Renderer.ClearMessages () } :> Subsystem
             member this.EnqueueMessage message = { this with Renderer = this.Renderer.EnqueueMessage (message :?> RenderMessage) } :> Subsystem
 

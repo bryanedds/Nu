@@ -414,7 +414,7 @@ module WorldModule =
         static member private processSubsystems subsystemType world =
             Map.toList world.Subsystems |>
             List.filter (fun (_, subsystem) -> subsystem.SubsystemType = subsystemType) |>
-            List.sortBy (fun (_, subsystem) -> -subsystem.SubsystemPriority) |>
+            List.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
             List.fold (fun world (subsystemName, subsystem) ->
                 let (subsystemResult, subsystem) = subsystem.ProcessMessages world
                 let world = subsystem.ApplyResult (subsystemResult, world)
@@ -423,7 +423,7 @@ module WorldModule =
 
         static member private cleanUpSubsystems world =
             Map.toList world.Subsystems |>
-            List.sortBy (fun (_, subsystem) -> -subsystem.SubsystemPriority) |>
+            List.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
             List.fold (fun world (subsystemName, subsystem) ->
                 let (subsystem, world) = subsystem.CleanUp world
                 World.setSubsystem subsystem subsystemName world)
@@ -552,12 +552,12 @@ module WorldModule =
                 let subsystems =
                     let userSubsystems = Map.ofList <| nuPlugin.MakeSubsystems ()
                     let integrator = Integrator.make farseerCautionMode Gravity
-                    let integratorSubsystem = { SubsystemType = UpdateType; SubsystemPriority = 1.0f; Integrator = integrator } :> Subsystem
+                    let integratorSubsystem = { SubsystemType = UpdateType; SubsystemOrder = DefaultSubsystemOrder; Integrator = integrator } :> Subsystem
                     let renderer = Renderer.make sdlDeps.RenderContext AssetGraphFilePath
                     let renderer = renderer.EnqueueMessage <| HintRenderPackageUseMessage { PackageName = DefaultPackageName }
-                    let rendererSubsystem = { SubsystemType = RenderType; SubsystemPriority = 1.0f; Renderer = renderer } :> Subsystem
+                    let rendererSubsystem = { SubsystemType = RenderType; SubsystemOrder = DefaultSubsystemOrder; Renderer = renderer } :> Subsystem
                     let audioPlayer = AudioPlayer.make AssetGraphFilePath
-                    let audioPlayerSubsystem = { SubsystemType = AudioType; SubsystemPriority = 1.0f; AudioPlayer = audioPlayer } :> Subsystem
+                    let audioPlayerSubsystem = { SubsystemType = AudioType; SubsystemOrder = DefaultSubsystemOrder; AudioPlayer = audioPlayer } :> Subsystem
                     let defaultSubsystems =
                         Map.ofList
                             [(IntegratorSubsystemName, integratorSubsystem)
@@ -679,9 +679,9 @@ module WorldModule =
 
             // make the world's subsystems
             let subsystems =
-                let integratorSubsystem = { SubsystemType = UpdateType; SubsystemPriority = 1.0f; Integrator = { MockIntegrator = () }} :> Subsystem
-                let rendererSubsystem = { SubsystemType = RenderType; SubsystemPriority = 1.0f; Renderer = { MockRenderer = () }} :> Subsystem
-                let audioPlayerSubsystem = { SubsystemType = AudioType; SubsystemPriority = 1.0f; AudioPlayer = { MockAudioPlayer = () }} :> Subsystem
+                let integratorSubsystem = { SubsystemType = UpdateType; SubsystemOrder = DefaultSubsystemOrder; Integrator = { MockIntegrator = () }} :> Subsystem
+                let rendererSubsystem = { SubsystemType = RenderType; SubsystemOrder = DefaultSubsystemOrder; Renderer = { MockRenderer = () }} :> Subsystem
+                let audioPlayerSubsystem = { SubsystemType = AudioType; SubsystemOrder = DefaultSubsystemOrder; AudioPlayer = { MockAudioPlayer = () }} :> Subsystem
                 Map.ofList
                     [(IntegratorSubsystemName, integratorSubsystem)
                      (RendererSubsystemName, rendererSubsystem)
