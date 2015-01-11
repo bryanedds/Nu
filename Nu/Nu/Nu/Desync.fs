@@ -59,9 +59,6 @@ module Desync =
     let updateByLens expr lens =
         updateByLensW (flip (fun _ -> expr)) lens
 
-    let xxx f w =
-        Lens.update f (Lens.id @-> World.lensEntity DefaultEntityAddress @-> World.lensEntitiesInGroup DefaultGroupAddress) w
-
     let private runDesync4 eventHandling (desync : Desync<Event<'a, 'o>, World, unit>) (observation : Observation<'a, 'o>) world =
         let callbackKey = World.makeCallbackKey ()
         let world = World.addCallbackState callbackKey (fun (_ : Event<'a, 'o>) -> desync) world
