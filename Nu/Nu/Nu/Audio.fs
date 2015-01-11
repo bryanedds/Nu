@@ -122,14 +122,14 @@ module AudioModule =
     
         static member private playSong playSongMessage audioPlayer =
             let song = playSongMessage.Song
-            let (audioPlayer', optAudioAsset) = AudioPlayer.tryLoadAudioAsset song audioPlayer
+            let (audioPlayer, optAudioAsset) = AudioPlayer.tryLoadAudioAsset song audioPlayer
             match optAudioAsset with
             | Some (WavAsset _) -> note <| "Cannot play wav file as song '" + acstring song + "'."
             | Some (OggAsset oggAsset) ->
                 ignore <| SDL_mixer.Mix_VolumeMusic (int <| playSongMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME)
-                ignore <| SDL_mixer.Mix_PlayMusic (oggAsset, -1)
+                ignore <| SDL_mixer.Mix_FadeInMusic (oggAsset, -1, 256) // Mix_PlayMusic seems to somtimes cause audio 'popping' when starting a song, so a fade is used instead...
             | None -> note <| "PlaySongMessage failed due to unloadable assets for '" + acstring song + "'."
-            { audioPlayer' with OptCurrentSong = Some playSongMessage }
+            { audioPlayer with OptCurrentSong = Some playSongMessage }
     
         static member private handleHintAudioPackageUse (hintPackageUse : HintAudioPackageUseMessage) audioPlayer =
             AudioPlayer.tryLoadAudioPackage hintPackageUse.PackageName audioPlayer
@@ -162,14 +162,14 @@ module AudioModule =
     
         static member private handlePlaySong playSongMessage audioPlayer =
             if SDL_mixer.Mix_PlayingMusic () = 1 then
-                if audioPlayer.OptCurrentSong = Some playSongMessage then audioPlayer
-                else
+                if audioPlayer.OptCurrentSong <> Some playSongMessage then
                     if  playSongMessage.TimeToFadeOutSongMs <> 0 &&
                         not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
                         ignore <| SDL_mixer.Mix_FadeOutMusic playSongMessage.TimeToFadeOutSongMs
                     else
                         ignore <| SDL_mixer.Mix_HaltMusic ()
                     { audioPlayer with OptNextPlaySong = Some playSongMessage }
+                else audioPlayer
             else AudioPlayer.playSong playSongMessage audioPlayer
     
         static member private handleFadeOutSong timeToFadeOutSongMs audioPlayer =
