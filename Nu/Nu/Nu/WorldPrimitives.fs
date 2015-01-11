@@ -312,9 +312,27 @@ module World =
         let world = { world with State = state }
         publish4 { OldWorldState = oldState } WorldStateChangeEventAddress GameAddress world
 
+    /// Update the state of the world and the world.
+    let updateStateAndW updater world =
+        let (state, world) = updater world.State world
+        setState state world
+
+    /// Update the state of the world.
+    let updateStateW updater world =
+        updateStateAndW (fun state world -> (updater state world, world)) world
+
     /// Update the state of the world.
     let updateState updater world =
-        setState (updater world.State) world
+        updateStateW (fun state _ -> updater state) world
+
+    /// Update the world by its state.
+    let updateByState updater world : World =
+        updater world.State world
+
+    /// Lens the state of the world.
+    let lensState =
+        { Get = getState
+          Set = setState }
 
     /// Get the tick time.
     let getTickTime world =

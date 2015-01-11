@@ -164,12 +164,15 @@ module WorldScreenModule =
             then World.publish4 { OldSimulant = oldScreen } (ScreenChangeEventAddress ->>- address) address world
             else world
 
-        /// Update a screen with the given 'updater' procedure at the given address. Also passes
-        /// the current world value to the procedure.
-        static member updateScreenW updater address world =
+        /// Update a screen at the given address with the given 'updater' procedure.
+        static member updateScreenAndW updater address world =
             let screen = World.getScreen address world
-            let screen = updater screen world
+            let (screen, world) = updater screen world
             World.setScreen screen address world
+
+        /// Update a screen with the given 'updater' procedure at the given address.
+        static member updateScreenW updater address world =
+            World.updateScreenAndW (fun screen world -> (updater screen world, world)) address world
 
         /// Update a screen with the given 'updater' procedure at the given address.
         static member updateScreen updater address world =
