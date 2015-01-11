@@ -8,44 +8,17 @@
     <Assets directory="Assets/Default" extension="tmx"/>
   </Package>
   <Package name="Gui">
-    <Asset name="Credits" file="Assets/BlazeVector/Groups/Credits.nugroup"/>
-    <Asset name="Title" file="Assets/BlazeVector/Groups/Title.nugroup"/>
-    <Asset name="BackButtonUp" file="Assets/BlazeVector/Gui/BackButtonUp.png" associations="[Render]"/>
-    <Asset name="BackButtonDown" file="Assets/BlazeVector/Gui/BackButtonDown.png" associations="[Render]"/>
-    <Asset name="CreditsButtonUp" file="Assets/BlazeVector/Gui/CreditsButtonUp.png" associations="[Render]"/>
-    <Asset name="CreditsButtonDown" file="Assets/BlazeVector/Gui/CreditsButtonDown.png" associations="[Render]"/>
-    <Asset name="ExitButtonUp" file="Assets/BlazeVector/Gui/ExitButtonUp.png" associations="[Render]"/>
-    <Asset name="ExitButtonDown" file="Assets/BlazeVector/Gui/ExitButtonDown.png" associations="[Render]"/>
-    <Asset name="PlayButtonUp" file="Assets/BlazeVector/Gui/PlayButtonUp.png" associations="[Render]"/>
-    <Asset name="PlayButtonDown" file="Assets/BlazeVector/Gui/PlayButtonDown.png" associations="[Render]"/>
-    <Asset name="Machinery" file="Assets/BlazeVector/Gui/Machinery.ogg" associations="[Audio]"/>
-    <Asset name="Nu" file="Assets/BlazeVector/Gui/Nu.wav" associations="[Audio]"/>
+    <Assets directory="Assets/BlazeVector/Gui" extension="png" associations="[Render]"/>
+    <Assets directory="Assets/BlazeVector/Gui" extension="wav" associations="[Audio]"/>
+    <Assets directory="Assets/BlazeVector/Gui" extension="ogg" associations="[Audio]"/>
+    <Assets directory="Assets/BlazeVector/Gui" extension="nugroup"/>
   </Package>
   <Package name="Stage">
-    <Asset name="Player" file="Assets/BlazeVector/Stage/Player.png" associations="[Render]"/>
-    <Asset name="PlayerBullet" file="Assets/BlazeVector/Stage/PlayerBullet.png" associations="[Render]"/>
-    <Asset name="Enemy" file="Assets/BlazeVector/Stage/Enemy.png" associations="[Render]"/>
-    <Asset name="EnemyBullet" file="Assets/BlazeVector/Stage/EnemyBullet.png" associations="[Render]"/>
-    <Asset name="RoadTileSet" file="Assets/BlazeVector/Stage/RoadTileSet.png" associations="[Render]"/>
-    <Asset name="SkylineTileSet" file="Assets/BlazeVector/Stage/SkylineTileSet.png" associations="[Render]"/>
-    <Asset name="Section0Group" file="Assets/BlazeVector/Groups/Section0.nugroup"/>
-    <Asset name="Section0" file="Assets/BlazeVector/Stage/Section0.tmx"/>
-    <Asset name="Section1Group" file="Assets/BlazeVector/Groups/Section1.nugroup"/>
-    <Asset name="Section1" file="Assets/BlazeVector/Stage/Section1.tmx"/>
-    <Asset name="Section2Group" file="Assets/BlazeVector/Groups/Section2.nugroup"/>
-    <Asset name="Section2" file="Assets/BlazeVector/Stage/Section2.tmx"/>
-    <Asset name="Section3Group" file="Assets/BlazeVector/Groups/Section3.nugroup"/>
-    <Asset name="Section3" file="Assets/BlazeVector/Stage/Section3.tmx"/>
-    <Asset name="BackgroundA" file="Assets/BlazeVector/Stage/BackgroundA.tmx"/>
-    <Asset name="BackgroundB" file="Assets/BlazeVector/Stage/BackgroundB.tmx"/>
-    <Asset name="RoadTileSet" file="Assets/BlazeVector/Stage/RoadTileSet.tsx"/>
-    <Asset name="DeadBlaze" file="Assets/BlazeVector/Stage/DeadBlaze.ogg" associations="[Audio]"/>
-    <Asset name="Shot" file="Assets/BlazeVector/Stage/Shot.wav" associations="[Audio]"/>
-    <Asset name="Jump" file="Assets/BlazeVector/Stage/Jump.wav" associations="[Audio]"/>
-    <Asset name="Hit" file="Assets/BlazeVector/Stage/Hit.wav" associations="[Audio]"/>
-    <Asset name="Explosion" file="Assets/BlazeVector/Stage/Explosion.wav" associations="[Audio]"/>
-    <Asset name="Death" file="Assets/BlazeVector/Stage/Death.wav" associations="[Audio]"/>
-    <Asset name="StageGui" file="Assets/BlazeVector/Groups/StageGui.nugroup"/>
-    <Asset name="StagePlay" file="Assets/BlazeVector/Groups/StagePlay.nugroup"/>
+    <Assets directory="Assets/BlazeVector/Stage" extension="png" associations="[Render]"/>
+    <Assets directory="Assets/BlazeVector/Stage" extension="wav" associations="[Audio]"/>
+    <Assets directory="Assets/BlazeVector/Stage" extension="ogg" associations="[Audio]"/>
+    <Assets directory="Assets/BlazeVector/Stage" extension="nugroup"/>
+    <Assets directory="Assets/BlazeVector/Stage" extension="tsx"/>
+    <Assets directory="Assets/BlazeVector/Stage" extension="tmx"/>
   </Package>
 </Root>
