@@ -4,12 +4,11 @@ open FSharpx
 open SDL2
 open OpenTK
 open Prime
-open Prime.Desync
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
 open Nu.Observation
-open Nu.Desync
+open Nu.Chain
 
 // this is the main module for our program.
 module Program =

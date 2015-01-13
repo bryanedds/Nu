@@ -32,11 +32,11 @@
 #load "MapPlus.fs"
 #load "RduTree.fs"
 #load "Rand.fs"
-#load "Desync.fs"
+#load "Chain.fs"
 
 open System
 open FSharpx
 open FParsec
 open Prime
-open Prime.Desync
+open Prime.Chain
 
