@@ -290,8 +290,8 @@ module Observation =
     /// Transform an observation into a running map from its event's data to keys as defined by 'f'.
     let organize f (observation : Observation<'a, 'o>) : Observation<('a * 'b) option * Map<'b, 'a>, 'o> =
         scan
-            (fun (_, m) a w ->
-                let b = f a w
+            (fun (_, m) a world ->
+                let b = f a world
                 if Map.containsKey b m
                 then (None, m)
                 else (Some (a.Data, b), Map.add b a.Data m))
@@ -301,11 +301,11 @@ module Observation =
     /// Transform an observation into a running set of its event's unique data as defined by 'by'.
     let groupBy by (observation : Observation<'a, 'o>) : Observation<'b * bool * 'b Set, 'o> =
         scan
-            (fun (_, _, s) a w ->
-                let b = by a w
-                if Set.contains b s
-                then (b, false, s)
-                else (b, true, Set.add b s))
+            (fun (_, _, set) a world ->
+                let b = by a world
+                if Set.contains b set
+                then (b, false, set)
+                else (b, true, Set.add b set))
             (Unchecked.defaultof<'b>, false, Set.empty)
             observation
 
@@ -390,114 +390,111 @@ module Observation =
 
     /// Take only one event from an observation per game tick.
     let noMoreThanOncePerTick observation =
-        observation |> organize (fun _ w -> w.State.TickTime) |> toFst |> choose
-
-    /// Propagate the event data of an observation to a value in the world's state.
-    let propagateWorldStateValue valueSetter observation =
-        subscribe (fun a w -> (Cascade, World.updateState (valueSetter a w) w)) observation
-
-    /// Propagate the event data of an observation to a value in the observing simulant when the
-    /// observer exists (doing nothing otherwise).
-    let propagateSimulantValue valueSetter observation =
-        subscribe (fun a w ->
-            let w =
-                if World.containsSimulant a.SubscriberAddress w
-                then World.updateSimulant (valueSetter a w) a.SubscriberAddress w
-                else w
-            (Cascade, w))
-            observation
+        observation |> organize (fun _ world -> world.State.TickTime) |> toFst |> choose
 
     /// Filter out world state change events that do not relate to those returned by 'valueGetter'.
     let worldStateValue (valueGetter : WorldState -> 'b) (observation : Observation<WorldStateChangeData, 'o>) =
-        filter (fun a w ->
+        filter (fun a world ->
             let oldValue = valueGetter a.Data.OldWorldState
-            let newValue = valueGetter (World.getState w)
+            let newValue = valueGetter (World.getState world)
             oldValue <> newValue)
             observation
 
     /// Filter out simulant change events that do not relate to those returned by 'valueGetter'.
     let simulantValue (valueGetter : 'a -> 'b) (observation : Observation<'a SimulantChangeData, 'o>) =
-        filter (fun a w ->
+        filter (fun a world ->
             let oldValue = valueGetter a.Data.OldSimulant
-            let newValue = valueGetter (World.getSimulant (Address.changeType<Simulant, 'a> a.PublisherAddress) w)
+            let newValue = valueGetter (World.getSimulant (Address.changeType<Simulant, 'a> a.PublisherAddress) world)
             oldValue <> newValue)
             observation
 
-    /// Make an observation from an observer address and change events from the world's state.
-    let observeWorldStateValue valueGetter observerAddress =
+[<AutoOpen>]
+module ObservationOperatorsModule =
+    open Observation
+
+    /// Pipe-right arrow that provides special precedence for observations.
+    let (-|>) = (|>)
+
+    /// Pipe-right fat-arrow that provides special precedence for observations.
+    let (=|>) = (|>)
+
+    /// Make an observation of the world state's change events.
+    let ( *== ) valueGetter observerAddress =
         observe WorldStateChangeEventAddress observerAddress |>
         worldStateValue valueGetter
 
-    /// Make an observation from an observer address and one change event from the world's state
-    /// per frame.
-    let observeWorldStateValueCyclic valueGetter observerAddress =
-        observeWorldStateValue valueGetter observerAddress |>
+    /// Make an observation of one of the world state's change events per frame.
+    let (/==) valueGetter observerAddress =
+        valueGetter *== observerAddress |>
         noMoreThanOncePerTick
 
-    /// Make an observation from an observer address and the observer's change events.
-    let observeSimulantValue (valueGetter : 'a -> 'b) (simulantAddress : 'a Address) (observerAddress : 'o Address) =
+    /// Make an observation of the observer's change events.
+    let ( *-- ) (simulantAddress : 'a Address, valueGetter : 'a -> 'b) (observerAddress : 'o Address) =
         let simulantChangeEventAddress = stoa<'a SimulantChangeData> (typeof<'a>.Name + "/Change")
         let changeEventAddress = simulantChangeEventAddress ->>- simulantAddress
         observe changeEventAddress observerAddress |>
         simulantValue valueGetter
 
-    /// Make an observation from an observer address and one of the observer's change events per
-    /// frame.
-    let observeSimulantValueCyclic valueGetter simulantAddress observerAddress =
-        observeSimulantValue valueGetter simulantAddress observerAddress |>
+    /// Make an observation of one of the observer's change events per frame.
+    let (/--) (simulantAddress, valueGetter) observerAddress =
+        (simulantAddress, valueGetter) *-- observerAddress |>
         noMoreThanOncePerTick
 
-[<AutoOpen>]
-module ObservationOperatorsModule =
+    /// Propagate the event data of an observation to a value in the world's state.
+    let (==>) observation valueSetter =
+        subscribe (fun a world -> (Cascade, World.updateState (valueSetter a.Data world) world)) observation
+
+    /// Propagate the event data of an observation to a value in the observing simulant when the
+    /// observer exists (doing nothing otherwise).
+    let (-->) observation valueSetter =
+        subscribe (fun a world ->
+            let world =
+                if World.containsSimulant a.SubscriberAddress world
+                then World.updateSimulant (valueSetter a.Data world) a.SubscriberAddress world
+                else world
+            (Cascade, world))
+            observation
 
     /// Propagate a value from the world's state to another value in the world's state.
-    let (%->) (valueGetter : WorldState -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
-        Observation.observeWorldStateValue valueGetter GameAddress |>
-        Observation.propagateWorldStateValue (fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue)
+    let ( *==> ) (valueGetter : WorldState -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
+        valueGetter *== GameAddress ==> fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue
 
     /// Propagate a value from the world's state to another value in the world's state, but with frame-based cycle-breaking.
-    let (%/>) (valueGetter : WorldState -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
-        Observation.observeWorldStateValueCyclic valueGetter GameAddress |>
-        Observation.propagateWorldStateValue (fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue)
+    let (/==>) (valueGetter : WorldState -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
+        valueGetter /== GameAddress ==> fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue
 
     /// Propagate a value from the world's state to a value in the given simulant.
-    let (+->) (valueGetter : WorldState -> 'b) (destinationAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
-        Observation.observeWorldStateValue valueGetter destinationAddress |>
-        Observation.propagateSimulantValue (fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue)
+    let ( *=-> ) (valueGetter : WorldState -> 'b) (destinationAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
+        valueGetter *== destinationAddress --> fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue
 
     /// Propagate a value from the world's state to a value in the given simulant, but with frame-based cycle-breaking.
-    let (+/>) (valueGetter : WorldState -> 'b) (destinationAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
-        Observation.observeWorldStateValueCyclic valueGetter destinationAddress |>
-        Observation.propagateSimulantValue (fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue)
+    let (/=->) (valueGetter : WorldState -> 'b) (destinationAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
+        valueGetter /== destinationAddress --> fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue
 
     /// Propagate a value from the given simulant to a value in the world's state.
-    let ( *-> ) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
-        Observation.observeSimulantValueCyclic valueGetter sourceAddress GameAddress |>
-        Observation.propagateWorldStateValue (fun _ world ->
+    let ( *-=> ) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
+        (sourceAddress, valueGetter) *-- GameAddress ==> fun _ world ->
             let sourceSimulant = World.getSimulant sourceAddress world
             let sourceSimulantValue = valueGetter sourceSimulant
-            valueSetter sourceSimulantValue)
+            valueSetter sourceSimulantValue
 
     /// Propagate a value from the given simulant to a value in the world's state, but with frame-based cycle-breaking.
-    let ( */> ) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
-        Observation.observeSimulantValueCyclic valueGetter sourceAddress GameAddress |>
-        Observation.propagateWorldStateValue (fun _ world ->
+    let (/-=>) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
+        (sourceAddress, valueGetter) /-- GameAddress ==> fun _ world ->
             let sourceSimulant = World.getSimulant sourceAddress world
             let sourceSimulantValue = valueGetter sourceSimulant
-            valueSetter sourceSimulantValue)
+            valueSetter sourceSimulantValue
 
     // Propagate a value from the given source simulant to a value in the given destination simulant.
-    let (-->) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (destinationAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
-        Observation.observeSimulantValue valueGetter sourceAddress destinationAddress |>
-        Observation.propagateSimulantValue (fun _ world ->
+    let ( *--> ) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (destinationAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
+        (sourceAddress, valueGetter) *-- destinationAddress --> fun _ world ->
             let sourceSimulant = World.getSimulant sourceAddress world
             let sourceSimulantValue = valueGetter sourceSimulant
-            valueSetter sourceSimulantValue)
+            valueSetter sourceSimulantValue
 
     // Propagate a value from the given source simulant to a value in the given destination simulant, but with frame-based cycle-breaking.
-    let (-/>) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (destinationAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
-        Observation.observeSimulantValueCyclic valueGetter sourceAddress destinationAddress |>
-        Observation.propagateSimulantValue (fun _ world ->
+    let (/-->) (sourceAddress : 'a Address, valueGetter : 'a -> 'b) (destinationAddress : 'o Address, valueSetter : 'b -> 'o -> 'o) =
+        (sourceAddress, valueGetter) /-- destinationAddress --> fun _ world ->
             let sourceSimulant = World.getSimulant sourceAddress world
             let sourceSimulantValue = valueGetter sourceSimulant
-            valueSetter sourceSimulantValue)
+            valueSetter sourceSimulantValue
