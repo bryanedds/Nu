@@ -4,12 +4,11 @@ open System.IO
 open SDL2
 open OpenTK
 open Prime
-open Prime.Desync
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
 open Nu.Observation
-open Nu.Desync
+open Nu.Chain
 open AStar
 open InfinityRpg
 open InfinityRpg.Constants
@@ -388,14 +387,14 @@ module GameplayDispatcherModule =
             else world
 
         static let runCharacterNavigation newNavigationDescriptor characterAddress address world =
-            let desync = desync {
+            let chain = chain {
                 do! updateEntity (Entity.setActivityState <| Navigation newNavigationDescriptor) characterAddress
                 do! during
                         (fun world ->
                             match World.getEntityBy Entity.getActivityState characterAddress world with
                             | Navigation nd -> newNavigationDescriptor.WalkDescriptor.WalkOriginM = nd.WalkDescriptor.WalkOriginM
                             | Action _ | NoActivity -> false) ^^
-                        desync {
+                        chain {
                             do! update ^^ fun world ->
                                 let navigationDescriptor =
                                     match World.getEntityBy Entity.getActivityState characterAddress world with
@@ -404,17 +403,17 @@ module GameplayDispatcherModule =
                                 updateCharacterByNavigation navigationDescriptor characterAddress world
                             do! pass }}
             let observation = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- address)
-            snd <| runDesyncAssumingCascade desync observation world
+            snd <| runAssumingCascade chain observation world
 
         static let runCharacterAction newActionDescriptor characterAddress address world =
             // NOTE: currently just implements attack
-            let desync = desync {
+            let chain = chain {
                 do! updateEntity (Entity.setActivityState <| Action newActionDescriptor) characterAddress
                 do! during
                         (fun world ->
                             let activityState = World.getEntityBy Entity.getActivityState characterAddress world 
                             ActivityState.isActing activityState) ^^
-                        desync {
+                        chain {
                             do! update ^^ fun world ->
                                 let actionDescriptor =
                                     match World.getEntityBy Entity.getActivityState characterAddress world  with
@@ -424,7 +423,7 @@ module GameplayDispatcherModule =
                                 runCharacterReaction actionDescriptor characterAddress address world
                             do! pass }}
             let observation = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- address)
-            snd <| runDesyncAssumingCascade desync observation world
+            snd <| runAssumingCascade chain observation world
 
         static let runCharacterNoActivity characterAddress world =
             World.updateEntity (Entity.setActivityState NoActivity) characterAddress world
@@ -519,12 +518,12 @@ module GameplayDispatcherModule =
                 let hudSaveGameAddress = getHudSaveGameAddress address
                 let hudHaltAddress = getHudHaltAddress address
                 let playerAddress = getPlayerAddress address
-                let desync = desync {
+                let chain = chain {
                     do! updateEntity (Entity.setEnabled false) hudSaveGameAddress
-                    do! loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress address world) ^^ fun i -> desync {
+                    do! loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress address world) ^^ fun i -> chain {
                         let! event = next
                         do! match event.Data with
-                            | Right _ -> desync {
+                            | Right _ -> chain {
                                 let! playerTurn =
                                     if i = 0
                                     then getBy <| determinePlayerTurnFromInput playerInput address
@@ -536,7 +535,7 @@ module GameplayDispatcherModule =
                     observe (ClickEventAddress ->>- hudHaltAddress) address |>
                     sum TickEventAddress |>
                     until (DeselectEventAddress ->>- address)
-                snd <| runDesyncAssumingCascade desync observation world
+                snd <| runAssumingCascade chain observation world
             else world
 
         static let handlePlayerChange event world =
