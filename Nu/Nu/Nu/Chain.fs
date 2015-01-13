@@ -113,10 +113,14 @@ module Chain =
         match step m world with
         | (world', Left m') -> run3 (m' e) e world'
         | (world', Right v) -> (world', v)
-        
+
     /// Run a chain to its end, providing unit for all its steps.
-    let rec run (m : Chain<unit, 'a>) (world : World) : (World * 'a) =
+    let rec run2 (m : Chain<unit, 'a>) (world : World) : (World * 'a) =
         run3 m () world
+
+    /// Run a chain to its end, providing unit for all its steps.
+    let rec run (m : Chain<unit, 'a>) (world : World) : World =
+        fst <| run3 m () world
 
     let private run4 eventHandling (chain : Chain<Event<'a, 'o>, unit>) (observation : Observation<'a, 'o>) world =
         let callbackKey = World.makeCallbackKey ()
