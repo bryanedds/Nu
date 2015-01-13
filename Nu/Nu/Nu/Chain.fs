@@ -259,17 +259,17 @@ module Chain =
 
     /// Update a lensed value at the given address and the world with the given 'updater' procedure.
     let updateLensedAndW expr lens =
-        chain { do! update (fun world -> Lens.update expr (lens @-> World.lens) world) }
+        chain { do! update <| World.updateLensedAndW expr lens }
 
     /// Update a lensed value with the given 'updater' procedure at the given address.
     let updateLensedW expr lens =
-        chain { do! update (fun world -> Lens.updateS expr lens world) }
+        chain { do! update <| World.updateLensedW expr lens }
 
     /// Update a lensed value with the given 'updater' procedure at the given address.
     let updateLensed expr lens =
-        updateLensedW (flip (fun _ -> expr)) lens
+        chain { do! update <| World.updateLensed expr lens }
 
     /// Update the world with the given 'updater' procedure that uses the lensed value at given
     /// address in its computation.
     let updateByLensed expr lens =
-        chain { do! update (fun world -> expr (Lens.get world lens) world) }
+        chain { do! update <| World.updateByLensed expr lens }
