@@ -9,6 +9,7 @@ open System.ComponentModel
 open System.Reflection
 open System.Xml
 open System.Xml.Serialization
+open FSharpx
 open SDL2
 open OpenTK
 open TiledSharp
@@ -81,6 +82,23 @@ module WorldModule =
         static member updateBySimulant updater address world : World =
             let simulant = World.getSimulant address world
             updater simulant world
+
+        /// Update a lensed value at the given address and the world with the given 'updater' procedure.
+        static member updateLensedAndW expr lens world : World =
+            Lens.update expr (lens @-> World.lens) world
+
+        /// Update a lensed value with the given 'updater' procedure at the given address.
+        static member updateLensedW expr lens world : World =
+            Lens.updateS expr lens world
+
+        /// Update a lensed value with the given 'updater' procedure at the given address.
+        static member updateLensed expr lens world : World =
+            World.updateLensedW (fun lensed _ -> expr lensed) lens world
+
+        /// Update the world with the given 'updater' procedure that uses the lensed value at given
+        /// address in its computation.
+        static member updateByLensed expr lens world : World =
+            expr (Lens.get world lens) world
 
         static member private getOptSimulantForPublishingDefinition (address : Simulant Address) world =
             World.getOptSimulant address world
