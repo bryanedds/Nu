@@ -47,7 +47,7 @@ System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Deb
 #load "Dispatchers.fs"
 #load "World.fs"
 #load "Observation.fs"
-#load "Desync.fs"
+#load "Chain.fs"
 
 open System
 open FSharpx
@@ -56,10 +56,9 @@ open SDL2
 open OpenTK
 open TiledSharp
 open Prime
-open Prime.Desync
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
 open Nu.Observation
-open Nu.Desync
+open Nu.Chain
 
