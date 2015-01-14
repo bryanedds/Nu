@@ -121,7 +121,7 @@ module WorldScreenModule =
         /// Get a group at the given address (failing with an exception otherwise), then
         /// transform it with the 'by' procudure.
         static member getScreenBy by address world =
-            by ^^ Option.get ^^ World.getOptScreen address world
+            by ^ Option.get ^ World.getOptScreen address world
 
         /// Get a group at the given address (failing with an exception otherwise).
         static member getScreen address world =

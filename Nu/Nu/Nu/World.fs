@@ -48,7 +48,7 @@ module WorldModule =
         /// Get a simulant at the given address (failing with an exception otherwise), then
         /// transform it with the 'by' procudure.
         static member getSimulantBy by address world =
-            by ^^ Option.get ^^ World.getOptSimulant address world
+            by ^ Option.get ^ World.getOptSimulant address world
 
         /// Get a simulant at the given address (failing with an exception otherwise).
         static member getSimulant address world =

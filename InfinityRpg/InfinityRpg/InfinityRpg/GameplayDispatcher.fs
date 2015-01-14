@@ -393,9 +393,9 @@ module GameplayDispatcherModule =
                         (fun world ->
                             match World.getEntityBy Entity.getActivityState characterAddress world with
                             | Navigation nd -> newNavigationDescriptor.WalkDescriptor.WalkOriginM = nd.WalkDescriptor.WalkOriginM
-                            | Action _ | NoActivity -> false) ^^
+                            | Action _ | NoActivity -> false) ^
                         chain {
-                            do! update ^^ fun world ->
+                            do! update ^ fun world ->
                                 let navigationDescriptor =
                                     match World.getEntityBy Entity.getActivityState characterAddress world with
                                     | Navigation navigationDescriptor -> navigationDescriptor
@@ -409,19 +409,15 @@ module GameplayDispatcherModule =
             // NOTE: currently just implements attack
             let chain = chain {
                 do! updateEntity (Entity.setActivityState <| Action newActionDescriptor) characterAddress
-                do! during
-                        (fun world ->
-                            let activityState = World.getEntityBy Entity.getActivityState characterAddress world 
-                            ActivityState.isActing activityState) ^^
-                        chain {
-                            do! update ^^ fun world ->
-                                let actionDescriptor =
-                                    match World.getEntityBy Entity.getActivityState characterAddress world  with
-                                    | Action actionDescriptor -> actionDescriptor
-                                    | _ -> failwithumf ()
-                                let world = updateCharacterByAction actionDescriptor characterAddress world
-                                runCharacterReaction actionDescriptor characterAddress address world
-                            do! pass }}
+                do! during (World.getEntityBy (Entity.getActivityState >> ActivityState.isActing) characterAddress) ^ chain {
+                    do! update ^ fun world ->
+                        let actionDescriptor =
+                            match World.getEntityBy Entity.getActivityState characterAddress world  with
+                            | Action actionDescriptor -> actionDescriptor
+                            | _ -> failwithumf ()
+                        let world = updateCharacterByAction actionDescriptor characterAddress world
+                        runCharacterReaction actionDescriptor characterAddress address world
+                    do! pass }}
             let observation = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- address)
             snd <| runAssumingCascade chain observation world
 
@@ -520,7 +516,7 @@ module GameplayDispatcherModule =
                 let playerAddress = getPlayerAddress address
                 let chain = chain {
                     do! updateEntity (Entity.setEnabled false) hudSaveGameAddress
-                    do! loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress address world) ^^ fun i -> chain {
+                    do! loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress address world) ^ fun i -> chain {
                         let! event = next
                         do! match event.Data with
                             | Right _ -> chain {
