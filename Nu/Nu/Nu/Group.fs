@@ -425,3 +425,11 @@ module WorldGroupModule =
                         Map.add groupName groupHierarchy groupHierarchies)
                     Map.empty
                     (enumerable groupNodes)
+
+    type [<StructuralEquality; NoComparison>] GroupRep =
+        { GroupAddress : Group Address }
+        static member getId groupRep world = (World.getGroup groupRep.GroupAddress world).Id
+        static member getName groupRep world = (World.getGroup groupRep.GroupAddress world).Name
+        static member getCreationTimeNp groupRep world = (World.getGroup groupRep.GroupAddress world).CreationTimeNp
+        static member getDispatcherNp groupRep world = (World.getGroup groupRep.GroupAddress world).DispatcherNp
+        static member getXtension groupRep world = (World.getGroup groupRep.GroupAddress world).Xtension

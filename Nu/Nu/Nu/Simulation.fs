@@ -205,16 +205,16 @@ module SimulationModule =
         default dispatcher.PropagatePhysics (_, _, world) = world
 
         /// Get the render descriptors needed to render an entity.
-        abstract GetRenderDescriptors : Entity * World -> RenderDescriptor list
-        default dispatcher.GetRenderDescriptors (_, _) = []
+        abstract GetRenderDescriptors : Entity * Entity Address * World -> RenderDescriptor list
+        default dispatcher.GetRenderDescriptors (_, _, _) = []
 
         /// Get the quick size of an entity (the appropriate user-define size for an entity).
-        abstract GetQuickSize : Entity * World -> Vector2
-        default dispatcher.GetQuickSize (_, _) = Vector2.One
+        abstract GetQuickSize : Entity * Entity Address * World -> Vector2
+        default dispatcher.GetQuickSize (_, _, _) = Vector2.One
 
         /// Get the priority with which an entity is picked in the editor.
-        abstract GetPickingPriority : Entity * World -> single
-        default dispatcher.GetPickingPriority (entity, _) = entity.Depth
+        abstract GetPickingPriority : Entity * Entity Address * World -> single
+        default dispatcher.GetPickingPriority (_, address, world) = EntityRep.getDepth address world world
 
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =

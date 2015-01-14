@@ -207,3 +207,9 @@ module WorldGameModule =
                 typeof<GroupDispatcher>.Name
                 typeof<EntityDispatcher>.Name
                 world
+
+    module GameRep =
+        let getId world = (World.getGame world).Id
+        let getCreationTimeNp world = (World.getGame world).CreationTimeNp
+        let getDispatcherNp world = (World.getGame world).DispatcherNp
+        let getXtension world = (World.getGame world).Xtension

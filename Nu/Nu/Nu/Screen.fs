@@ -393,3 +393,12 @@ module WorldScreenModule =
                         Map.add screenName screenHierarchy screenHierarchies)
                     Map.empty
                     (enumerable screenNodes)
+
+    type [<StructuralEquality; NoComparison>] ScreenRep =
+        { ScreenAddress : Screen Address }
+        
+        static member getId screenRep world = (World.getScreen screenRep.ScreenAddress world).Id
+        static member getName screenRep world = (World.getScreen screenRep.ScreenAddress world).Name
+        static member getCreationTimeNp screenRep world = (World.getScreen screenRep.ScreenAddress world).CreationTimeNp
+        static member getDispatcherNp screenRep world = (World.getScreen screenRep.ScreenAddress world).DispatcherNp
+        static member getXtension screenRep world = (World.getScreen screenRep.ScreenAddress world).Xtension
