@@ -286,8 +286,9 @@ module WorldScreenModule =
             let (screen, groupHierarchies) = screenHierarchy
             if not <| World.containsScreen address world then
                 let world = World.setScreenWithoutEvent screen address world
-                let world = snd <| World.addGroups groupHierarchies address world
+                let (_, world) = World.addGroups groupHierarchies address world
                 let (screen, world) = World.registerScreen screen address world
+                let world = World.setScreenWithoutEvent screen address world
                 let world = World.publish4 () (ScreenAddEventAddress ->>- address) address world
                 (screen, world)
             else failwith <| "Adding a screen that the world already contains at address '" + acstring address + "'."

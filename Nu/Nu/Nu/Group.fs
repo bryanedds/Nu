@@ -314,8 +314,9 @@ module WorldGroupModule =
             let (group, entities) = groupHierarchy
             if not <| World.containsGroup address world then
                 let world = World.setGroupWithoutEvent group address world
-                let world = snd <| World.addEntities entities address world
+                let (_, world) = World.addEntities entities address world
                 let (group, world) = World.registerGroup group address world
+                let world = World.setGroupWithoutEvent group address world
                 let world = World.publish4 () (GroupAddEventAddress ->>- address) address world
                 (group, world)
             else failwith <| "Adding a group that the world already contains at address '" + acstring address + "'."

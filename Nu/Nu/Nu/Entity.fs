@@ -53,7 +53,7 @@ module EntityModule =
                 (fun (entity, world) (facet : Facet) -> facet.Unregister (entity, address, world))
                 (entity, world)
                 entity.FacetsNp
-        
+
         /// Propagate an entity's physics properties from the physics subsystem.
         static member propagatePhysics (entity : Entity) address world =
             let world = entity.DispatcherNp.PropagatePhysics (entity, address, world)
@@ -410,6 +410,7 @@ module WorldEntityModule =
             if not <| World.containsEntity address world then
                 let world = World.setEntityWithoutEvent entity address world
                 let (entity, world) = World.registerEntity entity address world
+                let world = World.setEntityWithoutEvent entity address world
                 let world = World.publish4 () (EntityAddEventAddress ->>- address) address world
                 (entity, world)
             else failwith <| "Adding an entity that the world already contains at address '" + acstring address + "'."
