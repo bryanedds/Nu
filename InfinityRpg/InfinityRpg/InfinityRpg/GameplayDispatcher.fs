@@ -389,19 +389,18 @@ module GameplayDispatcherModule =
         static let runCharacterNavigation newNavigationDescriptor characterAddress address world =
             let chain = chain {
                 do! updateEntity (Entity.setActivityState <| Navigation newNavigationDescriptor) characterAddress
-                do! during
-                        (fun world ->
+                do! during (fun world ->
+                    match World.getEntityBy Entity.getActivityState characterAddress world with
+                    | Navigation navigationDescriptor -> newNavigationDescriptor.WalkDescriptor.WalkOriginM = navigationDescriptor.WalkDescriptor.WalkOriginM
+                    | Action _ -> false
+                    | NoActivity -> false) ^ chain {
+                    do! update ^ fun world ->
+                        let navigationDescriptor =
                             match World.getEntityBy Entity.getActivityState characterAddress world with
-                            | Navigation nd -> newNavigationDescriptor.WalkDescriptor.WalkOriginM = nd.WalkDescriptor.WalkOriginM
-                            | Action _ | NoActivity -> false) ^
-                        chain {
-                            do! update ^ fun world ->
-                                let navigationDescriptor =
-                                    match World.getEntityBy Entity.getActivityState characterAddress world with
-                                    | Navigation navigationDescriptor -> navigationDescriptor
-                                    | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
-                                updateCharacterByNavigation navigationDescriptor characterAddress world
-                            do! pass }}
+                            | Navigation navigationDescriptor -> navigationDescriptor
+                            | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
+                        updateCharacterByNavigation navigationDescriptor characterAddress world
+                    do! pass }}
             let observation = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- address)
             snd <| runAssumingCascade chain observation world
 
