@@ -70,10 +70,10 @@ module WorldTests =
         let groupHierarchies = Map.singleton group.Name (group, Map.singleton entity.Name entity)
         let screenHierarchy = (screen, groupHierarchies)
         let world = snd <| World.addScreen screenHierarchy DefaultScreenAddress world
-        let handleEvent = fun event world -> (Cascade, World.setUserState event.Subscriber.Name world)
+        let handleEvent = fun event world -> (Cascade, World.setUserState event.SubscriberAddress world)
         let world = World.subscribe4 handleEvent StringEventAddress DefaultEntityAddress world
         let world = World.publish4 String.Empty StringEventAddress GameAddress world
-        Assert.Equal<string> (DefaultEntityName, World.getUserState world)
+        Assert.Equal<Entity Address> (DefaultEntityAddress, World.getUserState world)
 
     let [<Fact>] gameSerializationWorks () =
         // TODO: make stronger assertions in here!!!

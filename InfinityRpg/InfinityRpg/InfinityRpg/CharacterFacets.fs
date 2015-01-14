@@ -190,7 +190,8 @@ module CharacterCameraFacetModule =
         inherit Facet ()
 
         static let handleTick event world =
-            let (character : Entity, address) = (event.Subscriber, event.SubscriberAddress)
+            let character = World.getEntity event.SubscriberAddress world
+            let address = event.SubscriberAddress
             let world =
                 World.updateCamera (fun camera ->
                     let eyeCenter = character.Position + character.Size * 0.5f

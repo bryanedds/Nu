@@ -41,10 +41,6 @@ module World =
     let mutable private getOptSimulantForPublishing =
         Unchecked.defaultof<Simulant Address -> World -> Simulant option>
 
-    /// Get a simulant at the given address from the world.
-    let private getSimulantForPublishing address world =
-        Option.get <| getOptSimulantForPublishing address world
-
     // OPTIMIZATION: priority annotated as single to decrease GC pressure.
     let private sortFstDesc (priority : single, _) (priority2 : single, _) =
         if priority > priority2 then -1
@@ -130,7 +126,6 @@ module World =
             { SubscriberAddress = Address.changeType<obj, 's> subscriberAddress
               PublisherAddress = Address.changeType<'p, Simulant> publisherAddress
               EventAddress = eventAddress
-              Subscriber = getSimulantForPublishing (Address.changeType<obj, Simulant> subscriberAddress) world :?> 's
               Data = eventData }
         let callableSubscription = unbox<BoxableSubscription> subscription
         let result = callableSubscription event world

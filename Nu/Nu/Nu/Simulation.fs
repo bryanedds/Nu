@@ -106,7 +106,6 @@ module SimulationModule =
         { SubscriberAddress : 's Address
           PublisherAddress : Simulant Address // TODO: consider making this a list so that Observer can provide all useful addresses
           EventAddress : 'a Address
-          Subscriber : 's
           Data : 'a }
 
     /// Describes whether an event has been resolved or should cascade.
