@@ -618,11 +618,12 @@ module GameplayDispatcherModule =
 
         static let handleSelectGameplay (event : Event<_, Screen>) world =
             let world =
+                let gameplay = World.getScreen event.SubscriberAddress world
                 // NOTE: doing a File.Exists then loading the file is dangerous since the file can
                 // always be deleted / moved between the two operations!
-                if event.Subscriber.ShallLoadGame && File.Exists SaveFilePath
-                then handleLoadGame event.Subscriber event.SubscriberAddress world
-                else handleNewGame event.Subscriber event.SubscriberAddress world
+                if gameplay.ShallLoadGame && File.Exists SaveFilePath
+                then handleLoadGame gameplay event.SubscriberAddress world
+                else handleNewGame gameplay event.SubscriberAddress world
             let world = World.playSong DefaultTimeToFadeOutSongMs 1.0f { PackageName = GameplayPackageName; AssetName = "Hero'sVengeance" } world
             (Cascade, world)
 
