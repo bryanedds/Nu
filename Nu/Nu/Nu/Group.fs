@@ -106,7 +106,7 @@ module WorldGroupModule =
         /// Get a group at the given address (failing with an exception otherwise), then
         /// transform it with the 'by' procudure.
         static member getGroupBy by address world =
-            by ^^ Option.get ^^ World.getOptGroup address world
+            by ^ Option.get ^ World.getOptGroup address world
 
         /// Get a group at the given address (failing with an exception otherwise).
         static member getGroup address world =

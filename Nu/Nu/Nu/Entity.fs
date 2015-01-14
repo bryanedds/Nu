@@ -215,7 +215,7 @@ module WorldEntityModule =
         /// Get an entity at the given address (failing with an exception otherwise), then
         /// transform it with the 'by' procudure.
         static member getEntityBy by address world =
-            by ^^ Option.get ^^ World.getOptEntity address world
+            by ^ Option.get ^ World.getOptEntity address world
 
         /// Get an entity at the given address (failing with an exception otherwise).
         static member getEntity address world =

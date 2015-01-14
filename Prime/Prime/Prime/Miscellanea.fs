@@ -88,11 +88,11 @@ module Miscellanea =
         Guid (m, int16 (n >>> 16), int16 n, bytes)
 
     /// Sequences two functions like Haskell ($).
-    let inline ( ^^ ) f g = f g
+    let inline (^) f g = f g
 
     /// Combine the contents of two maps, taking an item from the second map in the case of a key
     /// conflict.
-    let inline ( @@ ) map map2 =
+    let inline (@@) map map2 =
         Map.fold
             (fun map key value -> Map.add key value map)
             map
