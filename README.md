@@ -35,6 +35,9 @@ The best way to get started is to pull down the repository with a git client, an
 
 The current documentation for the **Nu Game Engine** is found here - https://github.com/bryanedds/FPWorks/blob/master/Nu/Documentation/Nu%20Game%20Engine.pdf?raw=true
 
+There is additional documentation on **advanced Nu game programming techniques** in an 'experience report' found here -
+https://github.com/bryanedds/FPWorks/blob/master/Nu/Documentation/Iterative%20Functional%20Reactive%20Programming%20with%20the%20Nu%20Game%20Engine.pdf?raw=true
+
 The current documentation for the **Aml** programming language is found here - https://github.com/bryanedds/FPWorks/tree/master/Aml/Documentation
 
 If you're looking at Aml, run the **AmlRepl project** from Visual Studio and follow its instructions (especially in studying the StdLib Aml code to get a real feel for the language).
