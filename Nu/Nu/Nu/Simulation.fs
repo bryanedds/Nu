@@ -150,8 +150,8 @@ module SimulationModule =
 
         /// Register a game when adding it to the world. Note that there is not corresponding
         /// Unregister method due to the inability to remove a game from the world.
-        abstract Register : Game * World -> Game * World
-        default dispatcher.Register (game, world) = (game, world)
+        abstract Register : GameRep * World -> World
+        default dispatcher.Register (_, world) = world
 
     /// The default dispatcher for screens.
     and ScreenDispatcher () =
@@ -161,12 +161,12 @@ module SimulationModule =
              define? Persistent true]
 
         /// Register a screen when adding it to the world.
-        abstract Register : Screen * Screen Address * World -> Screen * World
-        default dispatcher.Register (screen, _, world) = (screen, world)
+        abstract Register : ScreenRep * World -> World
+        default dispatcher.Register (_, world) = world
 
         /// Unregister a screen when removing it from the world.
-        abstract Unregister : Screen * Screen Address * World -> Screen * World
-        default dispatcher.Unregister (screen, _, world) = (screen, world)
+        abstract Unregister : ScreenRep * World -> World
+        default dispatcher.Unregister (_, world) = world
 
     /// The default dispatcher for groups.
     and GroupDispatcher () =
@@ -176,12 +176,12 @@ module SimulationModule =
              define? Persistent true]
 
         /// Register a group when adding it to a screen.
-        abstract Register : Group * Group Address * World -> Group * World
-        default dispatcher.Register (group, _, world) = (group, world)
+        abstract Register : GroupRep * World -> World
+        default dispatcher.Register (_, world) = world
 
         /// Unregister a group when removing it from a screen.
-        abstract Unregister : Group * Group Address * World -> Group * World
-        default dispatcher.Unregister (group, _, world) = (group, world)
+        abstract Unregister : GroupRep * World -> World
+        default dispatcher.Unregister (_, world) = world
 
     /// The default dispatcher for entities.
     and EntityDispatcher () =
@@ -291,8 +291,9 @@ module SimulationModule =
 
         /// Register a game when adding it to the world. Note that there is not corresponding
         /// Unregister method due to the inability to remove a game from the world.
-        static member register (game : Game) (world : World) : Game * World =
-            game.DispatcherNp.Register (game, world)
+        static member register (gameRep : GameRep) (world : World) : World =
+            let dispatcher = gameRep.GetDispatcherNp world : GameDispatcher
+            dispatcher.Register (gameRep, world)
 
         /// Query that a screen dispatches in the same manner as the dispatcher with the target type.
         static member dispatchesAs (dispatcherTargetType : Type) (game : Game) =
@@ -349,12 +350,14 @@ module SimulationModule =
         static member setPersistent value (screen : Screen) = { screen with Persistent = value }
 
         /// Register a screen when adding it to the world.
-        static member register (screen : Screen) address world =
-            screen.DispatcherNp.Register (screen, address, world)
+        static member register (screenRep : ScreenRep) world =
+            let dispatcher = screenRep.GetDispatcherNp world : ScreenDispatcher
+            dispatcher.Register (screenRep, world)
 
         /// Unregister a screen when removing it from the world.
-        static member unregister (screen : Screen) address world =
-            screen.DispatcherNp.Unregister (screen, address, world)
+        static member unregister (screenRep : ScreenRep) world =
+            let dispatcher = screenRep.GetDispatcherNp world : ScreenDispatcher
+            dispatcher.Unregister (screenRep, world)
 
         /// Query that a screen idling (that is, not currently transitioning in or out via another screen).
         static member isIdling screen =
@@ -408,12 +411,14 @@ module SimulationModule =
         static member setPersistent value (group : Group) = { group with Persistent = value }
 
         /// Register a group when adding it to a screen.
-        static member register (group : Group) address world =
-            group.DispatcherNp.Register (group, address, world)
-        
+        static member register (groupRep : GroupRep) world =
+            let dispatcher = groupRep.GetDispatcherNp world : GroupDispatcher
+            dispatcher.Register (groupRep, world)
+
         /// Unregister a group when removing it from a screen.
-        static member unregister (group : Group) address world =
-            group.DispatcherNp.Unregister (group, address, world)
+        static member unregister (groupRep : GroupRep) world =
+            let dispatcher = groupRep.GetDispatcherNp world : GroupDispatcher
+            dispatcher.Unregister (groupRep, world)
 
         /// Query that a group dispatches in the same manner as the dispatcher with the target type.
         static member dispatchesAs (dispatcherTargetType : Type) (group : Group) =
@@ -1556,6 +1561,12 @@ module SimulationModule =
             Map.toValueSeqBy fst groupHierarchies
 
         /// Get all the group addresses in the screen at the given address.
+        static member getGroupRepsInScreen screenRep world =
+            let screenAddress = screenRep.ScreenAddress
+            let groupHierarchies = World.getGroupMapInScreen screenAddress world
+            Map.toValueSeqBy (fun (group : Group, _) -> { GroupAddress = World.satoga screenAddress group.Name }) groupHierarchies
+
+        /// Get all the group addresses in the screen at the given address.
         static member getGroupAddressesInScreen screenAddress world =
             let groupHierarchies = World.getGroupMapInScreen screenAddress world
             Map.toValueSeqBy (fun (group : Group, _) -> World.satoga screenAddress group.Name) groupHierarchies
@@ -1615,19 +1626,20 @@ module SimulationModule =
         static member filterGroupAddresses pred addresses world =
             World.filterGroupAddressesW (fun group _ -> pred group) addresses world
 
-        static member private registerGroup group address world =
-            Group.register group address world
+        static member private registerGroup groupRep world =
+            Group.register groupRep world
 
-        static member private unregisterGroup group address world =
-            Group.unregister group address world
+        static member private unregisterGroup groupRep world =
+            Group.unregister groupRep world
             
         /// Remove a group from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the group's existence. Use with caution.
-        static member removeGroupImmediate address world =
+        static member removeGroupImmediate groupRep world =
+            let address = groupRep.GroupAddress
             let world = World.publish4 () (World.GroupRemovingEventAddress ->>- address) address world
             match World.getOptGroup address world with
             | Some group ->
-                let (group, world) = World.unregisterGroup group address world
+                let world = World.unregisterGroup groupRep world
                 let entityAddresses = World.getEntityAddressesInGroup address world
                 let world = snd <| World.removeEntitiesImmediate entityAddresses world
                 let world = World.setOptGroupWithoutEvent None address world
@@ -1663,7 +1675,8 @@ module SimulationModule =
             if not <| World.containsGroup address world then
                 let world = World.setGroupWithoutEvent group address world
                 let world = snd <| World.addEntities entities address world
-                let (group, world) = World.registerGroup group address world
+                let groupRep = { GroupAddress = address }
+                let world = World.registerGroup groupRep world
                 let world = World.publish4 () (World.GroupAddEventAddress ->>- address) address world
                 (group, world)
             else failwith <| "Adding a group that the world already contains at address '" + acstring address + "'."
@@ -1858,21 +1871,22 @@ module SimulationModule =
         static member filterScreenAddresses pred addresses world =
             World.filterScreenAddressesW (fun screen _ -> pred screen) addresses world
 
-        static member private registerScreen screen address world =
-            Screen.register screen address world
+        static member private registerScreen screenRep world =
+            Screen.register screenRep world
 
-        static member private unregisterScreen screen address world =
-            Screen.unregister screen address world
+        static member private unregisterScreen screenRep world =
+            Screen.unregister screenRep world
 
         /// Remove a screen from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the screen's existence. Use with caution.
-        static member removeScreenImmediate address world =
+        static member removeScreenImmediate screenRep world =
+            let address = screenRep.ScreenAddress
             let world = World.publish4 () (World.ScreenRemovingEventAddress ->>- address) address world
             match World.getOptScreen address world with
             | Some screen ->
-                let (screen, world) = World.unregisterScreen screen address world
-                let groupAddresses = World.getGroupAddressesInScreen address world
-                let world = snd <| World.removeGroupsImmediate groupAddresses world
+                let world = World.unregisterScreen screenRep world
+                let groupReps = World.getGroupRepsInScreen screenRep world
+                let world = snd <| World.removeGroupsImmediate groupReps world
                 let world = World.setOptScreenWithoutEvent None address world
                 (Some screen, world)
             | None -> (None, world)
@@ -1891,7 +1905,8 @@ module SimulationModule =
             if not <| World.containsScreen address world then
                 let world = World.setScreenWithoutEvent screen address world
                 let world = snd <| World.addGroups groupHierarchies address world
-                let (screen, world) = World.registerScreen screen address world
+                let screenRep = { ScreenAddress = address }
+                let world = World.registerScreen screenRep world
                 let world = World.publish4 () (World.ScreenAddEventAddress ->>- address) address world
                 (screen, world)
             else failwith <| "Adding a screen that the world already contains at address '" + acstring address + "'."
@@ -2019,8 +2034,38 @@ module SimulationModule =
         static member updateByLensed expr lens world : World =
             expr (Lens.get world lens) world
 
-    and [<NoEquality; NoComparison>] EntityProxy =
+    and SimulantRep =
+        interface end
+
+    and [<StructuralEquality; NoComparison>] GameRep =
+        { GameAddress : Game Address }
+        interface SimulantRep
+        member this.GetId world = (World.getGame world).Id
+        member this.GetCreationTimeNp world = (World.getGame world).CreationTimeNp
+        member this.GetDispatcherNp world = (World.getGame world).DispatcherNp
+        member this.GetXtension world = (World.getGame world).Xtension
+
+    and [<StructuralEquality; NoComparison>] ScreenRep =
+        { ScreenAddress : Screen Address }
+        interface SimulantRep
+        member this.GetId world = (World.getScreen this.ScreenAddress world).Id
+        member this.GetName world = (World.getScreen this.ScreenAddress world).Name
+        member this.GetCreationTimeNp world = (World.getScreen this.ScreenAddress world).CreationTimeNp
+        member this.GetDispatcherNp world = (World.getScreen this.ScreenAddress world).DispatcherNp
+        member this.GetXtension world = (World.getScreen this.ScreenAddress world).Xtension
+
+    and [<StructuralEquality; NoComparison>] GroupRep =
+        { GroupAddress : Group Address }
+        interface SimulantRep
+        member this.GetId world = (World.getGroup this.GroupAddress world).Id
+        member this.GetName world = (World.getGroup this.GroupAddress world).Name
+        member this.GetCreationTimeNp world = (World.getGroup this.GroupAddress world).CreationTimeNp
+        member this.GetDispatcherNp world = (World.getGroup this.GroupAddress world).DispatcherNp
+        member this.GetXtension world = (World.getGroup this.GroupAddress world).Xtension
+
+    and [<NoEquality; NoComparison>] EntityRep =
         { EntityAddress : Entity Address }
+        interface SimulantRep
         member this.GetId world = (World.getEntity this.EntityAddress world).Id
         member this.GetName world = (World.getEntity this.EntityAddress world).Name
         member this.GetCreationTimeNp world = (World.getEntity this.EntityAddress world).CreationTimeNp
