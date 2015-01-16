@@ -32,77 +32,6 @@ module WorldModule =
 
     type World with
 
-        /// Try to get a simulant at the given address.
-        static member getOptSimulant<'a when 'a :> Simulant> (address : 'a Address) world =
-            match address.Names with
-            | [] -> World.getGame world :> Simulant :?> 'a |> Some
-            | [_] -> World.getOptScreen (atosa address) world |> Option.map (fun s -> s :> Simulant :?> 'a)
-            | [_; _] -> World.getOptGroup (atoga address) world |> Option.map (fun g -> g :> Simulant :?> 'a)
-            | [_; _; _] -> World.getOptEntity (atoea address) world |> Option.map (fun e -> e :> Simulant :?> 'a)
-            | _ -> failwith <| "Invalid simulant address '" + acstring address + "'."
-
-        /// Query that the world contains a simulant at the given address.
-        static member containsSimulant address world =
-            Option.isSome <| World.getOptSimulant address world
-
-        /// Get a simulant at the given address (failing with an exception otherwise), then
-        /// transform it with the 'by' procudure.
-        static member getSimulantBy by address world =
-            by ^ Option.get ^ World.getOptSimulant address world
-
-        /// Get a simulant at the given address (failing with an exception otherwise).
-        static member getSimulant address world =
-            World.getSimulantBy id address world
-
-        /// Set a simulant at the given address (failing with an exception if one doesn't exist).
-        static member setSimulant<'a when 'a :> Simulant> (simulant : 'a) (address : 'a Address) world =
-            match address.Names with
-            | [] -> World.setGame (simulant :> obj :?> Game) world
-            | [_] -> World.setScreen (simulant :> obj :?> Screen) (Address.changeType<'a, Screen> address) world
-            | [_; _] -> World.setGroup (simulant :> obj :?> Group) (Address.changeType<'a, Group> address) world
-            | [_; _; _] -> World.setEntity (simulant :> obj :?> Entity) (Address.changeType<'a, Entity> address) world
-            | _ -> failwith <| "Invalid simulant address '" + acstring address + "'."
-
-        /// Update a simulant at the given address with the given 'updater' procedure.
-        static member updateSimulantAndW updater address world =
-            let simulant = World.getSimulant address world
-            let (simulant, world) = updater simulant world
-            World.setSimulant simulant address world
-
-        /// Update a simulant with the given 'updater' procedure at the given address.
-        static member updateSimulantW updater address world =
-            World.updateSimulantAndW (fun simulant world -> (updater simulant world, world)) address world
-
-        /// Update a simulant with the given 'updater' procedure at the given address.
-        static member updateSimulant updater address world =
-            World.updateSimulantW (fun simulant _ -> updater simulant) address world
-
-        /// Update the world with the given 'updater' procedure that uses the simulant at given
-        /// address in its computation.
-        static member updateBySimulant updater address world : World =
-            let simulant = World.getSimulant address world
-            updater simulant world
-
-        /// Update a lensed value at the given address and the world with the given 'updater' procedure.
-        static member updateLensedAndW expr lens world : World =
-            Lens.update expr (lens @-> World.lens) world
-
-        /// Update a lensed value with the given 'updater' procedure at the given address.
-        static member updateLensedW expr lens world : World =
-            Lens.updateS expr lens world
-
-        /// Update a lensed value with the given 'updater' procedure at the given address.
-        static member updateLensed expr lens world : World =
-            World.updateLensedW (fun lensed _ -> expr lensed) lens world
-
-        /// Update the world with the given 'updater' procedure that uses the lensed value at given
-        /// address in its computation.
-        static member updateByLensed expr lens world : World =
-            expr (Lens.get world lens) world
-
-        static member private getOptSimulantForPublishingDefinition (address : Simulant Address) world =
-            World.getOptSimulant address world
-
         /// Try to query that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
         static member tryGetIsSelectedScreenIdling world =
@@ -770,9 +699,6 @@ module WorldModule =
 
             // init type converters
             Math.initTypeConverters ()
-
-            // assign this crazy function
-            World.getOptSimulantForPublishing <- World.getOptSimulantForPublishingDefinition
 
         /// Initialize the Nu game engine, and make an empty world. Useful for unit-testing.
         static member initAndMakeEmpty (userState : 'u) =
