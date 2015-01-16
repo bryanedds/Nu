@@ -762,7 +762,7 @@ module SimulationModule =
             (single * SubscriptionEntry) list =
             List.fold
                 (fun subscriptions (key, address, subscription) ->
-                    match World.getOptSimulantForPublishing (Address.changeType<obj, Simulant> address) world with
+                    match World.getOptSimulantForPublishing (World.atoua address) world with
                     | Some (simulant : Simulant) ->
                         let priority = simulant.GetPublishingPriority getEntityPublishingPriority world
                         let subscription = (priority, (key, address, subscription))
@@ -2019,39 +2019,38 @@ module SimulationModule =
         static member updateByLensed expr lens world : World =
             expr (Lens.get world lens) world
 
-    and EntityAddress (names, namesRev, nameKeys, hash) =
-        inherit Address<Entity> (names, namesRev, nameKeys, hash, fun (_ : Entity) -> ())
-        member this.GetId world = (World.getEntity this world).Id
-        member this.GetName world = (World.getEntity this world).Name
-        member this.GetCreationTimeNp world = (World.getEntity this world).CreationTimeNp
-        member this.GetDispatcherNp world = (World.getEntity this world).DispatcherNp
-        member this.GetFacetNames world = (World.getEntity this world).FacetNames
-        member this.GetFacetsNp world = (World.getEntity this world).FacetsNp
-        member this.GetPosition world = (World.getEntity this world).Position
-        member this.SetPosition value world = World.updateEntity (fun entity -> { entity with Position = value}) this world
-        member this.GetDepth world = (World.getEntity this world).Depth
-        member this.SetDepth value world = World.updateEntity (fun entity -> { entity with Depth = value}) this world
-        member this.GetSize world = (World.getEntity this world).Size
-        member this.SetSize value world = World.updateEntity (fun entity -> { entity with Size = value}) this world
-        member this.GetRotation world = (World.getEntity this world).Rotation
-        member this.SetRotation value world = World.updateEntity (fun entity -> { entity with Rotation = value}) this world
-        member this.GetVisible world = (World.getEntity this world).Visible
-        member this.SetVisible value world = World.updateEntity (fun entity -> { entity with Visible = value}) this world
-        member this.GetViewType world = (World.getEntity this world).ViewType
-        member this.SetViewType value world = World.updateEntity (fun entity -> { entity with ViewType = value}) this world
-        member this.GetPublishChanges world = (World.getEntity this world).PublishChanges
-        member this.SetPublishChanges value world = World.updateEntity (fun entity -> { entity with PublishChanges = value}) this world
-        member this.GetPersistent world = (World.getEntity this world).Persistent
-        member this.SetPersistent value world = World.updateEntity (fun entity -> { entity with Persistent = value}) this world
-        member this.GetOptOverlayName world = (World.getEntity this world).OptOverlayName
-        member this.SetOptOverlayName value world = World.updateEntity (fun entity -> { entity with OptOverlayName = value}) this world
-        member this.GetXtension world = (World.getEntity this world).Xtension
-        member this.SetXtension xtension world = World.updateEntity (fun entity -> { entity with Xtension = xtension}) this world
+    and [<NoEquality; NoComparison>] EntityProxy =
+        { EntityAddress : Entity Address }
+        member this.GetId world = (World.getEntity this.EntityAddress world).Id
+        member this.GetName world = (World.getEntity this.EntityAddress world).Name
+        member this.GetCreationTimeNp world = (World.getEntity this.EntityAddress world).CreationTimeNp
+        member this.GetDispatcherNp world = (World.getEntity this.EntityAddress world).DispatcherNp
+        member this.GetFacetNames world = (World.getEntity this.EntityAddress world).FacetNames
+        member this.GetFacetsNp world = (World.getEntity this.EntityAddress world).FacetsNp
+        member this.GetPosition world = (World.getEntity this.EntityAddress world).Position
+        member this.SetPosition value world = World.updateEntity (fun entity -> { entity with Position = value}) this.EntityAddress world
+        member this.GetDepth world = (World.getEntity this.EntityAddress world).Depth
+        member this.SetDepth value world = World.updateEntity (fun entity -> { entity with Depth = value}) this.EntityAddress world
+        member this.GetSize world = (World.getEntity this.EntityAddress world).Size
+        member this.SetSize value world = World.updateEntity (fun entity -> { entity with Size = value}) this.EntityAddress world
+        member this.GetRotation world = (World.getEntity this.EntityAddress world).Rotation
+        member this.SetRotation value world = World.updateEntity (fun entity -> { entity with Rotation = value}) this.EntityAddress world
+        member this.GetVisible world = (World.getEntity this.EntityAddress world).Visible
+        member this.SetVisible value world = World.updateEntity (fun entity -> { entity with Visible = value}) this.EntityAddress world
+        member this.GetViewType world = (World.getEntity this.EntityAddress world).ViewType
+        member this.SetViewType value world = World.updateEntity (fun entity -> { entity with ViewType = value}) this.EntityAddress world
+        member this.GetPublishChanges world = (World.getEntity this.EntityAddress world).PublishChanges
+        member this.SetPublishChanges value world = World.updateEntity (fun entity -> { entity with PublishChanges = value}) this.EntityAddress world
+        member this.GetPersistent world = (World.getEntity this.EntityAddress world).Persistent
+        member this.SetPersistent value world = World.updateEntity (fun entity -> { entity with Persistent = value}) this.EntityAddress world
+        member this.GetOptOverlayName world = (World.getEntity this.EntityAddress world).OptOverlayName
+        member this.SetOptOverlayName value world = World.updateEntity (fun entity -> { entity with OptOverlayName = value}) this.EntityAddress world
+        member this.GetXtension world = (World.getEntity this.EntityAddress world).Xtension
+        member this.SetXtension xtension world = World.updateEntity (fun entity -> { entity with Xtension = xtension}) this.EntityAddress world
         member this.UpdateXtension updater world =
             let xtension = this.GetXtension world
             let xtension = updater xtension
             this.SetXtension xtension world
-
 
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
     /// specific values.

@@ -49,13 +49,12 @@ module AddressModule =
     /// NameKeys field available for faster look-ups.
     /// OPTIMIZATION: At little cost, I've also added the Hash field for fast keying directly
     /// on addresses.
-    type [<TypeConverter (typeof<AddressConverter>)>] 'a Address (names, namesRev, nameKeys, hash, typeCarrier) =
-
-        member this.Names : string list = names
-        member this.NamesRev : string list = namesRev
-        member this.NameKeys : NameKey list = nameKeys
-        member this.Hash : int = hash
-        member this.TypeCarrier : 'a -> unit = typeCarrier
+    type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
+        { Names : string list
+          NamesRev : string list
+          NameKeys : NameKey list
+          Hash : int
+          TypeCarrier : 'a -> unit }
 
         static member private join (list : string list) =
             String.Join ("/", list)
@@ -67,7 +66,7 @@ module AddressModule =
         static member make list =
             let keys = List.map NameKey.make list
             let hash = List.fold (fun hash (key : NameKey) -> hash ^^^ key.Hash) 0 keys
-            Address (list, List.rev list, keys, hash, fun (_ : 'a) -> ())
+            { Names = list; NamesRev = List.rev list; NameKeys = keys; Hash = hash; TypeCarrier = fun (_ : 'a) -> () }
 
         /// Convert a string into a list.
         static member stoa (str : string) =
@@ -145,7 +144,7 @@ module AddressModule =
 
     /// Convert any address to an obj Address.
     let atooa<'a> (address : 'a Address) =
-        Address (address.Names, address.NamesRev, address.NameKeys, address.Hash, fun (_ : obj) -> ())
+        { Names = address.Names; NamesRev = address.NamesRev; NameKeys = address.NameKeys; Hash = address.Hash; TypeCarrier = fun (_ : obj) -> () }
 
     /// Concatenate two addresses of the same type.
     let acat<'a> (address : 'a Address) (address2 : 'a Address) =
@@ -190,18 +189,18 @@ module Address =
 
     /// Change the type of an address.
     let changeType<'a, 'b> (address : 'a Address) =
-        Address (address.Names, address.NamesRev, address.NameKeys, address.Hash, fun (_ : 'b) -> ())
+        { Names = address.Names; NamesRev = address.NamesRev; NameKeys = address.NameKeys; Hash = address.Hash; TypeCarrier = fun (_ : 'b) -> () }
 
     /// Take the head of an address.
-    let head (address : 'a Address) =
+    let head address =
         List.head address.Names
         
     /// Take the tail of an address.
-    let tail<'a> (address : 'a Address) =
+    let tail<'a> address =
         Address<'a>.make <| List.tail address.Names
 
     /// Take a name of an address.
-    let at index (address : 'a Address) =
+    let at index address =
         List.at index address.Names
 
     /// Map over an address.
@@ -211,12 +210,12 @@ module Address =
 
     /// Filter the names of an address.
     /// NOTE: This doesn't seem to be a sensible operation for an address?
-    let filter predicate (address : 'a Address) =
+    let filter predicate address =
         let list = List.filter predicate address.Names
         Address.make list
 
     /// Fold over an address.
-    let fold folder state (address : 'a Address) =
+    let fold folder state address =
         List.fold folder state address.Names
 
     /// Take an address composed of the names of an address minus a skipped amount of names.
@@ -228,7 +227,7 @@ module Address =
         Address<'b>.make <| List.take n address.Names
 
     /// Take the last name of an address.
-    let last (address : 'a Address) =
+    let last address =
         List.last address.Names
 
     /// Take an address composed of all but the last name of an address.
@@ -236,9 +235,9 @@ module Address =
         Address<'b>.make <| List.allButLast address.Names
 
     /// Get the length of an address by its names.
-    let length (address : 'a Address) =
+    let length address =
         List.length address.Names
 
     /// Query that an address is devoid of names.
-    let isEmpty (address : 'a Address) =
+    let isEmpty address =
         List.isEmpty address.Names
