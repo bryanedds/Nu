@@ -7,87 +7,11 @@ open Prime
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
-
-[<AutoOpen>]
-module GameModule =
-
-    type Game with
-
-        static member getPublishChanges (game : Game) = game.PublishChanges
-        static member setPublishChanges value (game : Game) = { game with PublishChanges = value }
-        static member getOptSelectedScreenAddress game = game.OptSelectedScreenAddress
-        static member setOptSelectedScreenAddress optSelectedScreenAddress game = { game with OptSelectedScreenAddress = optSelectedScreenAddress }
-
-        /// Register a game when adding it to the world. Note that there is not corresponding
-        /// Unregister method due to the inability to remove a game from the world.
-        static member register (game : Game) (world : World) : Game * World =
-            game.DispatcherNp.Register (game, world)
-
-        /// Query that a screen dispatches in the same manner as the dispatcher with the target type.
-        static member dispatchesAs (dispatcherTargetType : Type) (game : Game) =
-            Reflection.dispatchesAs dispatcherTargetType game.DispatcherNp
-
-        /// Make a game.
-        static member make dispatcher =
-            { Id = Core.makeId ()
-              OptSelectedScreenAddress = None
-              PublishChanges = true
-              CreationTimeNp = DateTime.UtcNow
-              DispatcherNp = dispatcher
-              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
             
 [<AutoOpen>]
 module WorldGameModule =
 
     type World with
-
-        /// Get the game, then transform it with the 'by' procudure.
-        static member getGameBy by world =
-            by <| fst world.Simulants
-
-        /// Get the game.
-        static member getGame world =
-            World.getGameBy id world
-
-        /// Get the game hierarchy.
-        static member getGameHierarchy world =
-            let game = World.getGame world
-            let screenMap = World.getScreenMap world
-            (game, screenMap)
-
-        /// Set the game.
-        static member setGame game world =
-            let oldGame = World.getGame world
-            let screenMap = World.getScreenMap world
-            let world = { world with Simulants = (game, screenMap) }
-            if game.PublishChanges
-            then World.publish4 { OldSimulant = oldGame } (GameChangeEventAddress ->>- GameAddress) GameAddress world
-            else world
-
-        /// Update the game with the given 'updater' procedure.
-        static member updateGameAndW updater world =
-            let game = World.getGame world
-            let (game, world) = updater game world
-            World.setGame game world
-
-        /// Update the game with the given 'updater' procedure.
-        static member updateGameW updater world =
-            World.updateGameAndW (fun game world -> (updater game world, world)) world
-
-        /// Update the game with the given 'updater' procedure.
-        static member updateGame updater world =
-            World.updateGameW (fun game _ -> updater game) world
-
-        /// Update the world with the given 'updater' procedure that uses the game in its
-        /// computation.
-        static member updateByGame updater world : World =
-            let game = World.getGame world
-            updater game world
-
-        /// Lens the game.
-        static member lensGame =
-            { Get = World.getGame
-              Set = World.setGame }
 
         /// TODO: document!
         static member getOptSelectedScreenAddress world =
