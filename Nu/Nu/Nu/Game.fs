@@ -134,9 +134,9 @@ module WorldGameModule =
 
         /// Query that a simulant at the given address is the currently selected screen, is
         /// contained by the currently selected screen or its groups.
-        static member isAddressSelected address world =
+        static member isAddressSelected (address : 'a Address) world =
             let optScreenAddress = World.getOptSelectedScreenAddress world
-            match (address.Names, Option.map (fun address -> address.Names) optScreenAddress) with
+            match (address.Names, Option.map (fun (address : Screen Address) -> address.Names) optScreenAddress) with
             | ([], _) -> true
             | (_, None) -> false
             | (_, Some []) -> false

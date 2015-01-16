@@ -138,7 +138,7 @@ module World =
         let subscriptions = getSubscriptionsSorted publishSorter objEventAddress world
         let (_, world) =
             List.foldWhile
-                (fun (eventHandling, world) (_, subscriberAddress, subscription) ->
+                (fun (eventHandling, world) (_, subscriberAddress : obj Address, subscription) ->
                     if  (match eventHandling with Cascade -> true | Resolve -> false) &&
                         (match world.State.Liveness with Running -> true | Exiting -> false) then
                         match subscriberAddress.Names with

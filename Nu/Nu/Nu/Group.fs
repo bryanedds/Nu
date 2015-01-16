@@ -48,53 +48,6 @@ module WorldGroupModule =
 
     type World with
 
-        static member private optGroupFinder (address : Group Address) world =
-            match address.Names with
-            | [screenName; groupName] ->
-                let (_, screenMap) = world.Simulants 
-                match Map.tryFind screenName screenMap with
-                | Some (_, groupMap) ->
-                    match Map.tryFind groupName groupMap with
-                    | Some (group, _) -> Some group
-                    | None -> None
-                | None -> None
-            | _ -> failwith <| "Invalid group address '" + acstring address + "'."
-
-        static member private groupAdder (group : Group) (address : Group Address) world =
-            match address.Names with
-            | [screenName; groupName] ->
-                let (game, screenMap) = world.Simulants 
-                match Map.tryFind screenName screenMap with
-                | Some (screen, groupMap) ->
-                    match Map.tryFind groupName groupMap with
-                    | Some (_, entityMap) ->
-                        let groupMap = Map.add groupName (group, entityMap) groupMap
-                        let screenMap = Map.add screenName (screen, groupMap) screenMap
-                        { world with Simulants = (game, screenMap) }
-                    | None ->
-                        let groupMap = Map.add groupName (group, Map.empty) groupMap
-                        let screenMap = Map.add screenName (screen, groupMap) screenMap
-                        { world with Simulants = (game, screenMap) }
-                | None -> failwith <| "Cannot add group '" + acstring address + "' to non-existent screen."
-            | _ -> failwith <| "Invalid group address '" + acstring address + "'."
-
-        static member private groupRemover (address : Group Address) world =
-            match address.Names with
-            | [screenName; groupName] ->
-                let (game, screenMap) = world.Simulants 
-                match Map.tryFind screenName screenMap with
-                | Some (screen, groupMap) ->
-                    match Map.tryFind groupName groupMap with
-                    | Some (_, entityMap) ->
-                        if Map.isEmpty entityMap then
-                            let groupMap = Map.remove groupName groupMap
-                            let screenMap = Map.add screenName (screen, groupMap) screenMap
-                            { world with Simulants = (game, screenMap) }
-                        else failwith <| "Cannot remove group " + acstring address + ", which still contains entities."
-                    | None -> world
-                | None -> world
-            | _ -> failwith <| "Invalid group address '" + acstring address + "'."
-
         /// Query that the world contains a group at the given address.
         static member containsGroup address world =
             Option.isSome <| World.optGroupFinder address world

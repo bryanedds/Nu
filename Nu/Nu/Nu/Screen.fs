@@ -75,41 +75,6 @@ module WorldScreenModule =
 
     type World with
 
-        static member private optScreenFinder (address : Screen Address) world =
-            match address.Names with
-            | [screenName] ->
-                let (_, screenMap) = world.Simulants 
-                match Map.tryFind screenName screenMap with
-                | Some (screen, _) -> Some screen
-                | None -> None
-            | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
-
-        static member private screenAdder (screen : Screen) (address : Screen Address) world =
-            match address.Names with
-            | [screenName] ->
-                let (game, screenMap) = world.Simulants 
-                match Map.tryFind screenName screenMap with
-                | Some (_, groupMap) ->
-                    let screenMap = Map.add screenName (screen, groupMap) screenMap
-                    { world with Simulants = (game, screenMap) }
-                | None ->
-                    let screenMap = Map.add screenName (screen, Map.empty) screenMap
-                    { world with Simulants = (game, screenMap) }
-            | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
-
-        static member private screenRemover (address : Screen Address) world =
-            match address.Names with
-            | [screenName] ->
-                let (game, screenMap) = world.Simulants 
-                match Map.tryFind screenName screenMap with
-                | Some (_, groupMap) ->
-                    if Map.isEmpty groupMap then
-                        let screenMap = Map.remove screenName screenMap
-                        { world with Simulants = (game, screenMap) }
-                    else failwith <| "Cannot remove screen " + acstring address + ", which still contains groups."
-                | None -> world
-            | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
-
         /// Query that the world contains a group at the given address.
         static member containsScreen address world =
             Option.isSome <| World.optScreenFinder address world
