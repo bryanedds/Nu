@@ -732,22 +732,6 @@ module SimulationModule =
         static member internal EntityChangeEventAddress = World.EntityEventAddress -<- ntoa<Entity SimulantChangeData> "Change"
         static member internal DefaultDissolveImage = { PackageName = DefaultPackageName; AssetName = "Image8" }
 
-        static member internal getSubsystem<'s when 's :> Subsystem> name world =
-            Map.find name world.Subsystems :?> 's
-
-        static member internal getSubsystemBy<'s, 't when 's :> Subsystem> by name world : 't =
-            let subsystem = World.getSubsystem<'s> name world
-            by subsystem
-
-        static member internal setSubsystem<'s when 's :> Subsystem> (subsystem : 's) name world =
-            let subsystems = Map.add name (subsystem :> Subsystem) world.Subsystems
-            { world with Subsystems = subsystems }
-
-        static member internal updateSubsystem<'s when 's :> Subsystem> (updater : 's -> World -> 's) name world =
-            let subsystem = World.getSubsystem<'s> name world
-            let subsystem = updater subsystem world
-            World.setSubsystem subsystem name world
-
         /// Make a key used to track an unsubscription with a subscription.
         static member makeSubscriptionKey () =
             Guid.NewGuid ()
@@ -778,8 +762,8 @@ module SimulationModule =
             (single * SubscriptionEntry) list =
             List.fold
                 (fun subscriptions (key, address, subscription) ->
-                    match World.getOptSimulant (Address.changeType<obj, Simulant> address) world with
-                    | Some simulant ->
+                    match World.getOptSimulantForPublishing (Address.changeType<obj, Simulant> address) world with
+                    | Some (simulant : Simulant) ->
                         let priority = simulant.GetPublishingPriority getEntityPublishingPriority world
                         let subscription = (priority, (key, address, subscription))
                         subscription :: subscriptions
@@ -930,6 +914,22 @@ module SimulationModule =
                 let removingEventAddress = stoa<unit> (typeof<'s>.Name + "/" + "Removing") ->>- subscriberAddress
                 World.subscribe<unit, 's> removalKey subscription' removingEventAddress subscriberAddress world
             else failwith "Cannot monitor events with an anonymous subscriber."
+
+        static member internal getSubsystem<'s when 's :> Subsystem> name world =
+            Map.find name world.Subsystems :?> 's
+
+        static member internal getSubsystemBy<'s, 't when 's :> Subsystem> by name world : 't =
+            let subsystem = World.getSubsystem<'s> name world
+            by subsystem
+
+        static member internal setSubsystem<'s when 's :> Subsystem> (subsystem : 's) name world =
+            let subsystems = Map.add name (subsystem :> Subsystem) world.Subsystems
+            { world with Subsystems = subsystems }
+
+        static member internal updateSubsystem<'s when 's :> Subsystem> (updater : 's -> World -> 's) name world =
+            let subsystem = World.getSubsystem<'s> name world
+            let subsystem = updater subsystem world
+            World.setSubsystem subsystem name world
 
         /// Clear the physics messages.
         static member internal clearPhysicsMessages world =
@@ -1956,6 +1956,9 @@ module SimulationModule =
             | [_; _] -> World.getOptGroup (World.atoga address) world |> Option.map (fun g -> g :> Simulant :?> 'a)
             | [_; _; _] -> World.getOptEntity (World.atoea address) world |> Option.map (fun e -> e :> Simulant :?> 'a)
             | _ -> failwith <| "Invalid simulant address '" + acstring address + "'."
+
+        static member private getOptSimulantForPublishing (address : Simulant Address) world =
+            World.getOptSimulant address world
 
         /// Query that the world contains a simulant at the given address.
         static member containsSimulant address world =
