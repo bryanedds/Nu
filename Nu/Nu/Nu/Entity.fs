@@ -160,50 +160,6 @@ module WorldEntityModule =
 
     type World with
 
-        static member private optEntityFinder (address : Entity Address) world =
-            match address.Names with
-            | [screenName; groupName; entityName] ->
-                let (_, screenMap) = world.Simulants 
-                match Map.tryFind screenName screenMap with
-                | Some (_, groupMap) ->
-                    match Map.tryFind groupName groupMap with
-                    | Some (_, entityMap) -> Map.tryFind entityName entityMap
-                    | None -> None
-                | None -> None
-            | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
-
-        static member private entityAdder (entity : Entity) (address : Entity Address) world =
-            match address.Names with
-            | [screenName; groupName; entityName] ->
-                let (game, screenMap) = world.Simulants 
-                match Map.tryFind screenName screenMap with
-                | Some (screen, groupMap) ->
-                    match Map.tryFind groupName groupMap with
-                    | Some (group, entityMap) ->
-                        let entityMap = Map.add entityName entity entityMap
-                        let groupMap = Map.add groupName (group, entityMap) groupMap
-                        let screenMap = Map.add screenName (screen, groupMap) screenMap
-                        { world with Simulants = (game, screenMap) }
-                    | None -> failwith <| "Cannot add entity '" + acstring address + "' to non-existent group."
-                | None -> failwith <| "Cannot add entity '" + acstring address + "' to non-existent screen."
-            | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
-
-        static member private entityRemover (address : Entity Address) world =
-            match address.Names with
-            | [screenName; groupName; entityName] ->
-                let (game, screenMap) = world.Simulants 
-                match Map.tryFind screenName screenMap with
-                | Some (screen, groupMap) ->
-                    match Map.tryFind groupName groupMap with
-                    | Some (group, entityMap) ->
-                        let entityMap = Map.remove entityName entityMap
-                        let groupMap = Map.add groupName (group, entityMap) groupMap
-                        let screenMap = Map.add screenName (screen, groupMap) screenMap
-                        { world with Simulants = (game, screenMap) }
-                    | None -> world
-                | None -> world
-            | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
-
         /// Query that the world contains an entity at the given address.
         static member containsEntity address world =
             Option.isSome <| World.optEntityFinder address world

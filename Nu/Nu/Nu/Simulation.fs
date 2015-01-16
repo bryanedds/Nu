@@ -438,6 +438,156 @@ module SimulationModule =
           Callbacks : Callbacks
           State : WorldState }
 
+        static member internal optScreenFinder (address : Screen Address) world =
+            match address.Names with
+            | [screenName] ->
+                let (_, screenMap) = world.Simulants 
+                match Map.tryFind screenName screenMap with
+                | Some (screen, _) -> Some screen
+                | None -> None
+            | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
+
+        static member internal screenAdder (screen : Screen) (address : Screen Address) world =
+            match address.Names with
+            | [screenName] ->
+                let (game, screenMap) = world.Simulants 
+                match Map.tryFind screenName screenMap with
+                | Some (_, groupMap) ->
+                    let screenMap = Map.add screenName (screen, groupMap) screenMap
+                    { world with Simulants = (game, screenMap) }
+                | None ->
+                    let screenMap = Map.add screenName (screen, Map.empty) screenMap
+                    { world with Simulants = (game, screenMap) }
+            | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
+
+        static member internal screenRemover (address : Screen Address) world =
+            match address.Names with
+            | [screenName] ->
+                let (game, screenMap) = world.Simulants 
+                match Map.tryFind screenName screenMap with
+                | Some (_, groupMap) ->
+                    if Map.isEmpty groupMap then
+                        let screenMap = Map.remove screenName screenMap
+                        { world with Simulants = (game, screenMap) }
+                    else failwith <| "Cannot remove screen " + acstring address + ", which still contains groups."
+                | None -> world
+            | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
+
+        static member internal optGroupFinder (address : Group Address) world =
+            match address.Names with
+            | [screenName; groupName] ->
+                let (_, screenMap) = world.Simulants 
+                match Map.tryFind screenName screenMap with
+                | Some (_, groupMap) ->
+                    match Map.tryFind groupName groupMap with
+                    | Some (group, _) -> Some group
+                    | None -> None
+                | None -> None
+            | _ -> failwith <| "Invalid group address '" + acstring address + "'."
+
+        static member internal groupAdder (group : Group) (address : Group Address) world =
+            match address.Names with
+            | [screenName; groupName] ->
+                let (game, screenMap) = world.Simulants 
+                match Map.tryFind screenName screenMap with
+                | Some (screen, groupMap) ->
+                    match Map.tryFind groupName groupMap with
+                    | Some (_, entityMap) ->
+                        let groupMap = Map.add groupName (group, entityMap) groupMap
+                        let screenMap = Map.add screenName (screen, groupMap) screenMap
+                        { world with Simulants = (game, screenMap) }
+                    | None ->
+                        let groupMap = Map.add groupName (group, Map.empty) groupMap
+                        let screenMap = Map.add screenName (screen, groupMap) screenMap
+                        { world with Simulants = (game, screenMap) }
+                | None -> failwith <| "Cannot add group '" + acstring address + "' to non-existent screen."
+            | _ -> failwith <| "Invalid group address '" + acstring address + "'."
+
+        static member internal groupRemover (address : Group Address) world =
+            match address.Names with
+            | [screenName; groupName] ->
+                let (game, screenMap) = world.Simulants 
+                match Map.tryFind screenName screenMap with
+                | Some (screen, groupMap) ->
+                    match Map.tryFind groupName groupMap with
+                    | Some (_, entityMap) ->
+                        if Map.isEmpty entityMap then
+                            let groupMap = Map.remove groupName groupMap
+                            let screenMap = Map.add screenName (screen, groupMap) screenMap
+                            { world with Simulants = (game, screenMap) }
+                        else failwith <| "Cannot remove group " + acstring address + ", which still contains entities."
+                    | None -> world
+                | None -> world
+            | _ -> failwith <| "Invalid group address '" + acstring address + "'."
+
+        static member internal optEntityFinder (address : Entity Address) world =
+            match address.Names with
+            | [screenName; groupName; entityName] ->
+                let (_, screenMap) = world.Simulants 
+                match Map.tryFind screenName screenMap with
+                | Some (_, groupMap) ->
+                    match Map.tryFind groupName groupMap with
+                    | Some (_, entityMap) -> Map.tryFind entityName entityMap
+                    | None -> None
+                | None -> None
+            | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
+
+        static member internal entityAdder (entity : Entity) (address : Entity Address) world =
+            match address.Names with
+            | [screenName; groupName; entityName] ->
+                let (game, screenMap) = world.Simulants 
+                match Map.tryFind screenName screenMap with
+                | Some (screen, groupMap) ->
+                    match Map.tryFind groupName groupMap with
+                    | Some (group, entityMap) ->
+                        let entityMap = Map.add entityName entity entityMap
+                        let groupMap = Map.add groupName (group, entityMap) groupMap
+                        let screenMap = Map.add screenName (screen, groupMap) screenMap
+                        { world with Simulants = (game, screenMap) }
+                    | None -> failwith <| "Cannot add entity '" + acstring address + "' to non-existent group."
+                | None -> failwith <| "Cannot add entity '" + acstring address + "' to non-existent screen."
+            | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
+
+        static member internal entityRemover (address : Entity Address) world =
+            match address.Names with
+            | [screenName; groupName; entityName] ->
+                let (game, screenMap) = world.Simulants 
+                match Map.tryFind screenName screenMap with
+                | Some (screen, groupMap) ->
+                    match Map.tryFind groupName groupMap with
+                    | Some (group, entityMap) ->
+                        let entityMap = Map.remove entityName entityMap
+                        let groupMap = Map.add groupName (group, entityMap) groupMap
+                        let screenMap = Map.add screenName (screen, groupMap) screenMap
+                        { world with Simulants = (game, screenMap) }
+                    | None -> world
+                | None -> world
+            | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
+
+    and EntityAddress (names, namesRev, nameKeys, hash) =
+        inherit Address<Entity> (names, namesRev, nameKeys, hash, fun (_ : Entity) -> ())
+
+        static member getName (entity : EntityAddress) = entity.Name
+        static member getFacetNames (entity : EntityAddress) = entity.FacetNames
+        static member getOptOverlayName (entity : EntityAddress) = entity.OptOverlayName
+        static member getPosition (entity : EntityAddress) = entity.Position
+        static member setPosition value (entity : EntityAddress) = { entity with Position = value }
+        static member getDepth (entity : EntityAddress) = entity.Depth
+        static member setDepth value (entity : EntityAddress) = { entity with Depth = value }
+        static member getSize (entity : EntityAddress) = entity.Size
+        static member setSize value (entity : EntityAddress) = { entity with Size = value }
+        static member getRotation (entity : EntityAddress) = entity.Rotation
+        static member setRotation value (entity : EntityAddress) = { entity with Rotation = value }
+        static member getVisible (entity : EntityAddress) = entity.Visible
+        static member setVisible value (entity : EntityAddress) = { entity with Visible = value }
+        static member getViewType (entity : EntityAddress) = entity.ViewType
+        static member setViewType value (entity : EntityAddress) = { entity with ViewType = value }
+        static member getPublishChanges (entity : EntityAddress) = entity.PublishChanges
+        static member setPublishChanges value (entity : EntityAddress) = { entity with PublishChanges = value }
+        static member getPersistent (entity : EntityAddress) = entity.Persistent
+        static member setPersistent value (entity : EntityAddress) = { entity with Persistent = value }
+
+
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
     /// specific values.
     and NuPlugin () =
