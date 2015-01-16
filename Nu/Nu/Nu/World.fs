@@ -617,7 +617,8 @@ module WorldModule =
                       State = state }
 
                 // and finally, register the game
-                let world = snd <| Game.register (World.getGame world) world
+                let gameRep = { GameAddress = World.GameAddress }
+                let world = Game.register gameRep world
                 Right world
             | Left errorMsg -> Left errorMsg
 
@@ -681,7 +682,8 @@ module WorldModule =
                   State = state }
 
             // and finally, register the game
-            snd <| Game.register (World.getGame world) world
+            let gameRep = { GameAddress = World.GameAddress }
+            Game.register gameRep world
 
         /// Initialize the Nu game engine. Basically calls all the unavoidable imperative stuff
         /// needed to set up the .NET environment appropriately. MUST be called before making the
