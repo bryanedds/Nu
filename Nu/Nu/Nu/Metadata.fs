@@ -87,15 +87,15 @@ module Metadata =
     let private generateAssetMetadataSubmap (packageNode : XmlNode) =
         let packageName = (packageNode.Attributes.GetNamedItem NameAttributeName).InnerText
         let assets =
-            List.fold
-                (fun assets (node : XmlNode) ->
+            Seq.foldBack
+                (fun (node : XmlNode) assets ->
                     match node.Name with
                     | AssetNodeName -> match Assets.tryLoadAssetFromAssetNode node with Some asset -> asset :: assets | None -> assets
                     | AssetsNodeName -> match Assets.tryLoadAssetsFromAssetsNode true node with Some assets' -> assets' @ assets | None -> assets
                     | CommentNodeName -> assets
                     | _ -> [])
+                (packageNode.OfType<XmlNode> ())
                 []
-                (List.ofSeq <| packageNode.OfType<XmlNode> ())
         let submap = Map.ofListBy (fun asset -> generateAssetMetadata asset) assets
         (packageName, submap)
 

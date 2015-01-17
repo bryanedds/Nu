@@ -43,8 +43,8 @@ module FieldDispatcherModule =
                 let size = Vector2.Multiply (TileSize, TileSheetSize)
                 if Camera.inView3 field.ViewType field.Position size world.State.Camera then
                     let sprites =
-                        Map.fold
-                            (fun sprites tilePositionM tile ->
+                        Map.foldBack
+                            (fun tilePositionM tile sprites ->
                                 let tileOffset = vmtovf tilePositionM
                                 let tilePosition = field.Position + tileOffset
                                 let optTileInset = getOptTileInset tile.TileSheetPositionM
@@ -57,8 +57,8 @@ module FieldDispatcherModule =
                                       Image = field.FieldMapNp.FieldTileSheet
                                       Color = Vector4.One }
                                 sprite :: sprites)
-                            []
                             field.FieldMapNp.FieldTiles
+                            []
                     [LayerableDescriptor { Depth = field.Depth; LayeredDescriptor = SpritesDescriptor sprites }]
                 else []
             else []

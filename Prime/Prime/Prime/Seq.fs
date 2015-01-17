@@ -34,6 +34,10 @@ let foldi folder state seq =
             seq
     result
 
+/// Fold-back for seqs.
+let foldBack folder values state =
+    List.foldBack folder (List.ofSeq values) state
+
 /// Check if no elements satisfy a predicate in a seq.
 let fornone pred seq =
     let notPred = not << pred

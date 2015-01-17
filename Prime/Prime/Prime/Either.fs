@@ -66,15 +66,15 @@ module Either =
 
     /// Get only the Left values of a sequence of an Either value.
     let getLeftValues eithers =
-        Seq.fold
-            (fun lefts either -> match either with Right _ -> lefts | Left left -> left :: lefts)
-            eithers
+        List.foldBack
+            (fun either lefts -> match either with Right _ -> lefts | Left left -> left :: lefts)
+            (List.ofSeq eithers)
 
     /// Get only the Right values of a sequence of an Either value.
     let getRightValues eithers =
-        Seq.fold
-            (fun rights either -> match either with Right _ -> rights | Left right -> right :: rights)
-            eithers
+        List.foldBack
+            (fun either rights -> match either with Right _ -> rights | Left right -> right :: rights)
+            (List.ofSeq eithers)
 
     /// Map over the left side of an Either value.
     let mapLeft mapper either =
@@ -90,10 +90,10 @@ module Either =
 
     /// Split a sequences of Either values into a pair of left and right value lists.
     let split eithers =
-        Seq.fold
-            (fun (ls, rs) either ->
+        List.foldBack
+            (fun either (ls, rs) ->
                 match either with
                 | Right r -> (ls, r :: rs)
                 | Left l -> (l :: ls, rs))
+            (List.ofSeq eithers)
             ([], [])
-            eithers
