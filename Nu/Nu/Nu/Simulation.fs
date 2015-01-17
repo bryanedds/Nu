@@ -5,11 +5,13 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.ComponentModel
+open System.IO
 open System.Reflection
 open System.Xml
 open FSharpx
 open SDL2
 open OpenTK
+open TiledSharp
 open Prime
 open Nu
 open Nu.Constants
@@ -57,6 +59,43 @@ module ScreenStateModule =
         | IncomingState
         | OutgoingState
         | IdlingState
+
+    /// Describes the behavior of the screen dissolving algorithm.
+    type [<StructuralEquality; NoComparison>] DissolveData =
+        { IncomingTime : int64
+          OutgoingTime : int64
+          DissolveImage : AssetTag }
+
+    /// Describes the behavior of the screen splash algorithm.
+    type [<StructuralEquality; NoComparison>] SplashData =
+        { DissolveData : DissolveData
+          IdlingTime : int64
+          SplashImage : AssetTag }
+
+[<AutoOpen>]
+module TileMapModule =
+
+    /// The data needed to describe a Tiled tile map.
+    type [<StructuralEquality; NoComparison>] TileMapData =
+        { Map : TmxMap
+          MapSize : Vector2i
+          TileSize : Vector2i
+          TileSizeF : Vector2
+          TileMapSize : Vector2i
+          TileMapSizeF : Vector2
+          TileSet : TmxTileset
+          TileSetSize : Vector2i }
+
+    /// The data needed to describe a Tiled tile.
+    type [<StructuralEquality; NoComparison>] TileData =
+        { Tile : TmxLayerTile
+          I : int
+          J : int
+          Gid : int
+          GidPosition : int
+          Gid2 : Vector2i
+          OptTileSetTile : TmxTilesetTile option
+          TilePosition : Vector2i }
 
 [<AutoOpen>]
 module SimulationModule =
@@ -941,6 +980,135 @@ module SimulationModule =
         /// Lens the world.
         static member lens = Lens.id
 
+        (* Facet / Entity internals *)
+
+        static member private tryGetFacet facetName world =
+            match Map.tryFind facetName world.Components.Facets with
+            | Some facet -> Right <| facet
+            | None -> Left <| "Invalid facet name '" + facetName + "'."
+
+        static member private getFacetNamesToAdd oldFacetNames newFacetNames =
+            let newFacetNames = Set.ofList newFacetNames
+            let oldFacetNames = Set.ofList oldFacetNames
+            let facetNamesToAdd = Set.difference newFacetNames oldFacetNames
+            List.ofSeq facetNamesToAdd
+
+        static member private getFacetNamesToRemove oldFacetNames newFacetNames =
+            let newFacetNames = Set.ofList newFacetNames
+            let oldFacetNames = Set.ofList oldFacetNames
+            let facetNamesToRemove = Set.difference oldFacetNames newFacetNames
+            List.ofSeq facetNamesToRemove
+
+        static member private getEntityFieldDefinitionNamesToDetach entity facetToRemove =
+
+            // get the field definition name counts of the current, complete entity
+            let fieldDefinitions = Reflection.getReflectiveFieldDefinitionMap entity
+            let fieldDefinitionNameCounts = Reflection.getFieldDefinitionNameCounts fieldDefinitions
+
+            // get the field definition name counts of the facet to remove
+            let facetType = facetToRemove.GetType ()
+            let facetFieldDefinitions = Map.singleton facetType.Name <| Reflection.getFieldDefinitions facetType
+            let facetFieldDefinitionNameCounts = Reflection.getFieldDefinitionNameCounts facetFieldDefinitions
+
+            // compute the difference of the counts
+            let finalFieldDefinitionNameCounts =
+                Map.map
+                    (fun fieldName fieldCount ->
+                        match Map.tryFind fieldName facetFieldDefinitionNameCounts with
+                        | Some facetFieldCount -> fieldCount - facetFieldCount
+                        | None -> fieldCount)
+                    fieldDefinitionNameCounts
+
+            // build a set of all field names where the final counts are negative
+            Map.fold
+                (fun fieldNamesToDetach fieldName fieldCount ->
+                    if fieldCount = 0
+                    then Set.add fieldName fieldNamesToDetach
+                    else fieldNamesToDetach)
+                Set.empty
+                finalFieldDefinitionNameCounts
+
+        static member private tryRemoveFacet syncing facetName entity optAddress world =
+            match List.tryFind (fun facet -> Reflection.getTypeName facet = facetName) entity.FacetsNp with
+            | Some facet ->
+                let (entity, world) =
+                    match optAddress with
+                    | Some address ->
+                        let entityRep = { EntityAddress = address }
+                        let world = facet.Unregister entityRep world
+                        (World.getEntity address world, world)
+                    | None -> (entity, world)
+                let entity = { entity with Id = entity.Id } // hacky copy
+                let fieldNames = World.getEntityFieldDefinitionNamesToDetach entity facet
+                Reflection.detachFieldsViaNames fieldNames entity
+                let entity =
+                    if syncing then entity
+                    else { entity with FacetNames = List.remove ((=) (Reflection.getTypeName facet)) entity.FacetNames }
+                let entity = { entity with FacetsNp = List.remove ((=) facet) entity.FacetsNp }
+                let world =
+                    match optAddress with
+                    | Some address -> World.setEntity entity address world
+                    | None -> world
+                Right (entity, world)
+            | None -> Left <| "Failure to remove facet '" + facetName + "' from entity."
+
+        static member private tryAddFacet syncing facetName (entity : Entity) optAddress world =
+            match World.tryGetFacet facetName world with
+            | Right facet ->
+                if Entity.isFacetCompatible world.Components.EntityDispatchers facet entity then
+                    let entity = { entity with FacetsNp = facet :: entity.FacetsNp }
+                    Reflection.attachFields facet entity
+                    let entity =
+                        if syncing then entity
+                        else { entity with FacetNames = Reflection.getTypeName facet :: entity.FacetNames }
+                    match optAddress with
+                    | Some address ->
+                        let entityRep = { EntityAddress = address }
+                        let world = facet.Register entityRep world
+                        let entity = World.getEntity address world
+                        Right (entity, world)
+                    | None -> Right (entity, world)
+                else Left <| "Facet '" + Reflection.getTypeName facet + "' is incompatible with entity '" + entity.Name + "'."
+            | Left error -> Left error
+
+        static member private tryRemoveFacets syncing facetNamesToRemove entity optAddress world =
+            List.fold
+                (fun eitherEntityWorld facetName ->
+                    match eitherEntityWorld with
+                    | Right (entity, world) -> World.tryRemoveFacet syncing facetName entity optAddress world
+                    | Left _ as left -> left)
+                (Right (entity, world))
+                facetNamesToRemove
+
+        static member private tryAddFacets syncing facetNamesToAdd entity optAddress world =
+            List.fold
+                (fun eitherEntityWorld facetName ->
+                    match eitherEntityWorld with
+                    | Right (entity, world) -> World.tryAddFacet syncing facetName entity optAddress world
+                    | Left _ as left -> left)
+                (Right (entity, world))
+                facetNamesToAdd
+
+        static member private trySetFacetNames oldFacetNames newFacetNames entity optAddress world =
+            let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames newFacetNames
+            let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames newFacetNames
+            match World.tryRemoveFacets false facetNamesToRemove entity optAddress world with
+            | Right (entity, world) -> World.tryAddFacets false facetNamesToAdd entity optAddress world
+            | Left _ as left -> left
+
+        static member private trySynchronizeFacets oldFacetNames entity optAddress world =
+            let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames entity.FacetNames
+            let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames entity.FacetNames
+            match World.tryRemoveFacets true facetNamesToRemove entity optAddress world with
+            | Right (entity, world) -> World.tryAddFacets true facetNamesToAdd entity optAddress world
+            | Left _ as left -> left
+
+        static member private attachIntrinsicFacetsViaNames (entity : Entity) world =
+            let components = world.Components
+            let entity = { entity with Id = entity.Id } // hacky copy
+            Reflection.attachIntrinsicFacets components.EntityDispatchers components.Facets entity.DispatcherNp entity
+            entity
+
         (* Entity *)
 
         static member private optEntityFinder (address : Entity Address) world =
@@ -1288,6 +1456,148 @@ module SimulationModule =
                     picked)
                 entityRepsSorted
 
+        /// Make an entity (does NOT add the entity to the world!)
+        static member makeEntity dispatcherName optName world =
+            
+            // find the entity's dispatcher
+            let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
+            
+            // compute the default opt overlay name
+            let intrinsicOverlayName = dispatcherName
+            let defaultOptOverlayName = Map.find intrinsicOverlayName world.State.OverlayRouter
+
+            // make the bare entity with name as id
+            let entity = Entity.make dispatcher defaultOptOverlayName optName
+
+            // attach the entity's intrinsic facets and their fields
+            let entity = World.attachIntrinsicFacetsViaNames entity world
+
+            // apply the entity's overlay to its facet names
+            let entity =
+                match defaultOptOverlayName with
+                | Some defaultOverlayName ->
+                    let overlayer = world.State.Overlayer
+                    Overlayer.applyOverlayToFacetNames intrinsicOverlayName defaultOverlayName entity overlayer overlayer
+                        
+                    // synchronize the entity's facets (and attach their fields)
+                    match World.trySynchronizeFacets [] entity None world with
+                    | Right (entity, _) -> entity
+                    | Left error -> debug error; entity
+                | None -> entity
+
+            // attach the entity's dispatcher fields
+            Reflection.attachFields dispatcher entity
+
+            // apply the entity's overlay
+            match entity.OptOverlayName with
+            | Some overlayName ->
+
+                // OPTIMIZATION: apply overlay only when it will change something (EG - when it's not the intrinsic overlay)
+                if intrinsicOverlayName <> overlayName then
+                    let facetNames = Entity.getFacetNamesReflectively entity
+                    Overlayer.applyOverlay intrinsicOverlayName overlayName facetNames entity world.State.Overlayer
+                    entity
+                else entity
+            | None -> entity
+
+        /// Write an entity to an xml writer.
+        static member writeEntity (writer : XmlWriter) (entity : Entity) world =
+            writer.WriteAttributeString (DispatcherNameAttributeName, (entity.DispatcherNp.GetType ()).Name)
+            let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
+                if propertyName = "OptOverlayName" && propertyType = typeof<string option> then
+                    let defaultOptOverlayName = Map.find (Reflection.getTypeName entity.DispatcherNp) world.State.OverlayRouter
+                    defaultOptOverlayName <> (propertyValue :?> string option)
+                else
+                    let facetNames = Entity.getFacetNamesReflectively entity
+                    Overlayer.shouldPropertySerialize5 facetNames propertyName propertyType entity world.State.Overlayer
+            Reflection.writePropertiesFromTarget shouldWriteProperty writer entity
+
+        /// Write multiple entities to an xml writer.
+        static member writeEntities (writer : XmlWriter) entities world =
+            let entitiesSorted =
+                List.sortBy
+                    (fun (entity : Entity) -> entity.CreationTimeNp)
+                    (Map.toValueList entities)
+            let entitiesFiltered = List.filter (fun (entity : Entity) -> entity.Persistent) entitiesSorted
+            for entity in entitiesFiltered do
+                writer.WriteStartElement typeof<Entity>.Name
+                World.writeEntity writer entity world
+                writer.WriteEndElement ()
+
+        /// Read an entity from an xml node.
+        static member readEntity (entityNode : XmlNode) defaultDispatcherName world =
+
+            // read in the dispatcher name and create the dispatcher
+            let dispatcherName = Reflection.readDispatcherName defaultDispatcherName entityNode
+            let (dispatcherName, dispatcher) =
+                match Map.tryFind dispatcherName world.Components.EntityDispatchers with
+                | Some dispatcher -> (dispatcherName, dispatcher)
+                | None ->
+                    note <| "Could not locate dispatcher '" + dispatcherName + "'."
+                    let dispatcherName = typeof<EntityDispatcher>.Name
+                    let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
+                    (dispatcherName, dispatcher)
+
+            // compute the default overlay names
+            let intrinsicOverlayName = dispatcherName
+            let defaultOptOverlayName = Map.find intrinsicOverlayName world.State.OverlayRouter
+
+            // make the bare entity with name as id
+            let entity = Entity.make dispatcher defaultOptOverlayName None
+
+            // attach the entity's intrinsic facets and their fields
+            let entity = World.attachIntrinsicFacetsViaNames entity world
+
+            // read the entity's overlay and apply it to its facet names if applicable
+            Reflection.tryReadOptOverlayNameToTarget entityNode entity
+            match (defaultOptOverlayName, entity.OptOverlayName) with
+            | (Some defaultOverlayName, Some overlayName) ->
+                let overlayer = world.State.Overlayer
+                Overlayer.applyOverlayToFacetNames defaultOverlayName overlayName entity overlayer overlayer
+            | (_, _) -> ()
+
+            // read the entity's facet names
+            Reflection.readFacetNamesToTarget entityNode entity
+            
+            // synchronize the entity's facets (and attach their fields)
+            let entity =
+                match World.trySynchronizeFacets [] entity None world with
+                | Right (entity, _) -> entity
+                | Left error -> debug error; entity
+
+            // attach the entity's dispatcher fields
+            Reflection.attachFields dispatcher entity
+
+            // attempt to apply the entity's overlay
+            match entity.OptOverlayName with
+            | Some overlayName ->
+
+                // OPTIMIZATION: applying overlay only when it will change something (EG - when it's not the default overlay)
+                if intrinsicOverlayName <> overlayName then
+                    let facetNames = Entity.getFacetNamesReflectively entity
+                    Overlayer.applyOverlay intrinsicOverlayName overlayName facetNames entity world.State.Overlayer
+                else ()
+            | None -> ()
+
+            // read the entity's properties
+            Reflection.readPropertiesToTarget entityNode entity
+
+            // return the initialized entity
+            entity
+
+        /// Read multiple entities from an xml node.
+        static member readEntities (groupNode : XmlNode) defaultDispatcherName world =
+            match groupNode.SelectSingleNode EntitiesNodeName with
+            | null -> Map.empty
+            | entitiesNode ->
+                let entityNodes = entitiesNode.SelectNodes EntityNodeName
+                Seq.fold
+                    (fun entities entityNode ->
+                        let entity = World.readEntity entityNode defaultDispatcherName world
+                        Map.add entity.Name entity entities)
+                    Map.empty
+                    (enumerable entityNodes)
+
         (* Group *)
 
         static member private optGroupFinder (address : Group Address) world =
@@ -1586,6 +1896,103 @@ module SimulationModule =
                 world
                 groupHierarchies
 
+        /// Make a group (does NOT add the group to the world!)
+        static member makeGroup dispatcherName optName world =
+            let dispatcher = Map.find dispatcherName world.Components.GroupDispatchers
+            let group = Group.make dispatcher optName
+            Reflection.attachFields dispatcher group
+            group
+
+        /// Write a group hierarchy to an xml writer.
+        static member writeGroupHierarchy (writer : XmlWriter) groupHierarchy world =
+            let (group : Group, entities) = groupHierarchy
+            writer.WriteAttributeString (DispatcherNameAttributeName, (group.DispatcherNp.GetType ()).Name)
+            Reflection.writePropertiesFromTarget tautology3 writer group
+            writer.WriteStartElement EntitiesNodeName
+            World.writeEntities writer entities world
+            writer.WriteEndElement ()
+
+        /// Write a group hierarchy to an xml file.
+        static member writeGroupHierarchyToFile (filePath : string) groupHierarchy world =
+            let filePathTmp = filePath + ".tmp"
+            let writerSettings = XmlWriterSettings ()
+            writerSettings.Indent <- true
+            // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
+            // XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
+            use writer = XmlWriter.Create (filePathTmp, writerSettings)
+            writer.WriteStartDocument ()
+            writer.WriteStartElement RootNodeName
+            writer.WriteStartElement GroupNodeName
+            World.writeGroupHierarchy writer groupHierarchy world
+            writer.WriteEndElement ()
+            writer.WriteEndElement ()
+            writer.WriteEndDocument ()
+            writer.Dispose ()
+            File.Delete filePath
+            File.Move (filePathTmp, filePath)
+
+        /// Write multiple group hierarchies to an xml writer.
+        static member writeGroupHierarchies (writer : XmlWriter) groupHierarchies world =
+            let groupHierarchies =
+                List.sortBy
+                    (fun (group : Group, _) -> group.CreationTimeNp)
+                    (Map.toValueList groupHierarchies)
+            let groupHierarchies = List.filter (fun (group : Group, _) -> group.Persistent) groupHierarchies
+            for groupHierarchy in groupHierarchies do
+                writer.WriteStartElement GroupNodeName
+                World.writeGroupHierarchy writer groupHierarchy world
+                writer.WriteEndElement ()
+
+        /// Read a group hierarchy from an xml node.
+        static member readGroupHierarchy (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
+
+            // read in the dispatcher name and create the dispatcher
+            let dispatcherName = Reflection.readDispatcherName defaultDispatcherName groupNode
+            let dispatcher =
+                match Map.tryFind dispatcherName world.Components.GroupDispatchers with
+                | Some dispatcher -> dispatcher
+                | None ->
+                    note <| "Could not locate dispatcher '" + dispatcherName + "'."
+                    let dispatcherName = typeof<GroupDispatcher>.Name
+                    Map.find dispatcherName world.Components.GroupDispatchers
+            
+            // make the bare group with name as id
+            let group = Group.make dispatcher None
+            
+            // attach the group's instrinsic fields from its dispatcher if any
+            Reflection.attachFields group.DispatcherNp group
+
+            // read the groups's properties
+            Reflection.readPropertiesToTarget groupNode group
+            
+            // read the group's entities
+            let entities = World.readEntities (groupNode : XmlNode) defaultEntityDispatcherName world
+
+            // return the initialized group and entities
+            (group, entities)
+
+        /// Read a group hierarchy from an xml file.
+        static member readGroupHierarchyFromFile (filePath : string) world =
+            use reader = XmlReader.Create filePath
+            let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
+            let rootNode = document.[RootNodeName]
+            let groupNode = rootNode.[GroupNodeName]
+            World.readGroupHierarchy groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
+
+        /// Read multiple group hierarchies from an xml node.
+        static member readGroupHierarchies (screenNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
+            match screenNode.SelectSingleNode GroupsNodeName with
+            | null -> Map.empty
+            | groupsNode ->
+                let groupNodes = groupsNode.SelectNodes GroupNodeName
+                Seq.fold
+                    (fun groupHierarchies groupNode ->
+                        let groupHierarchy = World.readGroupHierarchy groupNode defaultDispatcherName defaultEntityDispatcherName world
+                        let groupName = (fst groupHierarchy).Name
+                        Map.add groupName groupHierarchy groupHierarchies)
+                    Map.empty
+                    (enumerable groupNodes)
+
         (* Screen *)
 
         static member private optScreenFinder (address : Screen Address) world =
@@ -1815,6 +2222,108 @@ module SimulationModule =
                 World.publish4 () (World.ScreenAddEventAddress ->>- address) screenRep world
             else failwith <| "Adding a screen that the world already contains at address '" + acstring address + "'."
 
+        /// Make a screen (does NOT add the screen to the world!)
+        static member makeScreen dispatcherName optName world =
+            let dispatcher = Map.find dispatcherName world.Components.ScreenDispatchers
+            let screen = Screen.make dispatcher optName
+            Reflection.attachFields dispatcher screen
+            screen
+        
+        /// Make a screen (does NOT add the screen to the world!)
+        static member makeDissolveScreen dissolveData dispatcherName optName world =
+            let optDissolveImage = Some dissolveData.DissolveImage
+            let screen = World.makeScreen dispatcherName optName world
+            let incomingDissolve = { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; OptDissolveImage = optDissolveImage }
+            let outgoingDissolve = { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; OptDissolveImage = optDissolveImage }
+            { screen with Incoming = incomingDissolve; Outgoing = outgoingDissolve }
+
+        /// Write a screen hierarchy to an xml writer.
+        static member writeScreenHierarchy (writer : XmlWriter) screenHierarchy world =
+            let (screen : Screen, groupHierarchies) = screenHierarchy
+            writer.WriteAttributeString (DispatcherNameAttributeName, (screen.DispatcherNp.GetType ()).Name)
+            Reflection.writePropertiesFromTarget tautology3 writer screen
+            writer.WriteStartElement GroupsNodeName
+            World.writeGroupHierarchies writer groupHierarchies world
+            writer.WriteEndElement ()
+
+        /// Write a screen hierarchy to an xml file.
+        static member writeScreenHierarchyToFile (filePath : string) screenHierarchy world =
+            let filePathTmp = filePath + ".tmp"
+            let writerSettings = XmlWriterSettings ()
+            writerSettings.Indent <- true
+            use writer = XmlWriter.Create (filePathTmp, writerSettings)
+            writer.WriteStartElement RootNodeName
+            writer.WriteStartElement ScreenNodeName
+            World.writeScreenHierarchy writer screenHierarchy world
+            writer.WriteEndElement ()
+            writer.WriteEndElement ()
+            writer.Dispose ()
+            File.Delete filePath
+            File.Move (filePathTmp, filePath)
+
+        /// Write multiple screen hierarchies to an xml writer.
+        static member writeScreenHierarchies (writer : XmlWriter) screenHierarchies world =
+            let screenHierarchies =
+                List.sortBy
+                    (fun (screen : Screen, _) -> screen.CreationTimeNp)
+                    (Map.toValueList screenHierarchies)
+            let screenHierarchies = List.filter (fun (screen : Screen, _) -> screen.Persistent) screenHierarchies
+            for screenHierarchy in screenHierarchies do
+                writer.WriteStartElement ScreenNodeName
+                World.writeScreenHierarchy writer screenHierarchy world
+                writer.WriteEndElement ()
+
+        /// Read a screen hierarchy from an xml node.
+        static member readScreenHierarchy
+            (screenNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
+            let dispatcherName = Reflection.readDispatcherName defaultDispatcherName screenNode
+            let dispatcher =
+                match Map.tryFind dispatcherName world.Components.ScreenDispatchers with
+                | Some dispatcher -> dispatcher
+                | None ->
+                    note <| "Could not locate dispatcher '" + dispatcherName + "'."
+                    let dispatcherName = typeof<ScreenDispatcher>.Name
+                    Map.find dispatcherName world.Components.ScreenDispatchers
+            let screen = Screen.make dispatcher None
+            Reflection.attachFields screen.DispatcherNp screen
+            Reflection.readPropertiesToTarget screenNode screen
+            let groupHierarchies = World.readGroupHierarchies (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName world
+            (screen, groupHierarchies)
+
+        /// Read a screen hierarchy from an xml file.
+        static member readScreenHierarchyFromFile (filePath : string) world =
+            use reader = XmlReader.Create filePath
+            let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
+            let rootNode = document.[RootNodeName]
+            let screenNode = rootNode.[ScreenNodeName]
+            World.readScreenHierarchy
+                screenNode
+                typeof<ScreenDispatcher>.Name
+                typeof<GroupDispatcher>.Name
+                typeof<EntityDispatcher>.Name
+                world
+
+        /// Read multiple screen hierarchies from an xml node.
+        static member readScreenHierarchies
+            (gameNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
+            match gameNode.SelectSingleNode ScreensNodeName with
+            | null -> Map.empty
+            | screensNode ->
+                let screenNodes = screensNode.SelectNodes ScreenNodeName
+                Seq.fold
+                    (fun screenHierarchies screenNode ->
+                        let screenHierarchy =
+                            World.readScreenHierarchy
+                                screenNode
+                                defaultDispatcherName
+                                defaultGroupDispatcherName
+                                defaultEntityDispatcherName
+                                world
+                        let screenName = (fst screenHierarchy).Name
+                        Map.add screenName screenHierarchy screenHierarchies)
+                    Map.empty
+                    (enumerable screenNodes)
+
         (* Game *)
 
         /// Get the game, then transform it with the 'by' procudure.
@@ -1875,6 +2384,104 @@ module SimulationModule =
         static member registerGame (gameRep : GameRep) (world : World) : World =
             let dispatcher = gameRep.GetDispatcherNp world : GameDispatcher
             dispatcher.Register gameRep world
+
+        /// Try to get the address of the currently selected screen.
+        static member getOptSelectedScreenRep world =
+            let game = World.getGame world
+            game.OptSelectedScreenRep
+        
+        /// Set the address of the currently selected screen to Some Address or None. Be careful
+        /// using this function directly as you may be wanting to use the higher-level
+        /// World.transitionScreen function.
+        static member setOptSelectedScreenRep optScreenRep world =
+            World.updateGame (Game.setOptSelectedScreenRep optScreenRep) world
+        
+        /// Get the address of the currently selected screen (failing with an exception if there
+        /// isn't one).
+        static member getSelectedScreenRep world =
+            Option.get <| World.getOptSelectedScreenRep world
+        
+        /// Set the address of the currently selected screen. Be careful using this function
+        /// directly as you may be wanting to use the higher-level World.transitionScreen function.
+        static member setSelectedScreenRep screenRep world =
+            World.setOptSelectedScreenRep (Some screenRep) world
+
+        /// Query that a simulant at the given address is the currently selected screen, is
+        /// contained by the currently selected screen or its groups.
+        static member isSimulantSelected<'s when 's :> SimulantRep> (simulantRep : 's) world =
+            let optScreenRep = World.getOptSelectedScreenRep world
+            let optScreenNames = Option.map (fun (screenRep : ScreenRep) -> screenRep.ScreenAddress.Names) optScreenRep
+            match (simulantRep.SimulantAddress.Names, optScreenNames) with
+            | ([], _) -> true
+            | (_, None) -> false
+            | (_, Some []) -> false
+            | (addressHead :: _, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
+
+        /// Make a game.
+        static member makeGame dispatcher =
+            let game = Game.make dispatcher
+            Reflection.attachFields dispatcher game
+            game
+
+        /// Write a game hierarchy to an xml writer.
+        static member writeGameHierarchy (writer : XmlWriter) gameHierarchy world =
+            let (game : Game, screenHierarchies) = gameHierarchy
+            writer.WriteAttributeString (DispatcherNameAttributeName, (game.DispatcherNp.GetType ()).Name)
+            Reflection.writePropertiesFromTarget tautology3 writer game
+            writer.WriteStartElement ScreensNodeName
+            World.writeScreenHierarchies writer screenHierarchies world
+            writer.WriteEndElement ()
+
+        /// Write a game hierarchy to an xml file.
+        static member writeGameHierarchyToFile (filePath : string) gameHierarchy world =
+            let filePathTmp = filePath + ".tmp"
+            let writerSettings = XmlWriterSettings ()
+            writerSettings.Indent <- true
+            use writer = XmlWriter.Create (filePathTmp, writerSettings)
+            writer.WriteStartElement RootNodeName
+            writer.WriteStartElement GameNodeName
+            World.writeGameHierarchy writer gameHierarchy world
+            writer.WriteEndElement ()
+            writer.WriteEndElement ()
+            writer.Dispose ()
+            File.Delete filePath
+            File.Move (filePathTmp, filePath)
+
+        /// Read a game hierarchy from an xml node.
+        static member readGameHierarchy
+            (gameNode : XmlNode) defaultDispatcherName defaultScreenDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
+            let dispatcherName = Reflection.readDispatcherName defaultDispatcherName gameNode
+            let dispatcher =
+                match Map.tryFind dispatcherName world.Components.GameDispatchers with
+                | Some dispatcher -> dispatcher
+                | None ->
+                    note <| "Could not locate dispatcher '" + dispatcherName + "'."
+                    let dispatcherName = typeof<GameDispatcher>.Name
+                    Map.find dispatcherName world.Components.GameDispatchers
+            let game = World.makeGame dispatcher
+            Reflection.readPropertiesToTarget gameNode game
+            let screenHierarchies =
+                World.readScreenHierarchies
+                    (gameNode : XmlNode)
+                    defaultScreenDispatcherName
+                    defaultGroupDispatcherName
+                    defaultEntityDispatcherName
+                    world
+            (game, screenHierarchies)
+
+        /// Read a game hierarchy from an xml file.
+        static member readGameHierarchyFromFile (filePath : string) world =
+            use reader = XmlReader.Create filePath
+            let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
+            let rootNode = document.[RootNodeName]
+            let gameNode = rootNode.[GameNodeName]
+            World.readGameHierarchy
+                gameNode
+                typeof<GameDispatcher>.Name
+                typeof<ScreenDispatcher>.Name
+                typeof<GroupDispatcher>.Name
+                typeof<EntityDispatcher>.Name
+                world
 
         (* Simulant *)
 

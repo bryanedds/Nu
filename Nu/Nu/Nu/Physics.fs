@@ -133,7 +133,7 @@ module PhysicsModule =
     /// A message from the physics system describing a body collision that took place.
     type [<StructuralEquality; NoComparison>] BodyCollisionMessage =
         { SourceAddress : obj Address
-          Source2Address : obj Address
+          CollideeAddress : obj Address
           Normal : Vector2
           Speed : single }
 
@@ -229,7 +229,7 @@ module PhysicsModule =
             let normal = fst <| contact.GetWorldManifold ()
             let bodyCollisionMessage =
                 { SourceAddress = fixture.Body.UserData :?> obj Address
-                  Source2Address = fixture2.Body.UserData :?> obj Address
+                  CollideeAddress = fixture2.Body.UserData :?> obj Address
                   Normal = Vector2 (normal.X, normal.Y)
                   Speed = contact.TangentSpeed * PhysicsToPixelRatio }
             let integrationMessage = BodyCollisionMessage bodyCollisionMessage

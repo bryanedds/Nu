@@ -17,15 +17,26 @@ module WorldPhysicsModule =
         { SubsystemType : SubsystemType
           SubsystemOrder : single
           Integrator : IIntegrator }
+        
+        static member private handleBodyTransformMessage (message : BodyTransformMessage) (entityRep : EntityRep) world =
+            // OPTIMIZATION: entity is not changed (avoiding a change entity event) if position and rotation haven't changed.
+            if entityRep.GetPosition world <> message.Position || entityRep.GetRotation world <> message.Rotation then
+                world |>
+                    // TODO: see if the following center-offsetting can be encapsulated within the Physics module!
+                    entityRep.SetPosition (message.Position - entityRep.GetSize world * 0.5f) |>
+                    entityRep.SetRotation message.Rotation
+            else world
 
         static member private handleIntegrationMessage world integrationMessage =
             match world.State.Liveness with
             | Running ->
                 match integrationMessage with
                 | BodyTransformMessage bodyTransformMessage ->
-                    match World.getOptEntity (atoea bodyTransformMessage.SourceAddress) world with
-                    | Some entity -> snd <| World.handleBodyTransformMessage bodyTransformMessage entity (atoea bodyTransformMessage.SourceAddress) world
-                    | None -> world
+                    let entityAddress = atoea bodyTransformMessage.SourceAddress
+                    if World.containsEntity entityAddress world then
+                        let entityRep = { EntityAddress = entityAddress }
+                        IntegratorSubsystem.handleBodyTransformMessage bodyTransformMessage entityRep world
+                    else world
                 | BodyCollisionMessage bodyCollisionMessage ->
                     match World.getOptEntity (atoea bodyCollisionMessage.SourceAddress) world with
                     | Some _ ->
@@ -33,7 +44,7 @@ module WorldPhysicsModule =
                         let collisionData =
                             { Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed
-                              Collidee = (atoea bodyCollisionMessage.Source2Address) }
+                              Collidee = { EntityAddress = atoea bodyCollisionMessage.CollideeAddress }}
                         World.publish4 collisionData collisionAddress GameRep world
                     | None -> world
             | Exiting -> world
@@ -56,7 +67,7 @@ module WorldPhysicsModule =
                 let (integrationMessages, integrator) = this.Integrator.Integrate ()
                 (integrationMessages :> obj, { this with Integrator = integrator } :> Subsystem)
 
-            member this.ApplyResult (integrationMessages, world) =
+            member this.ApplyResult integrationMessages world =
                 let integrationMessages = integrationMessages :?> IntegrationMessage list
                 List.fold IntegratorSubsystem.handleIntegrationMessage world integrationMessages
 
