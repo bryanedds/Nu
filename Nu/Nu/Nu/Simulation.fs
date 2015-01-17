@@ -351,6 +351,27 @@ module SimulationModule =
 
         interface Simulant
 
+        /// Get the names of all facets used by an entity via reflection.
+        /// TODO: see if this should be used as often as it is, and if it is needed in only one or
+        /// two cases, just inline it.
+        static member getFacetNamesReflectively entity =
+            List.map Reflection.getTypeName entity.FacetsNp
+
+        /// Query that a facet is compatible with those already being used by an entity.
+        /// Note a facet is incompatible with any other facet if it contains any fields that has
+        /// the same name but a different type.
+        static member isFacetCompatible entityDispatcherMap facet (entity : Entity) =
+            let facetType = facet.GetType ()
+            let facetFieldDefinitions = Reflection.getFieldDefinitions facetType
+            if Reflection.isFacetCompatibleWithDispatcher entityDispatcherMap facet entity then
+                List.notExists
+                    (fun definition ->
+                        match Map.tryFind definition.FieldName entity.Xtension.XFields with
+                        | Some field -> field.GetType () <> definition.FieldType
+                        | None -> false)
+                    facetFieldDefinitions
+            else false
+
         /// Make an entity.
         static member make dispatcher optOverlayName optName =
             let id = Core.makeId ()
@@ -1198,27 +1219,6 @@ module SimulationModule =
             let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
             dispatcher.GetPickingPriority entityRep world
 
-        /// Get the names of all facets used by an entity via reflection.
-        /// TODO: see if this should be used as often as it is, and if it is needed in only one or
-        /// two cases, just inline it.
-        static member getFacetNamesReflectively entity =
-            List.map Reflection.getTypeName entity.FacetsNp
-
-        /// Query that a facet is compatible with those already being used by an entity.
-        /// Note a facet is incompatible with any other facet if it contains any fields that has
-        /// the same name but a different type.
-        static member isFacetCompatible entityDispatcherMap facet (entity : Entity) =
-            let facetType = facet.GetType ()
-            let facetFieldDefinitions = Reflection.getFieldDefinitions facetType
-            if Reflection.isFacetCompatibleWithDispatcher entityDispatcherMap facet entity then
-                List.notExists
-                    (fun definition ->
-                        match Map.tryFind definition.FieldName entity.Xtension.XFields with
-                        | Some field -> field.GetType () <> definition.FieldType
-                        | None -> false)
-                    facetFieldDefinitions
-            else false
-
         /// Remove an entity from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the entity's existence. Use with caution.
         static member removeEntityImmediate entityRep world =
@@ -1271,11 +1271,13 @@ module SimulationModule =
                 world
                 entities
 
+        /// TODO: document!
         static member pickingSort entityReps world =
-            let prioritiesAndEntityReps = List.map (fun (entityRep : EntityRep) -> (entityRep.GetPickingPriority world, entityRep)) entityReps
+            let prioritiesAndEntityReps = List.map (fun (entityRep : EntityRep) -> (World.getPickingPriority entityRep world, entityRep)) entityReps
             let prioritiesAndEntityReps = List.sortWith World.sortFstDesc prioritiesAndEntityReps
             List.map snd prioritiesAndEntityReps
 
+        /// TODO: document!
         static member tryPick position entityReps world =
             let entityRepsSorted = World.pickingSort entityReps world
             List.tryFind
@@ -2054,8 +2056,8 @@ module SimulationModule =
             let snapped = Math.snap2F snap position
             this.SetPosition snapped world
 
-        member this.GetTransform world =
-            { Transform.Position = this.GetPosition world
+        member this.GetTransform world : Transform =
+            { Position = this.GetPosition world
               Depth = this.GetDepth world
               Size = this.GetSize world
               Rotation = this.GetRotation world }
