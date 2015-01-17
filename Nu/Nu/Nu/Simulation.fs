@@ -104,14 +104,14 @@ module SimulationModule =
         Dictionary<obj Address, obj Address list> HashIdentity.Structural
 
     /// Describes one of a screen's transition processes.
-    type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
-        { TransitionLifetime : int64
-          TransitionType : TransitionType
+    type [<CLIMutable; StructuralEquality; NoComparison>] TransitionDescriptor =
+        { TransitionType : TransitionType
+          TransitionLifetime : int64
           OptDissolveImage : AssetTag option }
 
         static member make transitionType =
-            { TransitionLifetime = 0L
-              TransitionType = transitionType
+            { TransitionType = transitionType
+              TransitionLifetime = 0L
               OptDissolveImage = None }
 
     /// The data for a mouse move event.
@@ -320,8 +320,8 @@ module SimulationModule =
           Name : string
           ScreenStateNp : ScreenState
           TransitionTicksNp : int64
-          Incoming : Transition
-          Outgoing : Transition
+          Incoming : TransitionDescriptor
+          Outgoing : TransitionDescriptor
           PublishChanges : bool
           Persistent : bool
           CreationTimeNp : DateTime
@@ -337,8 +337,8 @@ module SimulationModule =
               Name = match optName with None -> acstring id | Some name -> name
               ScreenStateNp = IdlingState
               TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
-              Incoming = Transition.make Incoming
-              Outgoing = Transition.make Outgoing
+              Incoming = TransitionDescriptor.make Incoming
+              Outgoing = TransitionDescriptor.make Outgoing
               PublishChanges = true
               Persistent = true
               CreationTimeNp = DateTime.UtcNow
@@ -586,19 +586,50 @@ module SimulationModule =
         static member internal EntityChangeEventAddress = World.EntityEventAddress -<- ntoa<EntityRep SimulantChangeData> "Change"
         static member internal DefaultDissolveImage = { PackageName = DefaultPackageName; AssetName = "Image8" }
 
-        /// Make a key used to track an unsubscription with a subscription.
-        static member makeSubscriptionKey () =
-            Guid.NewGuid ()
-
-        /// Make a callback key used to track callback states.
-        static member makeCallbackKey () =
-            Guid.NewGuid ()
+        (* Publishing *)
 
         // OPTIMIZATION: priority annotated as single to decrease GC pressure.
         static member private sortFstDesc (priority : single, _) (priority2 : single, _) =
             if priority > priority2 then -1
             elif priority < priority2 then 1
             else 0
+
+        static member private getAnyEventAddresses eventAddress =
+            // OPTIMIZATION: uses memoization.
+            if not <| Address.isEmpty eventAddress then
+                let anyEventAddressesKey = Address.allButLast eventAddress
+                match AnyEventAddressesCache.TryGetValue anyEventAddressesKey with
+                | (true, anyEventAddresses) -> anyEventAddresses
+                | (false, _) ->
+                    let eventAddressList = eventAddress.Names
+                    let anyEventAddressList = World.AnyEventAddress.Names
+                    let anyEventAddresses =
+                        [for i in 0 .. List.length eventAddressList - 1 do
+                            let subNameList = List.take i eventAddressList @ anyEventAddressList
+                            yield Address.make subNameList]
+                    AnyEventAddressesCache.Add (anyEventAddressesKey, anyEventAddresses)
+                    anyEventAddresses
+            else failwith "Event name cannot be empty."
+
+        static member private getSortableSubscriptions
+            getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world :
+            (single * SubscriptionEntry) list =
+            List.fold
+                (fun subscriptions (key, simulantRep : SimulantRep, subscription) ->
+                    let priority = simulantRep.GetPublishingPriority getEntityPublishingPriority world
+                    let subscription = (priority, (key, simulantRep, subscription))
+                    subscription :: subscriptions)
+                []
+                subscriptions
+
+        static member private getSubscriptionsSorted (publishSorter : SubscriptionSorter) eventAddress world =
+            let anyEventAddresses = World.getAnyEventAddresses eventAddress
+            let optSubLists = List.map (fun anyEventAddress -> Map.tryFind anyEventAddress world.Callbacks.Subscriptions) anyEventAddresses
+            let optSubLists = Map.tryFind eventAddress world.Callbacks.Subscriptions :: optSubLists
+            let subLists = List.definitize optSubLists
+            let subList = List.concat subLists
+            let subListRev = List.rev subList
+            publishSorter subListRev world
     
         static member private boxSubscription<'a, 's when 's :> SimulantRep> (subscription : Subscription<'a, 's>) =
             let boxableSubscription = fun (event : obj) world ->
@@ -611,16 +642,22 @@ module SimulationModule =
                 | _ -> reraise ()
             box boxableSubscription
 
-        static member private getSortableSubscriptions
-            getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world :
-            (single * SubscriptionEntry) list =
-            List.fold
-                (fun subscriptions (key, simulantRep : SimulantRep, subscription) ->
-                    let priority = simulantRep.GetPublishingPriority getEntityPublishingPriority world
-                    let subscription = (priority, (key, simulantRep, subscription))
-                    subscription :: subscriptions)
-                []
-                subscriptions
+        static member private publishEvent<'a, 'p, 's when 'p :> SimulantRep and 's :> SimulantRep>
+            (subscriberRep : SimulantRep) (publisherRep : 'p) (eventAddress : 'a Address) (eventData : 'a) subscription world =
+            let event =
+                { SubscriberRep = subscriberRep :?> 's
+                  PublisherRep = publisherRep :> SimulantRep
+                  EventAddress = eventAddress
+                  Data = eventData }
+            let callableSubscription = unbox<BoxableSubscription> subscription
+            let result = callableSubscription event world
+            Some result
+
+        /// Make a key used to track an unsubscription with a subscription.
+        static member makeSubscriptionKey () = Guid.NewGuid ()
+
+        /// Make a callback key used to track callback states.
+        static member makeCallbackKey () = Guid.NewGuid ()
 
         /// Sort subscriptions using categorization via the 'by' procedure.
         static member sortSubscriptionsBy by (subscriptions : SubscriptionEntry list) world =
@@ -647,43 +684,6 @@ module SimulationModule =
         /// A 'no-op' for subscription sorting - that is, performs no sorting at all.
         static member sortSubscriptionsNone (subscriptions : SubscriptionEntry list) (_ : World) =
             subscriptions
-
-        static member private getAnyEventAddresses eventAddress =
-            // OPTIMIZATION: uses memoization.
-            if not <| Address.isEmpty eventAddress then
-                let anyEventAddressesKey = Address.allButLast eventAddress
-                match AnyEventAddressesCache.TryGetValue anyEventAddressesKey with
-                | (true, anyEventAddresses) -> anyEventAddresses
-                | (false, _) ->
-                    let eventAddressList = eventAddress.Names
-                    let anyEventAddressList = World.AnyEventAddress.Names
-                    let anyEventAddresses =
-                        [for i in 0 .. List.length eventAddressList - 1 do
-                            let subNameList = List.take i eventAddressList @ anyEventAddressList
-                            yield Address.make subNameList]
-                    AnyEventAddressesCache.Add (anyEventAddressesKey, anyEventAddresses)
-                    anyEventAddresses
-            else failwith "Event name cannot be empty."
-
-        static member private getSubscriptionsSorted (publishSorter : SubscriptionSorter) eventAddress world =
-            let anyEventAddresses = World.getAnyEventAddresses eventAddress
-            let optSubLists = List.map (fun anyEventAddress -> Map.tryFind anyEventAddress world.Callbacks.Subscriptions) anyEventAddresses
-            let optSubLists = Map.tryFind eventAddress world.Callbacks.Subscriptions :: optSubLists
-            let subLists = List.definitize optSubLists
-            let subList = List.concat subLists
-            let subListRev = List.rev subList
-            publishSorter subListRev world
-
-        static member private publishEvent<'a, 'p, 's when 'p :> SimulantRep and 's :> SimulantRep>
-            (subscriberRep : SimulantRep) (publisherRep : 'p) (eventAddress : 'a Address) (eventData : 'a) subscription world =
-            let event =
-                { SubscriberRep = subscriberRep :?> 's
-                  PublisherRep = publisherRep :> SimulantRep
-                  EventAddress = eventAddress
-                  Data = eventData }
-            let callableSubscription = unbox<BoxableSubscription> subscription
-            let result = callableSubscription event world
-            Some result
 
         /// Publish an event, using the given publishSorter procedure to arranging the order to which subscriptions are published.
         static member publish<'a, 'p when 'p :> SimulantRep> publishSorter (eventData : 'a) (eventAddress : 'a Address) (publisherRep : 'p) world =
@@ -767,6 +767,20 @@ module SimulationModule =
                 World.subscribe<unit, 's> removalKey subscription' removingEventAddress subscriberRep world
             else failwith "Cannot monitor events with an anonymous subscriber."
 
+        /// Ignore all handled events.
+        static member handleAsPass<'a, 's when 's :> SimulantRep> (_ : Event<'a, 's>) (world : World) =
+            (Cascade, world)
+
+        /// Swallow all handled events.
+        static member handleAsSwallow<'a, 's when 's :> SimulantRep> (_ : Event<'a, 's>) (world : World) =
+            (Resolve, world)
+        
+        /// Handle event by exiting app.
+        static member handleAsExit<'a, 's when 's :> SimulantRep> (_ : Event<'a, 's>) (world : World) =
+            (Resolve, World.exit world)
+
+        (* Subsystems *)
+
         static member internal getSubsystem<'s when 's :> Subsystem> name world =
             Map.find name world.Subsystems :?> 's
 
@@ -807,6 +821,8 @@ module SimulationModule =
         static member addAudioMessage (message : AudioMessage) world =
             World.updateSubsystem (fun aps _ -> aps.EnqueueMessage message) AudioPlayerSubsystemName world
 
+        (* Callbacks *)
+
         /// Add a task to be executed by the engine at the specified task tick.
         static member addTask task world =
             let callbacks = { world.Callbacks with Tasks = task :: world.Callbacks.Tasks }
@@ -841,6 +857,8 @@ module SimulationModule =
         static member getCallbackState<'a> key world =
             let state = Map.find key world.Callbacks.CallbackStates
             state :?> 'a
+
+        (* WorldState *)
 
         /// Get the state of the world.
         static member getState world = world.State
@@ -965,17 +983,7 @@ module SimulationModule =
             let state = updater state
             World.setUserState state world
 
-        /// Ignore all handled events.
-        static member handleAsPass<'a, 's when 's :> SimulantRep> (_ : Event<'a, 's>) (world : World) =
-            (Cascade, world)
-
-        /// Swallow all handled events.
-        static member handleAsSwallow<'a, 's when 's :> SimulantRep> (_ : Event<'a, 's>) (world : World) =
-            (Resolve, world)
-        
-        /// Handle event by exiting app.
-        static member handleAsExit<'a, 's when 's :> SimulantRep> (_ : Event<'a, 's>) (world : World) =
-            (Resolve, World.exit world)
+        (* World *)
 
         /// Lens the world.
         static member lens = Lens.id
@@ -1036,7 +1044,7 @@ module SimulationModule =
                     | Some address ->
                         let entityRep = { EntityAddress = address }
                         let world = facet.Unregister entityRep world
-                        (World.getEntity address world, world)
+                        (World.getEntity entityRep world, world)
                     | None -> (entity, world)
                 let entity = { entity with Id = entity.Id } // hacky copy
                 let fieldNames = World.getEntityFieldDefinitionNamesToDetach entity facet
@@ -1047,7 +1055,9 @@ module SimulationModule =
                 let entity = { entity with FacetsNp = List.remove ((=) facet) entity.FacetsNp }
                 let world =
                     match optAddress with
-                    | Some address -> World.setEntity entity address world
+                    | Some address ->
+                        let entityRep = { EntityAddress = address }
+                        World.setEntity entity entityRep world
                     | None -> world
                 Right (entity, world)
             | None -> Left <| "Failure to remove facet '" + facetName + "' from entity."
@@ -1065,7 +1075,7 @@ module SimulationModule =
                     | Some address ->
                         let entityRep = { EntityAddress = address }
                         let world = facet.Register entityRep world
-                        let entity = World.getEntity address world
+                        let entity = World.getEntity entityRep world
                         Right (entity, world)
                     | None -> Right (entity, world)
                 else Left <| "Facet '" + Reflection.getTypeName facet + "' is incompatible with entity '" + entity.Name + "'."
@@ -1155,94 +1165,8 @@ module SimulationModule =
                 | None -> world
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
 
-        /// Query that the world contains an entity at the given address.
-        static member containsEntity address world =
-            Option.isSome <| World.optEntityFinder address world
-
-        /// Try to get an entity at the given address.
-        static member getOptEntity address world =
-            World.optEntityFinder address world
-
-        /// Get an entity at the given address (failing with an exception otherwise), then
-        /// transform it with the 'by' procudure.
-        static member getEntityBy by address world =
-            by ^ Option.get ^ World.getOptEntity address world
-
-        /// Get an entity at the given address (failing with an exception otherwise).
-        static member getEntity address world =
-            World.getEntityBy id address world
-
-        /// Get an entity with the given name in a group with the given address (failing with an
-        /// exception if there isn't one).
-        static member getEntityInGroup entityName groupAddress world =
-            World.getEntity (World.gatoea groupAddress entityName) world
-
-        /// Get an entity's address with the given name in the group with the given address
-        /// (failing with an exception if there isn't one).
-        static member getEntityAddressInGroup entityName groupAddress world =
-            let address = World.gatoea groupAddress entityName
-            ignore <| World.getEntity address world // ensure address is valid
-            address
-
-        static member private setEntityWithoutEvent entity address world =
-            World.entityAdder entity address world
-
-        static member private setOptEntityWithoutEvent optEntity address world =
-            match optEntity with 
-            | Some entity -> World.entityAdder entity address world
-            | None -> World.entityRemover address world
-
-        /// Set an entity at the given address (failing with an exception if one doesn't exist).
-        static member setEntity entity address world =
-            let oldWorld = world
-            let world = World.entityAdder entity address world
-            if entity.PublishChanges
-            then
-                let entityRep = { EntityAddress = address }
-                World.publish4
-                    { SimulantRep = entityRep; OldWorld = oldWorld }
-                    (World.EntityChangeEventAddress ->>- address)
-                    entityRep
-                    world
-            else world
-            
-        /// Update an entity at the given address and the world with the given 'updater' procedure.
-        static member updateEntityAndW updater address world =
-            let entity = World.getEntity address world
-            let (entity, world) = updater entity world
-            World.setEntity entity address world
-
-        /// Update an entity with the given 'updater' procedure at the given address.
-        static member updateEntityW updater address world =
-            World.updateEntityAndW (fun entity world -> (updater entity world, world)) address world
-            
-        /// Update an entity with the given 'updater' procedure at the given address.
-        static member updateEntity updater address world =
-            World.updateEntityW (fun entity _ -> updater entity) address world
-
-        /// Update the world with the given 'updater' procedure that uses the entity at given
-        /// address in its computation.
-        static member updateByEntity updater address world : World =
-            let entity = World.getEntity address world
-            updater entity world
-
-        /// Lens an entity at the given address.
-        static member lensEntity address =
-            { Get = World.getEntity address
-              Set = fun entity -> World.setEntity entity address }
-
-        /// Get all the entities at the given addresses as transformed them with the 'by'
-        /// procedure.
-        static member getEntitiesBy by addresses world =
-            Seq.map (fun address -> by <| World.getEntity address world) addresses
-            
-        /// Get all the entities at the given addresses.
-        static member getEntities addresses world =
-            World.getEntitiesBy id addresses world
-
-        /// Get all the entities in the group at the given address as mapped by their names.
-        static member getEntityMapInGroup (groupAddress : Group Address) world =
-            match groupAddress.Names with
+        static member private getEntityMapInGroup groupRep world =
+            match groupRep.GroupAddress.Names with
             | [screenName; groupName] ->
                 let (_, screenMap) = world.Simulants
                 match Map.tryFind screenName screenMap with
@@ -1251,82 +1175,42 @@ module SimulationModule =
                     | Some (_, entityMap) -> entityMap
                     | None -> Map.empty
                 | None -> Map.empty
-            | _ -> failwith <| "Invalid group address '" + acstring groupAddress + "'."
+            | _ -> failwith <| "Invalid group address '" + acstring groupRep.GroupAddress + "'."
 
-        /// Get all the entities in the group at the given address.
-        static member getEntitiesInGroup (groupAddress : Group Address) world =
-            Map.toValueSeq <| World.getEntityMapInGroup groupAddress world
+        static member private getOptEntity entityRep world =
+            World.optEntityFinder entityRep.EntityAddress world
 
-        /// Get all the entity addresses in the group at the given address.
-        static member getEntityAddressesInGroup groupAddress world =
-            let entities = World.getEntitiesInGroup groupAddress world
-            Seq.map (fun entity -> World.gatoea groupAddress entity.Name) entities
+        static member private getEntity (entityRep : EntityRep) world =
+            Option.get ^ World.getOptEntity entityRep world
+
+        static member private setEntityWithoutEvent entity entityRep world =
+            World.entityAdder entity entityRep.EntityAddress world
+
+        static member private setOptEntityWithoutEvent optEntity entityRep world =
+            match optEntity with 
+            | Some entity -> World.entityAdder entity entityRep.EntityAddress world
+            | None -> World.entityRemover entityRep.EntityAddress world
+
+        static member private setEntity entity (entityRep : EntityRep) world =
+            let oldWorld = world
+            let world = World.entityAdder entity entityRep.EntityAddress world
+            if entity.PublishChanges then
+                World.publish4
+                    { SimulantRep = entityRep; OldWorld = oldWorld }
+                    (World.EntityChangeEventAddress ->>- entityRep.EntityAddress)
+                    entityRep
+                    world
+            else world
+
+        /// Query that the world contains an entity at the given address.
+        static member containsEntity entityRep world =
+            Option.isSome <| World.optEntityFinder entityRep.EntityAddress world
 
         /// Get all the entity addresses in the group at the given address.
         static member getEntityRepsInGroup groupRep world =
+            let entityMap = World.getEntityMapInGroup groupRep world
             let groupAddress = groupRep.GroupAddress
-            let entities = World.getEntitiesInGroup groupAddress world
-            Seq.map (fun entity -> { EntityAddress = World.gatoea groupAddress entity.Name }) entities
-
-        /// Set the given entities to the respective addresses. Note, each address must already
-        /// have an existing entity, otherwise will fail with an exception.
-        static member setEntities entities addresses world =
-            Seq.fold2 (fun world entity address -> World.setEntity entity address world) world entities addresses
-
-        /// Set the given entities to the addresses as calculated by
-        /// (fun entity -> gatoea groupAddress entity.Name) in the group with the given address.
-        /// Note, each address must already have an existing entity, otherwise will fail with an
-        /// exception.
-        static member setEntitiesInGroup entities groupAddress world =
-            Seq.fold (fun world (entity : Entity) -> World.setEntity entity (World.gatoea groupAddress entity.Name) world) world entities
-
-        /// Update the entities at the given addresses and the world with the given 'updater' procedure.
-        static member updateEntitiesAndW updater addresses world =
-            Seq.fold (fun world address -> World.updateEntityAndW updater address world) world addresses
-
-        /// Update the entities at the given addresses with the given 'updater' procedure.
-        static member updateEntitiesW updater addresses world =
-            Seq.fold (fun world address -> World.updateEntityW updater address world) world addresses
-
-        /// Update the entities at the given addresses with the given 'updater' procedure.
-        static member updateEntities updater addresses world =
-            Seq.fold (fun world address -> World.updateEntity updater address world) world addresses
-
-        /// Update all entities in the group at the given address and the world using the given 'updater' procedure.
-        static member updateEntitiesInGroupAndW updater groupAddress world =
-            let addresses = World.getEntityAddressesInGroup groupAddress world
-            Seq.fold (fun world address -> World.updateEntityAndW updater address world) world addresses
-
-        /// Update all entities in the group at the given address using the given 'updater'
-        /// procedure. Also passes the current world value to the procedure.
-        static member updateEntitiesInGroupW updater groupAddress world =
-            let addresses = World.getEntityAddressesInGroup groupAddress world
-            Seq.fold (fun world address -> World.updateEntityW updater address world) world addresses
-
-        /// Update all entities in the group at the given address using the given 'updater' procedure.
-        static member updateEntitiesInGroup updater groupAddress world =
-            let addresses = World.getEntityAddressesInGroup groupAddress world
-            Seq.fold (fun world address -> World.updateEntity updater address world) world addresses
-
-        /// Lens the entities at the given addresses.
-        static member lensEntities addresses =
-            { Get = World.getEntities addresses
-              Set = fun entities -> World.setEntities entities addresses }
-
-        /// Lens all entities in the group at the given address.
-        static member lensEntitiesInGroup groupAddress =
-            { Get = World.getEntitiesInGroup groupAddress
-              Set = fun entities -> World.setEntitiesInGroup entities groupAddress }
-
-        /// Filter the given entity addresses by applying the 'pred' procedure to each entity at
-        /// its respected address. Also passes the current world value to the procedure.
-        static member filterEntityAddressesW pred addresses world =
-            Seq.filter (fun address -> World.getEntityBy (fun entity -> pred entity world) address world) addresses
-            
-        /// Filter the given entity addresses by applying the 'pred' procedure to each entity at
-        /// its respected address.
-        static member filterEntityAddresses pred addresses world =
-            World.filterEntityAddressesW (fun entity _ -> pred entity) addresses world
+            Seq.map (fun (kvp : KeyValuePair<string, _>) -> { EntityAddress = World.gatoea groupAddress kvp.Key }) entityMap
 
         /// Register an entity when adding it to a group.
         static member registerEntity (entityRep : EntityRep) world =
@@ -1346,55 +1230,13 @@ module SimulationModule =
                 world
                 facets
 
-        /// Propagate an entity's physics properties from the physics subsystem.
-        static member propagatePhysics (entityRep : EntityRep) world =
-            let dispatcher = entityRep.GetDispatcherNp world
-            let facets = entityRep.GetFacetsNp world
-            let world = dispatcher.PropagatePhysics entityRep world
-            List.fold
-                (fun world (facet : Facet) -> facet.PropagatePhysics entityRep world)
-                world
-                facets
-        
-        /// Get the render descriptors needed to render an entity.
-        static member getRenderDescriptors (entityRep : EntityRep) world =
-            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
-            let facets = entityRep.GetFacetsNp world
-            let renderDescriptors = dispatcher.GetRenderDescriptors entityRep world
-            List.fold
-                (fun renderDescriptors (facet : Facet) ->
-                    let descriptors = facet.GetRenderDescriptors entityRep world
-                    descriptors @ renderDescriptors)
-                renderDescriptors
-                facets
-        
-        /// Get the quick size of an entity (the appropriate user-define size for an entity).
-        static member getQuickSize (entityRep : EntityRep) world =
-            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
-            let facets = entityRep.GetFacetsNp world
-            let quickSize = dispatcher.GetQuickSize entityRep world
-            List.fold
-                (fun (maxSize : Vector2) (facet : Facet) ->
-                    let quickSize = facet.GetQuickSize entityRep world
-                    Vector2 (
-                        Math.Max (quickSize.X, maxSize.X),
-                        Math.Max (quickSize.Y, maxSize.Y)))
-                quickSize
-                facets
-
-        /// Get the priority with which an entity is picked in the editor.
-        static member getPickingPriority (entityRep : EntityRep) world =
-            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
-            dispatcher.GetPickingPriority entityRep world
-
         /// Remove an entity from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the entity's existence. Use with caution.
         static member removeEntityImmediate entityRep world =
-            let address = entityRep.EntityAddress
-            let world = World.publish4 () (World.EntityRemovingEventAddress ->>- address) entityRep world
-            if World.containsEntity address world then
+            let world = World.publish4 () (World.EntityRemovingEventAddress ->>- entityRep.EntityAddress) entityRep world
+            if World.containsEntity entityRep world then
                 let world = World.unregisterEntity entityRep world
-                World.setOptEntityWithoutEvent None address world
+                World.setOptEntityWithoutEvent None entityRep world
             else world
 
         /// Remove an entity from the world on the next tick. Use this rather than
@@ -1404,7 +1246,7 @@ module SimulationModule =
                 { ScheduledTime = world.State.TickTime
                   Operation = fun world -> World.removeEntityImmediate entityRep world }
             World.addTask task world
-            
+
         /// Remove multiple entities from the world immediately. Can be dangerous if existing
         /// in-flight subscriptions depend on any of the entities' existences. Use with caution.
         static member removeEntitiesImmediate entityReps world =
@@ -1412,7 +1254,7 @@ module SimulationModule =
                 (fun entityRep world -> World.removeEntityImmediate entityRep world)
                 (List.ofSeq entityReps)
                 world
-                
+
         /// Remove multiple entities from the world. Use this rather than removeEntitiesImmediate
         /// unless you need the latter's specific behavior.
         static member removeEntities entityReps world =
@@ -1420,13 +1262,11 @@ module SimulationModule =
 
         /// Add an entity at the given address to the world.
         static member addEntity entity entityRep world =
-            let address = entityRep.EntityAddress
-            if not <| World.containsEntity address world then
-                let world = World.setEntityWithoutEvent entity address world
-                let entityRep = { EntityAddress = address }
+            if not <| World.containsEntity entityRep world then
+                let world = World.setEntityWithoutEvent entity entityRep world
                 let world = World.registerEntity entityRep world
-                World.publish4 () (World.EntityAddEventAddress ->>- address) entityRep world
-            else failwith <| "Adding an entity that the world already contains at address '" + acstring address + "'."
+                World.publish4 () (World.EntityAddEventAddress ->>- entityRep.EntityAddress) entityRep world
+            else failwith <| "Adding an entity that the world already contains at address '" + acstring entityRep.EntityAddress + "'."
 
         /// Add multiple entities to the group at the given address.
         static member addEntities entities (groupRep : GroupRep) world =
@@ -1438,23 +1278,6 @@ module SimulationModule =
                     World.addEntity entity entityRep world)
                 world
                 entities
-
-        /// TODO: document!
-        static member pickingSort entityReps world =
-            let prioritiesAndEntityReps = List.map (fun (entityRep : EntityRep) -> (World.getPickingPriority entityRep world, entityRep)) entityReps
-            let prioritiesAndEntityReps = List.sortWith World.sortFstDesc prioritiesAndEntityReps
-            List.map snd prioritiesAndEntityReps
-
-        /// TODO: document!
-        static member tryPick position entityReps world =
-            let entityRepsSorted = World.pickingSort entityReps world
-            List.tryFind
-                (fun (entityRep : EntityRep) ->
-                    let positionWorld = Camera.mouseToWorld (entityRep.GetViewType world) position world.State.Camera
-                    let transform = entityRep.GetTransform world
-                    let picked = Math.isPointInBounds3 positionWorld transform.Position transform.Size
-                    picked)
-                entityRepsSorted
 
         /// Make an entity (does NOT add the entity to the world!)
         static member makeEntity dispatcherName optName world =
@@ -1598,6 +1421,64 @@ module SimulationModule =
                     Map.empty
                     (enumerable entityNodes)
 
+        /// Propagate an entity's physics properties from the physics subsystem.
+        static member propagatePhysics (entityRep : EntityRep) world =
+            let dispatcher = entityRep.GetDispatcherNp world
+            let facets = entityRep.GetFacetsNp world
+            let world = dispatcher.PropagatePhysics entityRep world
+            List.fold
+                (fun world (facet : Facet) -> facet.PropagatePhysics entityRep world)
+                world
+                facets
+        
+        /// Get the render descriptors needed to render an entity.
+        static member getRenderDescriptors (entityRep : EntityRep) world =
+            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
+            let facets = entityRep.GetFacetsNp world
+            let renderDescriptors = dispatcher.GetRenderDescriptors entityRep world
+            List.fold
+                (fun renderDescriptors (facet : Facet) ->
+                    let descriptors = facet.GetRenderDescriptors entityRep world
+                    descriptors @ renderDescriptors)
+                renderDescriptors
+                facets
+        
+        /// Get the quick size of an entity (the appropriate user-define size for an entity).
+        static member getQuickSize (entityRep : EntityRep) world =
+            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
+            let facets = entityRep.GetFacetsNp world
+            let quickSize = dispatcher.GetQuickSize entityRep world
+            List.fold
+                (fun (maxSize : Vector2) (facet : Facet) ->
+                    let quickSize = facet.GetQuickSize entityRep world
+                    Vector2 (
+                        Math.Max (quickSize.X, maxSize.X),
+                        Math.Max (quickSize.Y, maxSize.Y)))
+                quickSize
+                facets
+
+        /// Get the priority with which an entity is picked in the editor.
+        static member getPickingPriority (entityRep : EntityRep) world =
+            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
+            dispatcher.GetPickingPriority entityRep world
+
+        /// TODO: document!
+        static member pickingSort entityReps world =
+            let prioritiesAndEntityReps = List.map (fun (entityRep : EntityRep) -> (World.getPickingPriority entityRep world, entityRep)) entityReps
+            let prioritiesAndEntityReps = List.sortWith World.sortFstDesc prioritiesAndEntityReps
+            List.map snd prioritiesAndEntityReps
+
+        /// TODO: document!
+        static member tryPick position entityReps world =
+            let entityRepsSorted = World.pickingSort entityReps world
+            List.tryFind
+                (fun (entityRep : EntityRep) ->
+                    let positionWorld = Camera.mouseToWorld (entityRep.GetViewType world) position world.State.Camera
+                    let transform = entityRep.GetTransform world
+                    let picked = Math.isPointInBounds3 positionWorld transform.Position transform.Size
+                    picked)
+                entityRepsSorted
+
         (* Group *)
 
         static member private optGroupFinder (address : Group Address) world =
@@ -1647,189 +1528,49 @@ module SimulationModule =
                 | None -> world
             | _ -> failwith <| "Invalid group address '" + acstring address + "'."
 
-        /// Query that the world contains a group at the given address.
-        static member containsGroup address world =
-            Option.isSome <| World.optGroupFinder address world
-
-        /// Try to get a group at the given address.
-        static member getOptGroup address world =
-            World.optGroupFinder address world
-
-        /// Get a group at the given address (failing with an exception otherwise), then
-        /// transform it with the 'by' procudure.
-        static member getGroupBy by address world =
-            by ^ Option.get ^ World.getOptGroup address world
-
-        /// Get a group at the given address (failing with an exception otherwise).
-        static member getGroup address world =
-            World.getGroupBy id address world
-
-        /// Get a group with the given name in a screen with the given address (failing with an
-        /// exception otherwise).
-        static member getGroupInScreen groupName screenAddress world =
-            World.getGroup (World.satoga screenAddress groupName) world
-
-        /// Get a group's address with the given name in a group with the given address (failing
-        /// with an exception otherwise).
-        static member getGroupAddressInScreen groupName screenAddress world =
-            let address = World.satoga screenAddress groupName
-            ignore <| World.getGroup address world // ensure address is valid
-            address
-
-        static member private setGroupWithoutEvent group address world =
-            World.groupAdder group address world
-
-        static member private setOptGroupWithoutEvent optGroup address world =
-            match optGroup with 
-            | Some group -> World.groupAdder group address world
-            | None -> World.groupRemover address world
-
-        /// Set a group at the given address (failing with an exception if one doesn't exist).
-        static member setGroup group address world =
-            let oldWorld = world
-            let world = World.groupAdder group address world
-            if group.PublishChanges
-            then
-                let groupRep = { GroupAddress = address }
-                World.publish4
-                    { SimulantRep = groupRep; OldWorld = oldWorld }
-                    (World.GroupChangeEventAddress ->>- address)
-                    groupRep
-                    world
-            else world
-
-        /// Update a group at the given address and the world with the given 'updater' procedure.
-        static member updateGroupAndW updater address world =
-            let group = World.getGroup address world
-            let (group, world) = updater group world
-            World.setGroup group address world
-
-        /// Update a group with the given 'updater' procedure at the given address.
-        static member updateGroupW updater address world =
-            World.updateGroupAndW (fun group world -> (updater group world, world)) address world
-        
-        /// Update a group with the given 'updater' procedure at the given address.
-        static member updateGroup updater address world =
-            World.updateGroupW (fun group _ -> updater group) address world
-            
-        /// Update the world with the given 'updater' procedure that uses the group at given
-        /// address in its computation.
-        static member updateByGroup updater address world : World =
-            let group = World.getGroup address world
-            updater group world
-
-        /// Lens a group at the given address.
-        static member lensGroup address =
-            { Get = World.getGroup address
-              Set = fun group -> World.setGroup group address }
-
-        /// Try to get a group hierarchy (that is, a group with a map to all of its entities) at
-        /// the given address.
-        static member getOptGroupHierarchy address world =
-            match World.getOptGroup address world with
-            | Some group ->
-                let entityMap = World.getEntityMapInGroup address world
-                Some (group, entityMap)
-            | None -> None
-
-        /// Get a group hierarchy (that is, a group with a map to all of its entities) at the given
-        /// address (failing with an exception if there isn't one).
-        static member getGroupHierarchy address world =
-            Option.get <| World.getOptGroupHierarchy address world
-
-        /// Get the group hierarches at the given addresses.
-        static member getGroupHierarchies addresses world =
-            Seq.map (fun address -> World.getGroupHierarchy address world) addresses
-            
-        /// Get the groups at the given addresses as transformed them with the 'by'
-        /// procedure.
-        static member getGroupsBy by addresses world =
-            Seq.map (fst >> by) <| World.getGroupHierarchies addresses world
-
-        /// Get the groups at the given addresses.
-        static member getGroups addresses world =
-            World.getGroupsBy id addresses world
-
-        /// Get all the groups in the screen at the given address as mapped by their names.
-        static member getGroupMapInScreen (screenAddress : Screen Address) world =
-            match screenAddress.Names with
+        static member private getGroupMapInScreen screenRep world =
+            match screenRep.ScreenAddress.Names with
             | [screenName] ->
                 let (_, screenMap) = world.Simulants
                 match Map.tryFind screenName screenMap with
                 | Some (_, groupMap) -> groupMap
                 | None -> Map.empty
-            | _ -> failwith <| "Invalid screen address '" + acstring screenAddress + "'."
+            | _ -> failwith <| "Invalid screen address '" + acstring screenRep.ScreenAddress + "'."
 
-        /// Get all the groups in the screen at the given address.
-        static member getGroupsInScreen screenAddress world =
-            let groupHierarchies = World.getGroupMapInScreen screenAddress world
-            Map.toValueSeqBy fst groupHierarchies
+        static member private getOptGroup groupRep world =
+            World.optGroupFinder groupRep world
+
+        static member private getGroup groupRep world =
+            Option.get ^ World.getOptGroup groupRep world
+
+        static member private setGroupWithoutEvent group groupRep world =
+            World.groupAdder group groupRep.GroupAddress world
+
+        static member private setOptGroupWithoutEvent optGroup groupRep world =
+            match optGroup with 
+            | Some group -> World.groupAdder group groupRep.GroupAddress world
+            | None -> World.groupRemover groupRep.GroupAddress world
+
+        static member private setGroup group groupRep world =
+            let oldWorld = world
+            let world = World.groupAdder group groupRep.GroupAddress world
+            if group.PublishChanges then
+                World.publish4
+                    { SimulantRep = groupRep; OldWorld = oldWorld }
+                    (World.GroupChangeEventAddress ->>- groupRep.GroupAddress)
+                    groupRep
+                    world
+            else world
+
+        /// Query that the world contains a group at the given address.
+        static member containsGroup groupRep world =
+            Option.isSome <| World.optGroupFinder groupRep.GroupAddress world
 
         /// Get all the group addresses in the screen at the given address.
         static member getGroupRepsInScreen screenRep world =
+            let groupMap = World.getGroupMapInScreen screenRep world
             let screenAddress = screenRep.ScreenAddress
-            let groupHierarchies = World.getGroupMapInScreen screenAddress world
-            Map.toValueSeqBy (fun (group : Group, _) -> { GroupAddress = World.satoga screenAddress group.Name }) groupHierarchies
-
-        /// Get all the group addresses in the screen at the given address.
-        static member getGroupAddressesInScreen screenAddress world =
-            let groupHierarchies = World.getGroupMapInScreen screenAddress world
-            Map.toValueSeqBy (fun (group : Group, _) -> World.satoga screenAddress group.Name) groupHierarchies
-
-        /// Set the groups at the given addresses.
-        static member setGroups groups addresses world =
-            Seq.fold2 (fun world group address -> World.setGroup group address world) world groups addresses
-        
-        /// Set the groups in the screen at the given addresses.
-        static member setGroupsInScreen groups screenAddress world =
-            Seq.fold (fun world (group : Group) -> World.setGroup group (World.satoga screenAddress group.Name) world) world groups
-
-        /// Update the groups at the given addresses and the world with the given 'updater' procedure.
-        static member updateGroupsAndW updater addresses world =
-            Seq.fold (fun world address -> World.updateGroupAndW updater address world) world addresses
-
-        /// Update the groups at the given addresses with the given 'updater' procedure.
-        static member updateGroupsW updater addresses world =
-            Seq.fold (fun world address -> World.updateGroupW updater address world) world addresses
-        
-        /// Update the groups at the given addresses with the given 'updater' procedure.
-        static member updateGroups updater addresses world =
-            Seq.fold (fun world address -> World.updateGroup updater address world) world addresses
-
-        /// Update all groups in the screen at the given address and the world using the given 'updater'
-        static member updateGroupsInScreenAndW updater screenAddress world =
-            let addresses = World.getGroupAddressesInScreen screenAddress world
-            Seq.fold (fun world address -> World.updateGroupAndW updater address world) world addresses
-
-        /// Update all groups in the screen at the given address using the given 'updater'
-        static member updateGroupsInScreenW updater screenAddress world =
-            let addresses = World.getGroupAddressesInScreen screenAddress world
-            Seq.fold (fun world address -> World.updateGroupW updater address world) world addresses
-
-        /// Update all groups in the screen at the given address using the given 'updater' procedure.
-        static member updateGroupsInScreen updater screenAddress world =
-            let addresses = World.getGroupAddressesInScreen screenAddress world
-            Seq.fold (fun world address -> World.updateGroup updater address world) world addresses
-
-        /// Lens the groups at the given addresses.
-        static member lensGroups addresses =
-            { Get = World.getGroups addresses
-              Set = fun groups -> World.setGroups groups addresses }
-
-        /// Lens all groups in the screen at the given address.
-        static member lensGroupsInScreen screenAddress =
-            { Get = World.getGroupsInScreen screenAddress
-              Set = fun groups -> World.setGroupsInScreen groups screenAddress }
-
-        /// Filter the given group addresses by applying the 'pred' procedure to each group at
-        /// its respected address. Also passes the current world value to the procedure.
-        static member filterGroupAddressesW pred addresses world =
-            Seq.filter (fun address -> World.getGroupBy (fun group -> pred group world) address world) addresses
-            
-        /// Filter the given group addresses by applying the 'pred' procedure to each group at
-        /// its respected address.
-        static member filterGroupAddresses pred addresses world =
-            World.filterGroupAddressesW (fun group _ -> pred group) addresses world
+            Seq.map (fun (kvp : KeyValuePair<string, _>) -> { GroupAddress = World.satoga screenAddress kvp.Key }) groupMap
 
         /// Register a group when adding it to a screen.
         static member registerGroup (groupRep : GroupRep) world =
@@ -1844,13 +1585,12 @@ module SimulationModule =
         /// Remove a group from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the group's existence. Use with caution.
         static member removeGroupImmediate groupRep world =
-            let address = groupRep.GroupAddress
-            let world = World.publish4 () (World.GroupRemovingEventAddress ->>- address) groupRep world
-            if World.containsGroup address world then
+            let world = World.publish4 () (World.GroupRemovingEventAddress ->>- groupRep.GroupAddress) groupRep world
+            if World.containsGroup groupRep world then
                 let world = World.unregisterGroup groupRep world
                 let entityReps = World.getEntityRepsInGroup groupRep world
                 let world = World.removeEntitiesImmediate entityReps world
-                World.setOptGroupWithoutEvent None address world
+                World.setOptGroupWithoutEvent None groupRep world
             else world
 
         /// Remove a group from the world on the next tick. Use this rather than
@@ -1868,7 +1608,7 @@ module SimulationModule =
                 (fun groupRep world -> World.removeGroupImmediate groupRep world)
                 (List.ofSeq groupReps)
                 world
-                
+
         /// Remove multiple groups from the world. Use this rather than removeEntitiesImmediate
         /// unless you need the latter's specific behavior.
         static member removeGroups groupReps world =
@@ -1876,15 +1616,13 @@ module SimulationModule =
 
         /// Add a group at the given address to the world.
         static member addGroup groupHierarchy groupRep world =
-            let address = groupRep.GroupAddress
             let (group, entities) = groupHierarchy
-            if not <| World.containsGroup address world then
-                let world = World.setGroupWithoutEvent group address world
+            if not <| World.containsGroup groupRep world then
+                let world = World.setGroupWithoutEvent group groupRep world
                 let world = World.addEntities entities groupRep world
-                let groupRep = { GroupAddress = address }
                 let world = World.registerGroup groupRep world
-                World.publish4 () (World.GroupAddEventAddress ->>- address) groupRep world
-            else failwith <| "Adding a group that the world already contains at address '" + acstring address + "'."
+                World.publish4 () (World.GroupAddEventAddress ->>- groupRep.GroupAddress) groupRep world
+            else failwith <| "Adding a group that the world already contains at address '" + acstring groupRep.GroupAddress + "'."
 
         /// Add multiple groups to the screen at the given address.
         static member addGroups groupHierarchies screenRep world =
@@ -2030,6 +1768,9 @@ module SimulationModule =
                 | None -> world
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
+        static member private getScreenMap world =
+            snd world.Simulants
+
         /// Query that the world contains a group at the given address.
         static member containsScreen address world =
             Option.isSome <| World.optScreenFinder address world
@@ -2080,8 +1821,7 @@ module SimulationModule =
         static member setScreen screen address world =
             let oldWorld = world
             let world = World.screenAdder screen address world
-            if screen.PublishChanges
-            then
+            if screen.PublishChanges then
                 let screenRep = { ScreenAddress = address }
                 World.publish4
                     { SimulantRep = screenRep; OldWorld = oldWorld }
@@ -2127,10 +1867,6 @@ module SimulationModule =
         /// Get the screens at the given addresses.
         static member getScreens addresses world =
             World.getScreensBy id addresses world
-
-        /// Get all the screens in the game as mapped by their names.
-        static member getScreenMap world =
-            snd world.Simulants
 
         /// Get all the screens in the game.
         static member getScreensInGame world =
@@ -2233,8 +1969,8 @@ module SimulationModule =
         static member makeDissolveScreen dissolveData dispatcherName optName world =
             let optDissolveImage = Some dissolveData.DissolveImage
             let screen = World.makeScreen dispatcherName optName world
-            let incomingDissolve = { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; OptDissolveImage = optDissolveImage }
-            let outgoingDissolve = { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; OptDissolveImage = optDissolveImage }
+            let incomingDissolve = { TransitionDescriptor.make Incoming with TransitionLifetime = dissolveData.IncomingTime; OptDissolveImage = optDissolveImage }
+            let outgoingDissolve = { TransitionDescriptor.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; OptDissolveImage = optDissolveImage }
             { screen with Incoming = incomingDissolve; Outgoing = outgoingDissolve }
 
         /// Write a screen hierarchy to an xml writer.
@@ -2345,8 +2081,7 @@ module SimulationModule =
             let oldWorld = world
             let screenMap = World.getScreenMap world
             let world = { world with Simulants = (game, screenMap) }
-            if game.PublishChanges
-            then
+            if game.PublishChanges then
                 World.publish4
                     { OldWorld = world; SimulantRep = World.GameRep }
                     (World.GameChangeEventAddress ->>- World.GameAddress)

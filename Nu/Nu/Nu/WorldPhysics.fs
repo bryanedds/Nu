@@ -33,8 +33,8 @@ module WorldPhysicsModule =
                 match integrationMessage with
                 | BodyTransformMessage bodyTransformMessage ->
                     let entityAddress = atoea bodyTransformMessage.SourceAddress
-                    if World.containsEntity entityAddress world then
-                        let entityRep = { EntityAddress = entityAddress }
+                    let entityRep = { EntityAddress = entityAddress }
+                    if World.containsEntity entityRep world then
                         IntegratorSubsystem.handleBodyTransformMessage bodyTransformMessage entityRep world
                     else world
                 | BodyCollisionMessage bodyCollisionMessage ->
