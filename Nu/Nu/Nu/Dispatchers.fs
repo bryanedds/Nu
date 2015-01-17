@@ -11,74 +11,46 @@ open Nu.WorldConstants
 [<AutoOpen>]
 module RigidBodyFacetModule =
 
-    type Entity with
+    type EntityRep with
 
         // TODO: consider implementing Awake, AngularVelocity, and LinearVelocity fields to make
         // physics resets less destructive.
 
-        member entity.MinorId = entity?MinorId : Guid
-        static member getMinorId (entity : Entity) = entity.MinorId
-        static member setMinorId (value : Guid) (entity : Entity) = entity?MinorId <- value
-        
-        member entity.BodyType = entity?BodyType : BodyType
-        static member getBodyType (entity : Entity) = entity.BodyType
-        static member setBodyType (value : BodyType) (entity : Entity) = entity?BodyType <- value
-        
-        member entity.Density = entity?Density : single
-        static member getDensity (entity : Entity) = entity.Density
-        static member setDensity (value : single) (entity : Entity) = entity?Density <- value
-        
-        member entity.Friction = entity?Friction : single
-        static member getFriction (entity : Entity) = entity.Friction
-        static member setFriction (value : single) (entity : Entity) = entity?Friction <- value
-        
-        member entity.Restitution = entity?Restitution : single
-        static member getRestitution (entity : Entity) = entity.Restitution
-        static member setRestitution (value : single) (entity : Entity) = entity?Restitution <- value
-        // remaining members elided for space
-        member entity.FixedRotation = entity?FixedRotation : bool
-        static member getFixedRotation (entity : Entity) = entity.FixedRotation
-        static member setFixedRotation (value : bool) (entity : Entity) = entity?FixedRotation <- value
-        
-        member entity.LinearDamping = entity?LinearDamping : single
-        static member getLinearDamping (entity : Entity) = entity.LinearDamping
-        static member setLinearDamping (value : single) (entity : Entity) = entity?LinearDamping <- value
-        
-        member entity.AngularDamping = entity?AngularDamping : single
-        static member getAngularDamping (entity : Entity) = entity.AngularDamping
-        static member setAngularDamping (value : single) (entity : Entity) = entity?AngularDamping <- value
-        
-        member entity.GravityScale = entity?GravityScale : single
-        static member getGravityScale (entity : Entity) = entity.GravityScale
-        static member setGravityScale (value : single) (entity : Entity) = entity?GravityScale <- value
-        
-        member entity.CollisionCategories = entity?CollisionCategories : string
-        static member getCollisionCategories (entity : Entity) = entity.CollisionCategories
-        static member setCollisionCategories (value : string) (entity : Entity) = entity?CollisionCategories <- value
-        
-        member entity.CollisionMask = entity?CollisionMask : string
-        static member getCollisionMask (entity : Entity) = entity.CollisionMask
-        static member setCollisionMask (value : string) (entity : Entity) = entity?CollisionMask <- value
-        
-        member entity.CollisionExpr = entity?CollisionExpr : string
-        static member getCollisionExpr (entity : Entity) = entity.CollisionExpr
-        static member setCollisionExpr (value : string) (entity : Entity) = entity?CollisionExpr <- value
-        
-        member entity.IsBullet = entity?IsBullet : bool
-        static member getIsBullet (entity : Entity) = entity.IsBullet
-        static member setIsBullet (value : bool) (entity : Entity) = entity?IsBullet <- value
-        
-        member entity.IsSensor = entity?IsSensor : bool
-        static member getIsSensor (entity : Entity) = entity.IsSensor
-        static member setIsSensor (value : bool) (entity : Entity) = entity?IsSensor <- value
-        
-        member entity.PhysicsId = { SourceId = entity.Id; BodyId = entity.MinorId }
+        member this.GetMinorId world : Guid = (this.GetXtension world)?MinorId
+        member this.SetMinorId (value : Guid) world = this.UpdateXtension (fun xtension -> xtension?MinorId <- value) world
+        member this.GetBodyType world : BodyType = (this.GetXtension world)?BodyType
+        member this.SetBodyType (value : BodyType) world = this.UpdateXtension (fun xtension -> xtension?BodyType <- value) world
+        member this.GetDensity world : single = (this.GetXtension world)?Density
+        member this.SetDensity (value : single) world = this.UpdateXtension (fun xtension -> xtension?Density <- value) world
+        member this.GetFriction world : single = (this.GetXtension world)?Friction
+        member this.SetFriction (value : single) world = this.UpdateXtension (fun xtension -> xtension?Friction <- value) world
+        member this.GetRestitution world : single = (this.GetXtension world)?Restitution
+        member this.SetRestitution (value : single) world = this.UpdateXtension (fun xtension -> xtension?Restitution <- value) world
+        member this.GetFixedRotation world : bool = (this.GetXtension world)?FixedRotation
+        member this.SetFixedRotation (value : bool) world = this.UpdateXtension (fun xtension -> xtension?FixedRotation <- value) world
+        member this.GetLinearDamping world : single = (this.GetXtension world)?LinearDamping
+        member this.SetLinearDamping (value : single) world = this.UpdateXtension (fun xtension -> xtension?LinearDamping <- value) world
+        member this.GetAngularDamping world : single = (this.GetXtension world)?AngularDamping
+        member this.SetAngularDamping (value : single) world = this.UpdateXtension (fun xtension -> xtension?AngularDamping <- value) world
+        member this.GetGravityScale world : single = (this.GetXtension world)?GravityScale
+        member this.SetGravityScale (value : single) world = this.UpdateXtension (fun xtension -> xtension?GravityScale <- value) world
+        member this.GetCollisionCategories world : string = (this.GetXtension world)?CollisionCategories
+        member this.SetCollisionCategories (value : string) world = this.UpdateXtension (fun xtension -> xtension?CollisionCategories <- value) world
+        member this.GetCollisionMask world : string = (this.GetXtension world)?CollisionMask
+        member this.SetCollisionMask (value : string) world = this.UpdateXtension (fun xtension -> xtension?CollisionMask <- value) world
+        member this.GetCollisionExpr world : string = (this.GetXtension world)?CollisionExpr
+        member this.SetCollisionExpr (value : string) world = this.UpdateXtension (fun xtension -> xtension?CollisionExpr <- value) world
+        member this.GetIsBullet world : bool = (this.GetXtension world)?IsBullet
+        member this.SetIsBullet (value : bool) world = this.UpdateXtension (fun xtension -> xtension?IsBullet <- value) world
+        member this.GetIsSensor world : bool = (this.GetXtension world)?IsSensor
+        member this.SetIsSensor (value : bool) world = this.UpdateXtension (fun xtension -> xtension?IsSensor <- value) world
+        member this.GetPhysicsId world = { SourceId = this.GetId world; BodyId = this.GetMinorId world }
 
     type RigidBodyFacet () =
         inherit Facet ()
 
-        static let getBodyShape (entity : Entity) =
-            Physics.evalCollisionExpr (entity.Size : Vector2) entity.CollisionExpr
+        static let getBodyShape (entityRep : EntityRep) world =
+            Physics.evalCollisionExpr (entityRep.GetSize world) (entityRep.GetCollisionExpr world)
 
         static member FieldDefinitions =
             [variable? MinorId <| fun () -> Core.makeId ()
@@ -99,38 +71,37 @@ module RigidBodyFacetModule =
         override facet.RegisterPhysics (entityRep, world) =
             let bodyProperties = 
                 { BodyId = (entityRep.GetPhysicsId world).BodyId
-                  Position = entityRep.GetPosition + entity.Size * 0.5f
-                  Rotation = entityRep.GetRotation
-                  Shape = getBodyShape entity
-                  BodyType = entityRep.GetBodyType
-                  Density = entityRep.GetDensity
-                  Friction = entityRep.GetFriction
-                  Restitution = entityRep.GetRestitution
-                  FixedRotation = entityRep.GetFixedRotation
-                  LinearDamping = entityRep.GetLinearDamping
-                  AngularDamping = entityRep.GetAngularDamping
-                  GravityScale = entityRep.GetGravityScale
-                  CollisionCategories = Physics.toCollisionCategories entityRep.GetCollisionCategories
-                  CollisionMask = Physics.toCollisionCategories entityRep.GetCollisionMask
-                  IsBullet = entityRep.GetIsBullet
-                  IsSensor = entityRep.GetIsSensor }
-            World.createBody address entityRep.GetId bodyProperties world
+                  Position = entityRep.GetPosition world + entityRep.GetSize world * 0.5f
+                  Rotation = entityRep.GetRotation world
+                  Shape = getBodyShape entityRep world
+                  BodyType = entityRep.GetBodyType world
+                  Density = entityRep.GetDensity world
+                  Friction = entityRep.GetFriction world
+                  Restitution = entityRep.GetRestitution world
+                  FixedRotation = entityRep.GetFixedRotation world
+                  LinearDamping = entityRep.GetLinearDamping world
+                  AngularDamping = entityRep.GetAngularDamping world
+                  GravityScale = entityRep.GetGravityScale world
+                  CollisionCategories = Physics.toCollisionCategories <| entityRep.GetCollisionCategories world
+                  CollisionMask = Physics.toCollisionCategories <| entityRep.GetCollisionMask world
+                  IsBullet = entityRep.GetIsBullet world
+                  IsSensor = entityRep.GetIsSensor world }
+            World.createBody entityRep.EntityAddress (entityRep.GetId world) bodyProperties world
 
-        override facet.UnregisterPhysics (entity, _, world) =
-            World.destroyBody entity.PhysicsId world
+        override facet.UnregisterPhysics (entityRep, world) =
+            World.destroyBody (entityRep.GetPhysicsId world) world
 
-        override facet.PropagatePhysics (address, entity, world) =
-            let world = facet.UnregisterPhysics (address, entity, world)
-            facet.RegisterPhysics (address, entity, world)
+        override facet.PropagatePhysics (entityRep, world) =
+            let world = facet.UnregisterPhysics (entityRep, world)
+            facet.RegisterPhysics (entityRep, world)
 
 [<AutoOpen>]
 module SpriteFacetModule =
 
-    type Entity with
+    type EntityRep with
 
-        member entity.SpriteImage = entity?SpriteImage : AssetTag
-        static member getSpriteImage (entity : Entity) = entity.SpriteImage
-        static member setSpriteImage (value : AssetTag) (entity : Entity) = entity?SpriteImage <- value
+        member this.GetSpriteImage world : AssetTag = (this.GetXtension world)?SpriteImage
+        member this.SetSpriteImage (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?SpriteImage <- value) world
 
     type SpriteFacet () =
         inherit Facet ()
@@ -138,61 +109,55 @@ module SpriteFacetModule =
         static member FieldDefinitions =
             [define? SpriteImage { PackageName = DefaultPackageName; AssetName = "Image3" }]
 
-        override facet.GetRenderDescriptors (entity : Entity, world) =
-            if entity.Visible && Camera.inView3 entity.ViewType entity.Position entity.Size world.State.Camera then
+        override facet.GetRenderDescriptors (entityRep : EntityRep, world) =
+            if  entityRep.GetVisible world &&
+                Camera.inView3 (entityRep.GetViewType world) (entityRep.GetPosition world) (entityRep.GetSize world) world.State.Camera then
                 [LayerableDescriptor
-                    { Depth = entity.Depth
+                    { Depth = entityRep.GetDepth world
                       LayeredDescriptor =
                         SpriteDescriptor
-                            { Position = entity.Position
-                              Size = entity.Size
-                              Rotation = entity.Rotation
-                              ViewType = entity.ViewType
+                            { Position = entityRep.GetPosition world
+                              Size = entityRep.GetSize world
+                              Rotation = entityRep.GetRotation world
+                              ViewType = entityRep.GetViewType world
                               OptInset = None
-                              Image = entity.SpriteImage
+                              Image = entityRep.GetSpriteImage world
                               Color = Vector4.One }}]
             else []
 
-        override facet.GetQuickSize (entity : Entity, world) =
-            match Metadata.tryGetTextureSizeAsVector2 entity.SpriteImage world.State.AssetMetadataMap with
+        override facet.GetQuickSize (entityRep, world) =
+            match Metadata.tryGetTextureSizeAsVector2 (entityRep.GetSpriteImage world) world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
 
 [<AutoOpen>]
 module AnimatedSpriteFacetModule =
 
-    type Entity with
-
-        member entity.TileCount = entity?TileCount : int
-        static member getTileCount (entity : Entity) = entity.TileCount
-        static member setTileCount (value : int) (entity : Entity) = entity?TileCount <- value
-        
-        member entity.TileRun = entity?TileRun : int
-        static member getTileRun (entity : Entity) = entity.TileRun
-        static member setTileRun (value : int) (entity : Entity) = entity?TileRun <- value
-        
-        member entity.TileSize = entity?TileSize : Vector2
-        static member getTileSize (entity : Entity) = entity.TileSize
-        static member setTileSize (value : Vector2) (entity : Entity) = entity?TileSize <- value
-        
-        member entity.AnimationStutter = entity?AnimationStutter : int64
-        static member getAnimationStutter (entity : Entity) = entity.AnimationStutter
-        static member setAnimationStutter (value : int64) (entity : Entity) = entity?AnimationStutter <- value
-        
-        member entity.AnimationSheet = entity?AnimationSheet : AssetTag
-        static member getAnimationSheet (entity : Entity) = entity.AnimationSheet
-        static member setAnimationSheet (value : AssetTag) (entity : Entity) = entity?AnimationSheet <- value
+    type EntityRep with
+    
+        member this.GetTileCount world : int = (this.GetXtension world)?TileCount
+        member this.SetTileCount (value : int) world = this.UpdateXtension (fun xtension -> xtension?TileCount <- value) world
+        member this.GetTileRun world : int = (this.GetXtension world)?TileRun
+        member this.SetTileRun (value : int) world = this.UpdateXtension (fun xtension -> xtension?TileRun <- value) world
+        member this.GetTileSize world : Vector2 = (this.GetXtension world)?TileSize
+        member this.SetTileSize (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?TileSize <- value) world
+        member this.GetAnimationStutter world : int64 = (this.GetXtension world)?AnimationStutter
+        member this.SetAnimationStutter (value : int64) world = this.UpdateXtension (fun xtension -> xtension?AnimationStutter <- value) world
+        member this.GetAnimationSheet world : AssetTag = (this.GetXtension world)?AnimationSheet
+        member this.SetAnimationSheet (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?AnimationSheet <- value) world
 
     type AnimatedSpriteFacet () =
         inherit Facet ()
 
-        static let getOptSpriteInset (entity : Entity) world =
-            let tile = int (world.State.TickTime / entity.AnimationStutter) % entity.TileCount
-            let tileI = tile % entity.TileRun
-            let tileJ = tile / entity.TileRun
-            let tileX = single tileI * entity.TileSize.X
-            let tileY = single tileJ * entity.TileSize.Y
-            let inset = Vector4 (tileX, tileY, tileX + entity.TileSize.X, tileY + entity.TileSize.Y)
+        static let getOptSpriteInset (entityRep : EntityRep) world =
+            let tile = int (world.State.TickTime / entityRep.GetAnimationStutter world) % entityRep.GetTileCount world
+            let tileRun = entityRep.GetTileRun world
+            let tileSize = entityRep.GetTileSize world
+            let tileI = tile % tileRun
+            let tileJ = tile / tileRun
+            let tileX = single tileI * tileSize.X
+            let tileY = single tileJ * tileSize.Y
+            let inset = Vector4 (tileX, tileY, tileX + tileSize.X, tileY + tileSize.Y)
             Some inset
 
         static member FieldDefinitions =
@@ -202,23 +167,24 @@ module AnimatedSpriteFacetModule =
              define? AnimationStutter 4L
              define? AnimationSheet { PackageName = DefaultPackageName; AssetName = "Image7" }]
 
-        override facet.GetRenderDescriptors (entity : Entity, world) =
-            if entity.Visible && Camera.inView3 entity.ViewType entity.Position entity.Size world.State.Camera then
+        override facet.GetRenderDescriptors (entityRep, world) =
+            if  entityRep.GetVisible world &&
+                Camera.inView3 (entityRep.GetViewType world) (entityRep.GetPosition world) (entityRep.GetSize world) world.State.Camera then
                 [LayerableDescriptor
-                    { Depth = entity.Depth
+                    { Depth = entityRep.GetDepth world
                       LayeredDescriptor =
                         SpriteDescriptor
-                            { Position = entity.Position
-                              Size = entity.Size
-                              Rotation = entity.Rotation
-                              ViewType = entity.ViewType
-                              OptInset = getOptSpriteInset entity world
-                              Image = entity.AnimationSheet
+                            { Position = entityRep.GetPosition world
+                              Size = entityRep.GetSize world
+                              Rotation = entityRep.GetRotation world
+                              ViewType = entityRep.GetViewType world
+                              OptInset = getOptSpriteInset entityRep world
+                              Image = entityRep.GetAnimationSheet world
                               Color = Vector4.One }}]
             else []
 
-        override facet.GetQuickSize (entity : Entity, _ : World) =
-            entity.TileSize
+        override facet.GetQuickSize (entityRep, world) =
+            entityRep.GetTileSize world
 
 [<AutoOpen>]
 module EntityDispatcherModule =
