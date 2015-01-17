@@ -44,15 +44,15 @@ module WorldRenderModule =
                 match Map.tryFind (Address.head selectedScreenAddress) (World.getScreenMap world) with
                 | Some (_, groupMap) ->
                     let entityReps =
-                        Map.fold
-                            (fun entityReps groupName (_, entityMap) ->
+                        Map.foldBack
+                            (fun groupName (_, entityMap) entityReps ->
                                 let groupAddress = satoga selectedScreenAddress groupName
-                                Map.fold
-                                    (fun entityReps entityName _ -> { EntityAddress = gatoea groupAddress entityName } :: entityReps)
-                                    entityReps
-                                    entityMap)
-                            []
+                                Map.foldBack
+                                    (fun entityName _ entityReps -> { EntityAddress = gatoea groupAddress entityName } :: entityReps)
+                                    entityMap
+                                    entityReps)
                             groupMap
+                            []
                     let descriptors = List.map (fun entityRep -> Entity.getRenderDescriptors entityRep world) entityReps
                     let descriptors = List.concat descriptors
                     let selectedScreen = World.getScreen selectedScreenAddress world

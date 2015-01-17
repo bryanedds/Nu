@@ -152,8 +152,8 @@ module Assets =
     /// Attempt to load all the assets from a package Xml node.
     let tryLoadAssetsFromPackageNode usingRawAssets optAssociation (node : XmlNode) =
         let assets =
-            List.fold
-                (fun assets (assetNode : XmlNode) ->
+            Seq.foldBack
+                (fun (assetNode : XmlNode) assets ->
                     match assetNode.Name with
                     | AssetNodeName ->
                         match tryLoadAssetFromAssetNode assetNode with
@@ -165,8 +165,8 @@ module Assets =
                         | None -> debug <| "Invalid assets node in '" + node.Name + "' in asset graph."; assets
                     | CommentNodeName -> assets
                     | invalidNodeType -> debug <| "Invalid package child node type '" + invalidNodeType + "'."; assets)
+                (enumerable node.ChildNodes)
                 []
-                (List.ofSeq <| enumerable node.ChildNodes)
         let associatedAssets =
             match optAssociation with
             | Some association -> List.filter (fun asset -> List.exists ((=) association) asset.Associations) assets
@@ -177,19 +177,19 @@ module Assets =
     let tryLoadAssetsFromRootNode usingRawAssets optAssociation (node : XmlNode) =
         let possiblePackageNodes = List.ofSeq <| enumerable node.ChildNodes
         let packageNodes =
-            List.fold
-                (fun packageNodes (node : XmlNode) ->
+            List.foldBack
+                (fun (node : XmlNode) packageNodes ->
                     if node.Name = PackageNodeName then node :: packageNodes
                     else packageNodes)
-                []
                 possiblePackageNodes
+                []
         let assetLists =
-            List.fold
-                (fun assetLists packageNode ->
+            List.foldBack
+                (fun packageNode assetLists ->
                     let assets = tryLoadAssetsFromPackageNode usingRawAssets optAssociation packageNode
                     assets :: assetLists)
-                []
                 packageNodes
+                []
         let assets = List.concat assetLists
         Right assets
 

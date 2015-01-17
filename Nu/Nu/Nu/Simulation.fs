@@ -614,13 +614,13 @@ module SimulationModule =
         static member private getSortableSubscriptions
             getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world :
             (single * SubscriptionEntry) list =
-            List.fold
-                (fun subscriptions (key, simulantRep : SimulantRep, subscription) ->
+            List.foldBack
+                (fun (key, simulantRep : SimulantRep, subscription) subscriptions ->
                     let priority = simulantRep.GetPublishingPriority getEntityPublishingPriority world
                     let subscription = (priority, (key, simulantRep, subscription))
                     subscription :: subscriptions)
-                []
                 subscriptions
+                []
 
         static member private getSubscriptionsSorted (publishSorter : SubscriptionSorter) eventAddress world =
             let anyEventAddresses = World.getAnyEventAddresses eventAddress
@@ -1436,12 +1436,12 @@ module SimulationModule =
             let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
             let facets = entityRep.GetFacetsNp world
             let renderDescriptors = dispatcher.GetRenderDescriptors entityRep world
-            List.fold
-                (fun renderDescriptors (facet : Facet) ->
+            List.foldBack
+                (fun (facet : Facet) renderDescriptors ->
                     let descriptors = facet.GetRenderDescriptors entityRep world
                     descriptors @ renderDescriptors)
-                renderDescriptors
                 facets
+                renderDescriptors
         
         /// Get the quick size of an entity (the appropriate user-define size for an entity).
         static member getQuickSize (entityRep : EntityRep) world =
@@ -1771,150 +1771,39 @@ module SimulationModule =
         static member private getScreenMap world =
             snd world.Simulants
 
-        /// Query that the world contains a group at the given address.
-        static member containsScreen address world =
-            Option.isSome <| World.optScreenFinder address world
+        static member getOptScreen screenRep world =
+            World.optScreenFinder screenRep.ScreenAddress world
 
-        /// Try to get a group at the given address.
-        static member getOptScreen address world =
-            World.optScreenFinder address world
+        static member private getScreen screenRep world =
+            Option.get ^ World.getOptScreen screenRep world
 
-        /// Get a group at the given address (failing with an exception otherwise), then
-        /// transform it with the 'by' procudure.
-        static member getScreenBy by address world =
-            by ^ Option.get ^ World.getOptScreen address world
+        static member private setScreenWithoutEvent screen screenRep world =
+            World.screenAdder screen screenRep.ScreenAddress world
 
-        /// Get a group at the given address (failing with an exception otherwise).
-        static member getScreen address world =
-            World.getScreenBy id address world
-
-        /// Try to get a screen hierarchy (that is, a screen with a map to all of its group
-        /// hierarchies) at the given address.
-        static member getOptScreenHierarchy address world =
-            match World.getOptScreen address world with
-            | Some screen ->
-                let groupMap = World.getGroupMapInScreen address world
-                Some (screen, groupMap)
-            | None -> None
-        
-        /// Get a screen hierarchy (that is, a screen with a map to all of its group hierarchies)
-        /// at the given address (failing with an exception if there isn't one).
-        static member getScreenHierarchy address world =
-            Option.get <| World.getOptScreenHierarchy address world
-
-        /// Get a screen's address with the given name (failing with an exception if there isn't
-        /// one).
-        static member getScreenAddress screenName world =
-            let address = ntoa<Screen> screenName
-            ignore <| World.getScreen address world // ensures address is valid
-            address
-
-        static member private setScreenWithoutEvent screen address world =
-            World.screenAdder screen address world
-
-        static member private setOptScreenWithoutEvent optScreen address world =
+        static member private setOptScreenWithoutEvent optScreen screenRep world =
             match optScreen with 
-            | Some screen -> World.screenAdder screen address world
-            | None -> World.screenRemover address world
+            | Some screen -> World.screenAdder screen screenRep.ScreenAddress world
+            | None -> World.screenRemover screenRep.ScreenAddress world
 
-        /// Set a screen at the given address (failing with an exception if one doesn't exist).
-        static member setScreen screen address world =
+        static member setScreen screen screenRep world =
             let oldWorld = world
-            let world = World.screenAdder screen address world
+            let world = World.screenAdder screen screenRep.ScreenAddress world
             if screen.PublishChanges then
-                let screenRep = { ScreenAddress = address }
                 World.publish4
                     { SimulantRep = screenRep; OldWorld = oldWorld }
-                    (World.ScreenChangeEventAddress ->>- address)
+                    (World.ScreenChangeEventAddress ->>- screenRep.ScreenAddress)
                     screenRep
                     world
             else world
 
-        /// Update a screen at the given address with the given 'updater' procedure.
-        static member updateScreenAndW updater address world =
-            let screen = World.getScreen address world
-            let (screen, world) = updater screen world
-            World.setScreen screen address world
+        /// Query that the world contains a group at the given address.
+        static member containsScreen screenRep world =
+            Option.isSome <| World.optScreenFinder screenRep.ScreenAddress world
 
-        /// Update a screen with the given 'updater' procedure at the given address.
-        static member updateScreenW updater address world =
-            World.updateScreenAndW (fun screen world -> (updater screen world, world)) address world
-
-        /// Update a screen with the given 'updater' procedure at the given address.
-        static member updateScreen updater address world =
-            World.updateScreenW (fun screen _ -> updater screen) address world
-
-        /// Update the world with the given 'updater' procedure that uses the screen at given
-        /// address in its computation.
-        static member updateByScreen updater address world : World =
-            let screen = World.getScreen address world
-            updater screen world
-
-        /// Lens a screen at the given address.
-        static member lensScreen address =
-            { Get = World.getScreen address
-              Set = fun screen -> World.setScreen screen address }
-
-        /// Get the screen hierarches at the given addresses.
-        static member getScreenHierarchies addresses world =
-            Seq.map (fun address -> World.getScreenHierarchy address world) addresses
-
-        /// Get the screens at the given addresses as transformed them with the 'by'
-        /// procedure.
-        static member getScreensBy by addresses world =
-            Seq.map (fst >> by) <| World.getScreenHierarchies addresses world
-
-        /// Get the screens at the given addresses.
-        static member getScreens addresses world =
-            World.getScreensBy id addresses world
-
-        /// Get all the screens in the game.
-        static member getScreensInGame world =
-            Map.toValueSeqBy fst <| World.getScreenMap world
-            
         /// Get the addresses of all the world's screens.
-        static member getScreenAddresses world =
-            Map.fold (fun addresses screenName _ -> ntoa<Screen> screenName :: addresses) [] (World.getScreenMap world)
-
-        /// Set the screens at the given addresses.
-        static member setScreens screens addresses world =
-            Seq.fold2 (fun world screen address -> World.setScreen screen address world) world screens addresses
-        
-        /// Set all the screens in the game.
-        static member setScreensInGame screens world =
-            Seq.fold (fun world (screen : Screen) -> World.setScreen screen (ntoa screen.Name) world) world screens
-
-        /// Update the screens at the given addresses and the world with the given 'updater' procedure.
-        static member updateScreensAndW updater addresses world =
-            Seq.fold (fun world address -> World.updateScreenAndW updater address world) world addresses
-
-        /// Update the screens at the given addresses with the given 'updater' procedure.
-        static member updateScreensW updater addresses world =
-            Seq.fold (fun world address -> World.updateScreenW updater address world) world addresses
-        
-        /// Update the screens at the given addresses with the given 'updater' procedure.
-        static member updateScreens updater addresses world =
-            Seq.fold (fun world address -> World.updateScreen updater address world) world addresses
-
-        /// Lens the screens at the given addresses.
-        static member lensScreens addresses =
-            { Get = World.getScreens addresses
-              Set = fun screens -> World.setScreens screens addresses }
-
-        /// Lens all screens in the game at the given address.
-        static member lensScreensInGame =
-            { Get = World.getScreensInGame
-              Set = fun screens -> World.setScreensInGame screens }
-
-        /// Filter the given screen addresses by applying the 'pred' procedure to each screen at
-        /// its respected address. Also passes the current world value to the procedure.
-        static member filterScreenAddressesW pred addresses world =
-            Seq.filter (fun address -> World.getScreenBy (fun screen -> pred screen world) address world) addresses
-
-        /// Filter the given screen addresses by applying the 'pred' procedure to each screen at
-        /// its respected address.
-        static member filterScreenAddresses pred addresses world =
-            World.filterScreenAddressesW (fun screen _ -> pred screen) addresses world
+        static member getScreenReps world =
+            let screenMap = World.getScreenMap world
+            Map.foldBack (fun screenName _ screenReps -> ntoa<Screen> screenName :: screenReps) screenMap []
 
         /// Register a screen when adding it to the world.
         static member registerScreen (screenRep : ScreenRep) world =
@@ -1929,13 +1818,12 @@ module SimulationModule =
         /// Remove a screen from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the screen's existence. Use with caution.
         static member removeScreenImmediate screenRep world =
-            let address = screenRep.ScreenAddress
-            let world = World.publish4 () (World.ScreenRemovingEventAddress ->>- address) screenRep world
-            if World.containsScreen address world then
+            let world = World.publish4 () (World.ScreenRemovingEventAddress ->>- screenRep.ScreenAddress) screenRep world
+            if World.containsScreen screenRep world then
                 let world = World.unregisterScreen screenRep world
                 let groupReps = World.getGroupRepsInScreen screenRep world
                 let world = World.removeGroupsImmediate groupReps world
-                World.setOptScreenWithoutEvent None address world
+                World.setOptScreenWithoutEvent None screenRep world
             else world
 
         /// Remove a screen from the world on the next tick. Use this rather than
@@ -1948,15 +1836,13 @@ module SimulationModule =
 
         /// Add a screen at the given address to the world.
         static member addScreen screenHierarchy screenRep world =
-            let address = screenRep.ScreenAddress
             let (screen, groupHierarchies) = screenHierarchy
-            if not <| World.containsScreen address world then
-                let world = World.setScreenWithoutEvent screen address world
+            if not <| World.containsScreen screenRep world then
+                let world = World.setScreenWithoutEvent screen screenRep world
                 let world = World.addGroups groupHierarchies screenRep world
-                let screenRep = { ScreenAddress = address }
                 let world = World.registerScreen screenRep world
-                World.publish4 () (World.ScreenAddEventAddress ->>- address) screenRep world
-            else failwith <| "Adding a screen that the world already contains at address '" + acstring address + "'."
+                World.publish4 () (World.ScreenAddEventAddress ->>- screenRep.ScreenAddress) screenRep world
+            else failwith <| "Adding a screen that the world already contains at address '" + acstring screenRep.ScreenAddress + "'."
 
         /// Make a screen (does NOT add the screen to the world!)
         static member makeScreen dispatcherName optName world =
