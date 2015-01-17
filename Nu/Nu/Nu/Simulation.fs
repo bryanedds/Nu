@@ -106,9 +106,9 @@ module SimulationModule =
         { OldSimulant : 'a }
 
     /// An event used by Nu's purely functional event system.
-    and [<ReferenceEquality>] Event<'a, 's when 's :> Simulant> =
-        { SubscriberAddress : 's Address
-          PublisherAddress : Simulant Address // TODO: consider making this a list so that Observer can provide all useful addresses
+    and [<ReferenceEquality>] Event<'a, 's when 's :> SimulantRep> =
+        { SubscriberRep : 's
+          PublisherRep : SimulantRep // TODO: consider making this a list so that Observer can provide all useful addresses
           EventAddress : 'a Address
           Data : 'a }
 
@@ -118,14 +118,14 @@ module SimulationModule =
         | Cascade
 
     /// Describes a game event subscription.
-    and Subscription<'a, 's when 's :> Simulant> =
+    and Subscription<'a, 's when 's :> SimulantRep> =
         Event<'a, 's> -> World -> EventHandling * World
 
     /// Describes a game event subscription that can be boxed / unboxed.
     and BoxableSubscription = obj -> World -> EventHandling * World
 
     /// An entry into the world's subscription map.
-    and SubscriptionEntry = Guid * obj Address * obj
+    and SubscriptionEntry = Guid * SimulantRep * obj
 
     /// A map of event subscriptions.
     and SubscriptionEntries = Map<obj Address, SubscriptionEntry rQueue>
@@ -134,7 +134,7 @@ module SimulationModule =
     and SubscriptionSorter = SubscriptionEntry rQueue -> World -> SubscriptionEntry rQueue
 
     /// A map of subscription keys to unsubscription data.
-    and UnsubscriptionEntries = Map<Guid, obj Address * obj Address>
+    and UnsubscriptionEntries = Map<Guid, obj Address * SimulantRep>
 
     /// A task to be completed at the given time, with time being represented by the world's tick
     /// field.
@@ -197,62 +197,58 @@ module SimulationModule =
              define? Persistent true]
 
         /// Register an entity when adding it to a group.
-        abstract Register : Entity * Entity Address * World -> Entity * World
-        default dispatcher.Register (entity, _, world) = (entity, world)
+        abstract Register : EntityRep * World -> World
+        default dispatcher.Register (_, world) = world
 
         /// Unregister an entity when removing it from a group.
-        abstract Unregister : Entity * Entity Address * World -> Entity * World
-        default dispatcher.Unregister (entity, _, world) = (entity, world)
+        abstract Unregister : EntityRep * World -> World
+        default dispatcher.Unregister (_, world) = world
 
         /// Propagate an entity's physics properties from the physics subsystem.
-        abstract PropagatePhysics : Entity * Entity Address * World -> World
-        default dispatcher.PropagatePhysics (_, _, world) = world
+        abstract PropagatePhysics : EntityRep * World -> World
+        default dispatcher.PropagatePhysics (_, world) = world
 
         /// Get the render descriptors needed to render an entity.
-        abstract GetRenderDescriptors : Entity * World -> RenderDescriptor list
+        abstract GetRenderDescriptors : EntityRep * World -> RenderDescriptor list
         default dispatcher.GetRenderDescriptors (_, _) = []
 
         /// Get the quick size of an entity (the appropriate user-define size for an entity).
-        abstract GetQuickSize : Entity * World -> Vector2
+        abstract GetQuickSize : EntityRep * World -> Vector2
         default dispatcher.GetQuickSize (_, _) = Vector2.One
 
         /// Get the priority with which an entity is picked in the editor.
-        abstract GetPickingPriority : Entity * World -> single
-        default dispatcher.GetPickingPriority (entity, _) = entity.Depth
+        abstract GetPickingPriority : EntityRep * World -> single
+        default dispatcher.GetPickingPriority (entityRep, world) = entityRep.GetDepth world
 
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
 
         /// Register a facet when adding it to an entity.
-        abstract Register : Entity * Entity Address * World -> Entity * World
-        default facet.Register (entity, address, world) =
-            let world = facet.RegisterPhysics (entity, address, world)
-            (entity, world)
+        abstract Register : EntityRep * World -> World
+        default facet.Register (entityRep, world) = facet.RegisterPhysics (entityRep, world)
 
         /// Unregister a facet when removing it from an entity.
-        abstract Unregister : Entity * Entity Address * World -> Entity * World
-        default facet.Unregister (entity, address, world) =
-            let world = facet.UnregisterPhysics (entity, address, world)
-            (entity, world)
+        abstract Unregister : EntityRep * World -> World
+        default facet.Unregister (entityRep, world) = facet.UnregisterPhysics (entityRep, world)
 
         /// Participate in the registration of an entity's physics with the physics subsystem.
-        abstract RegisterPhysics : Entity * Entity Address * World -> World
-        default facet.RegisterPhysics (_, _, world) = world
+        abstract RegisterPhysics : EntityRep * World -> World
+        default facet.RegisterPhysics (_, world) = world
 
         /// Participate in the unregistration of an entity's physics from the physics subsystem.
-        abstract UnregisterPhysics : Entity * Entity Address * World -> World
-        default facet.UnregisterPhysics (_, _, world) = world
+        abstract UnregisterPhysics : EntityRep * World -> World
+        default facet.UnregisterPhysics (_, world) = world
 
         /// Participate in the propagation an entity's physics properties from the physics subsystem.
-        abstract PropagatePhysics : Entity * Entity Address * World -> World
-        default facet.PropagatePhysics (_, _, world) = world
+        abstract PropagatePhysics : EntityRep * World -> World
+        default facet.PropagatePhysics (_, world) = world
 
         /// Participate in getting the render descriptors needed to render an entity.
-        abstract GetRenderDescriptors : Entity * World -> RenderDescriptor list
+        abstract GetRenderDescriptors : EntityRep * World -> RenderDescriptor list
         default facet.GetRenderDescriptors (_, _) = []
 
         /// Participate in getting the priority with which an entity is picked in the editor.
-        abstract GetQuickSize : Entity * World -> Vector2
+        abstract GetQuickSize : EntityRep * World -> Vector2
         default facet.GetQuickSize (_, _) = DefaultEntitySize
 
     /// A marker interface for simulation types (Game, Screen, Group, Entity).
@@ -489,54 +485,63 @@ module SimulationModule =
         static member setPersistent value (entity : Entity) = { entity with Persistent = value }
 
         /// Register an entity when adding it to a group.
-        static member register (entity : Entity) address world =
-            let (entity, world) = entity.DispatcherNp.Register (entity, address, world)
+        static member register (entityRep : EntityRep) world =
+            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
+            let facets = entityRep.GetFacetsNp world
+            let world = dispatcher.Register (entityRep, world)
             List.fold
-                (fun (entity, world) (facet : Facet) -> facet.Register (entity, address, world))
-                (entity, world)
-                entity.FacetsNp
+                (fun world (facet : Facet) -> facet.Register (entityRep, world))
+                world
+                facets
         
         /// Unregister an entity when removing it from a group.
-        static member unregister (entity : Entity) address world =
-            let (entity, world) = entity.DispatcherNp.Unregister (entity, address, world)
+        static member unregister (entityRep : EntityRep) world =
+            let facets = entityRep.GetFacetsNp world
             List.fold
-                (fun (entity, world) (facet : Facet) -> facet.Unregister (entity, address, world))
-                (entity, world)
-                entity.FacetsNp
-        
-        /// Propagate an entity's physics properties from the physics subsystem.
-        static member propagatePhysics (entity : Entity) address world =
-            let world = entity.DispatcherNp.PropagatePhysics (entity, address, world)
-            List.fold
-                (fun world (facet : Facet) -> facet.PropagatePhysics (entity, address, world))
+                (fun world (facet : Facet) -> facet.Unregister (entityRep, world))
                 world
-                entity.FacetsNp
+                facets
+
+        /// Propagate an entity's physics properties from the physics subsystem.
+        static member propagatePhysics (entityRep : EntityRep) world =
+            let dispatcher = entityRep.GetDispatcherNp world
+            let facets = entityRep.GetFacetsNp world
+            let world = dispatcher.PropagatePhysics (entityRep, world)
+            List.fold
+                (fun world (facet : Facet) -> facet.PropagatePhysics (entityRep, world))
+                world
+                facets
         
         /// Get the render descriptors needed to render an entity.
-        static member getRenderDescriptors (entity : Entity) world =
-            let renderDescriptors = entity.DispatcherNp.GetRenderDescriptors (entity, world)
+        static member getRenderDescriptors (entityRep : EntityRep) world =
+            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
+            let facets = entityRep.GetFacetsNp world
+            let renderDescriptors = dispatcher.GetRenderDescriptors (entityRep, world)
             List.fold
                 (fun renderDescriptors (facet : Facet) ->
-                    let descriptors = facet.GetRenderDescriptors (entity, world)
+                    let descriptors = facet.GetRenderDescriptors (entityRep, world)
                     descriptors @ renderDescriptors)
                 renderDescriptors
-                entity.FacetsNp
+                facets
         
         /// Get the quick size of an entity (the appropriate user-define size for an entity).
-        static member getQuickSize  (entity : Entity) world =
-            let quickSize = entity.DispatcherNp.GetQuickSize (entity, world)
+        static member getQuickSize  (entityRep : EntityRep) world =
+            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
+            let facets = entityRep.GetFacetsNp world
+            let quickSize = dispatcher.GetQuickSize (entityRep, world)
             List.fold
                 (fun (maxSize : Vector2) (facet : Facet) ->
-                    let quickSize = facet.GetQuickSize (entity, world)
+                    let quickSize = facet.GetQuickSize (entityRep, world)
                     Vector2(
                         Math.Max (quickSize.X, maxSize.X),
                         Math.Max (quickSize.Y, maxSize.Y)))
                 quickSize
-                entity.FacetsNp
+                facets
         
         /// Get the priority with which an entity is picked in the editor.
-        static member getPickingPriority (entity : Entity) world =
-            entity.DispatcherNp.GetPickingPriority (entity, world)
+        static member getPickingPriority (entityRep : EntityRep) world =
+            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
+            dispatcher.GetPickingPriority (entityRep, world)
 
         /// Get the names of all facets used by an entity via reflection.
         /// TODO: see if this should be used as often as it is, and if it is needed in only one or
@@ -671,6 +676,7 @@ module SimulationModule =
         static member internal eatosa entityAddress = Address.take<Entity, Screen> 1 entityAddress
 
         static member internal GameAddress = Address<Game>.empty
+        static member internal GameRep = { GameAddress = World.GameAddress }
         static member internal DefaultScreenAddress = ntoa<Screen> DefaultGroupName
         static member internal DefaultGroupAddress = World.satoga World.DefaultScreenAddress DefaultGroupName
         static member internal DefaultEntityAddress = World.gatoea World.DefaultGroupAddress DefaultEntityName
@@ -751,7 +757,7 @@ module SimulationModule =
             elif priority < priority2 then 1
             else 0
     
-        static member private boxSubscription<'a, 's when 's :> Simulant> (subscription : Subscription<'a, 's>) =
+        static member private boxSubscription<'a, 's when 's :> SimulantRep> (subscription : Subscription<'a, 's>) =
             let boxableSubscription = fun (event : obj) world ->
                 try subscription (event :?> Event<'a, 's>) world
                 with
@@ -766,13 +772,10 @@ module SimulationModule =
             getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world :
             (single * SubscriptionEntry) list =
             List.fold
-                (fun subscriptions (key, address, subscription) ->
-                    match World.getOptSimulantForPublishing (World.atoua address) world with
-                    | Some (simulant : Simulant) ->
-                        let priority = simulant.GetPublishingPriority getEntityPublishingPriority world
-                        let subscription = (priority, (key, address, subscription))
-                        subscription :: subscriptions
-                    | None -> (0.0f, (key, address, subscription)) :: subscriptions)
+                (fun subscriptions (key, simulantRep : SimulantRep, subscription) ->
+                    let priority = simulantRep.GetPublishingPriority (getEntityPublishingPriority, world)
+                    let subscription = (priority, (key, simulantRep, subscription))
+                    subscription :: subscriptions)
                 []
                 subscriptions
 
@@ -785,7 +788,9 @@ module SimulationModule =
         /// Sort subscriptions by their editor picking priority.
         static member sortSubscriptionsByPickingPriority subscriptions world =
             World.sortSubscriptionsBy
-                (fun (entity : Entity) world -> entity.DispatcherNp.GetPickingPriority (entity, world))
+                (fun (entityRep : EntityRep) world ->
+                    let dispatcher = entityRep.GetDispatcherNp world
+                    dispatcher.GetPickingPriority (entityRep, world))
                 subscriptions
                 world
 
@@ -826,11 +831,11 @@ module SimulationModule =
             let subListRev = List.rev subList
             publishSorter subListRev world
 
-        static member private publishEvent<'a, 'p, 's when 'p :> Simulant and 's :> Simulant>
-            (subscriberAddress : obj Address) (publisherAddress : 'p Address) (eventAddress : 'a Address) (eventData : 'a) subscription world =
+        static member private publishEvent<'a, 'p, 's when 'p :> SimulantRep and 's :> SimulantRep>
+            (subscriberRep : SimulantRep) (publisherRep : 'p) (eventAddress : 'a Address) (eventData : 'a) subscription world =
             let event =
-                { SubscriberAddress = Address.changeType<obj, 's> subscriberAddress
-                  PublisherAddress = Address.changeType<'p, Simulant> publisherAddress
+                { SubscriberRep = subscriberRep :?> 's
+                  PublisherRep = publisherRep :> SimulantRep
                   EventAddress = eventAddress
                   Data = eventData }
             let callableSubscription = unbox<BoxableSubscription> subscription
@@ -838,20 +843,19 @@ module SimulationModule =
             Some result
 
         /// Publish an event, using the given publishSorter procedure to arranging the order to which subscriptions are published.
-        static member publish<'a, 'p when 'p :> Simulant>
-            publishSorter (eventData : 'a) (eventAddress : 'a Address) (publisherAddress : 'p Address) world =
+        static member publish<'a, 'p when 'p :> SimulantRep> publishSorter (eventData : 'a) (eventAddress : 'a Address) (publisherRep : 'p) world =
             let objEventAddress = atooa eventAddress
             let subscriptions = World.getSubscriptionsSorted publishSorter objEventAddress world
             let (_, world) =
                 List.foldWhile
-                    (fun (eventHandling, world) (_, subscriberAddress : obj Address, subscription) ->
+                    (fun (eventHandling, world) (_, subscriberRep : SimulantRep, subscription) ->
                         if  (match eventHandling with Cascade -> true | Resolve -> false) &&
                             (match world.State.Liveness with Running -> true | Exiting -> false) then
-                            match subscriberAddress.Names with
-                            | [] -> World.publishEvent<'a, 'p, Game> subscriberAddress publisherAddress eventAddress eventData subscription world
-                            | [_] -> World.publishEvent<'a, 'p, Screen> subscriberAddress publisherAddress eventAddress eventData subscription world
-                            | [_; _] -> World.publishEvent<'a, 'p, Group> subscriberAddress publisherAddress eventAddress eventData subscription world
-                            | [_; _; _] -> World.publishEvent<'a, 'p, Entity> subscriberAddress publisherAddress eventAddress eventData subscription world
+                            match subscriberRep.SimulantAddress.Names with
+                            | [] -> World.publishEvent<'a, 'p, GameRep> subscriberRep publisherRep eventAddress eventData subscription world
+                            | [_] -> World.publishEvent<'a, 'p, ScreenRep> subscriberRep publisherRep eventAddress eventData subscription world
+                            | [_; _] -> World.publishEvent<'a, 'p, GroupRep> subscriberRep publisherRep eventAddress eventData subscription world
+                            | [_; _; _] -> World.publishEvent<'a, 'p, EntityRep> subscriberRep publisherRep eventAddress eventData subscription world
                             | _ -> failwith "Unexpected match failure in 'Nu.World.publish.'"
                         else None)
                     (Cascade, world)
@@ -859,41 +863,41 @@ module SimulationModule =
             world
 
         /// Publish an event.
-        static member publish4<'a, 'p when 'p :> Simulant>
-            (eventData : 'a) (eventAddress : 'a Address) (publisherAddress : 'p Address) world =
-            World.publish World.sortSubscriptionsByHierarchy eventData eventAddress publisherAddress world
+        static member publish4<'a, 'p when 'p :> SimulantRep>
+            (eventData : 'a) (eventAddress : 'a Address) (publisherRep : 'p) world =
+            World.publish World.sortSubscriptionsByHierarchy eventData eventAddress publisherRep world
 
         /// Subscribe to an event.
-        static member subscribe<'a, 's when 's :> Simulant>
-            subscriptionKey (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriberAddress : 's Address) world =
+        static member subscribe<'a, 's when 's :> SimulantRep>
+            subscriptionKey (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriberRep : 's) world =
             if not <| Address.isEmpty eventAddress then
                 let objEventAddress = atooa eventAddress
                 let subscriptions =
-                    let subscriptionEntry = (subscriptionKey, atooa subscriberAddress, World.boxSubscription subscription)
+                    let subscriptionEntry = (subscriptionKey, subscriberRep :> SimulantRep, World.boxSubscription subscription)
                     match Map.tryFind objEventAddress world.Callbacks.Subscriptions with
                     | Some subscriptionEntries -> Map.add objEventAddress (subscriptionEntry :: subscriptionEntries) world.Callbacks.Subscriptions
                     | None -> Map.add objEventAddress [subscriptionEntry] world.Callbacks.Subscriptions
-                let unsubscriptions = Map.add subscriptionKey (objEventAddress, atooa subscriberAddress) world.Callbacks.Unsubscriptions
+                let unsubscriptions = Map.add subscriptionKey (objEventAddress, subscriberRep :> SimulantRep) world.Callbacks.Unsubscriptions
                 let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
                 { world with Callbacks = callbacks }
             else failwith "Event name cannot be empty."
 
         /// Subscribe to an event.
-        static member subscribe4<'a, 's when 's :> Simulant>
-            (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriberAddress : 's Address) world =
-            World.subscribe (World.makeSubscriptionKey ()) subscription eventAddress subscriberAddress world
+        static member subscribe4<'a, 's when 's :> SimulantRep>
+            (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriberRep : 's) world =
+            World.subscribe (World.makeSubscriptionKey ()) subscription eventAddress subscriberRep world
 
         /// Unsubscribe from an event.
         static member unsubscribe subscriptionKey world =
             match Map.tryFind subscriptionKey world.Callbacks.Unsubscriptions with
-            | Some (eventAddress, subscriberAddress) ->
+            | Some (eventAddress, subscriberRep) ->
                 match Map.tryFind eventAddress world.Callbacks.Subscriptions with
                 | Some subscriptionList ->
                     let subscriptionList =
                         List.remove
-                            (fun (subscriptionKey', subscriberAddress', _) ->
+                            (fun (subscriptionKey', subscriberRep', _) ->
                                 subscriptionKey' = subscriptionKey &&
-                                subscriberAddress' = subscriberAddress)
+                                subscriberRep' = subscriberRep)
                             subscriptionList
                     let subscriptions = 
                         match subscriptionList with
@@ -906,18 +910,18 @@ module SimulationModule =
             | None -> world
 
         /// Keep active a subscription for the lifetime of a simulant.
-        static member monitor<'a, 's when 's :> Simulant>
-            (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriberAddress : 's Address) world =
-            if not <| Address.isEmpty subscriberAddress then
+        static member monitor<'a, 's when 's :> SimulantRep>
+            (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriberRep : 's) world =
+            if not <| Address.isEmpty subscriberRep.SimulantAddress then
                 let monitorKey = World.makeSubscriptionKey ()
                 let removalKey = World.makeSubscriptionKey ()
-                let world = World.subscribe<'a, 's> monitorKey subscription eventAddress subscriberAddress world
+                let world = World.subscribe<'a, 's> monitorKey subscription eventAddress subscriberRep world
                 let subscription' = fun _ world ->
                     let world = World.unsubscribe removalKey world
                     let world = World.unsubscribe monitorKey world
                     (Cascade, world)
-                let removingEventAddress = stoa<unit> (typeof<'s>.Name + "/" + "Removing") ->>- subscriberAddress
-                World.subscribe<unit, 's> removalKey subscription' removingEventAddress subscriberAddress world
+                let removingEventAddress = stoa<unit> (typeof<'s>.Name + "/" + "Removing") ->>- subscriberRep.SimulantAddress
+                World.subscribe<unit, 's> removalKey subscription' removingEventAddress subscriberRep world
             else failwith "Cannot monitor events with an anonymous subscriber."
 
         static member internal getSubsystem<'s when 's :> Subsystem> name world =
@@ -1002,7 +1006,7 @@ module SimulationModule =
         static member setState state world =
             let oldState = world.State
             let world = { world with State = state }
-            World.publish4 { OldWorldState = oldState } World.WorldStateChangeEventAddress World.GameAddress world
+            World.publish4 { OldWorldState = oldState } World.WorldStateChangeEventAddress World.GameRep world
 
         /// Update the state of the world and the world.
         static member updateStateAndW updater world =
@@ -1119,15 +1123,15 @@ module SimulationModule =
             World.setUserState state world
 
         /// Ignore all handled events.
-        static member handleAsPass<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
+        static member handleAsPass<'a, 's when 's :> SimulantRep> (_ : Event<'a, 's>) (world : World) =
             (Cascade, world)
 
         /// Swallow all handled events.
-        static member handleAsSwallow<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
+        static member handleAsSwallow<'a, 's when 's :> SimulantRep> (_ : Event<'a, 's>) (world : World) =
             (Resolve, world)
         
         /// Handle event by exiting app.
-        static member handleAsExit<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
+        static member handleAsExit<'a, 's when 's :> SimulantRep> (_ : Event<'a, 's>) (world : World) =
             (Resolve, World.exit world)
 
         /// Lens the world.
@@ -1221,7 +1225,12 @@ module SimulationModule =
             let oldEntity = Option.get <| World.optEntityFinder address world
             let world = World.entityAdder entity address world
             if entity.PublishChanges
-            then World.publish4 { OldSimulant = oldEntity } (World.EntityChangeEventAddress ->>- address) address world
+            then
+                World.publish4
+                    { OldSimulant = oldEntity }
+                    (World.EntityChangeEventAddress ->>- address)
+                    { EntityAddress = address }
+                    world
             else world
             
         /// Update an entity at the given address and the world with the given 'updater' procedure.
@@ -1279,6 +1288,12 @@ module SimulationModule =
         static member getEntityAddressesInGroup groupAddress world =
             let entities = World.getEntitiesInGroup groupAddress world
             Seq.map (fun entity -> World.gatoea groupAddress entity.Name) entities
+
+        /// Get all the entity addresses in the group at the given address.
+        static member getEntityRepsInGroup groupRep world =
+            let groupAddress = groupRep.GroupAddress
+            let entities = World.getEntitiesInGroup groupAddress world
+            Seq.map (fun entity -> { EntityAddress = World.gatoea groupAddress entity.Name }) entities
 
         /// Set the given entities to the respective addresses. Note, each address must already
         /// have an existing entity, otherwise will fail with an exception.
@@ -1340,63 +1355,62 @@ module SimulationModule =
         static member filterEntityAddresses pred addresses world =
             World.filterEntityAddressesW (fun entity _ -> pred entity) addresses world
 
-        static member private registerEntity entity address world =
-            Entity.register entity address world
+        static member private registerEntity entityRep world =
+            Entity.register entityRep world
 
-        static member private unregisterEntity entity address world =
-            Entity.unregister entity address world
+        static member private unregisterEntity entityRep world =
+            Entity.unregister entityRep world
 
         /// Remove an entity from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the entity's existence. Use with caution.
-        static member removeEntityImmediate (address : Entity Address) world =
-            let world = World.publish4 () (World.EntityRemovingEventAddress ->>- address) address world
-            match World.getOptEntity address world with
-            | Some entity ->
-                let (entity, world) = World.unregisterEntity entity address world
-                let world = World.setOptEntityWithoutEvent None address world
-                (Some entity, world)
-            | None -> (None, world)
+        static member removeEntityImmediate entityRep world =
+            let address = entityRep.EntityAddress
+            let world = World.publish4 () (World.EntityRemovingEventAddress ->>- address) entityRep world
+            if World.containsEntity address world then
+                let world = World.unregisterEntity entityRep world
+                World.setOptEntityWithoutEvent None address world
+            else world
 
         /// Remove an entity from the world on the next tick. Use this rather than
         /// removeEntityImmediate unless you need the latter's specific behavior.
-        static member removeEntity address world =
+        static member removeEntity entityRep world =
             let task =
                 { ScheduledTime = world.State.TickTime
-                  Operation = fun world -> snd <| World.removeEntityImmediate address world }
+                  Operation = fun world -> World.removeEntityImmediate entityRep world }
             World.addTask task world
             
         /// Remove multiple entities from the world immediately. Can be dangerous if existing
         /// in-flight subscriptions depend on any of the entities' existences. Use with caution.
-        static member removeEntitiesImmediate addresses world =
+        static member removeEntitiesImmediate entityReps world =
             List.foldBack
-                (fun address (entities, world) ->
-                    let (entity, world) = World.removeEntityImmediate address world
-                    (entity :: entities, world))
-                (List.ofSeq addresses)
-                ([], world)
+                (fun entityRep world -> World.removeEntityImmediate entityRep world)
+                (List.ofSeq entityReps)
+                world
                 
         /// Remove multiple entities from the world. Use this rather than removeEntitiesImmediate
         /// unless you need the latter's specific behavior.
-        static member removeEntities addresses world =
-            snd <| World.removeEntitiesImmediate addresses world
+        static member removeEntities entityReps world =
+            World.removeEntitiesImmediate entityReps world
 
         /// Add an entity at the given address to the world.
-        static member addEntity entity address world =
+        static member addEntity entity entityRep world =
+            let address = entityRep.EntityAddress
             if not <| World.containsEntity address world then
                 let world = World.setEntityWithoutEvent entity address world
-                let (entity, world) = World.registerEntity entity address world
-                let world = World.publish4 () (World.EntityAddEventAddress ->>- address) address world
-                (entity, world)
+                let entityRep = { EntityAddress = address }
+                let world = World.registerEntity entityRep world
+                World.publish4 () (World.EntityAddEventAddress ->>- address) entityRep world
             else failwith <| "Adding an entity that the world already contains at address '" + acstring address + "'."
 
         /// Add multiple entities to the group at the given address.
-        static member addEntities entities (groupAddress : Group Address) world =
+        static member addEntities entities (groupRep : GroupRep) world =
+            let groupAddress = groupRep.GroupAddress
             Map.fold
-                (fun (entities, world) entityName entity ->
+                (fun world entityName entity ->
                     let entityAddress = World.gatoea groupAddress entityName
-                    let (entity, world) = World.addEntity entity entityAddress world
-                    (Map.add entityName entity entities, world))
-                (Map.empty, world)
+                    let entityRep = { EntityAddress = entityAddress }
+                    World.addEntity entity entityRep world)
+                world
                 entities
 
         (* Group *)
@@ -1490,7 +1504,12 @@ module SimulationModule =
             let oldGroup = Option.get <| World.optGroupFinder address world
             let world = World.groupAdder group address world
             if group.PublishChanges
-            then World.publish4 { OldSimulant = oldGroup } (World.GroupChangeEventAddress ->>- address) address world
+            then
+                World.publish4
+                    { OldSimulant = oldGroup }
+                    (World.GroupChangeEventAddress ->>- address)
+                    { GroupAddress = address }
+                    world
             else world
 
         /// Update a group at the given address and the world with the given 'updater' procedure.
@@ -1636,58 +1655,55 @@ module SimulationModule =
         /// subscriptions depend on the group's existence. Use with caution.
         static member removeGroupImmediate groupRep world =
             let address = groupRep.GroupAddress
-            let world = World.publish4 () (World.GroupRemovingEventAddress ->>- address) address world
-            match World.getOptGroup address world with
-            | Some group ->
+            let world = World.publish4 () (World.GroupRemovingEventAddress ->>- address) groupRep world
+            if World.containsGroup address world then
                 let world = World.unregisterGroup groupRep world
-                let entityAddresses = World.getEntityAddressesInGroup address world
-                let world = snd <| World.removeEntitiesImmediate entityAddresses world
-                let world = World.setOptGroupWithoutEvent None address world
-                (Some group, world)
-            | None -> (None, world)
-            
+                let entityReps = World.getEntityRepsInGroup groupRep world
+                let world = World.removeEntitiesImmediate entityReps world
+                World.setOptGroupWithoutEvent None address world
+            else world
+
         /// Remove a group from the world on the next tick. Use this rather than
         /// removeEntityImmediate unless you need the latter's specific behavior.
-        static member removeGroup address world =
+        static member removeGroup groupRep world =
             let task =
                 { ScheduledTime = world.State.TickTime
-                  Operation = fun world -> snd <| World.removeGroupImmediate address world }
+                  Operation = fun world -> World.removeGroupImmediate groupRep world }
             World.addTask task world
             
         /// Remove multiple groups from the world immediately. Can be dangerous if existing
         /// in-flight subscriptions depend on any of the groups' existences. Use with caution.
-        static member removeGroupsImmediate addresses world =
+        static member removeGroupsImmediate groupReps world =
             List.foldBack
-                (fun address (groups, world) ->
-                    let (group, world) = World.removeGroupImmediate address world
-                    (group :: groups, world))
-                (List.ofSeq addresses)
-                ([], world)
+                (fun groupRep world -> World.removeGroupImmediate groupRep world)
+                (List.ofSeq groupReps)
+                world
                 
         /// Remove multiple groups from the world. Use this rather than removeEntitiesImmediate
         /// unless you need the latter's specific behavior.
-        static member removeGroups addresses world =
-            snd <| World.removeGroupsImmediate addresses world
+        static member removeGroups groupReps world =
+            World.removeGroupsImmediate groupReps world
 
         /// Add a group at the given address to the world.
-        static member addGroup groupHierarchy address world =
+        static member addGroup groupHierarchy groupRep world =
+            let address = groupRep.GroupAddress
             let (group, entities) = groupHierarchy
             if not <| World.containsGroup address world then
                 let world = World.setGroupWithoutEvent group address world
-                let world = snd <| World.addEntities entities address world
+                let world = World.addEntities entities groupRep world
                 let groupRep = { GroupAddress = address }
                 let world = World.registerGroup groupRep world
-                let world = World.publish4 () (World.GroupAddEventAddress ->>- address) address world
-                (group, world)
+                World.publish4 () (World.GroupAddEventAddress ->>- address) groupRep world
             else failwith <| "Adding a group that the world already contains at address '" + acstring address + "'."
 
         /// Add multiple groups to the screen at the given address.
-        static member addGroups groupHierarchies (screenAddress : Screen Address) world =
+        static member addGroups groupHierarchies screenRep world =
             Map.fold
-                (fun (groups, world) groupName groupHierarchy ->
-                    let (group, world) = World.addGroup groupHierarchy (World.satoga screenAddress groupName) world
-                    (group :: groups, world))
-                ([], world)
+                (fun world groupName groupHierarchy ->
+                    let screenAddress = screenRep.ScreenAddress
+                    let groupAddress = World.satoga screenAddress groupName
+                    World.addGroup groupHierarchy { GroupAddress = groupAddress } world)
+                world
                 groupHierarchies
 
         (* Screen *)
@@ -1778,7 +1794,12 @@ module SimulationModule =
             let oldScreen = Option.get <| World.optScreenFinder address world
             let world = World.screenAdder screen address world
             if screen.PublishChanges
-            then World.publish4 { OldSimulant = oldScreen } (World.ScreenChangeEventAddress ->>- address) address world
+            then
+                World.publish4
+                    { OldSimulant = oldScreen }
+                    (World.ScreenChangeEventAddress ->>- address)
+                    { ScreenAddress = address }
+                    world
             else world
 
         /// Update a screen at the given address with the given 'updater' procedure.
@@ -1881,34 +1902,32 @@ module SimulationModule =
         /// subscriptions depend on the screen's existence. Use with caution.
         static member removeScreenImmediate screenRep world =
             let address = screenRep.ScreenAddress
-            let world = World.publish4 () (World.ScreenRemovingEventAddress ->>- address) address world
-            match World.getOptScreen address world with
-            | Some screen ->
+            let world = World.publish4 () (World.ScreenRemovingEventAddress ->>- address) screenRep world
+            if World.containsScreen address world then
                 let world = World.unregisterScreen screenRep world
                 let groupReps = World.getGroupRepsInScreen screenRep world
-                let world = snd <| World.removeGroupsImmediate groupReps world
-                let world = World.setOptScreenWithoutEvent None address world
-                (Some screen, world)
-            | None -> (None, world)
+                let world = World.removeGroupsImmediate groupReps world
+                World.setOptScreenWithoutEvent None address world
+            else world
 
         /// Remove a screen from the world on the next tick. Use this rather than
         /// removeEntityImmediate unless you need the latter's specific behavior.
-        static member removeScreen address world =
+        static member removeScreen screenRep world =
             let task =
                 { ScheduledTime = world.State.TickTime
-                  Operation = fun world -> snd <| World.removeScreenImmediate address world }
+                  Operation = fun world -> World.removeScreenImmediate screenRep world }
             World.addTask task world
 
         /// Add a screen at the given address to the world.
-        static member addScreen screenHierarchy address world =
+        static member addScreen screenHierarchy screenRep world =
+            let address = screenRep.ScreenAddress
             let (screen, groupHierarchies) = screenHierarchy
             if not <| World.containsScreen address world then
                 let world = World.setScreenWithoutEvent screen address world
-                let world = snd <| World.addGroups groupHierarchies address world
+                let world = World.addGroups groupHierarchies screenRep world
                 let screenRep = { ScreenAddress = address }
                 let world = World.registerScreen screenRep world
-                let world = World.publish4 () (World.ScreenAddEventAddress ->>- address) address world
-                (screen, world)
+                World.publish4 () (World.ScreenAddEventAddress ->>- address) screenRep world
             else failwith <| "Adding a screen that the world already contains at address '" + acstring address + "'."
 
         (* Game *)
@@ -1933,7 +1952,7 @@ module SimulationModule =
             let screenMap = World.getScreenMap world
             let world = { world with Simulants = (game, screenMap) }
             if game.PublishChanges
-            then World.publish4 { OldSimulant = oldGame } (World.GameChangeEventAddress ->>- World.GameAddress) World.GameAddress world
+            then World.publish4 { OldSimulant = oldGame } (World.GameChangeEventAddress ->>- World.GameAddress) World.GameRep world
             else world
 
         /// Update the game with the given 'updater' procedure.
@@ -2033,13 +2052,22 @@ module SimulationModule =
         /// address in its computation.
         static member updateByLensed expr lens world : World =
             expr (Lens.get world lens) world
-
+            
+    /// A marker interface for simulation types (Game, Screen, Group, Entity).
+    /// The only methods that have a place in here are those used internally by Nu's event system.
     and SimulantRep =
-        interface end
+        interface
+            /// Get the entity's publishing priority.
+            abstract GetPublishingPriority : (EntityRep -> World -> single) * World -> single
+            abstract SimulantAddress : Simulant Address
+        end
 
     and [<StructuralEquality; NoComparison>] GameRep =
         { GameAddress : Game Address }
-        interface SimulantRep
+        interface SimulantRep with
+            member this.GetPublishingPriority (_, _) = GamePublishingPriority
+            member this.SimulantAddress = World.atoua this.GameAddress
+        end
         member this.GetId world = (World.getGame world).Id
         member this.GetCreationTimeNp world = (World.getGame world).CreationTimeNp
         member this.GetDispatcherNp world = (World.getGame world).DispatcherNp
@@ -2047,7 +2075,10 @@ module SimulationModule =
 
     and [<StructuralEquality; NoComparison>] ScreenRep =
         { ScreenAddress : Screen Address }
-        interface SimulantRep
+        interface SimulantRep with
+            member this.GetPublishingPriority (_, _) = ScreenPublishingPriority
+            member this.SimulantAddress = World.atoua this.ScreenAddress
+        end
         member this.GetId world = (World.getScreen this.ScreenAddress world).Id
         member this.GetName world = (World.getScreen this.ScreenAddress world).Name
         member this.GetCreationTimeNp world = (World.getScreen this.ScreenAddress world).CreationTimeNp
@@ -2056,16 +2087,23 @@ module SimulationModule =
 
     and [<StructuralEquality; NoComparison>] GroupRep =
         { GroupAddress : Group Address }
-        interface SimulantRep
+        interface SimulantRep with
+            member this.GetPublishingPriority (_, _) = GroupPublishingPriority
+            member this.SimulantAddress = World.atoua this.GroupAddress
+        end
         member this.GetId world = (World.getGroup this.GroupAddress world).Id
         member this.GetName world = (World.getGroup this.GroupAddress world).Name
         member this.GetCreationTimeNp world = (World.getGroup this.GroupAddress world).CreationTimeNp
         member this.GetDispatcherNp world = (World.getGroup this.GroupAddress world).DispatcherNp
         member this.GetXtension world = (World.getGroup this.GroupAddress world).Xtension
 
-    and [<NoEquality; NoComparison>] EntityRep =
+    and [<StructuralEquality; NoComparison>] EntityRep =
         { EntityAddress : Entity Address }
-        interface SimulantRep
+        interface SimulantRep with
+            member this.GetPublishingPriority (getEntityPublishingPriority, world) = getEntityPublishingPriority this world
+            member this.SimulantAddress = World.atoua this.EntityAddress
+        end
+
         member this.GetId world = (World.getEntity this.EntityAddress world).Id
         member this.GetName world = (World.getEntity this.EntityAddress world).Name
         member this.GetCreationTimeNp world = (World.getEntity this.EntityAddress world).CreationTimeNp

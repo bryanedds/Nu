@@ -7,6 +7,7 @@ open Nu.Constants
 module WorldConstants =
 
     let GameAddress = World.GameAddress
+    let GameRep = World.GameRep
     let DefaultScreenAddress = World.DefaultScreenAddress
     let DefaultGroupAddress = World.DefaultGroupAddress
     let DefaultEntityAddress = World.DefaultEntityAddress
