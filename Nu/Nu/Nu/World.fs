@@ -35,8 +35,8 @@ module WorldModule =
         /// Try to query that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
         static member tryGetIsSelectedScreenIdling world =
-            match World.getOptSelectedScreen world with
-            | Some selectedScreen -> Some <| Screen.isIdling selectedScreen
+            match World.getOptSelectedScreenRep world with
+            | Some selectedScreenRep -> Some <| Screen.isIdling selectedScreen
             | None -> None
 
         /// Query that the selected screen is idling; that is, neither transitioning in or
@@ -70,24 +70,24 @@ module WorldModule =
                 | IncomingState
                 | OutgoingState ->
                     world |>
-                        World.subscribe ScreenTransitionMouseLeftKey World.handleAsSwallow (MouseLeftEventAddress ->- AnyEventAddress) GameAddress |>
-                        World.subscribe ScreenTransitionMouseCenterKey World.handleAsSwallow (MouseCenterEventAddress ->- AnyEventAddress) GameAddress |>
-                        World.subscribe ScreenTransitionMouseRightKey World.handleAsSwallow (MouseRightEventAddress ->- AnyEventAddress) GameAddress |>
-                        World.subscribe ScreenTransitionMouseX1Key World.handleAsSwallow (MouseX1EventAddress ->- AnyEventAddress) GameAddress |>
-                        World.subscribe ScreenTransitionMouseX2Key World.handleAsSwallow (MouseX2EventAddress ->- AnyEventAddress) GameAddress |>
-                        World.subscribe ScreenTransitionKeyboardKeyKey World.handleAsSwallow (KeyboardKeyEventAddress ->- AnyEventAddress) GameAddress 
+                        World.subscribe ScreenTransitionMouseLeftKey World.handleAsSwallow (MouseLeftEventAddress ->- AnyEventAddress) GameRep |>
+                        World.subscribe ScreenTransitionMouseCenterKey World.handleAsSwallow (MouseCenterEventAddress ->- AnyEventAddress) GameRep |>
+                        World.subscribe ScreenTransitionMouseRightKey World.handleAsSwallow (MouseRightEventAddress ->- AnyEventAddress) GameRep |>
+                        World.subscribe ScreenTransitionMouseX1Key World.handleAsSwallow (MouseX1EventAddress ->- AnyEventAddress) GameRep |>
+                        World.subscribe ScreenTransitionMouseX2Key World.handleAsSwallow (MouseX2EventAddress ->- AnyEventAddress) GameRep |>
+                        World.subscribe ScreenTransitionKeyboardKeyKey World.handleAsSwallow (KeyboardKeyEventAddress ->- AnyEventAddress) GameRep
             let world = World.setScreen screen address world
             (screen, world)
 
         /// Select the given screen without transitioning.
-        static member selectScreen screen screenAddress world =
+        static member selectScreen screen world =
             let world =
-                match World.getOptSelectedScreenAddress world with
-                | Some selectedScreenAddress ->  World.publish4 () (DeselectEventAddress ->>- selectedScreenAddress) selectedScreenAddress world
+                match World.getOptSelectedScreenRep world with
+                | Some selectedScreenRep ->  World.publish4 () (DeselectEventAddress ->>- selectedScreenRep.ScreenAddress) selectedScreenRep world
                 | None -> world
             let (screen, world) = World.setScreenState IncomingState screenAddress screen world
             let world = World.setOptSelectedScreenAddress (Some screenAddress) world
-            let world = World.publish4 () (SelectEventAddress ->>- screenAddress) screenAddress world
+            let world = World.publish4 () (SelectEventAddress ->>- screen.ScreenAddress) screen world
             (screen, world)
 
         /// Try to transition to the screen at the destination address if no other transition is in

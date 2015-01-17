@@ -95,15 +95,16 @@ module SimulationModule =
     type [<StructuralEquality; NoComparison>] CollisionData =
         { Normal : Vector2
           Speed : single
-          Collidee : Entity Address }
+          Collidee : EntityRep }
 
     /// The data for a world state change event.
     and [<StructuralEquality; NoComparison>] WorldStateChangeData =
         { OldWorldState : WorldState }
 
     /// The data for a simulant change event.
-    and [<StructuralEquality; NoComparison>] SimulantChangeData<'a when 'a :> Simulant> =
-        { OldSimulant : 'a }
+    and [<StructuralEquality; NoComparison>] SimulantChangeData<'s when 's :> SimulantRep> =
+        { SimulantRep : 's
+          OldWorld : World }
 
     /// An event used by Nu's purely functional event system.
     and [<ReferenceEquality>] Event<'a, 's when 's :> SimulantRep> =
@@ -118,8 +119,7 @@ module SimulationModule =
         | Cascade
 
     /// Describes a game event subscription.
-    and Subscription<'a, 's when 's :> SimulantRep> =
-        Event<'a, 's> -> World -> EventHandling * World
+    and Subscription<'a, 's when 's :> SimulantRep> = Event<'a, 's> -> World -> EventHandling * World
 
     /// Describes a game event subscription that can be boxed / unboxed.
     and BoxableSubscription = obj -> World -> EventHandling * World
@@ -150,8 +150,8 @@ module SimulationModule =
 
         /// Register a game when adding it to the world. Note that there is not corresponding
         /// Unregister method due to the inability to remove a game from the world.
-        abstract Register : GameRep * World -> World
-        default dispatcher.Register (_, world) = world
+        abstract Register : GameRep -> World -> World
+        default dispatcher.Register _ world = world
 
     /// The default dispatcher for screens.
     and ScreenDispatcher () =
@@ -161,12 +161,12 @@ module SimulationModule =
              define? Persistent true]
 
         /// Register a screen when adding it to the world.
-        abstract Register : ScreenRep * World -> World
-        default dispatcher.Register (_, world) = world
+        abstract Register : ScreenRep -> World -> World
+        default dispatcher.Register _ world = world
 
         /// Unregister a screen when removing it from the world.
-        abstract Unregister : ScreenRep * World -> World
-        default dispatcher.Unregister (_, world) = world
+        abstract Unregister : ScreenRep -> World -> World
+        default dispatcher.Unregister _ world = world
 
     /// The default dispatcher for groups.
     and GroupDispatcher () =
@@ -176,12 +176,12 @@ module SimulationModule =
              define? Persistent true]
 
         /// Register a group when adding it to a screen.
-        abstract Register : GroupRep * World -> World
-        default dispatcher.Register (_, world) = world
+        abstract Register : GroupRep -> World -> World
+        default dispatcher.Register _ world = world
 
         /// Unregister a group when removing it from a screen.
-        abstract Unregister : GroupRep * World -> World
-        default dispatcher.Unregister (_, world) = world
+        abstract Unregister : GroupRep -> World -> World
+        default dispatcher.Unregister _ world = world
 
     /// The default dispatcher for entities.
     and EntityDispatcher () =
@@ -197,108 +197,78 @@ module SimulationModule =
              define? Persistent true]
 
         /// Register an entity when adding it to a group.
-        abstract Register : EntityRep * World -> World
-        default dispatcher.Register (_, world) = world
+        abstract Register : EntityRep -> World -> World
+        default dispatcher.Register _ world = world
 
         /// Unregister an entity when removing it from a group.
-        abstract Unregister : EntityRep * World -> World
-        default dispatcher.Unregister (_, world) = world
+        abstract Unregister : EntityRep -> World -> World
+        default dispatcher.Unregister _ world = world
 
         /// Propagate an entity's physics properties from the physics subsystem.
-        abstract PropagatePhysics : EntityRep * World -> World
-        default dispatcher.PropagatePhysics (_, world) = world
+        abstract PropagatePhysics : EntityRep -> World -> World
+        default dispatcher.PropagatePhysics _ world = world
 
         /// Get the render descriptors needed to render an entity.
-        abstract GetRenderDescriptors : EntityRep * World -> RenderDescriptor list
-        default dispatcher.GetRenderDescriptors (_, _) = []
+        abstract GetRenderDescriptors : EntityRep -> World -> RenderDescriptor list
+        default dispatcher.GetRenderDescriptors _ _ = []
 
         /// Get the quick size of an entity (the appropriate user-define size for an entity).
-        abstract GetQuickSize : EntityRep * World -> Vector2
-        default dispatcher.GetQuickSize (_, _) = Vector2.One
+        abstract GetQuickSize : EntityRep -> World -> Vector2
+        default dispatcher.GetQuickSize _ _ = Vector2.One
 
         /// Get the priority with which an entity is picked in the editor.
-        abstract GetPickingPriority : EntityRep * World -> single
-        default dispatcher.GetPickingPriority (entityRep, world) = entityRep.GetDepth world
+        abstract GetPickingPriority : EntityRep -> World -> single
+        default dispatcher.GetPickingPriority entityRep world = entityRep.GetDepth world
 
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
 
         /// Register a facet when adding it to an entity.
-        abstract Register : EntityRep * World -> World
-        default facet.Register (entityRep, world) = facet.RegisterPhysics (entityRep, world)
+        abstract Register : EntityRep -> World -> World
+        default facet.Register entityRep world = facet.RegisterPhysics entityRep world
 
         /// Unregister a facet when removing it from an entity.
-        abstract Unregister : EntityRep * World -> World
-        default facet.Unregister (entityRep, world) = facet.UnregisterPhysics (entityRep, world)
+        abstract Unregister : EntityRep -> World -> World
+        default facet.Unregister entityRep world = facet.UnregisterPhysics entityRep world
 
         /// Participate in the registration of an entity's physics with the physics subsystem.
-        abstract RegisterPhysics : EntityRep * World -> World
-        default facet.RegisterPhysics (_, world) = world
+        abstract RegisterPhysics : EntityRep -> World -> World
+        default facet.RegisterPhysics _ world = world
 
         /// Participate in the unregistration of an entity's physics from the physics subsystem.
-        abstract UnregisterPhysics : EntityRep * World -> World
-        default facet.UnregisterPhysics (_, world) = world
+        abstract UnregisterPhysics : EntityRep -> World -> World
+        default facet.UnregisterPhysics _ world = world
 
         /// Participate in the propagation an entity's physics properties from the physics subsystem.
-        abstract PropagatePhysics : EntityRep * World -> World
-        default facet.PropagatePhysics (_, world) = world
+        abstract PropagatePhysics : EntityRep -> World -> World
+        default facet.PropagatePhysics _ world = world
 
         /// Participate in getting the render descriptors needed to render an entity.
-        abstract GetRenderDescriptors : EntityRep * World -> RenderDescriptor list
-        default facet.GetRenderDescriptors (_, _) = []
+        abstract GetRenderDescriptors : EntityRep -> World -> RenderDescriptor list
+        default facet.GetRenderDescriptors _ _ = []
 
         /// Participate in getting the priority with which an entity is picked in the editor.
-        abstract GetQuickSize : EntityRep * World -> Vector2
-        default facet.GetQuickSize (_, _) = DefaultEntitySize
+        abstract GetQuickSize : EntityRep -> World -> Vector2
+        default facet.GetQuickSize _ _ = DefaultEntitySize
 
     /// A marker interface for simulation types (Game, Screen, Group, Entity).
-    /// The only methods that have a place in here are those used internally by Nu's event system.
-    and Simulant =
-        interface
-            /// Get the entity's publishing priority.
-            abstract GetPublishingPriority : (Entity -> World -> single) -> World -> single
-        end
+    and Simulant = interface end
 
     /// The game type that hosts the various screens used to navigate through a game.
     and [<CLIMutable; StructuralEquality; NoComparison>] Game =
         { Id : Guid
-          OptSelectedScreenAddress : Screen Address option
+          OptSelectedScreenRep : ScreenRep option
           PublishChanges : bool
           CreationTimeNp : DateTime
           DispatcherNp : GameDispatcher
           Xtension : Xtension }
 
-        interface Simulant with
-            member this.GetPublishingPriority _ _ = GamePublishingPriority
-
-        /// Access a game's dynamic member.
-        static member (?) (this : Game, memberName) =
-            Xtension.(?) (this.Xtension, memberName)
-
-        /// Update a game's dynamic member.
-        static member (?<-) (this : Game, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
-            { this with Xtension = xtension }
-
-        static member getPublishChanges (game : Game) = game.PublishChanges
-        static member setPublishChanges value (game : Game) = { game with PublishChanges = value }
-        static member getOptSelectedScreenAddress game = game.OptSelectedScreenAddress
-        static member setOptSelectedScreenAddress optSelectedScreenAddress game = { game with OptSelectedScreenAddress = optSelectedScreenAddress }
-
-        /// Register a game when adding it to the world. Note that there is not corresponding
-        /// Unregister method due to the inability to remove a game from the world.
-        static member register (gameRep : GameRep) (world : World) : World =
-            let dispatcher = gameRep.GetDispatcherNp world : GameDispatcher
-            dispatcher.Register (gameRep, world)
-
-        /// Query that a screen dispatches in the same manner as the dispatcher with the target type.
-        static member dispatchesAs (dispatcherTargetType : Type) (game : Game) =
-            Reflection.dispatchesAs dispatcherTargetType game.DispatcherNp
+        interface Simulant
 
         /// Make a game.
         static member make dispatcher =
             { Id = Core.makeId ()
-              OptSelectedScreenAddress = None
+              OptSelectedScreenRep = None
               PublishChanges = true
               CreationTimeNp = DateTime.UtcNow
               DispatcherNp = dispatcher
@@ -319,49 +289,7 @@ module SimulationModule =
           DispatcherNp : ScreenDispatcher
           Xtension : Xtension }
 
-        interface Simulant with
-            member this.GetPublishingPriority _ _ = ScreenPublishingPriority
-
-        /// Access screen's dynamic member.
-        static member (?) (this : Screen, memberName) =
-            Xtension.(?) (this.Xtension, memberName)
-
-        /// Update screen's dynamic member.
-        static member (?<-) (this : Screen, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
-            { this with Xtension = xtension }
-
-        static member getName (screen : Screen) = screen.Name
-        static member getScreenStateNp (screen : Screen) = screen.ScreenStateNp
-        static member setScreenStateNp value screen = { screen with ScreenStateNp = value }
-        static member getTransitionTicksNp (screen : Screen) = screen.TransitionTicksNp
-        static member setTransitionTicksNp value screen = { screen with TransitionTicksNp = value }
-        static member getIncoming (screen : Screen) = screen.Incoming
-        static member setIncoming value screen = { screen with Incoming = value }
-        static member getOutgoing (screen : Screen) = screen.Outgoing
-        static member setOutgoing value screen = { screen with Outgoing = value }
-        static member getPublishChanges (screen : Screen) = screen.PublishChanges
-        static member setPublishChanges value (screen : Screen) = { screen with PublishChanges = value }
-        static member getPersistent (screen : Screen) = screen.Persistent
-        static member setPersistent value (screen : Screen) = { screen with Persistent = value }
-
-        /// Register a screen when adding it to the world.
-        static member register (screenRep : ScreenRep) world =
-            let dispatcher = screenRep.GetDispatcherNp world : ScreenDispatcher
-            dispatcher.Register (screenRep, world)
-
-        /// Unregister a screen when removing it from the world.
-        static member unregister (screenRep : ScreenRep) world =
-            let dispatcher = screenRep.GetDispatcherNp world : ScreenDispatcher
-            dispatcher.Unregister (screenRep, world)
-
-        /// Query that a screen idling (that is, not currently transitioning in or out via another screen).
-        static member isIdling screen =
-            screen.ScreenStateNp = IdlingState
-
-        /// Query that a screen dispatches in the same manner as the dispatcher with the target type.
-        static member dispatchesAs (dispatcherTargetType : Type) (screen : Screen) =
-            Reflection.dispatchesAs dispatcherTargetType screen.DispatcherNp
+        interface Simulant
 
         /// Make a screen.
         static member make dispatcher optName =
@@ -388,37 +316,7 @@ module SimulationModule =
           DispatcherNp : GroupDispatcher
           Xtension : Xtension }
 
-        interface Simulant with
-            member this.GetPublishingPriority _ _ = GroupPublishingPriority
-
-        /// Access a group's dynamic member.
-        static member (?) (this : Group, memberName) =
-            Xtension.(?) (this.Xtension, memberName)
-
-        /// Update a group's dynamic member.
-        static member (?<-) (this : Group, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
-            { this with Xtension = xtension }
-
-        static member getName (group : Group) = group.Name
-        static member getPublishChanges (group : Group) = group.PublishChanges
-        static member setPublishChanges value (group : Group) = { group with PublishChanges = value }
-        static member getPersistent (group : Group) = group.Persistent
-        static member setPersistent value (group : Group) = { group with Persistent = value }
-
-        /// Register a group when adding it to a screen.
-        static member register (groupRep : GroupRep) world =
-            let dispatcher = groupRep.GetDispatcherNp world : GroupDispatcher
-            dispatcher.Register (groupRep, world)
-
-        /// Unregister a group when removing it from a screen.
-        static member unregister (groupRep : GroupRep) world =
-            let dispatcher = groupRep.GetDispatcherNp world : GroupDispatcher
-            dispatcher.Unregister (groupRep, world)
-
-        /// Query that a group dispatches in the same manner as the dispatcher with the target type.
-        static member dispatchesAs (dispatcherTargetType : Type) (group : Group) =
-            Reflection.dispatchesAs dispatcherTargetType group.DispatcherNp
+        interface Simulant
 
         /// Make a group.
         static member make dispatcher optName =
@@ -451,161 +349,7 @@ module SimulationModule =
           OptOverlayName : string option
           Xtension : Xtension }
 
-        interface Simulant with
-            member this.GetPublishingPriority getEntityPublishingPriority world =
-                getEntityPublishingPriority this world
-
-        /// Access an entity's dynamic member.
-        static member (?) (this : Entity, memberName) =
-            Xtension.(?) (this.Xtension, memberName)
-
-        /// Update an entity's dynamic member.
-        static member (?<-) (this : Entity, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
-            { this with Xtension = xtension }
-
-        /// Query that an entity dispatches in the same manner as the dispatcher with the target type.
-        static member dispatchesAs (dispatcherTargetType : Type) (entityRep : EntityRep) world =
-            Reflection.dispatchesAs dispatcherTargetType (entityRep.GetDispatcherNp world)
-
-        static member getName (entity : Entity) = entity.Name
-        static member getFacetNames (entity : Entity) = entity.FacetNames
-        static member getOptOverlayName (entity : Entity) = entity.OptOverlayName
-        static member getPosition (entity : Entity) = entity.Position
-        static member setPosition value (entity : Entity) = { entity with Position = value }
-        static member getDepth (entity : Entity) = entity.Depth
-        static member setDepth value (entity : Entity) = { entity with Depth = value }
-        static member getSize (entity : Entity) = entity.Size
-        static member setSize value (entity : Entity) = { entity with Size = value }
-        static member getRotation (entity : Entity) = entity.Rotation
-        static member setRotation value (entity : Entity) = { entity with Rotation = value }
-        static member getVisible (entity : Entity) = entity.Visible
-        static member setVisible value (entity : Entity) = { entity with Visible = value }
-        static member getViewType (entity : Entity) = entity.ViewType
-        static member setViewType value (entity : Entity) = { entity with ViewType = value }
-        static member getPublishChanges (entity : Entity) = entity.PublishChanges
-        static member setPublishChanges value (entity : Entity) = { entity with PublishChanges = value }
-        static member getPersistent (entity : Entity) = entity.Persistent
-        static member setPersistent value (entity : Entity) = { entity with Persistent = value }
-
-        /// Register an entity when adding it to a group.
-        static member register (entityRep : EntityRep) world =
-            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
-            let facets = entityRep.GetFacetsNp world
-            let world = dispatcher.Register (entityRep, world)
-            List.fold
-                (fun world (facet : Facet) -> facet.Register (entityRep, world))
-                world
-                facets
-        
-        /// Unregister an entity when removing it from a group.
-        static member unregister (entityRep : EntityRep) world =
-            let facets = entityRep.GetFacetsNp world
-            List.fold
-                (fun world (facet : Facet) -> facet.Unregister (entityRep, world))
-                world
-                facets
-
-        /// Propagate an entity's physics properties from the physics subsystem.
-        static member propagatePhysics (entityRep : EntityRep) world =
-            let dispatcher = entityRep.GetDispatcherNp world
-            let facets = entityRep.GetFacetsNp world
-            let world = dispatcher.PropagatePhysics (entityRep, world)
-            List.fold
-                (fun world (facet : Facet) -> facet.PropagatePhysics (entityRep, world))
-                world
-                facets
-        
-        /// Get the render descriptors needed to render an entity.
-        static member getRenderDescriptors (entityRep : EntityRep) world =
-            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
-            let facets = entityRep.GetFacetsNp world
-            let renderDescriptors = dispatcher.GetRenderDescriptors (entityRep, world)
-            List.fold
-                (fun renderDescriptors (facet : Facet) ->
-                    let descriptors = facet.GetRenderDescriptors (entityRep, world)
-                    descriptors @ renderDescriptors)
-                renderDescriptors
-                facets
-        
-        /// Get the quick size of an entity (the appropriate user-define size for an entity).
-        static member getQuickSize  (entityRep : EntityRep) world =
-            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
-            let facets = entityRep.GetFacetsNp world
-            let quickSize = dispatcher.GetQuickSize (entityRep, world)
-            List.fold
-                (fun (maxSize : Vector2) (facet : Facet) ->
-                    let quickSize = facet.GetQuickSize (entityRep, world)
-                    Vector2 (
-                        Math.Max (quickSize.X, maxSize.X),
-                        Math.Max (quickSize.Y, maxSize.Y)))
-                quickSize
-                facets
-        
-        /// Get the priority with which an entity is picked in the editor.
-        static member getPickingPriority (entityRep : EntityRep) world =
-            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
-            dispatcher.GetPickingPriority (entityRep, world)
-
-        /// Get the names of all facets used by an entity via reflection.
-        /// TODO: see if this should be used as often as it is, and if it is needed in only one or
-        /// two cases, just inline it.
-        static member getFacetNamesReflectively entity =
-            List.map Reflection.getTypeName entity.FacetsNp
-
-        /// Query that a facet is compatible with those already being used by an entity.
-        /// Note a facet is incompatible with any other facet if it contains any fields that has
-        /// the same name but a different type.
-        static member isFacetCompatible entityDispatcherMap facet (entity : Entity) =
-            let facetType = facet.GetType ()
-            let facetFieldDefinitions = Reflection.getFieldDefinitions facetType
-            if Reflection.isFacetCompatibleWithDispatcher entityDispatcherMap facet entity then
-                List.notExists
-                    (fun definition ->
-                        match Map.tryFind definition.FieldName entity.Xtension.XFields with
-                        | Some field -> field.GetType () <> definition.FieldType
-                        | None -> false)
-                    facetFieldDefinitions
-            else false
-    
-        // OPTIMIZATION: priority annotated as single to decrease GC pressure.
-        static member private sortFstDesc (priority : single, _) (priority2 : single, _) =
-            if priority > priority2 then -1
-            elif priority < priority2 then 1
-            else 0
-
-        static member setPositionSnapped snap position (entityRep : EntityRep) world =
-            let snapped = Math.snap2F snap position
-            entityRep.SetPosition snapped world
-
-        static member getTransform (entityRep : EntityRep) world =
-            { Transform.Position = entityRep.GetPosition world
-              Depth = entityRep.GetDepth world
-              Size = entityRep.GetSize world
-              Rotation = entityRep.GetRotation world }
-
-        static member setTransform positionSnap rotationSnap transform (entityRep : EntityRep) world =
-            let transform = Math.snapTransform positionSnap rotationSnap transform
-            world |>
-                entityRep.SetPosition transform.Position |>
-                entityRep.SetDepth transform.Depth |>
-                entityRep.SetSize transform.Size |>
-                entityRep.SetRotation transform.Rotation
-
-        static member pickingSort entityReps world =
-            let prioritiesAndEntityReps = List.map (fun (entityRep : EntityRep) -> (entityRep.GetPickingPriority world, entityRep)) entityReps
-            let prioritiesAndEntityReps = List.sortWith Entity.sortFstDesc prioritiesAndEntityReps
-            List.map snd prioritiesAndEntityReps
-
-        static member tryPick position entityReps world =
-            let entityRepsSorted = Entity.pickingSort entityReps world
-            List.tryFind
-                (fun (entityRep : EntityRep) ->
-                    let positionWorld = Camera.mouseToWorld (entityRep.GetViewType world) position world.State.Camera
-                    let transform = Entity.getTransform entityRep world
-                    let picked = Math.isPointInBounds3 positionWorld transform.Position transform.Size
-                    picked)
-                entityRepsSorted
+        interface Simulant
 
         /// Make an entity.
         static member make dispatcher optOverlayName optName =
@@ -654,7 +398,7 @@ module SimulationModule =
             /// Processed the queued messages with the subsystem.
             abstract ProcessMessages : World -> SubsystemResult * Subsystem
             /// Apply the result of the message processing to the world.
-            abstract ApplyResult : SubsystemResult * World -> World
+            abstract ApplyResult : SubsystemResult -> World -> World
             /// Clean up any resources used by the subsystem.
             abstract CleanUp : World -> Subsystem * World
         end
@@ -767,19 +511,19 @@ module SimulationModule =
         static member internal WorldStateEventAddress = ntoa<obj> "WorldState"
         static member internal WorldStateChangeEventAddress = World.WorldStateEventAddress -<- ntoa<WorldStateChangeData> "Change"
         static member internal GameEventAddress = ntoa<obj> "Game"
-        static member internal GameChangeEventAddress = World.GameEventAddress -<- ntoa<Game SimulantChangeData> "Change"
+        static member internal GameChangeEventAddress = World.GameEventAddress -<- ntoa<GameRep SimulantChangeData> "Change"
         static member internal ScreenEventAddress = ntoa<obj> "Screen"
         static member internal ScreenAddEventAddress = World.ScreenEventAddress -<- ntoa<unit> "Add"
         static member internal ScreenRemovingEventAddress = World.ScreenEventAddress -<- ntoa<unit> "Removing"
-        static member internal ScreenChangeEventAddress = World.ScreenEventAddress -<- ntoa<Screen SimulantChangeData> "Change"
+        static member internal ScreenChangeEventAddress = World.ScreenEventAddress -<- ntoa<ScreenRep SimulantChangeData> "Change"
         static member internal GroupEventAddress = ntoa<obj> "Group"
         static member internal GroupAddEventAddress = World.GroupEventAddress -<- ntoa<unit> "Add"
         static member internal GroupRemovingEventAddress = World.GroupEventAddress -<- ntoa<unit> "Removing"
-        static member internal GroupChangeEventAddress = World.GroupEventAddress -<- ntoa<Group SimulantChangeData> "Change"
+        static member internal GroupChangeEventAddress = World.GroupEventAddress -<- ntoa<GroupRep SimulantChangeData> "Change"
         static member internal EntityEventAddress = ntoa<obj> "Entity"
         static member internal EntityAddEventAddress = World.EntityEventAddress -<- ntoa<unit> "Add"
         static member internal EntityRemovingEventAddress = World.EntityEventAddress -<- ntoa<unit> "Removing"
-        static member internal EntityChangeEventAddress = World.EntityEventAddress -<- ntoa<Entity SimulantChangeData> "Change"
+        static member internal EntityChangeEventAddress = World.EntityEventAddress -<- ntoa<EntityRep SimulantChangeData> "Change"
         static member internal DefaultDissolveImage = { PackageName = DefaultPackageName; AssetName = "Image8" }
 
         /// Make a key used to track an unsubscription with a subscription.
@@ -812,7 +556,7 @@ module SimulationModule =
             (single * SubscriptionEntry) list =
             List.fold
                 (fun subscriptions (key, simulantRep : SimulantRep, subscription) ->
-                    let priority = simulantRep.GetPublishingPriority (getEntityPublishingPriority, world)
+                    let priority = simulantRep.GetPublishingPriority getEntityPublishingPriority world
                     let subscription = (priority, (key, simulantRep, subscription))
                     subscription :: subscriptions)
                 []
@@ -828,8 +572,8 @@ module SimulationModule =
         static member sortSubscriptionsByPickingPriority subscriptions world =
             World.sortSubscriptionsBy
                 (fun (entityRep : EntityRep) world ->
-                    let dispatcher = entityRep.GetDispatcherNp world
-                    dispatcher.GetPickingPriority (entityRep, world))
+                    let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
+                    dispatcher.GetPickingPriority entityRep world)
                 subscriptions
                 world
 
@@ -1261,14 +1005,15 @@ module SimulationModule =
 
         /// Set an entity at the given address (failing with an exception if one doesn't exist).
         static member setEntity entity address world =
-            let oldEntity = Option.get <| World.optEntityFinder address world
+            let oldWorld = world
             let world = World.entityAdder entity address world
             if entity.PublishChanges
             then
+                let entityRep = { EntityAddress = address }
                 World.publish4
-                    { OldSimulant = oldEntity }
+                    { SimulantRep = entityRep; OldWorld = oldWorld }
                     (World.EntityChangeEventAddress ->>- address)
-                    { EntityAddress = address }
+                    entityRep
                     world
             else world
             
@@ -1394,11 +1139,85 @@ module SimulationModule =
         static member filterEntityAddresses pred addresses world =
             World.filterEntityAddressesW (fun entity _ -> pred entity) addresses world
 
-        static member private registerEntity entityRep world =
-            Entity.register entityRep world
+        /// Register an entity when adding it to a group.
+        static member registerEntity (entityRep : EntityRep) world =
+            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
+            let facets = entityRep.GetFacetsNp world
+            let world = dispatcher.Register entityRep world
+            List.fold
+                (fun world (facet : Facet) -> facet.Register entityRep world)
+                world
+                facets
+        
+        /// Unregister an entity when removing it from a group.
+        static member unregisterEntity (entityRep : EntityRep) world =
+            let facets = entityRep.GetFacetsNp world
+            List.fold
+                (fun world (facet : Facet) -> facet.Unregister entityRep world)
+                world
+                facets
 
-        static member private unregisterEntity entityRep world =
-            Entity.unregister entityRep world
+        /// Propagate an entity's physics properties from the physics subsystem.
+        static member propagatePhysics (entityRep : EntityRep) world =
+            let dispatcher = entityRep.GetDispatcherNp world
+            let facets = entityRep.GetFacetsNp world
+            let world = dispatcher.PropagatePhysics entityRep world
+            List.fold
+                (fun world (facet : Facet) -> facet.PropagatePhysics entityRep world)
+                world
+                facets
+        
+        /// Get the render descriptors needed to render an entity.
+        static member getRenderDescriptors (entityRep : EntityRep) world =
+            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
+            let facets = entityRep.GetFacetsNp world
+            let renderDescriptors = dispatcher.GetRenderDescriptors entityRep world
+            List.fold
+                (fun renderDescriptors (facet : Facet) ->
+                    let descriptors = facet.GetRenderDescriptors entityRep world
+                    descriptors @ renderDescriptors)
+                renderDescriptors
+                facets
+        
+        /// Get the quick size of an entity (the appropriate user-define size for an entity).
+        static member getQuickSize (entityRep : EntityRep) world =
+            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
+            let facets = entityRep.GetFacetsNp world
+            let quickSize = dispatcher.GetQuickSize entityRep world
+            List.fold
+                (fun (maxSize : Vector2) (facet : Facet) ->
+                    let quickSize = facet.GetQuickSize entityRep world
+                    Vector2 (
+                        Math.Max (quickSize.X, maxSize.X),
+                        Math.Max (quickSize.Y, maxSize.Y)))
+                quickSize
+                facets
+
+        /// Get the priority with which an entity is picked in the editor.
+        static member getPickingPriority (entityRep : EntityRep) world =
+            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
+            dispatcher.GetPickingPriority entityRep world
+
+        /// Get the names of all facets used by an entity via reflection.
+        /// TODO: see if this should be used as often as it is, and if it is needed in only one or
+        /// two cases, just inline it.
+        static member getFacetNamesReflectively entity =
+            List.map Reflection.getTypeName entity.FacetsNp
+
+        /// Query that a facet is compatible with those already being used by an entity.
+        /// Note a facet is incompatible with any other facet if it contains any fields that has
+        /// the same name but a different type.
+        static member isFacetCompatible entityDispatcherMap facet (entity : Entity) =
+            let facetType = facet.GetType ()
+            let facetFieldDefinitions = Reflection.getFieldDefinitions facetType
+            if Reflection.isFacetCompatibleWithDispatcher entityDispatcherMap facet entity then
+                List.notExists
+                    (fun definition ->
+                        match Map.tryFind definition.FieldName entity.Xtension.XFields with
+                        | Some field -> field.GetType () <> definition.FieldType
+                        | None -> false)
+                    facetFieldDefinitions
+            else false
 
         /// Remove an entity from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the entity's existence. Use with caution.
@@ -1451,6 +1270,21 @@ module SimulationModule =
                     World.addEntity entity entityRep world)
                 world
                 entities
+
+        static member pickingSort entityReps world =
+            let prioritiesAndEntityReps = List.map (fun (entityRep : EntityRep) -> (entityRep.GetPickingPriority world, entityRep)) entityReps
+            let prioritiesAndEntityReps = List.sortWith World.sortFstDesc prioritiesAndEntityReps
+            List.map snd prioritiesAndEntityReps
+
+        static member tryPick position entityReps world =
+            let entityRepsSorted = World.pickingSort entityReps world
+            List.tryFind
+                (fun (entityRep : EntityRep) ->
+                    let positionWorld = Camera.mouseToWorld (entityRep.GetViewType world) position world.State.Camera
+                    let transform = entityRep.GetTransform world
+                    let picked = Math.isPointInBounds3 positionWorld transform.Position transform.Size
+                    picked)
+                entityRepsSorted
 
         (* Group *)
 
@@ -1540,14 +1374,15 @@ module SimulationModule =
 
         /// Set a group at the given address (failing with an exception if one doesn't exist).
         static member setGroup group address world =
-            let oldGroup = Option.get <| World.optGroupFinder address world
+            let oldWorld = world
             let world = World.groupAdder group address world
             if group.PublishChanges
             then
+                let groupRep = { GroupAddress = address }
                 World.publish4
-                    { OldSimulant = oldGroup }
+                    { SimulantRep = groupRep; OldWorld = oldWorld }
                     (World.GroupChangeEventAddress ->>- address)
-                    { GroupAddress = address }
+                    groupRep
                     world
             else world
 
@@ -1684,12 +1519,16 @@ module SimulationModule =
         static member filterGroupAddresses pred addresses world =
             World.filterGroupAddressesW (fun group _ -> pred group) addresses world
 
-        static member private registerGroup groupRep world =
-            Group.register groupRep world
+        /// Register a group when adding it to a screen.
+        static member registerGroup (groupRep : GroupRep) world =
+            let dispatcher = groupRep.GetDispatcherNp world : GroupDispatcher
+            dispatcher.Register groupRep world
 
-        static member private unregisterGroup groupRep world =
-            Group.unregister groupRep world
-            
+        /// Unregister a group when removing it from a screen.
+        static member unregisterGroup (groupRep : GroupRep) world =
+            let dispatcher = groupRep.GetDispatcherNp world : GroupDispatcher
+            dispatcher.Unregister groupRep world
+
         /// Remove a group from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the group's existence. Use with caution.
         static member removeGroupImmediate groupRep world =
@@ -1830,14 +1669,15 @@ module SimulationModule =
 
         /// Set a screen at the given address (failing with an exception if one doesn't exist).
         static member setScreen screen address world =
-            let oldScreen = Option.get <| World.optScreenFinder address world
+            let oldWorld = world
             let world = World.screenAdder screen address world
             if screen.PublishChanges
             then
+                let screenRep = { ScreenAddress = address }
                 World.publish4
-                    { OldSimulant = oldScreen }
+                    { SimulantRep = screenRep; OldWorld = oldWorld }
                     (World.ScreenChangeEventAddress ->>- address)
-                    { ScreenAddress = address }
+                    screenRep
                     world
             else world
 
@@ -1931,11 +1771,15 @@ module SimulationModule =
         static member filterScreenAddresses pred addresses world =
             World.filterScreenAddressesW (fun screen _ -> pred screen) addresses world
 
-        static member private registerScreen screenRep world =
-            Screen.register screenRep world
+        /// Register a screen when adding it to the world.
+        static member registerScreen (screenRep : ScreenRep) world =
+            let dispatcher = screenRep.GetDispatcherNp world : ScreenDispatcher
+            dispatcher.Register screenRep world
 
-        static member private unregisterScreen screenRep world =
-            Screen.unregister screenRep world
+        /// Unregister a screen when removing it from the world.
+        static member unregisterScreen (screenRep : ScreenRep) world =
+            let dispatcher = screenRep.GetDispatcherNp world : ScreenDispatcher
+            dispatcher.Unregister screenRep world
 
         /// Remove a screen from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the screen's existence. Use with caution.
@@ -1987,11 +1831,16 @@ module SimulationModule =
 
         /// Set the game.
         static member setGame game world =
-            let oldGame = World.getGame world
+            let oldWorld = world
             let screenMap = World.getScreenMap world
             let world = { world with Simulants = (game, screenMap) }
             if game.PublishChanges
-            then World.publish4 { OldSimulant = oldGame } (World.GameChangeEventAddress ->>- World.GameAddress) World.GameRep world
+            then
+                World.publish4
+                    { OldWorld = world; SimulantRep = World.GameRep }
+                    (World.GameChangeEventAddress ->>- World.GameAddress)
+                    World.GameRep
+                    world
             else world
 
         /// Update the game with the given 'updater' procedure.
@@ -2018,6 +1867,12 @@ module SimulationModule =
         static member lensGame =
             { Get = World.getGame
               Set = World.setGame }
+
+        /// Register a game when adding it to the world. Note that there is not corresponding
+        /// Unregister method due to the inability to remove a game from the world.
+        static member registerGame (gameRep : GameRep) (world : World) : World =
+            let dispatcher = gameRep.GetDispatcherNp world : GameDispatcher
+            dispatcher.Register gameRep world
 
         (* Simulant *)
 
@@ -2097,52 +1952,72 @@ module SimulationModule =
     and SimulantRep =
         interface
             /// Get the entity's publishing priority.
-            abstract GetPublishingPriority : (EntityRep -> World -> single) * World -> single
+            abstract GetPublishingPriority : (EntityRep -> World -> single) -> World -> single
             abstract SimulantAddress : Simulant Address
         end
 
     and [<StructuralEquality; NoComparison>] GameRep =
         { GameAddress : Game Address }
+        
         interface SimulantRep with
-            member this.GetPublishingPriority (_, _) = GamePublishingPriority
+            member this.GetPublishingPriority _ _ = GamePublishingPriority
             member this.SimulantAddress = World.atoua this.GameAddress
         end
+        
         member this.GetId world = (World.getGame world).Id
         member this.GetCreationTimeNp world = (World.getGame world).CreationTimeNp
         member this.GetDispatcherNp world = (World.getGame world).DispatcherNp
         member this.GetXtension world = (World.getGame world).Xtension
 
+        /// Query that a game dispatches in the same manner as the dispatcher with the target type.
+        member this.DispatchesAs (dispatcherTargetType : Type) world =
+            Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
+
     and [<StructuralEquality; NoComparison>] ScreenRep =
         { ScreenAddress : Screen Address }
+        
         interface SimulantRep with
-            member this.GetPublishingPriority (_, _) = ScreenPublishingPriority
+            member this.GetPublishingPriority _ _ = ScreenPublishingPriority
             member this.SimulantAddress = World.atoua this.ScreenAddress
         end
+
         member this.GetId world = (World.getScreen this.ScreenAddress world).Id
         member this.GetName world = (World.getScreen this.ScreenAddress world).Name
         member this.GetCreationTimeNp world = (World.getScreen this.ScreenAddress world).CreationTimeNp
         member this.GetDispatcherNp world = (World.getScreen this.ScreenAddress world).DispatcherNp
         member this.GetXtension world = (World.getScreen this.ScreenAddress world).Xtension
+        member this.GetIdling world = this.GetScreenStateNp world = IdlingState
+
+        /// Query that a screen dispatches in the same manner as the dispatcher with the target type.
+        member this.DispatchesAs (dispatcherTargetType : Type) world =
+            Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
 
     and [<StructuralEquality; NoComparison>] GroupRep =
         { GroupAddress : Group Address }
+        
         interface SimulantRep with
-            member this.GetPublishingPriority (_, _) = GroupPublishingPriority
+            member this.GetPublishingPriority _ _ = GroupPublishingPriority
             member this.SimulantAddress = World.atoua this.GroupAddress
         end
+
         member this.GetId world = (World.getGroup this.GroupAddress world).Id
         member this.GetName world = (World.getGroup this.GroupAddress world).Name
         member this.GetCreationTimeNp world = (World.getGroup this.GroupAddress world).CreationTimeNp
         member this.GetDispatcherNp world = (World.getGroup this.GroupAddress world).DispatcherNp
         member this.GetXtension world = (World.getGroup this.GroupAddress world).Xtension
 
+        /// Query that a group dispatches in the same manner as the dispatcher with the target type.
+        member this.DispatchesAs (dispatcherTargetType : Type) (groupRep : GroupRep) world =
+            Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
+
     and [<StructuralEquality; NoComparison>] EntityRep =
         { EntityAddress : Entity Address }
+
         interface SimulantRep with
-            member this.GetPublishingPriority (getEntityPublishingPriority, world) = getEntityPublishingPriority this world
+            member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
             member this.SimulantAddress = World.atoua this.EntityAddress
         end
-
+        
         member this.GetId world = (World.getEntity this.EntityAddress world).Id
         member this.GetName world = (World.getEntity this.EntityAddress world).Name
         member this.GetCreationTimeNp world = (World.getEntity this.EntityAddress world).CreationTimeNp
@@ -2169,10 +2044,33 @@ module SimulationModule =
         member this.SetOptOverlayName value world = World.updateEntity (fun entity -> { entity with OptOverlayName = value}) this.EntityAddress world
         member this.GetXtension world = (World.getEntity this.EntityAddress world).Xtension
         member this.SetXtension xtension world = World.updateEntity (fun entity -> { entity with Xtension = xtension}) this.EntityAddress world
+        
         member this.UpdateXtension updater world =
             let xtension = this.GetXtension world
             let xtension = updater xtension
             this.SetXtension xtension world
+
+        member this.SetPositionSnapped snap position world =
+            let snapped = Math.snap2F snap position
+            this.SetPosition snapped world
+
+        member this.GetTransform world =
+            { Transform.Position = this.GetPosition world
+              Depth = this.GetDepth world
+              Size = this.GetSize world
+              Rotation = this.GetRotation world }
+
+        member this.SetTransform positionSnap rotationSnap transform world =
+            let transform = Math.snapTransform positionSnap rotationSnap transform
+            world |>
+                this.SetPosition transform.Position |>
+                this.SetDepth transform.Depth |>
+                this.SetSize transform.Size |>
+                this.SetRotation transform.Rotation
+
+        /// Query that an entity dispatches in the same manner as the dispatcher with the target type.
+        member this.DispatchesAs (dispatcherTargetType : Type) world =
+            Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
 
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
     /// specific values.

@@ -140,8 +140,8 @@ module WorldEntityModule =
                 let (entity, world) =
                     match optAddress with
                     | Some address ->
-                        let entityRef = { EntityAddress = address }
-                        let world = facet.Unregister (entityRef, world)
+                        let entityRep = { EntityAddress = address }
+                        let world = facet.Unregister entityRep world
                         (World.getEntity address world, world)
                     | None -> (entity, world)
                 let entity = { entity with Id = entity.Id } // hacky copy
@@ -171,7 +171,7 @@ module WorldEntityModule =
                     match optAddress with
                     | Some address ->
                         let entityRep = { EntityAddress = address }
-                        let world = facet.Register (entityRep, world)
+                        let world = facet.Register entityRep world
                         let entity = World.getEntity address world
                         Right (entity, world)
                     | None -> Right (entity, world)

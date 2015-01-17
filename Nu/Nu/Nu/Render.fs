@@ -93,7 +93,7 @@ module RenderModule =
         /// Handle render clean up by freeing all loaded render assets.
         abstract CleanUp : unit -> IRenderer
         /// Render a frame of the game.
-        abstract Render : Camera * RenderDescriptor list -> IRenderer
+        abstract Render : Camera -> RenderDescriptor list -> IRenderer
 
     /// The primary implementation of IRenderer.
     type [<ReferenceEquality>] Renderer =
@@ -393,7 +393,7 @@ module RenderModule =
                 let renderer = { renderer with RenderMessages = renderMessages }
                 renderer :> IRenderer
 
-            member renderer.Render (camera, renderDescriptors) =
+            member renderer.Render camera renderDescriptors =
                 let renderMessages = renderer.RenderMessages
                 let renderer = { renderer with RenderMessages = Queue.empty }
                 let renderer = Renderer.handleRenderMessages renderMessages renderer
@@ -413,5 +413,5 @@ module RenderModule =
         interface IRenderer with
             member renderer.ClearMessages () = renderer :> IRenderer
             member renderer.EnqueueMessage _ = renderer :> IRenderer
-            member renderer.Render (_, _) = renderer :> IRenderer
+            member renderer.Render _ _ = renderer :> IRenderer
             member renderer.CleanUp () = renderer :> IRenderer

@@ -38,8 +38,9 @@ module WorldRenderModule =
             | None -> []
 
         static member private getRenderDescriptors world =
-            match World.getOptSelectedScreenAddress world with
-            | Some selectedScreenAddress ->
+            match World.getOptSelectedScreenRep world with
+            | Some selectedScreenRep ->
+                let selectedScreenAddress = selectedScreenRep.ScreenAddress
                 match Map.tryFind (Address.head selectedScreenAddress) (World.getScreenMap world) with
                 | Some (_, groupMap) ->
                     let entityReps =
@@ -70,7 +71,7 @@ module WorldRenderModule =
 
             member this.ProcessMessages world =
                 let renderDescriptors = RendererSubsystem.getRenderDescriptors world
-                (() :> obj, { this with Renderer = this.Renderer.Render (world.State.Camera, renderDescriptors) } :> Subsystem)
+                (() :> obj, { this with Renderer = this.Renderer.Render world.State.Camera renderDescriptors } :> Subsystem)
 
             member this.ApplyResult (_, world) = world
             member this.CleanUp world = (this :> Subsystem, world)
