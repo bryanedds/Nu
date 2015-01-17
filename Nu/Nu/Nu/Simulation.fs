@@ -464,6 +464,10 @@ module SimulationModule =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
+        /// Query that an entity dispatches in the same manner as the dispatcher with the target type.
+        static member dispatchesAs (dispatcherTargetType : Type) (entityRep : EntityRep) world =
+            Reflection.dispatchesAs dispatcherTargetType (entityRep.GetDispatcherNp world)
+
         static member getName (entity : Entity) = entity.Name
         static member getFacetNames (entity : Entity) = entity.FacetNames
         static member getOptOverlayName (entity : Entity) = entity.OptOverlayName
@@ -532,7 +536,7 @@ module SimulationModule =
             List.fold
                 (fun (maxSize : Vector2) (facet : Facet) ->
                     let quickSize = facet.GetQuickSize (entityRep, world)
-                    Vector2(
+                    Vector2 (
                         Math.Max (quickSize.X, maxSize.X),
                         Math.Max (quickSize.Y, maxSize.Y)))
                 quickSize
@@ -563,10 +567,45 @@ module SimulationModule =
                         | None -> false)
                     facetFieldDefinitions
             else false
+    
+        // OPTIMIZATION: priority annotated as single to decrease GC pressure.
+        static member private sortFstDesc (priority : single, _) (priority2 : single, _) =
+            if priority > priority2 then -1
+            elif priority < priority2 then 1
+            else 0
 
-        /// Query that an entity dispatches in the same manner as the dispatcher with the target type.
-        static member dispatchesAs (dispatcherTargetType : Type) (entity : Entity) =
-            Reflection.dispatchesAs dispatcherTargetType entity.DispatcherNp
+        static member setPositionSnapped snap position (entityRep : EntityRep) world =
+            let snapped = Math.snap2F snap position
+            entityRep.SetPosition snapped world
+
+        static member getTransform (entityRep : EntityRep) world =
+            { Transform.Position = entityRep.GetPosition world
+              Depth = entityRep.GetDepth world
+              Size = entityRep.GetSize world
+              Rotation = entityRep.GetRotation world }
+
+        static member setTransform positionSnap rotationSnap transform (entityRep : EntityRep) world =
+            let transform = Math.snapTransform positionSnap rotationSnap transform
+            world |>
+                entityRep.SetPosition transform.Position |>
+                entityRep.SetDepth transform.Depth |>
+                entityRep.SetSize transform.Size |>
+                entityRep.SetRotation transform.Rotation
+
+        static member pickingSort entityReps world =
+            let prioritiesAndEntityReps = List.map (fun (entityRep : EntityRep) -> (entityRep.GetPickingPriority world, entityRep)) entityReps
+            let prioritiesAndEntityReps = List.sortWith Entity.sortFstDesc prioritiesAndEntityReps
+            List.map snd prioritiesAndEntityReps
+
+        static member tryPick position entityReps world =
+            let entityRepsSorted = Entity.pickingSort entityReps world
+            List.tryFind
+                (fun (entityRep : EntityRep) ->
+                    let positionWorld = Camera.mouseToWorld (entityRep.GetViewType world) position world.State.Camera
+                    let transform = Entity.getTransform entityRep world
+                    let picked = Math.isPointInBounds3 positionWorld transform.Position transform.Size
+                    picked)
+                entityRepsSorted
 
         /// Make an entity.
         static member make dispatcher optOverlayName optName =
