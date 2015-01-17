@@ -13,54 +13,33 @@ module WorldGameModule =
 
     type World with
 
-        /// TODO: document!
-        static member getOptSelectedScreenAddress world =
-            let game = World.getGame world
-            game.OptSelectedScreenAddress
-        
-        /// TODO: document!
-        static member setOptSelectedScreenAddress optAddress world =
-            World.updateGame (Game.setOptSelectedScreenAddress optAddress) world
-        
-        /// Get the address of the currently selected screen (failing with an exception if there
-        /// isn't one).
-        static member getSelectedScreenAddress world =
-            Option.get <| World.getOptSelectedScreenAddress world
-        
-        /// Set the address of the currently selected screen. Be careful using this function
-        /// directly as you may be wanting to use the higher-level World.transitionScreen function.
-        static member setSelectedScreenAddress address world =
-            World.setOptSelectedScreenAddress (Some address) world
-        
         /// Try to get the address of the currently selected screen.
-        static member getOptSelectedScreen world =
-            let optSelectedScreenAddress = World.getOptSelectedScreenAddress world
-            match optSelectedScreenAddress with
-            | Some selectedScreenAddress -> World.getOptScreen selectedScreenAddress world
-            | None -> None
-
+        static member getOptSelectedScreenRep world =
+            let game = World.getGame world
+            game.OptSelectedScreenRep
+        
         /// Set the address of the currently selected screen to Some Address or None. Be careful
         /// using this function directly as you may be wanting to use the higher-level
         /// World.transitionScreen function.
-        static member setOptSelectedScreen optScreen world =
-            let optSelectedScreenAddress = World.getOptSelectedScreenAddress world
-            match optSelectedScreenAddress with
-            | Some selectedScreenAddress -> World.setScreen (Option.get optScreen) selectedScreenAddress world
-            | None -> failwith "Cannot set a non-existent screen."
-
-        /// Get the screen that is currently selected, failing with an exception if there isn't one.
-        static member getSelectedScreen world =
-            Option.get <| World.getOptSelectedScreen world
+        static member setOptSelectedScreenRep optScreenRep world =
+            World.updateGame (Game.setOptSelectedScreenRep optScreenRep) world
         
-        /// Set the currently selected screen.
-        static member setSelectedScreen screen world =
-            World.setOptSelectedScreen (Some screen) world
+        /// Get the address of the currently selected screen (failing with an exception if there
+        /// isn't one).
+        static member getSelectedScreenRep world =
+            Option.get <| World.getOptSelectedScreenRep world
+        
+        /// Set the address of the currently selected screen. Be careful using this function
+        /// directly as you may be wanting to use the higher-level World.transitionScreen function.
+        static member setSelectedScreenRep screenRep world =
+            World.setOptSelectedScreenRep (Some screenRep) world
 
         /// Query that a simulant at the given address is the currently selected screen, is
         /// contained by the currently selected screen or its groups.
-        static member isAddressSelected (address : 'a Address) world =
-            let optScreenAddress = World.getOptSelectedScreenAddress world
-            match (address.Names, Option.map (fun (address : Screen Address) -> address.Names) optScreenAddress) with
+        static member isSimulantSelected<'s when 's :> SimulantRep> (simulantRep : 's) world =
+            let optScreenRep = World.getOptSelectedScreenRep world
+            let optScreenNames = Option.map (fun (screenRep : ScreenRep) -> screenRep.ScreenAddress.Names) optScreenRep
+            match (simulantRep.SimulantAddress.Names, optScreenNames) with
             | ([], _) -> true
             | (_, None) -> false
             | (_, Some []) -> false

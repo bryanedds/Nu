@@ -68,7 +68,7 @@ module RigidBodyFacetModule =
              define? IsBullet false
              define? IsSensor false]
 
-        override facet.RegisterPhysics (entityRep, world) =
+        override facet.RegisterPhysics entityRep world =
             let bodyProperties = 
                 { BodyId = (entityRep.GetPhysicsId world).BodyId
                   Position = entityRep.GetPosition world + entityRep.GetSize world * 0.5f
@@ -88,12 +88,12 @@ module RigidBodyFacetModule =
                   IsSensor = entityRep.GetIsSensor world }
             World.createBody entityRep.EntityAddress (entityRep.GetId world) bodyProperties world
 
-        override facet.UnregisterPhysics (entityRep, world) =
+        override facet.UnregisterPhysics entityRep world =
             World.destroyBody (entityRep.GetPhysicsId world) world
 
-        override facet.PropagatePhysics (entityRep, world) =
-            let world = facet.UnregisterPhysics (entityRep, world)
-            facet.RegisterPhysics (entityRep, world)
+        override facet.PropagatePhysics entityRep world =
+            let world = facet.UnregisterPhysics entityRep world
+            facet.RegisterPhysics entityRep world
 
 [<AutoOpen>]
 module SpriteFacetModule =
@@ -109,7 +109,7 @@ module SpriteFacetModule =
         static member FieldDefinitions =
             [define? SpriteImage { PackageName = DefaultPackageName; AssetName = "Image3" }]
 
-        override facet.GetRenderDescriptors (entityRep : EntityRep, world) =
+        override facet.GetRenderDescriptors entityRep world =
             if  entityRep.GetVisible world &&
                 Camera.inView3 (entityRep.GetViewType world) (entityRep.GetPosition world) (entityRep.GetSize world) world.State.Camera then
                 [LayerableDescriptor
@@ -125,7 +125,7 @@ module SpriteFacetModule =
                               Color = Vector4.One }}]
             else []
 
-        override facet.GetQuickSize (entityRep, world) =
+        override facet.GetQuickSize entityRep world =
             match Metadata.tryGetTextureSizeAsVector2 (entityRep.GetSpriteImage world) world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
@@ -167,7 +167,7 @@ module AnimatedSpriteFacetModule =
              define? AnimationStutter 4L
              define? AnimationSheet { PackageName = DefaultPackageName; AssetName = "Image7" }]
 
-        override facet.GetRenderDescriptors (entityRep, world) =
+        override facet.GetRenderDescriptors entityRep world =
             if  entityRep.GetVisible world &&
                 Camera.inView3 (entityRep.GetViewType world) (entityRep.GetPosition world) (entityRep.GetSize world) world.State.Camera then
                 [LayerableDescriptor
@@ -183,7 +183,7 @@ module AnimatedSpriteFacetModule =
                               Color = Vector4.One }}]
             else []
 
-        override facet.GetQuickSize (entityRep, world) =
+        override facet.GetQuickSize entityRep world =
             entityRep.GetTileSize world
 
 [<AutoOpen>]
@@ -202,10 +202,10 @@ module GuiDispatcherModule =
         inherit EntityDispatcher ()
 
         static let handleMouseLeft event world =
-            let gui = event.SubscriberRep
+            let gui = event.SubscriberRep : EntityRep
             let data = event.Data : MouseButtonData
             let eventHandling =
-                if World.isAddressSelected gui.EntityAddress world && gui.GetVisible world then
+                if World.isSimulantSelected gui world && gui.GetVisible world then
                     let mousePositionWorld = Camera.mouseToWorld (gui.GetViewType world) data.Position world.State.Camera
                     if gui.GetSwallowMouseLeft world &&
                        Math.isPointInBounds3 mousePositionWorld (gui.GetPosition world) (gui.GetSize world) then
@@ -220,7 +220,7 @@ module GuiDispatcherModule =
              define? DisabledColor <| Vector4 0.75f
              define? SwallowMouseLeft true]
 
-        override dispatcher.Register (gui, world) =
+        override dispatcher.Register gui world =
             world |>
                 World.monitor handleMouseLeft MouseLeftDownEventAddress gui |>
                 World.monitor handleMouseLeft MouseLeftUpEventAddress gui
@@ -243,9 +243,9 @@ module ButtonDispatcherModule =
         inherit GuiDispatcher ()
 
         let handleMouseLeftDown event world =
-            let button = event.SubscriberRep
+            let button = event.SubscriberRep : EntityRep
             let data = event.Data : MouseButtonData
-            if World.isAddressSelected button.EntityAddress world then
+            if World.isSimulantSelected button world then
                 let mousePositionWorld = Camera.mouseToWorld (button.GetViewType world) data.Position world.State.Camera
                 if  Math.isPointInBounds3 mousePositionWorld (button.GetPosition world) (button.GetSize world) &&
                     button.GetVisible world then
@@ -258,9 +258,9 @@ module ButtonDispatcherModule =
             else (Cascade, world)
 
         let handleMouseLeftUp event world =
-            let button = event.SubscriberRep
+            let button = event.SubscriberRep : EntityRep
             let data = event.Data : MouseButtonData
-            if World.isAddressSelected button.EntityAddress world then
+            if World.isSimulantSelected button world then
                 let wasDown = button.GetDown world
                 let world = button.SetDown false world
                 let mousePositionWorld = Camera.mouseToWorld (button.GetViewType world) data.Position world.State.Camera
@@ -285,12 +285,12 @@ module ButtonDispatcherModule =
              define? DownImage { PackageName = DefaultPackageName; AssetName = "Image2" }
              define? OptClickSound <| Some { PackageName = DefaultPackageName; AssetName = "Sound" }]
 
-        override dispatcher.Register (button, world) =
+        override dispatcher.Register button world =
             world |>
                 World.monitor handleMouseLeftDown MouseLeftDownEventAddress button |>
                 World.monitor handleMouseLeftUp MouseLeftUpEventAddress button
 
-        override dispatcher.GetRenderDescriptors (button, world) =
+        override dispatcher.GetRenderDescriptors button world =
             if button.GetVisible world then
                 [LayerableDescriptor
                     { Depth = button.GetDepth world
@@ -305,7 +305,7 @@ module ButtonDispatcherModule =
                               Color = if button.GetEnabled world then Vector4.One else button.GetDisabledColor world }}]
             else []
 
-        override dispatcher.GetQuickSize (button, world) =
+        override dispatcher.GetQuickSize button world =
             match Metadata.tryGetTextureSizeAsVector2 (button.GetUpImage world) world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
@@ -325,7 +325,7 @@ module LabelDispatcherModule =
             [define? SwallowMouseLeft true
              define? LabelImage { PackageName = DefaultPackageName; AssetName = "Image4" }]
 
-        override dispatcher.GetRenderDescriptors (label, world) =
+        override dispatcher.GetRenderDescriptors label world =
             if label.GetVisible world then
                 [LayerableDescriptor
                     { Depth = label.GetDepth world
@@ -340,7 +340,7 @@ module LabelDispatcherModule =
                               Color = if label.GetEnabled world then Vector4.One else label.GetDisabledColor world }}]
             else []
 
-        override dispatcher.GetQuickSize (label, world) =
+        override dispatcher.GetQuickSize label world =
             match Metadata.tryGetTextureSizeAsVector2 (label.GetLabelImage world) world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
@@ -372,7 +372,7 @@ module TextDispatcherModule =
              define? TextColor Vector4.One
              define? BackgroundImage { PackageName = DefaultPackageName; AssetName = "Image4" }]
 
-        override dispatcher.GetRenderDescriptors (text, world) =
+        override dispatcher.GetRenderDescriptors text world =
             if text.GetVisible world then
                 [LayerableDescriptor
                     { Depth = text.GetDepth world
@@ -397,7 +397,7 @@ module TextDispatcherModule =
                               Color = if text.GetEnabled world then Vector4.One else text.GetDisabledColor world }}]
             else []
 
-        override dispatcher.GetQuickSize (text, world) =
+        override dispatcher.GetQuickSize text world =
             match Metadata.tryGetTextureSizeAsVector2 (text.GetBackgroundImage world) world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
@@ -422,9 +422,9 @@ module ToggleDispatcherModule =
         inherit GuiDispatcher ()
         
         let handleMouseLeftDown event world =
-            let toggle = event.SubscriberRep
+            let toggle = event.SubscriberRep : EntityRep
             let data = event.Data : MouseButtonData
-            if World.isAddressSelected toggle.EntityAddress world then
+            if World.isSimulantSelected toggle world then
                 let mousePositionWorld = Camera.mouseToWorld (toggle.GetViewType world) data.Position world.State.Camera
                 if  Math.isPointInBounds3 mousePositionWorld (toggle.GetPosition world) (toggle.GetSize world) &&
                     toggle.GetVisible world then
@@ -436,9 +436,9 @@ module ToggleDispatcherModule =
             else (Cascade, world)
 
         let handleMouseLeftUp event world =
-            let toggle = event.SubscriberRep
+            let toggle = event.SubscriberRep : EntityRep
             let data = event.Data : MouseButtonData
-            if World.isAddressSelected toggle.EntityAddress world then
+            if World.isSimulantSelected toggle world then
                 let wasPressed = toggle.GetPressed world
                 let world = toggle.SetPressed false world
                 let mousePositionWorld = Camera.mouseToWorld (toggle.GetViewType world) data.Position world.State.Camera
@@ -465,12 +465,12 @@ module ToggleDispatcherModule =
              define? OnImage { PackageName = DefaultPackageName; AssetName = "Image2" }
              define? OptToggleSound <| Some { PackageName = DefaultPackageName; AssetName = "Sound" }]
 
-        override dispatcher.Register (toggle, world) =
+        override dispatcher.Register toggle world =
             world |>
                 World.monitor handleMouseLeftDown MouseLeftDownEventAddress toggle |>
                 World.monitor handleMouseLeftUp MouseLeftUpEventAddress toggle
 
-        override dispatcher.GetRenderDescriptors (toggle, world) =
+        override dispatcher.GetRenderDescriptors toggle world =
             if toggle.GetVisible world then
                 [LayerableDescriptor
                     { Depth = toggle.GetDepth world
@@ -485,7 +485,7 @@ module ToggleDispatcherModule =
                               Color = if toggle.GetEnabled world then Vector4.One else toggle.GetDisabledColor world }}]
             else []
 
-        override dispatcher.GetQuickSize (toggle, world) =
+        override dispatcher.GetQuickSize toggle world =
             match Metadata.tryGetTextureSizeAsVector2 (toggle.GetOffImage world) world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
@@ -502,9 +502,9 @@ module FeelerDispatcherModule =
         inherit GuiDispatcher ()
 
         let handleMouseLeftDown event world =
-            let feeler = event.SubscriberRep
+            let feeler = event.SubscriberRep : EntityRep
             let data = event.Data : MouseButtonData
-            if World.isAddressSelected feeler.EntityAddress world then
+            if World.isSimulantSelected feeler world then
                 let mousePositionWorld = Camera.mouseToWorld (feeler.GetViewType world) data.Position world.State.Camera
                 if  Math.isPointInBounds3 mousePositionWorld (feeler.GetPosition world) (feeler.GetSize world) &&
                     feeler.GetVisible world then
@@ -517,9 +517,9 @@ module FeelerDispatcherModule =
             else (Cascade, world)
 
         let handleMouseLeftUp event world =
-            let feeler = event.SubscriberRep
+            let feeler = event.SubscriberRep : EntityRep
             let data = event.Data : MouseButtonData
-            if World.isAddressSelected feeler.EntityAddress world && feeler.GetVisible world then
+            if World.isSimulantSelected feeler world && feeler.GetVisible world then
                 if feeler.GetEnabled world then
                     let world = feeler.SetTouched false world
                     let world = World.publish4 data.Position (UntouchEventAddress ->>- feeler.EntityAddress) feeler world
@@ -531,12 +531,12 @@ module FeelerDispatcherModule =
             [define? SwallowMouseLeft false
              define? Touched false]
 
-        override dispatcher.Register (feeler, world) =
+        override dispatcher.Register feeler world =
             world |>
                 World.monitor handleMouseLeftDown MouseLeftDownEventAddress feeler |>
                 World.monitor handleMouseLeftUp MouseLeftUpEventAddress feeler
 
-        override dispatcher.GetQuickSize (_, _) =
+        override dispatcher.GetQuickSize _ _ =
             Vector2 64.0f
 
 [<AutoOpen>]
@@ -571,7 +571,7 @@ module FillBarDispatcherModule =
              define? FillImage { PackageName = DefaultPackageName; AssetName = "Image9" }
              define? BorderImage { PackageName = DefaultPackageName; AssetName = "Image10" }]
 
-        override dispatcher.GetRenderDescriptors (fillBar, world) =
+        override dispatcher.GetRenderDescriptors fillBar world =
             if fillBar.GetVisible world then
                 let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar world
                 [LayerableDescriptor
@@ -598,7 +598,7 @@ module FillBarDispatcherModule =
                               Color = if fillBar.GetEnabled world then Vector4.One else fillBar.GetDisabledColor world }}]
             else []
 
-        override dispatcher.GetQuickSize (fillBar, world) =
+        override dispatcher.GetQuickSize fillBar world =
             match Metadata.tryGetTextureSizeAsVector2 (fillBar.GetBorderImage world) world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
@@ -796,18 +796,18 @@ module TileMapDispatcherModule =
              define? TileMapAsset { PackageName = DefaultPackageName; AssetName = "TileMap" }
              define? Parallax 0.0f]
 
-        override dispatcher.Register (tileMap, world) =
+        override dispatcher.Register tileMap world =
             registerTileMapPhysics tileMap world
 
-        override dispatcher.Unregister (tileMap, world) =
+        override dispatcher.Unregister tileMap world =
             unregisterTileMapPhysics tileMap world
             
-        override dispatcher.PropagatePhysics (tileMap, world) =
+        override dispatcher.PropagatePhysics tileMap world =
             world |>
                 unregisterTileMapPhysics tileMap |>
                 registerTileMapPhysics tileMap
 
-        override dispatcher.GetRenderDescriptors (tileMap, world) =
+        override dispatcher.GetRenderDescriptors tileMap world =
             if tileMap.GetVisible world then
                 match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) world.State.AssetMetadataMap with
                 | Some (_, images, map) ->
@@ -848,7 +848,7 @@ module TileMapDispatcherModule =
                 | None -> []
             else []
 
-        override dispatcher.GetQuickSize (tileMap, world) =
+        override dispatcher.GetQuickSize tileMap world =
             match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) world.State.AssetMetadataMap with
             | Some (_, _, map) -> Vector2 (single <| map.Width * map.TileWidth, single <| map.Height * map.TileHeight)
             | None -> DefaultEntitySize
