@@ -34,7 +34,7 @@ module WorldPhysicsModule =
                             { Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed
                               Collidee = (atoea bodyCollisionMessage.Source2Address) }
-                        World.publish4 collisionData collisionAddress GameAddress world
+                        World.publish4 collisionData collisionAddress GameRep world
                     | None -> world
             | Exiting -> world
 
