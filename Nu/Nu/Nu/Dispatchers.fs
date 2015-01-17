@@ -96,25 +96,25 @@ module RigidBodyFacetModule =
              define? IsBullet false
              define? IsSensor false]
 
-        override facet.RegisterPhysics (entity, address, world) =
+        override facet.RegisterPhysics (entityRep, world) =
             let bodyProperties = 
-                { BodyId = entity.PhysicsId.BodyId
-                  Position = entity.Position + entity.Size * 0.5f
-                  Rotation = entity.Rotation
+                { BodyId = (entityRep.GetPhysicsId world).BodyId
+                  Position = entityRep.GetPosition + entity.Size * 0.5f
+                  Rotation = entityRep.GetRotation
                   Shape = getBodyShape entity
-                  BodyType = entity.BodyType
-                  Density = entity.Density
-                  Friction = entity.Friction
-                  Restitution = entity.Restitution
-                  FixedRotation = entity.FixedRotation
-                  LinearDamping = entity.LinearDamping
-                  AngularDamping = entity.AngularDamping
-                  GravityScale = entity.GravityScale
-                  CollisionCategories = Physics.toCollisionCategories entity.CollisionCategories
-                  CollisionMask = Physics.toCollisionCategories entity.CollisionMask
-                  IsBullet = entity.IsBullet
-                  IsSensor = entity.IsSensor }
-            World.createBody address entity.Id bodyProperties world
+                  BodyType = entityRep.GetBodyType
+                  Density = entityRep.GetDensity
+                  Friction = entityRep.GetFriction
+                  Restitution = entityRep.GetRestitution
+                  FixedRotation = entityRep.GetFixedRotation
+                  LinearDamping = entityRep.GetLinearDamping
+                  AngularDamping = entityRep.GetAngularDamping
+                  GravityScale = entityRep.GetGravityScale
+                  CollisionCategories = Physics.toCollisionCategories entityRep.GetCollisionCategories
+                  CollisionMask = Physics.toCollisionCategories entityRep.GetCollisionMask
+                  IsBullet = entityRep.GetIsBullet
+                  IsSensor = entityRep.GetIsSensor }
+            World.createBody address entityRep.GetId bodyProperties world
 
         override facet.UnregisterPhysics (entity, _, world) =
             World.destroyBody entity.PhysicsId world
