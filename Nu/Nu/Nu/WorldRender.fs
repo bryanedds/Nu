@@ -18,11 +18,6 @@ module WorldRenderModule =
           SubsystemOrder : single
           Renderer : IRenderer }
 
-        static member private getGroupRenderDescriptors world entities =
-            Map.toValueListBy
-                (fun entity -> Entity.getRenderDescriptors entity world)
-                entities
-
         static member private getScreenTransitionRenderDescriptors camera screen transition =
             match transition.OptDissolveImage with
             | Some dissolveImage ->
@@ -47,9 +42,18 @@ module WorldRenderModule =
             | Some selectedScreenAddress ->
                 match Map.tryFind (Address.head selectedScreenAddress) (World.getScreenMap world) with
                 | Some (_, groupMap) ->
-                    let entityMaps = Map.toValueListBy snd groupMap
-                    let descriptors = List.map (RendererSubsystem.getGroupRenderDescriptors world) entityMaps
-                    let descriptors = List.concat <| List.concat descriptors
+                    let entityReps =
+                        Map.fold
+                            (fun entityReps groupName (_, entityMap) ->
+                                let groupAddress = satoga selectedScreenAddress groupName
+                                Map.fold
+                                    (fun entityReps entityName _ -> { EntityAddress = gatoea groupAddress entityName } :: entityReps)
+                                    entityReps
+                                    entityMap)
+                            []
+                            groupMap
+                    let descriptors = List.map (fun entityRep -> Entity.getRenderDescriptors entityRep world) entityReps
+                    let descriptors = List.concat descriptors
                     let selectedScreen = World.getScreen selectedScreenAddress world
                     match selectedScreen.ScreenStateNp with
                     | IncomingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors world.State.Camera selectedScreen selectedScreen.Incoming

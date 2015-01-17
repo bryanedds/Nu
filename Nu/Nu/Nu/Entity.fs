@@ -134,15 +134,16 @@ module WorldEntityModule =
                 finalFieldDefinitionNameCounts
 
         /// Try to remove a facet with the given name from an entity.
-        static member tryRemoveFacet syncing facetName (entityRep : EntityRep) optAddress world =
-            let facets = entityRep.GetFacetsNp world
-            match List.tryFind (fun facet -> Reflection.getTypeName facet = facetName) facets with
+        static member tryRemoveFacet syncing facetName entity optAddress world =
+            match List.tryFind (fun facet -> Reflection.getTypeName facet = facetName) entity.FacetsNp with
             | Some facet ->
-                let world =
+                let (entity, world) =
                     match optAddress with
-                    | Some address -> facet.Unregister (entityRep, world)
-                    | None -> world
-                let entity = World.getEntity entityRep.EntityAddress world
+                    | Some address ->
+                        let entityRef = { EntityAddress = address }
+                        let world = facet.Unregister (entityRef, world)
+                        (World.getEntity address world, world)
+                    | None -> (entity, world)
                 let entity = { entity with Id = entity.Id } // hacky copy
                 let fieldNames = World.getEntityFieldDefinitionNamesToDetach entity facet
                 Reflection.detachFieldsViaNames fieldNames entity
@@ -154,14 +155,13 @@ module WorldEntityModule =
                     match optAddress with
                     | Some address -> World.setEntity entity address world
                     | None -> world
-                Right world
+                Right (entity, world)
             | None -> Left <| "Failure to remove facet '" + facetName + "' from entity."
 
         /// Try to add a facet with the given name to an entity.
-        static member tryAddFacet syncing facetName (entityRep : EntityRep) optAddress world =
+        static member tryAddFacet syncing facetName (entity : Entity) optAddress world =
             match World.tryGetFacet facetName world with
             | Right facet ->
-                let entity = World.getEntity entityRep.EntityAddress world
                 if Entity.isFacetCompatible world.Components.EntityDispatchers facet entity then
                     let entity = { entity with FacetsNp = facet :: entity.FacetsNp }
                     Reflection.attachFields facet entity
@@ -170,49 +170,49 @@ module WorldEntityModule =
                         else { entity with FacetNames = Reflection.getTypeName facet :: entity.FacetNames }
                     match optAddress with
                     | Some address ->
-                        let world = World.setEntity entity address world
+                        let entityRep = { EntityAddress = address }
                         let world = facet.Register (entityRep, world)
-                        Right world
-                    | None -> Right world
-                else Left <| "Facet '" + Reflection.getTypeName facet + "' is incompatible with entity '" + entityRep.GetName world + "'."
+                        let entity = World.getEntity address world
+                        Right (entity, world)
+                    | None -> Right (entity, world)
+                else Left <| "Facet '" + Reflection.getTypeName facet + "' is incompatible with entity '" + entity.Name + "'."
             | Left error -> Left error
 
         /// Try to remove multiple facets from an entity.
-        static member tryRemoveFacets syncing facetNamesToRemove entityRep optAddress world =
+        static member tryRemoveFacets syncing facetNamesToRemove entity optAddress world =
             List.fold
                 (fun eitherEntityWorld facetName ->
                     match eitherEntityWorld with
-                    | Right world -> World.tryRemoveFacet syncing facetName entityRep optAddress world
+                    | Right (entity, world) -> World.tryRemoveFacet syncing facetName entity optAddress world
                     | Left _ as left -> left)
-                (Right world)
+                (Right (entity, world))
                 facetNamesToRemove
 
         /// Try to add multiple facets to an entity.
-        static member tryAddFacets syncing facetNamesToAdd entityRep optAddress world =
+        static member tryAddFacets syncing facetNamesToAdd entity optAddress world =
             List.fold
                 (fun eitherEntityWorld facetName ->
                     match eitherEntityWorld with
-                    | Right world -> World.tryAddFacet syncing facetName entityRep optAddress world
+                    | Right (entity, world) -> World.tryAddFacet syncing facetName entity optAddress world
                     | Left _ as left -> left)
-                (Right world)
+                (Right (entity, world))
                 facetNamesToAdd
 
         /// Try to set the facet names of an entity, synchronizing facet as needed.
-        static member trySetFacetNames oldFacetNames newFacetNames entityRep optAddress world =
+        static member trySetFacetNames oldFacetNames newFacetNames entity optAddress world =
             let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames newFacetNames
             let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames newFacetNames
-            match World.tryRemoveFacets false facetNamesToRemove entityRep optAddress world with
-            | Right world -> World.tryAddFacets false facetNamesToAdd entityRep optAddress world
+            match World.tryRemoveFacets false facetNamesToRemove entity optAddress world with
+            | Right (entity, world) -> World.tryAddFacets false facetNamesToAdd entity optAddress world
             | Left _ as left -> left
 
         /// Try to synchronize the facets of an entity to its current facet names.
-        static member trySynchronizeFacets oldFacetNames (entityRep : EntityRep) optAddress world =
-            let facetNames = entityRep.GetFacetNames world
-            let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames facetNames
-            let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames facetNames
-            match World.tryRemoveFacets true facetNamesToRemove entityRep optAddress world with
-            | Right world -> World.tryAddFacets true facetNamesToAdd entityRep optAddress world
-            | Left error -> Left error
+        static member trySynchronizeFacets oldFacetNames entity optAddress world =
+            let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames entity.FacetNames
+            let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames entity.FacetNames
+            match World.tryRemoveFacets true facetNamesToRemove entity optAddress world with
+            | Right (entity, world) -> World.tryAddFacets true facetNamesToAdd entity optAddress world
+            | Left _ as left -> left
 
         static member private attachIntrinsicFacetsViaNames (entity : Entity) world =
             let components = world.Components
@@ -294,7 +294,7 @@ module WorldEntityModule =
             // synchronize the entity's facets (and attach their fields)
             let entity =
                 match World.trySynchronizeFacets [] entity None world with
-                | Right _ -> entity
+                | Right (entity, _) -> entity
                 | Left error -> debug error; entity
 
             // attach the entity's dispatcher fields
