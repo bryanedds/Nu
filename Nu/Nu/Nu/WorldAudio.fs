@@ -22,7 +22,7 @@ module WorldAudioModule =
             member this.ClearMessages () = { this with AudioPlayer = this.AudioPlayer.ClearMessages () } :> Subsystem
             member this.EnqueueMessage message = { this with AudioPlayer = this.AudioPlayer.EnqueueMessage (message :?> AudioMessage) } :> Subsystem
             member this.ProcessMessages _ = (() :> obj, { this with AudioPlayer = this.AudioPlayer.Play () } :> Subsystem)
-            member this.ApplyResult (_, world) = world
+            member this.ApplyResult _ world = world
             member this.CleanUp world = (this :> Subsystem, world)
 
     type World with

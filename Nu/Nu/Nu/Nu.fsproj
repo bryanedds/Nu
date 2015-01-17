@@ -81,10 +81,6 @@
     <Compile Include="Simulation.fs" />
     <Compile Include="WorldConstants.fs" />
     <Compile Include="WorldPrimitives.fs" />
-    <Compile Include="Entity.fs" />
-    <Compile Include="Group.fs" />
-    <Compile Include="Screen.fs" />
-    <Compile Include="Game.fs" />
     <Compile Include="WorldPhysics.fs" />
     <Compile Include="WorldRender.fs" />
     <Compile Include="WorldAudio.fs" />
