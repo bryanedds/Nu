@@ -36,7 +36,7 @@ module WorldModule =
         /// out via another screen.
         static member tryGetIsSelectedScreenIdling world =
             match World.getOptSelectedScreenRep world with
-            | Some selectedScreenRep -> Some <| Screen.isIdling selectedScreen
+            | Some selectedScreenRep -> Some <| selectedScreenRep.GetIdling world
             | None -> None
 
         /// Query that the selected screen is idling; that is, neither transitioning in or
@@ -55,63 +55,57 @@ module WorldModule =
         static member isSelectedScreenTransitioning world =
             not <| World.isSelectedScreenIdling world
 
-        static member private setScreenState state address screen world =
-            let screen = Screen.setScreenStateNp state screen
-            let world =
-                match state with
-                | IdlingState ->
-                    world |>
-                        World.unsubscribe ScreenTransitionMouseLeftKey |>
-                        World.unsubscribe ScreenTransitionMouseCenterKey |>
-                        World.unsubscribe ScreenTransitionMouseRightKey |>
-                        World.unsubscribe ScreenTransitionMouseX1Key |>
-                        World.unsubscribe ScreenTransitionMouseX2Key |>
-                        World.unsubscribe ScreenTransitionKeyboardKeyKey
-                | IncomingState
-                | OutgoingState ->
-                    world |>
-                        World.subscribe ScreenTransitionMouseLeftKey World.handleAsSwallow (MouseLeftEventAddress ->- AnyEventAddress) GameRep |>
-                        World.subscribe ScreenTransitionMouseCenterKey World.handleAsSwallow (MouseCenterEventAddress ->- AnyEventAddress) GameRep |>
-                        World.subscribe ScreenTransitionMouseRightKey World.handleAsSwallow (MouseRightEventAddress ->- AnyEventAddress) GameRep |>
-                        World.subscribe ScreenTransitionMouseX1Key World.handleAsSwallow (MouseX1EventAddress ->- AnyEventAddress) GameRep |>
-                        World.subscribe ScreenTransitionMouseX2Key World.handleAsSwallow (MouseX2EventAddress ->- AnyEventAddress) GameRep |>
-                        World.subscribe ScreenTransitionKeyboardKeyKey World.handleAsSwallow (KeyboardKeyEventAddress ->- AnyEventAddress) GameRep
-            let world = World.setScreen screen address world
-            (screen, world)
+        static member private setScreenState state (screenRep : ScreenRep) world =
+            let world = screenRep.SetScreenStateNp state world
+            match state with
+            | IdlingState ->
+                world |>
+                    World.unsubscribe ScreenTransitionMouseLeftKey |>
+                    World.unsubscribe ScreenTransitionMouseCenterKey |>
+                    World.unsubscribe ScreenTransitionMouseRightKey |>
+                    World.unsubscribe ScreenTransitionMouseX1Key |>
+                    World.unsubscribe ScreenTransitionMouseX2Key |>
+                    World.unsubscribe ScreenTransitionKeyboardKeyKey
+            | IncomingState
+            | OutgoingState ->
+                world |>
+                    World.subscribe ScreenTransitionMouseLeftKey World.handleAsSwallow (MouseLeftEventAddress ->- AnyEventAddress) GameRep |>
+                    World.subscribe ScreenTransitionMouseCenterKey World.handleAsSwallow (MouseCenterEventAddress ->- AnyEventAddress) GameRep |>
+                    World.subscribe ScreenTransitionMouseRightKey World.handleAsSwallow (MouseRightEventAddress ->- AnyEventAddress) GameRep |>
+                    World.subscribe ScreenTransitionMouseX1Key World.handleAsSwallow (MouseX1EventAddress ->- AnyEventAddress) GameRep |>
+                    World.subscribe ScreenTransitionMouseX2Key World.handleAsSwallow (MouseX2EventAddress ->- AnyEventAddress) GameRep |>
+                    World.subscribe ScreenTransitionKeyboardKeyKey World.handleAsSwallow (KeyboardKeyEventAddress ->- AnyEventAddress) GameRep
 
         /// Select the given screen without transitioning.
-        static member selectScreen screen world =
+        static member selectScreen screenRep world =
             let world =
                 match World.getOptSelectedScreenRep world with
                 | Some selectedScreenRep ->  World.publish4 () (DeselectEventAddress ->>- selectedScreenRep.ScreenAddress) selectedScreenRep world
                 | None -> world
-            let (screen, world) = World.setScreenState IncomingState screenAddress screen world
-            let world = World.setOptSelectedScreenAddress (Some screenAddress) world
-            let world = World.publish4 () (SelectEventAddress ->>- screen.ScreenAddress) screen world
-            (screen, world)
+            let world = World.setScreenState IncomingState screenRep world
+            let world = World.setOptSelectedScreenRep (Some screenRep) world
+            World.publish4 () (SelectEventAddress ->>- screenRep.ScreenAddress) screenRep world
 
         /// Try to transition to the screen at the destination address if no other transition is in
         /// progress.
-        static member tryTransitionScreen destinationAddress world =
-            match World.getOptSelectedScreenAddress world with
-            | Some selectedScreenAddress ->
-                match World.getOptScreen selectedScreenAddress world with
-                | Some selectedScreen ->
+        static member tryTransitionScreen destinationRep world =
+            match World.getOptSelectedScreenRep world with
+            | Some selectedScreenRep ->
+                if World.containsScreen selectedScreenRep world then
                     let subscriptionKey = World.makeSubscriptionKey ()
-                    let subscription = fun (_ : Event<unit, Screen>) world ->
-                        match world.State.OptScreenTransitionDestinationAddress with
-                        | Some address ->
-                            let destinationScreen = World.getScreen destinationAddress world
+                    let subscription = fun (_ : Event<unit, ScreenRep>) world ->
+                        match world.State.OptScreenTransitionDestinationRep with
+                        | Some destinationRep ->
                             let world = World.unsubscribe subscriptionKey world
-                            let world = World.setOptScreenTransitionDestinationAddress None world
-                            let world = snd <| World.selectScreen destinationScreen address world
+                            let world = World.setOptScreenTransitionDestinationRep None world
+                            let world = World.selectScreen destinationRep world
                             (Cascade, world)
                         | None -> failwith "No valid OptScreenTransitionDestinationAddress during screen transition!"
-                    let world = World.setOptScreenTransitionDestinationAddress (Some destinationAddress) world
-                    let world = snd <| World.setScreenState OutgoingState selectedScreenAddress selectedScreen world
-                    let world = World.subscribe<unit, Screen> subscriptionKey subscription (OutgoingFinishEventAddress ->>- selectedScreenAddress) selectedScreenAddress world
+                    let world = World.setOptScreenTransitionDestinationRep (Some destinationRep) world
+                    let world = World.setScreenState OutgoingState selectedScreenRep world
+                    let world = World.subscribe<unit, ScreenRep> subscriptionKey subscription (OutgoingFinishEventAddress ->>- selectedScreenRep.ScreenAddress) selectedScreenRep world
                     Some world
-                | None -> None
+                else None
             | None -> None
 
         /// Transition to the screen at the destination address (failing with an exception if
@@ -120,49 +114,51 @@ module WorldModule =
             Option.get <| World.tryTransitionScreen destinationAddress world
             
         // TODO: replace this with more sophisticated use of handleAsScreenTransition4, and so on for its brethren.
-        static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> Simulant> eventHandling destinationAddress (_ : Event<'a, 's>) world =
-            let destinationScreen = World.getScreen destinationAddress world
-            let world = snd <| World.selectScreen destinationScreen destinationAddress world
+        static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> SimulantRep> eventHandling destinationRep (_ : Event<'a, 's>) world =
+            let world = World.selectScreen destinationRep world
             (eventHandling, world)
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the screen at the given destination address.
-        static member handleAsScreenTransitionFromSplash<'a, 's when 's :> Simulant> destinationAddress event world =
-            World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destinationAddress event world
+        static member handleAsScreenTransitionFromSplash<'a, 's when 's :> SimulantRep> destinationRep event world =
+            World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destinationRep event world
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the screen at the given destination address, as well as
         /// with additional provided via the 'by' procedure.
-        static member handleAsScreenTransitionFromSplashBy<'a, 's when 's :> Simulant> by destinationAddress event  (world : World) =
+        static member handleAsScreenTransitionFromSplashBy<'a, 's when 's :> SimulantRep> by destinationRep event (world : World) =
             let (eventHandling, world) = by event world
-            World.handleAsScreenTransitionFromSplash4<'a, 's> eventHandling destinationAddress event world
+            World.handleAsScreenTransitionFromSplash4<'a, 's> eventHandling destinationRep event world
 
-        static member private handleAsScreenTransition4<'a, 's when 's :> Simulant> eventHandling destinationAddress (_ : Event<'a, 's>) world =
-            match World.tryTransitionScreen destinationAddress world with
+        static member private handleAsScreenTransition4<'a, 's when 's :> SimulantRep>
+            eventHandling destinationRep (_ : Event<'a, 's>) world =
+            match World.tryTransitionScreen destinationRep world with
             | Some world -> (eventHandling, world)
             | None ->
-                trace <| "Program Error: Invalid screen transition for destination address '" + acstring destinationAddress + "'."
+                trace <| "Program Error: Invalid screen transition for destination address '" + acstring destinationRep.ScreenAddress + "'."
                 (eventHandling, world)
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the screen at the given destination address.
-        static member handleAsScreenTransition<'a, 's when 's :> Simulant> destinationAddress event world =
-            World.handleAsScreenTransition4<'a, 's> Cascade destinationAddress event world
+        static member handleAsScreenTransition<'a, 's when 's :> SimulantRep> destinationRep event world =
+            World.handleAsScreenTransition4<'a, 's> Cascade destinationRep event world
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the screen at the given destination address, as well as
         /// with additional provided via the 'by' procedure.
-        static member handleAsScreenTransitionBy<'a, 's when 's :> Simulant> by destinationAddress event (world : World) =
+        static member handleAsScreenTransitionBy<'a, 's when 's :> SimulantRep> by destinationRep event (world : World) =
             let (eventHandling, world) = by event world
-            World.handleAsScreenTransition4<'a, 's> eventHandling destinationAddress event world
+            World.handleAsScreenTransition4<'a, 's> eventHandling destinationRep event world
 
-        static member private updateScreenTransition1 screen transition =
-            if screen.TransitionTicksNp = transition.TransitionLifetime then (true, { screen with TransitionTicksNp = 0L })
-            else (false, { screen with TransitionTicksNp = screen.TransitionTicksNp + 1L })
+        static member private updateScreenTransition1 (screenRep : ScreenRep) transition world =
+            let transitionTicks = screenRep.GetTransitionTicksNp world
+            if transitionTicks = transition.TransitionLifetime
+            then (true, screenRep.SetTransitionTicksNp 0L world)
+            else (false, screenRep.SetTransitionTicksNp (transitionTicks + 1L) world)
 
         static member private updateScreenTransition world =
             // TODO: split this function up...
-            match World.getOptSelectedScreenAddress world with
+            match World.getOptSelectedScreenRep world with
             | Some selectedScreenAddress ->
                 let selectedScreen = World.getScreen selectedScreenAddress world
                 match selectedScreen.ScreenStateNp with

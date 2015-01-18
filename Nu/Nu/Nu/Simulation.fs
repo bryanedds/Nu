@@ -568,7 +568,7 @@ module SimulationModule =
         { TickTime : int64
           Liveness : Liveness
           Interactivity : Interactivity
-          OptScreenTransitionDestinationAddress : Screen Address option
+          OptScreenTransitionDestinationRep : ScreenRep option
           Camera : Camera
           AssetMetadataMap : AssetMetadataMap
           AssetGraphFilePath : string
@@ -1139,13 +1139,13 @@ module SimulationModule =
             let camera = updater <| World.getCamera world
             World.setCamera camera world
 
-        /// Get the OptScreenTransitionDestinationAddress field of the world.
-        static member getOptScreenTransitionDestinationAddress world =
-            world.State.OptScreenTransitionDestinationAddress
+        /// Get the OptScreenTransitionDestinationRep field of the world.
+        static member getOptScreenTransitionDestinationRep world =
+            world.State.OptScreenTransitionDestinationRep
 
-        /// Set the OptScreenTransitionDestinationAddress field of the world.
-        static member internal setOptScreenTransitionDestinationAddress address world =
-            let state = { world.State with OptScreenTransitionDestinationAddress = address  }
+        /// Set the OptScreenTransitionDestinationRep field of the world.
+        static member internal setOptScreenTransitionDestinationRep destinationRep world =
+            let state = { world.State with OptScreenTransitionDestinationRep = destinationRep }
             World.setState state world
 
         /// Get the asset metadata map.
