@@ -1396,6 +1396,22 @@ module SimulationModule =
             let entity = updater entity
             World.setEntity entity entityRep world
 
+        static member private registerEntity (entityRep : EntityRep) world =
+            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
+            let facets = entityRep.GetFacetsNp world
+            let world = dispatcher.Register entityRep world
+            List.fold
+                (fun world (facet : Facet) -> facet.Register entityRep world)
+                world
+                facets
+        
+        static member private unregisterEntity (entityRep : EntityRep) world =
+            let facets = entityRep.GetFacetsNp world
+            List.fold
+                (fun world (facet : Facet) -> facet.Unregister entityRep world)
+                world
+                facets
+
         static member private addEntity entity entityRep world =
             if not <| World.containsEntity entityRep world then
                 let world = World.setEntityWithoutEvent entity entityRep world
@@ -1422,24 +1438,6 @@ module SimulationModule =
             let entityMap = World.getEntityMapInGroup groupRep world
             let groupAddress = groupRep.GroupAddress
             Seq.map (fun (kvp : KeyValuePair<string, _>) -> { EntityAddress = World.gatoea groupAddress kvp.Key }) entityMap
-
-        /// Register an entity when adding it to a group.
-        static member registerEntity (entityRep : EntityRep) world =
-            let dispatcher = entityRep.GetDispatcherNp world : EntityDispatcher
-            let facets = entityRep.GetFacetsNp world
-            let world = dispatcher.Register entityRep world
-            List.fold
-                (fun world (facet : Facet) -> facet.Register entityRep world)
-                world
-                facets
-        
-        /// Unregister an entity when removing it from a group.
-        static member unregisterEntity (entityRep : EntityRep) world =
-            let facets = entityRep.GetFacetsNp world
-            List.fold
-                (fun world (facet : Facet) -> facet.Unregister entityRep world)
-                world
-                facets
 
         /// Remove an entity from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the entity's existence. Use with caution.
@@ -2162,14 +2160,14 @@ module SimulationModule =
             let game = updater game
             World.setGame game world
 
-        static member private registerGame (gameRep : GameRep) (world : World) : World =
-            let dispatcher = gameRep.GetDispatcherNp world : GameDispatcher
-            dispatcher.Register gameRep world
-
         static member internal makeGame dispatcher =
             let game = Game.make dispatcher
             Reflection.attachFields dispatcher game
             game
+
+        static member internal registerGame (gameRep : GameRep) (world : World) : World =
+            let dispatcher = gameRep.GetDispatcherNp world : GameDispatcher
+            dispatcher.Register gameRep world
 
         (* World *)
 
