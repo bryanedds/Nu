@@ -38,7 +38,8 @@ module WorldPhysicsModule =
                         IntegratorSubsystem.handleBodyTransformMessage bodyTransformMessage entityRep world
                     else world
                 | BodyCollisionMessage bodyCollisionMessage ->
-                    match World.getOptEntity (atoea bodyCollisionMessage.SourceAddress) world with
+                    let sourceRep = { EntityAddress = atoea bodyCollisionMessage.SourceAddress }
+                    match World.getOptEntity sourceRep world with
                     | Some _ ->
                         let collisionAddress = CollisionEventAddress ->- bodyCollisionMessage.SourceAddress
                         let collisionData =

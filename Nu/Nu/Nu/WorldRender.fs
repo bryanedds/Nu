@@ -53,9 +53,9 @@ module WorldRenderModule =
                                     entityReps)
                             groupMap
                             []
-                    let descriptors = List.map (fun entityRep -> Entity.getRenderDescriptors entityRep world) entityReps
+                    let descriptors = List.map (fun entityRep -> World.getRenderDescriptors entityRep world) entityReps
                     let descriptors = List.concat descriptors
-                    let selectedScreen = World.getScreen selectedScreenAddress world
+                    let selectedScreen = World.getScreen selectedScreenRep world
                     match selectedScreen.ScreenStateNp with
                     | IncomingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors world.State.Camera selectedScreen selectedScreen.Incoming
                     | OutgoingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors world.State.Camera selectedScreen selectedScreen.Outgoing
@@ -73,7 +73,7 @@ module WorldRenderModule =
                 let renderDescriptors = RendererSubsystem.getRenderDescriptors world
                 (() :> obj, { this with Renderer = this.Renderer.Render world.State.Camera renderDescriptors } :> Subsystem)
 
-            member this.ApplyResult (_, world) = world
+            member this.ApplyResult _ world = world
             member this.CleanUp world = (this :> Subsystem, world)
 
     type World with
