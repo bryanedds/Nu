@@ -141,7 +141,7 @@ module Chain =
             let world = advance event world
             (eventHandling, world)
         let world = advance Unchecked.defaultof<Event<'a, 'o>> world
-        let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observation.ObserverAddress world
+        let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observation.ObserverRep world
         (unsubscribe, world)
 
     /// Run a chain over Nu's event system.
@@ -171,105 +171,3 @@ module Chain =
     /// Update the world by its state.
     let updateByState expr : Chain<'e, unit> =
         chain { do! update <| World.updateByState expr }
-
-    /// Update a simulant at the given address with the given 'updater' procedure.
-    let updateSimulantAndW expr address : Chain<'e, unit> =
-        chain { do! update <| World.updateSimulantAndW expr address }
-
-    /// Update a simulant with the given 'updater' procedure at the given address.
-    let updateSimulantW expr address : Chain<'e, unit> =
-        chain { do! update <| World.updateSimulantW expr address }
-
-    /// Update a simulant with the given 'updater' procedure at the given address.
-    let updateSimulant expr address : Chain<'e, unit> =
-        updateSimulantW (flip (fun _ -> expr)) address
-
-    /// Update the world with the given 'updater' procedure that uses the simulant at given
-    /// address in its computation.
-    let updateBySimulant expr address : Chain<'e, unit> =
-        chain { do! update <| World.updateBySimulant expr address }
-
-    /// Update the game with the given 'updater' procedure.
-    let updateGameAndW expr : Chain<'e, unit> =
-        chain { do! update <| World.updateGameAndW expr }
-
-    /// Update the game with the given 'updater' procedure.
-    let updateGameW expr : Chain<'e, unit> =
-        chain { do! update <| World.updateGameW expr }
-
-    /// Update the game with the given 'updater' procedure.
-    let updateGame expr : Chain<'e, unit> =
-        updateGameW <| flip (fun _ -> expr)
-
-    /// Update the world with the given 'updater' procedure that uses the game in its
-    /// computation.
-    let updateByGame expr : Chain<'e, unit> =
-        chain { do! update <| World.updateByGame expr }
-
-    /// Update a screen at the given address with the given 'updater' procedure.
-    let updateScreenAndW expr address : Chain<'e, unit> =
-        chain { do! update <| World.updateScreenAndW expr address }
-
-    /// Update a screen with the given 'updater' procedure at the given address.
-    let updateScreenW expr address : Chain<'e, unit> =
-        chain { do! update <| World.updateScreenW expr address }
-
-    /// Update a screen with the given 'updater' procedure at the given address.
-    let updateScreen expr address : Chain<'e, unit> =
-        updateScreenW (flip (fun _ -> expr)) address
-
-    /// Update the world with the given 'updater' procedure that uses the screen at given
-    /// address in its computation.
-    let updateByScreen expr address : Chain<'e, unit> =
-        chain { do! update <| World.updateByScreen expr address }
-
-    /// Update a group at the given address and the world with the given 'updater' procedure.
-    let updateGroupW expr address : Chain<'e, unit> =
-        chain { do! update <| World.updateGroupW expr address }
-
-    /// Update a group with the given 'updater' procedure at the given address.
-    let updateGroupAndW expr address : Chain<'e, unit> =
-        chain { do! update <| World.updateGroupAndW expr address }
-
-    /// Update a group with the given 'updater' procedure at the given address.
-    let updateGroup expr address : Chain<'e, unit> =
-        updateGroupW (flip (fun _ -> expr)) address
-
-    /// Update the world with the given 'updater' procedure that uses the group at given
-    /// address in its computation.
-    let updateByGroup expr address : Chain<'e, unit> =
-        chain { do! update <| World.updateByGroup expr address }
-
-    /// Update an entity at the given address and the world with the given 'updater' procedure.
-    let updateEntityAndW expr address : Chain<'e, unit> =
-        chain { do! update <| World.updateEntityAndW expr address }
-
-    /// Update an entity with the given 'updater' procedure at the given address.
-    let updateEntityW expr address : Chain<'e, unit> =
-        chain { do! update <| World.updateEntityW expr address }
-
-    /// Update an entity with the given 'updater' procedure at the given address.
-    let updateEntity expr address : Chain<'e, unit> =
-        updateEntityW (flip (fun _ -> expr)) address
-
-    /// Update the world with the given 'updater' procedure that uses the entity at given
-    /// address in its computation.
-    let updateByEntity expr address : Chain<'e, unit> =
-        chain { do! update <| World.updateByEntity expr address }
-
-    /// Update a lensed value at the given address and the world with the given 'updater' procedure.
-    let updateLensedAndW expr lens =
-        chain { do! update <| World.updateLensedAndW expr lens }
-
-    /// Update a lensed value with the given 'updater' procedure at the given address.
-    let updateLensedW expr lens =
-        chain { do! update <| World.updateLensedW expr lens }
-
-    /// Update a lensed value with the given 'updater' procedure at the given address.
-    let updateLensed expr lens =
-        chain { do! update <| World.updateLensed expr lens }
-
-    /// Update the world with the given 'updater' procedure that uses the lensed value at given
-    /// address in its computation.
-    let updateByLensed expr lens =
-        chain { do! update <| World.updateByLensed expr lens }
