@@ -430,6 +430,88 @@ module SimulationModule =
               FacetsNp = []
               OptOverlayName = optOverlayName
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
+            
+    /// A marker interface for simulation types (Game, Screen, Group, Entity).
+    /// The only methods that have a place in here are those used internally by Nu's event system.
+    and SimulantRep =
+        interface
+            /// Get the entity's publishing priority.
+            abstract GetPublishingPriority : (EntityRep -> World -> single) -> World -> single
+            abstract SimulantAddress : Simulant Address
+        end
+
+    /// The game type that hosts the various screens used to navigate through a game.
+    and [<StructuralEquality; NoComparison>] GameRep =
+        { GameAddress : Game Address }
+        
+        interface SimulantRep with
+            member this.GetPublishingPriority _ _ = GamePublishingPriority
+            member this.SimulantAddress = Address.changeType<Game, Simulant> this.GameAddress
+        end
+
+    /// The screen type that allows transitioning to and from other screens, and also hosts the
+    /// currently interactive groups of entities.
+    and [<StructuralEquality; NoComparison>] ScreenRep =
+        { ScreenAddress : Screen Address }
+        
+        interface SimulantRep with
+            member this.GetPublishingPriority _ _ = ScreenPublishingPriority
+            member this.SimulantAddress = Address.changeType<Screen, Simulant> this.ScreenAddress
+        end
+
+    /// Forms a logical group of entities.
+    and [<StructuralEquality; NoComparison>] GroupRep =
+        { GroupAddress : Group Address }
+        
+        interface SimulantRep with
+            member this.GetPublishingPriority _ _ = GroupPublishingPriority
+            member this.SimulantAddress = Address.changeType<Group, Simulant> this.GroupAddress
+        end
+
+    /// The type around which the whole game engine is based! Used in combination with dispatchers
+    /// to implement things like buttons, characters, blocks, and things of that sort.
+    and [<StructuralEquality; NoComparison>] EntityRep =
+        { EntityAddress : Entity Address }
+
+        interface SimulantRep with
+            member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
+            member this.SimulantAddress = Address.changeType<Entity, Simulant> this.EntityAddress
+        end
+
+    /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
+    /// specific values.
+    and NuPlugin () =
+
+        /// Make user-defined subsystems such that Nu can utilitze them at run-time.
+        abstract MakeSubsystems : unit -> (string * Subsystem) list
+        default this.MakeSubsystems () = []
+        
+        /// Optionally make a user-defined game dispatchers such that Nu can utililize it at run-time.
+        abstract MakeOptGameDispatcher : unit -> GameDispatcher option
+        default this.MakeOptGameDispatcher () = None
+        
+        /// Make user-defined screen dispatchers such that Nu can utililize them at run-time.
+        abstract MakeScreenDispatchers : unit -> ScreenDispatcher list
+        default this.MakeScreenDispatchers () = []
+        
+        /// Make user-defined group dispatchers such that Nu can utililize them at run-time.
+        abstract MakeGroupDispatchers : unit -> GroupDispatcher list
+        default this.MakeGroupDispatchers () = []
+        
+        /// Make user-defined entity dispatchers such that Nu can utililize them at run-time.
+        abstract MakeEntityDispatchers : unit -> EntityDispatcher list
+        default this.MakeEntityDispatchers () = []
+        
+        /// Make user-defined assets such that Nu can utililize them at run-time.
+        abstract MakeFacets : unit -> Facet list
+        default this.MakeFacets () = []
+        
+        /// Make the overlay routes that will allow Nu to use different overlays for the specified
+        /// types. For example, a returned router of (typeof<ButtonDispatcher>.Name, Some "CustomButtonOverlay")
+        /// will cause all buttons to use the overlay with the name "CustomButtonOverlay" rather
+        /// than the default "ButtonDispatcher" overlay.
+        abstract MakeOverlayRoutes : unit -> (string * string option) list
+        default this.MakeOverlayRoutes () = []
 
     /// Represents an untyped message to a subsystem.
     and SubsystemMessage = obj
@@ -494,6 +576,118 @@ module SimulationModule =
           OverlayRouter : OverlayRouter
           OverlayFilePath : string
           UserState : obj }
+
+    and GameRep with
+        
+        member this.GetId world = (World.getGame world).Id
+        member this.GetCreationTimeNp world = (World.getGame world).CreationTimeNp
+        member this.GetDispatcherNp world = (World.getGame world).DispatcherNp
+        member this.GetOptSelectedScreenRep world = (World.getGame world).OptSelectedScreenRep
+        member this.SetOptSelectedScreenRep value world = World.updateGame (fun (game : Game) -> { game with OptSelectedScreenRep = value}) world
+        member this.GetPublishChanges world = (World.getGame world).PublishChanges
+        member this.SetPublishChanges value world = World.updateGame (fun game -> { game with PublishChanges = value}) world
+        member this.GetXtension world = (World.getGame world).Xtension
+        member this.SetXtension value world = World.updateGame (fun game -> { game with Xtension = value}) world
+        member this.UpdateXtension updater world = this.SetXtension (updater <| this.GetXtension world) world
+
+        /// Query that a game dispatches in the same manner as the dispatcher with the target type.
+        member this.DispatchesAs (dispatcherTargetType : Type) world =
+            Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
+
+    and ScreenRep with
+
+        member this.GetId world = (World.getScreen this world).Id
+        member this.GetName world = (World.getScreen this world).Name
+        member this.GetCreationTimeNp world = (World.getScreen this world).CreationTimeNp
+        member this.GetDispatcherNp world = (World.getScreen this world).DispatcherNp
+        member this.GetScreenStateNp world = (World.getScreen this world).ScreenStateNp
+        member this.SetScreenStateNp value world = World.updateScreen (fun screen -> { screen with ScreenStateNp = value}) this world
+        member this.GetTransitionTicksNp world = (World.getScreen this world).TransitionTicksNp
+        member this.SetTransitionTicksNp value world = World.updateScreen (fun screen -> { screen with TransitionTicksNp = value}) this world
+        member this.GetIncoming world = (World.getScreen this world).Incoming
+        member this.SetIncoming value world = World.updateScreen (fun screen -> { screen with Incoming = value}) this world
+        member this.GetOutgoing world = (World.getScreen this world).Outgoing
+        member this.SetOutgoing value world = World.updateScreen (fun screen -> { screen with Outgoing = value}) this world
+        member this.GetPublishChanges world = (World.getScreen this world).PublishChanges
+        member this.SetPublishChanges value world = World.updateScreen (fun (screen : Screen) -> { screen with PublishChanges = value}) this world
+        member this.GetPersistent world = (World.getScreen this world).Persistent
+        member this.SetPersistent value world = World.updateScreen (fun screen -> { screen with Persistent = value}) this world
+        member this.GetXtension world = (World.getScreen this world).Xtension
+        member this.SetXtension value world = World.updateScreen (fun screen -> { screen with Xtension = value}) this world
+        member this.UpdateXtension updater world = this.SetXtension (updater <| this.GetXtension world) world
+        member this.GetIdling world = this.GetScreenStateNp world = IdlingState
+
+        /// Query that a screen dispatches in the same manner as the dispatcher with the target type.
+        member this.DispatchesAs (dispatcherTargetType : Type) world =
+            Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
+
+    and GroupRep with
+
+        member this.GetId world = (World.getGroup this world).Id
+        member this.GetName world = (World.getGroup this world).Name
+        member this.GetCreationTimeNp world = (World.getGroup this world).CreationTimeNp
+        member this.GetDispatcherNp world = (World.getGroup this world).DispatcherNp
+        member this.GetXtension world = (World.getGroup this world).Xtension
+        member this.GetPublishChanges world = (World.getGroup this world).PublishChanges
+        member this.SetPublishChanges value world = World.updateGroup (fun (group : Group) -> { group with PublishChanges = value}) this world
+        member this.GetPersistent world = (World.getGroup this world).Persistent
+        member this.SetPersistent value world = World.updateGroup (fun group -> { group with Persistent = value}) this world
+
+        /// Query that a group dispatches in the same manner as the dispatcher with the target type.
+        member this.DispatchesAs (dispatcherTargetType : Type) world =
+            Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
+
+    and EntityRep with
+        
+        member this.GetId world = (World.getEntity this world).Id
+        member this.GetName world = (World.getEntity this world).Name
+        member this.GetCreationTimeNp world = (World.getEntity this world).CreationTimeNp
+        member this.GetDispatcherNp world = (World.getEntity this world).DispatcherNp
+        member this.GetFacetNames world = (World.getEntity this world).FacetNames
+        member this.GetFacetsNp world = (World.getEntity this world).FacetsNp
+        member this.GetPosition world = (World.getEntity this world).Position
+        member this.SetPosition value world = World.updateEntity (fun (entity : Entity) -> { entity with Position = value}) this world
+        member this.GetDepth world = (World.getEntity this world).Depth
+        member this.SetDepth value world = World.updateEntity (fun entity -> { entity with Depth = value}) this world
+        member this.GetSize world = (World.getEntity this world).Size
+        member this.SetSize value world = World.updateEntity (fun entity -> { entity with Size = value}) this world
+        member this.GetRotation world = (World.getEntity this world).Rotation
+        member this.SetRotation value world = World.updateEntity (fun entity -> { entity with Rotation = value}) this world
+        member this.GetVisible world = (World.getEntity this world).Visible
+        member this.SetVisible value world = World.updateEntity (fun entity -> { entity with Visible = value}) this world
+        member this.GetViewType world = (World.getEntity this world).ViewType
+        member this.SetViewType value world = World.updateEntity (fun entity -> { entity with ViewType = value}) this world
+        member this.GetPublishChanges world = (World.getEntity this world).PublishChanges
+        member this.SetPublishChanges value world = World.updateEntity (fun entity -> { entity with PublishChanges = value}) this world
+        member this.GetPersistent world = (World.getEntity this world).Persistent
+        member this.SetPersistent value world = World.updateEntity (fun entity -> { entity with Persistent = value}) this world
+        member this.GetOptOverlayName world = (World.getEntity this world).OptOverlayName
+        member this.SetOptOverlayName value world = World.updateEntity (fun entity -> { entity with OptOverlayName = value}) this world
+        member this.GetXtension world = (World.getEntity this world).Xtension
+        member this.SetXtension xtension world = World.updateEntity (fun entity -> { entity with Xtension = xtension}) this world
+        member this.UpdateXtension updater world = this.SetXtension (updater <| this.GetXtension world) world
+
+        member this.SetPositionSnapped snap position world =
+            let snapped = Math.snap2F snap position
+            this.SetPosition snapped world
+
+        member this.GetTransform world : Transform =
+            { Position = this.GetPosition world
+              Depth = this.GetDepth world
+              Size = this.GetSize world
+              Rotation = this.GetRotation world }
+
+        member this.SetTransform positionSnap rotationSnap transform world =
+            let transform = Math.snapTransform positionSnap rotationSnap transform
+            world |>
+                this.SetPosition transform.Position |>
+                this.SetDepth transform.Depth |>
+                this.SetSize transform.Size |>
+                this.SetRotation transform.Rotation
+
+        /// Query that an entity dispatches in the same manner as the dispatcher with the target type.
+        member this.DispatchesAs (dispatcherTargetType : Type) world =
+            Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
 
     /// The world, in a functional programming sense. Hosts the game object, the dependencies
     /// needed to implement a game, messages to by consumed by the various engine sub-systems,
@@ -983,11 +1177,6 @@ module SimulationModule =
             let state = updater state
             World.setUserState state world
 
-        (* World *)
-
-        /// Lens the world.
-        static member lens = Lens.id
-
         (* Facet / Entity internals *)
 
         static member private tryGetFacet facetName world =
@@ -1177,21 +1366,21 @@ module SimulationModule =
                 | None -> Map.empty
             | _ -> failwith <| "Invalid group address '" + acstring groupRep.GroupAddress + "'."
 
-        static member private getOptEntity entityRep world =
+        static member internal getOptEntity entityRep world =
             World.optEntityFinder entityRep.EntityAddress world
 
-        static member private getEntity (entityRep : EntityRep) world =
+        static member internal getEntity (entityRep : EntityRep) world =
             Option.get ^ World.getOptEntity entityRep world
 
-        static member private setEntityWithoutEvent entity entityRep world =
+        static member internal setEntityWithoutEvent entity entityRep world =
             World.entityAdder entity entityRep.EntityAddress world
 
-        static member private setOptEntityWithoutEvent optEntity entityRep world =
+        static member internal setOptEntityWithoutEvent optEntity entityRep world =
             match optEntity with 
             | Some entity -> World.entityAdder entity entityRep.EntityAddress world
             | None -> World.entityRemover entityRep.EntityAddress world
 
-        static member private setEntity entity (entityRep : EntityRep) world =
+        static member internal setEntity entity (entityRep : EntityRep) world =
             let oldWorld = world
             let world = World.entityAdder entity entityRep.EntityAddress world
             if entity.PublishChanges then
@@ -1201,6 +1390,28 @@ module SimulationModule =
                     entityRep
                     world
             else world
+
+        static member internal updateEntity updater entityRep world =
+            let entity = World.getEntity entityRep world
+            let entity = updater entity
+            World.setEntity entity entityRep world
+
+        static member private addEntity entity entityRep world =
+            if not <| World.containsEntity entityRep world then
+                let world = World.setEntityWithoutEvent entity entityRep world
+                let world = World.registerEntity entityRep world
+                World.publish4 () (World.EntityAddEventAddress ->>- entityRep.EntityAddress) entityRep world
+            else failwith <| "Adding an entity that the world already contains at address '" + acstring entityRep.EntityAddress + "'."
+
+        static member private addEntities entities (groupRep : GroupRep) world =
+            let groupAddress = groupRep.GroupAddress
+            Map.fold
+                (fun world entityName entity ->
+                    let entityAddress = World.gatoea groupAddress entityName
+                    let entityRep = { EntityAddress = entityAddress }
+                    World.addEntity entity entityRep world)
+                world
+                entities
 
         /// Query that the world contains an entity at the given address.
         static member containsEntity entityRep world =
@@ -1260,27 +1471,8 @@ module SimulationModule =
         static member removeEntities entityReps world =
             World.removeEntitiesImmediate entityReps world
 
-        /// Add an entity at the given address to the world.
-        static member addEntity entity entityRep world =
-            if not <| World.containsEntity entityRep world then
-                let world = World.setEntityWithoutEvent entity entityRep world
-                let world = World.registerEntity entityRep world
-                World.publish4 () (World.EntityAddEventAddress ->>- entityRep.EntityAddress) entityRep world
-            else failwith <| "Adding an entity that the world already contains at address '" + acstring entityRep.EntityAddress + "'."
-
-        /// Add multiple entities to the group at the given address.
-        static member addEntities entities (groupRep : GroupRep) world =
-            let groupAddress = groupRep.GroupAddress
-            Map.fold
-                (fun world entityName entity ->
-                    let entityAddress = World.gatoea groupAddress entityName
-                    let entityRep = { EntityAddress = entityAddress }
-                    World.addEntity entity entityRep world)
-                world
-                entities
-
-        /// Make an entity (does NOT add the entity to the world!)
-        static member makeEntity dispatcherName optName world =
+        /// Create an entity and add it to the world.
+        static member createEntity dispatcherName optName groupRep world =
             
             // find the entity's dispatcher
             let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
@@ -1312,23 +1504,32 @@ module SimulationModule =
             Reflection.attachFields dispatcher entity
 
             // apply the entity's overlay
-            match entity.OptOverlayName with
-            | Some overlayName ->
+            let entity =
+                match entity.OptOverlayName with
+                | Some overlayName ->
 
-                // OPTIMIZATION: apply overlay only when it will change something (EG - when it's not the intrinsic overlay)
-                if intrinsicOverlayName <> overlayName then
-                    let facetNames = Entity.getFacetNamesReflectively entity
-                    Overlayer.applyOverlay intrinsicOverlayName overlayName facetNames entity world.State.Overlayer
-                    entity
-                else entity
-            | None -> entity
+                    // OPTIMIZATION: apply overlay only when it will change something (EG - when it's not the intrinsic overlay)
+                    if intrinsicOverlayName <> overlayName then
+                        let facetNames = Entity.getFacetNamesReflectively entity
+                        Overlayer.applyOverlay intrinsicOverlayName overlayName facetNames entity world.State.Overlayer
+                        entity
+                    else entity
+                | None -> entity
+
+            // add entity to world
+            let entityRep = { EntityAddress = World.gatoea groupRep.GroupAddress entity.Name }
+            let world = World.addEntity entity entityRep world
+            (entityRep, world)
 
         /// Write an entity to an xml writer.
-        static member writeEntity (writer : XmlWriter) (entity : Entity) world =
-            writer.WriteAttributeString (DispatcherNameAttributeName, (entity.DispatcherNp.GetType ()).Name)
+        static member writeEntity (writer : XmlWriter) (entityRep : EntityRep) world =
+            let entity = World.getEntity entityRep world
+            let dispatcher = entity.DispatcherNp
+            let dispatcherTypeName = Reflection.getTypeName dispatcher
+            writer.WriteAttributeString (DispatcherNameAttributeName, dispatcherTypeName)
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
                 if propertyName = "OptOverlayName" && propertyType = typeof<string option> then
-                    let defaultOptOverlayName = Map.find (Reflection.getTypeName entity.DispatcherNp) world.State.OverlayRouter
+                    let defaultOptOverlayName = Map.find dispatcherTypeName world.State.OverlayRouter
                     defaultOptOverlayName <> (propertyValue :?> string option)
                 else
                     let facetNames = Entity.getFacetNamesReflectively entity
@@ -1336,19 +1537,16 @@ module SimulationModule =
             Reflection.writePropertiesFromTarget shouldWriteProperty writer entity
 
         /// Write multiple entities to an xml writer.
-        static member writeEntities (writer : XmlWriter) entities world =
-            let entitiesSorted =
-                List.sortBy
-                    (fun (entity : Entity) -> entity.CreationTimeNp)
-                    (Map.toValueList entities)
-            let entitiesFiltered = List.filter (fun (entity : Entity) -> entity.Persistent) entitiesSorted
-            for entity in entitiesFiltered do
+        static member writeEntities (writer : XmlWriter) entityReps world =
+            let entityRepsSorted = Seq.sortBy (fun (entityRep : EntityRep) -> entityRep.GetCreationTimeNp world) entityReps
+            let entityRepsPersistent = Seq.filter (fun (entityRep : EntityRep) -> entityRep.GetPersistent world) entityRepsSorted
+            for entityRep in entityRepsPersistent do
                 writer.WriteStartElement typeof<Entity>.Name
-                World.writeEntity writer entity world
+                World.writeEntity writer entityRep world
                 writer.WriteEndElement ()
 
         /// Read an entity from an xml node.
-        static member readEntity (entityNode : XmlNode) defaultDispatcherName world =
+        static member readEntity (entityNode : XmlNode) defaultDispatcherName groupRep world =
 
             // read in the dispatcher name and create the dispatcher
             let dispatcherName = Reflection.readDispatcherName defaultDispatcherName entityNode
@@ -1405,21 +1603,22 @@ module SimulationModule =
             // read the entity's properties
             Reflection.readPropertiesToTarget entityNode entity
 
-            // return the initialized entity
-            entity
+            // add entity to the world
+            let entityRep = { EntityAddress = World.gatoea groupRep.GroupAddress entity.Name }
+            let world = World.addEntity entity entityRep world
+            (entityRep, world)
 
         /// Read multiple entities from an xml node.
-        static member readEntities (groupNode : XmlNode) defaultDispatcherName world =
+        static member readEntities (groupNode : XmlNode) defaultDispatcherName groupRep world =
             match groupNode.SelectSingleNode EntitiesNodeName with
-            | null -> Map.empty
+            | null -> ([], world)
             | entitiesNode ->
-                let entityNodes = entitiesNode.SelectNodes EntityNodeName
-                Seq.fold
-                    (fun entities entityNode ->
-                        let entity = World.readEntity entityNode defaultDispatcherName world
-                        Map.add entity.Name entity entities)
-                    Map.empty
-                    (enumerable entityNodes)
+                Seq.foldBack
+                    (fun entityNode (entityReps, world) ->
+                        let (entityRep, world) = World.readEntity entityNode defaultDispatcherName groupRep world
+                        (entityRep :: entityReps, world))
+                    (enumerable <| entitiesNode.SelectNodes EntityNodeName)
+                    ([], world)
 
         /// Propagate an entity's physics properties from the physics subsystem.
         static member propagatePhysics (entityRep : EntityRep) world =
@@ -1528,7 +1727,7 @@ module SimulationModule =
                 | None -> world
             | _ -> failwith <| "Invalid group address '" + acstring address + "'."
 
-        static member private getGroupMapInScreen screenRep world =
+        static member internal getGroupMapInScreen screenRep world =
             match screenRep.ScreenAddress.Names with
             | [screenName] ->
                 let (_, screenMap) = world.Simulants
@@ -1537,21 +1736,21 @@ module SimulationModule =
                 | None -> Map.empty
             | _ -> failwith <| "Invalid screen address '" + acstring screenRep.ScreenAddress + "'."
 
-        static member private getOptGroup groupRep world =
-            World.optGroupFinder groupRep world
+        static member internal getOptGroup groupRep world =
+            World.optGroupFinder groupRep.GroupAddress world
 
-        static member private getGroup groupRep world =
+        static member internal getGroup groupRep world : Group =
             Option.get ^ World.getOptGroup groupRep world
 
-        static member private setGroupWithoutEvent group groupRep world =
+        static member internal setGroupWithoutEvent group groupRep world =
             World.groupAdder group groupRep.GroupAddress world
 
-        static member private setOptGroupWithoutEvent optGroup groupRep world =
+        static member internal setOptGroupWithoutEvent optGroup groupRep world =
             match optGroup with 
             | Some group -> World.groupAdder group groupRep.GroupAddress world
             | None -> World.groupRemover groupRep.GroupAddress world
 
-        static member private setGroup group groupRep world =
+        static member internal setGroup group groupRep world =
             let oldWorld = world
             let world = World.groupAdder group groupRep.GroupAddress world
             if group.PublishChanges then
@@ -1562,6 +1761,37 @@ module SimulationModule =
                     world
             else world
 
+        static member internal updateGroup updater groupRep world =
+            let group = World.getGroup groupRep world
+            let group = updater group
+            World.setGroup group groupRep world
+
+        static member private registerGroup (groupRep : GroupRep) world =
+            let dispatcher = groupRep.GetDispatcherNp world : GroupDispatcher
+            dispatcher.Register groupRep world
+
+        static member private unregisterGroup (groupRep : GroupRep) world =
+            let dispatcher = groupRep.GetDispatcherNp world : GroupDispatcher
+            dispatcher.Unregister groupRep world
+
+        static member private addGroup groupHierarchy groupRep world =
+            let (group, entities) = groupHierarchy
+            if not <| World.containsGroup groupRep world then
+                let world = World.setGroupWithoutEvent group groupRep world
+                let world = World.addEntities entities groupRep world
+                let world = World.registerGroup groupRep world
+                World.publish4 () (World.GroupAddEventAddress ->>- groupRep.GroupAddress) groupRep world
+            else failwith <| "Adding a group that the world already contains at address '" + acstring groupRep.GroupAddress + "'."
+
+        static member private addGroups groupHierarchies screenRep world =
+            Map.fold
+                (fun world groupName groupHierarchy ->
+                    let screenAddress = screenRep.ScreenAddress
+                    let groupAddress = World.satoga screenAddress groupName
+                    World.addGroup groupHierarchy { GroupAddress = groupAddress } world)
+                world
+                groupHierarchies
+
         /// Query that the world contains a group at the given address.
         static member containsGroup groupRep world =
             Option.isSome <| World.optGroupFinder groupRep.GroupAddress world
@@ -1571,16 +1801,6 @@ module SimulationModule =
             let groupMap = World.getGroupMapInScreen screenRep world
             let screenAddress = screenRep.ScreenAddress
             Seq.map (fun (kvp : KeyValuePair<string, _>) -> { GroupAddress = World.satoga screenAddress kvp.Key }) groupMap
-
-        /// Register a group when adding it to a screen.
-        static member registerGroup (groupRep : GroupRep) world =
-            let dispatcher = groupRep.GetDispatcherNp world : GroupDispatcher
-            dispatcher.Register groupRep world
-
-        /// Unregister a group when removing it from a screen.
-        static member unregisterGroup (groupRep : GroupRep) world =
-            let dispatcher = groupRep.GetDispatcherNp world : GroupDispatcher
-            dispatcher.Unregister groupRep world
 
         /// Remove a group from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the group's existence. Use with caution.
@@ -1614,44 +1834,27 @@ module SimulationModule =
         static member removeGroups groupReps world =
             World.removeGroupsImmediate groupReps world
 
-        /// Add a group at the given address to the world.
-        static member addGroup groupHierarchy groupRep world =
-            let (group, entities) = groupHierarchy
-            if not <| World.containsGroup groupRep world then
-                let world = World.setGroupWithoutEvent group groupRep world
-                let world = World.addEntities entities groupRep world
-                let world = World.registerGroup groupRep world
-                World.publish4 () (World.GroupAddEventAddress ->>- groupRep.GroupAddress) groupRep world
-            else failwith <| "Adding a group that the world already contains at address '" + acstring groupRep.GroupAddress + "'."
-
-        /// Add multiple groups to the screen at the given address.
-        static member addGroups groupHierarchies screenRep world =
-            Map.fold
-                (fun world groupName groupHierarchy ->
-                    let screenAddress = screenRep.ScreenAddress
-                    let groupAddress = World.satoga screenAddress groupName
-                    World.addGroup groupHierarchy { GroupAddress = groupAddress } world)
-                world
-                groupHierarchies
-
-        /// Make a group (does NOT add the group to the world!)
-        static member makeGroup dispatcherName optName world =
+        /// Create a group and add it to the world.
+        static member createGroup dispatcherName optName screenRep world =
             let dispatcher = Map.find dispatcherName world.Components.GroupDispatchers
             let group = Group.make dispatcher optName
             Reflection.attachFields dispatcher group
-            group
+            let groupRep = { GroupAddress = World.satoga screenRep.ScreenAddress group.Name }
+            let world = World.addGroup (group, Map.empty) groupRep world
+            (groupRep, world)
 
         /// Write a group hierarchy to an xml writer.
-        static member writeGroupHierarchy (writer : XmlWriter) groupHierarchy world =
-            let (group : Group, entities) = groupHierarchy
-            writer.WriteAttributeString (DispatcherNameAttributeName, (group.DispatcherNp.GetType ()).Name)
+        static member writeGroup (writer : XmlWriter) groupRep world =
+            let group = World.getGroup groupRep world
+            let entityReps = World.getEntityRepsInGroup groupRep world
+            writer.WriteAttributeString (DispatcherNameAttributeName, Reflection.getTypeName group.DispatcherNp)
             Reflection.writePropertiesFromTarget tautology3 writer group
             writer.WriteStartElement EntitiesNodeName
-            World.writeEntities writer entities world
+            World.writeEntities writer entityReps world
             writer.WriteEndElement ()
 
         /// Write a group hierarchy to an xml file.
-        static member writeGroupHierarchyToFile (filePath : string) groupHierarchy world =
+        static member writeGroupToFile (filePath : string) groupRep world =
             let filePathTmp = filePath + ".tmp"
             let writerSettings = XmlWriterSettings ()
             writerSettings.Indent <- true
@@ -1661,7 +1864,7 @@ module SimulationModule =
             writer.WriteStartDocument ()
             writer.WriteStartElement RootNodeName
             writer.WriteStartElement GroupNodeName
-            World.writeGroupHierarchy writer groupHierarchy world
+            World.writeGroup writer groupRep world
             writer.WriteEndElement ()
             writer.WriteEndElement ()
             writer.WriteEndDocument ()
@@ -1670,19 +1873,16 @@ module SimulationModule =
             File.Move (filePathTmp, filePath)
 
         /// Write multiple group hierarchies to an xml writer.
-        static member writeGroupHierarchies (writer : XmlWriter) groupHierarchies world =
-            let groupHierarchies =
-                List.sortBy
-                    (fun (group : Group, _) -> group.CreationTimeNp)
-                    (Map.toValueList groupHierarchies)
-            let groupHierarchies = List.filter (fun (group : Group, _) -> group.Persistent) groupHierarchies
-            for groupHierarchy in groupHierarchies do
+        static member writeGroups (writer : XmlWriter) groupReps world =
+            let groupRepsSorted = Seq.sortBy (fun (groupRep : GroupRep) -> groupRep.GetCreationTimeNp world) groupReps
+            let groupRepsPersistent = Seq.filter (fun (groupRep : GroupRep) -> groupRep.GetPersistent world) groupRepsSorted
+            for groupRep in groupRepsPersistent do
                 writer.WriteStartElement GroupNodeName
-                World.writeGroupHierarchy writer groupHierarchy world
+                World.writeGroup writer groupRep world
                 writer.WriteEndElement ()
 
         /// Read a group hierarchy from an xml node.
-        static member readGroupHierarchy (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
+        static member readGroup (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName screenRep world =
 
             // read in the dispatcher name and create the dispatcher
             let dispatcherName = Reflection.readDispatcherName defaultDispatcherName groupNode
@@ -1704,32 +1904,32 @@ module SimulationModule =
             Reflection.readPropertiesToTarget groupNode group
             
             // read the group's entities
-            let entities = World.readEntities (groupNode : XmlNode) defaultEntityDispatcherName world
+            let groupRep = { GroupAddress = World.satoga screenRep.ScreenAddress group.Name }
+            let world = World.addGroup (group, Map.empty) groupRep world
+            let world = snd <| World.readEntities (groupNode : XmlNode) defaultEntityDispatcherName groupRep world
 
-            // return the initialized group and entities
-            (group, entities)
+            // return the group, entities, and world
+            (groupRep, world)
 
         /// Read a group hierarchy from an xml file.
-        static member readGroupHierarchyFromFile (filePath : string) world =
+        static member readGroupFromFile (filePath : string) screenRep world =
             use reader = XmlReader.Create filePath
             let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
             let rootNode = document.[RootNodeName]
             let groupNode = rootNode.[GroupNodeName]
-            World.readGroupHierarchy groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
+            World.readGroup groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name screenRep world
 
         /// Read multiple group hierarchies from an xml node.
-        static member readGroupHierarchies (screenNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
+        static member readGroups (screenNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName screenRep world =
             match screenNode.SelectSingleNode GroupsNodeName with
-            | null -> Map.empty
+            | null -> ([], world)
             | groupsNode ->
-                let groupNodes = groupsNode.SelectNodes GroupNodeName
-                Seq.fold
-                    (fun groupHierarchies groupNode ->
-                        let groupHierarchy = World.readGroupHierarchy groupNode defaultDispatcherName defaultEntityDispatcherName world
-                        let groupName = (fst groupHierarchy).Name
-                        Map.add groupName groupHierarchy groupHierarchies)
-                    Map.empty
-                    (enumerable groupNodes)
+                Seq.foldBack
+                    (fun groupNode (groupReps, world) ->
+                        let groupRep = World.readGroup groupNode defaultDispatcherName defaultEntityDispatcherName screenRep world
+                        (groupRep :: groupReps, world))
+                    (enumerable <| groupsNode.SelectNodes GroupNodeName)
+                    ([], world)
 
         (* Screen *)
 
@@ -1768,24 +1968,24 @@ module SimulationModule =
                 | None -> world
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
-        static member private getScreenMap world =
+        static member internal getScreenMap world =
             snd world.Simulants
 
-        static member getOptScreen screenRep world =
+        static member internal getOptScreen screenRep world =
             World.optScreenFinder screenRep.ScreenAddress world
 
-        static member private getScreen screenRep world =
+        static member internal getScreen screenRep world : Screen =
             Option.get ^ World.getOptScreen screenRep world
 
-        static member private setScreenWithoutEvent screen screenRep world =
+        static member internal setScreenWithoutEvent screen screenRep world =
             World.screenAdder screen screenRep.ScreenAddress world
 
-        static member private setOptScreenWithoutEvent optScreen screenRep world =
+        static member internal setOptScreenWithoutEvent optScreen screenRep world =
             match optScreen with 
             | Some screen -> World.screenAdder screen screenRep.ScreenAddress world
             | None -> World.screenRemover screenRep.ScreenAddress world
 
-        static member setScreen screen screenRep world =
+        static member internal setScreen screen screenRep world =
             let oldWorld = world
             let world = World.screenAdder screen screenRep.ScreenAddress world
             if screen.PublishChanges then
@@ -1796,6 +1996,28 @@ module SimulationModule =
                     world
             else world
 
+        static member internal updateScreen updater screenRep world =
+            let screen = World.getScreen screenRep world
+            let screen = updater screen
+            World.setScreen screen screenRep world
+
+        static member private registerScreen (screenRep : ScreenRep) world =
+            let dispatcher = screenRep.GetDispatcherNp world : ScreenDispatcher
+            dispatcher.Register screenRep world
+
+        static member private unregisterScreen (screenRep : ScreenRep) world =
+            let dispatcher = screenRep.GetDispatcherNp world : ScreenDispatcher
+            dispatcher.Unregister screenRep world
+
+        static member private addScreen screenHierarchy screenRep world =
+            let (screen, groupHierarchies) = screenHierarchy
+            if not <| World.containsScreen screenRep world then
+                let world = World.setScreenWithoutEvent screen screenRep world
+                let world = World.addGroups groupHierarchies screenRep world
+                let world = World.registerScreen screenRep world
+                World.publish4 () (World.ScreenAddEventAddress ->>- screenRep.ScreenAddress) screenRep world
+            else failwith <| "Adding a screen that the world already contains at address '" + acstring screenRep.ScreenAddress + "'."
+
         /// Query that the world contains a group at the given address.
         static member containsScreen screenRep world =
             Option.isSome <| World.optScreenFinder screenRep.ScreenAddress world
@@ -1803,17 +2025,7 @@ module SimulationModule =
         /// Get the addresses of all the world's screens.
         static member getScreenReps world =
             let screenMap = World.getScreenMap world
-            Map.foldBack (fun screenName _ screenReps -> ntoa<Screen> screenName :: screenReps) screenMap []
-
-        /// Register a screen when adding it to the world.
-        static member registerScreen (screenRep : ScreenRep) world =
-            let dispatcher = screenRep.GetDispatcherNp world : ScreenDispatcher
-            dispatcher.Register screenRep world
-
-        /// Unregister a screen when removing it from the world.
-        static member unregisterScreen (screenRep : ScreenRep) world =
-            let dispatcher = screenRep.GetDispatcherNp world : ScreenDispatcher
-            dispatcher.Unregister screenRep world
+            Map.foldBack (fun screenName _ screenReps -> { ScreenAddress = ntoa<Screen> screenName } :: screenReps) screenMap []
 
         /// Remove a screen from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the screen's existence. Use with caution.
@@ -1834,49 +2046,42 @@ module SimulationModule =
                   Operation = fun world -> World.removeScreenImmediate screenRep world }
             World.addTask task world
 
-        /// Add a screen at the given address to the world.
-        static member addScreen screenHierarchy screenRep world =
-            let (screen, groupHierarchies) = screenHierarchy
-            if not <| World.containsScreen screenRep world then
-                let world = World.setScreenWithoutEvent screen screenRep world
-                let world = World.addGroups groupHierarchies screenRep world
-                let world = World.registerScreen screenRep world
-                World.publish4 () (World.ScreenAddEventAddress ->>- screenRep.ScreenAddress) screenRep world
-            else failwith <| "Adding a screen that the world already contains at address '" + acstring screenRep.ScreenAddress + "'."
-
-        /// Make a screen (does NOT add the screen to the world!)
-        static member makeScreen dispatcherName optName world =
+        /// Create a screen and add it to the world.
+        static member createScreen dispatcherName optName world =
             let dispatcher = Map.find dispatcherName world.Components.ScreenDispatchers
             let screen = Screen.make dispatcher optName
             Reflection.attachFields dispatcher screen
-            screen
+            let screenRep = { ScreenAddress = ntoa<Screen> screen.Name }
+            let world = World.addScreen (screen, Map.empty) screenRep world
+            (screenRep, world)
         
-        /// Make a screen (does NOT add the screen to the world!)
-        static member makeDissolveScreen dissolveData dispatcherName optName world =
+        /// Create a screen with a dissolving transition, and add it to the world.
+        static member createDissolveScreen dissolveData dispatcherName optName world =
             let optDissolveImage = Some dissolveData.DissolveImage
-            let screen = World.makeScreen dispatcherName optName world
-            let incomingDissolve = { TransitionDescriptor.make Incoming with TransitionLifetime = dissolveData.IncomingTime; OptDissolveImage = optDissolveImage }
-            let outgoingDissolve = { TransitionDescriptor.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; OptDissolveImage = optDissolveImage }
-            { screen with Incoming = incomingDissolve; Outgoing = outgoingDissolve }
+            let (screenRep, world) = World.createScreen dispatcherName optName world
+            let world = screenRep.SetIncoming { TransitionDescriptor.make Incoming with TransitionLifetime = dissolveData.IncomingTime; OptDissolveImage = optDissolveImage } world
+            let world = screenRep.SetOutgoing { TransitionDescriptor.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; OptDissolveImage = optDissolveImage } world
+            (screenRep, world)
 
         /// Write a screen hierarchy to an xml writer.
-        static member writeScreenHierarchy (writer : XmlWriter) screenHierarchy world =
-            let (screen : Screen, groupHierarchies) = screenHierarchy
+        static member writeScreen (writer : XmlWriter) screenRep world =
+            let screen = World.getScreen screenRep world
+            let groupReps = World.getGroupRepsInScreen screenRep world
             writer.WriteAttributeString (DispatcherNameAttributeName, (screen.DispatcherNp.GetType ()).Name)
             Reflection.writePropertiesFromTarget tautology3 writer screen
             writer.WriteStartElement GroupsNodeName
-            World.writeGroupHierarchies writer groupHierarchies world
+            World.writeGroups writer groupReps world
             writer.WriteEndElement ()
 
         /// Write a screen hierarchy to an xml file.
-        static member writeScreenHierarchyToFile (filePath : string) screenHierarchy world =
+        static member writeScreenToFile (filePath : string) screenRep world =
             let filePathTmp = filePath + ".tmp"
             let writerSettings = XmlWriterSettings ()
             writerSettings.Indent <- true
             use writer = XmlWriter.Create (filePathTmp, writerSettings)
             writer.WriteStartElement RootNodeName
             writer.WriteStartElement ScreenNodeName
-            World.writeScreenHierarchy writer screenHierarchy world
+            World.writeScreen writer screenRep world
             writer.WriteEndElement ()
             writer.WriteEndElement ()
             writer.Dispose ()
@@ -1884,20 +2089,16 @@ module SimulationModule =
             File.Move (filePathTmp, filePath)
 
         /// Write multiple screen hierarchies to an xml writer.
-        static member writeScreenHierarchies (writer : XmlWriter) screenHierarchies world =
-            let screenHierarchies =
-                List.sortBy
-                    (fun (screen : Screen, _) -> screen.CreationTimeNp)
-                    (Map.toValueList screenHierarchies)
-            let screenHierarchies = List.filter (fun (screen : Screen, _) -> screen.Persistent) screenHierarchies
-            for screenHierarchy in screenHierarchies do
+        static member writeScreens (writer : XmlWriter) screenReps world =
+            let screenRepsSorted = Seq.sortBy (fun (screenRep : ScreenRep) -> screenRep.GetCreationTimeNp world) screenReps
+            let screenRepsPersistent = Seq.filter (fun (screenRep : ScreenRep) -> screenRep.GetPersistent world) screenRepsSorted
+            for screenRep in screenRepsPersistent do
                 writer.WriteStartElement ScreenNodeName
-                World.writeScreenHierarchy writer screenHierarchy world
+                World.writeScreen writer screenRep world
                 writer.WriteEndElement ()
 
         /// Read a screen hierarchy from an xml node.
-        static member readScreenHierarchy
-            (screenNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
+        static member readScreen (screenNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
             let dispatcherName = Reflection.readDispatcherName defaultDispatcherName screenNode
             let dispatcher =
                 match Map.tryFind dispatcherName world.Components.ScreenDispatchers with
@@ -1909,114 +2110,79 @@ module SimulationModule =
             let screen = Screen.make dispatcher None
             Reflection.attachFields screen.DispatcherNp screen
             Reflection.readPropertiesToTarget screenNode screen
-            let groupHierarchies = World.readGroupHierarchies (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName world
-            (screen, groupHierarchies)
+            let screenRep = { ScreenAddress = ntoa<Screen> screen.Name }
+            let world = World.addScreen (screen, Map.empty) screenRep world
+            let world = snd <| World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName screenRep world
+            (screenRep, world)
 
         /// Read a screen hierarchy from an xml file.
-        static member readScreenHierarchyFromFile (filePath : string) world =
+        static member readScreenFromFile (filePath : string) world =
             use reader = XmlReader.Create filePath
             let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
             let rootNode = document.[RootNodeName]
             let screenNode = rootNode.[ScreenNodeName]
-            World.readScreenHierarchy
-                screenNode
-                typeof<ScreenDispatcher>.Name
-                typeof<GroupDispatcher>.Name
-                typeof<EntityDispatcher>.Name
-                world
+            World.readScreen screenNode typeof<ScreenDispatcher>.Name typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
 
         /// Read multiple screen hierarchies from an xml node.
-        static member readScreenHierarchies
-            (gameNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
+        static member readScreens (gameNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
             match gameNode.SelectSingleNode ScreensNodeName with
-            | null -> Map.empty
+            | null -> ([], world)
             | screensNode ->
-                let screenNodes = screensNode.SelectNodes ScreenNodeName
-                Seq.fold
-                    (fun screenHierarchies screenNode ->
-                        let screenHierarchy =
-                            World.readScreenHierarchy
-                                screenNode
-                                defaultDispatcherName
-                                defaultGroupDispatcherName
-                                defaultEntityDispatcherName
-                                world
-                        let screenName = (fst screenHierarchy).Name
-                        Map.add screenName screenHierarchy screenHierarchies)
-                    Map.empty
-                    (enumerable screenNodes)
+                Seq.foldBack
+                    (fun screenNode (screenReps, world) ->
+                        let (screenRep, world) = World.readScreen screenNode defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world
+                        (screenRep :: screenReps, world))
+                    (enumerable <| screensNode.SelectNodes ScreenNodeName)
+                    ([], world)
 
         (* Game *)
 
-        /// Get the game, then transform it with the 'by' procudure.
-        static member getGameBy by world =
-            by <| fst world.Simulants
-
-        /// Get the game.
-        static member getGame world =
-            World.getGameBy id world
-
-        /// Get the game hierarchy.
-        static member getGameHierarchy world =
+        static member internal getGameMap world =
             let game = World.getGame world
             let screenMap = World.getScreenMap world
             (game, screenMap)
 
-        /// Set the game.
-        static member setGame game world =
+        static member internal getGame world : Game =
+            fst world.Simulants
+
+        static member internal setGame game world =
             let oldWorld = world
             let screenMap = World.getScreenMap world
             let world = { world with Simulants = (game, screenMap) }
             if game.PublishChanges then
                 World.publish4
-                    { OldWorld = world; SimulantRep = World.GameRep }
+                    { OldWorld = oldWorld; SimulantRep = World.GameRep }
                     (World.GameChangeEventAddress ->>- World.GameAddress)
                     World.GameRep
                     world
             else world
 
-        /// Update the game with the given 'updater' procedure.
-        static member updateGameAndW updater world =
+        static member internal updateGame updater world =
             let game = World.getGame world
-            let (game, world) = updater game world
+            let game = updater game
             World.setGame game world
 
-        /// Update the game with the given 'updater' procedure.
-        static member updateGameW updater world =
-            World.updateGameAndW (fun game world -> (updater game world, world)) world
-
-        /// Update the game with the given 'updater' procedure.
-        static member updateGame updater world =
-            World.updateGameW (fun game _ -> updater game) world
-
-        /// Update the world with the given 'updater' procedure that uses the game in its
-        /// computation.
-        static member updateByGame updater world : World =
-            let game = World.getGame world
-            updater game world
-
-        /// Lens the game.
-        static member lensGame =
-            { Get = World.getGame
-              Set = World.setGame }
-
-        /// Register a game when adding it to the world. Note that there is not corresponding
-        /// Unregister method due to the inability to remove a game from the world.
-        static member registerGame (gameRep : GameRep) (world : World) : World =
+        static member private registerGame (gameRep : GameRep) (world : World) : World =
             let dispatcher = gameRep.GetDispatcherNp world : GameDispatcher
             dispatcher.Register gameRep world
 
+        static member internal makeGame dispatcher =
+            let game = Game.make dispatcher
+            Reflection.attachFields dispatcher game
+            game
+
+        (* World *)
+
         /// Try to get the address of the currently selected screen.
         static member getOptSelectedScreenRep world =
-            let game = World.getGame world
-            game.OptSelectedScreenRep
-        
+            World.GameRep.GetOptSelectedScreenRep world
+
         /// Set the address of the currently selected screen to Some Address or None. Be careful
         /// using this function directly as you may be wanting to use the higher-level
         /// World.transitionScreen function.
         static member setOptSelectedScreenRep optScreenRep world =
-            World.updateGame (Game.setOptSelectedScreenRep optScreenRep) world
-        
+            World.GameRep.SetOptSelectedScreenRep optScreenRep world
+
         /// Get the address of the currently selected screen (failing with an exception if there
         /// isn't one).
         static member getSelectedScreenRep world =
@@ -2038,30 +2204,25 @@ module SimulationModule =
             | (_, Some []) -> false
             | (addressHead :: _, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
 
-        /// Make a game.
-        static member makeGame dispatcher =
-            let game = Game.make dispatcher
-            Reflection.attachFields dispatcher game
-            game
-
         /// Write a game hierarchy to an xml writer.
-        static member writeGameHierarchy (writer : XmlWriter) gameHierarchy world =
-            let (game : Game, screenHierarchies) = gameHierarchy
-            writer.WriteAttributeString (DispatcherNameAttributeName, (game.DispatcherNp.GetType ()).Name)
+        static member writeGame (writer : XmlWriter) world =
+            let game = World.getGame world
+            let screenReps = World.getScreenReps world
+            writer.WriteAttributeString (DispatcherNameAttributeName, Reflection.getTypeName game.DispatcherNp)
             Reflection.writePropertiesFromTarget tautology3 writer game
             writer.WriteStartElement ScreensNodeName
-            World.writeScreenHierarchies writer screenHierarchies world
+            World.writeScreens writer screenReps world
             writer.WriteEndElement ()
 
         /// Write a game hierarchy to an xml file.
-        static member writeGameHierarchyToFile (filePath : string) gameHierarchy world =
+        static member writeGameToFile (filePath : string) world =
             let filePathTmp = filePath + ".tmp"
             let writerSettings = XmlWriterSettings ()
             writerSettings.Indent <- true
             use writer = XmlWriter.Create (filePathTmp, writerSettings)
             writer.WriteStartElement RootNodeName
             writer.WriteStartElement GameNodeName
-            World.writeGameHierarchy writer gameHierarchy world
+            World.writeGame writer world
             writer.WriteEndElement ()
             writer.WriteEndElement ()
             writer.Dispose ()
@@ -2069,8 +2230,8 @@ module SimulationModule =
             File.Move (filePathTmp, filePath)
 
         /// Read a game hierarchy from an xml node.
-        static member readGameHierarchy
-            (gameNode : XmlNode) defaultDispatcherName defaultScreenDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
+        static member readGame
+            gameNode defaultDispatcherName defaultScreenDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
             let dispatcherName = Reflection.readDispatcherName defaultDispatcherName gameNode
             let dispatcher =
                 match Map.tryFind dispatcherName world.Components.GameDispatchers with
@@ -2081,22 +2242,23 @@ module SimulationModule =
                     Map.find dispatcherName world.Components.GameDispatchers
             let game = World.makeGame dispatcher
             Reflection.readPropertiesToTarget gameNode game
-            let screenHierarchies =
-                World.readScreenHierarchies
-                    (gameNode : XmlNode)
+            let world = World.setGame game world
+            let world =
+                snd <| World.readScreens
+                    gameNode
                     defaultScreenDispatcherName
                     defaultGroupDispatcherName
                     defaultEntityDispatcherName
                     world
-            (game, screenHierarchies)
+            world
 
         /// Read a game hierarchy from an xml file.
-        static member readGameHierarchyFromFile (filePath : string) world =
+        static member readGameFromFile (filePath : string) world =
             use reader = XmlReader.Create filePath
             let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
             let rootNode = document.[RootNodeName]
             let gameNode = rootNode.[GameNodeName]
-            World.readGameHierarchy
+            World.readGame
                 gameNode
                 typeof<GameDispatcher>.Name
                 typeof<ScreenDispatcher>.Name
@@ -2106,233 +2268,11 @@ module SimulationModule =
 
         (* Simulant *)
 
-        /// Try to get a simulant at the given address.
-        static member getOptSimulant<'a when 'a :> Simulant> (address : 'a Address) world =
-            match address.Names with
-            | [] -> World.getGame world :> Simulant :?> 'a |> Some
-            | [_] -> World.getOptScreen (World.atosa address) world |> Option.map (fun s -> s :> Simulant :?> 'a)
-            | [_; _] -> World.getOptGroup (World.atoga address) world |> Option.map (fun g -> g :> Simulant :?> 'a)
-            | [_; _; _] -> World.getOptEntity (World.atoea address) world |> Option.map (fun e -> e :> Simulant :?> 'a)
-            | _ -> failwith <| "Invalid simulant address '" + acstring address + "'."
-
-        static member private getOptSimulantForPublishing (address : Simulant Address) world =
-            World.getOptSimulant address world
-
         /// Query that the world contains a simulant at the given address.
-        static member containsSimulant address world =
-            Option.isSome <| World.getOptSimulant address world
-
-        /// Get a simulant at the given address (failing with an exception otherwise), then
-        /// transform it with the 'by' procudure.
-        static member getSimulantBy by address world =
-            by ^ Option.get ^ World.getOptSimulant address world
-
-        /// Get a simulant at the given address (failing with an exception otherwise).
-        static member getSimulant address world =
-            World.getSimulantBy id address world
-
-        /// Set a simulant at the given address (failing with an exception if one doesn't exist).
-        static member setSimulant<'a when 'a :> Simulant> (simulant : 'a) (address : 'a Address) world =
-            match address.Names with
-            | [] -> World.setGame (simulant :> obj :?> Game) world
-            | [_] -> World.setScreen (simulant :> obj :?> Screen) (Address.changeType<'a, Screen> address) world
-            | [_; _] -> World.setGroup (simulant :> obj :?> Group) (Address.changeType<'a, Group> address) world
-            | [_; _; _] -> World.setEntity (simulant :> obj :?> Entity) (Address.changeType<'a, Entity> address) world
-            | _ -> failwith <| "Invalid simulant address '" + acstring address + "'."
-
-        /// Update a simulant at the given address with the given 'updater' procedure.
-        static member updateSimulantAndW updater address world =
-            let simulant = World.getSimulant address world
-            let (simulant, world) = updater simulant world
-            World.setSimulant simulant address world
-
-        /// Update a simulant with the given 'updater' procedure at the given address.
-        static member updateSimulantW updater address world =
-            World.updateSimulantAndW (fun simulant world -> (updater simulant world, world)) address world
-
-        /// Update a simulant with the given 'updater' procedure at the given address.
-        static member updateSimulant updater address world =
-            World.updateSimulantW (fun simulant _ -> updater simulant) address world
-
-        /// Update the world with the given 'updater' procedure that uses the simulant at given
-        /// address in its computation.
-        static member updateBySimulant updater address world : World =
-            let simulant = World.getSimulant address world
-            updater simulant world
-
-        /// Update a lensed value at the given address and the world with the given 'updater' procedure.
-        static member updateLensedAndW expr lens world : World =
-            Lens.update expr (lens @-> World.lens) world
-
-        /// Update a lensed value with the given 'updater' procedure at the given address.
-        static member updateLensedW expr lens world : World =
-            Lens.updateS expr lens world
-
-        /// Update a lensed value with the given 'updater' procedure at the given address.
-        static member updateLensed expr lens world : World =
-            World.updateLensedW (fun lensed _ -> expr lensed) lens world
-
-        /// Update the world with the given 'updater' procedure that uses the lensed value at given
-        /// address in its computation.
-        static member updateByLensed expr lens world : World =
-            expr (Lens.get world lens) world
-            
-    /// A marker interface for simulation types (Game, Screen, Group, Entity).
-    /// The only methods that have a place in here are those used internally by Nu's event system.
-    and SimulantRep =
-        interface
-            /// Get the entity's publishing priority.
-            abstract GetPublishingPriority : (EntityRep -> World -> single) -> World -> single
-            abstract SimulantAddress : Simulant Address
-        end
-
-    and [<StructuralEquality; NoComparison>] GameRep =
-        { GameAddress : Game Address }
-        
-        interface SimulantRep with
-            member this.GetPublishingPriority _ _ = GamePublishingPriority
-            member this.SimulantAddress = World.atoua this.GameAddress
-        end
-        
-        member this.GetId world = (World.getGame world).Id
-        member this.GetCreationTimeNp world = (World.getGame world).CreationTimeNp
-        member this.GetDispatcherNp world = (World.getGame world).DispatcherNp
-        member this.GetXtension world = (World.getGame world).Xtension
-
-        /// Query that a game dispatches in the same manner as the dispatcher with the target type.
-        member this.DispatchesAs (dispatcherTargetType : Type) world =
-            Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
-
-    and [<StructuralEquality; NoComparison>] ScreenRep =
-        { ScreenAddress : Screen Address }
-        
-        interface SimulantRep with
-            member this.GetPublishingPriority _ _ = ScreenPublishingPriority
-            member this.SimulantAddress = World.atoua this.ScreenAddress
-        end
-
-        member this.GetId world = (World.getScreen this.ScreenAddress world).Id
-        member this.GetName world = (World.getScreen this.ScreenAddress world).Name
-        member this.GetCreationTimeNp world = (World.getScreen this.ScreenAddress world).CreationTimeNp
-        member this.GetDispatcherNp world = (World.getScreen this.ScreenAddress world).DispatcherNp
-        member this.GetXtension world = (World.getScreen this.ScreenAddress world).Xtension
-        member this.GetIdling world = this.GetScreenStateNp world = IdlingState
-
-        /// Query that a screen dispatches in the same manner as the dispatcher with the target type.
-        member this.DispatchesAs (dispatcherTargetType : Type) world =
-            Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
-
-    and [<StructuralEquality; NoComparison>] GroupRep =
-        { GroupAddress : Group Address }
-        
-        interface SimulantRep with
-            member this.GetPublishingPriority _ _ = GroupPublishingPriority
-            member this.SimulantAddress = World.atoua this.GroupAddress
-        end
-
-        member this.GetId world = (World.getGroup this.GroupAddress world).Id
-        member this.GetName world = (World.getGroup this.GroupAddress world).Name
-        member this.GetCreationTimeNp world = (World.getGroup this.GroupAddress world).CreationTimeNp
-        member this.GetDispatcherNp world = (World.getGroup this.GroupAddress world).DispatcherNp
-        member this.GetXtension world = (World.getGroup this.GroupAddress world).Xtension
-
-        /// Query that a group dispatches in the same manner as the dispatcher with the target type.
-        member this.DispatchesAs (dispatcherTargetType : Type) (groupRep : GroupRep) world =
-            Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
-
-    and [<StructuralEquality; NoComparison>] EntityRep =
-        { EntityAddress : Entity Address }
-
-        interface SimulantRep with
-            member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
-            member this.SimulantAddress = World.atoua this.EntityAddress
-        end
-        
-        member this.GetId world = (World.getEntity this.EntityAddress world).Id
-        member this.GetName world = (World.getEntity this.EntityAddress world).Name
-        member this.GetCreationTimeNp world = (World.getEntity this.EntityAddress world).CreationTimeNp
-        member this.GetDispatcherNp world = (World.getEntity this.EntityAddress world).DispatcherNp
-        member this.GetFacetNames world = (World.getEntity this.EntityAddress world).FacetNames
-        member this.GetFacetsNp world = (World.getEntity this.EntityAddress world).FacetsNp
-        member this.GetPosition world = (World.getEntity this.EntityAddress world).Position
-        member this.SetPosition value world = World.updateEntity (fun entity -> { entity with Position = value}) this.EntityAddress world
-        member this.GetDepth world = (World.getEntity this.EntityAddress world).Depth
-        member this.SetDepth value world = World.updateEntity (fun entity -> { entity with Depth = value}) this.EntityAddress world
-        member this.GetSize world = (World.getEntity this.EntityAddress world).Size
-        member this.SetSize value world = World.updateEntity (fun entity -> { entity with Size = value}) this.EntityAddress world
-        member this.GetRotation world = (World.getEntity this.EntityAddress world).Rotation
-        member this.SetRotation value world = World.updateEntity (fun entity -> { entity with Rotation = value}) this.EntityAddress world
-        member this.GetVisible world = (World.getEntity this.EntityAddress world).Visible
-        member this.SetVisible value world = World.updateEntity (fun entity -> { entity with Visible = value}) this.EntityAddress world
-        member this.GetViewType world = (World.getEntity this.EntityAddress world).ViewType
-        member this.SetViewType value world = World.updateEntity (fun entity -> { entity with ViewType = value}) this.EntityAddress world
-        member this.GetPublishChanges world = (World.getEntity this.EntityAddress world).PublishChanges
-        member this.SetPublishChanges value world = World.updateEntity (fun entity -> { entity with PublishChanges = value}) this.EntityAddress world
-        member this.GetPersistent world = (World.getEntity this.EntityAddress world).Persistent
-        member this.SetPersistent value world = World.updateEntity (fun entity -> { entity with Persistent = value}) this.EntityAddress world
-        member this.GetOptOverlayName world = (World.getEntity this.EntityAddress world).OptOverlayName
-        member this.SetOptOverlayName value world = World.updateEntity (fun entity -> { entity with OptOverlayName = value}) this.EntityAddress world
-        member this.GetXtension world = (World.getEntity this.EntityAddress world).Xtension
-        member this.SetXtension xtension world = World.updateEntity (fun entity -> { entity with Xtension = xtension}) this.EntityAddress world
-        
-        member this.UpdateXtension updater world =
-            let xtension = this.GetXtension world
-            let xtension = updater xtension
-            this.SetXtension xtension world
-
-        member this.SetPositionSnapped snap position world =
-            let snapped = Math.snap2F snap position
-            this.SetPosition snapped world
-
-        member this.GetTransform world : Transform =
-            { Position = this.GetPosition world
-              Depth = this.GetDepth world
-              Size = this.GetSize world
-              Rotation = this.GetRotation world }
-
-        member this.SetTransform positionSnap rotationSnap transform world =
-            let transform = Math.snapTransform positionSnap rotationSnap transform
-            world |>
-                this.SetPosition transform.Position |>
-                this.SetDepth transform.Depth |>
-                this.SetSize transform.Size |>
-                this.SetRotation transform.Rotation
-
-        /// Query that an entity dispatches in the same manner as the dispatcher with the target type.
-        member this.DispatchesAs (dispatcherTargetType : Type) world =
-            Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
-
-    /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
-    /// specific values.
-    and NuPlugin () =
-
-        /// Make user-defined subsystems such that Nu can utilitze them at run-time.
-        abstract MakeSubsystems : unit -> (string * Subsystem) list
-        default this.MakeSubsystems () = []
-        
-        /// Optionally make a user-defined game dispatchers such that Nu can utililize it at run-time.
-        abstract MakeOptGameDispatcher : unit -> GameDispatcher option
-        default this.MakeOptGameDispatcher () = None
-        
-        /// Make user-defined screen dispatchers such that Nu can utililize them at run-time.
-        abstract MakeScreenDispatchers : unit -> ScreenDispatcher list
-        default this.MakeScreenDispatchers () = []
-        
-        /// Make user-defined group dispatchers such that Nu can utililize them at run-time.
-        abstract MakeGroupDispatchers : unit -> GroupDispatcher list
-        default this.MakeGroupDispatchers () = []
-        
-        /// Make user-defined entity dispatchers such that Nu can utililize them at run-time.
-        abstract MakeEntityDispatchers : unit -> EntityDispatcher list
-        default this.MakeEntityDispatchers () = []
-        
-        /// Make user-defined assets such that Nu can utililize them at run-time.
-        abstract MakeFacets : unit -> Facet list
-        default this.MakeFacets () = []
-        
-        /// Make the overlay routes that will allow Nu to use different overlays for the specified
-        /// types. For example, a returned router of (typeof<ButtonDispatcher>.Name, Some "CustomButtonOverlay")
-        /// will cause all buttons to use the overlay with the name "CustomButtonOverlay" rather
-        /// than the default "ButtonDispatcher" overlay.
-        abstract MakeOverlayRoutes : unit -> (string * string option) list
-        default this.MakeOverlayRoutes () = []
+        static member containsSimulant<'a when 'a :> SimulantRep> (simulantRep : 'a) world =
+            match simulantRep :> SimulantRep with
+            | :? GameRep -> true
+            | :? ScreenRep as screenRep -> World.containsScreen screenRep world
+            | :? GroupRep as groupRep -> World.containsGroup groupRep world
+            | :? EntityRep as entityRep -> World.containsEntity entityRep world
+            | _ -> failwithumf ()
