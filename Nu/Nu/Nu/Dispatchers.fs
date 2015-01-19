@@ -11,7 +11,7 @@ open Nu.WorldConstants
 [<AutoOpen>]
 module RigidBodyFacetModule =
 
-    type EntityRep with
+    type Entity with
 
         // TODO: consider implementing Awake, AngularVelocity, and LinearVelocity fields to make
         // physics resets less destructive.
@@ -49,8 +49,8 @@ module RigidBodyFacetModule =
     type RigidBodyFacet () =
         inherit Facet ()
 
-        static let getBodyShape (entityRep : EntityRep) world =
-            Physics.evalCollisionExpr (entityRep.GetSize world) (entityRep.GetCollisionExpr world)
+        static let getBodyShape (entity : Entity) world =
+            Physics.evalCollisionExpr (entity.GetSize world) (entity.GetCollisionExpr world)
 
         static member FieldDefinitions =
             [variable? MinorId <| fun () -> Core.makeId ()
@@ -68,37 +68,37 @@ module RigidBodyFacetModule =
              define? IsBullet false
              define? IsSensor false]
 
-        override facet.RegisterPhysics entityRep world =
+        override facet.RegisterPhysics entity world =
             let bodyProperties = 
-                { BodyId = (entityRep.GetPhysicsId world).BodyId
-                  Position = entityRep.GetPosition world + entityRep.GetSize world * 0.5f
-                  Rotation = entityRep.GetRotation world
-                  Shape = getBodyShape entityRep world
-                  BodyType = entityRep.GetBodyType world
-                  Density = entityRep.GetDensity world
-                  Friction = entityRep.GetFriction world
-                  Restitution = entityRep.GetRestitution world
-                  FixedRotation = entityRep.GetFixedRotation world
-                  LinearDamping = entityRep.GetLinearDamping world
-                  AngularDamping = entityRep.GetAngularDamping world
-                  GravityScale = entityRep.GetGravityScale world
-                  CollisionCategories = Physics.toCollisionCategories <| entityRep.GetCollisionCategories world
-                  CollisionMask = Physics.toCollisionCategories <| entityRep.GetCollisionMask world
-                  IsBullet = entityRep.GetIsBullet world
-                  IsSensor = entityRep.GetIsSensor world }
-            World.createBody entityRep.EntityAddress (entityRep.GetId world) bodyProperties world
+                { BodyId = (entity.GetPhysicsId world).BodyId
+                  Position = entity.GetPosition world + entity.GetSize world * 0.5f
+                  Rotation = entity.GetRotation world
+                  Shape = getBodyShape entity world
+                  BodyType = entity.GetBodyType world
+                  Density = entity.GetDensity world
+                  Friction = entity.GetFriction world
+                  Restitution = entity.GetRestitution world
+                  FixedRotation = entity.GetFixedRotation world
+                  LinearDamping = entity.GetLinearDamping world
+                  AngularDamping = entity.GetAngularDamping world
+                  GravityScale = entity.GetGravityScale world
+                  CollisionCategories = Physics.toCollisionCategories <| entity.GetCollisionCategories world
+                  CollisionMask = Physics.toCollisionCategories <| entity.GetCollisionMask world
+                  IsBullet = entity.GetIsBullet world
+                  IsSensor = entity.GetIsSensor world }
+            World.createBody entity.EntityAddress (entity.GetId world) bodyProperties world
 
-        override facet.UnregisterPhysics entityRep world =
-            World.destroyBody (entityRep.GetPhysicsId world) world
+        override facet.UnregisterPhysics entity world =
+            World.destroyBody (entity.GetPhysicsId world) world
 
-        override facet.PropagatePhysics entityRep world =
-            let world = facet.UnregisterPhysics entityRep world
-            facet.RegisterPhysics entityRep world
+        override facet.PropagatePhysics entity world =
+            let world = facet.UnregisterPhysics entity world
+            facet.RegisterPhysics entity world
 
 [<AutoOpen>]
 module SpriteFacetModule =
 
-    type EntityRep with
+    type Entity with
 
         member this.GetSpriteImage world : AssetTag = (this.GetXtension world)?SpriteImage
         member this.SetSpriteImage (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?SpriteImage <- value) world
@@ -109,31 +109,31 @@ module SpriteFacetModule =
         static member FieldDefinitions =
             [define? SpriteImage { PackageName = DefaultPackageName; AssetName = "Image3" }]
 
-        override facet.GetRenderDescriptors entityRep world =
-            if  entityRep.GetVisible world &&
-                Camera.inView3 (entityRep.GetViewType world) (entityRep.GetPosition world) (entityRep.GetSize world) world.State.Camera then
+        override facet.GetRenderDescriptors entity world =
+            if  entity.GetVisible world &&
+                Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world) world.State.Camera then
                 [LayerableDescriptor
-                    { Depth = entityRep.GetDepth world
+                    { Depth = entity.GetDepth world
                       LayeredDescriptor =
                         SpriteDescriptor
-                            { Position = entityRep.GetPosition world
-                              Size = entityRep.GetSize world
-                              Rotation = entityRep.GetRotation world
-                              ViewType = entityRep.GetViewType world
+                            { Position = entity.GetPosition world
+                              Size = entity.GetSize world
+                              Rotation = entity.GetRotation world
+                              ViewType = entity.GetViewType world
                               OptInset = None
-                              Image = entityRep.GetSpriteImage world
+                              Image = entity.GetSpriteImage world
                               Color = Vector4.One }}]
             else []
 
-        override facet.GetQuickSize entityRep world =
-            match Metadata.tryGetTextureSizeAsVector2 (entityRep.GetSpriteImage world) world.State.AssetMetadataMap with
+        override facet.GetQuickSize entity world =
+            match Metadata.tryGetTextureSizeAsVector2 (entity.GetSpriteImage world) world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
 
 [<AutoOpen>]
 module AnimatedSpriteFacetModule =
 
-    type EntityRep with
+    type Entity with
     
         member this.GetTileCount world : int = (this.GetXtension world)?TileCount
         member this.SetTileCount (value : int) world = this.UpdateXtension (fun xtension -> xtension?TileCount <- value) world
@@ -149,10 +149,10 @@ module AnimatedSpriteFacetModule =
     type AnimatedSpriteFacet () =
         inherit Facet ()
 
-        static let getOptSpriteInset (entityRep : EntityRep) world =
-            let tile = int (world.State.TickTime / entityRep.GetAnimationStutter world) % entityRep.GetTileCount world
-            let tileRun = entityRep.GetTileRun world
-            let tileSize = entityRep.GetTileSize world
+        static let getOptSpriteInset (entity : Entity) world =
+            let tile = int (world.State.TickTime / entity.GetAnimationStutter world) % entity.GetTileCount world
+            let tileRun = entity.GetTileRun world
+            let tileSize = entity.GetTileSize world
             let tileI = tile % tileRun
             let tileJ = tile / tileRun
             let tileX = single tileI * tileSize.X
@@ -167,29 +167,29 @@ module AnimatedSpriteFacetModule =
              define? AnimationStutter 4L
              define? AnimationSheet { PackageName = DefaultPackageName; AssetName = "Image7" }]
 
-        override facet.GetRenderDescriptors entityRep world =
-            if  entityRep.GetVisible world &&
-                Camera.inView3 (entityRep.GetViewType world) (entityRep.GetPosition world) (entityRep.GetSize world) world.State.Camera then
+        override facet.GetRenderDescriptors entity world =
+            if  entity.GetVisible world &&
+                Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world) world.State.Camera then
                 [LayerableDescriptor
-                    { Depth = entityRep.GetDepth world
+                    { Depth = entity.GetDepth world
                       LayeredDescriptor =
                         SpriteDescriptor
-                            { Position = entityRep.GetPosition world
-                              Size = entityRep.GetSize world
-                              Rotation = entityRep.GetRotation world
-                              ViewType = entityRep.GetViewType world
-                              OptInset = getOptSpriteInset entityRep world
-                              Image = entityRep.GetAnimationSheet world
+                            { Position = entity.GetPosition world
+                              Size = entity.GetSize world
+                              Rotation = entity.GetRotation world
+                              ViewType = entity.GetViewType world
+                              OptInset = getOptSpriteInset entity world
+                              Image = entity.GetAnimationSheet world
                               Color = Vector4.One }}]
             else []
 
-        override facet.GetQuickSize entityRep world =
-            entityRep.GetTileSize world
+        override facet.GetQuickSize entity world =
+            entity.GetTileSize world
 
 [<AutoOpen>]
 module GuiDispatcherModule =
 
-    type EntityRep with
+    type Entity with
     
         member this.GetEnabled world : bool = (this.GetXtension world)?Enabled
         member this.SetEnabled (value : bool) world = this.UpdateXtension (fun xtension -> xtension?Enabled <- value) world
@@ -202,7 +202,7 @@ module GuiDispatcherModule =
         inherit EntityDispatcher ()
 
         static let handleMouseLeft event world =
-            let gui = event.SubscriberRep : EntityRep
+            let gui = event.Subscriber : Entity
             let data = event.Data : MouseButtonData
             let eventHandling =
                 if World.isSimulantSelected gui world && gui.GetVisible world then
@@ -228,7 +228,7 @@ module GuiDispatcherModule =
 [<AutoOpen>]
 module ButtonDispatcherModule =
 
-    type EntityRep with
+    type Entity with
     
         member this.GetDown world : bool = (this.GetXtension world)?Down
         member this.SetDown (value : bool) world = this.UpdateXtension (fun xtension -> xtension?Down <- value) world
@@ -243,7 +243,7 @@ module ButtonDispatcherModule =
         inherit GuiDispatcher ()
 
         let handleMouseLeftDown event world =
-            let button = event.SubscriberRep : EntityRep
+            let button = event.Subscriber : Entity
             let data = event.Data : MouseButtonData
             if World.isSimulantSelected button world then
                 let mousePositionWorld = Camera.mouseToWorld (button.GetViewType world) data.Position world.State.Camera
@@ -258,7 +258,7 @@ module ButtonDispatcherModule =
             else (Cascade, world)
 
         let handleMouseLeftUp event world =
-            let button = event.SubscriberRep : EntityRep
+            let button = event.Subscriber : Entity
             let data = event.Data : MouseButtonData
             if World.isSimulantSelected button world then
                 let wasDown = button.GetDown world
@@ -313,7 +313,7 @@ module ButtonDispatcherModule =
 [<AutoOpen>]
 module LabelDispatcherModule =
 
-    type EntityRep with
+    type Entity with
     
         member this.GetLabelImage world : AssetTag = (this.GetXtension world)?LabelImage
         member this.SetLabelImage (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?LabelImage <- value) world
@@ -348,7 +348,7 @@ module LabelDispatcherModule =
 [<AutoOpen>]
 module TextDispatcherModule =
 
-    type EntityRep with
+    type Entity with
     
         member this.GetText world : string = (this.GetXtension world)?Text
         member this.SetText (value : string) world = this.UpdateXtension (fun xtension -> xtension?Text <- value) world
@@ -405,7 +405,7 @@ module TextDispatcherModule =
 [<AutoOpen>]
 module ToggleDispatcherModule =
 
-    type EntityRep with
+    type Entity with
     
         member this.GetOn world : bool = (this.GetXtension world)?On
         member this.SetOn (value : bool) world = this.UpdateXtension (fun xtension -> xtension?On <- value) world
@@ -422,7 +422,7 @@ module ToggleDispatcherModule =
         inherit GuiDispatcher ()
         
         let handleMouseLeftDown event world =
-            let toggle = event.SubscriberRep : EntityRep
+            let toggle = event.Subscriber : Entity
             let data = event.Data : MouseButtonData
             if World.isSimulantSelected toggle world then
                 let mousePositionWorld = Camera.mouseToWorld (toggle.GetViewType world) data.Position world.State.Camera
@@ -436,7 +436,7 @@ module ToggleDispatcherModule =
             else (Cascade, world)
 
         let handleMouseLeftUp event world =
-            let toggle = event.SubscriberRep : EntityRep
+            let toggle = event.Subscriber : Entity
             let data = event.Data : MouseButtonData
             if World.isSimulantSelected toggle world then
                 let wasPressed = toggle.GetPressed world
@@ -493,7 +493,7 @@ module ToggleDispatcherModule =
 [<AutoOpen>]
 module FeelerDispatcherModule =
 
-    type EntityRep with
+    type Entity with
     
         member this.GetTouched world : bool = (this.GetXtension world)?Touched
         member this.SetTouched (value : bool) world = this.UpdateXtension (fun xtension -> xtension?Touched <- value) world
@@ -502,7 +502,7 @@ module FeelerDispatcherModule =
         inherit GuiDispatcher ()
 
         let handleMouseLeftDown event world =
-            let feeler = event.SubscriberRep : EntityRep
+            let feeler = event.Subscriber : Entity
             let data = event.Data : MouseButtonData
             if World.isSimulantSelected feeler world then
                 let mousePositionWorld = Camera.mouseToWorld (feeler.GetViewType world) data.Position world.State.Camera
@@ -517,7 +517,7 @@ module FeelerDispatcherModule =
             else (Cascade, world)
 
         let handleMouseLeftUp event world =
-            let feeler = event.SubscriberRep : EntityRep
+            let feeler = event.Subscriber : Entity
             let data = event.Data : MouseButtonData
             if World.isSimulantSelected feeler world && feeler.GetVisible world then
                 if feeler.GetEnabled world then
@@ -542,7 +542,7 @@ module FeelerDispatcherModule =
 [<AutoOpen>]
 module FillBarDispatcherModule =
 
-    type EntityRep with
+    type Entity with
     
         member this.GetFill world : single = (this.GetXtension world)?Fill
         member this.SetFill (value : single) world = this.UpdateXtension (fun xtension -> xtension?Fill <- value) world
@@ -556,7 +556,7 @@ module FillBarDispatcherModule =
     type FillBarDispatcher () =
         inherit GuiDispatcher ()
         
-        let getFillBarSpriteDims (fillBar : EntityRep) world =
+        let getFillBarSpriteDims (fillBar : Entity) world =
             let spriteSize = fillBar.GetSize world
             let spriteInset = spriteSize * fillBar.GetFillInset world * 0.5f
             let spritePosition = fillBar.GetPosition world + spriteInset
@@ -666,7 +666,7 @@ module SideViewCharacterDispatcherModule =
 [<AutoOpen>]
 module TileMapDispatcherModule =
 
-    type EntityRep with
+    type Entity with
     
         member this.GetTileMapAsset world : AssetTag = (this.GetXtension world)?TileMapAsset
         member this.SetTileMapAsset (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?TileMapAsset <- value) world
@@ -686,7 +686,7 @@ module TileMapDispatcherModule =
             let tileSetSize = Vector2i (optTileSetWidth.Value / tileSize.X, optTileSetHeight.Value / tileSize.Y)
             { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileMapSize = tileMapSize; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
 
-        static member makeTileData (tm : EntityRep) tmd (tl : TmxLayer) tileIndex world =
+        static member makeTileData (tm : Entity) tmd (tl : TmxLayer) tileIndex world =
             let mapRun = tmd.MapSize.X
             let tileSetRun = tmd.TileSetSize.X
             let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
@@ -705,7 +705,7 @@ module TileMapDispatcherModule =
     type TileMapDispatcher () =
         inherit EntityDispatcher ()
 
-        let getTileBodyProperties6 (tm : EntityRep) tmd tli td ti cexpr world =
+        let getTileBodyProperties6 (tm : Entity) tmd tli td ti cexpr world =
             let tileShape = Physics.evalCollisionExpr (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr
             { BodyId = intsToGuid tli ti
               Position =
@@ -728,7 +728,7 @@ module TileMapDispatcherModule =
               IsSensor = false }
 
         let getTileBodyProperties tm tmd (tl : TmxLayer) tli ti world =
-            let td = EntityRep.makeTileData tm tmd tl ti world
+            let td = Entity.makeTileData tm tmd tl ti world
             match td.OptTileSetTile with
             | Some tileSetTile ->
                 match tileSetTile.Properties.TryGetValue CollisionProperty with
@@ -750,22 +750,22 @@ module TileMapDispatcherModule =
                     tileLayer.Tiles
             else []
         
-        let registerTileLayerPhysics (tileMap : EntityRep) tileMapData tileLayerIndex world tileLayer =
+        let registerTileLayerPhysics (tileMap : Entity) tileMapData tileLayerIndex world tileLayer =
             let bodyPropertyList = getTileLayerBodyPropertyList tileMap tileMapData tileLayerIndex tileLayer world
             World.createBodies tileMap.EntityAddress (tileMap.GetId world) bodyPropertyList world
 
-        let registerTileMapPhysics (tileMap : EntityRep) world =
+        let registerTileMapPhysics (tileMap : Entity) world =
             let tileMapAsset = tileMap.GetTileMapAsset world
-            let tileMapData = EntityRep.makeTileMapData tileMapAsset world
+            let tileMapData = Entity.makeTileMapData tileMapAsset world
             Seq.foldi
                 (registerTileLayerPhysics tileMap tileMapData)
                 world
                 tileMapData.Map.Layers
 
-        let getTileLayerPhysicsIds (tileMap : EntityRep) tileMapData tileLayer tileLayerIndex world =
+        let getTileLayerPhysicsIds (tileMap : Entity) tileMapData tileLayer tileLayerIndex world =
             Seq.foldi
                 (fun tileIndex physicsIds _ ->
-                    let tileData = EntityRep.makeTileData tileMap tileMapData tileLayer tileIndex world
+                    let tileData = Entity.makeTileData tileMap tileMapData tileLayer tileIndex world
                     match tileData.OptTileSetTile with
                     | Some tileSetTile ->
                         if tileSetTile.Properties.ContainsKey CollisionProperty then
@@ -776,9 +776,9 @@ module TileMapDispatcherModule =
                 []
                 tileLayer.Tiles
 
-        let unregisterTileMapPhysics (tileMap : EntityRep) world =
+        let unregisterTileMapPhysics (tileMap : Entity) world =
             let tileMapAsset = tileMap.GetTileMapAsset world
-            let tileMapData = EntityRep.makeTileMapData tileMapAsset world
+            let tileMapData = Entity.makeTileMapData tileMapAsset world
             Seq.foldi
                 (fun tileLayerIndex world (tileLayer : TmxLayer) ->
                     if tileLayer.Properties.ContainsKey CollisionProperty then

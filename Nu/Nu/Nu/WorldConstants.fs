@@ -6,11 +6,10 @@ open Nu.Constants
 
 module WorldConstants =
 
-    let GameAddress = World.GameAddress
-    let GameRep = World.GameRep
-    let DefaultScreenAddress = World.DefaultScreenAddress
-    let DefaultGroupAddress = World.DefaultGroupAddress
-    let DefaultEntityAddress = World.DefaultEntityAddress
+    let Game = World.Game
+    let DefaultScreen = World.DefaultScreen
+    let DefaultGroup = World.DefaultGroup
+    let DefaultEntity = World.DefaultEntity
     let AnyEventAddress = World.AnyEventAddress
     let TickEventAddress = World.TickEventAddress
     let SelectEventAddress = World.SelectEventAddress

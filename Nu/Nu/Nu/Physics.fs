@@ -165,7 +165,7 @@ module PhysicsModule =
         | BodyCollisionMessage of BodyCollisionMessage
         | BodyTransformMessage of BodyTransformMessage
 
-    /// The physics integrator. Represent the physics system in Nu.
+    /// The physics integrator. Represents the physics system in Nu.
     type IIntegrator =
         /// Query that the integrator contain the body with the given physics id.
         abstract BodyExists : PhysicsId -> bool
