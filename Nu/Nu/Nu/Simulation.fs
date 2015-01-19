@@ -1606,6 +1606,7 @@ module SimulationModule =
 
             // add entity to the world
             let entityRep = { EntityAddress = World.gatoea groupRep.GroupAddress entity.Name }
+            let world = World.removeEntity entityRep world
             let world = World.addEntity entity entityRep world
             (entityRep, world)
 
@@ -1914,6 +1915,7 @@ module SimulationModule =
             
             // read the group's entities
             let groupRep = { GroupAddress = World.satoga screenRep.ScreenAddress group.Name }
+            let world = World.removeGroupImmediate groupRep world
             let world = World.addGroup (group, Map.empty) groupRep world
             let world = snd <| World.readEntities (groupNode : XmlNode) defaultEntityDispatcherName groupRep world
 
@@ -1936,7 +1938,7 @@ module SimulationModule =
                 let (groupRepsRev, world) =
                     Seq.fold
                         (fun (groupRepsRev, world) groupNode ->
-                            let groupRep = World.readGroup groupNode defaultDispatcherName defaultEntityDispatcherName screenRep world
+                            let (groupRep, world) = World.readGroup groupNode defaultDispatcherName defaultEntityDispatcherName screenRep world
                             (groupRep :: groupRepsRev, world))
                         ([], world)
                         (enumerable <| groupsNode.SelectNodes GroupNodeName)
@@ -2123,6 +2125,7 @@ module SimulationModule =
             Reflection.attachFields screen.DispatcherNp screen
             Reflection.readPropertiesToTarget screenNode screen
             let screenRep = { ScreenAddress = ntoa<Screen> screen.Name }
+            let world = World.removeScreenImmediate screenRep world
             let world = World.addScreen (screen, Map.empty) screenRep world
             let world = snd <| World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName screenRep world
             (screenRep, world)

@@ -80,7 +80,6 @@ module WorldTests =
         let (entity, world) = World.createEntity typeof<EntityDispatcher>.Name (Some DefaultEntityName) group world
         let oldWorld = world
         World.writeGameToFile TestFilePath world
-        let world = World.removeScreenImmediate screen world
         let world = World.readGameFromFile TestFilePath world
         Assert.Equal<string> (screen.GetName oldWorld, screen.GetName world)
         Assert.Equal<string> (group.GetName oldWorld, group.GetName world)
