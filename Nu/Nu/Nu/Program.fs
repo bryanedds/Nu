@@ -72,7 +72,7 @@ module Program =
     Edit & Continue is a God-send to languages that support it. Unfortunately, F# does not.
     
     However, it was pointed out to me by Andrea Magnorsky that some amount of hot-swapping of F#
-    code is currently acheived in the Onikira: Demon Killer by cardoning F# code behind dynamically
+    code is currently acheived in the Onikira: Demon Killer by cordoning F# code behind dynamically
     loaded .NET assemibles. This seems like it would also be applicable with Nu currently since
     it also uses a plug-in model. On the other hand, I was informed that step-debugging for this
     hot-loaded code was not yet working (and I'm not sure if it could without further
@@ -84,5 +84,4 @@ module Program =
     
     let [<EntryPoint; STAThread>] main _ =
         Console.Write "Running Nu.exe"
-        ObservationTests.interativeFrpCyclicWorks ()
         SuccessExitCode

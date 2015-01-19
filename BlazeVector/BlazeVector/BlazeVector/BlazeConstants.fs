@@ -40,14 +40,14 @@ module BlazeConstants =
           DissolveImage = DefaultDissolveImage }
 
     // splash constants
-    let SplashRep = { ScreenAddress = ntoa<Screen> "Splash" }
+    let Splash = { ScreenAddress = ntoa<ScreenState> "Splash" }
     let SplashData =
         { DissolveData = DissolveData
           IdlingTime = 60L
           SplashImage = { PackageName = DefaultPackageName; AssetName = "Image5" }}
 
     // title constants
-    let TitleRep = { ScreenAddress = ntoa<Screen> "Title" }
+    let Title = { ScreenAddress = ntoa<ScreenState> "Title" }
     let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
     let SelectTitleEventAddress = stoa<unit> "Select/Title"
     let ClickTitlePlayEventAddress = stoa<unit> "Click/Title/Group/Play"
