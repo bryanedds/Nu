@@ -64,34 +64,23 @@ module WorldTests =
 
     let [<Fact>] entitySubscribeWorks () =
         let world = World.initAndMakeEmpty 0
-        let entity = World.makeEntity typeof<EntityDispatcher>.Name (Some DefaultEntityName) world
-        let group = World.makeGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) world
-        let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some DefaultScreenName) world
-        let groupHierarchies = Map.singleton group.Name (group, Map.singleton entity.Name entity)
-        let screenHierarchy = (screen, groupHierarchies)
-        let world = snd <| World.addScreen screenHierarchy DefaultScreenAddress world
-        let handleEvent = fun event world -> (Cascade, World.setUserState event.SubscriberAddress world)
-        let world = World.subscribe4 handleEvent StringEventAddress DefaultEntityAddress world
-        let world = World.publish4 String.Empty StringEventAddress GameAddress world
-        Assert.Equal<Entity Address> (DefaultEntityAddress, World.getUserState world)
+        let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some DefaultScreenName) world
+        let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) screen world
+        let (entity, world) = World.createEntity typeof<EntityDispatcher>.Name (Some DefaultEntityName) group world
+        let handleEvent = fun event world -> (Cascade, World.setUserState event.SubscriberRep.SimulantAddress world)
+        let world = World.subscribe4 handleEvent StringEventAddress entity world
+        let world = World.publish4 String.Empty StringEventAddress GameRep world
+        Assert.Equal<Simulant Address> (atoua DefaultEntityAddress, World.getUserState world)
 
     let [<Fact>] gameSerializationWorks () =
         // TODO: make stronger assertions in here!!!
         let world = World.initAndMakeEmpty 0
-        let entity = World.makeEntity typeof<EntityDispatcher>.Name (Some DefaultEntityName) world
-        let group = World.makeGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) world
-        let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some DefaultScreenName) world
-        let game = World.getGame world
-        let screenHierarchies =
-            Map.singleton screen.Name <|
-                (screen, Map.singleton group.Name <|
-                    (group, Map.singleton entity.Name entity))
-        let gameHierarchy = (game, screenHierarchies)
-        World.writeGameHierarchyToFile TestFilePath gameHierarchy world
-        let (_, screenHierarchies) = World.readGameHierarchyFromFile TestFilePath world
-        let (screen', groupHierarchies) = Map.find DefaultScreenName screenHierarchies
-        Assert.Equal<string> (screen.Name, screen'.Name)
-        let (group', entities) = Map.find DefaultGroupName groupHierarchies
-        Assert.Equal<string> (group.Name, group'.Name)
-        let entity' = Map.find DefaultEntityName entities
-        Assert.Equal<string> (entity.Name, entity'.Name)
+        let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some DefaultScreenName) world
+        let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) screen world
+        let (entity, world) = World.createEntity typeof<EntityDispatcher>.Name (Some DefaultEntityName) group world
+        let oldWorld = world
+        World.writeGameToFile TestFilePath world
+        let world = World.readGameFromFile TestFilePath world
+        Assert.Equal<string> (screen.GetName oldWorld, screen.GetName world)
+        Assert.Equal<string> (group.GetName oldWorld, group.GetName world)
+        Assert.Equal<string> (entity.GetName oldWorld, entity.GetName world)
