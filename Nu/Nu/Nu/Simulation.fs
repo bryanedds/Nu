@@ -714,7 +714,7 @@ module SimulationModule =
 
         static member internal GameAddress = Address<Game>.empty
         static member internal GameRep = { GameAddress = World.GameAddress }
-        static member internal DefaultScreenAddress = ntoa<Screen> DefaultGroupName
+        static member internal DefaultScreenAddress = ntoa<Screen> DefaultScreenName
         static member internal DefaultGroupAddress = World.satoga World.DefaultScreenAddress DefaultGroupName
         static member internal DefaultEntityAddress = World.gatoea World.DefaultGroupAddress DefaultEntityName
         static member internal AnyEventAddress = ntoa<obj> "*"
@@ -805,9 +805,7 @@ module SimulationModule =
                     anyEventAddresses
             else failwith "Event name cannot be empty."
 
-        static member private getSortableSubscriptions
-            getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world :
-            (single * SubscriptionEntry) list =
+        static member private getSortableSubscriptions getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world : (single * SubscriptionEntry) list =
             List.foldBack
                 (fun (key, simulantRep : SimulantRep, subscription) subscriptions ->
                     let priority = simulantRep.GetPublishingPriority getEntityPublishingPriority world
@@ -822,8 +820,7 @@ module SimulationModule =
             let optSubLists = Map.tryFind eventAddress world.Callbacks.Subscriptions :: optSubLists
             let subLists = List.definitize optSubLists
             let subList = List.concat subLists
-            let subListRev = List.rev subList
-            publishSorter subListRev world
+            publishSorter subList world
     
         static member private boxSubscription<'a, 's when 's :> SimulantRep> (subscription : Subscription<'a, 's>) =
             let boxableSubscription = fun (event : obj) world ->
@@ -1439,6 +1436,12 @@ module SimulationModule =
             let groupAddress = groupRep.GroupAddress
             Seq.map (fun (kvp : KeyValuePair<string, _>) -> { EntityAddress = World.gatoea groupAddress kvp.Key }) entityMap
 
+        // Get all the entityReps in the world.
+        static member getEntityReps1 world =
+            World.getGroupReps1 world |>
+            Seq.map (fun groupRep -> World.getEntityReps groupRep world) |>
+            Seq.concat
+
         /// Remove an entity from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the entity's existence. Use with caution.
         static member removeEntityImmediate entityRep world =
@@ -1611,12 +1614,14 @@ module SimulationModule =
             match groupNode.SelectSingleNode EntitiesNodeName with
             | null -> ([], world)
             | entitiesNode ->
-                Seq.foldBack
-                    (fun entityNode (entityReps, world) ->
-                        let (entityRep, world) = World.readEntity entityNode defaultDispatcherName groupRep world
-                        (entityRep :: entityReps, world))
-                    (enumerable <| entitiesNode.SelectNodes EntityNodeName)
-                    ([], world)
+                let (entityRepsRev, world) =
+                    Seq.fold
+                        (fun (entityRepsRev, world) entityNode ->
+                            let (entityRep, world) = World.readEntity entityNode defaultDispatcherName groupRep world
+                            (entityRep :: entityRepsRev, world))
+                        ([], world)
+                        (enumerable <| entitiesNode.SelectNodes EntityNodeName)
+                (List.rev entityRepsRev, world)
 
         /// Propagate an entity's physics properties from the physics subsystem.
         static member propagatePhysics (entityRep : EntityRep) world =
@@ -1800,6 +1805,12 @@ module SimulationModule =
             let screenAddress = screenRep.ScreenAddress
             Seq.map (fun (kvp : KeyValuePair<string, _>) -> { GroupAddress = World.satoga screenAddress kvp.Key }) groupMap
 
+        // Get all the groupReps in the world.
+        static member getGroupReps1 world =
+            World.getScreenReps world |>
+            Seq.map (fun screenRep -> World.getGroupReps screenRep world) |>
+            Seq.concat
+
         /// Remove a group from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the group's existence. Use with caution.
         static member removeGroupImmediate groupRep world =
@@ -1922,12 +1933,14 @@ module SimulationModule =
             match screenNode.SelectSingleNode GroupsNodeName with
             | null -> ([], world)
             | groupsNode ->
-                Seq.foldBack
-                    (fun groupNode (groupReps, world) ->
-                        let groupRep = World.readGroup groupNode defaultDispatcherName defaultEntityDispatcherName screenRep world
-                        (groupRep :: groupReps, world))
-                    (enumerable <| groupsNode.SelectNodes GroupNodeName)
-                    ([], world)
+                let (groupRepsRev, world) =
+                    Seq.fold
+                        (fun (groupRepsRev, world) groupNode ->
+                            let groupRep = World.readGroup groupNode defaultDispatcherName defaultEntityDispatcherName screenRep world
+                            (groupRep :: groupRepsRev, world))
+                        ([], world)
+                        (enumerable <| groupsNode.SelectNodes GroupNodeName)
+                (List.rev groupRepsRev, world)
 
         (* Screen *)
 
@@ -2022,9 +2035,9 @@ module SimulationModule =
 
         /// Get the addresses of all the world's screens.
         static member getScreenReps world =
-            let screenMap = World.getScreenMap world
-            let screenReps = Map.foldBack (fun screenName _ screenReps -> { ScreenAddress = ntoa<Screen> screenName } :: screenReps) screenMap []
-            Seq.ofList screenReps // TODO: maybe return this sequence in a lazier way?
+            World.getScreenMap world |>
+                Map.fold (fun screenRepsRev screenName _ -> { ScreenAddress = ntoa<Screen> screenName } :: screenRepsRev) [] |>
+                List.rev
 
         /// Remove a screen from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the screen's existence. Use with caution.
@@ -2127,12 +2140,14 @@ module SimulationModule =
             match gameNode.SelectSingleNode ScreensNodeName with
             | null -> ([], world)
             | screensNode ->
-                Seq.foldBack
-                    (fun screenNode (screenReps, world) ->
-                        let (screenRep, world) = World.readScreen screenNode defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world
-                        (screenRep :: screenReps, world))
-                    (enumerable <| screensNode.SelectNodes ScreenNodeName)
-                    ([], world)
+                let (screenRepsRev, world) =
+                    Seq.fold
+                        (fun (screenReps, world) screenNode ->
+                            let (screenRep, world) = World.readScreen screenNode defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world
+                            (screenRep :: screenReps, world))
+                        ([], world)
+                        (enumerable <| screensNode.SelectNodes ScreenNodeName)
+                (List.rev screenRepsRev, world)
 
         (* Game *)
 

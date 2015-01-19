@@ -40,27 +40,18 @@ module WorldRenderModule =
         static member private getRenderDescriptors world =
             match World.getOptSelectedScreenRep world with
             | Some selectedScreenRep ->
-                let selectedScreenAddress = selectedScreenRep.ScreenAddress
-                match Map.tryFind (Address.head selectedScreenAddress) (World.getScreenMap world) with
-                | Some (_, groupMap) ->
-                    let entityReps =
-                        Map.foldBack
-                            (fun groupName (_, entityMap) entityReps ->
-                                let groupAddress = satoga selectedScreenAddress groupName
-                                Map.foldBack
-                                    (fun entityName _ entityReps -> { EntityAddress = gatoea groupAddress entityName } :: entityReps)
-                                    entityMap
-                                    entityReps)
-                            groupMap
-                            []
-                    let descriptors = List.map (fun entityRep -> World.getRenderDescriptors entityRep world) entityReps
-                    let descriptors = List.concat descriptors
+                if World.containsScreen selectedScreenRep world then
+                    let entityReps = World.getEntityReps1 world
+                    let descriptors =
+                        Seq.map (fun entityRep -> World.getRenderDescriptors entityRep world) entityReps |>
+                        Seq.concat |>
+                        List.ofSeq
                     let selectedScreen = World.getScreen selectedScreenRep world
                     match selectedScreen.ScreenStateNp with
                     | IncomingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors world.State.Camera selectedScreen selectedScreen.Incoming
                     | OutgoingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors world.State.Camera selectedScreen selectedScreen.Outgoing
                     | IdlingState -> descriptors
-                | None -> []
+                else []
             | None -> []
 
         interface Subsystem with

@@ -1478,7 +1478,7 @@ module Evaluator =
     and sequentiallyEvalExprs exprs tillViolation env =
         let nextEnv evalResults currentEnv = if List.isEmpty evalResults then currentEnv else (List.head evalResults).Env
         let evalResults = List.fold (fun evalResults expr -> evalExprWithExplicitTracing expr (nextEnv evalResults env) :: evalResults) [] exprs
-        let evalResultsRev = List.rev evalResults // TODO: see if we can avoid this reverse by using a Queue or List.foldBack
+        let evalResultsRev = List.rev evalResults // TODO: see if we can avoid this reverse by using a Queue
         if tillViolation then List.takeTillInclusive (fun evalResult -> isViolation evalResult.Value) evalResultsRev
         else evalResultsRev
 
