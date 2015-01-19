@@ -217,36 +217,29 @@ module WorldModule =
             let world = World.subscribe SplashScreenTickKey (World.handleSplashScreenIdleTick idlingTime 0L) TickEventAddress event.SubscriberRep world
             (Resolve, world)
 
-        /// Add a splash screen to the world at the given address that transitions to the given
+        /// Create a splash screen to the world at the given address that transitions to the given
         /// destination upon completion.
-        static member addSplashScreen persistent splashData dispatcherName destination address world =
-            let splashScreen = { World.makeDissolveScreen splashData.DissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }
-            let splashGroup = { World.makeGroup typeof<GroupDispatcher>.Name (Some "SplashGroup") world with Persistent = persistent }
-            let splashLabel = { World.makeEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") world with Persistent = persistent }
-            let splashLabel = Entity.setSize world.State.Camera.EyeSize splashLabel
-            let splashLabel = Entity.setPosition (-world.State.Camera.EyeSize * 0.5f) splashLabel
-            let splashLabel = Entity.setLabelImage splashData.SplashImage splashLabel
-            let splashGroupHierarchies = Map.singleton splashGroup.Name (splashGroup, Map.singleton splashLabel.Name splashLabel)
-            let splashScreenHierarchy = (splashScreen, splashGroupHierarchies)
-            let world = snd <| World.addScreen splashScreenHierarchy address world
-            let world = World.monitor (World.handleSplashScreenIdle splashData.IdlingTime) (IncomingFinishEventAddress ->>- address) address world
-            let world = World.monitor (World.handleAsScreenTransitionFromSplash destination) (OutgoingFinishEventAddress ->>- address) address world
+        static member createSplashScreen persistent splashData dispatcherName destination optName world =
+            let (splashScreen, world) = World.createDissolveScreen splashData.DissolveData dispatcherName optName world
+            let (splashGroup, world) = World.createGroup typeof<GroupDispatcher>.Name (Some "SplashGroup") splashScreen world
+            let (splashLabel, world) = World.createEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") splashGroup world
+            let world = splashScreen.SetPersistent persistent world
+            let world = splashGroup.SetPersistent persistent world
+            let world = splashLabel.SetPersistent persistent world
+            let world = splashLabel.SetSize world.State.Camera.EyeSize world
+            let world = splashLabel.SetPosition (-world.State.Camera.EyeSize * 0.5f) world
+            let world = splashLabel.SetLabelImage splashData.SplashImage world
+            let world = World.monitor (World.handleSplashScreenIdle splashData.IdlingTime) (IncomingFinishEventAddress ->>- splashScreen.ScreenAddress) splashScreen world
+            let world = World.monitor (World.handleAsScreenTransitionFromSplash destination) (OutgoingFinishEventAddress ->>- splashScreen.ScreenAddress) splashScreen world
             (splashScreen, world)
 
-        /// Add a screen to the world at the given address that uses a dissolve transition.
-        static member addDissolveScreen persistent dissolveData dispatcherName address world =
-            let dissolveScreen = { World.makeDissolveScreen dissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }
-            let dissolveScreenHierarchy = (dissolveScreen, Map.empty)
-            World.addScreen dissolveScreenHierarchy address world
-
-        /// Add a dissolve screen to the world at the given address whose contents is loaded from
+        /// Create a dissolve screen to the world at the given address whose contents is loaded from
         /// the given group file.
-        static member addDissolveScreenFromGroupFile persistent dissolveData dispatcherName groupFilePath address world =
-            let dissolveScreen = { World.makeDissolveScreen dissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }
-            let (group, entities) = World.readGroupHierarchyFromFile groupFilePath world
-            let dissolveGroupHierarchies = Map.singleton group.Name (group, entities)
-            let dissolveScreenHierarchy = (dissolveScreen, dissolveGroupHierarchies)
-            World.addScreen dissolveScreenHierarchy address world
+        static member createDissolveScreenFromGroupFile persistent dissolveData dispatcherName groupFilePath optName world =
+            let (dissolveScreen, world) = World.createDissolveScreen dissolveData dispatcherName optName world
+            let world = dissolveScreen.SetPersistent persistent world
+            let world = snd <| World.readGroupFromFile groupFilePath dissolveScreen world
+            (dissolveScreen, world)
 
         static member private createIntrinsicOverlays entityDispatchers facets =
             let hasFacetNamesField = fun sourceType -> sourceType = typeof<EntityDispatcher>
@@ -270,32 +263,33 @@ module WorldModule =
                 let overlayer = Overlayer.make outputOverlayFilePath intrinsicOverlays
                 let world = World.setOverlayer overlayer world
 
-                // get all the entities in the world
-                let entities =
-                    [for screenKvp in snd world.Simulants do
-                        for groupKvp in snd screenKvp.Value do
-                            for entityKvp in snd groupKvp.Value do
-                                let address = Address<Entity>.make [screenKvp.Key; groupKvp.Key; entityKvp.Key]
-                                yield (address, entityKvp.Value)]
+                // get all the entityReps in the world
+                let entityReps =
+                    World.getScreenReps world |>
+                    Seq.map (fun screenRep -> World.getGroupReps screenRep world) |>
+                    Seq.concat |>
+                    Seq.map (fun groupRep -> World.getEntityReps groupRep world) |>
+                    Seq.concat
 
                 // apply overlays to all entities
                 let world =
                     Seq.fold
-                        (fun world (address, entity : Entity) ->
+                        (fun world (entityRep : EntityRep) ->
+                            let entity = World.getEntity entityRep world
                             let entity = { entity with Id = entity.Id } // hacky copy
                             match entity.OptOverlayName with
                             | Some overlayName ->
                                 let oldFacetNames = entity.FacetNames
                                 Overlayer.applyOverlayToFacetNames overlayName overlayName entity oldOverlayer world.State.Overlayer
-                                match World.trySynchronizeFacets oldFacetNames entity (Some address) world with
+                                match World.trySynchronizeFacets oldFacetNames entity (Some entityRep.EntityAddress) world with
                                 | Right (entity, world) ->
                                     let facetNames = Entity.getFacetNamesReflectively entity
                                     Overlayer.applyOverlay6 overlayName overlayName facetNames entity oldOverlayer world.State.Overlayer
-                                    World.setEntity entity address world
+                                    World.setEntity entity entityRep world
                                 | Left error -> note <| "There was an issue in applying a reloaded overlay: " + error; world
                             | None -> world)
                         world
-                        entities
+                        entityReps
 
                 // right!
                 Right world
@@ -333,7 +327,7 @@ module WorldModule =
 
         /// A hack for the physics subsystem that allows an old world value to displace the current
         /// one and have its physics values propagated to the imperative physics subsystem.
-        static member continueHack groupAddress world =
+        static member continueHack groupRep world =
             // NOTE: since messages may be invalid upon continuing a world (especially physics
             // messages), all messages are eliminated. If this poses an issue, the editor will have
             // to instead store past / future worlds only once their current frame has been
@@ -342,13 +336,8 @@ module WorldModule =
             let world = World.clearAudioMessages world
             let world = World.clearPhysicsMessages world
             let world = World.addPhysicsMessage RebuildPhysicsHackMessage world
-            let entityMap = World.getEntityMapInGroup groupAddress world
-            Map.fold
-                (fun world _ (entity : Entity) ->
-                    let entityAddress = gatoea groupAddress entity.Name
-                    Entity.propagatePhysics entity entityAddress world)
-                world
-                entityMap
+            let entityReps = World.getEntityReps groupRep world
+            Seq.fold (flip World.propagatePhysics) world entityReps
 
         static member private processSubsystems subsystemType world =
             Map.toList world.Subsystems |>

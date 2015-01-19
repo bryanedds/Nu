@@ -1295,7 +1295,7 @@ module SimulationModule =
             | Right (entity, world) -> World.tryAddFacets false facetNamesToAdd entity optAddress world
             | Left _ as left -> left
 
-        static member private trySynchronizeFacets oldFacetNames entity optAddress world =
+        static member internal trySynchronizeFacets oldFacetNames entity optAddress world =
             let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames entity.FacetNames
             let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames entity.FacetNames
             match World.tryRemoveFacets true facetNamesToRemove entity optAddress world with
@@ -1434,7 +1434,7 @@ module SimulationModule =
             Option.isSome <| World.optEntityFinder entityRep.EntityAddress world
 
         /// Get all the entity addresses in the group at the given address.
-        static member getEntityRepsInGroup groupRep world =
+        static member getEntityReps groupRep world =
             let entityMap = World.getEntityMapInGroup groupRep world
             let groupAddress = groupRep.GroupAddress
             Seq.map (fun (kvp : KeyValuePair<string, _>) -> { EntityAddress = World.gatoea groupAddress kvp.Key }) entityMap
@@ -1795,7 +1795,7 @@ module SimulationModule =
             Option.isSome <| World.optGroupFinder groupRep.GroupAddress world
 
         /// Get all the group addresses in the screen at the given address.
-        static member getGroupRepsInScreen screenRep world =
+        static member getGroupReps screenRep world =
             let groupMap = World.getGroupMapInScreen screenRep world
             let screenAddress = screenRep.ScreenAddress
             Seq.map (fun (kvp : KeyValuePair<string, _>) -> { GroupAddress = World.satoga screenAddress kvp.Key }) groupMap
@@ -1806,7 +1806,7 @@ module SimulationModule =
             let world = World.publish4 () (World.GroupRemovingEventAddress ->>- groupRep.GroupAddress) groupRep world
             if World.containsGroup groupRep world then
                 let world = World.unregisterGroup groupRep world
-                let entityReps = World.getEntityRepsInGroup groupRep world
+                let entityReps = World.getEntityReps groupRep world
                 let world = World.removeEntitiesImmediate entityReps world
                 World.setOptGroupWithoutEvent None groupRep world
             else world
@@ -1844,7 +1844,7 @@ module SimulationModule =
         /// Write a group hierarchy to an xml writer.
         static member writeGroup (writer : XmlWriter) groupRep world =
             let group = World.getGroup groupRep world
-            let entityReps = World.getEntityRepsInGroup groupRep world
+            let entityReps = World.getEntityReps groupRep world
             writer.WriteAttributeString (DispatcherNameAttributeName, Reflection.getTypeName group.DispatcherNp)
             Reflection.writePropertiesFromTarget tautology3 writer group
             writer.WriteStartElement EntitiesNodeName
@@ -2023,7 +2023,8 @@ module SimulationModule =
         /// Get the addresses of all the world's screens.
         static member getScreenReps world =
             let screenMap = World.getScreenMap world
-            Map.foldBack (fun screenName _ screenReps -> { ScreenAddress = ntoa<Screen> screenName } :: screenReps) screenMap []
+            let screenReps = Map.foldBack (fun screenName _ screenReps -> { ScreenAddress = ntoa<Screen> screenName } :: screenReps) screenMap []
+            Seq.ofList screenReps // TODO: maybe return this sequence in a lazier way?
 
         /// Remove a screen from the world immediately. Can be dangerous if existing in-flight
         /// subscriptions depend on the screen's existence. Use with caution.
@@ -2031,7 +2032,7 @@ module SimulationModule =
             let world = World.publish4 () (World.ScreenRemovingEventAddress ->>- screenRep.ScreenAddress) screenRep world
             if World.containsScreen screenRep world then
                 let world = World.unregisterScreen screenRep world
-                let groupReps = World.getGroupRepsInScreen screenRep world
+                let groupReps = World.getGroupReps screenRep world
                 let world = World.removeGroupsImmediate groupReps world
                 World.setOptScreenWithoutEvent None screenRep world
             else world
@@ -2064,7 +2065,7 @@ module SimulationModule =
         /// Write a screen hierarchy to an xml writer.
         static member writeScreen (writer : XmlWriter) screenRep world =
             let screen = World.getScreen screenRep world
-            let groupReps = World.getGroupRepsInScreen screenRep world
+            let groupReps = World.getGroupReps screenRep world
             writer.WriteAttributeString (DispatcherNameAttributeName, (screen.DispatcherNp.GetType ()).Name)
             Reflection.writePropertiesFromTarget tautology3 writer screen
             writer.WriteStartElement GroupsNodeName
