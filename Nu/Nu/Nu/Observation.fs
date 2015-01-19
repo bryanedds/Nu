@@ -11,28 +11,28 @@ module ObservationModule =
 
     /// An observation in the functional reactive style.
     /// TODO: I bet there's either a monad or arrow in here...
-    type [<ReferenceEquality>] Observation<'a, 'o when 'o :> SimulantRep> =
-        { ObserverRep : 'o
+    type [<ReferenceEquality>] Observation<'a, 'o when 'o :> Simulant> =
+        { Observer : 'o
           Subscribe : World -> 'a Address * (World -> World) * World }
-        static member make<'a> observerRep subscribe =
-            { ObserverRep = observerRep; Subscribe = subscribe }
+        static member make<'a> observer subscribe =
+            { Observer = observer; Subscribe = subscribe }
 
 module Observation =
 
     (* Primitive Combinators *)
 
     /// Make an observation from an observer address and an event address.
-    let observe<'a, 'o when 'o :> SimulantRep> (eventAddress : 'a Address) (observerRep : 'o) =
+    let observe<'a, 'o when 'o :> Simulant> (eventAddress : 'a Address) (observer : 'o) =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
             let subscriptionAddress = ntoa<'a> <| acstring subscriptionKey
             let unsubscribe = fun world -> World.unsubscribe subscriptionKey world
             let subscription = fun event world ->
-                let world = World.publish<'a, SimulantRep> World.sortSubscriptionsNone event.Data subscriptionAddress event.PublisherRep world
+                let world = World.publish<'a, Simulant> World.sortSubscriptionsNone event.Data subscriptionAddress event.Publisher world
                 (Cascade, world)
-            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observerRep world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observer world
             (subscriptionAddress, unsubscribe, world)
-        { ObserverRep = observerRep; Subscribe = subscribe }
+        { Observer = observer; Subscribe = subscribe }
 
     /// Combine an observation with the events from the given address. Combination is in 'product
     /// form', which is defined as a pair of the data of the combined events. Think of it as 'zip'
@@ -53,14 +53,14 @@ module Observation =
             let subscription = fun event world ->
                 let subscription' = fun event' world ->
                     let eventData = (event.Data, event'.Data)
-                    let world = World.publish<'a * 'b, SimulantRep> World.sortSubscriptionsNone eventData subscriptionAddress'' event.PublisherRep world
+                    let world = World.publish<'a * 'b, Simulant> World.sortSubscriptionsNone eventData subscriptionAddress'' event.Publisher world
                     let world = World.unsubscribe subscriptionKey' world
                     (Cascade, world)
-                let world = World.subscribe<'b, 'o> subscriptionKey' subscription' subscriptionAddress' observation.ObserverRep world
+                let world = World.subscribe<'b, 'o> subscriptionKey' subscription' subscriptionAddress' observation.Observer world
                 (Cascade, world)
-            let world = World.subscribe<'a, 'o> subscriptionKey subscription subscriptionAddress observation.ObserverRep world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription subscriptionAddress observation.Observer world
             (subscriptionAddress'', unsubscribe, world)
-        { ObserverRep = observation.ObserverRep; Subscribe = subscribe }
+        { Observer = observation.Observer; Subscribe = subscribe }
 
     /// Combine an observation with the events from the given address. Combination is in 'sum
     /// form', which is defined as an Either of the data of the combined events, where only data
@@ -79,16 +79,16 @@ module Observation =
                 World.unsubscribe subscriptionKey' world
             let subscription = fun event world ->
                 let eventData = Left event.Data
-                let world = World.publish<Either<'a, 'b>, SimulantRep> World.sortSubscriptionsNone eventData subscriptionAddress'' event.PublisherRep world
+                let world = World.publish<Either<'a, 'b>, Simulant> World.sortSubscriptionsNone eventData subscriptionAddress'' event.Publisher world
                 (Cascade, world)
             let subscription' = fun event world ->
                 let eventData = Right event.Data
-                let world = World.publish<Either<'a, 'b>, SimulantRep> World.sortSubscriptionsNone eventData subscriptionAddress'' event.PublisherRep world
+                let world = World.publish<Either<'a, 'b>, Simulant> World.sortSubscriptionsNone eventData subscriptionAddress'' event.Publisher world
                 (Cascade, world)
-            let world = World.subscribe<'b, 'o> subscriptionKey' subscription' subscriptionAddress' observation.ObserverRep world
-            let world = World.subscribe<'a, 'o> subscriptionKey subscription subscriptionAddress observation.ObserverRep world
+            let world = World.subscribe<'b, 'o> subscriptionKey' subscription' subscriptionAddress' observation.Observer world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription subscriptionAddress observation.Observer world
             (subscriptionAddress'', unsubscribe, world)
-        { ObserverRep = observation.ObserverRep; Subscribe = subscribe }
+        { Observer = observation.Observer; Subscribe = subscribe }
 
     /// Filter an observation's events by 'pred'.
     let filter (pred : Event<'a, 'o> -> World -> bool) (observation : Observation<'a, 'o>) =
@@ -100,12 +100,12 @@ module Observation =
             let subscription = fun event world ->
                 let world =
                     if pred event world
-                    then World.publish<'a, SimulantRep> World.sortSubscriptionsNone event.Data subscriptionAddress event.PublisherRep world
+                    then World.publish<'a, Simulant> World.sortSubscriptionsNone event.Data subscriptionAddress event.Publisher world
                     else world
                 (Cascade, world)
-            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observation.ObserverRep world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observation.Observer world
             (subscriptionAddress, unsubscribe, world)
-        { ObserverRep = observation.ObserverRep; Subscribe = subscribe }
+        { Observer = observation.Observer; Subscribe = subscribe }
 
     /// Map an observation's events by the 'mapper' procedure.
     let map (mapper : Event<'a, 'o> -> World -> 'b) (observation : Observation<'a, 'o>) : Observation<'b, 'o> =
@@ -115,11 +115,11 @@ module Observation =
             let (eventAddress, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world -> let world = unsubscribe world in World.unsubscribe subscriptionKey world
             let subscription = fun event world ->
-                let world = World.publish<'b, SimulantRep> World.sortSubscriptionsNone (mapper event world) subscriptionAddress event.PublisherRep world
+                let world = World.publish<'b, Simulant> World.sortSubscriptionsNone (mapper event world) subscriptionAddress event.Publisher world
                 (Cascade, world)
-            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observation.ObserverRep world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observation.Observer world
             (subscriptionAddress, unsubscribe, world)
-        { ObserverRep = observation.ObserverRep; Subscribe = subscribe }
+        { Observer = observation.Observer; Subscribe = subscribe }
 
     /// TODO: document!
     let track4
@@ -144,12 +144,12 @@ module Observation =
                 let world = World.addCallbackState callbackKey state world
                 let world =
                     if tracked
-                    then World.publish<'b, SimulantRep> World.sortSubscriptionsNone (transformer state) subscriptionAddress event.PublisherRep world
+                    then World.publish<'b, Simulant> World.sortSubscriptionsNone (transformer state) subscriptionAddress event.Publisher world
                     else world
                 (Cascade, world)
-            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observation.ObserverRep world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observation.Observer world
             (subscriptionAddress, unsubscribe, world)
-        { ObserverRep = observation.ObserverRep; Subscribe = subscribe }
+        { Observer = observation.Observer; Subscribe = subscribe }
 
     /// TODO: document!
     let track2
@@ -173,12 +173,12 @@ module Observation =
                 let world = World.addCallbackState callbackKey state world
                 let world =
                     if tracked
-                    then World.publish<'a, SimulantRep> World.sortSubscriptionsNone state subscriptionAddress event.PublisherRep world
+                    then World.publish<'a, Simulant> World.sortSubscriptionsNone state subscriptionAddress event.Publisher world
                     else world
                 (Cascade, world)
-            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observation.ObserverRep world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observation.Observer world
             (subscriptionAddress, unsubscribe, world)
-        { ObserverRep = observation.ObserverRep; Subscribe = subscribe }
+        { Observer = observation.Observer; Subscribe = subscribe }
 
     /// TODO: document!
     let track
@@ -202,12 +202,12 @@ module Observation =
                 let world = World.addCallbackState callbackKey state world
                 let world =
                     if tracked
-                    then World.publish<'a, SimulantRep> World.sortSubscriptionsNone event.Data subscriptionAddress event.PublisherRep world
+                    then World.publish<'a, Simulant> World.sortSubscriptionsNone event.Data subscriptionAddress event.Publisher world
                     else world
                 (Cascade, world)
-            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observation.ObserverRep world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observation.Observer world
             (subscriptionAddress, unsubscribe, world)
-        { ObserverRep = observation.ObserverRep; Subscribe = subscribe }
+        { Observer = observation.Observer; Subscribe = subscribe }
 
     /// Subscribe to an observation, handling each event with the given 'handleEvent' procedure,
     /// returning both an unsubscription procedure as well as the world as augmented with said
@@ -218,9 +218,9 @@ module Observation =
             let subscriptionAddress = ntoa<'a> <| acstring subscriptionKey
             let (address, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world -> let world = unsubscribe world in World.unsubscribe subscriptionKey world
-            let world = World.subscribe<'a, 'o> subscriptionKey handleEvent address observation.ObserverRep world
+            let world = World.subscribe<'a, 'o> subscriptionKey handleEvent address observation.Observer world
             (subscriptionAddress, unsubscribe, world)
-        let observation = { ObserverRep = observation.ObserverRep; Subscribe = subscribe }
+        let observation = { Observer = observation.Observer; Subscribe = subscribe }
         observation.Subscribe world |> _bc
 
     /// Subscribe to an observation, handling each event with the given 'handleEvent' procedure.
@@ -239,17 +239,17 @@ module Observation =
                 let world = World.unsubscribe subscriptionKey world
                 World.unsubscribe eventKey world
             let handleEvent = fun _ world -> let world = unsubscribe world in (Cascade, world)
-            let world = World.subscribe eventKey handleEvent eventAddress observation.ObserverRep world
+            let world = World.subscribe eventKey handleEvent eventAddress observation.Observer world
             let subscription = fun event world ->
-                let world = World.publish<'a, SimulantRep> World.sortSubscriptionsNone event.Data subscriptionAddress event.PublisherRep world
+                let world = World.publish<'a, Simulant> World.sortSubscriptionsNone event.Data subscriptionAddress event.Publisher world
                 (Cascade, world)
-            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress' observation.ObserverRep world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress' observation.Observer world
             (subscriptionAddress, unsubscribe, world)
-        { ObserverRep = observation.ObserverRep; Subscribe = subscribe }
+        { Observer = observation.Observer; Subscribe = subscribe }
 
     /// Terminate an observation when the observer is removed from the world.
     let lifetime (observation : Observation<'a, 'o>) : Observation<'a, 'o> =
-        let removingEventAddress = stoa<unit> (typeof<'o>.Name + "/" + "Removing") ->>- observation.ObserverRep.SimulantAddress
+        let removingEventAddress = stoa<unit> (typeof<'o>.Name + "/" + "Removing") ->>- observation.Observer.SimulantAddress
         until removingEventAddress observation
 
     /// Subscribe to an observation until the observer is removed from the world,
@@ -378,7 +378,7 @@ module Observation =
     
     /// Take events from an observation only when the observer is selected in the world (see
     /// documentation for World.isAddressSelected for what this means (it's very useful!)).
-    let isSelected event world = World.isSimulantSelected event.SubscriberRep world
+    let isSelected event world = World.isSimulantSelected event.Subscriber world
 
     /// Take events from an observation only when the currently selected screen is idling (that
     /// is, there is no screen transition in progress).
@@ -419,25 +419,25 @@ module ObservationOperatorsModule =
     let (=|>) = (|>)
 
     /// Make an observation of the world state's change events.
-    let ( *== ) valueGetter observerRep =
-        observe WorldStateChangeEventAddress observerRep |>
+    let ( *== ) valueGetter observer =
+        observe WorldStateChangeEventAddress observer |>
         worldStateValue valueGetter
 
     /// Make an observation of one of the world state's change events per frame.
-    let (/==) valueGetter observerRep =
-        valueGetter *== observerRep |>
+    let (/==) valueGetter observer =
+        valueGetter *== observer |>
         noMoreThanOncePerTick
 
     /// Make an observation of the observer's change events.
-    let ( *-- ) (simulantRep : 'a, valueGetter : World -> 'b) (observerRep : 'o) =
+    let ( *-- ) (simulant : 'a, valueGetter : World -> 'b) (observer : 'o) =
         let simulantChangeEventAddress = stoa<'a SimulantChangeData> (typeof<'a>.Name + "/Change")
-        let changeEventAddress = simulantChangeEventAddress ->>- simulantRep.SimulantAddress
-        observe changeEventAddress observerRep |>
+        let changeEventAddress = simulantChangeEventAddress ->>- simulant.SimulantAddress
+        observe changeEventAddress observer |>
         simulantValue valueGetter
 
     /// Make an observation of one of the observer's change events per frame.
-    let (/--) (simulantRep, valueGetter) observerRep =
-        (simulantRep, valueGetter) *-- observerRep |>
+    let (/--) (simulant, valueGetter) observer =
+        (simulant, valueGetter) *-- observer |>
         noMoreThanOncePerTick
 
     /// Propagate the event data of an observation to a value in the world's state.
@@ -449,7 +449,7 @@ module ObservationOperatorsModule =
     let (-->) observation valueSetter =
         subscribe (fun a world ->
             let world =
-                if World.containsSimulant a.SubscriberRep world
+                if World.containsSimulant a.Subscriber world
                 then valueSetter a.Data world
                 else world
             (Cascade, world))
@@ -457,32 +457,32 @@ module ObservationOperatorsModule =
 
     /// Propagate a value from the world's state to another value in the world's state.
     let ( *==> ) (valueGetter : WorldState -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
-        valueGetter *== GameRep ==> fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue
+        valueGetter *== Game ==> fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue
 
     /// Propagate a value from the world's state to another value in the world's state, but with frame-based cycle-breaking.
     let (/==>) (valueGetter : WorldState -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
-        valueGetter /== GameRep ==> fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue
+        valueGetter /== Game ==> fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue
 
     /// Propagate a value from the world's state to a value in the given simulant.
-    let ( *=-> ) (valueGetter : WorldState -> 'b) (destinationRep : 'o, valueSetter : 'b -> World -> World) =
-        valueGetter *== destinationRep --> fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue world
+    let ( *=-> ) (valueGetter : WorldState -> 'b) (destination : 'o, valueSetter : 'b -> World -> World) =
+        valueGetter *== destination --> fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue world
 
     /// Propagate a value from the world's state to a value in the given simulant, but with frame-based cycle-breaking.
-    let (/=->) (valueGetter : WorldState -> 'b) (destinationRep : 'o, valueSetter : 'b -> World -> World) =
-        valueGetter /== destinationRep --> fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue world
+    let (/=->) (valueGetter : WorldState -> 'b) (destination : 'o, valueSetter : 'b -> World -> World) =
+        valueGetter /== destination --> fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue world
 
     /// Propagate a value from the given simulant to a value in the world's state.
-    let ( *-=> ) (sourceRep : 'a, valueGetter : World -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
-        (sourceRep, valueGetter) *-- GameRep ==> fun _ world -> let sourceRepValue = valueGetter world in valueSetter sourceRepValue
+    let ( *-=> ) (source : 'a, valueGetter : World -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
+        (source, valueGetter) *-- Game ==> fun _ world -> let sourceValue = valueGetter world in valueSetter sourceValue
 
     /// Propagate a value from the given simulant to a value in the world's state, but with frame-based cycle-breaking.
-    let (/-=>) (sourceRep : 'a, valueGetter : World -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
-        (sourceRep, valueGetter) /-- GameRep ==> fun _ world -> let sourceRepValue = valueGetter world in valueSetter sourceRepValue
+    let (/-=>) (source : 'a, valueGetter : World -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
+        (source, valueGetter) /-- Game ==> fun _ world -> let sourceValue = valueGetter world in valueSetter sourceValue
 
     // Propagate a value from the given source simulant to a value in the given destination simulant.
-    let ( *--> ) (sourceRep : 'a, valueGetter : World -> 'b) (destinationRep : 'o, valueSetter : 'b -> World -> World) =
-        (sourceRep, valueGetter) *-- destinationRep --> fun _ world -> let sourceRepValue = valueGetter world in valueSetter sourceRepValue world
+    let ( *--> ) (source : 'a, valueGetter : World -> 'b) (destination : 'o, valueSetter : 'b -> World -> World) =
+        (source, valueGetter) *-- destination --> fun _ world -> let sourceValue = valueGetter world in valueSetter sourceValue world
 
     // Propagate a value from the given source simulant to a value in the given destination simulant, but with frame-based cycle-breaking.
-    let (/-->) (sourceRep : 'a, valueGetter : World -> 'b) (destinationRep : 'o, valueSetter : 'b -> World -> World) =
-        (sourceRep, valueGetter) /-- destinationRep --> fun _ world -> let sourceRepValue = valueGetter world in valueSetter sourceRepValue world
+    let (/-->) (source : 'a, valueGetter : World -> 'b) (destination : 'o, valueSetter : 'b -> World -> World) =
+        (source, valueGetter) /-- destination --> fun _ world -> let sourceValue = valueGetter world in valueSetter sourceValue world

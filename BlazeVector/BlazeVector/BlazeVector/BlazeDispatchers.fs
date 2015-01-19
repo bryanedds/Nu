@@ -162,7 +162,7 @@ module PlayerModule =
                 bullet |>
                     Entity.setPosition (playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)) |>
                     Entity.setDepth playerTransform.Depth
-            World.addEntity bullet bulletAddress world
+            World.addEntityData bullet bulletAddress world
 
         static let propelBullet (bullet : Entity) world =
             let world = World.applyBodyLinearImpulse (Vector2 (50.0f, 0.0f)) bullet.PhysicsId world

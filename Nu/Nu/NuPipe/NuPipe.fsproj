@@ -68,6 +68,9 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="FSharpx.Core">
+      <HintPath>..\..\..\Prime\FSharpx.Core\FSharpx.Core.dll</HintPath>
+    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
@@ -88,6 +91,7 @@
       <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

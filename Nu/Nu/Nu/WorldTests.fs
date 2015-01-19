@@ -13,8 +13,8 @@ module WorldTests =
     let UnitEventAddress = stoa<unit> "Unit"
     let StringEventAddress = stoa<string> "String"
     let TestFilePath = "TestFile.xml"
-    let incUserStateAndCascade (_ : Event<unit, GameRep>) world = (Cascade, World.updateUserState inc world)
-    let incUserStateAndResolve (_ : Event<unit, GameRep>) world = (Resolve, World.updateUserState inc world)
+    let incUserStateAndCascade (_ : Event<unit, Game>) world = (Cascade, World.updateUserState inc world)
+    let incUserStateAndResolve (_ : Event<unit, Game>) world = (Resolve, World.updateUserState inc world)
 
     let [<Fact>] emptyWorldDoesntExplode () =
         let world = World.initAndMakeEmpty ()
@@ -29,37 +29,37 @@ module WorldTests =
 
     let [<Fact>] subscribeWorks () =
         let world = World.initAndMakeEmpty 0
-        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameRep world
-        let world = World.publish4 () UnitEventAddress GameRep world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Game world
+        let world = World.publish4 () UnitEventAddress Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeAndPublishTwiceWorks () =
         let world = World.initAndMakeEmpty 0
-        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameRep world
-        let world = World.publish4 () UnitEventAddress GameRep world
-        let world = World.publish4 () UnitEventAddress GameRep world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Game world
+        let world = World.publish4 () UnitEventAddress Game world
+        let world = World.publish4 () UnitEventAddress Game world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeTwiceAndPublishWorks () =
         let world = World.initAndMakeEmpty 0
-        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameRep world
-        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameRep world
-        let world = World.publish4 () UnitEventAddress GameRep world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Game world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Game world
+        let world = World.publish4 () UnitEventAddress Game world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeWithResolutionWorks () =
         let world = World.initAndMakeEmpty 0
-        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameRep world
-        let world = World.subscribe4 incUserStateAndResolve UnitEventAddress GameRep world
-        let world = World.publish4 () UnitEventAddress GameRep world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Game world
+        let world = World.subscribe4 incUserStateAndResolve UnitEventAddress Game world
+        let world = World.publish4 () UnitEventAddress Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
         let world = World.initAndMakeEmpty 0
         let key = World.makeSubscriptionKey ()
-        let world = World.subscribe key incUserStateAndResolve UnitEventAddress GameRep world
+        let world = World.subscribe key incUserStateAndResolve UnitEventAddress Game world
         let world = World.unsubscribe key world
-        let world = World.publish4 () UnitEventAddress GameRep world
+        let world = World.publish4 () UnitEventAddress Game world
         Assert.Equal (0, World.getUserState world)
 
     let [<Fact>] entitySubscribeWorks () =
@@ -67,10 +67,10 @@ module WorldTests =
         let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some DefaultScreenName) world
         let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) screen world
         let (entity, world) = World.createEntity typeof<EntityDispatcher>.Name (Some DefaultEntityName) group world
-        let handleEvent = fun event world -> (Cascade, World.setUserState event.SubscriberRep.SimulantAddress world)
+        let handleEvent = fun event world -> (Cascade, World.setUserState event.Subscriber world)
         let world = World.subscribe4 handleEvent StringEventAddress entity world
-        let world = World.publish4 String.Empty StringEventAddress GameRep world
-        Assert.Equal<Simulant Address> (atoua DefaultEntityAddress, World.getUserState world)
+        let world = World.publish4 String.Empty StringEventAddress Game world
+        Assert.Equal<Simulant> (DefaultEntity :> Simulant, World.getUserState world)
 
     let [<Fact>] gameSerializationWorks () =
         // TODO: make stronger assertions in here!!!

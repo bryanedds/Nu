@@ -18,13 +18,13 @@ module WorldPhysicsModule =
           SubsystemOrder : single
           Integrator : IIntegrator }
         
-        static member private handleBodyTransformMessage (message : BodyTransformMessage) (entityRep : EntityRep) world =
+        static member private handleBodyTransformMessage (message : BodyTransformMessage) (entity : Entity) world =
             // OPTIMIZATION: entity is not changed (avoiding a change entity event) if position and rotation haven't changed.
-            if entityRep.GetPosition world <> message.Position || entityRep.GetRotation world <> message.Rotation then
+            if entity.GetPosition world <> message.Position || entity.GetRotation world <> message.Rotation then
                 world |>
                     // TODO: see if the following center-offsetting can be encapsulated within the Physics module!
-                    entityRep.SetPosition (message.Position - entityRep.GetSize world * 0.5f) |>
-                    entityRep.SetRotation message.Rotation
+                    entity.SetPosition (message.Position - entity.GetSize world * 0.5f) |>
+                    entity.SetRotation message.Rotation
             else world
 
         static member private handleIntegrationMessage world integrationMessage =
@@ -33,20 +33,20 @@ module WorldPhysicsModule =
                 match integrationMessage with
                 | BodyTransformMessage bodyTransformMessage ->
                     let entityAddress = atoea bodyTransformMessage.SourceAddress
-                    let entityRep = { EntityAddress = entityAddress }
-                    if World.containsEntity entityRep world then
-                        IntegratorSubsystem.handleBodyTransformMessage bodyTransformMessage entityRep world
+                    let entity = { EntityAddress = entityAddress }
+                    if World.containsEntity entity world then
+                        IntegratorSubsystem.handleBodyTransformMessage bodyTransformMessage entity world
                     else world
                 | BodyCollisionMessage bodyCollisionMessage ->
-                    let sourceRep = { EntityAddress = atoea bodyCollisionMessage.SourceAddress }
-                    match World.getOptEntity sourceRep world with
+                    let source = { EntityAddress = atoea bodyCollisionMessage.SourceAddress }
+                    match World.getOptEntityState source world with
                     | Some _ ->
                         let collisionAddress = CollisionEventAddress ->- bodyCollisionMessage.SourceAddress
                         let collisionData =
                             { Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed
                               Collidee = { EntityAddress = atoea bodyCollisionMessage.CollideeAddress }}
-                        World.publish4 collisionData collisionAddress GameRep world
+                        World.publish4 collisionData collisionAddress Game world
                     | None -> world
             | Exiting -> world
 
@@ -105,12 +105,12 @@ module WorldPhysicsModule =
             World.getSubsystemBy (fun (integrator : IntegratorSubsystem) -> integrator.BodyOnGround physicsId) IntegratorSubsystemName world
 
         /// Send a message to the physics system to create a physics body.
-        static member createBody (entityAddress : Entity Address) entityId bodyProperties world =
+        static member createBody (entityAddress : EntityState Address) entityId bodyProperties world =
             let createBodyMessage = CreateBodyMessage { SourceAddress = atooa entityAddress; SourceId = entityId; BodyProperties = bodyProperties }
             World.addPhysicsMessage createBodyMessage world
 
         /// Send a message to the physics system to create several physics bodies.
-        static member createBodies (entityAddress : Entity Address) entityId bodyPropertyList world =
+        static member createBodies (entityAddress : EntityState Address) entityId bodyPropertyList world =
             let createBodiesMessage = CreateBodiesMessage { SourceAddress = atooa entityAddress; SourceId = entityId; BodyPropertyList = bodyPropertyList }
             World.addPhysicsMessage createBodiesMessage world
 

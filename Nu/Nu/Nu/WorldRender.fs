@@ -18,11 +18,11 @@ module WorldRenderModule =
           SubsystemOrder : single
           Renderer : IRenderer }
 
-        static member private getScreenTransitionRenderDescriptors camera screen transition =
-            match transition.OptDissolveImage with
+        static member private getScreenTransitionRenderDescriptors camera (screen : Screen) transitionDescriptor world =
+            match transitionDescriptor.OptDissolveImage with
             | Some dissolveImage ->
-                let progress = single screen.TransitionTicksNp / single transition.TransitionLifetime
-                let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
+                let progress = single (screen.GetTransitionTicksNp world) / single transitionDescriptor.TransitionLifetime
+                let alpha = match transitionDescriptor.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                 let color = Vector4 (Vector3.One, alpha)
                 [LayerableDescriptor
                     { Depth = Single.MaxValue
@@ -38,18 +38,17 @@ module WorldRenderModule =
             | None -> []
 
         static member private getRenderDescriptors world =
-            match World.getOptSelectedScreenRep world with
-            | Some selectedScreenRep ->
-                if World.containsScreen selectedScreenRep world then
-                    let entityReps = World.getEntityReps1 world
+            match World.getOptSelectedScreen world with
+            | Some selectedScreen ->
+                if World.containsScreen selectedScreen world then
+                    let entities = World.getEntities1 world
                     let descriptors =
-                        Seq.map (fun entityRep -> World.getRenderDescriptors entityRep world) entityReps |>
+                        Seq.map (fun entity -> World.getRenderDescriptors entity world) entities |>
                         Seq.concat |>
                         List.ofSeq
-                    let selectedScreen = World.getScreen selectedScreenRep world
-                    match selectedScreen.ScreenStateNp with
-                    | IncomingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors world.State.Camera selectedScreen selectedScreen.Incoming
-                    | OutgoingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors world.State.Camera selectedScreen selectedScreen.Outgoing
+                    match selectedScreen.GetTransitionStateNp world with
+                    | IncomingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors world.State.Camera selectedScreen (selectedScreen.GetIncoming world) world
+                    | OutgoingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors world.State.Camera selectedScreen (selectedScreen.GetOutgoing world) world
                     | IdlingState -> descriptors
                 else []
             | None -> []

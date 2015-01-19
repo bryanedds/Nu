@@ -64,7 +64,7 @@ module Program =
 
     let getPickableEntities world =
         let groupAddress = (World.getUserState world).GroupAddress
-        let entityMap = World.getEntityMapInGroup groupAddress world
+        let entityMap = World.getEntityDataMap groupAddress world
         Map.toValueList entityMap
 
     let pushPastWorld pastWorld world =
@@ -146,7 +146,7 @@ module Program =
                         let entity = { entity with Name = valueStr }
                         let groupAddress = (World.getUserState world).GroupAddress
                         let entityAddress = gatoea groupAddress valueStr
-                        let world = snd <| World.addEntity entity entityAddress world
+                        let world = snd <| World.addEntityData entity entityAddress world
                         entityTds.RefWorld := world // must be set for property grid
                         entityTds.Form.propertyGrid.SelectedObject <- { entityTds with Address = entityAddress }
                         world
@@ -287,7 +287,7 @@ module Program =
 
     let populateTreeViewNodes (form : NuEditForm) world =
         let groupAddress = (World.getUserState world).GroupAddress
-        for entityKvp in World.getEntityMapInGroup groupAddress world do
+        for entityKvp in World.getEntityDataMap groupAddress world do
         let entityAddress = gatoea groupAddress entityKvp.Key
         addTreeViewNode form entityAddress world
 
@@ -425,7 +425,7 @@ module Program =
     let trySaveFile filePath world =
         try let groupAddress = (World.getUserState world).GroupAddress
             let group = World.getGroup groupAddress world
-            let entityMap = World.getEntityMapInGroup groupAddress world
+            let entityMap = World.getEntityDataMap groupAddress world
             let groupHierarchy = (group, entityMap)
             World.writeGroupHierarchyToFile filePath groupHierarchy world
         with exn ->
@@ -507,7 +507,7 @@ module Program =
                 let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = entity.Size; Rotation = entity.Rotation }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let entityAddress = gatoea groupAddress entity.Name
-                let world = snd <| World.addEntity entity entityAddress world
+                let world = snd <| World.addEntityData entity entityAddress world
                 refWorld := world // must be set for property grid
                 form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
                 world
@@ -621,7 +621,7 @@ module Program =
                 let entityTransform = { Entity.getTransform entity with Position = entityPosition }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let entityAddress = gatoea editorState.GroupAddress entity.Name
-                let world = snd <| World.addEntity entity entityAddress world
+                let world = snd <| World.addEntityData entity entityAddress world
                 selectEntity form entityAddress worldChangers refWorld world
                 world
             | None -> world)

@@ -35,8 +35,8 @@ module WorldModule =
         /// Try to query that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
         static member tryGetIsSelectedScreenIdling world =
-            match World.getOptSelectedScreenRep world with
-            | Some selectedScreenRep -> Some <| selectedScreenRep.GetIdling world
+            match World.getOptSelectedScreen world with
+            | Some selectedScreen -> Some <| selectedScreen.IsIdling world
             | None -> None
 
         /// Query that the selected screen is idling; that is, neither transitioning in or
@@ -55,8 +55,8 @@ module WorldModule =
         static member isSelectedScreenTransitioning world =
             not <| World.isSelectedScreenIdling world
 
-        static member private setScreenState state (screenRep : ScreenRep) world =
-            let world = screenRep.SetScreenStateNp state world
+        static member private setScreenTransitionState state (screen : Screen) world =
+            let world = screen.SetTransitionStateNp state world
             match state with
             | IdlingState ->
                 world |>
@@ -69,41 +69,41 @@ module WorldModule =
             | IncomingState
             | OutgoingState ->
                 world |>
-                    World.subscribe ScreenTransitionMouseLeftKey World.handleAsSwallow (MouseLeftEventAddress ->- AnyEventAddress) GameRep |>
-                    World.subscribe ScreenTransitionMouseCenterKey World.handleAsSwallow (MouseCenterEventAddress ->- AnyEventAddress) GameRep |>
-                    World.subscribe ScreenTransitionMouseRightKey World.handleAsSwallow (MouseRightEventAddress ->- AnyEventAddress) GameRep |>
-                    World.subscribe ScreenTransitionMouseX1Key World.handleAsSwallow (MouseX1EventAddress ->- AnyEventAddress) GameRep |>
-                    World.subscribe ScreenTransitionMouseX2Key World.handleAsSwallow (MouseX2EventAddress ->- AnyEventAddress) GameRep |>
-                    World.subscribe ScreenTransitionKeyboardKeyKey World.handleAsSwallow (KeyboardKeyEventAddress ->- AnyEventAddress) GameRep
+                    World.subscribe ScreenTransitionMouseLeftKey World.handleAsSwallow (MouseLeftEventAddress ->- AnyEventAddress) Game |>
+                    World.subscribe ScreenTransitionMouseCenterKey World.handleAsSwallow (MouseCenterEventAddress ->- AnyEventAddress) Game |>
+                    World.subscribe ScreenTransitionMouseRightKey World.handleAsSwallow (MouseRightEventAddress ->- AnyEventAddress) Game |>
+                    World.subscribe ScreenTransitionMouseX1Key World.handleAsSwallow (MouseX1EventAddress ->- AnyEventAddress) Game |>
+                    World.subscribe ScreenTransitionMouseX2Key World.handleAsSwallow (MouseX2EventAddress ->- AnyEventAddress) Game |>
+                    World.subscribe ScreenTransitionKeyboardKeyKey World.handleAsSwallow (KeyboardKeyEventAddress ->- AnyEventAddress) Game
 
         /// Select the given screen without transitioning.
-        static member selectScreen screenRep world =
+        static member selectScreen screen world =
             let world =
-                match World.getOptSelectedScreenRep world with
-                | Some selectedScreenRep ->  World.publish4 () (DeselectEventAddress ->>- selectedScreenRep.ScreenAddress) selectedScreenRep world
+                match World.getOptSelectedScreen world with
+                | Some selectedScreen ->  World.publish4 () (DeselectEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
                 | None -> world
-            let world = World.setScreenState IncomingState screenRep world
-            let world = World.setOptSelectedScreenRep (Some screenRep) world
-            World.publish4 () (SelectEventAddress ->>- screenRep.ScreenAddress) screenRep world
+            let world = World.setScreenTransitionState IncomingState screen world
+            let world = World.setOptSelectedScreen (Some screen) world
+            World.publish4 () (SelectEventAddress ->>- screen.ScreenAddress) screen world
 
         /// Try to transition to the screen at the destination address if no other transition is in
         /// progress.
-        static member tryTransitionScreen destinationRep world =
-            match World.getOptSelectedScreenRep world with
-            | Some selectedScreenRep ->
-                if World.containsScreen selectedScreenRep world then
+        static member tryTransitionScreen destination world =
+            match World.getOptSelectedScreen world with
+            | Some selectedScreen ->
+                if World.containsScreen selectedScreen world then
                     let subscriptionKey = World.makeSubscriptionKey ()
-                    let subscription = fun (_ : Event<unit, ScreenRep>) world ->
-                        match world.State.OptScreenTransitionDestinationRep with
-                        | Some destinationRep ->
+                    let subscription = fun (_ : Event<unit, Screen>) world ->
+                        match world.State.OptScreenTransitionDestination with
+                        | Some destination ->
                             let world = World.unsubscribe subscriptionKey world
-                            let world = World.setOptScreenTransitionDestinationRep None world
-                            let world = World.selectScreen destinationRep world
+                            let world = World.setOptScreenTransitionDestination None world
+                            let world = World.selectScreen destination world
                             (Cascade, world)
                         | None -> failwith "No valid OptScreenTransitionDestinationAddress during screen transition!"
-                    let world = World.setOptScreenTransitionDestinationRep (Some destinationRep) world
-                    let world = World.setScreenState OutgoingState selectedScreenRep world
-                    let world = World.subscribe<unit, ScreenRep> subscriptionKey subscription (OutgoingFinishEventAddress ->>- selectedScreenRep.ScreenAddress) selectedScreenRep world
+                    let world = World.setOptScreenTransitionDestination (Some destination) world
+                    let world = World.setScreenTransitionState OutgoingState selectedScreen world
+                    let world = World.subscribe<unit, Screen> subscriptionKey subscription (OutgoingFinishEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
                     Some world
                 else None
             | None -> None
@@ -114,80 +114,80 @@ module WorldModule =
             Option.get <| World.tryTransitionScreen destinationAddress world
             
         // TODO: replace this with more sophisticated use of handleAsScreenTransition4, and so on for its brethren.
-        static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> SimulantRep> eventHandling destinationRep (_ : Event<'a, 's>) world =
-            let world = World.selectScreen destinationRep world
+        static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> Simulant> eventHandling destination (_ : Event<'a, 's>) world =
+            let world = World.selectScreen destination world
             (eventHandling, world)
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the screen at the given destination address.
-        static member handleAsScreenTransitionFromSplash<'a, 's when 's :> SimulantRep> destinationRep event world =
-            World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destinationRep event world
+        static member handleAsScreenTransitionFromSplash<'a, 's when 's :> Simulant> destination event world =
+            World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destination event world
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the screen at the given destination address, as well as
         /// with additional provided via the 'by' procedure.
-        static member handleAsScreenTransitionFromSplashBy<'a, 's when 's :> SimulantRep> by destinationRep event (world : World) =
+        static member handleAsScreenTransitionFromSplashBy<'a, 's when 's :> Simulant> by destination event (world : World) =
             let (eventHandling, world) = by event world
-            World.handleAsScreenTransitionFromSplash4<'a, 's> eventHandling destinationRep event world
+            World.handleAsScreenTransitionFromSplash4<'a, 's> eventHandling destination event world
 
-        static member private handleAsScreenTransition4<'a, 's when 's :> SimulantRep>
-            eventHandling destinationRep (_ : Event<'a, 's>) world =
-            match World.tryTransitionScreen destinationRep world with
+        static member private handleAsScreenTransition4<'a, 's when 's :> Simulant>
+            eventHandling destination (_ : Event<'a, 's>) world =
+            match World.tryTransitionScreen destination world with
             | Some world -> (eventHandling, world)
             | None ->
-                trace <| "Program Error: Invalid screen transition for destination address '" + acstring destinationRep.ScreenAddress + "'."
+                trace <| "Program Error: Invalid screen transition for destination address '" + acstring destination.ScreenAddress + "'."
                 (eventHandling, world)
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the screen at the given destination address.
-        static member handleAsScreenTransition<'a, 's when 's :> SimulantRep> destinationRep event world =
-            World.handleAsScreenTransition4<'a, 's> Cascade destinationRep event world
+        static member handleAsScreenTransition<'a, 's when 's :> Simulant> destination event world =
+            World.handleAsScreenTransition4<'a, 's> Cascade destination event world
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the screen at the given destination address, as well as
         /// with additional provided via the 'by' procedure.
-        static member handleAsScreenTransitionBy<'a, 's when 's :> SimulantRep> by destinationRep event (world : World) =
+        static member handleAsScreenTransitionBy<'a, 's when 's :> Simulant> by destination event (world : World) =
             let (eventHandling, world) = by event world
-            World.handleAsScreenTransition4<'a, 's> eventHandling destinationRep event world
+            World.handleAsScreenTransition4<'a, 's> eventHandling destination event world
 
-        static member private updateScreenTransition1 (screenRep : ScreenRep) transition world =
-            let transitionTicks = screenRep.GetTransitionTicksNp world
+        static member private updateScreenTransition1 (screen : Screen) transition world =
+            let transitionTicks = screen.GetTransitionTicksNp world
             if transitionTicks = transition.TransitionLifetime
-            then (true, screenRep.SetTransitionTicksNp 0L world)
-            else (false, screenRep.SetTransitionTicksNp (transitionTicks + 1L) world)
+            then (true, screen.SetTransitionTicksNp 0L world)
+            else (false, screen.SetTransitionTicksNp (transitionTicks + 1L) world)
 
         static member private updateScreenTransition world =
             // TODO: split this function up...
-            match World.getOptSelectedScreenRep world with
-            | Some selectedScreenRep ->
-                match selectedScreenRep.GetScreenStateNp world with
+            match World.getOptSelectedScreen world with
+            | Some selectedScreen ->
+                match selectedScreen.GetTransitionStateNp world with
                 | IncomingState ->
                     match world.State.Liveness with
                     | Running ->
                         let world =
-                            if selectedScreenRep.GetTransitionTicksNp world = 0L
-                            then World.publish4 () (IncomingStartEventAddress ->>- selectedScreenRep.ScreenAddress) selectedScreenRep world
+                            if selectedScreen.GetTransitionTicksNp world = 0L
+                            then World.publish4 () (IncomingStartEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
                             else world
                         match world.State.Liveness with
                         | Running ->
-                            let (finished, world) = World.updateScreenTransition1 selectedScreenRep (selectedScreenRep.GetIncoming world) world
+                            let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetIncoming world) world
                             if finished then
-                                let world = World.setScreenState IdlingState selectedScreenRep world
-                                World.publish4 () (IncomingFinishEventAddress ->>- selectedScreenRep.ScreenAddress) selectedScreenRep world
+                                let world = World.setScreenTransitionState IdlingState selectedScreen world
+                                World.publish4 () (IncomingFinishEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
                             else world
                         | Exiting -> world
                     | Exiting -> world
                 | OutgoingState ->
                     let world =
-                        if selectedScreenRep.GetTransitionTicksNp world <> 0L then world
-                        else World.publish4 () (OutgoingStartEventAddress ->>- selectedScreenRep.ScreenAddress) selectedScreenRep world
+                        if selectedScreen.GetTransitionTicksNp world <> 0L then world
+                        else World.publish4 () (OutgoingStartEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
                     match world.State.Liveness with
                     | Running ->
-                        let (finished, world) = World.updateScreenTransition1 selectedScreenRep (selectedScreenRep.GetOutgoing world) world
+                        let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetOutgoing world) world
                         if finished then
-                            let world = World.setScreenState IdlingState selectedScreenRep world
+                            let world = World.setScreenTransitionState IdlingState selectedScreen world
                             match world.State.Liveness with
-                            | Running -> World.publish4 () (OutgoingFinishEventAddress ->>- selectedScreenRep.ScreenAddress) selectedScreenRep world
+                            | Running -> World.publish4 () (OutgoingFinishEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
                             | Exiting -> world
                         else world
                     | Exiting -> world
@@ -198,13 +198,13 @@ module WorldModule =
             let world = World.unsubscribe SplashScreenTickKey world
             if ticks < idlingTime then
                 let subscription = World.handleSplashScreenIdleTick idlingTime (inc ticks)
-                let world = World.subscribe SplashScreenTickKey subscription event.EventAddress event.SubscriberRep world
+                let world = World.subscribe SplashScreenTickKey subscription event.EventAddress event.Subscriber world
                 (Cascade, world)
             else
-                match World.getOptSelectedScreenRep world with
-                | Some selectedScreenRep ->
-                    if World.containsScreen selectedScreenRep world then
-                        let world = World.setScreenState OutgoingState selectedScreenRep world
+                match World.getOptSelectedScreen world with
+                | Some selectedScreen ->
+                    if World.containsScreen selectedScreen world then
+                        let world = World.setScreenTransitionState OutgoingState selectedScreen world
                         (Cascade, world)
                     else
                         trace "Program Error: Could not handle splash screen tick due to no selected screen."
@@ -214,7 +214,7 @@ module WorldModule =
                     (Resolve, World.exit world)
 
         static member private handleSplashScreenIdle idlingTime event world =
-            let world = World.subscribe SplashScreenTickKey (World.handleSplashScreenIdleTick idlingTime 0L) TickEventAddress event.SubscriberRep world
+            let world = World.subscribe SplashScreenTickKey (World.handleSplashScreenIdleTick idlingTime 0L) TickEventAddress event.Subscriber world
             (Resolve, world)
 
         /// Create a splash screen to the world at the given address that transitions to the given
@@ -264,25 +264,25 @@ module WorldModule =
                 let world = World.setOverlayer overlayer world
 
                 // apply overlays to all entities
-                let entityReps = World.getEntityReps1 world
+                let entities = World.getEntities1 world
                 let world =
                     Seq.fold
-                        (fun world (entityRep : EntityRep) ->
-                            let entity = World.getEntity entityRep world
-                            let entity = { entity with Id = entity.Id } // hacky copy
-                            match entity.OptOverlayName with
+                        (fun world (entity : Entity) ->
+                            let entityState = World.getEntityState entity world
+                            let entityState = { entityState with Id = entityState.Id } // hacky copy
+                            match entityState.OptOverlayName with
                             | Some overlayName ->
-                                let oldFacetNames = entity.FacetNames
-                                Overlayer.applyOverlayToFacetNames overlayName overlayName entity oldOverlayer world.State.Overlayer
-                                match World.trySynchronizeFacets oldFacetNames entity (Some entityRep.EntityAddress) world with
-                                | Right (entity, world) ->
-                                    let facetNames = Entity.getFacetNamesReflectively entity
-                                    Overlayer.applyOverlay6 overlayName overlayName facetNames entity oldOverlayer world.State.Overlayer
-                                    World.setEntityWithoutEvent entity entityRep world
+                                let oldFacetNames = entityState.FacetNames
+                                Overlayer.applyOverlayToFacetNames overlayName overlayName entityState oldOverlayer world.State.Overlayer
+                                match World.trySynchronizeFacets oldFacetNames entityState (Some entity.EntityAddress) world with
+                                | Right (entityState, world) ->
+                                    let facetNames = EntityState.getFacetNamesReflectively entityState
+                                    Overlayer.applyOverlay6 overlayName overlayName facetNames entityState oldOverlayer world.State.Overlayer
+                                    World.setEntityStateWithoutEvent entityState entity world
                                 | Left error -> note <| "There was an issue in applying a reloaded overlay: " + error; world
                             | None -> world)
                         world
-                        entityReps
+                        entities
 
                 // right!
                 Right world
@@ -320,7 +320,7 @@ module WorldModule =
 
         /// A hack for the physics subsystem that allows an old world value to displace the current
         /// one and have its physics values propagated to the imperative physics subsystem.
-        static member continueHack groupRep world =
+        static member continueHack group world =
             // NOTE: since messages may be invalid upon continuing a world (especially physics
             // messages), all messages are eliminated. If this poses an issue, the editor will have
             // to instead store past / future worlds only once their current frame has been
@@ -329,8 +329,8 @@ module WorldModule =
             let world = World.clearAudioMessages world
             let world = World.clearPhysicsMessages world
             let world = World.addPhysicsMessage RebuildPhysicsHackMessage world
-            let entityReps = World.getEntityReps groupRep world
-            Seq.fold (flip World.propagatePhysics) world entityReps
+            let entities = World.getEntities group world
+            Seq.fold (flip World.propagatePhysics) world entities
 
         static member private processSubsystems subsystemType world =
             Map.toList world.Subsystems |>
@@ -376,9 +376,9 @@ module WorldModule =
                     let mousePosition = Vector2 (single event.button.x, single event.button.y)
                     let world =
                         if World.isMouseButtonDown MouseLeft world
-                        then World.publish World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } MouseDragEventAddress GameRep world
+                        then World.publish World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } MouseDragEventAddress Game world
                         else world
-                    World.publish World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } MouseMoveEventAddress GameRep world
+                    World.publish World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } MouseMoveEventAddress Game world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton <| uint32 event.button.button
@@ -386,8 +386,8 @@ module WorldModule =
                     let mouseButtonDownEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Down"
                     let mouseButtonChangeEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
-                    let world = World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonDownEventAddress GameRep world
-                    World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress GameRep world
+                    let world = World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonDownEventAddress Game world
+                    World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress Game world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton <| uint32 event.button.button
@@ -395,20 +395,20 @@ module WorldModule =
                     let mouseButtonUpEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Up"
                     let mouseButtonChangeEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
-                    let world = World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEventAddress GameRep world
-                    World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress GameRep world
+                    let world = World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEventAddress Game world
+                    World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress Game world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = event.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = true }
-                    let world = World.publish World.sortSubscriptionsByHierarchy eventData KeyboardKeyDownEventAddress GameRep world
-                    World.publish World.sortSubscriptionsByHierarchy eventData KeyboardKeyChangeEventAddress GameRep world
+                    let world = World.publish World.sortSubscriptionsByHierarchy eventData KeyboardKeyDownEventAddress Game world
+                    World.publish World.sortSubscriptionsByHierarchy eventData KeyboardKeyChangeEventAddress Game world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let keyboard = event.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = false }
-                    let world = World.publish World.sortSubscriptionsByHierarchy eventData KeyboardKeyUpEventAddress GameRep world
-                    World.publish World.sortSubscriptionsByHierarchy eventData KeyboardKeyChangeEventAddress GameRep world
+                    let world = World.publish World.sortSubscriptionsByHierarchy eventData KeyboardKeyUpEventAddress Game world
+                    World.publish World.sortSubscriptionsByHierarchy eventData KeyboardKeyChangeEventAddress Game world
                 | _ -> world
             (world.State.Liveness, world)
 
@@ -424,7 +424,7 @@ module WorldModule =
                     let world = World.processSubsystems UpdateType world
                     match world.State.Liveness with
                     | Running ->
-                        let world = World.publish4 () TickEventAddress GameRep world
+                        let world = World.publish4 () TickEventAddress Game world
                         match world.State.Liveness with
                         | Running ->
                             let world = World.processTasks world
@@ -562,7 +562,7 @@ module WorldModule =
                       CallbackStates = Map.empty }
 
                 // make the world's state
-                let state =
+                let worldState =
                     let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH)
                     let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                     let intrinsicOverlays = World.createIntrinsicOverlays entityDispatchers facets
@@ -570,7 +570,7 @@ module WorldModule =
                     { TickTime = 0L
                       Liveness = Running
                       Interactivity = interactivity
-                      OptScreenTransitionDestinationRep = None
+                      OptScreenTransitionDestination = None
                       Camera = camera
                       AssetMetadataMap = assetMetadataMap
                       AssetGraphFilePath = AssetGraphFilePath
@@ -580,19 +580,19 @@ module WorldModule =
                       UserState = userState }
 
                 // make the game
-                let game = World.makeGame activeGameDispatcher
+                let gameState = World.makeGameState activeGameDispatcher
 
                 // make the world itself
                 let world =
-                    { Simulants = (game, Map.empty)
+                    { SimulantStates = (gameState, Map.empty)
                       Subsystems = subsystems
                       Components = components
                       Callbacks = callbacks
-                      State = state }
+                      State = worldState }
 
                 // and finally, register the game
-                let gameRep = { GameAddress = World.GameAddress }
-                let world = World.registerGame gameRep world
+                let game = { GameAddress = World.Game.GameAddress }
+                let world = World.registerGame game world
                 Right world
             | Left errorMsg -> Left errorMsg
 
@@ -631,11 +631,11 @@ module WorldModule =
                   CallbackStates = Map.empty }
 
             // make the world's state
-            let state =
+            let worldState =
                 { TickTime = 0L
                   Liveness = Running
                   Interactivity = GuiOnly
-                  OptScreenTransitionDestinationRep = None
+                  OptScreenTransitionDestination = None
                   Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single ResolutionXDefault, single ResolutionYDefault) }
                   AssetMetadataMap = Map.empty
                   AssetGraphFilePath = String.Empty
@@ -645,19 +645,18 @@ module WorldModule =
                   UserState = userState }
 
             // make the game
-            let game = World.makeGame gameDispatcher
+            let gameState = World.makeGameState gameDispatcher
 
             // make the world itself
             let world =
-                { Simulants = (game, Map.empty)
+                { SimulantStates = (gameState, Map.empty)
                   Subsystems = subsystems
                   Components = components
                   Callbacks = callbacks
-                  State = state }
+                  State = worldState }
 
             // and finally, register the game
-            let gameRep = { GameAddress = World.GameAddress }
-            World.registerGame gameRep world
+            World.registerGame Game world
 
         /// Initialize the Nu game engine. Basically calls all the unavoidable imperative stuff
         /// needed to set up the .NET environment appropriately. MUST be called before making the
