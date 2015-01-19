@@ -263,15 +263,8 @@ module WorldModule =
                 let overlayer = Overlayer.make outputOverlayFilePath intrinsicOverlays
                 let world = World.setOverlayer overlayer world
 
-                // get all the entityReps in the world
-                let entityReps =
-                    World.getScreenReps world |>
-                    Seq.map (fun screenRep -> World.getGroupReps screenRep world) |>
-                    Seq.concat |>
-                    Seq.map (fun groupRep -> World.getEntityReps groupRep world) |>
-                    Seq.concat
-
                 // apply overlays to all entities
+                let entityReps = World.getEntityReps1 world
                 let world =
                     Seq.fold
                         (fun world (entityRep : EntityRep) ->

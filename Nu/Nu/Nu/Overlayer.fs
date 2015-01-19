@@ -122,21 +122,19 @@ module Overlayer =
             match xtensionProperty.GetValue target with
             | :? Xtension as xtension ->
                 let nodes =
-                    List.foldBack
-                        (fun (kvp : KeyValuePair<string, XField>) optNodes ->
-                            match trySelectNode newOverlayName kvp.Key newOverlayer with
-                            | Some node -> (kvp.Value.FieldType, node) :: optNodes
-                            | None -> optNodes)
+                    List.foldBack (fun (kvp : KeyValuePair<string, XField>) optNodes ->
+                        match trySelectNode newOverlayName kvp.Key newOverlayer with
+                        | Some node -> (kvp.Value.FieldType, node) :: optNodes
+                        | None -> optNodes)
                         (List.ofSeq xtension.XFields)
                         []
                 let xFields =
-                    List.foldBack
-                        (fun (aType, node : XmlNode) xFields ->
-                            if isPropertyOverlaid oldOverlayName facetNames node.Name aType target oldOverlayer then
-                                let value = AlgebraicDescriptor.convertFromString node.InnerText aType
-                                let xField = { FieldValue = value; FieldType = aType }
-                                (node.Name, xField) :: xFields
-                            else xFields)
+                    List.foldBack (fun (aType, node : XmlNode) xFields ->
+                        if isPropertyOverlaid oldOverlayName facetNames node.Name aType target oldOverlayer then
+                            let value = AlgebraicDescriptor.convertFromString node.InnerText aType
+                            let xField = { FieldValue = value; FieldType = aType }
+                            (node.Name, xField) :: xFields
+                        else xFields)
                         nodes
                         []
                 let xFields = Map.addMany xFields xtension.XFields
