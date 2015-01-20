@@ -17,7 +17,7 @@ module BlazeConstants =
     let Section2FilePath = "Assets/Stage/Section2.nugroup"
     let Section3FilePath = "Assets/Stage/Section3.nugroup"
     let SectionFilePaths = [Section0FilePath; Section1FilePath; Section2FilePath; Section3FilePath]
-    let SectionCount = 32
+    let SectionCount = 1
 
     // asset constants
     let NuSplashSound = { PackageName = GuiPackageName; AssetName = "Nu" }

@@ -1648,6 +1648,7 @@ module SimulationModule =
 
         /// TODO: document!
         static member pickingSort entities world =
+            let entities = List.ofSeq entities
             let prioritiesAndEntities = List.map (fun (entity : Entity) -> (World.getPickingPriority entity world, entity)) entities
             let prioritiesAndEntities = List.sortWith World.sortFstDesc prioritiesAndEntities
             List.map snd prioritiesAndEntities
@@ -1897,12 +1898,12 @@ module SimulationModule =
             (group, world)
 
         /// Read a group from an xml file.
-        static member readGroupFromFile (filePath : string) screen world =
+        static member readGroupFromFile (filePath : string) optName screen world =
             use reader = XmlReader.Create filePath
             let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
             let rootNode = document.[RootNodeName]
             let groupNode = rootNode.[GroupNodeName]
-            World.readGroup groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name screen world
+            World.readGroup groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name optName screen world
 
         /// Read multiple groups from an xml node.
         static member readGroups (screenNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName screen world =
@@ -2104,12 +2105,12 @@ module SimulationModule =
             (screen, world)
 
         /// Read a screen from an xml file.
-        static member readScreenFromFile (filePath : string) world =
+        static member readScreenFromFile (filePath : string) optName world =
             use reader = XmlReader.Create filePath
             let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
             let rootNode = document.[RootNodeName]
             let screenNode = rootNode.[ScreenNodeName]
-            World.readScreen screenNode typeof<ScreenDispatcher>.Name typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
+            World.readScreen screenNode typeof<ScreenDispatcher>.Name typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name optName world
 
         /// Read multiple screens from an xml node.
         static member readScreens (gameNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
