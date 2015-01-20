@@ -32,20 +32,19 @@ module WorldPhysicsModule =
             | Running ->
                 match integrationMessage with
                 | BodyTransformMessage bodyTransformMessage ->
-                    let entityAddress = atoea bodyTransformMessage.SourceAddress
-                    let entity = { EntityAddress = entityAddress }
+                    let entity = Entity.proxy <| atoea bodyTransformMessage.SourceAddress
                     if World.containsEntity entity world then
                         IntegratorSubsystem.handleBodyTransformMessage bodyTransformMessage entity world
                     else world
                 | BodyCollisionMessage bodyCollisionMessage ->
-                    let source = { EntityAddress = atoea bodyCollisionMessage.SourceAddress }
+                    let source = Entity.proxy <| atoea bodyCollisionMessage.SourceAddress
                     match World.getOptEntityState source world with
                     | Some _ ->
                         let collisionAddress = CollisionEventAddress ->- bodyCollisionMessage.SourceAddress
                         let collisionData =
                             { Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed
-                              Collidee = { EntityAddress = atoea bodyCollisionMessage.CollideeAddress }}
+                              Collidee = Entity.proxy <| atoea bodyCollisionMessage.CollideeAddress }
                         World.publish4 collisionData collisionAddress Game world
                     | None -> world
             | Exiting -> world

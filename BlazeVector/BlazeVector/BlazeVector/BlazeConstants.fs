@@ -40,14 +40,14 @@ module BlazeConstants =
           DissolveImage = DefaultDissolveImage }
 
     // splash constants
-    let Splash = { ScreenAddress = ntoa<ScreenState> "Splash" }
+    let Splash = Screen.proxy <| ntoa "Splash"
     let SplashData =
         { DissolveData = DissolveData
           IdlingTime = 60L
           SplashImage = { PackageName = DefaultPackageName; AssetName = "Image5" }}
 
     // title constants
-    let Title = { ScreenAddress = ntoa<ScreenState> "Title" }
+    let Title = Screen.proxy <| ntoa "Title"
     let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
     let SelectTitleEventAddress = stoa<unit> "Select/Title"
     let ClickTitlePlayEventAddress = stoa<unit> "Click/Title/Group/Play"
@@ -55,11 +55,11 @@ module BlazeConstants =
     let ClickTitleExitEventAddress = stoa<unit> "Click/Title/Group/Exit"
 
     // stage constants
-    let StageAddress = stoa<Screen> "Stage"
+    let Stage = Screen.proxy <| ntoa "Stage"
     let StageGroupFilePath = "Assets/Gui/StageGui.nugroup"
     let ClickStageBackEventAddress = stoa<unit> "Click/Stage/Group/Back"
 
     // credits constants
-    let CreditsAddress = stoa<Screen> "Credits"
+    let Credits = Screen.proxy <| ntoa "Credits"
     let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
     let ClickCreditsBackEventAddress = stoa<unit> "Click/Credits/Group/Back"

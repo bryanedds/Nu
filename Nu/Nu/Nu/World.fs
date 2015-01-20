@@ -587,8 +587,7 @@ module WorldModule =
                       State = worldState }
 
                 // and finally, register the game
-                let game = { GameAddress = World.Game.GameAddress }
-                let world = World.registerGame game world
+                let world = World.registerGame world
                 Right world
 
             // forward error message
@@ -655,7 +654,7 @@ module WorldModule =
                   State = worldState }
 
             // and finally, register the game
-            World.registerGame Game world
+            World.registerGame world
 
         /// Initialize the Nu game engine. Basically calls all the unavoidable imperative stuff
         /// needed to set up the .NET environment appropriately. MUST be called before making the
