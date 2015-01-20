@@ -143,7 +143,7 @@ module PlayerModule =
     type PlayerDispatcher () =
         inherit EntityDispatcher ()
 
-        static let [<Literal>] WalkForce = 1000.0f
+        static let [<Literal>] WalkForce = 8000.0f
         static let [<Literal>] FallForce = -30000.0f
         static let [<Literal>] ClimbForce = 12000.0f
 
@@ -152,6 +152,7 @@ module PlayerModule =
             let bulletPosition = playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)
             let world = bullet.SetPosition bulletPosition world
             let world = bullet.SetDepth playerTransform.Depth world
+            let world = World.propagatePhysics bullet world
             (bullet, world)
 
         static let propelBullet (bullet : Entity) world =
@@ -291,7 +292,9 @@ module StageScreenModule =
 
         static let shiftEntities xShift entities world =
             Seq.fold
-                (fun world (entity : Entity) -> entity.SetPosition (entity.GetPosition world + Vector2 (xShift, 0.0f)) world)
+                (fun world (entity : Entity) ->
+                    let world = entity.SetPosition (entity.GetPosition world + Vector2 (xShift, 0.0f)) world
+                    World.propagatePhysics entity world)
                 world
                 entities
 
