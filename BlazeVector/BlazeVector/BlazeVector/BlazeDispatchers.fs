@@ -143,16 +143,15 @@ module PlayerModule =
     type PlayerDispatcher () =
         inherit EntityDispatcher ()
 
-        static let [<Literal>] WalkForce = 8000.0f
+        static let [<Literal>] WalkForce = 1000.0f
         static let [<Literal>] FallForce = -30000.0f
         static let [<Literal>] ClimbForce = 12000.0f
 
         static let createBullet (playerTransform : Transform) (group : Group) world =
             let (bullet, world) = World.createEntity typeof<BulletDispatcher>.Name None group world
             let bulletPosition = playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)
-            let bulletDepth = playerTransform.Depth
             let world = bullet.SetPosition bulletPosition world
-            let world = bullet.SetDepth bulletDepth world
+            let world = bullet.SetDepth playerTransform.Depth world
             (bullet, world)
 
         static let propelBullet (bullet : Entity) world =
@@ -279,8 +278,8 @@ module StagePlayModule =
         override dispatcher.Register group world =
             world |>
                 World.monitor handleAdjustCamera TickEventAddress group |>
-                World.monitor handlePlayerFall TickEventAddress group |>
-                adjustCamera group
+                World.monitor handlePlayerFall TickEventAddress group// |>
+                //adjustCamera group
 
 [<AutoOpen>]
 module StageScreenModule =
@@ -315,7 +314,7 @@ module StageScreenModule =
                 [0 .. SectionCount]
 
         static let createStagePlay world =
-            snd <| World.readGroupFromFile StagePlayFilePath None Stage world
+            snd <| World.readGroupFromFile StagePlayFilePath (Some StagePlayName) Stage world
 
         static let handleStartPlay _ world =
             let world = createStageSections world
