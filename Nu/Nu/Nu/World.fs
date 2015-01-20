@@ -235,7 +235,7 @@ module WorldModule =
         static member createDissolveScreenFromGroupFile persistent dissolveData dispatcherName groupFilePath optName world =
             let (dissolveScreen, world) = World.createDissolveScreen dissolveData dispatcherName optName world
             let world = dissolveScreen.SetPersistent persistent world
-            let world = snd <| World.readGroupFromFile groupFilePath dissolveScreen world
+            let world = snd <| World.readGroupFromFile groupFilePath None dissolveScreen world
             (dissolveScreen, world)
 
         static member private createIntrinsicOverlays entityDispatchers facets =
