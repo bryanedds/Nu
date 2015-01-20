@@ -248,39 +248,39 @@ module StagePlayModule =
     type StagePlayDispatcher () =
         inherit GroupDispatcher ()
 
-        static let getPlayerAddress address =
-            gatoea address StagePlayerName
+        static let getPlayer group =
+            Entity.proxy <| gatoea group.GroupAddress StagePlayerName
 
         static let adjustCamera address world =
             if World.isGamePlaying world then
                 World.updateCamera
                     (fun camera -> 
-                        let player = World.getEntity (getPlayerAddress address) world
-                        let eyeCenter = Vector2 (player.Position.X + player.Size.X * 0.5f + camera.EyeSize.X * 0.33f, camera.EyeCenter.Y)
+                        let player = getPlayer address
+                        let playerPosition = player.GetPosition world
+                        let playerSize = player.GetSize world
+                        let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + camera.EyeSize.X * 0.33f, camera.EyeCenter.Y)
                         { camera with EyeCenter = eyeCenter })
                     world
             else world
 
         static let handleAdjustCamera event world =
-            (Cascade, adjustCamera event.SubscriberAddress world)
+            (Cascade, adjustCamera event.Subscriber world)
 
         static let handlePlayerFall event world =
             if World.isGamePlaying world then
-                let player = World.getEntity (getPlayerAddress event.SubscriberAddress) world
-                if Entity.hasFallen player && World.isSelectedScreenIdling world then
+                let player = getPlayer event.Subscriber
+                if player.HasFallen world && World.isSelectedScreenIdling world then
                     let world = World.playSound 1.0f DeathSound world
-                    let world = World.transitionScreen TitleAddress world
+                    let world = World.transitionScreen Title world
                     (Cascade, world)
                 else (Cascade, world)
             else (Cascade, world)
 
-        override dispatcher.Register (group, address, world) =
-            let world =
-                world |>
-                    World.monitor handleAdjustCamera TickEventAddress address |>
-                    World.monitor handlePlayerFall TickEventAddress address
-            let world = adjustCamera address world
-            (group, world)
+        override dispatcher.Register group world =
+            world |>
+                World.monitor handleAdjustCamera TickEventAddress group |>
+                World.monitor handlePlayerFall TickEventAddress group |>
+                adjustCamera group
 
 [<AutoOpen>]
 module StageScreenModule =
@@ -288,15 +288,17 @@ module StageScreenModule =
     type StageScreenDispatcher () =
         inherit ScreenDispatcher ()
 
-        static let shiftEntities xShift entities =
-            Map.map
-                (fun _ (entity : Entity) -> Entity.setPosition (entity.Position + Vector2 (xShift, 0.0f)) entity)
+        static let shiftEntities xShift entities world =
+            Seq.fold
+                (fun world (entity : Entity) -> entity.SetPosition (entity.GetPosition world + Vector2 (xShift, 0.0f)) world)
+                world
                 entities
 
         static let makeSectionFromFile filePath sectionName xShift world =
-            let (sectionGroup, sectionEntities) = World.readGroupHierarchyFromFile filePath world
+            let (section, world) = World.readGroupFromFile filePath Stage world
+            let sectionEntities = World.getEntities section world
             let sectionEntities = shiftEntities xShift sectionEntities
-            (sectionName, (sectionGroup, sectionEntities))
+            (section, world)
 
         static let handleStartPlay event world =
             let random = Random ()
@@ -323,10 +325,8 @@ module StageScreenModule =
             let world = World.removeGroups groupAddresses world
             (Cascade, world)
 
-        override dispatcher.Register (screen, address, world) =
-            let world =
-                world |>
-                    World.monitor handleStartPlay (SelectEventAddress ->>- address) address |>
-                    World.monitor handleStoppingPlay (OutgoingStartEventAddress ->>- address) address |>
-                    World.monitor handleStopPlay (DeselectEventAddress ->>- address) address
-            (screen, world)
+        override dispatcher.Register screen world =
+            world |>
+                World.monitor handleStartPlay (SelectEventAddress ->>- screen.ScreenAddress) screen |>
+                World.monitor handleStoppingPlay (OutgoingStartEventAddress ->>- screen.ScreenAddress) screen |>
+                World.monitor handleStopPlay (DeselectEventAddress ->>- screen.ScreenAddress) screen
