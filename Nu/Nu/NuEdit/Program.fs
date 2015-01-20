@@ -493,6 +493,7 @@ module Program =
                       Size = entity.GetSize world
                       Rotation = entity.GetRotation world }
                 let world = entity.SetTransform positionSnap rotationSnap entityTransform world
+                let world = World.propagatePhysics entity world
                 refWorld := world // must be set for property grid
                 let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
                 form.propertyGrid.SelectedObject <- entityTds
