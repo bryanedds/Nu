@@ -24,7 +24,7 @@ module Observation =
 
     (* Primitive Combinators *)
 
-    /// Make an observation from an observer address and an event address.
+    /// Make an observation of an event at the given address.
     let observe<'a, 'o when 'o :> Simulant> (eventAddress : 'a Address) (observer : 'o) =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
@@ -93,7 +93,7 @@ module Observation =
             (subscriptionAddress'', unsubscribe, world)
         { Observer = observation.Observer; Subscribe = subscribe }
 
-    /// Filter an observation's events by 'pred'.
+    /// Filter an observation by the given 'pred' procedure.
     let filter (pred : Event<'a, 'o> -> World -> bool) (observation : Observation<'a, 'o>) =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
@@ -110,7 +110,7 @@ module Observation =
             (subscriptionAddress, unsubscribe, world)
         { Observer = observation.Observer; Subscribe = subscribe }
 
-    /// Map an observation's events by the 'mapper' procedure.
+    /// Map an observation by the given 'mapper' procedure.
     let map (mapper : Event<'a, 'o> -> World -> 'b) (observation : Observation<'a, 'o>) : Observation<'b, 'o> =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
@@ -279,7 +279,7 @@ module Observation =
     let scan (f : 'b -> Event<'a, 'o> -> World -> 'b) s (observation : Observation<'a, 'o>) : Observation<'b, 'o> =
         scan4 f id s observation
 
-    /// Transform an observation into a running average of it event's numeric data.
+    /// Transform an observation into a running average of its event's numeric data.
     let inline average (observation : Observation<'a, 'o>) : Observation<'a, 'o> =
         scan4
             (fun (_ : 'a, n : 'a, d : 'a) a _ ->
@@ -381,7 +381,7 @@ module Observation =
     
     /// Take events from an observation only when the observer is selected in the world (see
     /// documentation for World.isAddressSelected for what this means (it's very useful!)).
-    let isSelected event world = World.isSimulantSelected event.Subscriber world
+    let isObserverSelected event world = World.isSimulantSelected event.Subscriber world
 
     /// Take events from an observation only when the currently selected screen is idling (that
     /// is, there is no screen transition in progress).

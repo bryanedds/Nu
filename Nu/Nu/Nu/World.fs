@@ -86,8 +86,7 @@ module WorldModule =
             let world = World.setOptSelectedScreen (Some screen) world
             World.publish4 () (SelectEventAddress ->>- screen.ScreenAddress) screen world
 
-        /// Try to transition to the screen at the destination address if no other transition is in
-        /// progress.
+        /// Try to transition to the given screen if no other transition is in progress.
         static member tryTransitionScreen destination world =
             match World.getOptSelectedScreen world with
             | Some selectedScreen ->
@@ -108,8 +107,8 @@ module WorldModule =
                 else None
             | None -> None
 
-        /// Transition to the screen at the destination address (failing with an exception if
-        /// another transition is in progress).
+        /// Transition to the given screen (failing with an exception if another transition is
+        /// in progress).
         static member transitionScreen destinationAddress world =
             Option.get <| World.tryTransitionScreen destinationAddress world
             
@@ -119,13 +118,13 @@ module WorldModule =
             (eventHandling, world)
 
         /// A procedure that can be passed to an event handler to specify that an event is to
-        /// result in a transition to the screen at the given destination address.
+        /// result in a transition to the given destination screen.
         static member handleAsScreenTransitionFromSplash<'a, 's when 's :> Simulant> destination event world =
             World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destination event world
 
         /// A procedure that can be passed to an event handler to specify that an event is to
-        /// result in a transition to the screen at the given destination address, as well as
-        /// with additional provided via the 'by' procedure.
+        /// result in a transition to the given destination screen, as well as with additional
+        /// handling provided via the 'by' procedure.
         static member handleAsScreenTransitionFromSplashBy<'a, 's when 's :> Simulant> by destination event (world : World) =
             let (eventHandling, world) = by event world
             World.handleAsScreenTransitionFromSplash4<'a, 's> eventHandling destination event world
@@ -139,13 +138,13 @@ module WorldModule =
                 (eventHandling, world)
 
         /// A procedure that can be passed to an event handler to specify that an event is to
-        /// result in a transition to the screen at the given destination address.
+        /// result in a transition to the given destination screen.
         static member handleAsScreenTransition<'a, 's when 's :> Simulant> destination event world =
             World.handleAsScreenTransition4<'a, 's> Cascade destination event world
 
         /// A procedure that can be passed to an event handler to specify that an event is to
-        /// result in a transition to the screen at the given destination address, as well as
-        /// with additional provided via the 'by' procedure.
+        /// result in a transition to the given destination screen, as well as with additional
+        /// handling provided via the 'by' procedure.
         static member handleAsScreenTransitionBy<'a, 's when 's :> Simulant> by destination event (world : World) =
             let (eventHandling, world) = by event world
             World.handleAsScreenTransition4<'a, 's> eventHandling destination event world
@@ -217,8 +216,7 @@ module WorldModule =
             let world = World.subscribe SplashScreenTickKey (World.handleSplashScreenIdleTick idlingTime 0L) TickEventAddress event.Subscriber world
             (Resolve, world)
 
-        /// Create a splash screen to the world at the given address that transitions to the given
-        /// destination upon completion.
+        /// Create a splash screen that transitions to the given destination upon completion.
         static member createSplashScreen persistent splashData dispatcherName destination optName world =
             let (splashScreen, world) = World.createDissolveScreen splashData.DissolveData dispatcherName optName world
             let (splashGroup, world) = World.createGroup typeof<GroupDispatcher>.Name (Some "SplashGroup") splashScreen world
@@ -233,8 +231,7 @@ module WorldModule =
             let world = World.monitor (World.handleAsScreenTransitionFromSplash destination) (OutgoingFinishEventAddress ->>- splashScreen.ScreenAddress) splashScreen world
             (splashScreen, world)
 
-        /// Create a dissolve screen to the world at the given address whose contents is loaded from
-        /// the given group file.
+        /// Create a dissolve screen whose contents is loaded from the given group file.
         static member createDissolveScreenFromGroupFile persistent dissolveData dispatcherName groupFilePath optName world =
             let (dissolveScreen, world) = World.createDissolveScreen dissolveData dispatcherName optName world
             let world = dissolveScreen.SetPersistent persistent world
@@ -291,7 +288,7 @@ module WorldModule =
             with exn -> Left <| acstring exn
 
         /// Try to release the assets in use by the world. Currently does not support reloading
-        /// of song assets, and possible others.
+        /// of song assets, and possibly others that are locked by the engine's subsystems.
         static member tryReloadAssets inputDirectory outputDirectory refinementDirectory world =
             
             // try to reload asset graph file
@@ -314,7 +311,7 @@ module WorldModule =
                         Right world
             
                     // propagate errors
-                    | Left errorMsg -> Left errorMsg
+                    | Left error -> Left error
                 | Left error -> Left error
             with exn -> Left <| acstring exn
 
@@ -324,7 +321,7 @@ module WorldModule =
             // NOTE: since messages may be invalid upon continuing a world (especially physics
             // messages), all messages are eliminated. If this poses an issue, the editor will have
             // to instead store past / future worlds only once their current frame has been
-            // processed (integrated, advanced, rendered, played, et al).
+            // processed.
             let world = World.clearSubsystemsMessages world
             let world = World.addPhysicsMessage RebuildPhysicsHackMessage world
             let entities = World.getEntities group world
@@ -410,8 +407,8 @@ module WorldModule =
                 | _ -> world
             (world.State.Liveness, world)
 
-        /// Update the Nu game engine once per frame, updating its subsystems and publishing the
-        /// game tick event.
+        /// Update the game engine once per frame, updating its subsystems and publishing the Tick
+        /// event.
         static member processUpdate handleUpdate world =
             let world = handleUpdate world
             match world.State.Liveness with
@@ -450,6 +447,7 @@ module WorldModule =
                 World.cleanUpSubsystems
                 sdlConfig
 
+        /// TODO: document!
         static member run tryMakeWorld handleUpdate sdlConfig =
             World.run4 tryMakeWorld handleUpdate id sdlConfig
 
@@ -577,12 +575,12 @@ module WorldModule =
                       OverlayFilePath = OverlayFilePath
                       UserState = userState }
 
-                // make the game
-                let gameState = World.makeGameState activeGameDispatcher
+                // make the simulant states
+                let simulantStates = (World.makeGameState activeGameDispatcher, Map.empty)
 
                 // make the world itself
                 let world =
-                    { SimulantStates = (gameState, Map.empty)
+                    { SimulantStates = simulantStates
                       Subsystems = subsystems
                       Components = components
                       Callbacks = callbacks
@@ -592,7 +590,9 @@ module WorldModule =
                 let game = { GameAddress = World.Game.GameAddress }
                 let world = World.registerGame game world
                 Right world
-            | Left errorMsg -> Left errorMsg
+
+            // forward error message
+            | Left error -> Left error
 
         /// Make an empty world. Useful for unit-testing.
         static member makeEmpty (userState : 'u) =
@@ -641,13 +641,14 @@ module WorldModule =
                   OverlayFilePath = String.Empty
                   Overlayer = { Overlays = XmlDocument () }
                   UserState = userState }
+                  
 
-            // make the game
-            let gameState = World.makeGameState gameDispatcher
+            // make the simulant states
+            let simulantStates = (World.makeGameState gameDispatcher, Map.empty)
 
             // make the world itself
             let world =
-                { SimulantStates = (gameState, Map.empty)
+                { SimulantStates = simulantStates
                   Subsystems = subsystems
                   Components = components
                   Callbacks = callbacks

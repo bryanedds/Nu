@@ -88,7 +88,7 @@ module Chain =
             let world = expr world
             do! set world }
 
-    /// Loop in a chainhronous context while 'pred' evaluate to true.
+    /// Loop in a chain context while 'pred' evaluate to true.
     let rec loop (i : 'i) (next : 'i -> 'i) (pred : 'i -> World -> bool) (m : 'i -> Chain<'e, unit>) =
         chain {
             let! world = get
@@ -99,7 +99,7 @@ module Chain =
                         do! loop i next pred m }
                 else returnM () }
 
-    /// Loop in a chainhronous context while 'pred' evaluates to true.
+    /// Loop in a chain context while 'pred' evaluates to true.
     let during (pred : World -> bool) (m : Chain<'e, unit>) =
         loop () id (fun _ -> pred) (fun _ -> m)
 

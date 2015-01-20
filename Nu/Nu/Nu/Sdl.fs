@@ -160,6 +160,6 @@ module Sdl =
                                     | Right world ->
                                         run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps Running world
                                         SuccessExitCode
-                                    | Left errorMsg ->
-                                        trace errorMsg
+                                    | Left error ->
+                                        trace error
                                         FailureExitCode))))))

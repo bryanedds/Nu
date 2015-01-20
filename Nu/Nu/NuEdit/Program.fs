@@ -833,7 +833,7 @@ module Program =
             let world = World.subscribe4 (handleNuCameraDragEnd form) MouseCenterUpEventAddress GameAddress world
             let world = subscribeToEntityEvents form world
             Right world
-        | Left errorMsg -> Left errorMsg
+        | Left error -> Left error
 
     let tryCreateEditorWorld targetDirectory refinementDirectory form worldChangers refWorld sdlDeps nuPlugin =
         match tryMakeEditorWorld targetDirectory refinementDirectory form worldChangers refWorld sdlDeps nuPlugin with

@@ -1402,11 +1402,11 @@ module SimulationModule =
             let facets = entity.GetFacetsNp world
             List.fold (fun world (facet : Facet) -> facet.Unregister entity world) world facets
 
-        /// Query that the world contains an entity at the given address.
+        /// Query that the world contains an entity.
         static member containsEntity entity world =
             Option.isSome <| World.optEntityStateFinder entity world
 
-        /// Get all the entity addresses in the group at the given address.
+        /// Get all the entities contained by a group.
         static member getEntities group world =
             let entityStateMap = World.getEntityStateMap group world
             Seq.map (fun (kvp : KeyValuePair<string, _>) -> { EntityAddress = World.gatoea group.GroupAddress kvp.Key }) entityStateMap
@@ -1457,13 +1457,13 @@ module SimulationModule =
             let intrinsicOverlayName = dispatcherName
             let defaultOptOverlayName = Map.find intrinsicOverlayName world.State.OverlayRouter
 
-            // make the bare entity with name as id
+            // make the bare entity state (with name as id if none is provided)
             let entityState = EntityState.make dispatcher defaultOptOverlayName optName
 
-            // attach the entity's intrinsic facets and their fields
+            // attach the entity state's intrinsic facets and their fields
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
 
-            // apply the entity's overlay to its facet names
+            // apply the entity state's overlay to its facet names
             let entityState =
                 match defaultOptOverlayName with
                 | Some defaultOverlayName ->
@@ -1476,10 +1476,10 @@ module SimulationModule =
                     | Left error -> debug error; entityState
                 | None -> entityState
 
-            // attach the entity's dispatcher fields
+            // attach the entity state's dispatcher fields
             Reflection.attachFields dispatcher entityState
 
-            // apply the entity's overlay
+            // apply the entity state's overlay
             let entityState =
                 match entityState.OptOverlayName with
                 | Some overlayName ->
@@ -1492,7 +1492,7 @@ module SimulationModule =
                     else entityState
                 | None -> entityState
 
-            // add entity to world
+            // add entity's state to world
             let entity = { EntityAddress = World.gatoea group.GroupAddress entityState.Name }
             let world = World.addEntityState entityState entity world
             (entity, world)
@@ -1500,8 +1500,7 @@ module SimulationModule =
         /// Write an entity to an xml writer.
         static member writeEntity (writer : XmlWriter) (entity : Entity) world =
             let entityState = World.getEntityState entity world
-            let dispatcher = entityState.DispatcherNp
-            let dispatcherTypeName = Reflection.getTypeName dispatcher
+            let dispatcherTypeName = Reflection.getTypeName entityState.DispatcherNp
             writer.WriteAttributeString (DispatcherNameAttributeName, dispatcherTypeName)
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
                 if propertyName = "OptOverlayName" && propertyType = typeof<string option> then
@@ -1522,7 +1521,7 @@ module SimulationModule =
                 writer.WriteEndElement ()
 
         /// Read an entity from an xml node.
-        static member readEntity (entityNode : XmlNode) defaultDispatcherName group world =
+        static member readEntity entityNode defaultDispatcherName group world =
 
             // read in the dispatcher name and create the dispatcher
             let dispatcherName = Reflection.readDispatcherName defaultDispatcherName entityNode
@@ -1539,13 +1538,13 @@ module SimulationModule =
             let intrinsicOverlayName = dispatcherName
             let defaultOptOverlayName = Map.find intrinsicOverlayName world.State.OverlayRouter
 
-            // make the bare entity with name as id
+            // make the bare entity state with name as id
             let entityState = EntityState.make dispatcher defaultOptOverlayName None
 
-            // attach the entity's intrinsic facets and their fields
+            // attach the entity state's intrinsic facets and their fields
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
 
-            // read the entity's overlay and apply it to its facet names if applicable
+            // read the entity state's overlay and apply it to its facet names if applicable
             Reflection.tryReadOptOverlayNameToTarget entityNode entityState
             match (defaultOptOverlayName, entityState.OptOverlayName) with
             | (Some defaultOverlayName, Some overlayName) ->
@@ -1553,19 +1552,19 @@ module SimulationModule =
                 Overlayer.applyOverlayToFacetNames defaultOverlayName overlayName entityState overlayer overlayer
             | (_, _) -> ()
 
-            // read the entity's facet names
+            // read the entity state's facet names
             Reflection.readFacetNamesToTarget entityNode entityState
             
-            // synchronize the entity's facets (and attach their fields)
+            // synchronize the entity state's facets (and attach their fields)
             let entityState =
                 match World.trySynchronizeFacets [] entityState None world with
                 | Right (entityState, _) -> entityState
                 | Left error -> debug error; entityState
 
-            // attach the entity's dispatcher fields
+            // attach the entity state's dispatcher fields
             Reflection.attachFields dispatcher entityState
 
-            // attempt to apply the entity's overlay
+            // attempt to apply the entity state's overlay
             match entityState.OptOverlayName with
             | Some overlayName ->
 
@@ -1576,10 +1575,10 @@ module SimulationModule =
                 else ()
             | None -> ()
 
-            // read the entity's properties
+            // read the entity state's properties
             Reflection.readPropertiesToTarget entityNode entityState
 
-            // add entity to the world
+            // add entity state to the world
             let entity = { EntityAddress = World.gatoea group.GroupAddress entityState.Name }
             let world = World.destroyEntity entity world
             let world = World.addEntityState entityState entity world
@@ -1621,7 +1620,7 @@ module SimulationModule =
                 facets
                 renderDescriptors
         
-        /// Get the quick size of an entity (the appropriate user-define size for an entity).
+        /// Get the quick size of an entity (the appropriate user-defined size for an entity).
         static member getQuickSize (entity : Entity) world =
             let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
             let facets = entity.GetFacetsNp world
@@ -1760,11 +1759,11 @@ module SimulationModule =
             let dispatcher = group.GetDispatcherNp world : GroupDispatcher
             dispatcher.Unregister group world
 
-        /// Query that the world contains a group at the given address.
+        /// Query that the world contains a group.
         static member containsGroup group world =
             Option.isSome <| World.optGroupStateFinder group world
 
-        /// Get all the group addresses in the screen at the given address.
+        /// Get all the groups in a screen.
         static member getGroups screen world =
             let groupStateMap = World.getGroupStateMap screen world
             Seq.map
@@ -1818,7 +1817,7 @@ module SimulationModule =
             let world = World.addGroupState groupState group world
             (group, world)
 
-        /// Write a group hierarchy to an xml writer.
+        /// Write a group to an xml writer.
         static member writeGroup (writer : XmlWriter) group world =
             let groupState = World.getGroupState group world
             let entities = World.getEntities group world
@@ -1828,7 +1827,7 @@ module SimulationModule =
             World.writeEntities writer entities world
             writer.WriteEndElement ()
 
-        /// Write a group hierarchy to an xml file.
+        /// Write a group to an xml file.
         static member writeGroupToFile (filePath : string) group world =
             let filePathTmp = filePath + ".tmp"
             let writerSettings = XmlWriterSettings ()
@@ -1847,7 +1846,7 @@ module SimulationModule =
             File.Delete filePath
             File.Move (filePathTmp, filePath)
 
-        /// Write multiple group hierarchies to an xml writer.
+        /// Write multiple groups to an xml writer.
         static member writeGroups (writer : XmlWriter) groups world =
             let groupsSorted = Seq.sortBy (fun (group : Group) -> group.GetCreationTimeNp world) groups
             let groupsPersistent = Seq.filter (fun (group : Group) -> group.GetPersistent world) groupsSorted
@@ -1856,8 +1855,8 @@ module SimulationModule =
                 World.writeGroup writer group world
                 writer.WriteEndElement ()
 
-        /// Read a group hierarchy from an xml node.
-        static member readGroup (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName screen world =
+        /// Read a group from an xml node.
+        static member readGroup groupNode defaultDispatcherName defaultEntityDispatcherName screen world =
 
             // read in the dispatcher name and create the dispatcher
             let dispatcherName = Reflection.readDispatcherName defaultDispatcherName groupNode
@@ -1869,25 +1868,25 @@ module SimulationModule =
                     let dispatcherName = typeof<GroupDispatcher>.Name
                     Map.find dispatcherName world.Components.GroupDispatchers
             
-            // make the bare group with name as id
+            // make the bare group state with name as id
             let groupState = GroupState.make dispatcher None
             
-            // attach the group's instrinsic fields from its dispatcher if any
+            // attach the group state's instrinsic fields from its dispatcher if any
             Reflection.attachFields groupState.DispatcherNp groupState
 
-            // read the groups's properties
+            // read the groups state's properties
             Reflection.readPropertiesToTarget groupNode groupState
             
-            // read the group's entities
+            // add the group's state to the world
             let group = { GroupAddress = World.satoga screen.ScreenAddress groupState.Name }
             let world = World.destroyGroupImmediate group world
             let world = World.addGroupState groupState group world
+
+            // read the group's entities
             let world = snd <| World.readEntities (groupNode : XmlNode) defaultEntityDispatcherName group world
-            
-            // return the group, entities, and world
             (group, world)
 
-        /// Read a group hierarchy from an xml file.
+        /// Read a group from an xml file.
         static member readGroupFromFile (filePath : string) screen world =
             use reader = XmlReader.Create filePath
             let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
@@ -1895,7 +1894,7 @@ module SimulationModule =
             let groupNode = rootNode.[GroupNodeName]
             World.readGroup groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name screen world
 
-        /// Read multiple group hierarchies from an xml node.
+        /// Read multiple groups from an xml node.
         static member readGroups (screenNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName screen world =
             match screenNode.SelectSingleNode GroupsNodeName with
             | null -> ([], world)
@@ -1958,8 +1957,8 @@ module SimulationModule =
         static member internal setScreenStateWithoutEvent screenState screen world =
             World.screenStateAdder screenState screen world
 
-        static member internal setOptScreenWithoutEvent optScreenState screen world =
-            match optScreenState with 
+        static member internal setOptScreenStateWithoutEvent optScreenState screen world =
+            match optScreenState with
             | Some screenState -> World.screenStateAdder screenState screen world
             | None -> World.screenStateRemover screen world
 
@@ -1979,6 +1978,13 @@ module SimulationModule =
             let screenState = updater screenState
             World.setScreenState screenState screen world
 
+        static member private addScreenState screenState screen world =
+            if not <| World.containsScreen screen world then
+                let world = World.setScreenStateWithoutEvent screenState screen world
+                let world = World.registerScreen screen world
+                World.publish4 () (World.ScreenAddEventAddress ->>- screen.ScreenAddress) screen world
+            else failwith <| "Adding a screen that the world already contains at address '" + acstring screen.ScreenAddress + "'."
+
         static member private registerScreen (screen : Screen) world =
             let dispatcher = screen.GetDispatcherNp world : ScreenDispatcher
             dispatcher.Register screen world
@@ -1987,18 +1993,11 @@ module SimulationModule =
             let dispatcher = screen.GetDispatcherNp world : ScreenDispatcher
             dispatcher.Unregister screen world
 
-        static member private addScreenState screenState screen world =
-            if not <| World.containsScreen screen world then
-                let world = World.setScreenStateWithoutEvent screenState screen world
-                let world = World.registerScreen screen world
-                World.publish4 () (World.ScreenAddEventAddress ->>- screen.ScreenAddress) screen world
-            else failwith <| "Adding a screen that the world already contains at address '" + acstring screen.ScreenAddress + "'."
-
-        /// Query that the world contains a group at the given address.
+        /// Query that the world contains a screen.
         static member containsScreen screen world =
             Option.isSome <| World.optScreenStateFinder screen world
 
-        /// Get the addresses of all the world's screens.
+        /// Get all the world's screens.
         static member getScreens world =
             World.getScreenStateMap world |>
                 Map.fold (fun screensRev screenName _ -> { ScreenAddress = ntoa<ScreenState> screenName } :: screensRev) [] |>
@@ -2012,7 +2011,7 @@ module SimulationModule =
                 let world = World.unregisterScreen screen world
                 let groups = World.getGroups screen world
                 let world = World.destroyGroupsImmediate groups world
-                World.setOptScreenWithoutEvent None screen world
+                World.setOptScreenStateWithoutEvent None screen world
             else world
 
         /// Destroy a screen in the world on the next tick. Use this rather than
@@ -2040,7 +2039,7 @@ module SimulationModule =
             let world = screen.SetOutgoing { TransitionDescriptor.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; OptDissolveImage = optDissolveImage } world
             (screen, world)
 
-        /// Write a screen hierarchy to an xml writer.
+        /// Write a screen to an xml writer.
         static member writeScreen (writer : XmlWriter) screen world =
             let screenState = World.getScreenState screen world
             let groups = World.getGroups screen world
@@ -2050,7 +2049,7 @@ module SimulationModule =
             World.writeGroups writer groups world
             writer.WriteEndElement ()
 
-        /// Write a screen hierarchy to an xml file.
+        /// Write a screen to an xml file.
         static member writeScreenToFile (filePath : string) screen world =
             let filePathTmp = filePath + ".tmp"
             let writerSettings = XmlWriterSettings ()
@@ -2065,7 +2064,7 @@ module SimulationModule =
             File.Delete filePath
             File.Move (filePathTmp, filePath)
 
-        /// Write multiple screen hierarchies to an xml writer.
+        /// Write multiple screens to an xml writer.
         static member writeScreens (writer : XmlWriter) screens world =
             let screensSorted = Seq.sortBy (fun (screen : Screen) -> screen.GetCreationTimeNp world) screens
             let screensPersistent = Seq.filter (fun (screen : Screen) -> screen.GetPersistent world) screensSorted
@@ -2074,7 +2073,7 @@ module SimulationModule =
                 World.writeScreen writer screen world
                 writer.WriteEndElement ()
 
-        /// Read a screen hierarchy from an xml node.
+        /// Read a screen from an xml node.
         static member readScreen (screenNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
             let dispatcherName = Reflection.readDispatcherName defaultDispatcherName screenNode
             let dispatcher =
@@ -2093,7 +2092,7 @@ module SimulationModule =
             let world = snd <| World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName screen world
             (screen, world)
 
-        /// Read a screen hierarchy from an xml file.
+        /// Read a screen from an xml file.
         static member readScreenFromFile (filePath : string) world =
             use reader = XmlReader.Create filePath
             let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
@@ -2101,7 +2100,7 @@ module SimulationModule =
             let screenNode = rootNode.[ScreenNodeName]
             World.readScreen screenNode typeof<ScreenDispatcher>.Name typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
 
-        /// Read multiple screen hierarchies from an xml node.
+        /// Read multiple screens from an xml node.
         static member readScreens (gameNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
             match gameNode.SelectSingleNode ScreensNodeName with
             | null -> ([], world)
@@ -2142,39 +2141,36 @@ module SimulationModule =
             let gameState = updater gameState
             World.setGameState gameState world
 
+        static member internal registerGame (game : Game) (world : World) : World =
+            let dispatcher = game.GetDispatcherNp world : GameDispatcher
+            dispatcher.Register game world
+
         static member internal makeGameState dispatcher =
             let gameState = GameState.make dispatcher
             Reflection.attachFields dispatcher gameState
             gameState
 
-        static member internal registerGame (game : Game) (world : World) : World =
-            let dispatcher = game.GetDispatcherNp world : GameDispatcher
-            dispatcher.Register game world
-
         (* World *)
 
-        /// Try to get the address of the currently selected screen.
+        /// Try to get the currently selected screen.
         static member getOptSelectedScreen world =
             World.Game.GetOptSelectedScreen world
 
-        /// Set the address of the currently selected screen to Some Address or None. Be careful
-        /// using this function directly as you may be wanting to use the higher-level
-        /// World.transitionScreen function.
+        /// Set the currently selected screen or None. Be careful using this function directly as
+        //// you may be wanting to use the higher-level World.transitionScreen function instead.
         static member setOptSelectedScreen optScreen world =
             World.Game.SetOptSelectedScreen optScreen world
 
-        /// Get the address of the currently selected screen (failing with an exception if there
-        /// isn't one).
+        /// Get the currently selected screen (failing with an exception if there isn't one).
         static member getSelectedScreen world =
             Option.get <| World.getOptSelectedScreen world
         
-        /// Set the address of the currently selected screen. Be careful using this function
-        /// directly as you may be wanting to use the higher-level World.transitionScreen function.
+        /// Set the currently selected screen. Be careful using this function directly as you may
+        /// be wanting to use the higher-level World.transitionScreen function instead.
         static member setSelectedScreen screen world =
             World.setOptSelectedScreen (Some screen) world
 
-        /// Query that a simulant at the given address is the currently selected screen, is
-        /// contained by the currently selected screen or its groups.
+        /// Query that a simulant is the either currently selected screen or contained by it.
         static member isSimulantSelected<'s when 's :> Simulant> (simulant : 's) world =
             let optScreen = World.getOptSelectedScreen world
             let optScreenNames = Option.map (fun (screen : Screen) -> screen.ScreenAddress.Names) optScreen
@@ -2184,7 +2180,7 @@ module SimulationModule =
             | (_, Some []) -> false
             | (addressHead :: _, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
 
-        /// Write a game hierarchy to an xml writer.
+        /// Write a game to an xml writer.
         static member writeGame (writer : XmlWriter) world =
             let gameState = World.getGameState world
             let screens = World.getScreens world
@@ -2194,7 +2190,7 @@ module SimulationModule =
             World.writeScreens writer screens world
             writer.WriteEndElement ()
 
-        /// Write a game hierarchy to an xml file.
+        /// Write a game to an xml file.
         static member writeGameToFile (filePath : string) world =
             let filePathTmp = filePath + ".tmp"
             let writerSettings = XmlWriterSettings ()
@@ -2209,7 +2205,7 @@ module SimulationModule =
             File.Delete filePath
             File.Move (filePathTmp, filePath)
 
-        /// Read a game hierarchy from an xml node.
+        /// Read a game from an xml node.
         static member readGame
             gameNode defaultDispatcherName defaultScreenDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
             let dispatcherName = Reflection.readDispatcherName defaultDispatcherName gameNode
@@ -2232,7 +2228,7 @@ module SimulationModule =
                     world
             world
 
-        /// Read a game hierarchy from an xml file.
+        /// Read a game from an xml file.
         static member readGameFromFile (filePath : string) world =
             use reader = XmlReader.Create filePath
             let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
@@ -2248,7 +2244,7 @@ module SimulationModule =
 
         (* Simulant *)
 
-        /// Query that the world contains a simulant at the given address.
+        /// Query that the world contains a simulant.
         static member containsSimulant<'a when 'a :> Simulant> (simulant : 'a) world =
             match simulant :> Simulant with
             | :? Game -> true
