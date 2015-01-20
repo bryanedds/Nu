@@ -1525,7 +1525,7 @@ module SimulationModule =
                 writer.WriteEndElement ()
 
         /// Read an entity from an xml node.
-        static member readEntity entityNode defaultDispatcherName group world =
+        static member readEntity entityNode defaultDispatcherName optName group world =
 
             // read in the dispatcher name and create the dispatcher
             let dispatcherName = Reflection.readDispatcherName defaultDispatcherName entityNode
@@ -1582,6 +1582,9 @@ module SimulationModule =
             // read the entity state's properties
             Reflection.readPropertiesToTarget entityNode entityState
 
+            // apply the name if one is provided
+            let entityState = match optName with Some name -> { entityState with Name = name } | None -> entityState
+
             // add entity state to the world
             let entity = Entity.proxy <| World.gatoea group.GroupAddress entityState.Name
             let world = World.destroyEntity entity world
@@ -1596,7 +1599,7 @@ module SimulationModule =
                 let (entitiesRev, world) =
                     Seq.fold
                         (fun (entitiesRev, world) entityNode ->
-                            let (entity, world) = World.readEntity entityNode defaultDispatcherName group world
+                            let (entity, world) = World.readEntity entityNode defaultDispatcherName None group world
                             (entity :: entitiesRev, world))
                         ([], world)
                         (enumerable <| entitiesNode.SelectNodes EntityNodeName)
@@ -1860,7 +1863,7 @@ module SimulationModule =
                 writer.WriteEndElement ()
 
         /// Read a group from an xml node.
-        static member readGroup groupNode defaultDispatcherName defaultEntityDispatcherName screen world =
+        static member readGroup groupNode defaultDispatcherName defaultEntityDispatcherName optName screen world =
 
             // read in the dispatcher name and create the dispatcher
             let dispatcherName = Reflection.readDispatcherName defaultDispatcherName groupNode
@@ -1874,13 +1877,16 @@ module SimulationModule =
             
             // make the bare group state with name as id
             let groupState = GroupState.make dispatcher None
-            
+
             // attach the group state's instrinsic fields from its dispatcher if any
             Reflection.attachFields groupState.DispatcherNp groupState
 
-            // read the groups state's properties
+            // read the group state's properties
             Reflection.readPropertiesToTarget groupNode groupState
-            
+
+            // apply the name if one is provided
+            let groupState = match optName with Some name -> { groupState with Name = name } | None -> groupState
+
             // add the group's state to the world
             let group = Group.proxy <| World.satoga screen.ScreenAddress groupState.Name
             let world = World.destroyGroupImmediate group world
@@ -1906,7 +1912,7 @@ module SimulationModule =
                 let (groupsRev, world) =
                     Seq.fold
                         (fun (groupsRev, world) groupNode ->
-                            let (group, world) = World.readGroup groupNode defaultDispatcherName defaultEntityDispatcherName screen world
+                            let (group, world) = World.readGroup groupNode defaultDispatcherName defaultEntityDispatcherName None screen world
                             (group :: groupsRev, world))
                         ([], world)
                         (enumerable <| groupsNode.SelectNodes GroupNodeName)
@@ -2078,7 +2084,7 @@ module SimulationModule =
                 writer.WriteEndElement ()
 
         /// Read a screen from an xml node.
-        static member readScreen (screenNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
+        static member readScreen (screenNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName optName world =
             let dispatcherName = Reflection.readDispatcherName defaultDispatcherName screenNode
             let dispatcher =
                 match Map.tryFind dispatcherName world.Components.ScreenDispatchers with
@@ -2090,6 +2096,7 @@ module SimulationModule =
             let screenState = ScreenState.make dispatcher None
             Reflection.attachFields screenState.DispatcherNp screenState
             Reflection.readPropertiesToTarget screenNode screenState
+            let screenState = match optName with Some name -> { screenState with Name = name } | None -> screenState
             let screen = Screen.proxy <| ntoa screenState.Name
             let world = World.destroyScreenImmediate screen world
             let world = World.addScreenState screenState screen world
@@ -2112,7 +2119,7 @@ module SimulationModule =
                 let (screensRev, world) =
                     Seq.fold
                         (fun (screens, world) screenNode ->
-                            let (screen, world) = World.readScreen screenNode defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world
+                            let (screen, world) = World.readScreen screenNode defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName None world
                             (screen :: screens, world))
                         ([], world)
                         (enumerable <| screensNode.SelectNodes ScreenNodeName)

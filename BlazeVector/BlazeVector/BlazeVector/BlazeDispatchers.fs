@@ -288,29 +288,38 @@ module StageScreenModule =
     type StageScreenDispatcher () =
         inherit ScreenDispatcher ()
 
+        static let [<Literal>] SectionXShift = 2048.0f
+
         static let shiftEntities xShift entities world =
             Seq.fold
                 (fun world (entity : Entity) -> entity.SetPosition (entity.GetPosition world + Vector2 (xShift, 0.0f)) world)
                 world
                 entities
 
-        static let makeSectionFromFile filePath sectionName xShift world =
-            let (section, world) = World.readGroupFromFile filePath Stage world
+        static let createStageSectionFromFile filePath sectionName xShift world =
+            let (section, world) = World.readGroupFromFile filePath (Some sectionName) Stage world
             let sectionEntities = World.getEntities section world
-            let sectionEntities = shiftEntities xShift sectionEntities
-            (section, world)
+            shiftEntities xShift sectionEntities world
 
-        static let handleStartPlay event world =
+        static let createStageSections world =
             let random = Random ()
             let sectionFilePaths = List.toArray SectionFilePaths
-            let sectionHierarchies =
-                [for i in 0 .. SectionCount do
-                    let xShift = 2048.0f
+            List.fold
+                (fun world i ->
                     let sectionFilePathIndex = if i = 0 then 0 else random.Next () % sectionFilePaths.Length
-                    yield makeSectionFromFile sectionFilePaths.[sectionFilePathIndex] (SectionName + acstring i) (xShift * single i) world]
-            let stagePlayHierarchy = (StagePlayName, World.readGroupHierarchyFromFile StagePlayFilePath world)
-            let groupHierarchies = Map.ofList <| stagePlayHierarchy :: sectionHierarchies
-            let world = snd <| World.addGroups groupHierarchies event.SubscriberAddress world
+                    let sectionFilePath = sectionFilePaths.[sectionFilePathIndex]
+                    let sectionName = SectionName + acstring i
+                    let sectionXShift = SectionXShift * single i
+                    createStageSectionFromFile sectionFilePath sectionName sectionXShift world)
+                world
+                [0 .. SectionCount]
+
+        static let createStagePlay world =
+            snd <| World.readGroupFromFile StagePlayFilePath None Stage world
+
+        static let handleStartPlay _ world =
+            let world = createStageSections world
+            let world = createStagePlay world
             let world = World.playSong 0 1.0f DeadBlazeSong world
             (Cascade, world)
 
@@ -319,10 +328,11 @@ module StageScreenModule =
             (Cascade, world)
 
         static let handleStopPlay event world =
+            let screen = event.Subscriber : Screen
             let sectionNames = [for i in 0 .. SectionCount do yield SectionName + acstring i]
             let groupNames = StagePlayName :: sectionNames
-            let groupAddresses = List.map (fun groupName -> event.SubscriberAddress -<<- ntoa<Group> groupName) groupNames
-            let world = World.removeGroups groupAddresses world
+            let groups = List.map (fun groupName -> Group.proxy <| satoga screen.ScreenAddress groupName) groupNames
+            let world = World.destroyGroups groups world
             (Cascade, world)
 
         override dispatcher.Register screen world =

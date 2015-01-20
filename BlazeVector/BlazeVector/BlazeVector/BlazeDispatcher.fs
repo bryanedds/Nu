@@ -23,56 +23,55 @@ module BlazeVectorModule =
         // this function handles playing the stage
         static let handlePlayStage _ world =
             let world = World.fadeOutSong DefaultTimeToFadeOutSongMs world
-            let world = World.transitionScreen StageAddress world
+            let world = World.transitionScreen Stage world
             (Cascade, world)
     
-        // this function adds the BlazeVector title screen to the world
-        static let addTitleScreen world =
-    
-            // this adds a dissolve screen from the specified file with the given parameters
-            let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleGroupFilePath TitleAddress world
-    
+        // this function creates the BlazeVector title screen to the world
+        static let createTitleScreen world =
+
+            // this creates a dissolve screen from the specified file with the given parameters
+            let world = snd <| World.createDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleGroupFilePath (Some TitleName) world
+
             // this subscribes to the event that is raised when the Title screen is selected for
             // display and interaction, and handles the event by playing the song "Machinery"
-            let world = World.subscribe4 handlePlaySongMachinery SelectTitleEventAddress GameAddress world
-    
+            let world = World.subscribe4 handlePlaySongMachinery SelectTitleEventAddress Game world
+
             // subscribes to the event that is raised when the Title screen's Play button is
             // clicked, and handles the event by transitioning to the Stage screen
-            let world = World.subscribe4 handlePlayStage ClickTitlePlayEventAddress GameAddress world
-    
+            let world = World.subscribe4 handlePlayStage ClickTitlePlayEventAddress Game world
+
             // subscribes to the event that is raised when the Title screen's Credits button is
             // clicked, and handles the event by transitioning to the Credits screen
-            let world = World.subscribe4 (World.handleAsScreenTransition CreditsAddress) ClickTitleCreditsEventAddress GameAddress world
-    
+            let world = World.subscribe4 (World.handleAsScreenTransition Credits) ClickTitleCreditsEventAddress Game world
+
             // subscribes to the event that is raised when the Title screen's Exit button is clicked,
             // and handles the event by exiting the game
-            World.subscribe4 World.handleAsExit ClickTitleExitEventAddress GameAddress world
-    
+            World.subscribe4 World.handleAsExit ClickTitleExitEventAddress Game world
+
         // pretty much the same as above, but for the Credits screen
-        static let addCreditsScreen world =
-            let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name CreditsGroupFilePath CreditsAddress world
-            World.subscribe4 (World.handleAsScreenTransition TitleAddress) ClickCreditsBackEventAddress GameAddress world
-    
+        static let createCreditsScreen world =
+            let world = snd <| World.createDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name CreditsGroupFilePath (Some CreditsName) world
+            World.subscribe4 (World.handleAsScreenTransition Title) ClickCreditsBackEventAddress Game world
+
         // and so on.
-        static let addStageScreen world =
-            let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<StageScreenDispatcher>.Name StageGroupFilePath StageAddress world
-            World.subscribe4 (World.handleAsScreenTransition TitleAddress) ClickStageBackEventAddress GameAddress world
+        static let createStageScreen world =
+            let world = snd <| World.createDissolveScreenFromGroupFile false DissolveData typeof<StageScreenDispatcher>.Name StageGroupFilePath (Some StageName) world
+            World.subscribe4 (World.handleAsScreenTransition Title) ClickStageBackEventAddress Game world
 
         // game registration is where the game's high-level logic is set up!
-        override dispatcher.Register (game, world) =
+        override dispatcher.Register _ world =
 
-            // hint to the renderer that the Gui package should be loaded up front
+            // hint to the renderer that the 'Gui' package should be loaded up front
             let world = World.hintRenderPackageUse GuiPackageName world
-            
-            // add our Gui screens to the world
-            let world = addTitleScreen world
-            let world = addCreditsScreen world
-            let world = addStageScreen world
 
-            // add to the world a splash screen that automatically transitions to the Title screen
-            let (splashScreen, world) = World.addSplashScreen false SplashData typeof<ScreenDispatcher>.Name TitleAddress SplashAddress world
+            // create our screens
+            let world = createTitleScreen world
+            let world = createCreditsScreen world
+            let world = createStageScreen world
+
+            // create a splash screen that automatically transitions to the Title screen
+            let (splashScreen, world) = World.createSplashScreen false SplashData typeof<ScreenDispatcher>.Name Title (Some SplashName) world
 
             // play a neat sound effect, select the splash screen, and we're off!
             let world = World.playSound 1.0f NuSplashSound world
-            let world = snd <| World.selectScreen splashScreen SplashAddress world
-            (game, world)
+            World.selectScreen splashScreen world
