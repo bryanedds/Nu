@@ -448,6 +448,7 @@ module SimulationModule =
             member this.GetPublishingPriority _ _ = GamePublishingPriority
             member this.SimulantAddress = Address.changeType<GameState, SimulantState> this.GameAddress
         end
+        static member proxy address = { GameAddress = address }
 
     /// The screen type that allows transitioning to and from other screens, and also hosts the
     /// currently interactive groups of entities.
@@ -457,6 +458,7 @@ module SimulationModule =
             member this.GetPublishingPriority _ _ = ScreenPublishingPriority
             member this.SimulantAddress = Address.changeType<ScreenState, SimulantState> this.ScreenAddress
         end
+        static member proxy address = { ScreenAddress = address }
 
     /// Forms a logical group of entities.
     and [<StructuralEquality; NoComparison>] Group =
@@ -465,6 +467,7 @@ module SimulationModule =
             member this.GetPublishingPriority _ _ = GroupPublishingPriority
             member this.SimulantAddress = Address.changeType<GroupState, SimulantState> this.GroupAddress
         end
+        static member proxy address = { GroupAddress = address }
 
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, characters, blocks, and things of that sort.
@@ -474,6 +477,7 @@ module SimulationModule =
             member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
             member this.SimulantAddress = Address.changeType<EntityState, SimulantState> this.EntityAddress
         end
+        static member proxy address = { EntityAddress = address }
 
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
     /// specific values.
@@ -717,10 +721,10 @@ module SimulationModule =
 
         (* World Constants *)
         
-        static member internal Game = { GameAddress = Address<GameState>.empty }
-        static member internal DefaultScreen = { ScreenAddress = ntoa<ScreenState> DefaultScreenName }
-        static member internal DefaultGroup = { GroupAddress = World.satoga World.DefaultScreen.ScreenAddress DefaultGroupName }
-        static member internal DefaultEntity = { EntityAddress = World.gatoea World.DefaultGroup.GroupAddress DefaultEntityName }
+        static member internal Game = Game.proxy Address.empty
+        static member internal DefaultScreen = Screen.proxy <| ntoa DefaultScreenName
+        static member internal DefaultGroup = Group.proxy <| World.satoga World.DefaultScreen.ScreenAddress DefaultGroupName
+        static member internal DefaultEntity = Entity.proxy <| World.gatoea World.DefaultGroup.GroupAddress DefaultEntityName
         static member internal AnyEventAddress = ntoa<obj> "*"
         static member internal TickEventAddress = ntoa<unit> "Tick"
         static member internal SelectEventAddress = ntoa<unit> "Select"
@@ -1409,7 +1413,7 @@ module SimulationModule =
         /// Get all the entities contained by a group.
         static member getEntities group world =
             let entityStateMap = World.getEntityStateMap group world
-            Seq.map (fun (kvp : KeyValuePair<string, _>) -> { EntityAddress = World.gatoea group.GroupAddress kvp.Key }) entityStateMap
+            Seq.map (fun (kvp : KeyValuePair<string, _>) -> Entity.proxy <| World.gatoea group.GroupAddress kvp.Key) entityStateMap
 
         // Get all the entities in the world.
         static member getEntities1 world =
@@ -1493,7 +1497,7 @@ module SimulationModule =
                 | None -> entityState
 
             // add entity's state to world
-            let entity = { EntityAddress = World.gatoea group.GroupAddress entityState.Name }
+            let entity = Entity.proxy <| World.gatoea group.GroupAddress entityState.Name
             let world = World.addEntityState entityState entity world
             (entity, world)
 
@@ -1579,7 +1583,7 @@ module SimulationModule =
             Reflection.readPropertiesToTarget entityNode entityState
 
             // add entity state to the world
-            let entity = { EntityAddress = World.gatoea group.GroupAddress entityState.Name }
+            let entity = Entity.proxy <| World.gatoea group.GroupAddress entityState.Name
             let world = World.destroyEntity entity world
             let world = World.addEntityState entityState entity world
             (entity, world)
@@ -1767,7 +1771,7 @@ module SimulationModule =
         static member getGroups screen world =
             let groupStateMap = World.getGroupStateMap screen world
             Seq.map
-                (fun (kvp : KeyValuePair<string, _>) -> { GroupAddress = World.satoga screen.ScreenAddress kvp.Key })
+                (fun (kvp : KeyValuePair<string, _>) -> Group.proxy <| World.satoga screen.ScreenAddress kvp.Key)
                 groupStateMap
 
         // Get all the groups in the world.
@@ -1813,7 +1817,7 @@ module SimulationModule =
             let dispatcher = Map.find dispatcherName world.Components.GroupDispatchers
             let groupState = GroupState.make dispatcher optName
             Reflection.attachFields dispatcher groupState
-            let group = { GroupAddress = World.satoga screen.ScreenAddress groupState.Name }
+            let group = Group.proxy <| World.satoga screen.ScreenAddress groupState.Name
             let world = World.addGroupState groupState group world
             (group, world)
 
@@ -1878,7 +1882,7 @@ module SimulationModule =
             Reflection.readPropertiesToTarget groupNode groupState
             
             // add the group's state to the world
-            let group = { GroupAddress = World.satoga screen.ScreenAddress groupState.Name }
+            let group = Group.proxy <| World.satoga screen.ScreenAddress groupState.Name
             let world = World.destroyGroupImmediate group world
             let world = World.addGroupState groupState group world
 
@@ -2000,7 +2004,7 @@ module SimulationModule =
         /// Get all the world's screens.
         static member getScreens world =
             World.getScreenStateMap world |>
-                Map.fold (fun screensRev screenName _ -> { ScreenAddress = ntoa<ScreenState> screenName } :: screensRev) [] |>
+                Map.fold (fun screensRev screenName _ -> (Screen.proxy <| ntoa screenName) :: screensRev) [] |>
                 List.rev
 
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight
@@ -2027,7 +2031,7 @@ module SimulationModule =
             let dispatcher = Map.find dispatcherName world.Components.ScreenDispatchers
             let screenState = ScreenState.make dispatcher optName
             Reflection.attachFields dispatcher screenState
-            let screen = { ScreenAddress = ntoa<ScreenState> screenState.Name }
+            let screen = Screen.proxy <| ntoa screenState.Name
             let world = World.addScreenState screenState screen world
             (screen, world)
         
@@ -2086,7 +2090,7 @@ module SimulationModule =
             let screenState = ScreenState.make dispatcher None
             Reflection.attachFields screenState.DispatcherNp screenState
             Reflection.readPropertiesToTarget screenNode screenState
-            let screen = { ScreenAddress = ntoa<ScreenState> screenState.Name }
+            let screen = Screen.proxy <| ntoa screenState.Name
             let world = World.destroyScreenImmediate screen world
             let world = World.addScreenState screenState screen world
             let world = snd <| World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName screen world
@@ -2141,14 +2145,14 @@ module SimulationModule =
             let gameState = updater gameState
             World.setGameState gameState world
 
-        static member internal registerGame (game : Game) (world : World) : World =
-            let dispatcher = game.GetDispatcherNp world : GameDispatcher
-            dispatcher.Register game world
-
         static member internal makeGameState dispatcher =
             let gameState = GameState.make dispatcher
             Reflection.attachFields dispatcher gameState
             gameState
+
+        static member internal registerGame (world : World) : World =
+            let dispatcher = World.Game.GetDispatcherNp world : GameDispatcher
+            dispatcher.Register World.Game world
 
         (* World *)
 
