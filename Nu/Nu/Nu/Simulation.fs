@@ -1587,7 +1587,7 @@ module SimulationModule =
 
             // add entity state to the world
             let entity = Entity.proxy <| World.gatoea group.GroupAddress entityState.Name
-            let world = World.destroyEntity entity world
+            let world = World.destroyEntityImmediate entity world
             let world = World.addEntityState entityState entity world
             (entity, world)
 

@@ -19,13 +19,13 @@ module BlazeVectorModule =
         static let handlePlaySongMachinery _ world =
             let world = World.playSong 0 1.0f MachinerySong world
             (Cascade, world)
-    
+
         // this function handles playing the stage
         static let handlePlayStage _ world =
             let world = World.fadeOutSong DefaultTimeToFadeOutSongMs world
             let world = World.transitionScreen Stage world
             (Cascade, world)
-    
+
         // this function creates the BlazeVector title screen to the world
         static let createTitleScreen world =
 
@@ -70,8 +70,8 @@ module BlazeVectorModule =
             let world = createStageScreen world
 
             // create a splash screen that automatically transitions to the Title screen
-            let (splashScreen, world) = World.createSplashScreen false SplashData typeof<ScreenDispatcher>.Name Title (Some SplashName) world
+            let (splash, world) = World.createSplashScreen false SplashData typeof<ScreenDispatcher>.Name Title (Some SplashName) world
 
             // play a neat sound effect, select the splash screen, and we're off!
             let world = World.playSound 1.0f NuSplashSound world
-            World.selectScreen splashScreen world
+            World.selectScreen splash world
