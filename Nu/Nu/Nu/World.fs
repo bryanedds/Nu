@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2014.
+// Copyright (C) Bryan Edds, 2013-2015.
 
 namespace Nu
 open System
@@ -274,7 +274,7 @@ module WorldModule =
                             | Some overlayName ->
                                 let oldFacetNames = entityState.FacetNames
                                 Overlayer.applyOverlayToFacetNames overlayName overlayName entityState oldOverlayer world.State.Overlayer
-                                match World.trySynchronizeFacets oldFacetNames entityState (Some entity.EntityAddress) world with
+                                match World.trySynchronizeFacets oldFacetNames entityState (Some entity) world with
                                 | Right (entityState, world) ->
                                     let facetNames = EntityState.getFacetNamesReflectively entityState
                                     Overlayer.applyOverlay6 overlayName overlayName facetNames entityState oldOverlayer world.State.Overlayer
@@ -325,9 +325,7 @@ module WorldModule =
             // messages), all messages are eliminated. If this poses an issue, the editor will have
             // to instead store past / future worlds only once their current frame has been
             // processed (integrated, advanced, rendered, played, et al).
-            let world = World.clearRenderMessages world
-            let world = World.clearAudioMessages world
-            let world = World.clearPhysicsMessages world
+            let world = World.clearSubsystemsMessages world
             let world = World.addPhysicsMessage RebuildPhysicsHackMessage world
             let entities = World.getEntities group world
             Seq.fold (flip World.propagatePhysics) world entities

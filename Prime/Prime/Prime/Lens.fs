@@ -1,4 +1,7 @@
-﻿namespace FSharpx
+﻿// Prime - A PRIMitivEs code library.
+// Copyright (C) Bryan Edds, 2012-2015.
+
+namespace FSharpx
 open FSharpx
 module Lens =
 

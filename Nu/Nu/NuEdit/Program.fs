@@ -1,5 +1,5 @@
 ﻿// NuEdit - The Nu Game Engine editor.
-// Copyright (C) Bryan Edds, 2013-2014.
+// Copyright (C) Bryan Edds, 2013-2015.
 
 namespace NuEdit
 open NuEditDesign

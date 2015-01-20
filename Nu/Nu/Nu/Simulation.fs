@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2014.
+// Copyright (C) Bryan Edds, 2013-2015.
 
 namespace Nu
 open System
@@ -28,7 +28,7 @@ module InterativityModule =
 [<RequireQualifiedAccess>]
 module Interactivity =
 
-    /// Query that the engine is in game-playing mode.
+    /// Query that the game engine is in game-playing mode.
     let isGamePlaying interactivity =
         match interactivity with
         | GuiOnly -> false
@@ -54,7 +54,7 @@ module TransitionTypeModule =
 [<AutoOpen>]
 module ScreenStateModule =
 
-    /// The state of a screen in regards to its transition.
+    /// The state of a screen's transition.
     type TransitionState =
         | IncomingState
         | OutgoingState
@@ -109,6 +109,7 @@ module SimulationModule =
           TransitionLifetime : int64
           OptDissolveImage : AssetTag option }
 
+        /// Make a screen transition descriptor.
         static member make transitionType =
             { TransitionType = transitionType
               TransitionLifetime = 0L
@@ -145,25 +146,25 @@ module SimulationModule =
         { Simulant : 's
           OldWorld : World }
 
-    /// An event used by Nu's purely functional event system.
+    /// An event used by the game engine's purely-functional event system.
     and [<ReferenceEquality>] Event<'a, 's when 's :> Simulant> =
         { Subscriber : 's
           Publisher : Simulant // TODO: consider making this a list so that Observer can provide all useful addresses
           EventAddress : 'a Address
           Data : 'a }
 
-    /// Describes whether an event has been resolved or should cascade.
+    /// Describes whether an event has been resolved or should cascade to down-stream handlers.
     and EventHandling =
         | Resolve
         | Cascade
 
-    /// Describes a game event subscription.
+    /// Describes an event subscription.
     and Subscription<'a, 's when 's :> Simulant> = Event<'a, 's> -> World -> EventHandling * World
 
-    /// Describes a game event subscription that can be boxed / unboxed.
+    /// Describes an event subscription that can be boxed / unboxed.
     and BoxableSubscription = obj -> World -> EventHandling * World
 
-    /// An entry into the world's subscription map.
+    /// An entry in the subscription map.
     and SubscriptionEntry = Guid * Simulant * obj
 
     /// A map of event subscriptions.
@@ -175,8 +176,8 @@ module SimulationModule =
     /// A map of subscription keys to unsubscription data.
     and UnsubscriptionEntries = Map<Guid, obj Address * Simulant>
 
-    /// A task to be completed at the given time, with time being represented by the world's tick
-    /// field.
+    /// A task to be completed at the given time, with time being accounted for by the world
+    /// state's TickTime value.
     and [<ReferenceEquality>] Task =
         { ScheduledTime : int64
           Operation : World -> World }
@@ -290,10 +291,11 @@ module SimulationModule =
         abstract GetQuickSize : Entity -> World -> Vector2
         default facet.GetQuickSize _ _ = DefaultEntitySize
 
-    /// A marker interface for simulation state types (GameState, ScreenState, GroupState, EntityState).
+    /// A marker interface for the simulation state types (GameState, ScreenState, GroupState,
+    /// and EntityState).
     and SimulantState = interface end
 
-    /// The game type that hosts the various screens used to navigate through a game.
+    /// Hosts the ongoing state of a game. Should rarely be accessed directly by end-users.
     and [<CLIMutable; StructuralEquality; NoComparison>] GameState =
         { Id : Guid
           OptSelectedScreen : Screen option
@@ -304,7 +306,7 @@ module SimulationModule =
 
         interface SimulantState
 
-        /// Make a game.
+        /// Make a game state value.
         static member make dispatcher =
             { Id = Core.makeId ()
               OptSelectedScreen = None
@@ -313,8 +315,7 @@ module SimulationModule =
               DispatcherNp = dispatcher
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
 
-    /// The screen type that allows transitioning to and from other screens, and also hosts the
-    /// currently interactive groups of entities.
+    /// Hosts the ongoing state of a screen. Should rarely be accessed directly by end-users.
     and [<CLIMutable; StructuralEquality; NoComparison>] ScreenState =
         { Id : Guid
           Name : string
@@ -330,7 +331,7 @@ module SimulationModule =
 
         interface SimulantState
 
-        /// Make a screen.
+        /// Make a screen state value.
         static member make dispatcher optName =
             let id = Core.makeId ()
             { Id = id
@@ -345,7 +346,7 @@ module SimulationModule =
               DispatcherNp = dispatcher
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
 
-    /// Forms logical groups of entities.
+    /// Hosts the ongoing state of a group. Should rarely be accessed directly by end-users.
     and [<CLIMutable; StructuralEquality; NoComparison>] GroupState =
         { Id : Guid
           Name : string
@@ -357,7 +358,7 @@ module SimulationModule =
 
         interface SimulantState
 
-        /// Make a group.
+        /// Make a group state value.
         static member make dispatcher optName =
             let id = Core.makeId ()
             { Id = id
@@ -368,8 +369,7 @@ module SimulationModule =
               DispatcherNp = dispatcher
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
 
-    /// The type around which the whole game engine is based! Used in combination with dispatchers
-    /// to implement things like buttons, characters, blocks, and things of that sort.
+    /// Hosts the ongoing state of an entity. Should rarely be accessed directly by end-users.
     and [<CLIMutable; StructuralEquality; NoComparison>] EntityState =
         { Id : Guid
           Name : string
@@ -411,7 +411,7 @@ module SimulationModule =
                     facetFieldDefinitions
             else false
 
-        /// Make an entity.
+        /// Make an entity state value.
         static member make dispatcher optOverlayName optName =
             let id = Core.makeId ()
             { Id = id
@@ -431,19 +431,19 @@ module SimulationModule =
               OptOverlayName = optOverlayName
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
             
-    /// A marker interface for simulation types (Game, Screen, Group, Entity).
+    /// A marker interface for the simulation types (Game, Screen, Group, and Entity).
     /// The only methods that have a place in here are those used internally by Nu's event system.
     and Simulant =
         interface
             /// Get the entity's publishing priority.
             abstract GetPublishingPriority : (Entity -> World -> single) -> World -> single
+            /// Get the simulant's address.
             abstract SimulantAddress : SimulantState Address
         end
 
     /// The game type that hosts the various screens used to navigate through a game.
     and [<StructuralEquality; NoComparison>] Game =
         { GameAddress : GameState Address }
-
         interface Simulant with
             member this.GetPublishingPriority _ _ = GamePublishingPriority
             member this.SimulantAddress = Address.changeType<GameState, SimulantState> this.GameAddress
@@ -453,7 +453,6 @@ module SimulationModule =
     /// currently interactive groups of entities.
     and [<StructuralEquality; NoComparison>] Screen =
         { ScreenAddress : ScreenState Address }
-        
         interface Simulant with
             member this.GetPublishingPriority _ _ = ScreenPublishingPriority
             member this.SimulantAddress = Address.changeType<ScreenState, SimulantState> this.ScreenAddress
@@ -462,7 +461,6 @@ module SimulationModule =
     /// Forms a logical group of entities.
     and [<StructuralEquality; NoComparison>] Group =
         { GroupAddress : GroupState Address }
-        
         interface Simulant with
             member this.GetPublishingPriority _ _ = GroupPublishingPriority
             member this.SimulantAddress = Address.changeType<GroupState, SimulantState> this.GroupAddress
@@ -472,7 +470,6 @@ module SimulationModule =
     /// to implement things like buttons, characters, blocks, and things of that sort.
     and [<StructuralEquality; NoComparison>] Entity =
         { EntityAddress : EntityState Address }
-
         interface Simulant with
             member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
             member this.SimulantAddress = Address.changeType<EntityState, SimulantState> this.EntityAddress
@@ -556,7 +553,7 @@ module SimulationModule =
           GameDispatchers : Map<string, GameDispatcher>
           Facets : Map<string, Facet> }
 
-    /// The world's higher order facilities.
+    /// The world's simple callback facilities.
     and [<ReferenceEquality>] Callbacks =
         { Tasks : Task list
           Subscriptions : SubscriptionEntries
@@ -564,18 +561,19 @@ module SimulationModule =
           CallbackStates : Map<Guid, obj> }
 
     /// The world's state.
+    /// TODO: Provide an indirect accessor.
     and [<ReferenceEquality>] WorldState =
         { TickTime : int64
           Liveness : Liveness
           Interactivity : Interactivity
           OptScreenTransitionDestination : Screen option
-          Camera : Camera
+          Camera : Camera // TODO: move out of World state and give it it's own indirect accessor
           AssetMetadataMap : AssetMetadataMap
           AssetGraphFilePath : string
           Overlayer : Overlayer
           OverlayRouter : OverlayRouter
           OverlayFilePath : string
-          UserState : obj }
+          UserState : obj } // TODO: consider also moving out of world state and providing an indirect accessor
 
     and Game with
         
@@ -667,16 +665,14 @@ module SimulationModule =
         member this.SetXtension xtension world = World.updateEntityState (fun entityState -> { entityState with Xtension = xtension}) this world
         member this.UpdateXtension updater world = this.SetXtension (updater <| this.GetXtension world) world
 
-        member this.SetPositionSnapped snap position world =
-            let snapped = Math.snap2F snap position
-            this.SetPosition snapped world
-
+        /// TODO: document!
         member this.GetTransform world : Transform =
             { Position = this.GetPosition world
               Depth = this.GetDepth world
               Size = this.GetSize world
               Rotation = this.GetRotation world }
 
+        /// TODO: document!
         member this.SetTransform positionSnap rotationSnap transform world =
             let transform = Math.snapTransform positionSnap rotationSnap transform
             world |>
@@ -684,6 +680,11 @@ module SimulationModule =
                 this.SetDepth transform.Depth |>
                 this.SetSize transform.Size |>
                 this.SetRotation transform.Rotation
+
+        /// TODO: document!
+        member this.SetPositionSnapped snap position world =
+            let snapped = Math.snap2F snap position
+            this.SetPosition snapped world
 
         /// Query that an entity dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world =
@@ -701,6 +702,8 @@ module SimulationModule =
           Callbacks : Callbacks
           State : WorldState }
 
+        (* Simulant Address Converters *)
+        
         static member internal atoua address = Address.changeType<'a, SimulantState> address
         static member internal atosa address = Address.changeType<'a, ScreenState> address
         static member internal atoga address = Address.changeType<'a, GroupState> address
@@ -712,6 +715,8 @@ module SimulationModule =
         static member internal gatosa groupAddress = Address.take<GroupState, ScreenState> 1 groupAddress
         static member internal eatosa entityAddress = Address.take<EntityState, ScreenState> 1 entityAddress
 
+        (* World Constants *)
+        
         static member internal Game = { GameAddress = Address<GameState>.empty }
         static member internal DefaultScreen = { ScreenAddress = ntoa<ScreenState> DefaultScreenName }
         static member internal DefaultGroup = { GroupAddress = World.satoga World.DefaultScreen.ScreenAddress DefaultGroupName }
@@ -781,8 +786,8 @@ module SimulationModule =
 
         (* Publishing *)
 
-        // OPTIMIZATION: priority annotated as single to decrease GC pressure.
         static member private sortFstDesc (priority : single, _) (priority2 : single, _) =
+            // OPTIMIZATION: priority parameter is annotated as 'single' to decrease GC pressure.
             if priority > priority2 then -1
             elif priority < priority2 then 1
             else 0
@@ -987,24 +992,21 @@ module SimulationModule =
             let subsystem = updater subsystem world
             World.setSubsystem subsystem name world
 
-        /// Clear the physics messages.
-        static member internal clearPhysicsMessages world =
-            World.updateSubsystem (fun is _ -> is.ClearMessages ()) IntegratorSubsystemName world
+        static member internal updateSubsystems (updater : Subsystem -> World -> Subsystem) world =
+            Map.fold
+                (fun world name subsystem -> let subsystem = updater subsystem world in World.setSubsystem subsystem name world)
+                world
+                world.Subsystems
 
-        /// Clear the rendering messages.
-        static member internal clearRenderMessages world =
-            World.updateSubsystem (fun rs _ -> rs.ClearMessages ()) RendererSubsystemName world
-
-        /// Clear the audio messages.
-        static member internal clearAudioMessages world =
-            World.updateSubsystem (fun aps _ -> aps.ClearMessages ()) AudioPlayerSubsystemName world
+        static member internal clearSubsystemsMessages world =
+            World.updateSubsystems (fun is _ -> is.ClearMessages ()) world
 
         /// Add a physics message to the world.
-        static member addPhysicsMessage message world =
+        static member addPhysicsMessage (message : PhysicsMessage) world =
             World.updateSubsystem (fun is _ -> is.EnqueueMessage message) IntegratorSubsystemName world
 
         /// Add a rendering message to the world.
-        static member addRenderMessage message world =
+        static member addRenderMessage (message : RenderMessage) world =
             World.updateSubsystem (fun rs _ -> rs.EnqueueMessage message) RendererSubsystemName world
 
         /// Add an audio message to the world.
@@ -1012,6 +1014,14 @@ module SimulationModule =
             World.updateSubsystem (fun aps _ -> aps.EnqueueMessage message) AudioPlayerSubsystemName world
 
         (* Callbacks *)
+
+        static member internal clearTasks world =
+            let callbacks = { world.Callbacks with Tasks = [] }
+            { world with Callbacks = callbacks }
+
+        static member internal restoreTasks tasks world =
+            let callbacks = { world.Callbacks with Tasks = world.Callbacks.Tasks @ tasks }
+            { world with Callbacks = callbacks }
 
         /// Add a task to be executed by the engine at the specified task tick.
         static member addTask task world =
@@ -1021,16 +1031,6 @@ module SimulationModule =
         /// Add multiple task to be executed by the engine at the specified task tick.
         static member addTasks tasks world =
             let callbacks = { world.Callbacks with Tasks = tasks @ world.Callbacks.Tasks }
-            { world with Callbacks = callbacks }
-
-        /// Restore tasks to be executed by the engine at the specified task tick.
-        static member internal restoreTasks tasks world =
-            let callbacks = { world.Callbacks with Tasks = world.Callbacks.Tasks @ tasks }
-            { world with Callbacks = callbacks }
-
-        /// Clear all tasks.
-        static member internal clearTasks world =
-            let callbacks = { world.Callbacks with Tasks = [] }
             { world with Callbacks = callbacks }
 
         /// Add callback state to the world.
@@ -1051,7 +1051,8 @@ module SimulationModule =
         (* WorldState *)
 
         /// Get the state of the world.
-        static member getState world = world.State
+        static member getState world =
+            world.State
 
         /// Set the state of the world.
         static member setState state world =
@@ -1081,11 +1082,10 @@ module SimulationModule =
             { Get = World.getState
               Set = World.setState }
 
-        /// Get the tick time.
+        /// Get the world's tick time.
         static member getTickTime world =
             world.State.TickTime
 
-        /// Increment the tick time.
         static member internal incrementTickTime world =
             let state = { world.State with TickTime = world.State.TickTime + 1L }
             World.setState state world
@@ -1094,7 +1094,7 @@ module SimulationModule =
         static member getLiveness world =
             world.State.Liveness
 
-        /// Place the world into a state such that the app will exit at the end of the current frame.
+        /// Place the engine into a state such that the app will exit at the end of the current tick.
         static member exit world =
             let state = { world.State with Liveness = Exiting }
             World.setState state world
@@ -1135,11 +1135,10 @@ module SimulationModule =
             let camera = updater <| World.getCamera world
             World.setCamera camera world
 
-        /// Get the OptScreenTransitionDestination field of the world.
+        /// Get the current destination screen if a screen transition is currently underway.
         static member getOptScreenTransitionDestination world =
             world.State.OptScreenTransitionDestination
 
-        /// Set the OptScreenTransitionDestination field of the world.
         static member internal setOptScreenTransitionDestination destination world =
             let state = { world.State with OptScreenTransitionDestination = destination }
             World.setState state world
@@ -1148,12 +1147,10 @@ module SimulationModule =
         static member getAssetMetadataMap world =
             world.State.AssetMetadataMap
 
-        /// Set the asset metadata map.
         static member internal setAssetMetadataMap assetMetadataMap world =
             let state = { world.State with AssetMetadataMap = assetMetadataMap }
             World.setState state world
 
-        /// Set the Overlayer field of the world.
         static member internal setOverlayer overlayer world =
             let state = { world.State with Overlayer = overlayer }
             World.setState state world
@@ -1221,13 +1218,12 @@ module SimulationModule =
                 Set.empty
                 finalFieldDefinitionNameCounts
 
-        static member private tryRemoveFacet syncing facetName entityState optAddress world =
+        static member private tryRemoveFacet syncing facetName entityState optEntity world =
             match List.tryFind (fun facet -> Reflection.getTypeName facet = facetName) entityState.FacetsNp with
             | Some facet ->
                 let (entityState, world) =
-                    match optAddress with
-                    | Some address ->
-                        let entity = { EntityAddress = address }
+                    match optEntity with
+                    | Some entity ->
                         let world = facet.Unregister entity world
                         (World.getEntityState entity world, world)
                     | None -> (entityState, world)
@@ -1239,15 +1235,13 @@ module SimulationModule =
                     else { entityState with FacetNames = List.remove ((=) (Reflection.getTypeName facet)) entityState.FacetNames }
                 let entityState = { entityState with FacetsNp = List.remove ((=) facet) entityState.FacetsNp }
                 let world =
-                    match optAddress with
-                    | Some address ->
-                        let entity = { EntityAddress = address }
-                        World.setEntityState entityState entity world
+                    match optEntity with
+                    | Some entity -> World.setEntityState entityState entity world
                     | None -> world
                 Right (entityState, world)
             | None -> Left <| "Failure to remove facet '" + facetName + "' from entity."
 
-        static member private tryAddFacet syncing facetName (entityState : EntityState) optAddress world =
+        static member private tryAddFacet syncing facetName (entityState : EntityState) optEntity world =
             match World.tryGetFacet facetName world with
             | Right facet ->
                 if EntityState.isFacetCompatible world.Components.EntityDispatchers facet entityState then
@@ -1256,9 +1250,8 @@ module SimulationModule =
                     let entityState =
                         if syncing then entityState
                         else { entityState with FacetNames = Reflection.getTypeName facet :: entityState.FacetNames }
-                    match optAddress with
-                    | Some address ->
-                        let entity = { EntityAddress = address }
+                    match optEntity with
+                    | Some entity ->
                         let world = facet.Register entity world
                         let entityState = World.getEntityState entity world
                         Right (entityState, world)
@@ -1266,36 +1259,36 @@ module SimulationModule =
                 else Left <| "Facet '" + Reflection.getTypeName facet + "' is incompatible with entity '" + entityState.Name + "'."
             | Left error -> Left error
 
-        static member private tryRemoveFacets syncing facetNamesToRemove entityState optAddress world =
+        static member private tryRemoveFacets syncing facetNamesToRemove entityState optEntity world =
             List.fold
                 (fun eitherEntityWorld facetName ->
                     match eitherEntityWorld with
-                    | Right (entityState, world) -> World.tryRemoveFacet syncing facetName entityState optAddress world
+                    | Right (entityState, world) -> World.tryRemoveFacet syncing facetName entityState optEntity world
                     | Left _ as left -> left)
                 (Right (entityState, world))
                 facetNamesToRemove
 
-        static member private tryAddFacets syncing facetNamesToAdd entityState optAddress world =
+        static member private tryAddFacets syncing facetNamesToAdd entityState optEntity world =
             List.fold
                 (fun eitherEntityStateWorld facetName ->
                     match eitherEntityStateWorld with
-                    | Right (entityState, world) -> World.tryAddFacet syncing facetName entityState optAddress world
+                    | Right (entityState, world) -> World.tryAddFacet syncing facetName entityState optEntity world
                     | Left _ as left -> left)
                 (Right (entityState, world))
                 facetNamesToAdd
 
-        static member private trySetFacetNames oldFacetNames newFacetNames entityState optAddress world =
+        static member private trySetFacetNames oldFacetNames newFacetNames entityState optEntity world =
             let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames newFacetNames
             let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames newFacetNames
-            match World.tryRemoveFacets false facetNamesToRemove entityState optAddress world with
-            | Right (entityState, world) -> World.tryAddFacets false facetNamesToAdd entityState optAddress world
+            match World.tryRemoveFacets false facetNamesToRemove entityState optEntity world with
+            | Right (entityState, world) -> World.tryAddFacets false facetNamesToAdd entityState optEntity world
             | Left _ as left -> left
 
-        static member internal trySynchronizeFacets oldFacetNames entityState optAddress world =
+        static member internal trySynchronizeFacets oldFacetNames entityState optEntity world =
             let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames entityState.FacetNames
             let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames entityState.FacetNames
-            match World.tryRemoveFacets true facetNamesToRemove entityState optAddress world with
-            | Right (entityState, world) -> World.tryAddFacets true facetNamesToAdd entityState optAddress world
+            match World.tryRemoveFacets true facetNamesToRemove entityState optEntity world with
+            | Right (entityState, world) -> World.tryAddFacets true facetNamesToAdd entityState optEntity world
             | Left _ as left -> left
 
         static member private attachIntrinsicFacetsViaNames (entityState : EntityState) world =
@@ -1306,8 +1299,8 @@ module SimulationModule =
 
         (* Entity *)
 
-        static member private optEntityStateFinder (address : EntityState Address) world =
-            match address.Names with
+        static member private optEntityStateFinder entity world =
+            match entity.EntityAddress.Names with
             | [screenName; groupName; entityName] ->
                 let (_, screenStateMap) = world.SimulantStates 
                 match Map.tryFind screenName screenStateMap with
@@ -1316,10 +1309,10 @@ module SimulationModule =
                     | Some (_, entityStateMap) -> Map.tryFind entityName entityStateMap
                     | None -> None
                 | None -> None
-            | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
+            | _ -> failwith <| "Invalid entity address '" + acstring entity.EntityAddress + "'."
 
-        static member private entityStateAdder (entityState : EntityState) (address : EntityState Address) world =
-            match address.Names with
+        static member private entityStateAdder (entityState : EntityState) entity world =
+            match entity.EntityAddress.Names with
             | [screenName; groupName; entityName] ->
                 let (gameState, screenStateMap) = world.SimulantStates 
                 match Map.tryFind screenName screenStateMap with
@@ -1330,12 +1323,12 @@ module SimulationModule =
                         let groupStateMap = Map.add groupName (groupState, entityStateMap) groupStateMap
                         let screenStateMap = Map.add screenName (screenState, groupStateMap) screenStateMap
                         { world with SimulantStates = (gameState, screenStateMap) }
-                    | None -> failwith <| "Cannot add entity '" + acstring address + "' to non-existent group."
-                | None -> failwith <| "Cannot add entity '" + acstring address + "' to non-existent screen."
-            | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
+                    | None -> failwith <| "Cannot add entity '" + acstring entity.EntityAddress + "' to non-existent group."
+                | None -> failwith <| "Cannot add entity '" + acstring entity.EntityAddress + "' to non-existent screen."
+            | _ -> failwith <| "Invalid entity address '" + acstring entity.EntityAddress + "'."
 
-        static member private entityStateRemover (address : EntityState Address) world =
-            match address.Names with
+        static member private entityStateRemover entity world =
+            match entity.EntityAddress.Names with
             | [screenName; groupName; entityName] ->
                 let (gameState, screenStateMap) = world.SimulantStates 
                 match Map.tryFind screenName screenStateMap with
@@ -1348,7 +1341,7 @@ module SimulationModule =
                         { world with SimulantStates = (gameState, screenStateMap) }
                     | None -> world
                 | None -> world
-            | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
+            | _ -> failwith <| "Invalid entity address '" + acstring entity.EntityAddress + "'."
 
         static member private getEntityStateMap group world =
             match group.GroupAddress.Names with
@@ -1363,22 +1356,22 @@ module SimulationModule =
             | _ -> failwith <| "Invalid group address '" + acstring group.GroupAddress + "'."
 
         static member internal getOptEntityState entity world =
-            World.optEntityStateFinder entity.EntityAddress world
+            World.optEntityStateFinder entity world
 
         static member internal getEntityState (entity : Entity) world =
             Option.get ^ World.getOptEntityState entity world
 
         static member internal setEntityStateWithoutEvent entityState entity world =
-            World.entityStateAdder entityState entity.EntityAddress world
+            World.entityStateAdder entityState entity world
 
         static member internal setOptEntityStateWithoutEvent optEntityState entity world =
             match optEntityState with 
-            | Some entityState -> World.entityStateAdder entityState entity.EntityAddress world
-            | None -> World.entityStateRemover entity.EntityAddress world
+            | Some entityState -> World.entityStateAdder entityState entity world
+            | None -> World.entityStateRemover entity world
 
         static member internal setEntityState entityState (entity : Entity) world =
             let oldWorld = world
-            let world = World.entityStateAdder entityState entity.EntityAddress world
+            let world = World.entityStateAdder entityState entity world
             if entityState.PublishChanges then
                 World.publish4
                     { Simulant = entity; OldWorld = oldWorld }
@@ -1392,32 +1385,26 @@ module SimulationModule =
             let entityState = updater entityState
             World.setEntityState entityState entity world
 
-        static member private registerEntity (entity : Entity) world =
-            let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
-            let facets = entity.GetFacetsNp world
-            let world = dispatcher.Register entity world
-            List.fold
-                (fun world (facet : Facet) -> facet.Register entity world)
-                world
-                facets
-        
-        static member private unregisterEntity (entity : Entity) world =
-            let facets = entity.GetFacetsNp world
-            List.fold
-                (fun world (facet : Facet) -> facet.Unregister entity world)
-                world
-                facets
-
-        static member private addEntity entityState entity world =
+        static member private addEntityState entityState entity world =
             if not <| World.containsEntity entity world then
                 let world = World.setEntityStateWithoutEvent entityState entity world
                 let world = World.registerEntity entity world
                 World.publish4 () (World.EntityAddEventAddress ->>- entity.EntityAddress) entity world
             else failwith <| "Adding an entity that the world already contains at address '" + acstring entity.EntityAddress + "'."
 
+        static member private registerEntity (entity : Entity) world =
+            let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
+            let facets = entity.GetFacetsNp world
+            let world = dispatcher.Register entity world
+            List.fold (fun world (facet : Facet) -> facet.Register entity world) world facets
+        
+        static member private unregisterEntity (entity : Entity) world =
+            let facets = entity.GetFacetsNp world
+            List.fold (fun world (facet : Facet) -> facet.Unregister entity world) world facets
+
         /// Query that the world contains an entity at the given address.
         static member containsEntity entity world =
-            Option.isSome <| World.optEntityStateFinder entity.EntityAddress world
+            Option.isSome <| World.optEntityStateFinder entity world
 
         /// Get all the entity addresses in the group at the given address.
         static member getEntities group world =
@@ -1430,35 +1417,35 @@ module SimulationModule =
             Seq.map (fun group -> World.getEntities group world) |>
             Seq.concat
 
-        /// Remove an entity from the world immediately. Can be dangerous if existing in-flight
-        /// subscriptions depend on the entity's existence. Use with caution.
-        static member removeEntityImmediate entity world =
+        /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight
+        /// publishing depends on the entity's existence. Use with caution.
+        static member destroyEntityImmediate entity world =
             let world = World.publish4 () (World.EntityRemovingEventAddress ->>- entity.EntityAddress) entity world
             if World.containsEntity entity world then
                 let world = World.unregisterEntity entity world
                 World.setOptEntityStateWithoutEvent None entity world
             else world
 
-        /// Remove an entity from the world on the next tick. Use this rather than
-        /// removeEntityImmediate unless you need the latter's specific behavior.
-        static member removeEntity entity world =
+        /// Destroy an entity in the world on the next tick. Use this rather than
+        /// destroyEntityImmediate unless you need the latter's specific behavior.
+        static member destroyEntity entity world =
             let task =
                 { ScheduledTime = world.State.TickTime
-                  Operation = fun world -> World.removeEntityImmediate entity world }
+                  Operation = fun world -> World.destroyEntityImmediate entity world }
             World.addTask task world
 
-        /// Remove multiple entities from the world immediately. Can be dangerous if existing
-        /// in-flight subscriptions depend on any of the entities' existences. Use with caution.
-        static member removeEntitiesImmediate entities world =
+        /// Destroy multiple entities in the world immediately. Can be dangerous if existing
+        /// in-flight publishing depends on any of the entities' existences. Use with caution.
+        static member destroyEntitiesImmediate entities world =
             List.foldBack
-                (fun entity world -> World.removeEntityImmediate entity world)
+                (fun entity world -> World.destroyEntityImmediate entity world)
                 (List.ofSeq entities)
                 world
 
-        /// Remove multiple entities from the world. Use this rather than removeEntitiesImmediate
+        /// Destroy multiple entities in the world. Use this rather than destroyEntitiesImmediate
         /// unless you need the latter's specific behavior.
-        static member removeEntities entities world =
-            World.removeEntitiesImmediate entities world
+        static member destroyEntities entities world =
+            World.destroyEntitiesImmediate entities world
 
         /// Create an entity and add it to the world.
         static member createEntity dispatcherName optName group world =
@@ -1507,7 +1494,7 @@ module SimulationModule =
 
             // add entity to world
             let entity = { EntityAddress = World.gatoea group.GroupAddress entityState.Name }
-            let world = World.addEntity entityState entity world
+            let world = World.addEntityState entityState entity world
             (entity, world)
 
         /// Write an entity to an xml writer.
@@ -1594,8 +1581,8 @@ module SimulationModule =
 
             // add entity to the world
             let entity = { EntityAddress = World.gatoea group.GroupAddress entityState.Name }
-            let world = World.removeEntity entity world
-            let world = World.addEntity entityState entity world
+            let world = World.destroyEntity entity world
+            let world = World.addEntityState entityState entity world
             (entity, world)
 
         /// Read multiple entities from an xml node.
@@ -1672,8 +1659,8 @@ module SimulationModule =
 
         (* Group *)
 
-        static member private optGroupStateFinder (address : GroupState Address) world =
-            match address.Names with
+        static member private optGroupStateFinder group world =
+            match group.GroupAddress.Names with
             | [screenName; groupName] ->
                 let (_, screenStateMap) = world.SimulantStates
                 match Map.tryFind screenName screenStateMap with
@@ -1682,10 +1669,10 @@ module SimulationModule =
                     | Some (groupState, _) -> Some groupState
                     | None -> None
                 | None -> None
-            | _ -> failwith <| "Invalid group address '" + acstring address + "'."
+            | _ -> failwith <| "Invalid group address '" + acstring group.GroupAddress + "'."
 
-        static member private groupStateAdder (groupState : GroupState) (address : GroupState Address) world =
-            match address.Names with
+        static member private groupStateAdder (groupState : GroupState) group world =
+            match group.GroupAddress.Names with
             | [screenName; groupName] ->
                 let (gameState, screenStateMap) = world.SimulantStates 
                 match Map.tryFind screenName screenStateMap with
@@ -1699,11 +1686,11 @@ module SimulationModule =
                         let groupStateMap = Map.add groupName (groupState, Map.empty) groupStateMap
                         let screenStateMap = Map.add screenName (screenState, groupStateMap) screenStateMap
                         { world with SimulantStates = (gameState, screenStateMap) }
-                | None -> failwith <| "Cannot add group '" + acstring address + "' to non-existent screen."
-            | _ -> failwith <| "Invalid group address '" + acstring address + "'."
+                | None -> failwith <| "Cannot add group '" + acstring group.GroupAddress + "' to non-existent screen."
+            | _ -> failwith <| "Invalid group address '" + acstring group.GroupAddress + "'."
 
-        static member private groupStateRemover (address : GroupState Address) world =
-            match address.Names with
+        static member private groupStateRemover group world =
+            match group.GroupAddress.Names with
             | [screenName; groupName] ->
                 let (gameState, screenStateMap) = world.SimulantStates 
                 match Map.tryFind screenName screenStateMap with
@@ -1714,10 +1701,10 @@ module SimulationModule =
                             let groupStateMap = Map.remove groupName groupStateMap
                             let screenStateMap = Map.add screenName (screenState, groupStateMap) screenStateMap
                             { world with SimulantStates = (gameState, screenStateMap) }
-                        else failwith <| "Cannot remove group " + acstring address + ", which still contains entities."
+                        else failwith <| "Cannot remove group " + acstring group.GroupAddress + ", which still contains entities."
                     | None -> world
                 | None -> world
-            | _ -> failwith <| "Invalid group address '" + acstring address + "'."
+            | _ -> failwith <| "Invalid group address '" + acstring group.GroupAddress + "'."
 
         static member internal getGroupStateMap screen world =
             match screen.ScreenAddress.Names with
@@ -1729,22 +1716,22 @@ module SimulationModule =
             | _ -> failwith <| "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
         static member internal getOptGroupState group world =
-            World.optGroupStateFinder group.GroupAddress world
+            World.optGroupStateFinder group world
 
         static member internal getGroupState group world : GroupState =
             Option.get ^ World.getOptGroupState group world
 
         static member internal setGroupStateWithoutEvent groupState group world =
-            World.groupStateAdder groupState group.GroupAddress world
+            World.groupStateAdder groupState group world
 
         static member internal setOptGroupStateWithoutEvent optGroupState group world =
             match optGroupState with 
-            | Some groupState -> World.groupStateAdder groupState group.GroupAddress world
-            | None -> World.groupStateRemover group.GroupAddress world
+            | Some groupState -> World.groupStateAdder groupState group world
+            | None -> World.groupStateRemover group world
 
         static member internal setGroupState groupState group world =
             let oldWorld = world
-            let world = World.groupStateAdder groupState group.GroupAddress world
+            let world = World.groupStateAdder groupState group world
             if groupState.PublishChanges then
                 World.publish4
                     { Simulant = group; OldWorld = oldWorld }
@@ -1758,6 +1745,13 @@ module SimulationModule =
             let groupState = updater groupState
             World.setGroupState groupState group world
 
+        static member private addGroupState groupState group world =
+            if not <| World.containsGroup group world then
+                let world = World.setGroupStateWithoutEvent groupState group world
+                let world = World.registerGroup group world
+                World.publish4 () (World.GroupAddEventAddress ->>- group.GroupAddress) group world
+            else failwith <| "Adding a group that the world already contains at address '" + acstring group.GroupAddress + "'."
+
         static member private registerGroup (group : Group) world =
             let dispatcher = group.GetDispatcherNp world : GroupDispatcher
             dispatcher.Register group world
@@ -1766,16 +1760,9 @@ module SimulationModule =
             let dispatcher = group.GetDispatcherNp world : GroupDispatcher
             dispatcher.Unregister group world
 
-        static member private addGroup groupState group world =
-            if not <| World.containsGroup group world then
-                let world = World.setGroupStateWithoutEvent groupState group world
-                let world = World.registerGroup group world
-                World.publish4 () (World.GroupAddEventAddress ->>- group.GroupAddress) group world
-            else failwith <| "Adding a group that the world already contains at address '" + acstring group.GroupAddress + "'."
-
         /// Query that the world contains a group at the given address.
         static member containsGroup group world =
-            Option.isSome <| World.optGroupStateFinder group.GroupAddress world
+            Option.isSome <| World.optGroupStateFinder group world
 
         /// Get all the group addresses in the screen at the given address.
         static member getGroups screen world =
@@ -1790,37 +1777,37 @@ module SimulationModule =
             Seq.map (fun screen -> World.getGroups screen world) |>
             Seq.concat
 
-        /// Remove a group from the world immediately. Can be dangerous if existing in-flight
-        /// subscriptions depend on the group's existence. Use with caution.
-        static member removeGroupImmediate group world =
+        /// Destroy a group in the world immediately. Can be dangerous if existing in-flight
+        /// publishing depends on the group's existence. Use with caution.
+        static member destroyGroupImmediate group world =
             let world = World.publish4 () (World.GroupRemovingEventAddress ->>- group.GroupAddress) group world
             if World.containsGroup group world then
                 let world = World.unregisterGroup group world
                 let entities = World.getEntities group world
-                let world = World.removeEntitiesImmediate entities world
+                let world = World.destroyEntitiesImmediate entities world
                 World.setOptGroupStateWithoutEvent None group world
             else world
 
-        /// Remove a group from the world on the next tick. Use this rather than
-        /// removeEntityImmediate unless you need the latter's specific behavior.
-        static member removeGroup group world =
+        /// Destroy a group in the world on the next tick. Use this rather than
+        /// destroyGroupImmediate unless you need the latter's specific behavior.
+        static member destroyGroup group world =
             let task =
                 { ScheduledTime = world.State.TickTime
-                  Operation = fun world -> World.removeGroupImmediate group world }
+                  Operation = fun world -> World.destroyGroupImmediate group world }
             World.addTask task world
             
-        /// Remove multiple groups from the world immediately. Can be dangerous if existing
-        /// in-flight subscriptions depend on any of the groups' existences. Use with caution.
-        static member removeGroupsImmediate groups world =
+        /// Destroy multiple groups in the world immediately. Can be dangerous if existing
+        /// in-flight publishing depends on any of the groups' existences. Use with caution.
+        static member destroyGroupsImmediate groups world =
             List.foldBack
-                (fun group world -> World.removeGroupImmediate group world)
+                (fun group world -> World.destroyGroupImmediate group world)
                 (List.ofSeq groups)
                 world
 
-        /// Remove multiple groups from the world. Use this rather than removeEntitiesImmediate
+        /// Destroy multiple groups from the world. Use this rather than removeEntitiesImmediate
         /// unless you need the latter's specific behavior.
-        static member removeGroups groups world =
-            World.removeGroupsImmediate groups world
+        static member destroyGroups groups world =
+            World.destroyGroupsImmediate groups world
 
         /// Create a group and add it to the world.
         static member createGroup dispatcherName optName screen world =
@@ -1828,7 +1815,7 @@ module SimulationModule =
             let groupState = GroupState.make dispatcher optName
             Reflection.attachFields dispatcher groupState
             let group = { GroupAddress = World.satoga screen.ScreenAddress groupState.Name }
-            let world = World.addGroup groupState group world
+            let world = World.addGroupState groupState group world
             (group, world)
 
         /// Write a group hierarchy to an xml writer.
@@ -1893,10 +1880,10 @@ module SimulationModule =
             
             // read the group's entities
             let group = { GroupAddress = World.satoga screen.ScreenAddress groupState.Name }
-            let world = World.removeGroupImmediate group world
-            let world = World.addGroup groupState group world
+            let world = World.destroyGroupImmediate group world
+            let world = World.addGroupState groupState group world
             let world = snd <| World.readEntities (groupNode : XmlNode) defaultEntityDispatcherName group world
-
+            
             // return the group, entities, and world
             (group, world)
 
@@ -1924,17 +1911,17 @@ module SimulationModule =
 
         (* Screen *)
 
-        static member private optScreenStateFinder (address : ScreenState Address) world =
-            match address.Names with
+        static member private optScreenStateFinder screen world =
+            match screen.ScreenAddress.Names with
             | [screenName] ->
                 let (_, screenStateMap) = world.SimulantStates 
                 match Map.tryFind screenName screenStateMap with
                 | Some (screenState, _) -> Some screenState
                 | None -> None
-            | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
+            | _ -> failwith <| "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
-        static member private screenStateAdder (screenState : ScreenState) (address : ScreenState Address) world =
-            match address.Names with
+        static member private screenStateAdder (screenState : ScreenState) screen world =
+            match screen.ScreenAddress.Names with
             | [screenName] ->
                 let (gameState, screenStateMap) = world.SimulantStates 
                 match Map.tryFind screenName screenStateMap with
@@ -1944,10 +1931,10 @@ module SimulationModule =
                 | None ->
                     let screenStateMap = Map.add screenName (screenState, Map.empty) screenStateMap
                     { world with SimulantStates = (gameState, screenStateMap) }
-            | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
+            | _ -> failwith <| "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
-        static member private screenStateRemover (address : ScreenState Address) world =
-            match address.Names with
+        static member private screenStateRemover screen world =
+            match screen.ScreenAddress.Names with
             | [screenName] ->
                 let (gameState, screenStateMap) = world.SimulantStates 
                 match Map.tryFind screenName screenStateMap with
@@ -1955,30 +1942,30 @@ module SimulationModule =
                     if Map.isEmpty groupStateMap then
                         let screenStateMap = Map.remove screenName screenStateMap
                         { world with SimulantStates = (gameState, screenStateMap) }
-                    else failwith <| "Cannot remove screen " + acstring address + ", which still contains groups."
+                    else failwith <| "Cannot remove screen " + acstring screen.ScreenAddress + ", which still contains groups."
                 | None -> world
-            | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
+            | _ -> failwith <| "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
         static member internal getScreenStateMap world =
             snd world.SimulantStates
 
         static member internal getOptScreenState screen world =
-            World.optScreenStateFinder screen.ScreenAddress world
+            World.optScreenStateFinder screen world
 
         static member internal getScreenState screen world : ScreenState =
             Option.get ^ World.getOptScreenState screen world
 
         static member internal setScreenStateWithoutEvent screenState screen world =
-            World.screenStateAdder screenState screen.ScreenAddress world
+            World.screenStateAdder screenState screen world
 
         static member internal setOptScreenWithoutEvent optScreenState screen world =
             match optScreenState with 
-            | Some screenState -> World.screenStateAdder screenState screen.ScreenAddress world
-            | None -> World.screenStateRemover screen.ScreenAddress world
+            | Some screenState -> World.screenStateAdder screenState screen world
+            | None -> World.screenStateRemover screen world
 
         static member internal setScreenState screenState screen world =
             let oldWorld = world
-            let world = World.screenStateAdder screenState screen.ScreenAddress world
+            let world = World.screenStateAdder screenState screen world
             if screenState.PublishChanges then
                 World.publish4
                     { Simulant = screen; OldWorld = oldWorld }
@@ -2000,7 +1987,7 @@ module SimulationModule =
             let dispatcher = screen.GetDispatcherNp world : ScreenDispatcher
             dispatcher.Unregister screen world
 
-        static member private addScreen screenState screen world =
+        static member private addScreenState screenState screen world =
             if not <| World.containsScreen screen world then
                 let world = World.setScreenStateWithoutEvent screenState screen world
                 let world = World.registerScreen screen world
@@ -2009,7 +1996,7 @@ module SimulationModule =
 
         /// Query that the world contains a group at the given address.
         static member containsScreen screen world =
-            Option.isSome <| World.optScreenStateFinder screen.ScreenAddress world
+            Option.isSome <| World.optScreenStateFinder screen world
 
         /// Get the addresses of all the world's screens.
         static member getScreens world =
@@ -2017,23 +2004,23 @@ module SimulationModule =
                 Map.fold (fun screensRev screenName _ -> { ScreenAddress = ntoa<ScreenState> screenName } :: screensRev) [] |>
                 List.rev
 
-        /// Remove a screen from the world immediately. Can be dangerous if existing in-flight
-        /// subscriptions depend on the screen's existence. Use with caution.
-        static member removeScreenImmediate screen world =
+        /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight
+        /// publishing depends on the screen's existence. Use with caution.
+        static member destroyScreenImmediate screen world =
             let world = World.publish4 () (World.ScreenRemovingEventAddress ->>- screen.ScreenAddress) screen world
             if World.containsScreen screen world then
                 let world = World.unregisterScreen screen world
                 let groups = World.getGroups screen world
-                let world = World.removeGroupsImmediate groups world
+                let world = World.destroyGroupsImmediate groups world
                 World.setOptScreenWithoutEvent None screen world
             else world
 
-        /// Remove a screen from the world on the next tick. Use this rather than
-        /// removeEntityImmediate unless you need the latter's specific behavior.
-        static member removeScreen screen world =
+        /// Destroy a screen in the world on the next tick. Use this rather than
+        /// destroyScreenImmediate unless you need the latter's specific behavior.
+        static member destroyScreen screen world =
             let task =
                 { ScheduledTime = world.State.TickTime
-                  Operation = fun world -> World.removeScreenImmediate screen world }
+                  Operation = fun world -> World.destroyScreenImmediate screen world }
             World.addTask task world
 
         /// Create a screen and add it to the world.
@@ -2042,7 +2029,7 @@ module SimulationModule =
             let screenState = ScreenState.make dispatcher optName
             Reflection.attachFields dispatcher screenState
             let screen = { ScreenAddress = ntoa<ScreenState> screenState.Name }
-            let world = World.addScreen screenState screen world
+            let world = World.addScreenState screenState screen world
             (screen, world)
         
         /// Create a screen with a dissolving transition, and add it to the world.
@@ -2101,8 +2088,8 @@ module SimulationModule =
             Reflection.attachFields screenState.DispatcherNp screenState
             Reflection.readPropertiesToTarget screenNode screenState
             let screen = { ScreenAddress = ntoa<ScreenState> screenState.Name }
-            let world = World.removeScreenImmediate screen world
-            let world = World.addScreen screenState screen world
+            let world = World.destroyScreenImmediate screen world
+            let world = World.addScreenState screenState screen world
             let world = snd <| World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName screen world
             (screen, world)
 

@@ -1,5 +1,5 @@
 ﻿// Prime - A PRIMitivEs code library.
-// Copyright (C) Bryan Edds, 2012-2014.
+// Copyright (C) Bryan Edds, 2012-2015.
 
 (* IMPORTANT NOTE: change these paths to make this script run with your Prime installation. *)
 #r "C:/Development/FPWorks/Prime/FSharpx.Core/FSharpx.Core.dll"
