@@ -1,4 +1,7 @@
-﻿namespace Nu
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds, 2013-2015.
+
+namespace Nu
 open System
 open System.IO
 open System.ComponentModel
@@ -136,8 +139,7 @@ module AudioModule =
     
         static member private handleHintAudioPackageDisuse (hintPackageDisuse : HintAudioPackageDisuseMessage) audioPlayer =
             let packageName = hintPackageDisuse.PackageName
-            let optAssets = Map.tryFind packageName audioPlayer.AudioAssetMap
-            match optAssets with
+            match Map.tryFind packageName audioPlayer.AudioAssetMap with
             | Some assets ->
                 // all sounds / music must be halted because one of them might be playing during unload
                 // (which is very bad according to the API docs).

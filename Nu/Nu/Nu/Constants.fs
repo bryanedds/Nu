@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2014.
+// Copyright (C) Bryan Edds, 2013-2015.
 
 namespace Nu
 open System
@@ -21,11 +21,11 @@ module Constants =
     let [<Literal>] OverlayFilePath = "Overlay.xml"
     let [<Literal>] DefaultPackageName = "Default"
     let [<Literal>] IncludesAttributeName = "includes"
-    let [<Literal>] DefaultImageValue = "[Image | Default | AssetGraph.xml]"
-    let [<Literal>] DefaultTileMapAssetValue = "[TileMap | Default | AssetGraph.xml]"
-    let [<Literal>] DefaultFontValue = "[Font | Default | AssetGraph.xml]"
-    let [<Literal>] DefaultSoundValue = "[Sound | Default | AssetGraph.xml]"
-    let [<Literal>] DefaultSongValue = "[Song | Default | AssetGraph.xml]"
+    let [<Literal>] DefaultImageValue = "[Default | Image]"
+    let [<Literal>] DefaultTileMapAssetValue = "[Default | TileMap]"
+    let [<Literal>] DefaultFontValue = "[Default | Font]"
+    let [<Literal>] DefaultSoundValue = "[Default | Sound]"
+    let [<Literal>] DefaultSongValue = "[Default | Song]"
     let [<Literal>] PackageNodeName = "Package"
     let [<Literal>] AssetNodeName = "Asset"
     let [<Literal>] AssetsNodeName = "Assets"

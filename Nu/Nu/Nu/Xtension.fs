@@ -1,5 +1,5 @@
-﻿// Prime - A PRIMitivEs code library.
-// Copyright (C) Bryan Edds, 2012-2014.
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds, 2013-2015.
 
 namespace Nu
 open System

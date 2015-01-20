@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2014.
+// Copyright (C) Bryan Edds, 2013-2015.
 
 namespace Nu
 open System
@@ -14,7 +14,6 @@ open Nu
 module NameKeyModule =
 
     /// A name key for optimized look-up in hashing containers.
-    /// TODO: maybe put this in another place?
     type [<CustomEquality; NoComparison>] NameKey =
         { Hash : int // OPTIMIZATION: hash is most frequently accessed, so comes first
           Name : string }
@@ -49,6 +48,8 @@ module AddressModule =
     /// NameKeys field available for faster look-ups.
     /// OPTIMIZATION: At little cost, I've also added the Hash field for fast keying directly
     /// on addresses.
+    /// TODO: There seem to be several low-hanging fruit for simple optimizations on this type's
+    /// operations. Consider pursuing them as soon as time permits.
     type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
         { Names : string list
           NamesRev : string list

@@ -1,5 +1,5 @@
 // Aml - A Modular Language.
-// Copyright (C) Bryan Edds, 2012-2014.
+// Copyright (C) Bryan Edds, 2012-2015.
 
 namespace Aml
 open System
@@ -24,7 +24,7 @@ module Program =
     let echoIntroduction () =
         Console.ForegroundColor <- NormalConsoleColor
         Console.WriteLine "Welcome to Aml (A Modular Language)."
-        Console.WriteLine "Designed and implemented by Bryan Edds, 2012-2014."
+        Console.WriteLine "Designed and implemented by Bryan Edds, 2012-2015."
         Console.WriteLine ()
         Console.WriteLine "NOTE: The best way to learn Aml currently is to study the *.aml files in"
         Console.WriteLine "the Stdlib directory, and to read AmlSpec.rtf in the Documentation"
