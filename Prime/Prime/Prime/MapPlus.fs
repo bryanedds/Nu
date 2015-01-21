@@ -47,10 +47,10 @@ module MapPlus =
             let map = add (fst kvpHead) (snd kvpHead) mapPlus
             addMany kvpTail map
 
-    let remove (versionKey, mapKey) mapPlus =
-        let optMap = Map.tryFind versionKey mapPlus
+    let remove (plusKey, mapKey) mapPlus =
+        let optMap = Map.tryFind plusKey mapPlus
         match optMap with
-        | Some map -> Map.add versionKey (Map.remove mapKey map) mapPlus
+        | Some map -> Map.add plusKey (Map.remove mapKey map) mapPlus
         | None -> Map.empty
 
     let rec removeMany keys map =
@@ -82,5 +82,5 @@ module MapPlus =
     let toValueList map =
         toValueListBy id map
 
-    let singleton (key, value) =
-        add key value empty
+    let singleton (plusKey, mapKey) value =
+        add (plusKey, mapKey) value empty

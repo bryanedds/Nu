@@ -26,11 +26,11 @@ let ofSeqBy by seq =
 /// TODO: Optimize by program fusion.
 let toSeqBy by map =
     let seq = Map.toSeq map
-    Seq.map by seq
+    Seq.map (fun (k, v) -> by k v) seq
 
 /// Get a seq of a map's keys.
 let toKeySeq map =
-    toSeqBy fst map
+    toSeqBy (fun k _ -> k) map
 
 /// Convert a seq of a map's keys by a function.
 let toKeySeqBy by map =
@@ -38,7 +38,7 @@ let toKeySeqBy by map =
 
 /// Get a seq of a map's values.
 let toValueSeq map =
-    toSeqBy snd map
+    toSeqBy (fun _ v -> v) map
 
 /// Convert a seq of a map's values by a function.
 let toValueSeqBy by map =
