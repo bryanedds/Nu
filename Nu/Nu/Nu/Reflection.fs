@@ -268,8 +268,8 @@ module Reflection =
                 | xtensionProperty ->
                     match xtensionProperty.GetValue target with
                     | :? Xtension as xtension ->
-                        let xfields = Map.remove fieldName xtension.XFields
-                        let xtension = { xtension with XFields = xfields }
+                        let xFields = Map.remove fieldName xtension.XFields
+                        let xtension = { xtension with XFields = xFields }
                         xtensionProperty.SetValue (target, xtension)
                     | _ -> failwith <| "Invalid field '" + fieldName + "' for target type '" + targetType.Name + "'."
             | _ -> ()
@@ -368,7 +368,7 @@ module Reflection =
             facetNamesProperty.SetValue (target, facetNames)
 
     /// Attempt to read a target's .NET property from Xml.
-    let tryReadDotNetPropertyToTarget (property : PropertyInfo) (targetNode : XmlNode) (target : 'a) =
+    let tryReadPropertyToTarget (property : PropertyInfo) (targetNode : XmlNode) (target : 'a) =
         match targetNode.SelectSingleNode property.Name with
         | null -> ()
         | fieldNode ->
@@ -379,13 +379,13 @@ module Reflection =
                 property.SetValue (target, fieldValue)
 
     /// Read all of a target's .NET properties from Xml (except OptOverlayName and FacetNames).
-    let readDotNetPropertiesToTarget (targetNode : XmlNode) target =
+    let readPropertiesToTarget (targetNode : XmlNode) target =
         let properties = (target.GetType ()).GetPropertiesWritable ()
         for property in properties do
             if  property.Name <> "FacetNames" &&
                 property.Name <> "OptOverlayName" &&
                 isPropertyPersistentByName property.Name then
-                tryReadDotNetPropertyToTarget property targetNode target
+                tryReadPropertyToTarget property targetNode target
 
     /// Read one of a target's XFields.
     let readXField (targetNode : XmlNode) (target : obj) targetXFields fieldDefinition =
@@ -422,8 +422,8 @@ module Reflection =
             | _ -> debug "Target does not support xtensions due to Xtension field having unexpected type."
 
     /// Read all of a target's properties from Xml (except OptOverlayName and FacetNames).
-    let readPropertiesToTarget targetNode target =
-        readDotNetPropertiesToTarget targetNode target
+    let readValuesToTarget targetNode target =
+        readPropertiesToTarget targetNode target
         readXtensionToTarget targetNode target
 
     /// Write an Xtension to Xml.
@@ -441,10 +441,10 @@ module Reflection =
                 writer.WriteString xFieldValueStr
                 writer.WriteEndElement ()
 
-    /// Write all of a target's properties to Xml.
+    /// Write all of a target's values to Xml.
     /// NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
     /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
-    let writePropertiesFromTarget shouldWriteProperty (writer : XmlWriter) (target : 'a) =
+    let writeValuesFromTarget shouldWriteProperty (writer : XmlWriter) (target : 'a) =
         let targetType = target.GetType ()
         let properties = targetType.GetProperties ()
         for property in properties do
