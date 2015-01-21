@@ -752,7 +752,7 @@ module TileMapDispatcherModule =
                     []
                     tileLayer.Tiles
             else []
-        
+
         let registerTileLayerPhysics (tileMap : Entity) tileMapData tileLayerIndex world tileLayer =
             let bodyPropertyList = getTileLayerBodyPropertyList tileMap tileMapData tileLayerIndex tileLayer world
             World.createBodies tileMap.EntityAddress (tileMap.GetId world) bodyPropertyList world

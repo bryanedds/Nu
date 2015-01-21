@@ -1432,7 +1432,9 @@ module SimulationModule =
             List.fold (fun world (facet : Facet) -> facet.Register entity world) world facets
 
         static member private unregisterEntity (entity : Entity) world =
+            let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
             let facets = entity.GetFacetsNp world
+            let world = dispatcher.Unregister entity world
             List.fold (fun world (facet : Facet) -> facet.Unregister entity world) world facets
 
         /// Query that the world contains an entity.

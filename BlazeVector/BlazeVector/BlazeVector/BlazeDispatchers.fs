@@ -314,7 +314,7 @@ module StageScreenModule =
                     let sectionXShift = SectionXShift * single i
                     createStageSectionFromFile sectionFilePath sectionName sectionXShift world)
                 world
-                [0 .. SectionCount]
+                [0 .. SectionCount - 1]
 
         static let createStagePlay world =
             snd <| World.readGroupFromFile StagePlayFilePath (Some StagePlayName) Stage world
@@ -331,7 +331,7 @@ module StageScreenModule =
 
         static let handleStopPlay event world =
             let screen = event.Subscriber : Screen
-            let sectionNames = [for i in 0 .. SectionCount do yield SectionName + acstring i]
+            let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + acstring i]
             let groupNames = StagePlayName :: sectionNames
             let groups = List.map (fun groupName -> Group.proxy <| satoga screen.ScreenAddress groupName) groupNames
             let world = World.destroyGroups groups world
