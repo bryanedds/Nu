@@ -592,6 +592,12 @@ module SimulationModule =
         member this.SetXtension value world = World.updateGameState (fun gameState -> { gameState with Xtension = value }) world
         member this.UpdateXtension updater world = this.SetXtension (updater <| this.GetXtension world) world
 
+        /// Get an xtension field by name.
+        member this.GetXField name world =
+            let xtension = this.GetXtension world
+            let xField = Map.find name xtension.XFields
+            xField.FieldValue
+
         /// Query that a game dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world =
             Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
@@ -617,7 +623,16 @@ module SimulationModule =
         member this.GetXtension world = (World.getScreenState this world).Xtension
         member this.SetXtension value world = World.updateScreenState (fun screenState -> { screenState with Xtension = value }) this world
         member this.UpdateXtension updater world = this.SetXtension (updater <| this.GetXtension world) world
-        member this.IsIdling world = this.GetTransitionStateNp world = IdlingState
+
+        /// Get an xtension field by name.
+        member this.GetXField name world =
+            let xtension = this.GetXtension world
+            let xField = Map.find name xtension.XFields
+            xField.FieldValue
+
+        /// Query that a screen is in an idling state (not transitioning in nor out).
+        member this.IsIdling world =
+            this.GetTransitionStateNp world = IdlingState
 
         /// Query that a screen dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world =
@@ -629,11 +644,19 @@ module SimulationModule =
         member this.GetName world = (World.getGroupState this world).Name
         member this.GetCreationTimeNp world = (World.getGroupState this world).CreationTimeNp
         member this.GetDispatcherNp world = (World.getGroupState this world).DispatcherNp
-        member this.GetXtension world = (World.getGroupState this world).Xtension
         member this.GetPublishChanges world = (World.getGroupState this world).PublishChanges
         member this.SetPublishChanges value world = World.updateGroupState (fun (groupState : GroupState) -> { groupState with PublishChanges = value }) this world
         member this.GetPersistent world = (World.getGroupState this world).Persistent
         member this.SetPersistent value world = World.updateGroupState (fun groupState -> { groupState with Persistent = value }) this world
+        member this.GetXtension world = (World.getGroupState this world).Xtension
+        member this.SetXtension xtension world = World.updateGroupState (fun groupState -> { groupState with Xtension = xtension}) this world
+        member this.UpdateXtension updater world = this.SetXtension (updater <| this.GetXtension world) world
+
+        /// Get an xtension field by name.
+        member this.GetXField name world =
+            let xtension = this.GetXtension world
+            let xField = Map.find name xtension.XFields
+            xField.FieldValue
 
         /// Query that a group dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world =
@@ -668,6 +691,12 @@ module SimulationModule =
         member this.GetXtension world = (World.getEntityState this world).Xtension
         member this.SetXtension xtension world = World.updateEntityState (fun entityState -> { entityState with Xtension = xtension}) this world
         member this.UpdateXtension updater world = this.SetXtension (updater <| this.GetXtension world) world
+
+        /// Get an xtension field by name.
+        member this.GetXField name world =
+            let xtension = this.GetXtension world
+            let xField = Map.find name xtension.XFields
+            xField.FieldValue
 
         /// TODO: document!
         member this.GetTransform world : Transform =
@@ -1401,7 +1430,7 @@ module SimulationModule =
             let facets = entity.GetFacetsNp world
             let world = dispatcher.Register entity world
             List.fold (fun world (facet : Facet) -> facet.Register entity world) world facets
-        
+
         static member private unregisterEntity (entity : Entity) world =
             let facets = entity.GetFacetsNp world
             List.fold (fun world (facet : Facet) -> facet.Unregister entity world) world facets
@@ -1449,7 +1478,10 @@ module SimulationModule =
         /// Destroy multiple entities in the world. Use this rather than destroyEntitiesImmediate
         /// unless you need the latter's specific behavior.
         static member destroyEntities entities world =
-            World.destroyEntitiesImmediate entities world
+            let task =
+                { ScheduledTime = world.State.TickTime
+                  Operation = fun world -> World.destroyEntitiesImmediate entities world }
+            World.addTask task world
 
         /// Create an entity and add it to the world.
         static member createEntity dispatcherName optName group world =
@@ -1811,10 +1843,13 @@ module SimulationModule =
                 (List.ofSeq groups)
                 world
 
-        /// Destroy multiple groups from the world. Use this rather than removeEntitiesImmediate
+        /// Destroy multiple groups from the world. Use this rather than destroyEntitiesImmediate
         /// unless you need the latter's specific behavior.
         static member destroyGroups groups world =
-            World.destroyGroupsImmediate groups world
+            let task =
+                { ScheduledTime = world.State.TickTime
+                  Operation = fun world -> World.destroyGroupsImmediate groups world }
+            World.addTask task world
 
         /// Create a group and add it to the world.
         static member createGroup dispatcherName optName screen world =
