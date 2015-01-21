@@ -698,6 +698,12 @@ module SimulationModule =
             let xField = Map.find name xtension.XFields
             xField.FieldValue
 
+        /// Dump all the fields of an entity into a map. Useful for debugging such as with the
+        /// Watch feature in Visual Studio.
+        member this.Dump world =
+            let xtension = this.GetXtension world
+            Map.map (fun _ field -> field.FieldValue) xtension.XFields
+
         /// TODO: document!
         member this.GetTransform world : Transform =
             { Position = this.GetPosition world
