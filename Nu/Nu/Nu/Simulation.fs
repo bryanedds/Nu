@@ -702,7 +702,11 @@ module SimulationModule =
         /// Watch feature in Visual Studio.
         member this.Dump world =
             let xtension = this.GetXtension world
-            Map.map (fun _ field -> field.FieldValue) xtension.XFields
+            let xtmap = Map.map (fun _ field -> field.FieldValue) xtension.XFields
+            let state = World.getEntityState this world
+            let dnarray = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
+            let dnmap = Map.ofSeq dnarray
+            xtmap @@ dnmap
 
         /// TODO: document!
         member this.GetTransform world : Transform =
