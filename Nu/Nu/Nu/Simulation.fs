@@ -17,6 +17,13 @@ open Nu
 open Nu.Constants
 
 [<AutoOpen>]
+module DebugModule =
+
+    /// Allows for easier watching of simulant fields in a debugging context.
+    type Watchable (Properties, XFields) =
+        member this.F () = ignore (Properties, XFields)
+
+[<AutoOpen>]
 module InterativityModule =
 
     /// Describes the game engine's current level of 'interactivity'.
@@ -698,15 +705,23 @@ module SimulationModule =
             let xField = Map.find name xtension.XFields
             xField.FieldValue
 
-        /// Dump all the fields of an entity into a map. Useful for debugging such as with the
-        /// Watch feature in Visual Studio.
-        member this.Dump world =
-            let xtension = this.GetXtension world
-            let xtmap = Map.map (fun _ field -> field.FieldValue) xtension.XFields
+        /// Provides a full view of all the fields of an entity. Useful for debugging such as with
+        /// the Watch feature in Visual Studio.
+        member this.View world =
+            let state = World.getEntityState this world
+            let dnarray = Array.map (fun (property : PropertyInfo) -> (property.Name, (property.Name, property.GetValue state))) ((state.GetType ()).GetProperties ())
+            let dnmap = Map.ofSeq dnarray
+            let xtmap = Map.map (fun name field -> (name, field.FieldValue)) state.Xtension.XFields
+            dnmap @@ xtmap
+
+        /// Provides a partitioned view of all the fields of an entity. Useful for debugging such
+        /// as with the Watch feature in Visual Studio.
+        member this.Peek world =
             let state = World.getEntityState this world
             let dnarray = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
             let dnmap = Map.ofSeq dnarray
-            xtmap @@ dnmap
+            let xtmap = Map.map (fun _ field -> field.FieldValue) state.Xtension.XFields
+            Watchable (dnmap, xtmap)
 
         /// TODO: document!
         member this.GetTransform world : Transform =
@@ -852,14 +867,14 @@ module SimulationModule =
                     anyEventAddresses
             else failwith "Event name cannot be empty."
 
-        static member private getSortableSubscriptions getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world : (single * SubscriptionEntry) list =
-            List.foldBack
-                (fun (key, simulant : Simulant, subscription) subscriptions ->
+        static member private getSortableSubscriptions getEntityPublishingPriority (subscriptions : SubscriptionEntry rQueue) world : (single * SubscriptionEntry) list =
+            List.fold
+                (fun subscriptions (key, simulant : Simulant, subscription) ->
                     let priority = simulant.GetPublishingPriority getEntityPublishingPriority world
                     let subscription = (priority, (key, simulant, subscription))
                     subscription :: subscriptions)
-                subscriptions
                 []
+                subscriptions
 
         static member private getSubscriptionsSorted (publishSorter : SubscriptionSorter) eventAddress world =
             let anyEventAddresses = World.getAnyEventAddresses eventAddress
@@ -868,7 +883,7 @@ module SimulationModule =
             let subLists = List.definitize optSubLists
             let subList = List.concat subLists
             publishSorter subList world
-    
+
         static member private boxSubscription<'a, 's when 's :> Simulant> (subscription : Subscription<'a, 's>) =
             let boxableSubscription = fun (event : obj) world ->
                 try subscription (event :?> Event<'a, 's>) world
@@ -1557,7 +1572,7 @@ module SimulationModule =
                 else
                     let facetNames = EntityState.getFacetNamesReflectively entityState
                     Overlayer.shouldPropertySerialize5 facetNames propertyName propertyType entityState world.State.Overlayer
-            Reflection.writePropertiesFromTarget shouldWriteProperty writer entityState
+            Reflection.writeValuesFromTarget shouldWriteProperty writer entityState
 
         /// Write multiple entities to an xml writer.
         static member writeEntities (writer : XmlWriter) entities world =
@@ -1623,8 +1638,8 @@ module SimulationModule =
                 else ()
             | None -> ()
 
-            // read the entity state's properties
-            Reflection.readPropertiesToTarget entityNode entityState
+            // read the entity state's values
+            Reflection.readValuesToTarget entityNode entityState
 
             // apply the name if one is provided
             let entityState = match optName with Some name -> { entityState with Name = name } | None -> entityState
@@ -1877,7 +1892,7 @@ module SimulationModule =
             let groupState = World.getGroupState group world
             let entities = World.getEntities group world
             writer.WriteAttributeString (DispatcherNameAttributeName, Reflection.getTypeName groupState.DispatcherNp)
-            Reflection.writePropertiesFromTarget tautology3 writer groupState
+            Reflection.writeValuesFromTarget tautology3 writer groupState
             writer.WriteStartElement EntitiesNodeName
             World.writeEntities writer entities world
             writer.WriteEndElement ()
@@ -1929,8 +1944,8 @@ module SimulationModule =
             // attach the group state's instrinsic fields from its dispatcher if any
             Reflection.attachFields groupState.DispatcherNp groupState
 
-            // read the group state's properties
-            Reflection.readPropertiesToTarget groupNode groupState
+            // read the group state's value
+            Reflection.readValuesToTarget groupNode groupState
 
             // apply the name if one is provided
             let groupState = match optName with Some name -> { groupState with Name = name } | None -> groupState
@@ -2102,7 +2117,7 @@ module SimulationModule =
             let screenState = World.getScreenState screen world
             let groups = World.getGroups screen world
             writer.WriteAttributeString (DispatcherNameAttributeName, Reflection.getTypeName screenState.DispatcherNp)
-            Reflection.writePropertiesFromTarget tautology3 writer screenState
+            Reflection.writeValuesFromTarget tautology3 writer screenState
             writer.WriteStartElement GroupsNodeName
             World.writeGroups writer groups world
             writer.WriteEndElement ()
@@ -2143,7 +2158,7 @@ module SimulationModule =
                     Map.find dispatcherName world.Components.ScreenDispatchers
             let screenState = ScreenState.make dispatcher None
             Reflection.attachFields screenState.DispatcherNp screenState
-            Reflection.readPropertiesToTarget screenNode screenState
+            Reflection.readValuesToTarget screenNode screenState
             let screenState = match optName with Some name -> { screenState with Name = name } | None -> screenState
             let screen = Screen.proxy <| ntoa screenState.Name
             let world = World.destroyScreenImmediate screen world
@@ -2244,7 +2259,7 @@ module SimulationModule =
             let gameState = World.getGameState world
             let screens = World.getScreens world
             writer.WriteAttributeString (DispatcherNameAttributeName, Reflection.getTypeName gameState.DispatcherNp)
-            Reflection.writePropertiesFromTarget tautology3 writer gameState
+            Reflection.writeValuesFromTarget tautology3 writer gameState
             writer.WriteStartElement ScreensNodeName
             World.writeScreens writer screens world
             writer.WriteEndElement ()
@@ -2276,7 +2291,7 @@ module SimulationModule =
                     let dispatcherName = typeof<GameDispatcher>.Name
                     Map.find dispatcherName world.Components.GameDispatchers
             let gameState = World.makeGameState dispatcher
-            Reflection.readPropertiesToTarget gameNode gameState
+            Reflection.readValuesToTarget gameNode gameState
             let world = World.setGameState gameState world
             let world =
                 snd <| World.readScreens

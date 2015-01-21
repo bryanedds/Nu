@@ -72,8 +72,8 @@ module XtensionTests =
     let [<Fact>] xtensionSerializationViaContainingTypeWorks () =
         let xtd = { Xtension = Xtension.mixed }
         let xtd = xtd?TestField <- 5
-        use stream = writeToStream (Reflection.writePropertiesFromTarget tautology3) xtd
+        use stream = writeToStream (Reflection.writeValuesFromTarget tautology3) xtd
         ignore <| stream.Seek (0L, SeekOrigin.Begin)
         let xtdRead = { xtd with Xtension = xtd.Xtension } // hacky copy
-        readFromStream (fun node target -> Reflection.readPropertiesToTarget node target) stream { Xtension = Xtension.mixed }
+        readFromStream (fun node target -> Reflection.readValuesToTarget node target) stream { Xtension = Xtension.mixed }
         Assert.Equal (xtd, xtdRead)

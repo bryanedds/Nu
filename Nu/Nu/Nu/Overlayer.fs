@@ -107,7 +107,7 @@ module Overlayer =
                 let value = converter.ConvertFromString valueStr
                 property.SetValue (target, value)
 
-    let private applyOverlayToDotNetProperties oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
+    let private applyOverlayToProperties oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         for property in targetProperties do
@@ -159,7 +159,7 @@ module Overlayer =
     /// Only the properties / fields that are overlaid by the old overlay as specified by the old
     /// overlayer will be changed.
     let applyOverlay6 oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
-        applyOverlayToDotNetProperties oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer
+        applyOverlayToProperties oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer
         applyOverlayToXtension oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer
 
     /// Apply an overlay to the given target.

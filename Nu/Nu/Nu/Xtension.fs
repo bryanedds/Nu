@@ -34,7 +34,7 @@ module XtensionModule =
 
     /// Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way
     /// to implement dynamic fields.
-    /// TODO: use DebuggerTypeProxyAttribute to make xfields easier to browse in the debugger.
+    /// TODO: use DebuggerTypeProxyAttribute to make xFields easier to browse in the debugger.
     type [<StructuralEquality; NoComparison>] Xtension =
         { XFields : XFields
           CanDefault : bool
