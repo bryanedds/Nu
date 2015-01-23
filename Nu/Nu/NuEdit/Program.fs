@@ -441,9 +441,8 @@ module Program =
 
     let handleFormCreate atMouse (form : NuEditForm) (worldChangers : WorldChangers) refWorld (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
-            try let entityDispatcherName = form.createEntityComboBox.Text
-                let (entity, world) = World.createEntity entityDispatcherName None EditorGroup world
-                let world = pushPastWorld world world
+            try let world = pushPastWorld world world
+                let (entity, world) = World.createEntity form.createEntityComboBox.Text None EditorGroup world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
                 let entityPosition =
@@ -466,9 +465,8 @@ module Program =
 
     let handleFormDelete (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
-            let selectedObject = form.propertyGrid.SelectedObject
             let world = pushPastWorld world world
-            match selectedObject with
+            match form.propertyGrid.SelectedObject with
             | :? EntityTypeDescriptorSource as entityTds ->
                 let world = World.destroyEntity entityTds.DescribedEntity world
                 form.propertyGrid.SelectedObject <- null
@@ -526,15 +524,14 @@ module Program =
         ignore <| worldChangers.Add (fun world ->
             // TODO: allow disabling of physics as well
             let interactivity = if form.interactivityButton.Checked then GuiAndPhysicsAndGamePlay else GuiAndPhysics
-            let pastWorld = world
-            let world = World.setInteractivity interactivity world
-            if Interactivity.isGamePlaying interactivity then pushPastWorld pastWorld world
+            let (pastWorld, world) = (world, World.setInteractivity interactivity world)
+            if Interactivity.isGamePlaying interactivity
+            then pushPastWorld pastWorld world
             else world)
 
     (*let handleFormCut (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
-            let optEntityTds = form.propertyGrid.SelectedObject
-            match optEntityTds with
+            match form.propertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
                 let world = pushPastWorld world world
@@ -547,8 +544,7 @@ module Program =
         
     let handleFormCopy (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
-            let optEntityTds = form.propertyGrid.SelectedObject
-            match optEntityTds with
+            match form.propertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
                 let entity = World.getEntity entityTds.Address world
