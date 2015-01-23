@@ -189,6 +189,37 @@ module SimulationModule =
         { ScheduledTime : int64
           Operation : World -> World }
 
+    /// Represents the member value of an entity as accessible via reflection.
+    and [<ReferenceEquality>] EntityMemberValue =
+        | EntityXFieldDescriptor of XFieldDescriptor
+        | EntityPropertyInfo of PropertyInfo
+
+        static member containsProperty (property : PropertyInfo) =
+            let properties = typeof<EntityState>.GetProperties property.Name
+            Seq.exists (fun item -> item = property) properties
+
+        static member getValue property (entity : Entity) world =
+            match property with
+            | EntityXFieldDescriptor xfd ->
+                let xtension = entity.GetXtension world
+                (Map.find xfd.FieldName xtension.XFields).FieldValue
+            | EntityPropertyInfo propertyInfo ->
+                let entityState = World.getEntityState entity world
+                propertyInfo.GetValue entityState
+
+        static member setValue property value (entity : Entity) world =
+            match property with
+            | EntityXFieldDescriptor xfd ->
+                entity.UpdateXtension (fun xtension ->
+                    let xField = { FieldValue = value; FieldType = xfd.FieldType }
+                    { xtension with XFields = Map.add xfd.FieldName xField xtension.XFields })
+                    world
+            | EntityPropertyInfo propertyInfo ->
+                let entityState = World.getEntityState entity world
+                let entityState = { entityState with EntityState.Id = entityState.Id } // NOTE: hacky copy
+                propertyInfo.SetValue (entityState, value)
+                World.setEntityState entityState entity world
+
     /// The default dispatcher for games.
     and GameDispatcher () =
 
@@ -342,7 +373,7 @@ module SimulationModule =
         static member make dispatcher optName =
             let id = Core.makeId ()
             { Id = id
-              Name = match optName with None -> acstring id | Some name -> name
+              Name = match optName with Some name -> name | None -> acstring id
               TransitionStateNp = IdlingState
               TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
               Incoming = TransitionDescriptor.make Incoming
@@ -369,7 +400,7 @@ module SimulationModule =
         static member make dispatcher optName =
             let id = Core.makeId ()
             { Id = id
-              Name = match optName with None -> acstring id | Some name -> name
+              Name = match optName with Some name -> name | None -> acstring id
               PublishChanges = true
               Persistent = true
               CreationTimeNp = DateTime.UtcNow
@@ -422,7 +453,7 @@ module SimulationModule =
         static member make dispatcher optOverlayName optName =
             let id = Core.makeId ()
             { Id = id
-              Name = match optName with None -> acstring id | Some name -> name
+              Name = match optName with Some name -> name | None -> acstring id
               Position = Vector2.Zero
               Depth = 0.0f
               Size = DefaultEntitySize
@@ -1276,22 +1307,21 @@ module SimulationModule =
                 Set.empty
                 finalFieldDefinitionNameCounts
 
-        static member private tryRemoveFacet syncing facetName entityState optEntity world =
+        static member private tryRemoveFacet facetName entityState optEntity world =
             match List.tryFind (fun facet -> Reflection.getTypeName facet = facetName) entityState.FacetsNp with
             | Some facet ->
                 let (entityState, world) =
                     match optEntity with
                     | Some entity ->
+                        let world = World.setEntityState entityState entity world
                         let world = facet.Unregister entity world
-                        (World.getEntityState entity world, world)
+                        let entityState = World.getEntityState entity world
+                        (entityState, world)
                     | None -> (entityState, world)
-                let entityState = { entityState with Id = entityState.Id } // hacky copy
-                let fieldNames = World.getEntityFieldDefinitionNamesToDetach entityState facet
-                Reflection.detachFieldsViaNames fieldNames entityState
-                let entityState =
-                    if syncing then entityState
-                    else { entityState with FacetNames = List.remove ((=) (Reflection.getTypeName facet)) entityState.FacetNames }
+                let entityState = { entityState with FacetNames = List.remove ((=) facetName) entityState.FacetNames }
                 let entityState = { entityState with FacetsNp = List.remove ((=) facet) entityState.FacetsNp }
+                let fieldNames = World.getEntityFieldDefinitionNamesToDetach entityState facet
+                Reflection.detachFieldsViaNames fieldNames entityState // hacky copy elided
                 let world =
                     match optEntity with
                     | Some entity -> World.setEntityState entityState entity world
@@ -1299,17 +1329,16 @@ module SimulationModule =
                 Right (entityState, world)
             | None -> Left <| "Failure to remove facet '" + facetName + "' from entity."
 
-        static member private tryAddFacet syncing facetName (entityState : EntityState) optEntity world =
+        static member private tryAddFacet facetName (entityState : EntityState) optEntity world =
             match World.tryGetFacet facetName world with
             | Right facet ->
                 if EntityState.isFacetCompatible world.Components.EntityDispatchers facet entityState then
+                    let entityState = { entityState with FacetNames = facetName :: entityState.FacetNames }
                     let entityState = { entityState with FacetsNp = facet :: entityState.FacetsNp }
-                    Reflection.attachFields facet entityState
-                    let entityState =
-                        if syncing then entityState
-                        else { entityState with FacetNames = Reflection.getTypeName facet :: entityState.FacetNames }
+                    Reflection.attachFields facet entityState // hacky copy elided
                     match optEntity with
                     | Some entity ->
+                        let world = World.setEntityState entityState entity world
                         let world = facet.Register entity world
                         let entityState = World.getEntityState entity world
                         Right (entityState, world)
@@ -1317,36 +1346,36 @@ module SimulationModule =
                 else Left <| "Facet '" + Reflection.getTypeName facet + "' is incompatible with entity '" + entityState.Name + "'."
             | Left error -> Left error
 
-        static member private tryRemoveFacets syncing facetNamesToRemove entityState optEntity world =
+        static member private tryRemoveFacets facetNamesToRemove entityState optEntity world =
             List.fold
                 (fun eitherEntityWorld facetName ->
                     match eitherEntityWorld with
-                    | Right (entityState, world) -> World.tryRemoveFacet syncing facetName entityState optEntity world
+                    | Right (entityState, world) -> World.tryRemoveFacet facetName entityState optEntity world
                     | Left _ as left -> left)
                 (Right (entityState, world))
                 facetNamesToRemove
 
-        static member private tryAddFacets syncing facetNamesToAdd entityState optEntity world =
+        static member private tryAddFacets facetNamesToAdd entityState optEntity world =
             List.fold
                 (fun eitherEntityStateWorld facetName ->
                     match eitherEntityStateWorld with
-                    | Right (entityState, world) -> World.tryAddFacet syncing facetName entityState optEntity world
+                    | Right (entityState, world) -> World.tryAddFacet facetName entityState optEntity world
                     | Left _ as left -> left)
                 (Right (entityState, world))
                 facetNamesToAdd
 
-        static member private trySetFacetNames oldFacetNames newFacetNames entityState optEntity world =
-            let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames newFacetNames
-            let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames newFacetNames
-            match World.tryRemoveFacets false facetNamesToRemove entityState optEntity world with
-            | Right (entityState, world) -> World.tryAddFacets false facetNamesToAdd entityState optEntity world
+        static member private trySetFacetNames4 facetNames entityState optEntity world =
+            let facetNamesToRemove = World.getFacetNamesToRemove entityState.FacetNames facetNames
+            let facetNamesToAdd = World.getFacetNamesToAdd entityState.FacetNames facetNames
+            match World.tryRemoveFacets facetNamesToRemove entityState optEntity world with
+            | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
             | Left _ as left -> left
 
-        static member internal trySynchronizeFacets oldFacetNames entityState optEntity world =
+        static member internal trySynchronizeFacetsToNames oldFacetNames entityState optEntity world =
             let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames entityState.FacetNames
             let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames entityState.FacetNames
-            match World.tryRemoveFacets true facetNamesToRemove entityState optEntity world with
-            | Right (entityState, world) -> World.tryAddFacets true facetNamesToAdd entityState optEntity world
+            match World.tryRemoveFacets facetNamesToRemove entityState optEntity world with
+            | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
             | Left _ as left -> left
 
         static member private attachIntrinsicFacetsViaNames (entityState : EntityState) world =
@@ -1510,6 +1539,26 @@ module SimulationModule =
                   Operation = fun world -> World.destroyEntitiesImmediate entities world }
             World.addTask task world
 
+        static member private transmuteEntity shallDestroy entity optName group world =
+            let entityState = World.getEntityState entity world
+            let world = if shallDestroy then World.destroyEntityImmediate entity world else world
+            let id = Core.makeId ()
+            let name = match optName with Some name -> name | None -> acstring id
+            let entityState = { entityState with Id = id; Name = name }
+            let transmutedEntity = { entity with EntityAddress = World.gatoea group.GroupAddress name }
+            let world = World.addEntityState entityState transmutedEntity world
+            (transmutedEntity, world)
+
+        /// Duplicate an entity.
+        static member duplicateEntity entity optName group world =
+            World.transmuteEntity false entity optName group world
+
+        /// Reassign an entity's identity and / or group. Note that since this destroys the
+        /// reassigned entity immediately, you should not call this inside an event handler that
+        /// involves the reassigned entity itself.
+        static member reassignEntity entity optName group world =
+            World.transmuteEntity true entity optName group world
+
         /// Create an entity and add it to the world.
         static member createEntity dispatcherName optName group world =
             
@@ -1532,9 +1581,9 @@ module SimulationModule =
                 | Some defaultOverlayName ->
                     let overlayer = world.State.Overlayer
                     Overlayer.applyOverlayToFacetNames intrinsicOverlayName defaultOverlayName entityState overlayer overlayer
-                        
+
                     // synchronize the entity's facets (and attach their fields)
-                    match World.trySynchronizeFacets [] entityState None world with
+                    match World.trySynchronizeFacetsToNames [] entityState None world with
                     | Right (entityState, _) -> entityState
                     | Left error -> debug error; entityState
                 | None -> entityState
@@ -1572,7 +1621,7 @@ module SimulationModule =
                 else
                     let facetNames = EntityState.getFacetNamesReflectively entityState
                     Overlayer.shouldPropertySerialize5 facetNames propertyName propertyType entityState world.State.Overlayer
-            Reflection.writeValuesFromTarget shouldWriteProperty writer entityState
+            Reflection.writeMemberValuesFromTarget shouldWriteProperty writer entityState
 
         /// Write multiple entities to an xml writer.
         static member writeEntities (writer : XmlWriter) entities world =
@@ -1620,7 +1669,7 @@ module SimulationModule =
             
             // synchronize the entity state's facets (and attach their fields)
             let entityState =
-                match World.trySynchronizeFacets [] entityState None world with
+                match World.trySynchronizeFacetsToNames [] entityState None world with
                 | Right (entityState, _) -> entityState
                 | Left error -> debug error; entityState
 
@@ -1639,7 +1688,7 @@ module SimulationModule =
             | None -> ()
 
             // read the entity state's values
-            Reflection.readValuesToTarget entityNode entityState
+            Reflection.readMemberValuesToTarget entityNode entityState
 
             // apply the name if one is provided
             let entityState = match optName with Some name -> { entityState with Name = name } | None -> entityState
@@ -1722,6 +1771,30 @@ module SimulationModule =
                     let picked = Math.isPointInBounds3 positionWorld transform.Position transform.Size
                     picked)
                 entitiesSorted
+
+        /// Try to set an entity's overlay name.
+        static member trySetOptOverlayName optOverlayName entity world =
+            let entityState = World.getEntityState entity world
+            let optOldOverlayName = entityState.OptOverlayName
+            let entityState = { entityState with OptOverlayName = optOverlayName }
+            match (optOldOverlayName, optOverlayName) with
+            | (Some oldOverlayName, Some overlayName) ->
+                let (entityState, world) =
+                    Overlayer.applyOverlayToFacetNames oldOverlayName overlayName entity world.State.Overlayer world.State.Overlayer // hacky copy elided
+                    match World.trySynchronizeFacetsToNames entityState.FacetNames entityState (Some entity) world with
+                    | Right (entityState, world) -> (entityState, world)
+                    | Left error -> debug error; (entityState, world)
+                let facetNames = EntityState.getFacetNamesReflectively entityState
+                Overlayer.applyOverlay oldOverlayName overlayName facetNames entityState world.State.Overlayer
+                Right <| World.setEntityState entityState entity world
+            | (_, _) -> Left "Could not set the entity's overlay name."
+
+        /// Try to set the entity's facet names.
+        static member trySetFacetNames facetNames entity world =
+            let entityState = World.getEntityState entity world
+            match World.trySetFacetNames4 facetNames entityState (Some entity) world with
+            | Right (entityState, world) -> Right <| World.setEntityState entityState entity world
+            | Left error -> Left error
 
         (* Group *)
 
@@ -1892,7 +1965,7 @@ module SimulationModule =
             let groupState = World.getGroupState group world
             let entities = World.getEntities group world
             writer.WriteAttributeString (DispatcherNameAttributeName, Reflection.getTypeName groupState.DispatcherNp)
-            Reflection.writeValuesFromTarget tautology3 writer groupState
+            Reflection.writeMemberValuesFromTarget tautology3 writer groupState
             writer.WriteStartElement EntitiesNodeName
             World.writeEntities writer entities world
             writer.WriteEndElement ()
@@ -1945,7 +2018,7 @@ module SimulationModule =
             Reflection.attachFields groupState.DispatcherNp groupState
 
             // read the group state's value
-            Reflection.readValuesToTarget groupNode groupState
+            Reflection.readMemberValuesToTarget groupNode groupState
 
             // apply the name if one is provided
             let groupState = match optName with Some name -> { groupState with Name = name } | None -> groupState
@@ -2117,7 +2190,7 @@ module SimulationModule =
             let screenState = World.getScreenState screen world
             let groups = World.getGroups screen world
             writer.WriteAttributeString (DispatcherNameAttributeName, Reflection.getTypeName screenState.DispatcherNp)
-            Reflection.writeValuesFromTarget tautology3 writer screenState
+            Reflection.writeMemberValuesFromTarget tautology3 writer screenState
             writer.WriteStartElement GroupsNodeName
             World.writeGroups writer groups world
             writer.WriteEndElement ()
@@ -2158,7 +2231,7 @@ module SimulationModule =
                     Map.find dispatcherName world.Components.ScreenDispatchers
             let screenState = ScreenState.make dispatcher None
             Reflection.attachFields screenState.DispatcherNp screenState
-            Reflection.readValuesToTarget screenNode screenState
+            Reflection.readMemberValuesToTarget screenNode screenState
             let screenState = match optName with Some name -> { screenState with Name = name } | None -> screenState
             let screen = Screen.proxy <| ntoa screenState.Name
             let world = World.destroyScreenImmediate screen world
@@ -2259,7 +2332,7 @@ module SimulationModule =
             let gameState = World.getGameState world
             let screens = World.getScreens world
             writer.WriteAttributeString (DispatcherNameAttributeName, Reflection.getTypeName gameState.DispatcherNp)
-            Reflection.writeValuesFromTarget tautology3 writer gameState
+            Reflection.writeMemberValuesFromTarget tautology3 writer gameState
             writer.WriteStartElement ScreensNodeName
             World.writeScreens writer screens world
             writer.WriteEndElement ()
@@ -2291,7 +2364,7 @@ module SimulationModule =
                     let dispatcherName = typeof<GameDispatcher>.Name
                     Map.find dispatcherName world.Components.GameDispatchers
             let gameState = World.makeGameState dispatcher
-            Reflection.readValuesToTarget gameNode gameState
+            Reflection.readMemberValuesToTarget gameNode gameState
             let world = World.setGameState gameState world
             let world =
                 snd <| World.readScreens

@@ -421,8 +421,8 @@ module Reflection =
                 xtensionProperty.SetValue (target, xtension)
             | _ -> debug "Target does not support xtensions due to Xtension field having unexpected type."
 
-    /// Read all of a target's properties from Xml (except OptOverlayName and FacetNames).
-    let readValuesToTarget targetNode target =
+    /// Read all of a target's member values from Xml (except OptOverlayName and FacetNames).
+    let readMemberValuesToTarget targetNode target =
         readPropertiesToTarget targetNode target
         readXtensionToTarget targetNode target
 
@@ -441,10 +441,10 @@ module Reflection =
                 writer.WriteString xFieldValueStr
                 writer.WriteEndElement ()
 
-    /// Write all of a target's values to Xml.
+    /// Write all of a target's member values to Xml.
     /// NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
     /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
-    let writeValuesFromTarget shouldWriteProperty (writer : XmlWriter) (target : 'a) =
+    let writeMemberValuesFromTarget shouldWriteProperty (writer : XmlWriter) (target : 'a) =
         let targetType = target.GetType ()
         let properties = targetType.GetProperties ()
         for property in properties do

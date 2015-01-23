@@ -60,7 +60,6 @@
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
     <Compile Include="Constants.fs" />
-    <Compile Include="Reflection.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="AssetGraph.xml">
