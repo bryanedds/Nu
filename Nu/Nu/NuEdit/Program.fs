@@ -22,7 +22,6 @@ open Nu
 open Nu.Constants
 open Nu.WorldConstants
 open NuEdit.Constants
-(*open NuEdit.Reflection*)
 
 [<AutoOpen>]
 module ProgramModule =
@@ -72,40 +71,20 @@ module Program =
     let clearOtherWorlds world =
         World.updateUserState (fun editorState -> { editorState with PastWorlds = []; FutureWorlds = [] }) world
 
-    type (*[<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>]*) EntityTypeDescriptorSource =
+    type [<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>] EntityTypeDescriptorSource =
         { DescribedEntity : Entity
           Form : NuEditForm
           WorldChangers : WorldChangers
           RefWorld : World ref }
 
-    (*and EntityPropertyDescriptor (property, attributes) =
-        inherit PropertyDescriptor
-            ((match property with
-              | EntityXFieldDescriptor x -> x.FieldName
-              | EntityPropertyInfo p -> p.Name),
-             attributes)
+    and EntityPropertyDescriptor (property, attributes) =
+        inherit PropertyDescriptor (
+            (match property with EntityXFieldDescriptor xfd -> xfd.FieldName | EntityPropertyInfo pi -> pi.Name),
+            attributes)
 
-        let propertyName = match property with EntityXFieldDescriptor x -> x.FieldName | EntityPropertyInfo p -> p.Name
-        let propertyType = match property with EntityXFieldDescriptor x -> x.FieldType | EntityPropertyInfo p -> p.PropertyType
-        let propertyCanWrite = match property with EntityXFieldDescriptor _ -> true | EntityPropertyInfo x -> x.CanWrite
-
-        /// Synchonize an entity after an overlay change.
-        let synchronizeEntity optOldOverlayName address (entity : Entity) world =
-            match (optOldOverlayName, entity.OptOverlayName) with
-            | (Some oldOverlayName, Some overlayName) ->
-                let entity = { entity with Id = entity.Id } // hacky copy for in-place mutation
-                let (entity, world) =
-                    let oldFacetNames = entity.FacetNames
-                    let overlayer = world.State.Overlayer
-                    Overlayer.applyOverlayToFacetNames oldOverlayName overlayName entity overlayer overlayer
-                    match World.trySynchronizeFacets oldFacetNames entity (Some address) world with
-                    | Right (entity, world) -> (entity, world)
-                    | Left error -> debug error; (entity, world)
-                let facetNames = Entity.getFacetNamesReflectively entity
-                Overlayer.applyOverlay oldOverlayName overlayName facetNames entity world.State.Overlayer
-                let world = World.setEntity entity address world
-                (entity, world)
-            | (_, _) -> (entity, world)
+        let propertyName = match property with EntityXFieldDescriptor xfd -> xfd.FieldName | EntityPropertyInfo pi -> pi.Name
+        let propertyType = match property with EntityXFieldDescriptor xfd -> xfd.FieldType | EntityPropertyInfo pi -> pi.PropertyType
+        let propertyCanWrite = match property with EntityXFieldDescriptor _ -> true | EntityPropertyInfo xfd -> xfd.CanWrite
 
         override this.ComponentType = propertyType.DeclaringType
         override this.PropertyType = propertyType
@@ -122,8 +101,7 @@ module Program =
             | null -> null // WHY THE FUCK IS THIS EVER null???
             | source ->
                 let entityTds = source :?> EntityTypeDescriptorSource
-                let entity = World.getEntity entityTds.Address !entityTds.RefWorld
-                getEntityPropertyValue property entity
+                EntityMemberValue.getValue property entityTds.DescribedEntity !entityTds.RefWorld
 
         override this.SetValue (source, value) =
             
@@ -138,40 +116,31 @@ module Program =
                         trace <| "Invalid entity name '" + valueStr + "' (must not be a number)."
                         world
                     else
-                        let (optEntity, world) = World.removeEntityImmediate entityTds.Address world
-                        let entity = Option.get optEntity
-                        let entity = { entity with Name = valueStr }
-                        let groupAddress = (World.getUserState world).GroupAddress
-                        let entityAddress = gatoea groupAddress valueStr
-                        let world = snd <| World.addEntityData entity entityAddress world
+                        let entity = entityTds.DescribedEntity
+                        let (entity, world) = World.reassignEntity entity (Some valueStr) EditorGroup world
                         entityTds.RefWorld := world // must be set for property grid
-                        entityTds.Form.propertyGrid.SelectedObject <- { entityTds with Address = entityAddress }
+                        entityTds.Form.propertyGrid.SelectedObject <- { entityTds with DescribedEntity = entity }
                         world
                 | "FacetNames" ->
                     let facetNames = value :?> string list
-                    let entity = World.getEntity entityTds.Address world
+                    let entity = entityTds.DescribedEntity
                     let world =
-                        match World.trySetFacetNames entity.FacetNames facetNames entity (Some entityTds.Address) world with
-                        | Right (_, world) -> world
+                        match World.trySetFacetNames facetNames entity world with
+                        | Right world -> world
                         | Left error -> trace error; world
                     entityTds.RefWorld := world // must be set for property grid
                     entityTds.Form.propertyGrid.Refresh ()
                     world
                 | _ ->
-                    let entity = World.getEntity entityTds.Address world
-                    let (entity, world) =
+                    let entity = entityTds.DescribedEntity
+                    let world =
                         match propertyName with
                         | "OptOverlayName" ->
-                            let optOldOverlayName = entity.OptOverlayName
-                            let entity = setEntityPropertyValue property value entity
-                            let (entity, world) = synchronizeEntity optOldOverlayName entityTds.Address entity world
-                            let world = World.setEntity entity entityTds.Address world
-                            (entity, world)
-                        | _ ->
-                            let entity = setEntityPropertyValue property value entity
-                            let world = World.setEntity entity entityTds.Address world
-                            (entity, world)
-                    let world = Entity.propagatePhysics entity entityTds.Address world
+                            match World.trySetOptOverlayName (value :?> string option) entity world with
+                            | Right world -> world
+                            | Left error -> trace error; world
+                        | _ -> EntityMemberValue.setValue property value entity world
+                    let world = World.propagatePhysics entityTds.DescribedEntity world
                     entityTds.RefWorld := world // must be set for property grid
                     entityTds.Form.propertyGrid.Refresh ()
                     world)
@@ -182,21 +151,17 @@ module Program =
             ignore <| entityTds.WorldChangers.Add changer
 
         // NOTE: This has to be a static member in order to see the relevant types in the recursive definitions.
-        static member GetPropertyDescriptors (aType : Type) optSource =
+        static member getPropertyDescriptors (aType : Type) optXtension =
             // OPTIMIZATION: seqs used for speed.
             let properties = aType.GetProperties ()
             let typeConverterAttribute = TypeConverterAttribute (typeof<AlgebraicConverter>) // TODO: make this static?
-            let optXtensionProperty = Seq.tryFind (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension>) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.PropertyType <> typeof<Xtension>) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty <| property.GetCustomAttributes<ExtensionAttribute> ()) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Reflection.isPropertyPersistentByName property.Name) properties
             let propertyDescriptors = Seq.map (fun property -> EntityPropertyDescriptor (EntityPropertyInfo property, [|typeConverterAttribute|]) :> PropertyDescriptor) properties
             let propertyDescriptors =
-                match (optXtensionProperty, optSource) with
-                | (None, _) 
-                | (_, None) -> propertyDescriptors
-                | (Some property, Some entity) ->
-                    let xtension = property.GetValue entity :?> Xtension
+                match optXtension with
+                | Some xtension ->
                     let xFieldDescriptors =
                         Seq.fold
                             (fun xFieldDescriptors (xFieldKvp : KeyValuePair<string, XField>) ->
@@ -210,23 +175,22 @@ module Program =
                             []
                             xtension.XFields
                     Seq.append xFieldDescriptors propertyDescriptors
+                | None -> propertyDescriptors
             List.ofSeq propertyDescriptors
 
     and EntityTypeDescriptor (optSource : obj) =
         inherit CustomTypeDescriptor ()
         override this.GetProperties _ =
-            let propertyDescriptors =
+            let optXtension =
                 match optSource with
-                | :? EntityTypeDescriptorSource as source ->
-                    let entity = World.getEntity source.Address !source.RefWorld
-                    EntityPropertyDescriptor.GetPropertyDescriptors typeof<Entity> <| Some entity
-                | _ -> EntityPropertyDescriptor.GetPropertyDescriptors typeof<Entity> None
+                | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity.GetXtension !source.RefWorld)
+                | _ -> None
+            let propertyDescriptors = EntityPropertyDescriptor.getPropertyDescriptors typeof<EntityState> optXtension
             PropertyDescriptorCollection (Array.ofList propertyDescriptors)
 
     and EntityTypeDescriptorProvider () =
         inherit TypeDescriptionProvider ()
-        override this.GetTypeDescriptor (_, optSource) =
-            EntityTypeDescriptor optSource :> ICustomTypeDescriptor*)
+        override this.GetTypeDescriptor (_, optSource) = EntityTypeDescriptor optSource :> ICustomTypeDescriptor
 
     let getSnaps (form : NuEditForm) =
         let positionSnap = snd <| Int32.TryParse form.positionSnapTextBox.Text

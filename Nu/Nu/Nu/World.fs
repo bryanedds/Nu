@@ -266,12 +266,12 @@ module WorldModule =
                     Seq.fold
                         (fun world (entity : Entity) ->
                             let entityState = World.getEntityState entity world
-                            let entityState = { entityState with Id = entityState.Id } // hacky copy
                             match entityState.OptOverlayName with
                             | Some overlayName ->
                                 let oldFacetNames = entityState.FacetNames
+                                let entityState = { entityState with Id = entityState.Id } // hacky copy
                                 Overlayer.applyOverlayToFacetNames overlayName overlayName entityState oldOverlayer world.State.Overlayer
-                                match World.trySynchronizeFacets oldFacetNames entityState (Some entity) world with
+                                match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
                                 | Right (entityState, world) ->
                                     let facetNames = EntityState.getFacetNamesReflectively entityState
                                     Overlayer.applyOverlay6 overlayName overlayName facetNames entityState oldOverlayer world.State.Overlayer
