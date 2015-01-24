@@ -33,18 +33,18 @@ module GameplayDispatcherModule =
     type GameplayDispatcher () =
         inherit ScreenDispatcher ()
 
-        (* Hud Addresses *)
+        (* Hud Proxies *)
 
-        static let getHudAddress address = satoga address HudName
-        static let getHudHaltAddress address = gatoea (getHudAddress address) HudHaltName
-        static let getHudSaveGameAddress address = gatoea (getHudAddress address) HudSaveGameName
-        static let getHudFeelerAddress address = gatoea (getHudAddress address) HudFeelerName
-        static let getHudDetailUpAddress address = gatoea (getHudAddress address) HudDetailUpName
-        static let getHudDetailRightAddress address = gatoea (getHudAddress address) HudDetailRightName
-        static let getHudDetailDownAddress address = gatoea (getHudAddress address) HudDetailDownName
-        static let getHudDetailLeftAddress address = gatoea (getHudAddress address) HudDetailLeftName
+        static let proxyHud gameplay = Group.proxy <| satoga gameplay.ScreenAddress HudName
+        static let proxyHudHalt gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress HudHaltName
+        static let proxyHudSaveGame gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress HudSaveGameName
+        static let proxyHudFeeler gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress HudFeelerName
+        static let proxyHudDetailUp gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress HudDetailUpName
+        static let proxyHudDetailRight gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress HudDetailRightName
+        static let proxyHudDetailDown gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress HudDetailDownName
+        static let proxyHudDetailLeft gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress HudDetailLeftName
 
-        (* Proxies *)
+        (* Scene Proxies *)
 
         static let proxyScene gameplay =
             Group.proxy <| satoga gameplay.ScreenAddress SceneName
@@ -347,10 +347,11 @@ module GameplayDispatcherModule =
             let enemies = World.getEntities enemyAddresses world
             List.foldBack
                 (fun (enemy : Entity) enemyActivities ->
-                    let noCurrentEnemyActionActivity = Seq.notExists (fun (enemy : Entity) -> ActivityState.isActing enemy.ActivityState) enemies
+                    let noCurrentEnemyActionActivity =
+                        Seq.notExists (fun (enemy : Entity) -> ActivityState.isActing <| enemy.GetActivityState world) enemies
                     let enemyActivity =
                         if noCurrentEnemyActionActivity then
-                            match enemy.DesiredTurn with
+                            match enemy.GetDesiredTurn world with
                             | ActionTurn _ -> NoActivity
                             | NavigationTurn navigationDescriptor -> Navigation navigationDescriptor
                             | CancelTurn -> NoActivity
@@ -360,20 +361,22 @@ module GameplayDispatcherModule =
                 (List.ofSeq enemies)
                 []
 
-        static let runCharacterReaction actionDescriptor initiatorAddress address world =
+        static let runCharacterReaction actionDescriptor (initiator : Entity) gameplay world =
             // TODO: implement animations
-            let initiator = World.getEntity initiatorAddress world
             if actionDescriptor.ActionTicks = ActionTicksMax then
-                let reactorAddress = getCharacterAddressInDirection initiator.Position initiator.CharacterAnimationState.Direction address world
-                let reactor = World.getEntity reactorAddress world
-                let reactorDamage = initiator.PowerBuff * 5.0f - reactor.ShieldBuff |> int
-                let reactorHitPoints = reactor.HitPoints - reactorDamage
-                let reactor = Entity.setHitPoints reactorHitPoints reactor
-                let world = World.setEntity reactor reactorAddress world
-                if reactor.HitPoints <= 0 then
-                    if reactor.Name = PlayerName
-                    then World.transitionScreen TitleAddress world
-                    else World.removeEntity reactorAddress world
+                let reactor =
+                    proxyCharacterInDirection
+                        (initiator.GetPosition world)
+                        (initiator.GetCharacterAnimationState world).Direction
+                        gameplay
+                        world
+                let reactorDamage = initiator.GetPowerBuff world * 5.0f - reactor.GetShieldBuff world |> int
+                let reactorHitPoints = reactor.GetHitPoints world - reactorDamage
+                let world = reactor.SetHitPoints reactorHitPoints world
+                if reactor.GetHitPoints world <= 0 then
+                    if reactor.GetName world = PlayerName
+                    then World.transitionScreen Title world
+                    else World.destroyEntity reactor world
                 else world
             else world
 
@@ -525,19 +528,20 @@ module GameplayDispatcherModule =
             else world
 
         static let handlePlayerChange event world =
-            let address = event.SubscriberAddress
-            let playerNavigatingPath = isPlayerNavigatingPath address world
-            let world = World.updateEntity (Entity.setEnabled playerNavigatingPath) (getHudHaltAddress address) world
+            let gameplay = event.Subscriber : Screen
+            let hudHalt = proxyHudHalt gameplay
+            let playerNavigatingPath = isPlayerNavigatingPath gameplay world
+            let world = hudHalt.SetEnabled playerNavigatingPath world
             (Cascade, world)
 
         static let handleTouchFeeler event world =
             let playerInput = TouchInput event.Data
-            let world = tryRunPlayerTurn playerInput event.SubscriberAddress world
+            let world = tryRunPlayerTurn playerInput event.Subscriber world
             (Cascade, world)
 
         static let handleDownDetail direction event world =
             let playerInput = DetailInput direction
-            let world = tryRunPlayerTurn playerInput event.SubscriberAddress world
+            let world = tryRunPlayerTurn playerInput event.Subscriber world
             (Cascade, world)
 
         static let handleNewGame gameplay world =
@@ -621,12 +625,12 @@ module GameplayDispatcherModule =
         override dispatcher.Register gameplay world =
             world |>
                 (observe (EntityChangeEventAddress ->>- (proxyPlayer gameplay).EntityAddress) gameplay |> subscribe handlePlayerChange) |>
-                (observe (TouchEventAddress ->>- getHudFeelerAddress gameplay.ScreenAddress) gameplay |> filter isObserverSelected |> monitor handleTouchFeeler) |>
-                (observe (DownEventAddress ->>- getHudDetailUpAddress gameplay.ScreenAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Upward)) |>
-                (observe (DownEventAddress ->>- getHudDetailRightAddress gameplay.ScreenAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Rightward)) |>
-                (observe (DownEventAddress ->>- getHudDetailDownAddress gameplay.ScreenAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Downward)) |>
-                (observe (DownEventAddress ->>- getHudDetailLeftAddress gameplay.ScreenAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Leftward)) |>
+                (observe (TouchEventAddress ->>- (proxyHudFeeler gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor handleTouchFeeler) |>
+                (observe (DownEventAddress ->>- (proxyHudDetailUp gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Upward)) |>
+                (observe (DownEventAddress ->>- (proxyHudDetailRight gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Rightward)) |>
+                (observe (DownEventAddress ->>- (proxyHudDetailDown gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Downward)) |>
+                (observe (DownEventAddress ->>- (proxyHudDetailLeft gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Leftward)) |>
                 (World.subscribe4 handleSelectTitle (SelectEventAddress ->>- Title.ScreenAddress) gameplay) |>
                 (World.subscribe4 handleSelectGameplay (SelectEventAddress ->>- gameplay.ScreenAddress) gameplay) |>
-                (World.subscribe4 handleClickSaveGame (ClickEventAddress ->>- getHudSaveGameAddress gameplay.ScreenAddress) gameplay) |>
+                (World.subscribe4 handleClickSaveGame (ClickEventAddress ->>- (proxyHudSaveGame gameplay).EntityAddress) gameplay) |>
                 (World.subscribe4 handleDeselectGameplay (DeselectEventAddress ->>- gameplay.ScreenAddress) gameplay)
