@@ -14,58 +14,33 @@ open InfinityRpg.Constants
 module CharacterStateFacetModule =
 
     type Entity with
-    
-        member entity.CharacterType = entity?CharacterType : CharacterType
-        static member getCharacterType (entity : Entity) = entity.CharacterType
-        static member setCharacterType (value : CharacterType) (entity : Entity) = entity?CharacterType <- value
-        
-        member entity.ActivityState = entity?ActivityState : ActivityState
-        static member getActivityState (entity : Entity) = entity.ActivityState
-        static member setActivityState (value : ActivityState) (entity : Entity) = entity?ActivityState <- value
-        
-        member entity.HitPoints = entity?HitPoints : int
-        static member getHitPoints (entity : Entity) = entity.HitPoints
-        static member setHitPoints (value : int) (entity : Entity) = entity?HitPoints <- value
-        
-        member entity.SpecialPoints = entity?SpecialPoints : int
-        static member getSpecialPoints (entity : Entity) = entity.SpecialPoints
-        static member setSpecialPoints (value : int) (entity : Entity) = entity?SpecialPoints <- value
-        
-        member entity.PowerBuff = entity?PowerBuff : single
-        static member getPowerBuff (entity : Entity) = entity.PowerBuff
-        static member setPowerBuff (value : single) (entity : Entity) = entity?PowerBuff <- value
-        
-        member entity.ShieldBuff = entity?ShieldBuff : single
-        static member getShieldBuff (entity : Entity) = entity.ShieldBuff
-        static member setShieldBuff (value : single) (entity : Entity) = entity?ShieldBuff <- value
-        
-        member entity.MindBuff = entity?MindBuff : single
-        static member getMindBuff (entity : Entity) = entity.MindBuff
-        static member setMindBuff (value : single) (entity : Entity) = entity?MindBuff <- value
-        
-        member entity.CounterBuff = entity?CounterBuff : single
-        static member getCounterBuff (entity : Entity) = entity.CounterBuff
-        static member setCounterBuff (value : single) (entity : Entity) = entity?CounterBuff <- value
-        
-        member entity.Statuses = entity?Statuses : StatusType Set
-        static member getStatuses (entity : Entity) = entity.Statuses
-        static member setStatuses (value : StatusType Set) (entity : Entity) = entity?Statuses <- value
-        
-        member entity.EquippedWeapon = entity?EquippedWeapon : WeaponType option
-        static member getEquippedWeapon (entity : Entity) = entity.EquippedWeapon
-        static member setEquippedWeapon (value : WeaponType option) (entity : Entity) = entity?EquippedWeapon <- value
-        
-        member entity.EquippedArmor = entity?EquippedArmor : ArmorType option
-        static member getEquippedArmor (entity : Entity) = entity.EquippedArmor
-        static member setEquippedArmor (value : ArmorType option) (entity : Entity) = entity?EquippedArmor <- value
-        
-        member entity.EquippedRelics = entity?EquippedRelics : RelicType list
-        static member getEquippedRelics (entity : Entity) = entity.EquippedRelics
-        static member setEquippedRelics (value : RelicType list) (entity : Entity) = entity?EquippedRelics <- value
-        
-        member entity.ControlType = entity?ControlType : ControlType
-        static member getControlType (entity : Entity) = entity.ControlType
-        static member setControlType (value : ControlType) (entity : Entity) = entity?ControlType <- value
+
+        member this.GetCharacterType world : CharacterType = (this.GetXtension world)?CharacterType
+        member this.SetCharacterType (value : CharacterType) world = this.UpdateXtension (fun xtension -> xtension?ActivityState <- value) world
+        member this.GetActivityState world : ActivityState = (this.GetXtension world)?ActivityState
+        member this.SetActivityState (value : ActivityState) world = this.UpdateXtension (fun xtension -> xtension?ActivityState <- value) world
+        member this.GetHitPoints world : int = (this.GetXtension world)?HitPoints
+        member this.SetHitPoints (value : int) world = this.UpdateXtension (fun xtension -> xtension?HitPoints <- value) world
+        member this.GetSpecialPoints world : int = (this.GetXtension world)?SpecialPoints
+        member this.SetSpecialPoints (value : int) world = this.UpdateXtension (fun xtension -> xtension?SpecialPoints <- value) world
+        member this.GetPowerBuff world : single = (this.GetXtension world)?PowerBuff
+        member this.SetPowerBuff (value : single) world = this.UpdateXtension (fun xtension -> xtension?PowerBuff <- value) world
+        member this.GetShieldBuff world : single = (this.GetXtension world)?ShieldBuff
+        member this.SetShieldBuff (value : single) world = this.UpdateXtension (fun xtension -> xtension?ShieldBuff <- value) world
+        member this.GetMindBuff world : single = (this.GetXtension world)?MindBuff
+        member this.SetMindBuff (value : single) world = this.UpdateXtension (fun xtension -> xtension?MindBuff <- value) world
+        member this.GetCounterBuff world : single = (this.GetXtension world)?CounterBuff
+        member this.SetCounterBuff (value : single) world = this.UpdateXtension (fun xtension -> xtension?CounterBuff <- value) world
+        member this.GetStatusus world : StatusType Set = (this.GetXtension world)?Statusus
+        member this.SetStatusus (value : StatusType Set) world = this.UpdateXtension (fun xtension -> xtension?Statusus <- value) world
+        member this.GetEquippedWeapon world : WeaponType option = (this.GetXtension world)?EquippedWeapon
+        member this.SetEquippedWeapon (value : WeaponType option) world = this.UpdateXtension (fun xtension -> xtension?EquippedWeapon <- value) world
+        member this.GetEquippedArmor world : ArmorType option = (this.GetXtension world)?EquippedArmor
+        member this.SetEquippedArmor (value : ArmorType option) world = this.UpdateXtension (fun xtension -> xtension?EquippedArmor <- value) world
+        member this.GetEquippedRelics world : RelicType list = (this.GetXtension world)?EquippedRelics
+        member this.SetEquippedRelics (value : RelicType list) world = this.UpdateXtension (fun xtension -> xtension?EquippedRelics <- value) world
+        member this.GetControlType world : ControlType = (this.GetXtension world)?ControlType
+        member this.SetControlType (value : ControlType) world = this.UpdateXtension (fun xtension -> xtension?ControlType <- value) world
 
     type CharacterStateFacet () =
         inherit Facet ()
@@ -102,19 +77,16 @@ module CharacterAnimationFacetModule =
 
     type Entity with
     
-        member entity.CharacterAnimationState = entity?CharacterAnimationState : CharacterAnimationState
-        static member getCharacterAnimationState (entity : Entity) = entity.CharacterAnimationState
-        static member setCharacterAnimationState (value : CharacterAnimationState) (entity : Entity) = entity?CharacterAnimationState <- value
-    
-        member entity.CharacterAnimationSheet = entity?CharacterAnimationSheet : AssetTag
-        static member getCharacterAnimationSheet (entity : Entity) = entity.CharacterAnimationSheet
-        static member setCharacterAnimationSheet (value : AssetTag) (entity : Entity) = entity?CharacterAnimationSheet <- value
+        member this.GetCharacterAnimationState world : CharacterAnimationState = (this.GetXtension world)?CharacterAnimationState
+        member this.SetCharacterAnimationState (value : CharacterAnimationState) world = this.UpdateXtension (fun xtension -> xtension?CharacterAnimationState <- value) world
+        member this.GetCharacterAnimationSheet world : AssetTag = (this.GetXtension world)?CharacterAnimationSheet
+        member this.SetCharacterAnimationSheet (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?CharacterAnimationSheet <- value) world
 
     type CharacterAnimationFacet () =
         inherit Facet ()
         
         static let getOptSpriteInset (entity : Entity) world =
-            let animationState = entity.CharacterAnimationState
+            let animationState = entity.GetCharacterAnimationState world
             let animationFrames =
                 match animationState.AnimationType with
                 | CharacterAnimationFacing -> 2
@@ -168,18 +140,19 @@ module CharacterAnimationFacetModule =
                       StartTime = 0L }
              define? CharacterAnimationSheet PlayerImage]
 
-        override facet.GetRenderDescriptors (entity, world) =
-            if entity.Visible && Camera.inView3 entity.ViewType entity.Position entity.Size world.State.Camera then
+        override facet.GetRenderDescriptors entity world =
+            if  entity.GetVisible world &&
+                Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world) world.State.Camera then
                 [LayerableDescriptor
-                    { Depth = entity.Depth
+                    { Depth = entity.GetDepth world
                       LayeredDescriptor =
                         SpriteDescriptor
-                            { Position = entity.Position
-                              Size = entity.Size
-                              Rotation = entity.Rotation
-                              ViewType = entity.ViewType
+                            { Position = entity.GetPosition world
+                              Size = entity.GetSize world
+                              Rotation = entity.GetRotation world
+                              ViewType = entity.GetViewType world
                               OptInset = getOptSpriteInset entity world
-                              Image = entity.CharacterAnimationSheet
+                              Image = entity.GetCharacterAnimationSheet world
                               Color = Vector4.One }}]
             else []
 
@@ -190,19 +163,18 @@ module CharacterCameraFacetModule =
         inherit Facet ()
 
         static let handleTick event world =
-            let character = World.getEntity event.SubscriberAddress world
-            let address = event.SubscriberAddress
+            let character = event.Subscriber : Entity
             let world =
                 World.updateCamera (fun camera ->
-                    let eyeCenter = character.Position + character.Size * 0.5f
+                    let eyeCenter = character.GetPosition world + character.GetSize world * 0.5f
                     let eyeCenter =
-                        match World.getOptEntityData (gatoea (Address.allButLast address) FieldName) world with
-                        | Some field ->
+                        let field = Entity.proxy <| gatoea (eatoga character.EntityAddress) FieldName
+                        if World.containsEntity field world then
                             let eyeSize = camera.EyeSize
                             let eyeCornerNegative = eyeCenter - eyeSize * 0.5f
                             let eyeCornerPositive = eyeCenter + eyeSize * 0.5f
-                            let fieldCornerNegative = field.Position
-                            let fieldCornerPositive = field.Position + field.Size
+                            let fieldCornerNegative = field.GetPosition world
+                            let fieldCornerPositive = field.GetPosition world + field.GetSize world
                             let fieldBoundsNegative = fieldCornerNegative + eyeSize * 0.5f
                             let fieldBoundsPositive = fieldCornerPositive - eyeSize * 0.5f
                             let eyeCenterX =
@@ -214,11 +186,10 @@ module CharacterCameraFacetModule =
                                 elif eyeCornerPositive.Y > fieldCornerPositive.Y then fieldBoundsPositive.Y
                                 else eyeCenter.Y
                             Vector2 (eyeCenterX, eyeCenterY)
-                        | None -> eyeCenter
+                        else eyeCenter
                     { camera with EyeCenter = eyeCenter })
                     world
             (Cascade, world)
 
-        override facet.Register (entity, address, world) =
-            let world = observe TickEventAddress address |> monitor handleTick <| world
-            (entity, world)
+        override facet.Register entity world =
+            monitor handleTick (observe TickEventAddress entity) world

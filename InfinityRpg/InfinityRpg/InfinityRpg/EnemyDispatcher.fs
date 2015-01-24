@@ -13,9 +13,8 @@ module EnemyDispatcherModule =
 
     type Entity with
 
-        member entity.DesiredTurn = entity?DesiredTurn : Turn
-        static member getDesiredTurn (entity : Entity) = entity.DesiredTurn
-        static member setDesiredTurn (value : Turn) (entity : Entity) = entity?DesiredTurn <- value
+        member this.GetDesiredTurn world : Turn = (this.GetXtension world)?DesiredTurn
+        member this.SetDesiredTurn (value : Turn) world = this.UpdateXtension (fun xtension -> xtension?DesiredTurn <- value) world
 
     type EnemyDispatcher () =
         inherit CharacterDispatcher ()

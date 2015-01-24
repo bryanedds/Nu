@@ -22,18 +22,13 @@ module GameplayDispatcherModule =
         | NoInput
 
     type Screen with
-    
-        member screen.ContentRandState = screen?ContentRandState : uint64
-        static member getContentRandState (screen : Screen) = screen.ContentRandState
-        static member setContentRandState (value : uint64) (screen : Screen) = screen?ContentRandState <- value
-    
-        member screen.OngoingRandState = screen?OngoingRandState : uint64
-        static member getOngoingRandState (screen : Screen) = screen.OngoingRandState
-        static member setOngoingRandState (value : uint64) (screen : Screen) = screen?OngoingRandState <- value
-    
-        member screen.ShallLoadGame = screen?ShallLoadGame : bool
-        static member getShallLoadGame (screen : Screen) = screen.ShallLoadGame
-        static member setShallLoadGame (value : bool) (screen : Screen) = screen?ShallLoadGame <- value
+
+        member this.GetContentRandState world : uint64 = (this.GetXtension world)?ContentRandState
+        member this.SetContentRandState (value : uint64) world = this.UpdateXtension (fun xtension -> xtension?ContentRandState <- value) world
+        member this.GetOngoingRandState world : uint64 = (this.GetXtension world)?OngoingRandState
+        member this.SetOngoingRandState (value : uint64) world = this.UpdateXtension (fun xtension -> xtension?OngoingRandState <- value) world
+        member this.GetShallLoadGame world : bool = (this.GetXtension world)?ShallLoadGame
+        member this.SetShallLoadGame (value : bool) world = this.UpdateXtension (fun xtension -> xtension?ShallLoadGame <- value) world
 
     type GameplayDispatcher () =
         inherit ScreenDispatcher ()
@@ -49,13 +44,13 @@ module GameplayDispatcherModule =
         static let getHudDetailDownAddress address = gatoea (getHudAddress address) HudDetailDownName
         static let getHudDetailLeftAddress address = gatoea (getHudAddress address) HudDetailLeftName
 
-        (* Scene Addresses *)
+        (* Proxies *)
 
-        static let getSceneAddress address =
-            satoga address SceneName
+        static let proxyScene gameplay =
+            Group.proxy <| satoga gameplay.ScreenAddress SceneName
         
-        static let getFieldAddress address =
-            gatoea (getSceneAddress address) FieldName
+        static let proxyField gameplay =
+            Entity.proxy <| gatoea (getScene gameplay).GroupAddress FieldName
         
         static let getCharacterAddresses address world =
             let entityAddresses = World.getEntityAddressesInGroup (getSceneAddress address) world
@@ -84,27 +79,27 @@ module GameplayDispatcherModule =
 
         (* End of Addresses *)
 
-        static let makeField rand world =
+        static let createField scene rand world =
             let pathEdgesM = [(Vector2i (1, 10), Vector2i (20, 10))]
             let (fieldMap, rand) = FieldMap.make FieldTileSheetImage (Vector2i 22) pathEdgesM rand
-            let field = World.makeEntity typeof<FieldDispatcher>.Name (Some FieldName) world
-            let field = Entity.setFieldMapNp fieldMap field
-            let field = Entity.setSize (Entity.getQuickSize field world) field
-            let field = Entity.setPersistent false field
-            (field, rand)
+            let (field, world) = World.createEntity typeof<FieldDispatcher>.Name (Some FieldName) scene world
+            let world = field.SetFieldMapNp fieldMap world
+            let world = field.SetSize (World.getQuickSize field world) world
+            let world = field.SetPersistent false world
+            (field, rand, world)
 
-        static let makeEnemies rand world =
+        static let createEnemies scene rand world =
             let (randResult, rand) = Rand.nextIntUnder 5 rand
             let enemyCount = randResult + 1
             List.fold
-                (fun (enemies, rand) i ->
+                (fun (enemies, rand, world) i ->
                     let enemyPosition = single i * TileSize * 2.0f
-                    let enemy = World.makeEntity typeof<EnemyDispatcher>.Name None world
-                    let enemy = Entity.setDepth CharacterDepth enemy
-                    let enemy = Entity.setPosition enemyPosition enemy
-                    let enemy = Entity.setCharacterAnimationSheet GoopyImage enemy
-                    ((enemy.Name, enemy) :: enemies, rand))
-                ([], rand)
+                    let (enemy, world) = World.createEntity typeof<EnemyDispatcher>.Name None scene world
+                    let world = enemy.SetDepth CharacterDepth world
+                    let world = enemy.SetPosition enemyPosition world
+                    let world = enemy.SetCharacterAnimationSheet GoopyImage world
+                    (enemy :: enemies, rand, world))
+                ([], rand, world)
                 [0 .. enemyCount - 1]
 
         static let walk3 positive current destination =
@@ -549,10 +544,10 @@ module GameplayDispatcherModule =
             let world = tryRunPlayerTurn playerInput event.SubscriberAddress world
             (Cascade, world)
 
-        static let handleNewGame gameplay address world =
+        static let handleNewGame gameplay world =
 
-            // get common addresses
-            let sceneAddress = getSceneAddress address
+            // get common proxies
+            let scene = proxyScene gameplay
 
             // generate non-deterministic random numbers
             let sysrandom = Random ()
@@ -560,81 +555,66 @@ module GameplayDispatcherModule =
             let ongoingSeedState = uint64 <| sysrandom.Next ()
 
             // initialize gameplay screen
-            let gameplay = Screen.setContentRandState contentSeedState gameplay
-            let gameplay = Screen.setOngoingRandState ongoingSeedState gameplay
-            let world = World.setScreen gameplay address world
+            let world = gameplay.SetContentRandState contentSeedState world
+            let world = gameplay.SetOngoingRandState ongoingSeedState world
+
+            // make scene group
+            let (scene, world) = World.createGroup typeof<GroupDispatcher>.Name (Some SceneName) gameplay world
 
             // make rand from gameplay
-            let rand = Rand.make gameplay.ContentRandState
+            let rand = Rand.make <| gameplay.GetContentRandState world
 
             // make field
-            let (field, rand) = makeField rand world
+            let (field, rand, world) = createField scene rand world
 
             // make player
-            let player = World.makeEntity typeof<PlayerDispatcher>.Name (Some PlayerName) world
-            let player = Entity.setDepth CharacterDepth player
+            let (player, world) = World.createEntity typeof<PlayerDispatcher>.Name (Some PlayerName) scene world
+            let world = player.SetDepth CharacterDepth world
 
             // make enemies
-            let (enemies, _) = makeEnemies rand world
+            __c <| createEnemies scene rand world
 
-            // make scene hierarchy
-            let entityMap = Map.ofList <| [(field.Name, field); (player.Name, player)] @ enemies
-            let scene = World.makeGroup typeof<GroupDispatcher>.Name (Some SceneName) world
-            let sceneHierarchy = (scene, entityMap)
+        static let handleLoadGame (gameplay : Screen) world =
 
-            // add scene hierarchy to world
-            snd <| World.addGroup sceneHierarchy sceneAddress world
-
-        static let handleLoadGame gameplay address world =
-
-            // get common addresses
-            let sceneAddress = getSceneAddress address
+            // get common proxies
+            let scene = proxyScene gameplay
 
             // get and initialize gameplay screen from read
-            let gameplayHierarchy = World.readScreenHierarchyFromFile SaveFilePath world
-            let (gameplayFromRead, groupHierarchies) = gameplayHierarchy
-            let gameplay = Screen.setContentRandState gameplayFromRead.ContentRandState gameplay
-            let gameplay = Screen.setOngoingRandState gameplayFromRead.OngoingRandState gameplay
-            let world = World.setScreen gameplay address world
+            let contentRandState = gameplay.GetContentRandState world
+            let ongoingRandState = gameplay.GetOngoingRandState world
+            let world = snd <| World.readScreenFromFile SaveFilePath (Some GameplayName) world
+            let world = gameplay.SetContentRandState contentRandState world
+            let world = gameplay.SetOngoingRandState ongoingRandState world
 
             // make rand from gameplay
-            let rand = Rand.make gameplay.ContentRandState
+            let rand = Rand.make <| gameplay.GetContentRandState world
 
-            // make field frome rand (field is not serialized, but generated deterministically with ContentRandState)
-            let field = fst <| makeField rand world
-
-            // find scene hierarchy and add field to it
-            let sceneHierarchy = Map.find SceneName groupHierarchies
-            let (scene, entities) = sceneHierarchy
-            let entityMap = Map.add field.Name field entities
-            let sceneHierarchy = (scene, entityMap)
-
-            // add scene hierarchy to world
-            snd <| World.addGroup sceneHierarchy sceneAddress world
+            // make field from rand (field is not serialized, but generated deterministically with ContentRandState)
+            __c <| createField scene rand world
 
         static let handleSelectTitle _ world =
-            let world = World.playSong DefaultTimeToFadeOutSongMs 1.0f { PackageName = GuiPackageName; AssetName = "ButterflyGirl" } world
+            let world = World.playSong DefaultTimeToFadeOutSongMs 1.0f ButterflyGirlSong world
             (Cascade, world)
 
-        static let handleSelectGameplay (event : Event<_, Screen>) world =
+        static let handleSelectGameplay event  world =
+            let gameplay = event.Subscriber : Screen
             let world =
-                let gameplay = World.getScreen event.SubscriberAddress world
                 // NOTE: doing a File.Exists then loading the file is dangerous since the file can
                 // always be deleted / moved between the two operations!
-                if gameplay.ShallLoadGame && File.Exists SaveFilePath
-                then handleLoadGame gameplay event.SubscriberAddress world
-                else handleNewGame gameplay event.SubscriberAddress world
-            let world = World.playSong DefaultTimeToFadeOutSongMs 1.0f { PackageName = GameplayPackageName; AssetName = "Hero'sVengeance" } world
+                if gameplay.GetShallLoadGame world && File.Exists SaveFilePath
+                then handleLoadGame gameplay world
+                else handleNewGame gameplay world
+            let world = World.playSong DefaultTimeToFadeOutSongMs 1.0f HerosVengeanceSong world
             (Cascade, world)
 
         static let handleClickSaveGame event world =
-            let gameplayHierarchy = World.getScreenHierarchy event.SubscriberAddress world
-            World.writeScreenHierarchyToFile SaveFilePath gameplayHierarchy world
+            let gameplay = event.Subscriber
+            World.writeScreenToFile SaveFilePath gameplay world
             (Cascade, world)
 
         static let handleDeselectGameplay event world =
-            let sceneAddress = getSceneAddress event.SubscriberAddress
-            let world = World.removeGroup sceneAddress world
+            let scene = proxyScene event.Subscriber
+            let world = World.destroyGroup scene world
             (Cascade, world)
 
         static member FieldDefinitions =
@@ -642,17 +622,15 @@ module GameplayDispatcherModule =
              define? OngoingRandState Rand.DefaultSeedState
              define? ShallLoadGame false]
 
-        override dispatcher.Register (gameplay, address, world) =
-            let world =
-                world |>
-                    (observe (EntityChangeEventAddress ->>- getPlayerAddress address) address |> subscribe handlePlayerChange) |>
-                    (observe (TouchEventAddress ->>- getHudFeelerAddress address) address |> filter isSelected |> monitor handleTouchFeeler) |>
-                    (observe (DownEventAddress ->>- getHudDetailUpAddress address) address |> filter isSelected |> monitor (handleDownDetail Upward)) |>
-                    (observe (DownEventAddress ->>- getHudDetailRightAddress address) address |> filter isSelected |> monitor (handleDownDetail Rightward)) |>
-                    (observe (DownEventAddress ->>- getHudDetailDownAddress address) address |> filter isSelected |> monitor (handleDownDetail Downward)) |>
-                    (observe (DownEventAddress ->>- getHudDetailLeftAddress address) address |> filter isSelected |> monitor (handleDownDetail Leftward)) |>
-                    (World.subscribe4 handleSelectTitle (SelectEventAddress ->>- TitleAddress) address) |>
-                    (World.subscribe4 handleSelectGameplay (SelectEventAddress ->>- address) address) |>
-                    (World.subscribe4 handleClickSaveGame (ClickEventAddress ->>- getHudSaveGameAddress address) address) |>
-                    (World.subscribe4 handleDeselectGameplay (DeselectEventAddress ->>- address) address)
-            (gameplay, world)
+        override dispatcher.Register gameplay world =
+            world |>
+                (observe (EntityChangeEventAddress ->>- getPlayerAddress gameplay.ScreenAddress) gameplay |> subscribe handlePlayerChange) |>
+                (observe (TouchEventAddress ->>- getHudFeelerAddress gameplay.ScreenAddress) gameplay |> filter isObserverSelected |> monitor handleTouchFeeler) |>
+                (observe (DownEventAddress ->>- getHudDetailUpAddress gameplay.ScreenAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Upward)) |>
+                (observe (DownEventAddress ->>- getHudDetailRightAddress gameplay.ScreenAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Rightward)) |>
+                (observe (DownEventAddress ->>- getHudDetailDownAddress gameplay.ScreenAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Downward)) |>
+                (observe (DownEventAddress ->>- getHudDetailLeftAddress gameplay.ScreenAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Leftward)) |>
+                (World.subscribe4 handleSelectTitle (SelectEventAddress ->>- Title.ScreenAddress) gameplay) |>
+                (World.subscribe4 handleSelectGameplay (SelectEventAddress ->>- gameplay.ScreenAddress) gameplay) |>
+                (World.subscribe4 handleClickSaveGame (ClickEventAddress ->>- getHudSaveGameAddress gameplay.ScreenAddress) gameplay) |>
+                (World.subscribe4 handleDeselectGameplay (DeselectEventAddress ->>- gameplay.ScreenAddress) gameplay)
