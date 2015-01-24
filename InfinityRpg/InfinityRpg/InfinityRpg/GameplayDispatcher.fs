@@ -159,149 +159,147 @@ module GameplayDispatcherModule =
                 (fun (enemy : Entity) -> enemy.GetDesiredTurn world <> NoTurn || enemy.GetActivityState world <> NoActivity)
                 enemies
 
-        static let anyTurnsInProgress address world =
-            let player = World.getEntity (getPlayerAddress address) world
-            let enemies = World.getEntities (getEnemyAddresses address world) world
+        static let anyTurnsInProgress gameplay world =
+            let player = proxyPlayer gameplay
+            let enemies = proxyEnemies gameplay world
             anyTurnsInProgress2 player enemies
 
-        static let updateCharacterByWalk walkDescriptor (character : Entity) =
-            let (newPosition, walkState) = walk walkDescriptor character.Position
-            let character = Entity.setPosition newPosition character
-            let characterAnimationState = { character.CharacterAnimationState with Direction = walkDescriptor.WalkDirection }
-            let character = Entity.setCharacterAnimationState characterAnimationState character
-            (character, walkState)
+        static let updateCharacterByWalk walkDescriptor (character : Entity) world =
+            let (newPosition, walkState) = walk walkDescriptor <| character.GetPosition world
+            let world = character.SetPosition newPosition world
+            let characterAnimationState = { character.GetCharacterAnimationState world with Direction = walkDescriptor.WalkDirection }
+            let world = character.SetCharacterAnimationState characterAnimationState world
+            (world, walkState)
 
-        static let updateCharacterByWalkState walkState navigationDescriptor (character : Entity) =
+        static let updateCharacterByWalkState walkState navigationDescriptor (character : Entity) world =
             match walkState with
             | WalkFinished ->
                 match navigationDescriptor.OptNavigationPath with
                 | Some [] -> failwith "NavigationPath should never be empty here."
-                | Some (_ :: []) -> Entity.setActivityState NoActivity character
+                | Some (_ :: []) -> character.SetActivityState NoActivity world
                 | Some (currentNode :: navigationPath) ->
                     let walkDirection = vmtod <| (List.head navigationPath).PositionM - currentNode.PositionM
-                    let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = vftovm character.Position }
+                    let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = vftovm <| character.GetPosition world }
                     let navigationDescriptor = { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
-                    Entity.setActivityState (Navigation navigationDescriptor) character
-                | None -> Entity.setActivityState NoActivity character
-            | WalkContinuing -> character
+                    character.SetActivityState (Navigation navigationDescriptor) world
+                | None -> character.SetActivityState NoActivity world
+            | WalkContinuing -> world
 
-        static let updateCharacterByNavigation navigationDescriptor characterAddress world =
-            let character = World.getEntity characterAddress world
-            let (character, walkState) = updateCharacterByWalk navigationDescriptor.WalkDescriptor character
-            let character = updateCharacterByWalkState walkState navigationDescriptor character
-            World.setEntity character characterAddress world
+        static let updateCharacterByNavigation navigationDescriptor character world =
+            let (world, walkState) = updateCharacterByWalk navigationDescriptor.WalkDescriptor character world
+            updateCharacterByWalkState walkState navigationDescriptor character world
 
-        static let updateCharacterByAction actionDescriptor characterAddress world =
-            let tickTime = world.State.TickTime
-            let character = World.getEntity characterAddress world
-            let character =
-                if actionDescriptor.ActionTicks = 0L then
-                    character |>
-                        Entity.setCharacterAnimationState (getCharacterAnimationStateByActionBegin tickTime character.Position character.CharacterAnimationState actionDescriptor) |>
-                        Entity.setActivityState (Action <| ActionDescriptor.incActionTicks actionDescriptor)
-                elif actionDescriptor.ActionTicks > 0L && actionDescriptor.ActionTicks < ActionTicksMax then
-                    character |>
-                        Entity.setActivityState (Action <| ActionDescriptor.incActionTicks actionDescriptor)
-                else
-                    character |>
-                        Entity.setActivityState NoActivity |>
-                        Entity.setCharacterAnimationState (getCharacterAnimationStateByActionEnd tickTime character.CharacterAnimationState)
-            World.setEntity character characterAddress world
+        static let updateCharacterByAction actionDescriptor (character : Entity) world =
+            if actionDescriptor.ActionTicks = 0L then
+                world |>
+                    character.SetCharacterAnimationState (getCharacterAnimationStateByActionBegin world.State.TickTime (character.GetPosition world) (character.GetCharacterAnimationState world) actionDescriptor) |>
+                    character.SetActivityState (Action <| ActionDescriptor.incActionTicks actionDescriptor)
+            elif actionDescriptor.ActionTicks > 0L && actionDescriptor.ActionTicks < ActionTicksMax then
+                world |>
+                    character.SetActivityState (Action <| ActionDescriptor.incActionTicks actionDescriptor)
+            else
+                world |>
+                    character.SetActivityState NoActivity |>
+                    character.SetCharacterAnimationState (getCharacterAnimationStateByActionEnd world.State.TickTime (character.GetCharacterAnimationState world))
 
-        static let determineCharacterTurnFromDirection direction occupationMap (character : Entity) opponents =
-            match character.ActivityState with
+        static let determineCharacterTurnFromDirection direction occupationMap (character : Entity) opponents world =
+            match character.GetActivityState world with
             | Action _ -> NoTurn
             | Navigation _ -> NoTurn
             | NoActivity ->
-                let openDirections = OccupationMap.getOpenDirectionsAtPositionM (vftovm character.Position) occupationMap
+                let openDirections = OccupationMap.getOpenDirectionsAtPositionM (vftovm <| character.GetPosition world) occupationMap
                 if Set.contains direction openDirections then
-                    let walkDescriptor = { WalkDirection = direction; WalkOriginM = vftovm character.Position }
+                    let walkDescriptor = { WalkDirection = direction; WalkOriginM = vftovm <| character.GetPosition world }
                     NavigationTurn { WalkDescriptor = walkDescriptor; OptNavigationPath = None }
                 else
-                    let targetPosition = character.Position + dtovf direction
-                    if Seq.exists (fun (opponent : Entity) -> opponent.Position = targetPosition) opponents
+                    let targetPosition = character.GetPosition world + dtovf direction
+                    if Seq.exists (fun (opponent : Entity) -> opponent.GetPosition world = targetPosition) opponents
                     then makeAttackTurn <| vftovm targetPosition
                     else NoTurn
 
-        static let determineCharacterTurnFromTouch touchPosition occupationMap (character : Entity) opponents =
-            if character.ActivityState = NoActivity then
-                match tryGetNavigationPath touchPosition occupationMap character with
+        static let determineCharacterTurnFromTouch touchPosition occupationMap (character : Entity) opponents world =
+            if character.GetActivityState world = NoActivity then
+                match tryGetNavigationPath touchPosition occupationMap character world with
                 | Some navigationPath ->
                     match navigationPath with
                     | [] -> NoTurn
                     | _ ->
-                        let characterPositionM = vftovm character.Position
+                        let characterPositionM = vftovm <| character.GetPosition world
                         let walkDirection = vmtod <| (List.head navigationPath).PositionM - characterPositionM
                         let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = characterPositionM }
                         NavigationTurn { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
                 | None ->
                     let targetPosition = touchPosition |> vftovm |> vmtovf
-                    if Math.arePositionsAdjacent targetPosition character.Position then
-                        if Seq.exists (fun (opponent : Entity) -> opponent.Position = targetPosition) opponents
+                    if Math.arePositionsAdjacent targetPosition <| character.GetPosition world then
+                        if Seq.exists (fun (opponent : Entity) -> opponent.GetPosition world = targetPosition) opponents
                         then makeAttackTurn <| vftovm targetPosition
                         else NoTurn
                     else NoTurn
             else NoTurn
 
-        static let determineDesiredEnemyTurn occupationMap (player : Entity) (enemy : Entity) rand =
-            match enemy.ControlType with
+        static let determineDesiredEnemyTurn occupationMap (player : Entity) (enemy : Entity) rand world =
+            match enemy.GetControlType world with
             | Player ->
-                debug <| "Invalid ControlType '" + acstring enemy.ControlType + "' for enemy"
+                debug <| "Invalid ControlType '" + acstring (enemy.GetControlType world) + "' for enemy"
                 (NoTurn, rand)
             | Chaos ->
                 let nextPlayerPosition =
-                    match player.ActivityState with
-                    | Action _ -> player.Position
+                    match player.GetActivityState world with
+                    | Action _ -> player.GetPosition world
                     | Navigation navigationDescriptor -> NavigationDescriptor.nextPosition navigationDescriptor
-                    | NoActivity -> player.Position
-                if Math.arePositionsAdjacent enemy.Position nextPlayerPosition then
+                    | NoActivity -> player.GetPosition world
+                if Math.arePositionsAdjacent (enemy.GetPosition world) nextPlayerPosition then
                     let enemyTurn = makeAttackTurn <| vftovm nextPlayerPosition
                     (enemyTurn, rand)
                 else
                     let (randResult, rand) = Rand.nextIntUnder 4 rand
                     let direction = Direction.fromInt randResult
-                    let enemyTurn = determineCharacterTurnFromDirection direction occupationMap enemy [player]
+                    let enemyTurn = determineCharacterTurnFromDirection direction occupationMap enemy [player] world
                     (enemyTurn, rand)
             | Uncontrolled -> (NoTurn, rand)
 
-        static let determineDesiredEnemyTurns occupationMap player enemies rand =
+        static let determineDesiredEnemyTurns occupationMap player enemies rand world =
             let (_, enemyTurns, rand) =
                 List.foldBack
                     (fun (enemy : Entity) (occupationMap, enemyTurns, rand) ->
-                        let (enemyTurn, rand) = determineDesiredEnemyTurn occupationMap player enemy rand
-                        let occupationMap = OccupationMap.transferByDesiredTurn enemyTurn enemy occupationMap
+                        let (enemyTurn, rand) = determineDesiredEnemyTurn occupationMap player enemy rand world
+                        let occupationMap = OccupationMap.transferByDesiredTurn enemyTurn (enemy.GetPosition world) occupationMap
                         (occupationMap, enemyTurn :: enemyTurns, rand))
                     (List.ofSeq enemies)
                     (occupationMap, [], rand)
             (enemyTurns, rand)
 
-        static let determinePlayerTurnFromTouch touchPosition address world =
-            let field = World.getEntity (getFieldAddress address) world
-            let player = World.getEntity (getPlayerAddress address) world
-            let enemies = World.getEntities (getEnemyAddresses address world) world
-            if not <| anyTurnsInProgress2 player enemies then
+        static let determinePlayerTurnFromTouch touchPosition gameplay world =
+            let field = proxyField gameplay
+            let fieldMap = field.GetFieldMapNp world
+            let player = proxyPlayer gameplay
+            let enemies = proxyEnemies gameplay world
+            let enemyPositions = Seq.map (fun (enemy : Entity) -> enemy.GetPosition world) enemies
+            if not <| anyTurnsInProgress2 player enemies world then
                 let touchPositionW = Camera.mouseToWorld Relative touchPosition world.State.Camera
                 let occupationMapWithAdjacentEnemies =
                     OccupationMap.makeFromFieldTilesAndAdjacentCharacters
-                        (vftovm player.Position) field.FieldMapNp.FieldTiles enemies
-                match determineCharacterTurnFromTouch touchPositionW occupationMapWithAdjacentEnemies player enemies with
+                        (vftovm <| player.GetPosition world) fieldMap.FieldTiles enemyPositions
+                match determineCharacterTurnFromTouch touchPositionW occupationMapWithAdjacentEnemies player enemies world with
                 | ActionTurn _ as actionTurn -> actionTurn
                 | NavigationTurn navigationDescriptor as navigationTurn ->
                     let headNavigationNode = navigationDescriptor.OptNavigationPath |> Option.get |> List.head
-                    let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles enemies
+                    let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters fieldMap.FieldTiles enemyPositions
                     if Map.find headNavigationNode.PositionM occupationMapWithEnemies then CancelTurn
                     else navigationTurn
                 | CancelTurn -> CancelTurn
                 | NoTurn -> NoTurn
             else NoTurn
 
-        static let determinePlayerTurnFromDetailNavigation direction address world =
-            let field = World.getEntity (getFieldAddress address) world
-            let player = World.getEntity (getPlayerAddress address) world
-            let enemies = World.getEntities (getEnemyAddresses address world) world
-            if not <| anyTurnsInProgress2 player enemies then
-                let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles enemies
-                determineCharacterTurnFromDirection direction occupationMapWithEnemies player enemies
+        static let determinePlayerTurnFromDetailNavigation direction gameplay world =
+            let field = proxyField gameplay
+            let fieldMap = field.GetFieldMapNp world
+            let player = proxyPlayer gameplay
+            let enemies = proxyEnemies gameplay world
+            let enemyPositions = Seq.map (fun (enemy : Entity) -> enemy.GetPosition world) enemies
+            if not <| anyTurnsInProgress2 player enemies world then
+                let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters fieldMap.FieldTiles enemyPositions
+                determineCharacterTurnFromDirection direction occupationMapWithEnemies player enemies world
             else NoTurn
 
         static let determinePlayerTurnFromInput playerInput address world =
@@ -310,31 +308,32 @@ module GameplayDispatcherModule =
             | DetailInput direction -> determinePlayerTurnFromDetailNavigation direction address world
             | NoInput -> NoTurn
 
-        static let determinePlayerTurn address world =
-            let player = World.getEntity (getPlayerAddress address) world
-            match player.ActivityState with
+        static let determinePlayerTurn gameplay world =
+            let player = proxyPlayer gameplay
+            match player.GetActivityState world with
             | Action _ -> NoTurn
             | Navigation navigationDescriptor ->
                 let walkDescriptor = navigationDescriptor.WalkDescriptor
-                if player.Position = vmtovf walkDescriptor.WalkOriginM then
-                    let field = World.getEntity (getFieldAddress address) world
-                    let enemies = World.getEntities (getEnemyAddresses address world) world
-                    let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles enemies
+                if player.GetPosition world = vmtovf walkDescriptor.WalkOriginM then
+                    let field = proxyField gameplay
+                    let fieldMap = field.GetFieldMapNp world
+                    let enemies = proxyEnemies gameplay world
+                    let enemyPositions = Seq.map (fun (enemy : Entity) -> enemy.GetPosition world) enemies
+                    let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters fieldMap.FieldTiles enemyPositions
                     let walkDestinationM = walkDescriptor.WalkOriginM + dtovm walkDescriptor.WalkDirection
                     if Map.find walkDestinationM occupationMapWithEnemies then CancelTurn
                     else NavigationTurn navigationDescriptor
                 else NoTurn
             | NoActivity -> NoTurn
 
-        static let determineEnemyActionActivities enemyAddresses world =
-            let enemies = World.getEntities enemyAddresses world
+        static let determineEnemyActionActivities enemies world =
             List.foldBack
                 (fun (enemy : Entity) precedingEnemyActivities ->
                     let enemyActivity =
                         let noPrecedingEnemyActionActivity = Seq.notExists ActivityState.isActing precedingEnemyActivities
-                        let noCurrentEnemyActionActivity = Seq.notExists (fun (enemy : Entity) -> ActivityState.isActing enemy.ActivityState) enemies
+                        let noCurrentEnemyActionActivity = Seq.notExists (fun (enemy : Entity) -> ActivityState.isActing (enemy.GetActivityState world)) enemies
                         if noPrecedingEnemyActionActivity && noCurrentEnemyActionActivity then
-                            match enemy.DesiredTurn with
+                            match enemy.GetDesiredTurn world with
                             | ActionTurn actionDescriptor -> Action actionDescriptor
                             | NavigationTurn _ -> NoActivity
                             | CancelTurn -> NoActivity
