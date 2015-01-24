@@ -50,34 +50,30 @@ module GameplayDispatcherModule =
             Group.proxy <| satoga gameplay.ScreenAddress SceneName
         
         static let proxyField gameplay =
-            Entity.proxy <| gatoea (getScene gameplay).GroupAddress FieldName
+            Entity.proxy <| gatoea (proxyScene gameplay).GroupAddress FieldName
         
-        static let getCharacterAddresses address world =
-            let entityAddresses = World.getEntityAddressesInGroup (getSceneAddress address) world
-            World.filterEntityAddresses (Entity.dispatchesAs typeof<CharacterDispatcher>) entityAddresses world
+        static let proxyCharacters gameplay world =
+            let entities = World.getEntities (proxyScene gameplay) world
+            Seq.filter (fun (entity : Entity) -> entity.DispatchesAs typeof<CharacterDispatcher> world) entities
 
-        static let getOptCharacterAddressAtPosition position address world =
-            Seq.tryFind
-                (fun characterAddress -> World.getEntityBy (fun character -> character.Position = position) characterAddress world)
-                (getCharacterAddresses address world)
+        static let proxyOptCharacterAtPosition position gameplay world =
+            let characters = proxyCharacters gameplay world
+            Seq.tryFind (fun (character : Entity) -> character.GetPosition world = position) characters
         
-        //static let getCharacterAddressAtPosition position address world =
-        //    Option.get <| getOptCharacterAddressAtPosition position address world
+        static let proxyOptCharacterInDirection position direction gameplay world =
+            proxyOptCharacterAtPosition (position + dtovf direction) gameplay world
         
-        static let getOptCharacterAddressInDirection position direction address world =
-            getOptCharacterAddressAtPosition (position + dtovf direction) address world
-        
-        static let getCharacterAddressInDirection position direction address world =
-            Option.get <| getOptCharacterAddressInDirection position direction address world
+        static let proxyCharacterInDirection position direction gameplay world =
+            Option.get <| proxyOptCharacterInDirection position direction gameplay world
 
-        static let getPlayerAddress address =
-            gatoea (getSceneAddress address) PlayerName
+        static let proxyPlayer gameplay =
+            Entity.proxy <| gatoea (proxyScene gameplay).GroupAddress PlayerName
 
-        static let getEnemyAddresses address world =
-            let entityAddresses = World.getEntityAddressesInGroup (getSceneAddress address) world
-            World.filterEntityAddresses (Entity.dispatchesAs typeof<EnemyDispatcher>) entityAddresses world
+        static let proxyEnemies gameplay world =
+            let entities = World.getEntities (proxyScene gameplay) world
+            Seq.filter (fun (entity : Entity) -> entity.DispatchesAs typeof<EnemyDispatcher> world) entities
 
-        (* End of Addresses *)
+        (* End of Proxies *)
 
         static let createField scene rand world =
             let pathEdgesM = [(Vector2i (1, 10), Vector2i (20, 10))]
@@ -131,10 +127,10 @@ module GameplayDispatcherModule =
                 AnimationType = CharacterAnimationFacing
                 StartTime = tickTime }
 
-        static let tryGetNavigationPath touchPosition occupationMap (character : Entity) =
+        static let tryGetNavigationPath touchPosition occupationMap (character : Entity) world =
             let nodes = OccupationMap.makeNavigationNodes occupationMap
             let goalNode = Map.find (vftovm touchPosition) nodes
-            let currentNode = Map.find (vftovm character.Position) nodes
+            let currentNode = Map.find (vftovm <| character.GetPosition world) nodes
             let optNavigationPath =
                 AStar.FindPath (
                     currentNode,
@@ -145,22 +141,23 @@ module GameplayDispatcherModule =
             | null -> None
             | navigationPath -> Some (navigationPath |> List.ofSeq |> List.rev |> List.tail)
 
-        static let isPlayerNavigatingPath address world =
-            let player = World.getEntity (getPlayerAddress address) world
-            ActivityState.isNavigatingPath player.ActivityState
+        static let isPlayerNavigatingPath gameplay world =
+            let player = proxyPlayer gameplay
+            ActivityState.isNavigatingPath <| player.GetActivityState world
 
-        static let cancelNavigation (character : Entity) =
-            let characterActivity = character.ActivityState
+        static let cancelNavigation (character : Entity) world =
             let characterActivity =
-                match characterActivity with
+                match character.GetActivityState world with
                 | Action _ as action -> action
                 | NoActivity -> NoActivity
                 | Navigation navDescriptor -> Navigation { navDescriptor with OptNavigationPath = None }
-            Entity.setActivityState characterActivity character
+            character.SetActivityState characterActivity world
 
-        static let anyTurnsInProgress2 (player : Entity) enemies =
-            player.ActivityState <> NoActivity ||
-            Seq.exists (fun (enemy : Entity) -> enemy.DesiredTurn <> NoTurn || enemy.ActivityState <> NoActivity) enemies
+        static let anyTurnsInProgress2 (player : Entity) enemies world =
+            player.GetActivityState world <> NoActivity ||
+            Seq.exists
+                (fun (enemy : Entity) -> enemy.GetDesiredTurn world <> NoTurn || enemy.GetActivityState world <> NoActivity)
+                enemies
 
         static let anyTurnsInProgress address world =
             let player = World.getEntity (getPlayerAddress address) world
@@ -624,7 +621,7 @@ module GameplayDispatcherModule =
 
         override dispatcher.Register gameplay world =
             world |>
-                (observe (EntityChangeEventAddress ->>- getPlayerAddress gameplay.ScreenAddress) gameplay |> subscribe handlePlayerChange) |>
+                (observe (EntityChangeEventAddress ->>- (proxyPlayer gameplay).EntityAddress) gameplay |> subscribe handlePlayerChange) |>
                 (observe (TouchEventAddress ->>- getHudFeelerAddress gameplay.ScreenAddress) gameplay |> filter isObserverSelected |> monitor handleTouchFeeler) |>
                 (observe (DownEventAddress ->>- getHudDetailUpAddress gameplay.ScreenAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Upward)) |>
                 (observe (DownEventAddress ->>- getHudDetailRightAddress gameplay.ScreenAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Rightward)) |>
