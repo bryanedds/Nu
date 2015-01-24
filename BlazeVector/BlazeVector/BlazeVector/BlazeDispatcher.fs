@@ -33,30 +33,34 @@ module BlazeVectorModule =
             let world = snd <| World.createDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleGroupFilePath (Some TitleName) world
 
             // this subscribes to the event that is raised when the Title screen is selected for
-            // display and interaction, and handles the event by playing the song "Machinery"
-            let world = World.subscribe4 handlePlaySongMachinery SelectTitleEventAddress Game world
+            // display and interaction, and handles the event by playing the song "Machinery".
+            //
+            // You will need to familiarize yourself with the calling conventions of the various
+            // World.subscribe functions as well as the event address operators '->>-' and its ilk
+            // by studying their types and documentation comments.
+            let world = World.subscribe4 handlePlaySongMachinery (SelectEventAddress ->>- Title.ScreenAddress) Game world
 
             // subscribes to the event that is raised when the Title screen's Play button is
             // clicked, and handles the event by transitioning to the Stage screen
-            let world = World.subscribe4 handlePlayStage ClickTitlePlayEventAddress Game world
+            let world = World.subscribe4 handlePlayStage (ClickEventAddress ->>- TitlePlay.EntityAddress) Game world
 
             // subscribes to the event that is raised when the Title screen's Credits button is
             // clicked, and handles the event by transitioning to the Credits screen
-            let world = World.subscribe4 (World.handleAsScreenTransition Credits) ClickTitleCreditsEventAddress Game world
+            let world = World.subscribe4 (World.handleAsScreenTransition Credits) (ClickEventAddress ->>- TitleCredits.EntityAddress) Game world
 
             // subscribes to the event that is raised when the Title screen's Exit button is clicked,
             // and handles the event by exiting the game
-            World.subscribe4 World.handleAsExit ClickTitleExitEventAddress Game world
+            World.subscribe4 World.handleAsExit (ClickEventAddress ->>- TitleExit.EntityAddress) Game world
 
         // pretty much the same as above, but for the Credits screen
         static let createCreditsScreen world =
             let world = snd <| World.createDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name CreditsGroupFilePath (Some CreditsName) world
-            World.subscribe4 (World.handleAsScreenTransition Title) ClickCreditsBackEventAddress Game world
+            World.subscribe4 (World.handleAsScreenTransition Title) (ClickEventAddress ->>- CreditsBack.EntityAddress) Game world
 
         // and so on.
         static let createStageScreen world =
-            let world = snd <| World.createDissolveScreenFromGroupFile false DissolveData typeof<StageScreenDispatcher>.Name StageGroupFilePath (Some StageName) world
-            World.subscribe4 (World.handleAsScreenTransition Title) ClickStageBackEventAddress Game world
+            let world = snd <| World.createDissolveScreenFromGroupFile false DissolveData typeof<StageScreenDispatcher>.Name StageGuiFilePath (Some StageName) world
+            World.subscribe4 (World.handleAsScreenTransition Title) (ClickEventAddress ->>- StageBack.EntityAddress) Game world
 
         // game registration is where the game's high-level logic is set up!
         override dispatcher.Register _ world =

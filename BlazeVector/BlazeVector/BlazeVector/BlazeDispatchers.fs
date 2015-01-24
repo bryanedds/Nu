@@ -248,28 +248,23 @@ module StagePlayModule =
     type StagePlayDispatcher () =
         inherit GroupDispatcher ()
 
-        static let getPlayer group =
-            Entity.proxy <| gatoea group.GroupAddress StagePlayerName
-
-        static let adjustCamera address world =
+        static let adjustCamera world =
             if World.isGamePlaying world then
                 World.updateCamera
                     (fun camera -> 
-                        let player = getPlayer address
-                        let playerPosition = player.GetPosition world
-                        let playerSize = player.GetSize world
+                        let playerPosition = StagePlayer.GetPosition world
+                        let playerSize = StagePlayer.GetSize world
                         let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + camera.EyeSize.X * 0.33f, camera.EyeCenter.Y)
                         { camera with EyeCenter = eyeCenter })
                     world
             else world
 
-        static let handleAdjustCamera event world =
-            (Cascade, adjustCamera event.Subscriber world)
+        static let handleAdjustCamera _ world =
+            (Cascade, adjustCamera world)
 
-        static let handlePlayerFall event world =
+        static let handlePlayerFall _ world =
             if World.isGamePlaying world then
-                let player = getPlayer event.Subscriber
-                if player.HasFallen world && World.isSelectedScreenIdling world then
+                if StagePlayer.HasFallen world && World.isSelectedScreenIdling world then
                     let world = World.playSound 1.0f DeathSound world
                     let world = World.transitionScreen Title world
                     (Cascade, world)
@@ -288,6 +283,7 @@ module StageScreenModule =
     type StageScreenDispatcher () =
         inherit ScreenDispatcher ()
 
+        static let [<Literal>] SectionName = "Section"
         static let [<Literal>] SectionXShift = 2048.0f
 
         static let shiftEntities xShift entities world =
