@@ -343,8 +343,7 @@ module GameplayDispatcherModule =
                 (List.ofSeq enemies)
                 []
 
-        static let determineEnemyNavigationActivities enemyAddresses world =
-            let enemies = World.getEntities enemyAddresses world
+        static let determineEnemyNavigationActivities enemies world =
             List.foldBack
                 (fun (enemy : Entity) enemyActivities ->
                     let noCurrentEnemyActionActivity =
@@ -380,74 +379,76 @@ module GameplayDispatcherModule =
                 else world
             else world
 
-        static let runCharacterNavigation newNavigationDescriptor characterAddress address world =
+        static let runCharacterNavigation newNavigationDescriptor (character : Entity) gameplay world =
             let chain = chain {
-                do! updateEntity (Entity.setActivityState <| Navigation newNavigationDescriptor) characterAddress
+                do! update ^ character.SetActivityState ^ Navigation newNavigationDescriptor
                 do! during (fun world ->
-                    match World.getEntityBy Entity.getActivityState characterAddress world with
-                    | Navigation navigationDescriptor -> newNavigationDescriptor.WalkDescriptor.WalkOriginM = navigationDescriptor.WalkDescriptor.WalkOriginM
+                    match character.GetActivityState world with
+                    | Navigation navigationDescriptor ->
+                        newNavigationDescriptor.WalkDescriptor.WalkOriginM =
+                            navigationDescriptor.WalkDescriptor.WalkOriginM
                     | Action _ -> false
                     | NoActivity -> false) ^ chain {
                     do! update ^ fun world ->
                         let navigationDescriptor =
-                            match World.getEntityBy Entity.getActivityState characterAddress world with
+                            match character.GetActivityState world with
                             | Navigation navigationDescriptor -> navigationDescriptor
                             | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
-                        updateCharacterByNavigation navigationDescriptor characterAddress world
+                        updateCharacterByNavigation navigationDescriptor character world
                     do! pass }}
-            let observation = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- address)
+            let observation = observe TickEventAddress character |> until (DeselectEventAddress ->>- gameplay.ScreenAddress)
             snd <| runAssumingCascade chain observation world
 
-        static let runCharacterAction newActionDescriptor characterAddress address world =
+        static let runCharacterAction newActionDescriptor (character : Entity) gameplay world =
             // NOTE: currently just implements attack
             let chain = chain {
-                do! updateEntity (Entity.setActivityState <| Action newActionDescriptor) characterAddress
-                do! during (World.getEntityBy (Entity.getActivityState >> ActivityState.isActing) characterAddress) ^ chain {
+                do! update ^ character.SetActivityState ^ Action newActionDescriptor
+                do! during (fun world -> ActivityState.isActing <| character.GetActivityState world) ^ chain {
                     do! update ^ fun world ->
                         let actionDescriptor =
-                            match World.getEntityBy Entity.getActivityState characterAddress world  with
+                            match character.GetActivityState world  with
                             | Action actionDescriptor -> actionDescriptor
                             | _ -> failwithumf ()
-                        let world = updateCharacterByAction actionDescriptor characterAddress world
-                        runCharacterReaction actionDescriptor characterAddress address world
+                        let world = updateCharacterByAction actionDescriptor character world
+                        runCharacterReaction actionDescriptor character gameplay world
                     do! pass }}
-            let observation = observe TickEventAddress characterAddress |> until (DeselectEventAddress ->>- address)
+            let observation = observe TickEventAddress character |> until (DeselectEventAddress ->>- gameplay.ScreenAddress)
             snd <| runAssumingCascade chain observation world
 
-        static let runCharacterNoActivity characterAddress world =
-            World.updateEntity (Entity.setActivityState NoActivity) characterAddress world
+        static let runCharacterNoActivity (character : Entity) world =
+            character.SetActivityState NoActivity world
 
-        static let runCharacterActivity newActivity characterAddress address world =
+        static let runCharacterActivity newActivity character gameplay world =
             match newActivity with
-            | Action newActionDescriptor -> runCharacterAction newActionDescriptor characterAddress address world
-            | Navigation newNavigationDescriptor -> runCharacterNavigation newNavigationDescriptor characterAddress address world
-            | NoActivity -> runCharacterNoActivity characterAddress world
+            | Action newActionDescriptor -> runCharacterAction newActionDescriptor character gameplay world
+            | Navigation newNavigationDescriptor -> runCharacterNavigation newNavigationDescriptor character gameplay world
+            | NoActivity -> runCharacterNoActivity character world
 
-        static let tryRunEnemyActivity address world newActivity enemyAddress =
+        static let tryRunEnemyActivity gameplay world newActivity (enemy : Entity) =
             if newActivity <> NoActivity then
-                let enemy = World.getEntity enemyAddress world
-                let enemy = Entity.setDesiredTurn NoTurn enemy
-                let world = World.setEntity enemy enemyAddress world
-                runCharacterActivity newActivity enemyAddress address world
+                let world = enemy.SetDesiredTurn NoTurn world
+                runCharacterActivity newActivity enemy gameplay world
             else world
 
-        static let runEnemyNavigationActivities enemyNavigationActivities enemyAddresses address world =
+        static let runEnemyNavigationActivities enemyNavigationActivities enemies gameplay world =
             if Seq.exists ActivityState.isNavigating enemyNavigationActivities
-            then Seq.fold2 (tryRunEnemyActivity address) world enemyNavigationActivities enemyAddresses
+            then Seq.fold2 (tryRunEnemyActivity gameplay) world enemyNavigationActivities enemies
             else world
 
-        static let runEnemyActivities enemyActionActivities enemyNavigationActivities enemyAddresses address world =
+        static let runEnemyActivities enemyActionActivities enemyNavigationActivities enemies gameplay world =
             let anyEnemyActionActivity = Seq.exists ActivityState.isActing enemyActionActivities
             let newEnemyActivities = if anyEnemyActionActivity then enemyActionActivities else enemyNavigationActivities
-            Seq.fold2 (tryRunEnemyActivity address) world newEnemyActivities enemyAddresses
-
-        static let runPlayerTurn playerTurn address world =
+            Seq.fold2 (tryRunEnemyActivity gameplay) world newEnemyActivities enemies
+            
+        static let runPlayerTurn playerTurn gameplay world =
 
             // construct occupation map
             let occupationMap =
-                let field = World.getEntity (getFieldAddress address) world
-                let enemies = World.getEntities (getEnemyAddresses address world) world
-                OccupationMap.makeFromFieldTilesAndCharactersAndDesiredTurn field.FieldMapNp.FieldTiles enemies playerTurn
+                let field = proxyField gameplay
+                let fieldMap = field.GetFieldMapNp world
+                let enemies = proxyEnemies gameplay world
+                let enemyPositions = Seq.map (fun (enemy : Entity) -> enemy.GetPosition world) enemies
+                OccupationMap.makeFromFieldTilesAndCharactersAndDesiredTurn fieldMap.FieldTiles enemyPositions playerTurn
 
             // determine player activity
             let optNewPlayerActivity =
@@ -461,8 +462,8 @@ module GameplayDispatcherModule =
             let world =
                 match optNewPlayerActivity with
                 | Some newPlayerActivity ->
-                    let playerAddress = getPlayerAddress address
-                    runCharacterActivity newPlayerActivity playerAddress address world
+                    let player = proxyPlayer gameplay
+                    runCharacterActivity newPlayerActivity player gameplay world
                 | None -> world
 
             // determine (and set) enemy desired turns if applicable
@@ -471,33 +472,29 @@ module GameplayDispatcherModule =
                 match optNewPlayerActivity with
                 | Some (Action _)
                 | Some (Navigation _) ->
-                    let gameplay = World.getScreen address world
-                    let rand = Rand.make gameplay.OngoingRandState
-                    let player = World.getEntity (getPlayerAddress address) world
-                    let enemyAddresses = getEnemyAddresses address world
-                    let enemies = World.getEntities enemyAddresses world
-                    let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns occupationMap player enemies rand
-                    let enemies = Seq.map2 Entity.setDesiredTurn enemyDesiredTurns enemies
-                    let world = World.setEntities enemies enemyAddresses world
-                    let gameplay = Screen.setOngoingRandState (Rand.getState rand) gameplay
-                    World.setScreen gameplay address world
+                    let rand = Rand.make <| gameplay.GetOngoingRandState world
+                    let player = proxyPlayer gameplay
+                    let enemies = proxyEnemies gameplay world
+                    let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns occupationMap player enemies rand world
+                    let enemies = Seq.map2 (fun (enemy : Entity) turn -> enemy.SetDesiredTurn turn) enemies enemyDesiredTurns
+                    gameplay.SetOngoingRandState (Rand.getState rand) world
                 | Some NoActivity
                 | None -> world
 
             // run enemy activities in accordance with the player's current activity
             let world =
-                let enemyAddresses = getEnemyAddresses address world
-                let playerActivity = World.getEntityBy (fun player -> player.ActivityState) (getPlayerAddress address) world
-                match playerActivity with
+                let player = proxyPlayer gameplay
+                let enemies = proxyEnemies gameplay world
+                match player.GetActivityState world with
                 | Action _ -> world
                 | Navigation _ 
                 | NoActivity ->
-                    let newEnemyActionActivities = determineEnemyActionActivities enemyAddresses world
-                    let newEnemyNavigationActivities = determineEnemyNavigationActivities enemyAddresses world
+                    let newEnemyActionActivities = determineEnemyActionActivities enemies world
+                    let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies world
                     if List.exists ActivityState.isActing newEnemyActionActivities then
-                        let world = runEnemyActivities newEnemyActionActivities newEnemyNavigationActivities enemyAddresses address world
-                        World.updateEntity cancelNavigation (getPlayerAddress address) world
-                    else runEnemyNavigationActivities newEnemyNavigationActivities enemyAddresses address world
+                        let world = runEnemyActivities newEnemyActionActivities newEnemyNavigationActivities enemies gameplay world
+                        cancelNavigation player world
+                    else runEnemyNavigationActivities newEnemyNavigationActivities enemies gameplay world
 
             // teh world
             world
