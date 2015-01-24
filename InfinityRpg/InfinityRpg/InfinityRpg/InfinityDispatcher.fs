@@ -17,33 +17,30 @@ module InfinityRpgModule =
         inherit GameDispatcher ()
 
         static let handleAsScreenTransitionToGameplay shallLoadGame event world =
-            let gameplay = World.getScreen GameplayAddress world
-            let gameplay = Screen.setShallLoadGame shallLoadGame gameplay
-            let world = World.setScreen gameplay GameplayAddress world
-            World.handleAsScreenTransition GameplayAddress event world
+            let world = Gameplay.SetShallLoadGame shallLoadGame world
+            World.handleAsScreenTransition Gameplay event world
 
-        static let addTitle world =
-            let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleGroupFilePath TitleAddress world
-            let world = World.subscribe4 (World.handleAsScreenTransition CreditsAddress) ClickTitleCreditsEventAddress GameAddress world
-            let world = World.subscribe4 (handleAsScreenTransitionToGameplay false) ClickTitleNewGameEventAddress GameAddress world
-            let world = World.subscribe4 (handleAsScreenTransitionToGameplay true) ClickTitleLoadGameEventAddress GameAddress world
-            World.subscribe4 World.handleAsExit ClickTitleExitEventAddress GameAddress world
+        static let createTitle world =
+            let world = snd <| World.createDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleGroupFilePath (Some TitleName) world
+            let world = World.subscribe4 (World.handleAsScreenTransition Credits) ClickTitleCreditsEventAddress Game world
+            let world = World.subscribe4 (handleAsScreenTransitionToGameplay false) ClickTitleNewGameEventAddress Game world
+            let world = World.subscribe4 (handleAsScreenTransitionToGameplay true) ClickTitleLoadGameEventAddress Game world
+            World.subscribe4 World.handleAsExit ClickTitleExitEventAddress Game world
 
-        static let addCredits world =
-            let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name CreditsGroupFilePath CreditsAddress world
-            World.subscribe4 (World.handleAsScreenTransition TitleAddress) ClickCreditsBackEventAddress GameAddress world
+        static let createCredits world =
+            let world = snd <| World.createDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name CreditsGroupFilePath (Some CreditsName) world
+            World.subscribe4 (World.handleAsScreenTransition Title) ClickCreditsBackEventAddress Game world
 
-        static let addGameplay world =
-            let world = snd <| World.addDissolveScreenFromGroupFile true DissolveData typeof<GameplayDispatcher>.Name HudFilePath GameplayAddress world
-            let world = World.setGroup (Group.setPersistent false <| World.getGroup HudAddress world) HudAddress world
-            World.subscribe4 (World.handleAsScreenTransition TitleAddress) (ClickEventAddress ->>- HudBackAddress) GameAddress world
+        static let createGameplay world =
+            let world = snd <| World.createDissolveScreenFromGroupFile true DissolveData typeof<GameplayDispatcher>.Name HudFilePath (Some GameplayName) world
+            let world = Hud.SetPersistent false world // do not persist the Hud
+            World.subscribe4 (World.handleAsScreenTransition Title) (ClickEventAddress ->>- HudBack.EntityAddress) Game world
 
-        override dispatcher.Register (game, world) =
+        override dispatcher.Register _ world =
             let world = World.hintRenderPackageUse GuiPackageName world
             let world = World.hintRenderPackageUse GameplayPackageName world
-            let world = addTitle world
-            let world = addCredits world
-            let world = addGameplay world
-            let (splashScreen, world) = World.addSplashScreen false NuSplashData typeof<ScreenDispatcher>.Name TitleAddress NuSplashAddress world
-            let world = snd <| World.selectScreen splashScreen NuSplashAddress world
-            (game, world)
+            let world = createTitle world
+            let world = createCredits world
+            let world = createGameplay world
+            let (splash, world) = World.createSplashScreen false NuSplashData typeof<ScreenDispatcher>.Name Title (Some NuSplashName) world
+            World.selectScreen splash world
