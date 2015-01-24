@@ -162,7 +162,7 @@ module GameplayDispatcherModule =
         static let anyTurnsInProgress gameplay world =
             let player = proxyPlayer gameplay
             let enemies = proxyEnemies gameplay world
-            anyTurnsInProgress2 player enemies
+            anyTurnsInProgress2 player enemies world
 
         static let updateCharacterByWalk walkDescriptor (character : Entity) world =
             let (newPosition, walkState) = walk walkDescriptor <| character.GetPosition world
@@ -476,7 +476,7 @@ module GameplayDispatcherModule =
                     let player = proxyPlayer gameplay
                     let enemies = proxyEnemies gameplay world
                     let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns occupationMap player enemies rand world
-                    let enemies = Seq.map2 (fun (enemy : Entity) turn -> enemy.SetDesiredTurn turn) enemies enemyDesiredTurns
+                    let world = Seq.fold2 (fun world (enemy : Entity) turn -> enemy.SetDesiredTurn turn world) world enemies enemyDesiredTurns
                     gameplay.SetOngoingRandState (Rand.getState rand) world
                 | Some NoActivity
                 | None -> world
@@ -499,28 +499,29 @@ module GameplayDispatcherModule =
             // teh world
             world
 
-        static let tryRunPlayerTurn playerInput address world =
-            if not <| anyTurnsInProgress address world then
-                let hudSaveGameAddress = getHudSaveGameAddress address
-                let hudHaltAddress = getHudHaltAddress address
-                let playerAddress = getPlayerAddress address
+        static let tryRunPlayerTurn playerInput gameplay world =
+            if not <| anyTurnsInProgress gameplay world then
+                let hudSaveGame = proxyHudSaveGame gameplay
+                let hudHalt = proxyHudHalt gameplay
+                let player = proxyPlayer gameplay
                 let chain = chain {
-                    do! updateEntity (Entity.setEnabled false) hudSaveGameAddress
-                    do! loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress address world) ^ fun i -> chain {
+                    do! update ^ hudSaveGame.SetEnabled false
+                    do! loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress gameplay world) ^ fun i -> chain {
                         let! event = next
                         do! match event.Data with
                             | Right _ -> chain {
                                 let! playerTurn =
                                     if i = 0
-                                    then getBy <| determinePlayerTurnFromInput playerInput address
-                                    else getBy <| determinePlayerTurn address
-                                do! update <| runPlayerTurn playerTurn address }
-                            | Left _ -> updateEntity cancelNavigation playerAddress }
-                    do! updateEntity (Entity.setEnabled true) hudSaveGameAddress }
+                                    then getBy <| determinePlayerTurnFromInput playerInput gameplay
+                                    else getBy <| determinePlayerTurn gameplay
+                                do! update <| runPlayerTurn playerTurn gameplay }
+                            | Left _ -> chain {
+                                do! update ^ cancelNavigation player }}
+                    do! update ^ hudSaveGame.SetEnabled true }
                 let observation =
-                    observe (ClickEventAddress ->>- hudHaltAddress) address |>
+                    observe (ClickEventAddress ->>- hudHalt.EntityAddress) gameplay |>
                     sum TickEventAddress |>
-                    until (DeselectEventAddress ->>- address)
+                    until (DeselectEventAddress ->>- gameplay.ScreenAddress)
                 snd <| runAssumingCascade chain observation world
             else world
 
@@ -541,10 +542,7 @@ module GameplayDispatcherModule =
             let world = tryRunPlayerTurn playerInput event.Subscriber world
             (Cascade, world)
 
-        static let handleNewGame gameplay world =
-
-            // get common proxies
-            let scene = proxyScene gameplay
+        static let handleNewGame (gameplay : Screen) world =
 
             // generate non-deterministic random numbers
             let sysrandom = Random ()
@@ -562,7 +560,7 @@ module GameplayDispatcherModule =
             let rand = Rand.make <| gameplay.GetContentRandState world
 
             // make field
-            let (field, rand, world) = createField scene rand world
+            let (rand, world) = _bc <| createField scene rand world
 
             // make player
             let (player, world) = World.createEntity typeof<PlayerDispatcher>.Name (Some PlayerName) scene world
