@@ -13,9 +13,8 @@ module FieldDispatcherModule =
 
     type Entity with
     
-        member entity.FieldMapNp = entity?FieldMapNp : FieldMap
-        static member getFieldMapNp (entity : Entity) = entity.FieldMapNp
-        static member setFieldMapNp (value : FieldMap) (entity : Entity) = entity?FieldMapNp <- value
+        member this.GetFieldMapNp world : FieldMap = (this.GetXtension world)?FieldMapNp
+        member this.SetFieldMapNp (value : FieldMap) world = this.UpdateXtension (fun xtension -> xtension?FieldMapNp <- value) world
 
     type FieldDispatcher () =
         inherit EntityDispatcher ()
@@ -38,30 +37,30 @@ module FieldDispatcherModule =
         static member FieldDefinitions =
             [define? FieldMapNp DefaultFieldMap]
 
-        override dispatcher.GetRenderDescriptors (field, world) =
-            if field.Visible then
+        override dispatcher.GetRenderDescriptors field world =
+            if field.GetVisible world then
                 let size = Vector2.Multiply (TileSize, TileSheetSize)
-                if Camera.inView3 field.ViewType field.Position size world.State.Camera then
+                if Camera.inView3 (field.GetViewType world) (field.GetPosition world) size world.State.Camera then
+                    let fieldMap = field.GetFieldMapNp world
                     let sprites =
                         Map.foldBack
                             (fun tilePositionM tile sprites ->
-                                let tileOffset = vmtovf tilePositionM
-                                let tilePosition = field.Position + tileOffset
+                                let tilePosition = vmtovf tilePositionM // NOTE: field position assumed at origin
                                 let optTileInset = getOptTileInset tile.TileSheetPositionM
                                 let sprite =
                                     { Position = tilePosition
                                       Size = TileSize
-                                      Rotation = field.Rotation
-                                      ViewType = field.ViewType
+                                      Rotation = 0.0f // NOTE: rotation assumed zero
+                                      ViewType = Relative // NOTE: ViewType assumed relative
                                       OptInset = optTileInset
-                                      Image = field.FieldMapNp.FieldTileSheet
+                                      Image = fieldMap.FieldTileSheet
                                       Color = Vector4.One }
                                 sprite :: sprites)
-                            field.FieldMapNp.FieldTiles
+                            fieldMap.FieldTiles
                             []
-                    [LayerableDescriptor { Depth = field.Depth; LayeredDescriptor = SpritesDescriptor sprites }]
+                    [LayerableDescriptor { Depth = field.GetDepth world; LayeredDescriptor = SpritesDescriptor sprites }]
                 else []
             else []
 
-        override dispatcher.GetQuickSize (field, _) =
-            vmtovf field.FieldMapNp.FieldSizeM
+        override dispatcher.GetQuickSize field world =
+            vmtovf (field.GetFieldMapNp world).FieldSizeM

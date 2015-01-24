@@ -33,33 +33,33 @@ module OccupationMap =
         | CancelTurn -> occupationMap
         | NoTurn -> occupationMap
 
-    let occupyByCharacter (character : Entity) occupationMap =
-        let characterPositionM = vftovm character.Position
+    let occupyByCharacter characterPosition occupationMap =
+        let characterPositionM = vftovm characterPosition
         Map.add characterPositionM true occupationMap
 
-    let occupyByCharacters characters occupationMap =
-        Seq.fold (flip occupyByCharacter) occupationMap characters
+    let occupyByCharacters characterPositions occupationMap =
+        Seq.fold (flip occupyByCharacter) occupationMap characterPositions
 
-    let occupyByAdjacentCharacter positionM (character : Entity) occupationMap =
-        let characterPositionM = vftovm character.Position
+    let occupyByAdjacentCharacter positionM characterPosition occupationMap =
+        let characterPositionM = vftovm characterPosition
         if Math.arePositionMsAdjacent characterPositionM positionM
         then Map.add characterPositionM true occupationMap
         else occupationMap
 
-    let occupyByAdjacentCharacters positionM characters occupationMap =
-        Seq.fold (flip <| occupyByAdjacentCharacter positionM) occupationMap characters
+    let occupyByAdjacentCharacters positionM characterPositions occupationMap =
+        Seq.fold (flip <| occupyByAdjacentCharacter positionM) occupationMap characterPositions
 
-    let unoccupyByCharacter (character : Entity) occupationMap =
-        let characterPositionM = vftovm character.Position
+    let unoccupyByCharacter characterPosition occupationMap =
+        let characterPositionM = vftovm characterPosition
         Map.add characterPositionM false occupationMap
 
-    let unoccupyByCharacters characters occupationMap =
-        Seq.fold (flip unoccupyByCharacter) occupationMap characters
+    let unoccupyByCharacters characterPositions occupationMap =
+        Seq.fold (flip unoccupyByCharacter) occupationMap characterPositions
 
-    let transferByDesiredTurn desiredTurn character occupationMap =
+    let transferByDesiredTurn desiredTurn characterPosition occupationMap =
         match desiredTurn with
         | ActionTurn _ -> occupationMap
-        | NavigationTurn _ -> unoccupyByCharacter character occupationMap |> occupyByDesiredTurn desiredTurn
+        | NavigationTurn _ -> unoccupyByCharacter characterPosition occupationMap |> occupyByDesiredTurn desiredTurn
         | CancelTurn -> occupationMap
         | NoTurn -> occupationMap
 
@@ -72,17 +72,17 @@ module OccupationMap =
             Map.empty
             fieldTiles
 
-    let makeFromFieldTilesAndCharacters fieldTiles characters =
+    let makeFromFieldTilesAndCharacters fieldTiles characterPositions =
         let occupationMap = makeFromFieldTiles fieldTiles
-        occupyByCharacters characters occupationMap
+        occupyByCharacters characterPositions occupationMap
 
-    let makeFromFieldTilesAndCharactersAndDesiredTurn fieldTiles characters desiredTurn =
-        let occupationMap = makeFromFieldTilesAndCharacters fieldTiles characters
+    let makeFromFieldTilesAndCharactersAndDesiredTurn fieldTiles characterPositions desiredTurn =
+        let occupationMap = makeFromFieldTilesAndCharacters fieldTiles characterPositions
         occupyByDesiredTurn desiredTurn occupationMap
 
-    let makeFromFieldTilesAndAdjacentCharacters positionM fieldTiles characters =
+    let makeFromFieldTilesAndAdjacentCharacters positionM fieldTiles characterPositions =
         let occupationMap = makeFromFieldTiles fieldTiles
-        occupyByAdjacentCharacters positionM characters occupationMap
+        occupyByAdjacentCharacters positionM characterPositions occupationMap
 
     let makeNavigationNodes occupationMap =
         

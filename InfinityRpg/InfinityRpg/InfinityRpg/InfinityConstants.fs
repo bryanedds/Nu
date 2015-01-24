@@ -32,7 +32,7 @@ module Constants =
 
     // splash constants
     let NuSplashName = "Splash"
-    let NuSplashAddress = ntoa<Screen> NuSplashName
+    let NuSplash = Screen.proxy <| ntoa NuSplashName
     let NuSplashData =
         { DissolveData = DissolveData
           IdlingTime = 60L
@@ -44,33 +44,35 @@ module Constants =
     let BatsyImage = { PackageName = GameplayPackageName; AssetName = "Batsy" }
     let ZommieImage = { PackageName = GameplayPackageName; AssetName = "Zommie" }
     let FieldTileSheetImage = { PackageName = GameplayPackageName; AssetName = "FieldTileSheet" }
+    let HerosVengeanceSong = { PackageName = GameplayPackageName; AssetName = "Hero'sVengeance" }
+    let ButterflyGirlSong = { PackageName = GuiPackageName; AssetName = "ButterflyGirl" }
 
     // title constants
     let TitleName = "Title"
-    let TitleAddress = ntoa<Screen> TitleName
+    let Title = Screen.proxy <| ntoa TitleName
     let TitleGroupName = DefaultGroupName
-    let TitleGroupAddress = satoga TitleAddress TitleGroupName
-    let ClickTitleNewGameEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ntoa "NewGame"
-    let ClickTitleLoadGameEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ntoa "LoadGame"
-    let ClickTitleCreditsEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ntoa "Credits"
-    let ClickTitleExitEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ntoa "Exit"
+    let TitleGroup = Group.proxy <| satoga Title.ScreenAddress TitleGroupName
+    let ClickTitleNewGameEventAddress = ClickEventAddress ->>- TitleGroup.GroupAddress ->- ntoa "NewGame"
+    let ClickTitleLoadGameEventAddress = ClickEventAddress ->>- TitleGroup.GroupAddress ->- ntoa "LoadGame"
+    let ClickTitleCreditsEventAddress = ClickEventAddress ->>- TitleGroup.GroupAddress ->- ntoa "Credits"
+    let ClickTitleExitEventAddress = ClickEventAddress ->>- TitleGroup.GroupAddress ->- ntoa "Exit"
 
     // credits constants
     let CreditsName = "Credits"
-    let CreditsAddress = ntoa<Screen> CreditsName
+    let Credits = Screen.proxy <| ntoa CreditsName
     let CreditsGroupName = DefaultGroupName
-    let CreditsGroupAddress = satoga CreditsAddress CreditsGroupName
-    let ClickCreditsBackEventAddress = ClickEventAddress ->>- CreditsGroupAddress ->- ntoa "Back"
+    let CreditsGroup = Group.proxy <| satoga Credits.ScreenAddress CreditsGroupName
+    let ClickCreditsBackEventAddress = ClickEventAddress ->>- CreditsGroup.GroupAddress ->- ntoa "Back"
 
     // gameplay constants
     let GameplayName = "Gameplay"
-    let GameplayAddress = ntoa<Screen> GameplayName
+    let Gameplay = Screen.proxy <| ntoa GameplayName
     
     // hud constants
     let HudName = "Hud"
-    let HudAddress = satoga GameplayAddress HudName
+    let Hud = Group.proxy <| satoga Gameplay.ScreenAddress HudName
     let HudBackName = "Back"
-    let HudBackAddress = gatoea HudAddress HudBackName
+    let HudBack = Entity.proxy <| gatoea Hud.GroupAddress HudBackName
     let HudSaveGameName = "SaveGame"
     let HudHaltName = "Halt"
     let HudFeelerName = "Feeler"
@@ -81,7 +83,7 @@ module Constants =
     let SceneName = "Scene"
     
     // scene constants
-    let SceneAddress = satoga GameplayAddress SceneName
+    let Scene = Group.proxy <| satoga Gameplay.ScreenAddress SceneName
     let FieldName = "Field"
     let PlayerName = "Player"
 
