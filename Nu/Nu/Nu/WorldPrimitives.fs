@@ -590,22 +590,17 @@ module WorldStateModule =
         static member getState world =
             world.State
 
-        /// Set the state of the world.
-        static member setState state world =
+        static member private setState state world =
             let oldState = world.State
             let world = { world with State = state }
             World.publish4 { OldWorldState = oldState } WorldStateChangeEventAddress Game world
 
-        /// Update the state of the world and the world.
-        static member updateStateAndW updater world =
-            let (state, world) = updater world.State world
+        /// Update the world state, taking the world as an argument.
+        static member updateStateW updater world =
+            let state = updater world.State world
             World.setState state world
 
-        /// Update the state of the world.
-        static member updateStateW updater world =
-            World.updateStateAndW (fun state world -> (updater state world, world)) world
-
-        /// Update the state of the world.
+        /// Update the world state.
         static member updateState updater world =
             World.updateStateW (fun state _ -> updater state) world
 

@@ -64,6 +64,18 @@ module Chain =
     let update expr : Chain<'e, unit> =
         Chain (fun world -> (expr world, Right ()))
 
+    /// Update the world state, taking the world as an argument.
+    let updateStateW expr : Chain<'e, unit> =
+        chain { do! update <| World.updateStateW expr }
+
+    /// Update the world state.
+    let updateState expr : Chain<'e, unit> =
+        updateStateW (flip (fun _ -> expr))
+
+    /// Update the world by its state.
+    let updateByState expr : Chain<'e, unit> =
+        chain { do! update <| World.updateByState expr }
+
     /// Get the next event.
     let next : Chain<'e, 'e> =
         Chain (fun world -> (world, Left returnM))
@@ -158,19 +170,3 @@ module Chain =
     /// without specifying its event handling approach by assuming Resolve.
     let runAssumingResolve chain (observation : Observation<'a, 'o>) world =
         run4 Resolve chain observation world
-
-    /// Update the state of the world and the world itself.
-    let updateStateAndW expr : Chain<'e, unit> =
-        chain { do! update <| World.updateStateAndW expr }
-
-    /// Update the state of the world.
-    let updateStateW expr : Chain<'e, unit> =
-        chain { do! update <| World.updateStateW expr }
-
-    /// Update the state of the world.
-    let updateState expr : Chain<'e, unit> =
-        updateStateW (flip (fun _ -> expr))
-
-    /// Update the world by its state.
-    let updateByState expr : Chain<'e, unit> =
-        chain { do! update <| World.updateByState expr }
