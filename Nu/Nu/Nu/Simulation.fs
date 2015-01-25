@@ -562,18 +562,17 @@ module SimulationModule =
           CallbackStates : Map<Guid, obj> }
 
     /// The world's state.
-    /// TODO: Provide an indirect accessor.
     and [<ReferenceEquality>] WorldState =
         { TickTime : int64
           Liveness : Liveness
           Interactivity : Interactivity
           OptScreenTransitionDestination : Screen option
-          Camera : Camera // TODO: move out of World state and give it it's own indirect accessor
           AssetMetadataMap : AssetMetadataMap
           AssetGraphFilePath : string
           Overlayer : Overlayer
           OverlayRouter : OverlayRouter
           OverlayFilePath : string
+          Camera : Camera // TODO: move out of World state and give it it's own indirect accessor
           UserState : obj } // TODO: consider also moving out of world state and providing an indirect accessor
 
     /// The world, in a functional programming sense. Hosts the game object, the dependencies

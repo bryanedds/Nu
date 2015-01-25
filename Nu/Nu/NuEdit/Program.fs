@@ -345,12 +345,10 @@ module Program =
         if canEditWithMouse form world then (Cascade, world)
         else
             let handled = if World.isGamePlaying world then Cascade else Resolve
-            let editorState = World.getUserState world
-            match editorState.DragEntityState with
+            match (World.getUserState world).DragEntityState with
             | DragEntityPosition _
             | DragEntityRotation _ ->
-                let editorState = { editorState with DragEntityState = DragEntityNone }
-                let world = World.setUserState editorState world
+                let world = World.updateUserState (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
                 form.propertyGrid.Refresh ()
                 (handled, world)
             | DragEntityNone -> (Resolve, world)
@@ -363,11 +361,10 @@ module Program =
         (Resolve, world)
 
     let handleNuCameraDragEnd (_ : NuEditForm) (_ : Event<MouseButtonData, Game>) world =
-        let editorState = World.getUserState world
-        match editorState.DragCameraState with
+        match (World.getUserState world).DragCameraState with
         | DragCameraPosition _ ->
-            let editorState = { editorState with DragCameraState = DragCameraNone }
-            (Resolve, World.setUserState editorState world)
+            let world = World.updateUserState (fun editorState -> { editorState with DragCameraState = DragCameraNone }) world
+            (Resolve, world)
         | DragCameraNone -> (Resolve, world)
 
     let subscribeToEntityEvents form world =
@@ -494,28 +491,30 @@ module Program =
 
     let handleFormUndo (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
-            let editorState = World.getUserState world
-            match editorState.PastWorlds with
+            match (World.getUserState world).PastWorlds with
             | [] -> world
             | pastWorld :: pastWorlds ->
                 let futureWorld = world
                 let world = World.continueHack EditorGroup pastWorld
-                let editorState = { editorState with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: editorState.FutureWorlds }
-                let world = World.setUserState editorState world
+                let world =
+                    World.updateUserState (fun editorState ->
+                        { editorState with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: editorState.FutureWorlds })
+                        world
                 let world = World.setInteractivity GuiAndPhysics world
                 refreshFormOnUndoRedo form world
                 world)
 
     let handleFormRedo (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
-            let editorState = World.getUserState world
-            match editorState.FutureWorlds with
+            match (World.getUserState world).FutureWorlds with
             | [] -> world
             | futureWorld :: futureWorlds ->
                 let pastWorld = world
                 let world = World.continueHack EditorGroup futureWorld
-                let editorState = { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = futureWorlds }
-                let world = World.setUserState editorState world
+                let world =
+                    World.updateUserState (fun editorState ->
+                        { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = futureWorlds })
+                        world
                 let world = World.setInteractivity GuiAndPhysics world
                 refreshFormOnUndoRedo form world
                 world)
@@ -629,8 +628,7 @@ module Program =
 
     let updateEntityDrag (form : NuEditForm) world =
         if not <| canEditWithMouse form world then
-            let editorState = World.getUserState world
-            match editorState.DragEntityState with
+            match (World.getUserState world).DragEntityState with
             | DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) ->
                 let (positionSnap, _) = getSnaps form
                 let mousePosition = World.getMousePositionF world
@@ -638,8 +636,10 @@ module Program =
                 let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                 let world = entity.SetPositionSnapped positionSnap entityPosition world
                 let world = World.propagatePhysics entity world
-                let editorState = { editorState with DragEntityState = DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) }
-                let world = World.setUserState editorState world
+                let world =
+                    World.updateUserState (fun editorState ->
+                        { editorState with DragEntityState = DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) })
+                        world
                 form.propertyGrid.Refresh ()
                 world
             | DragEntityRotation _ -> world
@@ -647,8 +647,7 @@ module Program =
         else world
 
     let updateCameraDrag (_ : NuEditForm) world =
-        let editorState = World.getUserState world
-        match editorState.DragCameraState with
+        match (World.getUserState world).DragCameraState with
         | DragCameraPosition (pickOffset, mousePositionScreenOrig) ->
             let world =
                 World.updateCamera (fun camera ->
@@ -657,18 +656,18 @@ module Program =
                     let eyeCenter = (pickOffset - mousePositionScreenOrig) + -CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
                     { camera with EyeCenter = eyeCenter })
                     world
-            let editorState = { editorState with DragCameraState = DragCameraPosition (pickOffset, mousePositionScreenOrig) }
-            World.setUserState editorState world
+            World.updateUserState (fun editorState ->
+                { editorState with DragCameraState = DragCameraPosition (pickOffset, mousePositionScreenOrig) })
+                world
         | DragCameraNone -> world
 
     // TODO: remove code duplication with below
     let updateUndoButton (form : NuEditForm) world =
-        let editorState = World.getUserState world
         if form.undoToolStripMenuItem.Enabled then
-            if List.isEmpty editorState.PastWorlds then
+            if List.isEmpty (World.getUserState world).PastWorlds then
                 form.undoButton.Enabled <- false
                 form.undoToolStripMenuItem.Enabled <- false
-        elif not <| List.isEmpty editorState.PastWorlds then
+        elif not <| List.isEmpty (World.getUserState world).PastWorlds then
             form.undoButton.Enabled <- true
             form.undoToolStripMenuItem.Enabled <- true
 
