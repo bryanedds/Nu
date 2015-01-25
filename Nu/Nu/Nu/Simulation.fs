@@ -821,15 +821,14 @@ module SimulationModule =
         member this.Peek world = Watchable (this.ViewProperties world, this.ViewXFields world)
 
         /// TODO: document!
-        member this.GetTransform world : Transform =
-            { Position = this.GetPosition world
+        member this.GetTransform world =
+            { Transform.Position = this.GetPosition world
               Depth = this.GetDepth world
               Size = this.GetSize world
               Rotation = this.GetRotation world }
 
         /// TODO: document!
-        member this.SetTransform positionSnap rotationSnap transform world =
-            let transform = Math.snapTransform positionSnap rotationSnap transform
+        member this.SetTransform (transform : Transform) world =
             world |>
                 this.SetPosition transform.Position |>
                 this.SetDepth transform.Depth |>
@@ -840,6 +839,11 @@ module SimulationModule =
         member this.SetPositionSnapped snap position world =
             let snapped = Math.snap2F snap position
             this.SetPosition snapped world
+
+        /// TODO: document!
+        member this.SetTransformSnapped positionSnap rotationSnap transform world =
+            let transform = Math.snapTransform positionSnap rotationSnap transform
+            this.SetTransform transform world
 
         /// Query that an entity dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world =
@@ -1561,15 +1565,15 @@ module SimulationModule =
         static member containsEntity entity world =
             Option.isSome <| World.optEntityStateFinder entity world
 
-        /// Get all the entities contained by a group.
-        static member getEntities group world =
+        /// Proxy all the entities contained by a group.
+        static member proxyEntities group world =
             let entityStateMap = World.getEntityStateMap group world
             Seq.map (fun (kvp : KeyValuePair<string, _>) -> Entity.proxy <| World.gatoea group.GroupAddress kvp.Key) entityStateMap
 
         // Get all the entities in the world.
-        static member getEntities1 world =
-            World.getGroups1 world |>
-            Seq.map (fun group -> World.getEntities group world) |>
+        static member proxyEntities1 world =
+            World.proxyGroups1 world |>
+            Seq.map (fun group -> World.proxyEntities group world) |>
             Seq.concat
 
         /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight
@@ -1970,16 +1974,16 @@ module SimulationModule =
             Option.isSome <| World.optGroupStateFinder group world
 
         /// Get all the groups in a screen.
-        static member getGroups screen world =
+        static member proxyGroups screen world =
             let groupStateMap = World.getGroupStateMap screen world
             Seq.map
                 (fun (kvp : KeyValuePair<string, _>) -> Group.proxy <| World.satoga screen.ScreenAddress kvp.Key)
                 groupStateMap
 
         // Get all the groups in the world.
-        static member getGroups1 world =
-            World.getScreens world |>
-            Seq.map (fun screen -> World.getGroups screen world) |>
+        static member proxyGroups1 world =
+            World.proxyScreens world |>
+            Seq.map (fun screen -> World.proxyGroups screen world) |>
             Seq.concat
 
         /// Destroy a group in the world immediately. Can be dangerous if existing in-flight
@@ -1988,7 +1992,7 @@ module SimulationModule =
             let world = World.publish4 () (World.GroupRemovingEventAddress ->>- group.GroupAddress) group world
             if World.containsGroup group world then
                 let world = World.unregisterGroup group world
-                let entities = World.getEntities group world
+                let entities = World.proxyEntities group world
                 let world = World.destroyEntitiesImmediate entities world
                 World.setOptGroupStateWithoutEvent None group world
             else world
@@ -2029,7 +2033,7 @@ module SimulationModule =
         /// Write a group to an xml writer.
         static member writeGroup (writer : XmlWriter) group world =
             let groupState = World.getGroupState group world
-            let entities = World.getEntities group world
+            let entities = World.proxyEntities group world
             writer.WriteAttributeString (DispatcherNameAttributeName, Reflection.getTypeName groupState.DispatcherNp)
             Reflection.writeMemberValuesFromTarget tautology3 writer groupState
             writer.WriteStartElement EntitiesNodeName
@@ -2210,7 +2214,7 @@ module SimulationModule =
             Option.isSome <| World.optScreenStateFinder screen world
 
         /// Get all the world's screens.
-        static member getScreens world =
+        static member proxyScreens world =
             World.getScreenStateMap world |>
                 Map.fold (fun screensRev screenName _ -> (Screen.proxy <| ntoa screenName) :: screensRev) [] |>
                 List.rev
@@ -2221,7 +2225,7 @@ module SimulationModule =
             let world = World.publish4 () (World.ScreenRemovingEventAddress ->>- screen.ScreenAddress) screen world
             if World.containsScreen screen world then
                 let world = World.unregisterScreen screen world
-                let groups = World.getGroups screen world
+                let groups = World.proxyGroups screen world
                 let world = World.destroyGroupsImmediate groups world
                 World.setOptScreenStateWithoutEvent None screen world
             else world
@@ -2254,7 +2258,7 @@ module SimulationModule =
         /// Write a screen to an xml writer.
         static member writeScreen (writer : XmlWriter) screen world =
             let screenState = World.getScreenState screen world
-            let groups = World.getGroups screen world
+            let groups = World.proxyGroups screen world
             writer.WriteAttributeString (DispatcherNameAttributeName, Reflection.getTypeName screenState.DispatcherNp)
             Reflection.writeMemberValuesFromTarget tautology3 writer screenState
             writer.WriteStartElement GroupsNodeName
@@ -2396,7 +2400,7 @@ module SimulationModule =
         /// Write a game to an xml writer.
         static member writeGame (writer : XmlWriter) world =
             let gameState = World.getGameState world
-            let screens = World.getScreens world
+            let screens = World.proxyScreens world
             writer.WriteAttributeString (DispatcherNameAttributeName, Reflection.getTypeName gameState.DispatcherNp)
             Reflection.writeMemberValuesFromTarget tautology3 writer gameState
             writer.WriteStartElement ScreensNodeName
