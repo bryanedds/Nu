@@ -89,6 +89,12 @@ module WorldPrimitivesModule =
         /// Make a callback key used to track callback states.
         static member makeCallbackKey () = Guid.NewGuid ()
 
+        /// Get an entity's picking priority.
+        static member getEntityPickingPriority entity world =
+            let entityState = World.getEntityState entity world
+            let dispatcher = entityState.DispatcherNp
+            dispatcher.GetPickingPriority entity entityState.Depth world
+
         /// Sort subscriptions using categorization via the 'by' procedure.
         static member sortSubscriptionsBy by (subscriptions : SubscriptionEntry list) world =
             let subscriptions = World.getSortableSubscriptions by subscriptions world
@@ -97,12 +103,7 @@ module WorldPrimitivesModule =
 
         /// Sort subscriptions by their editor picking priority.
         static member sortSubscriptionsByPickingPriority subscriptions world =
-            World.sortSubscriptionsBy
-                (fun (entity : Entity) world ->
-                    let dispatcher = (World.getEntityState entity world).DispatcherNp
-                    dispatcher.GetPickingPriority entity world)
-                subscriptions
-                world
+            World.sortSubscriptionsBy World.getEntityPickingPriority subscriptions world
 
         /// Sort subscriptions by their place in the world's simulant hierarchy.
         static member sortSubscriptionsByHierarchy subscriptions world =
