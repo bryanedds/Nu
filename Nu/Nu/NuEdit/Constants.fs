@@ -13,7 +13,7 @@ module Constants =
 
     let EditorScreenName = "EditorScreen"
     let EditorScreen = Screen.proxy <| ntoa EditorScreenName
-    let EditorGroupName = DefaultGroupName
+    let EditorGroupName = "Group"
     let EditorGroup = Group.proxy <| satoga EditorScreen.ScreenAddress EditorGroupName
     let AddEntityKey = World.makeSubscriptionKey ()
     let RemovingEntityKey = World.makeSubscriptionKey ()

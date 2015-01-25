@@ -32,6 +32,18 @@ module WorldModule =
 
     type World with
 
+        /// Ignore all handled events.
+        static member handleAsPass<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
+            (Cascade, world)
+
+        /// Swallow all handled events.
+        static member handleAsSwallow<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
+            (Resolve, world)
+        
+        /// Handle event by exiting app.
+        static member handleAsExit<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
+            (Resolve, World.exit world)
+
         /// Try to query that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
         static member tryGetIsSelectedScreenIdling world =
