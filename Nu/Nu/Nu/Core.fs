@@ -21,7 +21,7 @@ module CoreModule =
         | Exiting
         
     /// Sequences two functions like Haskell ($).
-    /// Same as the (^) operator found in Prime, but placed here to expose directly it from Nu.
+    /// Same as the (^) operator found in Prime, but placed here to expose it directly from Nu.
     let (^) = (^)
 
 [<RequireQualifiedAccess>]

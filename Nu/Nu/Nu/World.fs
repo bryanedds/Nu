@@ -579,12 +579,12 @@ module WorldModule =
                       Liveness = Running
                       Interactivity = interactivity
                       OptScreenTransitionDestination = None
-                      Camera = camera
                       AssetMetadataMap = assetMetadataMap
                       AssetGraphFilePath = AssetGraphFilePath
                       Overlayer = Overlayer.make OverlayFilePath intrinsicOverlays
                       OverlayRouter = OverlayRouter.make entityDispatchers userOverlayRoutes
                       OverlayFilePath = OverlayFilePath
+                      Camera = camera
                       UserState = userState }
 
                 // make the simulant states
@@ -645,14 +645,13 @@ module WorldModule =
                   Liveness = Running
                   Interactivity = GuiOnly
                   OptScreenTransitionDestination = None
-                  Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single ResolutionXDefault, single ResolutionYDefault) }
                   AssetMetadataMap = Map.empty
                   AssetGraphFilePath = String.Empty
                   OverlayRouter = OverlayRouter.make (Map.ofList [World.pairWithName entityDispatcher]) []
                   OverlayFilePath = String.Empty
                   Overlayer = { Overlays = XmlDocument () }
+                  Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single ResolutionXDefault, single ResolutionYDefault) }
                   UserState = userState }
-                  
 
             // make the simulant states
             let simulantStates = (World.makeGameState gameDispatcher, Map.empty)

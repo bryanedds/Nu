@@ -613,11 +613,6 @@ module WorldStateModule =
         static member updateByState updater world : World =
             updater world.State world
 
-        /// Lens the state of the world.
-        static member lensState =
-            { Get = World.getState
-              Set = World.setState }
-
         /// Get the world's tick time.
         static member getTickTime world =
             world.State.TickTime
@@ -661,8 +656,7 @@ module WorldStateModule =
         static member getCamera world =
             world.State.Camera
 
-        /// Set the camera used to view the world.
-        static member setCamera camera world =
+        static member private setCamera camera world =
             let state = { world.State with Camera = camera }
             World.setState state world
 
@@ -695,8 +689,7 @@ module WorldStateModule =
         static member getUserState world : 'u =
             world.State.UserState :?> 'u
 
-        /// Set the user state of the world.
-        static member setUserState (userState : 'u) world =
+        static member private setUserState (userState : 'u) world =
             let state = { world.State with UserState = userState }
             World.setState state world
 
