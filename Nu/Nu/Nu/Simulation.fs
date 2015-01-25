@@ -468,7 +468,7 @@ module SimulationModule =
               FacetsNp = []
               OptOverlayName = optOverlayName
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
-            
+
     /// A marker interface for the simulation types (Game, Screen, Group, and Entity).
     /// The only methods that have a place in here are those used internally by Nu's event system.
     and Simulant =
@@ -635,6 +635,27 @@ module SimulationModule =
             let xtension = this.GetXtension world
             let xField = Map.find name xtension.XFields
             xField.FieldValue
+            
+        /// Provides a view of all the properties of a game. Useful for debugging such as with
+        /// the Watch feature in Visual Studio.
+        member private this.ViewProperties world =
+            let state = World.getGameState world
+            let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, (property.Name, property.GetValue state))) ((state.GetType ()).GetProperties ())
+            Map.ofSeq properties
+            
+        /// Provides a view of all the xtension fields of a game. Useful for debugging such as
+        /// with the Watch feature in Visual Studio.
+        member private this.ViewXFields world =
+            let state = World.getGameState world
+            Map.map (fun name field -> (name, field.FieldValue)) state.Xtension.XFields
+
+        /// Provides a full view of all the member values of a game. Useful for debugging such
+        /// as with the Watch feature in Visual Studio.
+        member this.View world = this.ViewProperties world @@ this.ViewXFields world
+
+        /// Provides a partitioned view of all the member values of a game. Useful for debugging
+        /// such as with the Watch feature in Visual Studio.
+        member this.Peek world = Watchable (this.ViewProperties world, this.ViewXFields world)
 
         /// Query that a game dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world =
@@ -667,6 +688,27 @@ module SimulationModule =
             let xtension = this.GetXtension world
             let xField = Map.find name xtension.XFields
             xField.FieldValue
+            
+        /// Provides a view of all the properties of a screen. Useful for debugging such as with
+        /// the Watch feature in Visual Studio.
+        member private this.ViewProperties world =
+            let state = World.getScreenState this world
+            let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, (property.Name, property.GetValue state))) ((state.GetType ()).GetProperties ())
+            Map.ofSeq properties
+            
+        /// Provides a view of all the xtension fields of a screen. Useful for debugging such as
+        /// with the Watch feature in Visual Studio.
+        member private this.ViewXFields world =
+            let state = World.getScreenState this world
+            Map.map (fun name field -> (name, field.FieldValue)) state.Xtension.XFields
+
+        /// Provides a full view of all the member values of a screen. Useful for debugging such
+        /// as with the Watch feature in Visual Studio.
+        member this.View world = this.ViewProperties world @@ this.ViewXFields world
+
+        /// Provides a partitioned view of all the member values of a screen. Useful for debugging
+        /// such as with the Watch feature in Visual Studio.
+        member this.Peek world = Watchable (this.ViewProperties world, this.ViewXFields world)
 
         /// Query that a screen is in an idling state (not transitioning in nor out).
         member this.IsIdling world =
@@ -695,6 +737,27 @@ module SimulationModule =
             let xtension = this.GetXtension world
             let xField = Map.find name xtension.XFields
             xField.FieldValue
+            
+        /// Provides a view of all the properties of a group. Useful for debugging such as with
+        /// the Watch feature in Visual Studio.
+        member private this.ViewProperties world =
+            let state = World.getGroupState this world
+            let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, (property.Name, property.GetValue state))) ((state.GetType ()).GetProperties ())
+            Map.ofSeq properties
+            
+        /// Provides a view of all the xtension fields of a group. Useful for debugging such as
+        /// with the Watch feature in Visual Studio.
+        member private this.ViewXFields world =
+            let state = World.getGroupState this world
+            Map.map (fun name field -> (name, field.FieldValue)) state.Xtension.XFields
+
+        /// Provides a full view of all the member values of a group. Useful for debugging such
+        /// as with the Watch feature in Visual Studio.
+        member this.View world = this.ViewProperties world @@ this.ViewXFields world
+
+        /// Provides a partitioned view of all the member values of a group. Useful for debugging
+        /// such as with the Watch feature in Visual Studio.
+        member this.Peek world = Watchable (this.ViewProperties world, this.ViewXFields world)
 
         /// Query that a group dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world =
@@ -735,24 +798,27 @@ module SimulationModule =
             let xtension = this.GetXtension world
             let xField = Map.find name xtension.XFields
             xField.FieldValue
-
-        /// Provides a full view of all the fields of an entity. Useful for debugging such as with
+            
+        /// Provides a view of all the properties of an entity. Useful for debugging such as with
         /// the Watch feature in Visual Studio.
-        member this.View world =
+        member private this.ViewProperties world =
             let state = World.getEntityState this world
-            let dnarray = Array.map (fun (property : PropertyInfo) -> (property.Name, (property.Name, property.GetValue state))) ((state.GetType ()).GetProperties ())
-            let dnmap = Map.ofSeq dnarray
-            let xtmap = Map.map (fun name field -> (name, field.FieldValue)) state.Xtension.XFields
-            dnmap @@ xtmap
+            let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, (property.Name, property.GetValue state))) ((state.GetType ()).GetProperties ())
+            Map.ofSeq properties
+            
+        /// Provides a view of all the xtension fields of an entity. Useful for debugging such as
+        /// with the Watch feature in Visual Studio.
+        member private this.ViewXFields world =
+            let state = World.getEntityState this world
+            Map.map (fun name field -> (name, field.FieldValue)) state.Xtension.XFields
 
-        /// Provides a partitioned view of all the fields of an entity. Useful for debugging such
+        /// Provides a full view of all the member values of an entity. Useful for debugging such
         /// as with the Watch feature in Visual Studio.
-        member this.Peek world =
-            let state = World.getEntityState this world
-            let dnarray = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
-            let dnmap = Map.ofSeq dnarray
-            let xtmap = Map.map (fun _ field -> field.FieldValue) state.Xtension.XFields
-            Watchable (dnmap, xtmap)
+        member this.View world = this.ViewProperties world @@ this.ViewXFields world
+
+        /// Provides a partitioned view of all the member values of an entity. Useful for debugging
+        /// such as with the Watch feature in Visual Studio.
+        member this.Peek world = Watchable (this.ViewProperties world, this.ViewXFields world)
 
         /// TODO: document!
         member this.GetTransform world : Transform =
