@@ -61,7 +61,7 @@ module Program =
     let CameraSpeed = 4.0f // NOTE: might be nice to be able to configure this just like entity creation depth in the editor
 
     let getPickableEntities world =
-        World.getEntities EditorGroup world
+        World.proxyEntities EditorGroup world
 
     let pushPastWorld pastWorld world =
         World.updateUserState
@@ -247,7 +247,7 @@ module Program =
             ignore <| form.treeView.Nodes.Add treeGroup
 
     let populateTreeViewNodes (form : NuEditForm) world =
-        for entity in World.getEntities EditorGroup world do
+        for entity in World.proxyEntities EditorGroup world do
             addTreeViewNode form entity world
 
     let tryScrollTreeViewToPropertyGridSelection (form : NuEditForm) =
@@ -455,7 +455,7 @@ module Program =
                       Depth = getCreationDepth form
                       Size = entity.GetSize world
                       Rotation = entity.GetRotation world }
-                let world = entity.SetTransform positionSnap rotationSnap entityTransform world
+                let world = entity.SetTransformSnapped positionSnap rotationSnap entityTransform world
                 let world = World.propagatePhysics entity world
                 refWorld := world // must be set for property grid
                 let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }

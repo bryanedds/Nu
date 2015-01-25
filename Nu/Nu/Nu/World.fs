@@ -261,7 +261,7 @@ module WorldModule =
                 let world = World.setOverlayer overlayer world
 
                 // apply overlays to all entities
-                let entities = World.getEntities1 world
+                let entities = World.proxyEntities1 world
                 let world =
                     Seq.fold
                         (fun world (entity : Entity) ->
@@ -324,7 +324,7 @@ module WorldModule =
             // processed.
             let world = World.clearSubsystemsMessages world
             let world = World.addPhysicsMessage RebuildPhysicsHackMessage world
-            let entities = World.getEntities group world
+            let entities = World.proxyEntities group world
             Seq.fold (flip World.propagatePhysics) world entities
 
         static member private processSubsystems subsystemType world =

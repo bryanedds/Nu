@@ -41,8 +41,8 @@ module WorldRenderModule =
             match World.getOptSelectedScreen world with
             | Some selectedScreen ->
                 if World.containsScreen selectedScreen world then
-                    let groups = World.getGroups selectedScreen world
-                    let entities = Seq.concat <| Seq.map (fun group -> World.getEntities group world) groups
+                    let groups = World.proxyGroups selectedScreen world
+                    let entities = Seq.concat <| Seq.map (fun group -> World.proxyEntities group world) groups
                     let descriptors =
                         Seq.map (fun entity -> World.getRenderDescriptors entity world) entities |>
                         Seq.concat |>

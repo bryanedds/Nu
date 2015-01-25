@@ -53,7 +53,7 @@ module GameplayDispatcherModule =
             Entity.proxy <| gatoea (proxyScene gameplay).GroupAddress FieldName
         
         static let proxyCharacters gameplay world =
-            let entities = World.getEntities (proxyScene gameplay) world
+            let entities = World.proxyEntities (proxyScene gameplay) world
             Seq.filter (fun (entity : Entity) -> entity.DispatchesAs typeof<CharacterDispatcher> world) entities
 
         static let proxyOptCharacterAtPosition position gameplay world =
@@ -70,7 +70,7 @@ module GameplayDispatcherModule =
             Entity.proxy <| gatoea (proxyScene gameplay).GroupAddress PlayerName
 
         static let proxyEnemies gameplay world =
-            let entities = World.getEntities (proxyScene gameplay) world
+            let entities = World.proxyEntities (proxyScene gameplay) world
             Seq.filter (fun (entity : Entity) -> entity.DispatchesAs typeof<EnemyDispatcher> world) entities
 
         (* End of Proxies *)

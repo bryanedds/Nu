@@ -296,7 +296,7 @@ module StageScreenModule =
 
         static let createStageSectionFromFile filePath sectionName xShift world =
             let (section, world) = World.readGroupFromFile filePath (Some sectionName) Stage world
-            let sectionEntities = World.getEntities section world
+            let sectionEntities = World.proxyEntities section world
             shiftEntities xShift sectionEntities world
 
         static let createStageSections world =
