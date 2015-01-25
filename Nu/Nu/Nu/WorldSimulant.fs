@@ -3,11 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
-open System.IO
-open System.Reflection
-open System.Xml
-open OpenTK
 open Prime
 open Nu
 open Nu.Constants

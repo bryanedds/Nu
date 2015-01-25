@@ -251,8 +251,8 @@ module ButtonDispatcherModule =
             let data = event.Data : MouseButtonData
             if World.isSimulantSelected button world then
                 let mousePositionWorld = Camera.mouseToWorld (button.GetViewType world) data.Position world.State.Camera
-                if  Math.isPointInBounds3 mousePositionWorld (button.GetPosition world) (button.GetSize world) &&
-                    button.GetVisible world then
+                if  button.GetVisible world &&
+                    Math.isPointInBounds3 mousePositionWorld (button.GetPosition world) (button.GetSize world) then
                     if button.GetEnabled world then
                         let world = button.SetDown true world
                         let world = World.publish4 () (DownEventAddress ->>- button.EntityAddress) button world
@@ -268,8 +268,8 @@ module ButtonDispatcherModule =
                 let wasDown = button.GetDown world
                 let world = button.SetDown false world
                 let mousePositionWorld = Camera.mouseToWorld (button.GetViewType world) data.Position world.State.Camera
-                if Math.isPointInBounds3 mousePositionWorld (button.GetPosition world) (button.GetSize world) &&
-                    button.GetVisible world then
+                if  button.GetVisible world &&
+                    Math.isPointInBounds3 mousePositionWorld (button.GetPosition world) (button.GetSize world) then
                     if button.GetEnabled world && wasDown then
                         let world = World.publish4 () (UpEventAddress ->>- button.EntityAddress) button world
                         let world = World.publish4 () (ClickEventAddress ->>- button.EntityAddress) button world
@@ -430,8 +430,8 @@ module ToggleDispatcherModule =
             let data = event.Data : MouseButtonData
             if World.isSimulantSelected toggle world then
                 let mousePositionWorld = Camera.mouseToWorld (toggle.GetViewType world) data.Position world.State.Camera
-                if  Math.isPointInBounds3 mousePositionWorld (toggle.GetPosition world) (toggle.GetSize world) &&
-                    toggle.GetVisible world then
+                if  toggle.GetVisible world &&
+                    Math.isPointInBounds3 mousePositionWorld (toggle.GetPosition world) (toggle.GetSize world) then
                     if toggle.GetEnabled world then
                         let world = toggle.SetPressed true world
                         (Resolve, world)
@@ -446,8 +446,8 @@ module ToggleDispatcherModule =
                 let wasPressed = toggle.GetPressed world
                 let world = toggle.SetPressed false world
                 let mousePositionWorld = Camera.mouseToWorld (toggle.GetViewType world) data.Position world.State.Camera
-                if  Math.isPointInBounds3 mousePositionWorld (toggle.GetPosition world) (toggle.GetSize world) &&
-                    toggle.GetVisible world then
+                if  toggle.GetVisible world &&
+                    Math.isPointInBounds3 mousePositionWorld (toggle.GetPosition world) (toggle.GetSize world) then
                     if toggle.GetEnabled world && wasPressed then
                         let world = toggle.SetOn (not <| toggle.GetOn world) world
                         let eventAddress = if toggle.GetOn world then OnEventAddress else OffEventAddress
@@ -510,8 +510,8 @@ module FeelerDispatcherModule =
             let data = event.Data : MouseButtonData
             if World.isSimulantSelected feeler world then
                 let mousePositionWorld = Camera.mouseToWorld (feeler.GetViewType world) data.Position world.State.Camera
-                if  Math.isPointInBounds3 mousePositionWorld (feeler.GetPosition world) (feeler.GetSize world) &&
-                    feeler.GetVisible world then
+                if  feeler.GetVisible world &&
+                    Math.isPointInBounds3 mousePositionWorld (feeler.GetPosition world) (feeler.GetSize world) then
                     if feeler.GetEnabled world then
                         let world = feeler.SetTouched true world
                         let world = World.publish4 data.Position (TouchEventAddress ->>- feeler.EntityAddress) feeler world
@@ -578,6 +578,7 @@ module FillBarDispatcherModule =
         override dispatcher.GetRenderDescriptors fillBar world =
             if fillBar.GetVisible world then
                 let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar world
+                let fillBarColor = if fillBar.GetEnabled world then Vector4.One else fillBar.GetDisabledColor world
                 [LayerableDescriptor
                     { Depth = fillBar.GetDepth world
                       LayeredDescriptor =
@@ -588,7 +589,7 @@ module FillBarDispatcherModule =
                               ViewType = Absolute
                               OptInset = None
                               Image = fillBar.GetBorderImage world
-                              Color = if fillBar.GetEnabled world then Vector4.One else fillBar.GetDisabledColor world }}
+                              Color = fillBarColor }}
                  LayerableDescriptor
                     { Depth = fillBar.GetDepth world
                       LayeredDescriptor =
@@ -599,7 +600,7 @@ module FillBarDispatcherModule =
                               ViewType = Absolute
                               OptInset = None
                               Image = fillBar.GetFillImage world
-                              Color = if fillBar.GetEnabled world then Vector4.One else fillBar.GetDisabledColor world }}]
+                              Color = fillBarColor }}]
             else []
 
         override dispatcher.GetQuickSize fillBar world =

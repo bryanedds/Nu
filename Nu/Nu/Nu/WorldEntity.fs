@@ -272,9 +272,8 @@ module WorldEntityModule =
                 facets
 
         /// Get the priority with which an entity is picked in the editor.
-        static member getPickingPriority (entity : Entity) world =
-            let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
-            dispatcher.GetPickingPriority entity world
+        static member getPickingPriority entity world =
+            World.getEntityPickingPriority entity world
 
         /// TODO: document!
         static member pickingSort entities world =

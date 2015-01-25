@@ -42,9 +42,10 @@ module WorldRenderModule =
             | Some selectedScreen ->
                 if World.containsScreen selectedScreen world then
                     let groups = World.proxyGroups selectedScreen world
-                    let entities = Seq.concat <| Seq.map (fun group -> World.proxyEntities group world) groups
                     let descriptors =
-                        Seq.map (fun entity -> World.getRenderDescriptors entity world) entities |>
+                        Seq.map (fun group -> World.proxyEntities group world) groups |>
+                        Seq.concat |>
+                        Seq.map (fun entity -> World.getRenderDescriptors entity world) |>
                         Seq.concat |>
                         List.ofSeq
                     match selectedScreen.GetTransitionStateNp world with

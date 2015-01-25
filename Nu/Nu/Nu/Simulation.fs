@@ -254,8 +254,8 @@ module SimulationModule =
         default dispatcher.GetQuickSize _ _ = Vector2.One
 
         /// Get the priority with which an entity is picked in the editor.
-        abstract GetPickingPriority : Entity -> World -> single
-        default dispatcher.GetPickingPriority _ _ = 0.0f // (World.getEntityState entity world).Depth
+        abstract GetPickingPriority : Entity -> single -> World -> single
+        default dispatcher.GetPickingPriority _ depth _ = depth
 
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
