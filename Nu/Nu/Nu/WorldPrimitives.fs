@@ -586,8 +586,6 @@ module WorldStateModule =
 
     type World with
 
-        (* WorldState *)
-
         /// Get the state of the world.
         static member getState world =
             world.State
