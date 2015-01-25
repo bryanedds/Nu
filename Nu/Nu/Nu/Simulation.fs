@@ -572,8 +572,8 @@ module SimulationModule =
           Overlayer : Overlayer
           OverlayRouter : OverlayRouter
           OverlayFilePath : string
-          Camera : Camera // TODO: move out of World state and give it it's own indirect accessor
-          UserState : obj } // TODO: consider also moving out of world state and providing an indirect accessor
+          Camera : Camera
+          UserState : obj }
 
     /// The world, in a functional programming sense. Hosts the game object, the dependencies
     /// needed to implement a game, messages to by consumed by the various engine sub-systems,
