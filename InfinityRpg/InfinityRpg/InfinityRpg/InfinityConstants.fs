@@ -50,19 +50,24 @@ module Constants =
     // title constants
     let TitleName = "Title"
     let Title = Screen.proxy <| ntoa TitleName
-    let TitleGroupName = DefaultGroupName
+    let TitleGroupName = "Group"
     let TitleGroup = Group.proxy <| satoga Title.ScreenAddress TitleGroupName
-    let ClickTitleNewGameEventAddress = ClickEventAddress ->>- TitleGroup.GroupAddress ->- ntoa "NewGame"
-    let ClickTitleLoadGameEventAddress = ClickEventAddress ->>- TitleGroup.GroupAddress ->- ntoa "LoadGame"
-    let ClickTitleCreditsEventAddress = ClickEventAddress ->>- TitleGroup.GroupAddress ->- ntoa "Credits"
-    let ClickTitleExitEventAddress = ClickEventAddress ->>- TitleGroup.GroupAddress ->- ntoa "Exit"
+    let TitleNewGameName = "NewGame"
+    let TitleNewGame = Entity.proxy <| gatoea TitleGroup.GroupAddress TitleNewGameName
+    let TitleLoadGameName = "LoadGame"
+    let TitleLoadGame = Entity.proxy <| gatoea TitleGroup.GroupAddress TitleLoadGameName
+    let TitleCreditsName = "Credits"
+    let TitleCredits = Entity.proxy <| gatoea TitleGroup.GroupAddress TitleCreditsName
+    let TitleExitName = "Exit"
+    let TitleExit = Entity.proxy <| gatoea TitleGroup.GroupAddress TitleExitName
 
     // credits constants
     let CreditsName = "Credits"
     let Credits = Screen.proxy <| ntoa CreditsName
-    let CreditsGroupName = DefaultGroupName
+    let CreditsGroupName = "Group"
     let CreditsGroup = Group.proxy <| satoga Credits.ScreenAddress CreditsGroupName
-    let ClickCreditsBackEventAddress = ClickEventAddress ->>- CreditsGroup.GroupAddress ->- ntoa "Back"
+    let CreditsBackName = "Back"
+    let CreditsBack = Entity.proxy <| gatoea CreditsGroup.GroupAddress CreditsBackName
 
     // gameplay constants
     let GameplayName = "Gameplay"
