@@ -210,7 +210,8 @@ module GuiDispatcherModule =
             let eventHandling =
                 if World.isSimulantSelected gui world && gui.GetVisible world then
                     let mousePositionWorld = Camera.mouseToWorld (gui.GetViewType world) data.Position world.State.Camera
-                    if gui.GetSwallowMouseLeft world &&
+                    if data.Down &&
+                       gui.GetSwallowMouseLeft world &&
                        Math.isPointInBounds3 mousePositionWorld (gui.GetPosition world) (gui.GetSize world) then
                        Resolve
                     else Cascade
