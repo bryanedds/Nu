@@ -90,7 +90,7 @@ module ObservationTests =
         let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) screen world
         let (jim, world) = World.createEntity typeof<EntityDispatcher>.Name (Some JimName) group world
         let (bob, world) = World.createEntity typeof<EntityDispatcher>.Name (Some BobName) group world
-        let world = world |> (bob, bob.GetVisible) *--> (jim, jim.SetVisible)
+        let world = world |> (bob, bob.GetVisible) *-> (jim, jim.SetVisible)
         let world = bob.SetVisible false world
         Assert.False <| bob.GetVisible world
         Assert.False <| jim.GetVisible world
@@ -103,8 +103,8 @@ module ObservationTests =
         let (bob, world) = World.createEntity typeof<EntityDispatcher>.Name (Some BobName) group world
         let world =
             world |>
-                (bob, bob.GetVisible) *--> (jim, jim.SetVisible) |>
-                (jim, jim.GetVisible) /--> (bob, not >> bob.SetVisible)
+                (bob, bob.GetVisible) *-> (jim, jim.SetVisible) |>
+                (jim, jim.GetVisible) /-> (bob, not >> bob.SetVisible)
         let world = bob.SetVisible false world
         Assert.True <| bob.GetVisible world
         Assert.True <| jim.GetVisible world
