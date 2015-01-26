@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Reflection
+open System.Runtime.CompilerServices
 open System.Xml
 open OpenTK
 open Prime
@@ -35,27 +36,6 @@ module WorldGroupModule =
             let xtension = this.GetXtension world
             let xField = Map.find name xtension.XFields
             xField.FieldValue
-            
-        /// Provides a view of all the properties of a group. Useful for debugging such as with
-        /// the Watch feature in Visual Studio.
-        member this.ViewProperties world =
-            let state = World.getGroupState this world
-            let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, (property.Name, property.GetValue state))) ((state.GetType ()).GetProperties ())
-            Map.ofSeq properties
-            
-        /// Provides a view of all the xtension fields of a group. Useful for debugging such as
-        /// with the Watch feature in Visual Studio.
-        member this.ViewXFields world =
-            let state = World.getGroupState this world
-            Map.map (fun name field -> (name, field.FieldValue)) state.Xtension.XFields
-
-        /// Provides a full view of all the member values of a group. Useful for debugging such
-        /// as with the Watch feature in Visual Studio.
-        member this.View world = this.ViewProperties world @@ this.ViewXFields world
-
-        /// Provides a partitioned view of all the member values of a group. Useful for debugging
-        /// such as with the Watch feature in Visual Studio.
-        member this.Peek world = Watchable (this.ViewProperties world, this.ViewXFields world)
 
         /// Query that a group dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world =
@@ -226,3 +206,35 @@ module WorldGroupModule =
                         ([], world)
                         (enumerable <| groupsNode.SelectNodes GroupNodeName)
                 (List.rev groupsRev, world)
+
+type [<Extension>] GroupExtension =
+
+    /// Provides a view of all the properties of a group. Useful for debugging such as with
+    /// the Watch feature in Visual Studio.
+    [<Extension>]
+    static member ViewProperties (group : Group) world =
+        let state = World.getGroupState group world
+        let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
+        Map.ofSeq properties
+            
+    /// Provides a view of all the xtension fields of a group. Useful for debugging such as
+    /// with the Watch feature in Visual Studio.
+    [<Extension>]
+    static member ViewXFields (group : Group) world =
+        let state = World.getGroupState group world
+        Map.map (fun _ field -> field.FieldValue) state.Xtension.XFields
+
+    /// Provides a full view of all the member values of a group. Useful for debugging such
+    /// as with the Watch feature in Visual Studio.
+    [<Extension>]
+    static member View (group : Group) world =
+        GroupExtension.ViewProperties group world @@
+        GroupExtension.ViewXFields group world
+
+    /// Provides a partitioned view of all the member values of a group. Useful for debugging
+    /// such as with the Watch feature in Visual Studio.
+    [<Extension>]
+    static member Peek (group : Group) world =
+        Watchable (
+            GroupExtension.ViewProperties group world,
+            GroupExtension.ViewXFields group world)
