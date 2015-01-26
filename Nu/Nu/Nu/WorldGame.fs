@@ -143,34 +143,28 @@ module WorldGameModule =
                 typeof<EntityDispatcher>.Name
                 world
 
-type [<Extension>] GameExtension =
-
-    /// Provides a view of all the properties of a game. Useful for debugging such as with
-    /// the Watch feature in Visual Studio.
-    [<Extension>]
-    static member ViewProperties (_ : Game) world =
-        let state = World.getGameState world
-        let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
-        Map.ofSeq properties
+        /// Provides a view of all the properties of a game. Useful for debugging such as with
+        /// the Watch feature in Visual Studio.
+        static member ViewGameProperties world =
+            let state = World.getGameState world
+            let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
+            Map.ofSeq properties
             
-    /// Provides a view of all the xtension fields of a game. Useful for debugging such as
-    /// with the Watch feature in Visual Studio.
-    [<Extension>]
-    static member ViewXFields (_ : Game) world =
-        let state = World.getGameState world
-        Map.map (fun _ field -> field.FieldValue) state.Xtension.XFields
+        /// Provides a view of all the xtension fields of a game. Useful for debugging such as
+        /// with the Watch feature in Visual Studio.
+        static member ViewGameXFields world =
+            let state = World.getGameState world
+            Map.map (fun _ field -> field.FieldValue) state.Xtension.XFields
 
-    /// Provides a full view of all the member values of a game. Useful for debugging such
-    /// as with the Watch feature in Visual Studio.
-    [<Extension>]
-    static member View (game : Game) world =
-        GameExtension.ViewProperties game world @@
-        GameExtension.ViewXFields game world
+        /// Provides a full view of all the member values of a game. Useful for debugging such
+        /// as with the Watch feature in Visual Studio.
+        static member ViewGame world =
+            World.ViewGameProperties world @@
+            World.ViewGameXFields world
 
-    /// Provides a partitioned view of all the member values of a game. Useful for debugging
-    /// such as with the Watch feature in Visual Studio.
-    [<Extension>]
-    static member Peek (game : Game) world =
-        Watchable (
-            GameExtension.ViewProperties game world,
-            GameExtension.ViewXFields game world)
+        /// Provides a partitioned view of all the member values of a game. Useful for debugging
+        /// such as with the Watch feature in Visual Studio.
+        static member PeekGame world =
+            Watchable (
+                World.ViewGameProperties world,
+                World.ViewGameXFields world)
