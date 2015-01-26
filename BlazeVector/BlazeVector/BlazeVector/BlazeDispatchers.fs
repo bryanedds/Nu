@@ -1,15 +1,11 @@
 ﻿namespace BlazeVector
 open System
-open System.Collections
 open OpenTK
 open SDL2
-open FarseerPhysics
-open FarseerPhysics.Dynamics
 open Prime
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
-open Nu.Observation
 open BlazeVector
 open BlazeVector.BlazeConstants
 
@@ -73,7 +69,7 @@ module EnemyModule =
         member this.SetHealth (value : int) world = this.UpdateXtension (fun xtension -> xtension?Health <- value) world
         
         member this.HasAppeared world =
-            let camera = world.State.Camera
+            let camera = World.getCamera world
             (this.GetPosition world).X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f
 
     type EnemyDispatcher () =

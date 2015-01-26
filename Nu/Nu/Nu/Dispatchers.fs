@@ -114,7 +114,7 @@ module SpriteFacetModule =
 
         override facet.GetRenderDescriptors entity world =
             if  entity.GetVisible world &&
-                Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world) world.State.Camera then
+                World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
                 [LayerableDescriptor
                     { Depth = entity.GetDepth world
                       LayeredDescriptor =
@@ -172,7 +172,7 @@ module AnimatedSpriteFacetModule =
 
         override facet.GetRenderDescriptors entity world =
             if  entity.GetVisible world &&
-                Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world) world.State.Camera then
+                World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
                 [LayerableDescriptor
                     { Depth = entity.GetDepth world
                       LayeredDescriptor =
@@ -209,7 +209,7 @@ module GuiDispatcherModule =
             let data = event.Data : MouseButtonData
             let eventHandling =
                 if World.isSimulantSelected gui world && gui.GetVisible world then
-                    let mousePositionWorld = Camera.mouseToWorld (gui.GetViewType world) data.Position world.State.Camera
+                    let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (gui.GetViewType world) data.Position) world
                     if data.Down &&
                        gui.GetSwallowMouseLeft world &&
                        Math.isPointInBounds3 mousePositionWorld (gui.GetPosition world) (gui.GetSize world) then
@@ -250,7 +250,7 @@ module ButtonDispatcherModule =
             let button = event.Subscriber : Entity
             let data = event.Data : MouseButtonData
             if World.isSimulantSelected button world then
-                let mousePositionWorld = Camera.mouseToWorld (button.GetViewType world) data.Position world.State.Camera
+                let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (button.GetViewType world) data.Position) world
                 if  button.GetVisible world &&
                     Math.isPointInBounds3 mousePositionWorld (button.GetPosition world) (button.GetSize world) then
                     if button.GetEnabled world then
@@ -267,7 +267,7 @@ module ButtonDispatcherModule =
             if World.isSimulantSelected button world then
                 let wasDown = button.GetDown world
                 let world = button.SetDown false world
-                let mousePositionWorld = Camera.mouseToWorld (button.GetViewType world) data.Position world.State.Camera
+                let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (button.GetViewType world) data.Position) world
                 if  button.GetVisible world &&
                     Math.isPointInBounds3 mousePositionWorld (button.GetPosition world) (button.GetSize world) then
                     if button.GetEnabled world && wasDown then
@@ -429,7 +429,7 @@ module ToggleDispatcherModule =
             let toggle = event.Subscriber : Entity
             let data = event.Data : MouseButtonData
             if World.isSimulantSelected toggle world then
-                let mousePositionWorld = Camera.mouseToWorld (toggle.GetViewType world) data.Position world.State.Camera
+                let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (toggle.GetViewType world) data.Position) world
                 if  toggle.GetVisible world &&
                     Math.isPointInBounds3 mousePositionWorld (toggle.GetPosition world) (toggle.GetSize world) then
                     if toggle.GetEnabled world then
@@ -445,7 +445,7 @@ module ToggleDispatcherModule =
             if World.isSimulantSelected toggle world then
                 let wasPressed = toggle.GetPressed world
                 let world = toggle.SetPressed false world
-                let mousePositionWorld = Camera.mouseToWorld (toggle.GetViewType world) data.Position world.State.Camera
+                let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (toggle.GetViewType world) data.Position) world
                 if  toggle.GetVisible world &&
                     Math.isPointInBounds3 mousePositionWorld (toggle.GetPosition world) (toggle.GetSize world) then
                     if toggle.GetEnabled world && wasPressed then
@@ -509,7 +509,7 @@ module FeelerDispatcherModule =
             let feeler = event.Subscriber : Entity
             let data = event.Data : MouseButtonData
             if World.isSimulantSelected feeler world then
-                let mousePositionWorld = Camera.mouseToWorld (feeler.GetViewType world) data.Position world.State.Camera
+                let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (feeler.GetViewType world) data.Position) world
                 if  feeler.GetVisible world &&
                     Math.isPointInBounds3 mousePositionWorld (feeler.GetPosition world) (feeler.GetSize world) then
                     if feeler.GetEnabled world then
@@ -816,7 +816,7 @@ module TileMapDispatcherModule =
             if tileMap.GetVisible world then
                 match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) world.State.AssetMetadataMap with
                 | Some (_, images, map) ->
-                    let camera = world.State.Camera
+                    let camera = World.getCamera world
                     let layers = List.ofSeq map.Layers
                     let tileSourceSize = Vector2i (map.TileWidth, map.TileHeight)
                     let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
@@ -830,7 +830,7 @@ module TileMapDispatcherModule =
                                 | Relative -> tileMap.GetParallax world * depth * -camera.EyeCenter
                             let parallaxPosition = tileMap.GetPosition world + parallaxTranslation
                             let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
-                            if Camera.inView3 viewType parallaxPosition size camera then
+                            if World.getCameraBy (Camera.inView3 viewType parallaxPosition size) world then
                                 let descriptor =
                                     LayerableDescriptor 
                                         { Depth = depth

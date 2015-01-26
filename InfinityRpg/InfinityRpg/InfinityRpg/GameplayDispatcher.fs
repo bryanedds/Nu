@@ -276,7 +276,7 @@ module GameplayDispatcherModule =
             let enemies = proxyEnemies gameplay world
             let enemyPositions = Seq.map (fun (enemy : Entity) -> enemy.GetPosition world) enemies
             if not <| anyTurnsInProgress2 player enemies world then
-                let touchPositionW = Camera.mouseToWorld Relative touchPosition world.State.Camera
+                let touchPositionW = World.getCameraBy (Camera.mouseToWorld Relative touchPosition) world
                 let occupationMapWithAdjacentEnemies =
                     OccupationMap.makeFromFieldTilesAndAdjacentCharacters
                         (vftovm <| player.GetPosition world) fieldMap.FieldTiles enemyPositions

@@ -49,8 +49,8 @@ module WorldRenderModule =
                         Seq.concat |>
                         List.ofSeq
                     match selectedScreen.GetTransitionStateNp world with
-                    | IncomingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors world.State.Camera selectedScreen (selectedScreen.GetIncoming world) world
-                    | OutgoingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors world.State.Camera selectedScreen (selectedScreen.GetOutgoing world) world
+                    | IncomingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors (World.getCamera world) selectedScreen (selectedScreen.GetIncoming world) world
+                    | OutgoingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors (World.getCamera world) selectedScreen (selectedScreen.GetOutgoing world) world
                     | IdlingState -> descriptors
                 else []
             | None -> []
@@ -62,8 +62,9 @@ module WorldRenderModule =
             member this.EnqueueMessage message = { this with Renderer = this.Renderer.EnqueueMessage (message :?> RenderMessage) } :> Subsystem
 
             member this.ProcessMessages world =
+                let camera = World.getCamera world
                 let renderDescriptors = RendererSubsystem.getRenderDescriptors world
-                (() :> obj, { this with Renderer = this.Renderer.Render world.State.Camera renderDescriptors } :> Subsystem)
+                (() :> obj, { this with Renderer = this.Renderer.Render camera renderDescriptors } :> Subsystem)
 
             member this.ApplyResult _ world = world
             member this.CleanUp world = (this :> Subsystem, world)

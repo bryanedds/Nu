@@ -230,14 +230,15 @@ module WorldModule =
 
         /// Create a splash screen that transitions to the given destination upon completion.
         static member createSplashScreen persistent splashData dispatcherName destination optName world =
+            let cameraEyeSize = World.getCameraBy (fun camera -> camera.EyeSize) world
             let (splashScreen, world) = World.createDissolveScreen splashData.DissolveData dispatcherName optName world
             let (splashGroup, world) = World.createGroup typeof<GroupDispatcher>.Name (Some "SplashGroup") splashScreen world
             let (splashLabel, world) = World.createEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") splashGroup world
             let world = splashScreen.SetPersistent persistent world
             let world = splashGroup.SetPersistent persistent world
             let world = splashLabel.SetPersistent persistent world
-            let world = splashLabel.SetSize world.State.Camera.EyeSize world
-            let world = splashLabel.SetPosition (-world.State.Camera.EyeSize * 0.5f) world
+            let world = splashLabel.SetSize cameraEyeSize world
+            let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
             let world = splashLabel.SetLabelImage splashData.SplashImage world
             let world = World.monitor (World.handleSplashScreenIdle splashData.IdlingTime) (IncomingFinishEventAddress ->>- splashScreen.ScreenAddress) splashScreen world
             let world = World.monitor (World.handleAsScreenTransitionFromSplash destination) (OutgoingFinishEventAddress ->>- splashScreen.ScreenAddress) splashScreen world

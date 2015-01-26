@@ -39,8 +39,10 @@ module FieldDispatcherModule =
 
         override dispatcher.GetRenderDescriptors field world =
             if field.GetVisible world then
+                let viewType = field.GetViewType world
+                let position = field.GetPosition world
                 let size = Vector2.Multiply (TileSize, TileSheetSize)
-                if Camera.inView3 (field.GetViewType world) (field.GetPosition world) size world.State.Camera then
+                if World.getCameraBy (Camera.inView3 viewType position size) world then
                     let fieldMap = field.GetFieldMapNp world
                     let sprites =
                         Map.foldBack
