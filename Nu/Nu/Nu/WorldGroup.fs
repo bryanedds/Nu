@@ -55,10 +55,11 @@ module WorldGroupModule =
             let isNew = not <| World.containsGroup group world
             if isNew || mayReplace then
                 let world = World.setGroupStateWithoutEvent groupState group world
-                let world = World.registerGroup group world
-                if isNew then World.publish4 () (GroupAddEventAddress ->>- group.GroupAddress) group world
+                if isNew then
+                    let world = World.registerGroup group world
+                    World.publish4 () (GroupAddEventAddress ->>- group.GroupAddress) group world
                 else world
-            else failwith <| "Adding an group that the world already contains at address '" + acstring group.GroupAddress + "'."
+            else failwith <| "Adding a group that the world already contains at address '" + acstring group.GroupAddress + "'."
 
         /// Query that the world contains a group.
         static member containsGroup group world =
