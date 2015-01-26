@@ -64,18 +64,6 @@ module Chain =
     let update expr : Chain<'e, unit> =
         Chain (fun world -> (expr world, Right ()))
 
-    /// Update the world state, taking the world as an argument.
-    let updateStateW expr : Chain<'e, unit> =
-        chain { do! update <| World.updateStateW expr }
-
-    /// Update the world state.
-    let updateState expr : Chain<'e, unit> =
-        updateStateW (flip (fun _ -> expr))
-
-    /// Update the world by its state.
-    let updateByState expr : Chain<'e, unit> =
-        chain { do! update <| World.updateByState expr }
-
     /// Get the next event.
     let next : Chain<'e, 'e> =
         Chain (fun world -> (world, Left returnM))

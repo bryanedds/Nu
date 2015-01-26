@@ -587,27 +587,13 @@ module WorldStateModule =
 
     type World with
 
-        /// Get the state of the world.
-        static member getState world =
+        static member private getState world =
             world.State
 
         static member private setState state world =
             let oldState = world.State
             let world = { world with State = state }
             World.publish4 { OldWorldState = oldState } WorldStateChangeEventAddress Game world
-
-        /// Update the world state, taking the world as an argument.
-        static member updateStateW updater world =
-            let state = updater world.State world
-            World.setState state world
-
-        /// Update the world state.
-        static member updateState updater world =
-            World.updateStateW (fun state _ -> updater state) world
-
-        /// Update the world by its state.
-        static member updateByState updater world : World =
-            updater world.State world
 
         /// Get the world's tick time.
         static member getTickTime world =

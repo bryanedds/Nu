@@ -395,14 +395,6 @@ module Observation =
     let noMoreThanOncePerTick observation =
         observation |> organize (fun _ world -> world.State.TickTime) |> toFst |> choose
 
-    /// Filter out world state change events that do not relate to those returned by 'valueGetter'.
-    let worldStateValue (valueGetter : WorldState -> 'b) (observation : Observation<WorldStateChangeData, 'o>) =
-        filter (fun a world ->
-            let oldValue = valueGetter a.Data.OldWorldState
-            let newValue = valueGetter (World.getState world)
-            oldValue <> newValue)
-            observation
-
     /// Filter out simulant change events that do not relate to those returned by 'valueGetter'.
     let simulantValue (valueGetter : World -> 'b) (observation : Observation<'a SimulantChangeData, 'o>) =
         filter (fun a world ->
@@ -418,19 +410,6 @@ module ObservationOperatorsModule =
     /// Pipe-right arrow that provides special precedence for observations.
     let (-|>) = (|>)
 
-    /// Pipe-right fat-arrow that provides special precedence for observations.
-    let (=|>) = (|>)
-
-    /// Make an observation of the world state's change events.
-    let ( *== ) valueGetter observer =
-        observe WorldStateChangeEventAddress observer |>
-        worldStateValue valueGetter
-
-    /// Make an observation of one of the world state's change events per frame.
-    let (/==) valueGetter observer =
-        valueGetter *== observer |>
-        noMoreThanOncePerTick
-
     /// Make an observation of the observer's change events.
     let ( *-- ) (simulant : 'a, valueGetter : World -> 'b) (observer : 'o) =
         let simulantChangeEventAddress = stoa<'a SimulantChangeData> (typeof<'a>.Name + "/Change")
@@ -443,10 +422,6 @@ module ObservationOperatorsModule =
         (simulant, valueGetter) *-- observer |>
         noMoreThanOncePerTick
 
-    /// Propagate the event data of an observation to a value in the world's state.
-    let (==>) observation valueSetter =
-        subscribe (fun a world -> (Cascade, World.updateState (valueSetter a.Data world) world)) observation
-
     /// Propagate the event data of an observation to a value in the observing simulant when the
     /// observer exists (doing nothing otherwise).
     let (-->) observation valueSetter =
@@ -458,34 +433,10 @@ module ObservationOperatorsModule =
             (Cascade, world))
             observation
 
-    /// Propagate a value from the world's state to another value in the world's state.
-    let ( *==> ) (valueGetter : WorldState -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
-        valueGetter *== Game ==> fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue
-
-    /// Propagate a value from the world's state to another value in the world's state, but with frame-based cycle-breaking.
-    let (/==>) (valueGetter : WorldState -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
-        valueGetter /== Game ==> fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue
-
-    /// Propagate a value from the world's state to a value in the given simulant.
-    let ( *=-> ) (valueGetter : WorldState -> 'b) (destination : 'o, valueSetter : 'b -> World -> World) =
-        valueGetter *== destination --> fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue world
-
-    /// Propagate a value from the world's state to a value in the given simulant, but with frame-based cycle-breaking.
-    let (/=->) (valueGetter : WorldState -> 'b) (destination : 'o, valueSetter : 'b -> World -> World) =
-        valueGetter /== destination --> fun _ world -> let sourceValue = valueGetter world.State in valueSetter sourceValue world
-
-    /// Propagate a value from the given simulant to a value in the world's state.
-    let ( *-=> ) (source : 'a, valueGetter : World -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
-        (source, valueGetter) *-- Game ==> fun _ world -> let sourceValue = valueGetter world in valueSetter sourceValue
-
-    /// Propagate a value from the given simulant to a value in the world's state, but with frame-based cycle-breaking.
-    let (/-=>) (source : 'a, valueGetter : World -> 'b) (valueSetter : 'b -> WorldState -> WorldState) =
-        (source, valueGetter) /-- Game ==> fun _ world -> let sourceValue = valueGetter world in valueSetter sourceValue
-
     // Propagate a value from the given source simulant to a value in the given destination simulant.
-    let ( *--> ) (source : 'a, valueGetter : World -> 'b) (destination : 'o, valueSetter : 'b -> World -> World) =
+    let ( *-> ) (source : 'a, valueGetter : World -> 'b) (destination : 'o, valueSetter : 'b -> World -> World) =
         (source, valueGetter) *-- destination --> fun _ world -> let sourceValue = valueGetter world in valueSetter sourceValue world
 
     // Propagate a value from the given source simulant to a value in the given destination simulant, but with frame-based cycle-breaking.
-    let (/-->) (source : 'a, valueGetter : World -> 'b) (destination : 'o, valueSetter : 'b -> World -> World) =
+    let (/->) (source : 'a, valueGetter : World -> 'b) (destination : 'o, valueSetter : 'b -> World -> World) =
         (source, valueGetter) /-- destination --> fun _ world -> let sourceValue = valueGetter world in valueSetter sourceValue world
