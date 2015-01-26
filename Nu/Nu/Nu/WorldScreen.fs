@@ -192,28 +192,29 @@ module WorldScreenModule =
                         (enumerable <| screensNode.SelectNodes ScreenNodeName)
                 (List.rev screensRev, world)
 
-        /// Provides a view of all the properties of a screen. Useful for debugging such as with
-        /// the Watch feature in Visual Studio.
-        static member ViewScreenProperties (screen : Screen) world =
-            let state = World.getScreenState screen world
-            let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
-            Map.ofSeq properties
-            
-        /// Provides a view of all the xtension fields of a screen. Useful for debugging such as
-        /// with the Watch feature in Visual Studio.
-        static member ViewScreenXFields (screen : Screen) world =
-            let state = World.getScreenState screen world
-            Map.map (fun _ field -> field.FieldValue) state.Xtension.XFields
+namespace Debug
+open Prime
+open Nu
+open System.Reflection
+type Screen =
 
-        /// Provides a full view of all the member values of a screen. Useful for debugging such
-        /// as with the Watch feature in Visual Studio.
-        static member ViewScreen (screen : Screen) world =
-            World.ViewScreenProperties screen world @@
-            World.ViewScreenXFields screen world
+    /// Provides a view of all the properties of a screen. Useful for debugging such as with
+    /// the Watch feature in Visual Studio.
+    static member viewProperties screen world =
+        let state = World.getScreenState screen world
+        let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
+        Map.ofSeq properties
+        
+    /// Provides a view of all the xtension fields of a screen. Useful for debugging such as
+    /// with the Watch feature in Visual Studio.
+    static member viewXFields screen world =
+        let state = World.getScreenState screen world
+        Map.map (fun _ field -> field.FieldValue) state.Xtension.XFields
 
-        /// Provides a partitioned view of all the member values of a screen. Useful for debugging
-        /// such as with the Watch feature in Visual Studio.
-        static member PeekScreen (screen : Screen) world =
-            Watchable (
-                World.ViewScreenProperties screen world,
-                World.ViewScreenXFields screen world)
+    /// Provides a full view of all the member values of a screen. Useful for debugging such
+    /// as with the Watch feature in Visual Studio.
+    static member view screen world = Screen.viewProperties screen world @@ Screen.viewXFields screen world
+
+    /// Provides a partitioned view of all the member values of a screen. Useful for debugging
+    /// such as with the Watch feature in Visual Studio.
+    static member peek screen world = Watchable (Screen.viewProperties screen world, Screen.viewXFields screen world)
