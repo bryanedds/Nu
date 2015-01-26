@@ -5,7 +5,6 @@ namespace Nu
 open System
 open OpenTK
 open Nu
-
 module Constants =
 
     let [<Literal>] DefaultScreenName = "Screen"

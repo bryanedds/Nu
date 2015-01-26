@@ -647,10 +647,14 @@ module WorldStateModule =
         static member updateInteractivity updater world =
             let interactivity = updater <| World.getInteractivity world
             World.setInteractivity interactivity world
+            
+        /// Get the a value from the camera used to view the world.
+        static member getCameraBy by world =
+            by world.State.Camera
 
         /// Get the camera used to view the world.
         static member getCamera world =
-            world.State.Camera
+            World.getCameraBy id world
 
         static member private setCamera camera world =
             let state = { world.State with Camera = camera }

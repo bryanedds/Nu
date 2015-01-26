@@ -334,7 +334,7 @@ module Program =
             match tryMousePick form mousePosition worldChangers refWorld world with
             | Some entity ->
                 let world = pushPastWorld world world
-                let mousePositionWorld = Camera.mouseToWorld (entity.GetViewType world) mousePosition world.State.Camera
+                let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (entity.GetViewType world) mousePosition) world
                 let dragState = DragEntityPosition (entity.GetPosition world + mousePositionWorld, mousePositionWorld, entity)
                 let world = World.updateUserState (fun editorState -> { editorState with DragEntityState = dragState }) world
                 (handled, world)
@@ -354,9 +354,10 @@ module Program =
             | DragEntityNone -> (Resolve, world)
 
     let handleNuCameraDragBegin (_ : NuEditForm) (_ : Event<MouseButtonData, Game>) world =
+        let camera = World.getCamera world
         let mousePosition = World.getMousePositionF world
-        let mousePositionScreen = Camera.mouseToScreen mousePosition world.State.Camera
-        let dragState = DragCameraPosition (world.State.Camera.EyeCenter + mousePositionScreen, mousePositionScreen)
+        let mousePositionScreen = Camera.mouseToScreen mousePosition camera
+        let dragState = DragCameraPosition (camera.EyeCenter + mousePositionScreen, mousePositionScreen)
         let world = World.updateUserState (fun editorState -> { editorState with DragCameraState = dragState }) world
         (Resolve, world)
 
@@ -442,8 +443,8 @@ module Program =
                 let (entity, world) = World.createEntity form.createEntityComboBox.Text None EditorGroup world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
+                let camera = World.getCamera world
                 let entityPosition =
-                    let camera = world.State.Camera
                     if atMouse
                     then Camera.mouseToWorld (entity.GetViewType world) mousePosition camera
                     else Camera.mouseToWorld (entity.GetViewType world) (camera.EyeSize * 0.5f) camera
@@ -559,8 +560,8 @@ module Program =
                 let (positionSnap, rotationSnap) = getSnaps form
                 let id = Core.makeId ()
                 let entity = { entity with Id = id; Name = acstring id }
+                let camera = World.getCamera world
                 let entityPosition =
-                    let camera = world.State.Camera
                     if atMouse
                     then Camera.mouseToWorld entity.ViewType editorState.RightClickPosition camera
                     else Camera.mouseToWorld entity.ViewType (camera.EyeSize * 0.5f) camera
@@ -632,7 +633,7 @@ module Program =
             | DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) ->
                 let (positionSnap, _) = getSnaps form
                 let mousePosition = World.getMousePositionF world
-                let mousePositionWorld = Camera.mouseToWorld (entity.GetViewType world) mousePosition world.State.Camera
+                let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (entity.GetViewType world) mousePosition) world
                 let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                 let world = entity.SetPositionSnapped positionSnap entityPosition world
                 let world = World.propagatePhysics entity world

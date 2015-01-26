@@ -287,7 +287,7 @@ module WorldEntityModule =
             let entitiesSorted = World.pickingSort entities world
             List.tryFind
                 (fun (entity : Entity) ->
-                    let positionWorld = Camera.mouseToWorld (entity.GetViewType world) position world.State.Camera
+                    let positionWorld = World.getCameraBy (Camera.mouseToWorld (entity.GetViewType world) position) world
                     let transform = entity.GetTransform world
                     let picked = Math.isPointInBounds3 positionWorld transform.Position transform.Size
                     picked)
