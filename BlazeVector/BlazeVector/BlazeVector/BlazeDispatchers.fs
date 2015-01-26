@@ -274,8 +274,7 @@ module StagePlayModule =
         override dispatcher.Register group world =
             world |>
                 World.monitor handleAdjustCamera TickEventAddress group |>
-                World.monitor handlePlayerFall TickEventAddress group// |>
-                //adjustCamera group
+                World.monitor handlePlayerFall TickEventAddress group
 
 [<AutoOpen>]
 module StageScreenModule =
