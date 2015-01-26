@@ -442,14 +442,17 @@ module WorldModule =
                 | Exiting -> (Exiting, world)
             | Exiting -> (Exiting, world)
 
+        /// TODO: document!
         static member processRender handleRender world =
             let world = World.processSubsystems RenderType world
             handleRender world
 
+        /// TODO: document!
         static member processPlay world =
             let world = World.processSubsystems AudioType world
             World.incrementTickTime world
 
+        /// TODO: document!
         static member run4 tryMakeWorld handleUpdate handleRender sdlConfig =
             Sdl.run
                 tryMakeWorld
