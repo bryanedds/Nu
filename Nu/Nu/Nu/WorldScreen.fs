@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Reflection
+open System.Runtime.CompilerServices
 open System.Xml
 open OpenTK
 open Prime
@@ -43,27 +44,6 @@ module WorldScreenModule =
             let xtension = this.GetXtension world
             let xField = Map.find name xtension.XFields
             xField.FieldValue
-            
-        /// Provides a view of all the properties of a screen. Useful for debugging such as with
-        /// the Watch feature in Visual Studio.
-        member this.ViewProperties world =
-            let state = World.getScreenState this world
-            let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, (property.Name, property.GetValue state))) ((state.GetType ()).GetProperties ())
-            Map.ofSeq properties
-            
-        /// Provides a view of all the xtension fields of a screen. Useful for debugging such as
-        /// with the Watch feature in Visual Studio.
-        member this.ViewXFields world =
-            let state = World.getScreenState this world
-            Map.map (fun name field -> (name, field.FieldValue)) state.Xtension.XFields
-
-        /// Provides a full view of all the member values of a screen. Useful for debugging such
-        /// as with the Watch feature in Visual Studio.
-        member this.View world = this.ViewProperties world @@ this.ViewXFields world
-
-        /// Provides a partitioned view of all the member values of a screen. Useful for debugging
-        /// such as with the Watch feature in Visual Studio.
-        member this.Peek world = Watchable (this.ViewProperties world, this.ViewXFields world)
 
         /// Query that a screen is in an idling state (not transitioning in nor out).
         member this.IsIdling world =
@@ -211,3 +191,35 @@ module WorldScreenModule =
                         ([], world)
                         (enumerable <| screensNode.SelectNodes ScreenNodeName)
                 (List.rev screensRev, world)
+
+type [<Extension>] ScreenExtension =
+
+    /// Provides a view of all the properties of a screen. Useful for debugging such as with
+    /// the Watch feature in Visual Studio.
+    [<Extension>]
+    static member ViewProperties (screen : Screen) world =
+        let state = World.getScreenState screen world
+        let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
+        Map.ofSeq properties
+            
+    /// Provides a view of all the xtension fields of a screen. Useful for debugging such as
+    /// with the Watch feature in Visual Studio.
+    [<Extension>]
+    static member ViewXFields (screen : Screen) world =
+        let state = World.getScreenState screen world
+        Map.map (fun _ field -> field.FieldValue) state.Xtension.XFields
+
+    /// Provides a full view of all the member values of a screen. Useful for debugging such
+    /// as with the Watch feature in Visual Studio.
+    [<Extension>]
+    static member View (screen : Screen) world =
+        ScreenExtension.ViewProperties screen world @@
+        ScreenExtension.ViewXFields screen world
+
+    /// Provides a partitioned view of all the member values of a screen. Useful for debugging
+    /// such as with the Watch feature in Visual Studio.
+    [<Extension>]
+    static member Peek (screen : Screen) world =
+        Watchable (
+            ScreenExtension.ViewProperties screen world,
+            ScreenExtension.ViewXFields screen world)

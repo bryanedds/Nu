@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Reflection
+open System.Runtime.CompilerServices
 open System.Xml
 open OpenTK
 open Prime
@@ -51,27 +52,6 @@ module WorldEntityModule =
             let xtension = this.GetXtension world
             let xField = Map.find name xtension.XFields
             xField.FieldValue
-            
-        /// Provides a view of all the properties of an entity. Useful for debugging such as with
-        /// the Watch feature in Visual Studio.
-        member this.ViewProperties world =
-            let state = World.getEntityState this world
-            let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, (property.Name, property.GetValue state))) ((state.GetType ()).GetProperties ())
-            Map.ofSeq properties
-            
-        /// Provides a view of all the xtension fields of an entity. Useful for debugging such as
-        /// with the Watch feature in Visual Studio.
-        member this.ViewXFields world =
-            let state = World.getEntityState this world
-            Map.map (fun name field -> (name, field.FieldValue)) state.Xtension.XFields
-
-        /// Provides a full view of all the member values of an entity. Useful for debugging such
-        /// as with the Watch feature in Visual Studio.
-        member this.View world = this.ViewProperties world @@ this.ViewXFields world
-
-        /// Provides a partitioned view of all the member values of an entity. Useful for debugging
-        /// such as with the Watch feature in Visual Studio.
-        member this.Peek world = Watchable (this.ViewProperties world, this.ViewXFields world)
 
         /// TODO: document!
         member this.GetTransform world =
@@ -450,3 +430,35 @@ module WorldEntityModule =
                 let entityState = { entityState with EntityState.Id = entityState.Id } // NOTE: hacky copy
                 propertyInfo.SetValue (entityState, value)
                 World.setEntityState entityState entity world
+
+type [<Extension>] EntityExtension =
+
+    /// Provides a view of all the properties of an entity. Useful for debugging such as with
+    /// the Watch feature in Visual Studio.
+    [<Extension>]
+    static member ViewProperties (entity : Entity) world =
+        let state = World.getEntityState entity world
+        let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
+        Map.ofSeq properties
+            
+    /// Provides a view of all the xtension fields of an entity. Useful for debugging such as
+    /// with the Watch feature in Visual Studio.
+    [<Extension>]
+    static member ViewXFields (entity : Entity) world =
+        let state = World.getEntityState entity world
+        Map.map (fun _ field -> field.FieldValue) state.Xtension.XFields
+
+    /// Provides a full view of all the member values of an entity. Useful for debugging such
+    /// as with the Watch feature in Visual Studio.
+    [<Extension>]
+    static member View (entity : Entity) world =
+        EntityExtension.ViewProperties entity world @@
+        EntityExtension.ViewXFields entity world
+
+    /// Provides a partitioned view of all the member values of an entity. Useful for debugging
+    /// such as with the Watch feature in Visual Studio.
+    [<Extension>]
+    static member Peek (entity : Entity) world =
+        Watchable (
+            EntityExtension.ViewProperties entity world,
+            EntityExtension.ViewXFields entity world)

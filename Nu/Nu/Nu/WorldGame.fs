@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Reflection
+open System.Runtime.CompilerServices
 open System.Xml
 open OpenTK
 open Prime
@@ -34,27 +35,6 @@ module WorldGameModule =
             let xtension = this.GetXtension world
             let xField = Map.find name xtension.XFields
             xField.FieldValue
-            
-        /// Provides a view of all the properties of a game. Useful for debugging such as with
-        /// the Watch feature in Visual Studio.
-        member this.ViewProperties world =
-            let state = World.getGameState world
-            let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, (property.Name, property.GetValue state))) ((state.GetType ()).GetProperties ())
-            Map.ofSeq properties
-            
-        /// Provides a view of all the xtension fields of a game. Useful for debugging such as
-        /// with the Watch feature in Visual Studio.
-        member this.ViewXFields world =
-            let state = World.getGameState world
-            Map.map (fun name field -> (name, field.FieldValue)) state.Xtension.XFields
-
-        /// Provides a full view of all the member values of a game. Useful for debugging such
-        /// as with the Watch feature in Visual Studio.
-        member this.View world = this.ViewProperties world @@ this.ViewXFields world
-
-        /// Provides a partitioned view of all the member values of a game. Useful for debugging
-        /// such as with the Watch feature in Visual Studio.
-        member this.Peek world = Watchable (this.ViewProperties world, this.ViewXFields world)
 
         /// Query that a game dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world =
@@ -162,3 +142,35 @@ module WorldGameModule =
                 typeof<GroupDispatcher>.Name
                 typeof<EntityDispatcher>.Name
                 world
+
+type [<Extension>] GameExtension =
+
+    /// Provides a view of all the properties of a game. Useful for debugging such as with
+    /// the Watch feature in Visual Studio.
+    [<Extension>]
+    static member ViewProperties (_ : Game) world =
+        let state = World.getGameState world
+        let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
+        Map.ofSeq properties
+            
+    /// Provides a view of all the xtension fields of a game. Useful for debugging such as
+    /// with the Watch feature in Visual Studio.
+    [<Extension>]
+    static member ViewXFields (_ : Game) world =
+        let state = World.getGameState world
+        Map.map (fun _ field -> field.FieldValue) state.Xtension.XFields
+
+    /// Provides a full view of all the member values of a game. Useful for debugging such
+    /// as with the Watch feature in Visual Studio.
+    [<Extension>]
+    static member View (game : Game) world =
+        GameExtension.ViewProperties game world @@
+        GameExtension.ViewXFields game world
+
+    /// Provides a partitioned view of all the member values of a game. Useful for debugging
+    /// such as with the Watch feature in Visual Studio.
+    [<Extension>]
+    static member Peek (game : Game) world =
+        Watchable (
+            GameExtension.ViewProperties game world,
+            GameExtension.ViewXFields game world)
