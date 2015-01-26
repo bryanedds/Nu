@@ -63,12 +63,14 @@ module WorldScreenModule =
             let dispatcher = screen.GetDispatcherNp world : ScreenDispatcher
             dispatcher.Unregister screen world
 
-        static member internal addScreenState screenState screen world =
-            if not <| World.containsScreen screen world then
+        static member internal addScreenState mayReplace screenState screen world =
+            let isNew = not <| World.containsScreen screen world
+            if isNew || mayReplace then
                 let world = World.setScreenStateWithoutEvent screenState screen world
                 let world = World.registerScreen screen world
-                World.publish4 () (ScreenAddEventAddress ->>- screen.ScreenAddress) screen world
-            else failwith <| "Adding a screen that the world already contains at address '" + acstring screen.ScreenAddress + "'."
+                if isNew then World.publish4 () (ScreenAddEventAddress ->>- screen.ScreenAddress) screen world
+                else world
+            else failwith <| "Adding an screen that the world already contains at address '" + acstring screen.ScreenAddress + "'."
 
         /// Query that the world contains a screen.
         static member containsScreen screen world =
@@ -105,7 +107,7 @@ module WorldScreenModule =
             let screenState = ScreenState.make dispatcher optName
             Reflection.attachFields dispatcher screenState
             let screen = Screen.proxy <| ntoa screenState.Name
-            let world = World.addScreenState screenState screen world
+            let world = World.addScreenState false screenState screen world
             (screen, world)
         
         /// Create a screen with a dissolving transition, and add it to the world.
@@ -165,8 +167,7 @@ module WorldScreenModule =
             Reflection.readMemberValuesToTarget screenNode screenState
             let screenState = match optName with Some name -> { screenState with Name = name } | None -> screenState
             let screen = Screen.proxy <| ntoa screenState.Name
-            let world = World.destroyScreenImmediate screen world
-            let world = World.addScreenState screenState screen world
+            let world = World.addScreenState true screenState screen world
             let world = snd <| World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName screen world
             (screen, world)
 

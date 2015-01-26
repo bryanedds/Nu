@@ -96,11 +96,13 @@ module WorldEntityModule =
             let world = dispatcher.Unregister entity world
             List.fold (fun world (facet : Facet) -> facet.Unregister entity world) world facets
 
-        static member internal addEntityState entityState entity world =
-            if not <| World.containsEntity entity world then
+        static member internal addEntityState mayReplace entityState entity world =
+            let isNew = not <| World.containsEntity entity world
+            if isNew || mayReplace then
                 let world = World.setEntityStateWithoutEvent entityState entity world
                 let world = World.registerEntity entity world
-                World.publish4 () (EntityAddEventAddress ->>- entity.EntityAddress) entity world
+                if isNew then World.publish4 () (EntityAddEventAddress ->>- entity.EntityAddress) entity world
+                else world
             else failwith <| "Adding an entity that the world already contains at address '" + acstring entity.EntityAddress + "'."
 
         /// Query that the world contains an entity.
@@ -152,7 +154,7 @@ module WorldEntityModule =
             let name = match optName with Some name -> name | None -> acstring id
             let entityState = { entityState with Id = id; Name = name }
             let transmutedEntity = { entity with EntityAddress = gatoea group.GroupAddress name }
-            let world = World.addEntityState entityState transmutedEntity world
+            let world = World.addEntityState false entityState transmutedEntity world
             (transmutedEntity, world)
 
         /// Duplicate an entity.
@@ -212,7 +214,7 @@ module WorldEntityModule =
 
             // add entity's state to world
             let entity = Entity.proxy <| gatoea group.GroupAddress entityState.Name
-            let world = World.addEntityState entityState entity world
+            let world = World.addEntityState false entityState entity world
             (entity, world)
 
         /// Propagate an entity's physics properties to the physics subsystem.
@@ -379,8 +381,7 @@ module WorldEntityModule =
 
             // add entity state to the world
             let entity = Entity.proxy <| gatoea group.GroupAddress entityState.Name
-            let world = World.destroyEntityImmediate entity world
-            let world = World.addEntityState entityState entity world
+            let world = World.addEntityState true entityState entity world
             (entity, world)
 
         /// Read multiple entities from an xml node.
