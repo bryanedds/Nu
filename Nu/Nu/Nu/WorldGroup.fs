@@ -51,12 +51,14 @@ module WorldGroupModule =
             let dispatcher = group.GetDispatcherNp world : GroupDispatcher
             dispatcher.Unregister group world
 
-        static member internal addGroupState groupState group world =
-            if not <| World.containsGroup group world then
+        static member internal addGroupState mayReplace groupState group world =
+            let isNew = not <| World.containsGroup group world
+            if isNew || mayReplace then
                 let world = World.setGroupStateWithoutEvent groupState group world
                 let world = World.registerGroup group world
-                World.publish4 () (GroupAddEventAddress ->>- group.GroupAddress) group world
-            else failwith <| "Adding a group that the world already contains at address '" + acstring group.GroupAddress + "'."
+                if isNew then World.publish4 () (GroupAddEventAddress ->>- group.GroupAddress) group world
+                else world
+            else failwith <| "Adding an group that the world already contains at address '" + acstring group.GroupAddress + "'."
 
         /// Query that the world contains a group.
         static member containsGroup group world =
@@ -110,7 +112,7 @@ module WorldGroupModule =
             let groupState = GroupState.make dispatcher optName
             Reflection.attachFields dispatcher groupState
             let group = Group.proxy <| satoga screen.ScreenAddress groupState.Name
-            let world = World.addGroupState groupState group world
+            let world = World.addGroupState false groupState group world
             (group, world)
 
         /// Write a group to an xml writer.
@@ -178,8 +180,7 @@ module WorldGroupModule =
 
             // add the group's state to the world
             let group = Group.proxy <| satoga screen.ScreenAddress groupState.Name
-            let world = World.destroyGroupImmediate group world
-            let world = World.addGroupState groupState group world
+            let world = World.addGroupState true groupState group world
 
             // read the group's entities
             let world = snd <| World.readEntities (groupNode : XmlNode) defaultEntityDispatcherName group world
