@@ -182,7 +182,7 @@ module PhysicsModule =
         abstract GetBodyOptGroundContactNormal : PhysicsId -> Vector2 option
         /// Try to get a contact tangent where the body with the given physics id is touching the ground.
         abstract GetBodyOptGroundContactTangent : PhysicsId -> Vector2 option
-        /// Query that the body with the give physics id is on the ground.
+        /// Query that the body with the given physics id is on the ground.
         abstract BodyOnGround : PhysicsId -> bool
         /// Clear all of the physics messages that have been enqueued.
         abstract ClearMessages : unit -> IIntegrator

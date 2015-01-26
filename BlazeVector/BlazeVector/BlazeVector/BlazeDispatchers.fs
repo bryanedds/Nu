@@ -148,7 +148,7 @@ module PlayerModule =
             let bulletPosition = playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)
             let world = bullet.SetPosition bulletPosition world
             let world = bullet.SetDepth playerTransform.Depth world
-            let world = World.propagatePhysics bullet world
+            let world = World.propagateEntityPhysics bullet world
             (bullet, world)
 
         static let propelBullet (bullet : Entity) world =
@@ -285,7 +285,7 @@ module StageScreenModule =
             Seq.fold
                 (fun world (entity : Entity) ->
                     let world = entity.SetPosition (entity.GetPosition world + Vector2 (xShift, 0.0f)) world
-                    World.propagatePhysics entity world)
+                    World.propagateEntityPhysics entity world)
                 world
                 entities
 

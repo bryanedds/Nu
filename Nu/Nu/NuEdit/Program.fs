@@ -125,7 +125,7 @@ module Program =
                     let facetNames = value :?> string list
                     let entity = entityTds.DescribedEntity
                     let world =
-                        match World.trySetFacetNames facetNames entity world with
+                        match World.trySetEntityFacetNames facetNames entity world with
                         | Right world -> world
                         | Left error -> trace error; world
                     entityTds.RefWorld := world // must be set for property grid
@@ -136,11 +136,11 @@ module Program =
                     let world =
                         match propertyName with
                         | "OptOverlayName" ->
-                            match World.trySetOptOverlayName (value :?> string option) entity world with
+                            match World.trySetEntityOptOverlayName (value :?> string option) entity world with
                             | Right world -> world
                             | Left error -> trace error; world
                         | _ -> EntityMemberValue.setValue property value entity world
-                    let world = World.propagatePhysics entityTds.DescribedEntity world
+                    let world = World.propagateEntityPhysics entityTds.DescribedEntity world
                     entityTds.RefWorld := world // must be set for property grid
                     entityTds.Form.propertyGrid.Refresh ()
                     world)
@@ -295,7 +295,7 @@ module Program =
 
     let tryMousePick (form : NuEditForm) mousePosition worldChangers refWorld world =
         let entities = getPickableEntities world
-        let optPicked = World.tryPick mousePosition entities world
+        let optPicked = World.tryPickEntity mousePosition entities world
         match optPicked with
         | Some entity ->
             selectEntity form entity worldChangers refWorld world
@@ -454,7 +454,7 @@ module Program =
                       Size = entity.GetSize world
                       Rotation = entity.GetRotation world }
                 let world = entity.SetTransformSnapped positionSnap rotationSnap entityTransform world
-                let world = World.propagatePhysics entity world
+                let world = World.propagateEntityPhysics entity world
                 refWorld := world // must be set for property grid
                 let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
                 form.propertyGrid.SelectedObject <- entityTds
@@ -581,8 +581,8 @@ module Program =
             | :? EntityTypeDescriptorSource as entityTds ->
                 let world = pushPastWorld world world
                 let entity = entityTds.DescribedEntity
-                let world = entity.SetSize (World.getQuickSize entity world) world
-                let world = World.propagatePhysics entity world
+                let world = entity.SetSize (World.getEntityQuickSize entity world) world
+                let world = World.propagateEntityPhysics entity world
                 entityTds.RefWorld := world // must be set for property grid
                 form.propertyGrid.Refresh ()
                 world
@@ -636,7 +636,7 @@ module Program =
                 let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (entity.GetViewType world) mousePosition) world
                 let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                 let world = entity.SetPositionSnapped positionSnap entityPosition world
-                let world = World.propagatePhysics entity world
+                let world = World.propagateEntityPhysics entity world
                 let world =
                     World.updateUserState (fun editorState ->
                         { editorState with DragEntityState = DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) })

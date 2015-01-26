@@ -75,7 +75,7 @@ module WorldPhysicsModule =
 
     type World with
 
-        /// Does the world contain the body with the given physics id?
+        /// Query that the world contains a body with the given physics id?
         static member bodyExists physicsId world =
             World.getSubsystemBy (fun (integrator : IntegratorSubsystem) -> integrator.BodyExists physicsId) IntegratorSubsystemName world
 
@@ -99,7 +99,7 @@ module WorldPhysicsModule =
         static member getBodyOptGroundContactTangent physicsId world =
             World.getSubsystemBy (fun (integrator : IntegratorSubsystem) -> integrator.GetBodyOptGroundContactTangent physicsId) IntegratorSubsystemName world
 
-        /// Query that the body with the give physics id is on the ground.
+        /// Query that the body with the given physics id is on the ground.
         static member bodyOnGround physicsId world =
             World.getSubsystemBy (fun (integrator : IntegratorSubsystem) -> integrator.BodyOnGround physicsId) IntegratorSubsystemName world
 

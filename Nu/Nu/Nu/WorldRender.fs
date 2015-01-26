@@ -45,7 +45,7 @@ module WorldRenderModule =
                     let descriptors =
                         Seq.map (fun group -> World.proxyEntities group world) groups |>
                         Seq.concat |>
-                        Seq.map (fun entity -> World.getRenderDescriptors entity world) |>
+                        Seq.map (fun entity -> World.getEntityRenderDescriptors entity world) |>
                         Seq.concat |>
                         List.ofSeq
                     match selectedScreen.GetTransitionStateNp world with
