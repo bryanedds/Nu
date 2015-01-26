@@ -28,8 +28,7 @@ module WorldGroupModule =
         member this.GetPersistent world = (World.getGroupState this world).Persistent
         member this.SetPersistent value world = World.updateGroupState (fun groupState -> { groupState with Persistent = value }) this world
         member this.GetXtension world = (World.getGroupState this world).Xtension
-        member this.SetXtension xtension world = World.updateGroupState (fun groupState -> { groupState with Xtension = xtension}) this world
-        member this.UpdateXtension updater world = this.SetXtension (updater <| this.GetXtension world) world
+        member this.UpdateXtension updater world = World.updateGroupState (fun groupState -> { groupState with Xtension = updater groupState.Xtension}) this world
 
         /// Get an xtension field by name.
         member this.GetXField name world =

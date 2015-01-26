@@ -44,8 +44,7 @@ module WorldEntityModule =
         member this.GetOptOverlayName world = (World.getEntityState this world).OptOverlayName
         member this.SetOptOverlayName value world = World.updateEntityState (fun entityState -> { entityState with OptOverlayName = value }) this world
         member this.GetXtension world = (World.getEntityState this world).Xtension
-        member this.SetXtension xtension world = World.updateEntityState (fun entityState -> { entityState with Xtension = xtension}) this world
-        member this.UpdateXtension updater world = this.SetXtension (updater <| this.GetXtension world) world
+        member this.UpdateXtension updater world = World.updateEntityState (fun entityState -> { entityState with Xtension = updater entityState.Xtension}) this world
 
         /// Get an xtension field by name.
         member this.GetXField name world =
