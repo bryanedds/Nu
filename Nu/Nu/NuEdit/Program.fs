@@ -529,7 +529,9 @@ module Program =
             then pushPastWorld pastWorld world
             else world)
 
-    (*let handleFormCut (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+    (* TODO: replace this cut paste functionality with a reflective approach
+    
+    let handleFormCut (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
             match form.propertyGrid.SelectedObject with
             | null -> world
