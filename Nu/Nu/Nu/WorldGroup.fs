@@ -207,34 +207,28 @@ module WorldGroupModule =
                         (enumerable <| groupsNode.SelectNodes GroupNodeName)
                 (List.rev groupsRev, world)
 
-type [<Extension>] GroupExtension =
-
-    /// Provides a view of all the properties of a group. Useful for debugging such as with
-    /// the Watch feature in Visual Studio.
-    [<Extension>]
-    static member ViewProperties (group : Group) world =
-        let state = World.getGroupState group world
-        let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
-        Map.ofSeq properties
+        /// Provides a view of all the properties of a group. Useful for debugging such as with
+        /// the Watch feature in Visual Studio.
+        static member ViewGroupProperties (group : Group) world =
+            let state = World.getGroupState group world
+            let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
+            Map.ofSeq properties
             
-    /// Provides a view of all the xtension fields of a group. Useful for debugging such as
-    /// with the Watch feature in Visual Studio.
-    [<Extension>]
-    static member ViewXFields (group : Group) world =
-        let state = World.getGroupState group world
-        Map.map (fun _ field -> field.FieldValue) state.Xtension.XFields
+        /// Provides a view of all the xtension fields of a group. Useful for debugging such as
+        /// with the Watch feature in Visual Studio.
+        static member ViewGroupXFields (group : Group) world =
+            let state = World.getGroupState group world
+            Map.map (fun _ field -> field.FieldValue) state.Xtension.XFields
 
-    /// Provides a full view of all the member values of a group. Useful for debugging such
-    /// as with the Watch feature in Visual Studio.
-    [<Extension>]
-    static member View (group : Group) world =
-        GroupExtension.ViewProperties group world @@
-        GroupExtension.ViewXFields group world
+        /// Provides a full view of all the member values of a group. Useful for debugging such
+        /// as with the Watch feature in Visual Studio.
+        static member ViewGroup (group : Group) world =
+            World.ViewGroupProperties group world @@
+            World.ViewGroupXFields group world
 
-    /// Provides a partitioned view of all the member values of a group. Useful for debugging
-    /// such as with the Watch feature in Visual Studio.
-    [<Extension>]
-    static member Peek (group : Group) world =
-        Watchable (
-            GroupExtension.ViewProperties group world,
-            GroupExtension.ViewXFields group world)
+        /// Provides a partitioned view of all the member values of a group. Useful for debugging
+        /// such as with the Watch feature in Visual Studio.
+        static member PeekGroup (group : Group) world =
+            Watchable (
+                World.ViewGroupProperties group world,
+                World.ViewGroupXFields group world)
