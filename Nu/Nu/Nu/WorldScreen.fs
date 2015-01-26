@@ -67,10 +67,11 @@ module WorldScreenModule =
             let isNew = not <| World.containsScreen screen world
             if isNew || mayReplace then
                 let world = World.setScreenStateWithoutEvent screenState screen world
-                let world = World.registerScreen screen world
-                if isNew then World.publish4 () (ScreenAddEventAddress ->>- screen.ScreenAddress) screen world
+                if isNew then
+                    let world = World.registerScreen screen world
+                    World.publish4 () (ScreenAddEventAddress ->>- screen.ScreenAddress) screen world
                 else world
-            else failwith <| "Adding an screen that the world already contains at address '" + acstring screen.ScreenAddress + "'."
+            else failwith <| "Adding a screen that the world already contains at address '" + acstring screen.ScreenAddress + "'."
 
         /// Query that the world contains a screen.
         static member containsScreen screen world =

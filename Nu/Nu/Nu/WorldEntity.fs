@@ -100,8 +100,9 @@ module WorldEntityModule =
             let isNew = not <| World.containsEntity entity world
             if isNew || mayReplace then
                 let world = World.setEntityStateWithoutEvent entityState entity world
-                let world = World.registerEntity entity world
-                if isNew then World.publish4 () (EntityAddEventAddress ->>- entity.EntityAddress) entity world
+                if isNew then
+                    let world = World.registerEntity entity world
+                    World.publish4 () (EntityAddEventAddress ->>- entity.EntityAddress) entity world
                 else world
             else failwith <| "Adding an entity that the world already contains at address '" + acstring entity.EntityAddress + "'."
 
