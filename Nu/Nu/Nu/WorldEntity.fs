@@ -235,8 +235,8 @@ module WorldEntityModule =
             let world = World.addEntityState entityState entity world
             (entity, world)
 
-        /// Propagate an entity's physics properties from the physics subsystem.
-        static member propagatePhysics (entity : Entity) world =
+        /// Propagate an entity's physics properties to the physics subsystem.
+        static member propagateEntityPhysics (entity : Entity) world =
             let dispatcher = entity.GetDispatcherNp world
             let facets = entity.GetFacetsNp world
             let world = dispatcher.PropagatePhysics entity world
@@ -246,7 +246,7 @@ module WorldEntityModule =
                 facets
         
         /// Get the render descriptors needed to render an entity.
-        static member getRenderDescriptors (entity : Entity) world =
+        static member getEntityRenderDescriptors (entity : Entity) world =
             let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
             let facets = entity.GetFacetsNp world
             let renderDescriptors = dispatcher.GetRenderDescriptors entity world
@@ -258,7 +258,7 @@ module WorldEntityModule =
                 renderDescriptors
         
         /// Get the quick size of an entity (the appropriate user-defined size for an entity).
-        static member getQuickSize (entity : Entity) world =
+        static member getEntityQuickSize (entity : Entity) world =
             let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
             let facets = entity.GetFacetsNp world
             let quickSize = dispatcher.GetQuickSize entity world
@@ -271,20 +271,16 @@ module WorldEntityModule =
                 quickSize
                 facets
 
-        /// Get the priority with which an entity is picked in the editor.
-        static member getPickingPriority entity world =
-            World.getEntityPickingPriority entity world
-
         /// TODO: document!
-        static member pickingSort entities world =
+        static member pickingSortEntities entities world =
             let entities = List.ofSeq entities
-            let prioritiesAndEntities = List.map (fun (entity : Entity) -> (World.getPickingPriority entity world, entity)) entities
+            let prioritiesAndEntities = List.map (fun (entity : Entity) -> (World.getEntityPickingPriority entity world, entity)) entities
             let prioritiesAndEntities = List.sortWith World.sortFstDesc prioritiesAndEntities
             List.map snd prioritiesAndEntities
 
         /// TODO: document!
-        static member tryPick position entities world =
-            let entitiesSorted = World.pickingSort entities world
+        static member tryPickEntity position entities world =
+            let entitiesSorted = World.pickingSortEntities entities world
             List.tryFind
                 (fun (entity : Entity) ->
                     let positionWorld = World.getCameraBy (Camera.mouseToWorld (entity.GetViewType world) position) world
@@ -294,7 +290,7 @@ module WorldEntityModule =
                 entitiesSorted
 
         /// Try to set an entity's overlay name.
-        static member trySetOptOverlayName optOverlayName entity world =
+        static member trySetEntityOptOverlayName optOverlayName entity world =
             let entityState = World.getEntityState entity world
             let optOldOverlayName = entityState.OptOverlayName
             let entityState = { entityState with OptOverlayName = optOverlayName }
@@ -311,7 +307,7 @@ module WorldEntityModule =
             | (_, _) -> Left "Could not set the entity's overlay name."
 
         /// Try to set the entity's facet names.
-        static member trySetFacetNames facetNames entity world =
+        static member trySetEntityFacetNames facetNames entity world =
             let entityState = World.getEntityState entity world
             match World.trySetFacetNames4 facetNames entityState (Some entity) world with
             | Right (entityState, world) -> Right <| World.setEntityState entityState entity world

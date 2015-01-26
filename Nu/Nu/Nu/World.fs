@@ -338,7 +338,7 @@ module WorldModule =
             let world = World.clearSubsystemsMessages world
             let world = World.addPhysicsMessage RebuildPhysicsHackMessage world
             let entities = World.proxyEntities group world
-            Seq.fold (flip World.propagatePhysics) world entities
+            Seq.fold (flip World.propagateEntityPhysics) world entities
 
         static member private processSubsystems subsystemType world =
             Map.toList world.Subsystems |>
