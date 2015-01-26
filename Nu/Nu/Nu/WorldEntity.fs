@@ -54,14 +54,14 @@ module WorldEntityModule =
             
         /// Provides a view of all the properties of an entity. Useful for debugging such as with
         /// the Watch feature in Visual Studio.
-        member private this.ViewProperties world =
+        member this.ViewProperties world =
             let state = World.getEntityState this world
             let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, (property.Name, property.GetValue state))) ((state.GetType ()).GetProperties ())
             Map.ofSeq properties
             
         /// Provides a view of all the xtension fields of an entity. Useful for debugging such as
         /// with the Watch feature in Visual Studio.
-        member private this.ViewXFields world =
+        member this.ViewXFields world =
             let state = World.getEntityState this world
             Map.map (fun name field -> (name, field.FieldValue)) state.Xtension.XFields
 
