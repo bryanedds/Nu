@@ -27,8 +27,7 @@ module WorldGameModule =
         member this.GetPublishChanges world = (World.getGameState world).PublishChanges
         member this.SetPublishChanges value world = World.updateGameState (fun gameState -> { gameState with PublishChanges = value }) world
         member this.GetXtension world = (World.getGameState world).Xtension
-        member this.SetXtension value world = World.updateGameState (fun gameState -> { gameState with Xtension = value }) world
-        member this.UpdateXtension updater world = this.SetXtension (updater <| this.GetXtension world) world
+        member this.UpdateXtension updater world = World.updateGameState (fun gameState -> { gameState with Xtension = updater gameState.Xtension}) world
 
         /// Get an xtension field by name.
         member this.GetXField name world =
