@@ -147,25 +147,18 @@ module WorldEntityModule =
                   Operation = fun world -> World.destroyEntitiesImmediate entities world }
             World.addTask task world
 
-        static member private transmuteEntity shallDestroy entity optName group world =
+        /// Reassign an entity's identity and / or group. Note that since this destroys the
+        /// reassigned entity immediately, you should not call this inside an event handler that
+        /// involves the reassigned entity itself.
+        static member reassignEntity entity optName group world =
             let entityState = World.getEntityState entity world
-            let world = if shallDestroy then World.destroyEntityImmediate entity world else world
+            let world = World.destroyEntityImmediate entity world
             let id = Core.makeId ()
             let name = match optName with Some name -> name | None -> acstring id
             let entityState = { entityState with Id = id; Name = name }
             let transmutedEntity = { entity with EntityAddress = gatoea group.GroupAddress name }
             let world = World.addEntityState false entityState transmutedEntity world
             (transmutedEntity, world)
-
-        /// Duplicate an entity.
-        static member duplicateEntity entity optName group world =
-            World.transmuteEntity false entity optName group world
-
-        /// Reassign an entity's identity and / or group. Note that since this destroys the
-        /// reassigned entity immediately, you should not call this inside an event handler that
-        /// involves the reassigned entity itself.
-        static member reassignEntity entity optName group world =
-            World.transmuteEntity true entity optName group world
 
         /// Create an entity and add it to the world.
         static member createEntity dispatcherName optName group world =
