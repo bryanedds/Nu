@@ -115,7 +115,7 @@ module CharacterAnimationFacetModule =
                 | Downward -> Vector2i (0, 1)
                 | Leftward -> Vector2i (animationFrames, 1)
             let animatedXOffsetM =
-                Math.Abs (world.State.TickTime - animationState.StartTime) /
+                Math.Abs (World.getTickTime world - animationState.StartTime) /
                 animationStutter % int64 animationFrames |>
                 int
             let animatedOffsetM = Vector2i (animatedXOffsetM, 0)

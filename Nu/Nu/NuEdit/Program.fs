@@ -236,12 +236,12 @@ module Program =
 
     let populateCreateComboBox (form : NuEditForm) world =
         form.createEntityComboBox.Items.Clear ()
-        for dispatcherKvp in world.Components.EntityDispatchers do
+        for dispatcherKvp in (World.getComponents world).EntityDispatchers do
             ignore <| form.createEntityComboBox.Items.Add dispatcherKvp.Key
         form.createEntityComboBox.SelectedIndex <- 0
 
     let populateTreeViewGroups (form : NuEditForm) world =
-        for dispatcherKvp in world.Components.EntityDispatchers do
+        for dispatcherKvp in (World.getComponents world).EntityDispatchers do
             let treeGroup = TreeNode dispatcherKvp.Key
             treeGroup.Name <- treeGroup.Text
             ignore <| form.treeView.Nodes.Add treeGroup
@@ -596,7 +596,7 @@ module Program =
 
     let handleFormReloadAssets (_ : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
-            let editorState = world.State.UserState :?> EditorState
+            let editorState = World.getUserState world
             let targetDirectory = editorState.TargetDirectory
             let refinementDirectory = editorState.RefinementDirectory
             let assetSourceDirectory = Path.Combine (targetDirectory, "..\\..")
@@ -614,7 +614,7 @@ module Program =
     let handleFormReloadOverlays (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
             let world = pushPastWorld world world
-            let targetDirectory = (world.State.UserState :?> EditorState).TargetDirectory
+            let targetDirectory = (World.getUserState world).TargetDirectory
             let overlayDirectory = Path.Combine (targetDirectory, "..\\..")
             match World.tryReloadOverlays overlayDirectory targetDirectory world with
             | Right world ->
