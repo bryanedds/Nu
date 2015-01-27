@@ -192,7 +192,7 @@ module GameplayDispatcherModule =
         static let updateCharacterByAction actionDescriptor (character : Entity) world =
             if actionDescriptor.ActionTicks = 0L then
                 world |>
-                    character.SetCharacterAnimationState (getCharacterAnimationStateByActionBegin world.State.TickTime (character.GetPosition world) (character.GetCharacterAnimationState world) actionDescriptor) |>
+                    character.SetCharacterAnimationState (getCharacterAnimationStateByActionBegin (World.getTickTime world) (character.GetPosition world) (character.GetCharacterAnimationState world) actionDescriptor) |>
                     character.SetActivityState (Action <| ActionDescriptor.incActionTicks actionDescriptor)
             elif actionDescriptor.ActionTicks > 0L && actionDescriptor.ActionTicks < ActionTicksMax then
                 world |>
@@ -200,7 +200,7 @@ module GameplayDispatcherModule =
             else
                 world |>
                     character.SetActivityState NoActivity |>
-                    character.SetCharacterAnimationState (getCharacterAnimationStateByActionEnd world.State.TickTime (character.GetCharacterAnimationState world))
+                    character.SetCharacterAnimationState (getCharacterAnimationStateByActionEnd (World.getTickTime world) (character.GetCharacterAnimationState world))
 
         static let determineCharacterTurnFromDirection direction occupationMap (character : Entity) opponents world =
             match character.GetActivityState world with

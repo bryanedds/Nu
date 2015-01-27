@@ -165,7 +165,7 @@ module PlayerModule =
             let player = event.Subscriber : Entity
             if World.isGamePlaying world then
                 if not <| player.HasFallen world then
-                    if world.State.TickTime % 6L = 0L then
+                    if World.getTickTime world % 6L = 0L then
                         let world = shootBullet player world
                         (Cascade, world)
                     else (Cascade, world)
@@ -175,7 +175,7 @@ module PlayerModule =
         static let getLastTimeOnGround (player : Entity) world =
             if not <| World.bodyOnGround (player.GetPhysicsId world) world
             then player.GetLastTimeOnGroundNp world
-            else world.State.TickTime
+            else World.getTickTime world
 
         static let handleMovement event world =
             let player = event.Subscriber : Entity
@@ -197,9 +197,10 @@ module PlayerModule =
         static let handleJump event world =
             let player = event.Subscriber : Entity
             if World.isGamePlaying world then
-                if  world.State.TickTime >= player.GetLastTimeJumpNp world + 12L &&
-                    world.State.TickTime <= player.GetLastTimeOnGroundNp world + 10L then
-                    let world = player.SetLastTimeJumpNp world.State.TickTime world
+                let tickTime = World.getTickTime world
+                if  tickTime >= player.GetLastTimeJumpNp world + 12L &&
+                    tickTime <= player.GetLastTimeOnGroundNp world + 10L then
+                    let world = player.SetLastTimeJumpNp tickTime world
                     let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 18000.0f)) (player.GetPhysicsId world) world
                     let world = World.playSound 1.0f JumpSound world
                     (Cascade, world)

@@ -581,8 +581,9 @@ module SimulationModule =
     ///
     /// TODO: attempt to implement with Fsharpx.PersistentHashMap with hash cached in Address type.
     and [<ReferenceEquality>] World =
-        { SimulantStates : GameState * Map<string, ScreenState * Map<string, GroupState * Map<string, EntityState>>>
-          Subsystems : Subsystems
-          Components : Components
-          Callbacks : Callbacks
-          State : WorldState }
+        internal
+            { SimulantStates : GameState * Map<string, ScreenState * Map<string, GroupState * Map<string, EntityState>>>
+              Subsystems : Subsystems
+              Components : Components
+              Callbacks : Callbacks
+              State : WorldState }

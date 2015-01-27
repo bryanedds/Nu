@@ -583,6 +583,15 @@ module WorldCallbacksModule =
             state :?> 'a
 
 [<AutoOpen>]
+module WorldComponentsModule =
+
+    type World with
+
+        /// Get the components of the world.
+        static member getComponents world =
+            world.Components
+
+[<AutoOpen>]
 module WorldStateModule =
 
     type World with
