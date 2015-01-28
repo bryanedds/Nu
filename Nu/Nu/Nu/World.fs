@@ -286,7 +286,7 @@ module WorldModule =
                                 Overlayer.applyOverlayToFacetNames overlayName overlayName entityState oldOverlayer world.State.Overlayer
                                 match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
                                 | Right (entityState, world) ->
-                                    let facetNames = EntityState.getFacetNamesReflectively entityState
+                                    let facetNames = World.getEntityFacetNamesReflectively entityState
                                     Overlayer.applyOverlay6 overlayName overlayName facetNames entityState oldOverlayer world.State.Overlayer
                                     World.setEntityStateWithoutEvent entityState entity world
                                 | Left error -> note <| "There was an issue in applying a reloaded overlay: " + error; world
@@ -568,9 +568,9 @@ module WorldModule =
 
                 // make the world's callbacks
                 let callbacks =
-                    { Tasks = []
-                      Subscriptions = Map.empty
+                    { Subscriptions = Map.empty
                       Unsubscriptions = Map.empty
+                      Tasks = []
                       CallbackStates = Map.empty }
 
                 // make the world's state
@@ -596,11 +596,11 @@ module WorldModule =
 
                 // make the world itself
                 let world =
-                    { SimulantStates = simulantStates
-                      Subsystems = subsystems
+                    { Subsystems = subsystems
                       Components = components
                       Callbacks = callbacks
-                      State = worldState }
+                      State = worldState
+                      SimulantStates = simulantStates }
 
                 // and finally, register the game
                 let world = World.registerGame world
@@ -638,9 +638,9 @@ module WorldModule =
             
             // make the world's callbacks
             let callbacks =
-                { Tasks = []
-                  Subscriptions = Map.empty
+                { Subscriptions = Map.empty
                   Unsubscriptions = Map.empty
+                  Tasks = []
                   CallbackStates = Map.empty }
 
             // make the world's state
@@ -662,11 +662,11 @@ module WorldModule =
 
             // make the world itself
             let world =
-                { SimulantStates = simulantStates
-                  Subsystems = subsystems
+                { Subsystems = subsystems
                   Components = components
                   Callbacks = callbacks
-                  State = worldState }
+                  State = worldState
+                  SimulantStates = simulantStates }
 
             // and finally, register the game
             World.registerGame world
