@@ -141,8 +141,7 @@ module CharacterAnimationFacetModule =
              define? CharacterAnimationSheet PlayerImage]
 
         override facet.GetRenderDescriptors entity world =
-            if  entity.GetVisible world &&
-                World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
+            if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
                 [LayerableDescriptor
                     { Depth = entity.GetDepth world
                       LayeredDescriptor =
