@@ -520,11 +520,11 @@ module SimulationModule =
     /// TODO: attempt to implement with Fsharpx.PersistentHashMap with hash cached in Address type.
     and [<ReferenceEquality>] World =
         internal
-            { SimulantStates : GameState * Map<string, ScreenState * Map<string, GroupState * Map<string, EntityState>>>
-              Subsystems : Subsystems
+            { Subsystems : Subsystems
               Components : Components
               Callbacks : Callbacks
-              State : WorldState }
+              State : WorldState
+              SimulantStates : GameState * Map<string, ScreenState * Map<string, GroupState * Map<string, EntityState>>> }
 
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
     /// specific values.
