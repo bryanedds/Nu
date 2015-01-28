@@ -38,30 +38,28 @@ module FieldDispatcherModule =
             [define? FieldMapNp DefaultFieldMap]
 
         override dispatcher.GetRenderDescriptors field world =
-            if field.GetVisible world then
-                let viewType = field.GetViewType world
-                let position = field.GetPosition world
-                let size = Vector2.Multiply (TileSize, TileSheetSize)
-                if World.getCameraBy (Camera.inView3 viewType position size) world then
-                    let fieldMap = field.GetFieldMapNp world
-                    let sprites =
-                        Map.foldBack
-                            (fun tilePositionM tile sprites ->
-                                let tilePosition = vmtovf tilePositionM // NOTE: field position assumed at origin
-                                let optTileInset = getOptTileInset tile.TileSheetPositionM
-                                let sprite =
-                                    { Position = tilePosition
-                                      Size = TileSize
-                                      Rotation = 0.0f // NOTE: rotation assumed zero
-                                      ViewType = Relative // NOTE: ViewType assumed relative
-                                      OptInset = optTileInset
-                                      Image = fieldMap.FieldTileSheet
-                                      Color = Vector4.One }
-                                sprite :: sprites)
-                            fieldMap.FieldTiles
-                            []
-                    [LayerableDescriptor { Depth = field.GetDepth world; LayeredDescriptor = SpritesDescriptor sprites }]
-                else []
+            let viewType = field.GetViewType world
+            let position = field.GetPosition world
+            let size = Vector2.Multiply (TileSize, TileSheetSize)
+            if World.getCameraBy (Camera.inView3 viewType position size) world then
+                let fieldMap = field.GetFieldMapNp world
+                let sprites =
+                    Map.foldBack
+                        (fun tilePositionM tile sprites ->
+                            let tilePosition = vmtovf tilePositionM // NOTE: field position assumed at origin
+                            let optTileInset = getOptTileInset tile.TileSheetPositionM
+                            let sprite =
+                                { Position = tilePosition
+                                  Size = TileSize
+                                  Rotation = 0.0f // NOTE: rotation assumed zero
+                                  ViewType = Relative // NOTE: ViewType assumed relative
+                                  OptInset = optTileInset
+                                  Image = fieldMap.FieldTileSheet
+                                  Color = Vector4.One }
+                            sprite :: sprites)
+                        fieldMap.FieldTiles
+                        []
+                [LayerableDescriptor { Depth = field.GetDepth world; LayeredDescriptor = SpritesDescriptor sprites }]
             else []
 
         override dispatcher.GetQuickSize field world =
