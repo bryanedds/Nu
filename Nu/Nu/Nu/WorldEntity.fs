@@ -105,6 +105,9 @@ module WorldEntityModule =
                 else world
             else failwith <| "Adding an entity that the world already contains at address '" + acstring entity.EntityAddress + "'."
 
+        static member internal getEntityFacetNamesReflectively entityState =
+            List.map Reflection.getTypeName entityState.FacetsNp
+
         /// Query that the world contains an entity.
         static member containsEntity entity world =
             Option.isSome <| World.getOptEntityState entity world
@@ -199,7 +202,7 @@ module WorldEntityModule =
 
                     // OPTIMIZATION: apply overlay only when it will change something (EG - when it's not the intrinsic overlay)
                     if intrinsicOverlayName <> overlayName then
-                        let facetNames = EntityState.getFacetNamesReflectively entityState
+                        let facetNames = World.getEntityFacetNamesReflectively entityState
                         Overlayer.applyOverlay intrinsicOverlayName overlayName facetNames entityState world.State.Overlayer
                         entityState
                     else entityState
@@ -276,7 +279,7 @@ module WorldEntityModule =
                     match World.trySynchronizeFacetsToNames entityState.FacetNames entityState (Some entity) world with
                     | Right (entityState, world) -> (entityState, world)
                     | Left error -> debug error; (entityState, world)
-                let facetNames = EntityState.getFacetNamesReflectively entityState
+                let facetNames = World.getEntityFacetNamesReflectively entityState
                 Overlayer.applyOverlay oldOverlayName overlayName facetNames entityState world.State.Overlayer
                 Right <| World.setEntityState entityState entity world
             | (_, _) -> Left "Could not set the entity's overlay name."
@@ -298,7 +301,7 @@ module WorldEntityModule =
                     let defaultOptOverlayName = Map.find dispatcherTypeName world.State.OverlayRouter
                     defaultOptOverlayName <> (propertyValue :?> string option)
                 else
-                    let facetNames = EntityState.getFacetNamesReflectively entityState
+                    let facetNames = World.getEntityFacetNamesReflectively entityState
                     Overlayer.shouldPropertySerialize5 facetNames propertyName propertyType entityState world.State.Overlayer
             Reflection.writeMemberValuesFromTarget shouldWriteProperty writer entityState
 
@@ -361,7 +364,7 @@ module WorldEntityModule =
 
                 // OPTIMIZATION: applying overlay only when it will change something (EG - when it's not the default overlay)
                 if intrinsicOverlayName <> overlayName then
-                    let facetNames = EntityState.getFacetNamesReflectively entityState
+                    let facetNames = World.getEntityFacetNamesReflectively entityState
                     Overlayer.applyOverlay intrinsicOverlayName overlayName facetNames entityState world.State.Overlayer
                 else ()
             | None -> ()

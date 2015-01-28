@@ -21,6 +21,20 @@ module WorldFacetModule =
             | Some facet -> Right <| facet
             | None -> Left <| "Invalid facet name '" + facetName + "'."
 
+        static member private isFacetCompatibleWithEntity entityDispatcherMap facet (entityState : EntityState) =
+            // Note a facet is incompatible with any other facet if it contains any fields that has
+            // the same name but a different type.
+            let facetType = facet.GetType ()
+            let facetFieldDefinitions = Reflection.getFieldDefinitions facetType
+            if Reflection.isFacetCompatibleWithDispatcher entityDispatcherMap facet entityState then
+                List.notExists
+                    (fun definition ->
+                        match Map.tryFind definition.FieldName entityState.Xtension.XFields with
+                        | Some field -> field.GetType () <> definition.FieldType
+                        | None -> false)
+                    facetFieldDefinitions
+            else false
+
         static member private getFacetNamesToAdd oldFacetNames newFacetNames =
             let newFacetNames = Set.ofList newFacetNames
             let oldFacetNames = Set.ofList oldFacetNames
@@ -87,7 +101,7 @@ module WorldFacetModule =
         static member private tryAddFacet facetName (entityState : EntityState) optEntity world =
             match World.tryGetFacet facetName world with
             | Right facet ->
-                if EntityState.isFacetCompatible world.Components.EntityDispatchers facet entityState then
+                if World.isFacetCompatibleWithEntity world.Components.EntityDispatchers facet entityState then
                     let entityState = { entityState with FacetNames = facetName :: entityState.FacetNames }
                     let entityState = { entityState with FacetsNp = facet :: entityState.FacetsNp }
                     Reflection.attachFields facet entityState // hacky copy elided

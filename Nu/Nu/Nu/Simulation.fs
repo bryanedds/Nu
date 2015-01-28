@@ -25,25 +25,22 @@ module InterativityModule =
         | GuiAndPhysics
         | GuiAndPhysicsAndGamePlay
 
-[<RequireQualifiedAccess>]
-module Interactivity =
+        /// Query that the game engine is in game-playing mode.
+        static member isGamePlaying interactivity =
+            match interactivity with
+            | GuiOnly -> false
+            | GuiAndPhysics -> false
+            | GuiAndPhysicsAndGamePlay -> true
 
-    /// Query that the game engine is in game-playing mode.
-    let isGamePlaying interactivity =
-        match interactivity with
-        | GuiOnly -> false
-        | GuiAndPhysics -> false
-        | GuiAndPhysicsAndGamePlay -> true
-
-    /// Query that the physics system is running.
-    let isPhysicsRunning interactivity =
-        match interactivity with
-        | GuiOnly -> false
-        | GuiAndPhysics -> true
-        | GuiAndPhysicsAndGamePlay -> true
+        /// Query that the physics system is running.
+        static member isPhysicsRunning interactivity =
+            match interactivity with
+            | GuiOnly -> false
+            | GuiAndPhysics -> true
+            | GuiAndPhysicsAndGamePlay -> true
 
 [<AutoOpen>]
-module TransitionTypeModule =
+module TransitionModule =
 
     /// The type of a screen transition. Incoming means a new screen is being shown, and Outgoing
     /// means an existing screen being hidden.
@@ -51,14 +48,23 @@ module TransitionTypeModule =
         | Incoming
         | Outgoing
 
-[<AutoOpen>]
-module ScreenStateModule =
-
     /// The state of a screen's transition.
     type TransitionState =
         | IncomingState
         | OutgoingState
         | IdlingState
+
+    /// Describes one of a screen's transition processes.
+    type [<CLIMutable; StructuralEquality; NoComparison>] TransitionDescriptor =
+        { TransitionType : TransitionType
+          TransitionLifetime : int64
+          OptDissolveImage : AssetTag option }
+
+        /// Make a screen transition descriptor.
+        static member make transitionType =
+            { TransitionType = transitionType
+              TransitionLifetime = 0L
+              OptDissolveImage = None }
 
     /// Describes the behavior of the screen dissolving algorithm.
     type [<StructuralEquality; NoComparison>] DissolveData =
@@ -100,17 +106,22 @@ module TileMapModule =
 [<AutoOpen>]
 module SimulationModule =
 
-    /// Describes one of a screen's transition processes.
-    type [<CLIMutable; StructuralEquality; NoComparison>] TransitionDescriptor =
-        { TransitionType : TransitionType
-          TransitionLifetime : int64
-          OptDissolveImage : AssetTag option }
+    /// Represents an untyped message to a subsystem.
+    type SubsystemMessage = obj
 
-        /// Make a screen transition descriptor.
-        static member make transitionType =
-            { TransitionType = transitionType
-              TransitionLifetime = 0L
-              OptDissolveImage = None }
+    /// Represents an untype result of a subsystem.
+    type SubsystemResult = obj
+
+    /// The type of subsystem. Dictates where subsystem's processing happens in the game loop.
+    type SubsystemType =
+        | UpdateType
+        | RenderType
+        | AudioType
+
+    /// Describes whether an event has been resolved or should cascade to down-stream handlers.
+    type EventHandling =
+        | Resolve
+        | Cascade
 
     /// The data for a mouse move event.
     type [<StructuralEquality; NoComparison>] MouseMoveData =
@@ -150,11 +161,6 @@ module SimulationModule =
           EventAddress : 'a Address
           Data : 'a }
 
-    /// Describes whether an event has been resolved or should cascade to down-stream handlers.
-    and EventHandling =
-        | Resolve
-        | Cascade
-
     /// Describes an event subscription.
     and Subscription<'a, 's when 's :> Simulant> = Event<'a, 's> -> World -> EventHandling * World
 
@@ -178,6 +184,58 @@ module SimulationModule =
     and [<ReferenceEquality>] Task =
         { ScheduledTime : int64
           Operation : World -> World }
+
+    /// Represents a subsystem by which additional engine-level subsystems such as AI, optimized
+    /// special FX, and the like can be added.
+    and Subsystem =
+        interface
+            /// The type of subsystem. Dictates where its processing happens in the game loop.
+            abstract SubsystemType : SubsystemType
+            /// The ordering by which the subsystem will be processed relative to other subsystems of the same type.
+            abstract SubsystemOrder : single
+            /// Clear the messages queued by subsystem.
+            abstract ClearMessages : unit -> Subsystem
+            /// Enqueue a message for the subsystem.
+            abstract EnqueueMessage : SubsystemMessage -> Subsystem
+            /// Processed the queued messages with the subsystem.
+            abstract ProcessMessages : World -> SubsystemResult * Subsystem
+            /// Apply the result of the message processing to the world.
+            abstract ApplyResult : SubsystemResult -> World -> World
+            /// Clean up any resources used by the subsystem.
+            abstract CleanUp : World -> Subsystem * World
+        end
+
+    /// The world's subsystems.
+    and Subsystems = Map<string, Subsystem>
+
+    /// The world's components.
+    and [<ReferenceEquality>] Components =
+        { EntityDispatchers : Map<string, EntityDispatcher>
+          GroupDispatchers : Map<string, GroupDispatcher>
+          ScreenDispatchers : Map<string, ScreenDispatcher>
+          GameDispatchers : Map<string, GameDispatcher>
+          Facets : Map<string, Facet> }
+
+    /// The world's simple callback facilities.
+    and [<ReferenceEquality>] Callbacks =
+        { Subscriptions : SubscriptionEntries
+          Unsubscriptions : UnsubscriptionEntries
+          Tasks : Task list
+          CallbackStates : Map<Guid, obj> }
+
+    /// The world's state.
+    and [<ReferenceEquality>] WorldState =
+        { TickTime : int64
+          Liveness : Liveness
+          Interactivity : Interactivity
+          OptScreenTransitionDestination : Screen option // TODO: move this into Game?
+          AssetMetadataMap : AssetMetadataMap
+          AssetGraphFilePath : string
+          Overlayer : Overlayer
+          OverlayRouter : OverlayRouter
+          OverlayFilePath : string
+          Camera : Camera
+          UserState : obj }
 
     /// The default dispatcher for games.
     and GameDispatcher () =
@@ -387,27 +445,6 @@ module SimulationModule =
 
         interface SimulantState
 
-        /// Get the names of all facets used by an entity via reflection.
-        /// TODO: see if this should be used as often as it is, and if it is needed in only one or
-        /// two cases, just inline it.
-        static member getFacetNamesReflectively entityState =
-            List.map Reflection.getTypeName entityState.FacetsNp
-
-        /// Query that a facet is compatible with those already being used by an entity.
-        /// Note a facet is incompatible with any other facet if it contains any fields that has
-        /// the same name but a different type.
-        static member isFacetCompatible entityDispatcherMap facet (entityState : EntityState) =
-            let facetType = facet.GetType ()
-            let facetFieldDefinitions = Reflection.getFieldDefinitions facetType
-            if Reflection.isFacetCompatibleWithDispatcher entityDispatcherMap facet entityState then
-                List.notExists
-                    (fun definition ->
-                        match Map.tryFind definition.FieldName entityState.Xtension.XFields with
-                        | Some field -> field.GetType () <> definition.FieldType
-                        | None -> false)
-                    facetFieldDefinitions
-            else false
-
         /// Make an entity state value.
         static member make dispatcher optOverlayName optName =
             let id = Core.makeId ()
@@ -476,6 +513,19 @@ module SimulationModule =
         end
         static member proxy address = { EntityAddress = address }
 
+    /// The world, in a functional programming sense. Hosts the game object, the dependencies
+    /// needed to implement a game, messages to by consumed by the various engine sub-systems,
+    /// and general configuration data.
+    ///
+    /// TODO: attempt to implement with Fsharpx.PersistentHashMap with hash cached in Address type.
+    and [<ReferenceEquality>] World =
+        internal
+            { SimulantStates : GameState * Map<string, ScreenState * Map<string, GroupState * Map<string, EntityState>>>
+              Subsystems : Subsystems
+              Components : Components
+              Callbacks : Callbacks
+              State : WorldState }
+
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
     /// specific values.
     and NuPlugin () =
@@ -510,80 +560,3 @@ module SimulationModule =
         /// than the default "ButtonDispatcher" overlay.
         abstract MakeOverlayRoutes : unit -> (string * string option) list
         default this.MakeOverlayRoutes () = []
-
-    /// Represents an untyped message to a subsystem.
-    and SubsystemMessage = obj
-
-    /// Represents an untype result of a subsystem.
-    and SubsystemResult = obj
-
-    /// The type of subsystem. Dictates where subsystem's processing happens in the game loop.
-    and SubsystemType =
-        | UpdateType
-        | RenderType
-        | AudioType
-
-    /// Represents a subsystem by which additional engine-level subsystems such as AI, optimized
-    /// special FX, and the like can be added.
-    and Subsystem =
-        interface
-            /// The type of subsystem. Dictates where its processing happens in the game loop.
-            abstract SubsystemType : SubsystemType
-            /// The ordering by which the subsystem will be processed relative to other subsystems of the same type.
-            abstract SubsystemOrder : single
-            /// Clear the messages queued by subsystem.
-            abstract ClearMessages : unit -> Subsystem
-            /// Enqueue a message for the subsystem.
-            abstract EnqueueMessage : SubsystemMessage -> Subsystem
-            /// Processed the queued messages with the subsystem.
-            abstract ProcessMessages : World -> SubsystemResult * Subsystem
-            /// Apply the result of the message processing to the world.
-            abstract ApplyResult : SubsystemResult -> World -> World
-            /// Clean up any resources used by the subsystem.
-            abstract CleanUp : World -> Subsystem * World
-        end
-
-    /// The world's subsystems.
-    and Subsystems = Map<string, Subsystem>
-
-    /// The world's components.
-    and [<ReferenceEquality>] Components =
-        { EntityDispatchers : Map<string, EntityDispatcher>
-          GroupDispatchers : Map<string, GroupDispatcher>
-          ScreenDispatchers : Map<string, ScreenDispatcher>
-          GameDispatchers : Map<string, GameDispatcher>
-          Facets : Map<string, Facet> }
-
-    /// The world's simple callback facilities.
-    and [<ReferenceEquality>] Callbacks =
-        { Tasks : Task list
-          Subscriptions : SubscriptionEntries
-          Unsubscriptions : UnsubscriptionEntries
-          CallbackStates : Map<Guid, obj> }
-
-    /// The world's state.
-    and [<ReferenceEquality>] WorldState =
-        { TickTime : int64
-          Liveness : Liveness
-          Interactivity : Interactivity
-          OptScreenTransitionDestination : Screen option
-          AssetMetadataMap : AssetMetadataMap
-          AssetGraphFilePath : string
-          Overlayer : Overlayer
-          OverlayRouter : OverlayRouter
-          OverlayFilePath : string
-          Camera : Camera
-          UserState : obj }
-
-    /// The world, in a functional programming sense. Hosts the game object, the dependencies
-    /// needed to implement a game, messages to by consumed by the various engine sub-systems,
-    /// and general configuration data.
-    ///
-    /// TODO: attempt to implement with Fsharpx.PersistentHashMap with hash cached in Address type.
-    and [<ReferenceEquality>] World =
-        internal
-            { SimulantStates : GameState * Map<string, ScreenState * Map<string, GroupState * Map<string, EntityState>>>
-              Subsystems : Subsystems
-              Components : Components
-              Callbacks : Callbacks
-              State : WorldState }
