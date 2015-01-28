@@ -403,7 +403,7 @@ module GameplayDispatcherModule =
             // NOTE: currently just implements attack
             let chain = chain {
                 do! update ^ character.SetActivityState ^ Action newActionDescriptor
-                do! during (fun world -> ActivityState.isActing ^ character.GetActivityState world) ^ chain {
+                do! during (ActivityState.isActing << character.GetActivityState) ^ chain {
                     do! update ^ fun world ->
                         let actionDescriptor =
                             match character.GetActivityState world  with
