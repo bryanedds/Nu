@@ -388,9 +388,9 @@ module Observation =
     /// (that is, there is a screen transition in progress).
     let isSelectedScreenTransitioning _ world = World.isSelectedScreenTransitioning world
 
-    /// Take only one event from an observation per game tick.
-    let noMoreThanOncePerTick observation =
-        observation |> organize (fun _ world -> World.getTickTime world) |> toFst |> choose
+    /// Take only one event from an observation per game update.
+    let noMoreThanOncePerUpdate observation =
+        observation |> organize (fun _ world -> World.getUpdateCount world) |> toFst |> choose
 
     /// Filter out simulant change events that do not relate to those returned by 'valueGetter'.
     let simulantValue (valueGetter : World -> 'b) (observation : Observation<'a SimulantChangeData, 'o>) =
@@ -417,7 +417,7 @@ module ObservationOperatorsModule =
     /// Make an observation of one of the observer's change events per frame.
     let (/--) (simulant, valueGetter) observer =
         (simulant, valueGetter) *-- observer |>
-        noMoreThanOncePerTick
+        noMoreThanOncePerUpdate
 
     /// Propagate the event data of an observation to a value in the observing simulant when the
     /// observer exists (doing nothing otherwise).

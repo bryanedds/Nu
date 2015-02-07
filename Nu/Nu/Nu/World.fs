@@ -451,7 +451,8 @@ module WorldModule =
         /// TODO: document!
         static member processPlay world =
             let world = World.processSubsystems AudioType world
-            World.processTickTime world
+            let world = World.updateTickTime world
+            World.incrementUpdateCount world
 
         /// TODO: document!
         static member run4 tryMakeWorld handleUpdate handleRender sdlConfig =
@@ -582,6 +583,7 @@ module WorldModule =
                     let userOverlayRoutes = nuPlugin.MakeOverlayRoutes ()
                     { TickRate = tickRate
                       TickTime = 0L
+                      UpdateCount = 0L
                       Liveness = Running
                       OptScreenTransitionDestination = None
                       AssetMetadataMap = assetMetadataMap
@@ -648,6 +650,7 @@ module WorldModule =
             let worldState =
                 { TickRate = 1L
                   TickTime = 0L
+                  UpdateCount = 0L
                   Liveness = Running
                   OptScreenTransitionDestination = None
                   AssetMetadataMap = Map.empty
