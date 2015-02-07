@@ -161,7 +161,7 @@ module CharacterCameraFacetModule =
     type CharacterCameraFacet () =
         inherit Facet ()
 
-        static let handleTick event world =
+        static let handleUpdate event world =
             let character = event.Subscriber : Entity
             let world =
                 World.updateCamera (fun camera ->
@@ -191,4 +191,4 @@ module CharacterCameraFacetModule =
             (Cascade, world)
 
         override facet.Register entity world =
-            monitor handleTick (observe TickEventAddress entity) world
+            monitor handleUpdate (observe UpdateEventAddress entity) world

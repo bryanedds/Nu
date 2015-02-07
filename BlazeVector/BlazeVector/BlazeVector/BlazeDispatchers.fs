@@ -22,20 +22,18 @@ module BulletModule =
 
         static let [<Literal>] BulletLifetime = 27L
 
-        static let handleTick event world =
+        static let handleUpdate event world =
             let bullet = event.Subscriber : Entity
-            if World.isGamePlaying world then
-                let world = bullet.SetAge (bullet.GetAge world + 1L) world
-                let world =
-                    if bullet.GetAge world > BulletLifetime
-                    then World.destroyEntity bullet world
-                    else world
-                (Cascade, world)
-            else (Cascade, world)
+            let world = bullet.SetAge (bullet.GetAge world + World.getTickRate world) world
+            let world =
+                if bullet.GetAge world > BulletLifetime
+                then World.destroyEntity bullet world
+                else world
+            (Cascade, world)
 
         static let handleCollision event world =
             let bullet = event.Subscriber : Entity
-            if World.isGamePlaying world then
+            if World.isTicking world then
                 let world = World.destroyEntity bullet world
                 (Cascade, world)
             else (Cascade, world)
@@ -57,7 +55,7 @@ module BulletModule =
 
         override dispatcher.Register bullet world =
             world |>
-                World.monitor handleTick TickEventAddress bullet |>
+                World.monitor handleUpdate UpdateEventAddress bullet |>
                 World.monitor handleCollision (CollisionEventAddress ->>- bullet.EntityAddress) bullet
 
 [<AutoOpen>]
@@ -76,24 +74,23 @@ module EnemyModule =
         inherit EntityDispatcher ()
         
         static let move (enemy : Entity) world =
-            let force = Vector2 (-2000.0f, -20000.0f)
+            let tickRate = World.getTickRate world
+            let force = Vector2 (-2000.0f, -20000.0f) * single tickRate
             World.applyBodyForce force (enemy.GetPhysicsId world) world
 
         static let die (enemy : Entity) world =
             let world = World.destroyEntity enemy world
             World.playSound 1.0f ExplosionSound world
 
-        static let handleTick event world =
+        static let handleUpdate event world =
             let enemy = event.Subscriber : Entity
-            if World.isGamePlaying world then
-                let world = if enemy.HasAppeared world then move enemy world else world
-                let world = if enemy.GetHealth world <= 0 then die enemy world else world
-                (Cascade, world)
-            else (Cascade, world)
+            let world = if enemy.HasAppeared world then move enemy world else world
+            let world = if enemy.GetHealth world <= 0 then die enemy world else world
+            (Cascade, world)
 
         static let handleCollision event world =
             let enemy = event.Subscriber : Entity
-            if World.isGamePlaying world then
+            if World.isTicking world then
                 let collidee = event.Data.Collidee
                 let isBullet = collidee.DispatchesAs typeof<BulletDispatcher> world
                 if isBullet then
@@ -122,7 +119,7 @@ module EnemyModule =
 
         override dispatcher.Register enemy world =
             world |>
-                World.monitor handleTick TickEventAddress enemy |>
+                World.monitor handleUpdate UpdateEventAddress enemy |>
                 World.monitor handleCollision (CollisionEventAddress ->>- enemy.EntityAddress) enemy
 
 [<AutoOpen>]
@@ -163,7 +160,7 @@ module PlayerModule =
 
         static let handleSpawnBullet event world =
             let player = event.Subscriber : Entity
-            if World.isGamePlaying world then
+            if World.isTicking world then
                 if not <| player.HasFallen world then
                     if World.getTickTime world % 6L = 0L then
                         let world = shootBullet player world
@@ -179,32 +176,29 @@ module PlayerModule =
 
         static let handleMovement event world =
             let player = event.Subscriber : Entity
-            if World.isGamePlaying world then
-                let lastTimeOnGround = getLastTimeOnGround player world
-                let world = player.SetLastTimeOnGroundNp lastTimeOnGround world
-                let physicsId = player.GetPhysicsId world
-                let optGroundTangent = World.getBodyOptGroundContactTangent physicsId world
-                let force =
-                    match optGroundTangent with
-                    | Some groundTangent ->
-                        let downForce = if groundTangent.Y > 0.0f then ClimbForce else 0.0f
-                        Vector2.Multiply (groundTangent, Vector2 (WalkForce, downForce))
-                    | None -> Vector2 (WalkForce, FallForce)
-                let world = World.applyBodyForce force physicsId world
-                (Cascade, world)
-            else (Cascade, world)
+            let lastTimeOnGround = getLastTimeOnGround player world
+            let world = player.SetLastTimeOnGroundNp lastTimeOnGround world
+            let physicsId = player.GetPhysicsId world
+            let optGroundTangent = World.getBodyOptGroundContactTangent physicsId world
+            let force =
+                match optGroundTangent with
+                | Some groundTangent ->
+                    let downForce = if groundTangent.Y > 0.0f then ClimbForce else 0.0f
+                    let vectorForce = Vector2.Multiply (groundTangent, Vector2 (WalkForce, downForce))
+                    vectorForce * World.getTickRateF world
+                | None -> Vector2 (WalkForce, FallForce)
+            let world = World.applyBodyForce force physicsId world
+            (Cascade, world)
 
         static let handleJump event world =
             let player = event.Subscriber : Entity
-            if World.isGamePlaying world then
-                let tickTime = World.getTickTime world
-                if  tickTime >= player.GetLastTimeJumpNp world + 12L &&
-                    tickTime <= player.GetLastTimeOnGroundNp world + 10L then
-                    let world = player.SetLastTimeJumpNp tickTime world
-                    let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 18000.0f)) (player.GetPhysicsId world) world
-                    let world = World.playSound 1.0f JumpSound world
-                    (Cascade, world)
-                else (Cascade, world)
+            let tickTime = World.getTickTime world
+            if  tickTime >= player.GetLastTimeJumpNp world + 12L &&
+                tickTime <= player.GetLastTimeOnGroundNp world + 10L then
+                let world = player.SetLastTimeJumpNp tickTime world
+                let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 18000.0f)) (player.GetPhysicsId world) world
+                let world = World.playSound 1.0f JumpSound world
+                (Cascade, world)
             else (Cascade, world)
 
         static let handleJumpByKeyboardKey event world =
@@ -234,8 +228,8 @@ module PlayerModule =
 
         override dispatcher.Register player world =
             world |>
-                World.monitor handleSpawnBullet TickEventAddress player |>
-                World.monitor handleMovement TickEventAddress player |>
+                World.monitor handleSpawnBullet UpdateEventAddress player |>
+                World.monitor handleMovement UpdateEventAddress player |>
                 World.monitor handleJump MouseLeftDownEventAddress player |>
                 World.monitor handleJumpByKeyboardKey KeyboardKeyDownEventAddress player
 
@@ -246,32 +240,28 @@ module StagePlayModule =
         inherit GroupDispatcher ()
 
         static let adjustCamera world =
-            if World.isGamePlaying world then
-                World.updateCamera
-                    (fun camera -> 
-                        let playerPosition = StagePlayer.GetPosition world
-                        let playerSize = StagePlayer.GetSize world
-                        let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + camera.EyeSize.X * 0.33f, camera.EyeCenter.Y)
-                        { camera with EyeCenter = eyeCenter })
-                    world
-            else world
+            World.updateCamera
+                (fun camera -> 
+                    let playerPosition = StagePlayer.GetPosition world
+                    let playerSize = StagePlayer.GetSize world
+                    let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + camera.EyeSize.X * 0.33f, camera.EyeCenter.Y)
+                    { camera with EyeCenter = eyeCenter })
+                world
 
         static let handleAdjustCamera _ world =
             (Cascade, adjustCamera world)
 
         static let handlePlayerFall _ world =
-            if World.isGamePlaying world then
-                if StagePlayer.HasFallen world && World.isSelectedScreenIdling world then
-                    let world = World.playSound 1.0f DeathSound world
-                    let world = World.transitionScreen Title world
-                    (Cascade, world)
-                else (Cascade, world)
+            if StagePlayer.HasFallen world && World.isSelectedScreenIdling world then
+                let world = World.playSound 1.0f DeathSound world
+                let world = World.transitionScreen Title world
+                (Cascade, world)
             else (Cascade, world)
 
         override dispatcher.Register group world =
             world |>
-                World.monitor handleAdjustCamera TickEventAddress group |>
-                World.monitor handlePlayerFall TickEventAddress group
+                World.monitor handleAdjustCamera UpdateEventAddress group |>
+                World.monitor handlePlayerFall UpdateEventAddress group
 
 [<AutoOpen>]
 module StageScreenModule =

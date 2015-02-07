@@ -224,8 +224,8 @@ module CharacterStateModule =
             | Some targetPositionM -> targetPositionM - vftovm currentPosition |> vmtod
             | None -> currentDirection
 
-        static member incActionTicks actionDescriptor =
-            { actionDescriptor with ActionTicks = inc actionDescriptor.ActionTicks }
+        static member updateActionTicks tickRate actionDescriptor =
+            { actionDescriptor with ActionTicks = actionDescriptor.ActionTicks + tickRate }
 
     type [<StructuralEquality; NoComparison>] ActivityState =
         | Action of ActionDescriptor

@@ -63,8 +63,9 @@ module WorldPhysicsModule =
             member this.ClearMessages () = { this with Integrator = this.Integrator.ClearMessages () } :> Subsystem
             member this.EnqueueMessage message = { this with Integrator = this.Integrator.EnqueueMessage (message :?> PhysicsMessage) } :> Subsystem
             
-            member this.ProcessMessages _ =
-                let (integrationMessages, integrator) = this.Integrator.Integrate ()
+            member this.ProcessMessages world =
+                let tickRate = World.getTickRate world
+                let (integrationMessages, integrator) = this.Integrator.Integrate tickRate
                 (integrationMessages :> obj, { this with Integrator = integrator } :> Subsystem)
 
             member this.ApplyResult integrationMessages world =

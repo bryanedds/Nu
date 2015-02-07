@@ -97,7 +97,7 @@ module WorldScreenModule =
         /// destroyScreenImmediate unless you need the latter's specific behavior.
         static member destroyScreen screen world =
             let task =
-                { ScheduledTime = world.State.TickTime
+                { ScheduledTime = World.getTickTime world
                   Operation = fun world -> World.destroyScreenImmediate screen world }
             World.addTask task world
 

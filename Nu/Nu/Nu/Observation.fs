@@ -373,12 +373,9 @@ module Observation =
 
     (* Special Combinators *)
 
-    /// Take events from an observation only while World.isGamePlaying evaluates to true.
-    let isGamePlaying _ world = World.isGamePlaying world
+    /// Take events from an observation only while World.isTicking evaluates to true.
+    let isTicking _ world = World.isTicking world
 
-    /// Take events from an observation only while World.isPhysicsRunning evaluates to true.
-    let isPhysicsRunning _ world = World.isPhysicsRunning world
-    
     /// Take events from an observation only when the observer is selected in the world (see
     /// documentation for World.isAddressSelected for what this means (it's very useful!)).
     let isObserverSelected event world = World.isSimulantSelected event.Subscriber world
@@ -393,7 +390,7 @@ module Observation =
 
     /// Take only one event from an observation per game tick.
     let noMoreThanOncePerTick observation =
-        observation |> organize (fun _ world -> world.State.TickTime) |> toFst |> choose
+        observation |> organize (fun _ world -> World.getTickTime world) |> toFst |> choose
 
     /// Filter out simulant change events that do not relate to those returned by 'valueGetter'.
     let simulantValue (valueGetter : World -> 'b) (observation : Observation<'a SimulantChangeData, 'o>) =

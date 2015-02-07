@@ -193,10 +193,10 @@ module GameplayDispatcherModule =
             if actionDescriptor.ActionTicks = 0L then
                 world |>
                     character.SetCharacterAnimationState (getCharacterAnimationStateByActionBegin (World.getTickTime world) (character.GetPosition world) (character.GetCharacterAnimationState world) actionDescriptor) |>
-                    character.SetActivityState (Action <| ActionDescriptor.incActionTicks actionDescriptor)
+                    character.SetActivityState (Action <| ActionDescriptor.updateActionTicks (World.getTickRate world) actionDescriptor)
             elif actionDescriptor.ActionTicks > 0L && actionDescriptor.ActionTicks < ActionTicksMax then
                 world |>
-                    character.SetActivityState (Action <| ActionDescriptor.incActionTicks actionDescriptor)
+                    character.SetActivityState (Action <| ActionDescriptor.updateActionTicks (World.getTickRate world) actionDescriptor)
             else
                 world |>
                     character.SetActivityState NoActivity |>
@@ -396,7 +396,7 @@ module GameplayDispatcherModule =
                             | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
                         updateCharacterByNavigation navigationDescriptor character world
                     do! pass }}
-            let observation = observe TickEventAddress character |> until (DeselectEventAddress ->>- gameplay.ScreenAddress)
+            let observation = observe UpdateEventAddress character |> until (DeselectEventAddress ->>- gameplay.ScreenAddress)
             snd <| runAssumingCascade chain observation world
 
         static let runCharacterAction newActionDescriptor (character : Entity) gameplay world =
@@ -412,7 +412,7 @@ module GameplayDispatcherModule =
                         let world = updateCharacterByAction actionDescriptor character world
                         runCharacterReaction actionDescriptor character gameplay world
                     do! pass }}
-            let observation = observe TickEventAddress character |> until (DeselectEventAddress ->>- gameplay.ScreenAddress)
+            let observation = observe UpdateEventAddress character |> until (DeselectEventAddress ->>- gameplay.ScreenAddress)
             snd <| runAssumingCascade chain observation world
 
         static let runCharacterNoActivity (character : Entity) world =
@@ -520,7 +520,7 @@ module GameplayDispatcherModule =
                     do! update ^ hudSaveGame.SetEnabled true }
                 let observation =
                     observe (ClickEventAddress ->>- hudHalt.EntityAddress) gameplay |>
-                    sum TickEventAddress |>
+                    sum UpdateEventAddress |>
                     until (DeselectEventAddress ->>- gameplay.ScreenAddress)
                 snd <| runAssumingCascade chain observation world
             else world

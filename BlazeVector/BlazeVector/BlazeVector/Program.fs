@@ -74,10 +74,10 @@ module Program =
             // here is an attempt to make the world with the various initial states, the engine
             // plugin, and SDL dependencies. Note that the first boolean, when true, protects from
             // a Farseer physics bug but slows down the engine badly, so that's why it's false.
-            World.tryMake false true GuiAndPhysicsAndGamePlay () nuPlugin sdlDeps
+            World.tryMake false true 1L () nuPlugin sdlDeps
 
         // this is a callback that specifies your game's unique behavior when updating the world
-        // every tick. The World value is the state of the world after the callback has transformed
+        // every update. The World value is the state of the world after the callback transforms
         // the one it receives. It is here where we first clearly see Nu's purely-functional(ish)
         // design. The World type is almost entirely immutable, and thus the only way to update it
         // is by making a new copy of an existing instance. Since we need no special update

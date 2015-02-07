@@ -17,29 +17,6 @@ module DebugModule =
         member this.F () = ignore (Properties, XFields)
 
 [<AutoOpen>]
-module InterativityModule =
-
-    /// Describes the game engine's current level of 'interactivity'.
-    type Interactivity =
-        | GuiOnly
-        | GuiAndPhysics
-        | GuiAndPhysicsAndGamePlay
-
-        /// Query that the game engine is in game-playing mode.
-        static member isGamePlaying interactivity =
-            match interactivity with
-            | GuiOnly -> false
-            | GuiAndPhysics -> false
-            | GuiAndPhysicsAndGamePlay -> true
-
-        /// Query that the physics system is running.
-        static member isPhysicsRunning interactivity =
-            match interactivity with
-            | GuiOnly -> false
-            | GuiAndPhysics -> true
-            | GuiAndPhysicsAndGamePlay -> true
-
-[<AutoOpen>]
 module TransitionModule =
 
     /// The type of a screen transition. Incoming means a new screen is being shown, and Outgoing
@@ -206,10 +183,10 @@ module SimulationModule =
         end
 
     /// The world's subsystems.
-    and Subsystems = Map<string, Subsystem>
+    and internal Subsystems = Map<string, Subsystem>
 
     /// The world's components.
-    and [<ReferenceEquality>] Components =
+    and [<ReferenceEquality>] internal Components =
         { EntityDispatchers : Map<string, EntityDispatcher>
           GroupDispatchers : Map<string, GroupDispatcher>
           ScreenDispatchers : Map<string, ScreenDispatcher>
@@ -217,7 +194,7 @@ module SimulationModule =
           Facets : Map<string, Facet> }
 
     /// The world's simple callback facilities.
-    and [<ReferenceEquality>] Callbacks =
+    and [<ReferenceEquality>] internal Callbacks =
         { Subscriptions : SubscriptionEntries
           Unsubscriptions : UnsubscriptionEntries
           Tasks : Task list
@@ -225,9 +202,9 @@ module SimulationModule =
 
     /// The world's state.
     and [<ReferenceEquality>] WorldState =
-        { TickTime : int64
+        { TickRate : int64
+          TickTime : int64
           Liveness : Liveness
-          Interactivity : Interactivity
           OptScreenTransitionDestination : Screen option // TODO: move this into Game?
           AssetMetadataMap : AssetMetadataMap
           AssetGraphFilePath : string

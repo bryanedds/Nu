@@ -86,7 +86,7 @@ module WorldGroupModule =
         /// destroyGroupImmediate unless you need the latter's specific behavior.
         static member destroyGroup group world =
             let task =
-                { ScheduledTime = world.State.TickTime
+                { ScheduledTime = World.getTickTime world
                   Operation = fun world -> World.destroyGroupImmediate group world }
             World.addTask task world
             
@@ -102,7 +102,7 @@ module WorldGroupModule =
         /// unless you need the latter's specific behavior.
         static member destroyGroups groups world =
             let task =
-                { ScheduledTime = world.State.TickTime
+                { ScheduledTime = World.getTickTime world
                   Operation = fun world -> World.destroyGroupsImmediate groups world }
             World.addTask task world
 
