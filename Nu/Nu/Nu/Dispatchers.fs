@@ -152,7 +152,7 @@ module AnimatedSpriteFacetModule =
         inherit Facet ()
 
         static let getOptSpriteInset (entity : Entity) world =
-            let tile = int (world.State.TickTime / entity.GetAnimationStutter world) % entity.GetTileCount world
+            let tile = int (World.getTickTime world / entity.GetAnimationStutter world) % entity.GetTileCount world
             let tileRun = entity.GetTileRun world
             let tileSize = entity.GetTileSize world
             let tileI = tile % tileRun

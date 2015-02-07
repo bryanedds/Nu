@@ -130,7 +130,7 @@ module WorldEntityModule =
         /// destroyEntityImmediate unless you need the latter's specific behavior.
         static member destroyEntity entity world =
             let task =
-                { ScheduledTime = world.State.TickTime
+                { ScheduledTime = World.getTickTime world
                   Operation = fun world -> World.destroyEntityImmediate entity world }
             World.addTask task world
 
@@ -146,7 +146,7 @@ module WorldEntityModule =
         /// unless you need the latter's specific behavior.
         static member destroyEntities entities world =
             let task =
-                { ScheduledTime = world.State.TickTime
+                { ScheduledTime = World.getTickTime world
                   Operation = fun world -> World.destroyEntitiesImmediate entities world }
             World.addTask task world
 

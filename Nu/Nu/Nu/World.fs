@@ -27,7 +27,7 @@ module WorldModule =
     let private ScreenTransitionMouseX1Key = World.makeSubscriptionKey ()
     let private ScreenTransitionMouseX2Key = World.makeSubscriptionKey ()
     let private ScreenTransitionKeyboardKeyKey = World.makeSubscriptionKey ()
-    let private SplashScreenTickKey = World.makeSubscriptionKey ()
+    let private SplashScreenUpdateKey = World.makeSubscriptionKey ()
     let private LoadedAssemblies = Dictionary<string, Assembly> ()
 
     type World with
@@ -163,9 +163,9 @@ module WorldModule =
 
         static member private updateScreenTransition1 (screen : Screen) transition world =
             let transitionTicks = screen.GetTransitionTicksNp world
-            if transitionTicks = transition.TransitionLifetime
-            then (true, screen.SetTransitionTicksNp 0L world)
-            else (false, screen.SetTransitionTicksNp (transitionTicks + 1L) world)
+            if transitionTicks = transition.TransitionLifetime then (true, screen.SetTransitionTicksNp 0L world)
+            elif transitionTicks > transition.TransitionLifetime then failwith "TransitionLifetime must be a consistent multiple of TickRate."
+            else (false, screen.SetTransitionTicksNp (transitionTicks + World.getTickRate world) world)
 
         static member private updateScreenTransition world =
             // TODO: split this function up...
@@ -205,11 +205,11 @@ module WorldModule =
                 | IdlingState -> world
             | None -> world
 
-        static member private handleSplashScreenIdleTick idlingTime ticks event world =
-            let world = World.unsubscribe SplashScreenTickKey world
+        static member private handleSplashScreenIdleUpdate idlingTime ticks event world =
+            let world = World.unsubscribe SplashScreenUpdateKey world
             if ticks < idlingTime then
-                let subscription = World.handleSplashScreenIdleTick idlingTime (inc ticks)
-                let world = World.subscribe SplashScreenTickKey subscription event.EventAddress event.Subscriber world
+                let subscription = World.handleSplashScreenIdleUpdate idlingTime (inc ticks)
+                let world = World.subscribe SplashScreenUpdateKey subscription event.EventAddress event.Subscriber world
                 (Cascade, world)
             else
                 match World.getOptSelectedScreen world with
@@ -218,14 +218,14 @@ module WorldModule =
                         let world = World.setScreenTransitionState OutgoingState selectedScreen world
                         (Cascade, world)
                     else
-                        trace "Program Error: Could not handle splash screen tick due to no selected screen."
+                        trace "Program Error: Could not handle splash screen update due to no selected screen."
                         (Resolve, World.exit world)
                 | None ->
-                    trace "Program Error: Could not handle splash screen tick due to no selected screen."
+                    trace "Program Error: Could not handle splash screen update due to no selected screen."
                     (Resolve, World.exit world)
 
         static member private handleSplashScreenIdle idlingTime event world =
-            let world = World.subscribe SplashScreenTickKey (World.handleSplashScreenIdleTick idlingTime 0L) TickEventAddress event.Subscriber world
+            let world = World.subscribe SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) UpdateEventAddress event.Subscriber world
             (Resolve, world)
 
         /// Create a splash screen that transitions to the given destination upon completion.
@@ -359,10 +359,11 @@ module WorldModule =
                 world
 
         static member private processTask (tasksNotRun, world) task =
-            if task.ScheduledTime < world.State.TickTime then
-                debug <| "Task leak found for time '" + acstring world.State.TickTime + "'."
+            let tickTime = World.getTickTime world
+            if task.ScheduledTime < tickTime then
+                debug <| "Task leak found for time '" + acstring tickTime + "'."
                 (tasksNotRun, world)
-            elif task.ScheduledTime = world.State.TickTime then
+            elif task.ScheduledTime = tickTime then
                 let world = task.Operation world
                 (tasksNotRun, world)
             else (task :: tasksNotRun, world)
@@ -420,8 +421,8 @@ module WorldModule =
                 | _ -> world
             (world.State.Liveness, world)
 
-        /// Update the game engine once per frame, updating its subsystems and publishing the Tick
-        /// event.
+        /// Update the game engine once per frame, updating its subsystems and publishing the
+        /// Update event.
         static member processUpdate handleUpdate world =
             let world = handleUpdate world
             match world.State.Liveness with
@@ -432,7 +433,7 @@ module WorldModule =
                     let world = World.processSubsystems UpdateType world
                     match world.State.Liveness with
                     | Running ->
-                        let world = World.publish4 () TickEventAddress Game world
+                        let world = World.publish4 () UpdateEventAddress Game world
                         match world.State.Liveness with
                         | Running ->
                             let world = World.processTasks world
@@ -450,7 +451,7 @@ module WorldModule =
         /// TODO: document!
         static member processPlay world =
             let world = World.processSubsystems AudioType world
-            World.incrementTickTime world
+            World.processTickTime world
 
         /// TODO: document!
         static member run4 tryMakeWorld handleUpdate handleRender sdlConfig =
@@ -475,7 +476,7 @@ module WorldModule =
 
         /// Try to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member tryMake farseerCautionMode useLoadedGameDispatcher interactivity userState (nuPlugin : NuPlugin) sdlDeps =
+        static member tryMake farseerCautionMode useLoadedGameDispatcher tickRate userState (nuPlugin : NuPlugin) sdlDeps =
 
             // attempt to generate asset metadata so the rest of the world can be created
             match Metadata.tryGenerateAssetMetadataMap AssetGraphFilePath with
@@ -579,9 +580,9 @@ module WorldModule =
                     let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                     let intrinsicOverlays = World.createIntrinsicOverlays entityDispatchers facets
                     let userOverlayRoutes = nuPlugin.MakeOverlayRoutes ()
-                    { TickTime = 0L
+                    { TickRate = tickRate
+                      TickTime = 0L
                       Liveness = Running
-                      Interactivity = interactivity
                       OptScreenTransitionDestination = None
                       AssetMetadataMap = assetMetadataMap
                       AssetGraphFilePath = AssetGraphFilePath
@@ -645,9 +646,9 @@ module WorldModule =
 
             // make the world's state
             let worldState =
-                { TickTime = 0L
+                { TickRate = 1L
+                  TickTime = 0L
                   Liveness = Running
-                  Interactivity = GuiOnly
                   OptScreenTransitionDestination = None
                   AssetMetadataMap = Map.empty
                   AssetGraphFilePath = String.Empty

@@ -236,12 +236,12 @@ module Program =
 
     let populateCreateComboBox (form : NuEditForm) world =
         form.createEntityComboBox.Items.Clear ()
-        for dispatcherKvp in (World.getComponents world).EntityDispatchers do
+        for dispatcherKvp in World.getEntityDispatchers world do
             ignore <| form.createEntityComboBox.Items.Add dispatcherKvp.Key
         form.createEntityComboBox.SelectedIndex <- 0
 
     let populateTreeViewGroups (form : NuEditForm) world =
-        for dispatcherKvp in (World.getComponents world).EntityDispatchers do
+        for dispatcherKvp in World.getEntityDispatchers world do
             let treeGroup = TreeNode dispatcherKvp.Key
             treeGroup.Name <- treeGroup.Text
             ignore <| form.treeView.Nodes.Add treeGroup
@@ -280,7 +280,7 @@ module Program =
         tryScrollTreeViewToPropertyGridSelection form
 
     let refreshFormOnUndoRedo (form : NuEditForm) world =
-        form.interactivityButton.Checked <- false
+        form.tickingButton.Checked <- false
         refreshPropertyGrid form world
         refreshTreeView form world
 
@@ -290,7 +290,7 @@ module Program =
         tryScrollTreeViewToPropertyGridSelection form
 
     let canEditWithMouse (form : NuEditForm) world =
-        World.isGamePlaying world &&
+        World.isTicking world &&
         not form.editWhileInteractiveCheckBox.Checked
 
     let tryMousePick (form : NuEditForm) mousePosition worldChangers refWorld world =
@@ -321,7 +321,7 @@ module Program =
         | _ -> failwith "Unexpected match failure in NuEdit.Program.handleNuEntityRemoving."
 
     let handleNuMouseRightDown (form : NuEditForm) worldChangers refWorld (_ : Event<MouseButtonData, Game>) world =
-        let handled = if World.isGamePlaying world then Cascade else Resolve
+        let handled = if World.isTicking world then Cascade else Resolve
         let mousePosition = World.getMousePositionF world
         ignore <| tryMousePick form mousePosition worldChangers refWorld world
         let world = World.updateUserState (fun editorState -> { editorState with RightClickPosition = mousePosition }) world
@@ -329,7 +329,7 @@ module Program =
 
     let handleNuEntityDragBegin (form : NuEditForm) worldChangers refWorld (_ : Event<MouseButtonData, Game>) world =
         if not <| canEditWithMouse form world then
-            let handled = if World.isGamePlaying world then Cascade else Resolve
+            let handled = if World.isTicking world then Cascade else Resolve
             let mousePosition = World.getMousePositionF world
             match tryMousePick form mousePosition worldChangers refWorld world with
             | Some entity ->
@@ -344,7 +344,7 @@ module Program =
     let handleNuEntityDragEnd (form : NuEditForm) (_ : Event<MouseButtonData, Game>) world =
         if canEditWithMouse form world then (Cascade, world)
         else
-            let handled = if World.isGamePlaying world then Cascade else Resolve
+            let handled = if World.isTicking world then Cascade else Resolve
             match (World.getUserState world).DragEntityState with
             | DragEntityPosition _
             | DragEntityRotation _ ->
@@ -486,7 +486,7 @@ module Program =
                 let world = tryLoadFile form form.openFileDialog.FileName world
                 let world = clearOtherWorlds world
                 form.propertyGrid.SelectedObject <- null
-                form.interactivityButton.Checked <- false
+                form.tickingButton.Checked <- false
                 world
             | _ -> world)
 
@@ -501,7 +501,7 @@ module Program =
                     World.updateUserState (fun editorState ->
                         { editorState with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: editorState.FutureWorlds })
                         world
-                let world = World.setInteractivity GuiAndPhysics world
+                let world = World.setTickRate 0L world
                 refreshFormOnUndoRedo form world
                 world)
 
@@ -516,18 +516,16 @@ module Program =
                     World.updateUserState (fun editorState ->
                         { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = futureWorlds })
                         world
-                let world = World.setInteractivity GuiAndPhysics world
+                let world = World.setTickRate 0L world
                 refreshFormOnUndoRedo form world
                 world)
 
     let handleFormInteractivityChanged (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
             // TODO: allow disabling of physics as well
-            let interactivity = if form.interactivityButton.Checked then GuiAndPhysicsAndGamePlay else GuiAndPhysics
-            let (pastWorld, world) = (world, World.setInteractivity interactivity world)
-            if Interactivity.isGamePlaying interactivity
-            then pushPastWorld pastWorld world
-            else world)
+            let tickRate = if form.tickingButton.Checked then 1L else 0L
+            let (pastWorld, world) = (world, World.setTickRate tickRate world)
+            if tickRate = 1L then pushPastWorld pastWorld world else world)
 
     (* TODO: replace this cut paste functionality with a reflective approach
     
@@ -737,7 +735,7 @@ module Program =
         form.undoToolStripMenuItem.Click.Add (handleFormUndo form worldChangers)
         form.redoButton.Click.Add (handleFormRedo form worldChangers)
         form.redoToolStripMenuItem.Click.Add (handleFormRedo form worldChangers)
-        form.interactivityButton.CheckedChanged.Add (handleFormInteractivityChanged form worldChangers)
+        form.tickingButton.CheckedChanged.Add (handleFormInteractivityChanged form worldChangers)
         (*form.cutToolStripMenuItem.Click.Add (handleFormCut form worldChangers)
         form.cutContextMenuItem.Click.Add (handleFormCut form worldChangers)
         form.copyToolStripMenuItem.Click.Add (handleFormCopy form worldChangers)
@@ -761,7 +759,7 @@ module Program =
               PastWorlds = []
               FutureWorlds = []
               Clipboard = ref None }
-        let eitherWorld = World.tryMake true false GuiAndPhysics editorState nuPlugin sdlDeps
+        let eitherWorld = World.tryMake true false 0L editorState nuPlugin sdlDeps
         match eitherWorld with
         | Right world ->
             let world = snd <| World.createScreen typeof<ScreenDispatcher>.Name (Some EditorScreenName) world

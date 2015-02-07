@@ -587,9 +587,25 @@ module WorldComponentsModule =
 
     type World with
 
-        /// Get the components of the world.
-        static member getComponents world =
-            world.Components
+        /// Get the entity dispatchers of the world.
+        static member getEntityDispatchers world =
+            world.Components.EntityDispatchers
+
+        /// Get the group dispatchers of the world.
+        static member getGroupDispatchers world =
+            world.Components.GroupDispatchers
+
+        /// Get the screen dispatchers of the world.
+        static member getScreenDispatchers world =
+            world.Components.ScreenDispatchers
+
+        /// Get the entity dispatchers of the world.
+        static member getGameDispatchers world =
+            world.Components.GameDispatchers
+
+        /// Get the entity dispatchers of the world.
+        static member getFacets world =
+            world.Components.Facets
 
 [<AutoOpen>]
 module WorldStateModule =
@@ -599,50 +615,48 @@ module WorldStateModule =
         static member private getState world =
             world.State
 
+        static member private setStateWithoutEvent state world =
+            { world with State = state }
+
         static member private setState state world =
             let oldState = world.State
-            let world = { world with State = state }
+            let world = World.setStateWithoutEvent state world
             World.publish4 { OldWorldState = oldState } WorldStateChangeEventAddress Game world
+
+        /// Get the world's tick rate.
+        static member getTickRate world =
+            world.State.TickRate
+
+        /// Get the world's tick rate as a floating-point value.
+        static member getTickRateF world =
+            single <| World.getTickRate world
+
+        /// Set the world's tick rate.
+        static member setTickRate tickRate world =
+            let state = { world.State with TickRate = tickRate }
+            World.setState state world
 
         /// Get the world's tick time.
         static member getTickTime world =
             world.State.TickTime
 
-        static member internal incrementTickTime world =
-            let state = { world.State with TickTime = world.State.TickTime + 1L }
-            World.setState state world
+        /// Query that the world is ticking.
+        static member isTicking world =
+            World.getTickRate world <> 0L
+
+        static member internal processTickTime world =
+            let state = { world.State with TickTime = World.getTickTime world + World.getTickRate world }
+            World.setStateWithoutEvent state world
 
         /// Get the the liveness state of the world.
         static member getLiveness world =
             world.State.Liveness
 
-        /// Place the engine into a state such that the app will exit at the end of the current tick.
+        /// Place the engine into a state such that the app will exit at the end of the current update.
         static member exit world =
             let state = { world.State with Liveness = Exiting }
             World.setState state world
 
-        /// Query that the engine is in game-playing mode.
-        static member isGamePlaying world =
-            Interactivity.isGamePlaying world.State.Interactivity
-
-        /// Query that the physics system is running.
-        static member isPhysicsRunning world =
-            Interactivity.isPhysicsRunning world.State.Interactivity
-
-        /// Get the interactivity state of the world.
-        static member getInteractivity world =
-            world.State.Interactivity
-
-        /// Set the level of the world's interactivity.
-        static member setInteractivity interactivity world =
-            let state = { world.State with Interactivity = interactivity }
-            World.setState state world
-
-        /// Update the the level of the world's interactivity.
-        static member updateInteractivity updater world =
-            let interactivity = updater <| World.getInteractivity world
-            World.setInteractivity interactivity world
-            
         /// Get the a value from the camera used to view the world.
         static member getCameraBy by world =
             by world.State.Camera

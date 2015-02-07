@@ -188,8 +188,8 @@ module PhysicsModule =
         abstract ClearMessages : unit -> IIntegrator
         /// Enqueue a message from an external source.
         abstract EnqueueMessage : PhysicsMessage -> IIntegrator
-        /// Integrate (or 'tick') the physics system one frame.
-        abstract Integrate : unit -> IntegrationMessage list * IIntegrator
+        /// Integrate the physics system one frame.
+        abstract Integrate : int64 -> IntegrationMessage list * IIntegrator
 
     /// The primary implementation of IIntegrator.
     type [<ReferenceEquality>] Integrator =
@@ -487,11 +487,12 @@ module PhysicsModule =
                 let integrator = { integrator with PhysicsMessages = physicsMessages }
                 integrator :> IIntegrator
 
-            member integrator.Integrate () =
+            member integrator.Integrate tickRate =
                 let physicsMessages = integrator.PhysicsMessages
                 let integrator = { integrator with PhysicsMessages = Queue.empty }
                 Integrator.handlePhysicsMessages physicsMessages integrator
-                integrator.PhysicsContext.Step PhysicsStepRate
+                let physicsStepAmount = PhysicsStepRate * single tickRate
+                integrator.PhysicsContext.Step physicsStepAmount
                 Integrator.createTransformMessages integrator
                 let messages = List.ofSeq integrator.IntegrationMessages
                 integrator.IntegrationMessages.Clear ()
@@ -510,7 +511,7 @@ module PhysicsModule =
             member integrator.BodyOnGround _ = failwith "No bodies in MockIntegrator"
             member integrator.ClearMessages () = integrator :> IIntegrator
             member integrator.EnqueueMessage _ = integrator :> IIntegrator
-            member integrator.Integrate () = ([], integrator :> IIntegrator)
+            member integrator.Integrate _ = ([], integrator :> IIntegrator)
 
 [<RequireQualifiedAccess>]
 module Physics =

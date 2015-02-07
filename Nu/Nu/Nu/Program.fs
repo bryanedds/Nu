@@ -70,8 +70,6 @@ module Program =
     current physics engine be replaceable with pure functional one, improvements to the feature may
     be implementable in time. *)
 
-    (* IDEA: consider disabling Tick events as the way to pause gameplay. *)
-
     (* IDEA: Faster feedback / iteration times with Edit & Continue.
     
     Edit & Continue is a God-send to languages that support it. Unfortunately, F# does not.
