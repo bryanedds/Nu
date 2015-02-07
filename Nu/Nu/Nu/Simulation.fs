@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open FSharpx.Collections
 open OpenTK
 open TiledSharp
 open Prime
@@ -197,7 +198,7 @@ module SimulationModule =
     and [<ReferenceEquality>] internal Callbacks =
         { Subscriptions : SubscriptionEntries
           Unsubscriptions : UnsubscriptionEntries
-          Tasks : Task list
+          Tasks : Task Queue
           CallbackStates : Map<Guid, obj> }
 
     /// The world's state.

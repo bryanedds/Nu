@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Collections.Generic
 open FSharpx
+open FSharpx.Collections
 open OpenTK
 open Prime
 open Nu
@@ -550,21 +551,21 @@ module WorldCallbacksModule =
     type World with
 
         static member internal clearTasks world =
-            let callbacks = { world.Callbacks with Tasks = [] }
+            let callbacks = { world.Callbacks with Tasks = Queue.empty }
             { world with Callbacks = callbacks }
 
-        static member internal restoreTasks tasks world =
-            let callbacks = { world.Callbacks with Tasks = world.Callbacks.Tasks @ tasks }
+        static member internal restoreTasks (tasks : Task Queue) world =
+            let callbacks = { world.Callbacks with Tasks = Queue.ofSeq <| Seq.append (world.Callbacks.Tasks :> Task seq) (tasks :> Task seq) }
             { world with Callbacks = callbacks }
 
         /// Add a task to be executed by the engine at the specified task tick.
         static member addTask task world =
-            let callbacks = { world.Callbacks with Tasks = task :: world.Callbacks.Tasks }
+            let callbacks = { world.Callbacks with Tasks = Queue.conj task world.Callbacks.Tasks }
             { world with Callbacks = callbacks }
 
         /// Add multiple task to be executed by the engine at the specified task tick.
         static member addTasks tasks world =
-            let callbacks = { world.Callbacks with Tasks = tasks @ world.Callbacks.Tasks }
+            let callbacks = { world.Callbacks with Tasks = Queue.ofSeq <| Seq.append (tasks :> Task seq) (world.Callbacks.Tasks :> Task seq) }
             { world with Callbacks = callbacks }
 
         /// Add callback state to the world.
