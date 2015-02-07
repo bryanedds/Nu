@@ -204,6 +204,7 @@ module SimulationModule =
     and [<ReferenceEquality>] WorldState =
         { TickRate : int64
           TickTime : int64
+          UpdateCount : int64
           Liveness : Liveness
           OptScreenTransitionDestination : Screen option // TODO: move this into Game?
           AssetMetadataMap : AssetMetadataMap

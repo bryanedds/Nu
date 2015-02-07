@@ -644,8 +644,16 @@ module WorldStateModule =
         static member isTicking world =
             World.getTickRate world <> 0L
 
-        static member internal processTickTime world =
+        static member internal updateTickTime world =
             let state = { world.State with TickTime = World.getTickTime world + World.getTickRate world }
+            World.setStateWithoutEvent state world
+
+        /// Get the world's update count.
+        static member getUpdateCount world =
+            world.State.UpdateCount
+
+        static member internal incrementUpdateCount world =
+            let state = { world.State with UpdateCount = inc <| World.getUpdateCount world }
             World.setStateWithoutEvent state world
 
         /// Get the the liveness state of the world.
