@@ -10,6 +10,7 @@ open System.Reflection
 open System.Xml
 open System.Xml.Serialization
 open FSharpx
+open FSharpx.Collections
 open SDL2
 open OpenTK
 open TiledSharp
@@ -163,8 +164,11 @@ module WorldModule =
 
         static member private updateScreenTransition1 (screen : Screen) transition world =
             let transitionTicks = screen.GetTransitionTicksNp world
-            if transitionTicks = transition.TransitionLifetime then (true, screen.SetTransitionTicksNp 0L world)
-            elif transitionTicks > transition.TransitionLifetime then failwith "TransitionLifetime must be a consistent multiple of TickRate."
+            if transitionTicks = transition.TransitionLifetime then
+                (true, screen.SetTransitionTicksNp 0L world)
+            elif transitionTicks > transition.TransitionLifetime then
+                debug <| "TransitionLifetime for screen '" + acstring screen.ScreenAddress + "' must be a consistent multiple of TickRate."
+                (true, screen.SetTransitionTicksNp 0L world)
             else (false, screen.SetTransitionTicksNp (transitionTicks + World.getTickRate world) world)
 
         static member private updateScreenTransition world =
@@ -360,19 +364,18 @@ module WorldModule =
 
         static member private processTask (tasksNotRun, world) task =
             let tickTime = World.getTickTime world
-            if task.ScheduledTime < tickTime then
-                debug <| "Task leak found for time '" + acstring tickTime + "'."
-                (tasksNotRun, world)
-            elif task.ScheduledTime = tickTime then
+            if tickTime = task.ScheduledTime then
                 let world = task.Operation world
                 (tasksNotRun, world)
-            else (task :: tasksNotRun, world)
+            elif tickTime > task.ScheduledTime then
+                debug <| "Task leak found for time '" + acstring tickTime + "'."
+                (tasksNotRun, world)
+            else (Queue.conj task tasksNotRun, world)
 
         static member private processTasks world =
-            let tasks = List.rev world.Callbacks.Tasks
+            let tasks = world.Callbacks.Tasks
             let world = World.clearTasks world
-            let (tasksNotRun, world) = List.fold World.processTask ([], world) tasks
-            let tasksNotRun = List.rev tasksNotRun
+            let (tasksNotRun, world) = Queue.fold World.processTask (Queue.empty, world) tasks
             World.restoreTasks tasksNotRun world
 
         /// Process an input event from SDL and ultimately publish any related game events.
@@ -572,7 +575,7 @@ module WorldModule =
                 let callbacks =
                     { Subscriptions = Map.empty
                       Unsubscriptions = Map.empty
-                      Tasks = []
+                      Tasks = Queue.empty
                       CallbackStates = Map.empty }
 
                 // make the world's state
@@ -643,7 +646,7 @@ module WorldModule =
             let callbacks =
                 { Subscriptions = Map.empty
                   Unsubscriptions = Map.empty
-                  Tasks = []
+                  Tasks = Queue.empty
                   CallbackStates = Map.empty }
 
             // make the world's state
