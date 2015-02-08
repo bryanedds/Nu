@@ -60,7 +60,7 @@ module BlazeDispatcherModule =
 
         // and so on.
         static let createGameplayScreen world =
-            let world = snd <| World.createDissolveScreenFromGroupFile false DissolveData typeof<GameplayScreenDispatcher>.Name HudGroupFilePath (Some GameplayName) world
+            let world = snd <| World.createDissolveScreenFromGroupFile false DissolveData typeof<GameplayScreenDispatcher>.Name GameplayGroupFilePath (Some GameplayName) world
             World.subscribe4 (World.handleAsScreenTransition Title) (ClickEventAddress ->>- GameplayBack.EntityAddress) Game world
 
         // game registration is where the game's high-level logic is set up!

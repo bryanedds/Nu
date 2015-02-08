@@ -11,7 +11,7 @@ module BlazeConstants =
     // these constants specify the file paths from which various simulants are loaded
     let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
     let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
-    let HudGroupFilePath = "Assets/Gui/Hud.nugroup"
+    let GameplayGroupFilePath = "Assets/Gui/Gameplay.nugroup"
     let PlayerGroupFilePath = "Assets/Gameplay/Player.nugroup"
     let Section0FilePath = "Assets/Gameplay/Section0.nugroup"
     let Section1FilePath = "Assets/Gameplay/Section1.nugroup"
@@ -100,4 +100,4 @@ module BlazeConstants =
     let CreditsBack = Entity.proxy <| gatoea CreditsGroup.GroupAddress CreditsBackName
 
     // and finally, this constant simply specifies how many sections are added to a game
-    let SectionCount = 32
+    let SectionCount = 16
