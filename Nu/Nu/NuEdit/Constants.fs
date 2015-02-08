@@ -9,8 +9,6 @@ open Nu.Constants
 open Nu.WorldConstants
 module Constants =
 
-    // TODO: make InfinityRpg a build dependency when it's working again
-
     let EditorScreenName = "EditorScreen"
     let EditorScreen = Screen.proxy <| ntoa EditorScreenName
     let EditorGroupName = "Group"

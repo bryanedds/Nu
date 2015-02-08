@@ -522,7 +522,6 @@ module Program =
 
     let handleFormInteractivityChanged (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
-            // TODO: allow disabling of physics as well
             let tickRate = if form.tickingButton.Checked then 1L else 0L
             let (pastWorld, world) = (world, World.setTickRate tickRate world)
             if tickRate = 1L then pushPastWorld pastWorld world else world)
