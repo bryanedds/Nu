@@ -234,16 +234,16 @@ module PlayerModule =
                 World.monitor handleJumpByKeyboardKey KeyboardKeyDownEventAddress player
 
 [<AutoOpen>]
-module StagePlayModule =
+module PlayerGroupModule =
 
-    type StagePlayDispatcher () =
+    type PlayerGroupDispatcher () =
         inherit GroupDispatcher ()
 
         static let adjustCamera world =
             World.updateCamera
                 (fun camera -> 
-                    let playerPosition = StagePlayer.GetPosition world
-                    let playerSize = StagePlayer.GetSize world
+                    let playerPosition = Player.GetPosition world
+                    let playerSize = Player.GetSize world
                     let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + camera.EyeSize.X * 0.33f, camera.EyeCenter.Y)
                     { camera with EyeCenter = eyeCenter })
                 world
@@ -252,7 +252,7 @@ module StagePlayModule =
             (Cascade, adjustCamera world)
 
         static let handlePlayerFall _ world =
-            if StagePlayer.HasFallen world && World.isSelectedScreenIdling world then
+            if Player.HasFallen world && World.isSelectedScreenIdling world then
                 let world = World.playSound 1.0f DeathSound world
                 let world = World.transitionScreen Title world
                 (Cascade, world)
@@ -264,9 +264,9 @@ module StagePlayModule =
                 World.monitor handlePlayerFall UpdateEventAddress group
 
 [<AutoOpen>]
-module StageScreenModule =
+module GameplayScreenModule =
 
-    type StageScreenDispatcher () =
+    type GameplayScreenDispatcher () =
         inherit ScreenDispatcher ()
 
         static let [<Literal>] SectionName = "Section"
@@ -280,12 +280,12 @@ module StageScreenModule =
                 world
                 entities
 
-        static let createStageSectionFromFile filePath sectionName xShift world =
-            let (section, world) = World.readGroupFromFile filePath (Some sectionName) Stage world
+        static let createSectionFromFile filePath sectionName xShift world =
+            let (section, world) = World.readGroupFromFile filePath (Some sectionName) Gameplay world
             let sectionEntities = World.proxyEntities section world
             shiftEntities xShift sectionEntities world
 
-        static let createStageSections world =
+        static let createSectionGroups world =
             let random = Random ()
             let sectionFilePaths = List.toArray SectionFilePaths
             List.fold
@@ -294,16 +294,16 @@ module StageScreenModule =
                     let sectionFilePath = sectionFilePaths.[sectionFilePathIndex]
                     let sectionName = SectionName + acstring i
                     let sectionXShift = SectionXShift * single i
-                    createStageSectionFromFile sectionFilePath sectionName sectionXShift world)
+                    createSectionFromFile sectionFilePath sectionName sectionXShift world)
                 world
                 [0 .. SectionCount - 1]
 
-        static let createStagePlay world =
-            snd <| World.readGroupFromFile StagePlayFilePath (Some StagePlayName) Stage world
+        static let createPlayerGroup world =
+            snd <| World.readGroupFromFile PlayerGroupFilePath (Some PlayerGroupName) Gameplay world
 
         static let handleStartPlay _ world =
-            let world = createStageSections world
-            let world = createStagePlay world
+            let world = createPlayerGroup world
+            let world = createSectionGroups world
             let world = World.playSong 0 1.0f DeadBlazeSong world
             (Cascade, world)
 
@@ -314,7 +314,7 @@ module StageScreenModule =
         static let handleStopPlay event world =
             let screen = event.Subscriber : Screen
             let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + acstring i]
-            let groupNames = StagePlayName :: sectionNames
+            let groupNames = PlayerGroupName :: sectionNames
             let groups = List.map (fun groupName -> Group.proxy <| satoga screen.ScreenAddress groupName) groupNames
             let world = World.destroyGroups groups world
             (Cascade, world)

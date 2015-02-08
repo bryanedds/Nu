@@ -32,7 +32,7 @@ module InfinityRpgModule =
             World.subscribe4 (World.handleAsScreenTransition Title) (ClickEventAddress ->>- CreditsBack.EntityAddress) Game world
 
         static let createGameplay world =
-            let world = snd <| World.createDissolveScreenFromGroupFile true DissolveData typeof<GameplayDispatcher>.Name HudFilePath (Some GameplayName) world
+            let world = snd <| World.createDissolveScreenFromGroupFile true DissolveData typeof<GameplayDispatcher>.Name HudGroupFilePath (Some GameplayName) world
             let world = Hud.SetPersistent false world // do not persist the Hud
             World.subscribe4 (World.handleAsScreenTransition Title) (ClickEventAddress ->>- HudBack.EntityAddress) Game world
 
