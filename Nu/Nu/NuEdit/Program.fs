@@ -509,8 +509,13 @@ module Program =
         ignore <| worldChangers.Add (fun world ->
             match (World.getUserState world).FutureWorlds with
             | [] -> world
-            | futureWorld :: _ ->
+            | futureWorld :: futureWorlds ->
+                let pastWorld = world
                 let world = World.continueHack EditorGroup futureWorld
+                let world =
+                    World.updateUserState (fun editorState ->
+                        { editorState with PastWorlds = pastWorld :: (World.getUserState pastWorld).PastWorlds; FutureWorlds = futureWorlds })
+                        world
                 let world = World.setTickRate 0L world
                 refreshFormOnUndoRedo form world
                 world)
