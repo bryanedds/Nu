@@ -519,7 +519,7 @@ module Program =
         ignore <| worldChangers.Add (fun world ->
             // TODO: allow disabling of physics as well
             let tickRate = if form.tickingButton.Checked then 1L else 0L
-            let (pastWorld, world) = (world, World.setTick tickRate world)
+            let (pastWorld, world) = (world, World.setTickRate tickRate world)
             if tickRate = 1L then pushPastWorld pastWorld world else world)
 
     (* TODO: replace this cut paste functionality with a reflective approach
