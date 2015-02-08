@@ -6,32 +6,32 @@ module BlazeConstants =
 
     // these constants specify the packages as named in the project's 'AssetGraph.xml' file
     let GuiPackageName = "Gui"
-    let StagePackageName = "Stage"
+    let GameplayPackageName = "Gameplay"
 
     // these constants specify the file paths from which various simulants are loaded
     let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
     let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
-    let StageGuiFilePath = "Assets/Gui/StageGui.nugroup"
-    let StagePlayFilePath = "Assets/Stage/StagePlay.nugroup"
-    let Section0FilePath = "Assets/Stage/Section0.nugroup"
-    let Section1FilePath = "Assets/Stage/Section1.nugroup"
-    let Section2FilePath = "Assets/Stage/Section2.nugroup"
-    let Section3FilePath = "Assets/Stage/Section3.nugroup"
+    let StageGuiFilePath = "Assets/Gameplay/StageGui.nugroup"
+    let StagePlayFilePath = "Assets/Gameplay/StagePlay.nugroup"
+    let Section0FilePath = "Assets/Gameplay/Section0.nugroup"
+    let Section1FilePath = "Assets/Gameplay/Section1.nugroup"
+    let Section2FilePath = "Assets/Gameplay/Section2.nugroup"
+    let Section3FilePath = "Assets/Gameplay/Section3.nugroup"
     let SectionFilePaths = [Section0FilePath; Section1FilePath; Section2FilePath; Section3FilePath]
 
     // these constants locate various assets described by the project's 'AssetGraph.xml' file
     let NuSplashSound = { PackageName = GuiPackageName; AssetName = "Nu" }
     let MachinerySong = { PackageName = GuiPackageName; AssetName = "Machinery" }
-    let DeadBlazeSong = { PackageName = StagePackageName; AssetName = "DeadBlaze" }
-    let HitSound = { PackageName = StagePackageName; AssetName = "Hit" }
-    let ExplosionSound = { PackageName = StagePackageName; AssetName = "Explosion" }
-    let ShotSound = { PackageName = StagePackageName; AssetName = "Shot" }
-    let JumpSound = { PackageName = StagePackageName; AssetName = "Jump" }
-    let DeathSound = { PackageName = StagePackageName; AssetName = "Death" }
-    let EnemyBulletImage = { PackageName = StagePackageName; AssetName = "EnemyBullet" }
-    let PlayerBulletImage = { PackageName = StagePackageName; AssetName = "PlayerBullet" }
-    let EnemyImage = { PackageName = StagePackageName; AssetName = "Enemy" }
-    let PlayerImage = { PackageName = StagePackageName; AssetName = "Player" }
+    let DeadBlazeSong = { PackageName = GameplayPackageName; AssetName = "DeadBlaze" }
+    let HitSound = { PackageName = GameplayPackageName; AssetName = "Hit" }
+    let ExplosionSound = { PackageName = GameplayPackageName; AssetName = "Explosion" }
+    let ShotSound = { PackageName = GameplayPackageName; AssetName = "Shot" }
+    let JumpSound = { PackageName = GameplayPackageName; AssetName = "Jump" }
+    let DeathSound = { PackageName = GameplayPackageName; AssetName = "Death" }
+    let EnemyBulletImage = { PackageName = GameplayPackageName; AssetName = "EnemyBullet" }
+    let PlayerBulletImage = { PackageName = GameplayPackageName; AssetName = "PlayerBullet" }
+    let EnemyImage = { PackageName = GameplayPackageName; AssetName = "Enemy" }
+    let PlayerImage = { PackageName = GameplayPackageName; AssetName = "Player" }
 
     // this constant describes the 'dissolving' transition behavior of game's screens
     let DissolveData =
