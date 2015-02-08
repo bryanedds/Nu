@@ -9,7 +9,7 @@ open BlazeVector
 open BlazeVector.BlazeConstants
 
 [<AutoOpen>]
-module BlazeVectorModule =
+module BlazeDispatcherModule =
 
     /// The custom type for BlazeVector's game dispatcher.
     type BlazeDispatcher () =
