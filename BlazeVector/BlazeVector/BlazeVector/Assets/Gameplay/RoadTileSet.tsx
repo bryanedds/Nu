@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tileset name="RoadTileSet" tilewidth="64" tileheight="64">
  <properties>
-  <property name="PackageName" value="Stage"/>
+  <property name="PackageName" value="Gameplay"/>
   <property name="ImageAssetName" value="RoadTileSet"/>
  </properties>
  <image source="RoadTileSet.png" width="1024" height="1024"/>

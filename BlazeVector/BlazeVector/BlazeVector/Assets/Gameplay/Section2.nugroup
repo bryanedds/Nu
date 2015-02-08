@@ -11,7 +11,7 @@
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
         <Position>-480, -304</Position>
-        <TileMapAsset>[Stage | Section2TileMap]</TileMapAsset>
+        <TileMapAsset>[Gameplay | Section2TileMap]</TileMapAsset>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>-160, -15.68001</Position>
@@ -21,13 +21,13 @@
         <Position>-480, -304</Position>
         <Depth>-8</Depth>
         <Parallax>0.1</Parallax>
-        <TileMapAsset>[Stage | BackgroundA]</TileMapAsset>
+        <TileMapAsset>[Gameplay | BackgroundA]</TileMapAsset>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
         <Position>-480, -304</Position>
         <Depth>-4</Depth>
         <Parallax>0.1</Parallax>
-        <TileMapAsset>[Stage | BackgroundB]</TileMapAsset>
+        <TileMapAsset>[Gameplay | BackgroundB]</TileMapAsset>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>-424, -175.68</Position>
