@@ -66,8 +66,9 @@ module BlazeDispatcherModule =
         // game registration is where the game's high-level logic is set up!
         override dispatcher.Register _ world =
 
-            // hint to the renderer that the 'Gui' package should be loaded up front
+            // hint to the renderer and audio system that the 'Gui' package should be loaded up front
             let world = World.hintRenderPackageUse GuiPackageName world
+            let world = World.hintAudioPackageUse GuiPackageName world
 
             // create our screens
             let world = createTitleScreen world
