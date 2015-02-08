@@ -632,10 +632,19 @@ module WorldStateModule =
         static member getTickRateF world =
             single <| World.getTickRate world
 
-        /// Set the world's tick rate.
-        static member setTickRate tickRate world =
+        /// Set the world's tick rate without waiting for the end of the current update. Only use
+        /// this if you need it and understand the engine internals well enough to know the
+        /// consequences.
+        static member setTickRateImmediately tickRate world =
             let state = { world.State with TickRate = tickRate }
             World.setState state world
+
+        /// Set the world's tick rate.
+        static member setTickRate tickRate world =
+            let task =
+                { ScheduledTime = World.getTickTime world
+                  Operation = fun world -> World.setTickRateImmediately tickRate world }
+            World.addTask task world
 
         /// Get the world's tick time.
         static member getTickTime world =

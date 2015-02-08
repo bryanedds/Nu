@@ -499,7 +499,7 @@ module Program =
                 let world = World.continueHack EditorGroup pastWorld
                 let world =
                     World.updateUserState (fun editorState ->
-                        { editorState with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: editorState.FutureWorlds })
+                        { editorState with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: (World.getUserState futureWorld).FutureWorlds })
                         world
                 let world = World.setTickRate 0L world
                 refreshFormOnUndoRedo form world
@@ -509,13 +509,8 @@ module Program =
         ignore <| worldChangers.Add (fun world ->
             match (World.getUserState world).FutureWorlds with
             | [] -> world
-            | futureWorld :: futureWorlds ->
-                let pastWorld = world
+            | futureWorld :: _ ->
                 let world = World.continueHack EditorGroup futureWorld
-                let world =
-                    World.updateUserState (fun editorState ->
-                        { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = futureWorlds })
-                        world
                 let world = World.setTickRate 0L world
                 refreshFormOnUndoRedo form world
                 world)
@@ -524,7 +519,7 @@ module Program =
         ignore <| worldChangers.Add (fun world ->
             // TODO: allow disabling of physics as well
             let tickRate = if form.tickingButton.Checked then 1L else 0L
-            let (pastWorld, world) = (world, World.setTickRate tickRate world)
+            let (pastWorld, world) = (world, World.setTick tickRate world)
             if tickRate = 1L then pushPastWorld pastWorld world else world)
 
     (* TODO: replace this cut paste functionality with a reflective approach
