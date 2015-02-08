@@ -17,7 +17,7 @@ module Constants =
     // file paths
     let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
     let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
-    let HudFilePath = "Assets/Gui/Hud.nugroup"
+    let HudGroupFilePath = "Assets/Gui/Hud.nugroup"
     let SaveFilePath = "InfinityRpg.sav"
 
     // package constants

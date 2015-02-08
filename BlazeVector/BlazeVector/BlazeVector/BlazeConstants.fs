@@ -11,8 +11,8 @@ module BlazeConstants =
     // these constants specify the file paths from which various simulants are loaded
     let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
     let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
-    let StageGuiFilePath = "Assets/Gameplay/StageGui.nugroup"
-    let StagePlayFilePath = "Assets/Gameplay/StagePlay.nugroup"
+    let HudGroupFilePath = "Assets/Gui/Hud.nugroup"
+    let PlayerGroupFilePath = "Assets/Gameplay/Player.nugroup"
     let Section0FilePath = "Assets/Gameplay/Section0.nugroup"
     let Section1FilePath = "Assets/Gameplay/Section1.nugroup"
     let Section2FilePath = "Assets/Gameplay/Section2.nugroup"
@@ -79,17 +79,17 @@ module BlazeConstants =
     let TitleExitName = "Exit"
     let TitleExit = Entity.proxy <| gatoea TitleGroup.GroupAddress TitleExitName
 
-    // these constants specify names and proxies for various simulants of the state screen
-    let StageName = "Stage"
-    let Stage = Screen.proxy <| ntoa StageName
-    let StageGroupName = "Group"
-    let StageGroup = Group.proxy <| satoga Stage.ScreenAddress StageGroupName
-    let StageBackName = "Back"
-    let StageBack = Entity.proxy <| gatoea StageGroup.GroupAddress StageBackName
-    let StagePlayName = "StagePlay"
-    let StagePlay = Group.proxy <| satoga Stage.ScreenAddress StagePlayName
-    let StagePlayerName = "Player"
-    let StagePlayer = Entity.proxy <| gatoea StagePlay.GroupAddress StagePlayerName
+    // these constants specify names and proxies for various simulants of the gameplay screen
+    let GameplayName = "Gameplay"
+    let Gameplay = Screen.proxy <| ntoa GameplayName
+    let GameplayGroupName = "Group"
+    let GameplayGroup = Group.proxy <| satoga Gameplay.ScreenAddress GameplayGroupName
+    let GameplayBackName = "Back"
+    let GameplayBack = Entity.proxy <| gatoea GameplayGroup.GroupAddress GameplayBackName
+    let PlayerGroupName = "Player"
+    let PlayerGroup = Group.proxy <| satoga Gameplay.ScreenAddress PlayerGroupName
+    let PlayerName = "Player"
+    let Player = Entity.proxy <| gatoea PlayerGroup.GroupAddress PlayerName
 
     // these constants specify names and proxies for various simulants of the credits screen
     let CreditsName = "Credits"
@@ -99,5 +99,5 @@ module BlazeConstants =
     let CreditsBackName = "Back"
     let CreditsBack = Entity.proxy <| gatoea CreditsGroup.GroupAddress CreditsBackName
 
-    // and finally, this constant simply specifies how many sections are added to a stage
+    // and finally, this constant simply specifies how many sections are added to a game
     let SectionCount = 32
