@@ -708,9 +708,9 @@ module Program =
             match optDispatcherType with
             | Some aType ->
                 let nuPlugin = Activator.CreateInstance aType :?> NuPlugin
-                (directoryName, nuPlugin)
-            | None -> (".", NuPlugin ())
-        else (".", NuPlugin ())
+                (directoryName, nuPlugin,openDialog.FileName)
+            | None -> (".", NuPlugin (),openDialog.FileName + " - no plugin")
+        else (".", NuPlugin ()," - default")
 
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()
@@ -785,9 +785,10 @@ module Program =
         World.init ()
         let worldChangers = WorldChangers ()
         let refWorld = ref Unchecked.defaultof<World>
-        let (targetDirectory, nuPlugin) = selectTargetDirectoryAndMakeNuPlugin ()
+        let (targetDirectory, nuPlugin,targetExeInfo) = selectTargetDirectoryAndMakeNuPlugin ()
         let refinementDirectory = "Refinement"
         use form = createNuEditForm worldChangers refWorld
+        form.Text <- form.Text + " - " + targetExeInfo
         let sdlViewConfig = ExistingWindow form.displayPanel.Handle
         let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
         let sdlConfig =
