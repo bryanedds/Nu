@@ -53,8 +53,9 @@ module ProgramModule =
     let writePreference key value = 
         let prefs = readPreferences()
         let prefs = if prefs.IsSome then prefs.Value else Dictionary<string,string>()
-        prefs.[key] <- value
-        writePreferences prefs
+        if prefs.ContainsKey key && prefs.[key] <> value then
+            prefs.[key] <- value
+            writePreferences prefs
     // TODO: increase warning level to 5.
     // TODO: implement entity freezing, then quick size on create.
     // TODO: implement selection box rendering.
