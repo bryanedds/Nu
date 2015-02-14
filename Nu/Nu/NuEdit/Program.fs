@@ -25,7 +25,37 @@ open NuEdit.Constants
 
 [<AutoOpen>]
 module ProgramModule =
-
+    let before (delimiter:string) (text:string) = 
+        text.Substring(0, text.IndexOf delimiter)
+    let after (delimiter:string) (text:string) = 
+        text.Substring <| text.IndexOf delimiter + delimiter.Length
+    let preferencesPath () = 
+        Environment.GetFolderPath Environment.SpecialFolder.LocalApplicationData
+        |> fun e-> System.IO.Path.Combine [|e;System.Reflection.Assembly.GetExecutingAssembly().FullName + ".txt" |]
+    let writePreferences (values:IDictionary<string,string>) = 
+        let targetPath = preferencesPath()
+        values
+        |> Seq.map (fun  (KeyValue(a,b)) -> a+","+b)
+        |> fun e -> System.IO.File.WriteAllLines(targetPath,e)
+    let readPreferences () =
+        let targetPath = preferencesPath()
+        if File.Exists targetPath = false then
+            None
+        else 
+            File.ReadAllLines targetPath
+            |> Seq.map (fun l -> before "," l,after "," l)
+            |> dict
+            |> fun e->Dictionary<string,string>(e)
+            |> Some
+    let readPreference key = 
+        let prefs = readPreferences()
+        if prefs.IsSome && prefs.Value.ContainsKey key then Some prefs.Value.[key] else None
+    let writePreference key value = 
+        let prefs = readPreferences()
+        let prefs = if prefs.IsSome then prefs.Value else Dictionary<string,string>()
+        if prefs.ContainsKey key && prefs.[key] <> value then
+            prefs.[key] <- value
+            writePreferences prefs
     // TODO: increase warning level to 5.
     // TODO: implement entity freezing, then quick size on create.
     // TODO: implement selection box rendering.
@@ -480,10 +510,15 @@ module Program =
 
     let handleFormOpen (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
+            let lastNuGroup = readPreference "lastnugroup"
+            if lastNuGroup.IsSome then
+                form.openFileDialog.InitialDirectory <- Path.GetDirectoryName lastNuGroup.Value
             let openFileResult = form.openFileDialog.ShowDialog form
             match openFileResult with
             | DialogResult.OK ->
-                let world = tryLoadFile form form.openFileDialog.FileName world
+                let filename = form.openFileDialog.FileName 
+                let world = tryLoadFile form filename world
+                writePreference "lastnugroup" filename
                 let world = clearOtherWorlds world
                 form.propertyGrid.SelectedObject <- null
                 form.tickingButton.Checked <- false
@@ -696,8 +731,13 @@ module Program =
         use openDialog = new OpenFileDialog ()
         openDialog.Filter <- "Executable Files (*.exe)|*.exe"
         openDialog.Title <- "Select your game's executable file to make its assets and components available in the editor (or cancel for defaults)."
+        let lastExe = readPreference "lastexe"
+        
+        if lastExe.IsSome then openDialog.InitialDirectory <- Path.GetDirectoryName lastExe.Value
         if openDialog.ShowDialog () = DialogResult.OK then
-            let directoryName = Path.GetDirectoryName openDialog.FileName
+            let fileName = openDialog.FileName
+            let directoryName = Path.GetDirectoryName fileName
+            writePreference "lastexe" fileName
             Directory.SetCurrentDirectory directoryName
             let assembly = Assembly.LoadFrom openDialog.FileName
             let assemblyTypes = assembly.GetTypes ()
@@ -708,9 +748,9 @@ module Program =
             match optDispatcherType with
             | Some aType ->
                 let nuPlugin = Activator.CreateInstance aType :?> NuPlugin
-                (directoryName, nuPlugin)
-            | None -> (".", NuPlugin ())
-        else (".", NuPlugin ())
+                (directoryName, nuPlugin,openDialog.FileName)
+            | None -> (".", NuPlugin (),openDialog.FileName + " - no plugin")
+        else (".", NuPlugin ()," - default")
 
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()
@@ -785,9 +825,10 @@ module Program =
         World.init ()
         let worldChangers = WorldChangers ()
         let refWorld = ref Unchecked.defaultof<World>
-        let (targetDirectory, nuPlugin) = selectTargetDirectoryAndMakeNuPlugin ()
+        let (targetDirectory, nuPlugin,targetExeInfo) = selectTargetDirectoryAndMakeNuPlugin ()
         let refinementDirectory = "Refinement"
         use form = createNuEditForm worldChangers refWorld
+        form.Text <- form.Text + " - " + targetExeInfo
         let sdlViewConfig = ExistingWindow form.displayPanel.Handle
         let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
         let sdlConfig =
