@@ -46,13 +46,13 @@ module WorldPrimitivesModule =
             else failwith "Event name cannot be empty."
 
         static member private getSortableSubscriptions getEntityPublishingPriority (subscriptions : SubscriptionEntry rQueue) world : (single * SubscriptionEntry) list =
-            List.fold
-                (fun subscriptions (key, simulant : Simulant, subscription) ->
+            List.foldBack
+                (fun (key, simulant : Simulant, subscription) subscriptions ->
                     let priority = simulant.GetPublishingPriority getEntityPublishingPriority world
                     let subscription = (priority, (key, simulant, subscription))
                     subscription :: subscriptions)
-                []
                 subscriptions
+                []
 
         static member private getSubscriptionsSorted (publishSorter : SubscriptionSorter) eventAddress world =
             let anyEventAddresses = World.getAnyEventAddresses eventAddress
