@@ -52,8 +52,8 @@ module WorldTests =
 
     let [<Fact>] subscribeWithResolutionWorks () =
         let world = World.initAndMakeEmpty 0
-        let world = World.subscribe4 incUserStateAndResolve UnitEventAddress Game world
         let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Game world
+        let world = World.subscribe4 incUserStateAndResolve UnitEventAddress Game world
         let world = World.publish4 () UnitEventAddress Game world
         Assert.Equal (1, World.getUserState world)
 
