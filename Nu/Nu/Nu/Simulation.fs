@@ -181,7 +181,7 @@ module SimulationModule =
             abstract ApplyResult : SubsystemResult -> World -> World
             /// Clean up any resources used by the subsystem.
             abstract CleanUp : World -> Subsystem * World
-        end
+            end
 
     /// The world's subsystems.
     and internal Subsystems = Map<string, Subsystem>
@@ -452,7 +452,7 @@ module SimulationModule =
             abstract GetPublishingPriority : (Entity -> World -> single) -> World -> single
             /// Get the simulant's address.
             abstract SimulantAddress : SimulantState Address
-        end
+            end
 
     /// The game type that hosts the various screens used to navigate through a game.
     and [<StructuralEquality; NoComparison>] Game =
@@ -460,7 +460,7 @@ module SimulationModule =
         interface Simulant with
             member this.GetPublishingPriority _ _ = GamePublishingPriority
             member this.SimulantAddress = Address.changeType<GameState, SimulantState> this.GameAddress
-        end
+            end
         static member proxy address = { GameAddress = address }
 
     /// The screen type that allows transitioning to and from other screens, and also hosts the
@@ -470,7 +470,7 @@ module SimulationModule =
         interface Simulant with
             member this.GetPublishingPriority _ _ = ScreenPublishingPriority
             member this.SimulantAddress = Address.changeType<ScreenState, SimulantState> this.ScreenAddress
-        end
+            end
         static member proxy address = { ScreenAddress = address }
 
     /// Forms a logical group of entities.
@@ -479,7 +479,7 @@ module SimulationModule =
         interface Simulant with
             member this.GetPublishingPriority _ _ = GroupPublishingPriority
             member this.SimulantAddress = Address.changeType<GroupState, SimulantState> this.GroupAddress
-        end
+            end
         static member proxy address = { GroupAddress = address }
 
     /// The type around which the whole game engine is based! Used in combination with dispatchers
@@ -489,7 +489,7 @@ module SimulationModule =
         interface Simulant with
             member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
             member this.SimulantAddress = Address.changeType<EntityState, SimulantState> this.EntityAddress
-        end
+            end
         static member proxy address = { EntityAddress = address }
 
     /// The world, in a functional programming sense. Hosts the game object, the dependencies

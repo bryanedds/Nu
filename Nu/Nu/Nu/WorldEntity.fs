@@ -67,6 +67,16 @@ module WorldEntityModule =
                 this.SetSize transform.Size |>
                 this.SetRotation transform.Rotation
 
+        /// Get the center position of an entity.
+        member this.GetCenter world =
+            let transform = this.GetTransform world
+            transform.Position + transform.Size * 0.5f
+
+        /// Set the center position of an entity.
+        member this.SetCenter center world =
+            let size = this.GetSize world
+            this.SetPosition (center - size * 0.5f) world
+
         /// TODO: document!
         member this.SetPositionSnapped snap position world =
             let snapped = Math.snap2F snap position

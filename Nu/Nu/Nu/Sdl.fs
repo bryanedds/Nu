@@ -81,8 +81,8 @@ module Sdl =
             destroy ()
             result
 
-    /// Advance the game engine's logic by one frame.
-    let logic handleEvent handleUpdate world =
+    /// Update the game engine's state.
+    let update handleEvent handleUpdate world =
         let mutable result = (Running, world)
         let polledEvent = ref <| SDL.SDL_Event ()
         while   SDL.SDL_PollEvent polledEvent <> 0 &&
@@ -112,7 +112,7 @@ module Sdl =
     let rec run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps liveness world =
         match liveness with
         | Running ->
-            let (liveness, world) = logic handleEvent handleUpdate world
+            let (liveness, world) = update handleEvent handleUpdate world
             match liveness with
             | Running ->
                 let world = render handleRender sdlDeps world
