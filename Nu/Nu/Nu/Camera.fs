@@ -92,8 +92,8 @@ module Camera =
             | Relative -> getViewRelative
             | Absolute -> getViewAbsolute
         let view = getView camera
-        let positionEntity = positionScreen * view
-        positionEntity
+        let positionWorld = positionScreen * view
+        positionWorld
 
     /// Transform the given mouse position to local space.
     let mouseToLocal viewType localPosition mousePosition camera =
