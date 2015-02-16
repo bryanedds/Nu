@@ -5,7 +5,6 @@ namespace Nu
 open System
 open System.Reflection
 open System.ComponentModel
-open Microsoft.FSharp.Reflection
 open Prime
 open Nu
 open Nu.Constants
