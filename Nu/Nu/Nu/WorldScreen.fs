@@ -21,7 +21,7 @@ module WorldScreenModule =
 
         member this.GetId world = (World.getScreenState this world).Id
         member this.GetName world = (World.getScreenState this world).Name
-        member this.GetCreationTimeNp world = (World.getScreenState this world).CreationTimeNp
+        member this.GetCreationTimeStampNp world = (World.getScreenState this world).CreationTimeStampNp
         member this.GetDispatcherNp world = (World.getScreenState this world).DispatcherNp
         member this.GetTransitionStateNp world = (World.getScreenState this world).TransitionStateNp
         member this.SetTransitionStateNp value world = World.updateScreenState (fun screenState -> { screenState with TransitionStateNp = value }) this world
@@ -145,7 +145,7 @@ module WorldScreenModule =
 
         /// Write multiple screens to an xml writer.
         static member writeScreens (writer : XmlWriter) screens world =
-            let screensSorted = Seq.sortBy (fun (screen : Screen) -> screen.GetCreationTimeNp world) screens
+            let screensSorted = Seq.sortBy (fun (screen : Screen) -> screen.GetCreationTimeStampNp world) screens
             let screensPersistent = Seq.filter (fun (screen : Screen) -> screen.GetPersistent world) screensSorted
             for screen in screensPersistent do
                 writer.WriteStartElement ScreenNodeName

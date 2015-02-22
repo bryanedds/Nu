@@ -6,7 +6,7 @@
     <Persistent>True</Persistent>
     <Entities>
       <Entity dispatcherName="EnemyDispatcher">
-        <Position>1256, 111.0395</Position>
+        <Position>1256, 111.04</Position>
         <Depth>4</Depth>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">

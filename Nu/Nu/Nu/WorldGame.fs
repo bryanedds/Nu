@@ -20,7 +20,7 @@ module WorldGameModule =
     type Game with
         
         member this.GetId world = (World.getGameState world).Id
-        member this.GetCreationTimeNp world = (World.getGameState world).CreationTimeNp
+        member this.GetCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
         member this.GetDispatcherNp world = (World.getGameState world).DispatcherNp
         member this.GetOptSelectedScreen world = (World.getGameState world).OptSelectedScreen
         member this.SetOptSelectedScreen value world = World.updateGameState (fun (gameState : GameState) -> { gameState with OptSelectedScreen = value }) world
