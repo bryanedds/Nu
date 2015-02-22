@@ -53,9 +53,8 @@ module Sdl =
             trace <| "SDL2# initialization failed due to '" + error + "'."
             FailureExitCode
         else
-            let result = action ()
-            destroy ()
-            result
+            try action ()
+            finally destroy ()
 
     /// Initalize an SDL resources and continue into a given action (AKA, continuation).
     let withSdlResource create destroy action =
@@ -65,9 +64,8 @@ module Sdl =
             trace <| "SDL2# resource creation failed due to '" + error + "'."
             FailureExitCode
         else
-            let result = action resource
-            destroy resource
-            result
+            try action resource
+            finally destroy resource
 
     /// Initalize a global SDL resources and continue into a given action (AKA, continuation).
     let withSdlGlobalResource create destroy action =
@@ -77,9 +75,8 @@ module Sdl =
             trace <| "SDL2# global resource creation failed due to '" + error + "'."
             FailureExitCode
         else
-            let result = action ()
-            destroy ()
-            result
+            try action ()
+            finally destroy ()
 
     /// Update the game engine's state.
     let update handleEvent handleUpdate world =
