@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Diagnostics
 open System.Runtime.InteropServices
 open System.Configuration
 open Prime
@@ -11,25 +12,17 @@ open Nu
 [<RequireQualifiedAccess>]
 module internal CoreInternal =
 
-#if LINUX
-    // NOTE: this code has not been tested, and I have no idea if it works correctly, or even well!
-
-    /// The linux representation of time.
-    type internal timeval =
-        struct
-            val tv_sec : int
-            val tv_usec : int
-            end
-
-    /// Query the linux gettimeofday system call.
-    [<DllImport("libc")>]
-    extern void private gettimeofday (timeval&, int64)
+#if PLATFORM_AGNOSTIC_TIMESTAMPING
+    // NOTE: the risk of using PLATFORM_AGNOSTIC_TIMESTAMPING is two-fold -
+    //  1) Stopwatch.GetTimestamp is too low resolution on Windows .NET.
+    //  2) Even on Mono, Stopwatch.GetTimestamp, which is ultimately implemented in terms of
+    //     mono_100ns_ticks as defined here - https://github.com/mono/mono/blob/master/mono/utils/mono-time.c
+    //     does not necessarily lead to a high-resolution, linear-time path on all platforms.
+    // Still, a programmer can always pray for his stuff to work in the practical cases...
     
     /// Get a time stamp at the highest-available resolution on linux.
     let internal getTimeStampInternal () =
-        let mutable t = timeval ()
-        gettimeofday(&t, -1L);
-        int64 t.tv_sec * 1000000L + int64 t.tv_usec
+        Stopwatch.GetTimestamp ()
 #else
     /// Query the windows performance counter.
     [<DllImport("Kernel32.dll")>]
