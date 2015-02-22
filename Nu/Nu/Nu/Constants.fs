@@ -6,6 +6,10 @@ open System
 open OpenTK
 open Nu
 module Constants =
+    type T = {
+          M : int
+          N : single
+        }
 
     let [<Literal>] DefaultScreenName = "Screen"
     let [<Literal>] DefaultGroupName = "Group"
