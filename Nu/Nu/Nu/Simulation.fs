@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Diagnostics
 open FSharpx.Collections
 open OpenTK
 open TiledSharp
@@ -335,7 +334,7 @@ module SimulationModule =
         { Id : Guid
           OptSelectedScreen : Screen option
           PublishChanges : bool
-          CreationTimeNp : int64
+          CreationTimeStampNp : int64
           DispatcherNp : GameDispatcher
           Xtension : Xtension }
 
@@ -346,7 +345,7 @@ module SimulationModule =
             { Id = Core.makeId ()
               OptSelectedScreen = None
               PublishChanges = true
-              CreationTimeNp = Stopwatch.GetTimestamp ()
+              CreationTimeStampNp = Core.getTimeStamp ()
               DispatcherNp = dispatcher
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
 
@@ -360,7 +359,7 @@ module SimulationModule =
           Outgoing : TransitionDescriptor
           PublishChanges : bool
           Persistent : bool
-          CreationTimeNp : int64
+          CreationTimeStampNp : int64
           DispatcherNp : ScreenDispatcher
           Xtension : Xtension }
 
@@ -377,7 +376,7 @@ module SimulationModule =
               Outgoing = TransitionDescriptor.make Outgoing
               PublishChanges = true
               Persistent = true
-              CreationTimeNp = Stopwatch.GetTimestamp ()
+              CreationTimeStampNp = Core.getTimeStamp ()
               DispatcherNp = dispatcher
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
 
@@ -387,7 +386,7 @@ module SimulationModule =
           Name : string
           PublishChanges : bool
           Persistent : bool
-          CreationTimeNp : int64
+          CreationTimeStampNp : int64
           DispatcherNp : GroupDispatcher
           Xtension : Xtension }
 
@@ -400,7 +399,7 @@ module SimulationModule =
               Name = match optName with Some name -> name | None -> acstring id
               PublishChanges = true
               Persistent = true
-              CreationTimeNp = Stopwatch.GetTimestamp ()
+              CreationTimeStampNp = Core.getTimeStamp ()
               DispatcherNp = dispatcher
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
 
@@ -416,7 +415,7 @@ module SimulationModule =
           ViewType : ViewType
           PublishChanges : bool
           Persistent : bool
-          CreationTimeNp : int64 // just needed for ordering writes to reduce diff volumes
+          CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
           DispatcherNp : EntityDispatcher
           FacetNames : string list
           FacetsNp : Facet list
@@ -438,7 +437,7 @@ module SimulationModule =
               ViewType = Relative
               PublishChanges = true
               Persistent = true
-              CreationTimeNp = Stopwatch.GetTimestamp ()
+              CreationTimeStampNp = Core.getTimeStamp ()
               DispatcherNp = dispatcher
               FacetNames = []
               FacetsNp = []

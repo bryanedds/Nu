@@ -21,7 +21,7 @@ module WorldEntityModule =
         
         member this.GetId world = (World.getEntityState this world).Id
         member this.GetName world = (World.getEntityState this world).Name
-        member this.GetCreationTimeNp world = (World.getEntityState this world).CreationTimeNp
+        member this.GetCreationTimeStampNp world = (World.getEntityState this world).CreationTimeStampNp
         member this.GetDispatcherNp world = (World.getEntityState this world).DispatcherNp
         member this.GetFacetNames world = (World.getEntityState this world).FacetNames
         member this.GetFacetsNp world = (World.getEntityState this world).FacetsNp
@@ -317,7 +317,7 @@ module WorldEntityModule =
 
         /// Write multiple entities to an xml writer.
         static member writeEntities (writer : XmlWriter) entities world =
-            let entitiesSorted = Seq.sortBy (fun (entity : Entity) -> entity.GetCreationTimeNp world) entities
+            let entitiesSorted = Seq.sortBy (fun (entity : Entity) -> entity.GetCreationTimeStampNp world) entities
             let entitiesPersistent = Seq.filter (fun (entity : Entity) -> entity.GetPersistent world) entitiesSorted
             for entity in entitiesPersistent do
                 writer.WriteStartElement typeof<Entity>.Name

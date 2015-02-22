@@ -3,9 +3,44 @@
 
 namespace Nu
 open System
+open System.Runtime.InteropServices
 open System.Configuration
 open Prime
 open Nu
+
+[<RequireQualifiedAccess>]
+module internal CoreInternal =
+
+#if LINUX
+    // NOTE: this code has not been tested, and I have no idea if it works correctly, or even well!
+
+    /// The linux representation of time.
+    type internal timeval =
+        struct
+            val tv_sec : int
+            val tv_usec : int
+            end
+
+    /// Query the linux gettimeofday system call.
+    [<DllImport("libc")>]
+    extern void private gettimeofday (timeval&, int64)
+    
+    /// Get a time stamp at the highest-available resolution on linux.
+    let getTimeStampInternal () =
+        let mutable t = timeval ()
+        gettimeofday(&t, -1L);
+        int64 t.tv_sec * 1000000L + int64 t.tv_usec
+#else
+    /// Query the windows performance counter.
+    [<DllImport("Kernel32.dll")>]
+    extern bool private QueryPerformanceCounter (int64&)
+
+    /// Get a time stamp at the highest-available resolution on windows.
+    let getTimeStampInternal () =
+        let mutable t = 0L
+        ignore <| QueryPerformanceCounter &t
+        t
+#endif
 
 [<AutoOpen>]
 module CoreModule =
@@ -30,6 +65,9 @@ module Core =
     /// Make a Nu Id.
     let makeId () =
         Guid.NewGuid ()
+
+    /// Get a time stamp at the highest-available resolution.
+    let getTimeStamp () = CoreInternal.getTimeStampInternal ()
 
     /// Get a resolution along either an X or Y dimension.
     let getResolutionOrDefault isX defaultResolution =

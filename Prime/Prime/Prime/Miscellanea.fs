@@ -138,6 +138,7 @@ module Type =
         | Some aType -> aType
         | None -> failwith <| "Could not find type with unqualified name '" + name + "'."
 
+    /// TODO: document!
     let GetPropertyByPreference (preference, properties) =
         let optPreferred = Seq.tryFind preference properties
         if Seq.isEmpty properties then null

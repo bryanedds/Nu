@@ -21,7 +21,7 @@ module WorldGroupModule =
 
         member this.GetId world = (World.getGroupState this world).Id
         member this.GetName world = (World.getGroupState this world).Name
-        member this.GetCreationTimeNp world = (World.getGroupState this world).CreationTimeNp
+        member this.GetCreationTimeStampNp world = (World.getGroupState this world).CreationTimeStampNp
         member this.GetDispatcherNp world = (World.getGroupState this world).DispatcherNp
         member this.GetPublishChanges world = (World.getGroupState this world).PublishChanges
         member this.SetPublishChanges value world = World.updateGroupState (fun (groupState : GroupState) -> { groupState with PublishChanges = value }) this world
@@ -146,7 +146,7 @@ module WorldGroupModule =
 
         /// Write multiple groups to an xml writer.
         static member writeGroups (writer : XmlWriter) groups world =
-            let groupsSorted = Seq.sortBy (fun (group : Group) -> group.GetCreationTimeNp world) groups
+            let groupsSorted = Seq.sortBy (fun (group : Group) -> group.GetCreationTimeStampNp world) groups
             let groupsPersistent = Seq.filter (fun (group : Group) -> group.GetPersistent world) groupsSorted
             for group in groupsPersistent do
                 writer.WriteStartElement GroupNodeName
