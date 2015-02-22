@@ -346,7 +346,7 @@ module SimulationModule =
             { Id = Core.makeId ()
               OptSelectedScreen = None
               PublishChanges = true
-              CreationTimeNp = DateTime.UtcNow
+              CreationTimeNp = Stopwatch.GetTimestamp ()
               DispatcherNp = dispatcher
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
 
