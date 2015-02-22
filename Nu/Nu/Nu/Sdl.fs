@@ -105,8 +105,7 @@ module Sdl =
     let play handlePlay world =
         handlePlay world
 
-    /// Run the game engine with the given handlers.
-    let rec run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps liveness world =
+    let rec private run7 handleEvent handleUpdate handleRender handlePlay sdlDeps liveness world =
         match liveness with
         | Running ->
             let (liveness, world) = update handleEvent handleUpdate world
@@ -114,9 +113,16 @@ module Sdl =
             | Running ->
                 let world = render handleRender sdlDeps world
                 let world = play handlePlay world
-                run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps liveness world
-            | Exiting -> ignore <| handleExit world
-        | Exiting -> ()
+                run7 handleEvent handleUpdate handleRender handlePlay sdlDeps liveness world
+            | Exiting -> world
+        | Exiting -> world
+
+    /// Run the game engine with the given handlers.
+    let run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps liveness world =
+        try let world = run7 handleEvent handleUpdate handleRender handlePlay sdlDeps liveness world
+            ignore <| handleExit world
+        with _ ->
+            ignore <| handleExit world
 
     /// Run the game engine with the given handlers.
     let run handleTryMakeWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig =
