@@ -10,7 +10,7 @@ module Program =
     (* TODO: investigate NuEdit extensibility mechanism. *)
 
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
-    scaled to a back-buffer of a varying size, render each component unscaled to a off-screen
+    scaled to a back-buffer of a varying size, render each component unscaled to an off-screen
     buffer of a static size and then blit that with scaling to the back-buffer. NOTE: this only
     applies to 2D ~ will not apply to 3D once implemented in Nu (for obvious reasons). *)
 
