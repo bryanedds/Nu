@@ -26,7 +26,7 @@ module internal CoreInternal =
     extern void private gettimeofday (timeval&, int64)
     
     /// Get a time stamp at the highest-available resolution on linux.
-    let getTimeStampInternal () =
+    let internal getTimeStampInternal () =
         let mutable t = timeval ()
         gettimeofday(&t, -1L);
         int64 t.tv_sec * 1000000L + int64 t.tv_usec
@@ -36,7 +36,7 @@ module internal CoreInternal =
     extern bool private QueryPerformanceCounter (int64&)
 
     /// Get a time stamp at the highest-available resolution on windows.
-    let getTimeStampInternal () =
+    let internal getTimeStampInternal () =
         let mutable t = 0L
         ignore <| QueryPerformanceCounter &t
         t
