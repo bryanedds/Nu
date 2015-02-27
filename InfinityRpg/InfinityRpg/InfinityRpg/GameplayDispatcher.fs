@@ -575,11 +575,7 @@ module GameplayDispatcherModule =
             let scene = proxyScene gameplay
 
             // get and initialize gameplay screen from read
-            let contentRandState = gameplay.GetContentRandState world
-            let ongoingRandState = gameplay.GetOngoingRandState world
             let world = snd <| World.readScreenFromFile SaveFilePath (Some GameplayName) world
-            let world = gameplay.SetContentRandState contentRandState world
-            let world = gameplay.SetOngoingRandState ongoingRandState world
             let world = gameplay.SetTransitionStateNp IncomingState world
 
             // make rand from gameplay
