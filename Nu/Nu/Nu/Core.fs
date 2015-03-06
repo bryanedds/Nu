@@ -62,6 +62,11 @@ module Core =
     /// Get a time stamp at the highest-available resolution.
     let getTimeStamp () = CoreInternal.getTimeStampInternal ()
 
+    /// Spin the CPU until the time stamp advances.
+    let spinUntilNextTimeStamp () =
+        let timeStamp = getTimeStamp ()
+        while timeStamp = getTimeStamp () do ()
+
     /// Get a resolution along either an X or Y dimension.
     let getResolutionOrDefault isX defaultResolution =
         let appSetting = ConfigurationManager.AppSettings.["Resolution" + if isX then "X" else "Y"]
