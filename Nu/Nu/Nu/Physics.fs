@@ -265,41 +265,41 @@ module PhysicsModule =
 
         static member private createBoxBody sourceAddress bodyProperties boxShape integrator =
             let body =
-                Factories.BodyFactory.CreateRectangle (
-                    integrator.PhysicsContext,
-                    Integrator.toPhysicsPolygonDiameter <| boxShape.Extent.X * 2.0f,
-                    Integrator.toPhysicsPolygonDiameter <| boxShape.Extent.Y * 2.0f,
-                    bodyProperties.Density,
-                    Integrator.toPhysicsV2 boxShape.Center,
-                    0.0f,
-                    Integrator.toPhysicsBodyType bodyProperties.BodyType,
-                    sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+                Factories.BodyFactory.CreateRectangle
+                    (integrator.PhysicsContext,
+                     Integrator.toPhysicsPolygonDiameter <| boxShape.Extent.X * 2.0f,
+                     Integrator.toPhysicsPolygonDiameter <| boxShape.Extent.Y * 2.0f,
+                     bodyProperties.Density,
+                     Integrator.toPhysicsV2 boxShape.Center,
+                     0.0f,
+                     Integrator.toPhysicsBodyType bodyProperties.BodyType,
+                     sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
             body.UserData <- sourceAddress // BUG: ...so I set it again here :/
             body
 
         static member private createCircleBody sourceAddress bodyProperties (circleShape : CircleShape) integrator =
             let body =
-                Factories.BodyFactory.CreateCircle (
-                    integrator.PhysicsContext,
-                    Integrator.toPhysicsPolygonRadius circleShape.Radius,
-                    bodyProperties.Density,
-                    Integrator.toPhysicsV2 circleShape.Center,
-                    Integrator.toPhysicsBodyType bodyProperties.BodyType,
-                    sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+                Factories.BodyFactory.CreateCircle
+                    (integrator.PhysicsContext,
+                     Integrator.toPhysicsPolygonRadius circleShape.Radius,
+                     bodyProperties.Density,
+                     Integrator.toPhysicsV2 circleShape.Center,
+                     Integrator.toPhysicsBodyType bodyProperties.BodyType,
+                     sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
             body.UserData <- sourceAddress // BUG: ...so I set it again here :/
             body
 
         static member private createCapsuleBody sourceAddress bodyProperties capsuleShape integrator =
             let body =
-                Factories.BodyFactory.CreateCapsule (
-                    integrator.PhysicsContext,
-                    Integrator.toPhysicsPolygonDiameter capsuleShape.Height,
-                    Integrator.toPhysicsPolygonRadius capsuleShape.Radius,
-                    bodyProperties.Density,
-                    Integrator.toPhysicsV2 capsuleShape.Center,
-                    0.0f,
-                    Integrator.toPhysicsBodyType bodyProperties.BodyType,
-                    sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+                Factories.BodyFactory.CreateCapsule
+                    (integrator.PhysicsContext,
+                     Integrator.toPhysicsPolygonDiameter capsuleShape.Height,
+                     Integrator.toPhysicsPolygonRadius capsuleShape.Radius,
+                     bodyProperties.Density,
+                     Integrator.toPhysicsV2 capsuleShape.Center,
+                     0.0f,
+                     Integrator.toPhysicsBodyType bodyProperties.BodyType,
+                     sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
             body.UserData <- sourceAddress // BUG: ...so I set it again here :/
             // scale in the capsule's box to stop sticking
             let capsuleBox = body.FixtureList.[0].Shape :?> FarseerPhysics.Collision.Shapes.PolygonShape
@@ -308,14 +308,14 @@ module PhysicsModule =
 
         static member private createPolygonBody sourceAddress bodyProperties polygonShape integrator =
             let body =
-                Factories.BodyFactory.CreatePolygon (
-                    integrator.PhysicsContext,
-                    FarseerPhysics.Common.Vertices (List.map Integrator.toPhysicsV2 polygonShape.Vertices),
-                    bodyProperties.Density,
-                    Integrator.toPhysicsV2 polygonShape.Center,
-                    0.0f,
-                    Integrator.toPhysicsBodyType bodyProperties.BodyType,
-                    sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+                Factories.BodyFactory.CreatePolygon
+                    (integrator.PhysicsContext,
+                     FarseerPhysics.Common.Vertices (List.map Integrator.toPhysicsV2 polygonShape.Vertices),
+                     bodyProperties.Density,
+                     Integrator.toPhysicsV2 polygonShape.Center,
+                     0.0f,
+                     Integrator.toPhysicsBodyType bodyProperties.BodyType,
+                     sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
             body.UserData <- sourceAddress // BUG: ...so I set it again here :/
             body
 

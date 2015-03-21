@@ -122,11 +122,11 @@ module Assets =
             let name = getAssetName filePath node
             let associations = getAssetAssociations node
             let refinements = getAssetRefinements node
-            Some {
-                AssetTag = { PackageName = node.ParentNode.Name; AssetName = name }
-                FilePath = filePath
-                Refinements = refinements
-                Associations = associations }
+            Some
+                { AssetTag = { PackageName = node.ParentNode.Name; AssetName = name }
+                  FilePath = filePath
+                  Refinements = refinements
+                  Associations = associations }
         | None -> None
 
     /// Attempt to load assets from the given Xml node.

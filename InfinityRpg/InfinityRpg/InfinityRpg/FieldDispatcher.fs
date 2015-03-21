@@ -27,11 +27,11 @@ module FieldDispatcherModule =
         static let getOptTileInset (tileSheetPositionM : Vector2i) =
             let tileOffset = vmtovf tileSheetPositionM
             let tileInset =
-                Vector4 (
-                    tileOffset.X,
-                    tileOffset.Y,
-                    tileOffset.X + TileSize.X,
-                    tileOffset.Y + TileSize.Y)
+                Vector4
+                    (tileOffset.X,
+                     tileOffset.Y,
+                     tileOffset.X + TileSize.X,
+                     tileOffset.Y + TileSize.Y)
             Some tileInset
 
         static member FieldDefinitions =

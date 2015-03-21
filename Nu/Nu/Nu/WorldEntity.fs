@@ -253,9 +253,9 @@ module WorldEntityModule =
             List.fold
                 (fun (maxSize : Vector2) (facet : Facet) ->
                     let quickSize = facet.GetQuickSize entity world
-                    Vector2 (
-                        Math.Max (quickSize.X, maxSize.X),
-                        Math.Max (quickSize.Y, maxSize.Y)))
+                    Vector2
+                        (Math.Max (quickSize.X, maxSize.X),
+                         Math.Max (quickSize.Y, maxSize.Y)))
                 quickSize
                 facets
 

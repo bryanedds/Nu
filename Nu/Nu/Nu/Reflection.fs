@@ -87,10 +87,10 @@ module Reflection =
     /// Is a property with the given name persistent?
     let isPropertyPersistent target (property : PropertyInfo) =
         isPropertyPersistentByName property.Name &&
-        not (
-            property.Name = NameFieldName &&
-            property.PropertyType = typeof<string> &&
-            fst <| Guid.TryParse (property.GetValue target :?> string))
+        not
+            (property.Name = NameFieldName &&
+             property.PropertyType = typeof<string> &&
+             fst <| Guid.TryParse (property.GetValue target :?> string))
 
     /// Query that the dispatcher has behavior congruent to the given type.
     let dispatchesAs (dispatcherTargetType : Type) dispatcher =

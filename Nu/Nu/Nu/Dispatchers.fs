@@ -689,9 +689,9 @@ module TileMapDispatcherModule =
             let gid2 = Vector2i (gid % tileSetRun, gid / tileSetRun)
             let tileMapPosition = tm.GetPosition world
             let tilePosition =
-                Vector2i (
-                    int tileMapPosition.X + tmd.TileSize.X * i,
-                    int tileMapPosition.Y - tmd.TileSize.Y * (j + 1)) // subtraction for right-handedness
+                Vector2i
+                    (int tileMapPosition.X + tmd.TileSize.X * i,
+                     int tileMapPosition.Y - tmd.TileSize.Y * (j + 1)) // subtraction for right-handedness
             let optTileSetTile = Seq.tryFind (fun (item : TmxTilesetTile) -> tile.Gid - 1 = item.Id) tmd.TileSet.Tiles
             { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile }
 
@@ -702,9 +702,9 @@ module TileMapDispatcherModule =
             let tileShape = Physics.evalCollisionExpr (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr
             { BodyId = intsToGuid tli ti
               Position =
-                Vector2 (
-                    single <| td.TilePosition.X + tmd.TileSize.X / 2,
-                    single <| td.TilePosition.Y + tmd.TileSize.Y / 2 + tmd.TileMapSize.Y)
+                Vector2
+                    (single <| td.TilePosition.X + tmd.TileSize.X / 2,
+                     single <| td.TilePosition.Y + tmd.TileSize.Y / 2 + tmd.TileMapSize.Y)
               Rotation = tm.GetRotation world
               Shape = tileShape
               BodyType = BodyType.Static
