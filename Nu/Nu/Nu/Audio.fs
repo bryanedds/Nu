@@ -76,8 +76,7 @@ module AudioModule =
                 ignore <| SDL_mixer.Mix_HaltChannel i
     
         static member private tryLoadAudioAsset2 (asset : Asset) =
-            let extension = Path.GetExtension asset.FilePath
-            match extension with
+            match Path.GetExtension asset.FilePath with
             | ".wav" ->
                 let optWav = SDL_mixer.Mix_LoadWAV asset.FilePath
                 if optWav <> IntPtr.Zero then Some (asset.AssetTag.AssetName, WavAsset optWav)
@@ -92,11 +91,10 @@ module AudioModule =
                     let errorMsg = SDL.SDL_GetError ()
                     trace <| "Could not load ogg '" + asset.FilePath + "' due to '" + errorMsg + "'."
                     None
-            | _ -> trace <| "Could not load audio asset '" + acstring asset + "' due to unknown extension '" + extension + "'."; None
+            | extension -> trace <| "Could not load audio asset '" + acstring asset + "' due to unknown extension '" + extension + "'."; None
     
         static member private tryLoadAudioPackage packageName audioPlayer =
-            let optAssets = Assets.tryLoadAssetsFromPackage true (Some AudioAssociation) packageName audioPlayer.AssetGraphFilePath
-            match optAssets with
+            match Assets.tryLoadAssetsFromPackage true (Some AudioAssociation) packageName audioPlayer.AssetGraphFilePath with
             | Right assets ->
                 let optAudioAssets = List.map AudioPlayer.tryLoadAudioAsset2 assets
                 let audioAssets = List.definitize optAudioAssets
@@ -113,9 +111,8 @@ module AudioModule =
                 audioPlayer
             
         static member private tryLoadAudioAsset (assetTag : AssetTag) audioPlayer =
-            let optAssetMap = Map.tryFind assetTag.PackageName audioPlayer.AudioAssetMap
             let (audioPlayer, optAssetMap) =
-                match optAssetMap with
+                match Map.tryFind assetTag.PackageName audioPlayer.AudioAssetMap with
                 | Some _ -> (audioPlayer, Map.tryFind assetTag.PackageName audioPlayer.AudioAssetMap)
                 | None ->
                     note <| "Loading audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."

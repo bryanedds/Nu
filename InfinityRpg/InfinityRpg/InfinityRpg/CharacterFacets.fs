@@ -121,15 +121,15 @@ module CharacterAnimationFacetModule =
             let animatedOffsetM = Vector2i (animatedXOffsetM, 0)
             let spriteCoordsinates = animationOffsetM + directionCoordsOffset + animatedOffsetM
             let spriteOffset =
-                Vector2 (
-                    TileSize.X * single spriteCoordsinates.X,
-                    TileSize.Y * single spriteCoordsinates.Y)
+                Vector2
+                    (TileSize.X * single spriteCoordsinates.X,
+                     TileSize.Y * single spriteCoordsinates.Y)
             let spriteInset =
-                Vector4 (
-                    spriteOffset.X,
-                    spriteOffset.Y,
-                    spriteOffset.X + TileSize.X,
-                    spriteOffset.Y + TileSize.Y)
+                Vector4
+                    (spriteOffset.X,
+                     spriteOffset.Y,
+                     spriteOffset.X + TileSize.X,
+                     spriteOffset.Y + TileSize.Y)
             Some spriteInset
 
         static member FieldDefinitions =

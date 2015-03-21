@@ -46,19 +46,19 @@ module Camera =
 
     /// Get the bounds of the camera's sight relative to its position.
     let getViewBoundsRelative camera =
-        Vector4 (
-            camera.EyeCenter.X - camera.EyeSize.X * 0.5f,
-            camera.EyeCenter.Y - camera.EyeSize.Y * 0.5f,
-            camera.EyeCenter.X + camera.EyeSize.X * 0.5f,
-            camera.EyeCenter.Y + camera.EyeSize.Y * 0.5f)
+        Vector4
+            (camera.EyeCenter.X - camera.EyeSize.X * 0.5f,
+             camera.EyeCenter.Y - camera.EyeSize.Y * 0.5f,
+             camera.EyeCenter.X + camera.EyeSize.X * 0.5f,
+             camera.EyeCenter.Y + camera.EyeSize.Y * 0.5f)
 
     /// Get the bounds of the camera's sight not relative to its position.
     let getViewBoundsAbsolute camera =
-        Vector4 (
-            camera.EyeSize.X * -0.5f,
-            camera.EyeSize.Y * -0.5f,
-            camera.EyeSize.X * 0.5f,
-            camera.EyeSize.Y * 0.5f)
+        Vector4
+            (camera.EyeSize.X * -0.5f,
+             camera.EyeSize.Y * -0.5f,
+             camera.EyeSize.X * 0.5f,
+             camera.EyeSize.Y * 0.5f)
 
     /// Get the bounds of the camera's sight.
     let getViewBounds viewType camera =
@@ -79,9 +79,9 @@ module Camera =
     /// Transform the given mouse position to screen space.
     let mouseToScreen (mousePosition : Vector2) camera =
         let positionScreen =
-            Vector2 (
-                mousePosition.X - camera.EyeSize.X * 0.5f,
-                -(mousePosition.Y - camera.EyeSize.Y * 0.5f)) // negation for right-handedness
+            Vector2
+                (mousePosition.X - camera.EyeSize.X * 0.5f,
+                 -(mousePosition.Y - camera.EyeSize.Y * 0.5f)) // negation for right-handedness
         positionScreen
 
     /// Transform the given mouse position to world space.

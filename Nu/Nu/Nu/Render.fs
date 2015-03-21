@@ -112,8 +112,7 @@ module RenderModule =
             | FontAsset (font, _) -> SDL_ttf.TTF_CloseFont font
 
         static member private tryLoadRenderAsset2 renderContext (asset : Asset) =
-            let extension = Path.GetExtension asset.FilePath
-            match extension with
+            match Path.GetExtension asset.FilePath with
             | ".bmp"
             | ".png" ->
                 let optTexture = SDL_image.IMG_LoadTexture (renderContext, asset.FilePath)
@@ -134,11 +133,10 @@ module RenderModule =
                         else trace <| "Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."; None
                     | (false, _) -> trace <| "Could not load font due to file name being too short: '" + asset.FilePath + "'."; None
                 else trace <| "Could not load font '" + asset.FilePath + "'."; None
-            | _ -> trace <| "Could not load render asset '" + acstring asset + "' due to unknown extension '" + extension + "'."; None
+            | extension -> trace <| "Could not load render asset '" + acstring asset + "' due to unknown extension '" + extension + "'."; None
 
         static member private tryLoadRenderPackage packageName renderer =
-            let optAssets = Assets.tryLoadAssetsFromPackage true (Some RenderAssociation) packageName renderer.AssetGraphFilePath
-            match optAssets with
+            match Assets.tryLoadAssetsFromPackage true (Some RenderAssociation) packageName renderer.AssetGraphFilePath with
             | Right assets ->
                 let optRenderAssets = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
                 let renderAssets = List.definitize optRenderAssets
@@ -155,9 +153,8 @@ module RenderModule =
                 renderer
 
         static member private tryLoadRenderAsset (assetTag : AssetTag) renderer =
-            let optAssetMap = Map.tryFind assetTag.PackageName renderer.RenderAssetMap
             let (renderer, optAssetMap) =
-                match optAssetMap with
+                match Map.tryFind assetTag.PackageName renderer.RenderAssetMap with
                 | Some _ -> (renderer, Map.tryFind assetTag.PackageName renderer.RenderAssetMap)
                 | None ->
                     note <| "Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
@@ -170,8 +167,7 @@ module RenderModule =
     
         static member private handleHintRenderPackageDisuse (hintPackageDisuse : HintRenderPackageDisuseMessage) renderer =
             let packageName = hintPackageDisuse.PackageName
-            let optAssets = Map.tryFind packageName renderer.RenderAssetMap
-            match optAssets with
+            match Map.tryFind packageName renderer.RenderAssetMap with
             | Some assets ->
                 for asset in assets do Renderer.freeRenderAsset asset.Value
                 { renderer with RenderAssetMap = Map.remove packageName renderer.RenderAssetMap }
@@ -276,16 +272,16 @@ module RenderModule =
                             let mapRun = mapSize.X
                             let (i, j) = (n % mapRun, n / mapRun)
                             let tilePosition =
-                                Vector2 (
-                                    positionView.X + tileSize.X * single i + camera.EyeSize.X * 0.5f,
-                                    -(positionView.Y - tileSize.Y * single j + sizeView.Y) + camera.EyeSize.Y * 0.5f) // negation for right-handedness
+                                Vector2
+                                    (positionView.X + tileSize.X * single i + camera.EyeSize.X * 0.5f,
+                                     -(positionView.Y - tileSize.Y * single j + sizeView.Y) + camera.EyeSize.Y * 0.5f) // negation for right-handedness
                             if Math.isBoundsInBounds3 tilePosition tileSize <| Vector4 (0.0f, 0.0f, camera.EyeSize.X, camera.EyeSize.Y) then
                                 let gid = tiles.[n].Gid - tileSet.FirstGid
                                 let gidPosition = gid * tileSourceSize.X
                                 let tileSourcePosition =
-                                    Vector2 (
-                                        single <| gidPosition % tileSetWidth,
-                                        single <| gidPosition / tileSetWidth * tileSourceSize.Y)
+                                    Vector2
+                                        (single <| gidPosition % tileSetWidth,
+                                         single <| gidPosition / tileSetWidth * tileSourceSize.Y)
                                 let mutable sourceRect = SDL.SDL_Rect ()
                                 sourceRect.x <- int tileSourcePosition.X
                                 sourceRect.y <- int tileSourcePosition.Y
