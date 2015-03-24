@@ -214,6 +214,7 @@ module SimulationModule =
           OverlayRouter : OverlayRouter
           OverlayFilePath : string
           Camera : Camera
+          Cache : Cache
           UserState : obj }
 
     /// The default dispatcher for games.

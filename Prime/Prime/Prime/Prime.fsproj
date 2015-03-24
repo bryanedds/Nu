@@ -75,6 +75,7 @@
     <Compile Include="PersistentHashMap.fs" />
     <Compile Include="HashSet.fs" />
     <Compile Include="Dictionary.fs" />
+    <Compile Include="Cache.fs" />
     <Compile Include="Lens.fs" />
     <Compile Include="AlgebraicReader.fs" />
     <Compile Include="AlgebraicConverter.fs" />
