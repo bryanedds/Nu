@@ -187,6 +187,7 @@ module SimulationModule =
     and internal Subsystems = Map<string, Subsystem>
 
     /// The world's components.
+    /// TODO: Consider making this an abstract data type.
     and [<ReferenceEquality>] internal Components =
         { EntityDispatchers : Map<string, EntityDispatcher>
           GroupDispatchers : Map<string, GroupDispatcher>
@@ -195,6 +196,7 @@ module SimulationModule =
           Facets : Map<string, Facet> }
 
     /// The world's simple callback facilities.
+    /// TODO: Consider making this an abstract data type.
     and [<ReferenceEquality>] internal Callbacks =
         { Subscriptions : SubscriptionEntries
           Unsubscriptions : UnsubscriptionEntries
@@ -202,6 +204,7 @@ module SimulationModule =
           CallbackStates : Map<Guid, obj> }
 
     /// The world's state.
+    /// TODO: Consider making this an abstract data type.
     and [<ReferenceEquality>] WorldState =
         { TickRate : int64
           TickTime : int64
@@ -496,8 +499,6 @@ module SimulationModule =
     /// The world, in a functional programming sense. Hosts the game object, the dependencies
     /// needed to implement a game, messages to by consumed by the various engine sub-systems,
     /// and general configuration data.
-    ///
-    /// TODO: attempt to implement with Fsharpx.PersistentHashMap with hash cached in Address type.
     and [<ReferenceEquality>] World =
         internal
             { Subsystems : Subsystems
