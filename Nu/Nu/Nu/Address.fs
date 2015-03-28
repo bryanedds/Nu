@@ -14,6 +14,7 @@ open Nu
 module NameKeyModule =
 
     /// A name key for optimized look-up in hashing containers.
+    /// OPTIMIZATION: OptHashCode is lazy for speed.
     type [<CustomEquality; NoComparison>] NameKey =
         { Name : string
           mutable OptHashCode : int option }
@@ -48,11 +49,9 @@ module NameKeyModule =
 module AddressModule =
 
     /// Specifies the address of an element in a game, or name of an event.
+    /// OPTIMIZATION: NameKeys are used in case we can manage some sort of hashing look-up with them.
     /// OPTIMIZATION: Comparison is done using the full string of names for speed.
-    /// OPTIMIZATION: In the face of using a PersistentHashMap for simulant storage, I've made the
-    /// NameKeys field available for faster look-ups.
-    /// OPTIMIZATION: At little cost, I've also added the Hash field for fast keying directly
-    /// on addresses.
+    /// OPTIMIZATION: OptNamesStr and OptHashCode are lazy for speed.
     type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
         { NameKeys : NameKey list
           mutable OptNamesStr : string option
@@ -65,32 +64,28 @@ module AddressModule =
         static member internal split (str : string) =
             List.ofArray <| str.Split '/'
 
-        /// Make an address from a list of names.
-        static member makeFromKeys keys =
-            { NameKeys = keys; OptNamesStr = None; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
-
-        /// Make an address from a list of names.
-        static member makeFromList list =
-            let keys = List.map NameKey.make list
-            Address<'a>.makeFromKeys keys
-
-        /// Make an address from a list of names.
-        static member makeFromStrAndKeys str keys =
-            { NameKeys = keys; OptNamesStr = Some str; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
-
-        /// Make an address from a '/' delimited string.
-        static member makeFromString str =
-            let list = Address<'a>.split str
-            let keys = List.map NameKey.make list
-            { NameKeys = keys; OptNamesStr = Some str; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
-
-        /// Convert a string into a list.
-        static member stoa (str : string) =
-            Address<'a>.makeFromString str
-
         /// The empty address.
         static member empty =
             { NameKeys = []; OptNamesStr = Some String.Empty; OptHashCode = Some 0; TypeCarrier = fun (_ : 'a) -> () }
+
+        /// Make an address from name keys.
+        static member makeFromNameKeys nameKeys =
+            { NameKeys = nameKeys; OptNamesStr = None; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
+
+        /// Make an address from a list of names.
+        static member makeFromNamesList namesList =
+            let nameKeys = List.map NameKey.make namesList
+            Address<'a>.makeFromNameKeys nameKeys
+
+        /// Make an address from a '/' delimited string.
+        static member makeFromNamesString namesStr =
+            let namesList = Address<'a>.split namesStr
+            let nameKeys = List.map NameKey.make namesList
+            { NameKeys = nameKeys; OptNamesStr = Some namesStr; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
+
+        /// Convert a names string into an address.
+        static member stoa (namesStr : string) =
+            Address<'a>.makeFromNamesString namesStr
 
         /// TODO: document!
         static member getNamesStr (address : 'a Address) =
@@ -163,21 +158,21 @@ module AddressModule =
                 if targetType.IsInstanceOfType source then source
                 else failwith "Invalid AddressConverter conversion from source."
 
-    /// Convert a string into an address.
-    let stoa<'a> str =
-        Address<'a>.stoa str
+    /// Convert a names string into an address.
+    let stoa<'a> namesStr =
+        Address<'a>.stoa namesStr
 
-    /// Convert a name key list into an address.
-    let ktoa<'a> keys =
-        Address<'a>.makeFromKeys keys
+    /// Convert a name keys into an address.
+    let ktoa<'a> nameKeys =
+        Address<'a>.makeFromNameKeys nameKeys
 
-    /// Convert a list into an address.
-    let ltoa<'a> list =
-        Address<'a>.makeFromList list
+    /// Convert a names list into an address.
+    let ltoa<'a> namesList =
+        Address<'a>.makeFromNamesList namesList
 
-    /// Convert a single name into an address.
-    let ntoa<'a> name =
-        ltoa<'a> [name]
+    /// Convert a name string into an address.
+    let ntoa<'a> nameStr =
+        ltoa<'a> [nameStr]
 
     /// Convert any address to an obj Address.
     let atooa<'a> (address : 'a Address) =
@@ -185,11 +180,11 @@ module AddressModule =
 
     /// Concatenate two addresses of the same type.
     let acat<'a> (address : 'a Address) (address2 : 'a Address) =
-        Address<'a>.makeFromKeys (address.NameKeys @ address2.NameKeys)
+        Address<'a>.makeFromNameKeys (address.NameKeys @ address2.NameKeys)
 
     /// Concatenate two addresses, taking the type of first address.
     let acatf<'a> (address : 'a Address) (address2 : obj Address) =
-        Address<'a>.makeFromKeys (address.NameKeys @ address2.NameKeys)
+        Address<'a>.makeFromNameKeys (address.NameKeys @ address2.NameKeys)
     
     /// Concatenate two addresses, forcing the type of first address.
     let acatff<'a, 'b> (address : 'a Address) (address2 : 'b Address) =
@@ -197,7 +192,7 @@ module AddressModule =
 
     /// Concatenate two addresses, taking the type of the second address.
     let acats<'a> (address : obj Address) (address2 : 'a Address) =
-        Address<'a>.makeFromKeys (address.NameKeys @ address2.NameKeys)
+        Address<'a>.makeFromNameKeys (address.NameKeys @ address2.NameKeys)
     
     /// Concatenate two addresses, forcing the type of second address.
     let acatsf<'a, 'b> (address : 'a Address) (address2 : 'b Address) =
@@ -239,32 +234,32 @@ module Address =
         
     /// Take the tail of an address.
     let tail<'a> address =
-        Address<'a>.makeFromKeys <| List.tail address.NameKeys
+        Address<'a>.makeFromNameKeys <| List.tail address.NameKeys
 
     /// Take a name key of an address.
     let at index address =
         List.at index address.NameKeys
 
-    /// Take an address composed of the names of an address minus a skipped amount of names.
+    /// Take an address composed of the name keys of an address minus a skipped amount of name keys.
     let skip<'a, 'b> n (address : 'a Address) =
-        Address<'b>.makeFromKeys <| List.skip n address.NameKeys
+        Address<'b>.makeFromNameKeys <| List.skip n address.NameKeys
 
-    /// Take an address composed of the given number of names of an address.
+    /// Take an address composed of the given number of name keys of an address.
     let take<'a, 'b> n (address : 'a Address) =
-        Address<'b>.makeFromKeys <| List.take n address.NameKeys
+        Address<'b>.makeFromNameKeys <| List.take n address.NameKeys
 
-    /// Take the last name of an address.
+    /// Take the last name key of an address.
     let last address =
         List.last address.NameKeys
 
     /// Take an address composed of all but the last name of an address.
     let allButLast<'a, 'b> (address : 'a Address) =
-        Address<'b>.makeFromKeys <| List.allButLast address.NameKeys
+        Address<'b>.makeFromNameKeys <| List.allButLast address.NameKeys
 
-    /// Get the length of an address by its names.
+    /// Get the length of an address by its name keys.
     let length address =
         List.length address.NameKeys
 
-    /// Query that an address is devoid of names.
+    /// Query that an address is devoid of name keys.
     let isEmpty address =
         List.isEmpty address.NameKeys
