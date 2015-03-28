@@ -202,16 +202,22 @@ module WorldPrimitivesModule =
         (* Entity *)
 
         static member private optEntityStateFinder entity world =
-            match entity.EntityAddress.Names with
-            | [screenName; groupName; entityName] ->
-                let (_, screenStateMap) = world.SimulantStates 
-                match Map.tryFind screenName screenStateMap with
-                | Some (_, groupStateMap) ->
-                    match Map.tryFind groupName groupStateMap with
-                    | Some (_, entityStateMap) -> Map.tryFind entityName entityStateMap
-                    | None -> None
-                | None -> None
-            | _ -> failwith <| "Invalid entity address '" + acstring entity.EntityAddress + "'."
+            
+            let getFresh () =
+                let optEntityState =
+                    match entity.EntityAddress.Names with
+                    | [screenName; groupName; entityName] ->
+                        let (_, screenStateMap) = world.SimulantStates 
+                        match Map.tryFind screenName screenStateMap with
+                        | Some (_, groupStateMap) ->
+                            match Map.tryFind groupName groupStateMap with
+                            | Some (_, entityStateMap) -> Map.tryFind entityName entityStateMap
+                            | None -> None
+                        | None -> None
+                    | _ -> failwith <| "Invalid entity address '" + acstring entity.EntityAddress + "'."
+                ((world :> obj, entity.EntityAddress), optEntityState)
+
+            KeyedCache.getValue (world :> obj, entity.EntityAddress) getFresh world.State.OptEntityCache
 
         static member private entityStateAdder (entityState : EntityState) entity world =
             match entity.EntityAddress.Names with
