@@ -202,8 +202,13 @@ module WorldPrimitivesModule =
         (* Entity *)
 
         static member private optEntityStateFinder entity world =
+
+            let keyEquality
+                (world : World, entityAddress : EntityState Address)
+                (world2 : World, entityAddress2 : EntityState Address) =
+                world === world2 && entityAddress === entityAddress2
             
-            let getFresh () =
+            let getFreshKeyAndValue () =
                 let optEntityState =
                     match entity.EntityAddress.Names with
                     | [screenName; groupName; entityName] ->
@@ -217,7 +222,7 @@ module WorldPrimitivesModule =
                     | _ -> failwith <| "Invalid entity address '" + acstring entity.EntityAddress + "'."
                 ((world, entity.EntityAddress), optEntityState)
 
-            KeyedCache.getValue (===) getFresh (world, entity.EntityAddress) world.State.OptEntityCache
+            KeyedCache.getValue keyEquality getFreshKeyAndValue (world, entity.EntityAddress) world.State.OptEntityCache
 
         static member private entityStateAdder (entityState : EntityState) entity world =
             match entity.EntityAddress.Names with
