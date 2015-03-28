@@ -204,9 +204,7 @@ module WorldPrimitivesModule =
         static member private optEntityStateKeyEquality 
             (entityAddress : EntityState Address, world : World)
             (entityAddress2 : EntityState Address, world2 : World) =
-            entityAddress.Hash = entityAddress2.Hash &&
-            entityAddress.NamesStr = entityAddress2.NamesStr &&
-            world === world2
+            entityAddress === entityAddress2 && world === world2
 
         static member private optEntityGetFreshKeyAndValue entity world =
             let optEntityState =

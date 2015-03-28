@@ -15,8 +15,17 @@ module NameKeyModule =
 
     /// A name key for optimized look-up in hashing containers.
     type [<CustomEquality; NoComparison>] NameKey =
-        { Hash : int // OPTIMIZATION: hash is most frequently accessed, so comes first
-          Name : string }
+        { Name : string
+          mutable OptHashCode : int option }
+
+        /// TODO: document!
+        static member getHashCode nameKey =
+            match nameKey.OptHashCode with
+            | Some hashCode -> hashCode
+            | None ->
+                let hashCode = hash nameKey.Name
+                nameKey.OptHashCode <- Some hashCode
+                hashCode
 
         interface NameKey IEquatable with
             member this.Equals that =
@@ -28,15 +37,12 @@ module NameKeyModule =
             | _ -> false
 
         override this.GetHashCode () =
-            this.Hash
+            NameKey.getHashCode this
 
-[<RequireQualifiedAccess>]
-module NameKey =
-
-    /// Make a name key from a single address name string.
-    let make addressName =
-        { Hash = hash addressName
-          Name = addressName }
+        /// Make a name key from a single address name string.
+        static member make addressName =
+            { Name = addressName
+              OptHashCode = None }
 
 [<AutoOpen>]
 module AddressModule =
@@ -48,9 +54,9 @@ module AddressModule =
     /// OPTIMIZATION: At little cost, I've also added the Hash field for fast keying directly
     /// on addresses.
     type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
-        { NamesStr : string
-          NameKeys : NameKey list
-          Hash : int
+        { NameKeys : NameKey list
+          mutable OptNamesStr : string option
+          mutable OptHashCode : int option
           TypeCarrier : 'a -> unit }
 
         static member internal join (seq : string seq) =
@@ -60,24 +66,23 @@ module AddressModule =
             List.ofArray <| str.Split '/'
 
         /// Make an address from a list of names.
+        static member makeFromKeys keys =
+            { NameKeys = keys; OptNamesStr = None; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
+
+        /// Make an address from a list of names.
         static member makeFromList list =
-            let str = Address<'a>.join list
             let keys = List.map NameKey.make list
-            { NamesStr = str; NameKeys = keys; Hash = hash str; TypeCarrier = fun (_ : 'a) -> () }
+            Address<'a>.makeFromKeys keys
 
         /// Make an address from a list of names.
         static member makeFromStrAndKeys str keys =
-            { NamesStr = str; NameKeys = keys; Hash = hash str; TypeCarrier = fun (_ : 'a) -> () }
+            { NameKeys = keys; OptNamesStr = Some str; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
 
-        /// Make an address from a list of names.
-        static member makeFromKeys keys =
-            let str = keys |> Seq.map (fun key -> key.Name) |> Address<'a>.join
-            Address<'a>.makeFromStrAndKeys str keys
-
+        /// Make an address from a '/' delimited string.
         static member makeFromString str =
             let list = Address<'a>.split str
             let keys = List.map NameKey.make list
-            { NamesStr = str; NameKeys = keys; Hash = hash str; TypeCarrier = fun (_ : 'a) -> () }
+            { NameKeys = keys; OptNamesStr = Some str; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
 
         /// Convert a string into a list.
         static member stoa (str : string) =
@@ -85,32 +90,50 @@ module AddressModule =
 
         /// The empty address.
         static member empty =
-            { NamesStr = String.Empty; NameKeys = []; Hash = 0; TypeCarrier = fun (_ : 'a) -> () }
+            { NameKeys = []; OptNamesStr = Some String.Empty; OptHashCode = Some 0; TypeCarrier = fun (_ : 'a) -> () }
+
+        /// TODO: document!
+        static member getNamesStr (address : 'a Address) =
+            match address.OptNamesStr with
+            | Some namesStr -> namesStr
+            | None ->
+                let namesStr = address.NameKeys |> Seq.map (fun nameKey -> nameKey.Name) |> Address<'a>.join
+                address.OptNamesStr <- Some namesStr
+                namesStr
+
+        /// TODO: document!
+        static member getHashCode (address : 'a Address) =
+            match address.OptHashCode with
+            | Some hashCode -> hashCode
+            | None ->
+                let hashCode = hash <| Address<'a>.getNamesStr address
+                address.OptHashCode <- Some hashCode
+                hashCode
 
         interface 'a Address IComparable with
             member this.CompareTo that =
-                String.Compare (this.NamesStr, that.NamesStr)
+                String.Compare (Address<'a>.getNamesStr this, Address<'a>.getNamesStr that)
 
         interface IComparable with
             member this.CompareTo that =
                 match that with
-                | :? ('a Address) as that -> String.Compare (this.NamesStr, that.NamesStr)
+                | :? ('a Address) as that -> String.Compare (Address<'a>.getNamesStr this, Address<'a>.getNamesStr that)
                 | _ -> failwith "Invalid Address comparison (comparee not of type Address)."
 
         interface 'a Address IEquatable with
             member this.Equals that =
-                this.NamesStr = that.NamesStr
+                Address<'a>.getNamesStr this = Address<'a>.getNamesStr that
 
         override this.Equals that =
             match that with
-            | :? ('a Address) as that -> this.NamesStr = that.NamesStr
+            | :? ('a Address) as that -> Address<'a>.getNamesStr this = Address<'a>.getNamesStr that
             | _ -> false
 
         override this.GetHashCode () =
-            this.Hash
+            Address<'a>.getHashCode this
         
         override this.ToString () =
-            this.NamesStr
+            Address<'a>.getNamesStr this
 
     /// Converts Address types.
     and AddressConverter (targetType : Type) =
@@ -158,19 +181,15 @@ module AddressModule =
 
     /// Convert any address to an obj Address.
     let atooa<'a> (address : 'a Address) =
-        { NamesStr = address.NamesStr; NameKeys = address.NameKeys; Hash = address.Hash; TypeCarrier = fun (_ : obj) -> () }
+        { NameKeys = address.NameKeys; OptNamesStr = None; OptHashCode = None; TypeCarrier = fun (_ : obj) -> () }
 
     /// Concatenate two addresses of the same type.
     let acat<'a> (address : 'a Address) (address2 : 'a Address) =
-        Address<'a>.makeFromStrAndKeys
-            (Address<'a>.join [address.NamesStr; address2.NamesStr])
-            (address.NameKeys @ address2.NameKeys)
+        Address<'a>.makeFromKeys (address.NameKeys @ address2.NameKeys)
 
     /// Concatenate two addresses, taking the type of first address.
     let acatf<'a> (address : 'a Address) (address2 : obj Address) =
-        Address<'a>.makeFromStrAndKeys
-            (Address<'a>.join [address.NamesStr; address2.NamesStr])
-            (address.NameKeys @ address2.NameKeys)
+        Address<'a>.makeFromKeys (address.NameKeys @ address2.NameKeys)
     
     /// Concatenate two addresses, forcing the type of first address.
     let acatff<'a, 'b> (address : 'a Address) (address2 : 'b Address) =
@@ -178,9 +197,7 @@ module AddressModule =
 
     /// Concatenate two addresses, taking the type of the second address.
     let acats<'a> (address : obj Address) (address2 : 'a Address) =
-        Address<'a>.makeFromStrAndKeys
-            (Address<'a>.join [address.NamesStr; address2.NamesStr])
-            (address.NameKeys @ address2.NameKeys)
+        Address<'a>.makeFromKeys (address.NameKeys @ address2.NameKeys)
     
     /// Concatenate two addresses, forcing the type of second address.
     let acatsf<'a, 'b> (address : 'a Address) (address2 : 'b Address) =
@@ -206,7 +223,15 @@ module Address =
 
     /// Change the type of an address.
     let changeType<'a, 'b> (address : 'a Address) =
-        { NamesStr = address.NamesStr; NameKeys = address.NameKeys; Hash = address.Hash; TypeCarrier = fun (_ : 'b) -> () }
+        { NameKeys = address.NameKeys; OptNamesStr = None; OptHashCode = None; TypeCarrier = fun (_ : 'b) -> () }
+
+    /// TODO: document!
+    let getNamesStr address =
+        Address<'a>.getNamesStr address
+
+    /// TODO: document!
+    let getHashCode address =
+        Address<'a>.getHashCode address
 
     /// Take the head of an address.
     let head address =
