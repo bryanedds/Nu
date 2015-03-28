@@ -28,8 +28,8 @@ type [<ReferenceEquality>] KeyedCache<'k, 'v when 'k : equality> =
         { CacheKey = cacheKey
           CacheValue = cacheValue }
 
-    static member getValue (cacheKey : 'k) getFreshKeyAndValue keyedCache : 'v =
-        if keyedCache.CacheKey <> cacheKey then
+    static member getValue keyEquality getFreshKeyAndValue (cacheKey : 'k) keyedCache : 'v =
+        if not <| keyEquality keyedCache.CacheKey cacheKey then
             let (freshKey, freshValue) = getFreshKeyAndValue ()
             keyedCache.CacheKey <- freshKey
             keyedCache.CacheValue <- freshValue
