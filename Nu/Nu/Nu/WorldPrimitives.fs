@@ -201,28 +201,33 @@ module WorldPrimitivesModule =
 
         (* Entity *)
 
-        static member private optEntityStateFinder entity world =
+        static member private optEntityStateKeyEquality 
+            (world : World, entityAddress : EntityState Address)
+            (world2 : World, entityAddress2 : EntityState Address) =
+            entityAddress.Hash = entityAddress2.Hash &&
+            entityAddress.NamesStr = entityAddress2.NamesStr &&
+            world === world2
 
-            let keyEquality
-                (world : World, entityAddress : EntityState Address)
-                (world2 : World, entityAddress2 : EntityState Address) =
-                world === world2 && entityAddress.NamesStr = entityAddress2.NamesStr
-            
-            let getFreshKeyAndValue () =
-                let optEntityState =
-                    match entity.EntityAddress.NameKeys with
-                    | [screenNameKey; groupNameKey; entityNameKey] ->
-                        let (_, screenStateMap) = world.SimulantStates 
-                        match Map.tryFind screenNameKey.Name screenStateMap with
-                        | Some (_, groupStateMap) ->
-                            match Map.tryFind groupNameKey.Name groupStateMap with
-                            | Some (_, entityStateMap) -> Map.tryFind entityNameKey.Name entityStateMap
-                            | None -> None
+        static member private optEntityGetFreshKeyAndValue entity world =
+            let optEntityState =
+                match entity.EntityAddress.NameKeys with
+                | [screenNameKey; groupNameKey; entityNameKey] ->
+                    let (_, screenStateMap) = world.SimulantStates 
+                    match Map.tryFind screenNameKey.Name screenStateMap with
+                    | Some (_, groupStateMap) ->
+                        match Map.tryFind groupNameKey.Name groupStateMap with
+                        | Some (_, entityStateMap) -> Map.tryFind entityNameKey.Name entityStateMap
                         | None -> None
-                    | _ -> failwith <| "Invalid entity address '" + acstring entity.EntityAddress + "'."
-                ((world, entity.EntityAddress), optEntityState)
+                    | None -> None
+                | _ -> failwith <| "Invalid entity address '" + acstring entity.EntityAddress + "'."
+            ((world, entity.EntityAddress), optEntityState)
 
-            KeyedCache.getValue keyEquality getFreshKeyAndValue (world, entity.EntityAddress) world.State.OptEntityCache
+        static member private optEntityStateFinder entity world =
+            KeyedCache.getValue
+                World.optEntityStateKeyEquality
+                (fun () -> World.optEntityGetFreshKeyAndValue entity world)
+                (world, entity.EntityAddress)
+                world.State.OptEntityCache
 
         static member private entityStateAdder (entityState : EntityState) entity world =
             match entity.EntityAddress.NameKeys with
