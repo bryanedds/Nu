@@ -1,5 +1,10 @@
 ﻿namespace Prime
 
+module KeyedCacheMetrics =
+
+    let mutable internal CacheHits = 0L
+    let mutable internal CacheMisses = 0L
+
 type [<ReferenceEquality>] 'v RefCache =
     private
         { Volatile : 'v ref
@@ -30,8 +35,11 @@ type [<ReferenceEquality>] KeyedCache<'k, 'v when 'k : equality> =
 
     static member getValue keyEquality getFreshKeyAndValue (cacheKey : 'k) keyedCache : 'v =
         if not <| keyEquality keyedCache.CacheKey cacheKey then
+            // KeyedCacheMetrics.CacheMisses <- KeyedCacheMetrics.CacheMisses + 1L
             let (freshKey, freshValue) = getFreshKeyAndValue ()
             keyedCache.CacheKey <- freshKey
             keyedCache.CacheValue <- freshValue
             freshValue
-        else keyedCache.CacheValue
+        else
+            // KeyedCacheMetrics.CacheHits <- KeyedCacheMetrics.CacheHits + 1L
+            keyedCache.CacheValue
