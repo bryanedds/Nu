@@ -215,9 +215,9 @@ module WorldPrimitivesModule =
                             | None -> None
                         | None -> None
                     | _ -> failwith <| "Invalid entity address '" + acstring entity.EntityAddress + "'."
-                ((world :> obj, entity.EntityAddress), optEntityState)
+                ((world, entity.EntityAddress), optEntityState)
 
-            KeyedCache.getValue (world :> obj, entity.EntityAddress) getFresh world.State.OptEntityCache
+            KeyedCache.getValue (===) getFresh (world, entity.EntityAddress) world.State.OptEntityCache
 
         static member private entityStateAdder (entityState : EntityState) entity world =
             match entity.EntityAddress.Names with

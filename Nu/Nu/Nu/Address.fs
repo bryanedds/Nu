@@ -90,7 +90,7 @@ module AddressModule =
 
         interface 'a Address IEquatable with
             member this.Equals that =
-                this.Names = that.Names
+                this.NamesRev = that.NamesRev
 
         override this.Equals that =
             match that with

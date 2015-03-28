@@ -595,7 +595,7 @@ module WorldModule =
                       OverlayRouter = OverlayRouter.make entityDispatchers userOverlayRoutes
                       OverlayFilePath = OverlayFilePath
                       Camera = camera
-                      OptEntityCache = KeyedCache.make Unchecked.defaultof<obj * EntityState Address> None
+                      OptEntityCache = KeyedCache.make (Unchecked.defaultof<World>, Unchecked.defaultof<EntityState Address>) None
                       UserState = userState }
 
                 // make the simulant states
@@ -663,7 +663,7 @@ module WorldModule =
                   OverlayFilePath = String.Empty
                   Overlayer = { Overlays = XmlDocument () }
                   Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single ResolutionXDefault, single ResolutionYDefault) }
-                  OptEntityCache = KeyedCache.make Unchecked.defaultof<obj * EntityState Address> None
+                  OptEntityCache = KeyedCache.make (Unchecked.defaultof<World>, Unchecked.defaultof<EntityState Address>) None
                   UserState = userState }
 
             // make the simulant states
