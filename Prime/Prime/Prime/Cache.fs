@@ -33,7 +33,7 @@ type [<ReferenceEquality>] KeyedCache<'k, 'v when 'k : equality> =
         { CacheKey = cacheKey
           CacheValue = cacheValue }
 
-    static member getValue keyEquality getFreshKeyAndValue (cacheKey : 'k) keyedCache : 'v =
+    static member getValue (keyEquality : 'k -> 'k -> bool) getFreshKeyAndValue cacheKey keyedCache : 'v =
         if not <| keyEquality keyedCache.CacheKey cacheKey then
             // KeyedCacheMetrics.CacheMisses <- KeyedCacheMetrics.CacheMisses + 1L
             let (freshKey, freshValue) = getFreshKeyAndValue ()

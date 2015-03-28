@@ -47,10 +47,10 @@ module CoreModule =
     type Liveness =
         | Running
         | Exiting
-        
+
     /// Sequences two functions like Haskell ($).
     /// Same as the (^) operator found in Prime, but placed here to expose it directly from Nu.
-    let (^) = (^)
+    let inline (^) f g = f g
 
 [<RequireQualifiedAccess>]
 module Core =

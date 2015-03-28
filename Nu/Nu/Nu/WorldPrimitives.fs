@@ -202,8 +202,8 @@ module WorldPrimitivesModule =
         (* Entity *)
 
         static member private optEntityStateKeyEquality 
-            (world : World, entityAddress : EntityState Address)
-            (world2 : World, entityAddress2 : EntityState Address) =
+            (entityAddress : EntityState Address, world : World)
+            (entityAddress2 : EntityState Address, world2 : World) =
             entityAddress.Hash = entityAddress2.Hash &&
             entityAddress.NamesStr = entityAddress2.NamesStr &&
             world === world2
@@ -220,13 +220,13 @@ module WorldPrimitivesModule =
                         | None -> None
                     | None -> None
                 | _ -> failwith <| "Invalid entity address '" + acstring entity.EntityAddress + "'."
-            ((world, entity.EntityAddress), optEntityState)
+            ((entity.EntityAddress, world), optEntityState)
 
         static member private optEntityStateFinder entity world =
             KeyedCache.getValue
                 World.optEntityStateKeyEquality
                 (fun () -> World.optEntityGetFreshKeyAndValue entity world)
-                (world, entity.EntityAddress)
+                (entity.EntityAddress, world)
                 world.State.OptEntityCache
 
         static member private entityStateAdder (entityState : EntityState) entity world =
@@ -277,7 +277,7 @@ module WorldPrimitivesModule =
             World.optEntityStateFinder entity world
 
         static member internal getEntityState (entity : Entity) world =
-            Option.get ^ World.getOptEntityState entity world
+            (World.optEntityStateFinder entity world).Value // OPTIMIZATION: getting entity state as directly as possible
 
         static member internal setEntityStateWithoutEvent entityState entity world =
             World.entityStateAdder entityState entity world
@@ -364,8 +364,8 @@ module WorldPrimitivesModule =
         static member internal getOptGroupState group world =
             World.optGroupStateFinder group world
 
-        static member internal getGroupState group world : GroupState =
-            Option.get ^ World.getOptGroupState group world
+        static member internal getGroupState group world =
+            (World.optGroupStateFinder group world).Value // OPTIMIZATION: getting entity state as directly as possible
 
         static member internal setGroupStateWithoutEvent groupState group world =
             World.groupStateAdder groupState group world
@@ -434,8 +434,8 @@ module WorldPrimitivesModule =
         static member internal getOptScreenState screen world =
             World.optScreenStateFinder screen world
 
-        static member internal getScreenState screen world : ScreenState =
-            Option.get ^ World.getOptScreenState screen world
+        static member internal getScreenState screen world =
+            (World.optScreenStateFinder screen world).Value // OPTIMIZATION: getting entity state as directly as possible
 
         static member internal setScreenStateWithoutEvent screenState screen world =
             World.screenStateAdder screenState screen world
