@@ -17,8 +17,10 @@ module ObservationModule =
     type [<ReferenceEquality>] Observation<'a, 'o when 'o :> Simulant> =
         { Observer : 'o
           Subscribe : World -> 'a Address * (World -> World) * World }
+
         static member make<'a> observer subscribe =
-            { Observer = observer; Subscribe = subscribe }
+            { Observer = observer
+              Subscribe = subscribe }
 
 module Observation =
 
