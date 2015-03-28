@@ -261,7 +261,7 @@ module WorldPrimitivesModule =
             World.optEntityStateFinder entity world
 
         static member internal getEntityState (entity : Entity) world =
-            Option.get ^ World.getOptEntityState entity world
+            (World.optEntityStateFinder entity world).Value
 
         static member internal setEntityStateWithoutEvent entityState entity world =
             World.entityStateAdder entityState entity world
@@ -349,7 +349,7 @@ module WorldPrimitivesModule =
             World.optGroupStateFinder group world
 
         static member internal getGroupState group world : GroupState =
-            Option.get ^ World.getOptGroupState group world
+            (World.optGroupStateFinder group world).Value
 
         static member internal setGroupStateWithoutEvent groupState group world =
             World.groupStateAdder groupState group world
@@ -419,7 +419,7 @@ module WorldPrimitivesModule =
             World.optScreenStateFinder screen world
 
         static member internal getScreenState screen world : ScreenState =
-            Option.get ^ World.getOptScreenState screen world
+            (World.optScreenStateFinder screen world).Value
 
         static member internal setScreenStateWithoutEvent screenState screen world =
             World.screenStateAdder screenState screen world
