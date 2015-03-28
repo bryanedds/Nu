@@ -16,8 +16,8 @@ module WorldSimulantModule =
         /// Query that a simulant is the either currently selected screen or contained by it.
         static member isSimulantSelected<'s when 's :> Simulant> (simulant : 's) world =
             let optScreen = World.getOptSelectedScreen world
-            let optScreenNames = Option.map (fun (screen : Screen) -> screen.ScreenAddress.Names) optScreen
-            match (simulant.SimulantAddress.Names, optScreenNames) with
+            let optScreenNameKeys = Option.map (fun (screen : Screen) -> screen.ScreenAddress.NameKeys) optScreen
+            match (simulant.SimulantAddress.NameKeys, optScreenNameKeys) with
             | ([], _) -> true
             | (_, None) -> false
             | (_, Some []) -> false
