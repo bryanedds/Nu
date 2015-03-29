@@ -73,11 +73,11 @@
     <Compile Include="Set.fs" />
     <Compile Include="Map.fs" />
     <Compile Include="PersistentHashMap.fs" />
+    <Compile Include="Lens.fs" />
     <Compile Include="HashSet.fs" />
     <Compile Include="Dictionary.fs" />
     <Compile Include="KeyedCache.fs" />
     <Compile Include="MutantCache.fs" />
-    <Compile Include="Lens.fs" />
     <Compile Include="AlgebraicReader.fs" />
     <Compile Include="AlgebraicConverter.fs" />
     <Compile Include="AlgebraicDescriptor.fs" />
