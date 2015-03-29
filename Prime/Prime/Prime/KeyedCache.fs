@@ -5,6 +5,7 @@ module internal KeyedCacheMetrics =
     let mutable GlobalCacheHits = 0L
     let mutable GlobalCacheMisses = 0L
 
+/// Presents a purely-functional interface to a cached value.
 type [<ReferenceEquality>] KeyedCache<'k, 'v when 'k : equality> =
     private
         { mutable CacheKey : 'k
