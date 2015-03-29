@@ -4,11 +4,15 @@
 module internal MutantCacheMetrics =
     let mutable GlobalMutantRebuilds = 0L
 
+/// Presents a purely-functional interface to a mutable object / record / whatever.
 type [<ReferenceEquality>] MutantCache<'k, 'm when 'k : equality> =
     private
         { ConstantKey : 'k
           RefKey : 'k ref
           RefMutant : 'm ref }
+
+    static member make key mutant =
+        { ConstantKey = key; RefKey = ref key; RefMutant = ref mutant }
 
     static member getMutant keyEquality generateKey rebuildMutant (mutantCache : MutantCache<'k, 'm>) =
         if not <| keyEquality !mutantCache.RefKey mutantCache.ConstantKey then
