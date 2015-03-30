@@ -490,12 +490,12 @@ module WorldModule =
                 let subsystems =
                     let userSubsystems = Map.ofList <| nuPlugin.MakeSubsystems ()
                     let integrator = Integrator.make farseerCautionMode Gravity
-                    let integratorSubsystem = { SubsystemType = UpdateType; SubsystemOrder = DefaultSubsystemOrder; Integrator = integrator } :> Subsystem
+                    let integratorSubsystem = IntegratorSubsystem.make DefaultSubsystemOrder integrator :> Subsystem
                     let renderer = Renderer.make sdlDeps.RenderContext AssetGraphFilePath
                     let renderer = renderer.EnqueueMessage <| HintRenderPackageUseMessage { PackageName = DefaultPackageName }
-                    let rendererSubsystem = { SubsystemType = RenderType; SubsystemOrder = DefaultSubsystemOrder; Renderer = renderer } :> Subsystem
+                    let rendererSubsystem = RendererSubsystem.make DefaultSubsystemOrder renderer :> Subsystem
                     let audioPlayer = AudioPlayer.make AssetGraphFilePath
-                    let audioPlayerSubsystem = { SubsystemType = AudioType; SubsystemOrder = DefaultSubsystemOrder; AudioPlayer = audioPlayer } :> Subsystem
+                    let audioPlayerSubsystem = AudioPlayerSubsystem.make DefaultSubsystemOrder audioPlayer :> Subsystem
                     let defaultSubsystems =
                         Map.ofList
                             [(IntegratorSubsystemName, integratorSubsystem)
@@ -624,9 +624,9 @@ module WorldModule =
 
             // make the world's subsystems
             let subsystems =
-                let integratorSubsystem = { SubsystemType = UpdateType; SubsystemOrder = DefaultSubsystemOrder; Integrator = { MockIntegrator = () }} :> Subsystem
-                let rendererSubsystem = { SubsystemType = RenderType; SubsystemOrder = DefaultSubsystemOrder; Renderer = { MockRenderer = () }} :> Subsystem
-                let audioPlayerSubsystem = { SubsystemType = AudioType; SubsystemOrder = DefaultSubsystemOrder; AudioPlayer = { MockAudioPlayer = () }} :> Subsystem
+                let integratorSubsystem = IntegratorSubsystem.make DefaultSubsystemOrder { MockIntegrator = () } :> Subsystem
+                let rendererSubsystem = RendererSubsystem.make DefaultSubsystemOrder { MockRenderer = () } :> Subsystem
+                let audioPlayerSubsystem = AudioPlayerSubsystem.make DefaultSubsystemOrder { MockAudioPlayer = () } :> Subsystem
                 Map.ofList
                     [(IntegratorSubsystemName, integratorSubsystem)
                      (RendererSubsystemName, rendererSubsystem)

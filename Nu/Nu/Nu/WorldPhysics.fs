@@ -14,9 +14,13 @@ module WorldPhysicsModule =
 
     /// The subsystem for the world's integrator.
     type [<ReferenceEquality>] IntegratorSubsystem =
-        { SubsystemType : SubsystemType
-          SubsystemOrder : single
-          Integrator : IIntegrator }
+        private
+            { SubsystemOrder : single
+              Integrator : IIntegrator }
+
+        static member make subsystemOrder integrator =
+            { SubsystemOrder = subsystemOrder
+              Integrator = integrator }
         
         static member private handleBodyTransformMessage (message : BodyTransformMessage) (entity : Entity) world =
             // OPTIMIZATION: entity is not changed (avoiding a change entity event) if position and rotation haven't changed.
@@ -58,7 +62,7 @@ module WorldPhysicsModule =
         member this.BodyOnGround physicsId = this.Integrator.BodyOnGround physicsId
 
         interface Subsystem with
-            member this.SubsystemType = this.SubsystemType
+            member this.SubsystemType = UpdateType
             member this.SubsystemOrder = this.SubsystemOrder
             member this.ClearMessages () = { this with Integrator = this.Integrator.ClearMessages () } :> Subsystem
             member this.EnqueueMessage message = { this with Integrator = this.Integrator.EnqueueMessage (message :?> PhysicsMessage) } :> Subsystem
