@@ -13,11 +13,16 @@ module WorldAudioModule =
 
     /// The subsystem for the world's audio player.
     type [<ReferenceEquality>] AudioPlayerSubsystem =
-        { SubsystemType : SubsystemType
-          SubsystemOrder : single
-          AudioPlayer : IAudioPlayer }
+        private
+            { SubsystemOrder : single
+              AudioPlayer : IAudioPlayer }
+
+        static member make subsystemOrder audioPlayer =
+            { SubsystemOrder = subsystemOrder
+              AudioPlayer = audioPlayer }
+
         interface Subsystem with
-            member this.SubsystemType = this.SubsystemType
+            member this.SubsystemType = AudioType
             member this.SubsystemOrder = this.SubsystemOrder
             member this.ClearMessages () = { this with AudioPlayer = this.AudioPlayer.ClearMessages () } :> Subsystem
             member this.EnqueueMessage message = { this with AudioPlayer = this.AudioPlayer.EnqueueMessage (message :?> AudioMessage) } :> Subsystem
