@@ -59,7 +59,7 @@ Keep up with the state of development and get some insight on how the projects a
 License
 =======
 
-Copyright (c) 2013-2014 Bryan Edds
+Copyright (c) 2013-2015 Bryan Edds
 
 All non-text resources in this repository are private. You may not use any of
 the non-text resources in your own project(s).
