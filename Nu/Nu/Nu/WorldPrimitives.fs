@@ -13,193 +13,263 @@ open Nu.Constants
 open Nu.WorldConstants
 
 [<AutoOpen>]
-module WorldPrimitivesModule =
-
-    let private AnyEventAddressesCache =
-        Dictionary<obj Address, obj Address list> HashIdentity.Structural
+module WorldInputModule =
 
     type World with
 
-        (* Publishing *)
+        /// Convert a MouseButton to SDL's representation.
+        static member internal toSdlMouseButton mouseButton =
+            MouseState.toSdlButton mouseButton
 
-        static member internal sortFstDesc (priority : single, _) (priority2 : single, _) =
-            // OPTIMIZATION: priority parameter is annotated as 'single' to decrease GC pressure.
-            if priority > priority2 then -1
-            elif priority < priority2 then 1
-            else 0
+        /// Convert SDL's representation of a mouse button to a MouseButton.
+        static member internal toNuMouseButton mouseButton =
+            MouseState.toNuButton mouseButton
 
-        static member private getAnyEventAddresses eventAddress =
-            // OPTIMIZATION: uses memoization.
-            if not <| Address.isEmpty eventAddress then
-                let anyEventAddressesKey = Address.allButLast eventAddress
-                match AnyEventAddressesCache.TryGetValue anyEventAddressesKey with
-                | (true, anyEventAddresses) -> anyEventAddresses
-                | (false, _) ->
-                    let eventAddressNameKeys = eventAddress.NameKeys
-                    let anyEventAddressNameKeys = AnyEventAddress.NameKeys
-                    let anyEventAddresses =
-                        [for i in 0 .. List.length eventAddressNameKeys - 1 do
-                            let subNameKeys = List.take i eventAddressNameKeys @ anyEventAddressNameKeys
-                            yield ktoa subNameKeys]
-                    AnyEventAddressesCache.Add (anyEventAddressesKey, anyEventAddresses)
-                    anyEventAddresses
-            else failwith "Event name cannot be empty."
+        /// Query that the given mouse button is down.
+        static member isMouseButtonDown mouseButton (_ : World) =
+            MouseState.isButtonDown mouseButton
 
-        static member private getSortableSubscriptions getEntityPublishingPriority (subscriptions : SubscriptionEntry rQueue) world : (single * SubscriptionEntry) list =
-            List.foldBack
-                (fun (key, simulant : Simulant, subscription) subscriptions ->
-                    let priority = simulant.GetPublishingPriority getEntityPublishingPriority world
-                    let subscription = (priority, (key, simulant, subscription))
-                    subscription :: subscriptions)
-                subscriptions
-                []
+        /// Get the position of the mouse.
+        static member getMousePosition (_ : World) =
+            MouseState.getPosition ()
 
-        static member private getSubscriptionsSorted (publishSorter : SubscriptionSorter) eventAddress world =
-            let anyEventAddresses = World.getAnyEventAddresses eventAddress
-            let optSubLists = List.map (fun anyEventAddress -> Map.tryFind anyEventAddress world.Callbacks.Subscriptions) anyEventAddresses
-            let optSubLists = Map.tryFind eventAddress world.Callbacks.Subscriptions :: optSubLists
-            let subLists = List.definitize optSubLists
-            let subList = List.concat subLists
-            publishSorter subList world
+        /// Get the position of the mouse in floating-point coordinates.
+        static member getMousePositionF (_ : World) =
+            MouseState.getPositionF ()
 
-        static member private boxSubscription<'a, 's when 's :> Simulant> (subscription : Subscription<'a, 's>) =
-            let boxableSubscription = fun (event : obj) world ->
-                try subscription (event :?> Event<'a, 's>) world
-                with
-                | :? InvalidCastException ->
-                    // NOTE: If you've reached this exception, then you've probably inadvertantly mixed
-                    // up an event type parameter for some form of World.publish or subscribe.
-                    reraise ()
-                | _ -> reraise ()
-            box boxableSubscription
+        /// Query that the given keyboard key is down.
+        static member isKeyboardKeyDown scanCode (_ : World) =
+            KeyboardState.isKeyDown scanCode
 
-        static member private publishEvent<'a, 'p, 's when 'p :> Simulant and 's :> Simulant>
-            (subscriber : Simulant) (publisher : 'p) (eventAddress : 'a Address) (eventData : 'a) subscription world =
-            let event =
-                { Subscriber = subscriber :?> 's
-                  Publisher = publisher :> Simulant
-                  EventAddress = eventAddress
-                  Data = eventData }
-            let callableSubscription = unbox<BoxableSubscription> subscription
-            let result = callableSubscription event world
-            Some result
+        // TODO: implement isKeyboardModifierActive.
 
-        /// Make a key used to track an unsubscription with a subscription.
-        static member makeSubscriptionKey () = Guid.NewGuid ()
+[<AutoOpen>]
+module WorldSubsystemsModule =
 
-        /// Make a callback key used to track callback states.
-        static member makeCallbackKey () = Guid.NewGuid ()
+    type World with
 
-        /// Get an entity's picking priority.
-        static member getEntityPickingPriority entity world =
-            let entityState = World.getEntityState entity world
-            let dispatcher = entityState.DispatcherNp
-            dispatcher.GetPickingPriority entity entityState.Depth world
+        static member internal getSubsystem<'s when 's :> Subsystem> name world =
+            Map.find name world.Subsystems :?> 's
 
-        /// Sort subscriptions using categorization via the 'by' procedure.
-        static member sortSubscriptionsBy by (subscriptions : SubscriptionEntry list) world =
-            let subscriptions = World.getSortableSubscriptions by subscriptions world
-            let subscriptions = List.sortWith World.sortFstDesc subscriptions
-            List.map snd subscriptions
+        static member internal getSubsystemBy<'s, 't when 's :> Subsystem> by name world : 't =
+            let subsystem = World.getSubsystem<'s> name world
+            by subsystem
 
-        /// Sort subscriptions by their editor picking priority.
-        static member sortSubscriptionsByPickingPriority subscriptions world =
-            World.sortSubscriptionsBy World.getEntityPickingPriority subscriptions world
+        static member internal setSubsystem<'s when 's :> Subsystem> (subsystem : 's) name world =
+            let subsystems = Map.add name (subsystem :> Subsystem) world.Subsystems
+            { world with Subsystems = subsystems }
 
-        /// Sort subscriptions by their place in the world's simulant hierarchy.
-        static member sortSubscriptionsByHierarchy subscriptions world =
-            World.sortSubscriptionsBy
-                (fun _ _ -> EntityPublishingPriority)
-                subscriptions
+        static member internal updateSubsystem<'s when 's :> Subsystem> (updater : 's -> World -> 's) name world =
+            let subsystem = World.getSubsystem<'s> name world
+            let subsystem = updater subsystem world
+            World.setSubsystem subsystem name world
+
+        static member internal updateSubsystems (updater : Subsystem -> World -> Subsystem) world =
+            Map.fold
+                (fun world name subsystem -> let subsystem = updater subsystem world in World.setSubsystem subsystem name world)
                 world
+                world.Subsystems
 
-        /// A 'no-op' for subscription sorting - that is, performs no sorting at all.
-        static member sortSubscriptionsNone (subscriptions : SubscriptionEntry list) (_ : World) =
-            subscriptions
+        static member internal clearSubsystemsMessages world =
+            World.updateSubsystems (fun is _ -> is.ClearMessages ()) world
 
-        /// Publish an event, using the given publishSorter procedure to arranging the order to which subscriptions are published.
-        static member publish<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) (publisher : 'p) world =
-            let objEventAddress = atooa eventAddress
-            let subscriptions = World.getSubscriptionsSorted publishSorter objEventAddress world
-            let (_, world) =
-                List.foldWhile
-                    (fun (eventHandling, world) (_, subscriber : Simulant, subscription) ->
-                        if  (match eventHandling with Cascade -> true | Resolve -> false) &&
-                            (match world.State.Liveness with Running -> true | Exiting -> false) then
-                            match subscriber.SimulantAddress.NameKeys with
-                            | [] -> World.publishEvent<'a, 'p, Game> subscriber publisher eventAddress eventData subscription world
-                            | [_] -> World.publishEvent<'a, 'p, Screen> subscriber publisher eventAddress eventData subscription world
-                            | [_; _] -> World.publishEvent<'a, 'p, Group> subscriber publisher eventAddress eventData subscription world
-                            | [_; _; _] -> World.publishEvent<'a, 'p, Entity> subscriber publisher eventAddress eventData subscription world
-                            | _ -> failwith "Unexpected match failure in 'Nu.World.publish.'"
-                        else None)
-                    (Cascade, world)
-                    subscriptions
-            world
+        /// Add a physics message to the world.
+        static member addPhysicsMessage (message : PhysicsMessage) world =
+            World.updateSubsystem (fun is _ -> is.EnqueueMessage message) IntegratorSubsystemName world
 
-        /// Publish an event.
-        static member publish4<'a, 'p when 'p :> Simulant>
-            (eventData : 'a) (eventAddress : 'a Address) (publisher : 'p) world =
-            World.publish World.sortSubscriptionsByHierarchy eventData eventAddress publisher world
+        /// Add a rendering message to the world.
+        static member addRenderMessage (message : RenderMessage) world =
+            World.updateSubsystem (fun rs _ -> rs.EnqueueMessage message) RendererSubsystemName world
 
-        /// Subscribe to an event.
-        static member subscribe<'a, 's when 's :> Simulant>
-            subscriptionKey (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world =
-            if not <| Address.isEmpty eventAddress then
-                let objEventAddress = atooa eventAddress
-                let subscriptions =
-                    let subscriptionEntry = (subscriptionKey, subscriber :> Simulant, World.boxSubscription subscription)
-                    match Map.tryFind objEventAddress world.Callbacks.Subscriptions with
-                    | Some subscriptionEntries -> Map.add objEventAddress (subscriptionEntry :: subscriptionEntries) world.Callbacks.Subscriptions
-                    | None -> Map.add objEventAddress [subscriptionEntry] world.Callbacks.Subscriptions
-                let unsubscriptions = Map.add subscriptionKey (objEventAddress, subscriber :> Simulant) world.Callbacks.Unsubscriptions
-                let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
-                { world with Callbacks = callbacks }
-            else failwith "Event name cannot be empty."
+        /// Add an audio message to the world.
+        static member addAudioMessage (message : AudioMessage) world =
+            World.updateSubsystem (fun aps _ -> aps.EnqueueMessage message) AudioPlayerSubsystemName world
 
-        /// Subscribe to an event.
-        static member subscribe4<'a, 's when 's :> Simulant>
-            (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world =
-            World.subscribe (World.makeSubscriptionKey ()) subscription eventAddress subscriber world
+[<AutoOpen>]
+module WorldCallbacksModule =
 
-        /// Unsubscribe from an event.
-        static member unsubscribe subscriptionKey world =
-            match Map.tryFind subscriptionKey world.Callbacks.Unsubscriptions with
-            | Some (eventAddress, subscriber) ->
-                match Map.tryFind eventAddress world.Callbacks.Subscriptions with
-                | Some subscriptionList ->
-                    let subscriptionList =
-                        List.remove
-                            (fun (subscriptionKey', subscriber', _) ->
-                                subscriptionKey' = subscriptionKey &&
-                                subscriber' = subscriber)
-                            subscriptionList
-                    let subscriptions = 
-                        match subscriptionList with
-                        | [] -> Map.remove eventAddress world.Callbacks.Subscriptions
-                        | _ -> Map.add eventAddress subscriptionList world.Callbacks.Subscriptions
-                    let unsubscriptions = Map.remove subscriptionKey world.Callbacks.Unsubscriptions
-                    let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
-                    { world with Callbacks = callbacks }
-                | None -> world
-            | None -> world
+    type World with
 
-        /// Keep active a subscription for the lifetime of a simulant.
-        static member monitor<'a, 's when 's :> Simulant>
-            (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world =
-            if not <| Address.isEmpty subscriber.SimulantAddress then
-                let monitorKey = World.makeSubscriptionKey ()
-                let removalKey = World.makeSubscriptionKey ()
-                let world = World.subscribe<'a, 's> monitorKey subscription eventAddress subscriber world
-                let subscription' = fun _ world ->
-                    let world = World.unsubscribe removalKey world
-                    let world = World.unsubscribe monitorKey world
-                    (Cascade, world)
-                let removingEventAddress = stoa<unit> (typeof<'s>.Name + "/" + "Removing") ->>- subscriber.SimulantAddress
-                World.subscribe<unit, 's> removalKey subscription' removingEventAddress subscriber world
-            else failwith "Cannot monitor events with an anonymous subscriber."
+        static member internal clearTasks world =
+            let callbacks = { world.Callbacks with Tasks = Queue.empty }
+            { world with Callbacks = callbacks }
 
-        (* Entity *)
+        static member internal restoreTasks (tasks : Task Queue) world =
+            let callbacks = { world.Callbacks with Tasks = Queue.ofSeq <| Seq.append (world.Callbacks.Tasks :> Task seq) (tasks :> Task seq) }
+            { world with Callbacks = callbacks }
+
+        /// Add a task to be executed by the engine at the specified task tick.
+        static member addTask task world =
+            let callbacks = { world.Callbacks with Tasks = Queue.conj task world.Callbacks.Tasks }
+            { world with Callbacks = callbacks }
+
+        /// Add multiple task to be executed by the engine at the specified task tick.
+        static member addTasks tasks world =
+            let callbacks = { world.Callbacks with Tasks = Queue.ofSeq <| Seq.append (tasks :> Task seq) (world.Callbacks.Tasks :> Task seq) }
+            { world with Callbacks = callbacks }
+
+        /// Add callback state to the world.
+        static member addCallbackState key state world =
+            let callbacks = { world.Callbacks with CallbackStates = Map.add key (state :> obj) world.Callbacks.CallbackStates }
+            { world with Callbacks = callbacks }
+
+        /// Remove callback state from the world.
+        static member removeCallbackState key world =
+            let callbacks = { world.Callbacks with CallbackStates = Map.remove key world.Callbacks.CallbackStates }
+            { world with Callbacks = callbacks }
+
+        /// Get callback state from the world.
+        static member getCallbackState<'a> key world =
+            let state = Map.find key world.Callbacks.CallbackStates
+            state :?> 'a
+
+[<AutoOpen>]
+module WorldComponentsModule =
+
+    type World with
+
+        /// Get the entity dispatchers of the world.
+        static member getEntityDispatchers world =
+            world.Components.EntityDispatchers
+
+        /// Get the group dispatchers of the world.
+        static member getGroupDispatchers world =
+            world.Components.GroupDispatchers
+
+        /// Get the screen dispatchers of the world.
+        static member getScreenDispatchers world =
+            world.Components.ScreenDispatchers
+
+        /// Get the entity dispatchers of the world.
+        static member getGameDispatchers world =
+            world.Components.GameDispatchers
+
+        /// Get the entity dispatchers of the world.
+        static member getFacets world =
+            world.Components.Facets
+
+[<AutoOpen>]
+module WorldStateModule =
+
+    type World with
+
+        static member private getState world =
+            world.State
+
+        static member private setStateWithoutEvent state world =
+            { world with State = state }
+
+        static member private setState state world =
+            let oldState = world.State
+            let world = World.setStateWithoutEvent state world
+            World.publish4 { OldWorldState = oldState } WorldStateChangeEventAddress Game world
+
+        /// Get the world's tick rate.
+        static member getTickRate world =
+            world.State.TickRate
+
+        /// Get the world's tick rate as a floating-point value.
+        static member getTickRateF world =
+            single <| World.getTickRate world
+
+        /// Set the world's tick rate without waiting for the end of the current update. Only use
+        /// this if you need it and understand the engine internals well enough to know the
+        /// consequences.
+        static member setTickRateImmediately tickRate world =
+            let state = { world.State with TickRate = tickRate }
+            World.setState state world
+
+        /// Set the world's tick rate.
+        static member setTickRate tickRate world =
+            let task =
+                { ScheduledTime = World.getTickTime world
+                  Operation = fun world -> World.setTickRateImmediately tickRate world }
+            World.addTask task world
+
+        /// Get the world's tick time.
+        static member getTickTime world =
+            world.State.TickTime
+
+        /// Query that the world is ticking.
+        static member isTicking world =
+            World.getTickRate world <> 0L
+
+        static member internal updateTickTime world =
+            let state = { world.State with TickTime = World.getTickTime world + World.getTickRate world }
+            World.setStateWithoutEvent state world
+
+        /// Get the world's update count.
+        static member getUpdateCount world =
+            world.State.UpdateCount
+
+        static member internal incrementUpdateCount world =
+            let state = { world.State with UpdateCount = inc <| World.getUpdateCount world }
+            World.setStateWithoutEvent state world
+
+        /// Get the the liveness state of the world.
+        static member getLiveness world =
+            world.State.Liveness
+
+        /// Place the engine into a state such that the app will exit at the end of the current update.
+        static member exit world =
+            let state = { world.State with Liveness = Exiting }
+            World.setState state world
+
+        /// Get the a value from the camera used to view the world.
+        static member getCameraBy by world =
+            by world.State.Camera
+
+        /// Get the camera used to view the world.
+        static member getCamera world =
+            World.getCameraBy id world
+
+        static member private setCamera camera world =
+            let state = { world.State with Camera = camera }
+            World.setState state world
+
+        /// Update the camera used to view the world.
+        static member updateCamera updater world =
+            let camera = updater <| World.getCamera world
+            World.setCamera camera world
+
+        /// Get the current destination screen if a screen transition is currently underway.
+        static member getOptScreenTransitionDestination world =
+            world.State.OptScreenTransitionDestination
+
+        static member internal setOptScreenTransitionDestination destination world =
+            let state = { world.State with OptScreenTransitionDestination = destination }
+            World.setState state world
+
+        /// Get the asset metadata map.
+        static member getAssetMetadataMap world =
+            world.State.AssetMetadataMap
+
+        static member internal setAssetMetadataMap assetMetadataMap world =
+            let state = { world.State with AssetMetadataMap = assetMetadataMap }
+            World.setState state world
+
+        static member internal setOverlayer overlayer world =
+            let state = { world.State with Overlayer = overlayer }
+            World.setState state world
+
+        /// Get the user state of the world, casted to 'u.
+        static member getUserState world : 'u =
+            world.State.UserState :?> 'u
+
+        static member private setUserState (userState : 'u) world =
+            let state = { world.State with UserState = userState }
+            World.setState state world
+
+        /// Update the user state of the world.
+        static member updateUserState (updater : 'u -> 'v) world =
+            let state = World.getUserState world
+            let state = updater state
+            World.setUserState state world
+
+[<AutoOpen>]
+module WorldEntityPrimitivesModule =
+
+    type World with
 
         static member private optEntityStateKeyEquality 
             (entityAddress : EntityState Address, world : World)
@@ -301,7 +371,20 @@ module WorldPrimitivesModule =
             let entityState = updater entityState
             World.setEntityState entityState entity world
 
-        (* Group *)
+        /// Get an entity's picking priority.
+        static member getEntityPickingPriority entity world =
+            let entityState = World.getEntityState entity world
+            let dispatcher = entityState.DispatcherNp
+            dispatcher.GetPickingPriority entity entityState.Depth world
+
+        /// Sort subscriptions by their editor picking priority.
+        static member sortSubscriptionsByPickingPriority subscriptions world =
+            World.sortSubscriptionsBy World.getEntityPickingPriority subscriptions world
+
+[<AutoOpen>]
+module WorldGroupPrimitivesModule =
+
+    type World with
 
         static member private optGroupStateFinder group world =
             match group.GroupAddress.NameKeys with
@@ -389,7 +472,10 @@ module WorldPrimitivesModule =
             let groupState = updater groupState
             World.setGroupState groupState group world
 
-        (* Screen *)
+[<AutoOpen>]
+module WorldScreenPrimitivesModule =
+
+    type World with
 
         static member private optScreenStateFinder screen world =
             match screen.ScreenAddress.NameKeys with
@@ -459,7 +545,10 @@ module WorldPrimitivesModule =
             let screenState = updater screenState
             World.setScreenState screenState screen world
 
-        (* Game *)
+[<AutoOpen>]
+module WorldGamePrimitivesModule =
+
+    type World with
 
         static member internal getGameStateMap world =
             let gameState = World.getGameState world
