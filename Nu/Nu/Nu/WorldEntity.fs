@@ -259,6 +259,16 @@ module WorldEntityModule =
                 quickSize
                 facets
 
+        /// Get an entity's picking priority.
+        static member getEntityPickingPriority entity world =
+            let entityState = World.getEntityState entity world
+            let dispatcher = entityState.DispatcherNp
+            dispatcher.GetPickingPriority entity entityState.Depth world
+
+        /// Sort subscriptions by their editor picking priority.
+        static member sortSubscriptionsByPickingPriority subscriptions world =
+            World.sortSubscriptionsBy World.getEntityPickingPriority subscriptions world
+
         /// TODO: document!
         static member pickingSortEntities entities world =
             let entities = List.ofSeq entities
