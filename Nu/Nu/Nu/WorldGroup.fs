@@ -50,7 +50,7 @@ module WorldGroupModule =
             let dispatcher = group.GetDispatcherNp world : GroupDispatcher
             dispatcher.Unregister group world
 
-        static member internal addGroupState mayReplace groupState group world =
+        static member internal addGroup mayReplace groupState group world =
             let isNew = not <| World.containsGroup group world
             if isNew || mayReplace then
                 let world = World.setGroupStateWithoutEvent groupState group world
@@ -112,7 +112,7 @@ module WorldGroupModule =
             let groupState = GroupState.make dispatcher optName
             Reflection.attachFields dispatcher groupState
             let group = Group.proxy <| satoga screen.ScreenAddress groupState.Name
-            let world = World.addGroupState false groupState group world
+            let world = World.addGroup false groupState group world
             (group, world)
 
         /// Write a group to an xml writer.
@@ -180,7 +180,7 @@ module WorldGroupModule =
 
             // add the group's state to the world
             let group = Group.proxy <| satoga screen.ScreenAddress groupState.Name
-            let world = World.addGroupState true groupState group world
+            let world = World.addGroup true groupState group world
 
             // read the group's entities
             let world = snd <| World.readEntities (groupNode : XmlNode) defaultEntityDispatcherName group world
