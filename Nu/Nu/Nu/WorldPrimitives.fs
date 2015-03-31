@@ -267,7 +267,7 @@ module WorldStateModule =
             World.setUserState state world
 
 [<AutoOpen>]
-module WorldEntityPrimitivesModule =
+module WorldEntityStateModule =
 
     type World with
 
@@ -371,18 +371,8 @@ module WorldEntityPrimitivesModule =
             let entityState = updater entityState
             World.setEntityState entityState entity world
 
-        /// Get an entity's picking priority.
-        static member getEntityPickingPriority entity world =
-            let entityState = World.getEntityState entity world
-            let dispatcher = entityState.DispatcherNp
-            dispatcher.GetPickingPriority entity entityState.Depth world
-
-        /// Sort subscriptions by their editor picking priority.
-        static member sortSubscriptionsByPickingPriority subscriptions world =
-            World.sortSubscriptionsBy World.getEntityPickingPriority subscriptions world
-
 [<AutoOpen>]
-module WorldGroupPrimitivesModule =
+module WorldGroupStateModule =
 
     type World with
 
@@ -473,7 +463,7 @@ module WorldGroupPrimitivesModule =
             World.setGroupState groupState group world
 
 [<AutoOpen>]
-module WorldScreenPrimitivesModule =
+module WorldScreenStateModule =
 
     type World with
 
@@ -546,7 +536,7 @@ module WorldScreenPrimitivesModule =
             World.setScreenState screenState screen world
 
 [<AutoOpen>]
-module WorldGamePrimitivesModule =
+module WorldGameStateModule =
 
     type World with
 
