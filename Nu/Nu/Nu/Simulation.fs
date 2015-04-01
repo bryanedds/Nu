@@ -335,13 +335,12 @@ module SimulationModule =
 
     /// Hosts the ongoing state of a game. Should rarely be accessed directly by end-users.
     and [<CLIMutable; StructuralEquality; NoComparison>] GameState =
-        internal
-            { Id : Guid
-              OptSelectedScreen : Screen option
-              PublishChanges : bool
-              CreationTimeStampNp : int64
-              DispatcherNp : GameDispatcher
-              Xtension : Xtension }
+        { Id : Guid
+          OptSelectedScreen : Screen option
+          PublishChanges : bool
+          CreationTimeStampNp : int64
+          DispatcherNp : GameDispatcher
+          Xtension : Xtension }
 
         /// Make a game state value.
         static member internal make dispatcher =
@@ -356,18 +355,17 @@ module SimulationModule =
 
     /// Hosts the ongoing state of a screen. Should rarely be accessed directly by end-users.
     and [<CLIMutable; StructuralEquality; NoComparison>] ScreenState =
-        internal
-            { Id : Guid
-              Name : string
-              TransitionStateNp : TransitionState
-              TransitionTicksNp : int64
-              Incoming : TransitionDescriptor
-              Outgoing : TransitionDescriptor
-              PublishChanges : bool
-              Persistent : bool
-              CreationTimeStampNp : int64
-              DispatcherNp : ScreenDispatcher
-              Xtension : Xtension }
+        { Id : Guid
+          Name : string
+          TransitionStateNp : TransitionState
+          TransitionTicksNp : int64
+          Incoming : TransitionDescriptor
+          Outgoing : TransitionDescriptor
+          PublishChanges : bool
+          Persistent : bool
+          CreationTimeStampNp : int64
+          DispatcherNp : ScreenDispatcher
+          Xtension : Xtension }
 
         /// Make a screen state value.
         static member internal make dispatcher optName =
@@ -388,14 +386,13 @@ module SimulationModule =
 
     /// Hosts the ongoing state of a group. Should rarely be accessed directly by end-users.
     and [<CLIMutable; StructuralEquality; NoComparison>] GroupState =
-        internal
-            { Id : Guid
-              Name : string
-              PublishChanges : bool
-              Persistent : bool
-              CreationTimeStampNp : int64
-              DispatcherNp : GroupDispatcher
-              Xtension : Xtension }
+        { Id : Guid
+          Name : string
+          PublishChanges : bool
+          Persistent : bool
+          CreationTimeStampNp : int64
+          DispatcherNp : GroupDispatcher
+          Xtension : Xtension }
 
         /// Make a group state value.
         static member internal make dispatcher optName =
@@ -412,23 +409,22 @@ module SimulationModule =
 
     /// Hosts the ongoing state of an entity. Should rarely be accessed directly by end-users.
     and [<CLIMutable; StructuralEquality; NoComparison>] EntityState =
-        internal
-            { Id : Guid
-              Name : string
-              Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-              Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
-              Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-              Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
-              Visible : bool
-              ViewType : ViewType
-              PublishChanges : bool
-              Persistent : bool
-              CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
-              DispatcherNp : EntityDispatcher
-              FacetNames : string list
-              FacetsNp : Facet list
-              OptOverlayName : string option
-              Xtension : Xtension }
+        { Id : Guid
+          Name : string
+          Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
+          Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
+          Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
+          Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
+          Visible : bool
+          ViewType : ViewType
+          PublishChanges : bool
+          Persistent : bool
+          CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
+          DispatcherNp : EntityDispatcher
+          FacetNames : string list
+          FacetsNp : Facet list
+          OptOverlayName : string option
+          Xtension : Xtension }
 
         /// Make an entity state value.
         static member internal make dispatcher optOverlayName optName =
