@@ -72,9 +72,8 @@ module Program =
             let nuPlugin = BlazePlugin ()
 
             // here is an attempt to make the world with the various initial states, the engine
-            // plugin, and SDL dependencies. Note that the first boolean, when true, protects from
-            // a Farseer physics bug but slows down the engine badly, so that's why it's false.
-            World.tryMake false true 1L () nuPlugin sdlDeps
+            // plugin, and SDL dependencies.
+            World.tryMake true 1L () nuPlugin sdlDeps
 
         // this is a callback that specifies your game's unique behavior when updating the world
         // every update. The World value is the state of the world after the callback transforms

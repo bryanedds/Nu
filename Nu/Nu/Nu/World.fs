@@ -480,7 +480,7 @@ module WorldModule =
 
         /// Try to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member tryMake farseerCautionMode useLoadedGameDispatcher tickRate userState (nuPlugin : NuPlugin) sdlDeps =
+        static member tryMake useLoadedGameDispatcher tickRate userState (nuPlugin : NuPlugin) sdlDeps =
 
             // attempt to generate asset metadata so the rest of the world can be created
             match Metadata.tryGenerateAssetMetadataMap AssetGraphFilePath with
@@ -489,7 +489,7 @@ module WorldModule =
                 // make the world's subsystems
                 let subsystems =
                     let userSubsystems = Map.ofList <| nuPlugin.MakeSubsystems ()
-                    let integrator = Integrator.make farseerCautionMode Gravity
+                    let integrator = Integrator.make Gravity
                     let integratorSubsystem = IntegratorSubsystem.make DefaultSubsystemOrder integrator :> Subsystem
                     let renderer = Renderer.make sdlDeps.RenderContext AssetGraphFilePath
                     let renderer = renderer.EnqueueMessage <| HintRenderPackageUseMessage { PackageName = DefaultPackageName }
