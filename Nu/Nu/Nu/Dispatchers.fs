@@ -113,7 +113,7 @@ module SpriteFacetModule =
             [define? SpriteImage { PackageName = DefaultPackageName; AssetName = "Image3" }]
 
         override facet.GetRenderDescriptors entity world =
-            if  World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
+            if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
                 [LayerableDescriptor
                     { Depth = entity.GetDepth world
                       LayeredDescriptor =
@@ -170,7 +170,7 @@ module AnimatedSpriteFacetModule =
              define? AnimationSheet { PackageName = DefaultPackageName; AssetName = "Image7" }]
 
         override facet.GetRenderDescriptors entity world =
-            if  World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
+            if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
                 [LayerableDescriptor
                     { Depth = entity.GetDepth world
                       LayeredDescriptor =
