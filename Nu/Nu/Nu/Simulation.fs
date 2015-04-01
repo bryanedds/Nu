@@ -217,7 +217,7 @@ module SimulationModule =
           OverlayRouter : OverlayRouter
           OverlayFilePath : string
           Camera : Camera
-          OptEntityCache : KeyedCache<Address<EntityState> * World, EntityState option>
+          OptEntityCache : KeyedCache<EntityState Address * World, EntityState option>
           UserState : obj }
 
     /// The default dispatcher for games.
