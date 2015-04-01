@@ -125,7 +125,7 @@ module SimulationModule =
 
     /// The data for a world state change event.
     and [<StructuralEquality; NoComparison>] WorldStateChangeData =
-        { OldWorldState : WorldState }
+        { OldWorld : World }
 
     /// The data for a simulant change event.
     and [<StructuralEquality; NoComparison>] SimulantChangeData<'s when 's :> Simulant> =
@@ -204,7 +204,8 @@ module SimulationModule =
           CallbackStates : Map<Guid, obj> }
 
     /// The world's state.
-    and [<ReferenceEquality>] WorldState =
+    /// TODO: Consider making this an abstract data type.
+    and [<ReferenceEquality>] internal WorldState =
         { TickRate : int64
           TickTime : int64
           UpdateCount : int64

@@ -160,9 +160,9 @@ module WorldStateModule =
             { world with State = state }
 
         static member private setState state world =
-            let oldState = world.State
+            let oldWorld = world
             let world = World.setStateWithoutEvent state world
-            World.publish4 { OldWorldState = oldState } WorldStateChangeEventAddress Game world
+            World.publish4 { WorldStateChangeData.OldWorld = oldWorld } WorldStateChangeEventAddress Game world
 
         /// Get the world's tick rate.
         static member getTickRate world =
