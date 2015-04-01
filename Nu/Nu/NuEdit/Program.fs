@@ -185,7 +185,8 @@ module Program =
                 match optSource with
                 | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity.GetXtension !source.RefWorld)
                 | _ -> None
-            let propertyDescriptors = EntityPropertyDescriptor.getPropertyDescriptors typeof<EntityState> optXtension
+            ignore optXtension
+            let propertyDescriptors = [] // TODO: fix this! EntityPropertyDescriptor.getPropertyDescriptors typeof<EntityState> optXtension
             PropertyDescriptorCollection (Array.ofList propertyDescriptors)
 
     and EntityTypeDescriptorProvider () =

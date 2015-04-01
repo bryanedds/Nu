@@ -272,8 +272,8 @@ module WorldEntityStateModule =
     type World with
 
         static member private optEntityStateKeyEquality 
-            (entityAddress : EntityState Address, world : World)
-            (entityAddress2 : EntityState Address, world2 : World) =
+            (entityAddress : Entity Address, world : World)
+            (entityAddress2 : Entity Address, world2 : World) =
             entityAddress === entityAddress2 && world === world2
 
         static member private optEntityGetFreshKeyAndValue entity world =

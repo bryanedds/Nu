@@ -595,7 +595,7 @@ module WorldModule =
                       OverlayRouter = OverlayRouter.make entityDispatchers userOverlayRoutes
                       OverlayFilePath = OverlayFilePath
                       Camera = camera
-                      OptEntityCache = Unchecked.defaultof<KeyedCache<EntityState Address * World, EntityState option>>
+                      OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                       UserState = userState }
 
                 // make the simulant states
@@ -610,7 +610,7 @@ module WorldModule =
                       SimulantStates = simulantStates }
 
                 // initialize OptEntityCache
-                let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address<EntityState>.empty, world) None }}
+                let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address<Entity>.empty, world) None }}
 
                 // and finally, register the game
                 let world = World.registerGame world
@@ -666,7 +666,7 @@ module WorldModule =
                   OverlayFilePath = String.Empty
                   Overlayer = { Overlays = XmlDocument () }
                   Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single ResolutionXDefault, single ResolutionYDefault) }
-                  OptEntityCache = Unchecked.defaultof<KeyedCache<EntityState Address * World, EntityState option>>
+                  OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                   UserState = userState }
 
             // make the simulant states
@@ -681,7 +681,7 @@ module WorldModule =
                   SimulantStates = simulantStates }
 
             // initialize OptEntityCache
-            let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address<EntityState>.empty, world) None }}
+            let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address<Entity>.empty, world) None }}
 
             // and finally, register the game
             World.registerGame world
