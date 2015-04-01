@@ -758,7 +758,7 @@ module Program =
               PastWorlds = []
               FutureWorlds = []
               Clipboard = ref None }
-        let eitherWorld = World.tryMake true false 0L editorState nuPlugin sdlDeps
+        let eitherWorld = World.tryMake false 0L editorState nuPlugin sdlDeps
         match eitherWorld with
         | Right world ->
             let world = snd <| World.createScreen typeof<ScreenDispatcher>.Name (Some EditorScreenName) world

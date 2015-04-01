@@ -198,7 +198,6 @@ module PhysicsModule =
               Bodies : BodyDictionary
               PhysicsMessages : PhysicsMessage Queue
               IntegrationMessages : IntegrationMessage List
-              FarseerCautionMode : bool // HACK: ensures two bodies aren't created in the same position, thus evading a Farseer bug
               mutable RebuildingHack : bool }
 
         static member private toPixel value =
@@ -331,15 +330,6 @@ module PhysicsModule =
             Integrator.configureBodyProperties bodyProperties body
             body.add_OnCollision (fun fn fn2 collision -> Integrator.handleCollision integrator fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
 
-            // make a very hack-assed attempt to keep mobile bodies from being created in the same position
-            let isBodyMobile = match bodyProperties.BodyType with Static -> false | Dynamic | Kinematic -> true
-            if  isBodyMobile &&
-                integrator.FarseerCautionMode &&
-                integrator.Bodies |> Seq.exists (fun kvp -> kvp.Value.Position = body.Position)  then
-                let random = System.Random ()
-                let randomOffset = Framework.Vector2 (single <| random.NextDouble (), single <| random.NextDouble ())
-                body.Position <- body.Position + randomOffset
-
             // attempt to add the body
             if not <| integrator.Bodies.TryAdd ({ SourceId = sourceId; BodyId = bodyProperties.BodyId }, body) then
                 debug <| "Could not add body via '" + acstring bodyProperties + "'."
@@ -426,13 +416,12 @@ module PhysicsModule =
                     integrator.IntegrationMessages.Add bodyTransformMessage
 
         /// Make an integrator.
-        static member make farseerCautionMode gravity =
+        static member make gravity =
             let integrator =
                 { PhysicsContext = FarseerPhysics.Dynamics.World (Integrator.toPhysicsV2 gravity)
                   Bodies = BodyDictionary HashIdentity.Structural
                   PhysicsMessages = Queue.empty
                   IntegrationMessages = List<IntegrationMessage> ()
-                  FarseerCautionMode = farseerCautionMode
                   RebuildingHack = false }
             integrator :> IIntegrator
 
