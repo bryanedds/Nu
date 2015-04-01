@@ -217,7 +217,7 @@ module SimulationModule =
           OverlayRouter : OverlayRouter
           OverlayFilePath : string
           Camera : Camera
-          OptEntityCache : KeyedCache<EntityState Address * World, EntityState option>
+          OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
           UserState : obj }
 
     /// The default dispatcher for games.
@@ -343,7 +343,7 @@ module SimulationModule =
           Xtension : Xtension }
 
         /// Make a game state value.
-        static member internal make dispatcher =
+        static member make dispatcher =
             { Id = Core.makeId ()
               OptSelectedScreen = None
               PublishChanges = true
@@ -368,7 +368,7 @@ module SimulationModule =
           Xtension : Xtension }
 
         /// Make a screen state value.
-        static member internal make dispatcher optName =
+        static member make dispatcher optName =
             let id = Core.makeId ()
             { Id = id
               Name = match optName with Some name -> name | None -> acstring id
@@ -395,7 +395,7 @@ module SimulationModule =
           Xtension : Xtension }
 
         /// Make a group state value.
-        static member internal make dispatcher optName =
+        static member make dispatcher optName =
             let id = Core.makeId ()
             { Id = id
               Name = match optName with Some name -> name | None -> acstring id
@@ -427,7 +427,7 @@ module SimulationModule =
           Xtension : Xtension }
 
         /// Make an entity state value.
-        static member internal make dispatcher optOverlayName optName =
+        static member make dispatcher optOverlayName optName =
             let id = Core.makeId ()
             { Id = id
               Name = match optName with Some name -> name | None -> acstring id
@@ -455,44 +455,44 @@ module SimulationModule =
             /// Get the entity's publishing priority.
             abstract GetPublishingPriority : (Entity -> World -> single) -> World -> single
             /// Get the simulant's address.
-            abstract SimulantAddress : SimulantState Address
+            abstract SimulantAddress : Simulant Address
             end
 
     /// The game type that hosts the various screens used to navigate through a game.
     and [<StructuralEquality; NoComparison>] Game =
-        { GameAddress : GameState Address }
+        { GameAddress : Game Address }
         interface Simulant with
             member this.GetPublishingPriority _ _ = GamePublishingPriority
-            member this.SimulantAddress = Address.changeType<GameState, SimulantState> this.GameAddress
+            member this.SimulantAddress = Address.changeType<Game, Simulant> this.GameAddress
             end
         static member proxy address = { GameAddress = address }
 
     /// The screen type that allows transitioning to and from other screens, and also hosts the
     /// currently interactive groups of entities.
     and [<StructuralEquality; NoComparison>] Screen =
-        { ScreenAddress : ScreenState Address }
+        { ScreenAddress : Screen Address }
         interface Simulant with
             member this.GetPublishingPriority _ _ = ScreenPublishingPriority
-            member this.SimulantAddress = Address.changeType<ScreenState, SimulantState> this.ScreenAddress
+            member this.SimulantAddress = Address.changeType<Screen, Simulant> this.ScreenAddress
             end
         static member proxy address = { ScreenAddress = address }
 
     /// Forms a logical group of entities.
     and [<StructuralEquality; NoComparison>] Group =
-        { GroupAddress : GroupState Address }
+        { GroupAddress : Group Address }
         interface Simulant with
             member this.GetPublishingPriority _ _ = GroupPublishingPriority
-            member this.SimulantAddress = Address.changeType<GroupState, SimulantState> this.GroupAddress
+            member this.SimulantAddress = Address.changeType<Group, Simulant> this.GroupAddress
             end
         static member proxy address = { GroupAddress = address }
 
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, characters, blocks, and things of that sort.
     and [<StructuralEquality; NoComparison>] Entity =
-        { EntityAddress : EntityState Address }
+        { EntityAddress : Entity Address }
         interface Simulant with
             member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
-            member this.SimulantAddress = Address.changeType<EntityState, SimulantState> this.EntityAddress
+            member this.SimulantAddress = Address.changeType<Entity, Simulant> this.EntityAddress
             end
         static member proxy address = { EntityAddress = address }
 

@@ -109,12 +109,12 @@ module WorldPhysicsModule =
             World.getSubsystemBy (fun (integrator : IntegratorSubsystem) -> integrator.BodyOnGround physicsId) IntegratorSubsystemName world
 
         /// Send a message to the physics system to create a physics body.
-        static member createBody (entityAddress : EntityState Address) entityId bodyProperties world =
+        static member createBody (entityAddress : Entity Address) entityId bodyProperties world =
             let createBodyMessage = CreateBodyMessage { SourceAddress = atooa entityAddress; SourceId = entityId; BodyProperties = bodyProperties }
             World.addPhysicsMessage createBodyMessage world
 
         /// Send a message to the physics system to create several physics bodies.
-        static member createBodies (entityAddress : EntityState Address) entityId bodyPropertyList world =
+        static member createBodies (entityAddress : Entity Address) entityId bodyPropertyList world =
             let createBodiesMessage = CreateBodiesMessage { SourceAddress = atooa entityAddress; SourceId = entityId; BodyPropertyList = bodyPropertyList }
             World.addPhysicsMessage createBodiesMessage world
 
