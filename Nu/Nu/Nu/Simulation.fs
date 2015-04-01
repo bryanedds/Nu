@@ -204,7 +204,6 @@ module SimulationModule =
           CallbackStates : Map<Guid, obj> }
 
     /// The world's state.
-    /// TODO: Consider making this an abstract data type.
     and [<ReferenceEquality>] WorldState =
         { TickRate : int64
           TickTime : int64
@@ -335,17 +334,16 @@ module SimulationModule =
 
     /// Hosts the ongoing state of a game. Should rarely be accessed directly by end-users.
     and [<CLIMutable; StructuralEquality; NoComparison>] GameState =
-        { Id : Guid
-          OptSelectedScreen : Screen option
-          PublishChanges : bool
-          CreationTimeStampNp : int64
-          DispatcherNp : GameDispatcher
-          Xtension : Xtension }
-
-        interface SimulantState
+        internal
+            { Id : Guid
+              OptSelectedScreen : Screen option
+              PublishChanges : bool
+              CreationTimeStampNp : int64
+              DispatcherNp : GameDispatcher
+              Xtension : Xtension }
 
         /// Make a game state value.
-        static member make dispatcher =
+        static member internal make dispatcher =
             { Id = Core.makeId ()
               OptSelectedScreen = None
               PublishChanges = true
@@ -353,24 +351,25 @@ module SimulationModule =
               DispatcherNp = dispatcher
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
 
-    /// Hosts the ongoing state of a screen. Should rarely be accessed directly by end-users.
-    and [<CLIMutable; StructuralEquality; NoComparison>] ScreenState =
-        { Id : Guid
-          Name : string
-          TransitionStateNp : TransitionState
-          TransitionTicksNp : int64
-          Incoming : TransitionDescriptor
-          Outgoing : TransitionDescriptor
-          PublishChanges : bool
-          Persistent : bool
-          CreationTimeStampNp : int64
-          DispatcherNp : ScreenDispatcher
-          Xtension : Xtension }
-
         interface SimulantState
 
+    /// Hosts the ongoing state of a screen. Should rarely be accessed directly by end-users.
+    and [<CLIMutable; StructuralEquality; NoComparison>] ScreenState =
+        internal
+            { Id : Guid
+              Name : string
+              TransitionStateNp : TransitionState
+              TransitionTicksNp : int64
+              Incoming : TransitionDescriptor
+              Outgoing : TransitionDescriptor
+              PublishChanges : bool
+              Persistent : bool
+              CreationTimeStampNp : int64
+              DispatcherNp : ScreenDispatcher
+              Xtension : Xtension }
+
         /// Make a screen state value.
-        static member make dispatcher optName =
+        static member internal make dispatcher optName =
             let id = Core.makeId ()
             { Id = id
               Name = match optName with Some name -> name | None -> acstring id
@@ -384,20 +383,21 @@ module SimulationModule =
               DispatcherNp = dispatcher
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
 
-    /// Hosts the ongoing state of a group. Should rarely be accessed directly by end-users.
-    and [<CLIMutable; StructuralEquality; NoComparison>] GroupState =
-        { Id : Guid
-          Name : string
-          PublishChanges : bool
-          Persistent : bool
-          CreationTimeStampNp : int64
-          DispatcherNp : GroupDispatcher
-          Xtension : Xtension }
-
         interface SimulantState
 
+    /// Hosts the ongoing state of a group. Should rarely be accessed directly by end-users.
+    and [<CLIMutable; StructuralEquality; NoComparison>] GroupState =
+        internal
+            { Id : Guid
+              Name : string
+              PublishChanges : bool
+              Persistent : bool
+              CreationTimeStampNp : int64
+              DispatcherNp : GroupDispatcher
+              Xtension : Xtension }
+
         /// Make a group state value.
-        static member make dispatcher optName =
+        static member internal make dispatcher optName =
             let id = Core.makeId ()
             { Id = id
               Name = match optName with Some name -> name | None -> acstring id
@@ -407,29 +407,30 @@ module SimulationModule =
               DispatcherNp = dispatcher
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
 
-    /// Hosts the ongoing state of an entity. Should rarely be accessed directly by end-users.
-    and [<CLIMutable; StructuralEquality; NoComparison>] EntityState =
-        { Id : Guid
-          Name : string
-          Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-          Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
-          Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-          Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
-          Visible : bool
-          ViewType : ViewType
-          PublishChanges : bool
-          Persistent : bool
-          CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
-          DispatcherNp : EntityDispatcher
-          FacetNames : string list
-          FacetsNp : Facet list
-          OptOverlayName : string option
-          Xtension : Xtension }
-
         interface SimulantState
 
+    /// Hosts the ongoing state of an entity. Should rarely be accessed directly by end-users.
+    and [<CLIMutable; StructuralEquality; NoComparison>] EntityState =
+        internal
+            { Id : Guid
+              Name : string
+              Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
+              Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
+              Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
+              Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
+              Visible : bool
+              ViewType : ViewType
+              PublishChanges : bool
+              Persistent : bool
+              CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
+              DispatcherNp : EntityDispatcher
+              FacetNames : string list
+              FacetsNp : Facet list
+              OptOverlayName : string option
+              Xtension : Xtension }
+
         /// Make an entity state value.
-        static member make dispatcher optOverlayName optName =
+        static member internal make dispatcher optOverlayName optName =
             let id = Core.makeId ()
             { Id = id
               Name = match optName with Some name -> name | None -> acstring id
@@ -447,6 +448,8 @@ module SimulationModule =
               FacetsNp = []
               OptOverlayName = optOverlayName
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
+
+        interface SimulantState
 
     /// A marker interface for the simulation types (Game, Screen, Group, and Entity).
     /// The only methods that have a place in here are those used internally by Nu's event system.
