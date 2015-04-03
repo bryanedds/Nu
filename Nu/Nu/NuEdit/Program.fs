@@ -150,34 +150,6 @@ module Program =
             entityTds.RefWorld := changer !entityTds.RefWorld
             ignore <| entityTds.WorldChangers.Add changer
 
-        // NOTE: This has to be a static member in order to see the relevant types in the recursive definitions.
-        static member getPropertyDescriptors (aType : Type) optXtension =
-            // OPTIMIZATION: seqs used for speed.
-            let properties = aType.GetProperties ()
-            let typeConverterAttribute = TypeConverterAttribute (typeof<AlgebraicConverter>) // TODO: make this static?
-            let properties = Seq.filter (fun (property : PropertyInfo) -> property.PropertyType <> typeof<Xtension>) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty <| property.GetCustomAttributes<ExtensionAttribute> ()) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> Reflection.isPropertyPersistentByName property.Name) properties
-            let propertyDescriptors = Seq.map (fun property -> EntityPropertyDescriptor (EntityPropertyInfo property, [|typeConverterAttribute|]) :> PropertyDescriptor) properties
-            let propertyDescriptors =
-                match optXtension with
-                | Some xtension ->
-                    let xFieldDescriptors =
-                        Seq.fold
-                            (fun xFieldDescriptors (xFieldKvp : KeyValuePair<string, XField>) ->
-                                let fieldName = xFieldKvp.Key
-                                let fieldType = xFieldKvp.Value.FieldType
-                                if Reflection.isPropertyPersistentByName fieldName then
-                                    let xFieldDescriptor = EntityXFieldDescriptor { FieldName = fieldName; FieldType = fieldType }
-                                    let xFieldDescriptor = EntityPropertyDescriptor (xFieldDescriptor, [|typeConverterAttribute|])
-                                    xFieldDescriptor :> PropertyDescriptor :: xFieldDescriptors
-                                else xFieldDescriptors)
-                            []
-                            xtension.XFields
-                    Seq.append xFieldDescriptors propertyDescriptors
-                | None -> propertyDescriptors
-            List.ofSeq propertyDescriptors
-
     and EntityTypeDescriptor (optSource : obj) =
         inherit CustomTypeDescriptor ()
         override this.GetProperties _ =
@@ -186,7 +158,8 @@ module Program =
                 | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity.GetXtension !source.RefWorld)
                 | _ -> None
             ignore optXtension
-            let propertyDescriptors = [] // TODO: fix this! EntityPropertyDescriptor.getPropertyDescriptors typeof<EntityState> optXtension
+            let makePropertyDescriptor = fun (emb, tcas) -> (EntityPropertyDescriptor (emb, Array.map (fun attr -> attr :> Attribute) tcas)) :> PropertyDescriptor
+            let propertyDescriptors = EntityMemberValue.getPropertyDescriptors makePropertyDescriptor typeof<EntityState> optXtension
             PropertyDescriptorCollection (Array.ofList propertyDescriptors)
 
     and EntityTypeDescriptorProvider () =

@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.ComponentModel
 open System.Collections.Generic
 open System.IO
 open System.Reflection
@@ -447,6 +448,34 @@ module WorldEntityModule =
                 let entityState = { entityState with EntityState.Id = entityState.Id } // NOTE: hacky copy
                 propertyInfo.SetValue (entityState, value)
                 World.setEntityState entityState entity world
+
+        // TODO: put this in a better place! And of course, document.
+        static member getPropertyDescriptors makePropertyDescriptor (aType : Type) optXtension =
+            // OPTIMIZATION: seqs used for speed.
+            let properties = aType.GetProperties ()
+            let typeConverterAttribute = TypeConverterAttribute (typeof<AlgebraicConverter>) // TODO: make this static?
+            let properties = Seq.filter (fun (property : PropertyInfo) -> property.PropertyType <> typeof<Xtension>) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty <| property.GetCustomAttributes<ExtensionAttribute> ()) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> Reflection.isPropertyPersistentByName property.Name) properties
+            let propertyDescriptors = Seq.map (fun property -> makePropertyDescriptor (EntityPropertyInfo property, [|typeConverterAttribute|])) properties
+            let propertyDescriptors =
+                match optXtension with
+                | Some xtension ->
+                    let xFieldDescriptors =
+                        Seq.fold
+                            (fun xFieldDescriptors (xFieldKvp : KeyValuePair<string, XField>) ->
+                                let fieldName = xFieldKvp.Key
+                                let fieldType = xFieldKvp.Value.FieldType
+                                if Reflection.isPropertyPersistentByName fieldName then
+                                    let xFieldDescriptor = EntityXFieldDescriptor { FieldName = fieldName; FieldType = fieldType }
+                                    let xFieldDescriptor : PropertyDescriptor = makePropertyDescriptor (xFieldDescriptor, [|typeConverterAttribute|])
+                                    xFieldDescriptor :: xFieldDescriptors
+                                else xFieldDescriptors)
+                            []
+                            xtension.XFields
+                    Seq.append xFieldDescriptors propertyDescriptors
+                | None -> propertyDescriptors
+            List.ofSeq propertyDescriptors
 
 namespace Debug
 open Prime
