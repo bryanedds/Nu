@@ -331,9 +331,10 @@ module SimulationModule =
 
     /// A marker interface for the simulation state types (GameState, ScreenState, GroupState,
     /// and EntityState).
-    and SimulantState = interface end
+    and internal SimulantState = interface end
 
-    /// Hosts the ongoing state of a game. Should rarely be accessed directly by end-users.
+    /// Hosts the ongoing state of a game. The end-user of this engine should never touch this
+    /// type, and it's only public to make [<CliMutable>] work.
     and [<CLIMutable; StructuralEquality; NoComparison>] GameState =
         { Id : Guid
           OptSelectedScreen : Screen option
@@ -353,7 +354,8 @@ module SimulationModule =
 
         interface SimulantState
 
-    /// Hosts the ongoing state of a screen. Should rarely be accessed directly by end-users.
+    /// Hosts the ongoing state of a screen. The end-user of this engine should never touch this
+    /// type, and it's only public to make [<CliMutable>] work.
     and [<CLIMutable; StructuralEquality; NoComparison>] ScreenState =
         { Id : Guid
           Name : string
@@ -384,7 +386,8 @@ module SimulationModule =
 
         interface SimulantState
 
-    /// Hosts the ongoing state of a group. Should rarely be accessed directly by end-users.
+    /// Hosts the ongoing state of a group. The end-user of this engine should never touch this
+    /// type, and it's only public to make [<CliMutable>] work.
     and [<CLIMutable; StructuralEquality; NoComparison>] GroupState =
         { Id : Guid
           Name : string
@@ -407,7 +410,8 @@ module SimulationModule =
 
         interface SimulantState
 
-    /// Hosts the ongoing state of an entity. Should rarely be accessed directly by end-users.
+    /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
+    /// type, and it's only public to make [<CliMutable>] work.
     and [<CLIMutable; StructuralEquality; NoComparison>] EntityState =
         { Id : Guid
           Name : string
