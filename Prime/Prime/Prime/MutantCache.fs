@@ -5,8 +5,9 @@ module internal MutantCacheMetrics =
     let mutable GlobalMutantRebuilds = 0L
 
 /// Presents a purely-functional interface to a mutable object / record / whatever.
-/// If it is not sufficiently efficient to run a clone operation on the mutant for every get, pass
-/// id in for the clone function!
+/// If it is not satisfactorily efficient to run a clone operation on the mutant for every get,
+/// just pass in the id function for make's cloneMutant arg, but make sure to NEVER mutate the
+/// returned mutant!
 /// TODO: document this type's functions!
 type [<ReferenceEquality>] MutantCache<'k, 'm when 'k : equality> =
     private
