@@ -87,7 +87,7 @@ module SimulationModule =
     /// Represents an untyped message to a subsystem.
     type SubsystemMessage = obj
 
-    /// Represents an untype result of a subsystem.
+    /// Represents an untyped result of a subsystem.
     type SubsystemResult = obj
 
     /// The type of subsystem. Dictates where subsystem's processing happens in the game loop.
@@ -453,7 +453,7 @@ module SimulationModule =
         interface SimulantState
 
     /// A marker interface for the simulation types (Game, Screen, Group, and Entity).
-    /// The only methods that have a place in here are those used internally by Nu's event system.
+    /// The only methods that belong here are those used internally by Nu's event system.
     and Simulant =
         interface
             /// Get the entity's publishing priority.

@@ -14,4 +14,4 @@ module Program =
             match Assets.tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory fullBuild AssetGraphFilePath with
             | Right () -> SuccessExitCode
             | Left error -> Console.WriteLine error; FailureExitCode
-        | _ -> Console.WriteLine "NuPipe.exe requires four parameters: inputDirectory, outputDirectory, refinementDirectory, and fullBuild."; FailureExitCode
+        | _ -> Console.WriteLine "NuPipe.exe requires four parameters: inputDirectory, outputDirectory, refinementDirectory, and a fullBuild flag."; FailureExitCode
