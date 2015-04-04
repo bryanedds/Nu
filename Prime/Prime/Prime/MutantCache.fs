@@ -1,7 +1,7 @@
 ﻿namespace Prime
 
 [<RequireQualifiedAccess>]
-module internal MutantCacheMetrics =
+module MutantCacheMetrics =
     let mutable private GlobalMutantRebuilds = 0L
     let getGlobalMutantRebuilds () = GlobalMutantRebuilds
 
