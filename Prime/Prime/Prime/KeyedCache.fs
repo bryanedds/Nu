@@ -1,7 +1,7 @@
 ﻿namespace Prime
 
 [<RequireQualifiedAccess>]
-module internal KeyedCacheMetrics =
+module KeyedCacheMetrics =
     let mutable private GlobalCacheHits = 0L
     let mutable private GlobalCacheMisses = 0L
     let getGlobalCacheHits () = GlobalCacheHits
