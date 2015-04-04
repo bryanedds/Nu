@@ -24,16 +24,18 @@ type [<ReferenceEquality>] MutantCache<'k, 'm when 'k : equality> =
           RefMutant = ref mutant }
 
     static member getMutant generateKey rebuildMutant (mutantCache : MutantCache<'k, 'm>) =
-        if not <| mutantCache.KeyEquality !mutantCache.RefKey mutantCache.ConstantKey then
+        let mutantCache =
+            if not <| mutantCache.KeyEquality !mutantCache.RefKey mutantCache.ConstantKey then
 #if DEBUG
-            MutantCacheMetrics.GlobalMutantRebuilds <- MutantCacheMetrics.GlobalMutantRebuilds + 1L
+                MutantCacheMetrics.GlobalMutantRebuilds <- MutantCacheMetrics.GlobalMutantRebuilds + 1L
 #endif
-            let newKey = generateKey ()
-            let newMutant = rebuildMutant ()
-            mutantCache.RefKey := newKey
-            mutantCache.RefMutant := newMutant
-            (mutantCache.CloneMutant newMutant, { mutantCache with ConstantKey = newKey })
-        else (mutantCache.CloneMutant !mutantCache.RefMutant, mutantCache)
+                let newKey = generateKey ()
+                let newMutant = rebuildMutant ()
+                mutantCache.RefKey := newKey
+                mutantCache.RefMutant := newMutant
+                { mutantCache with ConstantKey = newKey }
+            else mutantCache
+        (mutantCache.CloneMutant !mutantCache.RefMutant, mutantCache)
 
     static member mutateMutant rebuildMutant generateKey mutateMutant mutantCache =
         let (mutant, mutantCache) = MutantCache<'k, 'm>.getMutant generateKey rebuildMutant mutantCache
