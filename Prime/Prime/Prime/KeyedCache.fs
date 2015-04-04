@@ -2,8 +2,10 @@
 
 [<RequireQualifiedAccess>]
 module internal KeyedCacheMetrics =
-    let mutable GlobalCacheHits = 0L
-    let mutable GlobalCacheMisses = 0L
+    let mutable private GlobalCacheHits = 0L
+    let mutable private GlobalCacheMisses = 0L
+    let getGlobalCacheHits () = GlobalCacheHits
+    let getGlobalCacheMisses () = GlobalCacheMisses
 
 /// Presents a purely-functional interface to a cached value.
 /// TODO: document this type's functions!
