@@ -86,12 +86,14 @@
     <Compile Include="AlgebraicConverter.fs" />
     <Compile Include="AlgebraicDescriptor.fs" />
     <Compile Include="AlgebraicString.fs" />
+    <Compile Include="Xtension.fs" />
     <Compile Include="Implicit.fs" />
     <Compile Include="DuckTyping.fs" />
     <Compile Include="ImmutableSubclass.fs" />
     <Compile Include="RandTests.fs" />
     <Compile Include="AlgebraicReaderTests.fs" />
     <Compile Include="AlgebraicConverterTests.fs" />
+    <Compile Include="XtensionTests.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="App.config" />

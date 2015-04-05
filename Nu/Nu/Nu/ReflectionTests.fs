@@ -9,7 +9,7 @@ open Xunit
 open Prime
 open Nu
 open Nu.Constants
-module XtensionTests =
+module ReflectionTests =
 
     type [<CLIMutable; NoComparison>] TestXtended =
         { Xtension : Xtension }
@@ -37,35 +37,6 @@ module XtensionTests =
         let xmlReader = XmlReader.Create stream
         let xmlDocument = let emptyDoc = XmlDocument () in (emptyDoc.Load xmlReader; emptyDoc)
         read (xmlDocument.SelectSingleNode RootNodeName) target
-
-    let [<Fact>] canAddField () =
-        let xtn = Xtension.empty
-        let xtn = xtn?TestField <- 5
-        let fieldValue = xtn?TestField
-        Assert.Equal (5, fieldValue)
-
-#if DEBUG
-    let [<Fact>] cantAddFieldWhenSealed () =
-        let xtn = Xtension.safe
-        Assert.Throws<Exception> (fun () -> ignore <| xtn?TestField <- 0)
-#endif
-
-    let [<Fact>] cantAccessNonexistentField () =
-        let xtn = Xtension.mixed
-        let xtn = xtn?TestField <- 5
-        Assert.Throws<Exception> (fun () -> ignore <| xtn?TetField)
-
-    let [<Fact>] missingFieldReturnsDefault () =
-        let xtn = Xtension.empty
-        let xtn = xtn?TestField <- 0
-        let fieldValue = xtn?MissingField
-        Assert.Equal (0, fieldValue)
-
-    let [<Fact>] canAddFieldViaContainingType () =
-        let xtd = { Xtension = Xtension.empty }
-        let xtd = xtd?TestField <- 5
-        let fieldValue = xtd?TestField
-        Assert.Equal (5, fieldValue)
 
     let [<Fact>] xtensionSerializationViaContainingTypeWorks () =
         let xtd = { Xtension = Xtension.mixed }
