@@ -1,13 +1,11 @@
-﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2015.
+﻿// Prime - A PRIMitivEs code library.
+// Copyright (C) Bryan Edds, 2012-2015.
 
-namespace Nu
+namespace Prime
 open System
 open System.Reflection
 open System.ComponentModel
 open Prime
-open Nu
-open Nu.Constants
 
 [<AutoOpen>]
 module XtensionModule =
