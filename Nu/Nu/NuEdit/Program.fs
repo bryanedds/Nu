@@ -191,7 +191,8 @@ module Program =
                 | [||] -> ()
                 | nodes ->
                     let node = nodes.[0]
-                    if nodeExpansion then node.Expand ()
+                    if nodeExpansion
+                    then node.Expand ()
                     else node.Collapse ())
             treeState
 
@@ -241,7 +242,8 @@ module Program =
         match form.propertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             entityTds.RefWorld := world // must be set for property grid
-            if World.containsEntity entityTds.DescribedEntity world then form.propertyGrid.Refresh ()
+            if World.containsEntity entityTds.DescribedEntity world
+            then form.propertyGrid.Refresh ()
             else form.propertyGrid.SelectedObject <- null
         | _ -> form.propertyGrid.SelectedObject <- null
 
@@ -663,7 +665,8 @@ module Program =
         let world = updateCameraDrag form world
         updateUndoButton form world
         updateRedoButton form world
-        if form.IsDisposed then World.exit world
+        if form.IsDisposed
+        then World.exit world
         else world
 
     let selectTargetDirectoryAndMakeNuPlugin () =
