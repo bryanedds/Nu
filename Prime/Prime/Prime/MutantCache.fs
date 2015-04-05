@@ -2,7 +2,7 @@
 
 [<RequireQualifiedAccess>]
 module MutantCacheMetrics =
-    let mutable private GlobalMutantRebuilds = 0L
+    let mutable internal GlobalMutantRebuilds = 0L
     let getGlobalMutantRebuilds () = GlobalMutantRebuilds
 
 /// Presents a purely-functional interface to a mutable object / record / whatever.
