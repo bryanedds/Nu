@@ -2,8 +2,8 @@
 
 [<RequireQualifiedAccess>]
 module KeyedCacheMetrics =
-    let mutable private GlobalCacheHits = 0L
-    let mutable private GlobalCacheMisses = 0L
+    let mutable internal GlobalCacheHits = 0L
+    let mutable internal GlobalCacheMisses = 0L
     let getGlobalCacheHits () = GlobalCacheHits
     let getGlobalCacheMisses () = GlobalCacheMisses
 
