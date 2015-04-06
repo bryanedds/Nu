@@ -39,13 +39,6 @@ module Program =
     memory every frame. This way, queries against the physics state can be done IMMEDIATELY with no
     need for complex intermediate states (albeit against a physics state that is one frame old). *)
 
-    (* WISDOM & TODO: the more generalized code is, the less ways in which it can be wrong.
-    
-    Due to that fact, much of Nu, including Addresses, Xtensions, serialization & reflection code,
-    as well as the purely functional event system, could be generalized and moved out to Prime.
-    
-    This non-trivial refactoring task should be undertaken as soon as time permits. *)
-
     (* WISDOM: On threading physics...
     
     A simulation that would put physics on another thread should likely do so in a different app
@@ -69,7 +62,7 @@ module Program =
     current physics engine be replaceable with pure functional one, improvements to the feature may
     be implementable in time. *)
 
-    (* IDEA: Faster feedback / iteration times with Edit & Continue.
+    (* IDEA: Faster feedback / iteration times with dynamic Nu plug-ins -
     
     Edit & Continue is a God-send to languages that support it. Unfortunately, F# does not.
     
@@ -78,11 +71,10 @@ module Program =
     loaded .NET assemibles. This seems like it would also be applicable with Nu currently since
     it also uses a plug-in model. On the other hand, I was informed that step-debugging for this
     hot-loaded code was not yet working (and I'm not sure if it could without further
-    investigation.
-    
-    To me, the real solution is a proper implementation of Edit & Continue in F#. However, that is
-    something over which I have very little control over its implementation barring spending months
-    (at least) on implementing it in the F# compiler myself. *)
+    investigation).
+
+    Regardless, the approach of dynamic Nu plug-ins to enable hot-swapping of F# code looks to be
+    the correct path forward. *)
     
     let [<EntryPoint; STAThread>] main _ =
         Console.Write "Running Nu.exe"
