@@ -19,15 +19,6 @@ module NameKeyModule =
         { Name : string
           mutable OptHashCode : int option }
 
-        /// TODO: document!
-        static member getHashCode nameKey =
-            match nameKey.OptHashCode with
-            | Some hashCode -> hashCode
-            | None ->
-                let hashCode = hash nameKey.Name
-                nameKey.OptHashCode <- Some hashCode
-                hashCode
-
         interface NameKey IEquatable with
             member this.Equals that =
                 this.Name = that.Name
@@ -38,7 +29,12 @@ module NameKeyModule =
             | _ -> false
 
         override this.GetHashCode () =
-            NameKey.getHashCode this
+            match this.OptHashCode with
+            | Some hashCode -> hashCode
+            | None ->
+                let hashCode = hash this.Name
+                this.OptHashCode <- Some hashCode
+                hashCode
 
         /// Make a name key from a single address name string.
         static member make addressName =
