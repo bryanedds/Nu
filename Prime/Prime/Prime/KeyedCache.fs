@@ -32,17 +32,3 @@ type [<ReferenceEquality>] KeyedCache<'k, 'v when 'k : equality> =
             KeyedCacheMetrics.GlobalCacheHits <- KeyedCacheMetrics.GlobalCacheHits + 1L
 #endif
             keyedCache.CacheValue
-
-    static member tryGetGlobalCacheHits () : int64 option =
-#if DEBUG
-        Some KeyedCacheMetrics.GlobalCacheHits
-#else
-        None
-#endif
-
-    static member tryGetGlobalCacheMisses () : int64 option =
-#if DEBUG
-        Some KeyedCacheMetrics.GlobalCacheMisses
-#else
-        None
-#endif
