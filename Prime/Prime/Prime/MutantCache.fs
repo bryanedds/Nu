@@ -45,10 +45,3 @@ type [<ReferenceEquality>] MutantCache<'k, 'm when 'k : equality> =
         mutantCache.RefKey := newKey
         mutantCache.RefMutant := mutateMutant mutant
         { mutantCache with ConstantKey = newKey }
-
-    static member tryGetGlobalMutantRebuilds () : int64 option =
-#if DEBUG
-        Some MutantCacheMetrics.GlobalMutantRebuilds
-#else
-        None
-#endif
