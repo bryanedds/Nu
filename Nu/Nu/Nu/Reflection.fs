@@ -12,58 +12,58 @@ open Prime
 open Nu
 open Nu.Constants
 
+/// An evaluatable expression for defining a field.
+type [<NoEquality; NoComparison>] FieldExpr =
+    | Constant of obj
+    | Variable of (unit -> obj)
+    static member eval expr =
+        match expr with
+        | Constant value -> value
+        | Variable fn -> fn ()
+
+/// The definition of a data-driven field.
+type [<NoEquality; NoComparison>] FieldDefinition =
+    { FieldName : string
+      FieldType : Type
+      FieldExpr : FieldExpr }
+
+    static member private validate fieldName (fieldType : Type) (_ : FieldExpr) =
+        if fieldName = "FacetNames" then failwith "FacetNames cannot be an intrinsic field."
+        if fieldName = "OptOverlayName" then failwith "OptOverlayName cannot be an intrinsic field."
+        if Array.exists (fun gta -> gta = typeof<obj>) fieldType.GenericTypeArguments then
+            failwith <|
+                "Generic field definition lacking type information for field '" + fieldName + "'. " +
+                "Use explicit typing on all values that carry incomplete type information such as empty lists, empty sets, and none options,."
+
+    /// Make a field definition.
+    static member make fieldName fieldType fieldExpr =
+        FieldDefinition.validate fieldName fieldType fieldExpr
+        { FieldName = fieldName; FieldType = fieldType; FieldExpr = fieldExpr }
+
+/// In tandem with the define literal, grants a nice syntax to define constant fields.
+type DefineConstant =
+    { DefineConstant : unit }
+    
+    /// Some magic syntax for composing constant fields.
+    static member (?) (_, fieldName) =
+        fun (constant : 'c) ->
+            FieldDefinition.make fieldName typeof<'c> <| Constant constant
+
+/// In tandem with the variable literal, grants a nice syntax to define variable fields.
+type DefineVariable =
+    { DefineVariable : unit }
+
+    /// Some magic syntax for composing variable fields.
+    static member (?) (_, fieldName) =
+        fun (variable : unit -> 'v) ->
+            FieldDefinition.make fieldName typeof<'v> <| Variable (fun () -> variable () :> obj)
+
 [<AutoOpen>]
 module ReflectionModule =
 
-    /// An evaluatable expression for defining a field.
-    type [<NoEquality; NoComparison>] FieldExpr =
-        | Constant of obj
-        | Variable of (unit -> obj)
-        static member eval expr =
-            match expr with
-            | Constant value -> value
-            | Variable fn -> fn ()
-
-    /// The definition of a data-driven field.
-    type [<NoEquality; NoComparison>] FieldDefinition =
-        { FieldName : string
-          FieldType : Type
-          FieldExpr : FieldExpr }
-
-        static member private validate fieldName (fieldType : Type) (_ : FieldExpr) =
-            if fieldName = "FacetNames" then failwith "FacetNames cannot be an intrinsic field."
-            if fieldName = "OptOverlayName" then failwith "OptOverlayName cannot be an intrinsic field."
-            if Array.exists (fun gta -> gta = typeof<obj>) fieldType.GenericTypeArguments then
-                failwith <|
-                    "Generic field definition lacking type information for field '" + fieldName + "'. " +
-                    "Use explicit typing on all values that carry incomplete type information such as empty lists, empty sets, and none options,."
-
-        /// Make a field definition.
-        static member make fieldName fieldType fieldExpr =
-            FieldDefinition.validate fieldName fieldType fieldExpr
-            { FieldName = fieldName; FieldType = fieldType; FieldExpr = fieldExpr }
-
-    /// In tandem with the define literal, grants a nice syntax to define constant fields.
-    type DefineConstant =
-        { DefineConstant : unit }
-        
-        /// Some magic syntax for composing constant fields.
-        static member (?) (_, fieldName) =
-            fun (constant : 'c) ->
-                FieldDefinition.make fieldName typeof<'c> <| Constant constant
-
-    /// In tandem with the variable literal, grants a nice syntax to define variable fields.
-    type DefineVariable =
-        { DefineVariable : unit }
-
-        /// Some magic syntax for composing variable fields.
-        static member (?) (_, fieldName) =
-            fun (variable : unit -> 'v) ->
-                FieldDefinition.make fieldName typeof<'v> <| Variable (fun () -> variable () :> obj)
-
     /// In tandem with the DefineConstant type, grants a nice syntax to define constant fields.
     let define = { DefineConstant = () }
-
+    
     /// In tandem with the DefineVariable type, grants a nice syntax to define variable fields.
     let variable = { DefineVariable = () }
 

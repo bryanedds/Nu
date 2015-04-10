@@ -5,18 +5,19 @@ open TiledSharp
 open Prime
 open Nu
 
+type Tracking =
+    | BackTracking
+    | NoBackTracking
+    | NoAdjacentTracking
+
+module MetamapMetrics =
+
+    let mutable GlobalWalkCounter = 0
+    let mutable GlobalTryStumbleCounter = 0
+    let mutable GlobalWanderCounter = 0
+
 [<AutoOpen>]
-module MetamapModule =
-
-    // TODO: get rid of these?
-    let mutable DebugWalkCounter = 0
-    let mutable DebugTryStumbleCounter = 0
-    let mutable DebugWanderCounter = 0
-
-    type Tracking =
-        | BackTracking
-        | NoBackTracking
-        | NoAdjacentTracking
+module DirectionModule =
 
     type Direction with
 
@@ -27,7 +28,7 @@ module MetamapModule =
             (direction, rand)
 
         static member walk (source : Vector2i) direction =
-            DebugWalkCounter <- DebugWalkCounter + 1
+            MetamapMetrics.GlobalWalkCounter <- MetamapMetrics.GlobalWalkCounter + 1
             match direction with
             | Upward -> Vector2i (source.X, source.Y + 1)
             | Rightward -> Vector2i (source.X + 1, source.Y)
@@ -52,7 +53,7 @@ module MetamapModule =
             | None -> Direction.stumbleUnbiased source rand
 
         static member tryStumbleUntil predicate tryLimit optBias source rand =
-            DebugTryStumbleCounter <- DebugTryStumbleCounter + 1
+            MetamapMetrics.GlobalTryStumbleCounter <- MetamapMetrics.GlobalTryStumbleCounter + 1
             let destinations =
                 Seq.unfold
                     (fun rand ->
@@ -64,7 +65,7 @@ module MetamapModule =
             destinations
 
         static member wander stumbleLimit stumbleBounds tracking optBias source rand =
-            DebugWanderCounter <- DebugWanderCounter + 1
+            MetamapMetrics.GlobalWanderCounter <- MetamapMetrics.GlobalWanderCounter + 1
             let stumblePredicate =
                 fun (trail : Vector2i Set) (destination : Vector2i, _) ->
                     MapBounds.isPointInBounds destination stumbleBounds &&

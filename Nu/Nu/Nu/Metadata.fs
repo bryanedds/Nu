@@ -15,24 +15,21 @@ open Prime
 open Nu
 open Nu.Constants
 
-[<AutoOpen>]
-module MetadataModule =
+/// Metadata for an asset. Useful to describe various attributes of an asset without having the
+/// full asset loaded into memory.
+type [<StructuralEquality; NoComparison>] AssetMetadata =
+    | TextureMetadata of Vector2i
+    | TileMapMetadata of string * AssetTag list * TmxMap
+    | SoundMetadata
+    | SongMetadata
+    | OtherMetadata of obj
+    | InvalidMetadata of string
 
-    /// Metadata for an asset. Useful to describe various attributes of an asset without having the
-    /// full asset loaded into memory.
-    type [<StructuralEquality; NoComparison>] AssetMetadata =
-        | TextureMetadata of Vector2i
-        | TileMapMetadata of string * AssetTag list * TmxMap
-        | SoundMetadata
-        | SongMetadata
-        | OtherMetadata of obj
-        | InvalidMetadata of string
+/// A map of asset names to asset metadata.
+type AssetMetadataMap = Map<string, Map<string, AssetMetadata>>
 
-    /// A map of asset names to asset metadata.
-    type AssetMetadataMap = Map<string, Map<string, AssetMetadata>>
-
-    /// Thrown when a tile set property is not found.
-    exception TileSetPropertyNotFoundException of string
+/// Thrown when a tile set property is not found.
+exception TileSetPropertyNotFoundException of string
 
 [<RequireQualifiedAccess>]
 module Metadata =

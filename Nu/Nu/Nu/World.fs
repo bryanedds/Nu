@@ -362,21 +362,21 @@ module WorldModule =
                 World.setSubsystem subsystem subsystemName world)
                 world
 
-        static member private processTask (tasksNotRun, world) task =
+        static member private processTasklet (taskletsNotRun, world) tasklet =
             let tickTime = World.getTickTime world
-            if tickTime = task.ScheduledTime then
-                let world = task.Operation world
-                (tasksNotRun, world)
-            elif tickTime > task.ScheduledTime then
-                debug <| "Task leak found for time '" + acstring tickTime + "'."
-                (tasksNotRun, world)
-            else (Queue.conj task tasksNotRun, world)
+            if tickTime = tasklet.ScheduledTime then
+                let world = tasklet.Operation world
+                (taskletsNotRun, world)
+            elif tickTime > tasklet.ScheduledTime then
+                debug <| "Tasklet leak found for time '" + acstring tickTime + "'."
+                (taskletsNotRun, world)
+            else (Queue.conj tasklet taskletsNotRun, world)
 
-        static member private processTasks world =
-            let tasks = world.Callbacks.Tasks
-            let world = World.clearTasks world
-            let (tasksNotRun, world) = Queue.fold World.processTask (Queue.empty, world) tasks
-            World.restoreTasks tasksNotRun world
+        static member private processTasklets world =
+            let tasklets = world.Callbacks.Tasklets
+            let world = World.clearTasklets world
+            let (taskletsNotRun, world) = Queue.fold World.processTasklet (Queue.empty, world) tasklets
+            World.restoreTasklets taskletsNotRun world
 
         /// Process an input event from SDL and ultimately publish any related game events.
         static member processInput (event : SDL.SDL_Event) world =
@@ -439,7 +439,7 @@ module WorldModule =
                         let world = World.publish4 () UpdateEventAddress Game world
                         match world.State.Liveness with
                         | Running ->
-                            let world = World.processTasks world
+                            let world = World.processTasklets world
                             (world.State.Liveness, world)
                         | Exiting -> (Exiting, world)
                     | Exiting -> (Exiting, world)
@@ -575,7 +575,7 @@ module WorldModule =
                 let callbacks =
                     { Subscriptions = Map.empty
                       Unsubscriptions = Map.empty
-                      Tasks = Queue.empty
+                      Tasklets = Queue.empty
                       CallbackStates = Map.empty }
 
                 // make the world's state
@@ -650,7 +650,7 @@ module WorldModule =
             let callbacks =
                 { Subscriptions = Map.empty
                   Unsubscriptions = Map.empty
-                  Tasks = Queue.empty
+                  Tasklets = Queue.empty
                   CallbackStates = Map.empty }
 
             // make the world's state

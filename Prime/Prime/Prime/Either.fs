@@ -6,14 +6,14 @@ open System
 open System.ComponentModel
 open Prime
 
+/// Haskell-style Either type.
+/// TODO: more nice operators definitions.
+type Either<'l, 'r> =
+    | Right of 'r
+    | Left of 'l
+
 [<AutoOpen>]
 module EitherModule =
-
-    /// Haskell-style Either type.
-    /// TODO: more nice operators definitions.
-    type Either<'l, 'r> =
-        | Right of 'r
-        | Left of 'l
 
     /// Monadic return for Either.
     let internal returnM r = Right r

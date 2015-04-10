@@ -140,10 +140,10 @@ module WorldEntityModule =
         /// Destroy an entity in the world on the next tick. Use this rather than
         /// destroyEntityImmediate unless you need the latter's specific behavior.
         static member destroyEntity entity world =
-            let task =
+            let tasklet =
                 { ScheduledTime = World.getTickTime world
                   Operation = fun world -> World.destroyEntityImmediate entity world }
-            World.addTask task world
+            World.addTasklet tasklet world
 
         /// Destroy multiple entities in the world immediately. Can be dangerous if existing
         /// in-flight publishing depends on any of the entities' existences. Use with caution.
@@ -156,10 +156,10 @@ module WorldEntityModule =
         /// Destroy multiple entities in the world. Use this rather than destroyEntitiesImmediate
         /// unless you need the latter's specific behavior.
         static member destroyEntities entities world =
-            let task =
+            let tasklet =
                 { ScheduledTime = World.getTickTime world
                   Operation = fun world -> World.destroyEntitiesImmediate entities world }
-            World.addTask task world
+            World.addTasklet tasklet world
 
         /// Reassign an entity's identity and / or group. Note that since this destroys the
         /// reassigned entity immediately, you should not call this inside an event handler that
@@ -182,7 +182,7 @@ module WorldEntityModule =
             
             // compute the default opt overlay name
             let intrinsicOverlayName = dispatcherName
-            let defaultOptOverlayName = Map.find intrinsicOverlayName world.State.OverlayRouter
+            let defaultOptOverlayName = Map.find intrinsicOverlayName world.State.OverlayRouter.Routes
 
             // make the bare entity state (with name as id if none is provided)
             let entityState = EntityState.make dispatcher defaultOptOverlayName optName
@@ -319,7 +319,7 @@ module WorldEntityModule =
             writer.WriteAttributeString (DispatcherNameAttributeName, dispatcherTypeName)
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
                 if propertyName = "OptOverlayName" && propertyType = typeof<string option> then
-                    let defaultOptOverlayName = Map.find dispatcherTypeName world.State.OverlayRouter
+                    let defaultOptOverlayName = Map.find dispatcherTypeName world.State.OverlayRouter.Routes
                     defaultOptOverlayName <> (propertyValue :?> string option)
                 else
                     let facetNames = World.getEntityFacetNamesReflectively entityState
@@ -351,7 +351,7 @@ module WorldEntityModule =
 
             // compute the default overlay names
             let intrinsicOverlayName = dispatcherName
-            let defaultOptOverlayName = Map.find intrinsicOverlayName world.State.OverlayRouter
+            let defaultOptOverlayName = Map.find intrinsicOverlayName world.State.OverlayRouter.Routes
 
             // make the bare entity state with name as id
             let entityState = EntityState.make dispatcher defaultOptOverlayName None

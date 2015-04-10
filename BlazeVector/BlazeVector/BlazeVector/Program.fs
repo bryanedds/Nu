@@ -7,30 +7,31 @@ open Nu
 open Nu.Constants
 open Nu.WorldConstants
 open BlazeVector
+
+/// Creates BlazeVector-specific values (here dispatchers and facets).
+/// Allows BlazeVector simulation types to be created in the game as well as in NuEdit.
+type BlazePlugin () =
+    inherit NuPlugin ()
+
+    // make our game-specific game dispatcher...
+    override this.MakeOptGameDispatcher () =
+        Some (BlazeDispatcher () :> GameDispatcher)
+
+    // make our game-specific screen dispatchers...
+    override this.MakeScreenDispatchers () =
+        [GameplayScreenDispatcher () :> ScreenDispatcher]
+
+    // make our game-specific group dispatchers...
+    override this.MakeGroupDispatchers () =
+        [PlayerGroupDispatcher () :> GroupDispatcher]
+
+    // make our game-specific entity dispatchers...
+    override this.MakeEntityDispatchers () =
+        [BulletDispatcher () :> EntityDispatcher
+         PlayerDispatcher () :> EntityDispatcher
+         EnemyDispatcher () :> EntityDispatcher]
+
 module Program =
-
-    /// Creates BlazeVector-specific values (here dispatchers and facets).
-    /// Allows BlazeVector simulation types to be created in the game as well as in NuEdit.
-    type BlazePlugin () =
-        inherit NuPlugin ()
-
-        // make our game-specific game dispatcher...
-        override this.MakeOptGameDispatcher () =
-            Some (BlazeDispatcher () :> GameDispatcher)
-
-        // make our game-specific screen dispatchers...
-        override this.MakeScreenDispatchers () =
-            [GameplayScreenDispatcher () :> ScreenDispatcher]
-
-        // make our game-specific group dispatchers...
-        override this.MakeGroupDispatchers () =
-            [PlayerGroupDispatcher () :> GroupDispatcher]
-
-        // make our game-specific entity dispatchers...
-        override this.MakeEntityDispatchers () =
-            [BulletDispatcher () :> EntityDispatcher
-             PlayerDispatcher () :> EntityDispatcher
-             EnemyDispatcher () :> EntityDispatcher]
 
     // this the entry point for the BlazeVector application
     let [<EntryPoint; STAThread>] main _ =
