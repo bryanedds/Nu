@@ -6,8 +6,8 @@ open System
 open System.IO
 open System.Collections.Generic
 open Prime
+open Aml
 open Aml.Ast
-open Aml.AstModule // fixes issues when loading this file in fsi
 open Aml.AmlConstants
 open Aml.Primitives
 module Writer =

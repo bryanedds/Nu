@@ -3,15 +3,12 @@
 
 namespace Prime
 
-[<AutoOpen>]
-module RduTreeModule =
-
-    /// A tree onto which arbitrary recursive discriminated unions can be projected.
-    /// TODO: implement TypeConverter.
-    [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>]
-    type 'a RduTree =
-        | Leaf
-        | Branch of 'a * 'a RduTree list
+/// A tree onto which arbitrary recursive discriminated unions can be projected.
+/// TODO: implement TypeConverter.
+[<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>]
+type 'a RduTree =
+    | Leaf
+    | Branch of 'a * 'a RduTree list
 
 [<RequireQualifiedAccess>]
 module RduTree =

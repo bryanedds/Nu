@@ -1,13 +1,13 @@
 ﻿// Prime - A PRIMitivEs code library.
 // Copyright (C) Bryan Edds, 2012-2015.
 
-namespace Prime
+namespace Prime.Tests
 open System
 open Xunit
 open Prime
 module RandTests =
 
-    let Samples = 32768
+    let [<Literal>] Samples = 32768
 
     let makeSamples (next : Rand -> ('n * Rand)) =
         let refRand = ref <| Rand.makeDefault ()

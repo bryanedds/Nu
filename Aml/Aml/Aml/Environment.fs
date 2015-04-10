@@ -7,6 +7,7 @@ open System.IO
 open System.Collections
 open System.Collections.Generic
 open Prime
+open Aml
 open Aml.Ast
 open Aml.AmlConstants
 open Aml.Initial
@@ -23,7 +24,7 @@ module Environment =
         makeEnv
             (Dictionary<string, EnvEntry> HashIdentity.Structural)
             []
-            (List<CachedEntry ref> ())
+            (Generic.List<CachedEntry ref> ())
             false
             (makeEmptyDebugInfo ())
             Set.empty
@@ -42,7 +43,7 @@ module Environment =
             makeEnv
                 (List.toDictionary InitialEntriesList)
                 []
-                (List<CachedEntry ref> ())
+                (Generic.List<CachedEntry ref> ())
                 false
                 (makeEmptyDebugInfo ())
                 Set.empty

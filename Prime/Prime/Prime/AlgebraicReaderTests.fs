@@ -1,7 +1,7 @@
 ﻿// Prime - A PRIMitivEs code library.
 // Copyright (C) Bryan Edds, 2012-2015.
 
-namespace Prime
+namespace Prime.Tests
 open System
 open System.Collections.Generic
 open FParsec

@@ -10,52 +10,49 @@ open Prime
 open Nu
 open Nu.Constants
 
-[<AutoOpen>]
-module AssetsModule =
+/// A refinement that can be applied to an asset during the build process.
+type Refinement =
+    | PsdToPng
+    | OldSchool
 
-    /// A refinement that can be applied to an asset during the build process.
-    type Refinement =
-        | PsdToPng
-        | OldSchool
+    /// Convert a string to a refinement value.
+    static member stringToRefinement str =
+        match str with
+        | "PsdToPng" -> PsdToPng
+        | "OldSchool" -> OldSchool
+        | _ -> failwith <| "Invalid refinement '" + str + "'."
 
-        /// Convert a string to a refinement value.
-        static member stringToRefinement str =
-            match str with
-            | "PsdToPng" -> PsdToPng
-            | "OldSchool" -> OldSchool
-            | _ -> failwith <| "Invalid refinement '" + str + "'."
+/// Describes a means for looking up an asset.
+type AssetTag =
+    { PackageName : string
+      AssetName : string }
 
-    /// Describes a means for looking up an asset.
-    type AssetTag =
-        { PackageName : string
-          AssetName : string }
+/// Describes a game asset, such as a texture, sound, or model in detail.
+type [<StructuralEquality; NoComparison>] Asset =
+    { AssetTag : AssetTag
+      FilePath : string
+      Refinements : Refinement list
+      Associations : string list }
 
-    /// Describes a game asset, such as a texture, sound, or model in detail.
-    type [<StructuralEquality; NoComparison>] Asset =
-        { AssetTag : AssetTag
-          FilePath : string
-          Refinements : Refinement list
-          Associations : string list }
+/// All assets must belong to an asset Package, which is a unit of asset loading.
+///
+/// In order for the renderer to render a single texture, that texture, along with all the other
+/// assets in the corresponding package, must be loaded. Also, the only way to unload any of those
+/// assets is to send an AssetPackageUnload message to the renderer, which unloads them all. There
+/// is an AssetPackageLoad message to load a package when convenient.
+///
+/// The use of a message system for the renderer should enable streamed loading, optionally with
+/// smooth fading-in of late-loaded assets (IE - assets that are already in the view frustum but are
+/// still being loaded).
+///
+/// Finally, the use of AssetPackages could enforce assets to be loaded in order of size and will
+/// avoid unnecessary Large Object Heap fragmentation.
+type [<StructuralEquality; NoComparison>] Package =
+    { Name : string
+      AssetNames : string list }
 
-    /// All assets must belong to an asset Package, which is a unit of asset loading.
-    ///
-    /// In order for the renderer to render a single texture, that texture, along with all the other
-    /// assets in the corresponding package, must be loaded. Also, the only way to unload any of those
-    /// assets is to send an AssetPackageUnload message to the renderer, which unloads them all. There
-    /// is an AssetPackageLoad message to load a package when convenient.
-    ///
-    /// The use of a message system for the renderer should enable streamed loading, optionally with
-    /// smooth fading-in of late-loaded assets (IE - assets that are already in the view frustum but are
-    /// still being loaded).
-    ///
-    /// Finally, the use of AssetPackages could enforce assets to be loaded in order of size and will
-    /// avoid unnecessary Large Object Heap fragmentation.
-    type [<StructuralEquality; NoComparison>] Package =
-        { Name : string
-          AssetNames : string list }
-
-    /// Maps asset (packages + names) to asset values.
-    type 'a AssetMap = Map<string, Map<string, 'a>>
+/// Maps asset (packages + names) to asset values.
+type 'a AssetMap = Map<string, Map<string, 'a>>
 
 [<RequireQualifiedAccess>]
 module Assets =

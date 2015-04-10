@@ -1,23 +1,24 @@
 ﻿// Prime - A PRIMitivEs code library.
 // Copyright (C) Bryan Edds, 2012-2015.
 
-namespace Prime
+namespace Prime.Tests
 open System
 open System.IO
 open System.Xml
 open Xunit
 open Prime
+
+type [<CLIMutable; NoComparison>] TestXtended =
+    { Xtension : Xtension }
+
+    static member (?) (this : TestXtended, memberName) =
+        Xtension.(?) (this.Xtension, memberName)
+
+    static member (?<-) (this : TestXtended, memberName, value) =
+        let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
+        { this with Xtension = xtension }
+
 module XtensionTests =
-
-    type [<CLIMutable; NoComparison>] TestXtended =
-        { Xtension : Xtension }
-
-        static member (?) (this : TestXtended, memberName) =
-            Xtension.(?) (this.Xtension, memberName)
-
-        static member (?<-) (this : TestXtended, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
-            { this with Xtension = xtension }
 
     let [<Fact>] canAddField () =
         let xtn = Xtension.empty

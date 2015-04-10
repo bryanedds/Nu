@@ -7,22 +7,33 @@ open Nu.Constants
 open InfinityRpg
 open InfinityRpg.Constants
 
+type Direction =
+    | Upward
+    | Rightward
+    | Downward
+    | Leftward
+
+    static member fromInt n =
+        match n with
+        | 0 -> Upward
+        | 1 -> Rightward
+        | 2 -> Downward
+        | 3 -> Leftward
+        | _ -> failwith <| "Invalid conversion to Direction from int '" + acstring n + "'."
+
+type MapBounds =
+    { CornerNegative : Vector2i
+      CornerPositive : Vector2i }
+
+    static member isPointInBounds (point : Vector2i) bounds =
+        not
+            (point.X < bounds.CornerNegative.X ||
+             point.X > bounds.CornerPositive.X ||
+             point.Y < bounds.CornerNegative.Y ||
+             point.Y > bounds.CornerPositive.Y)
+
 [<AutoOpen>]
-module Math =
-
-    type Direction =
-        | Upward
-        | Rightward
-        | Downward
-        | Leftward
-
-        static member fromInt n =
-            match n with
-            | 0 -> Upward
-            | 1 -> Rightward
-            | 2 -> Downward
-            | 3 -> Leftward
-            | _ -> failwith <| "Invalid conversion to Direction from int '" + acstring n + "'."
+module MathModule =
 
     let vmtovi vm =
         Vector2i.Multiply (vm, TileSizeI)
@@ -71,6 +82,8 @@ module Math =
     let vmtod v =
         v |> vmtovf |> vftod
 
+module Math =
+
     let arePositionMsAdjacent positionM positionM2 =
         positionM = positionM2 + Vector2i.Up ||
         positionM = positionM2 + Vector2i.Right ||
@@ -82,17 +95,3 @@ module Math =
 
     let arePositionsAdjacent position position2 =
         arePositionIsAdjacent (vftovi position) (vftovi position2)
-
-[<AutoOpen>]
-module MapBoundsModule =
-
-    type MapBounds =
-        { CornerNegative : Vector2i
-          CornerPositive : Vector2i }
-
-        static member isPointInBounds (point : Vector2i) bounds =
-            not
-                (point.X < bounds.CornerNegative.X ||
-                 point.X > bounds.CornerPositive.X ||
-                 point.Y < bounds.CornerNegative.Y ||
-                 point.Y > bounds.CornerPositive.Y)

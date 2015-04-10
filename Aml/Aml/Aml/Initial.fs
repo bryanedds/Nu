@@ -5,8 +5,8 @@ namespace Aml
 open System
 open System.Collections.Generic
 open Prime
+open Aml
 open Aml.Ast
-open Aml.AstModule
 open Aml.AmlConstants
 open Aml.Primitives
 module Initial =

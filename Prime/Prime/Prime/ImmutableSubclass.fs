@@ -1,8 +1,7 @@
 ﻿// Prime - A PRIMitivEs code library.
 // Copyright (C) Bryan Edds, 2012-2015.
 
-namespace Prime
-module ImmutableSubclass =
+namespace Prime.Samples
 
     (* This file merely contains code that demonstrates how to build immutable class families. *)
 

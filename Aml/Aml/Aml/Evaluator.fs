@@ -7,8 +7,8 @@ open System.IO
 open System.Collections.Generic
 open FParsec.CharParsers
 open Prime
+open Aml
 open Aml.Ast
-open Aml.AstModule
 open Aml.AmlConstants
 open Aml.Primitives
 open Aml.Initial
@@ -17,14 +17,11 @@ open Aml.Conversions
 open Aml.Reader
 open Aml.EvaluatorPrimitives
 
-[<AutoOpen>]
-module EvaluatorModule =
-
-    /// The status of a conditional expression once evaluated.
-    type [<ReferenceEquality>] ConditionalStatus =
-        | CSViolation of Expr
-        | CSNormal
-        | CSNotBoolean
+/// The status of a conditional expression once evaluated.
+type [<ReferenceEquality>] ConditionalStatus =
+    | CSViolation of Expr
+    | CSNormal
+    | CSNotBoolean
 
 module Evaluator =
 
