@@ -9,109 +9,106 @@ open Prime
 open Nu
 open Nu.Constants
 
-[<AutoOpen>]
-module MathModule =
+/// Describes all the elements of a 2d transformation.
+type [<StructuralEquality; NoComparison>] Transform =
+    { Position : Vector2
+      Depth : single
+      Size : Vector2
+      Rotation : single }
 
-    /// Describes all the elements of a 2d transformation.
-    type [<StructuralEquality; NoComparison>] Transform =
-        { Position : Vector2
-          Depth : single
-          Size : Vector2
-          Rotation : single }
+/// Depicts whether a view is purposed to render in relative or absolute space. For
+/// example, Gui entities are rendered in absolute space since they remain still no matter
+/// where the camera moves, and vice versa for non-Gui entities.
+type ViewType =
+    | Absolute
+    | Relative
 
-    /// Depicts whether a view is purposed to render in relative or absolute space. For
-    /// example, Gui entities are rendered in absolute space since they remain still no matter
-    /// where the camera moves, and vice versa for non-Gui entities.
-    type ViewType =
-        | Absolute
-        | Relative
+/// Converts Vector2 types.
+type Vector2Converter () =
+    inherit TypeConverter ()
 
-    /// Converts Vector2 types.
-    type Vector2Converter () =
-        inherit TypeConverter ()
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string> ||
+        destType = typeof<Vector2>
 
-        override this.CanConvertTo (_, destType) =
-            destType = typeof<string> ||
-            destType = typeof<Vector2>
+    override this.ConvertTo (_, culture, source, destType) =
+        if destType = typeof<string> then
+            let v2 = source :?> Vector2
+            String.Format (culture, "{0}, {1}", v2.X, v2.Y) :> obj
+        elif destType = typeof<Vector2> then source
+        else failwith "Invalid Vector2Converter conversion to source."
 
-        override this.ConvertTo (_, culture, source, destType) =
-            if destType = typeof<string> then
-                let v2 = source :?> Vector2
-                String.Format (culture, "{0}, {1}", v2.X, v2.Y) :> obj
-            elif destType = typeof<Vector2> then source
-            else failwith "Invalid Vector2Converter conversion to source."
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<string> ||
+        sourceType = typeof<Vector2>
 
-        override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<string> ||
-            sourceType = typeof<Vector2>
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? string ->
+            let args = (source :?> string).Split ','
+            let args = Array.map (fun (args : string) -> args.Trim ()) args
+            let argFs = Array.map (fun arg -> Single.Parse arg) args
+            Vector2 (argFs.[0], argFs.[1]) :> obj
+        | :? Vector2 -> source
+        | _ -> failwith "Invalid Vector2Converter conversion from source."
 
-        override this.ConvertFrom (_, _, source) =
-            match source with
-            | :? string ->
-                let args = (source :?> string).Split ','
-                let args = Array.map (fun (args : string) -> args.Trim ()) args
-                let argFs = Array.map (fun arg -> Single.Parse arg) args
-                Vector2 (argFs.[0], argFs.[1]) :> obj
-            | :? Vector2 -> source
-            | _ -> failwith "Invalid Vector2Converter conversion from source."
+/// Converts Vector3 types.
+type Vector3Converter () =
+    inherit TypeConverter ()
 
-    /// Converts Vector3 types.
-    type Vector3Converter () =
-        inherit TypeConverter ()
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string> ||
+        destType = typeof<Vector3>
 
-        override this.CanConvertTo (_, destType) =
-            destType = typeof<string> ||
-            destType = typeof<Vector3>
+    override this.ConvertTo (_, culture, source, destType) =
+        if destType = typeof<string> then
+            let v3 = source :?> Vector3
+            String.Format (culture, "{0}, {1}, {2}", v3.X, v3.Y, v3.Z) :> obj
+        elif destType = typeof<Vector3> then source
+        else failwith "Invalid Vector3Converter conversion to source."
 
-        override this.ConvertTo (_, culture, source, destType) =
-            if destType = typeof<string> then
-                let v3 = source :?> Vector3
-                String.Format (culture, "{0}, {1}, {2}", v3.X, v3.Y, v3.Z) :> obj
-            elif destType = typeof<Vector3> then source
-            else failwith "Invalid Vector3Converter conversion to source."
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<string> ||
+        sourceType = typeof<Vector3>
 
-        override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<string> ||
-            sourceType = typeof<Vector3>
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? string ->
+            let args = (source :?> string).Split ','
+            let args = Array.map (fun (args : string) -> args.Trim ()) args
+            let argFs = Array.map (fun arg -> Single.Parse arg) args
+            Vector3 (argFs.[0], argFs.[1], argFs.[2]) :> obj
+        | :? Vector3 -> source
+        | _ -> failwith "Invalid Vector3Converter conversion from source."
 
-        override this.ConvertFrom (_, _, source) =
-            match source with
-            | :? string ->
-                let args = (source :?> string).Split ','
-                let args = Array.map (fun (args : string) -> args.Trim ()) args
-                let argFs = Array.map (fun arg -> Single.Parse arg) args
-                Vector3 (argFs.[0], argFs.[1], argFs.[2]) :> obj
-            | :? Vector3 -> source
-            | _ -> failwith "Invalid Vector3Converter conversion from source."
+/// Converts Vector4 types.
+type Vector4Converter () =
+    inherit TypeConverter ()
 
-    /// Converts Vector4 types.
-    type Vector4Converter () =
-        inherit TypeConverter ()
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string> ||
+        destType = typeof<Vector4>
 
-        override this.CanConvertTo (_, destType) =
-            destType = typeof<string> ||
-            destType = typeof<Vector4>
+    override this.ConvertTo (_, culture, source, destType) =
+        if destType = typeof<string> then
+            let v4 = source :?> Vector4
+            String.Format (culture, "{0}, {1}, {2}, {3}", v4.X, v4.Y, v4.Z, v4.W) :> obj
+        elif destType = typeof<Vector4> then source
+        else failwith "Invalid Vector4Converter conversion to source."
 
-        override this.ConvertTo (_, culture, source, destType) =
-            if destType = typeof<string> then
-                let v4 = source :?> Vector4
-                String.Format (culture, "{0}, {1}, {2}, {3}", v4.X, v4.Y, v4.Z, v4.W) :> obj
-            elif destType = typeof<Vector4> then source
-            else failwith "Invalid Vector4Converter conversion to source."
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<string> ||
+        sourceType = typeof<Vector4>
 
-        override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<string> ||
-            sourceType = typeof<Vector4>
-
-        override this.ConvertFrom (_, _, source) =
-            match source with
-            | :? string ->
-                let args = (source :?> string).Split ','
-                let args = Array.map (fun (args : string) -> args.Trim ()) args
-                let argFs = Array.map (fun arg -> Single.Parse arg) args
-                Vector4 (argFs.[0], argFs.[1], argFs.[2], argFs.[3]) :> obj
-            | :? Vector4 -> source
-            | _ -> failwith "Invalid Vector4Converter conversion from source."
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? string ->
+            let args = (source :?> string).Split ','
+            let args = Array.map (fun (args : string) -> args.Trim ()) args
+            let argFs = Array.map (fun arg -> Single.Parse arg) args
+            Vector4 (argFs.[0], argFs.[1], argFs.[2], argFs.[3]) :> obj
+        | :? Vector4 -> source
+        | _ -> failwith "Invalid Vector4Converter conversion from source."
 
 module Matrix3 =
 

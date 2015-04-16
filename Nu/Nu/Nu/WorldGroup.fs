@@ -85,10 +85,10 @@ module WorldGroupModule =
         /// Destroy a group in the world on the next tick. Use this rather than
         /// destroyGroupImmediate unless you need the latter's specific behavior.
         static member destroyGroup group world =
-            let task =
+            let tasklet =
                 { ScheduledTime = World.getTickTime world
                   Operation = fun world -> World.destroyGroupImmediate group world }
-            World.addTask task world
+            World.addTasklet tasklet world
             
         /// Destroy multiple groups in the world immediately. Can be dangerous if existing
         /// in-flight publishing depends on any of the groups' existences. Use with caution.
@@ -101,10 +101,10 @@ module WorldGroupModule =
         /// Destroy multiple groups from the world. Use this rather than destroyEntitiesImmediate
         /// unless you need the latter's specific behavior.
         static member destroyGroups groups world =
-            let task =
+            let tasklet =
                 { ScheduledTime = World.getTickTime world
                   Operation = fun world -> World.destroyGroupsImmediate groups world }
-            World.addTask task world
+            World.addTasklet tasklet world
 
         /// Create a group and add it to the world.
         static member createGroup dispatcherName optName screen world =

@@ -35,18 +35,18 @@ module internal CoreInternal =
         t
 #endif
 
+/// Specifies the screen-clearing routine.
+type ScreenClear =
+    | NoClear
+    | ColorClear of byte * byte * byte
+
+/// Specifies whether the engine is running or exiting.
+type Liveness =
+    | Running
+    | Exiting
+
 [<AutoOpen>]
 module CoreModule =
-
-    /// Specifies the screen-clearing routine.
-    type ScreenClear =
-        | NoClear
-        | ColorClear of byte * byte * byte
-
-    /// Specifies whether the engine is running or exiting.
-    type Liveness =
-        | Running
-        | Exiting
 
     /// Sequences two functions like Haskell ($).
     /// Same as the (^) operator found in Prime, but placed here to expose it directly from Nu.

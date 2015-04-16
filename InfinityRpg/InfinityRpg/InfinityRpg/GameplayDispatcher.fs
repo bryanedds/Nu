@@ -75,6 +75,12 @@ module GameplayDispatcherModule =
 
         (* End of Proxies *)
 
+        static let makeAttackTurn targetPositionM =
+            ActionTurn
+                { ActionTicks = 0L
+                  ActionOptTargetPositionM = Some targetPositionM
+                  ActionDataName = AttackName }
+
         static let createField scene rand world =
             let pathEdgesM = [(Vector2i (1, 10), Vector2i (20, 10))]
             let (fieldMap, rand) = FieldMap.make FieldTileSheetImage (Vector2i 22) pathEdgesM rand

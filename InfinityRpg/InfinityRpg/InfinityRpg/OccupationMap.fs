@@ -5,6 +5,7 @@ open Prime
 open Nu
 open InfinityRpg.Constants
 
+[<RequireQualifiedAccess>]
 module OccupationMap =
 
     let isOpenAtPositionM positionM occupationMap =

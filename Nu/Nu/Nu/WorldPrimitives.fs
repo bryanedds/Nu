@@ -90,22 +90,22 @@ module WorldCallbacksModule =
 
     type World with
 
-        static member internal clearTasks world =
-            let callbacks = { world.Callbacks with Tasks = Queue.empty }
+        static member internal clearTasklets world =
+            let callbacks = { world.Callbacks with Tasklets = Queue.empty }
             { world with Callbacks = callbacks }
 
-        static member internal restoreTasks (tasks : Task Queue) world =
-            let callbacks = { world.Callbacks with Tasks = Queue.ofSeq <| Seq.append (world.Callbacks.Tasks :> Task seq) (tasks :> Task seq) }
+        static member internal restoreTasklets (tasklets : Tasklet Queue) world =
+            let callbacks = { world.Callbacks with Tasklets = Queue.ofSeq <| Seq.append (world.Callbacks.Tasklets :> Tasklet seq) (tasklets :> Tasklet seq) }
             { world with Callbacks = callbacks }
 
-        /// Add a task to be executed by the engine at the specified task tick.
-        static member addTask task world =
-            let callbacks = { world.Callbacks with Tasks = Queue.conj task world.Callbacks.Tasks }
+        /// Add a tasklet to be executed by the engine at the scheduled time.
+        static member addTasklet tasklet world =
+            let callbacks = { world.Callbacks with Tasklets = Queue.conj tasklet world.Callbacks.Tasklets }
             { world with Callbacks = callbacks }
 
-        /// Add multiple task to be executed by the engine at the specified task tick.
-        static member addTasks tasks world =
-            let callbacks = { world.Callbacks with Tasks = Queue.ofSeq <| Seq.append (tasks :> Task seq) (world.Callbacks.Tasks :> Task seq) }
+        /// Add multiple tasklets to be executed by the engine at the scheduled times.
+        static member addTasklets tasklets world =
+            let callbacks = { world.Callbacks with Tasklets = Queue.ofSeq <| Seq.append (tasklets :> Tasklet seq) (world.Callbacks.Tasklets :> Tasklet seq) }
             { world with Callbacks = callbacks }
 
         /// Add callback state to the world.
@@ -181,10 +181,10 @@ module WorldStateModule =
 
         /// Set the world's tick rate.
         static member setTickRate tickRate world =
-            let task =
+            let tasklet =
                 { ScheduledTime = World.getTickTime world
                   Operation = fun world -> World.setTickRateImmediately tickRate world }
-            World.addTask task world
+            World.addTasklet tasklet world
 
         /// Get the world's tick time.
         static member getTickTime world =

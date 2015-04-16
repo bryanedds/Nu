@@ -6,17 +6,14 @@ open System
 open System.Collections.Generic
 open System.IO
 open Prime
+open Aml
 open Aml.Ast
-open Aml.AstModule
 open Aml.AmlConstants
 
-[<AutoOpen>]
-module PrimitivesModule =
-
-    /// The manner in which entries are appended to a procedural frame.
-    type AppendType =
-        | AppendToNewFrame of Size : int
-        | AppendToHeadFrame of Offset : int
+/// The manner in which entries are appended to a procedural frame.
+type AppendType =
+    | AppendToNewFrame of Size : int
+    | AppendToHeadFrame of Offset : int
 
 module Primitives =
 

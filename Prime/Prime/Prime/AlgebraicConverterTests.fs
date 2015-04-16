@@ -1,23 +1,24 @@
 ﻿// Prime - A PRIMitivEs code library.
 // Copyright (C) Bryan Edds, 2012-2015.
 
-namespace Prime
+namespace Prime.Tests
 open System
 open System.ComponentModel
 open FParsec
 open Xunit
 open Prime
+
+type IntIntRecord = { Int : int; Int2 : int }
+
+type SimpleUnion =
+    | SimpleUnion
+    | SimpleUnion2
+
+type [<StructuralEquality; NoComparison>] ComplexUnion =
+    | ComplexUnion of int
+    | ComplexUnion2 of int * int
+
 module AlgebraicConverterTests =
-
-    type IntIntRecord = { Int : int; Int2 : int }
-
-    type SimpleUnion =
-        | SimpleUnion
-        | SimpleUnion2
-
-    type [<StructuralEquality; NoComparison>] ComplexUnion =
-        | ComplexUnion of int
-        | ComplexUnion2 of int * int
     
     let [<Fact>] canConvertStringToInt () =
         let value = (AlgebraicConverter typeof<int>).ConvertFromString "0" :?> int
