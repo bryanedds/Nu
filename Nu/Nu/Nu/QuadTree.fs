@@ -26,19 +26,29 @@ type [<NoEquality; NoComparison>] QuadNode =
             let childSize = size * 0.25f
             let childPosition = QuadNode.makeChildPosition i position childSize
             yield QuadNode.make childDepth childPosition childSize|]
+        
+    static member tryAddElement _ _ _ _ =
+        false
 
     static member make depth position (size : Vector2) =
-        let children = QuadNode.makeChildren depth position size
+        let children = if depth > 1 then QuadNode.makeChildren depth position size else [||]
         { Depth = depth
           Position = position
           Size = size
           Children = children
           Elements = HashSet () }
         
-type [<NoEquality; NoComparison>] QuadTree =
+type [<NoEquality; NoComparison>] Quadtree =
     private
         { Node : QuadNode
           OmnipresentElements : obj Address HashSet }
+
+    static member addElement omnipresence position size element quadtree =
+        if omnipresence then
+            ignore <| quadtree.OmnipresentElements.Add element
+        elif not <| QuadNode.tryAddElement position size element quadtree.Node then
+            note "Element is outside of quad tree's containment area."
+            ignore <| quadtree.OmnipresentElements.Add element
 
     static member make depth position size =
         { Node = QuadNode.make depth position size
