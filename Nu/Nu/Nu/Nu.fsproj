@@ -66,6 +66,7 @@
     <Compile Include="Constants.fs" />
     <Compile Include="Address.fs" />
     <Compile Include="Math.fs" />
+    <Compile Include="QuadTree.fs" />
     <Compile Include="Overlay.fs" />
     <Compile Include="Reflection.fs" />
     <Compile Include="Camera.fs" />
