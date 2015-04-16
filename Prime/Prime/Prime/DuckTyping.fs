@@ -1,19 +1,19 @@
 ﻿// Prime - A PRIMitivEs code library.
 // Copyright (C) Bryan Edds, 2012-2015.
 
-namespace Prime
+namespace Prime.Samples
+
+(* This file merely contains code that exemplifies F#'s compile-time duck-typing, AKA, Structural typing. *)
+
+type RedDuck =
+    { Name : string }
+    member this.Quack () = "Red"
+
+type BlueDuck =
+    { Name : string }
+    member this.Quack () = "Blue"
+
 module DuckTypingExample =
-
-    (* This file merely contains code that exemplifies F#'s compile-time duck-typing, AKA,
-    Structural typing. *)
-
-    type RedDuck =
-        { Name : string }
-        member this.Quack () = "Red"
-
-    type BlueDuck =
-        { Name : string }
-        member this.Quack () = "Blue"
 
     let inline name this =
         (^a : (member Name : string) this)
@@ -31,16 +31,16 @@ module DuckTypingExample =
     let red = quack { RedDuck.Name = "Jim" }
     let blue = quack { BlueDuck.Name = "Fred" }
     let naq = nameAndQuack { BlueDuck.Name = "Fred" }
-
+    
 // TODO: move this into its own file
+type [<NoEquality; NoComparison>] 'a Absorb =
+    { Number : int
+      TypeCarrier : 'a -> unit }
+
+    static member make number =
+        { Number = number; TypeCarrier = fun (_ : 'a) -> () }
+
 module TypeAbsorption =
-
-    type [<NoEquality; NoComparison>] 'a Absorb =
-        { Number : int
-          TypeCarrier : 'a -> unit }
-
-        static member make number =
-            { Number = number; TypeCarrier = fun (_ : 'a) -> () }
 
     let ( ->- ) (a : 'a Absorb) (b : 'b Absorb) =
         Absorb<'a>.make <| a.Number + b.Number

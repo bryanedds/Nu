@@ -10,19 +10,21 @@ module Implicit =
     let inline implicit arg =
         (^a : (static member op_Implicit : ^b -> ^a) arg)
 
+(* Example definition of an implicitly-convertible type. *)
+
+namespace Prime.Samples
+open Prime
+
+type T =
+    { S : string }
+    static member op_Implicit s = { S = s }
+
+module ImplicitT =
+
+    let (!!) : string -> T =
+        implicit
+
 module ImplicitExample =
-
-    (* Example definition of an implicitly-convertible type. *)
-    
-    type T =
-        { S : string }
-        static member op_Implicit s = { S = s }
-
-    module ImplicitT =
-        let (!!) : string -> T =
-            implicit
-
-    (* Example usage of implicit type conversion. *)
 
     open ImplicitT
     let t = !!"Hello conversion!"

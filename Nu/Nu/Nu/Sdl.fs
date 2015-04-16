@@ -10,35 +10,32 @@ open Prime
 open Nu
 open Nu.Constants
 
-[<AutoOpen>]
-module SdlModule =
+/// Describes the initial configuration of a window created via SDL.
+type SdlWindowConfig =
+    { WindowTitle : string
+      WindowX : int
+      WindowY : int
+      WindowFlags : SDL.SDL_WindowFlags }
 
-    /// Describes the initial configuration of a window created via SDL.
-    type SdlWindowConfig =
-        { WindowTitle : string
-          WindowX : int
-          WindowY : int
-          WindowFlags : SDL.SDL_WindowFlags }
+/// Describes the view that SDL will use to render.
+type SdlViewConfig =
+    | NewWindow of SdlWindowConfig
+    | ExistingWindow of nativeint
+    //| FullScreen TODO: implement
 
-    /// Describes the view that SDL will use to render.
-    type SdlViewConfig =
-        | NewWindow of SdlWindowConfig
-        | ExistingWindow of nativeint
-        //| FullScreen TODO: implement
+/// Describes the general configuration of SDL.
+type SdlConfig =
+    { ViewConfig : SdlViewConfig
+      ViewW : int
+      ViewH : int
+      RendererFlags : SDL.SDL_RendererFlags
+      AudioChunkSize : int }
 
-    /// Describes the general configuration of SDL.
-    type SdlConfig =
-        { ViewConfig : SdlViewConfig
-          ViewW : int
-          ViewH : int
-          RendererFlags : SDL.SDL_RendererFlags
-          AudioChunkSize : int }
-
-    /// The dependencies needed to initialize SDL.
-    type SdlDeps =
-        { RenderContext : nativeint
-          Window : nativeint
-          Config : SdlConfig }
+/// The dependencies needed to initialize SDL.
+type SdlDeps =
+    { RenderContext : nativeint
+      Window : nativeint
+      Config : SdlConfig }
 
 [<RequireQualifiedAccess>]
 module Sdl =

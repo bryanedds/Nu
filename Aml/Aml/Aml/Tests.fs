@@ -1,9 +1,10 @@
 ﻿// Aml - A Modular Language.
 // Copyright (C) Bryan Edds, 2012-2015.
 
-namespace Aml
+namespace Aml.Tests
 open FParsec.CharParsers
 open Xunit
+open Aml
 open Aml.Ast
 open Aml.AmlConstants
 open Aml.Primitives
@@ -12,6 +13,19 @@ open Aml.Writer
 open Aml.Initial
 open Aml.Evaluator
 open Aml.Environment
+
+type TestCase =
+    { Expected : string
+      Actual : string }
+
+type [<ReferenceEquality>] ParsedTestCase =
+    { ParsedExpected : string
+      ParsedActual : ParserResult<Expr list, unit> }
+    
+type [<ReferenceEquality>] EvaledTestCase =
+    { EvaledExpected : string
+      EvaledActual : Expr list }
+
 module Tests =
 
     /// Write an expr for test consumption by truncating top-level violations.
@@ -22,18 +36,6 @@ module Tests =
 
     /// Write multiple expressions as a string for test consumption.
     let writeExprsForTest exprs = writeValues writeExprForTest exprs
-
-    type TestCase =
-        { Expected : string
-          Actual : string }
-
-    type [<ReferenceEquality>] ParsedTestCase =
-        { ParsedExpected : string
-          ParsedActual : ParserResult<Expr list, unit> }
-    
-    type [<ReferenceEquality>] EvaledTestCase =
-        { EvaledExpected : string
-          EvaledActual : Expr list }
 
     let parseTestCase testCase = {
         ParsedExpected = testCase.Expected

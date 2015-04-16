@@ -9,18 +9,15 @@ open Nu
 open Nu.Constants
 open Nu.WorldConstants
 
-[<AutoOpen>]
-module ObservationModule =
+/// An observation in the functional reactive style.
+/// TODO: I bet there's either a monad or arrow in here...
+type [<ReferenceEquality>] Observation<'a, 'o when 'o :> Simulant> =
+    { Observer : 'o
+      Subscribe : World -> 'a Address * (World -> World) * World }
 
-    /// An observation in the functional reactive style.
-    /// TODO: I bet there's either a monad or arrow in here...
-    type [<ReferenceEquality>] Observation<'a, 'o when 'o :> Simulant> =
-        { Observer : 'o
-          Subscribe : World -> 'a Address * (World -> World) * World }
-
-        static member make<'a> observer subscribe =
-            { Observer = observer
-              Subscribe = subscribe }
+    static member make<'a> observer subscribe =
+        { Observer = observer
+          Subscribe = subscribe }
 
 module Observation =
 
@@ -403,7 +400,7 @@ module Observation =
             observation
 
 [<AutoOpen>]
-module ObservationOperatorsModule =
+module ObservationModule =
     open Observation
 
     /// Pipe-right arrow that provides special precedence for observations.

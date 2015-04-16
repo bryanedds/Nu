@@ -1,20 +1,12 @@
 ﻿// Aml - A Modular Language.
 // Copyright (C) Bryan Edds, 2012-2015.
 
-(* NOTE: change these paths to make this script run with your Aml installation. *)
-#r "C:/Development/FPWorks/Prime/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
-#r "C:/Development/FPWorks/Prime/FParsec/FParsec.dll"
-#r "C:/Development/FPWorks/Aml/Fspp4.0/FSharp.PowerPack.Compatibility.dll"
-#r "C:/Development/FPWorks/Aml/xUnit/xunit.dll"
-#r "C:/Development/FPWorks/Prime/Prime/Prime/bin/Debug/Prime.exe"
-
-#load "Ast.fs"
-#load "AmlConstants.fs"
-#load "Primitives.fs"
-#load "Initial.fs"
-#load "Writer.fs"
-#load "Conversions.fs"
-#load "Reader.fs"
+#r "../../../Prime/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
+#r "../../../Prime/FParsec/FParsec.dll"
+#r "../../../Aml/Fspp4.0/FSharp.PowerPack.Compatibility.dll"
+#r "../../../Aml/xUnit/xunit.dll"
+#r "../../../Prime/Prime/Prime/bin/Debug/Prime.exe"
+#r "../../../Aml/Aml/Aml/bin/Debug/Aml.exe"
 
 open System
 open FParsec.Primitives

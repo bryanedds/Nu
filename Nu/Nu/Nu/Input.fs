@@ -9,18 +9,15 @@ open SDL2
 open Prime
 open Nu
 
-[<AutoOpen>]
-module MouseButtonModule =
-
-    /// Describes a mouse button.
-    type MouseButton =
-        | MouseLeft
-        | MouseCenter
-        | MouseRight
-        | MouseX1
-        | MouseX2
-        override this.ToString () = AlgebraicDescriptor.convertToString this
-        static member toEventName this = (acstring this).Substring "Mouse".Length
+/// Describes a mouse button.
+type MouseButton =
+    | MouseLeft
+    | MouseCenter
+    | MouseRight
+    | MouseX1
+    | MouseX2
+    override this.ToString () = AlgebraicDescriptor.convertToString this
+    static member toEventName this = (acstring this).Substring "Mouse".Length
 
 [<RequireQualifiedAccess>]
 module MouseState =

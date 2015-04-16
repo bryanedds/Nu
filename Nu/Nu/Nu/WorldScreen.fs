@@ -96,10 +96,10 @@ module WorldScreenModule =
         /// Destroy a screen in the world on the next tick. Use this rather than
         /// destroyScreenImmediate unless you need the latter's specific behavior.
         static member destroyScreen screen world =
-            let task =
+            let tasklet =
                 { ScheduledTime = World.getTickTime world
                   Operation = fun world -> World.destroyScreenImmediate screen world }
-            World.addTask task world
+            World.addTasklet tasklet world
 
         /// Create a screen and add it to the world.
         static member createScreen dispatcherName optName world =

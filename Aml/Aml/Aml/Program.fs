@@ -5,6 +5,7 @@ namespace Aml
 open System
 open System.Runtime
 open Prime
+open Aml
 open Aml.Ast
 open Aml.AmlConstants
 open Aml.Initial

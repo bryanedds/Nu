@@ -10,149 +10,146 @@ open System.Text
 open Prime
 open Nu
 
-[<AutoOpen>]
-module NameKeyModule =
+/// A name key for optimized look-up in hashing containers.
+/// OPTIMIZATION: OptHashCode is lazy for speed.
+type [<CustomEquality; NoComparison>] NameKey =
+    { Name : string
+      mutable OptHashCode : int option }
 
-    /// A name key for optimized look-up in hashing containers.
-    /// OPTIMIZATION: OptHashCode is lazy for speed.
-    type [<CustomEquality; NoComparison>] NameKey =
-        { Name : string
-          mutable OptHashCode : int option }
+    interface NameKey IEquatable with
+        member this.Equals that =
+            this.Name = that.Name
 
-        interface NameKey IEquatable with
-            member this.Equals that =
-                this.Name = that.Name
+    override this.Equals that =
+        match that with
+        | :? NameKey as that -> this.Name = that.Name
+        | _ -> false
 
-        override this.Equals that =
+    override this.GetHashCode () =
+        match this.OptHashCode with
+        | Some hashCode -> hashCode
+        | None ->
+            let hashCode = hash this.Name
+            this.OptHashCode <- Some hashCode
+            hashCode
+
+    /// Make a name key from a single address name string.
+    static member make addressName =
+        { Name = addressName
+          OptHashCode = None }
+
+/// Specifies the address of an element in a game, or name of an event.
+/// OPTIMIZATION: NameKeys are used in case we can manage some sort of hashing look-up with them.
+/// OPTIMIZATION: Comparison is done using the full string of names for speed.
+/// OPTIMIZATION: OptNamesStr and OptHashCode are lazy for speed.
+type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
+    { NameKeys : NameKey list
+      mutable OptNamesStr : string option
+      mutable OptHashCode : int option
+      TypeCarrier : 'a -> unit }
+
+    static member internal join (seq : string seq) =
+        String.Join ("/", seq)
+
+    static member internal split (str : string) =
+        List.ofArray <| str.Split '/'
+
+    /// The empty address.
+    static member empty =
+        { NameKeys = []; OptNamesStr = Some String.Empty; OptHashCode = Some 0; TypeCarrier = fun (_ : 'a) -> () }
+
+    /// Make an address from name keys.
+    static member makeFromNameKeys nameKeys =
+        { NameKeys = nameKeys; OptNamesStr = None; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
+
+    /// Make an address from a list of names.
+    static member makeFromNamesList namesList =
+        let nameKeys = List.map NameKey.make namesList
+        Address<'a>.makeFromNameKeys nameKeys
+
+    /// Make an address from a '/' delimited string.
+    static member makeFromNamesString namesStr =
+        let namesList = Address<'a>.split namesStr
+        let nameKeys = List.map NameKey.make namesList
+        { NameKeys = nameKeys; OptNamesStr = Some namesStr; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
+
+    /// Convert a names string into an address.
+    static member stoa (namesStr : string) =
+        Address<'a>.makeFromNamesString namesStr
+
+    /// TODO: document!
+    static member getNamesStr (address : 'a Address) =
+        match address.OptNamesStr with
+        | Some namesStr -> namesStr
+        | None ->
+            let namesStr = address.NameKeys |> Seq.map (fun nameKey -> nameKey.Name) |> Address<'a>.join
+            address.OptNamesStr <- Some namesStr
+            namesStr
+
+    /// TODO: document!
+    static member getHashCode (address : 'a Address) =
+        match address.OptHashCode with
+        | Some hashCode -> hashCode
+        | None ->
+            let hashCode = hash <| Address<'a>.getNamesStr address
+            address.OptHashCode <- Some hashCode
+            hashCode
+
+    interface 'a Address IComparable with
+        member this.CompareTo that =
+            String.Compare (Address<'a>.getNamesStr this, Address<'a>.getNamesStr that)
+
+    interface IComparable with
+        member this.CompareTo that =
             match that with
-            | :? NameKey as that -> this.Name = that.Name
-            | _ -> false
+            | :? ('a Address) as that -> String.Compare (Address<'a>.getNamesStr this, Address<'a>.getNamesStr that)
+            | _ -> failwith "Invalid Address comparison (comparee not of type Address)."
 
-        override this.GetHashCode () =
-            match this.OptHashCode with
-            | Some hashCode -> hashCode
-            | None ->
-                let hashCode = hash this.Name
-                this.OptHashCode <- Some hashCode
-                hashCode
+    interface 'a Address IEquatable with
+        member this.Equals that =
+            Address<'a>.getNamesStr this = Address<'a>.getNamesStr that
 
-        /// Make a name key from a single address name string.
-        static member make addressName =
-            { Name = addressName
-              OptHashCode = None }
+    override this.Equals that =
+        match that with
+        | :? ('a Address) as that -> Address<'a>.getNamesStr this = Address<'a>.getNamesStr that
+        | _ -> false
+
+    override this.GetHashCode () =
+        Address<'a>.getHashCode this
+    
+    override this.ToString () =
+        Address<'a>.getNamesStr this
+
+/// Converts Address types.
+and AddressConverter (targetType : Type) =
+    inherit TypeConverter ()
+    
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string> ||
+        destType = targetType
+        
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<string> then
+            let toStringMethod = targetType.GetMethod "ToString"
+            toStringMethod.Invoke (source, null)
+        elif destType = targetType then source
+        else failwith "Invalid AddressConverter conversion to source."
+        
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<string> ||
+        sourceType = targetType
+        
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? string ->
+            let stoaFunction = targetType.GetMethod ("stoa", BindingFlags.Static ||| BindingFlags.Public)
+            stoaFunction.Invoke (null, [|source|])
+        | _ ->
+            if targetType.IsInstanceOfType source then source
+            else failwith "Invalid AddressConverter conversion from source."
 
 [<AutoOpen>]
 module AddressModule =
-
-    /// Specifies the address of an element in a game, or name of an event.
-    /// OPTIMIZATION: NameKeys are used in case we can manage some sort of hashing look-up with them.
-    /// OPTIMIZATION: Comparison is done using the full string of names for speed.
-    /// OPTIMIZATION: OptNamesStr and OptHashCode are lazy for speed.
-    type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
-        { NameKeys : NameKey list
-          mutable OptNamesStr : string option
-          mutable OptHashCode : int option
-          TypeCarrier : 'a -> unit }
-
-        static member internal join (seq : string seq) =
-            String.Join ("/", seq)
-
-        static member internal split (str : string) =
-            List.ofArray <| str.Split '/'
-
-        /// The empty address.
-        static member empty =
-            { NameKeys = []; OptNamesStr = Some String.Empty; OptHashCode = Some 0; TypeCarrier = fun (_ : 'a) -> () }
-
-        /// Make an address from name keys.
-        static member makeFromNameKeys nameKeys =
-            { NameKeys = nameKeys; OptNamesStr = None; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
-
-        /// Make an address from a list of names.
-        static member makeFromNamesList namesList =
-            let nameKeys = List.map NameKey.make namesList
-            Address<'a>.makeFromNameKeys nameKeys
-
-        /// Make an address from a '/' delimited string.
-        static member makeFromNamesString namesStr =
-            let namesList = Address<'a>.split namesStr
-            let nameKeys = List.map NameKey.make namesList
-            { NameKeys = nameKeys; OptNamesStr = Some namesStr; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
-
-        /// Convert a names string into an address.
-        static member stoa (namesStr : string) =
-            Address<'a>.makeFromNamesString namesStr
-
-        /// TODO: document!
-        static member getNamesStr (address : 'a Address) =
-            match address.OptNamesStr with
-            | Some namesStr -> namesStr
-            | None ->
-                let namesStr = address.NameKeys |> Seq.map (fun nameKey -> nameKey.Name) |> Address<'a>.join
-                address.OptNamesStr <- Some namesStr
-                namesStr
-
-        /// TODO: document!
-        static member getHashCode (address : 'a Address) =
-            match address.OptHashCode with
-            | Some hashCode -> hashCode
-            | None ->
-                let hashCode = hash <| Address<'a>.getNamesStr address
-                address.OptHashCode <- Some hashCode
-                hashCode
-
-        interface 'a Address IComparable with
-            member this.CompareTo that =
-                String.Compare (Address<'a>.getNamesStr this, Address<'a>.getNamesStr that)
-
-        interface IComparable with
-            member this.CompareTo that =
-                match that with
-                | :? ('a Address) as that -> String.Compare (Address<'a>.getNamesStr this, Address<'a>.getNamesStr that)
-                | _ -> failwith "Invalid Address comparison (comparee not of type Address)."
-
-        interface 'a Address IEquatable with
-            member this.Equals that =
-                Address<'a>.getNamesStr this = Address<'a>.getNamesStr that
-
-        override this.Equals that =
-            match that with
-            | :? ('a Address) as that -> Address<'a>.getNamesStr this = Address<'a>.getNamesStr that
-            | _ -> false
-
-        override this.GetHashCode () =
-            Address<'a>.getHashCode this
-        
-        override this.ToString () =
-            Address<'a>.getNamesStr this
-
-    /// Converts Address types.
-    and AddressConverter (targetType : Type) =
-        inherit TypeConverter ()
-        
-        override this.CanConvertTo (_, destType) =
-            destType = typeof<string> ||
-            destType = targetType
-            
-        override this.ConvertTo (_, _, source, destType) =
-            if destType = typeof<string> then
-                let toStringMethod = targetType.GetMethod "ToString"
-                toStringMethod.Invoke (source, null)
-            elif destType = targetType then source
-            else failwith "Invalid AddressConverter conversion to source."
-            
-        override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<string> ||
-            sourceType = targetType
-            
-        override this.ConvertFrom (_, _, source) =
-            match source with
-            | :? string ->
-                let stoaFunction = targetType.GetMethod ("stoa", BindingFlags.Static ||| BindingFlags.Public)
-                stoaFunction.Invoke (null, [|source|])
-            | _ ->
-                if targetType.IsInstanceOfType source then source
-                else failwith "Invalid AddressConverter conversion from source."
 
     /// Convert a names string into an address.
     let stoa<'a> namesStr =
