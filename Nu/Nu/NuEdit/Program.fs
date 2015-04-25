@@ -95,6 +95,8 @@ and EntityPropertyDescriptor (property, attributes) =
         // grab the type descriptor and assign the value
         let entityTds = source :?> EntityTypeDescriptorSource
         let changer = (fun world ->
+
+            // TODO: comment
             let world = pushPastWorld world world
             match propertyName with
             | "Name" ->
@@ -108,6 +110,8 @@ and EntityPropertyDescriptor (property, attributes) =
                     entityTds.RefWorld := world // must be set for property grid
                     entityTds.Form.propertyGrid.SelectedObject <- { entityTds with DescribedEntity = entity }
                     world
+
+            // TODO: comment
             | "FacetNames" ->
                 let facetNames = value :?> string list
                 let entity = entityTds.DescribedEntity
@@ -118,6 +122,8 @@ and EntityPropertyDescriptor (property, attributes) =
                 entityTds.RefWorld := world // must be set for property grid
                 entityTds.Form.propertyGrid.Refresh ()
                 world
+
+            // TODO: comment
             | _ ->
                 let entity = entityTds.DescribedEntity
                 let world =

@@ -7,7 +7,7 @@ open OpenTK
 open Nu
 module Constants =
 
-    (* Engine Literals *)
+    (* Engine Constants *)
 
     let [<Literal>] DesiredFps = 60
     let [<Literal>] SuccessExitCode = 0
@@ -22,13 +22,13 @@ module Constants =
     let [<Literal>] DefaultGroupName = "Group"
     let [<Literal>] DefaultEntityName = "Entity"
     let [<Literal>] GamePublishingPriority = Single.MaxValue
-    let (*Literal*) ScreenPublishingPriority = GamePublishingPriority * 0.5f
-    let (*Literal*) GroupPublishingPriority = ScreenPublishingPriority * 0.5f
-    let (*Literal*) EntityPublishingPriority = GroupPublishingPriority * 0.5f
-    let (*Literal*) DefaultEntitySize = Vector2 64.0f
-    let (*Literal*) InvalidId = Guid.Empty
+    let ScreenPublishingPriority = GamePublishingPriority * 0.5f
+    let GroupPublishingPriority = ScreenPublishingPriority * 0.5f
+    let EntityPublishingPriority = GroupPublishingPriority * 0.5f
+    let DefaultEntitySize = Vector2 64.0f
+    let InvalidId = Guid.Empty
 
-    (* Xml Literals *)
+    (* Xml Constants *)
 
     let [<Literal>] RootNodeName = "Root"
     let [<Literal>] DispatcherNameAttributeName = "dispatcherName"
@@ -53,7 +53,7 @@ module Constants =
     let [<Literal>] EntityNodeName = DefaultEntityName
     let [<Literal>] EntitiesNodeName = "Entities"
 
-    (* Asset Literals *)
+    (* Asset Constants *)
 
     let [<Literal>] AssetGraphFilePath = "AssetGraph.xml"
     let [<Literal>] OverlayFilePath = "Overlay.xml"
@@ -64,32 +64,32 @@ module Constants =
     let [<Literal>] DefaultSoundValue = "[Default | Sound]"
     let [<Literal>] DefaultSongValue = "[Default | Song]"
 
-    (* Render Literals *)
+    (* Render Constants *)
 
     let [<Literal>] ResolutionXDefault = 960
     let [<Literal>] ResolutionYDefault = 544
-    let (*Literal*) ResolutionX = Core.getResolutionOrDefault true ResolutionXDefault
-    let (*Literal*) ResolutionY = Core.getResolutionOrDefault false ResolutionYDefault
-    let (*Literal*) ScreenClearing = ColorClear (255uy, 255uy, 255uy)
+    let ResolutionX = Core.getResolutionOrDefault true ResolutionXDefault
+    let ResolutionY = Core.getResolutionOrDefault false ResolutionYDefault
+    let ScreenClearing = ColorClear (255uy, 255uy, 255uy)
 
-    (* Audio Literals *)
+    (* Audio Constants *)
 
     let [<Literal>] AudioFrequency = 44100
     let [<Literal>] AudioBufferSizeDefault = 1024
     let [<Literal>] DefaultTimeToFadeOutSongMs = 500
 
-    (* Physics Literals *)
+    (* Physics Constants *)
 
-    let (*Literal*) PhysicsStepRate = 1.0f / single DesiredFps
+    let PhysicsStepRate = 1.0f / single DesiredFps
     let [<Literal>] PhysicsToPixelRatio = 64.0f
-    let (*Literal*) PixelToPhysicsRatio = 1.0f / PhysicsToPixelRatio
+    let PixelToPhysicsRatio = 1.0f / PhysicsToPixelRatio
     let [<Literal>] NormalDensity = 10.0f // NOTE: this seems to be a stable density for Farseer
-    let (*Literal*) Gravity = Vector2 (0.0f, -9.80665f) * PhysicsToPixelRatio
+    let Gravity = Vector2 (0.0f, -9.80665f) * PhysicsToPixelRatio
     let [<Literal>] CollisionProperty = "C"
 
-    (* Math Literals *)
+    (* Math Constants *)
 
     let [<Literal>] RadiansToDegrees = 57.2957795
-    let (*Literal*) DegreesToRadians = 1.0 / RadiansToDegrees
-    let (*Literal*) RadiansToDegreesF = single RadiansToDegrees
-    let (*Literal*) DegreesToRadiansF = single DegreesToRadians
+    let DegreesToRadians = 1.0 / RadiansToDegrees
+    let RadiansToDegreesF = single RadiansToDegrees
+    let DegreesToRadiansF = single DegreesToRadians
