@@ -171,43 +171,6 @@ and Subsystem =
         abstract CleanUp : World -> Subsystem * World
         end
 
-/// The world's subsystems.
-and internal Subsystems = Map<string, Subsystem>
-
-/// The world's components.
-/// TODO: Consider making this an abstract data type.
-and [<ReferenceEquality>] internal Components =
-    { EntityDispatchers : Map<string, EntityDispatcher>
-      GroupDispatchers : Map<string, GroupDispatcher>
-      ScreenDispatchers : Map<string, ScreenDispatcher>
-      GameDispatchers : Map<string, GameDispatcher>
-      Facets : Map<string, Facet> }
-
-/// The world's simple callback facilities.
-/// TODO: Consider making this an abstract data type.
-and [<ReferenceEquality>] internal Callbacks =
-    { Subscriptions : SubscriptionEntries
-      Unsubscriptions : UnsubscriptionEntries
-      Tasklets : Tasklet Queue
-      CallbackStates : Map<Guid, obj> }
-
-/// The world's state.
-/// TODO: Consider making this an abstract data type.
-and [<ReferenceEquality>] internal WorldState =
-    { TickRate : int64
-      TickTime : int64
-      UpdateCount : int64
-      Liveness : Liveness
-      OptScreenTransitionDestination : Screen option // TODO: move this into Game?
-      AssetMetadataMap : AssetMetadataMap
-      AssetGraphFilePath : string
-      Overlayer : Overlayer
-      OverlayRouter : OverlayRouter
-      OverlayFilePath : string
-      Camera : Camera
-      OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
-      UserState : obj }
-
 /// The default dispatcher for games.
 and GameDispatcher () =
 
@@ -488,17 +451,6 @@ and [<StructuralEquality; NoComparison>] Entity =
         end
     static member proxy address = { EntityAddress = address }
 
-/// The world, in a functional programming sense. Hosts the game object, the dependencies
-/// needed to implement a game, messages to by consumed by the various engine sub-systems,
-/// and general configuration data.
-and [<ReferenceEquality>] World =
-    internal
-        { Subsystems : Subsystems
-          Components : Components
-          Callbacks : Callbacks
-          State : WorldState
-          SimulantStates : GameState * Map<string, ScreenState * Map<string, GroupState * Map<string, EntityState>>> }
-
 /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
 /// specific values.
 and NuPlugin () =
@@ -533,3 +485,52 @@ and NuPlugin () =
     /// than the default "ButtonDispatcher" overlay.
     abstract MakeOverlayRoutes : unit -> (string * string option) list
     default this.MakeOverlayRoutes () = []
+
+/// The world's subsystems.
+/// TODO: Consider making this an abstract data type?
+and internal Subsystems = Map<string, Subsystem>
+
+/// The world's components.
+/// TODO: Consider making this an abstract data type.
+and [<ReferenceEquality>] internal Components =
+    { EntityDispatchers : Map<string, EntityDispatcher>
+      GroupDispatchers : Map<string, GroupDispatcher>
+      ScreenDispatchers : Map<string, ScreenDispatcher>
+      GameDispatchers : Map<string, GameDispatcher>
+      Facets : Map<string, Facet> }
+
+/// The world's simple callback facilities.
+/// TODO: Consider making this an abstract data type.
+and [<ReferenceEquality>] internal Callbacks =
+    { Subscriptions : SubscriptionEntries
+      Unsubscriptions : UnsubscriptionEntries
+      Tasklets : Tasklet Queue
+      CallbackStates : Map<Guid, obj> }
+
+/// The world's state.
+/// TODO: Consider making this an abstract data type.
+and [<ReferenceEquality>] internal WorldState =
+    { TickRate : int64
+      TickTime : int64
+      UpdateCount : int64
+      Liveness : Liveness
+      OptScreenTransitionDestination : Screen option // TODO: move this into Game?
+      AssetMetadataMap : AssetMetadataMap
+      AssetGraphFilePath : string
+      Overlayer : Overlayer
+      OverlayRouter : OverlayRouter
+      OverlayFilePath : string
+      Camera : Camera
+      OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
+      UserState : obj }
+
+/// The world, in a functional programming sense. Hosts the game object, the dependencies
+/// needed to implement a game, messages to by consumed by the various engine sub-systems,
+/// and general configuration data.
+and [<ReferenceEquality>] World =
+    internal
+        { Subsystems : Subsystems
+          Components : Components
+          Callbacks : Callbacks
+          State : WorldState
+          SimulantStates : GameState * Map<string, ScreenState * Map<string, GroupState * Map<string, EntityState>>> }

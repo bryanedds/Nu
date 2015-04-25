@@ -75,6 +75,11 @@ module Program =
 
     Regardless, the approach of dynamic Nu plug-ins to enable hot-swapping of F# code looks to be
     the correct path forward. *)
+
+    (* IDEA: Perhaps the constants needed to specify specific simulants and assets in code can be
+    type-provided rather than being authored manually, hopefully in a dynamic way. *)
+
+    (* IDEA: Perhaps an FRP Signal abstraction could be build on top of the Observation type...? *)
     
     let [<EntryPoint; STAThread>] main _ =
         Console.Write "Running Nu.exe"
