@@ -80,7 +80,6 @@
     <Compile Include="Simulation.fs" />
     <Compile Include="WorldAddress.fs" />
     <Compile Include="WorldConstants.fs" />
-    <Compile Include="WorldPublishing.fs" />
     <Compile Include="WorldPrimitives.fs" />
     <Compile Include="WorldFacet.fs" />
     <Compile Include="WorldEntity.fs" />

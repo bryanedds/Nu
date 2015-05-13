@@ -17,10 +17,6 @@ module WorldPhysicsModule =
         private
             { SubsystemOrder : single
               Integrator : IIntegrator }
-
-        static member make subsystemOrder integrator =
-            { SubsystemOrder = subsystemOrder
-              Integrator = integrator }
         
         static member private handleBodyTransformMessage (message : BodyTransformMessage) (entity : Entity) world =
             // OPTIMIZATION: entity is not changed (avoiding a change entity event) if position and rotation haven't changed.
@@ -77,6 +73,10 @@ module WorldPhysicsModule =
                 List.fold IntegratorSubsystem.handleIntegrationMessage world integrationMessages
 
             member this.CleanUp world = (this :> Subsystem, world)
+
+        static member make subsystemOrder integrator =
+            { SubsystemOrder = subsystemOrder
+              Integrator = integrator }
 
     type World with
 

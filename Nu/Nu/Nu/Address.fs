@@ -33,8 +33,11 @@ type [<CustomEquality; NoComparison>] NameKey =
             this.OptHashCode <- Some hashCode
             hashCode
 
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module NameKey =
+
     /// Make a name key from a single address name string.
-    static member make addressName =
+    let make addressName =
         { Name = addressName
           OptHashCode = None }
 

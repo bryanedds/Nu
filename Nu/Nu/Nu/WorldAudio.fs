@@ -17,10 +17,6 @@ module WorldAudioModule =
             { SubsystemOrder : single
               AudioPlayer : IAudioPlayer }
 
-        static member make subsystemOrder audioPlayer =
-            { SubsystemOrder = subsystemOrder
-              AudioPlayer = audioPlayer }
-
         interface Subsystem with
             member this.SubsystemType = AudioType
             member this.SubsystemOrder = this.SubsystemOrder
@@ -29,6 +25,10 @@ module WorldAudioModule =
             member this.ProcessMessages _ = (() :> obj, { this with AudioPlayer = this.AudioPlayer.Play () } :> Subsystem)
             member this.ApplyResult _ world = world
             member this.CleanUp world = (this :> Subsystem, world)
+
+        static member make subsystemOrder audioPlayer =
+            { SubsystemOrder = subsystemOrder
+              AudioPlayer = audioPlayer }
 
     type World with
 

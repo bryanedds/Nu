@@ -22,7 +22,10 @@ type internal OverlayState =
 type [<ReferenceEquality>] Overlayer =
     { Overlays : XmlDocument }
 
-    static member private trySelectNode overlayName propertyName overlayer =
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Overlayer =
+
+    let rec private trySelectNode overlayName propertyName overlayer =
         match overlayer.Overlays.DocumentElement with
         | null -> None
         | documentElement ->
@@ -44,12 +47,12 @@ type [<ReferenceEquality>] Overlayer =
                         while enr.MoveNext () && Option.isNone optNode do
                             let includeName = enr.Current :?> string // must be cast since Array.GetEnumerator is not generic...
                             let includeName = includeName.Trim ()
-                            optNode <- Overlayer.trySelectNode includeName propertyName overlayer
+                            optNode <- trySelectNode includeName propertyName overlayer
                         optNode
                 | leaf -> Some leaf
 
-    static member private getPropertyState overlayName propertyName propertyType target overlayer =
-        match Overlayer.trySelectNode overlayName propertyName overlayer with
+    let private getPropertyState overlayName propertyName propertyType target overlayer =
+        match trySelectNode overlayName propertyName overlayer with
         | Some overlayNode -> 
             let targetType = target.GetType ()
             let optProperty = targetType.GetProperty overlayNode.Name
@@ -75,11 +78,11 @@ type [<ReferenceEquality>] Overlayer =
             | None -> Bare
         | None -> Bare
 
-    static member private isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer =
-        Overlayer.getPropertyState overlayName propertyName propertyType target overlayer = Overlaid ||
-        List.exists (fun facetName -> Overlayer.getPropertyState facetName propertyName propertyType target overlayer = Overlaid) facetNames
+    let private isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer =
+        getPropertyState overlayName propertyName propertyType target overlayer = Overlaid ||
+        List.exists (fun facetName -> getPropertyState facetName propertyName propertyType target overlayer = Overlaid) facetNames
 
-    static member private isPropertyOverlaid5 facetNames propertyName propertyType target overlayer =
+    let private isPropertyOverlaid5 facetNames propertyName propertyType target overlayer =
         let targetType = target.GetType ()
         match targetType.GetProperty "OptOverlayName" with
         | null -> false
@@ -87,14 +90,14 @@ type [<ReferenceEquality>] Overlayer =
             match optOverlayNameProperty.GetValue target with
             | :? (string option) as optOverlayName ->
                 match optOverlayName with
-                | Some overlayName -> Overlayer.isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer
+                | Some overlayName -> isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer
                 | None -> false
             | _ -> false
 
-    static member private tryApplyOverlayToRecordField facetNames (property : PropertyInfo) (valueNode : XmlNode) oldOverlayName target oldOverlayer =
+    let private tryApplyOverlayToRecordField facetNames (property : PropertyInfo) (valueNode : XmlNode) oldOverlayName target oldOverlayer =
         let shouldApplyOverlay =
             property.PropertyType <> typeof<Xtension> &&
-            Overlayer.isPropertyOverlaid oldOverlayName facetNames property.Name property.PropertyType target oldOverlayer
+            isPropertyOverlaid oldOverlayName facetNames property.Name property.PropertyType target oldOverlayer
         if shouldApplyOverlay then
             let valueStr = valueNode.InnerText
             let converter = AlgebraicConverter property.PropertyType
@@ -102,17 +105,17 @@ type [<ReferenceEquality>] Overlayer =
                 let value = converter.ConvertFromString valueStr
                 property.SetValue (target, value)
 
-    static member private applyOverlayToProperties oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
+    let private applyOverlayToProperties oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         for property in targetProperties do
             if property.Name <> "FacetNames" && property.PropertyType <> typeof<string list> then
-                match Overlayer.trySelectNode newOverlayName property.Name newOverlayer with
-                | Some fieldNode -> Overlayer.tryApplyOverlayToRecordField facetNames property fieldNode oldOverlayName target oldOverlayer
+                match trySelectNode newOverlayName property.Name newOverlayer with
+                | Some fieldNode -> tryApplyOverlayToRecordField facetNames property fieldNode oldOverlayName target oldOverlayer
                 | None -> ()
 
     // TODO: see if this can be decomposed
-    static member private applyOverlayToXtension oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
+    let private applyOverlayToXtension oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
         let targetType = target.GetType ()
         match targetType.GetProperty "Xtension" with
         | null -> ()
@@ -121,14 +124,14 @@ type [<ReferenceEquality>] Overlayer =
             | :? Xtension as xtension ->
                 let nodes =
                     List.foldBack (fun (kvp : KeyValuePair<string, XField>) optNodes ->
-                        match Overlayer.trySelectNode newOverlayName kvp.Key newOverlayer with
+                        match trySelectNode newOverlayName kvp.Key newOverlayer with
                         | Some node -> (kvp.Value.FieldType, node) :: optNodes
                         | None -> optNodes)
                         (List.ofSeq xtension.XFields)
                         []
                 let xFields =
                     List.foldBack (fun (aType, node : XmlNode) xFields ->
-                        if Overlayer.isPropertyOverlaid oldOverlayName facetNames node.Name aType target oldOverlayer then
+                        if isPropertyOverlaid oldOverlayName facetNames node.Name aType target oldOverlayer then
                             let value = AlgebraicDescriptor.convertFromString node.InnerText aType
                             let xField = { FieldValue = value; FieldType = aType }
                             (node.Name, xField) :: xFields
@@ -141,38 +144,38 @@ type [<ReferenceEquality>] Overlayer =
             | _ -> ()
 
     /// Apply an overlay to the FacetNames field of the given target.
-    static member applyOverlayToFacetNames oldOverlayName newOverlayName target oldOverlayer newOverlayer =
+    let applyOverlayToFacetNames oldOverlayName newOverlayName target oldOverlayer newOverlayer =
         let targetType = target.GetType ()
         match targetType.GetProperty "FacetNames" with
         | null -> ()
         | facetNamesProperty ->
-            match Overlayer.trySelectNode newOverlayName facetNamesProperty.Name newOverlayer with
-            | Some fieldNode -> Overlayer.tryApplyOverlayToRecordField [] facetNamesProperty fieldNode oldOverlayName target oldOverlayer
+            match trySelectNode newOverlayName facetNamesProperty.Name newOverlayer with
+            | Some fieldNode -> tryApplyOverlayToRecordField [] facetNamesProperty fieldNode oldOverlayName target oldOverlayer
             | None -> ()
 
     /// Apply an overlay to the given target (except for any FacetNames field).
     /// Only the properties / fields that are overlaid by the old overlay as specified by the old
     /// overlayer will be changed.
-    static member applyOverlay6 oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
-        Overlayer.applyOverlayToProperties oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer
-        Overlayer.applyOverlayToXtension oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer
+    let applyOverlay6 oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
+        applyOverlayToProperties oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer
+        applyOverlayToXtension oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer
 
     /// Apply an overlay to the given target.
     /// Only the properties / fields that are overlaid by the old overlay will be changed.
-    static member applyOverlay oldOverlayName newOverlayName facetNames target overlayer =
-        Overlayer.applyOverlay6 oldOverlayName newOverlayName facetNames target overlayer overlayer
+    let applyOverlay oldOverlayName newOverlayName facetNames target overlayer =
+        applyOverlay6 oldOverlayName newOverlayName facetNames target overlayer overlayer
 
     /// Query that a property should be serialized.
-    static member shouldPropertySerialize overlayName facetNames propertyName propertyType target overlayer =
-        not <| Overlayer.isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer
+    let shouldPropertySerialize overlayName facetNames propertyName propertyType target overlayer =
+        not <| isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer
 
     /// Query that a property should be serialized.
-    static member shouldPropertySerialize5 facetNames propertyName propertyType target overlayer =
-        not <| Overlayer.isPropertyOverlaid5 facetNames propertyName propertyType target overlayer
+    let shouldPropertySerialize5 facetNames propertyName propertyType target overlayer =
+        not <| isPropertyOverlaid5 facetNames propertyName propertyType target overlayer
 
     /// Make an Overlayer by loading overlays from a file and then combining it with the given
     /// intrinsic overlays.
-    static member make (filePath : string) (intrinsicOverlays : XmlDocument) =
+    let make (filePath : string) (intrinsicOverlays : XmlDocument) =
 
         // create new overlay document into which all nodes will be inserted
         let overlays = XmlDocument ()
@@ -200,8 +203,11 @@ type [<ReferenceEquality>] Overlayer =
 type OverlayRouter =
     { Routes : Map<string, string option> }
 
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module OverlayRouter =
+
     /// Make an OverlayRouter.
-    static member make dispatchers userRoutes =
+    let make dispatchers userRoutes =
         let router = 
             Map.fold
                 (fun overlayRouter _ dispatcher ->
