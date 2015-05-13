@@ -18,10 +18,6 @@ module WorldRenderModule =
             { SubsystemOrder : single
               Renderer : IRenderer }
 
-        static member make subsystemOrder renderer =
-            { SubsystemOrder = subsystemOrder
-              Renderer = renderer }
-
         static member private getScreenTransitionRenderDescriptors camera (screen : Screen) transitionDescriptor world =
             match transitionDescriptor.OptDissolveImage with
             | Some dissolveImage ->
@@ -73,6 +69,10 @@ module WorldRenderModule =
 
             member this.ApplyResult _ world = world
             member this.CleanUp world = (this :> Subsystem, world)
+
+        static member make subsystemOrder renderer =
+            { SubsystemOrder = subsystemOrder
+              Renderer = renderer }
 
     type World with
 

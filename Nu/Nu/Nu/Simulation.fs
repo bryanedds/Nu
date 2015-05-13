@@ -32,12 +32,6 @@ type [<CLIMutable; StructuralEquality; NoComparison>] TransitionDescriptor =
       TransitionLifetime : int64
       OptDissolveImage : AssetTag option }
 
-    /// Make a screen transition descriptor.
-    static member make transitionType =
-        { TransitionType = transitionType
-          TransitionLifetime = 0L
-          OptDissolveImage = None }
-
 /// Describes the behavior of the screen dissolving algorithm.
 type [<StructuralEquality; NoComparison>] DissolveData =
     { IncomingTime : int64
@@ -282,10 +276,11 @@ and Facet () =
 
 /// A marker interface for the simulation state types (GameState, ScreenState, GroupState,
 /// and EntityState).
-and internal SimulantState = interface end
+and internal SimulantState =
+    interface end
 
 /// Hosts the ongoing state of a game. The end-user of this engine should never touch this
-/// type, and it's only public to make [<CliMutable>] work.
+/// type, and it's public _only_ to make [<CliMutable>] work.
 and [<CLIMutable; StructuralEquality; NoComparison>] GameState =
     { Id : Guid
       OptSelectedScreen : Screen option
@@ -293,20 +288,10 @@ and [<CLIMutable; StructuralEquality; NoComparison>] GameState =
       CreationTimeStampNp : int64
       DispatcherNp : GameDispatcher
       Xtension : Xtension }
-
-    /// Make a game state value.
-    static member make dispatcher =
-        { Id = Core.makeId ()
-          OptSelectedScreen = None
-          PublishChanges = true
-          CreationTimeStampNp = Core.getTimeStamp ()
-          DispatcherNp = dispatcher
-          Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
-
     interface SimulantState
 
 /// Hosts the ongoing state of a screen. The end-user of this engine should never touch this
-/// type, and it's only public to make [<CliMutable>] work.
+/// type, and it's public _only_ to make [<CliMutable>] work.
 and [<CLIMutable; StructuralEquality; NoComparison>] ScreenState =
     { Id : Guid
       Name : string
@@ -319,26 +304,10 @@ and [<CLIMutable; StructuralEquality; NoComparison>] ScreenState =
       CreationTimeStampNp : int64
       DispatcherNp : ScreenDispatcher
       Xtension : Xtension }
-
-    /// Make a screen state value.
-    static member make dispatcher optName =
-        let id = Core.makeId ()
-        { Id = id
-          Name = match optName with Some name -> name | None -> acstring id
-          TransitionStateNp = IdlingState
-          TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
-          Incoming = TransitionDescriptor.make Incoming
-          Outgoing = TransitionDescriptor.make Outgoing
-          PublishChanges = true
-          Persistent = true
-          CreationTimeStampNp = Core.getTimeStamp ()
-          DispatcherNp = dispatcher
-          Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
-
     interface SimulantState
 
 /// Hosts the ongoing state of a group. The end-user of this engine should never touch this
-/// type, and it's only public to make [<CliMutable>] work.
+/// type, and it's public _only_ to make [<CliMutable>] work.
 and [<CLIMutable; StructuralEquality; NoComparison>] GroupState =
     { Id : Guid
       Name : string
@@ -347,22 +316,10 @@ and [<CLIMutable; StructuralEquality; NoComparison>] GroupState =
       CreationTimeStampNp : int64
       DispatcherNp : GroupDispatcher
       Xtension : Xtension }
-
-    /// Make a group state value.
-    static member make dispatcher optName =
-        let id = Core.makeId ()
-        { Id = id
-          Name = match optName with Some name -> name | None -> acstring id
-          PublishChanges = true
-          Persistent = true
-          CreationTimeStampNp = Core.getTimeStamp ()
-          DispatcherNp = dispatcher
-          Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
-
     interface SimulantState
 
 /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
-/// type, and it's only public to make [<CliMutable>] work.
+/// type, and it's public _only_ to make [<CliMutable>] work.
 and [<CLIMutable; StructuralEquality; NoComparison>] EntityState =
     { Id : Guid
       Name : string
@@ -380,27 +337,6 @@ and [<CLIMutable; StructuralEquality; NoComparison>] EntityState =
       FacetsNp : Facet list
       OptOverlayName : string option
       Xtension : Xtension }
-
-    /// Make an entity state value.
-    static member make dispatcher optOverlayName optName =
-        let id = Core.makeId ()
-        { Id = id
-          Name = match optName with Some name -> name | None -> acstring id
-          Position = Vector2.Zero
-          Depth = 0.0f
-          Size = DefaultEntitySize
-          Rotation = 0.0f
-          Visible = true
-          ViewType = Relative
-          PublishChanges = true
-          Persistent = true
-          CreationTimeStampNp = Core.getTimeStamp ()
-          DispatcherNp = dispatcher
-          FacetNames = []
-          FacetsNp = []
-          OptOverlayName = optOverlayName
-          Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
-
     interface SimulantState
 
 /// A marker interface for the simulation types (Game, Screen, Group, and Entity).
@@ -487,7 +423,7 @@ and NuPlugin () =
     default this.MakeOverlayRoutes () = []
 
 /// The world's subsystems.
-/// TODO: Consider making this an abstract data type?
+/// TODO: Consider making this an abstract data type.
 and internal Subsystems = Map<string, Subsystem>
 
 /// The world's components.
@@ -528,7 +464,7 @@ and [<ReferenceEquality>] internal WorldState =
 /// needed to implement a game, messages to by consumed by the various engine sub-systems,
 /// and general configuration data.
 and [<ReferenceEquality>] World =
-    internal
+    private
         { Subsystems : Subsystems
           Components : Components
           Callbacks : Callbacks

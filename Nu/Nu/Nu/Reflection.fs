@@ -16,7 +16,12 @@ open Nu.Constants
 type [<NoEquality; NoComparison>] FieldExpr =
     | Constant of obj
     | Variable of (unit -> obj)
-    static member eval expr =
+    
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module FieldExpr =
+
+    /// Evaluate a field expression.
+    let eval expr =
         match expr with
         | Constant value -> value
         | Variable fn -> fn ()
@@ -26,8 +31,11 @@ type [<NoEquality; NoComparison>] FieldDefinition =
     { FieldName : string
       FieldType : Type
       FieldExpr : FieldExpr }
+      
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module FieldDefinition =
 
-    static member private validate fieldName (fieldType : Type) (_ : FieldExpr) =
+    let private validate fieldName (fieldType : Type) (_ : FieldExpr) =
         if fieldName = "FacetNames" then failwith "FacetNames cannot be an intrinsic field."
         if fieldName = "OptOverlayName" then failwith "OptOverlayName cannot be an intrinsic field."
         if Array.exists (fun gta -> gta = typeof<obj>) fieldType.GenericTypeArguments then
@@ -36,8 +44,8 @@ type [<NoEquality; NoComparison>] FieldDefinition =
                 "Use explicit typing on all values that carry incomplete type information such as empty lists, empty sets, and none options,."
 
     /// Make a field definition.
-    static member make fieldName fieldType fieldExpr =
-        FieldDefinition.validate fieldName fieldType fieldExpr
+    let make fieldName fieldType fieldExpr =
+        validate fieldName fieldType fieldExpr
         { FieldName = fieldName; FieldType = fieldType; FieldExpr = fieldExpr }
 
 /// In tandem with the define literal, grants a nice syntax to define constant fields.

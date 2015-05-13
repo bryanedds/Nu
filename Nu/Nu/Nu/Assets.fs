@@ -15,8 +15,11 @@ type Refinement =
     | PsdToPng
     | OldSchool
 
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Refinement =
+
     /// Convert a string to a refinement value.
-    static member stringToRefinement str =
+    let stringToRefinement str =
         match str with
         | "PsdToPng" -> PsdToPng
         | "OldSchool" -> OldSchool

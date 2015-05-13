@@ -89,6 +89,7 @@
     <Compile Include="Xtension.fs" />
     <Compile Include="Implicit.fs" />
     <Compile Include="DuckTyping.fs" />
+    <Compile Include="TypeAbsorption.fs" />
     <Compile Include="ImmutableSubclass.fs" />
     <Compile Include="RandTests.fs" />
     <Compile Include="AlgebraicReaderTests.fs" />
