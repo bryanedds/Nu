@@ -198,13 +198,21 @@ module Overlayer =
         // make overlay
         { Overlays = overlays }
 
-/// Maps from dispatcher names to opt overlay names.
-/// TODO: consider making this an abstract data type.
+/// Maps from dispatcher names to optional overlay names.
 type OverlayRouter =
-    { Routes : Map<string, string option> }
+    private
+        { Routes : Map<string, string option> }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module OverlayRouter =
+
+    /// Find an overlay name for a given dispatcher name.
+    let find overlayName overlayRouter =
+        Map.find overlayName overlayRouter.Routes
+
+    /// Try to find an overlay name for a given dispatcher name.
+    let tryFind overlayName overlayRouter =
+        Map.tryFind overlayName overlayRouter.Routes
 
     /// Make an OverlayRouter.
     let make dispatchers userRoutes =
