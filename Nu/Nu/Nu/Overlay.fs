@@ -18,9 +18,9 @@ type internal OverlayState =
     | Overlaid
 
 /// Defines the manner in which overlays are applied to targets.
-/// TODO: consider making this an abstract data type.
 type [<ReferenceEquality>] Overlayer =
-    { Overlays : XmlDocument }
+    private
+        { Overlays : XmlDocument }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Overlayer =
