@@ -10,14 +10,10 @@ open Nu.Constants
 open Nu.WorldConstants
 
 /// An observation in the functional reactive style.
-/// TODO: I bet there's either a monad or arrow in here...
+/// TODO: I bet there's either a monad or arrow here...
 type [<ReferenceEquality>] Observation<'a, 'o when 'o :> Simulant> =
     { Observer : 'o
       Subscribe : World -> 'a Address * (World -> World) * World }
-
-    static member make<'a> observer subscribe =
-        { Observer = observer
-          Subscribe = subscribe }
 
 module Observation =
 
@@ -410,13 +406,11 @@ module ObservationModule =
     let ( *-- ) (simulant : 'a, valueGetter : World -> 'b) (observer : 'o) =
         let simulantChangeEventAddress = stoa<'a SimulantChangeData> (typeof<'a>.Name + "/Change")
         let changeEventAddress = simulantChangeEventAddress ->>- simulant.SimulantAddress
-        observe changeEventAddress observer |>
-        simulantValue valueGetter
+        observe changeEventAddress observer |> simulantValue valueGetter
 
     /// Make an observation of one of the observer's change events per frame.
     let (/--) (simulant, valueGetter) observer =
-        (simulant, valueGetter) *-- observer |>
-        noMoreThanOncePerUpdate
+        (simulant, valueGetter) *-- observer |> noMoreThanOncePerUpdate
 
     /// Propagate the event data of an observation to a value in the observing simulant when the
     /// observer exists (doing nothing otherwise).

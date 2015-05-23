@@ -16,7 +16,7 @@ open Nu.Constants
 type [<NoEquality; NoComparison>] FieldExpr =
     | Constant of obj
     | Variable of (unit -> obj)
-    
+
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module FieldExpr =
 
@@ -31,7 +31,7 @@ type [<NoEquality; NoComparison>] FieldDefinition =
     { FieldName : string
       FieldType : Type
       FieldExpr : FieldExpr }
-      
+
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module FieldDefinition =
 
