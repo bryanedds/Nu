@@ -26,6 +26,7 @@ type [<StructuralEquality; NoComparison>] AssetMetadata =
     | InvalidMetadata of string
 
 /// A map of asset names to asset metadata.
+/// TODO: consider turning this, combined with the functions in the Metadata module, into an ADT.
 type AssetMetadataMap = Map<string, Map<string, AssetMetadata>>
 
 /// Thrown when a tile set property is not found.
