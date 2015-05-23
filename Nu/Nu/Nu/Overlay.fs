@@ -206,12 +206,12 @@ type OverlayRouter =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module OverlayRouter =
 
-    /// Find an overlay name for a given dispatcher name.
-    let find overlayName overlayRouter =
+    /// Find an optional overlay name for a given dispatcher name.
+    let findOptOverlayName overlayName overlayRouter =
         Map.find overlayName overlayRouter.Routes
 
-    /// Try to find an overlay name for a given dispatcher name.
-    let tryFind overlayName overlayRouter =
+    /// Try to find an optional overlay name for a given dispatcher name.
+    let tryFindOptOverlayName overlayName overlayRouter =
         Map.tryFind overlayName overlayRouter.Routes
 
     /// Make an OverlayRouter.
