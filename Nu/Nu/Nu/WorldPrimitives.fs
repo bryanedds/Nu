@@ -387,7 +387,7 @@ module World =
     let getFacets world =
         world.Components.Facets
 
-    (* State *)
+    (* WorldState *)
 
     let private getState world =
         world.State

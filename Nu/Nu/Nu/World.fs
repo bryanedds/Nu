@@ -19,8 +19,8 @@ open Nu
 open Nu.Constants
 open Nu.WorldConstants
 
-[<AutoOpen>]
-module WorldModule' =
+[<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module WorldModule =
 
     let private ScreenTransitionMouseLeftKey = World.makeSubscriptionKey ()
     let private ScreenTransitionMouseCenterKey = World.makeSubscriptionKey ()

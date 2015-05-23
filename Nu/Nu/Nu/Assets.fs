@@ -19,7 +19,7 @@ type Refinement =
 module Refinement =
 
     /// Convert a string to a refinement value.
-    let stringToRefinement str =
+    let fromString str =
         match str with
         | "PsdToPng" -> PsdToPng
         | "OldSchool" -> OldSchool
@@ -107,7 +107,7 @@ module Assets =
         | null -> []
         | refinements ->
             let refinements = AlgebraicDescriptor.convertFromString refinements.InnerText typeof<string list> :?> string list
-            List.map Refinement.stringToRefinement refinements
+            List.map Refinement.fromString refinements
 
     let private writeMagickImageAsPng filePath (image : MagickImage) =
         match Path.GetExtension filePath with
