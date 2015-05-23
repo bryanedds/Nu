@@ -109,8 +109,8 @@ module World =
             match AnyEventAddressesCache.TryGetValue anyEventAddressesKey with
             | (true, anyEventAddresses) -> anyEventAddresses
             | (false, _) ->
-                let eventAddressNameKeys = eventAddress.NameKeys
-                let anyEventAddressNameKeys = AnyEventAddress.NameKeys
+                let eventAddressNameKeys = Address.getNameKeys eventAddress
+                let anyEventAddressNameKeys = Address.getNameKeys AnyEventAddress
                 let anyEventAddresses =
                     [for i in 0 .. List.length eventAddressNameKeys - 1 do
                         let subNameKeys = List.take i eventAddressNameKeys @ anyEventAddressNameKeys
@@ -190,7 +190,7 @@ module World =
                 (fun (eventHandling, world) (_, subscriber : Simulant, subscription) ->
                     if  (match eventHandling with Cascade -> true | Resolve -> false) &&
                         (match world.State.Liveness with Running -> true | Exiting -> false) then
-                        match subscriber.SimulantAddress.NameKeys with
+                        match Address.getNameKeys subscriber.SimulantAddress with
                         | [] -> publishEvent<'a, 'p, Game> subscriber publisher eventAddress eventData subscription world
                         | [_] -> publishEvent<'a, 'p, Screen> subscriber publisher eventAddress eventData subscription world
                         | [_; _] -> publishEvent<'a, 'p, Group> subscriber publisher eventAddress eventData subscription world
@@ -511,7 +511,7 @@ module World =
 
     let private optEntityGetFreshKeyAndValue entity world =
         let optEntityState =
-            match entity.EntityAddress.NameKeys with
+            match Address.getNameKeys entity.EntityAddress with
             | [screenNameKey; groupNameKey; entityNameKey] ->
                 let (_, screenStateMap) = world.SimulantStates 
                 match Map.tryFind screenNameKey.Name screenStateMap with
@@ -531,7 +531,7 @@ module World =
             world.State.OptEntityCache
 
     let private entityStateAdder (entityState : EntityState) entity world =
-        match entity.EntityAddress.NameKeys with
+        match Address.getNameKeys entity.EntityAddress with
         | [screenNameKey; groupNameKey; entityNameKey] ->
             let (gameState, screenStateMap) = world.SimulantStates 
             match Map.tryFind screenNameKey.Name screenStateMap with
@@ -547,7 +547,7 @@ module World =
         | _ -> failwith <| "Invalid entity address '" + acstring entity.EntityAddress + "'."
 
     let private entityStateRemover entity world =
-        match entity.EntityAddress.NameKeys with
+        match Address.getNameKeys entity.EntityAddress with
         | [screenNameKey; groupNameKey; entityNameKey] ->
             let (gameState, screenStateMap) = world.SimulantStates 
             match Map.tryFind screenNameKey.Name screenStateMap with
@@ -563,7 +563,7 @@ module World =
         | _ -> failwith <| "Invalid entity address '" + acstring entity.EntityAddress + "'."
 
     let internal getEntityStateMap group world =
-        match group.GroupAddress.NameKeys with
+        match Address.getNameKeys group.GroupAddress with
         | [screenNameKey; groupNameKey] ->
             let (_, screenStateMap) = world.SimulantStates
             match Map.tryFind screenNameKey.Name screenStateMap with
@@ -607,7 +607,7 @@ module World =
     (* GroupState *)
 
     let private optGroupStateFinder group world =
-        match group.GroupAddress.NameKeys with
+        match Address.getNameKeys group.GroupAddress with
         | [screenNameKey; groupNameKey] ->
             let (_, screenStateMap) = world.SimulantStates
             match Map.tryFind screenNameKey.Name screenStateMap with
@@ -619,7 +619,7 @@ module World =
         | _ -> failwith <| "Invalid group address '" + acstring group.GroupAddress + "'."
 
     let private groupStateAdder (groupState : GroupState) group world =
-        match group.GroupAddress.NameKeys with
+        match Address.getNameKeys group.GroupAddress with
         | [screenNameKey; groupNameKey] ->
             let (gameState, screenStateMap) = world.SimulantStates 
             match Map.tryFind screenNameKey.Name screenStateMap with
@@ -637,7 +637,7 @@ module World =
         | _ -> failwith <| "Invalid group address '" + acstring group.GroupAddress + "'."
 
     let private groupStateRemover group world =
-        match group.GroupAddress.NameKeys with
+        match Address.getNameKeys group.GroupAddress with
         | [screenNameKey; groupNameKey] ->
             let (gameState, screenStateMap) = world.SimulantStates 
             match Map.tryFind screenNameKey.Name screenStateMap with
@@ -654,7 +654,7 @@ module World =
         | _ -> failwith <| "Invalid group address '" + acstring group.GroupAddress + "'."
 
     let internal getGroupStateMap screen world =
-        match screen.ScreenAddress.NameKeys with
+        match Address.getNameKeys screen.ScreenAddress with
         | [screenNameKey] ->
             let (_, screenStateMap) = world.SimulantStates
             match Map.tryFind screenNameKey.Name screenStateMap with
@@ -695,7 +695,7 @@ module World =
     (* ScreenState *)
 
     let private optScreenStateFinder screen world =
-        match screen.ScreenAddress.NameKeys with
+        match Address.getNameKeys screen.ScreenAddress with
         | [screenNameKey] ->
             let (_, screenStateMap) = world.SimulantStates 
             match Map.tryFind screenNameKey.Name screenStateMap with
@@ -704,7 +704,7 @@ module World =
         | _ -> failwith <| "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
     let private screenStateAdder (screenState : ScreenState) screen world =
-        match screen.ScreenAddress.NameKeys with
+        match Address.getNameKeys screen.ScreenAddress with
         | [screenNameKey] ->
             let (gameState, screenStateMap) = world.SimulantStates 
             match Map.tryFind screenNameKey.Name screenStateMap with
@@ -717,7 +717,7 @@ module World =
         | _ -> failwith <| "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
     let private screenStateRemover screen world =
-        match screen.ScreenAddress.NameKeys with
+        match Address.getNameKeys screen.ScreenAddress with
         | [screenNameKey] ->
             let (gameState, screenStateMap) = world.SimulantStates 
             match Map.tryFind screenNameKey.Name screenStateMap with

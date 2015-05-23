@@ -13,8 +13,9 @@ open Nu
 /// A name key for optimized look-up in hashing containers.
 /// OPTIMIZATION: OptHashCode is lazy for speed.
 type [<CustomEquality; NoComparison>] NameKey =
-    { Name : string
-      mutable OptHashCode : int option }
+    private
+        { Name : string
+          mutable OptHashCode : int option }
 
     interface NameKey IEquatable with
         member this.Equals that =
@@ -33,6 +34,9 @@ type [<CustomEquality; NoComparison>] NameKey =
             this.OptHashCode <- Some hashCode
             hashCode
 
+    override this.ToString () =
+        this.Name
+
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module NameKey =
 
@@ -41,15 +45,20 @@ module NameKey =
         { Name = addressName
           OptHashCode = None }
 
+    /// Get the name of a name key.
+    let getName nameKey =
+        nameKey.Name
+
 /// Specifies the address of an element in a game, or name of an event.
 /// OPTIMIZATION: NameKeys are used in case we can manage some sort of hashing look-up with them.
 /// OPTIMIZATION: Comparison is done using the full string of names for speed.
 /// OPTIMIZATION: OptNamesStr and OptHashCode are lazy for speed.
 type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
-    { NameKeys : NameKey list
-      mutable OptNamesStr : string option
-      mutable OptHashCode : int option
-      TypeCarrier : 'a -> unit }
+    private
+        { NameKeys : NameKey list
+          mutable OptNamesStr : string option
+          mutable OptHashCode : int option
+          TypeCarrier : 'a -> unit }
 
     static member internal join (seq : string seq) =
         String.Join ("/", seq)
@@ -211,6 +220,10 @@ module AddressModule =
 
 [<RequireQualifiedAccess>]
 module Address =
+
+    /// Get the name keys of an address.
+    let getNameKeys address =
+        address.NameKeys
 
     /// Change the type of an address.
     let changeType<'a, 'b> (address : 'a Address) =
