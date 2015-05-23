@@ -610,7 +610,7 @@ module WorldModule =
                       SimulantStates = simulantStates }
 
                 // initialize OptEntityCache
-                let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address<Entity>.empty, world) None }}
+                let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}
 
                 // and finally, register the game
                 let world = World.registerGame world
@@ -681,7 +681,7 @@ module WorldModule =
                   SimulantStates = simulantStates }
 
             // initialize OptEntityCache
-            let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address<Entity>.empty, world) None }}
+            let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}
 
             // and finally, register the game
             World.registerGame world
