@@ -60,12 +60,16 @@ module Core =
         Guid.NewGuid ()
 
     /// Get a time stamp at the highest-available resolution.
-    let getTimeStamp () = CoreInternal.getTimeStampInternal ()
+    let getTimeStamp () =
+        CoreInternal.getTimeStampInternal ()
 
-    /// Spin the CPU until the time stamp advances.
-    let spinUntilNextTimeStamp () =
-        let timeStamp = getTimeStamp ()
-        while timeStamp = getTimeStamp () do ()
+    /// Spin until the time stamp advances, taking the next time stamp.
+    let getNextTimeStamp () =
+        let currentStamp = getTimeStamp ()
+        let mutable nextStamp = getTimeStamp ()
+        while currentStamp = nextStamp do
+            nextStamp <- getTimeStamp ()
+        nextStamp
 
     /// Get a resolution along either an X or Y dimension.
     let getResolutionOrDefault isX defaultResolution =

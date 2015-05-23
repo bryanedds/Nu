@@ -4,6 +4,8 @@ open System.Collections.Generic
 open OpenTK
 open Prime
 
+// NOTE: this code is a complete WIP - don't use it just yet :)
+
 type [<NoEquality; NoComparison>] private 'e QuadNode =
     private
         { Depth : int

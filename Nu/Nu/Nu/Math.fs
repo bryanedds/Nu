@@ -110,6 +110,7 @@ type Vector4Converter () =
         | :? Vector4 -> source
         | _ -> failwith "Invalid Vector4Converter conversion from source."
 
+[<RequireQualifiedAccess>]
 module Matrix3 =
 
     /// Gets the invertse view matrix with a terribly hacky method custom-designed to satisfy SDL2's
