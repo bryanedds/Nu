@@ -49,11 +49,39 @@ module NameKey =
     let getName nameKey =
         nameKey.Name
 
+/// Converts Address types.
+type AddressConverter (targetType : Type) =
+    inherit TypeConverter ()
+    
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string> ||
+        destType = targetType
+        
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<string> then
+            let toStringMethod = targetType.GetMethod "ToString"
+            toStringMethod.Invoke (source, null)
+        elif destType = targetType then source
+        else failwith "Invalid AddressConverter conversion to source."
+        
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<string> ||
+        sourceType = targetType
+        
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? string ->
+            let stoaFunction = targetType.GetMethod ("stoa", BindingFlags.Static ||| BindingFlags.Public)
+            stoaFunction.Invoke (null, [|source|])
+        | _ ->
+            if targetType.IsInstanceOfType source then source
+            else failwith "Invalid AddressConverter conversion from source."
+
 /// Specifies the address of an element in a game, or name of an event.
 /// OPTIMIZATION: NameKeys are used in case we can manage some sort of hashing look-up with them.
 /// OPTIMIZATION: Comparison is done using the full string of names for speed.
 /// OPTIMIZATION: OptNamesStr and OptHashCode are lazy for speed.
-type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
+and [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
     private
         { NameKeys : NameKey list
           mutable OptNamesStr : string option
@@ -106,34 +134,6 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     
     override this.ToString () =
         Address<'a>.getNamesStr this
-
-/// Converts Address types.
-and AddressConverter (targetType : Type) =
-    inherit TypeConverter ()
-    
-    override this.CanConvertTo (_, destType) =
-        destType = typeof<string> ||
-        destType = targetType
-        
-    override this.ConvertTo (_, _, source, destType) =
-        if destType = typeof<string> then
-            let toStringMethod = targetType.GetMethod "ToString"
-            toStringMethod.Invoke (source, null)
-        elif destType = targetType then source
-        else failwith "Invalid AddressConverter conversion to source."
-        
-    override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<string> ||
-        sourceType = targetType
-        
-    override this.ConvertFrom (_, _, source) =
-        match source with
-        | :? string ->
-            let stoaFunction = targetType.GetMethod ("stoa", BindingFlags.Static ||| BindingFlags.Public)
-            stoaFunction.Invoke (null, [|source|])
-        | _ ->
-            if targetType.IsInstanceOfType source then source
-            else failwith "Invalid AddressConverter conversion from source."
 
 [<RequireQualifiedAccess>]
 module Address =
