@@ -35,18 +35,24 @@ type [<NoEquality; NoComparison>] FieldDefinition =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module FieldDefinition =
 
-    let private validate fieldName (fieldType : Type) (_ : FieldExpr) =
-        if fieldName = "FacetNames" then failwith "FacetNames cannot be an intrinsic field."
-        if fieldName = "OptOverlayName" then failwith "OptOverlayName cannot be an intrinsic field."
-        if Array.exists (fun gta -> gta = typeof<obj>) fieldType.GenericTypeArguments then
+    /// Validate a field definition.
+    let validate fieldDefinition =
+        if fieldDefinition.FieldName = "FacetNames" then failwith "FacetNames cannot be an intrinsic field."
+        if fieldDefinition.FieldName = "OptOverlayName" then failwith "OptOverlayName cannot be an intrinsic field."
+        if Array.exists (fun gta -> gta = typeof<obj>) fieldDefinition.FieldType.GenericTypeArguments then
             failwith <|
-                "Generic field definition lacking type information for field '" + fieldName + "'. " +
+                "Generic field definition lacking type information for field '" + fieldDefinition.FieldName + "'. " +
                 "Use explicit typing on all values that carry incomplete type information such as empty lists, empty sets, and none options,."
 
     /// Make a field definition.
     let make fieldName fieldType fieldExpr =
-        validate fieldName fieldType fieldExpr
         { FieldName = fieldName; FieldType = fieldType; FieldExpr = fieldExpr }
+
+    /// Make a field definition, validating it in the process.
+    let makeValidated fieldName fieldType fieldExpr =
+        let result = make fieldName fieldType fieldExpr
+        validate result
+        result
 
 /// In tandem with the define literal, grants a nice syntax to define constant fields.
 type DefineConstant =
@@ -55,7 +61,7 @@ type DefineConstant =
     /// Some magic syntax for composing constant fields.
     static member (?) (_, fieldName) =
         fun (constant : 'c) ->
-            FieldDefinition.make fieldName typeof<'c> <| Constant constant
+            FieldDefinition.makeValidated fieldName typeof<'c> <| Constant constant
 
 /// In tandem with the variable literal, grants a nice syntax to define variable fields.
 type DefineVariable =
@@ -64,7 +70,7 @@ type DefineVariable =
     /// Some magic syntax for composing variable fields.
     static member (?) (_, fieldName) =
         fun (variable : unit -> 'v) ->
-            FieldDefinition.make fieldName typeof<'v> <| Variable (fun () -> variable () :> obj)
+            FieldDefinition.makeValidated fieldName typeof<'v> <| Variable (fun () -> variable () :> obj)
 
 [<AutoOpen>]
 module ReflectionModule =
