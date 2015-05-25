@@ -263,34 +263,6 @@ module World =
             subscribe<unit, 's> removalKey subscription' removingEventAddress subscriber world
         else failwith "Cannot monitor events with an anonymous subscriber."
 
-    (* Input *)
-
-    /// Convert a MouseButton to SDL's representation.
-    let internal toSdlMouseButton mouseButton =
-        MouseState.toSdlButton mouseButton
-
-    /// Convert SDL's representation of a mouse button to a MouseButton.
-    let internal toNuMouseButton mouseButton =
-        MouseState.toNuButton mouseButton
-
-    /// Query that the given mouse button is down.
-    let isMouseButtonDown mouseButton (_ : World) =
-        MouseState.isButtonDown mouseButton
-
-    /// Get the position of the mouse.
-    let getMousePosition (_ : World) =
-        MouseState.getPosition ()
-
-    /// Get the position of the mouse in floating-point coordinates.
-    let getMousePositionF (_ : World) =
-        MouseState.getPositionF ()
-
-    /// Query that the given keyboard key is down.
-    let isKeyboardKeyDown scanCode (_ : World) =
-        KeyboardState.isKeyDown scanCode
-
-    // TODO: implement isKeyboardModifierActive.
-
     (* Subsystems *)
 
     let internal getSubsystem<'s when 's :> Subsystem> name world =
@@ -317,18 +289,6 @@ module World =
 
     let internal clearSubsystemsMessages world =
         updateSubsystems (fun is _ -> is.ClearMessages ()) world
-
-    /// Add a physics message to the world.
-    let addPhysicsMessage (message : PhysicsMessage) world =
-        updateSubsystem (fun is _ -> is.EnqueueMessage message) IntegratorSubsystemName world
-
-    /// Add a rendering message to the world.
-    let addRenderMessage (message : RenderMessage) world =
-        updateSubsystem (fun rs _ -> rs.EnqueueMessage message) RendererSubsystemName world
-
-    /// Add an audio message to the world.
-    let addAudioMessage (message : AudioMessage) world =
-        updateSubsystem (fun aps _ -> aps.EnqueueMessage message) AudioPlayerSubsystemName world
 
     (* Callbacks *)
 
