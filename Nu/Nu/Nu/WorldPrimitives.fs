@@ -89,6 +89,30 @@ module EntityState =
           Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Game =
+
+    /// Create a Game proxy from an address.
+    let proxy address = { GameAddress = address }
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Screen =
+
+    /// Create a Screen proxy from an address.
+    let proxy address = { ScreenAddress = address }
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Group =
+
+    /// Create a Group proxy from an address.
+    let proxy address = { GroupAddress = address }
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Entity =
+
+    /// Create an Entity proxy from an address.
+    let proxy address = { EntityAddress = address }
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module World =
 
     (* Publishing *)
