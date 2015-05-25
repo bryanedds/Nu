@@ -9,74 +9,74 @@ open Nu
 open Nu.Constants
 open Nu.WorldConstants
 
+/// The subsystem for the world's integrator.
+type [<ReferenceEquality>] IntegratorSubsystem =
+    private
+        { SubsystemOrder : single
+          Integrator : IIntegrator }
+        
+    static member private handleBodyTransformMessage (message : BodyTransformMessage) (entity : Entity) world =
+        // OPTIMIZATION: entity is not changed (avoiding a change entity event) if position and rotation haven't changed.
+        if entity.GetPosition world <> message.Position || entity.GetRotation world <> message.Rotation then
+            world |>
+                // TODO: see if the following center-offsetting can be encapsulated within the Physics module!
+                entity.SetPosition (message.Position - entity.GetSize world * 0.5f) |>
+                entity.SetRotation message.Rotation
+        else world
+
+    static member private handleIntegrationMessage world integrationMessage =
+        match world.State.Liveness with
+        | Running ->
+            match integrationMessage with
+            | BodyTransformMessage bodyTransformMessage ->
+                let entity = Entity.proxy <| atoea bodyTransformMessage.SourceAddress
+                if World.containsEntity entity world then
+                    IntegratorSubsystem.handleBodyTransformMessage bodyTransformMessage entity world
+                else world
+            | BodyCollisionMessage bodyCollisionMessage ->
+                let source = Entity.proxy <| atoea bodyCollisionMessage.SourceAddress
+                match World.getOptEntityState source world with
+                | Some _ ->
+                    let collisionAddress = CollisionEventAddress ->- bodyCollisionMessage.SourceAddress
+                    let collisionData =
+                        { Normal = bodyCollisionMessage.Normal
+                          Speed = bodyCollisionMessage.Speed
+                          Collidee = Entity.proxy <| atoea bodyCollisionMessage.CollideeAddress }
+                    World.publish4 collisionData collisionAddress Game world
+                | None -> world
+        | Exiting -> world
+
+    member this.BodyExists physicsId = this.Integrator.BodyExists physicsId
+    member this.GetBodyContactNormals physicsId = this.Integrator.GetBodyContactNormals physicsId
+    member this.GetBodyLinearVelocity physicsId = this.Integrator.GetBodyLinearVelocity physicsId
+    member this.GetBodyGroundContactNormals physicsId = this.Integrator.GetBodyGroundContactNormals physicsId
+    member this.GetBodyOptGroundContactNormal physicsId = this.Integrator.GetBodyOptGroundContactNormal physicsId
+    member this.GetBodyOptGroundContactTangent physicsId = this.Integrator.GetBodyOptGroundContactTangent physicsId
+    member this.BodyOnGround physicsId = this.Integrator.BodyOnGround physicsId
+
+    interface Subsystem with
+        member this.SubsystemType = UpdateType
+        member this.SubsystemOrder = this.SubsystemOrder
+        member this.ClearMessages () = { this with Integrator = this.Integrator.ClearMessages () } :> Subsystem
+        member this.EnqueueMessage message = { this with Integrator = this.Integrator.EnqueueMessage (message :?> PhysicsMessage) } :> Subsystem
+            
+        member this.ProcessMessages world =
+            let tickRate = World.getTickRate world
+            let (integrationMessages, integrator) = this.Integrator.Integrate tickRate
+            (integrationMessages :> obj, { this with Integrator = integrator } :> Subsystem)
+
+        member this.ApplyResult integrationMessages world =
+            let integrationMessages = integrationMessages :?> IntegrationMessage list
+            List.fold IntegratorSubsystem.handleIntegrationMessage world integrationMessages
+
+        member this.CleanUp world = (this :> Subsystem, world)
+
+    static member make subsystemOrder integrator =
+        { SubsystemOrder = subsystemOrder
+          Integrator = integrator }
+
 [<AutoOpen>]
 module WorldPhysicsModule =
-
-    /// The subsystem for the world's integrator.
-    type [<ReferenceEquality>] IntegratorSubsystem =
-        private
-            { SubsystemOrder : single
-              Integrator : IIntegrator }
-        
-        static member private handleBodyTransformMessage (message : BodyTransformMessage) (entity : Entity) world =
-            // OPTIMIZATION: entity is not changed (avoiding a change entity event) if position and rotation haven't changed.
-            if entity.GetPosition world <> message.Position || entity.GetRotation world <> message.Rotation then
-                world |>
-                    // TODO: see if the following center-offsetting can be encapsulated within the Physics module!
-                    entity.SetPosition (message.Position - entity.GetSize world * 0.5f) |>
-                    entity.SetRotation message.Rotation
-            else world
-
-        static member private handleIntegrationMessage world integrationMessage =
-            match world.State.Liveness with
-            | Running ->
-                match integrationMessage with
-                | BodyTransformMessage bodyTransformMessage ->
-                    let entity = Entity.proxy <| atoea bodyTransformMessage.SourceAddress
-                    if World.containsEntity entity world then
-                        IntegratorSubsystem.handleBodyTransformMessage bodyTransformMessage entity world
-                    else world
-                | BodyCollisionMessage bodyCollisionMessage ->
-                    let source = Entity.proxy <| atoea bodyCollisionMessage.SourceAddress
-                    match World.getOptEntityState source world with
-                    | Some _ ->
-                        let collisionAddress = CollisionEventAddress ->- bodyCollisionMessage.SourceAddress
-                        let collisionData =
-                            { Normal = bodyCollisionMessage.Normal
-                              Speed = bodyCollisionMessage.Speed
-                              Collidee = Entity.proxy <| atoea bodyCollisionMessage.CollideeAddress }
-                        World.publish4 collisionData collisionAddress Game world
-                    | None -> world
-            | Exiting -> world
-
-        member this.BodyExists physicsId = this.Integrator.BodyExists physicsId
-        member this.GetBodyContactNormals physicsId = this.Integrator.GetBodyContactNormals physicsId
-        member this.GetBodyLinearVelocity physicsId = this.Integrator.GetBodyLinearVelocity physicsId
-        member this.GetBodyGroundContactNormals physicsId = this.Integrator.GetBodyGroundContactNormals physicsId
-        member this.GetBodyOptGroundContactNormal physicsId = this.Integrator.GetBodyOptGroundContactNormal physicsId
-        member this.GetBodyOptGroundContactTangent physicsId = this.Integrator.GetBodyOptGroundContactTangent physicsId
-        member this.BodyOnGround physicsId = this.Integrator.BodyOnGround physicsId
-
-        interface Subsystem with
-            member this.SubsystemType = UpdateType
-            member this.SubsystemOrder = this.SubsystemOrder
-            member this.ClearMessages () = { this with Integrator = this.Integrator.ClearMessages () } :> Subsystem
-            member this.EnqueueMessage message = { this with Integrator = this.Integrator.EnqueueMessage (message :?> PhysicsMessage) } :> Subsystem
-            
-            member this.ProcessMessages world =
-                let tickRate = World.getTickRate world
-                let (integrationMessages, integrator) = this.Integrator.Integrate tickRate
-                (integrationMessages :> obj, { this with Integrator = integrator } :> Subsystem)
-
-            member this.ApplyResult integrationMessages world =
-                let integrationMessages = integrationMessages :?> IntegrationMessage list
-                List.fold IntegratorSubsystem.handleIntegrationMessage world integrationMessages
-
-            member this.CleanUp world = (this :> Subsystem, world)
-
-        static member make subsystemOrder integrator =
-            { SubsystemOrder = subsystemOrder
-              Integrator = integrator }
 
     type World with
 
