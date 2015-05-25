@@ -76,6 +76,10 @@ module WorldRenderModule =
 
     type World with
 
+        /// Add a rendering message to the world.
+        static member addRenderMessage (message : RenderMessage) world =
+            World.updateSubsystem (fun rs _ -> rs.EnqueueMessage message) RendererSubsystemName world
+
         /// Hint that a rendering asset package with the given name should be loaded. Should be
         /// used to avoid loading assets at inconvenient times (such as in the middle of game play!)
         static member hintRenderPackageUse packageName world =

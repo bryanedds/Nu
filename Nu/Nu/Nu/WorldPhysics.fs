@@ -80,6 +80,10 @@ module WorldPhysicsModule =
 
     type World with
 
+        /// Add a physics message to the world.
+        static member addPhysicsMessage (message : PhysicsMessage) world =
+            World.updateSubsystem (fun is _ -> is.EnqueueMessage message) IntegratorSubsystemName world
+
         /// Query that the world contains a body with the given physics id?
         static member bodyExists physicsId world =
             World.getSubsystemBy (fun (integrator : IntegratorSubsystem) -> integrator.BodyExists physicsId) IntegratorSubsystemName world

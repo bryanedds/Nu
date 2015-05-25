@@ -32,6 +32,10 @@ module WorldAudioModule =
 
     type World with
 
+        /// Add an audio message to the world.
+        static member addAudioMessage (message : AudioMessage) world =
+            World.updateSubsystem (fun aps _ -> aps.EnqueueMessage message) AudioPlayerSubsystemName world
+
         /// Send a message to the audio system to play a song.
         static member playSong timeToFadeOutSongMs volume song world =
             let playSongMessage = PlaySongMessage { TimeToFadeOutSongMs = timeToFadeOutSongMs; Volume = volume; Song = song }
