@@ -450,9 +450,9 @@ module WorldEntityModule =
                 World.setEntityState entityState entity world
 
         // TODO: put this in a better place! And of course, document.
-        static member getPropertyDescriptors makePropertyDescriptor (aType : Type) optXtension =
+        static member getPropertyDescriptors makePropertyDescriptor optXtension =
             // OPTIMIZATION: seqs used for speed.
-            let properties = aType.GetProperties ()
+            let properties = typeof<EntityState>.GetProperties ()
             let typeConverterAttribute = TypeConverterAttribute (typeof<AlgebraicConverter>) // TODO: make this static?
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.PropertyType <> typeof<Xtension>) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty <| property.GetCustomAttributes<ExtensionAttribute> ()) properties
