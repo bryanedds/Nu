@@ -151,7 +151,7 @@ and EntityTypeDescriptor (optSource : obj) =
             | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity.GetXtension !source.RefWorld)
             | _ -> None
         ignore optXtension
-        let makePropertyDescriptor = fun (emb, tcas) -> (EntityPropertyDescriptor (emb, Array.map (fun attr -> attr :> Attribute) tcas)) :> PropertyDescriptor
+        let makePropertyDescriptor = fun (emv, tcas) -> (EntityPropertyDescriptor (emv, Array.map (fun attr -> attr :> Attribute) tcas)) :> PropertyDescriptor
         let propertyDescriptors = EntityMemberValue.getPropertyDescriptors makePropertyDescriptor typeof<EntityState> optXtension
         PropertyDescriptorCollection (Array.ofList propertyDescriptors)
 
