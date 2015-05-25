@@ -152,7 +152,7 @@ and EntityTypeDescriptor (optSource : obj) =
             | _ -> None
         ignore optXtension
         let makePropertyDescriptor = fun (emv, tcas) -> (EntityPropertyDescriptor (emv, Array.map (fun attr -> attr :> Attribute) tcas)) :> PropertyDescriptor
-        let propertyDescriptors = EntityMemberValue.getPropertyDescriptors makePropertyDescriptor typeof<EntityState> optXtension
+        let propertyDescriptors = EntityMemberValue.getPropertyDescriptors makePropertyDescriptor typeof<EntityState> optXtension // TODO: NEVER reference EntityState outside of Nu!
         PropertyDescriptorCollection (Array.ofList propertyDescriptors)
 
 and EntityTypeDescriptorProvider () =
