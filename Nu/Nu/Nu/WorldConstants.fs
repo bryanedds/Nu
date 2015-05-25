@@ -8,10 +8,10 @@ open Nu
 open Nu.Constants
 module WorldConstants =
 
-    let Game = Game.proxy Address.empty
-    let DefaultScreen = Screen.proxy <| ntoa DefaultScreenName
-    let DefaultGroup = Group.proxy <| satoga DefaultScreen.ScreenAddress DefaultGroupName
-    let DefaultEntity = Entity.proxy <| gatoea DefaultGroup.GroupAddress DefaultEntityName
+    let Game = { GameAddress = Address.empty }
+    let DefaultScreen = { ScreenAddress = ntoa DefaultScreenName }
+    let DefaultGroup = { GroupAddress = satoga DefaultScreen.ScreenAddress DefaultGroupName }
+    let DefaultEntity = { EntityAddress = gatoea DefaultGroup.GroupAddress DefaultEntityName }
     let AnyEventAddress = ntoa<obj> "*"
     let UpdateEventAddress = ntoa<unit> "Update"
     let SelectEventAddress = ntoa<unit> "Select"
