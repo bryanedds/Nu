@@ -356,7 +356,6 @@ and [<StructuralEquality; NoComparison>] Game =
         member this.GetPublishingPriority _ _ = GamePublishingPriority
         member this.SimulantAddress = Address.changeType<Game, Simulant> this.GameAddress
         end
-    static member proxy address = { GameAddress = address }
 
 /// The screen type that allows transitioning to and from other screens, and also hosts the
 /// currently interactive groups of entities.
@@ -366,7 +365,6 @@ and [<StructuralEquality; NoComparison>] Screen =
         member this.GetPublishingPriority _ _ = ScreenPublishingPriority
         member this.SimulantAddress = Address.changeType<Screen, Simulant> this.ScreenAddress
         end
-    static member proxy address = { ScreenAddress = address }
 
 /// Forms a logical group of entities.
 and [<StructuralEquality; NoComparison>] Group =
@@ -375,7 +373,6 @@ and [<StructuralEquality; NoComparison>] Group =
         member this.GetPublishingPriority _ _ = GroupPublishingPriority
         member this.SimulantAddress = Address.changeType<Group, Simulant> this.GroupAddress
         end
-    static member proxy address = { GroupAddress = address }
 
 /// The type around which the whole game engine is based! Used in combination with dispatchers
 /// to implement things like buttons, characters, blocks, and things of that sort.
@@ -385,7 +382,6 @@ and [<StructuralEquality; NoComparison>] Entity =
         member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
         member this.SimulantAddress = Address.changeType<Entity, Simulant> this.EntityAddress
         end
-    static member proxy address = { EntityAddress = address }
 
 /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
 /// specific values.
