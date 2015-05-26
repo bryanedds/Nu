@@ -419,42 +419,47 @@ and NuPlugin () =
     default this.MakeOverlayRoutes () = []
 
 /// The world's subsystems.
-/// TODO: Consider making this an abstract data type.
-and internal Subsystems = Map<string, Subsystem>
+/// TODO: Make this an abstract data type.
+and [<ReferenceEquality>] internal Subsystems =
+    // private
+        { SubsystemMap : Map<string, Subsystem> }
 
 /// The world's components.
-/// TODO: Consider making this an abstract data type.
+/// TODO: Make this an abstract data type.
 and [<ReferenceEquality>] internal Components =
-    { EntityDispatchers : Map<string, EntityDispatcher>
-      GroupDispatchers : Map<string, GroupDispatcher>
-      ScreenDispatchers : Map<string, ScreenDispatcher>
-      GameDispatchers : Map<string, GameDispatcher>
-      Facets : Map<string, Facet> }
+    // private
+        { EntityDispatchers : Map<string, EntityDispatcher>
+          GroupDispatchers : Map<string, GroupDispatcher>
+          ScreenDispatchers : Map<string, ScreenDispatcher>
+          GameDispatchers : Map<string, GameDispatcher>
+          Facets : Map<string, Facet> }
 
 /// The world's simple callback facilities.
-/// TODO: Consider making this an abstract data type.
+/// TODO: Make this an abstract data type.
 and [<ReferenceEquality>] internal Callbacks =
-    { Subscriptions : SubscriptionEntries
-      Unsubscriptions : UnsubscriptionEntries
-      Tasklets : Tasklet Queue
-      CallbackStates : Map<Guid, obj> }
+    // private
+        { Subscriptions : SubscriptionEntries
+          Unsubscriptions : UnsubscriptionEntries
+          Tasklets : Tasklet Queue
+          CallbackStates : Map<Guid, obj> }
 
 /// The world's state.
-/// TODO: Consider making this an abstract data type.
+/// TODO: Make this an abstract data type.
 and [<ReferenceEquality>] internal WorldState =
-    { TickRate : int64
-      TickTime : int64
-      UpdateCount : int64
-      Liveness : Liveness
-      OptScreenTransitionDestination : Screen option // TODO: move this into Game?
-      AssetMetadataMap : AssetMetadataMap
-      AssetGraphFilePath : string
-      Overlayer : Overlayer
-      OverlayRouter : OverlayRouter
-      OverlayFilePath : string
-      Camera : Camera
-      OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
-      UserState : obj }
+    // private
+        { TickRate : int64
+          TickTime : int64
+          UpdateCount : int64
+          Liveness : Liveness
+          OptScreenTransitionDestination : Screen option // TODO: move this into Game?
+          AssetMetadataMap : AssetMetadataMap
+          AssetGraphFilePath : string
+          Overlayer : Overlayer
+          OverlayRouter : OverlayRouter
+          OverlayFilePath : string
+          Camera : Camera
+          OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
+          UserState : obj }
 
 /// The world, in a functional programming sense. Hosts the game object, the dependencies
 /// needed to implement a game, messages to by consumed by the various engine sub-systems,

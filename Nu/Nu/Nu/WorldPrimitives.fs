@@ -190,14 +190,14 @@ module World =
     (* Subsystems *)
 
     let internal getSubsystem<'s when 's :> Subsystem> name world =
-        Map.find name world.Subsystems :?> 's
+        Map.find name world.Subsystems.SubsystemMap :?> 's
 
     let internal getSubsystemBy<'s, 't when 's :> Subsystem> by name world : 't =
         let subsystem = getSubsystem<'s> name world
         by subsystem
 
     let internal setSubsystem<'s when 's :> Subsystem> (subsystem : 's) name world =
-        let subsystems = Map.add name (subsystem :> Subsystem) world.Subsystems
+        let subsystems = { SubsystemMap = Map.add name (subsystem :> Subsystem) world.Subsystems.SubsystemMap }
         { world with Subsystems = subsystems }
 
     let internal updateSubsystem<'s when 's :> Subsystem> (updater : 's -> World -> 's) name world =
@@ -209,7 +209,7 @@ module World =
         Map.fold
             (fun world name subsystem -> let subsystem = updater subsystem world in setSubsystem subsystem name world)
             world
-            world.Subsystems
+            world.Subsystems.SubsystemMap
 
     let internal clearSubsystemsMessages world =
         updateSubsystems (fun is _ -> is.ClearMessages ()) world
