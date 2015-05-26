@@ -141,6 +141,7 @@ and UnsubscriptionEntries = Map<Guid, obj Address * Simulant>
 
 /// A tasklet to be completed at the given time, with time being accounted for by the world
 /// state's TickTime value.
+/// TODO: Make this an abstract data type.
 and [<ReferenceEquality>] Tasklet =
     { ScheduledTime : int64
       Operation : World -> World }
