@@ -8,6 +8,7 @@ open Nu
 open Nu.Constants
 module WorldConstants =
 
+    // TODO: put constants in Constants.World module.
     let Game = Game.proxy Address.empty
     let DefaultScreen = Screen.proxy <| ntoa DefaultScreenName
     let DefaultGroup = Group.proxy <| satoga DefaultScreen.ScreenAddress DefaultGroupName

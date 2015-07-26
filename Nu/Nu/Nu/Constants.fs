@@ -7,6 +7,8 @@ open OpenTK
 open Nu
 module Constants =
 
+    // TODO: put constant groups in their own module (EG - Constants.Engine)
+
     (* Engine Constants *)
 
     let [<Literal>] DesiredFps = 60
