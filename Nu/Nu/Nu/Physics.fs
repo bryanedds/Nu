@@ -166,6 +166,7 @@ type [<StructuralEquality; NoComparison>] IntegrationMessage =
     | BodyTransformMessage of BodyTransformMessage
 
 /// The physics integrator. Represents the physics system in Nu.
+/// TODO: consider renaming this to IPhysicsEngine.
 type IIntegrator =
     /// Query that the integrator contain the body with the given physics id.
     abstract BodyExists : PhysicsId -> bool

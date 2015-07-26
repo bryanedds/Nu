@@ -16,30 +16,33 @@ type [<StructuralEquality; NoComparison>] Camera =
     { EyeCenter : Vector2
       EyeSize : Vector2 }
 
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Camera =
+
     /// Get the view of the camera in absolute terms (world space).
-    static member getViewAbsolute (_ : Camera) =
+    let getViewAbsolute (_ : Camera) =
         Matrix3.Identity
         
     /// Get the view of the camera in absolute terms (world space) with translation sliced on
     /// integers.
-    static member getViewAbsoluteI (_ : Camera) =
+    let getViewAbsoluteI (_ : Camera) =
         Matrix3.Identity
 
     /// The relative view of the camera with original single values. Due to the problems with
     /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
     /// coordinates is very, very bad for rendering.
-    static member getViewRelative camera =
+    let getViewRelative camera =
         let translation = camera.EyeCenter
         Matrix3.CreateFromTranslation translation
 
     /// The relative view of the camera with translation sliced on integers. Good for rendering.
-    static member getViewRelativeI camera =
+    let getViewRelativeI camera =
         let translation = camera.EyeCenter
         let translationI = Vector2 (single <| int translation.X, single <| int translation.Y)
         Matrix3.CreateFromTranslation translationI
 
     /// Get the bounds of the camera's sight relative to its position.
-    static member getViewBoundsRelative camera =
+    let getViewBoundsRelative camera =
         Vector4
             (camera.EyeCenter.X - camera.EyeSize.X * 0.5f,
              camera.EyeCenter.Y - camera.EyeSize.Y * 0.5f,
@@ -47,7 +50,7 @@ type [<StructuralEquality; NoComparison>] Camera =
              camera.EyeCenter.Y + camera.EyeSize.Y * 0.5f)
 
     /// Get the bounds of the camera's sight not relative to its position.
-    static member getViewBoundsAbsolute camera =
+    let getViewBoundsAbsolute camera =
         Vector4
             (camera.EyeSize.X * -0.5f,
              camera.EyeSize.Y * -0.5f,
@@ -55,23 +58,23 @@ type [<StructuralEquality; NoComparison>] Camera =
              camera.EyeSize.Y * 0.5f)
 
     /// Get the bounds of the camera's sight.
-    static member getViewBounds viewType camera =
+    let getViewBounds viewType camera =
         match viewType with
-        | Relative -> Camera.getViewBoundsRelative camera
-        | Absolute -> Camera.getViewBoundsAbsolute camera
+        | Relative -> getViewBoundsRelative camera
+        | Absolute -> getViewBoundsAbsolute camera
 
     /// Query that the given bounds is within the camera's sight.
-    static member inView viewType (bounds : Vector4) camera =
-        let viewBounds = Camera.getViewBounds viewType camera
+    let inView viewType (bounds : Vector4) camera =
+        let viewBounds = getViewBounds viewType camera
         Math.isBoundsInBounds bounds viewBounds
 
     /// Query that the given bounds is within the camera's sight.
-    static member inView3 viewType (position : Vector2) (size : Vector2) camera =
-        let viewBounds = Camera.getViewBounds viewType camera
+    let inView3 viewType (position : Vector2) (size : Vector2) camera =
+        let viewBounds = getViewBounds viewType camera
         Math.isBoundsInBounds3 position size viewBounds
 
     /// Transform the given mouse position to screen space.
-    static member mouseToScreen (mousePosition : Vector2) camera =
+    let mouseToScreen (mousePosition : Vector2) camera =
         let positionScreen =
             Vector2
                 (mousePosition.X - camera.EyeSize.X * 0.5f,
@@ -79,17 +82,17 @@ type [<StructuralEquality; NoComparison>] Camera =
         positionScreen
 
     /// Transform the given mouse position to world space.
-    static member mouseToWorld viewType mousePosition camera =
-        let positionScreen = Camera.mouseToScreen mousePosition camera
+    let mouseToWorld viewType mousePosition camera =
+        let positionScreen = mouseToScreen mousePosition camera
         let getView =
             match viewType with
-            | Relative -> Camera.getViewRelative
-            | Absolute -> Camera.getViewAbsolute
+            | Relative -> getViewRelative
+            | Absolute -> getViewAbsolute
         let view = getView camera
         let positionWorld = positionScreen * view
         positionWorld
 
     /// Transform the given mouse position to entity space.
-    static member mouseToEntity viewType entityPosition mousePosition camera =
-        let mousePositionWorld = Camera.mouseToWorld viewType mousePosition camera
+    let mouseToEntity viewType entityPosition mousePosition camera =
+        let mousePositionWorld = mouseToWorld viewType mousePosition camera
         entityPosition - mousePositionWorld

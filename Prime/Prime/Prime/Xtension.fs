@@ -89,14 +89,17 @@ type [<StructuralEquality; NoComparison>] Xtension =
             let xFields = Map.add fieldName { FieldValue = value :> obj; FieldType = typeof<'a> } xtension.XFields
             { xtension with XFields = xFields }
 
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Xtension =
+
     /// An Xtension that can default and isn't sealed.
-    static member empty = { XFields = Map.empty; CanDefault = true; Sealed = false }
+    let empty = { XFields = Map.empty; CanDefault = true; Sealed = false }
 
     /// An Xtension that cannot default and is sealed.
-    static member safe = { XFields = Map.empty; CanDefault = false; Sealed = true }
+    let safe = { XFields = Map.empty; CanDefault = false; Sealed = true }
 
     /// An Xtension that cannot default and isn't sealed.
-    static member mixed = { XFields = Map.empty; CanDefault = false; Sealed = false }
+    let mixed = { XFields = Map.empty; CanDefault = false; Sealed = false }
 
     /// Make an extension with custom safety.
-    static member make canDefault isSealed = { XFields = Map.empty; CanDefault = canDefault; Sealed = isSealed }
+    let make canDefault isSealed = { XFields = Map.empty; CanDefault = canDefault; Sealed = isSealed }

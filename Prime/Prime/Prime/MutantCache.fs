@@ -1,10 +1,5 @@
 ﻿namespace Prime
 
-[<RequireQualifiedAccess>]
-module MutantCacheMetrics =
-    let mutable internal GlobalMutantRebuilds = 0L
-    let getGlobalMutantRebuilds () = GlobalMutantRebuilds
-
 /// Presents a purely-functional interface to a mutable object / record / whatever.
 /// If it is not satisfactorily efficient to run a clone operation on the mutant for every get,
 /// just pass in the id function for make's cloneMutant arg, but make sure to NEVER mutate the
@@ -18,18 +13,17 @@ type [<ReferenceEquality>] MutantCache<'k, 'm when 'k : equality> =
           RefKey : 'k ref
           RefMutant : 'm ref }
 
-    static member make keyEquality cloneMutant key mutant =
-        { KeyEquality = keyEquality
-          CloneMutant = cloneMutant
-          ConstantKey = key
-          RefKey = ref key
-          RefMutant = ref mutant }
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module MutantCache =
 
-    static member getMutant generateKey rebuildMutant (mutantCache : MutantCache<'k, 'm>) =
+    let mutable private GlobalMutantRebuilds = 0L
+    let getGlobalMutantRebuilds () = GlobalMutantRebuilds
+
+    let getMutant generateKey rebuildMutant (mutantCache : MutantCache<'k, 'm>) =
         let mutantCache =
             if not <| mutantCache.KeyEquality !mutantCache.RefKey mutantCache.ConstantKey then
 #if DEBUG
-                MutantCacheMetrics.GlobalMutantRebuilds <- MutantCacheMetrics.GlobalMutantRebuilds + 1L
+                GlobalMutantRebuilds <- GlobalMutantRebuilds + 1L
 #endif
                 let newKey = generateKey ()
                 let newMutant = rebuildMutant ()
@@ -39,9 +33,16 @@ type [<ReferenceEquality>] MutantCache<'k, 'm when 'k : equality> =
             else mutantCache
         (mutantCache.CloneMutant !mutantCache.RefMutant, mutantCache)
 
-    static member mutateMutant rebuildMutant generateKey mutateMutant mutantCache =
-        let (mutant, mutantCache) = MutantCache<'k, 'm>.getMutant generateKey rebuildMutant mutantCache
-        let newKey = generateKey ()
+    let mutateMutant rebuildMutant generateKey mutateMutant mutantCache =
+        let (mutant : 'm, mutantCache) = getMutant generateKey rebuildMutant mutantCache
+        let newKey = generateKey () : 'k
         mutantCache.RefKey := newKey
         mutantCache.RefMutant := mutateMutant mutant
         { mutantCache with ConstantKey = newKey }
+
+    let make keyEquality cloneMutant (key : 'k) (mutant : 'm) =
+        { KeyEquality = keyEquality
+          CloneMutant = cloneMutant
+          ConstantKey = key
+          RefKey = ref key
+          RefMutant = ref mutant }

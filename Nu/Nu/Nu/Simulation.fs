@@ -32,12 +32,6 @@ type [<CLIMutable; StructuralEquality; NoComparison>] TransitionDescriptor =
       TransitionLifetime : int64
       OptDissolveImage : AssetTag option }
 
-    /// Make a screen transition descriptor.
-    static member make transitionType =
-        { TransitionType = transitionType
-          TransitionLifetime = 0L
-          OptDissolveImage = None }
-
 /// Describes the behavior of the screen dissolving algorithm.
 type [<StructuralEquality; NoComparison>] DissolveData =
     { IncomingTime : int64
@@ -147,6 +141,7 @@ and UnsubscriptionEntries = Map<Guid, obj Address * Simulant>
 
 /// A tasklet to be completed at the given time, with time being accounted for by the world
 /// state's TickTime value.
+/// TODO: Make this an abstract data type.
 and [<ReferenceEquality>] Tasklet =
     { ScheduledTime : int64
       Operation : World -> World }
@@ -282,10 +277,11 @@ and Facet () =
 
 /// A marker interface for the simulation state types (GameState, ScreenState, GroupState,
 /// and EntityState).
-and internal SimulantState = interface end
+and internal SimulantState =
+    interface end
 
 /// Hosts the ongoing state of a game. The end-user of this engine should never touch this
-/// type, and it's only public to make [<CliMutable>] work.
+/// type, and it's public _only_ to make [<CliMutable>] work.
 and [<CLIMutable; StructuralEquality; NoComparison>] GameState =
     { Id : Guid
       OptSelectedScreen : Screen option
@@ -293,20 +289,10 @@ and [<CLIMutable; StructuralEquality; NoComparison>] GameState =
       CreationTimeStampNp : int64
       DispatcherNp : GameDispatcher
       Xtension : Xtension }
-
-    /// Make a game state value.
-    static member make dispatcher =
-        { Id = Core.makeId ()
-          OptSelectedScreen = None
-          PublishChanges = true
-          CreationTimeStampNp = Core.getTimeStamp ()
-          DispatcherNp = dispatcher
-          Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
-
     interface SimulantState
 
 /// Hosts the ongoing state of a screen. The end-user of this engine should never touch this
-/// type, and it's only public to make [<CliMutable>] work.
+/// type, and it's public _only_ to make [<CliMutable>] work.
 and [<CLIMutable; StructuralEquality; NoComparison>] ScreenState =
     { Id : Guid
       Name : string
@@ -319,26 +305,10 @@ and [<CLIMutable; StructuralEquality; NoComparison>] ScreenState =
       CreationTimeStampNp : int64
       DispatcherNp : ScreenDispatcher
       Xtension : Xtension }
-
-    /// Make a screen state value.
-    static member make dispatcher optName =
-        let id = Core.makeId ()
-        { Id = id
-          Name = match optName with Some name -> name | None -> acstring id
-          TransitionStateNp = IdlingState
-          TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
-          Incoming = TransitionDescriptor.make Incoming
-          Outgoing = TransitionDescriptor.make Outgoing
-          PublishChanges = true
-          Persistent = true
-          CreationTimeStampNp = Core.getTimeStamp ()
-          DispatcherNp = dispatcher
-          Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
-
     interface SimulantState
 
 /// Hosts the ongoing state of a group. The end-user of this engine should never touch this
-/// type, and it's only public to make [<CliMutable>] work.
+/// type, and it's public _only_ to make [<CliMutable>] work.
 and [<CLIMutable; StructuralEquality; NoComparison>] GroupState =
     { Id : Guid
       Name : string
@@ -347,22 +317,10 @@ and [<CLIMutable; StructuralEquality; NoComparison>] GroupState =
       CreationTimeStampNp : int64
       DispatcherNp : GroupDispatcher
       Xtension : Xtension }
-
-    /// Make a group state value.
-    static member make dispatcher optName =
-        let id = Core.makeId ()
-        { Id = id
-          Name = match optName with Some name -> name | None -> acstring id
-          PublishChanges = true
-          Persistent = true
-          CreationTimeStampNp = Core.getTimeStamp ()
-          DispatcherNp = dispatcher
-          Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
-
     interface SimulantState
 
 /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
-/// type, and it's only public to make [<CliMutable>] work.
+/// type, and it's public _only_ to make [<CliMutable>] work.
 and [<CLIMutable; StructuralEquality; NoComparison>] EntityState =
     { Id : Guid
       Name : string
@@ -380,27 +338,6 @@ and [<CLIMutable; StructuralEquality; NoComparison>] EntityState =
       FacetsNp : Facet list
       OptOverlayName : string option
       Xtension : Xtension }
-
-    /// Make an entity state value.
-    static member make dispatcher optOverlayName optName =
-        let id = Core.makeId ()
-        { Id = id
-          Name = match optName with Some name -> name | None -> acstring id
-          Position = Vector2.Zero
-          Depth = 0.0f
-          Size = DefaultEntitySize
-          Rotation = 0.0f
-          Visible = true
-          ViewType = Relative
-          PublishChanges = true
-          Persistent = true
-          CreationTimeStampNp = Core.getTimeStamp ()
-          DispatcherNp = dispatcher
-          FacetNames = []
-          FacetsNp = []
-          OptOverlayName = optOverlayName
-          Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
-
     interface SimulantState
 
 /// A marker interface for the simulation types (Game, Screen, Group, and Entity).
@@ -420,7 +357,6 @@ and [<StructuralEquality; NoComparison>] Game =
         member this.GetPublishingPriority _ _ = GamePublishingPriority
         member this.SimulantAddress = Address.changeType<Game, Simulant> this.GameAddress
         end
-    static member proxy address = { GameAddress = address }
 
 /// The screen type that allows transitioning to and from other screens, and also hosts the
 /// currently interactive groups of entities.
@@ -430,7 +366,6 @@ and [<StructuralEquality; NoComparison>] Screen =
         member this.GetPublishingPriority _ _ = ScreenPublishingPriority
         member this.SimulantAddress = Address.changeType<Screen, Simulant> this.ScreenAddress
         end
-    static member proxy address = { ScreenAddress = address }
 
 /// Forms a logical group of entities.
 and [<StructuralEquality; NoComparison>] Group =
@@ -439,7 +374,6 @@ and [<StructuralEquality; NoComparison>] Group =
         member this.GetPublishingPriority _ _ = GroupPublishingPriority
         member this.SimulantAddress = Address.changeType<Group, Simulant> this.GroupAddress
         end
-    static member proxy address = { GroupAddress = address }
 
 /// The type around which the whole game engine is based! Used in combination with dispatchers
 /// to implement things like buttons, characters, blocks, and things of that sort.
@@ -449,7 +383,6 @@ and [<StructuralEquality; NoComparison>] Entity =
         member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
         member this.SimulantAddress = Address.changeType<Entity, Simulant> this.EntityAddress
         end
-    static member proxy address = { EntityAddress = address }
 
 /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
 /// specific values.
@@ -487,48 +420,53 @@ and NuPlugin () =
     default this.MakeOverlayRoutes () = []
 
 /// The world's subsystems.
-/// TODO: Consider making this an abstract data type?
-and internal Subsystems = Map<string, Subsystem>
+/// TODO: Make this an abstract data type.
+and [<ReferenceEquality>] internal Subsystems =
+    // private
+        { SubsystemMap : Map<string, Subsystem> }
 
 /// The world's components.
-/// TODO: Consider making this an abstract data type.
+/// TODO: Make this an abstract data type.
 and [<ReferenceEquality>] internal Components =
-    { EntityDispatchers : Map<string, EntityDispatcher>
-      GroupDispatchers : Map<string, GroupDispatcher>
-      ScreenDispatchers : Map<string, ScreenDispatcher>
-      GameDispatchers : Map<string, GameDispatcher>
-      Facets : Map<string, Facet> }
+    // private
+        { EntityDispatchers : Map<string, EntityDispatcher>
+          GroupDispatchers : Map<string, GroupDispatcher>
+          ScreenDispatchers : Map<string, ScreenDispatcher>
+          GameDispatchers : Map<string, GameDispatcher>
+          Facets : Map<string, Facet> }
 
 /// The world's simple callback facilities.
-/// TODO: Consider making this an abstract data type.
+/// TODO: Make this an abstract data type.
 and [<ReferenceEquality>] internal Callbacks =
-    { Subscriptions : SubscriptionEntries
-      Unsubscriptions : UnsubscriptionEntries
-      Tasklets : Tasklet Queue
-      CallbackStates : Map<Guid, obj> }
+    // private
+        { Subscriptions : SubscriptionEntries
+          Unsubscriptions : UnsubscriptionEntries
+          Tasklets : Tasklet Queue
+          CallbackStates : Map<Guid, obj> }
 
 /// The world's state.
-/// TODO: Consider making this an abstract data type.
+/// TODO: Make this an abstract data type.
 and [<ReferenceEquality>] internal WorldState =
-    { TickRate : int64
-      TickTime : int64
-      UpdateCount : int64
-      Liveness : Liveness
-      OptScreenTransitionDestination : Screen option // TODO: move this into Game?
-      AssetMetadataMap : AssetMetadataMap
-      AssetGraphFilePath : string
-      Overlayer : Overlayer
-      OverlayRouter : OverlayRouter
-      OverlayFilePath : string
-      Camera : Camera
-      OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
-      UserState : obj }
+    // private
+        { TickRate : int64
+          TickTime : int64
+          UpdateCount : int64
+          Liveness : Liveness
+          OptScreenTransitionDestination : Screen option // TODO: move this into Game?
+          AssetMetadataMap : AssetMetadataMap
+          AssetGraphFilePath : string
+          Overlayer : Overlayer
+          OverlayRouter : OverlayRouter
+          OverlayFilePath : string
+          Camera : Camera
+          OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
+          UserState : obj }
 
 /// The world, in a functional programming sense. Hosts the game object, the dependencies
 /// needed to implement a game, messages to by consumed by the various engine sub-systems,
 /// and general configuration data.
 and [<ReferenceEquality>] World =
-    internal
+    private
         { Subsystems : Subsystems
           Components : Components
           Callbacks : Callbacks

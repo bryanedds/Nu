@@ -4,6 +4,8 @@ open System.Collections.Generic
 open OpenTK
 open Prime
 
+// NOTE: this code is a complete WIP - don't use it just yet :)
+
 type [<NoEquality; NoComparison>] private 'e QuadNode =
     private
         { Depth : int
@@ -12,7 +14,10 @@ type [<NoEquality; NoComparison>] private 'e QuadNode =
           Children : 'e QuadNode array
           Elements : 'e HashSet }
 
-    static member internal makeChildPosition i position (childSize : Vector2) =
+[<RequireQualifiedAccess>]
+module private QuadNode =
+
+    let private makeChildPosition i position (childSize : Vector2) =
         match i with
         | 0 -> position
         | 1 -> position + Vector2 (childSize.X, 0.0f)
@@ -20,81 +25,63 @@ type [<NoEquality; NoComparison>] private 'e QuadNode =
         | 3 -> position + childSize
         | _ -> failwithumf ()
 
-    static member internal makeChildren depth position (size : Vector2) =
-        [|for i in 0 .. 3 do
-            let childDepth = depth - 1
-            let childSize = size * 0.25f
-            let childPosition = QuadNode<'e>.makeChildPosition i position childSize
-            yield QuadNode<'e>.make childDepth childPosition childSize|]
-
-    static member internal tryAddElement _ _ _ _ =
+    let internal tryAddElement _ _ _ _ =
         false
         
-    static member internal tryRemoveElement _ _ _ _ =
+    let internal tryRemoveElement _ _ _ _ =
         false
 
-    static member internal make depth position (size : Vector2) =
+    let rec internal make<'e> depth position (size : Vector2) =
         if depth < 1 then failwith "Invalid depth for QuadNode. Expected depth >= 1."
-        let children = if depth > 1 then QuadNode<'e>.makeChildren depth position size else [||]
+        let children =
+            if depth > 1 then 
+                [|for i in 0 .. 3 do
+                    let childDepth = depth - 1
+                    let childSize = size * 0.25f
+                    let childPosition = makeChildPosition i position childSize
+                    yield make<'e> childDepth childPosition childSize|]
+            else [||]
         { Depth = depth
           Position = position
           Size = size
-          Children = children
-          Elements = HashSet () }
+          Children = (children : 'e QuadNode array)
+          Elements = HashSet () } : 'e QuadNode
         
 type [<NoEquality; NoComparison>] 'e QuadTree =
     private
         { Node : 'e QuadNode
           OmnipresentElements : 'e HashSet }
 
-    static member internal addElement quadTree omnipresence position size element =
-        if omnipresence then
-            ignore <| quadTree.OmnipresentElements.Add element
-        elif not <| QuadNode<'e>.tryAddElement quadTree.Node position size element then
-            note "Element is outside of quad tree's containment area."
-            ignore <| quadTree.OmnipresentElements.Add element
-
-    static member internal removeElement quadTree omnipresence position size element =
-        if omnipresence then
-            ignore <| quadTree.OmnipresentElements.Remove element
-        elif not <| QuadNode<'e>.tryRemoveElement quadTree.Node position size element then
-            ignore <| quadTree.OmnipresentElements.Remove element
-
-    static member internal updateElement
-        quadTree
-        oldOmnipresence oldPosition oldSize
-        newOmnipresence newPosition newSize
-        element =
-        QuadTree<'e>.removeElement quadTree oldOmnipresence oldPosition oldSize element
-        QuadTree<'e>.addElement quadTree newOmnipresence newPosition newSize element
-
-    static member internal getElementsAtPoint =
-        ()
-
-    static member internal getElementsInRect =
-        ()
-
-    static member internal make depth position size =
-        { Node = QuadNode<'e>.make depth position size
-          OmnipresentElements = HashSet () }
-
 [<RequireQualifiedAccess>]
 module QuadTree =
 
     let addElement quadTree omnipresence position size element =
-        QuadTree<_>.addElement quadTree omnipresence position size element
+        if omnipresence then
+            ignore <| quadTree.OmnipresentElements.Add element
+        elif not <| QuadNode.tryAddElement quadTree.Node position size element then
+            note "Element is outside of quad tree's containment area."
+            ignore <| quadTree.OmnipresentElements.Add element
 
     let removeElement quadTree omnipresence position size element =
-        QuadTree<_>.removeElement quadTree omnipresence position size element
+        if omnipresence then
+            ignore <| quadTree.OmnipresentElements.Remove element
+        elif not <| QuadNode.tryRemoveElement quadTree.Node position size element then
+            ignore <| quadTree.OmnipresentElements.Remove element
 
-    let updateElement quadTree oldOmnipresence oldPosition oldSize newOmnipresence newPosition newSize element =
-        QuadTree<_>.updateElement quadTree oldOmnipresence oldPosition oldSize newOmnipresence newPosition newSize element
+    let updateElement
+        quadTree
+        oldOmnipresence oldPosition oldSize
+        newOmnipresence newPosition newSize
+        element =
+        removeElement quadTree oldOmnipresence oldPosition oldSize element
+        addElement quadTree newOmnipresence newPosition newSize element
 
-    let getElementsAtPoint =
-        QuadTree<_>.getElementsAtPoint
+    let getElementsAtPoint _ _ =
+        ()
 
-    let getElementsInRect =
-        QuadTree<_>.getElementsInRect
+    let getElementsInRect _ _ =
+        ()
 
     let make depth position size =
-        QuadTree<_>.make depth position size
+        { Node = QuadNode.make<'e> depth position size
+          OmnipresentElements = HashSet () }
