@@ -19,7 +19,7 @@ open Nu
 open Nu.Constants
 open Nu.WorldConstants
 
-[<AutoOpen>]
+[<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module WorldModule =
 
     let private ScreenTransitionMouseLeftKey = World.makeSubscriptionKey ()
@@ -345,7 +345,7 @@ module WorldModule =
             Seq.fold (flip World.propagateEntityPhysics) world entities
 
         static member private processSubsystems subsystemType world =
-            Map.toList world.Subsystems |>
+            Map.toList world.Subsystems.SubsystemMap |>
             List.filter (fun (_, subsystem) -> subsystem.SubsystemType = subsystemType) |>
             List.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
             List.fold (fun world (subsystemName, subsystem) ->
@@ -355,7 +355,7 @@ module WorldModule =
                 world
 
         static member private cleanUpSubsystems world =
-            Map.toList world.Subsystems |>
+            Map.toList world.Subsystems.SubsystemMap |>
             List.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
             List.fold (fun world (subsystemName, subsystem) ->
                 let (subsystem, world) = subsystem.CleanUp world
@@ -501,7 +501,7 @@ module WorldModule =
                             [(IntegratorSubsystemName, integratorSubsystem)
                              (RendererSubsystemName, rendererSubsystem)
                              (AudioPlayerSubsystemName, audioPlayerSubsystem)]
-                    defaultSubsystems @@ userSubsystems
+                    { SubsystemMap = defaultSubsystems @@ userSubsystems }
 
                 // make user-defined components
                 let userFacets = World.pairWithNames <| nuPlugin.MakeFacets ()
@@ -610,7 +610,7 @@ module WorldModule =
                       SimulantStates = simulantStates }
 
                 // initialize OptEntityCache
-                let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address<Entity>.empty, world) None }}
+                let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}
 
                 // and finally, register the game
                 let world = World.registerGame world
@@ -627,10 +627,11 @@ module WorldModule =
                 let integratorSubsystem = IntegratorSubsystem.make DefaultSubsystemOrder { MockIntegrator = () } :> Subsystem
                 let rendererSubsystem = RendererSubsystem.make DefaultSubsystemOrder { MockRenderer = () } :> Subsystem
                 let audioPlayerSubsystem = AudioPlayerSubsystem.make DefaultSubsystemOrder { MockAudioPlayer = () } :> Subsystem
-                Map.ofList
-                    [(IntegratorSubsystemName, integratorSubsystem)
-                     (RendererSubsystemName, rendererSubsystem)
-                     (AudioPlayerSubsystemName, audioPlayerSubsystem)]
+                { SubsystemMap =
+                    Map.ofList
+                        [(IntegratorSubsystemName, integratorSubsystem)
+                         (RendererSubsystemName, rendererSubsystem)
+                         (AudioPlayerSubsystemName, audioPlayerSubsystem)] }
 
             // make the default dispatchers
             let entityDispatcher = EntityDispatcher ()
@@ -681,7 +682,7 @@ module WorldModule =
                   SimulantStates = simulantStates }
 
             // initialize OptEntityCache
-            let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address<Entity>.empty, world) None }}
+            let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}
 
             // and finally, register the game
             World.registerGame world

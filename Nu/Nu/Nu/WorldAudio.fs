@@ -8,29 +8,33 @@ open Nu
 open Nu.Constants
 open Nu.WorldConstants
 
+/// The subsystem for the world's audio player.
+type [<ReferenceEquality>] AudioPlayerSubsystem =
+    private
+        { SubsystemOrder : single
+          AudioPlayer : IAudioPlayer }
+
+    interface Subsystem with
+        member this.SubsystemType = AudioType
+        member this.SubsystemOrder = this.SubsystemOrder
+        member this.ClearMessages () = { this with AudioPlayer = this.AudioPlayer.ClearMessages () } :> Subsystem
+        member this.EnqueueMessage message = { this with AudioPlayer = this.AudioPlayer.EnqueueMessage (message :?> AudioMessage) } :> Subsystem
+        member this.ProcessMessages _ = (() :> obj, { this with AudioPlayer = this.AudioPlayer.Play () } :> Subsystem)
+        member this.ApplyResult _ world = world
+        member this.CleanUp world = (this :> Subsystem, world)
+
+    static member make subsystemOrder audioPlayer =
+        { SubsystemOrder = subsystemOrder
+          AudioPlayer = audioPlayer }
+
 [<AutoOpen>]
 module WorldAudioModule =
 
-    /// The subsystem for the world's audio player.
-    type [<ReferenceEquality>] AudioPlayerSubsystem =
-        private
-            { SubsystemOrder : single
-              AudioPlayer : IAudioPlayer }
-
-        static member make subsystemOrder audioPlayer =
-            { SubsystemOrder = subsystemOrder
-              AudioPlayer = audioPlayer }
-
-        interface Subsystem with
-            member this.SubsystemType = AudioType
-            member this.SubsystemOrder = this.SubsystemOrder
-            member this.ClearMessages () = { this with AudioPlayer = this.AudioPlayer.ClearMessages () } :> Subsystem
-            member this.EnqueueMessage message = { this with AudioPlayer = this.AudioPlayer.EnqueueMessage (message :?> AudioMessage) } :> Subsystem
-            member this.ProcessMessages _ = (() :> obj, { this with AudioPlayer = this.AudioPlayer.Play () } :> Subsystem)
-            member this.ApplyResult _ world = world
-            member this.CleanUp world = (this :> Subsystem, world)
-
     type World with
+
+        /// Add an audio message to the world.
+        static member addAudioMessage (message : AudioMessage) world =
+            World.updateSubsystem (fun aps _ -> aps.EnqueueMessage message) AudioPlayerSubsystemName world
 
         /// Send a message to the audio system to play a song.
         static member playSong timeToFadeOutSongMs volume song world =

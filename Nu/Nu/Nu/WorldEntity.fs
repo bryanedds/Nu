@@ -182,7 +182,7 @@ module WorldEntityModule =
             
             // compute the default opt overlay name
             let intrinsicOverlayName = dispatcherName
-            let defaultOptOverlayName = Map.find intrinsicOverlayName world.State.OverlayRouter.Routes
+            let defaultOptOverlayName = OverlayRouter.findOptOverlayName intrinsicOverlayName world.State.OverlayRouter
 
             // make the bare entity state (with name as id if none is provided)
             let entityState = EntityState.make dispatcher defaultOptOverlayName optName
@@ -319,7 +319,7 @@ module WorldEntityModule =
             writer.WriteAttributeString (DispatcherNameAttributeName, dispatcherTypeName)
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
                 if propertyName = "OptOverlayName" && propertyType = typeof<string option> then
-                    let defaultOptOverlayName = Map.find dispatcherTypeName world.State.OverlayRouter.Routes
+                    let defaultOptOverlayName = OverlayRouter.findOptOverlayName dispatcherTypeName world.State.OverlayRouter
                     defaultOptOverlayName <> (propertyValue :?> string option)
                 else
                     let facetNames = World.getEntityFacetNamesReflectively entityState
@@ -351,7 +351,7 @@ module WorldEntityModule =
 
             // compute the default overlay names
             let intrinsicOverlayName = dispatcherName
-            let defaultOptOverlayName = Map.find intrinsicOverlayName world.State.OverlayRouter.Routes
+            let defaultOptOverlayName = OverlayRouter.findOptOverlayName intrinsicOverlayName world.State.OverlayRouter
 
             // make the bare entity state with name as id
             let entityState = EntityState.make dispatcher defaultOptOverlayName None
@@ -450,9 +450,9 @@ module WorldEntityModule =
                 World.setEntityState entityState entity world
 
         // TODO: put this in a better place! And of course, document.
-        static member getPropertyDescriptors makePropertyDescriptor (aType : Type) optXtension =
+        static member getPropertyDescriptors makePropertyDescriptor optXtension =
             // OPTIMIZATION: seqs used for speed.
-            let properties = aType.GetProperties ()
+            let properties = typeof<EntityState>.GetProperties ()
             let typeConverterAttribute = TypeConverterAttribute (typeof<AlgebraicConverter>) // TODO: make this static?
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.PropertyType <> typeof<Xtension>) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty <| property.GetCustomAttributes<ExtensionAttribute> ()) properties

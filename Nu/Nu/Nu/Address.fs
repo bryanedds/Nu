@@ -13,8 +13,9 @@ open Nu
 /// A name key for optimized look-up in hashing containers.
 /// OPTIMIZATION: OptHashCode is lazy for speed.
 type [<CustomEquality; NoComparison>] NameKey =
-    { Name : string
-      mutable OptHashCode : int option }
+    private
+        { Name : string
+          mutable OptHashCode : int option }
 
     interface NameKey IEquatable with
         member this.Equals that =
@@ -33,20 +34,59 @@ type [<CustomEquality; NoComparison>] NameKey =
             this.OptHashCode <- Some hashCode
             hashCode
 
+    override this.ToString () =
+        this.Name
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module NameKey =
+
     /// Make a name key from a single address name string.
-    static member make addressName =
+    let make addressName =
         { Name = addressName
           OptHashCode = None }
+
+    /// Get the name of a name key.
+    let getName nameKey =
+        nameKey.Name
+
+/// Converts Address types.
+type AddressConverter (targetType : Type) =
+    inherit TypeConverter ()
+    
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string> ||
+        destType = targetType
+        
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<string> then
+            let toStringMethod = targetType.GetMethod "ToString"
+            toStringMethod.Invoke (source, null)
+        elif destType = targetType then source
+        else failwith "Invalid AddressConverter conversion to source."
+        
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<string> ||
+        sourceType = targetType
+        
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? string ->
+            let stoaFunction = targetType.GetMethod ("stoa", BindingFlags.Static ||| BindingFlags.Public)
+            stoaFunction.Invoke (null, [|source|])
+        | _ ->
+            if targetType.IsInstanceOfType source then source
+            else failwith "Invalid AddressConverter conversion from source."
 
 /// Specifies the address of an element in a game, or name of an event.
 /// OPTIMIZATION: NameKeys are used in case we can manage some sort of hashing look-up with them.
 /// OPTIMIZATION: Comparison is done using the full string of names for speed.
 /// OPTIMIZATION: OptNamesStr and OptHashCode are lazy for speed.
-type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
-    { NameKeys : NameKey list
-      mutable OptNamesStr : string option
-      mutable OptHashCode : int option
-      TypeCarrier : 'a -> unit }
+and [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
+    private
+        { NameKeys : NameKey list
+          mutable OptNamesStr : string option
+          mutable OptHashCode : int option
+          TypeCarrier : 'a -> unit }
 
     static member internal join (seq : string seq) =
         String.Join ("/", seq)
@@ -54,31 +94,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     static member internal split (str : string) =
         List.ofArray <| str.Split '/'
 
-    /// The empty address.
-    static member empty =
-        { NameKeys = []; OptNamesStr = Some String.Empty; OptHashCode = Some 0; TypeCarrier = fun (_ : 'a) -> () }
-
-    /// Make an address from name keys.
-    static member makeFromNameKeys nameKeys =
-        { NameKeys = nameKeys; OptNamesStr = None; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
-
-    /// Make an address from a list of names.
-    static member makeFromNamesList namesList =
-        let nameKeys = List.map NameKey.make namesList
-        Address<'a>.makeFromNameKeys nameKeys
-
-    /// Make an address from a '/' delimited string.
-    static member makeFromNamesString namesStr =
-        let namesList = Address<'a>.split namesStr
-        let nameKeys = List.map NameKey.make namesList
-        { NameKeys = nameKeys; OptNamesStr = Some namesStr; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
-
-    /// Convert a names string into an address.
-    static member stoa (namesStr : string) =
-        Address<'a>.makeFromNamesString namesStr
-
-    /// TODO: document!
-    static member getNamesStr (address : 'a Address) =
+    static member internal getNamesStr (address : 'a Address) =
         match address.OptNamesStr with
         | Some namesStr -> namesStr
         | None ->
@@ -86,8 +102,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
             address.OptNamesStr <- Some namesStr
             namesStr
 
-    /// TODO: document!
-    static member getHashCode (address : 'a Address) =
+    static member internal getHashCode (address : 'a Address) =
         match address.OptHashCode with
         | Some hashCode -> hashCode
         | None ->
@@ -120,94 +135,35 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     override this.ToString () =
         Address<'a>.getNamesStr this
 
-/// Converts Address types.
-and AddressConverter (targetType : Type) =
-    inherit TypeConverter ()
-    
-    override this.CanConvertTo (_, destType) =
-        destType = typeof<string> ||
-        destType = targetType
-        
-    override this.ConvertTo (_, _, source, destType) =
-        if destType = typeof<string> then
-            let toStringMethod = targetType.GetMethod "ToString"
-            toStringMethod.Invoke (source, null)
-        elif destType = targetType then source
-        else failwith "Invalid AddressConverter conversion to source."
-        
-    override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<string> ||
-        sourceType = targetType
-        
-    override this.ConvertFrom (_, _, source) =
-        match source with
-        | :? string ->
-            let stoaFunction = targetType.GetMethod ("stoa", BindingFlags.Static ||| BindingFlags.Public)
-            stoaFunction.Invoke (null, [|source|])
-        | _ ->
-            if targetType.IsInstanceOfType source then source
-            else failwith "Invalid AddressConverter conversion from source."
-
-[<AutoOpen>]
-module AddressModule =
-
-    /// Convert a names string into an address.
-    let stoa<'a> namesStr =
-        Address<'a>.stoa namesStr
-
-    /// Convert a name keys into an address.
-    let ktoa<'a> nameKeys =
-        Address<'a>.makeFromNameKeys nameKeys
-
-    /// Convert a names list into an address.
-    let ltoa<'a> namesList =
-        Address<'a>.makeFromNamesList namesList
-
-    /// Convert a name string into an address.
-    let ntoa<'a> nameStr =
-        ltoa<'a> [nameStr]
-
-    /// Convert any address to an obj Address.
-    let atooa<'a> (address : 'a Address) =
-        { NameKeys = address.NameKeys; OptNamesStr = None; OptHashCode = None; TypeCarrier = fun (_ : obj) -> () }
-
-    /// Concatenate two addresses of the same type.
-    let acat<'a> (address : 'a Address) (address2 : 'a Address) =
-        Address<'a>.makeFromNameKeys (address.NameKeys @ address2.NameKeys)
-
-    /// Concatenate two addresses, taking the type of first address.
-    let acatf<'a> (address : 'a Address) (address2 : obj Address) =
-        Address<'a>.makeFromNameKeys (address.NameKeys @ address2.NameKeys)
-    
-    /// Concatenate two addresses, forcing the type of first address.
-    let acatff<'a, 'b> (address : 'a Address) (address2 : 'b Address) =
-        acatf address <| atooa address2
-
-    /// Concatenate two addresses, taking the type of the second address.
-    let acats<'a> (address : obj Address) (address2 : 'a Address) =
-        Address<'a>.makeFromNameKeys (address.NameKeys @ address2.NameKeys)
-    
-    /// Concatenate two addresses, forcing the type of second address.
-    let acatsf<'a, 'b> (address : 'a Address) (address2 : 'b Address) =
-        acats (atooa address) address2
-    
-    /// Concatenate two addresses of the same type.
-    let (-|-) = acat
-
-    /// Concatenate two addresses, taking the type of first address.
-    let (->-) = acatf
-
-    /// Concatenate two addresses, forcing the type of first address.
-    let (->>-) = acatff
-
-    /// Concatenate two addresses, taking the type of the second address.
-    let (-<-) = acats
-    
-    /// Concatenate two addresses, forcing the type of second address.
-    let (-<<-) = acatsf
-
 [<RequireQualifiedAccess>]
 module Address =
+
+    /// The empty address.
+    let empty<'a> =
+        { NameKeys = []; OptNamesStr = Some String.Empty; OptHashCode = Some 0; TypeCarrier = fun (_ : 'a) -> () }
+
+    /// Make an address from name keys.
+    let makeFromNameKeys<'a> nameKeys =
+        { NameKeys = nameKeys; OptNamesStr = None; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
+
+    /// Make an address from a list of names.
+    let makeFromNamesList<'a> namesList =
+        let nameKeys = List.map NameKey.make namesList
+        makeFromNameKeys<'a> nameKeys
+
+    /// Make an address from a '/' delimited string.
+    let makeFromNamesString<'a> namesStr =
+        let namesList = Address<'a>.split namesStr
+        let nameKeys = List.map NameKey.make namesList
+        { NameKeys = nameKeys; OptNamesStr = Some namesStr; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
+
+    /// Convert a names string into an address.
+    let stoa<'a> (namesStr : string) =
+        makeFromNamesString<'a> namesStr
+
+    /// Get the name keys of an address.
+    let getNameKeys address =
+        address.NameKeys
 
     /// Change the type of an address.
     let changeType<'a, 'b> (address : 'a Address) =
@@ -227,7 +183,7 @@ module Address =
         
     /// Take the tail of an address.
     let tail<'a> address =
-        Address<'a>.makeFromNameKeys <| List.tail address.NameKeys
+        makeFromNameKeys<'a> <| List.tail address.NameKeys
 
     /// Take a name key of an address.
     let at index address =
@@ -235,11 +191,11 @@ module Address =
 
     /// Take an address composed of the name keys of an address minus a skipped amount of name keys.
     let skip<'a, 'b> n (address : 'a Address) =
-        Address<'b>.makeFromNameKeys <| List.skip n address.NameKeys
+        makeFromNameKeys<'b> <| List.skip n address.NameKeys
 
     /// Take an address composed of the given number of name keys of an address.
     let take<'a, 'b> n (address : 'a Address) =
-        Address<'b>.makeFromNameKeys <| List.take n address.NameKeys
+        makeFromNameKeys<'b> <| List.take n address.NameKeys
 
     /// Take the last name key of an address.
     let last address =
@@ -247,7 +203,7 @@ module Address =
 
     /// Take an address composed of all but the last name of an address.
     let allButLast<'a, 'b> (address : 'a Address) =
-        Address<'b>.makeFromNameKeys <| List.allButLast address.NameKeys
+        makeFromNameKeys<'b> <| List.allButLast address.NameKeys
 
     /// Get the length of an address by its name keys.
     let length address =
@@ -256,3 +212,61 @@ module Address =
     /// Query that an address is devoid of name keys.
     let isEmpty address =
         List.isEmpty address.NameKeys
+
+[<AutoOpen>]
+module AddressOperators =
+
+    /// Convert a names string into an address.
+    let stoa<'a> namesStr =
+        Address.stoa<'a> namesStr
+
+    /// Convert a name keys into an address.
+    let ktoa<'a> nameKeys =
+        Address.makeFromNameKeys<'a> nameKeys
+
+    /// Convert a names list into an address.
+    let ltoa<'a> namesList =
+        Address.makeFromNamesList<'a> namesList
+
+    /// Convert a name string into an address.
+    let ntoa<'a> nameStr =
+        ltoa<'a> [nameStr]
+
+    /// Convert any address to an obj Address.
+    let atooa<'a> (address : 'a Address) =
+        { NameKeys = address.NameKeys; OptNamesStr = None; OptHashCode = None; TypeCarrier = fun (_ : obj) -> () }
+
+    /// Concatenate two addresses of the same type.
+    let acat<'a> (address : 'a Address) (address2 : 'a Address) =
+        Address.makeFromNameKeys<'a> (address.NameKeys @ address2.NameKeys)
+
+    /// Concatenate two addresses, taking the type of first address.
+    let acatf<'a> (address : 'a Address) (address2 : obj Address) =
+        Address.makeFromNameKeys<'a> (address.NameKeys @ address2.NameKeys)
+    
+    /// Concatenate two addresses, forcing the type of first address.
+    let acatff<'a, 'b> (address : 'a Address) (address2 : 'b Address) =
+        acatf address <| atooa address2
+
+    /// Concatenate two addresses, taking the type of the second address.
+    let acats<'a> (address : obj Address) (address2 : 'a Address) =
+        Address.makeFromNameKeys<'a> (address.NameKeys @ address2.NameKeys)
+    
+    /// Concatenate two addresses, forcing the type of second address.
+    let acatsf<'a, 'b> (address : 'a Address) (address2 : 'b Address) =
+        acats (atooa address) address2
+    
+    /// Concatenate two addresses of the same type.
+    let (-|-) = acat
+
+    /// Concatenate two addresses, taking the type of first address.
+    let (->-) = acatf
+
+    /// Concatenate two addresses, forcing the type of first address.
+    let (->>-) = acatff
+
+    /// Concatenate two addresses, taking the type of the second address.
+    let (-<-) = acats
+    
+    /// Concatenate two addresses, forcing the type of second address.
+    let (-<<-) = acatsf

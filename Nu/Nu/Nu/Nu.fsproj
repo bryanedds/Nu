@@ -78,9 +78,8 @@
     <Compile Include="Input.fs" />
     <Compile Include="Sdl.fs" />
     <Compile Include="Simulation.fs" />
-    <Compile Include="WorldAddress.fs" />
+    <Compile Include="SimulationPrimitives.fs" />
     <Compile Include="WorldConstants.fs" />
-    <Compile Include="WorldPublishing.fs" />
     <Compile Include="WorldPrimitives.fs" />
     <Compile Include="WorldFacet.fs" />
     <Compile Include="WorldEntity.fs" />
@@ -88,6 +87,7 @@
     <Compile Include="WorldScreen.fs" />
     <Compile Include="WorldGame.fs" />
     <Compile Include="WorldSimulant.fs" />
+    <Compile Include="WorldInput.fs" />
     <Compile Include="WorldPhysics.fs" />
     <Compile Include="WorldRender.fs" />
     <Compile Include="WorldAudio.fs" />

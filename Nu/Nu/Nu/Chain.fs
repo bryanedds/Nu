@@ -8,13 +8,13 @@ open Nu
 open Nu.Constants
 open Nu.WorldConstants
 
-[<AutoOpen>]
-module ChainModule =
+/// The Chain monad. Allows the user to define a chain of operations over the world that
+/// optionally spans across a bounded number of events.
+type [<NoComparison; NoEquality>] Chain<'e, 'a> =
+    Chain of (World -> World * Either<'e -> Chain<'e, 'a>, 'a>)
 
-    /// The Chain monad. Allows the user to define a chain of operations over the world that
-    /// optionally spans across a bounded number of events.
-    type [<NoComparison; NoEquality>] Chain<'e, 'a> =
-        Chain of (World -> World * Either<'e -> Chain<'e, 'a>, 'a>)
+[<AutoOpen>]
+module ChainBuilder =
 
     // World -> (World * CHoice<'E -> Chain<'E, 'A>, 'A> -> 'A) -> 'A
 
