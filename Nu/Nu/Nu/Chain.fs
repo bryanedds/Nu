@@ -16,6 +16,8 @@ module ChainModule =
     type [<NoComparison; NoEquality>] Chain<'e, 'a> =
         Chain of (World -> World * Either<'e -> Chain<'e, 'a>, 'a>)
 
+    // World -> (World * CHoice<'E -> Chain<'E, 'A>, 'A> -> 'A) -> 'A
+
     /// Monadic return for the chain monad.
     let internal returnM (a : 'a) : Chain<'e, 'a> =
         Chain (fun s -> (s, Right a))
@@ -23,6 +25,16 @@ module ChainModule =
     /// Monadic bind for the chain monad.
     let rec internal bind (m : Chain<'e, 'a>) (cont : 'a -> Chain<'e, 'b>) : Chain<'e, 'b> =
         Chain (fun world ->
+            // match m with Chain f -> 
+            //    f world (function
+            //        | world, Left m ->    ...
+            //        | world, Right v ->    ...    ) 
+
+            // Async<'T> = ('T -> unit) -> unit
+            // Async<'T> = ('T -> unit) * (exn -> unit) -> unit
+            // ???? Async<'T> = ('T * World -> World) -> unit
+
+            //
             match (match m with Chain f -> f world) with
             //                             ^--- NOTE: unbounded recursion here
             | (world, Left m) -> (world, Left (fun e -> bind (m e) cont))
