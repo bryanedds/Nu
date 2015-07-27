@@ -6,11 +6,11 @@ open InfinityRpg
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    // splash proxies
+    // nu splash screen
     let NuSplashName = "Splash"
     let NuSplash = Screen.proxy <| ntoa NuSplashName
 
-    // title proxies
+    // title screen
     let TitleName = "Title"
     let Title = Screen.proxy <| ntoa TitleName
     let TitleGroupName = "Group"
@@ -24,7 +24,7 @@ module Simulants =
     let TitleExitName = "Exit"
     let TitleExit = Entity.proxy <| gatoea TitleGroup.GroupAddress TitleExitName
 
-    // credits proxies
+    // credits screen
     let CreditsName = "Credits"
     let Credits = Screen.proxy <| ntoa CreditsName
     let CreditsGroupName = "Group"
@@ -32,11 +32,11 @@ module Simulants =
     let CreditsBackName = "Back"
     let CreditsBack = Entity.proxy <| gatoea CreditsGroup.GroupAddress CreditsBackName
 
-    // gameplay proxies
+    // gameplay screen
     let GameplayName = "Gameplay"
     let Gameplay = Screen.proxy <| ntoa GameplayName
     
-    // hud proxies
+    // hud group
     let HudName = "Hud"
     let Hud = Group.proxy <| satoga Gameplay.ScreenAddress HudName
     let HudBackName = "Back"
@@ -50,7 +50,7 @@ module Simulants =
     let HudDetailLeftName = "DetailLeft"
     let SceneName = "Scene"
     
-    // scene proxies
+    // scene group
     let Scene = Group.proxy <| satoga Gameplay.ScreenAddress SceneName
     let FieldName = "Field"
     let PlayerName = "Player"
