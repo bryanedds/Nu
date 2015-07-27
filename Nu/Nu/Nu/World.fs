@@ -16,8 +16,6 @@ open OpenTK
 open TiledSharp
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 
 [<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module WorldModule =
@@ -82,22 +80,22 @@ module WorldModule =
             | IncomingState
             | OutgoingState ->
                 world |>
-                    World.subscribe ScreenTransitionMouseLeftKey World.handleAsSwallow (MouseLeftEventAddress ->- AnyEventAddress) Game |>
-                    World.subscribe ScreenTransitionMouseCenterKey World.handleAsSwallow (MouseCenterEventAddress ->- AnyEventAddress) Game |>
-                    World.subscribe ScreenTransitionMouseRightKey World.handleAsSwallow (MouseRightEventAddress ->- AnyEventAddress) Game |>
-                    World.subscribe ScreenTransitionMouseX1Key World.handleAsSwallow (MouseX1EventAddress ->- AnyEventAddress) Game |>
-                    World.subscribe ScreenTransitionMouseX2Key World.handleAsSwallow (MouseX2EventAddress ->- AnyEventAddress) Game |>
-                    World.subscribe ScreenTransitionKeyboardKeyKey World.handleAsSwallow (KeyboardKeyEventAddress ->- AnyEventAddress) Game
+                    World.subscribe ScreenTransitionMouseLeftKey World.handleAsSwallow (Events.MouseLeftEventAddress ->- Events.AnyEventAddress) Proxies.Game |>
+                    World.subscribe ScreenTransitionMouseCenterKey World.handleAsSwallow (Events.MouseCenterEventAddress ->- Events.AnyEventAddress) Proxies.Game |>
+                    World.subscribe ScreenTransitionMouseRightKey World.handleAsSwallow (Events.MouseRightEventAddress ->- Events.AnyEventAddress) Proxies.Game |>
+                    World.subscribe ScreenTransitionMouseX1Key World.handleAsSwallow (Events.MouseX1EventAddress ->- Events.AnyEventAddress) Proxies.Game |>
+                    World.subscribe ScreenTransitionMouseX2Key World.handleAsSwallow (Events.MouseX2EventAddress ->- Events.AnyEventAddress) Proxies.Game |>
+                    World.subscribe ScreenTransitionKeyboardKeyKey World.handleAsSwallow (Events.KeyboardKeyEventAddress ->- Events.AnyEventAddress) Proxies.Game
 
         /// Select the given screen without transitioning.
         static member selectScreen screen world =
             let world =
                 match World.getOptSelectedScreen world with
-                | Some selectedScreen ->  World.publish4 () (DeselectEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
+                | Some selectedScreen ->  World.publish4 () (Events.DeselectEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
                 | None -> world
             let world = World.setScreenTransitionState IncomingState screen world
             let world = World.setOptSelectedScreen (Some screen) world
-            World.publish4 () (SelectEventAddress ->>- screen.ScreenAddress) screen world
+            World.publish4 () (Events.SelectEventAddress ->>- screen.ScreenAddress) screen world
 
         /// Try to transition to the given screen if no other transition is in progress.
         static member tryTransitionScreen destination world =
@@ -115,7 +113,7 @@ module WorldModule =
                         | None -> failwith "No valid OptScreenTransitionDestinationAddress during screen transition!"
                     let world = World.setOptScreenTransitionDestination (Some destination) world
                     let world = World.setScreenTransitionState OutgoingState selectedScreen world
-                    let world = World.subscribe<unit, Screen> subscriptionKey subscription (OutgoingFinishEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
+                    let world = World.subscribe<unit, Screen> subscriptionKey subscription (Events.OutgoingFinishEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
                     Some world
                 else None
             | None -> None
@@ -181,28 +179,28 @@ module WorldModule =
                     | Running ->
                         let world =
                             if selectedScreen.GetTransitionTicksNp world = 0L
-                            then World.publish4 () (IncomingStartEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
+                            then World.publish4 () (Events.IncomingStartEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
                             else world
                         match world.State.Liveness with
                         | Running ->
                             let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetIncoming world) world
                             if finished then
                                 let world = World.setScreenTransitionState IdlingState selectedScreen world
-                                World.publish4 () (IncomingFinishEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
+                                World.publish4 () (Events.IncomingFinishEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
                             else world
                         | Exiting -> world
                     | Exiting -> world
                 | OutgoingState ->
                     let world =
                         if selectedScreen.GetTransitionTicksNp world <> 0L then world
-                        else World.publish4 () (OutgoingStartEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
+                        else World.publish4 () (Events.OutgoingStartEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
                     match world.State.Liveness with
                     | Running ->
                         let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetOutgoing world) world
                         if finished then
                             let world = World.setScreenTransitionState IdlingState selectedScreen world
                             match world.State.Liveness with
-                            | Running -> World.publish4 () (OutgoingFinishEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
+                            | Running -> World.publish4 () (Events.OutgoingFinishEventAddress ->>- selectedScreen.ScreenAddress) selectedScreen world
                             | Exiting -> world
                         else world
                     | Exiting -> world
@@ -229,7 +227,7 @@ module WorldModule =
                     (Resolve, World.exit world)
 
         static member private handleSplashScreenIdle idlingTime event world =
-            let world = World.subscribe SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) UpdateEventAddress event.Subscriber world
+            let world = World.subscribe SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) Events.UpdateEventAddress event.Subscriber world
             (Resolve, world)
 
         /// Create a splash screen that transitions to the given destination upon completion.
@@ -244,8 +242,8 @@ module WorldModule =
             let world = splashLabel.SetSize cameraEyeSize world
             let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
             let world = splashLabel.SetLabelImage splashData.SplashImage world
-            let world = World.monitor (World.handleSplashScreenIdle splashData.IdlingTime) (IncomingFinishEventAddress ->>- splashScreen.ScreenAddress) splashScreen world
-            let world = World.monitor (World.handleAsScreenTransitionFromSplash destination) (OutgoingFinishEventAddress ->>- splashScreen.ScreenAddress) splashScreen world
+            let world = World.monitor (World.handleSplashScreenIdle splashData.IdlingTime) (Events.IncomingFinishEventAddress ->>- splashScreen.ScreenAddress) splashScreen world
+            let world = World.monitor (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinishEventAddress ->>- splashScreen.ScreenAddress) splashScreen world
             (splashScreen, world)
 
         /// Create a dissolve screen whose contents is loaded from the given group file.
@@ -388,39 +386,39 @@ module WorldModule =
                     let mousePosition = Vector2 (single event.button.x, single event.button.y)
                     let world =
                         if World.isMouseButtonDown MouseLeft world
-                        then World.publish World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } MouseDragEventAddress Game world
+                        then World.publish World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseDragEventAddress Proxies.Game world
                         else world
-                    World.publish World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } MouseMoveEventAddress Game world
+                    World.publish World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseMoveEventAddress Proxies.Game world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton <| uint32 event.button.button
                     let mouseButtonEventAddress = ntoa <| MouseButton.toEventName mouseButton
-                    let mouseButtonDownEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Down"
-                    let mouseButtonChangeEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
+                    let mouseButtonDownEventAddress = Events.MouseEventAddress -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Down"
+                    let mouseButtonChangeEventAddress = Events.MouseEventAddress -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
-                    let world = World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonDownEventAddress Game world
-                    World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress Game world
+                    let world = World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonDownEventAddress Proxies.Game world
+                    World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress Proxies.Game world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton <| uint32 event.button.button
                     let mouseButtonEventAddress = ntoa <| MouseButton.toEventName mouseButton
-                    let mouseButtonUpEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Up"
-                    let mouseButtonChangeEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
+                    let mouseButtonUpEventAddress = Events.MouseEventAddress -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Up"
+                    let mouseButtonChangeEventAddress = Events.MouseEventAddress -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
-                    let world = World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEventAddress Game world
-                    World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress Game world
+                    let world = World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEventAddress Proxies.Game world
+                    World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress Proxies.Game world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = event.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = true }
-                    let world = World.publish World.sortSubscriptionsByHierarchy eventData KeyboardKeyDownEventAddress Game world
-                    World.publish World.sortSubscriptionsByHierarchy eventData KeyboardKeyChangeEventAddress Game world
+                    let world = World.publish World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyDownEventAddress Proxies.Game world
+                    World.publish World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChangeEventAddress Proxies.Game world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let keyboard = event.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = false }
-                    let world = World.publish World.sortSubscriptionsByHierarchy eventData KeyboardKeyUpEventAddress Game world
-                    World.publish World.sortSubscriptionsByHierarchy eventData KeyboardKeyChangeEventAddress Game world
+                    let world = World.publish World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyUpEventAddress Proxies.Game world
+                    World.publish World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChangeEventAddress Proxies.Game world
                 | _ -> world
             (world.State.Liveness, world)
 
@@ -436,7 +434,7 @@ module WorldModule =
                     let world = World.processSubsystems UpdateType world
                     match world.State.Liveness with
                     | Running ->
-                        let world = World.publish4 () UpdateEventAddress Game world
+                        let world = World.publish4 () Events.UpdateEventAddress Proxies.Game world
                         match world.State.Liveness with
                         | Running ->
                             let world = World.processTasklets world
@@ -483,24 +481,24 @@ module WorldModule =
         static member tryMake useLoadedGameDispatcher tickRate userState (nuPlugin : NuPlugin) sdlDeps =
 
             // attempt to generate asset metadata so the rest of the world can be created
-            match Metadata.tryGenerateAssetMetadataMap AssetGraphFilePath with
+            match Metadata.tryGenerateAssetMetadataMap Constants.Assets.AssetGraphFilePath with
             | Right assetMetadataMap ->
 
                 // make the world's subsystems
                 let subsystems =
                     let userSubsystems = Map.ofList <| nuPlugin.MakeSubsystems ()
-                    let integrator = Integrator.make Gravity
-                    let integratorSubsystem = IntegratorSubsystem.make DefaultSubsystemOrder integrator :> Subsystem
-                    let renderer = Renderer.make sdlDeps.RenderContext AssetGraphFilePath
-                    let renderer = renderer.EnqueueMessage <| HintRenderPackageUseMessage { PackageName = DefaultPackageName }
-                    let rendererSubsystem = RendererSubsystem.make DefaultSubsystemOrder renderer :> Subsystem
-                    let audioPlayer = AudioPlayer.make AssetGraphFilePath
-                    let audioPlayerSubsystem = AudioPlayerSubsystem.make DefaultSubsystemOrder audioPlayer :> Subsystem
+                    let integrator = Integrator.make Constants.Physics.Gravity
+                    let integratorSubsystem = IntegratorSubsystem.make Constants.Engine.DefaultSubsystemOrder integrator :> Subsystem
+                    let renderer = Renderer.make sdlDeps.RenderContext Constants.Assets.AssetGraphFilePath
+                    let renderer = renderer.EnqueueMessage <| HintRenderPackageUseMessage { PackageName = Constants.Assets.DefaultPackageName }
+                    let rendererSubsystem = RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder renderer :> Subsystem
+                    let audioPlayer = AudioPlayer.make Constants.Assets.AssetGraphFilePath
+                    let audioPlayerSubsystem = AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder audioPlayer :> Subsystem
                     let defaultSubsystems =
                         Map.ofList
-                            [(IntegratorSubsystemName, integratorSubsystem)
-                             (RendererSubsystemName, rendererSubsystem)
-                             (AudioPlayerSubsystemName, audioPlayerSubsystem)]
+                            [(Constants.Engine.IntegratorSubsystemName, integratorSubsystem)
+                             (Constants.Engine.RendererSubsystemName, rendererSubsystem)
+                             (Constants.Engine.AudioPlayerSubsystemName, audioPlayerSubsystem)]
                     { SubsystemMap = defaultSubsystems @@ userSubsystems }
 
                 // make user-defined components
@@ -590,10 +588,10 @@ module WorldModule =
                       Liveness = Running
                       OptScreenTransitionDestination = None
                       AssetMetadataMap = assetMetadataMap
-                      AssetGraphFilePath = AssetGraphFilePath
-                      Overlayer = Overlayer.make OverlayFilePath intrinsicOverlays
+                      AssetGraphFilePath = Constants.Assets.AssetGraphFilePath
+                      Overlayer = Overlayer.make Constants.Assets.OverlayFilePath intrinsicOverlays
                       OverlayRouter = OverlayRouter.make entityDispatchers userOverlayRoutes
-                      OverlayFilePath = OverlayFilePath
+                      OverlayFilePath = Constants.Assets.OverlayFilePath
                       Camera = camera
                       OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                       UserState = userState }
@@ -624,14 +622,14 @@ module WorldModule =
 
             // make the world's subsystems
             let subsystems =
-                let integratorSubsystem = IntegratorSubsystem.make DefaultSubsystemOrder { MockIntegrator = () } :> Subsystem
-                let rendererSubsystem = RendererSubsystem.make DefaultSubsystemOrder { MockRenderer = () } :> Subsystem
-                let audioPlayerSubsystem = AudioPlayerSubsystem.make DefaultSubsystemOrder { MockAudioPlayer = () } :> Subsystem
+                let integratorSubsystem = IntegratorSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockIntegrator = () } :> Subsystem
+                let rendererSubsystem = RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockRenderer = () } :> Subsystem
+                let audioPlayerSubsystem = AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockAudioPlayer = () } :> Subsystem
                 { SubsystemMap =
                     Map.ofList
-                        [(IntegratorSubsystemName, integratorSubsystem)
-                         (RendererSubsystemName, rendererSubsystem)
-                         (AudioPlayerSubsystemName, audioPlayerSubsystem)] }
+                        [(Constants.Engine.IntegratorSubsystemName, integratorSubsystem)
+                         (Constants.Engine.RendererSubsystemName, rendererSubsystem)
+                         (Constants.Engine.AudioPlayerSubsystemName, audioPlayerSubsystem)] }
 
             // make the default dispatchers
             let entityDispatcher = EntityDispatcher ()
@@ -666,7 +664,7 @@ module WorldModule =
                   OverlayRouter = OverlayRouter.make (Map.ofList [World.pairWithName entityDispatcher]) []
                   OverlayFilePath = String.Empty
                   Overlayer = { Overlays = XmlDocument () }
-                  Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single ResolutionXDefault, single ResolutionYDefault) }
+                  Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault) }
                   OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                   UserState = userState }
 

@@ -2,9 +2,7 @@
 open System
 open Prime
 open Nu
-open Nu.Constants
 open InfinityRpg
-open InfinityRpg.Constants
 
 type InfinityRpgPlugin () =
     inherit NuPlugin ()

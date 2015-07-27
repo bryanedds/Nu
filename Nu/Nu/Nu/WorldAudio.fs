@@ -5,8 +5,6 @@ namespace Nu
 open System
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 
 /// The subsystem for the world's audio player.
 type [<ReferenceEquality>] AudioPlayerSubsystem =
@@ -34,7 +32,7 @@ module WorldAudioModule =
 
         /// Add an audio message to the world.
         static member addAudioMessage (message : AudioMessage) world =
-            World.updateSubsystem (fun aps _ -> aps.EnqueueMessage message) AudioPlayerSubsystemName world
+            World.updateSubsystem (fun aps _ -> aps.EnqueueMessage message) Constants.Engine.AudioPlayerSubsystemName world
 
         /// Send a message to the audio system to play a song.
         static member playSong timeToFadeOutSongMs volume song world =

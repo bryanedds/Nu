@@ -3,9 +3,7 @@ open System
 open OpenTK
 open Prime
 open Nu
-open Nu.Constants
 open InfinityRpg
-open InfinityRpg.Constants
 
 type Tracking =
     | BackTracking
@@ -178,10 +176,10 @@ module Direction =
 module MathModule =
 
     let vmtovi vm =
-        Vector2i.Multiply (vm, TileSizeI)
+        Vector2i.Multiply (vm, Constants.Layout.TileSizeI)
 
     let vitovm vi =
-        Vector2i.Divide (vi, TileSizeI)
+        Vector2i.Divide (vi, Constants.Layout.TileSizeI)
 
     let vitovf (vi : Vector2i) =
         vi.Vector2

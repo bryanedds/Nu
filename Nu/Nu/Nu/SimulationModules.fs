@@ -4,13 +4,110 @@
 namespace Nu
 open System
 open System.Collections.Generic
-open FSharpx
 open FSharpx.Collections
 open OpenTK
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module TransitionDescriptor =
+
+    /// Make a screen transition descriptor.
+    let make transitionType =
+        { TransitionType = transitionType
+          TransitionLifetime = 0L
+          OptDissolveImage = None }
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module GameState =
+
+    /// Make a game state value.
+    let make dispatcher =
+        { Id = Core.makeId ()
+          OptSelectedScreen = None
+          PublishChanges = true
+          CreationTimeStampNp = Core.getTimeStamp ()
+          DispatcherNp = dispatcher
+          Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module ScreenState =
+
+    /// Make a screen state value.
+    let make dispatcher optName =
+        let id = Core.makeId ()
+        { Id = id
+          Name = match optName with Some name -> name | None -> acstring id
+          TransitionStateNp = IdlingState
+          TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
+          Incoming = TransitionDescriptor.make Incoming
+          Outgoing = TransitionDescriptor.make Outgoing
+          PublishChanges = true
+          Persistent = true
+          CreationTimeStampNp = Core.getTimeStamp ()
+          DispatcherNp = dispatcher
+          Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
+      
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module GroupState =
+
+    /// Make a group state value.
+    let make dispatcher optName =
+        let id = Core.makeId ()
+        { GroupState.Id = id
+          Name = match optName with Some name -> name | None -> acstring id
+          PublishChanges = true
+          Persistent = true
+          CreationTimeStampNp = Core.getTimeStamp ()
+          DispatcherNp = dispatcher
+          Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
+      
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module EntityState =
+
+    /// Make an entity state value.
+    let make dispatcher optOverlayName optName =
+        let id = Core.makeId ()
+        { Id = id
+          Name = match optName with Some name -> name | None -> acstring id
+          Position = Vector2.Zero
+          Depth = 0.0f
+          Size = Constants.Engine.DefaultEntitySize
+          Rotation = 0.0f
+          Visible = true
+          ViewType = Relative
+          PublishChanges = true
+          Persistent = true
+          CreationTimeStampNp = Core.getTimeStamp ()
+          DispatcherNp = dispatcher
+          FacetNames = []
+          FacetsNp = []
+          OptOverlayName = optOverlayName
+          Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Game =
+
+    /// Create a Game proxy from an address.
+    let proxy address = { GameAddress = address }
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Screen =
+
+    /// Create a Screen proxy from an address.
+    let proxy address = { ScreenAddress = address }
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Group =
+
+    /// Create a Group proxy from an address.
+    let proxy address = { GroupAddress = address }
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Entity =
+
+    /// Create an Entity proxy from an address.
+    let proxy address = { EntityAddress = address }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module World =
@@ -34,7 +131,7 @@ module World =
             | (true, anyEventAddresses) -> anyEventAddresses
             | (false, _) ->
                 let eventAddressNameKeys = Address.getNameKeys eventAddress
-                let anyEventAddressNameKeys = Address.getNameKeys AnyEventAddress
+                let anyEventAddressNameKeys = Address.getNameKeys Events.AnyEventAddress
                 let anyEventAddresses =
                     [for i in 0 .. List.length eventAddressNameKeys - 1 do
                         let subNameKeys = List.take i eventAddressNameKeys @ anyEventAddressNameKeys
@@ -97,7 +194,7 @@ module World =
     /// Sort subscriptions by their place in the world's simulant hierarchy.
     let sortSubscriptionsByHierarchy subscriptions world =
         sortSubscriptionsBy
-            (fun _ _ -> EntityPublishingPriority)
+            (fun _ _ -> Constants.Engine.EntityPublishingPriority)
             subscriptions
             world
 
@@ -282,7 +379,7 @@ module World =
     let private setState state world =
         let oldWorld = world
         let world = setStateWithoutEvent state world
-        publish4 { WorldStateChangeData.OldWorld = oldWorld } WorldStateChangeEventAddress Game world
+        publish4 { WorldStateChangeData.OldWorld = oldWorld } Events.WorldStateChangeEventAddress Proxies.Game world
 
     /// Get the world's tick rate.
     let getTickRate world =
@@ -478,7 +575,7 @@ module World =
         if entityState.PublishChanges then
             publish4
                 { Simulant = entity; OldWorld = oldWorld }
-                (EntityChangeEventAddress ->>- entity.EntityAddress)
+                (Events.EntityChangeEventAddress ->>- entity.EntityAddress)
                 entity
                 world
         else world
@@ -566,7 +663,7 @@ module World =
         if groupState.PublishChanges then
             publish4
                 { Simulant = group; OldWorld = oldWorld }
-                (GroupChangeEventAddress ->>- group.GroupAddress)
+                (Events.GroupChangeEventAddress ->>- group.GroupAddress)
                 group
                 world
         else world
@@ -636,7 +733,7 @@ module World =
         if screenState.PublishChanges then
             publish4
                 { Simulant = screen; OldWorld = oldWorld }
-                (ScreenChangeEventAddress ->>- screen.ScreenAddress)
+                (Events.ScreenChangeEventAddress ->>- screen.ScreenAddress)
                 screen
                 world
         else world
@@ -662,9 +759,9 @@ module World =
         let world = { world with SimulantStates = (gameState, screenStateMap) }
         if gameState.PublishChanges then
             publish4
-                { OldWorld = oldWorld; Simulant = Game }
-                (GameChangeEventAddress ->>- Game.GameAddress)
-                Game
+                { OldWorld = oldWorld; Simulant = Proxies.Game }
+                (Events.GameChangeEventAddress ->>- Proxies.Game.GameAddress)
+                Proxies.Game
                 world
         else world
 

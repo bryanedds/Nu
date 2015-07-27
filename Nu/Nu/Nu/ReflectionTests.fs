@@ -8,7 +8,6 @@ open System.Xml
 open Xunit
 open Prime
 open Nu
-open Nu.Constants
 module ReflectionTests =
 
     type [<CLIMutable; NoComparison>] TestXtended =
@@ -26,7 +25,7 @@ module ReflectionTests =
         let xmlWriterSettings = XmlWriterSettings ()
         let xmlWriter = XmlWriter.Create (memoryStream, xmlWriterSettings)
         xmlWriter.WriteStartDocument ()
-        xmlWriter.WriteStartElement RootNodeName
+        xmlWriter.WriteStartElement Constants.Xml.RootNodeName
         write xmlWriter source
         xmlWriter.WriteEndElement ()
         xmlWriter.WriteEndDocument ()
@@ -36,7 +35,7 @@ module ReflectionTests =
     let readFromStream read (stream : Stream) target : unit =
         let xmlReader = XmlReader.Create stream
         let xmlDocument = let emptyDoc = XmlDocument () in (emptyDoc.Load xmlReader; emptyDoc)
-        read (xmlDocument.SelectSingleNode RootNodeName) target
+        read (xmlDocument.SelectSingleNode Constants.Xml.RootNodeName) target
 
     let [<Fact>] xtensionSerializationViaContainingTypeWorks () =
         let xtd = { Xtension = Xtension.mixed }

@@ -5,8 +5,6 @@ namespace Nu
 open System
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 
 [<AutoOpen>]
 module WorldSimulantModule =

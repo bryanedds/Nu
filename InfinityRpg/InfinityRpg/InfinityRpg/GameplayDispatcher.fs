@@ -5,13 +5,10 @@ open SDL2
 open OpenTK
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 open Nu.Observation
 open Nu.Chain
 open AStar
 open InfinityRpg
-open InfinityRpg.Constants
 
 [<AutoOpen>]
 module GameplayDispatcherModule =
@@ -35,22 +32,22 @@ module GameplayDispatcherModule =
 
         (* Hud Proxies *)
 
-        static let proxyHud gameplay = Group.proxy <| satoga gameplay.ScreenAddress HudName
-        static let proxyHudHalt gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress HudHaltName
-        static let proxyHudSaveGame gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress HudSaveGameName
-        static let proxyHudFeeler gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress HudFeelerName
-        static let proxyHudDetailUp gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress HudDetailUpName
-        static let proxyHudDetailRight gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress HudDetailRightName
-        static let proxyHudDetailDown gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress HudDetailDownName
-        static let proxyHudDetailLeft gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress HudDetailLeftName
+        static let proxyHud gameplay = Group.proxy <| satoga gameplay.ScreenAddress Proxies.HudName
+        static let proxyHudHalt gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Proxies.HudHaltName
+        static let proxyHudSaveGame gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Proxies.HudSaveGameName
+        static let proxyHudFeeler gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Proxies.HudFeelerName
+        static let proxyHudDetailUp gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Proxies.HudDetailUpName
+        static let proxyHudDetailRight gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Proxies.HudDetailRightName
+        static let proxyHudDetailDown gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Proxies.HudDetailDownName
+        static let proxyHudDetailLeft gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Proxies.HudDetailLeftName
 
         (* Scene Proxies *)
 
         static let proxyScene gameplay =
-            Group.proxy <| satoga gameplay.ScreenAddress SceneName
+            Group.proxy <| satoga gameplay.ScreenAddress Proxies.SceneName
         
         static let proxyField gameplay =
-            Entity.proxy <| gatoea (proxyScene gameplay).GroupAddress FieldName
+            Entity.proxy <| gatoea (proxyScene gameplay).GroupAddress Proxies.FieldName
         
         static let proxyCharacters gameplay world =
             let entities = World.proxyEntities (proxyScene gameplay) world
@@ -67,7 +64,7 @@ module GameplayDispatcherModule =
             Option.get <| proxyOptCharacterInDirection position direction gameplay world
 
         static let proxyPlayer gameplay =
-            Entity.proxy <| gatoea (proxyScene gameplay).GroupAddress PlayerName
+            Entity.proxy <| gatoea (proxyScene gameplay).GroupAddress Proxies.PlayerName
 
         static let proxyEnemies gameplay world =
             let entities = World.proxyEntities (proxyScene gameplay) world
@@ -79,12 +76,12 @@ module GameplayDispatcherModule =
             ActionTurn
                 { ActionTicks = 0L
                   ActionOptTargetPositionM = Some targetPositionM
-                  ActionDataName = AttackName }
+                  ActionDataName = Constants.InfinityRpg.AttackName }
 
         static let createField scene rand world =
             let pathEdgesM = [(Vector2i (1, 10), Vector2i (20, 10))]
-            let (fieldMap, rand) = FieldMap.make FieldTileSheetImage (Vector2i 22) pathEdgesM rand
-            let (field, world) = World.createEntity typeof<FieldDispatcher>.Name (Some FieldName) scene world
+            let (fieldMap, rand) = FieldMap.make Constants.Assets.FieldTileSheetImage (Vector2i 22) pathEdgesM rand
+            let (field, world) = World.createEntity typeof<FieldDispatcher>.Name (Some Proxies.FieldName) scene world
             let world = field.SetFieldMapNp fieldMap world
             let world = field.SetSize (World.getEntityQuickSize field world) world
             let world = field.SetPersistent false world
@@ -95,20 +92,20 @@ module GameplayDispatcherModule =
             let enemyCount = randResult + 1
             List.fold
                 (fun (enemies, rand, world) i ->
-                    let enemyPosition = single i * TileSize * 2.0f
+                    let enemyPosition = single i * Constants.Layout.TileSize * 2.0f
                     let (enemy, world) = World.createEntity typeof<EnemyDispatcher>.Name None scene world
-                    let world = enemy.SetDepth CharacterDepth world
+                    let world = enemy.SetDepth Constants.Layout.CharacterDepth world
                     let world = enemy.SetPosition enemyPosition world
-                    let world = enemy.SetCharacterAnimationSheet GoopyImage world
+                    let world = enemy.SetCharacterAnimationSheet Constants.Assets.GoopyImage world
                     (enemy :: enemies, rand, world))
                 ([], rand, world)
                 [0 .. enemyCount - 1]
 
         static let walk3 positive current destination =
-            let walkSpeed = if positive then CharacterWalkSpeed else -CharacterWalkSpeed
+            let walkSpeed = if positive then Constants.Layout.CharacterWalkSpeed else -Constants.Layout.CharacterWalkSpeed
             let next = current + walkSpeed
             let delta = if positive then destination - next else next - destination
-            if delta < CharacterWalkSpeed then (destination, WalkFinished) else (next, WalkContinuing)
+            if delta < Constants.Layout.CharacterWalkSpeed then (destination, WalkFinished) else (next, WalkContinuing)
 
         static let walk walkDescriptor (position : Vector2) =
             let walkOrigin = vmtovf walkDescriptor.WalkOriginM
@@ -200,7 +197,7 @@ module GameplayDispatcherModule =
                 world |>
                     character.SetCharacterAnimationState (getCharacterAnimationStateByActionBegin (World.getTickTime world) (character.GetPosition world) (character.GetCharacterAnimationState world) actionDescriptor) |>
                     character.SetActivityState (Action <| ActionDescriptor.updateActionTicks (World.getTickRate world) actionDescriptor)
-            elif actionDescriptor.ActionTicks > 0L && actionDescriptor.ActionTicks < ActionTicksMax then
+            elif actionDescriptor.ActionTicks > 0L && actionDescriptor.ActionTicks < Constants.InfinityRpg.ActionTicksMax then
                 world |>
                     character.SetActivityState (Action <| ActionDescriptor.updateActionTicks (World.getTickRate world) actionDescriptor)
             else
@@ -368,7 +365,7 @@ module GameplayDispatcherModule =
 
         static let runCharacterReaction actionDescriptor (initiator : Entity) gameplay world =
             // TODO: implement animations
-            if actionDescriptor.ActionTicks = ActionTicksMax then
+            if actionDescriptor.ActionTicks = Constants.InfinityRpg.ActionTicksMax then
                 let reactor =
                     proxyCharacterInDirection
                         (initiator.GetPosition world)
@@ -379,8 +376,8 @@ module GameplayDispatcherModule =
                 let reactorHitPoints = reactor.GetHitPoints world - reactorDamage
                 let world = reactor.SetHitPoints reactorHitPoints world
                 if reactor.GetHitPoints world <= 0 then
-                    if reactor.GetName world = PlayerName
-                    then World.transitionScreen Title world
+                    if reactor.GetName world = Proxies.PlayerName
+                    then World.transitionScreen Proxies.Title world
                     else World.destroyEntity reactor world
                 else world
             else world
@@ -402,7 +399,7 @@ module GameplayDispatcherModule =
                             | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
                         updateCharacterByNavigation navigationDescriptor character world
                     do! pass }}
-            let observation = observe UpdateEventAddress character |> until (DeselectEventAddress ->>- gameplay.ScreenAddress)
+            let observation = observe Events.UpdateEventAddress character |> until (Events.DeselectEventAddress ->>- gameplay.ScreenAddress)
             snd <| runAssumingCascade chain observation world
 
         static let runCharacterAction newActionDescriptor (character : Entity) gameplay world =
@@ -418,7 +415,7 @@ module GameplayDispatcherModule =
                         let world = updateCharacterByAction actionDescriptor character world
                         runCharacterReaction actionDescriptor character gameplay world
                     do! pass }}
-            let observation = observe UpdateEventAddress character |> until (DeselectEventAddress ->>- gameplay.ScreenAddress)
+            let observation = observe Events.UpdateEventAddress character |> until (Events.DeselectEventAddress ->>- gameplay.ScreenAddress)
             snd <| runAssumingCascade chain observation world
 
         static let runCharacterNoActivity (character : Entity) world =
@@ -525,9 +522,9 @@ module GameplayDispatcherModule =
                                 do! update ^ cancelNavigation player }}
                     do! update ^ hudSaveGame.SetEnabled true }
                 let observation =
-                    observe (ClickEventAddress ->>- hudHalt.EntityAddress) gameplay |>
-                    sum UpdateEventAddress |>
-                    until (DeselectEventAddress ->>- gameplay.ScreenAddress)
+                    observe (Events.ClickEventAddress ->>- hudHalt.EntityAddress) gameplay |>
+                    sum Events.UpdateEventAddress |>
+                    until (Events.DeselectEventAddress ->>- gameplay.ScreenAddress)
                 snd <| runAssumingCascade chain observation world
             else world
 
@@ -560,7 +557,7 @@ module GameplayDispatcherModule =
             let world = gameplay.SetOngoingRandState ongoingSeedState world
 
             // make scene group
-            let (scene, world) = World.createGroup typeof<GroupDispatcher>.Name (Some SceneName) gameplay world
+            let (scene, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Proxies.SceneName) gameplay world
 
             // make rand from gameplay
             let rand = Rand.make <| gameplay.GetContentRandState world
@@ -569,8 +566,8 @@ module GameplayDispatcherModule =
             let (rand, world) = _bc <| createField scene rand world
 
             // make player
-            let (player, world) = World.createEntity typeof<PlayerDispatcher>.Name (Some PlayerName) scene world
-            let world = player.SetDepth CharacterDepth world
+            let (player, world) = World.createEntity typeof<PlayerDispatcher>.Name (Some Proxies.PlayerName) scene world
+            let world = player.SetDepth Constants.Layout.CharacterDepth world
 
             // make enemies
             __c <| createEnemies scene rand world
@@ -581,7 +578,7 @@ module GameplayDispatcherModule =
             let scene = proxyScene gameplay
 
             // get and initialize gameplay screen from read
-            let world = snd <| World.readScreenFromFile SaveFilePath (Some GameplayName) world
+            let world = snd <| World.readScreenFromFile Constants.FilePaths.SaveFilePath (Some Proxies.GameplayName) world
             let world = gameplay.SetTransitionStateNp IncomingState world
 
             // make rand from gameplay
@@ -591,7 +588,7 @@ module GameplayDispatcherModule =
             __c <| createField scene rand world
 
         static let handleSelectTitle _ world =
-            let world = World.playSong DefaultTimeToFadeOutSongMs 1.0f ButterflyGirlSong world
+            let world = World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Constants.Assets.ButterflyGirlSong world
             (Cascade, world)
 
         static let handleSelectGameplay event  world =
@@ -599,15 +596,15 @@ module GameplayDispatcherModule =
             let world =
                 // NOTE: doing a File.Exists then loading the file is dangerous since the file can
                 // always be deleted / moved between the two operations!
-                if gameplay.GetShallLoadGame world && File.Exists SaveFilePath
+                if gameplay.GetShallLoadGame world && File.Exists Constants.FilePaths.SaveFilePath
                 then handleLoadGame gameplay world
                 else handleNewGame gameplay world
-            let world = World.playSong DefaultTimeToFadeOutSongMs 1.0f HerosVengeanceSong world
+            let world = World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Constants.Assets.HerosVengeanceSong world
             (Cascade, world)
 
         static let handleClickSaveGame event world =
             let gameplay = event.Subscriber
-            World.writeScreenToFile SaveFilePath gameplay world
+            World.writeScreenToFile Constants.FilePaths.SaveFilePath gameplay world
             (Cascade, world)
 
         static let handleDeselectGameplay event world =
@@ -622,13 +619,13 @@ module GameplayDispatcherModule =
 
         override dispatcher.Register gameplay world =
             world |>
-                (observe (EntityChangeEventAddress ->>- (proxyPlayer gameplay).EntityAddress) gameplay |> subscribe handlePlayerChange) |>
-                (observe (TouchEventAddress ->>- (proxyHudFeeler gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor handleTouchFeeler) |>
-                (observe (DownEventAddress ->>- (proxyHudDetailUp gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Upward)) |>
-                (observe (DownEventAddress ->>- (proxyHudDetailRight gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Rightward)) |>
-                (observe (DownEventAddress ->>- (proxyHudDetailDown gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Downward)) |>
-                (observe (DownEventAddress ->>- (proxyHudDetailLeft gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Leftward)) |>
-                (World.subscribe4 handleSelectTitle (SelectEventAddress ->>- Title.ScreenAddress) gameplay) |>
-                (World.subscribe4 handleSelectGameplay (SelectEventAddress ->>- gameplay.ScreenAddress) gameplay) |>
-                (World.subscribe4 handleClickSaveGame (ClickEventAddress ->>- (proxyHudSaveGame gameplay).EntityAddress) gameplay) |>
-                (World.subscribe4 handleDeselectGameplay (DeselectEventAddress ->>- gameplay.ScreenAddress) gameplay)
+                (observe (Events.EntityChangeEventAddress ->>- (proxyPlayer gameplay).EntityAddress) gameplay |> subscribe handlePlayerChange) |>
+                (observe (Events.TouchEventAddress ->>- (proxyHudFeeler gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor handleTouchFeeler) |>
+                (observe (Events.DownEventAddress ->>- (proxyHudDetailUp gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Upward)) |>
+                (observe (Events.DownEventAddress ->>- (proxyHudDetailRight gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Rightward)) |>
+                (observe (Events.DownEventAddress ->>- (proxyHudDetailDown gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Downward)) |>
+                (observe (Events.DownEventAddress ->>- (proxyHudDetailLeft gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Leftward)) |>
+                (World.subscribe4 handleSelectTitle (Events.SelectEventAddress ->>- Proxies.Title.ScreenAddress) gameplay) |>
+                (World.subscribe4 handleSelectGameplay (Events.SelectEventAddress ->>- gameplay.ScreenAddress) gameplay) |>
+                (World.subscribe4 handleClickSaveGame (Events.ClickEventAddress ->>- (proxyHudSaveGame gameplay).EntityAddress) gameplay) |>
+                (World.subscribe4 handleDeselectGameplay (Events.DeselectEventAddress ->>- gameplay.ScreenAddress) gameplay)

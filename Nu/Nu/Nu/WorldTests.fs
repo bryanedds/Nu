@@ -9,8 +9,6 @@ open SDL2
 open Xunit
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 module WorldTests =
 
     let UnitEventAddress = stoa<unit> "Unit"
@@ -32,55 +30,55 @@ module WorldTests =
 
     let [<Fact>] subscribeWorks () =
         let world = World.initAndMakeEmpty 0
-        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Game world
-        let world = World.publish4 () UnitEventAddress Game world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Proxies.Game world
+        let world = World.publish4 () UnitEventAddress Proxies.Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeAndPublishTwiceWorks () =
         let world = World.initAndMakeEmpty 0
-        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Game world
-        let world = World.publish4 () UnitEventAddress Game world
-        let world = World.publish4 () UnitEventAddress Game world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Proxies.Game world
+        let world = World.publish4 () UnitEventAddress Proxies.Game world
+        let world = World.publish4 () UnitEventAddress Proxies.Game world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeTwiceAndPublishWorks () =
         let world = World.initAndMakeEmpty 0
-        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Game world
-        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Game world
-        let world = World.publish4 () UnitEventAddress Game world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Proxies.Game world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Proxies.Game world
+        let world = World.publish4 () UnitEventAddress Proxies.Game world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeWithResolutionWorks () =
         let world = World.initAndMakeEmpty 0
-        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Game world
-        let world = World.subscribe4 incUserStateAndResolve UnitEventAddress Game world
-        let world = World.publish4 () UnitEventAddress Game world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Proxies.Game world
+        let world = World.subscribe4 incUserStateAndResolve UnitEventAddress Proxies.Game world
+        let world = World.publish4 () UnitEventAddress Proxies.Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
         let world = World.initAndMakeEmpty 0
         let key = World.makeSubscriptionKey ()
-        let world = World.subscribe key incUserStateAndResolve UnitEventAddress Game world
+        let world = World.subscribe key incUserStateAndResolve UnitEventAddress Proxies.Game world
         let world = World.unsubscribe key world
-        let world = World.publish4 () UnitEventAddress Game world
+        let world = World.publish4 () UnitEventAddress Proxies.Game world
         Assert.Equal (0, World.getUserState world)
 
     let [<Fact>] entitySubscribeWorks () =
         let world = World.initAndMakeEmpty 0
-        let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some DefaultScreenName) world
-        let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) screen world
-        let (entity, world) = World.createEntity typeof<EntityDispatcher>.Name (Some DefaultEntityName) group world
+        let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some Constants.Engine.DefaultScreenName) world
+        let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Constants.Engine.DefaultGroupName) screen world
+        let (entity, world) = World.createEntity typeof<EntityDispatcher>.Name (Some Constants.Engine.DefaultEntityName) group world
         let handleEvent = fun event world -> (Cascade, World.updateUserState (fun _ -> event.Subscriber) world)
         let world = World.subscribe4 handleEvent StringEventAddress entity world
-        let world = World.publish4 String.Empty StringEventAddress Game world
-        Assert.Equal<Simulant> (DefaultEntity :> Simulant, World.getUserState world)
+        let world = World.publish4 String.Empty StringEventAddress Proxies.Game world
+        Assert.Equal<Simulant> (Proxies.DefaultEntity :> Simulant, World.getUserState world)
 
     let [<Fact>] gameSerializationWorks () =
         // TODO: make stronger assertions in here!!!
         let world = World.initAndMakeEmpty 0
-        let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some DefaultScreenName) world
-        let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) screen world
-        let (entity, world) = World.createEntity typeof<EntityDispatcher>.Name (Some DefaultEntityName) group world
+        let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some Constants.Engine.DefaultScreenName) world
+        let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Constants.Engine.DefaultGroupName) screen world
+        let (entity, world) = World.createEntity typeof<EntityDispatcher>.Name (Some Constants.Engine.DefaultEntityName) group world
         let oldWorld = world
         World.writeGameToFile TestFilePath world
         let world = World.readGameFromFile TestFilePath world

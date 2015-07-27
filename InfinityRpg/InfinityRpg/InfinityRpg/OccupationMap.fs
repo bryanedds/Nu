@@ -3,7 +3,6 @@ open System
 open OpenTK
 open Prime
 open Nu
-open InfinityRpg.Constants
 
 [<RequireQualifiedAccess>]
 module OccupationMap =

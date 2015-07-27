@@ -5,14 +5,10 @@ namespace Nu
 open System
 open OpenTK
 open Nu
-open Nu.Constants
-module WorldConstants =
 
-    // TODO: put constants in Constants.World module.
-    let Game = Game.proxy Address.empty
-    let DefaultScreen = Screen.proxy <| ntoa DefaultScreenName
-    let DefaultGroup = Group.proxy <| satoga DefaultScreen.ScreenAddress DefaultGroupName
-    let DefaultEntity = Entity.proxy <| gatoea DefaultGroup.GroupAddress DefaultEntityName
+[<RequireQualifiedAccess>]
+module Events =
+
     let AnyEventAddress = ntoa<obj> "*"
     let UpdateEventAddress = ntoa<unit> "Update"
     let SelectEventAddress = ntoa<unit> "Select"
@@ -74,4 +70,3 @@ module WorldConstants =
     let EntityAddEventAddress = EntityEventAddress -<- ntoa<unit> "Add"
     let EntityRemovingEventAddress = EntityEventAddress -<- ntoa<unit> "Removing"
     let EntityChangeEventAddress = EntityEventAddress -<- ntoa<Entity SimulantChangeData> "Change"
-    let DefaultDissolveImage = { PackageName = DefaultPackageName; AssetName = "Image8" }

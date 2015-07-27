@@ -64,6 +64,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="InfinityConstants.fs" />
+    <Compile Include="InfinityProxies.fs" />
     <Compile Include="InfinityMath.fs" />
     <Compile Include="MetaMap.fs" />
     <Compile Include="FieldMap.fs" />

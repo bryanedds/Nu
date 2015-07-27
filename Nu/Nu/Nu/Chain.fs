@@ -5,8 +5,6 @@ namespace Nu
 open FSharpx
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 
 /// The Chain monad. Allows the user to define a chain of operations over the world that
 /// optionally spans across a bounded number of events.

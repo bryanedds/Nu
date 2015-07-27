@@ -11,8 +11,6 @@ open System.Xml
 open OpenTK
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 
 [<AutoOpen>]
 module WorldGroupModule =
@@ -56,7 +54,7 @@ module WorldGroupModule =
                 let world = World.setGroupStateWithoutEvent groupState group world
                 if isNew then
                     let world = World.registerGroup group world
-                    World.publish4 () (GroupAddEventAddress ->>- group.GroupAddress) group world
+                    World.publish4 () (Events.GroupAddEventAddress ->>- group.GroupAddress) group world
                 else world
             else failwith <| "Adding a group that the world already contains at address '" + acstring group.GroupAddress + "'."
 
@@ -74,7 +72,7 @@ module WorldGroupModule =
         /// Destroy a group in the world immediately. Can be dangerous if existing in-flight
         /// publishing depends on the group's existence. Use with caution.
         static member destroyGroupImmediate group world =
-            let world = World.publish4 () (GroupRemovingEventAddress ->>- group.GroupAddress) group world
+            let world = World.publish4 () (Events.GroupRemovingEventAddress ->>- group.GroupAddress) group world
             if World.containsGroup group world then
                 let world = World.unregisterGroup group world
                 let entities = World.proxyEntities group world
@@ -119,9 +117,9 @@ module WorldGroupModule =
         static member writeGroup (writer : XmlWriter) group world =
             let groupState = World.getGroupState group world
             let entities = World.proxyEntities group world
-            writer.WriteAttributeString (DispatcherNameAttributeName, Reflection.getTypeName groupState.DispatcherNp)
+            writer.WriteAttributeString (Constants.Xml.DispatcherNameAttributeName, Reflection.getTypeName groupState.DispatcherNp)
             Reflection.writeMemberValuesFromTarget tautology3 writer groupState
-            writer.WriteStartElement EntitiesNodeName
+            writer.WriteStartElement Constants.Xml.EntitiesNodeName
             World.writeEntities writer entities world
             writer.WriteEndElement ()
 
@@ -134,8 +132,8 @@ module WorldGroupModule =
             // XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
             use writer = XmlWriter.Create (filePathTmp, writerSettings)
             writer.WriteStartDocument ()
-            writer.WriteStartElement RootNodeName
-            writer.WriteStartElement GroupNodeName
+            writer.WriteStartElement Constants.Xml.RootNodeName
+            writer.WriteStartElement Constants.Xml.GroupNodeName
             World.writeGroup writer group world
             writer.WriteEndElement ()
             writer.WriteEndElement ()
@@ -149,7 +147,7 @@ module WorldGroupModule =
             let groupsSorted = Seq.sortBy (fun (group : Group) -> group.GetCreationTimeStampNp world) groups
             let groupsPersistent = Seq.filter (fun (group : Group) -> group.GetPersistent world) groupsSorted
             for group in groupsPersistent do
-                writer.WriteStartElement GroupNodeName
+                writer.WriteStartElement Constants.Xml.GroupNodeName
                 World.writeGroup writer group world
                 writer.WriteEndElement ()
 
@@ -190,13 +188,13 @@ module WorldGroupModule =
         static member readGroupFromFile (filePath : string) optName screen world =
             use reader = XmlReader.Create filePath
             let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
-            let rootNode = document.[RootNodeName]
-            let groupNode = rootNode.[GroupNodeName]
+            let rootNode = document.[Constants.Xml.RootNodeName]
+            let groupNode = rootNode.[Constants.Xml.GroupNodeName]
             World.readGroup groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name optName screen world
 
         /// Read multiple groups from an xml node.
         static member readGroups (screenNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName screen world =
-            match screenNode.SelectSingleNode GroupsNodeName with
+            match screenNode.SelectSingleNode Constants.Xml.GroupsNodeName with
             | null -> ([], world)
             | groupsNode ->
                 let (groupsRev, world) =
@@ -205,7 +203,7 @@ module WorldGroupModule =
                             let (group, world) = World.readGroup groupNode defaultDispatcherName defaultEntityDispatcherName None screen world
                             (group :: groupsRev, world))
                         ([], world)
-                        (enumerable <| groupsNode.SelectNodes GroupNodeName)
+                        (enumerable <| groupsNode.SelectNodes Constants.Xml.GroupNodeName)
                 (List.rev groupsRev, world)
 
 namespace Debug

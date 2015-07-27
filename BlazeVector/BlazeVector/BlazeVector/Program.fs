@@ -4,8 +4,6 @@ open OpenTK
 open SDL2
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 open BlazeVector
 
 /// Creates BlazeVector-specific values (here dispatchers and facets).
@@ -60,10 +58,10 @@ module Program =
         // this makes a configuration record with the specifications we set out above.
         let sdlConfig =
             { ViewConfig = sdlViewConfig
-              ViewW = ResolutionX
-              ViewH = ResolutionY
+              ViewW = Constants.Render.ResolutionX
+              ViewH = Constants.Render.ResolutionY
               RendererFlags = sdlRendererFlags
-              AudioChunkSize = AudioBufferSizeDefault }
+              AudioChunkSize = Constants.Audio.AudioBufferSizeDefault }
 
         // this is a callback that attempts to make 'the world' in a functional programming
         // sense. In a Nu game, the world is represented as a complex record type named World.

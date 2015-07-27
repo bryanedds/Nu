@@ -19,8 +19,6 @@ open System.Xml.Serialization
 open Microsoft.FSharp.Reflection
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 open NuEdit.Constants
 
 // TODO: increase warning level to 5.
@@ -352,8 +350,8 @@ module Program =
 
     let subscribeToEntityEvents form world =
         world |>
-            World.subscribe AddEntityKey (handleNuEntityAdd form) (EntityAddEventAddress ->>- EditorGroup.GroupAddress ->- AnyEventAddress) Game |>
-            World.subscribe RemovingEntityKey (handleNuEntityRemoving form) (EntityRemovingEventAddress ->>- EditorGroup.GroupAddress ->- AnyEventAddress) Game
+            World.subscribe AddEntityKey (handleNuEntityAdd form) (Events.EntityAddEventAddress ->>- EditorGroup.GroupAddress ->- Events.AnyEventAddress) Proxies.Game |>
+            World.subscribe RemovingEntityKey (handleNuEntityRemoving form) (Events.EntityRemovingEventAddress ->>- EditorGroup.GroupAddress ->- Events.AnyEventAddress) Proxies.Game
 
     let unsubscribeFromEntityEvents world =
         world |>
@@ -697,7 +695,7 @@ module Program =
 
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()
-        form.displayPanel.MaximumSize <- Drawing.Size (ResolutionX, ResolutionY)
+        form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
         form.positionSnapTextBox.Text <- acstring DefaultPositionSnap
         form.rotationSnapTextBox.Text <- acstring DefaultRotationSnap
         form.createDepthTextBox.Text <- acstring DefaultCreationDepth
@@ -747,11 +745,11 @@ module Program =
             let world = snd <| World.createScreen typeof<ScreenDispatcher>.Name (Some EditorScreenName) world
             let world = snd <| World.createGroup typeof<GroupDispatcher>.Name (Some EditorGroupName) EditorScreen world
             let world = World.setOptSelectedScreen (Some EditorScreen) world 
-            let world = World.subscribe4 (handleNuMouseRightDown form worldChangers refWorld) MouseRightDownEventAddress Game world
-            let world = World.subscribe4 (handleNuEntityDragBegin form worldChangers refWorld) MouseLeftDownEventAddress Game world
-            let world = World.subscribe4 (handleNuEntityDragEnd form) MouseLeftUpEventAddress Game world
-            let world = World.subscribe4 (handleNuCameraDragBegin form) MouseCenterDownEventAddress Game world
-            let world = World.subscribe4 (handleNuCameraDragEnd form) MouseCenterUpEventAddress Game world
+            let world = World.subscribe4 (handleNuMouseRightDown form worldChangers refWorld) Events.MouseRightDownEventAddress Proxies.Game world
+            let world = World.subscribe4 (handleNuEntityDragBegin form worldChangers refWorld) Events.MouseLeftDownEventAddress Proxies.Game world
+            let world = World.subscribe4 (handleNuEntityDragEnd form) Events.MouseLeftUpEventAddress Proxies.Game world
+            let world = World.subscribe4 (handleNuCameraDragBegin form) Events.MouseCenterDownEventAddress Proxies.Game world
+            let world = World.subscribe4 (handleNuCameraDragEnd form) Events.MouseCenterUpEventAddress Proxies.Game world
             let world = subscribeToEntityEvents form world
             Right world
         | Left error -> Left error
@@ -778,7 +776,7 @@ module Program =
               ViewW = form.displayPanel.MaximumSize.Width
               ViewH = form.displayPanel.MaximumSize.Height
               RendererFlags = sdlRendererFlags
-              AudioChunkSize = AudioBufferSizeDefault }
+              AudioChunkSize = Constants.Audio.AudioBufferSizeDefault }
         World.run4
             (fun sdlDeps ->
                 match tryCreateEditorWorld targetDirectory refinementDirectory form worldChangers refWorld sdlDeps nuPlugin with

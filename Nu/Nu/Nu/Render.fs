@@ -12,7 +12,6 @@ open SDL2
 open TiledSharp
 open Prime
 open Nu
-open Nu.Constants
 
 /// Describes how to render a sprite to the rendering system.
 type [<StructuralEquality; NoComparison>] Sprite =
@@ -133,7 +132,7 @@ type [<ReferenceEquality>] Renderer =
         | extension -> trace <| "Could not load render asset '" + acstring asset + "' due to unknown extension '" + extension + "'."; None
 
     static member private tryLoadRenderPackage packageName renderer =
-        match Assets.tryLoadAssetsFromPackage true (Some RenderAssociation) packageName renderer.AssetGraphFilePath with
+        match Assets.tryLoadAssetsFromPackage true (Some Constants.Xml.RenderAssociation) packageName renderer.AssetGraphFilePath with
         | Right assets ->
             let optRenderAssets = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
             let renderAssets = List.definitize optRenderAssets
@@ -216,7 +215,7 @@ type [<ReferenceEquality>] Renderer =
                 destRect.y <- int <| -positionView.Y + camera.EyeSize.Y * 0.5f - sizeView.Y // negation for right-handedness
                 destRect.w <- int sizeView.X
                 destRect.h <- int sizeView.Y
-                let rotation = double -sprite.Rotation * RadiansToDegrees // negation for right-handedness
+                let rotation = double -sprite.Rotation * Constants.Math.RadiansToDegrees // negation for right-handedness
                 let mutable rotationCenter = SDL.SDL_Point ()
                 rotationCenter.x <- int <| sizeView.X * 0.5f
                 rotationCenter.y <- int <| sizeView.Y * 0.5f
@@ -289,7 +288,7 @@ type [<ReferenceEquality>] Renderer =
                             destRect.y <- int tilePosition.Y
                             destRect.w <- int tileSize.X
                             destRect.h <- int tileSize.Y
-                            let rotation = double -tileRotation * RadiansToDegrees // negation for right-handedness
+                            let rotation = double -tileRotation * Constants.Math.RadiansToDegrees // negation for right-handedness
                             let mutable rotationCenter = SDL.SDL_Point ()
                             rotationCenter.x <- int <| tileSize.X * 0.5f
                             rotationCenter.y <- int <| tileSize.Y * 0.5f

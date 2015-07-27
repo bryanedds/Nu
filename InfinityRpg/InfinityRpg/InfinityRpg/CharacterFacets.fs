@@ -4,11 +4,8 @@ open SDL2
 open OpenTK
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 open Nu.Observation
 open InfinityRpg
-open InfinityRpg.Constants
 
 [<AutoOpen>]
 module CharacterStateFacetModule =
@@ -103,8 +100,8 @@ module CharacterAnimationFacetModule =
                 | CharacterAnimationSlain -> Vector2i (4, 2)
             let animationStutter =
                 match animationState.AnimationType with
-                | CharacterAnimationFacing -> CharacterAnimationFacingStutter
-                | CharacterAnimationActing -> CharacterAnimationActingStutter
+                | CharacterAnimationFacing -> Constants.InfinityRpg.CharacterAnimationFacingStutter
+                | CharacterAnimationActing -> Constants.InfinityRpg.CharacterAnimationActingStutter
                 | CharacterAnimationDefending -> 1L // doesn't matter - no animation frames
                 | CharacterAnimationSpecial -> 1L // doesn't matter - no animation frames
                 | CharacterAnimationSlain -> 1L // doesn't matter - no animation frames
@@ -122,14 +119,14 @@ module CharacterAnimationFacetModule =
             let spriteCoordsinates = animationOffsetM + directionCoordsOffset + animatedOffsetM
             let spriteOffset =
                 Vector2
-                    (TileSize.X * single spriteCoordsinates.X,
-                     TileSize.Y * single spriteCoordsinates.Y)
+                    (Constants.Layout.TileSize.X * single spriteCoordsinates.X,
+                     Constants.Layout.TileSize.Y * single spriteCoordsinates.Y)
             let spriteInset =
                 Vector4
                     (spriteOffset.X,
                      spriteOffset.Y,
-                     spriteOffset.X + TileSize.X,
-                     spriteOffset.Y + TileSize.Y)
+                     spriteOffset.X + Constants.Layout.TileSize.X,
+                     spriteOffset.Y + Constants.Layout.TileSize.Y)
             Some spriteInset
 
         static member FieldDefinitions =
@@ -138,7 +135,7 @@ module CharacterAnimationFacetModule =
                     { AnimationType = CharacterAnimationFacing
                       Direction = Upward
                       StartTime = 0L }
-             define? CharacterAnimationSheet PlayerImage]
+             define? CharacterAnimationSheet Constants.Assets.PlayerImage]
 
         override facet.GetRenderDescriptors entity world =
             if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
@@ -167,7 +164,7 @@ module CharacterCameraFacetModule =
                 World.updateCamera (fun camera ->
                     let eyeCenter = character.GetPosition world + character.GetSize world * 0.5f
                     let eyeCenter =
-                        let field = Entity.proxy <| gatoea (eatoga character.EntityAddress) FieldName
+                        let field = Entity.proxy <| gatoea (eatoga character.EntityAddress) Proxies.FieldName
                         if World.containsEntity field world then
                             let eyeSize = camera.EyeSize
                             let eyeCornerNegative = eyeCenter - eyeSize * 0.5f
@@ -191,4 +188,4 @@ module CharacterCameraFacetModule =
             (Cascade, world)
 
         override facet.Register entity world =
-            monitor handleUpdate (observe UpdateEventAddress entity) world
+            monitor handleUpdate (observe Events.UpdateEventAddress entity) world

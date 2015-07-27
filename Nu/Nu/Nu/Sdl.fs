@@ -8,7 +8,6 @@ open System.Threading
 open SDL2
 open Prime
 open Nu
-open Nu.Constants
 
 /// Describes the initial configuration of a window created via SDL.
 type SdlWindowConfig =
@@ -48,7 +47,7 @@ module Sdl =
         let error = SDL.SDL_GetError ()
         if initResult <> 0 then
             trace <| "SDL2# initialization failed due to '" + error + "'."
-            FailureExitCode
+            Constants.Engine.FailureExitCode
         else
             try action ()
             finally destroy ()
@@ -59,7 +58,7 @@ module Sdl =
         if resource = IntPtr.Zero then
             let error = SDL.SDL_GetError ()
             trace <| "SDL2# resource creation failed due to '" + error + "'."
-            FailureExitCode
+            Constants.Engine.FailureExitCode
         else
             try action resource
             finally destroy resource
@@ -70,7 +69,7 @@ module Sdl =
         if resource <> 0 then
             let error = SDL.SDL_GetError ()
             trace <| "SDL2# global resource creation failed due to '" + error + "'."
-            FailureExitCode
+            Constants.Engine.FailureExitCode
         else
             try action ()
             finally destroy ()
@@ -89,7 +88,7 @@ module Sdl =
 
     /// Render the game engine's current frame.
     let render handleRender sdlDeps world =
-        match ScreenClearing with
+        match Constants.Render.ScreenClearing with
         | NoClear -> ()
         | ColorClear (r, g, b) ->
             ignore <| SDL.SDL_SetRenderDrawColor (sdlDeps.RenderContext, r, g, b, 255uy)
@@ -151,7 +150,7 @@ module Sdl =
                             (fun () -> SDL_mixer.Mix_Quit ())
                             (fun () ->
                             withSdlGlobalResource
-                                (fun () -> SDL_mixer.Mix_OpenAudio (AudioFrequency, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
+                                (fun () -> SDL_mixer.Mix_OpenAudio (Constants.Audio.AudioFrequency, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
                                 (fun () -> SDL_mixer.Mix_CloseAudio ())
                                 (fun () ->
                                     let sdlDeps = { RenderContext = renderContext; Window = window; Config = sdlConfig }
@@ -159,7 +158,7 @@ module Sdl =
                                     match eitherWorld with
                                     | Right world ->
                                         run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps Running world
-                                        SuccessExitCode
+                                        Constants.Engine.SuccessExitCode
                                     | Left error ->
                                         trace error
-                                        FailureExitCode))))))
+                                        Constants.Engine.FailureExitCode))))))

@@ -10,7 +10,6 @@ open System.Reflection
 open System.Xml
 open Prime
 open Nu
-open Nu.Constants
 
 /// An evaluatable expression for defining a field.
 type [<NoEquality; NoComparison>] FieldExpr =
@@ -102,7 +101,7 @@ module Reflection =
     let isPropertyPersistent target (property : PropertyInfo) =
         isPropertyPersistentByName property.Name &&
         not
-            (property.Name = NameFieldName &&
+            (property.Name = Constants.Engine.NameFieldName &&
              property.PropertyType = typeof<string> &&
              fst <| Guid.TryParse (property.GetValue target :?> string))
 
@@ -330,7 +329,7 @@ module Reflection =
 
     /// Read dispatcherName from an xml node.
     let readDispatcherName defaultDispatcherName (node : XmlNode) =
-        match node.Attributes.[DispatcherNameAttributeName] with
+        match node.Attributes.[Constants.Xml.DispatcherNameAttributeName] with
         | null -> defaultDispatcherName
         | dispatcherNameAttribute -> dispatcherNameAttribute.InnerText
 
@@ -494,7 +493,7 @@ module Reflection =
 
         // create a document to house the overlay nodes
         let document = XmlDocument ()
-        let root = document.CreateElement RootNodeName
+        let root = document.CreateElement Constants.Xml.RootNodeName
 
         // construct the overlay nodes
         for (overlayName, includeNames, definitions, hasFacetNamesField) in overlayDescriptors do
@@ -505,7 +504,7 @@ module Reflection =
             // construct the "includes" attribute
             match includeNames with
             | _ :: _ ->
-                let includesAttribute = document.CreateAttribute IncludesAttributeName
+                let includesAttribute = document.CreateAttribute Constants.Xml.IncludesAttributeName
                 includesAttribute.InnerText <- AlgebraicDescriptor.convertToString includeNames
                 ignore <| overlayNode.Attributes.Append includesAttribute
             | _ -> ()
