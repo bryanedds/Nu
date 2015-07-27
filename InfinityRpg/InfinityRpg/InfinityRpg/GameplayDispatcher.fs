@@ -578,7 +578,7 @@ module GameplayDispatcherModule =
             let scene = proxyScene gameplay
 
             // get and initialize gameplay screen from read
-            let world = snd <| World.readScreenFromFile Constants.FilePaths.SaveFilePath (Some Proxies.GameplayName) world
+            let world = snd <| World.readScreenFromFile Constants.FilePaths.SaveFile (Some Proxies.GameplayName) world
             let world = gameplay.SetTransitionStateNp IncomingState world
 
             // make rand from gameplay
@@ -596,7 +596,7 @@ module GameplayDispatcherModule =
             let world =
                 // NOTE: doing a File.Exists then loading the file is dangerous since the file can
                 // always be deleted / moved between the two operations!
-                if gameplay.GetShallLoadGame world && File.Exists Constants.FilePaths.SaveFilePath
+                if gameplay.GetShallLoadGame world && File.Exists Constants.FilePaths.SaveFile
                 then handleLoadGame gameplay world
                 else handleNewGame gameplay world
             let world = World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Constants.Assets.HerosVengeanceSong world
@@ -604,7 +604,7 @@ module GameplayDispatcherModule =
 
         static let handleClickSaveGame event world =
             let gameplay = event.Subscriber
-            World.writeScreenToFile Constants.FilePaths.SaveFilePath gameplay world
+            World.writeScreenToFile Constants.FilePaths.SaveFile gameplay world
             (Cascade, world)
 
         static let handleDeselectGameplay event world =
