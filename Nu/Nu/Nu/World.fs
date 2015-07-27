@@ -80,12 +80,12 @@ module WorldModule =
             | IncomingState
             | OutgoingState ->
                 world |>
-                    World.subscribe ScreenTransitionMouseLeftKey World.handleAsSwallow (EventAddresses.MouseLeft ->- EventAddresses.Any) Proxies.Game |>
-                    World.subscribe ScreenTransitionMouseCenterKey World.handleAsSwallow (EventAddresses.MouseCenter ->- EventAddresses.Any) Proxies.Game |>
-                    World.subscribe ScreenTransitionMouseRightKey World.handleAsSwallow (EventAddresses.MouseRight ->- EventAddresses.Any) Proxies.Game |>
-                    World.subscribe ScreenTransitionMouseX1Key World.handleAsSwallow (EventAddresses.MouseX1 ->- EventAddresses.Any) Proxies.Game |>
-                    World.subscribe ScreenTransitionMouseX2Key World.handleAsSwallow (EventAddresses.MouseX2 ->- EventAddresses.Any) Proxies.Game |>
-                    World.subscribe ScreenTransitionKeyboardKeyKey World.handleAsSwallow (EventAddresses.KeyboardKey ->- EventAddresses.Any) Proxies.Game
+                    World.subscribe ScreenTransitionMouseLeftKey World.handleAsSwallow (EventAddresses.MouseLeft ->- EventAddresses.Any) Simulants.Game |>
+                    World.subscribe ScreenTransitionMouseCenterKey World.handleAsSwallow (EventAddresses.MouseCenter ->- EventAddresses.Any) Simulants.Game |>
+                    World.subscribe ScreenTransitionMouseRightKey World.handleAsSwallow (EventAddresses.MouseRight ->- EventAddresses.Any) Simulants.Game |>
+                    World.subscribe ScreenTransitionMouseX1Key World.handleAsSwallow (EventAddresses.MouseX1 ->- EventAddresses.Any) Simulants.Game |>
+                    World.subscribe ScreenTransitionMouseX2Key World.handleAsSwallow (EventAddresses.MouseX2 ->- EventAddresses.Any) Simulants.Game |>
+                    World.subscribe ScreenTransitionKeyboardKeyKey World.handleAsSwallow (EventAddresses.KeyboardKey ->- EventAddresses.Any) Simulants.Game
 
         /// Select the given screen without transitioning.
         static member selectScreen screen world =
@@ -386,9 +386,9 @@ module WorldModule =
                     let mousePosition = Vector2 (single event.button.x, single event.button.y)
                     let world =
                         if World.isMouseButtonDown MouseLeft world
-                        then World.publish World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } EventAddresses.MouseDrag Proxies.Game world
+                        then World.publish World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } EventAddresses.MouseDrag Simulants.Game world
                         else world
-                    World.publish World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } EventAddresses.MouseMove Proxies.Game world
+                    World.publish World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } EventAddresses.MouseMove Simulants.Game world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton <| uint32 event.button.button
@@ -396,8 +396,8 @@ module WorldModule =
                     let mouseButtonDownEventAddress = EventAddresses.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Down"
                     let mouseButtonChangeEventAddress = EventAddresses.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
-                    let world = World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonDownEventAddress Proxies.Game world
-                    World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress Proxies.Game world
+                    let world = World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonDownEventAddress Simulants.Game world
+                    World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress Simulants.Game world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton <| uint32 event.button.button
@@ -405,20 +405,20 @@ module WorldModule =
                     let mouseButtonUpEventAddress = EventAddresses.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Up"
                     let mouseButtonChangeEventAddress = EventAddresses.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
-                    let world = World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEventAddress Proxies.Game world
-                    World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress Proxies.Game world
+                    let world = World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEventAddress Simulants.Game world
+                    World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress Simulants.Game world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = event.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = true }
-                    let world = World.publish World.sortSubscriptionsByHierarchy eventData EventAddresses.KeyboardKeyDown Proxies.Game world
-                    World.publish World.sortSubscriptionsByHierarchy eventData EventAddresses.KeyboardKeyChange Proxies.Game world
+                    let world = World.publish World.sortSubscriptionsByHierarchy eventData EventAddresses.KeyboardKeyDown Simulants.Game world
+                    World.publish World.sortSubscriptionsByHierarchy eventData EventAddresses.KeyboardKeyChange Simulants.Game world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let keyboard = event.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = false }
-                    let world = World.publish World.sortSubscriptionsByHierarchy eventData EventAddresses.KeyboardKeyUp Proxies.Game world
-                    World.publish World.sortSubscriptionsByHierarchy eventData EventAddresses.KeyboardKeyChange Proxies.Game world
+                    let world = World.publish World.sortSubscriptionsByHierarchy eventData EventAddresses.KeyboardKeyUp Simulants.Game world
+                    World.publish World.sortSubscriptionsByHierarchy eventData EventAddresses.KeyboardKeyChange Simulants.Game world
                 | _ -> world
             (world.State.Liveness, world)
 
@@ -434,7 +434,7 @@ module WorldModule =
                     let world = World.processSubsystems UpdateType world
                     match world.State.Liveness with
                     | Running ->
-                        let world = World.publish4 () EventAddresses.Update Proxies.Game world
+                        let world = World.publish4 () EventAddresses.Update Simulants.Game world
                         match world.State.Liveness with
                         | Running ->
                             let world = World.processTasklets world

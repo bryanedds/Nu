@@ -30,37 +30,37 @@ module WorldTests =
 
     let [<Fact>] subscribeWorks () =
         let world = World.initAndMakeEmpty 0
-        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Proxies.Game world
-        let world = World.publish4 () UnitEventAddress Proxies.Game world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Simulants.Game world
+        let world = World.publish4 () UnitEventAddress Simulants.Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeAndPublishTwiceWorks () =
         let world = World.initAndMakeEmpty 0
-        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Proxies.Game world
-        let world = World.publish4 () UnitEventAddress Proxies.Game world
-        let world = World.publish4 () UnitEventAddress Proxies.Game world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Simulants.Game world
+        let world = World.publish4 () UnitEventAddress Simulants.Game world
+        let world = World.publish4 () UnitEventAddress Simulants.Game world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeTwiceAndPublishWorks () =
         let world = World.initAndMakeEmpty 0
-        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Proxies.Game world
-        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Proxies.Game world
-        let world = World.publish4 () UnitEventAddress Proxies.Game world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Simulants.Game world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Simulants.Game world
+        let world = World.publish4 () UnitEventAddress Simulants.Game world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeWithResolutionWorks () =
         let world = World.initAndMakeEmpty 0
-        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Proxies.Game world
-        let world = World.subscribe4 incUserStateAndResolve UnitEventAddress Proxies.Game world
-        let world = World.publish4 () UnitEventAddress Proxies.Game world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Simulants.Game world
+        let world = World.subscribe4 incUserStateAndResolve UnitEventAddress Simulants.Game world
+        let world = World.publish4 () UnitEventAddress Simulants.Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
         let world = World.initAndMakeEmpty 0
         let key = World.makeSubscriptionKey ()
-        let world = World.subscribe key incUserStateAndResolve UnitEventAddress Proxies.Game world
+        let world = World.subscribe key incUserStateAndResolve UnitEventAddress Simulants.Game world
         let world = World.unsubscribe key world
-        let world = World.publish4 () UnitEventAddress Proxies.Game world
+        let world = World.publish4 () UnitEventAddress Simulants.Game world
         Assert.Equal (0, World.getUserState world)
 
     let [<Fact>] entitySubscribeWorks () =
@@ -70,8 +70,8 @@ module WorldTests =
         let (entity, world) = World.createEntity typeof<EntityDispatcher>.Name (Some Constants.Engine.DefaultEntityName) group world
         let handleEvent = fun event world -> (Cascade, World.updateUserState (fun _ -> event.Subscriber) world)
         let world = World.subscribe4 handleEvent StringEventAddress entity world
-        let world = World.publish4 String.Empty StringEventAddress Proxies.Game world
-        Assert.Equal<Simulant> (Proxies.DefaultEntity :> Simulant, World.getUserState world)
+        let world = World.publish4 String.Empty StringEventAddress Simulants.Game world
+        Assert.Equal<Simulant> (Simulants.DefaultEntity :> Simulant, World.getUserState world)
 
     let [<Fact>] gameSerializationWorks () =
         // TODO: make stronger assertions in here!!!

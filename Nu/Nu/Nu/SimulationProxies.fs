@@ -7,7 +7,7 @@ open OpenTK
 open Nu
 
 [<RequireQualifiedAccess>]
-module Proxies =
+module Simulants =
 
     let Game = { GameAddress = Address.empty }
     let DefaultScreen = { ScreenAddress = ntoa Constants.Engine.DefaultScreenName }
