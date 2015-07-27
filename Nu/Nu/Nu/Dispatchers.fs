@@ -222,8 +222,8 @@ module GuiDispatcherModule =
 
         override dispatcher.Register gui world =
             world |>
-                World.monitor handleMouseLeft Events.MouseLeftDownEventAddress gui |>
-                World.monitor handleMouseLeft Events.MouseLeftUpEventAddress gui
+                World.monitor handleMouseLeft EventAddresses.MouseLeftDown gui |>
+                World.monitor handleMouseLeft EventAddresses.MouseLeftUp gui
 
 [<AutoOpen>]
 module ButtonDispatcherModule =
@@ -251,7 +251,7 @@ module ButtonDispatcherModule =
                     Math.isPointInBounds3 mousePositionWorld (button.GetPosition world) (button.GetSize world) then
                     if button.GetEnabled world then
                         let world = button.SetDown true world
-                        let world = World.publish4 () (Events.DownEventAddress ->>- button.EntityAddress) button world
+                        let world = World.publish4 () (EventAddresses.Down ->>- button.EntityAddress) button world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -267,8 +267,8 @@ module ButtonDispatcherModule =
                 if  button.GetVisible world &&
                     Math.isPointInBounds3 mousePositionWorld (button.GetPosition world) (button.GetSize world) then
                     if button.GetEnabled world && wasDown then
-                        let world = World.publish4 () (Events.UpEventAddress ->>- button.EntityAddress) button world
-                        let world = World.publish4 () (Events.ClickEventAddress ->>- button.EntityAddress) button world
+                        let world = World.publish4 () (EventAddresses.Up ->>- button.EntityAddress) button world
+                        let world = World.publish4 () (EventAddresses.Click ->>- button.EntityAddress) button world
                         let world =
                             match button.GetOptClickSound world with
                             | Some clickSound -> World.playSound 1.0f clickSound world
@@ -287,8 +287,8 @@ module ButtonDispatcherModule =
 
         override dispatcher.Register button world =
             world |>
-                World.monitor handleMouseLeftDown Events.MouseLeftDownEventAddress button |>
-                World.monitor handleMouseLeftUp Events.MouseLeftUpEventAddress button
+                World.monitor handleMouseLeftDown EventAddresses.MouseLeftDown button |>
+                World.monitor handleMouseLeftUp EventAddresses.MouseLeftUp button
 
         override dispatcher.GetRenderDescriptors button world =
             [LayerableDescriptor
@@ -440,7 +440,7 @@ module ToggleDispatcherModule =
                     Math.isPointInBounds3 mousePositionWorld (toggle.GetPosition world) (toggle.GetSize world) then
                     if toggle.GetEnabled world && wasPressed then
                         let world = toggle.SetOn (not <| toggle.GetOn world) world
-                        let eventAddress = if toggle.GetOn world then Events.OnEventAddress else Events.OffEventAddress
+                        let eventAddress = if toggle.GetOn world then EventAddresses.On else EventAddresses.Off
                         let world = World.publish4 () (eventAddress ->>- toggle.EntityAddress) toggle world
                         let world =
                             match toggle.GetOptToggleSound world with
@@ -461,8 +461,8 @@ module ToggleDispatcherModule =
 
         override dispatcher.Register toggle world =
             world |>
-                World.monitor handleMouseLeftDown Events.MouseLeftDownEventAddress toggle |>
-                World.monitor handleMouseLeftUp Events.MouseLeftUpEventAddress toggle
+                World.monitor handleMouseLeftDown EventAddresses.MouseLeftDown toggle |>
+                World.monitor handleMouseLeftUp EventAddresses.MouseLeftUp toggle
 
         override dispatcher.GetRenderDescriptors toggle world =
             [LayerableDescriptor
@@ -502,7 +502,7 @@ module FeelerDispatcherModule =
                     Math.isPointInBounds3 mousePositionWorld (feeler.GetPosition world) (feeler.GetSize world) then
                     if feeler.GetEnabled world then
                         let world = feeler.SetTouched true world
-                        let world = World.publish4 data.Position (Events.TouchEventAddress ->>- feeler.EntityAddress) feeler world
+                        let world = World.publish4 data.Position (EventAddresses.Touch ->>- feeler.EntityAddress) feeler world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -514,7 +514,7 @@ module FeelerDispatcherModule =
             if World.isSimulantSelected feeler world && feeler.GetVisible world then
                 if feeler.GetEnabled world then
                     let world = feeler.SetTouched false world
-                    let world = World.publish4 data.Position (Events.UntouchEventAddress ->>- feeler.EntityAddress) feeler world
+                    let world = World.publish4 data.Position (EventAddresses.Untouch ->>- feeler.EntityAddress) feeler world
                     (Resolve, world)
                 else (Resolve, world)
             else (Cascade, world)
@@ -525,8 +525,8 @@ module FeelerDispatcherModule =
 
         override dispatcher.Register feeler world =
             world |>
-                World.monitor handleMouseLeftDown Events.MouseLeftDownEventAddress feeler |>
-                World.monitor handleMouseLeftUp Events.MouseLeftUpEventAddress feeler
+                World.monitor handleMouseLeftDown EventAddresses.MouseLeftDown feeler |>
+                World.monitor handleMouseLeftUp EventAddresses.MouseLeftUp feeler
 
         override dispatcher.GetQuickSize _ _ =
             Vector2 64.0f

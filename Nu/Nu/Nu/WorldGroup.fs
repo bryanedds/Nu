@@ -54,7 +54,7 @@ module WorldGroupModule =
                 let world = World.setGroupStateWithoutEvent groupState group world
                 if isNew then
                     let world = World.registerGroup group world
-                    World.publish4 () (Events.GroupAddEventAddress ->>- group.GroupAddress) group world
+                    World.publish4 () (EventAddresses.GroupAdd ->>- group.GroupAddress) group world
                 else world
             else failwith <| "Adding a group that the world already contains at address '" + acstring group.GroupAddress + "'."
 
@@ -72,7 +72,7 @@ module WorldGroupModule =
         /// Destroy a group in the world immediately. Can be dangerous if existing in-flight
         /// publishing depends on the group's existence. Use with caution.
         static member destroyGroupImmediate group world =
-            let world = World.publish4 () (Events.GroupRemovingEventAddress ->>- group.GroupAddress) group world
+            let world = World.publish4 () (EventAddresses.GroupRemoving ->>- group.GroupAddress) group world
             if World.containsGroup group world then
                 let world = World.unregisterGroup group world
                 let entities = World.proxyEntities group world

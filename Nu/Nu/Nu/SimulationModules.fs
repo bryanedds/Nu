@@ -131,7 +131,7 @@ module World =
             | (true, anyEventAddresses) -> anyEventAddresses
             | (false, _) ->
                 let eventAddressNameKeys = Address.getNameKeys eventAddress
-                let anyEventAddressNameKeys = Address.getNameKeys Events.AnyEventAddress
+                let anyEventAddressNameKeys = Address.getNameKeys EventAddresses.Any
                 let anyEventAddresses =
                     [for i in 0 .. List.length eventAddressNameKeys - 1 do
                         let subNameKeys = List.take i eventAddressNameKeys @ anyEventAddressNameKeys
@@ -379,7 +379,7 @@ module World =
     let private setState state world =
         let oldWorld = world
         let world = setStateWithoutEvent state world
-        publish4 { WorldStateChangeData.OldWorld = oldWorld } Events.WorldStateChangeEventAddress Proxies.Game world
+        publish4 { WorldStateChangeData.OldWorld = oldWorld } EventAddresses.WorldStateChange Proxies.Game world
 
     /// Get the world's tick rate.
     let getTickRate world =
@@ -575,7 +575,7 @@ module World =
         if entityState.PublishChanges then
             publish4
                 { Simulant = entity; OldWorld = oldWorld }
-                (Events.EntityChangeEventAddress ->>- entity.EntityAddress)
+                (EventAddresses.EntityChange ->>- entity.EntityAddress)
                 entity
                 world
         else world
@@ -663,7 +663,7 @@ module World =
         if groupState.PublishChanges then
             publish4
                 { Simulant = group; OldWorld = oldWorld }
-                (Events.GroupChangeEventAddress ->>- group.GroupAddress)
+                (EventAddresses.GroupChange ->>- group.GroupAddress)
                 group
                 world
         else world
@@ -733,7 +733,7 @@ module World =
         if screenState.PublishChanges then
             publish4
                 { Simulant = screen; OldWorld = oldWorld }
-                (Events.ScreenChangeEventAddress ->>- screen.ScreenAddress)
+                (EventAddresses.ScreenChange ->>- screen.ScreenAddress)
                 screen
                 world
         else world
@@ -760,7 +760,7 @@ module World =
         if gameState.PublishChanges then
             publish4
                 { OldWorld = oldWorld; Simulant = Proxies.Game }
-                (Events.GameChangeEventAddress ->>- Proxies.Game.GameAddress)
+                (EventAddresses.GameChange ->>- Proxies.Game.GameAddress)
                 Proxies.Game
                 world
         else world
