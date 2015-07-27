@@ -8,10 +8,10 @@ module Constants =
     [<RequireQualifiedAccess>]
     module FilePaths =
 
-        let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
-        let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
-        let HudGroupFilePath = "Assets/Gui/Hud.nugroup"
-        let SaveFilePath = "InfinityRpg.sav"
+        let TitleGroup = "Assets/Gui/Title.nugroup"
+        let CreditsGroup = "Assets/Gui/Credits.nugroup"
+        let HudGroup = "Assets/Gui/Hud.nugroup"
+        let SaveFile = "InfinityRpg.sav"
 
     [<RequireQualifiedAccess>]
     module Assets =
