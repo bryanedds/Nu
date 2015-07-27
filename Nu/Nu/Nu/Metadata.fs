@@ -13,7 +13,6 @@ open OpenTK
 open TiledSharp
 open Prime
 open Nu
-open Nu.Constants
 
 /// Metadata for an asset. Useful to describe various attributes of an asset without having the
 /// full asset loaded into memory.
@@ -86,13 +85,13 @@ module Metadata =
         (asset.AssetTag.AssetName, metadata)
 
     let private generateAssetMetadataSubmap (packageNode : XmlNode) =
-        let packageName = (packageNode.Attributes.GetNamedItem NameAttributeName).InnerText
+        let packageName = (packageNode.Attributes.GetNamedItem Constants.Xml.NameAttributeName).InnerText
         let assets =
             Seq.fold (fun assetsRev (node : XmlNode) ->
                 match node.Name with
-                | AssetNodeName -> match Assets.tryLoadAssetFromAssetNode node with Some asset -> asset :: assetsRev | None -> assetsRev
-                | AssetsNodeName -> match Assets.tryLoadAssetsFromAssetsNode true node with Some assets' -> List.rev assets' @ assetsRev | None -> assetsRev
-                | CommentNodeName -> assetsRev
+                | Constants.Xml.AssetNodeName -> match Assets.tryLoadAssetFromAssetNode node with Some asset -> asset :: assetsRev | None -> assetsRev
+                | Constants.Xml.AssetsNodeName -> match Assets.tryLoadAssetsFromAssetsNode true node with Some assets' -> List.rev assets' @ assetsRev | None -> assetsRev
+                | Constants.Xml.CommentNodeName -> assetsRev
                 | _ -> [])
                 []
                 (packageNode.OfType<XmlNode> ()) |>
@@ -112,12 +111,12 @@ module Metadata =
     let tryGenerateAssetMetadataMap assetGraphFilePath =
         try let document = XmlDocument ()
             document.Load (assetGraphFilePath : string) 
-            let optRootNode = document.[RootNodeName]
+            let optRootNode = document.[Constants.Xml.RootNodeName]
             match optRootNode with
             | null -> Left <| "Root node is missing from asset graph file '" + assetGraphFilePath + "'."
             | rootNode ->
                 let possiblePackageNodes = List.ofSeq <| rootNode.OfType<XmlNode> ()
-                let packageNodes = List.filter (fun (node : XmlNode) -> node.Name = PackageNodeName) possiblePackageNodes
+                let packageNodes = List.filter (fun (node : XmlNode) -> node.Name = Constants.Xml.PackageNodeName) possiblePackageNodes
                 let assetMetadataMap = generateAssetMetadataMap packageNodes
                 Right assetMetadataMap
         with exn -> Left <| acstring exn

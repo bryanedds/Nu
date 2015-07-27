@@ -6,8 +6,6 @@ open System
 open LanguagePrimitives
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 
 /// An observation in the functional reactive style.
 /// TODO: I bet there's either a monad or arrow here...

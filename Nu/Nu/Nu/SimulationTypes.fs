@@ -8,7 +8,6 @@ open OpenTK
 open TiledSharp
 open Prime
 open Nu
-open Nu.Constants
 
 /// Allows for easier watching of simulant fields in a debugging context.
 type Watchable (Properties, XFields) =
@@ -213,7 +212,7 @@ and EntityDispatcher () =
     static member FieldDefinitions =
         [define? Position Vector2.Zero
          define? Depth 0.0f
-         define? Size DefaultEntitySize
+         define? Size Constants.Engine.DefaultEntitySize
          define? Rotation 0.0f
          define? Visible true
          define? ViewType Relative
@@ -273,12 +272,11 @@ and Facet () =
 
     /// Participate in getting the priority with which an entity is picked in the editor.
     abstract GetQuickSize : Entity -> World -> Vector2
-    default facet.GetQuickSize _ _ = DefaultEntitySize
+    default facet.GetQuickSize _ _ = Constants.Engine.DefaultEntitySize
 
 /// A marker interface for the simulation state types (GameState, ScreenState, GroupState,
 /// and EntityState).
-and internal SimulantState =
-    interface end
+and internal SimulantState = interface end
 
 /// Hosts the ongoing state of a game. The end-user of this engine should never touch this
 /// type, and it's public _only_ to make [<CliMutable>] work.
@@ -354,7 +352,7 @@ and Simulant =
 and [<StructuralEquality; NoComparison>] Game =
     { GameAddress : Game Address }
     interface Simulant with
-        member this.GetPublishingPriority _ _ = GamePublishingPriority
+        member this.GetPublishingPriority _ _ = Constants.Engine.GamePublishingPriority
         member this.SimulantAddress = Address.changeType<Game, Simulant> this.GameAddress
         end
 
@@ -363,7 +361,7 @@ and [<StructuralEquality; NoComparison>] Game =
 and [<StructuralEquality; NoComparison>] Screen =
     { ScreenAddress : Screen Address }
     interface Simulant with
-        member this.GetPublishingPriority _ _ = ScreenPublishingPriority
+        member this.GetPublishingPriority _ _ = Constants.Engine.ScreenPublishingPriority
         member this.SimulantAddress = Address.changeType<Screen, Simulant> this.ScreenAddress
         end
 
@@ -371,7 +369,7 @@ and [<StructuralEquality; NoComparison>] Screen =
 and [<StructuralEquality; NoComparison>] Group =
     { GroupAddress : Group Address }
     interface Simulant with
-        member this.GetPublishingPriority _ _ = GroupPublishingPriority
+        member this.GetPublishingPriority _ _ = Constants.Engine.GroupPublishingPriority
         member this.SimulantAddress = Address.changeType<Group, Simulant> this.GroupAddress
         end
 

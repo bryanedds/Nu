@@ -8,8 +8,6 @@ open System.Xml
 open OpenTK
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 
 [<AutoOpen>]
 module WorldFacetModule =

@@ -5,7 +5,6 @@ open OpenTK
 open Prime
 open Nu
 open InfinityRpg
-open InfinityRpg.Constants
 
 type ElementType =
     | Fire // beats nothing; strongest

@@ -14,7 +14,6 @@ open OpenTK
 open Microsoft.Xna
 open Prime
 open Nu
-open Nu.Constants
 
 /// Identifies a target whose body can be found in the Integrator.
 type [<StructuralEquality; StructuralComparison>] PhysicsId =
@@ -23,7 +22,7 @@ type [<StructuralEquality; StructuralComparison>] PhysicsId =
 
     /// The invalid physics id.
     static member InvalidId =
-        { SourceId = InvalidId; BodyId = InvalidId }
+        { SourceId = Constants.Engine.InvalidId; BodyId = Constants.Engine.InvalidId }
 
     /// Make a PhysicsId for an external source.
     static member make (sourceId : Guid) =
@@ -199,10 +198,10 @@ type [<ReferenceEquality>] Integrator =
           mutable RebuildingHack : bool }
 
     static member private toPixel value =
-        value * PhysicsToPixelRatio
+        value * Constants.Physics.PhysicsToPixelRatio
 
     static member private toPhysics value =
-        value * PixelToPhysicsRatio
+        value * Constants.Physics.PixelToPhysicsRatio
 
     static member private toPixelV2 (v2 : Framework.Vector2) =
         Vector2 (Integrator.toPixel v2.X, Integrator.toPixel v2.Y)
@@ -231,7 +230,7 @@ type [<ReferenceEquality>] Integrator =
             { SourceAddress = fixture.Body.UserData :?> obj Address
               CollideeAddress = fixture2.Body.UserData :?> obj Address
               Normal = Vector2 (normal.X, normal.Y)
-              Speed = contact.TangentSpeed * PhysicsToPixelRatio }
+              Speed = contact.TangentSpeed * Constants.Physics.PhysicsToPixelRatio }
         let integrationMessage = BodyCollisionMessage bodyCollisionMessage
         integrator.IntegrationMessages.Add integrationMessage
         true
@@ -478,7 +477,7 @@ type [<ReferenceEquality>] Integrator =
             let physicsMessages = integrator.PhysicsMessages
             let integrator = { integrator with PhysicsMessages = Queue.empty }
             Integrator.handlePhysicsMessages physicsMessages integrator
-            let physicsStepAmount = PhysicsStepRate * single tickRate
+            let physicsStepAmount = Constants.Physics.PhysicsStepRate * single tickRate
             integrator.PhysicsContext.Step physicsStepAmount
             Integrator.createTransformMessages integrator
             let messages = List.ofSeq integrator.IntegrationMessages

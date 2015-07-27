@@ -3,10 +3,7 @@ open System
 open OpenTK
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 open InfinityRpg
-open InfinityRpg.Constants
 
 [<AutoOpen>]
 module FieldDispatcherModule =
@@ -22,7 +19,7 @@ module FieldDispatcherModule =
         static let DefaultRand = Rand.makeDefault ()
         static let DefaultSizeM = Vector2i (4, 4)
         static let DefaultPathEdgesM = [(Vector2i (1, 1), Vector2i (2, 2))]
-        static let DefaultFieldMap = fst <| FieldMap.make FieldTileSheetImage DefaultSizeM DefaultPathEdgesM DefaultRand
+        static let DefaultFieldMap = fst <| FieldMap.make Constants.Assets.FieldTileSheetImage DefaultSizeM DefaultPathEdgesM DefaultRand
 
         static let getOptTileInset (tileSheetPositionM : Vector2i) =
             let tileOffset = vmtovf tileSheetPositionM
@@ -30,8 +27,8 @@ module FieldDispatcherModule =
                 Vector4
                     (tileOffset.X,
                      tileOffset.Y,
-                     tileOffset.X + TileSize.X,
-                     tileOffset.Y + TileSize.Y)
+                     tileOffset.X + Constants.Layout.TileSize.X,
+                     tileOffset.Y + Constants.Layout.TileSize.Y)
             Some tileInset
 
         static member FieldDefinitions =
@@ -40,7 +37,7 @@ module FieldDispatcherModule =
         override dispatcher.GetRenderDescriptors field world =
             let viewType = field.GetViewType world
             let position = field.GetPosition world
-            let size = Vector2.Multiply (TileSize, TileSheetSize)
+            let size = Vector2.Multiply (Constants.Layout.TileSize, Constants.Layout.TileSheetSize)
             if World.getCameraBy (Camera.inView3 viewType position size) world then
                 let fieldMap = field.GetFieldMapNp world
                 let sprites =
@@ -50,7 +47,7 @@ module FieldDispatcherModule =
                             let optTileInset = getOptTileInset tile.TileSheetPositionM
                             let sprite =
                                 { Position = tilePosition
-                                  Size = TileSize
+                                  Size = Constants.Layout.TileSize
                                   Rotation = 0.0f // NOTE: rotation assumed zero
                                   ViewType = Relative // NOTE: ViewType assumed relative
                                   OptInset = optTileInset

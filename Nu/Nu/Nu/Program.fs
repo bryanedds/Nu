@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open Nu
-open Nu.Constants
 module Program =
 
     (* TODO: investigate NuEdit extensibility mechanism. *)
@@ -83,4 +82,4 @@ module Program =
     
     let [<EntryPoint; STAThread>] main _ =
         Console.Write "Running Nu.exe"
-        SuccessExitCode
+        Constants.Engine.SuccessExitCode

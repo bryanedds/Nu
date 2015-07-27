@@ -11,8 +11,6 @@ open System.Xml
 open OpenTK
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 
 [<AutoOpen>]
 module WorldScreenModule =
@@ -68,7 +66,7 @@ module WorldScreenModule =
                 let world = World.setScreenStateWithoutEvent screenState screen world
                 if isNew then
                     let world = World.registerScreen screen world
-                    World.publish4 () (ScreenAddEventAddress ->>- screen.ScreenAddress) screen world
+                    World.publish4 () (Events.ScreenAddEventAddress ->>- screen.ScreenAddress) screen world
                 else world
             else failwith <| "Adding a screen that the world already contains at address '" + acstring screen.ScreenAddress + "'."
 
@@ -85,7 +83,7 @@ module WorldScreenModule =
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight
         /// publishing depends on the screen's existence. Use with caution.
         static member destroyScreenImmediate screen world =
-            let world = World.publish4 () (ScreenRemovingEventAddress ->>- screen.ScreenAddress) screen world
+            let world = World.publish4 () (Events.ScreenRemovingEventAddress ->>- screen.ScreenAddress) screen world
             if World.containsScreen screen world then
                 let world = World.unregisterScreen screen world
                 let groups = World.proxyGroups screen world
@@ -122,9 +120,9 @@ module WorldScreenModule =
         static member writeScreen (writer : XmlWriter) screen world =
             let screenState = World.getScreenState screen world
             let groups = World.proxyGroups screen world
-            writer.WriteAttributeString (DispatcherNameAttributeName, Reflection.getTypeName screenState.DispatcherNp)
+            writer.WriteAttributeString (Constants.Xml.DispatcherNameAttributeName, Reflection.getTypeName screenState.DispatcherNp)
             Reflection.writeMemberValuesFromTarget tautology3 writer screenState
-            writer.WriteStartElement GroupsNodeName
+            writer.WriteStartElement Constants.Xml.GroupsNodeName
             World.writeGroups writer groups world
             writer.WriteEndElement ()
 
@@ -134,8 +132,8 @@ module WorldScreenModule =
             let writerSettings = XmlWriterSettings ()
             writerSettings.Indent <- true
             use writer = XmlWriter.Create (filePathTmp, writerSettings)
-            writer.WriteStartElement RootNodeName
-            writer.WriteStartElement ScreenNodeName
+            writer.WriteStartElement Constants.Xml.RootNodeName
+            writer.WriteStartElement Constants.Xml.ScreenNodeName
             World.writeScreen writer screen world
             writer.WriteEndElement ()
             writer.WriteEndElement ()
@@ -148,7 +146,7 @@ module WorldScreenModule =
             let screensSorted = Seq.sortBy (fun (screen : Screen) -> screen.GetCreationTimeStampNp world) screens
             let screensPersistent = Seq.filter (fun (screen : Screen) -> screen.GetPersistent world) screensSorted
             for screen in screensPersistent do
-                writer.WriteStartElement ScreenNodeName
+                writer.WriteStartElement Constants.Xml.ScreenNodeName
                 World.writeScreen writer screen world
                 writer.WriteEndElement ()
 
@@ -175,13 +173,13 @@ module WorldScreenModule =
         static member readScreenFromFile (filePath : string) optName world =
             use reader = XmlReader.Create filePath
             let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
-            let rootNode = document.[RootNodeName]
-            let screenNode = rootNode.[ScreenNodeName]
+            let rootNode = document.[Constants.Xml.RootNodeName]
+            let screenNode = rootNode.[Constants.Xml.ScreenNodeName]
             World.readScreen screenNode typeof<ScreenDispatcher>.Name typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name optName world
 
         /// Read multiple screens from an xml node.
         static member readScreens (gameNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
-            match gameNode.SelectSingleNode ScreensNodeName with
+            match gameNode.SelectSingleNode Constants.Xml.ScreensNodeName with
             | null -> ([], world)
             | screensNode ->
                 let (screensRev, world) =
@@ -190,7 +188,7 @@ module WorldScreenModule =
                             let (screen, world) = World.readScreen screenNode defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName None world
                             (screen :: screens, world))
                         ([], world)
-                        (enumerable <| screensNode.SelectNodes ScreenNodeName)
+                        (enumerable <| screensNode.SelectNodes Constants.Xml.ScreenNodeName)
                 (List.rev screensRev, world)
 
 namespace Debug

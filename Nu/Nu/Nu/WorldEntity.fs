@@ -12,8 +12,6 @@ open System.Xml
 open OpenTK
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 
 [<AutoOpen>]
 module WorldEntityModule =
@@ -112,7 +110,7 @@ module WorldEntityModule =
                 let world = World.setEntityStateWithoutEvent entityState entity world
                 if isNew then
                     let world = World.registerEntity entity world
-                    World.publish4 () (EntityAddEventAddress ->>- entity.EntityAddress) entity world
+                    World.publish4 () (Events.EntityAddEventAddress ->>- entity.EntityAddress) entity world
                 else world
             else failwith <| "Adding an entity that the world already contains at address '" + acstring entity.EntityAddress + "'."
 
@@ -131,7 +129,7 @@ module WorldEntityModule =
         /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight
         /// publishing depends on the entity's existence. Use with caution.
         static member destroyEntityImmediate entity world =
-            let world = World.publish4 () (EntityRemovingEventAddress ->>- entity.EntityAddress) entity world
+            let world = World.publish4 () (Events.EntityRemovingEventAddress ->>- entity.EntityAddress) entity world
             if World.containsEntity entity world then
                 let world = World.unregisterEntity entity world
                 World.setOptEntityStateWithoutEvent None entity world
@@ -316,7 +314,7 @@ module WorldEntityModule =
         static member writeEntity (writer : XmlWriter) (entity : Entity) world =
             let entityState = World.getEntityState entity world
             let dispatcherTypeName = Reflection.getTypeName entityState.DispatcherNp
-            writer.WriteAttributeString (DispatcherNameAttributeName, dispatcherTypeName)
+            writer.WriteAttributeString (Constants.Xml.DispatcherNameAttributeName, dispatcherTypeName)
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
                 if propertyName = "OptOverlayName" && propertyType = typeof<string option> then
                     let defaultOptOverlayName = OverlayRouter.findOptOverlayName dispatcherTypeName world.State.OverlayRouter
@@ -403,7 +401,7 @@ module WorldEntityModule =
 
         /// Read multiple entities from an xml node.
         static member readEntities (groupNode : XmlNode) defaultDispatcherName group world =
-            match groupNode.SelectSingleNode EntitiesNodeName with
+            match groupNode.SelectSingleNode Constants.Xml.EntitiesNodeName with
             | null -> ([], world)
             | entitiesNode ->
                 let (entitiesRev, world) =
@@ -412,7 +410,7 @@ module WorldEntityModule =
                             let (entity, world) = World.readEntity entityNode defaultDispatcherName None group world
                             (entity :: entitiesRev, world))
                         ([], world)
-                        (enumerable <| entitiesNode.SelectNodes EntityNodeName)
+                        (enumerable <| entitiesNode.SelectNodes Constants.Xml.EntityNodeName)
                 (List.rev entitiesRev, world)
 
     /// Represents the member value of an entity as accessible via reflection.

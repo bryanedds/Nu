@@ -4,10 +4,7 @@ open OpenTK
 open SDL2
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 open BlazeVector
-open BlazeVector.BlazeConstants
 
 [<AutoOpen>]
 module BulletModule =
@@ -46,7 +43,7 @@ module BulletModule =
              define? GravityScale 0.0f
              define? IsBullet true
              define? CollisionExpr "Circle"
-             define? SpriteImage PlayerBulletImage
+             define? SpriteImage Constants.Assets.PlayerBulletImage
              define? Age 0L]
 
         static member IntrinsicFacetNames =
@@ -55,8 +52,8 @@ module BulletModule =
 
         override dispatcher.Register bullet world =
             world |>
-                World.monitor handleUpdate UpdateEventAddress bullet |>
-                World.monitor handleCollision (CollisionEventAddress ->>- bullet.EntityAddress) bullet
+                World.monitor handleUpdate Events.UpdateEventAddress bullet |>
+                World.monitor handleCollision (Events.CollisionEventAddress ->>- bullet.EntityAddress) bullet
 
 [<AutoOpen>]
 module EnemyModule =
@@ -80,7 +77,7 @@ module EnemyModule =
 
         static let die (enemy : Entity) world =
             let world = World.destroyEntity enemy world
-            World.playSound 1.0f ExplosionSound world
+            World.playSound 1.0f Constants.Assets.ExplosionSound world
 
         static let handleUpdate event world =
             let enemy = event.Subscriber : Entity
@@ -95,7 +92,7 @@ module EnemyModule =
                 let isBullet = collidee.DispatchesAs typeof<BulletDispatcher> world
                 if isBullet then
                     let world = enemy.SetHealth (enemy.GetHealth world - 1) world
-                    let world = World.playSound 1.0f HitSound world
+                    let world = World.playSound 1.0f Constants.Assets.HitSound world
                     (Cascade, world)
                 else (Cascade, world)
             else (Cascade, world)
@@ -110,7 +107,7 @@ module EnemyModule =
              define? TileRun 4
              define? TileSize <| Vector2 (48.0f, 96.0f)
              define? AnimationStutter 8L
-             define? AnimationSheet EnemyImage
+             define? AnimationSheet Constants.Assets.EnemyImage
              define? Health 6]
 
         static member IntrinsicFacetNames =
@@ -119,8 +116,8 @@ module EnemyModule =
 
         override dispatcher.Register enemy world =
             world |>
-                World.monitor handleUpdate UpdateEventAddress enemy |>
-                World.monitor handleCollision (CollisionEventAddress ->>- enemy.EntityAddress) enemy
+                World.monitor handleUpdate Events.UpdateEventAddress enemy |>
+                World.monitor handleCollision (Events.CollisionEventAddress ->>- enemy.EntityAddress) enemy
 
 [<AutoOpen>]
 module PlayerModule =
@@ -150,7 +147,7 @@ module PlayerModule =
 
         static let propelBullet (bullet : Entity) world =
             let world = World.applyBodyLinearImpulse (Vector2 (50.0f, 0.0f)) (bullet.GetPhysicsId world) world
-            World.playSound 1.0f ShotSound world
+            World.playSound 1.0f Constants.Assets.ShotSound world
 
         static let shootBullet (player : Entity) world =
             let playerTransform = player.GetTransform world
@@ -197,7 +194,7 @@ module PlayerModule =
                 tickTime <= player.GetLastTimeOnGroundNp world + 10L then
                 let world = player.SetLastTimeJumpNp tickTime world
                 let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 18000.0f)) (player.GetPhysicsId world) world
-                let world = World.playSound 1.0f JumpSound world
+                let world = World.playSound 1.0f Constants.Assets.JumpSound world
                 (Cascade, world)
             else (Cascade, world)
 
@@ -218,7 +215,7 @@ module PlayerModule =
              define? TileRun 4
              define? TileSize <| Vector2 (48.0f, 96.0f)
              define? AnimationStutter 3L
-             define? AnimationSheet PlayerImage
+             define? AnimationSheet Constants.Assets.PlayerImage
              define? LastTimeOnGroundNp Int64.MinValue
              define? LastTimeJumpNp Int64.MinValue]
 
@@ -228,10 +225,10 @@ module PlayerModule =
 
         override dispatcher.Register player world =
             world |>
-                World.monitor handleSpawnBullet UpdateEventAddress player |>
-                World.monitor handleMovement UpdateEventAddress player |>
-                World.monitor handleJump MouseLeftDownEventAddress player |>
-                World.monitor handleJumpByKeyboardKey KeyboardKeyDownEventAddress player
+                World.monitor handleSpawnBullet Events.UpdateEventAddress player |>
+                World.monitor handleMovement Events.UpdateEventAddress player |>
+                World.monitor handleJump Events.MouseLeftDownEventAddress player |>
+                World.monitor handleJumpByKeyboardKey Events.KeyboardKeyDownEventAddress player
 
 [<AutoOpen>]
 module PlayerGroupModule =
@@ -242,8 +239,8 @@ module PlayerGroupModule =
         static let adjustCamera world =
             World.updateCamera
                 (fun camera -> 
-                    let playerPosition = Player.GetPosition world
-                    let playerSize = Player.GetSize world
+                    let playerPosition = Proxies.Player.GetPosition world
+                    let playerSize = Proxies.Player.GetSize world
                     let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + camera.EyeSize.X * 0.33f, camera.EyeCenter.Y)
                     { camera with EyeCenter = eyeCenter })
                 world
@@ -252,16 +249,16 @@ module PlayerGroupModule =
             (Cascade, adjustCamera world)
 
         static let handlePlayerFall _ world =
-            if Player.HasFallen world && World.isSelectedScreenIdling world then
-                let world = World.playSound 1.0f DeathSound world
-                let world = World.transitionScreen Title world
+            if Proxies.Player.HasFallen world && World.isSelectedScreenIdling world then
+                let world = World.playSound 1.0f Constants.Assets.DeathSound world
+                let world = World.transitionScreen Proxies.Title world
                 (Cascade, world)
             else (Cascade, world)
 
         override dispatcher.Register group world =
             world |>
-                World.monitor handleAdjustCamera UpdateEventAddress group |>
-                World.monitor handlePlayerFall UpdateEventAddress group
+                World.monitor handleAdjustCamera Events.UpdateEventAddress group |>
+                World.monitor handlePlayerFall Events.UpdateEventAddress group
 
 [<AutoOpen>]
 module GameplayScreenModule =
@@ -281,13 +278,13 @@ module GameplayScreenModule =
                 entities
 
         static let createSectionFromFile filePath sectionName xShift world =
-            let (section, world) = World.readGroupFromFile filePath (Some sectionName) Gameplay world
+            let (section, world) = World.readGroupFromFile filePath (Some sectionName) Proxies.Gameplay world
             let sectionEntities = World.proxyEntities section world
             shiftEntities xShift sectionEntities world
 
         static let createSectionGroups world =
             let random = Random ()
-            let sectionFilePaths = List.toArray SectionFilePaths
+            let sectionFilePaths = List.toArray Constants.FilePaths.Sections
             List.fold
                 (fun world i ->
                     let sectionFilePathIndex = if i = 0 then 0 else random.Next () % sectionFilePaths.Length
@@ -296,31 +293,31 @@ module GameplayScreenModule =
                     let sectionXShift = SectionXShift * single i
                     createSectionFromFile sectionFilePath sectionName sectionXShift world)
                 world
-                [0 .. SectionCount - 1]
+                [0 .. Constants.BlazeVector.SectionCount - 1]
 
         static let createPlayerGroup world =
-            snd <| World.readGroupFromFile PlayerGroupFilePath (Some PlayerGroupName) Gameplay world
+            snd <| World.readGroupFromFile Constants.FilePaths.PlayerGroup (Some Proxies.PlayerGroupName) Proxies.Gameplay world
 
         static let handleStartPlay _ world =
             let world = createPlayerGroup world
             let world = createSectionGroups world
-            let world = World.playSong 0 1.0f DeadBlazeSong world
+            let world = World.playSong 0 1.0f Constants.Assets.DeadBlazeSong world
             (Cascade, world)
 
         static let handleStoppingPlay _ world =
-            let world = World.fadeOutSong DefaultTimeToFadeOutSongMs world
+            let world = World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
             (Cascade, world)
 
         static let handleStopPlay event world =
             let screen = event.Subscriber : Screen
-            let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + acstring i]
-            let groupNames = PlayerGroupName :: sectionNames
+            let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield SectionName + acstring i]
+            let groupNames = Proxies.PlayerGroupName :: sectionNames
             let groups = List.map (fun groupName -> Group.proxy <| satoga screen.ScreenAddress groupName) groupNames
             let world = World.destroyGroups groups world
             (Cascade, world)
 
         override dispatcher.Register screen world =
             world |>
-                World.monitor handleStartPlay (SelectEventAddress ->>- screen.ScreenAddress) screen |>
-                World.monitor handleStoppingPlay (OutgoingStartEventAddress ->>- screen.ScreenAddress) screen |>
-                World.monitor handleStopPlay (DeselectEventAddress ->>- screen.ScreenAddress) screen
+                World.monitor handleStartPlay (Events.SelectEventAddress ->>- screen.ScreenAddress) screen |>
+                World.monitor handleStoppingPlay (Events.OutgoingStartEventAddress ->>- screen.ScreenAddress) screen |>
+                World.monitor handleStopPlay (Events.DeselectEventAddress ->>- screen.ScreenAddress) screen

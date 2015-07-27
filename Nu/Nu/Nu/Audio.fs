@@ -9,7 +9,6 @@ open FSharpx.Collections
 open SDL2
 open Prime
 open Nu
-open Nu.Constants
 
 /// A message to the audio system to play a song.
 type [<StructuralEquality; NoComparison>] PlaySongMessage =
@@ -91,7 +90,7 @@ type [<ReferenceEquality>] AudioPlayer =
         | extension -> trace <| "Could not load audio asset '" + acstring asset + "' due to unknown extension '" + extension + "'."; None
 
     static member private tryLoadAudioPackage packageName audioPlayer =
-        match Assets.tryLoadAssetsFromPackage true (Some AudioAssociation) packageName audioPlayer.AssetGraphFilePath with
+        match Assets.tryLoadAssetsFromPackage true (Some Constants.Xml.AudioAssociation) packageName audioPlayer.AssetGraphFilePath with
         | Right assets ->
             let optAudioAssets = List.map AudioPlayer.tryLoadAudioAsset2 assets
             let audioAssets = List.definitize optAudioAssets

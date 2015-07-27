@@ -8,7 +8,6 @@ open System.IO
 open ImageMagick
 open Prime
 open Nu
-open Nu.Constants
 
 /// A refinement that can be applied to an asset during the build process.
 type Refinement =
@@ -62,17 +61,17 @@ type 'a AssetMap = Map<string, Map<string, 'a>>
 module Assets =
 
     let private tryGetAssetFilePath (node : XmlNode) =
-        match node.Attributes.GetNamedItem FileAttributeName with
+        match node.Attributes.GetNamedItem Constants.Xml.FileAttributeName with
         | null -> None
         | filePath -> Some filePath.InnerText
 
     let private tryGetAssetDirectory (node : XmlNode) =
-        match node.Attributes.GetNamedItem DirectoryAttributeName with
+        match node.Attributes.GetNamedItem Constants.Xml.DirectoryAttributeName with
         | null -> None
         | directory -> Some directory.InnerText
 
     let private getAssetAssociations (node : XmlNode) =
-        match node.Attributes.GetNamedItem AssociationsAttributeName with
+        match node.Attributes.GetNamedItem Constants.Xml.AssociationsAttributeName with
         | null -> []
         | associations -> AlgebraicDescriptor.convertFromString associations.InnerText typeof<string list> :?> string list
 
@@ -86,24 +85,24 @@ module Assets =
         else rawAssetExtension
 
     let private tryGetAssetExtension usingRawAssets refinements (node : XmlNode) =
-        match node.Attributes.GetNamedItem ExtensionAttributeName with
+        match node.Attributes.GetNamedItem Constants.Xml.ExtensionAttributeName with
         | null -> None
         | rawAssetExtension -> 
             let extension = getAssetExtension usingRawAssets rawAssetExtension.InnerText refinements
             Some extension
 
     let private getAssetSearchOption (node : XmlNode) =
-        match node.Attributes.GetNamedItem RecursiveAttributeName with
+        match node.Attributes.GetNamedItem Constants.Xml.RecursiveAttributeName with
         | null -> SearchOption.TopDirectoryOnly
         | isRecursive -> if isRecursive.InnerText = acstring true then SearchOption.AllDirectories else SearchOption.TopDirectoryOnly
 
     let private getAssetName filePath (node : XmlNode) =
-        match node.Attributes.GetNamedItem NameAttributeName with
+        match node.Attributes.GetNamedItem Constants.Xml.NameAttributeName with
         | null -> Path.GetFileNameWithoutExtension filePath
         | name -> name.InnerText
 
     let private getAssetRefinements (node : XmlNode) =
-        match node.Attributes.GetNamedItem RefinementsAttributeName with
+        match node.Attributes.GetNamedItem Constants.Xml.RefinementsAttributeName with
         | null -> []
         | refinements ->
             let refinements = AlgebraicDescriptor.convertFromString refinements.InnerText typeof<string list> :?> string list
@@ -159,15 +158,15 @@ module Assets =
             Seq.fold
                 (fun assetsRev (assetNode : XmlNode) ->
                     match assetNode.Name with
-                    | AssetNodeName ->
+                    | Constants.Xml.AssetNodeName ->
                         match tryLoadAssetFromAssetNode assetNode with
                         | Some asset -> asset :: assetsRev
                         | None -> debug <| "Invalid asset node in '" + node.Name + "' in asset graph."; assetsRev
-                    | AssetsNodeName ->
+                    | Constants.Xml.AssetsNodeName ->
                         match tryLoadAssetsFromAssetsNode usingRawAssets assetNode with
                         | Some loadedAssets -> List.rev loadedAssets @ assetsRev
                         | None -> debug <| "Invalid assets node in '" + node.Name + "' in asset graph."; assetsRev
-                    | CommentNodeName -> assetsRev
+                    | Constants.Xml.CommentNodeName -> assetsRev
                     | invalidNodeType -> debug <| "Invalid package child node type '" + invalidNodeType + "'."; assetsRev)
                 []
                 (enumerable node.ChildNodes) |>
@@ -181,7 +180,7 @@ module Assets =
         let possiblePackageNodes = List.ofSeq <| enumerable node.ChildNodes
         let packageNodes =
             List.fold (fun packageNodesRev (node : XmlNode) ->
-                if node.Name = PackageNodeName
+                if node.Name = Constants.Xml.PackageNodeName
                 then node :: packageNodesRev
                 else packageNodesRev)
                 []
@@ -222,15 +221,15 @@ module Assets =
     let tryLoadAssetsFromPackage usingRawAssets optAssociation packageName (assetGraphFilePath : string) =
         try let document = XmlDocument ()
             document.Load assetGraphFilePath
-            match document.[RootNodeName] with
+            match document.[Constants.Xml.RootNodeName] with
             | null -> Left "Root node is missing from asset graph."
             | rootNode ->
                 let possiblePackageNodes = List.ofSeq <| enumerable rootNode.ChildNodes
                 let packageNodes =
                     List.filter
                         (fun (node : XmlNode) ->
-                            node.Name = PackageNodeName &&
-                            (node.Attributes.GetNamedItem NameAttributeName).InnerText = packageName)
+                            node.Name = Constants.Xml.PackageNodeName &&
+                            (node.Attributes.GetNamedItem Constants.Xml.NameAttributeName).InnerText = packageName)
                         possiblePackageNodes
                 match packageNodes with
                 | [] -> Left <| "Package node '" + packageName + "' is missing from asset graph."
@@ -243,7 +242,7 @@ module Assets =
     let tryLoadAssetsFromPackages usingRawAssets optAssociation packageNames (assetGraphFilePath : string) =
         try let document = XmlDocument ()
             document.Load assetGraphFilePath
-            match document.[RootNodeName] with
+            match document.[Constants.Xml.RootNodeName] with
             | null -> Left "Root node is missing from asset graph."
             | rootNode ->
                 let possiblePackageNodes = List.ofSeq <| enumerable rootNode.ChildNodes
@@ -251,8 +250,8 @@ module Assets =
                 let packageNodes =
                     List.filter
                         (fun (node : XmlNode) ->
-                            node.Name = PackageNodeName &&
-                            Set.contains (node.Attributes.GetNamedItem NameAttributeName).InnerText packageNameSet)
+                            node.Name = Constants.Xml.PackageNodeName &&
+                            Set.contains (node.Attributes.GetNamedItem Constants.Xml.NameAttributeName).InnerText packageNameSet)
                         possiblePackageNodes
                 tryLoadAssetsFromPackageNodes usingRawAssets optAssociation packageNodes
         with exn -> Left <| acstring exn
@@ -261,7 +260,7 @@ module Assets =
     let tryLoadAssetsFromDocument usingRawAssets optAssociation (assetGraphFilePath : string) =
         try let document = XmlDocument ()
             document.Load assetGraphFilePath
-            match document.[RootNodeName] with
+            match document.[Constants.Xml.RootNodeName] with
             | null -> Left "Root node is missing from asset graph."
             | rootNode -> tryLoadAssetsFromRootNode usingRawAssets optAssociation rootNode
         with exn -> Left <| acstring exn

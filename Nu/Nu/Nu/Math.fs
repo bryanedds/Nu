@@ -7,7 +7,6 @@ open System.ComponentModel
 open OpenTK
 open Prime
 open Nu
-open Nu.Constants
 
 /// Describes all the elements of a 2d transformation.
 type [<StructuralEquality; NoComparison>] Transform =
@@ -150,11 +149,11 @@ module Math =
 
     /// Snap an radian value to an offset.
     let snapR offset value =
-        mul RadiansToDegreesF value |>
+        mul Constants.Math.RadiansToDegreesF value |>
         int |>
         snap offset |>
         single |>
-        mul DegreesToRadiansF
+        mul Constants.Math.DegreesToRadiansF
 
     /// Snap an single float value to an offset.
     let snapF offset (value : single) =

@@ -9,7 +9,6 @@ open System.ComponentModel
 open System.Collections.Generic
 open Prime
 open Nu
-open Nu.Constants
 
 /// Describes the overlay state of a field.
 type internal OverlayState =
@@ -36,7 +35,7 @@ module Overlayer =
                 let optLeaf = branch.SelectSingleNode propertyName
                 match optLeaf with
                 | null ->
-                    let optIncludeNames = branch.Attributes.[IncludesAttributeName]
+                    let optIncludeNames = branch.Attributes.[Constants.Xml.IncludesAttributeName]
                     match optIncludeNames with
                     | null -> None
                     | includeNames ->
@@ -179,7 +178,7 @@ module Overlayer =
 
         // create new overlay document into which all nodes will be inserted
         let overlays = XmlDocument ()
-        let overlaysRoot = overlays.CreateElement RootNodeName
+        let overlaysRoot = overlays.CreateElement Constants.Xml.RootNodeName
         ignore <| overlays.AppendChild overlaysRoot
 
         // load the user-defined overlay document from file

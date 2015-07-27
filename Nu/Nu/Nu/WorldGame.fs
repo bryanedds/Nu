@@ -11,8 +11,6 @@ open System.Xml
 open OpenTK
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 
 [<AutoOpen>]
 module WorldGameModule =
@@ -42,8 +40,8 @@ module WorldGameModule =
     type World with
 
         static member internal registerGame (world : World) : World =
-            let dispatcher = Game.GetDispatcherNp world : GameDispatcher
-            dispatcher.Register Game world
+            let dispatcher = Proxies.Game.GetDispatcherNp world : GameDispatcher
+            dispatcher.Register Proxies.Game world
 
         static member internal makeGameState dispatcher =
             let gameState = GameState.make dispatcher
@@ -64,12 +62,12 @@ module WorldGameModule =
 
         /// Try to get the currently selected screen.
         static member getOptSelectedScreen world =
-            Game.GetOptSelectedScreen world
+            Proxies.Game.GetOptSelectedScreen world
 
         /// Set the currently selected screen or None. Be careful using this function directly as
         //// you may be wanting to use the higher-level World.transitionScreen function instead.
         static member setOptSelectedScreen optScreen world =
-            Game.SetOptSelectedScreen optScreen world
+            Proxies.Game.SetOptSelectedScreen optScreen world
 
         /// Get the currently selected screen (failing with an exception if there isn't one).
         static member getSelectedScreen world =
@@ -84,9 +82,9 @@ module WorldGameModule =
         static member writeGame (writer : XmlWriter) world =
             let gameState = World.getGameState world
             let screens = World.proxyScreens world
-            writer.WriteAttributeString (DispatcherNameAttributeName, Reflection.getTypeName gameState.DispatcherNp)
+            writer.WriteAttributeString (Constants.Xml.DispatcherNameAttributeName, Reflection.getTypeName gameState.DispatcherNp)
             Reflection.writeMemberValuesFromTarget tautology3 writer gameState
-            writer.WriteStartElement ScreensNodeName
+            writer.WriteStartElement Constants.Xml.ScreensNodeName
             World.writeScreens writer screens world
             writer.WriteEndElement ()
 
@@ -96,8 +94,8 @@ module WorldGameModule =
             let writerSettings = XmlWriterSettings ()
             writerSettings.Indent <- true
             use writer = XmlWriter.Create (filePathTmp, writerSettings)
-            writer.WriteStartElement RootNodeName
-            writer.WriteStartElement GameNodeName
+            writer.WriteStartElement Constants.Xml.RootNodeName
+            writer.WriteStartElement Constants.Xml.GameNodeName
             World.writeGame writer world
             writer.WriteEndElement ()
             writer.WriteEndElement ()
@@ -132,8 +130,8 @@ module WorldGameModule =
         static member readGameFromFile (filePath : string) world =
             use reader = XmlReader.Create filePath
             let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
-            let rootNode = document.[RootNodeName]
-            let gameNode = rootNode.[GameNodeName]
+            let rootNode = document.[Constants.Xml.RootNodeName]
+            let gameNode = rootNode.[Constants.Xml.GameNodeName]
             World.readGame
                 gameNode
                 typeof<GameDispatcher>.Name

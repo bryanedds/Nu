@@ -6,8 +6,6 @@ open System
 open Xunit
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 open Nu.Observation
 open Nu.Chain
 module ChainTests =
@@ -30,24 +28,24 @@ module ChainTests =
                 do! reactE incUserState
                 do! pass
                 do! loop 0 inc (fun i _ -> i < 2) (fun _ -> update incUserStateTwiceNoEvent) }
-        let observation = observe IntEventAddress Game
+        let observation = observe IntEventAddress Proxies.Game
         let world = snd <| Chain.runAssumingCascade chain observation world
         Assert.Equal (0, World.getUserState world)
 
         // assert the first publish executes the first chained operation
-        let world = World.publish4 1 IntEventAddress Game world
+        let world = World.publish4 1 IntEventAddress Proxies.Game world
         Assert.Equal (1, World.getUserState world)
 
         // assert the second publish executes the second chained operation
-        let world = World.publish4 2 IntEventAddress Game world
+        let world = World.publish4 2 IntEventAddress Proxies.Game world
         Assert.Equal (2, World.getUserState world)
         
         // and so on...
-        let world = World.publish4 3 IntEventAddress Game world
+        let world = World.publish4 3 IntEventAddress Proxies.Game world
         Assert.Equal (3, World.getUserState world)
         
         // and so on...
-        let world = World.publish4 4 IntEventAddress Game world
+        let world = World.publish4 4 IntEventAddress Proxies.Game world
         Assert.Equal (7, World.getUserState world)
         
         // assert no garbage is left over after chained computation is concluded

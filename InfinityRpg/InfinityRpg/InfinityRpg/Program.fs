@@ -2,7 +2,6 @@
 open System
 open SDL2
 open Nu
-open Nu.Constants
 module Program =
 
     // this the entry point for the InfinityRpg application
@@ -32,10 +31,10 @@ module Program =
         // this makes a configuration record with the specifications we set out above.
         let sdlConfig =
             { ViewConfig = sdlViewConfig
-              ViewW = ResolutionX
-              ViewH = ResolutionY
+              ViewW = Constants.Render.ResolutionX
+              ViewH = Constants.Render.ResolutionY
               RendererFlags = sdlRendererFlags
-              AudioChunkSize = AudioBufferSizeDefault }
+              AudioChunkSize = Constants.Audio.AudioBufferSizeDefault }
 
         // after some configuration it is time to run the game. We're off and running!
         World.run
