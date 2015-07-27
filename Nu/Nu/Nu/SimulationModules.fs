@@ -379,7 +379,7 @@ module World =
     let private setState state world =
         let oldWorld = world
         let world = setStateWithoutEvent state world
-        publish4 { WorldStateChangeData.OldWorld = oldWorld } EventAddresses.WorldStateChange Proxies.Game world
+        publish4 { WorldStateChangeData.OldWorld = oldWorld } EventAddresses.WorldStateChange Simulants.Game world
 
     /// Get the world's tick rate.
     let getTickRate world =
@@ -759,9 +759,9 @@ module World =
         let world = { world with SimulantStates = (gameState, screenStateMap) }
         if gameState.PublishChanges then
             publish4
-                { OldWorld = oldWorld; Simulant = Proxies.Game }
-                (EventAddresses.GameChange ->>- Proxies.Game.GameAddress)
-                Proxies.Game
+                { OldWorld = oldWorld; Simulant = Simulants.Game }
+                (EventAddresses.GameChange ->>- Simulants.Game.GameAddress)
+                Simulants.Game
                 world
         else world
 

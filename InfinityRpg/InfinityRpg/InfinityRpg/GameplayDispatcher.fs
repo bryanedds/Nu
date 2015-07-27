@@ -30,24 +30,24 @@ module GameplayDispatcherModule =
     type GameplayDispatcher () =
         inherit ScreenDispatcher ()
 
-        (* Hud Proxies *)
+        (* Hud Simulants *)
 
-        static let proxyHud gameplay = Group.proxy <| satoga gameplay.ScreenAddress Proxies.HudName
-        static let proxyHudHalt gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Proxies.HudHaltName
-        static let proxyHudSaveGame gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Proxies.HudSaveGameName
-        static let proxyHudFeeler gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Proxies.HudFeelerName
-        static let proxyHudDetailUp gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Proxies.HudDetailUpName
-        static let proxyHudDetailRight gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Proxies.HudDetailRightName
-        static let proxyHudDetailDown gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Proxies.HudDetailDownName
-        static let proxyHudDetailLeft gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Proxies.HudDetailLeftName
+        static let proxyHud gameplay = Group.proxy <| satoga gameplay.ScreenAddress Simulants.HudName
+        static let proxyHudHalt gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Simulants.HudHaltName
+        static let proxyHudSaveGame gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Simulants.HudSaveGameName
+        static let proxyHudFeeler gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Simulants.HudFeelerName
+        static let proxyHudDetailUp gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Simulants.HudDetailUpName
+        static let proxyHudDetailRight gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Simulants.HudDetailRightName
+        static let proxyHudDetailDown gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Simulants.HudDetailDownName
+        static let proxyHudDetailLeft gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Simulants.HudDetailLeftName
 
-        (* Scene Proxies *)
+        (* Scene Simulants *)
 
         static let proxyScene gameplay =
-            Group.proxy <| satoga gameplay.ScreenAddress Proxies.SceneName
+            Group.proxy <| satoga gameplay.ScreenAddress Simulants.SceneName
         
         static let proxyField gameplay =
-            Entity.proxy <| gatoea (proxyScene gameplay).GroupAddress Proxies.FieldName
+            Entity.proxy <| gatoea (proxyScene gameplay).GroupAddress Simulants.FieldName
         
         static let proxyCharacters gameplay world =
             let entities = World.proxyEntities (proxyScene gameplay) world
@@ -64,13 +64,13 @@ module GameplayDispatcherModule =
             Option.get <| proxyOptCharacterInDirection position direction gameplay world
 
         static let proxyPlayer gameplay =
-            Entity.proxy <| gatoea (proxyScene gameplay).GroupAddress Proxies.PlayerName
+            Entity.proxy <| gatoea (proxyScene gameplay).GroupAddress Simulants.PlayerName
 
         static let proxyEnemies gameplay world =
             let entities = World.proxyEntities (proxyScene gameplay) world
             Seq.filter (fun (entity : Entity) -> entity.DispatchesAs typeof<EnemyDispatcher> world) entities
 
-        (* End of Proxies *)
+        (* End of Simulants *)
 
         static let makeAttackTurn targetPositionM =
             ActionTurn
@@ -81,7 +81,7 @@ module GameplayDispatcherModule =
         static let createField scene rand world =
             let pathEdgesM = [(Vector2i (1, 10), Vector2i (20, 10))]
             let (fieldMap, rand) = FieldMap.make Constants.Assets.FieldTileSheetImage (Vector2i 22) pathEdgesM rand
-            let (field, world) = World.createEntity typeof<FieldDispatcher>.Name (Some Proxies.FieldName) scene world
+            let (field, world) = World.createEntity typeof<FieldDispatcher>.Name (Some Simulants.FieldName) scene world
             let world = field.SetFieldMapNp fieldMap world
             let world = field.SetSize (World.getEntityQuickSize field world) world
             let world = field.SetPersistent false world
@@ -376,8 +376,8 @@ module GameplayDispatcherModule =
                 let reactorHitPoints = reactor.GetHitPoints world - reactorDamage
                 let world = reactor.SetHitPoints reactorHitPoints world
                 if reactor.GetHitPoints world <= 0 then
-                    if reactor.GetName world = Proxies.PlayerName
-                    then World.transitionScreen Proxies.Title world
+                    if reactor.GetName world = Simulants.PlayerName
+                    then World.transitionScreen Simulants.Title world
                     else World.destroyEntity reactor world
                 else world
             else world
@@ -557,7 +557,7 @@ module GameplayDispatcherModule =
             let world = gameplay.SetOngoingRandState ongoingSeedState world
 
             // make scene group
-            let (scene, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Proxies.SceneName) gameplay world
+            let (scene, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Simulants.SceneName) gameplay world
 
             // make rand from gameplay
             let rand = Rand.make <| gameplay.GetContentRandState world
@@ -566,7 +566,7 @@ module GameplayDispatcherModule =
             let (rand, world) = _bc <| createField scene rand world
 
             // make player
-            let (player, world) = World.createEntity typeof<PlayerDispatcher>.Name (Some Proxies.PlayerName) scene world
+            let (player, world) = World.createEntity typeof<PlayerDispatcher>.Name (Some Simulants.PlayerName) scene world
             let world = player.SetDepth Constants.Layout.CharacterDepth world
 
             // make enemies
@@ -578,7 +578,7 @@ module GameplayDispatcherModule =
             let scene = proxyScene gameplay
 
             // get and initialize gameplay screen from read
-            let world = snd <| World.readScreenFromFile Constants.FilePaths.SaveFile (Some Proxies.GameplayName) world
+            let world = snd <| World.readScreenFromFile Constants.FilePaths.SaveFile (Some Simulants.GameplayName) world
             let world = gameplay.SetTransitionStateNp IncomingState world
 
             // make rand from gameplay
@@ -625,7 +625,7 @@ module GameplayDispatcherModule =
                 (observe (EventAddresses.Down ->>- (proxyHudDetailRight gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Rightward)) |>
                 (observe (EventAddresses.Down ->>- (proxyHudDetailDown gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Downward)) |>
                 (observe (EventAddresses.Down ->>- (proxyHudDetailLeft gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Leftward)) |>
-                (World.subscribe4 handleSelectTitle (EventAddresses.Select ->>- Proxies.Title.ScreenAddress) gameplay) |>
+                (World.subscribe4 handleSelectTitle (EventAddresses.Select ->>- Simulants.Title.ScreenAddress) gameplay) |>
                 (World.subscribe4 handleSelectGameplay (EventAddresses.Select ->>- gameplay.ScreenAddress) gameplay) |>
                 (World.subscribe4 handleClickSaveGame (EventAddresses.Click ->>- (proxyHudSaveGame gameplay).EntityAddress) gameplay) |>
                 (World.subscribe4 handleDeselectGameplay (EventAddresses.Deselect ->>- gameplay.ScreenAddress) gameplay)

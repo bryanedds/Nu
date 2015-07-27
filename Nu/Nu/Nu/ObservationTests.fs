@@ -18,67 +18,67 @@ module ObservationTests =
 
     let [<Fact>] subscribeWorks () =
         let world = World.initAndMakeEmpty 0
-        let world = observe UnitEventAddress Proxies.Game |> subscribe incUserStateAndCascade <| world
-        let world = World.publish4 () UnitEventAddress Proxies.Game world
+        let world = observe UnitEventAddress Simulants.Game |> subscribe incUserStateAndCascade <| world
+        let world = World.publish4 () UnitEventAddress Simulants.Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeTwiceUnsubscribeOnceWorks () =
         let world = World.initAndMakeEmpty 0
-        let observation = observe UnitEventAddress Proxies.Game
+        let observation = observe UnitEventAddress Simulants.Game
         let world = subscribe incUserStateAndCascade observation world
         let (unsubscribe, world) = subscribeWithUnsub incUserStateAndCascade observation world
         let world = unsubscribe world
-        let world = World.publish4 () UnitEventAddress Proxies.Game world
+        let world = World.publish4 () UnitEventAddress Simulants.Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
         let world = World.initAndMakeEmpty 0
-        let (unsubscribe, world) = observe UnitEventAddress Proxies.Game |> subscribeWithUnsub incUserStateAndCascade <| world
+        let (unsubscribe, world) = observe UnitEventAddress Simulants.Game |> subscribeWithUnsub incUserStateAndCascade <| world
         let world = unsubscribe world
-        let world = World.publish4 () UnitEventAddress Proxies.Game world
+        let world = World.publish4 () UnitEventAddress Simulants.Game world
         Assert.True <| Map.isEmpty world.Callbacks.Subscriptions
         Assert.Equal (0, World.getUserState world)
 
     let [<Fact>] filterWorks () =
         let world = World.initAndMakeEmpty 0
         let world =
-            observe UnitEventAddress Proxies.Game |>
+            observe UnitEventAddress Simulants.Game |>
             filter (fun _ world -> World.getUserState world = 0) |>
             subscribe incUserStateAndCascade <|
             world
-        let world = World.publish4 () UnitEventAddress Proxies.Game world
-        let world = World.publish4 () UnitEventAddress Proxies.Game world
+        let world = World.publish4 () UnitEventAddress Simulants.Game world
+        let world = World.publish4 () UnitEventAddress Simulants.Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] mapWorks () =
         let world = World.initAndMakeEmpty 0
         let world =
-            observe IntEventAddress Proxies.Game |>
+            observe IntEventAddress Simulants.Game |>
             map (fun event _ -> event.Data * 2) |>
             subscribe (fun event world -> (Cascade, World.updateUserState (fun _ -> event.Data) world)) <|
             world
-        let world = World.publish4 1 IntEventAddress Proxies.Game world
+        let world = World.publish4 1 IntEventAddress Simulants.Game world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] scanWorks () =
         let world = World.initAndMakeEmpty 0
         let world =
-            observe IntEventAddress Proxies.Game |>
+            observe IntEventAddress Simulants.Game |>
             scan (fun acc event _ -> acc + event.Data) 0 |>
             subscribe (fun event world -> (Cascade, World.updateUserState (fun _ -> event.Data) world)) <|
             world
-        let world = World.publish4 1 IntEventAddress Proxies.Game world
-        let world = World.publish4 2 IntEventAddress Proxies.Game world
+        let world = World.publish4 1 IntEventAddress Simulants.Game world
+        let world = World.publish4 2 IntEventAddress Simulants.Game world
         Assert.Equal (3, World.getUserState world)
 
     let [<Fact>] scanDoesntLeaveGarbage () =
         let world = World.initAndMakeEmpty 0
         let (unsubscribe, world) =
-            observe IntEventAddress Proxies.Game |>
+            observe IntEventAddress Simulants.Game |>
             scan2 (fun a _ _ -> a) |>
             subscribeWithUnsub incUserStateAndCascade <|
             world
-        let world = World.publish4 0 IntEventAddress Proxies.Game world
+        let world = World.publish4 0 IntEventAddress Simulants.Game world
         let world = unsubscribe world
         Assert.True <| Map.isEmpty world.Callbacks.CallbackStates
 

@@ -239,8 +239,8 @@ module PlayerGroupModule =
         static let adjustCamera world =
             World.updateCamera
                 (fun camera -> 
-                    let playerPosition = Proxies.Player.GetPosition world
-                    let playerSize = Proxies.Player.GetSize world
+                    let playerPosition = Simulants.Player.GetPosition world
+                    let playerSize = Simulants.Player.GetSize world
                     let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + camera.EyeSize.X * 0.33f, camera.EyeCenter.Y)
                     { camera with EyeCenter = eyeCenter })
                 world
@@ -249,9 +249,9 @@ module PlayerGroupModule =
             (Cascade, adjustCamera world)
 
         static let handlePlayerFall _ world =
-            if Proxies.Player.HasFallen world && World.isSelectedScreenIdling world then
+            if Simulants.Player.HasFallen world && World.isSelectedScreenIdling world then
                 let world = World.playSound 1.0f Constants.Assets.DeathSound world
-                let world = World.transitionScreen Proxies.Title world
+                let world = World.transitionScreen Simulants.Title world
                 (Cascade, world)
             else (Cascade, world)
 
@@ -278,7 +278,7 @@ module GameplayScreenModule =
                 entities
 
         static let createSectionFromFile filePath sectionName xShift world =
-            let (section, world) = World.readGroupFromFile filePath (Some sectionName) Proxies.Gameplay world
+            let (section, world) = World.readGroupFromFile filePath (Some sectionName) Simulants.Gameplay world
             let sectionEntities = World.proxyEntities section world
             shiftEntities xShift sectionEntities world
 
@@ -296,7 +296,7 @@ module GameplayScreenModule =
                 [0 .. Constants.BlazeVector.SectionCount - 1]
 
         static let createPlayerGroup world =
-            snd <| World.readGroupFromFile Constants.FilePaths.PlayerGroup (Some Proxies.PlayerGroupName) Proxies.Gameplay world
+            snd <| World.readGroupFromFile Constants.FilePaths.PlayerGroup (Some Simulants.PlayerGroupName) Simulants.Gameplay world
 
         static let handleStartPlay _ world =
             let world = createPlayerGroup world
@@ -311,7 +311,7 @@ module GameplayScreenModule =
         static let handleStopPlay event world =
             let screen = event.Subscriber : Screen
             let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield SectionName + acstring i]
-            let groupNames = Proxies.PlayerGroupName :: sectionNames
+            let groupNames = Simulants.PlayerGroupName :: sectionNames
             let groups = List.map (fun groupName -> Group.proxy <| satoga screen.ScreenAddress groupName) groupNames
             let world = World.destroyGroups groups world
             (Cascade, world)

@@ -4,7 +4,7 @@ open Nu
 open InfinityRpg
 
 [<RequireQualifiedAccess>]
-module Proxies =
+module Simulants =
 
     // splash proxies
     let NuSplashName = "Splash"

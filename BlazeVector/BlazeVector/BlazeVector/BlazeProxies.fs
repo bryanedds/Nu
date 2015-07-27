@@ -3,7 +3,7 @@ open Nu
 open BlazeVector
 
 [<RequireQualifiedAccess>]
-module Proxies =
+module Simulants =
 
     // these pair of constants are -
     //  a) a string used to give a name to the splash screen

@@ -40,8 +40,8 @@ module WorldGameModule =
     type World with
 
         static member internal registerGame (world : World) : World =
-            let dispatcher = Proxies.Game.GetDispatcherNp world : GameDispatcher
-            dispatcher.Register Proxies.Game world
+            let dispatcher = Simulants.Game.GetDispatcherNp world : GameDispatcher
+            dispatcher.Register Simulants.Game world
 
         static member internal makeGameState dispatcher =
             let gameState = GameState.make dispatcher
@@ -62,12 +62,12 @@ module WorldGameModule =
 
         /// Try to get the currently selected screen.
         static member getOptSelectedScreen world =
-            Proxies.Game.GetOptSelectedScreen world
+            Simulants.Game.GetOptSelectedScreen world
 
         /// Set the currently selected screen or None. Be careful using this function directly as
         //// you may be wanting to use the higher-level World.transitionScreen function instead.
         static member setOptSelectedScreen optScreen world =
-            Proxies.Game.SetOptSelectedScreen optScreen world
+            Simulants.Game.SetOptSelectedScreen optScreen world
 
         /// Get the currently selected screen (failing with an exception if there isn't one).
         static member getSelectedScreen world =
