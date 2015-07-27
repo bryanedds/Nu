@@ -10,7 +10,6 @@ What is the **Nu Game Engine**?
 This repository hosts several projects, including -
 
 - ![Alt text](Nu/Promotional/Nu Icon.png?raw=true "Nu Game Engine"), the **Nu Game Engine**, a cross-platform F# 2D game engine built in the functional style. Uses SDL2 and Farseer Physics.
-- the programming language **Aml**, a common language for building DSLs on top of using F#.
 - the small but potentially useful F# code library **Prime** (interesting features, but lacks unit tests).
 - the sample game **BlazeVector**.
 
@@ -37,10 +36,6 @@ The current documentation for the **Nu Game Engine** is found here - https://git
 
 There is additional documentation on **advanced Nu game programming techniques** in an 'experience report' found here -
 https://github.com/bryanedds/FPWorks/blob/master/Nu/Documentation/Iterative%20Functional%20Reactive%20Programming%20with%20the%20Nu%20Game%20Engine.pdf?raw=true
-
-The current documentation for the **Aml** programming language is found here - https://github.com/bryanedds/FPWorks/tree/master/Aml/Documentation
-
-If you're looking at Aml, run the **AmlRepl project** from Visual Studio and follow its instructions (especially in studying the StdLib Aml code to get a real feel for the language).
 
 Finally, please check out the license for this repository below!
 
