@@ -31,8 +31,8 @@ type InfinityDispatcher () =
         World.subscribe4 (World.handleAsScreenTransition Proxies.Title) (EventAddresses.Click ->>- Proxies.HudBack.EntityAddress) Proxies.Game world
 
     override dispatcher.Register _ world =
-        let world = World.hintRenderPackageUse Constants.PackageNames.Gui world
-        let world = World.hintRenderPackageUse Constants.PackageNames.Gameplay world
+        let world = World.hintRenderPackageUse Constants.Assets.GuiPackageName world
+        let world = World.hintRenderPackageUse Constants.Assets.GameplayPackageName world
         let world = createTitle world
         let world = createCredits world
         let world = createGameplay world

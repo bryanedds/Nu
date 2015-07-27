@@ -14,21 +14,17 @@ module Constants =
         let SaveFilePath = "InfinityRpg.sav"
 
     [<RequireQualifiedAccess>]
-    module PackageNames =
-
-        let Gui = "Gui"
-        let Gameplay = "Gameplay"
-
-    [<RequireQualifiedAccess>]
     module Assets =
 
-        let PlayerImage = { PackageName = PackageNames.Gameplay; AssetName = "Player" }
-        let GoopyImage = { PackageName = PackageNames.Gameplay; AssetName = "Goopy" }
-        let BatsyImage = { PackageName = PackageNames.Gameplay; AssetName = "Batsy" }
-        let ZommieImage = { PackageName = PackageNames.Gameplay; AssetName = "Zommie" }
-        let FieldTileSheetImage = { PackageName = PackageNames.Gameplay; AssetName = "FieldTileSheet" }
-        let HerosVengeanceSong = { PackageName = PackageNames.Gameplay; AssetName = "Hero'sVengeance" }
-        let ButterflyGirlSong = { PackageName = PackageNames.Gui; AssetName = "ButterflyGirl" }
+        let GuiPackageName = "Gui"
+        let GameplayPackageName = "Gameplay"
+        let PlayerImage = { PackageName = GameplayPackageName; AssetName = "Player" }
+        let GoopyImage = { PackageName = GameplayPackageName; AssetName = "Goopy" }
+        let BatsyImage = { PackageName = GameplayPackageName; AssetName = "Batsy" }
+        let ZommieImage = { PackageName = GameplayPackageName; AssetName = "Zommie" }
+        let FieldTileSheetImage = { PackageName = GameplayPackageName; AssetName = "FieldTileSheet" }
+        let HerosVengeanceSong = { PackageName = GameplayPackageName; AssetName = "Hero'sVengeance" }
+        let ButterflyGirlSong = { PackageName = GuiPackageName; AssetName = "ButterflyGirl" }
 
     [<RequireQualifiedAccess>]
     module Layout =
@@ -48,13 +44,13 @@ module Constants =
         let DissolveData =
             { IncomingTime = 20L
               OutgoingTime = 30L
-              DissolveImage = { PackageName = PackageNames.Gui; AssetName = "Dissolve" }}
+              DissolveImage = { PackageName = Assets.GuiPackageName; AssetName = "Dissolve" }}
 
         // nu splash constants
         let NuSplashData =
             { DissolveData = DissolveData
               IdlingTime = 60L
-              SplashImage = { PackageName = PackageNames.Gui; AssetName = "Nu" }}
+              SplashImage = { PackageName = Assets.GuiPackageName; AssetName = "Nu" }}
 
         // general data
         let AttackName = "Attack"

@@ -5,13 +5,6 @@ open Nu
 module Constants =
 
     [<RequireQualifiedAccess>]
-    module PackageNames =
-
-        // these constants specify the packages as named in the project's 'AssetGraph.xml' file
-        let Gui = "Gui"
-        let Gameplay = "Gameplay"
-
-    [<RequireQualifiedAccess>]
     module FilePaths =
 
         // these constants specify the file paths from which various simulants are loaded
@@ -28,19 +21,23 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Assets =
 
+        // these constants specify the packages as named in the project's 'AssetGraph.xml' file
+        let GuiPackageName = "Gui"
+        let GameplayPackageName = "Gameplay"
+
         // these constants locate various assets described by the project's 'AssetGraph.xml' file
-        let NuSplashSound = { PackageName = PackageNames.Gui; AssetName = "Nu" }
-        let MachinerySong = { PackageName = PackageNames.Gui; AssetName = "Machinery" }
-        let DeadBlazeSong = { PackageName = PackageNames.Gameplay; AssetName = "DeadBlaze" }
-        let HitSound = { PackageName = PackageNames.Gameplay; AssetName = "Hit" }
-        let ExplosionSound = { PackageName = PackageNames.Gameplay; AssetName = "Explosion" }
-        let ShotSound = { PackageName = PackageNames.Gameplay; AssetName = "Shot" }
-        let JumpSound = { PackageName = PackageNames.Gameplay; AssetName = "Jump" }
-        let DeathSound = { PackageName = PackageNames.Gameplay; AssetName = "Death" }
-        let EnemyBulletImage = { PackageName = PackageNames.Gameplay; AssetName = "EnemyBullet" }
-        let PlayerBulletImage = { PackageName = PackageNames.Gameplay; AssetName = "PlayerBullet" }
-        let EnemyImage = { PackageName = PackageNames.Gameplay; AssetName = "Enemy" }
-        let PlayerImage = { PackageName = PackageNames.Gameplay; AssetName = "Player" }
+        let NuSplashSound = { PackageName = GuiPackageName; AssetName = "Nu" }
+        let MachinerySong = { PackageName = GuiPackageName; AssetName = "Machinery" }
+        let DeadBlazeSong = { PackageName = GameplayPackageName; AssetName = "DeadBlaze" }
+        let HitSound = { PackageName = GameplayPackageName; AssetName = "Hit" }
+        let ExplosionSound = { PackageName = GameplayPackageName; AssetName = "Explosion" }
+        let ShotSound = { PackageName = GameplayPackageName; AssetName = "Shot" }
+        let JumpSound = { PackageName = GameplayPackageName; AssetName = "Jump" }
+        let DeathSound = { PackageName = GameplayPackageName; AssetName = "Death" }
+        let EnemyBulletImage = { PackageName = GameplayPackageName; AssetName = "EnemyBullet" }
+        let PlayerBulletImage = { PackageName = GameplayPackageName; AssetName = "PlayerBullet" }
+        let EnemyImage = { PackageName = GameplayPackageName; AssetName = "Enemy" }
+        let PlayerImage = { PackageName = GameplayPackageName; AssetName = "Player" }
 
     [<RequireQualifiedAccess>]
     module BlazeVector =

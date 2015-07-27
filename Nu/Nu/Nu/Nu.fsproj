@@ -79,7 +79,7 @@
     <Compile Include="Sdl.fs" />
     <Compile Include="SimulationTypes.fs" />
     <Compile Include="SimulationOperators.fs" />
-    <Compile Include="SimulationEvents.fs" />
+    <Compile Include="SimulationEventAddresses.fs" />
     <Compile Include="SimulationProxies.fs" />
     <Compile Include="SimulationModules.fs" />
     <Compile Include="WorldFacet.fs" />
