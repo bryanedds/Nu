@@ -110,7 +110,7 @@ module WorldEntityModule =
                 let world = World.setEntityStateWithoutEvent entityState entity world
                 if isNew then
                     let world = World.registerEntity entity world
-                    World.publish4 () (Events.EntityAddEventAddress ->>- entity.EntityAddress) entity world
+                    World.publish4 () (EventAddresses.EntityAdd ->>- entity.EntityAddress) entity world
                 else world
             else failwith <| "Adding an entity that the world already contains at address '" + acstring entity.EntityAddress + "'."
 
@@ -129,7 +129,7 @@ module WorldEntityModule =
         /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight
         /// publishing depends on the entity's existence. Use with caution.
         static member destroyEntityImmediate entity world =
-            let world = World.publish4 () (Events.EntityRemovingEventAddress ->>- entity.EntityAddress) entity world
+            let world = World.publish4 () (EventAddresses.EntityRemoving ->>- entity.EntityAddress) entity world
             if World.containsEntity entity world then
                 let world = World.unregisterEntity entity world
                 World.setOptEntityStateWithoutEvent None entity world

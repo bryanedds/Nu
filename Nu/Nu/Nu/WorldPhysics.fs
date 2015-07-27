@@ -35,7 +35,7 @@ type [<ReferenceEquality>] IntegratorSubsystem =
                 let source = Entity.proxy <| atoea bodyCollisionMessage.SourceAddress
                 match World.getOptEntityState source world with
                 | Some _ ->
-                    let collisionAddress = Events.CollisionEventAddress ->- bodyCollisionMessage.SourceAddress
+                    let collisionAddress = EventAddresses.Collision ->- bodyCollisionMessage.SourceAddress
                     let collisionData =
                         { Normal = bodyCollisionMessage.Normal
                           Speed = bodyCollisionMessage.Speed

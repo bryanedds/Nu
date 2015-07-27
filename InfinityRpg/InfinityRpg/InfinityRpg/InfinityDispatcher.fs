@@ -16,19 +16,19 @@ type InfinityDispatcher () =
 
     static let createTitle world =
         let world = snd <| World.createDissolveScreenFromGroupFile false Constants.InfinityRpg.DissolveData typeof<ScreenDispatcher>.Name Constants.FilePaths.TitleGroupFilePath (Some Proxies.TitleName) world
-        let world = World.subscribe4 (World.handleAsScreenTransition Proxies.Credits) (Events.ClickEventAddress ->>- Proxies.TitleCredits.EntityAddress) Proxies.Game world
-        let world = World.subscribe4 (handleAsScreenTransitionToGameplay false) (Events.ClickEventAddress ->>- Proxies.TitleNewGame.EntityAddress) Proxies.Game world
-        let world = World.subscribe4 (handleAsScreenTransitionToGameplay true) (Events.ClickEventAddress ->>- Proxies.TitleLoadGame.EntityAddress) Proxies.Game world
-        World.subscribe4 World.handleAsExit (Events.ClickEventAddress ->>- Proxies.TitleExit.EntityAddress) Proxies.Game world
+        let world = World.subscribe4 (World.handleAsScreenTransition Proxies.Credits) (EventAddresses.Click ->>- Proxies.TitleCredits.EntityAddress) Proxies.Game world
+        let world = World.subscribe4 (handleAsScreenTransitionToGameplay false) (EventAddresses.Click ->>- Proxies.TitleNewGame.EntityAddress) Proxies.Game world
+        let world = World.subscribe4 (handleAsScreenTransitionToGameplay true) (EventAddresses.Click ->>- Proxies.TitleLoadGame.EntityAddress) Proxies.Game world
+        World.subscribe4 World.handleAsExit (EventAddresses.Click ->>- Proxies.TitleExit.EntityAddress) Proxies.Game world
 
     static let createCredits world =
         let world = snd <| World.createDissolveScreenFromGroupFile false Constants.InfinityRpg.DissolveData typeof<ScreenDispatcher>.Name Constants.FilePaths.CreditsGroupFilePath (Some Proxies.CreditsName) world
-        World.subscribe4 (World.handleAsScreenTransition Proxies.Title) (Events.ClickEventAddress ->>- Proxies.CreditsBack.EntityAddress) Proxies.Game world
+        World.subscribe4 (World.handleAsScreenTransition Proxies.Title) (EventAddresses.Click ->>- Proxies.CreditsBack.EntityAddress) Proxies.Game world
 
     static let createGameplay world =
         let world = snd <| World.createDissolveScreenFromGroupFile true Constants.InfinityRpg.DissolveData typeof<GameplayDispatcher>.Name Constants.FilePaths.HudGroupFilePath (Some Proxies.GameplayName) world
         let world = Proxies.Hud.SetPersistent false world // do not persist the Hud
-        World.subscribe4 (World.handleAsScreenTransition Proxies.Title) (Events.ClickEventAddress ->>- Proxies.HudBack.EntityAddress) Proxies.Game world
+        World.subscribe4 (World.handleAsScreenTransition Proxies.Title) (EventAddresses.Click ->>- Proxies.HudBack.EntityAddress) Proxies.Game world
 
     override dispatcher.Register _ world =
         let world = World.hintRenderPackageUse Constants.PackageNames.Gui world

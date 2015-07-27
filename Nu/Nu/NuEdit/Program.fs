@@ -350,8 +350,8 @@ module Program =
 
     let subscribeToEntityEvents form world =
         world |>
-            World.subscribe AddEntityKey (handleNuEntityAdd form) (Events.EntityAddEventAddress ->>- EditorGroup.GroupAddress ->- Events.AnyEventAddress) Proxies.Game |>
-            World.subscribe RemovingEntityKey (handleNuEntityRemoving form) (Events.EntityRemovingEventAddress ->>- EditorGroup.GroupAddress ->- Events.AnyEventAddress) Proxies.Game
+            World.subscribe AddEntityKey (handleNuEntityAdd form) (EventAddresses.EntityAdd ->>- EditorGroup.GroupAddress ->- EventAddresses.Any) Proxies.Game |>
+            World.subscribe RemovingEntityKey (handleNuEntityRemoving form) (EventAddresses.EntityRemoving ->>- EditorGroup.GroupAddress ->- EventAddresses.Any) Proxies.Game
 
     let unsubscribeFromEntityEvents world =
         world |>
@@ -745,11 +745,11 @@ module Program =
             let world = snd <| World.createScreen typeof<ScreenDispatcher>.Name (Some EditorScreenName) world
             let world = snd <| World.createGroup typeof<GroupDispatcher>.Name (Some EditorGroupName) EditorScreen world
             let world = World.setOptSelectedScreen (Some EditorScreen) world 
-            let world = World.subscribe4 (handleNuMouseRightDown form worldChangers refWorld) Events.MouseRightDownEventAddress Proxies.Game world
-            let world = World.subscribe4 (handleNuEntityDragBegin form worldChangers refWorld) Events.MouseLeftDownEventAddress Proxies.Game world
-            let world = World.subscribe4 (handleNuEntityDragEnd form) Events.MouseLeftUpEventAddress Proxies.Game world
-            let world = World.subscribe4 (handleNuCameraDragBegin form) Events.MouseCenterDownEventAddress Proxies.Game world
-            let world = World.subscribe4 (handleNuCameraDragEnd form) Events.MouseCenterUpEventAddress Proxies.Game world
+            let world = World.subscribe4 (handleNuMouseRightDown form worldChangers refWorld) EventAddresses.MouseRightDown Proxies.Game world
+            let world = World.subscribe4 (handleNuEntityDragBegin form worldChangers refWorld) EventAddresses.MouseLeftDown Proxies.Game world
+            let world = World.subscribe4 (handleNuEntityDragEnd form) EventAddresses.MouseLeftUp Proxies.Game world
+            let world = World.subscribe4 (handleNuCameraDragBegin form) EventAddresses.MouseCenterDown Proxies.Game world
+            let world = World.subscribe4 (handleNuCameraDragEnd form) EventAddresses.MouseCenterUp Proxies.Game world
             let world = subscribeToEntityEvents form world
             Right world
         | Left error -> Left error

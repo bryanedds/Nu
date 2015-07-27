@@ -399,7 +399,7 @@ module GameplayDispatcherModule =
                             | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
                         updateCharacterByNavigation navigationDescriptor character world
                     do! pass }}
-            let observation = observe Events.UpdateEventAddress character |> until (Events.DeselectEventAddress ->>- gameplay.ScreenAddress)
+            let observation = observe EventAddresses.Update character |> until (EventAddresses.Deselect ->>- gameplay.ScreenAddress)
             snd <| runAssumingCascade chain observation world
 
         static let runCharacterAction newActionDescriptor (character : Entity) gameplay world =
@@ -415,7 +415,7 @@ module GameplayDispatcherModule =
                         let world = updateCharacterByAction actionDescriptor character world
                         runCharacterReaction actionDescriptor character gameplay world
                     do! pass }}
-            let observation = observe Events.UpdateEventAddress character |> until (Events.DeselectEventAddress ->>- gameplay.ScreenAddress)
+            let observation = observe EventAddresses.Update character |> until (EventAddresses.Deselect ->>- gameplay.ScreenAddress)
             snd <| runAssumingCascade chain observation world
 
         static let runCharacterNoActivity (character : Entity) world =
@@ -522,9 +522,9 @@ module GameplayDispatcherModule =
                                 do! update ^ cancelNavigation player }}
                     do! update ^ hudSaveGame.SetEnabled true }
                 let observation =
-                    observe (Events.ClickEventAddress ->>- hudHalt.EntityAddress) gameplay |>
-                    sum Events.UpdateEventAddress |>
-                    until (Events.DeselectEventAddress ->>- gameplay.ScreenAddress)
+                    observe (EventAddresses.Click ->>- hudHalt.EntityAddress) gameplay |>
+                    sum EventAddresses.Update |>
+                    until (EventAddresses.Deselect ->>- gameplay.ScreenAddress)
                 snd <| runAssumingCascade chain observation world
             else world
 
@@ -619,13 +619,13 @@ module GameplayDispatcherModule =
 
         override dispatcher.Register gameplay world =
             world |>
-                (observe (Events.EntityChangeEventAddress ->>- (proxyPlayer gameplay).EntityAddress) gameplay |> subscribe handlePlayerChange) |>
-                (observe (Events.TouchEventAddress ->>- (proxyHudFeeler gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor handleTouchFeeler) |>
-                (observe (Events.DownEventAddress ->>- (proxyHudDetailUp gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Upward)) |>
-                (observe (Events.DownEventAddress ->>- (proxyHudDetailRight gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Rightward)) |>
-                (observe (Events.DownEventAddress ->>- (proxyHudDetailDown gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Downward)) |>
-                (observe (Events.DownEventAddress ->>- (proxyHudDetailLeft gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Leftward)) |>
-                (World.subscribe4 handleSelectTitle (Events.SelectEventAddress ->>- Proxies.Title.ScreenAddress) gameplay) |>
-                (World.subscribe4 handleSelectGameplay (Events.SelectEventAddress ->>- gameplay.ScreenAddress) gameplay) |>
-                (World.subscribe4 handleClickSaveGame (Events.ClickEventAddress ->>- (proxyHudSaveGame gameplay).EntityAddress) gameplay) |>
-                (World.subscribe4 handleDeselectGameplay (Events.DeselectEventAddress ->>- gameplay.ScreenAddress) gameplay)
+                (observe (EventAddresses.EntityChange ->>- (proxyPlayer gameplay).EntityAddress) gameplay |> subscribe handlePlayerChange) |>
+                (observe (EventAddresses.Touch ->>- (proxyHudFeeler gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor handleTouchFeeler) |>
+                (observe (EventAddresses.Down ->>- (proxyHudDetailUp gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Upward)) |>
+                (observe (EventAddresses.Down ->>- (proxyHudDetailRight gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Rightward)) |>
+                (observe (EventAddresses.Down ->>- (proxyHudDetailDown gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Downward)) |>
+                (observe (EventAddresses.Down ->>- (proxyHudDetailLeft gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Leftward)) |>
+                (World.subscribe4 handleSelectTitle (EventAddresses.Select ->>- Proxies.Title.ScreenAddress) gameplay) |>
+                (World.subscribe4 handleSelectGameplay (EventAddresses.Select ->>- gameplay.ScreenAddress) gameplay) |>
+                (World.subscribe4 handleClickSaveGame (EventAddresses.Click ->>- (proxyHudSaveGame gameplay).EntityAddress) gameplay) |>
+                (World.subscribe4 handleDeselectGameplay (EventAddresses.Deselect ->>- gameplay.ScreenAddress) gameplay)
