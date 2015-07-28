@@ -19,7 +19,6 @@ open System.Xml.Serialization
 open Microsoft.FSharp.Reflection
 open Prime
 open Nu
-open NuEdit.Constants
 
 // TODO: increase warning level to 5.
 // TODO: implement entity freezing, then quick size on create.
@@ -104,7 +103,7 @@ and EntityPropertyDescriptor (property, attributes) =
                     world
                 else
                     let entity = entityTds.DescribedEntity
-                    let (entity, world) = World.reassignEntity entity (Some valueStr) EditorGroup world
+                    let (entity, world) = World.reassignEntity entity (Some valueStr) Simulants.EditorGroup world
                     entityTds.RefWorld := world // must be set for property grid
                     entityTds.Form.propertyGrid.SelectedObject <- { entityTds with DescribedEntity = entity }
                     world
@@ -165,7 +164,7 @@ module Program =
     let CameraSpeed = 4.0f // NOTE: might be nice to be able to configure this just like entity creation depth in the editor
 
     let getPickableEntities world =
-        World.proxyEntities EditorGroup world
+        World.proxyEntities Simulants.EditorGroup world
 
     let clearOtherWorlds world =
         World.updateUserState (fun editorState -> { editorState with PastWorlds = []; FutureWorlds = [] }) world
@@ -226,7 +225,7 @@ module Program =
             ignore <| form.treeView.Nodes.Add treeGroup
 
     let populateTreeViewNodes (form : NuEditForm) world =
-        for entity in World.proxyEntities EditorGroup world do
+        for entity in World.proxyEntities Simulants.EditorGroup world do
             addTreeViewNode form entity world
 
     let tryScrollTreeViewToPropertyGridSelection (form : NuEditForm) =
@@ -350,16 +349,16 @@ module Program =
 
     let subscribeToEntityEvents form world =
         world |>
-            World.subscribe AddEntityKey (handleNuEntityAdd form) (EventAddresses.EntityAdd ->>- EditorGroup.GroupAddress ->- EventAddresses.Any) Simulants.Game |>
-            World.subscribe RemovingEntityKey (handleNuEntityRemoving form) (EventAddresses.EntityRemoving ->>- EditorGroup.GroupAddress ->- EventAddresses.Any) Simulants.Game
+            World.subscribe Constants.SubscriptionKeys.AddEntity (handleNuEntityAdd form) (EventAddresses.EntityAdd ->>- Simulants.EditorGroup.GroupAddress ->- EventAddresses.Any) Simulants.Game |>
+            World.subscribe Constants.SubscriptionKeys.RemovingEntity (handleNuEntityRemoving form) (EventAddresses.EntityRemoving ->>- Simulants.EditorGroup.GroupAddress ->- EventAddresses.Any) Simulants.Game
 
     let unsubscribeFromEntityEvents world =
         world |>
-            World.unsubscribe AddEntityKey |>
-            World.unsubscribe RemovingEntityKey
+            World.unsubscribe Constants.SubscriptionKeys.AddEntity |>
+            World.unsubscribe Constants.SubscriptionKeys.RemovingEntity
 
     let trySaveFile filePath world =
-        try World.writeGroupToFile filePath EditorGroup world
+        try World.writeGroupToFile filePath Simulants.EditorGroup world
         with exn ->
             ignore <|
                 MessageBox.Show
@@ -372,10 +371,10 @@ module Program =
 
         try // destroy current group
             let world = unsubscribeFromEntityEvents world
-            let world = World.destroyGroupImmediate EditorGroup world
+            let world = World.destroyGroupImmediate Simulants.EditorGroup world
 
             // load and add group
-            let world = snd <| World.readGroupFromFile filePath (Some EditorGroupName) EditorScreen world
+            let world = snd <| World.readGroupFromFile filePath (Some Simulants.EditorGroupName) Simulants.EditorScreen world
             let world = subscribeToEntityEvents form world
 
             // refresh tree view
@@ -420,7 +419,7 @@ module Program =
     let handleFormCreate atMouse (form : NuEditForm) (worldChangers : WorldChangers) refWorld (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
             try let world = pushPastWorld world world
-                let (entity, world) = World.createEntity form.createEntityComboBox.Text None EditorGroup world
+                let (entity, world) = World.createEntity form.createEntityComboBox.Text None Simulants.EditorGroup world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
                 let camera = World.getCamera world
@@ -476,7 +475,7 @@ module Program =
             | [] -> world
             | pastWorld :: pastWorlds ->
                 let futureWorld = world
-                let world = World.continueHack EditorGroup pastWorld
+                let world = World.continueHack Simulants.EditorGroup pastWorld
                 let world =
                     World.updateUserState (fun editorState ->
                         { editorState with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: (World.getUserState futureWorld).FutureWorlds })
@@ -491,7 +490,7 @@ module Program =
             | [] -> world
             | futureWorld :: futureWorlds ->
                 let pastWorld = world
-                let world = World.continueHack EditorGroup futureWorld
+                let world = World.continueHack Simulants.EditorGroup futureWorld
                 let world =
                     World.updateUserState (fun editorState ->
                         { editorState with PastWorlds = pastWorld :: (World.getUserState pastWorld).PastWorlds; FutureWorlds = futureWorlds })
@@ -742,9 +741,9 @@ module Program =
         let eitherWorld = World.tryMake false 0L editorState nuPlugin sdlDeps
         match eitherWorld with
         | Right world ->
-            let world = snd <| World.createScreen typeof<ScreenDispatcher>.Name (Some EditorScreenName) world
-            let world = snd <| World.createGroup typeof<GroupDispatcher>.Name (Some EditorGroupName) EditorScreen world
-            let world = World.setOptSelectedScreen (Some EditorScreen) world 
+            let world = snd <| World.createScreen typeof<ScreenDispatcher>.Name (Some Simulants.EditorScreenName) world
+            let world = snd <| World.createGroup typeof<GroupDispatcher>.Name (Some Simulants.EditorGroupName) Simulants.EditorScreen world
+            let world = World.setOptSelectedScreen (Some Simulants.EditorScreen) world 
             let world = World.subscribe4 (handleNuMouseRightDown form worldChangers refWorld) EventAddresses.MouseRightDown Simulants.Game world
             let world = World.subscribe4 (handleNuEntityDragBegin form worldChangers refWorld) EventAddresses.MouseLeftDown Simulants.Game world
             let world = World.subscribe4 (handleNuEntityDragEnd form) EventAddresses.MouseLeftUp Simulants.Game world

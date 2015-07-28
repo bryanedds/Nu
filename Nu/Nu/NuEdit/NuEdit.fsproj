@@ -59,7 +59,8 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
-    <Compile Include="Constants.fs" />
+    <Compile Include="NuEditConstants.fs" />
+    <Compile Include="NuEditSimulants.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="AssetGraph.xml">
