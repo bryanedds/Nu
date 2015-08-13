@@ -456,19 +456,32 @@ module WorldModule =
             World.incrementUpdateCount world
 
         /// TODO: document!
-        static member run4 tryMakeWorld handleUpdate handleRender sdlConfig =
+        static member cleanUp world =
+            World.cleanUpSubsystems world
+
+        /// TODO: document!
+        static member run6 handleUpdate handleRender sdlConfig optFrames liveness world =
+            Sdl.run8
+                World.processInput
+                (World.processUpdate handleUpdate)
+                (World.processRender handleRender)
+                World.processPlay
+                World.cleanUp
+                sdlConfig
+                optFrames
+                liveness
+                world
+
+        /// TODO: document!
+        static member run tryMakeWorld handleUpdate handleRender sdlConfig =
             Sdl.run
                 tryMakeWorld
                 World.processInput
                 (World.processUpdate handleUpdate)
                 (World.processRender handleRender)
                 World.processPlay
-                World.cleanUpSubsystems
+                World.cleanUp
                 sdlConfig
-
-        /// TODO: document!
-        static member run tryMakeWorld handleUpdate sdlConfig =
-            World.run4 tryMakeWorld handleUpdate id sdlConfig
 
         static member private pairWithName source =
             (Reflection.getTypeName source, source)
@@ -489,10 +502,16 @@ module WorldModule =
                     let userSubsystems = Map.ofList <| nuPlugin.MakeSubsystems ()
                     let integrator = Integrator.make Constants.Physics.Gravity
                     let integratorSubsystem = IntegratorSubsystem.make Constants.Engine.DefaultSubsystemOrder integrator :> Subsystem
-                    let renderer = Renderer.make sdlDeps.RenderContext Constants.Assets.AssetGraphFilePath
+                    let renderer =
+                        match sdlDeps.OptRenderContext with
+                        | Some renderContext -> Renderer.make renderContext Constants.Assets.AssetGraphFilePath :> IRenderer
+                        | None -> MockRenderer.make () :> IRenderer
                     let renderer = renderer.EnqueueMessage <| HintRenderPackageUseMessage { PackageName = Constants.Assets.DefaultPackageName }
                     let rendererSubsystem = RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder renderer :> Subsystem
-                    let audioPlayer = AudioPlayer.make Constants.Assets.AssetGraphFilePath
+                    let audioPlayer =
+                        if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
+                        then AudioPlayer.make Constants.Assets.AssetGraphFilePath :> IAudioPlayer
+                        else MockAudioPlayer.make () :> IAudioPlayer
                     let audioPlayerSubsystem = AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder audioPlayer :> Subsystem
                     let defaultSubsystems =
                         Map.ofList

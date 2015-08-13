@@ -17,16 +17,10 @@ module WorldTests =
     let incUserStateAndCascade (_ : Event<unit, Game>) world = (Cascade, World.updateUserState inc world)
     let incUserStateAndResolve (_ : Event<unit, Game>) world = (Resolve, World.updateUserState inc world)
 
-    let [<Fact>] emptyWorldDoesntExplode () =
-        let world = World.initAndMakeEmpty ()
-        match World.processInput (SDL.SDL_Event ()) world with
-        | (Running, world) ->
-            match World.processUpdate id world with
-            | (Running, world) ->
-                let world = World.processRender id world
-                ignore <| World.processPlay world
-            | (Exiting, _) -> failwith "Test should not reach here."
-        | (Exiting, _) -> failwith "Test should not reach here."
+    let [<Fact>] emptyWorldRunForOneFrameDoesntRaiseException () =
+        let world = World.initAndMakeEmpty 0
+        let world = World.run6 id id SdlDeps.empty (Some 1) Running world
+        ignore <| World.cleanUp world
 
     let [<Fact>] subscribeWorks () =
         let world = World.initAndMakeEmpty 0
