@@ -720,8 +720,3 @@ module WorldModule =
 
             // init type converters
             Math.initTypeConverters ()
-
-        /// Initialize the Nu game engine, and make an empty world. Useful for unit-testing.
-        static member initAndMakeEmpty (userState : 'u) =
-            World.init ()
-            World.makeEmpty userState

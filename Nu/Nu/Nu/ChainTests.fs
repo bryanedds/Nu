@@ -19,7 +19,8 @@ module ChainTests =
     let [<Fact>] chainWorks () =
         
         // build everything
-        let world = World.initAndMakeEmpty 0
+        World.init ()
+        let world = World.makeEmpty 0
         let chain =
             chain {
                 let! e = next
