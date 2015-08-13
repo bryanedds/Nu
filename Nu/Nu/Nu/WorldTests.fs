@@ -17,11 +17,12 @@ module WorldTests =
     let incUserStateAndCascade (_ : Event<unit, Game>) world = (Cascade, World.updateUserState inc world)
     let incUserStateAndResolve (_ : Event<unit, Game>) world = (Resolve, World.updateUserState inc world)
 
-    let [<Fact>] emptyWorldRunForOneFrameDoesntRaiseException () =
+    let [<Fact>] runWorldForOneFrameThenCleanUp () =
         World.init ()
         let world = World.makeEmpty 0
         let world = World.run6 id id SdlDeps.empty (Some 1) Running world
-        ignore <| World.cleanUp world
+        let world = World.cleanUp world
+        ignore world
 
     let [<Fact>] subscribeWorks () =
         World.init ()
