@@ -17,46 +17,47 @@ module WorldTests =
     let incUserStateAndCascade (_ : Event<unit, Game>) world = (Cascade, World.updateUserState inc world)
     let incUserStateAndResolve (_ : Event<unit, Game>) world = (Resolve, World.updateUserState inc world)
 
-    let [<Fact>] emptyWorldDoesntExplode () =
-        let world = World.initAndMakeEmpty ()
-        match World.processInput (SDL.SDL_Event ()) world with
-        | (Running, world) ->
-            match World.processUpdate id world with
-            | (Running, world) ->
-                let world = World.processRender id world
-                ignore <| World.processPlay world
-            | (Exiting, _) -> failwith "Test should not reach here."
-        | (Exiting, _) -> failwith "Test should not reach here."
+    let [<Fact>] runWorldForOneFrameThenCleanUp () =
+        World.init ()
+        let world = World.makeEmpty 0
+        let world = World.run6 id id SdlDeps.empty (Some 1) Running world
+        let world = World.cleanUp world
+        ignore world
 
     let [<Fact>] subscribeWorks () =
-        let world = World.initAndMakeEmpty 0
+        World.init ()
+        let world = World.makeEmpty 0
         let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Simulants.Game world
         let world = World.publish4 () UnitEventAddress Simulants.Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeAndPublishTwiceWorks () =
-        let world = World.initAndMakeEmpty 0
+        World.init ()
+        let world = World.makeEmpty 0
         let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Simulants.Game world
         let world = World.publish4 () UnitEventAddress Simulants.Game world
         let world = World.publish4 () UnitEventAddress Simulants.Game world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeTwiceAndPublishWorks () =
-        let world = World.initAndMakeEmpty 0
+        World.init ()
+        let world = World.makeEmpty 0
         let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Simulants.Game world
         let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Simulants.Game world
         let world = World.publish4 () UnitEventAddress Simulants.Game world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeWithResolutionWorks () =
-        let world = World.initAndMakeEmpty 0
+        World.init ()
+        let world = World.makeEmpty 0
         let world = World.subscribe4 incUserStateAndCascade UnitEventAddress Simulants.Game world
         let world = World.subscribe4 incUserStateAndResolve UnitEventAddress Simulants.Game world
         let world = World.publish4 () UnitEventAddress Simulants.Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
-        let world = World.initAndMakeEmpty 0
+        World.init ()
+        let world = World.makeEmpty 0
         let key = World.makeSubscriptionKey ()
         let world = World.subscribe key incUserStateAndResolve UnitEventAddress Simulants.Game world
         let world = World.unsubscribe key world
@@ -64,7 +65,8 @@ module WorldTests =
         Assert.Equal (0, World.getUserState world)
 
     let [<Fact>] entitySubscribeWorks () =
-        let world = World.initAndMakeEmpty 0
+        World.init ()
+        let world = World.makeEmpty 0
         let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some Constants.Engine.DefaultScreenName) world
         let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Constants.Engine.DefaultGroupName) screen world
         let (entity, world) = World.createEntity typeof<EntityDispatcher>.Name (Some Constants.Engine.DefaultEntityName) group world
@@ -75,7 +77,8 @@ module WorldTests =
 
     let [<Fact>] gameSerializationWorks () =
         // TODO: make stronger assertions in here!!!
-        let world = World.initAndMakeEmpty 0
+        World.init ()
+        let world = World.makeEmpty 0
         let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some Constants.Engine.DefaultScreenName) world
         let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Constants.Engine.DefaultGroupName) screen world
         let (entity, world) = World.createEntity typeof<EntityDispatcher>.Name (Some Constants.Engine.DefaultEntityName) group world

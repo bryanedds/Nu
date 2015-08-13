@@ -69,5 +69,8 @@ module Program =
         // behavior in this program, we simply return the world as it was received.
         let updateWorld world = world
 
-        // after some configuration it is time to run your game. We're off and running!
-        World.run tryMakeWorld updateWorld sdlConfig
+        // similar to the above, but for rendering. Most games probably won't do anything here.
+        let renderWorld world = world
+
+        // after some configuration it is time to run the game. We're off and running!
+        World.run tryMakeWorld updateWorld renderWorld sdlConfig

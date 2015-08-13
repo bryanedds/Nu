@@ -32,9 +32,40 @@ type SdlConfig =
 
 /// The dependencies needed to initialize SDL.
 type SdlDeps =
-    { RenderContext : nativeint
-      Window : nativeint
+    { OptRenderContext : nativeint option
+      OptWindow : nativeint option
       Config : SdlConfig }
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module SdlViewConfig =
+
+    /// An empty SdlViewConfig.
+    let empty =
+        NewWindow
+            { WindowTitle = "Nu Game"
+              WindowX = SDL.SDL_WINDOWPOS_UNDEFINED
+              WindowY = SDL.SDL_WINDOWPOS_UNDEFINED
+              WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module SdlConfig =
+
+    /// An empty SdlConfig.
+    let empty =
+        { ViewConfig = SdlViewConfig.empty
+          ViewW = Constants.Render.ResolutionX
+          ViewH = Constants.Render.ResolutionY
+          RendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
+          AudioChunkSize = Constants.Audio.AudioBufferSizeDefault }
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module SdlDeps =
+
+    /// An empty SdlDeps.
+    let empty =
+        { OptRenderContext = None
+          OptWindow = None
+          Config = SdlConfig.empty }
 
 [<RequireQualifiedAccess>]
 module Sdl =
@@ -76,49 +107,66 @@ module Sdl =
 
     /// Update the game engine's state.
     let update handleEvent handleUpdate world =
-        let mutable result = (Running, world)
-        let polledEvent = ref <| SDL.SDL_Event ()
-        while   SDL.SDL_PollEvent polledEvent <> 0 &&
+        if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
+            let mutable result = (Running, world)
+            let polledEvent = ref <| SDL.SDL_Event ()
+            while
+                SDL.SDL_PollEvent polledEvent <> 0 &&
                 (match fst result with Running -> true | Exiting -> false) do
                 result <- handleEvent !polledEvent (snd result)
-        match fst result with
-        | Exiting -> ()
-        | Running -> result <- handleUpdate (snd result)
-        result
+            match fst result with
+            | Exiting -> ()
+            | Running -> result <- handleUpdate (snd result)
+            result
+        else handleUpdate world
 
     /// Render the game engine's current frame.
     let render handleRender sdlDeps world =
-        match Constants.Render.ScreenClearing with
-        | NoClear -> ()
-        | ColorClear (r, g, b) ->
-            ignore <| SDL.SDL_SetRenderDrawColor (sdlDeps.RenderContext, r, g, b, 255uy)
-            ignore <| SDL.SDL_RenderClear sdlDeps.RenderContext
-        let world = handleRender world
-        SDL.SDL_RenderPresent sdlDeps.RenderContext
-        world
+        match sdlDeps.OptRenderContext with
+        | Some renderContext ->
+            match Constants.Render.ScreenClearing with
+            | NoClear -> ()
+            | ColorClear (r, g, b) ->
+                ignore <| SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy)
+                ignore <| SDL.SDL_RenderClear renderContext
+            let world = handleRender world
+            SDL.SDL_RenderPresent renderContext
+            world
+        | None -> handleRender world
 
     /// Play the game engine's current audio.
     let play handlePlay world =
-        handlePlay world
+        if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
+        then handlePlay world // doesn't need any extra sdl processing here
+        else handlePlay world
 
-    let rec private run7 handleEvent handleUpdate handleRender handlePlay sdlDeps liveness world =
-        match liveness with
-        | Running ->
-            let (liveness, world) = update handleEvent handleUpdate world
+    let rec private run7 handleEvent handleUpdate handleRender handlePlay sdlDeps optFrames liveness world =
+        let (anotherFrame, optFrames) =
+            match optFrames with
+            | Some frames ->
+                if frames > 0 then (true, Some <| frames - 1)
+                elif frames < 0 then (true, Some frames)
+                else (false, Some frames)
+            | None -> (true, None)
+        if anotherFrame then
             match liveness with
             | Running ->
-                let world = render handleRender sdlDeps world
-                let world = play handlePlay world
-                run7 handleEvent handleUpdate handleRender handlePlay sdlDeps liveness world
+                let (liveness, world) = update handleEvent handleUpdate world
+                match liveness with
+                | Running ->
+                    let world = render handleRender sdlDeps world
+                    let world = play handlePlay world
+                    run7 handleEvent handleUpdate handleRender handlePlay sdlDeps optFrames liveness world
+                | Exiting -> world
             | Exiting -> world
-        | Exiting -> world
+        else world
 
     /// Run the game engine with the given handlers.
-    let run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps liveness world =
-        try let world = run7 handleEvent handleUpdate handleRender handlePlay sdlDeps liveness world
-            ignore <| handleExit world
+    let run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps optFrames liveness world =
+        try let world = run7 handleEvent handleUpdate handleRender handlePlay sdlDeps optFrames liveness world
+            handleExit world
         with _ ->
-            ignore <| handleExit world
+            handleExit world
 
     /// Run the game engine with the given handlers.
     let run handleTryMakeWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig =
@@ -153,11 +201,11 @@ module Sdl =
                                 (fun () -> SDL_mixer.Mix_OpenAudio (Constants.Audio.AudioFrequency, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
                                 (fun () -> SDL_mixer.Mix_CloseAudio ())
                                 (fun () ->
-                                    let sdlDeps = { RenderContext = renderContext; Window = window; Config = sdlConfig }
+                                    let sdlDeps = { OptRenderContext = Some renderContext; OptWindow = Some window; Config = sdlConfig }
                                     let eitherWorld = handleTryMakeWorld sdlDeps
                                     match eitherWorld with
                                     | Right world ->
-                                        run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps Running world
+                                        ignore <| run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps None Running world
                                         Constants.Engine.SuccessExitCode
                                     | Left error ->
                                         trace error
