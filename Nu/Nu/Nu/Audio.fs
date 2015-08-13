@@ -221,6 +221,8 @@ type [<ReferenceEquality>] AudioPlayer =
 
     /// Make an AudioPlayer.
     static member make assetGraphFilePath =
+        if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO = 0u then
+            failwith "Cannot create an AudioPlayer without SDL audio initialized."
         let audioPlayer =
             { AudioContext = ()
               AudioAssetMap = Map.empty
@@ -228,7 +230,7 @@ type [<ReferenceEquality>] AudioPlayer =
               OptCurrentSong = None
               OptNextPlaySong = None
               AssetGraphFilePath = assetGraphFilePath }
-        audioPlayer :> IAudioPlayer
+        audioPlayer
 
     interface IAudioPlayer with
 
@@ -250,8 +252,13 @@ type [<ReferenceEquality>] AudioPlayer =
 
 /// The mock implementation of IAudioPlayer.
 type [<ReferenceEquality>] MockAudioPlayer =
-    { MockAudioPlayer : unit }
+    private
+        { MockAudioPlayer : unit }
+
     interface IAudioPlayer with
         member audioPlayer.ClearMessages () = audioPlayer :> IAudioPlayer
         member audioPlayer.EnqueueMessage _ = audioPlayer :> IAudioPlayer
         member audioPlayer.Play () = audioPlayer :> IAudioPlayer
+
+    static member make () =
+        { MockAudioPlayer = () }

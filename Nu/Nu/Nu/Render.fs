@@ -375,7 +375,7 @@ type [<ReferenceEquality>] Renderer =
               RenderAssetMap = Map.empty
               RenderMessages = Queue.empty
               AssetGraphFilePath = assetGraphFilePath }
-        renderer :> IRenderer
+        renderer
 
     interface IRenderer with
 
@@ -404,9 +404,14 @@ type [<ReferenceEquality>] Renderer =
 
 /// The mock implementation of IRenderer.
 type [<ReferenceEquality>] MockRenderer =
-    { MockRenderer : unit }
+    private
+        { MockRenderer : unit }
+
     interface IRenderer with
         member renderer.ClearMessages () = renderer :> IRenderer
         member renderer.EnqueueMessage _ = renderer :> IRenderer
         member renderer.Render _ _ = renderer :> IRenderer
         member renderer.CleanUp () = renderer :> IRenderer
+
+    static member make () =
+        { MockRenderer = () }

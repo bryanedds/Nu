@@ -776,7 +776,7 @@ module Program =
               ViewH = form.displayPanel.MaximumSize.Height
               RendererFlags = sdlRendererFlags
               AudioChunkSize = Constants.Audio.AudioBufferSizeDefault }
-        World.run4
+        World.run
             (fun sdlDeps ->
                 match tryCreateEditorWorld targetDirectory refinementDirectory form worldChangers refWorld sdlDeps nuPlugin with
                 | Right world as right ->

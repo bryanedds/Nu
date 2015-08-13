@@ -40,4 +40,5 @@ module Program =
         World.run
             (fun sdlDeps -> World.tryMake true 1L () (InfinityRpgPlugin ()) sdlDeps)
             (fun world -> world)
+            (fun world -> world)
             sdlConfig
