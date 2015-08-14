@@ -89,9 +89,9 @@ module ObservationTests =
         let world = unsubscribe world
         Assert.True <| Map.isEmpty world.Callbacks.CallbackStates
 
-    let [<Fact>] interativeFrpWorks () =
+    let [<Fact>] iterativeFrpWorks () =
         World.init ()
-        let world = World.makeEmpty 0
+        let world = World.makeEmpty ()
         let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some Constants.Engine.DefaultScreenName) world
         let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Constants.Engine.DefaultGroupName) screen world
         let (jim, world) = World.createEntity typeof<EntityDispatcher>.Name (Some JimName) group world
@@ -101,9 +101,9 @@ module ObservationTests =
         Assert.False <| bob.GetVisible world
         Assert.False <| jim.GetVisible world
 
-    let [<Fact>] interativeFrpCyclicWorks () =
+    let [<Fact>] iterativeFrpCyclicWorks () =
         World.init ()
-        let world = World.makeEmpty 0
+        let world = World.makeEmpty ()
         let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some Constants.Engine.DefaultScreenName) world
         let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Constants.Engine.DefaultGroupName) screen world
         let (jim, world) = World.createEntity typeof<EntityDispatcher>.Name (Some JimName) group world
