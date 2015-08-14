@@ -19,7 +19,7 @@ module WorldTests =
 
     let [<Fact>] runWorldForOneFrameThenCleanUp () =
         World.init ()
-        let world = World.makeEmpty 0
+        let world = World.makeEmpty ()
         let world = World.run6 id id SdlDeps.empty (Some 1) Running world
         let world = World.cleanUp world
         ignore world
@@ -66,7 +66,7 @@ module WorldTests =
 
     let [<Fact>] entitySubscribeWorks () =
         World.init ()
-        let world = World.makeEmpty 0
+        let world = World.makeEmpty ()
         let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some Constants.Engine.DefaultScreenName) world
         let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Constants.Engine.DefaultGroupName) screen world
         let (entity, world) = World.createEntity typeof<EntityDispatcher>.Name (Some Constants.Engine.DefaultEntityName) group world
@@ -78,7 +78,7 @@ module WorldTests =
     let [<Fact>] gameSerializationWorks () =
         // TODO: make stronger assertions in here!!!
         World.init ()
-        let world = World.makeEmpty 0
+        let world = World.makeEmpty ()
         let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some Constants.Engine.DefaultScreenName) world
         let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Constants.Engine.DefaultGroupName) screen world
         let (entity, world) = World.createEntity typeof<EntityDispatcher>.Name (Some Constants.Engine.DefaultEntityName) group world
