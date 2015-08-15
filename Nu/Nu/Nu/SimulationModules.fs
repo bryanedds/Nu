@@ -488,7 +488,7 @@ module World =
     let private optEntityStateKeyEquality 
         (entityAddress : Entity Address, world : World)
         (entityAddress2 : Entity Address, world2 : World) =
-        entityAddress === entityAddress2 && world === world2
+        entityAddress == entityAddress2 && world == world2
 
     let private optEntityGetFreshKeyAndValue entity world =
         let optEntityState =
