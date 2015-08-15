@@ -6,42 +6,93 @@ open System
 open System.Diagnostics
 open System.ComponentModel
 open System.Reflection
+open System.IO
 
 [<AutoOpen>]
 module Miscellanea =
 
     /// The tautology function.
     /// No matter what you pass it, it evaluates to true.
-    let tautology _ = true
+    let inline tautology _ = true
 
     /// The tautology function with two arguments.
     /// No matter what you pass it, it evaluates to true.
-    let tautology2 _ _ = true
+    let inline tautology2 _ _ = true
 
     /// The tautology function with three arguments.
     /// No matter what you pass it, it evaluates to true.
-    let tautology3 _ _ _ = true
+    let inline tautology3 _ _ _ = true
 
     /// The absurdity function.
     /// No matter what you pass it, it evaluates to false.
-    let absurdity _ = false
+    let inline absurdity _ = false
 
     /// The absurdity function with two arguments.
     /// No matter what you pass it, it evaluates to false.
-    let absurdity2 _ _ = false
+    let inline absurdity2 _ _ = false
 
     /// Convert any value to an obj.
-    let objectify x = x :> obj
+    let inline objectify x = x :> obj
 
     /// Flip two function parameters.
-    /// TODO: curry and uncurry.
-    let flip f x y = f y x
+    let inline flip f x y = f y x
+
+    /// Transforms a function by flipping the order of its arguments.
+    let inline flip3 f a b c = f c a b
+
+    /// Transforms a function by flipping the order of its arguments.
+    let inline flip4 f a b c d = f d a b c
+
+    /// Test for null.
+    let inline isNull a = match a with null -> true | _ -> false
 
     /// Fail with an unexpected match failure.
-    let failwithumf () = failwith "Unexpected match failure."
+    let inline failwithumf () = failwith "Unexpected match failure."
 
     /// Convert any value to its type.
-    let getType x = x.GetType ()
+    let inline getType a = a.GetType ()
+
+    /// Get the fields of a type.
+    let inline getFields (t : Type) = t.GetFields (BindingFlags.Instance ||| BindingFlags.Public)
+
+    /// Get the value of a field.
+    let inline getFieldValue (f : FieldInfo) (a : obj) = f.GetValue a
+
+    /// Get the properties of a type.
+    let inline getProperties (t : Type) = t.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
+
+    /// Get the value of a property.
+    let inline getPropertyValue indices (p : PropertyInfo) (a : obj) = p.GetValue (a, indices)
+
+    /// Test for reference equality.
+    let inline referenceEquals a b = obj.ReferenceEquals (a, b)
+
+    /// Test just the value parts of a type for equality.
+    /// NOTE: This function uses mad reflection, so is extremely slow, and should not be used in tight loops.
+    let rec similar (a : obj) (b : obj) =
+        if isNull a then isNull b
+        elif isNull b then false
+        elif referenceEquals (getType a) (getType b) then
+            let aType = getType a
+            if  aType.IsValueType ||
+                aType = typeof<string> then
+                a = b
+            else if aType.IsSubclassOf typeof<Stream> then
+                // NOTE: Stream has a screwed up contract that its Length property can throw if seeking is not
+                // supported. They should have returned nullable int instead, but nooooo....
+                true
+            else
+                let fieldsSimilar =
+                    aType
+                    |> getFields
+                    |> Array.forall (fun i -> similar (getFieldValue i a) (getFieldValue i b))
+                let propertiesSimilar =
+                    aType
+                    |> getProperties
+                    |> Array.filter (fun p -> (p.GetIndexParameters ()).Length = 0)
+                    |> Array.forall (fun i -> similar (getPropertyValue null i a) (getPropertyValue null i b))
+                fieldsSimilar && propertiesSimilar
+        else false
 
     /// A generic identification code type.
     type Id = int64
@@ -88,7 +139,13 @@ module Miscellanea =
         Guid (m, int16 (n >>> 16), int16 n, bytes)
 
     /// Sequences two functions like Haskell ($).
-    let inline (^) f g = f g
+    let (^) = (<|)
+
+    /// Test for reference equality.
+    let (==) = referenceEquals
+
+    /// Test just the value parts of a type for equality.
+    let (===) = similar
 
     /// Combine the contents of two maps, taking an item from the second map in the case of a key
     /// conflict.
