@@ -38,45 +38,45 @@ module Miscellanea =
     let inline flip f x y = f y x
 
     /// Transforms a function by flipping the order of its arguments.
-    let inline flip3 f a b c = f c a b
+    let inline flip3 f x y z = f z x y
 
     /// Transforms a function by flipping the order of its arguments.
-    let inline flip4 f a b c d = f d a b c
+    let inline flip4 f x y z w = f w x y z
 
     /// Test for null.
-    let inline isNull a = match a with null -> true | _ -> false
+    let inline isNull x = match x with null -> true | _ -> false
 
     /// Fail with an unexpected match failure.
     let inline failwithumf () = failwith "Unexpected match failure."
 
     /// Convert any value to its type.
-    let inline getType a = a.GetType ()
+    let inline getType x = x.GetType ()
 
     /// Get the fields of a type.
     let inline getFields (t : Type) = t.GetFields (BindingFlags.Instance ||| BindingFlags.Public)
 
     /// Get the value of a field.
-    let inline getFieldValue (f : FieldInfo) (a : obj) = f.GetValue a
+    let inline getFieldValue (f : FieldInfo) (x : obj) = f.GetValue x
 
     /// Get the properties of a type.
     let inline getProperties (t : Type) = t.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
 
     /// Get the value of a property.
-    let inline getPropertyValue indices (p : PropertyInfo) (a : obj) = p.GetValue (a, indices)
+    let inline getPropertyValue indices (p : PropertyInfo) (x : obj) = p.GetValue (x, indices)
 
     /// Test for reference equality.
-    let inline referenceEquals a b = obj.ReferenceEquals (a, b)
+    let inline referenceEquals x y = obj.ReferenceEquals (x, y)
 
     /// Test just the value parts of a type for equality.
     /// NOTE: This function uses mad reflection, so is extremely slow, and should not be used in tight loops.
-    let rec similar (a : obj) (b : obj) =
-        if isNull a then isNull b
-        elif isNull b then false
-        elif referenceEquals (getType a) (getType b) then
-            let aType = getType a
+    let rec similar (x : obj) (y : obj) =
+        if isNull x then isNull y
+        elif isNull y then false
+        elif referenceEquals (getType x) (getType y) then
+            let aType = getType x
             if  aType.IsValueType ||
                 aType = typeof<string> then
-                a = b
+                x = y
             else if aType.IsSubclassOf typeof<Stream> then
                 // NOTE: Stream has a screwed up contract that its Length property can throw if seeking is not
                 // supported. They should have returned nullable int instead, but nooooo....
@@ -85,12 +85,12 @@ module Miscellanea =
                 let fieldsSimilar =
                     aType
                     |> getFields
-                    |> Array.forall (fun i -> similar (getFieldValue i a) (getFieldValue i b))
+                    |> Array.forall (fun i -> similar (getFieldValue i x) (getFieldValue i y))
                 let propertiesSimilar =
                     aType
                     |> getProperties
                     |> Array.filter (fun p -> (p.GetIndexParameters ()).Length = 0)
-                    |> Array.forall (fun i -> similar (getPropertyValue null i a) (getPropertyValue null i b))
+                    |> Array.forall (fun i -> similar (getPropertyValue null i x) (getPropertyValue null i y))
                 fieldsSimilar && propertiesSimilar
         else false
 
