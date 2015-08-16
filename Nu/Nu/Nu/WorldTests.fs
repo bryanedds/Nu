@@ -20,9 +20,7 @@ module WorldTests =
     let [<Fact>] runWorldForOneFrameThenCleanUp () =
         World.init ()
         let world = World.makeEmpty ()
-        let world = World.run6 id id SdlDeps.empty (Some 1) Running world
-        let world = World.cleanUp world
-        ignore world
+        World.run4 SdlDeps.empty (Some 1) Running world
 
     let [<Fact>] subscribeWorks () =
         World.init ()
