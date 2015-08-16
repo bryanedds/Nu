@@ -460,17 +460,33 @@ module WorldModule =
             World.cleanUpSubsystems world
 
         /// TODO: document!
-        static member run6 handleUpdate handleRender sdlConfig optFrames liveness world =
+        static member runWithoutCleanUp handleUpdate handleRender sdlDeps optFrames liveness world =
+            Sdl.runWithoutCleanUp 
+                World.processInput
+                (World.processUpdate handleUpdate)
+                (World.processRender handleRender)
+                World.processPlay
+                sdlDeps
+                optFrames
+                liveness
+                world
+
+        /// TODO: document!
+        static member run6 handleUpdate handleRender sdlDeps optFrames liveness world =
             Sdl.run8
                 World.processInput
                 (World.processUpdate handleUpdate)
                 (World.processRender handleRender)
                 World.processPlay
                 World.cleanUp
-                sdlConfig
+                sdlDeps
                 optFrames
                 liveness
                 world
+
+        /// TODO: document!
+        static member run4 sdlDeps optFrames liveness world =
+            World.run6 id id sdlDeps optFrames liveness world
 
         /// TODO: document!
         static member run tryMakeWorld handleUpdate handleRender sdlConfig =

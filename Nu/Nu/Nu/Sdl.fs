@@ -140,7 +140,8 @@ module Sdl =
         then handlePlay world // doesn't need any extra sdl processing here
         else handlePlay world
 
-    let rec private run7 handleEvent handleUpdate handleRender handlePlay sdlDeps optFrames liveness world =
+    /// Run the game engine with the given handlers, but don't clean up at the end.
+    let rec runWithoutCleanUp handleEvent handleUpdate handleRender handlePlay sdlDeps optFrames liveness world =
         let (anotherFrame, optFrames) =
             match optFrames with
             | Some frames ->
@@ -156,17 +157,17 @@ module Sdl =
                 | Running ->
                     let world = render handleRender sdlDeps world
                     let world = play handlePlay world
-                    run7 handleEvent handleUpdate handleRender handlePlay sdlDeps optFrames liveness world
+                    runWithoutCleanUp handleEvent handleUpdate handleRender handlePlay sdlDeps optFrames liveness world
                 | Exiting -> world
             | Exiting -> world
         else world
 
     /// Run the game engine with the given handlers.
     let run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps optFrames liveness world =
-        try let world = run7 handleEvent handleUpdate handleRender handlePlay sdlDeps optFrames liveness world
-            handleExit world
+        try let world = runWithoutCleanUp handleEvent handleUpdate handleRender handlePlay sdlDeps optFrames liveness world
+            ignore <| handleExit world
         with _ ->
-            handleExit world
+            ignore <| handleExit world
 
     /// Run the game engine with the given handlers.
     let run handleTryMakeWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig =
