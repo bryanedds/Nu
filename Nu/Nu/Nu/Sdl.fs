@@ -140,7 +140,7 @@ module Sdl =
         then handlePlay world // doesn't need any extra sdl processing here
         else handlePlay world
 
-    /// Run the game engine with the given handlers, but don't clean up at the end.
+    /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
     let rec runWithoutCleanUp handleEvent handleUpdate handleRender handlePlay sdlDeps optFrames liveness world =
         let (anotherFrame, optFrames) =
             match optFrames with
@@ -165,9 +165,9 @@ module Sdl =
     /// Run the game engine with the given handlers.
     let run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps optFrames liveness world =
         try let world = runWithoutCleanUp handleEvent handleUpdate handleRender handlePlay sdlDeps optFrames liveness world
-            ignore <| handleExit world
+            handleExit world
         with _ ->
-            ignore <| handleExit world
+            handleExit world
 
     /// Run the game engine with the given handlers.
     let run handleTryMakeWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig =
@@ -206,7 +206,7 @@ module Sdl =
                                     let eitherWorld = handleTryMakeWorld sdlDeps
                                     match eitherWorld with
                                     | Right world ->
-                                        ignore <| run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps None Running world
+                                        run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps None Running world
                                         Constants.Engine.SuccessExitCode
                                     | Left error ->
                                         trace error

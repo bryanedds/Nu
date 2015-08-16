@@ -457,7 +457,7 @@ module WorldModule =
 
         /// TODO: document!
         static member cleanUp world =
-            World.cleanUpSubsystems world
+            ignore <| World.cleanUpSubsystems world
 
         /// TODO: document!
         static member runWithoutCleanUp handleUpdate handleRender sdlDeps optFrames liveness world =
