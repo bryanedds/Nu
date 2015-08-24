@@ -255,18 +255,21 @@ module AddressOperators =
     /// Concatenate two addresses, forcing the type of second address.
     let acatsf<'a, 'b> (address : 'a Address) (address2 : 'b Address) =
         acats (atooa address) address2
-    
+
+/// Implement operators as static members.
+type Address with
+
     /// Concatenate two addresses of the same type.
-    let (-|-) = acat
+    static member (-|-) (address, address2) = acat address address2
 
     /// Concatenate two addresses, taking the type of first address.
-    let (->-) = acatf
+    static member (->-) (address, address2) = acatf address address2
 
     /// Concatenate two addresses, forcing the type of first address.
-    let (->>-) = acatff
+    static member (->>-) (address, address2) = acatff address address2
 
     /// Concatenate two addresses, taking the type of the second address.
-    let (-<-) = acats
-    
+    static member (-<-) (address, address2) = acats address address2
+
     /// Concatenate two addresses, forcing the type of second address.
-    let (-<<-) = acatsf
+    static member (-<<-) (address, address2) = acatsf address address2

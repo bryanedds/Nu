@@ -52,8 +52,8 @@ module BulletModule =
 
         override dispatcher.Register bullet world =
             world |>
-                World.monitor handleUpdate EventAddresses.Update bullet |>
-                World.monitor handleCollision (EventAddresses.Collision ->>- bullet.EntityAddress) bullet
+                World.monitor handleUpdate Events.Update bullet |>
+                World.monitor handleCollision (Events.Collision ->>- bullet) bullet
 
 [<AutoOpen>]
 module EnemyModule =
@@ -116,8 +116,8 @@ module EnemyModule =
 
         override dispatcher.Register enemy world =
             world |>
-                World.monitor handleUpdate EventAddresses.Update enemy |>
-                World.monitor handleCollision (EventAddresses.Collision ->>- enemy.EntityAddress) enemy
+                World.monitor handleUpdate Events.Update enemy |>
+                World.monitor handleCollision (Events.Collision ->>- enemy) enemy
 
 [<AutoOpen>]
 module PlayerModule =
@@ -225,10 +225,10 @@ module PlayerModule =
 
         override dispatcher.Register player world =
             world |>
-                World.monitor handleSpawnBullet EventAddresses.Update player |>
-                World.monitor handleMovement EventAddresses.Update player |>
-                World.monitor handleJump EventAddresses.MouseLeftDown player |>
-                World.monitor handleJumpByKeyboardKey EventAddresses.KeyboardKeyDown player
+                World.monitor handleSpawnBullet Events.Update player |>
+                World.monitor handleMovement Events.Update player |>
+                World.monitor handleJump Events.MouseLeftDown player |>
+                World.monitor handleJumpByKeyboardKey Events.KeyboardKeyDown player
 
 [<AutoOpen>]
 module PlayerGroupModule =
@@ -257,8 +257,8 @@ module PlayerGroupModule =
 
         override dispatcher.Register group world =
             world |>
-                World.monitor handleAdjustCamera EventAddresses.Update group |>
-                World.monitor handlePlayerFall EventAddresses.Update group
+                World.monitor handleAdjustCamera Events.Update group |>
+                World.monitor handlePlayerFall Events.Update group
 
 [<AutoOpen>]
 module GameplayScreenModule =
@@ -318,6 +318,6 @@ module GameplayScreenModule =
 
         override dispatcher.Register screen world =
             world |>
-                World.monitor handleStartPlay (EventAddresses.Select ->>- screen.ScreenAddress) screen |>
-                World.monitor handleStoppingPlay (EventAddresses.OutgoingStart ->>- screen.ScreenAddress) screen |>
-                World.monitor handleStopPlay (EventAddresses.Deselect ->>- screen.ScreenAddress) screen
+                World.monitor handleStartPlay (Events.Select ->>- screen) screen |>
+                World.monitor handleStoppingPlay (Events.OutgoingStart ->>- screen) screen |>
+                World.monitor handleStopPlay (Events.Deselect ->>- screen) screen
