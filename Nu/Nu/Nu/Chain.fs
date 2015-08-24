@@ -2,6 +2,8 @@
 // Copyright (C) Bryan Edds, 2013-2015.
 
 namespace Nu
+open System
+open System.Diagnostics
 open FSharpx
 open Prime
 open Nu
@@ -17,11 +19,11 @@ module ChainBuilder =
     // World -> (World * CHoice<'E -> Chain<'E, 'A>, 'A> -> 'A) -> 'A
 
     /// Monadic return for the chain monad.
-    let internal returnM (a : 'a) : Chain<'e, 'a> =
+    let [<DebuggerHidden; DebuggerStepThrough>] internal returnM (a : 'a) : Chain<'e, 'a> =
         Chain (fun s -> (s, Right a))
         
     /// Monadic bind for the chain monad.
-    let rec internal bind (m : Chain<'e, 'a>) (cont : 'a -> Chain<'e, 'b>) : Chain<'e, 'b> =
+    let rec [<DebuggerHidden; DebuggerStepThrough>] internal bind (m : Chain<'e, 'a>) (cont : 'a -> Chain<'e, 'b>) : Chain<'e, 'b> =
         Chain (fun world ->
             // match m with Chain f -> 
             //    f world (function
@@ -40,8 +42,8 @@ module ChainBuilder =
 
     /// Implements the chain monad.
     type ChainBuilder () =
-        member this.Return op = returnM op
-        member this.Bind (m, cont) = bind m cont
+        [<DebuggerHidden; DebuggerStepThrough>] member this.Return op = returnM op
+        [<DebuggerHidden; DebuggerStepThrough>] member this.Bind (m, cont) = bind m cont
 
     /// Builds the chain monad.
     let chain = ChainBuilder ()
@@ -59,19 +61,19 @@ module Chain =
         Chain (fun world -> (world, Right world))
 
     /// Get the world transformed by 'by'.
-    let getBy by : Chain<'e, 'a> =
+    let [<DebuggerHidden; DebuggerStepThrough>] getBy by : Chain<'e, 'a> =
         Chain (fun world -> (world, Right <| by world))
 
     /// Set the world.
-    let set world : Chain<'e, unit> =
+    let [<DebuggerHidden; DebuggerStepThrough>] set world : Chain<'e, unit> =
         Chain (fun _ -> (world, Right ()))
 
     /// Update the world with an additional transformed world parameter.
-    let updateBy by expr : Chain<'e, unit> =
+    let [<DebuggerHidden; DebuggerStepThrough>] updateBy by expr : Chain<'e, unit> =
         Chain (fun world -> (expr (by world) world, Right ()))
 
     /// Update the world.
-    let update expr : Chain<'e, unit> =
+    let [<DebuggerHidden; DebuggerStepThrough>] update expr : Chain<'e, unit> =
         Chain (fun world -> (expr world, Right ()))
 
     /// Get the next event.
@@ -83,7 +85,7 @@ module Chain =
         Chain (fun world -> (world, Left (fun _ -> returnM ())))
 
     /// React to the next event, using the event's value in the reaction.
-    let reactE expr : Chain<'e, unit> =
+    let [<DebuggerHidden; DebuggerStepThrough>] reactE expr : Chain<'e, unit> =
         chain {
             let! e = next
             let! world = get
@@ -91,7 +93,7 @@ module Chain =
             do! set world }
 
     /// React to the next event, discarding the event's value.
-    let react expr : Chain<'e, unit> =
+    let [<DebuggerHidden; DebuggerStepThrough>] react expr : Chain<'e, unit> =
         chain {
             do! pass
             let! world = get
@@ -99,7 +101,7 @@ module Chain =
             do! set world }
 
     /// Loop in a chain context while 'pred' evaluate to true.
-    let rec loop (i : 'i) (next : 'i -> 'i) (pred : 'i -> World -> bool) (m : 'i -> Chain<'e, unit>) =
+    let rec [<DebuggerHidden; DebuggerStepThrough>] loop (i : 'i) (next : 'i -> 'i) (pred : 'i -> World -> bool) (m : 'i -> Chain<'e, unit>) =
         chain {
             let! world = get
             do! if pred i world then
@@ -110,29 +112,29 @@ module Chain =
                 else returnM () }
 
     /// Loop in a chain context while 'pred' evaluates to true.
-    let during (pred : World -> bool) (m : Chain<'e, unit>) =
+    let [<DebuggerHidden; DebuggerStepThrough>] during (pred : World -> bool) (m : Chain<'e, unit>) =
         loop () id (fun _ -> pred) (fun _ -> m)
 
     /// Step once into a chain.
-    let step (m : Chain<'e, 'a>) (world : World) : World * Either<'e -> Chain<'e, 'a>, 'a> =
+    let [<DebuggerHidden; DebuggerStepThrough>] step (m : Chain<'e, 'a>) (world : World) : World * Either<'e -> Chain<'e, 'a>, 'a> =
         match m with Chain f -> f world
 
     /// Advance a chain value by one step, providing 'e'.
-    let advance (m : 'e -> Chain<'e, 'a>) (e : 'e) (world : World) : World * Either<'e -> Chain<'e, 'a>, 'a> =
+    let [<DebuggerHidden; DebuggerStepThrough>] advance (m : 'e -> Chain<'e, 'a>) (e : 'e) (world : World) : World * Either<'e -> Chain<'e, 'a>, 'a> =
         step (m e) world
 
     /// Run a chain to its end, providing 'e' for all its steps.
-    let rec run3 (m : Chain<'e, 'a>) (e : 'e) (world : World) : (World * 'a) =
+    let rec [<DebuggerHidden; DebuggerStepThrough>] run3 (m : Chain<'e, 'a>) (e : 'e) (world : World) : (World * 'a) =
         match step m world with
         | (world', Left m') -> run3 (m' e) e world'
         | (world', Right v) -> (world', v)
 
     /// Run a chain to its end, providing unit for all its steps.
-    let rec run2 (m : Chain<unit, 'a>) (world : World) : (World * 'a) =
+    let rec [<DebuggerHidden; DebuggerStepThrough>] run2 (m : Chain<unit, 'a>) (world : World) : (World * 'a) =
         run3 m () world
 
     /// Run a chain to its end, providing unit for all its steps.
-    let rec run (m : Chain<unit, 'a>) (world : World) : World =
+    let rec [<DebuggerHidden; DebuggerStepThrough>] run (m : Chain<unit, 'a>) (world : World) : World =
         fst <| run3 m () world
 
     let private run4 eventHandling (chain : Chain<Event<'a, 'o>, unit>) (observation : Observation<'a, 'o>) world =
