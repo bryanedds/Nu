@@ -348,9 +348,9 @@ and Simulant =
         abstract SimulantAddress : Simulant Address
         end
 
-/// Operators for a Simulant.
+/// Operators for the Simulant type.
 and SimulantOperators =
-    private { __ : unit }
+    private | SimulantOperators
 
     /// Concatenate two addresses, forcing the type of first address.
     static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.SimulantAddress)
