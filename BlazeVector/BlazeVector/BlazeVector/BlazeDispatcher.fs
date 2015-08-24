@@ -36,29 +36,29 @@ module BlazeDispatcherModule =
             // You will need to familiarize yourself with the calling conventions of the various
             // World.subscribe functions as well as the event address operators '->>-' and its ilk
             // by studying their types and documentation comments.
-            let world = World.subscribe4 handleSelectTitleScreen (EventAddresses.Select ->>- Simulants.Title.ScreenAddress) Simulants.Game world
+            let world = World.subscribe4 handleSelectTitleScreen (Events.Select ->>- Simulants.Title) Simulants.Game world
 
             // subscribes to the event that is raised when the Title screen's Play button is
             // clicked, and handles the event by transitioning to the Gameplay screen
-            let world = World.subscribe4 handleClickTitlePlay (EventAddresses.Click ->>- Simulants.TitlePlay.EntityAddress) Simulants.Game world
+            let world = World.subscribe4 handleClickTitlePlay (Events.Click ->>- Simulants.TitlePlay) Simulants.Game world
 
             // subscribes to the event that is raised when the Title screen's Credits button is
             // clicked, and handles the event by transitioning to the Credits screen
-            let world = World.subscribe4 (World.handleAsScreenTransition Simulants.Credits) (EventAddresses.Click ->>- Simulants.TitleCredits.EntityAddress) Simulants.Game world
+            let world = World.subscribe4 (World.handleAsScreenTransition Simulants.Credits) (Events.Click ->>- Simulants.TitleCredits) Simulants.Game world
 
             // subscribes to the event that is raised when the Title screen's Exit button is clicked,
             // and handles the event by exiting the game
-            World.subscribe4 World.handleAsExit (EventAddresses.Click ->>- Simulants.TitleExit.EntityAddress) Simulants.Game world
+            World.subscribe4 World.handleAsExit (Events.Click ->>- Simulants.TitleExit) Simulants.Game world
 
         // pretty much the same as above, but for the Credits screen
         static let createCreditsScreen world =
             let world = snd <| World.createDissolveScreenFromGroupFile false Constants.BlazeVector.DissolveData typeof<ScreenDispatcher>.Name Constants.FilePaths.CreditsGroup (Some Simulants.CreditsName) world
-            World.subscribe4 (World.handleAsScreenTransition Simulants.Title) (EventAddresses.Click ->>- Simulants.CreditsBack.EntityAddress) Simulants.Game world
+            World.subscribe4 (World.handleAsScreenTransition Simulants.Title) (Events.Click ->>- Simulants.CreditsBack) Simulants.Game world
 
         // and so on.
         static let createGameplayScreen world =
             let world = snd <| World.createDissolveScreenFromGroupFile false Constants.BlazeVector.DissolveData typeof<GameplayScreenDispatcher>.Name Constants.FilePaths.GameplayGroup (Some Simulants.GameplayName) world
-            World.subscribe4 (World.handleAsScreenTransition Simulants.Title) (EventAddresses.Click ->>- Simulants.GameplayBack.EntityAddress) Simulants.Game world
+            World.subscribe4 (World.handleAsScreenTransition Simulants.Title) (Events.Click ->>- Simulants.GameplayBack) Simulants.Game world
 
         // game registration is where the game's high-level logic is set up!
         override dispatcher.Register _ world =

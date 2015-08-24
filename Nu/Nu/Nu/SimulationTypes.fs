@@ -356,6 +356,18 @@ and [<StructuralEquality; NoComparison>] Game =
         member this.SimulantAddress = Address.changeType<Game, Simulant> this.GameAddress
         end
 
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatf<'a> (address : 'a Address) (game : Game) = acatf address (atooa game.GameAddress)
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatff<'a> (address : 'a Address) (game : Game) = acatff address game.GameAddress
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member (->-) (address, game) = Game.acatf address game
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member (->>-) (address, game) = Game.acatff address game
+
 /// The screen type that allows transitioning to and from other screens, and also hosts the
 /// currently interactive groups of entities.
 and [<StructuralEquality; NoComparison>] Screen =
@@ -365,6 +377,18 @@ and [<StructuralEquality; NoComparison>] Screen =
         member this.SimulantAddress = Address.changeType<Screen, Simulant> this.ScreenAddress
         end
 
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatf<'a> (address : 'a Address) (screen : Screen) = acatf address (atooa screen.ScreenAddress)
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatff<'a> (address : 'a Address) (screen : Screen) = acatff address screen.ScreenAddress
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member (->-) (address, screen) = Screen.acatf address screen
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member (->>-) (address, screen) = Screen.acatff address screen
+
 /// Forms a logical group of entities.
 and [<StructuralEquality; NoComparison>] Group =
     { GroupAddress : Group Address }
@@ -372,6 +396,18 @@ and [<StructuralEquality; NoComparison>] Group =
         member this.GetPublishingPriority _ _ = Constants.Engine.GroupPublishingPriority
         member this.SimulantAddress = Address.changeType<Group, Simulant> this.GroupAddress
         end
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatf<'a> (address : 'a Address) (group : Group) = acatf address (atooa group.GroupAddress)
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatff<'a> (address : 'a Address) (group : Group) = acatff address group.GroupAddress
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member (->-) (address, group) = Group.acatf address group
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member (->>-) (address, group) = Group.acatff address group
 
 /// The type around which the whole game engine is based! Used in combination with dispatchers
 /// to implement things like buttons, characters, blocks, and things of that sort.
@@ -381,6 +417,18 @@ and [<StructuralEquality; NoComparison>] Entity =
         member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
         member this.SimulantAddress = Address.changeType<Entity, Simulant> this.EntityAddress
         end
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatf<'a> (address : 'a Address) (entity : Entity) = acatf address (atooa entity.EntityAddress)
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatff<'a> (address : 'a Address) (entity : Entity) = acatff address entity.EntityAddress
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member (->-) (address, entity) = Entity.acatf address entity
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member (->>-) (address, entity) = Entity.acatff address entity
 
 /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
 /// specific values.

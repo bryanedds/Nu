@@ -382,14 +382,12 @@ module GameplayDispatcherModule =
                 else world
             else world
 
-        static let runCharacterNavigation newNavigationDescriptor (character : Entity) gameplay world =
+        static let runCharacterNavigation newNavigationDescriptor (character : Entity) (gameplay : Screen) world =
             let chain = chain {
                 do! update ^ character.SetActivityState ^ Navigation newNavigationDescriptor
                 do! during (fun world ->
                     match character.GetActivityState world with
-                    | Navigation navigationDescriptor ->
-                        newNavigationDescriptor.WalkDescriptor.WalkOriginM =
-                            navigationDescriptor.WalkDescriptor.WalkOriginM
+                    | Navigation navigationDescriptor -> newNavigationDescriptor.WalkDescriptor.WalkOriginM = navigationDescriptor.WalkDescriptor.WalkOriginM
                     | Action _ -> false
                     | NoActivity -> false) ^ chain {
                     do! update ^ fun world ->
@@ -399,7 +397,7 @@ module GameplayDispatcherModule =
                             | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
                         updateCharacterByNavigation navigationDescriptor character world
                     do! pass }}
-            let observation = observe EventAddresses.Update character |> until (EventAddresses.Deselect ->>- gameplay.ScreenAddress)
+            let observation = observe Events.Update character |> until (Events.Deselect ->>- gameplay)
             snd <| runAssumingCascade chain observation world
 
         static let runCharacterAction newActionDescriptor (character : Entity) gameplay world =
@@ -409,13 +407,13 @@ module GameplayDispatcherModule =
                 do! during (ActivityState.isActing << character.GetActivityState) ^ chain {
                     do! update ^ fun world ->
                         let actionDescriptor =
-                            match character.GetActivityState world  with
+                            match character.GetActivityState world with
                             | Action actionDescriptor -> actionDescriptor
                             | _ -> failwithumf ()
                         let world = updateCharacterByAction actionDescriptor character world
                         runCharacterReaction actionDescriptor character gameplay world
                     do! pass }}
-            let observation = observe EventAddresses.Update character |> until (EventAddresses.Deselect ->>- gameplay.ScreenAddress)
+            let observation = observe Events.Update character |> until (Events.Deselect ->>- gameplay)
             snd <| runAssumingCascade chain observation world
 
         static let runCharacterNoActivity (character : Entity) world =
@@ -522,9 +520,9 @@ module GameplayDispatcherModule =
                                 do! update ^ cancelNavigation player }}
                     do! update ^ hudSaveGame.SetEnabled true }
                 let observation =
-                    observe (EventAddresses.Click ->>- hudHalt.EntityAddress) gameplay |>
-                    sum EventAddresses.Update |>
-                    until (EventAddresses.Deselect ->>- gameplay.ScreenAddress)
+                    observe (Events.Click ->>- hudHalt) gameplay |>
+                    sum Events.Update |>
+                    until (Events.Deselect ->>- gameplay)
                 snd <| runAssumingCascade chain observation world
             else world
 
@@ -619,13 +617,13 @@ module GameplayDispatcherModule =
 
         override dispatcher.Register gameplay world =
             world |>
-                (observe (EventAddresses.EntityChange ->>- (proxyPlayer gameplay).EntityAddress) gameplay |> subscribe handlePlayerChange) |>
-                (observe (EventAddresses.Touch ->>- (proxyHudFeeler gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor handleTouchFeeler) |>
-                (observe (EventAddresses.Down ->>- (proxyHudDetailUp gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Upward)) |>
-                (observe (EventAddresses.Down ->>- (proxyHudDetailRight gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Rightward)) |>
-                (observe (EventAddresses.Down ->>- (proxyHudDetailDown gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Downward)) |>
-                (observe (EventAddresses.Down ->>- (proxyHudDetailLeft gameplay).EntityAddress) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Leftward)) |>
-                (World.subscribe4 handleSelectTitle (EventAddresses.Select ->>- Simulants.Title.ScreenAddress) gameplay) |>
-                (World.subscribe4 handleSelectGameplay (EventAddresses.Select ->>- gameplay.ScreenAddress) gameplay) |>
-                (World.subscribe4 handleClickSaveGame (EventAddresses.Click ->>- (proxyHudSaveGame gameplay).EntityAddress) gameplay) |>
-                (World.subscribe4 handleDeselectGameplay (EventAddresses.Deselect ->>- gameplay.ScreenAddress) gameplay)
+                (observe (Events.EntityChange ->>- proxyPlayer gameplay) gameplay |> subscribe handlePlayerChange) |>
+                (observe (Events.Touch ->>- proxyHudFeeler gameplay) gameplay |> filter isObserverSelected |> monitor handleTouchFeeler) |>
+                (observe (Events.Down ->>- proxyHudDetailUp gameplay) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Upward)) |>
+                (observe (Events.Down ->>- proxyHudDetailRight gameplay) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Rightward)) |>
+                (observe (Events.Down ->>- proxyHudDetailDown gameplay) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Downward)) |>
+                (observe (Events.Down ->>- proxyHudDetailLeft gameplay) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Leftward)) |>
+                (World.subscribe4 handleSelectTitle (Events.Select ->>- Simulants.Title) gameplay) |>
+                (World.subscribe4 handleSelectGameplay (Events.Select ->>- gameplay) gameplay) |>
+                (World.subscribe4 handleClickSaveGame (Events.Click ->>- proxyHudSaveGame gameplay) gameplay) |>
+                (World.subscribe4 handleDeselectGameplay (Events.Deselect ->>- gameplay) gameplay)

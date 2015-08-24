@@ -188,4 +188,4 @@ module CharacterCameraFacetModule =
             (Cascade, world)
 
         override facet.Register entity world =
-            monitor handleUpdate (observe EventAddresses.Update entity) world
+            monitor handleUpdate (observe Events.Update entity) world
