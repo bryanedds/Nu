@@ -348,9 +348,26 @@ and Simulant =
         abstract SimulantAddress : Simulant Address
         end
 
+/// Operators for a Simulant.
+and SimulantOperators =
+    private { __ : unit }
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.SimulantAddress)
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatff<'a> (address : 'a Address) (simulant : Simulant) = acatff address simulant.SimulantAddress
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member (->>-) (address, simulant : Simulant) = SimulantOperators.acatff address simulant
+
 /// The game type that hosts the various screens used to navigate through a game.
 and [<StructuralEquality; NoComparison>] Game =
     { GameAddress : Game Address }
+
     interface Simulant with
         member this.GetPublishingPriority _ _ = Constants.Engine.GamePublishingPriority
         member this.SimulantAddress = Address.changeType<Game, Simulant> this.GameAddress
@@ -372,6 +389,7 @@ and [<StructuralEquality; NoComparison>] Game =
 /// currently interactive groups of entities.
 and [<StructuralEquality; NoComparison>] Screen =
     { ScreenAddress : Screen Address }
+
     interface Simulant with
         member this.GetPublishingPriority _ _ = Constants.Engine.ScreenPublishingPriority
         member this.SimulantAddress = Address.changeType<Screen, Simulant> this.ScreenAddress
@@ -392,6 +410,7 @@ and [<StructuralEquality; NoComparison>] Screen =
 /// Forms a logical group of entities.
 and [<StructuralEquality; NoComparison>] Group =
     { GroupAddress : Group Address }
+
     interface Simulant with
         member this.GetPublishingPriority _ _ = Constants.Engine.GroupPublishingPriority
         member this.SimulantAddress = Address.changeType<Group, Simulant> this.GroupAddress
@@ -413,6 +432,7 @@ and [<StructuralEquality; NoComparison>] Group =
 /// to implement things like buttons, characters, blocks, and things of that sort.
 and [<StructuralEquality; NoComparison>] Entity =
     { EntityAddress : Entity Address }
+
     interface Simulant with
         member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
         member this.SimulantAddress = Address.changeType<Entity, Simulant> this.EntityAddress
