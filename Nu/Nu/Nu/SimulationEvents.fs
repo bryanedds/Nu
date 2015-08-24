@@ -7,7 +7,7 @@ open OpenTK
 open Nu
 
 [<RequireQualifiedAccess>]
-module EventAddresses =
+module Events =
 
     let Any = ntoa<obj> "*"
     let Update = ntoa<unit> "Update"
