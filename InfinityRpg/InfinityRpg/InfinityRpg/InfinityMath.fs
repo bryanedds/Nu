@@ -43,7 +43,7 @@ module Direction =
         | 1 -> Rightward
         | 2 -> Downward
         | 3 -> Leftward
-        | _ -> failwith <| "Invalid conversion to Direction from int '" + acstring n + "'."
+        | _ -> failwith ^ "Invalid conversion to Direction from int '" + acstring n + "'."
 
     let next rand =
         let randMax = 4
@@ -95,7 +95,7 @@ module Direction =
                 MapBounds.isPointInBounds destination stumbleBounds &&
                 (match tracking with
                  | BackTracking -> true
-                 | NoBackTracking -> not <| Set.contains destination trail
+                 | NoBackTracking -> not ^ Set.contains destination trail
                  | NoAdjacentTracking ->
                     let contains =
                         [Set.contains (destination + Vector2i.Up) trail
@@ -130,11 +130,11 @@ module Direction =
         paths
 
     let wanderUntil predicate stumbleLimit stumbleBounds tracking optBias source rand =
-        Option.get <| tryWanderUntil predicate stumbleLimit stumbleBounds tracking optBias 0 source rand
+        Option.get ^ tryWanderUntil predicate stumbleLimit stumbleBounds tracking optBias 0 source rand
 
     let concretizePath maxLength abstractPath =
-        let path = List.ofSeq <| Seq.tryTake maxLength abstractPath
-        (List.map fst path, snd <| List.last path)
+        let path = List.ofSeq ^ Seq.tryTake maxLength abstractPath
+        (List.map fst path, snd ^ List.last path)
 
     let concretizeOptPath maxLength abstractPath rand =
         match abstractPath with
@@ -149,7 +149,7 @@ module Direction =
         let tryLimit = 100
         let stumbleLimit = 16
         let predicate = fun (path : (Vector2i * Rand) seq) ->
-            let path = List.ofSeq <| Seq.tryTake maxLength path
+            let path = List.ofSeq ^ Seq.tryTake maxLength path
             if List.length path >= minLength then
                 let sites = List.map fst path
                 let uniqueSites = Set.ofList sites

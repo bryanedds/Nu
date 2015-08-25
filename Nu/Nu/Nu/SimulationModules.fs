@@ -125,7 +125,7 @@ module World =
 
     let private getAnyEventAddresses eventAddress =
         // OPTIMIZATION: uses memoization.
-        if not <| Address.isEmpty eventAddress then
+        if not ^ Address.isEmpty eventAddress then
             let anyEventAddressesKey = Address.allButLast eventAddress
             match AnyEventAddressesCache.TryGetValue anyEventAddressesKey with
             | (true, anyEventAddresses) -> anyEventAddresses
@@ -230,7 +230,7 @@ module World =
     /// Subscribe to an event.
     let subscribe<'a, 's when 's :> Simulant>
         subscriptionKey (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world =
-        if not <| Address.isEmpty eventAddress then
+        if not ^ Address.isEmpty eventAddress then
             let objEventAddress = atooa eventAddress
             let subscriptions =
                 let subscriptionEntry = (subscriptionKey, subscriber :> Simulant, boxSubscription subscription)
@@ -272,7 +272,7 @@ module World =
     /// Keep active a subscription for the lifetime of a simulant.
     let monitor<'a, 's when 's :> Simulant>
         (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world =
-        if not <| Address.isEmpty subscriber.SimulantAddress then
+        if not ^ Address.isEmpty subscriber.SimulantAddress then
             let monitorKey = makeSubscriptionKey ()
             let removalKey = makeSubscriptionKey ()
             let world = subscribe<'a, 's> monitorKey subscription eventAddress subscriber world
@@ -318,7 +318,7 @@ module World =
         { world with Callbacks = callbacks }
 
     let internal restoreTasklets (tasklets : Tasklet Queue) world =
-        let callbacks = { world.Callbacks with Tasklets = Queue.ofSeq <| Seq.append (world.Callbacks.Tasklets :> Tasklet seq) (tasklets :> Tasklet seq) }
+        let callbacks = { world.Callbacks with Tasklets = Queue.ofSeq ^ Seq.append (world.Callbacks.Tasklets :> Tasklet seq) (tasklets :> Tasklet seq) }
         { world with Callbacks = callbacks }
 
     /// Add a tasklet to be executed by the engine at the scheduled time.
@@ -328,7 +328,7 @@ module World =
 
     /// Add multiple tasklets to be executed by the engine at the scheduled times.
     let addTasklets tasklets world =
-        let callbacks = { world.Callbacks with Tasklets = Queue.ofSeq <| Seq.append (tasklets :> Tasklet seq) (world.Callbacks.Tasklets :> Tasklet seq) }
+        let callbacks = { world.Callbacks with Tasklets = Queue.ofSeq ^ Seq.append (tasklets :> Tasklet seq) (world.Callbacks.Tasklets :> Tasklet seq) }
         { world with Callbacks = callbacks }
 
     /// Add callback state to the world.
@@ -387,7 +387,7 @@ module World =
 
     /// Get the world's tick rate as a floating-point value.
     let getTickRateF world =
-        single <| getTickRate world
+        single ^ getTickRate world
 
     /// Set the world's tick rate without waiting for the end of the current update. Only use
     /// this if you need it and understand the engine internals well enough to know the
@@ -420,7 +420,7 @@ module World =
         world.State.UpdateCount
 
     let internal incrementUpdateCount world =
-        let state = { world.State with UpdateCount = inc <| getUpdateCount world }
+        let state = { world.State with UpdateCount = inc ^ getUpdateCount world }
         setStateWithoutEvent state world
 
     /// Get the the liveness state of the world.
@@ -446,7 +446,7 @@ module World =
 
     /// Update the camera used to view the world.
     let updateCamera updater world =
-        let camera = updater <| getCamera world
+        let camera = updater ^ getCamera world
         setCamera camera world
 
     /// Get the current destination screen if a screen transition is currently underway.
@@ -501,7 +501,7 @@ module World =
                     | Some (_, entityStateMap) -> Map.tryFind entityNameKey.Name entityStateMap
                     | None -> None
                 | None -> None
-            | _ -> failwith <| "Invalid entity address '" + acstring entity.EntityAddress + "'."
+            | _ -> failwith ^ "Invalid entity address '" + acstring entity.EntityAddress + "'."
         ((entity.EntityAddress, world), optEntityState)
 
     let private optEntityStateFinder entity world =
@@ -523,9 +523,9 @@ module World =
                     let groupStateMap = Map.add groupNameKey.Name (groupState, entityStateMap) groupStateMap
                     let screenStateMap = Map.add screenNameKey.Name (screenState, groupStateMap) screenStateMap
                     { world with SimulantStates = (gameState, screenStateMap) }
-                | None -> failwith <| "Cannot add entity '" + acstring entity.EntityAddress + "' to non-existent group."
-            | None -> failwith <| "Cannot add entity '" + acstring entity.EntityAddress + "' to non-existent screen."
-        | _ -> failwith <| "Invalid entity address '" + acstring entity.EntityAddress + "'."
+                | None -> failwith ^ "Cannot add entity '" + acstring entity.EntityAddress + "' to non-existent group."
+            | None -> failwith ^ "Cannot add entity '" + acstring entity.EntityAddress + "' to non-existent screen."
+        | _ -> failwith ^ "Invalid entity address '" + acstring entity.EntityAddress + "'."
 
     let private entityStateRemover entity world =
         match Address.getNameKeys entity.EntityAddress with
@@ -541,7 +541,7 @@ module World =
                     { world with SimulantStates = (gameState, screenStateMap) }
                 | None -> world
             | None -> world
-        | _ -> failwith <| "Invalid entity address '" + acstring entity.EntityAddress + "'."
+        | _ -> failwith ^ "Invalid entity address '" + acstring entity.EntityAddress + "'."
 
     let internal getEntityStateMap group world =
         match Address.getNameKeys group.GroupAddress with
@@ -553,7 +553,7 @@ module World =
                 | Some (_, entityStateMap) -> entityStateMap
                 | None -> Map.empty
             | None -> Map.empty
-        | _ -> failwith <| "Invalid group address '" + acstring group.GroupAddress + "'."
+        | _ -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
 
     let internal getOptEntityState entity world =
         optEntityStateFinder entity world
@@ -597,7 +597,7 @@ module World =
                 | Some (groupState, _) -> Some groupState
                 | None -> None
             | None -> None
-        | _ -> failwith <| "Invalid group address '" + acstring group.GroupAddress + "'."
+        | _ -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
 
     let private groupStateAdder (groupState : GroupState) group world =
         match Address.getNameKeys group.GroupAddress with
@@ -614,8 +614,8 @@ module World =
                     let groupStateMap = Map.add groupNameKey.Name (groupState, Map.empty) groupStateMap
                     let screenStateMap = Map.add screenNameKey.Name (screenState, groupStateMap) screenStateMap
                     { world with SimulantStates = (gameState, screenStateMap) }
-            | None -> failwith <| "Cannot add group '" + acstring group.GroupAddress + "' to non-existent screen."
-        | _ -> failwith <| "Invalid group address '" + acstring group.GroupAddress + "'."
+            | None -> failwith ^ "Cannot add group '" + acstring group.GroupAddress + "' to non-existent screen."
+        | _ -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
 
     let private groupStateRemover group world =
         match Address.getNameKeys group.GroupAddress with
@@ -629,10 +629,10 @@ module World =
                         let groupStateMap = Map.remove groupNameKey.Name groupStateMap
                         let screenStateMap = Map.add screenNameKey.Name (screenState, groupStateMap) screenStateMap
                         { world with SimulantStates = (gameState, screenStateMap) }
-                    else failwith <| "Cannot remove group " + acstring group.GroupAddress + ", which still contains entities."
+                    else failwith ^ "Cannot remove group " + acstring group.GroupAddress + ", which still contains entities."
                 | None -> world
             | None -> world
-        | _ -> failwith <| "Invalid group address '" + acstring group.GroupAddress + "'."
+        | _ -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
 
     let internal getGroupStateMap screen world =
         match Address.getNameKeys screen.ScreenAddress with
@@ -641,7 +641,7 @@ module World =
             match Map.tryFind screenNameKey.Name screenStateMap with
             | Some (_, groupStateMap) -> groupStateMap
             | None -> Map.empty
-        | _ -> failwith <| "Invalid screen address '" + acstring screen.ScreenAddress + "'."
+        | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
     let internal getOptGroupState group world =
         optGroupStateFinder group world
@@ -682,7 +682,7 @@ module World =
             match Map.tryFind screenNameKey.Name screenStateMap with
             | Some (screenState, _) -> Some screenState
             | None -> None
-        | _ -> failwith <| "Invalid screen address '" + acstring screen.ScreenAddress + "'."
+        | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
     let private screenStateAdder (screenState : ScreenState) screen world =
         match Address.getNameKeys screen.ScreenAddress with
@@ -695,7 +695,7 @@ module World =
             | None ->
                 let screenStateMap = Map.add screenNameKey.Name (screenState, Map.empty) screenStateMap
                 { world with SimulantStates = (gameState, screenStateMap) }
-        | _ -> failwith <| "Invalid screen address '" + acstring screen.ScreenAddress + "'."
+        | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
     let private screenStateRemover screen world =
         match Address.getNameKeys screen.ScreenAddress with
@@ -706,9 +706,9 @@ module World =
                 if Map.isEmpty groupStateMap then
                     let screenStateMap = Map.remove screenNameKey.Name screenStateMap
                     { world with SimulantStates = (gameState, screenStateMap) }
-                else failwith <| "Cannot remove screen " + acstring screen.ScreenAddress + ", which still contains groups."
+                else failwith ^ "Cannot remove screen " + acstring screen.ScreenAddress + ", which still contains groups."
             | None -> world
-        | _ -> failwith <| "Invalid screen address '" + acstring screen.ScreenAddress + "'."
+        | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
     let internal getScreenStateMap world =
         snd world.SimulantStates

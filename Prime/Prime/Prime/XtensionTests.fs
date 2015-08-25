@@ -29,13 +29,13 @@ module XtensionTests =
 #if DEBUG
     let [<Fact>] cantAddFieldWhenSealed () =
         let xtn = Xtension.safe
-        Assert.Throws<Exception> (fun () -> ignore <| xtn?TestField <- 0)
+        Assert.Throws<Exception> (fun () -> ignore ^ xtn?TestField <- 0)
 #endif
 
     let [<Fact>] cantAccessNonexistentField () =
         let xtn = Xtension.mixed
         let xtn = xtn?TestField <- 5
-        Assert.Throws<Exception> (fun () -> ignore <| xtn?TetField)
+        Assert.Throws<Exception> (fun () -> ignore ^ xtn?TetField)
 
     let [<Fact>] missingFieldReturnsDefault () =
         let xtn = Xtension.empty

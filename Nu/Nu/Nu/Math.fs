@@ -157,7 +157,7 @@ module Math =
 
     /// Snap an single float value to an offset.
     let snapF offset (value : single) =
-        single (snap offset <| int value)
+        single (snap offset ^ int value)
 
     /// Snap an Vector2 value to an offset.
     let snap2F offset (v2 : Vector2) =
@@ -178,7 +178,7 @@ module Math =
 
     /// Queries that a point is within the given bounds.
     let isPointInBounds3 (point : Vector2) (boxPos : Vector2) (boxSize : Vector2) =
-        isPointInBounds point <| Vector4 (boxPos.X, boxPos.Y, boxPos.X + boxSize.X, boxPos.Y + boxSize.Y)
+        isPointInBounds point ^ Vector4 (boxPos.X, boxPos.Y, boxPos.X + boxSize.X, boxPos.Y + boxSize.Y)
 
     /// Queries that a bounds is within the given bounds.
     let isBoundsInBounds (bounds : Vector4) (bounds2 : Vector4) =

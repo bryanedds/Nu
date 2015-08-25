@@ -11,6 +11,6 @@ open NuEdit
 module Simulants =
 
     let EditorScreenName = "EditorScreen"
-    let EditorScreen = Screen.proxy <| ntoa EditorScreenName
+    let EditorScreen = Screen.proxy ^ ntoa EditorScreenName
     let EditorGroupName = Constants.Engine.DefaultGroupName
-    let EditorGroup = Group.proxy <| satoga EditorScreen.ScreenAddress EditorGroupName
+    let EditorGroup = Group.proxy ^ satoga EditorScreen.ScreenAddress EditorGroupName

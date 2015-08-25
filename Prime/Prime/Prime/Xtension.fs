@@ -37,7 +37,7 @@ type [<StructuralEquality; NoComparison>] Xtension =
     /// Get the default value of an instance of type 'r taking into account XDefaultValue decorations.
     static member private getDefaultValue () : 'r =
         let defaultFieldType = typeof<'r>
-        let optDefaultValueAttribute = Seq.tryHead <| defaultFieldType.GetCustomAttributes<XDefaultValueAttribute> ()
+        let optDefaultValueAttribute = Seq.tryHead ^ defaultFieldType.GetCustomAttributes<XDefaultValueAttribute> ()
         match optDefaultValueAttribute with
         | Some defaultValueAttribute ->
             match defaultValueAttribute.DefaultValue with
@@ -47,13 +47,13 @@ type [<StructuralEquality; NoComparison>] Xtension =
                 let converter = AlgebraicConverter defaultValueType
                 if converter.CanConvertFrom defaultFieldType
                 then converter.ConvertFrom defaultValue :?> 'r
-                else failwith <| "Cannot convert '" + acstring defaultValue + "' to type '" + defaultFieldType.Name + "'."
+                else failwith ^ "Cannot convert '" + acstring defaultValue + "' to type '" + defaultFieldType.Name + "'."
         | None -> Unchecked.defaultof<'r>
 
     /// Try to get the default value for a given xtension member, returning None when defaulting is disallowed.
     static member private tryGetDefaultValue (this : Xtension) memberName : 'r =
         if this.CanDefault then Xtension.getDefaultValue ()
-        else failwith <| "Xtension field '" + memberName + "' does not exist and no default is permitted because CanDefault is false."
+        else failwith ^ "Xtension field '" + memberName + "' does not exist and no default is permitted because CanDefault is false."
 
     /// The dynamic look-up operator for an Xtension.
     /// Example:
@@ -67,7 +67,7 @@ type [<StructuralEquality; NoComparison>] Xtension =
             // return field directly if the return type matches, otherwise the default value for that type
             match field.FieldValue with
             | :? 'r as fieldValue -> fieldValue
-            | _ -> failwith <| "Xtension field '" + memberName + "' of type '" + field.FieldType.Name + "' is not of the expected type '" + typeof<'r>.Name + "'."
+            | _ -> failwith ^ "Xtension field '" + memberName + "' of type '" + field.FieldType.Name + "' is not of the expected type '" + typeof<'r>.Name + "'."
 
         | None ->
 
@@ -82,7 +82,7 @@ type [<StructuralEquality; NoComparison>] Xtension =
         // NOTE: nop'ed outside of debug mode for efficiency
         // TODO: consider writing a 'Map.addDidContainKey' function to efficently add and return a
         // result that the key was already contained.
-        if xtension.Sealed && not <| Map.containsKey fieldName xtension.XFields
+        if xtension.Sealed && not ^ Map.containsKey fieldName xtension.XFields
         then failwith "Cannot add field to a sealed Xtension."
         else
 #endif

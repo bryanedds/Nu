@@ -57,16 +57,16 @@ module QuadTree =
 
     let addElement quadTree omnipresence position size element =
         if omnipresence then
-            ignore <| quadTree.OmnipresentElements.Add element
-        elif not <| QuadNode.tryAddElement quadTree.Node position size element then
+            ignore ^ quadTree.OmnipresentElements.Add element
+        elif not ^ QuadNode.tryAddElement quadTree.Node position size element then
             note "Element is outside of quad tree's containment area."
-            ignore <| quadTree.OmnipresentElements.Add element
+            ignore ^ quadTree.OmnipresentElements.Add element
 
     let removeElement quadTree omnipresence position size element =
         if omnipresence then
-            ignore <| quadTree.OmnipresentElements.Remove element
-        elif not <| QuadNode.tryRemoveElement quadTree.Node position size element then
-            ignore <| quadTree.OmnipresentElements.Remove element
+            ignore ^ quadTree.OmnipresentElements.Remove element
+        elif not ^ QuadNode.tryRemoveElement quadTree.Node position size element then
+            ignore ^ quadTree.OmnipresentElements.Remove element
 
     let updateElement
         quadTree

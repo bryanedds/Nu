@@ -38,7 +38,7 @@ module Camera =
     /// The relative view of the camera with translation sliced on integers. Good for rendering.
     let getViewRelativeI camera =
         let translation = camera.EyeCenter
-        let translationI = Vector2 (single <| int translation.X, single <| int translation.Y)
+        let translationI = Vector2 (single ^ int translation.X, single ^ int translation.Y)
         Matrix3.CreateFromTranslation translationI
 
     /// Get the bounds of the camera's sight relative to its position.

@@ -21,11 +21,11 @@ type AlgebraicConverter (targetType : Type) =
 
     let objToObjList (source : obj) =
         let iEnumerable = source :?> IEnumerable
-        List.ofSeq <| enumerable<obj> iEnumerable
+        List.ofSeq ^ enumerable<obj> iEnumerable
 
     let objToComparableSet (source : obj) =
         let iEnumerable = source :?> IEnumerable
-        Set.ofSeq <| enumerable<IComparable> iEnumerable
+        Set.ofSeq ^ enumerable<IComparable> iEnumerable
 
     let rec toString source (sourceType : Type) =
 
@@ -78,7 +78,7 @@ type AlgebraicConverter (targetType : Type) =
 
             elif FSharpType.IsUnion sourceType then
                 let (unionCase, unionFields) = FSharpValue.GetUnionFields (source, sourceType)
-                if not <| Array.isEmpty unionFields then
+                if not ^ Array.isEmpty unionFields then
                     let unionFieldStrs =
                         List.mapi
                             (fun i unionField ->

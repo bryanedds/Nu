@@ -66,7 +66,7 @@ module Overlayer =
                 match (optProperty, optXtension) with
                 | (null, None) -> None
                 | (null, Some xtension) -> Some (Map.find overlayNode.Name xtension.XFields).FieldValue
-                | (targetProperty, _) -> Some <| targetProperty.GetValue target
+                | (targetProperty, _) -> Some ^ targetProperty.GetValue target
             match optPropertyValue with
             | Some propertyValue ->
                 let converter = AlgebraicConverter propertyType
@@ -166,11 +166,11 @@ module Overlayer =
 
     /// Query that a property should be serialized.
     let shouldPropertySerialize overlayName facetNames propertyName propertyType target overlayer =
-        not <| isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer
+        not ^ isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer
 
     /// Query that a property should be serialized.
     let shouldPropertySerialize5 facetNames propertyName propertyType target overlayer =
-        not <| isPropertyOverlaid5 facetNames propertyName propertyType target overlayer
+        not ^ isPropertyOverlaid5 facetNames propertyName propertyType target overlayer
 
     /// Make an Overlayer by loading overlays from a file and then combining it with the given
     /// intrinsic overlays.
@@ -179,7 +179,7 @@ module Overlayer =
         // create new overlay document into which all nodes will be inserted
         let overlays = XmlDocument ()
         let overlaysRoot = overlays.CreateElement Constants.Xml.RootNodeName
-        ignore <| overlays.AppendChild overlaysRoot
+        ignore ^ overlays.AppendChild overlaysRoot
 
         // load the user-defined overlay document from file
         let loadedOverlays = XmlDocument ()
@@ -192,7 +192,7 @@ module Overlayer =
                 (enumerable loadedOverlays.DocumentElement.ChildNodes)
         for node in childNodes do
             let imported = overlays.ImportNode (node, true)
-            ignore <| overlays.DocumentElement.AppendChild imported
+            ignore ^ overlays.DocumentElement.AppendChild imported
 
         // make overlay
         { Overlays = overlays }

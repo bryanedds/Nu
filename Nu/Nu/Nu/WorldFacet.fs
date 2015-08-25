@@ -16,8 +16,8 @@ module WorldFacetModule =
 
         static member private tryGetFacet facetName world =
             match Map.tryFind facetName world.Components.Facets with
-            | Some facet -> Right <| facet
-            | None -> Left <| "Invalid facet name '" + facetName + "'."
+            | Some facet -> Right facet
+            | None -> Left ^ "Invalid facet name '" + facetName + "'."
 
         static member private isFacetCompatibleWithEntity entityDispatcherMap facet (entityState : EntityState) =
             // Note a facet is incompatible with any other facet if it contains any fields that has
@@ -53,7 +53,7 @@ module WorldFacetModule =
 
             // get the field definition name counts of the facet to remove
             let facetType = facetToRemove.GetType ()
-            let facetFieldDefinitions = Map.singleton facetType.Name <| Reflection.getFieldDefinitions facetType
+            let facetFieldDefinitions = Map.singleton facetType.Name ^ Reflection.getFieldDefinitions facetType
             let facetFieldDefinitionNameCounts = Reflection.getFieldDefinitionNameCounts facetFieldDefinitions
 
             // compute the difference of the counts
@@ -94,7 +94,7 @@ module WorldFacetModule =
                     | Some entity -> World.setEntityState entityState entity world
                     | None -> world
                 Right (entityState, world)
-            | None -> Left <| "Failure to remove facet '" + facetName + "' from entity."
+            | None -> Left ^ "Failure to remove facet '" + facetName + "' from entity."
 
         static member private tryAddFacet facetName (entityState : EntityState) optEntity world =
             match World.tryGetFacet facetName world with
@@ -110,7 +110,7 @@ module WorldFacetModule =
                         let entityState = World.getEntityState entity world
                         Right (entityState, world)
                     | None -> Right (entityState, world)
-                else Left <| "Facet '" + Reflection.getTypeName facet + "' is incompatible with entity '" + entityState.Name + "'."
+                else Left ^ "Facet '" + Reflection.getTypeName facet + "' is incompatible with entity '" + entityState.Name + "'."
             | Left error -> Left error
 
         static member private tryRemoveFacets facetNamesToRemove entityState optEntity world =

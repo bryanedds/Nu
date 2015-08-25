@@ -16,7 +16,7 @@ module KeyedCache =
     let getGlobalCacheMisses () = GlobalCacheMisses
 
     let getValue (keyEquality : 'k -> 'k -> bool) getFreshKeyAndValue cacheKey keyedCache : 'v =
-        if not <| keyEquality keyedCache.CacheKey cacheKey then
+        if not ^ keyEquality keyedCache.CacheKey cacheKey then
 #if DEBUG
             GlobalCacheMisses <- GlobalCacheMisses + 1L
 #endif

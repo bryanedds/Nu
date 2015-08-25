@@ -32,22 +32,22 @@ module GameplayDispatcherModule =
 
         (* Hud Simulants *)
 
-        static let proxyHud gameplay = Group.proxy <| satoga gameplay.ScreenAddress Simulants.HudName
-        static let proxyHudHalt gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Simulants.HudHaltName
-        static let proxyHudSaveGame gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Simulants.HudSaveGameName
-        static let proxyHudFeeler gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Simulants.HudFeelerName
-        static let proxyHudDetailUp gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Simulants.HudDetailUpName
-        static let proxyHudDetailRight gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Simulants.HudDetailRightName
-        static let proxyHudDetailDown gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Simulants.HudDetailDownName
-        static let proxyHudDetailLeft gameplay = Entity.proxy <| gatoea (proxyHud gameplay).GroupAddress Simulants.HudDetailLeftName
+        static let proxyHud gameplay = Group.proxy ^ satoga gameplay.ScreenAddress Simulants.HudName
+        static let proxyHudHalt gameplay = Entity.proxy ^ gatoea (proxyHud gameplay).GroupAddress Simulants.HudHaltName
+        static let proxyHudSaveGame gameplay = Entity.proxy ^ gatoea (proxyHud gameplay).GroupAddress Simulants.HudSaveGameName
+        static let proxyHudFeeler gameplay = Entity.proxy ^ gatoea (proxyHud gameplay).GroupAddress Simulants.HudFeelerName
+        static let proxyHudDetailUp gameplay = Entity.proxy ^ gatoea (proxyHud gameplay).GroupAddress Simulants.HudDetailUpName
+        static let proxyHudDetailRight gameplay = Entity.proxy ^ gatoea (proxyHud gameplay).GroupAddress Simulants.HudDetailRightName
+        static let proxyHudDetailDown gameplay = Entity.proxy ^ gatoea (proxyHud gameplay).GroupAddress Simulants.HudDetailDownName
+        static let proxyHudDetailLeft gameplay = Entity.proxy ^ gatoea (proxyHud gameplay).GroupAddress Simulants.HudDetailLeftName
 
         (* Scene Simulants *)
 
         static let proxyScene gameplay =
-            Group.proxy <| satoga gameplay.ScreenAddress Simulants.SceneName
+            Group.proxy ^ satoga gameplay.ScreenAddress Simulants.SceneName
         
         static let proxyField gameplay =
-            Entity.proxy <| gatoea (proxyScene gameplay).GroupAddress Simulants.FieldName
+            Entity.proxy ^ gatoea (proxyScene gameplay).GroupAddress Simulants.FieldName
         
         static let proxyCharacters gameplay world =
             let entities = World.proxyEntities (proxyScene gameplay) world
@@ -61,10 +61,10 @@ module GameplayDispatcherModule =
             proxyOptCharacterAtPosition (position + dtovf direction) gameplay world
         
         static let proxyCharacterInDirection position direction gameplay world =
-            Option.get <| proxyOptCharacterInDirection position direction gameplay world
+            Option.get ^ proxyOptCharacterInDirection position direction gameplay world
 
         static let proxyPlayer gameplay =
-            Entity.proxy <| gatoea (proxyScene gameplay).GroupAddress Simulants.PlayerName
+            Entity.proxy ^ gatoea (proxyScene gameplay).GroupAddress Simulants.PlayerName
 
         static let proxyEnemies gameplay world =
             let entities = World.proxyEntities (proxyScene gameplay) world
@@ -133,7 +133,7 @@ module GameplayDispatcherModule =
         static let tryGetNavigationPath touchPosition occupationMap (character : Entity) world =
             let nodes = OccupationMap.makeNavigationNodes occupationMap
             let goalNode = Map.find (vftovm touchPosition) nodes
-            let currentNode = Map.find (vftovm <| character.GetPosition world) nodes
+            let currentNode = Map.find (vftovm ^ character.GetPosition world) nodes
             let optNavigationPath =
                 AStar.FindPath (
                     currentNode,
@@ -146,7 +146,7 @@ module GameplayDispatcherModule =
 
         static let isPlayerNavigatingPath gameplay world =
             let player = proxyPlayer gameplay
-            ActivityState.isNavigatingPath <| player.GetActivityState world
+            ActivityState.isNavigatingPath ^ player.GetActivityState world
 
         static let cancelNavigation (character : Entity) world =
             let characterActivity =
@@ -168,7 +168,7 @@ module GameplayDispatcherModule =
             anyTurnsInProgress2 player enemies world
 
         static let updateCharacterByWalk walkDescriptor (character : Entity) world =
-            let (newPosition, walkState) = walk walkDescriptor <| character.GetPosition world
+            let (newPosition, walkState) = walk walkDescriptor ^ character.GetPosition world
             let world = character.SetPosition newPosition world
             let characterAnimationState = { character.GetCharacterAnimationState world with Direction = walkDescriptor.WalkDirection }
             let world = character.SetCharacterAnimationState characterAnimationState world
@@ -181,8 +181,8 @@ module GameplayDispatcherModule =
                 | Some [] -> failwith "NavigationPath should never be empty here."
                 | Some (_ :: []) -> character.SetActivityState NoActivity world
                 | Some (currentNode :: navigationPath) ->
-                    let walkDirection = vmtod <| (List.head navigationPath).PositionM - currentNode.PositionM
-                    let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = vftovm <| character.GetPosition world }
+                    let walkDirection = vmtod ^ (List.head navigationPath).PositionM - currentNode.PositionM
+                    let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = vftovm ^ character.GetPosition world }
                     let navigationDescriptor = { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
                     character.SetActivityState (Navigation navigationDescriptor) world
                 | None -> character.SetActivityState NoActivity world
@@ -196,10 +196,10 @@ module GameplayDispatcherModule =
             if actionDescriptor.ActionTicks = 0L then
                 world |>
                     character.SetCharacterAnimationState (getCharacterAnimationStateByActionBegin (World.getTickTime world) (character.GetPosition world) (character.GetCharacterAnimationState world) actionDescriptor) |>
-                    character.SetActivityState (Action <| ActionDescriptor.updateActionTicks (World.getTickRate world) actionDescriptor)
+                    character.SetActivityState (Action ^ ActionDescriptor.updateActionTicks (World.getTickRate world) actionDescriptor)
             elif actionDescriptor.ActionTicks > 0L && actionDescriptor.ActionTicks < Constants.InfinityRpg.ActionTicksMax then
                 world |>
-                    character.SetActivityState (Action <| ActionDescriptor.updateActionTicks (World.getTickRate world) actionDescriptor)
+                    character.SetActivityState (Action ^ ActionDescriptor.updateActionTicks (World.getTickRate world) actionDescriptor)
             else
                 world |>
                     character.SetActivityState NoActivity |>
@@ -210,14 +210,14 @@ module GameplayDispatcherModule =
             | Action _ -> NoTurn
             | Navigation _ -> NoTurn
             | NoActivity ->
-                let openDirections = OccupationMap.getOpenDirectionsAtPositionM (vftovm <| character.GetPosition world) occupationMap
+                let openDirections = OccupationMap.getOpenDirectionsAtPositionM (vftovm ^ character.GetPosition world) occupationMap
                 if Set.contains direction openDirections then
-                    let walkDescriptor = { WalkDirection = direction; WalkOriginM = vftovm <| character.GetPosition world }
+                    let walkDescriptor = { WalkDirection = direction; WalkOriginM = vftovm ^ character.GetPosition world }
                     NavigationTurn { WalkDescriptor = walkDescriptor; OptNavigationPath = None }
                 else
                     let targetPosition = character.GetPosition world + dtovf direction
                     if Seq.exists (fun (opponent : Entity) -> opponent.GetPosition world = targetPosition) opponents
-                    then makeAttackTurn <| vftovm targetPosition
+                    then makeAttackTurn ^ vftovm targetPosition
                     else NoTurn
 
         static let determineCharacterTurnFromTouch touchPosition occupationMap (character : Entity) opponents world =
@@ -227,15 +227,15 @@ module GameplayDispatcherModule =
                     match navigationPath with
                     | [] -> NoTurn
                     | _ ->
-                        let characterPositionM = vftovm <| character.GetPosition world
-                        let walkDirection = vmtod <| (List.head navigationPath).PositionM - characterPositionM
+                        let characterPositionM = vftovm ^ character.GetPosition world
+                        let walkDirection = vmtod ^ (List.head navigationPath).PositionM - characterPositionM
                         let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = characterPositionM }
                         NavigationTurn { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
                 | None ->
                     let targetPosition = touchPosition |> vftovm |> vmtovf
-                    if Math.arePositionsAdjacent targetPosition <| character.GetPosition world then
+                    if Math.arePositionsAdjacent targetPosition ^ character.GetPosition world then
                         if Seq.exists (fun (opponent : Entity) -> opponent.GetPosition world = targetPosition) opponents
-                        then makeAttackTurn <| vftovm targetPosition
+                        then makeAttackTurn ^ vftovm targetPosition
                         else NoTurn
                     else NoTurn
             else NoTurn
@@ -243,7 +243,7 @@ module GameplayDispatcherModule =
         static let determineDesiredEnemyTurn occupationMap (player : Entity) (enemy : Entity) rand world =
             match enemy.GetControlType world with
             | Player ->
-                debug <| "Invalid ControlType '" + acstring (enemy.GetControlType world) + "' for enemy"
+                debug ^ "Invalid ControlType '" + acstring (enemy.GetControlType world) + "' for enemy"
                 (NoTurn, rand)
             | Chaos ->
                 let nextPlayerPosition =
@@ -252,7 +252,7 @@ module GameplayDispatcherModule =
                     | Navigation navigationDescriptor -> NavigationDescriptor.nextPosition navigationDescriptor
                     | NoActivity -> player.GetPosition world
                 if Math.arePositionsAdjacent (enemy.GetPosition world) nextPlayerPosition then
-                    let enemyTurn = makeAttackTurn <| vftovm nextPlayerPosition
+                    let enemyTurn = makeAttackTurn ^ vftovm nextPlayerPosition
                     (enemyTurn, rand)
                 else
                     let (randResult, rand) = Rand.nextIntUnder 4 rand
@@ -278,11 +278,11 @@ module GameplayDispatcherModule =
             let player = proxyPlayer gameplay
             let enemies = proxyEnemies gameplay world
             let enemyPositions = Seq.map (fun (enemy : Entity) -> enemy.GetPosition world) enemies
-            if not <| anyTurnsInProgress2 player enemies world then
+            if not ^ anyTurnsInProgress2 player enemies world then
                 let touchPositionW = World.getCameraBy (Camera.mouseToWorld Relative touchPosition) world
                 let occupationMapWithAdjacentEnemies =
                     OccupationMap.makeFromFieldTilesAndAdjacentCharacters
-                        (vftovm <| player.GetPosition world) fieldMap.FieldTiles enemyPositions
+                        (vftovm ^ player.GetPosition world) fieldMap.FieldTiles enemyPositions
                 match determineCharacterTurnFromTouch touchPositionW occupationMapWithAdjacentEnemies player enemies world with
                 | ActionTurn _ as actionTurn -> actionTurn
                 | NavigationTurn navigationDescriptor as navigationTurn ->
@@ -300,7 +300,7 @@ module GameplayDispatcherModule =
             let player = proxyPlayer gameplay
             let enemies = proxyEnemies gameplay world
             let enemyPositions = Seq.map (fun (enemy : Entity) -> enemy.GetPosition world) enemies
-            if not <| anyTurnsInProgress2 player enemies world then
+            if not ^ anyTurnsInProgress2 player enemies world then
                 let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters fieldMap.FieldTiles enemyPositions
                 determineCharacterTurnFromDirection direction occupationMapWithEnemies player enemies world
             else NoTurn
@@ -350,7 +350,7 @@ module GameplayDispatcherModule =
             List.foldBack
                 (fun (enemy : Entity) enemyActivities ->
                     let noCurrentEnemyActionActivity =
-                        Seq.notExists (fun (enemy : Entity) -> ActivityState.isActing <| enemy.GetActivityState world) enemies
+                        Seq.notExists (fun (enemy : Entity) -> ActivityState.isActing ^ enemy.GetActivityState world) enemies
                     let enemyActivity =
                         if noCurrentEnemyActionActivity then
                             match enemy.GetDesiredTurn world with
@@ -454,8 +454,8 @@ module GameplayDispatcherModule =
             // determine player activity
             let optNewPlayerActivity =
                 match playerTurn with
-                | ActionTurn actionDescriptor -> Some <| Action actionDescriptor
-                | NavigationTurn navigationDescriptor -> Some <| Navigation navigationDescriptor
+                | ActionTurn actionDescriptor -> Some ^ Action actionDescriptor
+                | NavigationTurn navigationDescriptor -> Some ^ Navigation navigationDescriptor
                 | CancelTurn -> Some NoActivity
                 | NoTurn -> None
 
@@ -473,7 +473,7 @@ module GameplayDispatcherModule =
                 match optNewPlayerActivity with
                 | Some (Action _)
                 | Some (Navigation _) ->
-                    let rand = Rand.make <| gameplay.GetOngoingRandState world
+                    let rand = Rand.make ^ gameplay.GetOngoingRandState world
                     let player = proxyPlayer gameplay
                     let enemies = proxyEnemies gameplay world
                     let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns occupationMap player enemies rand world
@@ -501,7 +501,7 @@ module GameplayDispatcherModule =
             world
 
         static let tryRunPlayerTurn playerInput gameplay world =
-            if not <| anyTurnsInProgress gameplay world then
+            if not ^ anyTurnsInProgress gameplay world then
                 let hudSaveGame = proxyHudSaveGame gameplay
                 let hudHalt = proxyHudHalt gameplay
                 let player = proxyPlayer gameplay
@@ -513,9 +513,9 @@ module GameplayDispatcherModule =
                             | Right _ -> chain {
                                 let! playerTurn =
                                     if i = 0
-                                    then getBy <| determinePlayerTurnFromInput playerInput gameplay
-                                    else getBy <| determinePlayerTurn gameplay
-                                do! update <| runPlayerTurn playerTurn gameplay }
+                                    then getBy ^ determinePlayerTurnFromInput playerInput gameplay
+                                    else getBy ^ determinePlayerTurn gameplay
+                                do! update ^ runPlayerTurn playerTurn gameplay }
                             | Left _ -> chain {
                                 do! update ^ cancelNavigation player }}
                     do! update ^ hudSaveGame.SetEnabled true }
@@ -523,7 +523,7 @@ module GameplayDispatcherModule =
                     observe (Events.Click ->>- hudHalt) gameplay |>
                     sum Events.Update |>
                     until (Events.Deselect ->>- gameplay)
-                snd <| runAssumingCascade chain observation world
+                snd ^ runAssumingCascade chain observation world
             else world
 
         static let handlePlayerChange event world =
@@ -547,8 +547,8 @@ module GameplayDispatcherModule =
 
             // generate non-deterministic random numbers
             let sysrandom = Random ()
-            let contentSeedState = uint64 <| sysrandom.Next ()
-            let ongoingSeedState = uint64 <| sysrandom.Next ()
+            let contentSeedState = uint64 ^ sysrandom.Next ()
+            let ongoingSeedState = uint64 ^ sysrandom.Next ()
 
             // initialize gameplay screen
             let world = gameplay.SetContentRandState contentSeedState world
@@ -558,17 +558,17 @@ module GameplayDispatcherModule =
             let (scene, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Simulants.SceneName) gameplay world
 
             // make rand from gameplay
-            let rand = Rand.make <| gameplay.GetContentRandState world
+            let rand = Rand.make ^ gameplay.GetContentRandState world
 
             // make field
-            let (rand, world) = _bc <| createField scene rand world
+            let (rand, world) = _bc ^ createField scene rand world
 
             // make player
             let (player, world) = World.createEntity typeof<PlayerDispatcher>.Name (Some Simulants.PlayerName) scene world
             let world = player.SetDepth Constants.Layout.CharacterDepth world
 
             // make enemies
-            __c <| createEnemies scene rand world
+            __c ^ createEnemies scene rand world
 
         static let handleLoadGame (gameplay : Screen) world =
 
@@ -576,14 +576,14 @@ module GameplayDispatcherModule =
             let scene = proxyScene gameplay
 
             // get and initialize gameplay screen from read
-            let world = snd <| World.readScreenFromFile Constants.FilePaths.SaveFile (Some Simulants.GameplayName) world
+            let world = snd ^ World.readScreenFromFile Constants.FilePaths.SaveFile (Some Simulants.GameplayName) world
             let world = gameplay.SetTransitionStateNp IncomingState world
 
             // make rand from gameplay
-            let rand = Rand.make <| gameplay.GetContentRandState world
+            let rand = Rand.make ^ gameplay.GetContentRandState world
 
             // make field from rand (field is not serialized, but generated deterministically with ContentRandState)
-            __c <| createField scene rand world
+            __c ^ createField scene rand world
 
         static let handleSelectTitle _ world =
             let world = World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Constants.Assets.ButterflyGirlSong world

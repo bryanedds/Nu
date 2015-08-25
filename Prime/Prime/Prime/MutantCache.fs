@@ -21,7 +21,7 @@ module MutantCache =
 
     let getMutant generateKey rebuildMutant (mutantCache : MutantCache<'k, 'm>) =
         let mutantCache =
-            if not <| mutantCache.KeyEquality !mutantCache.RefKey mutantCache.ConstantKey then
+            if not ^ mutantCache.KeyEquality !mutantCache.RefKey mutantCache.ConstantKey then
 #if DEBUG
                 GlobalMutantRebuilds <- GlobalMutantRebuilds + 1L
 #endif

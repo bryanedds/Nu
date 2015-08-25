@@ -54,7 +54,7 @@ module RigidBodyFacetModule =
             Physics.evalCollisionExpr (entity.GetSize world) (entity.GetCollisionExpr world)
 
         static member FieldDefinitions =
-            [variable? MinorId <| fun () -> Core.makeId ()
+            [variable? MinorId ^ fun () -> Core.makeId ()
              define? BodyType Dynamic
              define? Density Constants.Physics.NormalDensity
              define? Friction 0.0f
@@ -83,8 +83,8 @@ module RigidBodyFacetModule =
                   LinearDamping = entity.GetLinearDamping world
                   AngularDamping = entity.GetAngularDamping world
                   GravityScale = entity.GetGravityScale world
-                  CollisionCategories = Physics.toCollisionCategories <| entity.GetCollisionCategories world
-                  CollisionMask = Physics.toCollisionCategories <| entity.GetCollisionMask world
+                  CollisionCategories = Physics.toCollisionCategories ^ entity.GetCollisionCategories world
+                  CollisionMask = Physics.toCollisionCategories ^ entity.GetCollisionMask world
                   IsBullet = entity.GetIsBullet world
                   IsSensor = entity.GetIsSensor world }
             World.createBody entity.EntityAddress (entity.GetId world) bodyProperties world
@@ -163,7 +163,7 @@ module AnimatedSpriteFacetModule =
         static member FieldDefinitions =
             [define? TileCount 16 
              define? TileRun 4
-             define? TileSize <| Vector2 (16.0f, 16.0f)
+             define? TileSize ^ Vector2 (16.0f, 16.0f)
              define? AnimationStutter 4L
              define? AnimationSheet { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image7" }]
 
@@ -217,7 +217,7 @@ module GuiDispatcherModule =
         static member FieldDefinitions =
             [define? ViewType Absolute
              define? Enabled true
-             define? DisabledColor <| Vector4 0.75f
+             define? DisabledColor ^ Vector4 0.75f
              define? SwallowMouseLeft true]
 
         override dispatcher.Register gui world =
@@ -283,7 +283,7 @@ module ButtonDispatcherModule =
              define? Down false
              define? UpImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image" }
              define? DownImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image2" }
-             define? OptClickSound <| Some { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Sound" }]
+             define? OptClickSound ^ Some { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Sound" }]
 
         override dispatcher.Register button world =
             world |>
@@ -439,7 +439,7 @@ module ToggleDispatcherModule =
                 if  toggle.GetVisible world &&
                     Math.isPointInBounds3 mousePositionWorld (toggle.GetPosition world) (toggle.GetSize world) then
                     if toggle.GetEnabled world && wasPressed then
-                        let world = toggle.SetOn (not <| toggle.GetOn world) world
+                        let world = toggle.SetOn (not ^ toggle.GetOn world) world
                         let eventAddress = if toggle.GetOn world then Events.On else Events.Off
                         let world = World.publish4 () (eventAddress ->>- toggle) toggle world
                         let world =
@@ -457,7 +457,7 @@ module ToggleDispatcherModule =
              define? Pressed false
              define? OffImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image" }
              define? OnImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image2" }
-             define? OptToggleSound <| Some { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Sound" }]
+             define? OptToggleSound ^ Some { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Sound" }]
 
         override dispatcher.Register toggle world =
             world |>
@@ -665,7 +665,7 @@ module TileMapDispatcherModule =
         member this.SetParallax (value : single) world = this.UpdateXtension (fun xtension -> xtension?Parallax <- value) world
 
         static member makeTileMapData (tileMapAsset : AssetTag) world =
-            let map = __c <| Metadata.getTileMapMetadata tileMapAsset world.State.AssetMetadataMap
+            let map = __c ^ Metadata.getTileMapMetadata tileMapAsset world.State.AssetMetadataMap
             let mapSize = Vector2i (map.Width, map.Height)
             let tileSize = Vector2i (map.TileWidth, map.TileHeight)
             let tileSizeF = Vector2 (single tileSize.X, single tileSize.Y)
@@ -701,8 +701,8 @@ module TileMapDispatcherModule =
             { BodyId = intsToGuid tli ti
               Position =
                 Vector2
-                    (single <| td.TilePosition.X + tmd.TileSize.X / 2,
-                     single <| td.TilePosition.Y + tmd.TileSize.Y / 2 + tmd.TileMapSize.Y)
+                    (single ^ td.TilePosition.X + tmd.TileSize.X / 2,
+                     single ^ td.TilePosition.Y + tmd.TileSize.Y / 2 + tmd.TileMapSize.Y)
               Rotation = tm.GetRotation world
               Shape = tileShape
               BodyType = BodyType.Static
@@ -713,8 +713,8 @@ module TileMapDispatcherModule =
               LinearDamping = 0.0f
               AngularDamping = 0.0f
               GravityScale = 0.0f
-              CollisionCategories = Physics.toCollisionCategories <| tm.GetCollisionCategories world
-              CollisionMask = Physics.toCollisionCategories <| tm.GetCollisionMask world
+              CollisionCategories = Physics.toCollisionCategories ^ tm.GetCollisionCategories world
+              CollisionMask = Physics.toCollisionCategories ^ tm.GetCollisionMask world
               IsBullet = false
               IsSensor = false }
 
@@ -839,5 +839,5 @@ module TileMapDispatcherModule =
 
         override dispatcher.GetQuickSize tileMap world =
             match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) world.State.AssetMetadataMap with
-            | Some (_, _, map) -> Vector2 (single <| map.Width * map.TileWidth, single <| map.Height * map.TileHeight)
+            | Some (_, _, map) -> Vector2 (single ^ map.Width * map.TileWidth, single ^ map.Height * map.TileHeight)
             | None -> Constants.Engine.DefaultEntitySize

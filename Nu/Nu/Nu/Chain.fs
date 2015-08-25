@@ -62,7 +62,7 @@ module Chain =
 
     /// Get the world transformed by 'by'.
     let [<DebuggerHidden; DebuggerStepThrough>] getBy by : Chain<'e, 'a> =
-        Chain (fun world -> (world, Right <| by world))
+        Chain (fun world -> (world, Right ^ by world))
 
     /// Set the world.
     let [<DebuggerHidden; DebuggerStepThrough>] set world : Chain<'e, unit> =
@@ -135,7 +135,7 @@ module Chain =
 
     /// Run a chain to its end, providing unit for all its steps.
     let rec [<DebuggerHidden; DebuggerStepThrough>] run (m : Chain<unit, 'a>) (world : World) : World =
-        fst <| run3 m () world
+        fst ^ run3 m () world
 
     let private run4 eventHandling (chain : Chain<Event<'a, 'o>, unit>) (observation : Observation<'a, 'o>) world =
         let callbackKey = World.makeCallbackKey ()

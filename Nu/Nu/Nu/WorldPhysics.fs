@@ -27,19 +27,19 @@ type [<ReferenceEquality>] IntegratorSubsystem =
         | Running ->
             match integrationMessage with
             | BodyTransformMessage bodyTransformMessage ->
-                let entity = Entity.proxy <| atoea bodyTransformMessage.SourceAddress
+                let entity = Entity.proxy ^ atoea bodyTransformMessage.SourceAddress
                 if World.containsEntity entity world then
                     IntegratorSubsystem.handleBodyTransformMessage bodyTransformMessage entity world
                 else world
             | BodyCollisionMessage bodyCollisionMessage ->
-                let source = Entity.proxy <| atoea bodyCollisionMessage.SourceAddress
+                let source = Entity.proxy ^ atoea bodyCollisionMessage.SourceAddress
                 match World.getOptEntityState source world with
                 | Some _ ->
                     let collisionAddress = Events.Collision ->- bodyCollisionMessage.SourceAddress
                     let collisionData =
                         { Normal = bodyCollisionMessage.Normal
                           Speed = bodyCollisionMessage.Speed
-                          Collidee = Entity.proxy <| atoea bodyCollisionMessage.CollideeAddress }
+                          Collidee = Entity.proxy ^ atoea bodyCollisionMessage.CollideeAddress }
                     World.publish4 collisionData collisionAddress Simulants.Game world
                 | None -> world
         | Exiting -> world

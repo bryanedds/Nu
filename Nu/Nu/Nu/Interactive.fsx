@@ -26,5 +26,5 @@ open Nu.WorldConstants
 open Nu.Observation
 open Nu.Chain
 
-System.IO.Directory.SetCurrentDirectory <| __SOURCE_DIRECTORY__ + "../bin/Debug"
+System.IO.Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
 
