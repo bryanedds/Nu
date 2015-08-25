@@ -47,7 +47,7 @@ module WorldModule =
         /// out via another screen.
         static member tryGetIsSelectedScreenIdling world =
             match World.getOptSelectedScreen world with
-            | Some selectedScreen -> Some <| selectedScreen.IsIdling world
+            | Some selectedScreen -> Some ^ selectedScreen.IsIdling world
             | None -> None
 
         /// Query that the selected screen is idling; that is, neither transitioning in or
@@ -55,16 +55,16 @@ module WorldModule =
         static member isSelectedScreenIdling world =
             match World.tryGetIsSelectedScreenIdling world with
             | Some answer -> answer
-            | None -> failwith <| "Cannot query state of non-existent selected screen."
+            | None -> failwith ^ "Cannot query state of non-existent selected screen."
 
         /// Try to query that the selected screen is transitioning.
         static member tryGetIsSelectedScreenTransitioning world =
-            Option.map not <| World.tryGetIsSelectedScreenIdling world
+            Option.map not ^ World.tryGetIsSelectedScreenIdling world
 
         /// Query that the selected screen is transitioning (failing with an exception if no screen
         /// is selected).
         static member isSelectedScreenTransitioning world =
-            not <| World.isSelectedScreenIdling world
+            not ^ World.isSelectedScreenIdling world
 
         static member private setScreenTransitionState state (screen : Screen) world =
             let world = screen.SetTransitionStateNp state world
@@ -121,7 +121,7 @@ module WorldModule =
         /// Transition to the given screen (failing with an exception if another transition is
         /// in progress).
         static member transitionScreen destinationAddress world =
-            Option.get <| World.tryTransitionScreen destinationAddress world
+            Option.get ^ World.tryTransitionScreen destinationAddress world
             
         // TODO: replace this with more sophisticated use of handleAsScreenTransition4, and so on for its brethren.
         static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> Simulant> eventHandling destination (_ : Event<'a, 's>) world =
@@ -145,7 +145,7 @@ module WorldModule =
             match World.tryTransitionScreen destination world with
             | Some world -> (eventHandling, world)
             | None ->
-                trace <| "Program Error: Invalid screen transition for destination address '" + acstring destination.ScreenAddress + "'."
+                trace ^ "Program Error: Invalid screen transition for destination address '" + acstring destination.ScreenAddress + "'."
                 (eventHandling, world)
 
         /// A procedure that can be passed to an event handler to specify that an event is to
@@ -165,7 +165,7 @@ module WorldModule =
             if transitionTicks = transition.TransitionLifetime then
                 (true, screen.SetTransitionTicksNp 0L world)
             elif transitionTicks > transition.TransitionLifetime then
-                debug <| "TransitionLifetime for screen '" + acstring screen.ScreenAddress + "' must be a consistent multiple of TickRate."
+                debug ^ "TransitionLifetime for screen '" + acstring screen.ScreenAddress + "' must be a consistent multiple of TickRate."
                 (true, screen.SetTransitionTicksNp 0L world)
             else (false, screen.SetTransitionTicksNp (transitionTicks + World.getTickRate world) world)
 
@@ -250,7 +250,7 @@ module WorldModule =
         static member createDissolveScreenFromGroupFile persistent dissolveData dispatcherName groupFilePath optName world =
             let (dissolveScreen, world) = World.createDissolveScreen dissolveData dispatcherName optName world
             let world = dissolveScreen.SetPersistent persistent world
-            let world = snd <| World.readGroupFromFile groupFilePath None dissolveScreen world
+            let world = snd ^ World.readGroupFromFile groupFilePath None dissolveScreen world
             (dissolveScreen, world)
 
         static member private createIntrinsicOverlays entityDispatchers facets =
@@ -291,7 +291,7 @@ module WorldModule =
                                     let facetNames = World.getEntityFacetNamesReflectively entityState
                                     Overlayer.applyOverlay6 overlayName overlayName facetNames entityState oldOverlayer world.State.Overlayer
                                     World.setEntityStateWithoutEvent entityState entity world
-                                | Left error -> note <| "There was an issue in applying a reloaded overlay: " + error; world
+                                | Left error -> note ^ "There was an issue in applying a reloaded overlay: " + error; world
                             | None -> world)
                         world
                         entities
@@ -300,7 +300,7 @@ module WorldModule =
                 Right world
 
             // propagate error
-            with exn -> Left <| acstring exn
+            with exn -> Left ^ acstring exn
 
         /// Try to release the assets in use by the world. Currently does not support reloading
         /// of song assets, and possibly others that are locked by the engine's subsystems.
@@ -328,7 +328,7 @@ module WorldModule =
                     // propagate errors
                     | Left error -> Left error
                 | Left error -> Left error
-            with exn -> Left <| acstring exn
+            with exn -> Left ^ acstring exn
 
         /// A hack for the physics subsystem that allows an old world value to displace the current
         /// one and have its physics values propagated to the imperative physics subsystem.
@@ -366,7 +366,7 @@ module WorldModule =
                 let world = tasklet.Operation world
                 (taskletsNotRun, world)
             elif tickTime > tasklet.ScheduledTime then
-                debug <| "Tasklet leak found for time '" + acstring tickTime + "'."
+                debug ^ "Tasklet leak found for time '" + acstring tickTime + "'."
                 (taskletsNotRun, world)
             else (Queue.conj tasklet taskletsNotRun, world)
 
@@ -391,8 +391,8 @@ module WorldModule =
                     World.publish World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseMove Simulants.Game world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
-                    let mouseButton = World.toNuMouseButton <| uint32 event.button.button
-                    let mouseButtonEventAddress = ntoa <| MouseButton.toEventName mouseButton
+                    let mouseButton = World.toNuMouseButton ^ uint32 event.button.button
+                    let mouseButtonEventAddress = ntoa ^ MouseButton.toEventName mouseButton
                     let mouseButtonDownEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Down"
                     let mouseButtonChangeEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
@@ -400,8 +400,8 @@ module WorldModule =
                     World.publish World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress Simulants.Game world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
-                    let mouseButton = World.toNuMouseButton <| uint32 event.button.button
-                    let mouseButtonEventAddress = ntoa <| MouseButton.toEventName mouseButton
+                    let mouseButton = World.toNuMouseButton ^ uint32 event.button.button
+                    let mouseButtonEventAddress = ntoa ^ MouseButton.toEventName mouseButton
                     let mouseButtonUpEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Up"
                     let mouseButtonChangeEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
@@ -457,7 +457,7 @@ module WorldModule =
 
         /// TODO: document!
         static member cleanUp world =
-            ignore <| World.cleanUpSubsystems world
+            ignore ^ World.cleanUpSubsystems world
 
         /// TODO: document!
         static member runWithoutCleanUp handleUpdate handleRender sdlDeps optFrames liveness world =
@@ -515,14 +515,14 @@ module WorldModule =
 
                 // make the world's subsystems
                 let subsystems =
-                    let userSubsystems = Map.ofList <| nuPlugin.MakeSubsystems ()
+                    let userSubsystems = Map.ofList ^ nuPlugin.MakeSubsystems ()
                     let integrator = Integrator.make Constants.Physics.Gravity
                     let integratorSubsystem = IntegratorSubsystem.make Constants.Engine.DefaultSubsystemOrder integrator :> Subsystem
                     let renderer =
                         match sdlDeps.OptRenderContext with
                         | Some renderContext -> Renderer.make renderContext Constants.Assets.AssetGraphFilePath :> IRenderer
                         | None -> MockRenderer.make () :> IRenderer
-                    let renderer = renderer.EnqueueMessage <| HintRenderPackageUseMessage { PackageName = Constants.Assets.DefaultPackageName }
+                    let renderer = renderer.EnqueueMessage ^ HintRenderPackageUseMessage { PackageName = Constants.Assets.DefaultPackageName }
                     let rendererSubsystem = RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder renderer :> Subsystem
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
@@ -537,10 +537,10 @@ module WorldModule =
                     { SubsystemMap = defaultSubsystems @@ userSubsystems }
 
                 // make user-defined components
-                let userFacets = World.pairWithNames <| nuPlugin.MakeFacets ()
-                let userEntityDispatchers = World.pairWithNames <| nuPlugin.MakeEntityDispatchers ()
-                let userGroupDispatchers = World.pairWithNames <| nuPlugin.MakeGroupDispatchers ()
-                let userScreenDispatchers = World.pairWithNames <| nuPlugin.MakeScreenDispatchers ()
+                let userFacets = World.pairWithNames ^ nuPlugin.MakeFacets ()
+                let userEntityDispatchers = World.pairWithNames ^ nuPlugin.MakeEntityDispatchers ()
+                let userGroupDispatchers = World.pairWithNames ^ nuPlugin.MakeGroupDispatchers ()
+                let userScreenDispatchers = World.pairWithNames ^ nuPlugin.MakeScreenDispatchers ()
                 let userOptGameDispatcher = nuPlugin.MakeOptGameDispatcher ()
 
                 // infer the active game dispatcher
@@ -580,15 +580,15 @@ module WorldModule =
                 let entityDispatchers = defaultEntityDispatchers @@ userEntityDispatchers
 
                 // make group dispatchers
-                let defaultGroupDispatchers = Map.ofList [World.pairWithName <| GroupDispatcher ()]
+                let defaultGroupDispatchers = Map.ofList [World.pairWithName ^ GroupDispatcher ()]
                 let groupDispatchers = defaultGroupDispatchers @@ userGroupDispatchers
 
                 // make screen dispatchers
-                let defaultScreenDispatchers = Map.ofList [World.pairWithName <| ScreenDispatcher ()]
+                let defaultScreenDispatchers = Map.ofList [World.pairWithName ^ ScreenDispatcher ()]
                 let screenDispatchers = defaultScreenDispatchers @@ userScreenDispatchers
 
                 // make game dispatchers
-                let defaultGameDispatchers = Map.ofList [World.pairWithName <| defaultGameDispatcher]
+                let defaultGameDispatchers = Map.ofList [World.pairWithName ^ defaultGameDispatcher]
                 let gameDispatchers = 
                     match userOptGameDispatcher with
                     | Some gameDispatcher ->
@@ -728,8 +728,8 @@ module WorldModule =
             // make types load reflectively from pathed (non-static) assemblies
             AppDomain.CurrentDomain.AssemblyLoad.Add
                 (fun args -> LoadedAssemblies.[args.LoadedAssembly.FullName] <- args.LoadedAssembly)
-            AppDomain.CurrentDomain.add_AssemblyResolve <| ResolveEventHandler
-                (fun _ args -> snd <| LoadedAssemblies.TryGetValue args.Name)
+            AppDomain.CurrentDomain.add_AssemblyResolve ^ ResolveEventHandler
+                (fun _ args -> snd ^ LoadedAssemblies.TryGetValue args.Name)
 
             // ensure the current culture is invariate
             System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.InvariantCulture

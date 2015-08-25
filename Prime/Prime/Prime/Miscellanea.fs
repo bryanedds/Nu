@@ -108,7 +108,7 @@ module Miscellanea =
 
     /// Perform an operation until a predicate passes.
     let rec doUntil op pred =
-        if not <| pred () then
+        if not (pred ()) then
             op ()
             doUntil op pred
 
@@ -126,7 +126,7 @@ module Miscellanea =
 
     /// Add a custom TypeConverter to an existing type.
     let assignTypeConverter<'t, 'c> () =
-        ignore <| TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>)
+        ignore (TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>))
 
     /// Short-hand for linq enumerable cast.
     let enumerable<'a> enumeratable =
@@ -139,7 +139,7 @@ module Miscellanea =
         Guid (m, int16 (n >>> 16), int16 n, bytes)
 
     /// Sequences two functions like Haskell ($).
-    let (^) = (<|)
+    let inline (^) f g = f g
 
     /// Test for reference equality.
     let (==) = referenceEquals
@@ -193,7 +193,7 @@ module Type =
     let GetTypeUnqualified name =
         match TryGetTypeUnqualified name with
         | Some aType -> aType
-        | None -> failwith <| "Could not find type with unqualified name '" + name + "'."
+        | None -> failwith ^ "Could not find type with unqualified name '" + name + "'."
 
     /// TODO: document!
     let GetPropertyByPreference (preference, properties) =
@@ -214,13 +214,13 @@ module TypeModule =
         member this.TryGetCustomTypeConverter () =
             // TODO: check for custom type converters in the TypeDescriptor attributes as well
             let typeConverterAttributes = this.GetCustomAttributes<TypeConverterAttribute> ()
-            if not <| Seq.isEmpty typeConverterAttributes then
+            if not ^ Seq.isEmpty typeConverterAttributes then
                 let typeConverterAttribute = Seq.head typeConverterAttributes
                 let typeConverterTypeName = typeConverterAttribute.ConverterTypeName
                 let typeConverterType = Type.GetType typeConverterTypeName
                 match typeConverterType.GetConstructor [|typeof<Type>|] with
-                | null -> Some <| (typeConverterType.GetConstructor [||]).Invoke [||]
-                | constructor1 -> Some <| constructor1.Invoke [|this|]
+                | null -> Some ^ (typeConverterType.GetConstructor [||]).Invoke [||]
+                | constructor1 -> Some ^ constructor1.Invoke [|this|]
             else None
 
         member this.GetPropertyWritable propertyName =

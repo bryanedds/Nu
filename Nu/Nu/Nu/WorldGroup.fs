@@ -49,24 +49,24 @@ module WorldGroupModule =
             dispatcher.Unregister group world
 
         static member internal addGroup mayReplace groupState group world =
-            let isNew = not <| World.containsGroup group world
+            let isNew = not ^ World.containsGroup group world
             if isNew || mayReplace then
                 let world = World.setGroupStateWithoutEvent groupState group world
                 if isNew then
                     let world = World.registerGroup group world
                     World.publish4 () (Events.GroupAdd ->>- group) group world
                 else world
-            else failwith <| "Adding a group that the world already contains at address '" + acstring group.GroupAddress + "'."
+            else failwith ^ "Adding a group that the world already contains at address '" + acstring group.GroupAddress + "'."
 
         /// Query that the world contains a group.
         static member containsGroup group world =
-            Option.isSome <| World.getOptGroupState group world
+            Option.isSome ^ World.getOptGroupState group world
 
         /// Get all the groups in a screen.
         static member proxyGroups screen world =
             let groupStateMap = World.getGroupStateMap screen world
             Seq.map
-                (fun (kvp : KeyValuePair<string, _>) -> Group.proxy <| satoga screen.ScreenAddress kvp.Key)
+                (fun (kvp : KeyValuePair<string, _>) -> Group.proxy ^ satoga screen.ScreenAddress kvp.Key)
                 groupStateMap
 
         /// Destroy a group in the world immediately. Can be dangerous if existing in-flight
@@ -109,7 +109,7 @@ module WorldGroupModule =
             let dispatcher = Map.find dispatcherName world.Components.GroupDispatchers
             let groupState = GroupState.make dispatcher optName
             Reflection.attachFields dispatcher groupState
-            let group = Group.proxy <| satoga screen.ScreenAddress groupState.Name
+            let group = Group.proxy ^ satoga screen.ScreenAddress groupState.Name
             let world = World.addGroup false groupState group world
             (group, world)
 
@@ -129,7 +129,7 @@ module WorldGroupModule =
             let writerSettings = XmlWriterSettings ()
             writerSettings.Indent <- true
             // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
-            // XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
+            // XmlWriter.Create ^ (document.CreateNavigator ()).AppendChild ()
             use writer = XmlWriter.Create (filePathTmp, writerSettings)
             writer.WriteStartDocument ()
             writer.WriteStartElement Constants.Xml.RootNodeName
@@ -160,7 +160,7 @@ module WorldGroupModule =
                 match Map.tryFind dispatcherName world.Components.GroupDispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    note <| "Could not locate dispatcher '" + dispatcherName + "'."
+                    note ^ "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<GroupDispatcher>.Name
                     Map.find dispatcherName world.Components.GroupDispatchers
             
@@ -177,11 +177,11 @@ module WorldGroupModule =
             let groupState = match optName with Some name -> { groupState with Name = name } | None -> groupState
 
             // add the group's state to the world
-            let group = Group.proxy <| satoga screen.ScreenAddress groupState.Name
+            let group = Group.proxy ^ satoga screen.ScreenAddress groupState.Name
             let world = World.addGroup true groupState group world
 
             // read the group's entities
-            let world = snd <| World.readEntities (groupNode : XmlNode) defaultEntityDispatcherName group world
+            let world = snd ^ World.readEntities (groupNode : XmlNode) defaultEntityDispatcherName group world
             (group, world)
 
         /// Read a group from an xml file.
@@ -203,7 +203,7 @@ module WorldGroupModule =
                             let (group, world) = World.readGroup groupNode defaultDispatcherName defaultEntityDispatcherName None screen world
                             (group :: groupsRev, world))
                         ([], world)
-                        (enumerable <| groupsNode.SelectNodes Constants.Xml.GroupNodeName)
+                        (enumerable ^ groupsNode.SelectNodes Constants.Xml.GroupNodeName)
                 (List.rev groupsRev, world)
 
 namespace Debug

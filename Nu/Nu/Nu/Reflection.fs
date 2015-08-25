@@ -39,7 +39,7 @@ module FieldDefinition =
         if fieldDefinition.FieldName = "FacetNames" then failwith "FacetNames cannot be an intrinsic field."
         if fieldDefinition.FieldName = "OptOverlayName" then failwith "OptOverlayName cannot be an intrinsic field."
         if Array.exists (fun gta -> gta = typeof<obj>) fieldDefinition.FieldType.GenericTypeArguments then
-            failwith <|
+            failwith ^
                 "Generic field definition lacking type information for field '" + fieldDefinition.FieldName + "'. " +
                 "Use explicit typing on all values that carry incomplete type information such as empty lists, empty sets, and none options,."
 
@@ -60,7 +60,7 @@ type DefineConstant =
     /// Some magic syntax for composing constant fields.
     static member (?) (_, fieldName) =
         fun (constant : 'c) ->
-            FieldDefinition.makeValidated fieldName typeof<'c> <| Constant constant
+            FieldDefinition.makeValidated fieldName typeof<'c> ^ Constant constant
 
 /// In tandem with the variable literal, grants a nice syntax to define variable fields.
 type DefineVariable =
@@ -69,7 +69,7 @@ type DefineVariable =
     /// Some magic syntax for composing variable fields.
     static member (?) (_, fieldName) =
         fun (variable : unit -> 'v) ->
-            FieldDefinition.makeValidated fieldName typeof<'v> <| Variable (fun () -> variable () :> obj)
+            FieldDefinition.makeValidated fieldName typeof<'v> ^ Variable (fun () -> variable () :> obj)
 
 [<AutoOpen>]
 module ReflectionModule =
@@ -93,9 +93,9 @@ module Reflection =
 
     /// Is a property with the given name persistent?
     let isPropertyPersistentByName (propertyName : string) =
-        not <| propertyName.EndsWith "Id" && // don't write an Id
-        not <| propertyName.EndsWith "Ids" && // don't write multiple Ids
-        not <| propertyName.EndsWith "Np" // don't write non-persistent properties
+        not ^ propertyName.EndsWith "Id" && // don't write an Id
+        not ^ propertyName.EndsWith "Ids" && // don't write multiple Ids
+        not ^ propertyName.EndsWith "Np" // don't write non-persistent properties
 
     /// Is a property with the given name persistent?
     let isPropertyPersistent target (property : PropertyInfo) =
@@ -103,7 +103,7 @@ module Reflection =
         not
             (property.Name = Constants.Engine.NameFieldName &&
              property.PropertyType = typeof<string> &&
-             fst <| Guid.TryParse (property.GetValue target :?> string))
+             fst ^ Guid.TryParse (property.GetValue target :?> string))
 
     /// Query that the dispatcher has behavior congruent to the given type.
     let dispatchesAs (dispatcherTargetType : Type) dispatcher =
@@ -136,7 +136,7 @@ module Reflection =
                     match fieldDefinitionsProperty.GetValue null with
                     | :? (obj list) as definitions when List.isEmpty definitions -> []
                     | :? (FieldDefinition list) as definitions -> definitions
-                    | _ -> failwith <| "FieldDefinitions property for type '" + targetType.Name + "' must be of type FieldDefinition list."
+                    | _ -> failwith ^ "FieldDefinitions property for type '" + targetType.Name + "' must be of type FieldDefinition list."
             FieldDefinitionsCache.Add (targetType, fieldDefinitions)
             fieldDefinitions
 
@@ -179,12 +179,12 @@ module Reflection =
                 | Some reqdDispatcher ->
                     let reqdDispatcherType = reqdDispatcher.GetType ()
                     match targetType.GetProperty "DispatcherNp" with
-                    | null -> failwith <| "Target '" + acstring target + "' does not implement dispatching in a compatible way."
+                    | null -> failwith ^ "Target '" + acstring target + "' does not implement dispatching in a compatible way."
                     | dispatcherNpProperty ->
                         let dispatcher = dispatcherNpProperty.GetValue target
                         dispatchesAs reqdDispatcherType dispatcher
-                | None -> failwith <| "Could not find required dispatcher '" + reqdDispatcherName + "' in dispatcher map."
-            | _ -> failwith <| "Static member 'RequiredDispatcherName' for facet '" + facetType.Name + "' is not of type string."
+                | None -> failwith ^ "Could not find required dispatcher '" + reqdDispatcherName + "' in dispatcher map."
+            | _ -> failwith ^ "Static member 'RequiredDispatcherName' for facet '" + facetType.Name + "' is not of type string."
 
     /// Check for facet compatibility with the target's dispatcher.
     let isFacetCompatibleWithDispatcher dispatcherMap (facet : obj) (target : obj) =
@@ -200,7 +200,7 @@ module Reflection =
         let optDispatcher =
             match targetType.GetProperty "DispatcherNp" with
             | null -> None
-            | dispatcherNpProperty -> Some <| objectify ^ dispatcherNpProperty.GetValue target
+            | dispatcherNpProperty -> Some ^ objectify ^ dispatcherNpProperty.GetValue target
         let optFacets =
             match targetType.GetProperty "FacetsNp" with
             | null -> None
@@ -242,7 +242,7 @@ module Reflection =
             match intrinsicFacetNames with
             | :? (obj list) as intrinsicFacetNames when List.isEmpty intrinsicFacetNames -> []
             | :? (string list) as intrinsicFacetNames -> intrinsicFacetNames
-            | _ -> failwith <| "IntrinsicFacetNames property for type '" + targetType.Name + "' must be of type string list."
+            | _ -> failwith ^ "IntrinsicFacetNames property for type '" + targetType.Name + "' must be of type string list."
 
     /// Get the intrinsic facet names of a target type.
     let getIntrinsicFacetNames (targetType : Type) =
@@ -259,7 +259,7 @@ module Reflection =
             match targetType.GetPropertyWritable fieldDefinition.FieldName with
             | null ->
                 match targetType.GetPropertyWritable "Xtension" with
-                | null -> failwith <| "Invalid field '" + fieldDefinition.FieldName + "' for target type '" + targetType.Name + "'."
+                | null -> failwith ^ "Invalid field '" + fieldDefinition.FieldName + "' for target type '" + targetType.Name + "'."
                 | xtensionProperty ->
                     match xtensionProperty.GetValue target with
                     | :? Xtension as xtension ->
@@ -267,7 +267,7 @@ module Reflection =
                         let xFields = Map.add fieldDefinition.FieldName xField xtension.XFields
                         let xtension = { xtension with XFields = xFields }
                         xtensionProperty.SetValue (target, xtension)
-                    | _ -> failwith <| "Invalid field '" + fieldDefinition.FieldName + "' for target type '" + targetType.Name + "'."
+                    | _ -> failwith ^ "Invalid field '" + fieldDefinition.FieldName + "' for target type '" + targetType.Name + "'."
             | property -> property.SetValue (target, fieldValue)
 
     /// Detach fields from a target.
@@ -277,14 +277,14 @@ module Reflection =
             match targetType.GetPropertyWritable fieldName with
             | null ->
                 match targetType.GetPropertyWritable "Xtension" with
-                | null -> failwith <| "Invalid field '" + fieldName + "' for target type '" + targetType.Name + "'."
+                | null -> failwith ^ "Invalid field '" + fieldName + "' for target type '" + targetType.Name + "'."
                 | xtensionProperty ->
                     match xtensionProperty.GetValue target with
                     | :? Xtension as xtension ->
                         let xFields = Map.remove fieldName xtension.XFields
                         let xtension = { xtension with XFields = xFields }
                         xtensionProperty.SetValue (target, xtension)
-                    | _ -> failwith <| "Invalid field '" + fieldName + "' for target type '" + targetType.Name + "'."
+                    | _ -> failwith ^ "Invalid field '" + fieldName + "' for target type '" + targetType.Name + "'."
             | _ -> ()
 
     /// Attach source's fields to a target.
@@ -306,16 +306,16 @@ module Reflection =
                 (fun facetName ->
                     match Map.tryFind facetName facetMap with
                     | Some facet -> facet
-                    | None -> failwith <| "Could not find facet '" + facetName + "' in facet map.")
+                    | None -> failwith ^ "Could not find facet '" + facetName + "' in facet map.")
                 facetNames
         let targetType = target.GetType ()
         match targetType.GetPropertyWritable "FacetsNp" with
-        | null -> failwith <| "Could not attach facet to type '" + targetType.Name + "'."
+        | null -> failwith ^ "Could not attach facet to type '" + targetType.Name + "'."
         | facetsNpProperty ->
             List.iter
                 (fun facet ->
-                    if not <| isFacetCompatibleWithDispatcher dispatcherMap facet target
-                    then failwith <| "Facet of type '" + getTypeName facet + "' is not compatible with target '" + acstring target + "'."
+                    if not ^ isFacetCompatibleWithDispatcher dispatcherMap facet target
+                    then failwith ^ "Facet of type '" + getTypeName facet + "' is not compatible with target '" + acstring target + "'."
                     else ())
                 facets
             facetsNpProperty.SetValue (target, facets)
@@ -413,7 +413,7 @@ module Reflection =
                 if converter.CanConvertFrom typeof<string> then
                     let xField = { FieldValue = converter.ConvertFromString fieldNode.InnerText; FieldType = fieldDefinition.FieldType }
                     Map.add fieldDefinition.FieldName xField targetXFields
-                else debug <| "Cannot convert string '" + fieldNode.InnerText + "' to type '" + fieldDefinition.FieldType.Name + "'."; targetXFields
+                else debug ^ "Cannot convert string '" + fieldNode.InnerText + "' to type '" + fieldDefinition.FieldType.Name + "'."; targetXFields
         else targetXFields
 
     /// Read a target's XFields.
@@ -441,7 +441,7 @@ module Reflection =
 
     /// Write an Xtension to Xml.
     /// NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
-    /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
+    /// XmlWriter.Create ^ (document.CreateNavigator ()).AppendChild ()
     let writeXtension shouldWriteProperty (writer : XmlWriter) xtension =
         for xFieldKvp in xtension.XFields do
             let xFieldName = xFieldKvp.Key
@@ -456,7 +456,7 @@ module Reflection =
 
     /// Write all of a target's member values to Xml.
     /// NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
-    /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
+    /// XmlWriter.Create ^ (document.CreateNavigator ()).AppendChild ()
     let writeMemberValuesFromTarget shouldWriteProperty (writer : XmlWriter) (target : 'a) =
         let targetType = target.GetType ()
         let properties = targetType.GetProperties ()
@@ -478,7 +478,7 @@ module Reflection =
         let sourceTypeHashSet = HashSet ()
         for sourceType in sourceTypes do
             for sourceTypeDecomposed in sourceType :: getBaseTypesExceptObject sourceType do
-                ignore <| sourceTypeHashSet.Add sourceTypeDecomposed
+                ignore ^ sourceTypeHashSet.Add sourceTypeDecomposed
         let sourceTypes = List.ofSeq sourceTypeHashSet
 
         // get the descriptors needed to construct the overlays
@@ -506,7 +506,7 @@ module Reflection =
             | _ :: _ ->
                 let includesAttribute = document.CreateAttribute Constants.Xml.IncludesAttributeName
                 includesAttribute.InnerText <- AlgebraicDescriptor.convertToString includeNames
-                ignore <| overlayNode.Attributes.Append includesAttribute
+                ignore ^ overlayNode.Attributes.Append includesAttribute
             | _ -> ()
 
             // construct the field nodes
@@ -516,18 +516,18 @@ module Reflection =
                 | Constant constant ->
                     let converter = AlgebraicConverter definition.FieldType
                     fieldNode.InnerText <- converter.ConvertToString constant
-                    ignore <| overlayNode.AppendChild fieldNode
+                    ignore ^ overlayNode.AppendChild fieldNode
                 | Variable _ -> ()
 
             // construct the "FacetNames" node if needed
             if hasFacetNamesField then
                 let facetNamesNode = document.CreateElement "FacetNames"
                 facetNamesNode.InnerText <- AlgebraicDescriptor.convertToString []
-                ignore <| overlayNode.AppendChild facetNamesNode
+                ignore ^ overlayNode.AppendChild facetNamesNode
 
             // append the overlay node
-            ignore <| root.AppendChild overlayNode
+            ignore ^ root.AppendChild overlayNode
 
         // append the root node
-        ignore <| document.AppendChild root
+        ignore ^ document.AppendChild root
         document

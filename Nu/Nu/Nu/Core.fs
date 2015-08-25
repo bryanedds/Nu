@@ -31,7 +31,7 @@ module internal CoreInternal =
     /// Get a time stamp at the highest-available resolution on windows.
     let internal getTimeStampInternal () =
         let mutable t = 0L
-        ignore <| QueryPerformanceCounter &t
+        ignore ^ QueryPerformanceCounter &t
         t
 #endif
 

@@ -36,7 +36,7 @@ module BulletModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? Size <| Vector2 (24.0f, 24.0f)
+            [define? Size ^ Vector2 (24.0f, 24.0f)
              define? Density 0.25f
              define? Restitution 0.5f
              define? LinearDamping 0.0f
@@ -98,14 +98,14 @@ module EnemyModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? Size <| Vector2 (48.0f, 96.0f)
+            [define? Size ^ Vector2 (48.0f, 96.0f)
              define? FixedRotation true
              define? LinearDamping 3.0f
              define? GravityScale 0.0f
              define? CollisionExpr "Capsule"
              define? TileCount 6
              define? TileRun 4
-             define? TileSize <| Vector2 (48.0f, 96.0f)
+             define? TileSize ^ Vector2 (48.0f, 96.0f)
              define? AnimationStutter 8L
              define? AnimationSheet Constants.Assets.EnemyImage
              define? Health 6]
@@ -151,14 +151,14 @@ module PlayerModule =
 
         static let shootBullet (player : Entity) world =
             let playerTransform = player.GetTransform world
-            let playerGroup = Group.proxy <| eatoga player.EntityAddress
+            let playerGroup = Group.proxy ^ eatoga player.EntityAddress
             let (bullet, world) = createBullet playerTransform playerGroup world
             propelBullet bullet world
 
         static let handleSpawnBullet event world =
             let player = event.Subscriber : Entity
             if World.isTicking world then
-                if not <| player.HasFallen world then
+                if not ^ player.HasFallen world then
                     if World.getTickTime world % 6L = 0L then
                         let world = shootBullet player world
                         (Cascade, world)
@@ -167,7 +167,7 @@ module PlayerModule =
             else (Cascade, world)
 
         static let getLastTimeOnGround (player : Entity) world =
-            if not <| World.bodyOnGround (player.GetPhysicsId world) world
+            if not ^ World.bodyOnGround (player.GetPhysicsId world) world
             then player.GetLastTimeOnGroundNp world
             else World.getTickTime world
 
@@ -206,14 +206,14 @@ module PlayerModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? Size <| Vector2 (48.0f, 96.0f)
+            [define? Size ^ Vector2 (48.0f, 96.0f)
              define? FixedRotation true
              define? LinearDamping 3.0f
              define? GravityScale 0.0f
              define? CollisionExpr "Capsule"
              define? TileCount 16
              define? TileRun 4
-             define? TileSize <| Vector2 (48.0f, 96.0f)
+             define? TileSize ^ Vector2 (48.0f, 96.0f)
              define? AnimationStutter 3L
              define? AnimationSheet Constants.Assets.PlayerImage
              define? LastTimeOnGroundNp Int64.MinValue
@@ -296,7 +296,7 @@ module GameplayScreenModule =
                 [0 .. Constants.BlazeVector.SectionCount - 1]
 
         static let createPlayerGroup world =
-            snd <| World.readGroupFromFile Constants.FilePaths.PlayerGroup (Some Simulants.PlayerGroupName) Simulants.Gameplay world
+            snd ^ World.readGroupFromFile Constants.FilePaths.PlayerGroup (Some Simulants.PlayerGroupName) Simulants.Gameplay world
 
         static let handleStartPlay _ world =
             let world = createPlayerGroup world
@@ -312,7 +312,7 @@ module GameplayScreenModule =
             let screen = event.Subscriber : Screen
             let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield SectionName + acstring i]
             let groupNames = Simulants.PlayerGroupName :: sectionNames
-            let groups = List.map (fun groupName -> Group.proxy <| satoga screen.ScreenAddress groupName) groupNames
+            let groups = List.map (fun groupName -> Group.proxy ^ satoga screen.ScreenAddress groupName) groupNames
             let world = World.destroyGroups groups world
             (Cascade, world)
 

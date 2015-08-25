@@ -39,7 +39,7 @@ module ObservationTests =
         let (unsubscribe, world) = observe UnitEventAddress Simulants.Game |> subscribeWithUnsub incUserStateAndCascade <| world
         let world = unsubscribe world
         let world = World.publish4 () UnitEventAddress Simulants.Game world
-        Assert.True <| Map.isEmpty world.Callbacks.Subscriptions
+        Assert.True ^ Map.isEmpty world.Callbacks.Subscriptions
         Assert.Equal (0, World.getUserState world)
 
     let [<Fact>] filterWorks () =
@@ -87,7 +87,7 @@ module ObservationTests =
             world
         let world = World.publish4 0 IntEventAddress Simulants.Game world
         let world = unsubscribe world
-        Assert.True <| Map.isEmpty world.Callbacks.CallbackStates
+        Assert.True ^ Map.isEmpty world.Callbacks.CallbackStates
 
     let [<Fact>] iterativeFrpWorks () =
         World.init ()
@@ -98,8 +98,8 @@ module ObservationTests =
         let (bob, world) = World.createEntity typeof<EntityDispatcher>.Name (Some BobName) group world
         let world = world |> (bob, bob.GetVisible) *-> (jim, jim.SetVisible)
         let world = bob.SetVisible false world
-        Assert.False <| bob.GetVisible world
-        Assert.False <| jim.GetVisible world
+        Assert.False ^ bob.GetVisible world
+        Assert.False ^ jim.GetVisible world
 
     let [<Fact>] iterativeFrpCyclicWorks () =
         World.init ()
@@ -113,5 +113,5 @@ module ObservationTests =
                 (bob, bob.GetVisible) *-> (jim, jim.SetVisible) |>
                 (jim, jim.GetVisible) /-> (bob, not >> bob.SetVisible)
         let world = bob.SetVisible false world
-        Assert.True <| bob.GetVisible world
-        Assert.True <| jim.GetVisible world
+        Assert.True ^ bob.GetVisible world
+        Assert.True ^ jim.GetVisible world

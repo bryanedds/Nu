@@ -71,7 +71,7 @@ module WorldGameModule =
 
         /// Get the currently selected screen (failing with an exception if there isn't one).
         static member getSelectedScreen world =
-            Option.get <| World.getOptSelectedScreen world
+            Option.get ^ World.getOptSelectedScreen world
         
         /// Set the currently selected screen. Be careful using this function directly as you may
         /// be wanting to use the higher-level World.transitionScreen function instead.
@@ -111,14 +111,14 @@ module WorldGameModule =
                 match Map.tryFind dispatcherName world.Components.GameDispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    note <| "Could not locate dispatcher '" + dispatcherName + "'."
+                    note ^ "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<GameDispatcher>.Name
                     Map.find dispatcherName world.Components.GameDispatchers
             let gameState = World.makeGameState dispatcher
             Reflection.readMemberValuesToTarget gameNode gameState
             let world = World.setGameState gameState world
             let world =
-                snd <| World.readScreens
+                snd ^ World.readScreens
                     gameNode
                     defaultScreenDispatcherName
                     defaultGroupDispatcherName

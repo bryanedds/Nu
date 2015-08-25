@@ -225,7 +225,7 @@ type [<ReferenceEquality>] Integrator =
 
     static member private handleCollision
         integrator (fixture : Dynamics.Fixture) (fixture2 : Dynamics.Fixture) (contact : Dynamics.Contacts.Contact) =
-        let normal = fst <| contact.GetWorldManifold ()
+        let normal = fst ^ contact.GetWorldManifold ()
         let bodyCollisionMessage =
             { SourceAddress = fixture.Body.UserData :?> obj Address
               CollideeAddress = fixture2.Body.UserData :?> obj Address
@@ -263,8 +263,8 @@ type [<ReferenceEquality>] Integrator =
         let body =
             Factories.BodyFactory.CreateRectangle
                 (integrator.PhysicsContext,
-                 Integrator.toPhysicsPolygonDiameter <| boxShape.Extent.X * 2.0f,
-                 Integrator.toPhysicsPolygonDiameter <| boxShape.Extent.Y * 2.0f,
+                 Integrator.toPhysicsPolygonDiameter ^ boxShape.Extent.X * 2.0f,
+                 Integrator.toPhysicsPolygonDiameter ^ boxShape.Extent.Y * 2.0f,
                  bodyProperties.Density,
                  Integrator.toPhysicsV2 boxShape.Center,
                  0.0f,
@@ -299,7 +299,7 @@ type [<ReferenceEquality>] Integrator =
         body.UserData <- sourceAddress // BUG: ...so I set it again here :/
         // scale in the capsule's box to stop sticking
         let capsuleBox = body.FixtureList.[0].Shape :?> FarseerPhysics.Collision.Shapes.PolygonShape
-        ignore <| capsuleBox.Vertices.Scale (Framework.Vector2 (0.75f, 1.0f))
+        ignore ^ capsuleBox.Vertices.Scale (Framework.Vector2 (0.75f, 1.0f))
         body
 
     static member private createPolygonBody sourceAddress bodyProperties polygonShape integrator =
@@ -328,8 +328,8 @@ type [<ReferenceEquality>] Integrator =
         body.add_OnCollision (fun fn fn2 collision -> Integrator.handleCollision integrator fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
 
         // attempt to add the body
-        if not <| integrator.Bodies.TryAdd ({ SourceId = sourceId; BodyId = bodyProperties.BodyId }, body) then
-            debug <| "Could not add body via '" + acstring bodyProperties + "'."
+        if not ^ integrator.Bodies.TryAdd ({ SourceId = sourceId; BodyId = bodyProperties.BodyId }, body) then
+            debug ^ "Could not add body via '" + acstring bodyProperties + "'."
 
     static member private createBodies (createBodiesMessage : CreateBodiesMessage) integrator =
         List.iter
@@ -342,11 +342,11 @@ type [<ReferenceEquality>] Integrator =
     static member private destroyBody2 physicsId integrator =
         match integrator.Bodies.TryGetValue physicsId with
         | (true, body) ->
-            ignore <| integrator.Bodies.Remove physicsId
+            ignore ^ integrator.Bodies.Remove physicsId
             integrator.PhysicsContext.RemoveBody body
         | (false, _) ->
             if not integrator.RebuildingHack then
-                debug <| "Could not destroy non-existent body with PhysicsId = " + acstring physicsId + "'."
+                debug ^ "Could not destroy non-existent body with PhysicsId = " + acstring physicsId + "'."
 
     static member private destroyBody (destroyBodyMessage : DestroyBodyMessage) integrator =
         Integrator.destroyBody2 destroyBodyMessage.PhysicsId integrator
@@ -357,27 +357,27 @@ type [<ReferenceEquality>] Integrator =
     static member private setBodyPosition (setBodyPositionMessage : SetBodyPositionMessage) integrator =
         match integrator.Bodies.TryGetValue setBodyPositionMessage.PhysicsId with
         | (true, body) -> body.Position <- Integrator.toPhysicsV2 setBodyPositionMessage.Position
-        | (false, _) -> debug <| "Could not set position of non-existent body with PhysicsId = " + acstring setBodyPositionMessage.PhysicsId + "'."
+        | (false, _) -> debug ^ "Could not set position of non-existent body with PhysicsId = " + acstring setBodyPositionMessage.PhysicsId + "'."
 
     static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) integrator =
         match integrator.Bodies.TryGetValue setBodyRotationMessage.PhysicsId with
         | (true, body) -> body.Rotation <- setBodyRotationMessage.Rotation
-        | (false, _) -> debug <| "Could not set rotation of non-existent body with PhysicsId = " + acstring setBodyRotationMessage.PhysicsId + "'."
+        | (false, _) -> debug ^ "Could not set rotation of non-existent body with PhysicsId = " + acstring setBodyRotationMessage.PhysicsId + "'."
 
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) integrator =
         match integrator.Bodies.TryGetValue setBodyLinearVelocityMessage.PhysicsId with
         | (true, body) -> body.LinearVelocity <- Integrator.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity
-        | (false, _) -> debug <| "Could not set linear velocity of non-existent body with PhysicsId = " + acstring setBodyLinearVelocityMessage.PhysicsId + "'."
+        | (false, _) -> debug ^ "Could not set linear velocity of non-existent body with PhysicsId = " + acstring setBodyLinearVelocityMessage.PhysicsId + "'."
 
     static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) integrator =
         match integrator.Bodies.TryGetValue applyBodyLinearImpulseMessage.PhysicsId with
         | (true, body) -> body.ApplyLinearImpulse (Integrator.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse)
-        | (false, _) -> debug <| "Could not apply linear impulse to non-existent body with PhysicsId = " + acstring applyBodyLinearImpulseMessage.PhysicsId + "'."
+        | (false, _) -> debug ^ "Could not apply linear impulse to non-existent body with PhysicsId = " + acstring applyBodyLinearImpulseMessage.PhysicsId + "'."
 
     static member private applyBodyForce applyBodyForceMessage integrator =
         match integrator.Bodies.TryGetValue applyBodyForceMessage.PhysicsId with
         | (true, body) -> body.ApplyForce (Integrator.toPhysicsV2 applyBodyForceMessage.Force)
-        | (false, _) -> debug <| "Could not apply force to non-existent body with PhysicsId = " + acstring applyBodyForceMessage.PhysicsId + "'."
+        | (false, _) -> debug ^ "Could not apply force to non-existent body with PhysicsId = " + acstring applyBodyForceMessage.PhysicsId + "'."
 
     static member private handlePhysicsMessage integrator physicsMessage =
         match physicsMessage with
@@ -431,7 +431,7 @@ type [<ReferenceEquality>] Integrator =
             let contacts = Integrator.getBodyContacts physicsId integrator
             List.map
                 (fun (contact : Contact) ->
-                    let normal = fst <| contact.GetWorldManifold ()
+                    let normal = fst ^ contact.GetWorldManifold ()
                     Vector2 (normal.X, normal.Y))
                 contacts
 
@@ -457,12 +457,12 @@ type [<ReferenceEquality>] Integrator =
 
         member integrator.GetBodyOptGroundContactTangent physicsId =
             match (integrator :> IIntegrator).GetBodyOptGroundContactNormal physicsId with
-            | Some normal -> Some <| Vector2 (normal.Y, -normal.X)
+            | Some normal -> Some ^ Vector2 (normal.Y, -normal.X)
             | None -> None
 
         member integrator.BodyOnGround physicsId =
             let groundNormals = (integrator :> IIntegrator).GetBodyGroundContactNormals physicsId
-            not <| List.isEmpty groundNormals
+            not ^ List.isEmpty groundNormals
 
         member integrator.ClearMessages () =
             let integrator = { integrator with PhysicsMessages = Queue.empty }
@@ -518,7 +518,7 @@ module Physics =
     /// TODO: see if AlgebraicConverter can be used here instead of this shitty custom syntax.
     /// TODO: propagate errors rather than tracing in place
     let evalCollisionExpr (extent : Vector2) (expr : string) =
-        let terms = List.ofArray <| expr.Split '?'
+        let terms = List.ofArray ^ expr.Split '?'
         let terms = List.map (fun (term : string) -> term.Trim ()) terms
         let defaultShape = BoxShape { Extent = extent * 0.5f; Center = Vector2.Zero }
         match terms with
@@ -527,12 +527,12 @@ module Physics =
         | ["Circle"] -> CircleShape { Radius = extent.X * 0.5f; Center = Vector2.Zero }
         | ["Capsule"] -> CapsuleShape { Height = extent.Y * 0.5f; Radius = extent.Y * 0.25f; Center = Vector2.Zero }
         | ["Polygon"; verticesStr] ->
-            let vertexStrs = List.ofArray <| verticesStr.Split '|'
+            let vertexStrs = List.ofArray ^ verticesStr.Split '|'
             try let vertices = List.map (fun str -> AlgebraicDescriptor.convertFromString str typeof<Vector2> :?> Vector2) vertexStrs
                 let vertices = List.map (fun vertex -> vertex - Vector2 0.5f) vertices
                 let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) vertices
                 PolygonShape { Vertices = vertices; Center = Vector2.Zero }
             with :? NotSupportedException ->
-                trace <| "Could not parse collision polygon vertices '" + verticesStr + "'. Format is 'Polygon? 0.0, 0.0 | 0.0, 1.0 | 1.0, 1.0 | 1.0, 0.0'"
+                trace ^ "Could not parse collision polygon vertices '" + verticesStr + "'. Format is 'Polygon? 0.0, 0.0 | 0.0, 1.0 | 1.0, 1.0 | 1.0, 0.0'"
                 defaultShape
-        | _ -> trace <| "Invalid tile collision expression '" + expr + "'."; defaultShape
+        | _ -> trace ^ "Invalid tile collision expression '" + expr + "'."; defaultShape

@@ -46,8 +46,8 @@ module AlgebraicReader =
     let closeComplexValueForm = charForm CloseComplexValueChar
     let separatorForm = charForm SeparatorChar
 
-    let readNameChars = many1 <| noneOf (StructureChars + WhitespaceChars)
-    let readSimpleValueChars = many1 <| noneOf StructureChars
+    let readNameChars = many1 (noneOf (StructureChars + WhitespaceChars))
+    let readSimpleValueChars = many1 (noneOf StructureChars)
 
     let (readValue : Parser<obj, unit>, refReadValue : Parser<obj, unit> ref) = createParserForwardedToRef ()
 

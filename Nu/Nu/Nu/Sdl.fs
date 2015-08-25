@@ -77,7 +77,7 @@ module Sdl =
         let initResult = create ()
         let error = SDL.SDL_GetError ()
         if initResult <> 0 then
-            trace <| "SDL2# initialization failed due to '" + error + "'."
+            trace ^ "SDL2# initialization failed due to '" + error + "'."
             Constants.Engine.FailureExitCode
         else
             try action ()
@@ -88,7 +88,7 @@ module Sdl =
         let resource = create ()
         if resource = IntPtr.Zero then
             let error = SDL.SDL_GetError ()
-            trace <| "SDL2# resource creation failed due to '" + error + "'."
+            trace ^ "SDL2# resource creation failed due to '" + error + "'."
             Constants.Engine.FailureExitCode
         else
             try action resource
@@ -99,7 +99,7 @@ module Sdl =
         let resource = create ()
         if resource <> 0 then
             let error = SDL.SDL_GetError ()
-            trace <| "SDL2# global resource creation failed due to '" + error + "'."
+            trace ^ "SDL2# global resource creation failed due to '" + error + "'."
             Constants.Engine.FailureExitCode
         else
             try action ()
@@ -109,7 +109,7 @@ module Sdl =
     let update handleEvent handleUpdate world =
         if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
             let mutable result = (Running, world)
-            let polledEvent = ref <| SDL.SDL_Event ()
+            let polledEvent = ref ^ SDL.SDL_Event ()
             while
                 SDL.SDL_PollEvent polledEvent <> 0 &&
                 (match fst result with Running -> true | Exiting -> false) do
@@ -127,8 +127,8 @@ module Sdl =
             match Constants.Render.ScreenClearing with
             | NoClear -> ()
             | ColorClear (r, g, b) ->
-                ignore <| SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy)
-                ignore <| SDL.SDL_RenderClear renderContext
+                ignore ^ SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy)
+                ignore ^ SDL.SDL_RenderClear renderContext
             let world = handleRender world
             SDL.SDL_RenderPresent renderContext
             world
@@ -145,7 +145,7 @@ module Sdl =
         let (anotherFrame, optFrames) =
             match optFrames with
             | Some frames ->
-                if frames > 0 then (true, Some <| frames - 1)
+                if frames > 0 then (true, Some ^ frames - 1)
                 elif frames < 0 then (true, Some frames)
                 else (false, Some frames)
             | None -> (true, None)
@@ -194,7 +194,7 @@ module Sdl =
 #if MIX_INIT_OGG
                             (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG) // NOTE: for some reason this line fails on 32-bit builds.. WHY?
 #else
-                            (fun () -> SDL_mixer.Mix_Init <| enum<SDL_mixer.MIX_InitFlags> 0)
+                            (fun () -> SDL_mixer.Mix_Init ^ enum<SDL_mixer.MIX_InitFlags> 0)
 #endif
                             (fun () -> SDL_mixer.Mix_Quit ())
                             (fun () ->

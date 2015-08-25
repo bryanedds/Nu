@@ -40,10 +40,10 @@ module Metadata =
               AssetName = properties.["ImageAssetName"] }
         with :? KeyNotFoundException ->
             let errorMessage = "TileSet '" + tileSet.Name + "' missing one or more properties (PackageName or AssetName)."
-            raise <| TileSetPropertyNotFoundException errorMessage
+            raise ^ TileSetPropertyNotFoundException errorMessage
 
     let private generateTextureMetadata asset =
-        if not <| File.Exists asset.FilePath then
+        if not ^ File.Exists asset.FilePath then
             let errorMessage = "Failed to load Bitmap due to missing file '" + asset.FilePath + "'."
             trace errorMessage
             InvalidMetadata errorMessage
@@ -52,7 +52,7 @@ module Metadata =
             // actual image buffer.
             try use bitmap = new Bitmap (asset.FilePath)
                 if bitmap.PixelFormat = Imaging.PixelFormat.Format32bppArgb
-                then TextureMetadata <| Vector2i (bitmap.Width, bitmap.Height)
+                then TextureMetadata ^ Vector2i (bitmap.Width, bitmap.Height)
                 else
                     let errorMessage = "Bitmap with invalid format (expecting 32-bit ARGB)."
                     trace errorMessage
@@ -81,7 +81,7 @@ module Metadata =
             | ".tmx" -> generateTileMapMetadata asset
             | ".wav" -> SoundMetadata
             | ".ogg" -> SongMetadata
-            | _ -> InvalidMetadata <| "Could not load asset metadata '" + acstring asset + "' due to unknown extension '" + extension + "'."
+            | _ -> InvalidMetadata ^ "Could not load asset metadata '" + acstring asset + "' due to unknown extension '" + extension + "'."
         (asset.AssetTag.AssetName, metadata)
 
     let private generateAssetMetadataSubmap (packageNode : XmlNode) =
@@ -113,13 +113,13 @@ module Metadata =
             document.Load (assetGraphFilePath : string) 
             let optRootNode = document.[Constants.Xml.RootNodeName]
             match optRootNode with
-            | null -> Left <| "Root node is missing from asset graph file '" + assetGraphFilePath + "'."
+            | null -> Left ^ "Root node is missing from asset graph file '" + assetGraphFilePath + "'."
             | rootNode ->
-                let possiblePackageNodes = List.ofSeq <| rootNode.OfType<XmlNode> ()
+                let possiblePackageNodes = List.ofSeq ^ rootNode.OfType<XmlNode> ()
                 let packageNodes = List.filter (fun (node : XmlNode) -> node.Name = Constants.Xml.PackageNodeName) possiblePackageNodes
                 let assetMetadataMap = generateAssetMetadataMap packageNodes
                 Right assetMetadataMap
-        with exn -> Left <| acstring exn
+        with exn -> Left ^ acstring exn
 
     /// Try to get the metadata of the given asset.
     let tryGetMetadata (assetTag : AssetTag) assetMetadataMap =
@@ -142,17 +142,17 @@ module Metadata =
 
     /// Forcibly get the texture size metadata of the given asset (throwing on failure).
     let getTextureSize assetTag assetMetadataMap =
-        Option.get <| tryGetTextureSize assetTag assetMetadataMap
+        Option.get ^ tryGetTextureSize assetTag assetMetadataMap
 
     /// Try to get the texture size metadata of the given asset.
     let tryGetTextureSizeAsVector2 assetTag assetMetadataMap =
         match tryGetTextureSize assetTag assetMetadataMap with
-        | Some size -> Some <| Vector2 (single size.X, single size.Y)
+        | Some size -> Some ^ Vector2 (single size.X, single size.Y)
         | None -> None
 
     /// Forcibly get the texture size metadata of the given asset (throwing on failure).
     let getTextureSizeAsVector2 assetTag assetMetadataMap =
-        Option.get <| tryGetTextureSizeAsVector2 assetTag assetMetadataMap
+        Option.get ^ tryGetTextureSizeAsVector2 assetTag assetMetadataMap
 
     /// Try to get the tile map metadata of the given asset.
     let tryGetTileMapMetadata assetTag assetMetadataMap =
@@ -164,4 +164,4 @@ module Metadata =
 
     /// Forcibly get the tile map metadata of the given asset (throwing on failure).
     let getTileMapMetadata assetTag assetMetadataMap =
-        Option.get <| tryGetTileMapMetadata assetTag assetMetadataMap
+        Option.get ^ tryGetTileMapMetadata assetTag assetMetadataMap

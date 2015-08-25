@@ -64,5 +64,5 @@ let foldWhile fn initial input =
 /// Check that a predicate passes for NO items in a sequence.
 let rec notExists pred seq =
     match tryHead seq with
-    | Some head -> not <| pred head && notExists pred (Seq.skip 1 seq)
+    | Some head -> not ^ pred head && notExists pred (Seq.skip 1 seq)
     | None -> true

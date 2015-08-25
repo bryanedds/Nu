@@ -22,7 +22,7 @@ module Refinement =
         match str with
         | "PsdToPng" -> PsdToPng
         | "OldSchool" -> OldSchool
-        | _ -> failwith <| "Invalid refinement '" + str + "'."
+        | _ -> failwith ^ "Invalid refinement '" + str + "'."
 
 /// Describes a means for looking up an asset.
 /// TODO: consider if we could / should use a TypeCarrier (phantom type) here.
@@ -113,7 +113,7 @@ module Assets =
         | ".png" ->
             use stream = File.OpenWrite filePath
             image.Write (stream, MagickFormat.Png32)
-        | _ -> failwith <| "Invalid image file format for refinement '" + acstring OldSchool + "'; must be of *.png format."
+        | _ -> failwith ^ "Invalid image file format for refinement '" + acstring OldSchool + "'; must be of *.png format."
 
     /// Attempt to load an asset from the given Xml node.
     let tryLoadAssetFromAssetNode (node : XmlNode) =
@@ -147,8 +147,8 @@ module Assets =
                                   Associations = associations
                                   Refinements = refinements })
                             filePaths
-                    Some <| List.ofArray assets
-                with exn -> debug <| "Invalid directory '" + directory + "'."; None
+                    Some ^ List.ofArray assets
+                with exn -> debug ^ "Invalid directory '" + directory + "'."; None
             | None -> None
         | None -> None
 
@@ -161,13 +161,13 @@ module Assets =
                     | Constants.Xml.AssetNodeName ->
                         match tryLoadAssetFromAssetNode assetNode with
                         | Some asset -> asset :: assetsRev
-                        | None -> debug <| "Invalid asset node in '" + node.Name + "' in asset graph."; assetsRev
+                        | None -> debug ^ "Invalid asset node in '" + node.Name + "' in asset graph."; assetsRev
                     | Constants.Xml.AssetsNodeName ->
                         match tryLoadAssetsFromAssetsNode usingRawAssets assetNode with
                         | Some loadedAssets -> List.rev loadedAssets @ assetsRev
-                        | None -> debug <| "Invalid assets node in '" + node.Name + "' in asset graph."; assetsRev
+                        | None -> debug ^ "Invalid assets node in '" + node.Name + "' in asset graph."; assetsRev
                     | Constants.Xml.CommentNodeName -> assetsRev
-                    | invalidNodeType -> debug <| "Invalid package child node type '" + invalidNodeType + "'."; assetsRev)
+                    | invalidNodeType -> debug ^ "Invalid package child node type '" + invalidNodeType + "'."; assetsRev)
                 []
                 (enumerable node.ChildNodes) |>
             List.rev
@@ -177,7 +177,7 @@ module Assets =
 
     /// Attempt to load all the assets from the document root Xml node.
     let tryLoadAssetsFromRootNode usingRawAssets optAssociation (node : XmlNode) =
-        let possiblePackageNodes = List.ofSeq <| enumerable node.ChildNodes
+        let possiblePackageNodes = List.ofSeq ^ enumerable node.ChildNodes
         let packageNodes =
             List.fold (fun packageNodesRev (node : XmlNode) ->
                 if node.Name = Constants.Xml.PackageNodeName
@@ -203,7 +203,7 @@ module Assets =
         match packageNames with
         | [] ->
             let packageListing = String.Join ("; ", packageNames)
-            Left <| "Multiple packages have the same names '" + packageListing + "' which is an error."
+            Left ^ "Multiple packages have the same names '" + packageListing + "' which is an error."
         | _ :: _ ->
             let eitherPackageAssetLists =
                 List.map
@@ -214,8 +214,8 @@ module Assets =
                     nodes
             let (errors, assets) = Either.split eitherPackageAssetLists
             match errors with
-            | [] -> Right <| Map.ofList assets
-            | _ :: _ -> Left <| "Error(s) when loading assets '" + String.Join ("; ", errors) + "'."
+            | [] -> Right ^ Map.ofList assets
+            | _ :: _ -> Left ^ "Error(s) when loading assets '" + String.Join ("; ", errors) + "'."
 
     /// Attempt to load all the assets from a package.
     let tryLoadAssetsFromPackage usingRawAssets optAssociation packageName (assetGraphFilePath : string) =
@@ -224,7 +224,7 @@ module Assets =
             match document.[Constants.Xml.RootNodeName] with
             | null -> Left "Root node is missing from asset graph."
             | rootNode ->
-                let possiblePackageNodes = List.ofSeq <| enumerable rootNode.ChildNodes
+                let possiblePackageNodes = List.ofSeq ^ enumerable rootNode.ChildNodes
                 let packageNodes =
                     List.filter
                         (fun (node : XmlNode) ->
@@ -232,10 +232,10 @@ module Assets =
                             (node.Attributes.GetNamedItem Constants.Xml.NameAttributeName).InnerText = packageName)
                         possiblePackageNodes
                 match packageNodes with
-                | [] -> Left <| "Package node '" + packageName + "' is missing from asset graph."
-                | [packageNode] -> Right <| tryLoadAssetsFromPackageNode usingRawAssets optAssociation packageNode
-                | _ :: _ -> Left <| "Multiple packages with the same name '" + packageName + "' is an error."
-        with exn -> Left <| acstring exn
+                | [] -> Left ^ "Package node '" + packageName + "' is missing from asset graph."
+                | [packageNode] -> Right ^ tryLoadAssetsFromPackageNode usingRawAssets optAssociation packageNode
+                | _ :: _ -> Left ^ "Multiple packages with the same name '" + packageName + "' is an error."
+        with exn -> Left ^ acstring exn
 
     /// Attempt to load all the assets from multiple packages.
     /// TODO: test this function!
@@ -245,7 +245,7 @@ module Assets =
             match document.[Constants.Xml.RootNodeName] with
             | null -> Left "Root node is missing from asset graph."
             | rootNode ->
-                let possiblePackageNodes = List.ofSeq <| enumerable rootNode.ChildNodes
+                let possiblePackageNodes = List.ofSeq ^ enumerable rootNode.ChildNodes
                 let packageNameSet = Set.ofList packageNames
                 let packageNodes =
                     List.filter
@@ -254,7 +254,7 @@ module Assets =
                             Set.contains (node.Attributes.GetNamedItem Constants.Xml.NameAttributeName).InnerText packageNameSet)
                         possiblePackageNodes
                 tryLoadAssetsFromPackageNodes usingRawAssets optAssociation packageNodes
-        with exn -> Left <| acstring exn
+        with exn -> Left ^ acstring exn
 
     /// Try to load all the assets from an asset graph document.
     let tryLoadAssetsFromDocument usingRawAssets optAssociation (assetGraphFilePath : string) =
@@ -263,7 +263,7 @@ module Assets =
             match document.[Constants.Xml.RootNodeName] with
             | null -> Left "Root node is missing from asset graph."
             | rootNode -> tryLoadAssetsFromRootNode usingRawAssets optAssociation rootNode
-        with exn -> Left <| acstring exn
+        with exn -> Left ^ acstring exn
 
     /// Apply a single refinement to an asset.
     let refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement =
@@ -278,7 +278,7 @@ module Assets =
         let refinementFilePath = Path.Combine (refinementDirectory, refinementFileSubpath)
 
         // refine the asset
-        ignore <| Directory.CreateDirectory ^ Path.GetDirectoryName refinementFilePath
+        ignore ^ Directory.CreateDirectory ^ Path.GetDirectoryName refinementFilePath
         match refinement with
         | PsdToPng ->
             use image = new MagickImage (intermediateFilePath)
@@ -317,7 +317,7 @@ module Assets =
 
             // build the asset if fully building or if it's out of date
             if  fullBuild ||
-                not <| File.Exists outputFilePath ||
+                not ^ File.Exists outputFilePath ||
                 File.GetLastWriteTimeUtc inputFilePath > File.GetLastWriteTimeUtc outputFilePath then
 
                 // refine the asset
@@ -328,9 +328,9 @@ module Assets =
                 // attempt to copy the intermediate asset if output file is out of date
                 let intermediateFilePath = Path.Combine (intermediateDirectory, intermediateFileSubpath)
                 let outputFilePath = Path.Combine (outputDirectory, intermediateFileSubpath)
-                ignore <| Directory.CreateDirectory ^ Path.GetDirectoryName outputFilePath
+                ignore ^ Directory.CreateDirectory ^ Path.GetDirectoryName outputFilePath
                 try File.Copy (intermediateFilePath, outputFilePath, true)
-                with _ -> note <| "Resource lock on '" + outputFilePath + "' has prevented build for asset '" + acstring asset.AssetTag + "'."
+                with _ -> note ^ "Resource lock on '" + outputFilePath + "' has prevented build for asset '" + acstring asset.AssetTag + "'."
 
     /// Attempt to build all the assets found in the given asset graph.
     let tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory fullBuild assetGraphFilePath =
@@ -345,6 +345,6 @@ module Assets =
         // attempt to build assets
         match eitherAssets with
         | Right assets ->
-            try Right <| buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assets
-            with exn -> Left <| acstring exn
+            try Right ^ buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assets
+            with exn -> Left ^ acstring exn
         | Left error -> Left error

@@ -105,26 +105,26 @@ module WorldEntityModule =
             List.fold (fun world (facet : Facet) -> facet.Unregister entity world) world facets
 
         static member internal addEntity mayReplace entityState entity world =
-            let isNew = not <| World.containsEntity entity world
+            let isNew = not ^ World.containsEntity entity world
             if isNew || mayReplace then
                 let world = World.setEntityStateWithoutEvent entityState entity world
                 if isNew then
                     let world = World.registerEntity entity world
                     World.publish4 () (Events.EntityAdd ->>- entity) entity world
                 else world
-            else failwith <| "Adding an entity that the world already contains at address '" + acstring entity.EntityAddress + "'."
+            else failwith ^ "Adding an entity that the world already contains at address '" + acstring entity.EntityAddress + "'."
 
         static member internal getEntityFacetNamesReflectively entityState =
             List.map Reflection.getTypeName entityState.FacetsNp
 
         /// Query that the world contains an entity.
         static member containsEntity entity world =
-            Option.isSome <| World.getOptEntityState entity world
+            Option.isSome ^ World.getOptEntityState entity world
 
         /// Proxy all the entities contained by a group.
         static member proxyEntities group world =
             let entityStateMap = World.getEntityStateMap group world
-            Seq.map (fun (kvp : KeyValuePair<string, _>) -> Entity.proxy <| gatoea group.GroupAddress kvp.Key) entityStateMap
+            Seq.map (fun (kvp : KeyValuePair<string, _>) -> Entity.proxy ^ gatoea group.GroupAddress kvp.Key) entityStateMap
 
         /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight
         /// publishing depends on the entity's existence. Use with caution.
@@ -218,7 +218,7 @@ module WorldEntityModule =
                 | None -> entityState
 
             // add entity's state to world
-            let entity = Entity.proxy <| gatoea group.GroupAddress entityState.Name
+            let entity = Entity.proxy ^ gatoea group.GroupAddress entityState.Name
             let world = World.addEntity false entityState entity world
             (entity, world)
 
@@ -300,14 +300,14 @@ module WorldEntityModule =
                     | Left error -> debug error; (entityState, world)
                 let facetNames = World.getEntityFacetNamesReflectively entityState
                 Overlayer.applyOverlay oldOverlayName overlayName facetNames entityState world.State.Overlayer
-                Right <| World.setEntityState entityState entity world
+                Right ^ World.setEntityState entityState entity world
             | (_, _) -> Left "Could not set the entity's overlay name."
 
         /// Try to set the entity's facet names.
         static member trySetEntityFacetNames facetNames entity world =
             let entityState = World.getEntityState entity world
             match World.trySetFacetNames4 facetNames entityState (Some entity) world with
-            | Right (entityState, world) -> Right <| World.setEntityState entityState entity world
+            | Right (entityState, world) -> Right ^ World.setEntityState entityState entity world
             | Left error -> Left error
 
         /// Write an entity to an xml writer.
@@ -342,7 +342,7 @@ module WorldEntityModule =
                 match Map.tryFind dispatcherName world.Components.EntityDispatchers with
                 | Some dispatcher -> (dispatcherName, dispatcher)
                 | None ->
-                    note <| "Could not locate dispatcher '" + dispatcherName + "'."
+                    note ^ "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<EntityDispatcher>.Name
                     let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
                     (dispatcherName, dispatcher)
@@ -395,7 +395,7 @@ module WorldEntityModule =
             let entityState = match optName with Some name -> { entityState with Name = name } | None -> entityState
 
             // add entity state to the world
-            let entity = Entity.proxy <| gatoea group.GroupAddress entityState.Name
+            let entity = Entity.proxy ^ gatoea group.GroupAddress entityState.Name
             let world = World.addEntity true entityState entity world
             (entity, world)
 
@@ -410,7 +410,7 @@ module WorldEntityModule =
                             let (entity, world) = World.readEntity entityNode defaultDispatcherName None group world
                             (entity :: entitiesRev, world))
                         ([], world)
-                        (enumerable <| entitiesNode.SelectNodes Constants.Xml.EntityNodeName)
+                        (enumerable ^ entitiesNode.SelectNodes Constants.Xml.EntityNodeName)
                 (List.rev entitiesRev, world)
 
     /// Represents the member value of an entity as accessible via reflection.
@@ -453,7 +453,7 @@ module WorldEntityModule =
             let properties = typeof<EntityState>.GetProperties ()
             let typeConverterAttribute = TypeConverterAttribute (typeof<AlgebraicConverter>) // TODO: make this static?
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.PropertyType <> typeof<Xtension>) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty <| property.GetCustomAttributes<ExtensionAttribute> ()) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty ^ property.GetCustomAttributes<ExtensionAttribute> ()) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Reflection.isPropertyPersistentByName property.Name) properties
             let propertyDescriptors = Seq.map (fun property -> makePropertyDescriptor (EntityPropertyInfo property, [|typeConverterAttribute|])) properties
             let propertyDescriptors =

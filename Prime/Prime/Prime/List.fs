@@ -5,6 +5,7 @@
 module List
 open System
 open System.Collections.Generic
+open Prime
 
 // TODO: for speed, use new F# 4.0 List functions that are implemented _without_ Seq functions!
 
@@ -124,7 +125,7 @@ let rec roll roller state (list : 'a list) =
 
 /// Windowed for lists.
 let windowed count (list : 'a list) =
-    List.ofSeq <| Seq.windowed count list
+    List.ofSeq ^ Seq.windowed count list
 
 /// Zip two lists by a function.
 /// TODO: optimize with program fusion.
@@ -300,12 +301,12 @@ let toDictionaryBy by list =
 /// Convert a list to a HashSet.
 let toHashSet list =
     let hashSet = HashSet HashIdentity.Structural
-    List.iter (fun item -> ignore <| hashSet.Add item) list
+    List.iter (fun item -> ignore ^ hashSet.Add item) list
     hashSet
 
 /// Implement a fold while predicate f passes.
 let foldWhile fn initial input =
-    Seq.foldWhile fn initial <| List.toSeq input
+    Seq.foldWhile fn initial ^ List.toSeq input
 
 /// Remove all elements from a list that satisfy a predicate.
 /// TODO: see if List.rev can be removed.

@@ -4,6 +4,7 @@
 [<RequireQualifiedAccess>]
 module PersistentHashMap
 open FSharpx.Collections
+open Prime
 
 let singleton key value =
     PersistentHashMap.add key value PersistentHashMap.empty
@@ -33,7 +34,7 @@ let ofList (list : List<_>) =
 // catch an exception if the key is not present (may require changing FSharpx source...)
 let tryFind key map =
     if PersistentHashMap.containsKey key map
-    then Some <| PersistentHashMap.find key map
+    then Some ^ PersistentHashMap.find key map
     else None
 
 let filter pred map =

@@ -15,7 +15,7 @@ module String =
             if n = 0 then acc
             else
                 let n = n - 1
-                loop n <| str.[n] :: acc
+                loop n ^ str.[n] :: acc
         loop (String.length str) []
     
     /// Converts a list of characters into a string.
@@ -37,7 +37,7 @@ module String =
     
     /// Convert a string to an array of characters.
     /// TODO: optimize this.
-    let toArray str = Array.ofList <| explode str
+    let toArray str = Array.ofList ^ explode str
     
     /// Surround a string with another surrounding string.
     let surround (str : string) (surrounding : string) =

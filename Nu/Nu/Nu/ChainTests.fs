@@ -24,13 +24,13 @@ module ChainTests =
         let chain =
             chain {
                 let! e = next
-                do! update <| incUserState e
+                do! update ^ incUserState e
                 do! react incUserStateNoEvent
                 do! reactE incUserState
                 do! pass
                 do! loop 0 inc (fun i _ -> i < 2) (fun _ -> update incUserStateTwiceNoEvent) }
         let observation = observe IntEventAddress Simulants.Game
-        let world = snd <| Chain.runAssumingCascade chain observation world
+        let world = snd ^ Chain.runAssumingCascade chain observation world
         Assert.Equal (0, World.getUserState world)
 
         // assert the first publish executes the first chained operation
@@ -50,4 +50,4 @@ module ChainTests =
         Assert.Equal (7, World.getUserState world)
         
         // assert no garbage is left over after chained computation is concluded
-        Assert.True <| Map.isEmpty world.Callbacks.CallbackStates
+        Assert.True ^ Map.isEmpty world.Callbacks.CallbackStates

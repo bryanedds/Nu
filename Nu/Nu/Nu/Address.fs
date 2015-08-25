@@ -92,7 +92,7 @@ and [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)
         String.Join ("/", seq)
 
     static member internal split (str : string) =
-        List.ofArray <| str.Split '/'
+        List.ofArray ^ str.Split '/'
 
     static member internal getNamesStr (address : 'a Address) =
         match address.OptNamesStr with
@@ -106,7 +106,7 @@ and [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)
         match address.OptHashCode with
         | Some hashCode -> hashCode
         | None ->
-            let hashCode = hash <| Address<'a>.getNamesStr address
+            let hashCode = hash ^ Address<'a>.getNamesStr address
             address.OptHashCode <- Some hashCode
             hashCode
 
@@ -183,7 +183,7 @@ module Address =
         
     /// Take the tail of an address.
     let tail<'a> address =
-        makeFromNameKeys<'a> <| List.tail address.NameKeys
+        makeFromNameKeys<'a> ^ List.tail address.NameKeys
 
     /// Take a name key of an address.
     let at index address =
@@ -191,11 +191,11 @@ module Address =
 
     /// Take an address composed of the name keys of an address minus a skipped amount of name keys.
     let skip<'a, 'b> n (address : 'a Address) =
-        makeFromNameKeys<'b> <| List.skip n address.NameKeys
+        makeFromNameKeys<'b> ^ List.skip n address.NameKeys
 
     /// Take an address composed of the given number of name keys of an address.
     let take<'a, 'b> n (address : 'a Address) =
-        makeFromNameKeys<'b> <| List.take n address.NameKeys
+        makeFromNameKeys<'b> ^ List.take n address.NameKeys
 
     /// Take the last name key of an address.
     let last address =
@@ -203,7 +203,7 @@ module Address =
 
     /// Take an address composed of all but the last name of an address.
     let allButLast<'a, 'b> (address : 'a Address) =
-        makeFromNameKeys<'b> <| List.allButLast address.NameKeys
+        makeFromNameKeys<'b> ^ List.allButLast address.NameKeys
 
     /// Get the length of an address by its name keys.
     let length address =
@@ -246,7 +246,7 @@ module AddressOperators =
     
     /// Concatenate two addresses, forcing the type of first address.
     let acatff<'a, 'b> (address : 'a Address) (address2 : 'b Address) =
-        acatf address <| atooa address2
+        acatf address ^ atooa address2
 
     /// Concatenate two addresses, taking the type of the second address.
     let acats<'a> (address : obj Address) (address2 : 'a Address) =

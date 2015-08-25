@@ -80,12 +80,12 @@ module Either =
     let mapLeft mapper either =
         match either with
         | Right r -> Right r
-        | Left l -> Left <| mapper l
+        | Left l -> Left ^ mapper l
 
     /// Map over the right side of an Either value.
     let mapRight mapper either =
         match either with
-        | Right r -> Right <| mapper r
+        | Right r -> Right ^ mapper r
         | Left l -> Left l
 
     /// Split a sequences of Either values into a pair of left and right value lists.

@@ -27,7 +27,7 @@ module MapPlus =
     let containsKey (plusKey, mapKey) _ mapPlus =
         let optMap = Map.tryFind plusKey mapPlus
         match optMap with
-        | Some map -> Option.isSome <| Map.tryFind mapKey map
+        | Some map -> Option.isSome ^ Map.tryFind mapKey map
         | None -> false
 
     let add (plusKey, mapKey) value mapPlus =

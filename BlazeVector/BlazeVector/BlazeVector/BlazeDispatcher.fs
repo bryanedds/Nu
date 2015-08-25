@@ -28,7 +28,7 @@ module BlazeDispatcherModule =
         static let createTitleScreen world =
 
             // this creates a dissolve screen from the specified file with the given parameters
-            let world = snd <| World.createDissolveScreenFromGroupFile false Constants.BlazeVector.DissolveData typeof<ScreenDispatcher>.Name Constants.FilePaths.TitleGroup (Some Simulants.TitleName) world
+            let world = snd ^ World.createDissolveScreenFromGroupFile false Constants.BlazeVector.DissolveData typeof<ScreenDispatcher>.Name Constants.FilePaths.TitleGroup (Some Simulants.TitleName) world
 
             // this subscribes to the event that is raised when the Title screen is selected for
             // display and interaction, and handles the event by playing the song "Machinery".
@@ -52,12 +52,12 @@ module BlazeDispatcherModule =
 
         // pretty much the same as above, but for the Credits screen
         static let createCreditsScreen world =
-            let world = snd <| World.createDissolveScreenFromGroupFile false Constants.BlazeVector.DissolveData typeof<ScreenDispatcher>.Name Constants.FilePaths.CreditsGroup (Some Simulants.CreditsName) world
+            let world = snd ^ World.createDissolveScreenFromGroupFile false Constants.BlazeVector.DissolveData typeof<ScreenDispatcher>.Name Constants.FilePaths.CreditsGroup (Some Simulants.CreditsName) world
             World.subscribe4 (World.handleAsScreenTransition Simulants.Title) (Events.Click ->>- Simulants.CreditsBack) Simulants.Game world
 
         // and so on.
         static let createGameplayScreen world =
-            let world = snd <| World.createDissolveScreenFromGroupFile false Constants.BlazeVector.DissolveData typeof<GameplayScreenDispatcher>.Name Constants.FilePaths.GameplayGroup (Some Simulants.GameplayName) world
+            let world = snd ^ World.createDissolveScreenFromGroupFile false Constants.BlazeVector.DissolveData typeof<GameplayScreenDispatcher>.Name Constants.FilePaths.GameplayGroup (Some Simulants.GameplayName) world
             World.subscribe4 (World.handleAsScreenTransition Simulants.Title) (Events.Click ->>- Simulants.GameplayBack) Simulants.Game world
 
         // game registration is where the game's high-level logic is set up!
