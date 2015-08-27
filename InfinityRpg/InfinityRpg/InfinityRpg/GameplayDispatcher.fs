@@ -500,7 +500,7 @@ module GameplayDispatcherModule =
             let world = tryRunPlayerTurn playerInput world
             (Cascade, world)
 
-        static let handleNewGame _ world =
+        static let handleNewGame world =
 
             // generate non-deterministic random numbers
             let sysrandom = Random ()
@@ -527,7 +527,7 @@ module GameplayDispatcherModule =
             // make enemies
             __c ^ createEnemies scene rand world
 
-        static let handleLoadGame _ world =
+        static let handleLoadGame world =
 
             // get and initialize gameplay screen from read
             let world = snd ^ World.readScreenFromFile Constants.FilePaths.SaveFile (Some ^ Simulants.Gameplay.ScreenName) world
@@ -543,14 +543,13 @@ module GameplayDispatcherModule =
             let world = World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Constants.Assets.ButterflyGirlSong world
             (Cascade, world)
 
-        static let handleSelectGameplay event world =
-            let gameplay = event.Subscriber : Screen
+        static let handleSelectGameplay _ world =
             let world =
                 // NOTE: doing a File.Exists then loading the file is dangerous since the file can
                 // always be deleted / moved between the two operations!
-                if gameplay.GetShallLoadGame world && File.Exists Constants.FilePaths.SaveFile
-                then handleLoadGame gameplay world
-                else handleNewGame gameplay world
+                if Simulants.Gameplay.GetShallLoadGame world && File.Exists Constants.FilePaths.SaveFile
+                then handleLoadGame world
+                else handleNewGame world
             let world = World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Constants.Assets.HerosVengeanceSong world
             (Cascade, world)
 
