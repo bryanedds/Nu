@@ -5,16 +5,17 @@ open BlazeVector
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    // this constant is the result of converting a name to a Screen proxy. A proxy is like an 'address' with which to
-    // affect a simulant.
+    // this constant is the result of converting a name to a Screen proxy. A proxy is like an
+    // 'address' with which to affect a simulant.
     let Splash = ntos "Splash"
 
     // same as above, but for the title screen
     let Title = ntos "Title"
 
-    // this is the group that is loaded into the title screen that contains all of its gui entities. You'll notice that
-    // the group is built from a combination of the title screen's proxy as well as its own personal name as
-    // found in its originating document, 'Assets/Gui/Title.nugroup'.
+    // this is the group that is loaded into the title screen that contains all of its gui
+    // entities. You'll notice that the group is built from a combination of the title screen's
+    // proxy as well as its own personal name as found in its originating document,
+    // 'Assets/Gui/Title.nugroup'.
     let TitleGroup = stog Title "Group"
 
     // this ia like the above, but for the play button found in the above group
