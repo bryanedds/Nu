@@ -404,8 +404,7 @@ module ObservationModule =
 
     /// Make an observation of the observer's change events.
     let [<DebuggerHidden; DebuggerStepThrough>] ( *-- ) (simulant : 'a, valueGetter : World -> 'b) (observer : 'o) =
-        let simulantChangeEventAddress = ftoa<'a SimulantChangeData> (typeof<'a>.Name + "/Change")
-        let changeEventAddress = simulantChangeEventAddress ->>- simulant.SimulantAddress
+        let changeEventAddress = ftoa<'a SimulantChangeData> (typeof<'a>.Name + "/Change") ->>- simulant.SimulantAddress
         observe changeEventAddress observer |> simulantValue valueGetter
 
     /// Make an observation of one of the observer's change events per frame.

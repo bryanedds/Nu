@@ -157,10 +157,6 @@ module Address =
         let nameKeys = List.map NameKey.make namesList
         { NameKeys = nameKeys; OptFullName = Some fullName; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
 
-    /// Convert a full name into an address.
-    let ftoa<'a> (fullName : string) =
-        makeFromFullName<'a> fullName
-
     /// Get the name keys of an address.
     let getNameKeys address =
         address.NameKeys
@@ -220,6 +216,10 @@ module Address =
 [<AutoOpen>]
 module AddressOperators =
 
+    /// Convert an address of type 'a to an address of type 'b.
+    let atoa<'a, 'b> address =
+        Address.changeType<'a, 'b> address
+
     /// Convert a name keys into an address.
     let ktoa<'a> nameKeys =
         Address.makeFromNameKeys<'a> nameKeys
@@ -230,7 +230,7 @@ module AddressOperators =
 
     /// Convert a full name into an address.
     let ftoa<'a> fullName =
-        Address.ftoa<'a> fullName
+        Address.makeFromFullName<'a> fullName
 
     /// Convert a single name into an address.
     let ntoa<'a> nameStr =
@@ -242,11 +242,11 @@ module AddressOperators =
 
     /// Concatenate two addresses of the same type.
     let acat<'a> (address : 'a Address) (address2 : 'a Address) =
-        Address.makeFromNameKeys<'a> (address.NameKeys @ address2.NameKeys)
+        ktoa<'a> (address.NameKeys @ address2.NameKeys)
 
     /// Concatenate two addresses, taking the type of first address.
     let acatf<'a> (address : 'a Address) (address2 : obj Address) =
-        Address.makeFromNameKeys<'a> (address.NameKeys @ address2.NameKeys)
+        ktoa<'a> (address.NameKeys @ address2.NameKeys)
     
     /// Concatenate two addresses, forcing the type of first address.
     let acatff<'a, 'b> (address : 'a Address) (address2 : 'b Address) =
@@ -254,7 +254,7 @@ module AddressOperators =
 
     /// Concatenate two addresses, taking the type of the second address.
     let acats<'a> (address : obj Address) (address2 : 'a Address) =
-        Address.makeFromNameKeys<'a> (address.NameKeys @ address2.NameKeys)
+        ktoa<'a> (address.NameKeys @ address2.NameKeys)
     
     /// Concatenate two addresses, forcing the type of second address.
     let acatsf<'a, 'b> (address : 'a Address) (address2 : 'b Address) =

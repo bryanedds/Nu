@@ -355,14 +355,8 @@ and SimulantOperators =
     /// Concatenate two addresses, forcing the type of first address.
     static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.SimulantAddress)
 
-    /// Concatenate two addresses, forcing the type of first address.
-    static member acatff<'a> (address : 'a Address) (simulant : Simulant) = acatff address simulant.SimulantAddress
-
-    /// Concatenate two addresses, forcing the type of first address.
+    /// Concatenate two addresses, takings the type of first address.
     static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
-
-    /// Concatenate two addresses, forcing the type of first address.
-    static member (->>-) (address, simulant : Simulant) = SimulantOperators.acatff address simulant
 
 /// The game type that hosts the various screens used to navigate through a game.
 and [<StructuralEquality; NoComparison>] Game =
@@ -370,7 +364,7 @@ and [<StructuralEquality; NoComparison>] Game =
 
     interface Simulant with
         member this.GetPublishingPriority _ _ = Constants.Engine.GamePublishingPriority
-        member this.SimulantAddress = Address.changeType<Game, Simulant> this.GameAddress
+        member this.SimulantAddress = atoa<Game, Simulant> this.GameAddress
         end
 
     /// Get the full name of a game proxy.
@@ -379,17 +373,11 @@ and [<StructuralEquality; NoComparison>] Game =
     /// Create a Game proxy from an address.
     static member proxy address = { GameAddress = address }
 
-    /// Concatenate two addresses, forcing the type of first address.
+    /// Concatenate two addresses, taking the type of first address.
     static member acatf<'a> (address : 'a Address) (game : Game) = acatf address (atooa game.GameAddress)
 
-    /// Concatenate two addresses, forcing the type of first address.
-    static member acatff<'a> (address : 'a Address) (game : Game) = acatff address game.GameAddress
-
-    /// Concatenate two addresses, forcing the type of first address.
+    /// Concatenate two addresses, taking the type of first address.
     static member (->-) (address, game) = Game.acatf address game
-
-    /// Concatenate two addresses, forcing the type of first address.
-    static member (->>-) (address, game) = Game.acatff address game
 
 /// The screen type that allows transitioning to and from other screens, and also hosts the
 /// currently interactive groups of entities.
@@ -398,7 +386,7 @@ and [<StructuralEquality; NoComparison>] Screen =
 
     interface Simulant with
         member this.GetPublishingPriority _ _ = Constants.Engine.ScreenPublishingPriority
-        member this.SimulantAddress = Address.changeType<Screen, Simulant> this.ScreenAddress
+        member this.SimulantAddress = atoa<Screen, Simulant> this.ScreenAddress
         end
 
     /// Get the full name of a screen proxy.
@@ -410,17 +398,11 @@ and [<StructuralEquality; NoComparison>] Screen =
     /// Create a Screen proxy from an address.
     static member proxy address = { ScreenAddress = address }
 
-    /// Concatenate two addresses, forcing the type of first address.
+    /// Concatenate two addresses, taking the type of first address.
     static member acatf<'a> (address : 'a Address) (screen : Screen) = acatf address (atooa screen.ScreenAddress)
 
-    /// Concatenate two addresses, forcing the type of first address.
-    static member acatff<'a> (address : 'a Address) (screen : Screen) = acatff address screen.ScreenAddress
-
-    /// Concatenate two addresses, forcing the type of first address.
+    /// Concatenate two addresses, taking the type of first address.
     static member (->-) (address, screen) = Screen.acatf address screen
-
-    /// Concatenate two addresses, forcing the type of first address.
-    static member (->>-) (address, screen) = Screen.acatff address screen
 
     /// Convert a screen's proxy to a group's by appending the group's name at the end.
     /// NOTE: unfortunately, this operator does not resolve since it's not inside the string type definition.
@@ -428,7 +410,7 @@ and [<StructuralEquality; NoComparison>] Screen =
     static member (!>) screenName = Screen.proxy ^ ntoa screenName
 
     /// Convert a screen's proxy to a group's by appending the group's name at the end.
-    static member (=>) (screen, groupName) = Group.proxy ^ Address.changeType<Screen, Group> screen.ScreenAddress ->- ntoa groupName
+    static member (=>) (screen, groupName : string) = Group.proxy ^ atoa<Screen, Group> screen.ScreenAddress ->- ntoa groupName
 
 /// Forms a logical group of entities.
 and [<StructuralEquality; NoComparison>] Group =
@@ -436,7 +418,7 @@ and [<StructuralEquality; NoComparison>] Group =
 
     interface Simulant with
         member this.GetPublishingPriority _ _ = Constants.Engine.GroupPublishingPriority
-        member this.SimulantAddress = Address.changeType<Group, Simulant> this.GroupAddress
+        member this.SimulantAddress = atoa<Group, Simulant> this.GroupAddress
         end
 
     /// Get the full name of a group proxy.
@@ -448,20 +430,17 @@ and [<StructuralEquality; NoComparison>] Group =
     /// Create a Group proxy from an address.
     static member proxy address = { GroupAddress = address }
 
-    /// Concatenate two addresses, forcing the type of first address.
+    /// Concatenate two addresses, taking the type of first address.
     static member acatf<'a> (address : 'a Address) (group : Group) = acatf address (atooa group.GroupAddress)
 
-    /// Concatenate two addresses, forcing the type of first address.
-    static member acatff<'a> (address : 'a Address) (group : Group) = acatff address group.GroupAddress
-
-    /// Concatenate two addresses, forcing the type of first address.
-    static member (->-) (address, group) = Group.acatf address group
-
-    /// Concatenate two addresses, forcing the type of first address.
-    static member (->>-) (address, group) = Group.acatff address group
+    /// Convert a group's proxy to its screen's.
+    static member (!<) group = Screen.proxy ^ Address.allButLast group.GroupAddress
 
     /// Convert a group's proxy to an entity's by appending the entity's name at the end.
-    static member (=>) (group, entityName) = Entity.proxy ^ Address.changeType<Group, Entity> group.GroupAddress ->- ntoa entityName
+    static member (=>) (group, entityName) = Entity.proxy ^ atoa<Group, Entity> group.GroupAddress ->- ntoa entityName
+
+    /// Concatenate two addresses, taking the type of first address.
+    static member (->-) (address, group) = Group.acatf address group
 
 /// The type around which the whole game engine is based! Used in combination with dispatchers
 /// to implement things like buttons, characters, blocks, and things of that sort.
@@ -470,7 +449,7 @@ and [<StructuralEquality; NoComparison>] Entity =
 
     interface Simulant with
         member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
-        member this.SimulantAddress = Address.changeType<Entity, Simulant> this.EntityAddress
+        member this.SimulantAddress = atoa<Entity, Simulant> this.EntityAddress
         end
 
     /// Get the name of an entity proxy.
@@ -482,17 +461,14 @@ and [<StructuralEquality; NoComparison>] Entity =
     /// Create an Entity proxy from an address.
     static member proxy address = { EntityAddress = address }
 
-    /// Concatenate two addresses, forcing the type of first address.
+    /// Concatenate two addresses, taking the type of first address.
     static member acatf<'a> (address : 'a Address) (entity : Entity) = acatf address (atooa entity.EntityAddress)
 
-    /// Concatenate two addresses, forcing the type of first address.
-    static member acatff<'a> (address : 'a Address) (entity : Entity) = acatff address entity.EntityAddress
+    /// Convert an entity's proxy to its group's.
+    static member (!<) entity = Group.proxy ^ Address.allButLast entity.EntityAddress
 
-    /// Concatenate two addresses, forcing the type of first address.
+    /// Concatenate two addresses, taking the type of first address.
     static member (->-) (address, entity) = Entity.acatf address entity
-
-    /// Concatenate two addresses, forcing the type of first address.
-    static member (->>-) (address, entity) = Entity.acatff address entity
 
 /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
 /// specific values.

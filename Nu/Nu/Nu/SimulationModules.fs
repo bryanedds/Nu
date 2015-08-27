@@ -88,26 +88,11 @@ module EntityState =
 [<AutoOpen>]
 module SimulationOperators =
 
-    /// Convert any type of address to a screen's address.
-    let atosa address = Address.changeType<'a, Screen> address
-
-    /// Convert any type of address to a group's address.
-    let atoga address = Address.changeType<'a, Group> address
-
-    /// Convert any type of address to an entity's address.
-    let atoea address = Address.changeType<'a, Entity> address
-
-    /// Convert any type of address to a screen's proxy.
-    let atos address = Screen.proxy ^ Address.changeType<'a, Screen> address
-
-    /// Convert any type of address to a group's proxy.
-    let atog address = Group.proxy ^ Address.changeType<'a, Group> address
-
-    /// Convert any type of address to an entity's proxy.
-    let atoe address = Entity.proxy ^ Address.changeType<'a, Entity> address
+    /// Convert a name to a screen's proxy.
+    let (!>) screenName = Screen.proxy ^ ntoa screenName
 
     /// Convert a name to a screen's proxy.
-    let ntos screenName = Screen.proxy ^ ntoa screenName
+    let ntos screenName = !> screenName
 
     /// Convert a group's proxy to an entity's by appending the entity's name at the end.
     let gtoe (group : Group) entityName = group => entityName
@@ -115,20 +100,11 @@ module SimulationOperators =
     /// Convert a screen's proxy to a group's by appending the group's name at the end.
     let stog (screen : Screen) groupName = screen => groupName
 
-    /// Convert a screen's proxy to an entity's by appending the group and entity's names at the end.
-    let stoe screen groupName entityName = gtoe (stog screen groupName) entityName
-
     /// Convert an entity's proxy to a group's by removing the entity's name from the end.
-    let etog entity = Group.proxy ^ Address.take<Entity, Group> 2 entity.EntityAddress
+    let etog (entity : Entity) = !< entity
 
     /// Convert a group's proxy to a screen's by removing the group's name from the end.
     let gtos group = Screen.proxy ^ Address.take<Group, Screen> 1 group.GroupAddress
-
-    /// Convert a entity's proxy to a screen's by removing the group and entity's names from the end.
-    let etos entity = Screen.proxy ^ Address.take<Entity, Screen> 1 entity.EntityAddress
-
-    /// Convert a name to a screen's proxy.
-    let (!>) screenName = ntos screenName
 
 [<RequireQualifiedAccess>]
 module Simulants =
@@ -604,7 +580,7 @@ module World =
         if entityState.PublishChanges then
             publish4
                 { Simulant = entity; OldWorld = oldWorld }
-                (Events.EntityChange ->>- entity)
+                (Events.EntityChange ->- entity)
                 entity
                 world
         else world
@@ -692,7 +668,7 @@ module World =
         if groupState.PublishChanges then
             publish4
                 { Simulant = group; OldWorld = oldWorld }
-                (Events.GroupChange ->>- group)
+                (Events.GroupChange ->- group)
                 group
                 world
         else world
@@ -762,7 +738,7 @@ module World =
         if screenState.PublishChanges then
             publish4
                 { Simulant = screen; OldWorld = oldWorld }
-                (Events.ScreenChange ->>- screen)
+                (Events.ScreenChange ->- screen)
                 screen
                 world
         else world
@@ -789,7 +765,7 @@ module World =
         if gameState.PublishChanges then
             publish4
                 { OldWorld = oldWorld; Simulant = Simulants.Game }
-                (Events.GameChange ->>- Simulants.Game)
+                (Events.GameChange ->- Simulants.Game)
                 Simulants.Game
                 world
         else world
