@@ -282,7 +282,7 @@ module Program =
         | None -> None
 
     let handleNuEntityAdd (form : NuEditForm) event world =
-        addTreeViewNode form (Entity.proxy ^ atoea event.Publisher.SimulantAddress) world
+        addTreeViewNode form (Entity.proxy ^ atoa event.Publisher.SimulantAddress) world
         (Cascade, world)
 
     let handleNuEntityRemoving (form : NuEditForm) event world =
@@ -292,7 +292,7 @@ module Program =
         match form.propertyGrid.SelectedObject with
         | null -> (Cascade, world)
         | :? EntityTypeDescriptorSource as entityTds ->
-            if atoea event.Publisher.SimulantAddress = entityTds.DescribedEntity.EntityAddress then
+            if atoa event.Publisher.SimulantAddress = entityTds.DescribedEntity.EntityAddress then
                 form.propertyGrid.SelectedObject <- null
                 let world = World.updateUserState (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
                 (Cascade, world)
@@ -349,8 +349,8 @@ module Program =
 
     let subscribeToEntityEvents form world =
         world |>
-            World.subscribe Constants.SubscriptionKeys.AddEntity (handleNuEntityAdd form) (Events.EntityAdd ->>- Simulants.EditorGroup ->- Events.Any) Simulants.Game |>
-            World.subscribe Constants.SubscriptionKeys.RemovingEntity (handleNuEntityRemoving form) (Events.EntityRemoving ->>- Simulants.EditorGroup ->- Events.Any) Simulants.Game
+            World.subscribe Constants.SubscriptionKeys.AddEntity (handleNuEntityAdd form) (Events.EntityAdd ->- Simulants.EditorGroup ->- Events.Any) Simulants.Game |>
+            World.subscribe Constants.SubscriptionKeys.RemovingEntity (handleNuEntityRemoving form) (Events.EntityRemoving ->- Simulants.EditorGroup ->- Events.Any) Simulants.Game
 
     let unsubscribeFromEntityEvents world =
         world |>

@@ -251,7 +251,7 @@ module ButtonDispatcherModule =
                     Math.isPointInBounds3 mousePositionWorld (button.GetPosition world) (button.GetSize world) then
                     if button.GetEnabled world then
                         let world = button.SetDown true world
-                        let world = World.publish4 () (Events.Down ->>- button) button world
+                        let world = World.publish4 () (Events.Down ->- button) button world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -267,8 +267,8 @@ module ButtonDispatcherModule =
                 if  button.GetVisible world &&
                     Math.isPointInBounds3 mousePositionWorld (button.GetPosition world) (button.GetSize world) then
                     if button.GetEnabled world && wasDown then
-                        let world = World.publish4 () (Events.Up ->>- button) button world
-                        let world = World.publish4 () (Events.Click ->>- button) button world
+                        let world = World.publish4 () (Events.Up ->- button) button world
+                        let world = World.publish4 () (Events.Click ->- button) button world
                         let world =
                             match button.GetOptClickSound world with
                             | Some clickSound -> World.playSound 1.0f clickSound world
@@ -441,7 +441,7 @@ module ToggleDispatcherModule =
                     if toggle.GetEnabled world && wasPressed then
                         let world = toggle.SetOn (not ^ toggle.GetOn world) world
                         let eventAddress = if toggle.GetOn world then Events.On else Events.Off
-                        let world = World.publish4 () (eventAddress ->>- toggle) toggle world
+                        let world = World.publish4 () (eventAddress ->- toggle) toggle world
                         let world =
                             match toggle.GetOptToggleSound world with
                             | Some toggleSound -> World.playSound 1.0f toggleSound world
@@ -502,7 +502,7 @@ module FeelerDispatcherModule =
                     Math.isPointInBounds3 mousePositionWorld (feeler.GetPosition world) (feeler.GetSize world) then
                     if feeler.GetEnabled world then
                         let world = feeler.SetTouched true world
-                        let world = World.publish4 data.Position (Events.Touch ->>- feeler) feeler world
+                        let world = World.publish4 data.Position (Events.Touch ->- feeler) feeler world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -514,7 +514,7 @@ module FeelerDispatcherModule =
             if World.isSimulantSelected feeler world && feeler.GetVisible world then
                 if feeler.GetEnabled world then
                     let world = feeler.SetTouched false world
-                    let world = World.publish4 data.Position (Events.Untouch ->>- feeler) feeler world
+                    let world = World.publish4 data.Position (Events.Untouch ->- feeler) feeler world
                     (Resolve, world)
                 else (Resolve, world)
             else (Cascade, world)

@@ -364,7 +364,7 @@ module GameplayDispatcherModule =
                             | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
                         updateCharacterByNavigation navigationDescriptor character world
                     do! pass }}
-            let observation = character |> observe Events.Update |> until (Events.Deselect ->>- Simulants.Gameplay)
+            let observation = character |> observe Events.Update |> until (Events.Deselect ->- Simulants.Gameplay)
             snd ^ runAssumingCascade chain observation world
 
         static let runCharacterAction newActionDescriptor (character : Entity) world =
@@ -380,7 +380,7 @@ module GameplayDispatcherModule =
                         let world = updateCharacterByAction actionDescriptor character world
                         runCharacterReaction actionDescriptor character world
                     do! pass }}
-            let observation = character |> observe Events.Update |> until (Events.Deselect ->>- Simulants.Gameplay)
+            let observation = character |> observe Events.Update |> until (Events.Deselect ->- Simulants.Gameplay)
             snd ^ runAssumingCascade chain observation world
 
         static let runCharacterNoActivity (character : Entity) world =
@@ -479,9 +479,9 @@ module GameplayDispatcherModule =
                                 do! update ^ cancelNavigation Simulants.Player }}
                     do! update ^ Simulants.HudSaveGame.SetEnabled true }
                 let observation =
-                    observe (Events.Click ->>- Simulants.HudHalt) Simulants.Gameplay |>
+                    observe (Events.Click ->- Simulants.HudHalt) Simulants.Gameplay |>
                     sum Events.Update |>
-                    until (Events.Deselect ->>- Simulants.Gameplay)
+                    until (Events.Deselect ->- Simulants.Gameplay)
                 snd ^ runAssumingCascade chain observation world
             else world
 
@@ -570,13 +570,13 @@ module GameplayDispatcherModule =
 
         override dispatcher.Register gameplay world =
             world |>
-                (observe (Events.EntityChange ->>- Simulants.Player) gameplay |> subscribe handlePlayerChange) |>
-                (observe (Events.Touch ->>- Simulants.HudFeeler) gameplay |> filter isObserverSelected |> monitor handleTouchFeeler) |>
-                (observe (Events.Down ->>- Simulants.HudDetailUp) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Upward)) |>
-                (observe (Events.Down ->>- Simulants.HudDetailRight) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Rightward)) |>
-                (observe (Events.Down ->>- Simulants.HudDetailDown) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Downward)) |>
-                (observe (Events.Down ->>- Simulants.HudDetailLeft) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Leftward)) |>
-                (World.subscribe4 handleSelectTitle (Events.Select ->>- Simulants.Title) gameplay) |>
-                (World.subscribe4 handleSelectGameplay (Events.Select ->>- gameplay) gameplay) |>
-                (World.subscribe4 handleClickSaveGame (Events.Click ->>- Simulants.HudSaveGame) gameplay) |>
-                (World.subscribe4 handleDeselectGameplay (Events.Deselect ->>- gameplay) gameplay)
+                (observe (Events.EntityChange ->- Simulants.Player) gameplay |> subscribe handlePlayerChange) |>
+                (observe (Events.Touch ->- Simulants.HudFeeler) gameplay |> filter isObserverSelected |> monitor handleTouchFeeler) |>
+                (observe (Events.Down ->- Simulants.HudDetailUp) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Upward)) |>
+                (observe (Events.Down ->- Simulants.HudDetailRight) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Rightward)) |>
+                (observe (Events.Down ->- Simulants.HudDetailDown) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Downward)) |>
+                (observe (Events.Down ->- Simulants.HudDetailLeft) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Leftward)) |>
+                (World.subscribe4 handleSelectTitle (Events.Select ->- Simulants.Title) gameplay) |>
+                (World.subscribe4 handleSelectGameplay (Events.Select ->- gameplay) gameplay) |>
+                (World.subscribe4 handleClickSaveGame (Events.Click ->- Simulants.HudSaveGame) gameplay) |>
+                (World.subscribe4 handleDeselectGameplay (Events.Deselect ->- gameplay) gameplay)

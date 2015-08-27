@@ -53,7 +53,7 @@ module BulletModule =
         override dispatcher.Register bullet world =
             world |>
                 World.monitor handleUpdate Events.Update bullet |>
-                World.monitor handleCollision (Events.Collision ->>- bullet) bullet
+                World.monitor handleCollision (Events.Collision ->- bullet) bullet
 
 [<AutoOpen>]
 module EnemyModule =
@@ -117,7 +117,7 @@ module EnemyModule =
         override dispatcher.Register enemy world =
             world |>
                 World.monitor handleUpdate Events.Update enemy |>
-                World.monitor handleCollision (Events.Collision ->>- enemy) enemy
+                World.monitor handleCollision (Events.Collision ->- enemy) enemy
 
 [<AutoOpen>]
 module PlayerModule =
@@ -317,6 +317,6 @@ module GameplayScreenModule =
 
         override dispatcher.Register screen world =
             world |>
-                World.monitor handleStartPlay (Events.Select ->>- screen) screen |>
-                World.monitor handleStoppingPlay (Events.OutgoingStart ->>- screen) screen |>
-                World.monitor handleStopPlay (Events.Deselect ->>- screen) screen
+                World.monitor handleStartPlay (Events.Select ->- screen) screen |>
+                World.monitor handleStoppingPlay (Events.OutgoingStart ->- screen) screen |>
+                World.monitor handleStopPlay (Events.Deselect ->- screen) screen

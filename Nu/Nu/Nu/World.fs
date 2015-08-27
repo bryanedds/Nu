@@ -91,11 +91,11 @@ module WorldModule =
         static member selectScreen screen world =
             let world =
                 match World.getOptSelectedScreen world with
-                | Some selectedScreen ->  World.publish4 () (Events.Deselect ->>- selectedScreen) selectedScreen world
+                | Some selectedScreen ->  World.publish4 () (Events.Deselect ->- selectedScreen) selectedScreen world
                 | None -> world
             let world = World.setScreenTransitionState IncomingState screen world
             let world = World.setOptSelectedScreen (Some screen) world
-            World.publish4 () (Events.Select ->>- screen) screen world
+            World.publish4 () (Events.Select ->- screen) screen world
 
         /// Try to transition to the given screen if no other transition is in progress.
         static member tryTransitionScreen destination world =
@@ -113,7 +113,7 @@ module WorldModule =
                         | None -> failwith "No valid OptScreenTransitionDestinationAddress during screen transition!"
                     let world = World.setOptScreenTransitionDestination (Some destination) world
                     let world = World.setScreenTransitionState OutgoingState selectedScreen world
-                    let world = World.subscribe<unit, Screen> subscriptionKey subscription (Events.OutgoingFinish ->>- selectedScreen) selectedScreen world
+                    let world = World.subscribe<unit, Screen> subscriptionKey subscription (Events.OutgoingFinish ->- selectedScreen) selectedScreen world
                     Some world
                 else None
             | None -> None
@@ -179,28 +179,28 @@ module WorldModule =
                     | Running ->
                         let world =
                             if selectedScreen.GetTransitionTicksNp world = 0L
-                            then World.publish4 () (Events.IncomingStart ->>- selectedScreen) selectedScreen world
+                            then World.publish4 () (Events.IncomingStart ->- selectedScreen) selectedScreen world
                             else world
                         match world.State.Liveness with
                         | Running ->
                             let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetIncoming world) world
                             if finished then
                                 let world = World.setScreenTransitionState IdlingState selectedScreen world
-                                World.publish4 () (Events.IncomingFinish ->>- selectedScreen) selectedScreen world
+                                World.publish4 () (Events.IncomingFinish ->- selectedScreen) selectedScreen world
                             else world
                         | Exiting -> world
                     | Exiting -> world
                 | OutgoingState ->
                     let world =
                         if selectedScreen.GetTransitionTicksNp world <> 0L then world
-                        else World.publish4 () (Events.OutgoingStart ->>- selectedScreen) selectedScreen world
+                        else World.publish4 () (Events.OutgoingStart ->- selectedScreen) selectedScreen world
                     match world.State.Liveness with
                     | Running ->
                         let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetOutgoing world) world
                         if finished then
                             let world = World.setScreenTransitionState IdlingState selectedScreen world
                             match world.State.Liveness with
-                            | Running -> World.publish4 () (Events.OutgoingFinish ->>- selectedScreen) selectedScreen world
+                            | Running -> World.publish4 () (Events.OutgoingFinish ->- selectedScreen) selectedScreen world
                             | Exiting -> world
                         else world
                     | Exiting -> world
@@ -242,8 +242,8 @@ module WorldModule =
             let world = splashLabel.SetSize cameraEyeSize world
             let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
             let world = splashLabel.SetLabelImage splashData.SplashImage world
-            let world = World.monitor (World.handleSplashScreenIdle splashData.IdlingTime) (Events.IncomingFinish ->>- splashScreen) splashScreen world
-            let world = World.monitor (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish ->>- splashScreen) splashScreen world
+            let world = World.monitor (World.handleSplashScreenIdle splashData.IdlingTime) (Events.IncomingFinish ->- splashScreen) splashScreen world
+            let world = World.monitor (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish ->- splashScreen) splashScreen world
             (splashScreen, world)
 
         /// Create a dissolve screen whose contents is loaded from the given group file.
