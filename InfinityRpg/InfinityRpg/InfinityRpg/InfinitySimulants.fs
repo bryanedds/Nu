@@ -11,21 +11,19 @@ module Simulants =
 
     // title screen
     let Title = !> "Title"
-    let TitleGroup = Title => "Group"
-    let TitleNewGame = TitleGroup => "NewGame"
-    let TitleLoadGame = TitleGroup => "LoadGame"
-    let TitleCredits = TitleGroup => "Credits"
-    let TitleExit = TitleGroup => "Exit"
+    let TitleGui = Title => "Gui"
+    let TitleNewGame = TitleGui => "NewGame"
+    let TitleLoadGame = TitleGui => "LoadGame"
+    let TitleCredits = TitleGui => "Credits"
+    let TitleExit = TitleGui => "Exit"
 
     // credits screen
     let Credits = !> "Credits"
-    let CreditsGroup = Credits => "Group"
-    let CreditsBack = CreditsGroup => "Back"
+    let CreditsGui = Credits => "Gui"
+    let CreditsBack = CreditsGui => "Back"
 
     // gameplay screen
     let Gameplay = !> "Gameplay"
-    
-    // hud group
     let Hud = Gameplay => "Hud"
     let HudBack = Hud => "Back"
     let HudSaveGame = Hud => "SaveGame"
@@ -35,8 +33,6 @@ module Simulants =
     let HudDetailRight = Hud => "DetailRight"
     let HudDetailDown = Hud => "DetailDown"
     let HudDetailLeft = Hud => "DetailLeft"
-    
-    // scene group
     let Scene = Gameplay => "Scene"
     let Field = Scene => "Field"
     let Player = Scene => "Player"
