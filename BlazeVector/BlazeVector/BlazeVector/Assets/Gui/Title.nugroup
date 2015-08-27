@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group dispatcherName="GroupDispatcher">
-    <Name>Group</Name>
+    <Name>Gui</Name>
     <PublishChanges>True</PublishChanges>
     <Persistent>True</Persistent>
     <Entities>

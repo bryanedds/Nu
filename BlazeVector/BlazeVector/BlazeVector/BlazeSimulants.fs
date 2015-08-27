@@ -16,23 +16,23 @@ module Simulants =
     // entities. You'll notice that the group is built from a combination of the title screen's
     // proxy as well as its own personal name as found in its originating document,
     // 'Assets/Gui/Title.nugroup'.
-    let TitleGroup = Title => "Group"
+    let TitleGui = Title => "Gui"
 
     // this is like the above, but for the play button found in the above group
-    let TitlePlay = TitleGroup => "Play"
+    let TitlePlay = TitleGui => "Play"
     
     // and so on for the title screens credits and exit buttons.
-    let TitleCredits = TitleGroup => "Credits"
-    let TitleExit = TitleGroup => "Exit"
+    let TitleCredits = TitleGui => "Credits"
+    let TitleExit = TitleGui => "Exit"
 
     // like those proceeding them, these are proxies for various simulants of the gameplay screen
     let Gameplay = !> "Gameplay"
-    let GameplayGroup = Gameplay => "Group"
-    let GameplayBack = GameplayGroup => "Back"
-    let PlayerGroup = Gameplay => "Player"
-    let Player = PlayerGroup => "Player"
+    let GameplayGui = Gameplay => "Gui"
+    let GameplayBack = GameplayGui => "Back"
+    let GameplayScene = Gameplay => "Scene"
+    let Player = GameplayScene => "Player"
 
     // proxies for the credits screen
     let Credits = !> "Credits"
-    let CreditsGroup = Credits => "Group"
-    let CreditsBack = CreditsGroup => "Back"
+    let CreditsGui = Credits => "Gui"
+    let CreditsBack = CreditsGui => "Back"

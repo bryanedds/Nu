@@ -138,7 +138,7 @@ module PlayerModule =
         static let [<Literal>] ClimbForce = 12000.0f
 
         static let createBullet (playerTransform : Transform) world =
-            let (bullet, world) = World.createEntity typeof<BulletDispatcher>.Name None Simulants.PlayerGroup world
+            let (bullet, world) = World.createEntity typeof<BulletDispatcher>.Name None Simulants.GameplayScene world
             let bulletPosition = playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)
             let world = bullet.SetPosition bulletPosition world
             let world = bullet.SetDepth playerTransform.Depth world
@@ -295,7 +295,7 @@ module GameplayScreenModule =
                 [0 .. Constants.BlazeVector.SectionCount - 1]
 
         static let createPlayerGroup world =
-            snd ^ World.readGroupFromFile Constants.FilePaths.PlayerGroup (Some Simulants.PlayerGroup.GroupName) Simulants.Gameplay world
+            snd ^ World.readGroupFromFile Constants.FilePaths.PlayerGroup (Some Simulants.GameplayScene.GroupName) Simulants.Gameplay world
 
         static let handleStartPlay _ world =
             let world = createPlayerGroup world
@@ -310,7 +310,7 @@ module GameplayScreenModule =
         static let handleStopPlay event world =
             let screen = event.Subscriber : Screen
             let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield SectionName + acstring i]
-            let groupNames = Simulants.PlayerGroup.GroupName :: sectionNames
+            let groupNames = Simulants.GameplayScene.GroupName :: sectionNames
             let groups = List.map (fun groupName -> screen => groupName) groupNames
             let world = World.destroyGroups groups world
             (Cascade, world)
