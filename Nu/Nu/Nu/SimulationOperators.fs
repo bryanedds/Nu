@@ -8,6 +8,8 @@ open Nu
 [<AutoOpen>]
 module SimulationOperators =
 
+    (* TODO: get rid of these operators. *)
+
     /// Convert any type of address to a simulant's address.
     let atoua address = Address.changeType<'a, Simulant> address
 
