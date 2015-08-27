@@ -109,6 +109,29 @@ module Entity =
     /// Create an Entity proxy from an address.
     let proxy address = { EntityAddress = address }
 
+[<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module SimulationOperators =
+
+    let ntos screenName = Screen.proxy ^ atosa ^ ntoa screenName
+
+    /// Convert a group's proxy to an entity's by appending the entity's name at the end.
+    let gtoe group entityName = Entity.proxy ^ gatoea group.GroupAddress entityName
+
+    /// Convert a screen's proxy to a group's by appending the group's name at the end.
+    let stog screen groupName = Group.proxy ^ satoga screen.ScreenAddress groupName
+
+    /// Convert a screen's proxy to an entity's by appending the group and entity's names at the end.
+    let stoe screen groupName entityName = Entity.proxy ^ satoea screen.ScreenAddress groupName entityName
+
+    /// Convert an entity's proxy to a group's by removing the entity's name from the end.
+    let etog entity = Group.proxy ^ eatoga entity
+
+    /// Convert a group's proxy to a screen's by removing the group's name from the end.
+    let gtos group = Screen.proxy ^ gatosa group.GroupAddress
+
+    /// Convert a entity's proxy to a screen's by removing the group and entity's names from the end.
+    let etos entity = Screen.proxy ^ eatosa entity.EntityAddress
+
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module World =
 
