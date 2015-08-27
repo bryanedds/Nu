@@ -66,7 +66,7 @@ module WorldGroupModule =
         static member proxyGroups screen world =
             let groupStateMap = World.getGroupStateMap screen world
             Seq.map
-                (fun (kvp : KeyValuePair<string, _>) -> Group.proxy ^ satoga screen.ScreenAddress kvp.Key)
+                (fun (kvp : KeyValuePair<string, _>) -> stog screen kvp.Key)
                 groupStateMap
 
         /// Destroy a group in the world immediately. Can be dangerous if existing in-flight
@@ -109,7 +109,7 @@ module WorldGroupModule =
             let dispatcher = Map.find dispatcherName world.Components.GroupDispatchers
             let groupState = GroupState.make dispatcher optName
             Reflection.attachFields dispatcher groupState
-            let group = Group.proxy ^ satoga screen.ScreenAddress groupState.Name
+            let group = stog screen groupState.Name
             let world = World.addGroup false groupState group world
             (group, world)
 
@@ -177,7 +177,7 @@ module WorldGroupModule =
             let groupState = match optName with Some name -> { groupState with Name = name } | None -> groupState
 
             // add the group's state to the world
-            let group = Group.proxy ^ satoga screen.ScreenAddress groupState.Name
+            let group = stog screen groupState.Name
             let world = World.addGroup true groupState group world
 
             // read the group's entities

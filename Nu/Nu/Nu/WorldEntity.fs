@@ -124,7 +124,7 @@ module WorldEntityModule =
         /// Proxy all the entities contained by a group.
         static member proxyEntities group world =
             let entityStateMap = World.getEntityStateMap group world
-            Seq.map (fun (kvp : KeyValuePair<string, _>) -> Entity.proxy ^ gatoea group.GroupAddress kvp.Key) entityStateMap
+            Seq.map (fun (kvp : KeyValuePair<string, _>) -> gtoe group kvp.Key) entityStateMap
 
         /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight
         /// publishing depends on the entity's existence. Use with caution.
@@ -218,7 +218,7 @@ module WorldEntityModule =
                 | None -> entityState
 
             // add entity's state to world
-            let entity = Entity.proxy ^ gatoea group.GroupAddress entityState.Name
+            let entity = gtoe group entityState.Name
             let world = World.addEntity false entityState entity world
             (entity, world)
 
@@ -395,7 +395,7 @@ module WorldEntityModule =
             let entityState = match optName with Some name -> { entityState with Name = name } | None -> entityState
 
             // add entity state to the world
-            let entity = Entity.proxy ^ gatoea group.GroupAddress entityState.Name
+            let entity = gtoe group entityState.Name
             let world = World.addEntity true entityState entity world
             (entity, world)
 

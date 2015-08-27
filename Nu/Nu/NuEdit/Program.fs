@@ -374,7 +374,7 @@ module Program =
             let world = World.destroyGroupImmediate Simulants.EditorGroup world
 
             // load and add group
-            let world = snd ^ World.readGroupFromFile filePath (Some Simulants.EditorGroupName) Simulants.EditorScreen world
+            let world = snd ^ World.readGroupFromFile filePath (Some Simulants.EditorGroup.GroupName) Simulants.EditorScreen world
             let world = subscribeToEntityEvents form world
 
             // refresh tree view
@@ -741,8 +741,8 @@ module Program =
         let eitherWorld = World.tryMake false 0L editorState nuPlugin sdlDeps
         match eitherWorld with
         | Right world ->
-            let world = snd ^ World.createScreen typeof<ScreenDispatcher>.Name (Some Simulants.EditorScreenName) world
-            let world = snd ^ World.createGroup typeof<GroupDispatcher>.Name (Some Simulants.EditorGroupName) Simulants.EditorScreen world
+            let world = snd ^ World.createScreen typeof<ScreenDispatcher>.Name (Some Simulants.EditorScreen.ScreenName) world
+            let world = snd ^ World.createGroup typeof<GroupDispatcher>.Name (Some Simulants.EditorGroup.GroupName) Simulants.EditorScreen world
             let world = World.setOptSelectedScreen (Some Simulants.EditorScreen) world 
             let world = World.subscribe4 (handleNuMouseRightDown form worldChangers refWorld) Events.MouseRightDown Simulants.Game world
             let world = World.subscribe4 (handleNuEntityDragBegin form worldChangers refWorld) Events.MouseLeftDown Simulants.Game world
