@@ -77,7 +77,7 @@ module WorldScreenModule =
         /// Get all the world's screens.
         static member proxyScreens world =
             World.getScreenStateMap world |>
-                Map.fold (fun screensRev screenName _ -> (ntos screenName) :: screensRev) [] |>
+                Map.fold (fun screensRev screenName _ -> ntos screenName :: screensRev) [] |>
                 List.rev
 
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight

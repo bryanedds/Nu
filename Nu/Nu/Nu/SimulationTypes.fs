@@ -376,8 +376,8 @@ and [<StructuralEquality; NoComparison>] Game =
     /// Get the full name of a game proxy.
     member this.GameFullName = Address.getFullName this.GameAddress
 
-    /// Get the  name of a game proxy.
-    member this.GameName = Address.getName this.GameAddress
+    /// Create a Game proxy from an address.
+    static member proxy address = { GameAddress = address }
 
     /// Concatenate two addresses, forcing the type of first address.
     static member acatf<'a> (address : 'a Address) (game : Game) = acatf address (atooa game.GameAddress)
@@ -407,6 +407,9 @@ and [<StructuralEquality; NoComparison>] Screen =
     /// Get the name of a screen proxy.
     member this.ScreenName = Address.getName this.ScreenAddress
 
+    /// Create a Screen proxy from an address.
+    static member proxy address = { ScreenAddress = address }
+
     /// Concatenate two addresses, forcing the type of first address.
     static member acatf<'a> (address : 'a Address) (screen : Screen) = acatf address (atooa screen.ScreenAddress)
 
@@ -422,10 +425,10 @@ and [<StructuralEquality; NoComparison>] Screen =
     /// Convert a screen's proxy to a group's by appending the group's name at the end.
     /// NOTE: unfortunately, this operator does not resolve since it's not inside the string type definition.
     /// TODO: see if this can be fixed.
-    static member (!>) screenName = { ScreenAddress = ntoa screenName }
+    static member (!>) screenName = Screen.proxy ^ ntoa screenName
 
     /// Convert a screen's proxy to a group's by appending the group's name at the end.
-    static member (=>) (screen, groupName) = { GroupAddress = Address.changeType<Screen, Group> screen.ScreenAddress ->- ntoa groupName }
+    static member (=>) (screen, groupName) = Group.proxy ^ Address.changeType<Screen, Group> screen.ScreenAddress ->- ntoa groupName
 
 /// Forms a logical group of entities.
 and [<StructuralEquality; NoComparison>] Group =
@@ -442,6 +445,9 @@ and [<StructuralEquality; NoComparison>] Group =
     /// Get the name of a group proxy.
     member this.GroupName = Address.getName this.GroupAddress
 
+    /// Create a Group proxy from an address.
+    static member proxy address = { GroupAddress = address }
+
     /// Concatenate two addresses, forcing the type of first address.
     static member acatf<'a> (address : 'a Address) (group : Group) = acatf address (atooa group.GroupAddress)
 
@@ -455,7 +461,7 @@ and [<StructuralEquality; NoComparison>] Group =
     static member (->>-) (address, group) = Group.acatff address group
 
     /// Convert a group's proxy to an entity's by appending the entity's name at the end.
-    static member (=>) (group, entityName) = { EntityAddress = Address.changeType<Group, Entity> group.GroupAddress ->- ntoa entityName }
+    static member (=>) (group, entityName) = Entity.proxy ^ Address.changeType<Group, Entity> group.GroupAddress ->- ntoa entityName
 
 /// The type around which the whole game engine is based! Used in combination with dispatchers
 /// to implement things like buttons, characters, blocks, and things of that sort.
@@ -472,6 +478,9 @@ and [<StructuralEquality; NoComparison>] Entity =
 
     /// Get the name of an entity proxy.
     member this.EntityName = Address.getName this.EntityAddress
+
+    /// Create an Entity proxy from an address.
+    static member proxy address = { EntityAddress = address }
 
     /// Concatenate two addresses, forcing the type of first address.
     static member acatf<'a> (address : 'a Address) (entity : Entity) = acatf address (atooa entity.EntityAddress)
