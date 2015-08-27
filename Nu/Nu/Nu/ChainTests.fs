@@ -10,7 +10,7 @@ open Nu.Observation
 open Nu.Chain
 module ChainTests =
 
-    let IntEventAddress = stoa<int> "Test"
+    let IntEventAddress = ntoa<int> "Test"
     let incUserState _ world = World.updateUserState inc world
     let incUserStateNoEvent world = World.updateUserState inc world
     let incUserStateTwice _ world = World.updateUserState (inc >> inc) world

@@ -80,7 +80,6 @@
     <Compile Include="SimulationTypes.fs" />
     <Compile Include="SimulationOperators.fs" />
     <Compile Include="SimulationEvents.fs" />
-    <Compile Include="SimulationSimulants.fs" />
     <Compile Include="SimulationModules.fs" />
     <Compile Include="WorldFacet.fs" />
     <Compile Include="WorldEntity.fs" />

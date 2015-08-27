@@ -109,29 +109,55 @@ module Entity =
     /// Create an Entity proxy from an address.
     let proxy address = { EntityAddress = address }
 
-[<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+[<AutoOpen>]
 module SimulationOperators =
+
+    /// Convert any type of address to a screen's address.
+    let atosa address = Address.changeType<'a, Screen> address
+
+    /// Convert any type of address to a group's address.
+    let atoga address = Address.changeType<'a, Group> address
+
+    /// Convert any type of address to an entity's address.
+    let atoea address = Address.changeType<'a, Entity> address
+
+    /// Convert any type of address to a screen's proxy.
+    let atos address = Screen.proxy ^ Address.changeType<'a, Screen> address
+
+    /// Convert any type of address to a group's proxy.
+    let atog address = Group.proxy ^ Address.changeType<'a, Group> address
+
+    /// Convert any type of address to an entity's proxy.
+    let atoe address = Entity.proxy ^ Address.changeType<'a, Entity> address
 
     /// Convert a name to a screen's proxy.
     let ntos screenName = Screen.proxy ^ atosa ^ ntoa screenName
 
     /// Convert a group's proxy to an entity's by appending the entity's name at the end.
-    let gtoe group entityName = Entity.proxy ^ gatoea group.GroupAddress entityName
+    let gtoe group entityName = Entity.proxy ^ Address.changeType<Group, Entity> group.GroupAddress ->- ntoa entityName
 
     /// Convert a screen's proxy to a group's by appending the group's name at the end.
-    let stog screen groupName = Group.proxy ^ satoga screen.ScreenAddress groupName
+    let stog screen groupName = Group.proxy ^ Address.changeType<Screen, Group> screen.ScreenAddress ->- ntoa groupName
 
     /// Convert a screen's proxy to an entity's by appending the group and entity's names at the end.
-    let stoe screen groupName entityName = Entity.proxy ^ satoea screen.ScreenAddress groupName entityName
+    let stoe screen groupName entityName = gtoe (stog screen groupName) entityName
 
     /// Convert an entity's proxy to a group's by removing the entity's name from the end.
-    let etog entity = Group.proxy ^ eatoga entity
+    let etog entity = Group.proxy ^ Address.take<Entity, Group> 2 entity.EntityAddress
 
     /// Convert a group's proxy to a screen's by removing the group's name from the end.
-    let gtos group = Screen.proxy ^ gatosa group.GroupAddress
+    let gtos group = Screen.proxy ^ Address.take<Group, Screen> 1 group.GroupAddress
 
     /// Convert a entity's proxy to a screen's by removing the group and entity's names from the end.
-    let etos entity = Screen.proxy ^ eatosa entity.EntityAddress
+    let etos entity = Screen.proxy ^ Address.take<Entity, Screen> 1 entity.EntityAddress
+
+[<RequireQualifiedAccess>]
+module Simulants =
+
+    let Game = { GameAddress = Address.empty }
+    let DefaultScreen = ntos Constants.Engine.DefaultScreenName
+    let DefaultGroup = stog DefaultScreen Constants.Engine.DefaultGroupName
+    let DefaultEntity = gtoe DefaultGroup Constants.Engine.DefaultEntityName
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module World =
@@ -304,7 +330,7 @@ module World =
                 let world = unsubscribe removalKey world
                 let world = unsubscribe monitorKey world
                 (Cascade, world)
-            let removingEventAddress = stoa<unit> (typeof<'s>.Name + "/" + "Removing") ->>- subscriber.SimulantAddress
+            let removingEventAddress = nstoa<unit> (typeof<'s>.Name + "/Removing") ->>- subscriber.SimulantAddress
             subscribe<unit, 's> removalKey subscription' removingEventAddress subscriber world
         else failwith "Cannot monitor events with an anonymous subscriber."
 
