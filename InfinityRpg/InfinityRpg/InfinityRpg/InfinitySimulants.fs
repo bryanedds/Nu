@@ -7,10 +7,10 @@ open InfinityRpg
 module Simulants =
 
     // nu splash screen
-    let NuSplash = ntos "Splash"
+    let NuSplash = !> "Splash"
 
     // title screen
-    let Title = ntos "Title"
+    let Title = !> "Title"
     let TitleGroup = Title => "Group"
     let TitleNewGame = TitleGroup => "NewGame"
     let TitleLoadGame = TitleGroup => "LoadGame"
@@ -18,12 +18,12 @@ module Simulants =
     let TitleExit = TitleGroup => "Exit"
 
     // credits screen
-    let Credits = ntos "Credits"
+    let Credits = !> "Credits"
     let CreditsGroup = Credits => "Group"
     let CreditsBack = CreditsGroup => "Back"
 
     // gameplay screen
-    let Gameplay = ntos "Gameplay"
+    let Gameplay = !> "Gameplay"
     
     // hud group
     let Hud = Gameplay => "Hud"

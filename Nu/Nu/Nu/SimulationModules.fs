@@ -85,30 +85,6 @@ module EntityState =
           OptOverlayName = optOverlayName
           Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
 
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Game =
-
-    /// Create a Game proxy from an address.
-    let proxy address = { GameAddress = address }
-
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Screen =
-
-    /// Create a Screen proxy from an address.
-    let proxy address = { ScreenAddress = address }
-
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Group =
-
-    /// Create a Group proxy from an address.
-    let proxy address = { GroupAddress = address }
-
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Entity =
-
-    /// Create an Entity proxy from an address.
-    let proxy address = { EntityAddress = address }
-
 [<AutoOpen>]
 module SimulationOperators =
 
@@ -151,13 +127,16 @@ module SimulationOperators =
     /// Convert a entity's proxy to a screen's by removing the group and entity's names from the end.
     let etos entity = Screen.proxy ^ Address.take<Entity, Screen> 1 entity.EntityAddress
 
+    /// Convert a name to a screen's proxy.
+    let (!>) screenName = ntos screenName
+
 [<RequireQualifiedAccess>]
 module Simulants =
 
     let Game = { GameAddress = Address.empty }
-    let DefaultScreen = ntos Constants.Engine.DefaultScreenName
-    let DefaultGroup = stog DefaultScreen Constants.Engine.DefaultGroupName
-    let DefaultEntity = gtoe DefaultGroup Constants.Engine.DefaultEntityName
+    let DefaultScreen = !> Constants.Engine.DefaultScreenName
+    let DefaultGroup = DefaultScreen => Constants.Engine.DefaultGroupName
+    let DefaultEntity = DefaultGroup => Constants.Engine.DefaultEntityName
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module World =
