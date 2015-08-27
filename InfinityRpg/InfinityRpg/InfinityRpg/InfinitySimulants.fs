@@ -7,50 +7,36 @@ open InfinityRpg
 module Simulants =
 
     // nu splash screen
-    let NuSplashName = "Splash"
-    let NuSplash = Screen.proxy ^ ntoa NuSplashName
+    let NuSplash = ntos "Splash"
 
     // title screen
-    let TitleName = "Title"
-    let Title = Screen.proxy ^ ntoa TitleName
-    let TitleGroupName = "Group"
-    let TitleGroup = Group.proxy ^ satoga Title.ScreenAddress TitleGroupName
-    let TitleNewGameName = "NewGame"
-    let TitleNewGame = Entity.proxy ^ gatoea TitleGroup.GroupAddress TitleNewGameName
-    let TitleLoadGameName = "LoadGame"
-    let TitleLoadGame = Entity.proxy ^ gatoea TitleGroup.GroupAddress TitleLoadGameName
-    let TitleCreditsName = "Credits"
-    let TitleCredits = Entity.proxy ^ gatoea TitleGroup.GroupAddress TitleCreditsName
-    let TitleExitName = "Exit"
-    let TitleExit = Entity.proxy ^ gatoea TitleGroup.GroupAddress TitleExitName
+    let Title = ntos "Title"
+    let TitleGroup = stog Title "Group"
+    let TitleNewGame = gtoe TitleGroup "NewGame"
+    let TitleLoadGame = gtoe TitleGroup "LoadGame"
+    let TitleCredits = gtoe TitleGroup "Credits"
+    let TitleExit = gtoe TitleGroup "Exit"
 
     // credits screen
-    let CreditsName = "Credits"
-    let Credits = Screen.proxy ^ ntoa CreditsName
-    let CreditsGroupName = "Group"
-    let CreditsGroup = Group.proxy ^ satoga Credits.ScreenAddress CreditsGroupName
-    let CreditsBackName = "Back"
-    let CreditsBack = Entity.proxy ^ gatoea CreditsGroup.GroupAddress CreditsBackName
+    let Credits = ntos "Credits"
+    let CreditsGroup = stog Credits "Group"
+    let CreditsBack = gtoe CreditsGroup "Back"
 
     // gameplay screen
-    let GameplayName = "Gameplay"
-    let Gameplay = Screen.proxy ^ ntoa GameplayName
+    let Gameplay = ntos "Gameplay"
     
     // hud group
-    let HudName = "Hud"
-    let Hud = Group.proxy ^ satoga Gameplay.ScreenAddress HudName
-    let HudBackName = "Back"
-    let HudBack = Entity.proxy ^ gatoea Hud.GroupAddress HudBackName
-    let HudSaveGameName = "SaveGame"
-    let HudHaltName = "Halt"
-    let HudFeelerName = "Feeler"
-    let HudDetailUpName = "DetailUp"
-    let HudDetailRightName = "DetailRight"
-    let HudDetailDownName = "DetailDown"
-    let HudDetailLeftName = "DetailLeft"
-    let SceneName = "Scene"
+    let Hud = stog Gameplay "Hud"
+    let HudBack = gtoe Hud "Back"
+    let HudSaveGame = gtoe Hud "SaveGame"
+    let HudHalt = gtoe Hud "Halt"
+    let HudFeeler = gtoe Hud "Feeler"
+    let HudDetailUp = gtoe Hud "DetailUp"
+    let HudDetailRight = gtoe Hud "DetailRight"
+    let HudDetailDown = gtoe Hud "DetailDown"
+    let HudDetailLeft = gtoe Hud "DetailLeft"
     
     // scene group
-    let Scene = Group.proxy ^ satoga Gameplay.ScreenAddress SceneName
-    let FieldName = "Field"
-    let PlayerName = "Player"
+    let Scene = stog Gameplay "Scene"
+    let Field = gtoe Scene "Field"
+    let Player = gtoe Scene "Player"

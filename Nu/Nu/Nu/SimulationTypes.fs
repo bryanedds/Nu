@@ -395,6 +395,9 @@ and [<StructuralEquality; NoComparison>] Screen =
         member this.SimulantAddress = Address.changeType<Screen, Simulant> this.ScreenAddress
         end
 
+    /// Get the name of a screen proxy.
+    member this.ScreenName = (Address.last this.ScreenAddress).Name
+
     /// Concatenate two addresses, forcing the type of first address.
     static member acatf<'a> (address : 'a Address) (screen : Screen) = acatf address (atooa screen.ScreenAddress)
 
@@ -415,6 +418,9 @@ and [<StructuralEquality; NoComparison>] Group =
         member this.GetPublishingPriority _ _ = Constants.Engine.GroupPublishingPriority
         member this.SimulantAddress = Address.changeType<Group, Simulant> this.GroupAddress
         end
+
+    /// Get the name of a group proxy.
+    member this.GroupName = (Address.last this.GroupAddress).Name
 
     /// Concatenate two addresses, forcing the type of first address.
     static member acatf<'a> (address : 'a Address) (group : Group) = acatf address (atooa group.GroupAddress)
@@ -437,6 +443,9 @@ and [<StructuralEquality; NoComparison>] Entity =
         member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
         member this.SimulantAddress = Address.changeType<Entity, Simulant> this.EntityAddress
         end
+
+    /// Get the name of an entity proxy.
+    member this.EntityName = (Address.last this.EntityAddress).Name
 
     /// Concatenate two addresses, forcing the type of first address.
     static member acatf<'a> (address : 'a Address) (entity : Entity) = acatf address (atooa entity.EntityAddress)
