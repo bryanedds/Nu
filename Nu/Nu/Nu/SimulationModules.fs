@@ -330,7 +330,7 @@ module World =
                 let world = unsubscribe removalKey world
                 let world = unsubscribe monitorKey world
                 (Cascade, world)
-            let removingEventAddress = nstoa<unit> (typeof<'s>.Name + "/Removing") ->>- subscriber.SimulantAddress
+            let removingEventAddress = ftoa<unit> (typeof<'s>.Name + "/Removing") ->>- subscriber.SimulantAddress
             subscribe<unit, 's> removalKey subscription' removingEventAddress subscriber world
         else failwith "Cannot monitor events with an anonymous subscriber."
 
