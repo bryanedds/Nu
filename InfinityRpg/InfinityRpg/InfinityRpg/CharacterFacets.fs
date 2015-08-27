@@ -164,13 +164,12 @@ module CharacterCameraFacetModule =
                 World.updateCamera (fun camera ->
                     let eyeCenter = character.GetPosition world + character.GetSize world * 0.5f
                     let eyeCenter =
-                        let field = Entity.proxy ^ gatoea (eatoga character.EntityAddress) Simulants.Field.EntityName
-                        if World.containsEntity field world then
+                        if World.containsEntity Simulants.Field world then
                             let eyeSize = camera.EyeSize
                             let eyeCornerNegative = eyeCenter - eyeSize * 0.5f
                             let eyeCornerPositive = eyeCenter + eyeSize * 0.5f
-                            let fieldCornerNegative = field.GetPosition world
-                            let fieldCornerPositive = field.GetPosition world + field.GetSize world
+                            let fieldCornerNegative = Simulants.Field.GetPosition world
+                            let fieldCornerPositive = Simulants.Field.GetPosition world + Simulants.Field.GetSize world
                             let fieldBoundsNegative = fieldCornerNegative + eyeSize * 0.5f
                             let fieldBoundsPositive = fieldCornerPositive - eyeSize * 0.5f
                             let eyeCenterX =

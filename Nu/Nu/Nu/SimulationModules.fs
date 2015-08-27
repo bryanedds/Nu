@@ -112,6 +112,7 @@ module Entity =
 [<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module SimulationOperators =
 
+    /// Convert a name to a screen's proxy.
     let ntos screenName = Screen.proxy ^ atosa ^ ntoa screenName
 
     /// Convert a group's proxy to an entity's by appending the entity's name at the end.
