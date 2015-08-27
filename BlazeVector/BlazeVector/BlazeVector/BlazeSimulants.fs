@@ -18,7 +18,7 @@ module Simulants =
     // 'Assets/Gui/Title.nugroup'.
     let TitleGroup = Title => "Group"
 
-    // this ia like the above, but for the play button found in the above group
+    // this is like the above, but for the play button found in the above group
     let TitlePlay = TitleGroup => "Play"
     
     // and so on for the title screens credits and exit buttons.
