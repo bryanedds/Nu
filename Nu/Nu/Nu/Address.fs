@@ -175,7 +175,7 @@ module Address =
 
     /// TODO: document!
     let getName address =
-        getNameKeys address |> List.tryLast |> Option.getOrDefault ^ NameKey.make "" |> NameKey.getName
+        getNameKeys address |> List.last |> NameKey.getName
 
     /// TODO: document!
     let getHashCode address =
