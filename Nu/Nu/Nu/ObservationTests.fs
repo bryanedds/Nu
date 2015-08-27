@@ -9,8 +9,8 @@ open Nu
 open Nu.Observation
 module ObservationTests =
 
-    let IntEventAddress = stoa<int> "Test"
-    let UnitEventAddress = stoa<unit> "Test"
+    let IntEventAddress = ntoa<int> "Test"
+    let UnitEventAddress = ntoa<unit> "Test"
     let JimName = "Jim"
     let BobName = "Bob"
     let incUserStateAndCascade _ world = (Cascade, World.updateUserState inc world)

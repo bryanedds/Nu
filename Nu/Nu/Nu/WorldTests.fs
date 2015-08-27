@@ -11,8 +11,8 @@ open Prime
 open Nu
 module WorldTests =
 
-    let UnitEventAddress = stoa<unit> "Unit"
-    let StringEventAddress = stoa<string> "String"
+    let UnitEventAddress = ntoa<unit> "Unit"
+    let StringEventAddress = ntoa<string> "String"
     let TestFilePath = "TestFile.xml"
     let incUserStateAndCascade (_ : Event<unit, Game>) world = (Cascade, World.updateUserState inc world)
     let incUserStateAndResolve (_ : Event<unit, Game>) world = (Resolve, World.updateUserState inc world)

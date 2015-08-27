@@ -71,7 +71,7 @@ type AddressConverter (targetType : Type) =
     override this.ConvertFrom (_, _, source) =
         match source with
         | :? string ->
-            let stoaFunction = targetType.GetMethod ("stoa", BindingFlags.Static ||| BindingFlags.Public)
+            let stoaFunction = targetType.GetMethod ("nstoa", BindingFlags.Static ||| BindingFlags.Public)
             stoaFunction.Invoke (null, [|source|])
         | _ ->
             if targetType.IsInstanceOfType source then source
@@ -158,7 +158,7 @@ module Address =
         { NameKeys = nameKeys; OptNamesStr = Some namesStr; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
 
     /// Convert a names string into an address.
-    let stoa<'a> (namesStr : string) =
+    let nstoa<'a> (namesStr : string) =
         makeFromNamesString<'a> namesStr
 
     /// Get the name keys of an address.
@@ -216,10 +216,6 @@ module Address =
 [<AutoOpen>]
 module AddressOperators =
 
-    /// Convert a names string into an address.
-    let stoa<'a> namesStr =
-        Address.stoa<'a> namesStr
-
     /// Convert a name keys into an address.
     let ktoa<'a> nameKeys =
         Address.makeFromNameKeys<'a> nameKeys
@@ -231,6 +227,10 @@ module AddressOperators =
     /// Convert a name string into an address.
     let ntoa<'a> nameStr =
         ltoa<'a> [nameStr]
+
+    /// Convert a names string into an address.
+    let nstoa<'a> namesStr =
+        Address.nstoa<'a> namesStr
 
     /// Convert any address to an obj Address.
     let atooa<'a> (address : 'a Address) =

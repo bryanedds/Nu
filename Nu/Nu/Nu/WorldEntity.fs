@@ -168,7 +168,7 @@ module WorldEntityModule =
             let id = Core.makeId ()
             let name = match optName with Some name -> name | None -> acstring id
             let entityState = { entityState with Id = id; Name = name }
-            let transmutedEntity = { entity with EntityAddress = gatoea group.GroupAddress name }
+            let transmutedEntity = gtoe group name
             let world = World.addEntity false entityState transmutedEntity world
             (transmutedEntity, world)
 
