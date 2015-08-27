@@ -11,32 +11,32 @@ module Simulants =
 
     // title screen
     let Title = ntos "Title"
-    let TitleGroup = stog Title "Group"
-    let TitleNewGame = gtoe TitleGroup "NewGame"
-    let TitleLoadGame = gtoe TitleGroup "LoadGame"
-    let TitleCredits = gtoe TitleGroup "Credits"
-    let TitleExit = gtoe TitleGroup "Exit"
+    let TitleGroup = Title => "Group"
+    let TitleNewGame = TitleGroup => "NewGame"
+    let TitleLoadGame = TitleGroup => "LoadGame"
+    let TitleCredits = TitleGroup => "Credits"
+    let TitleExit = TitleGroup => "Exit"
 
     // credits screen
     let Credits = ntos "Credits"
-    let CreditsGroup = stog Credits "Group"
-    let CreditsBack = gtoe CreditsGroup "Back"
+    let CreditsGroup = Credits => "Group"
+    let CreditsBack = CreditsGroup => "Back"
 
     // gameplay screen
     let Gameplay = ntos "Gameplay"
     
     // hud group
-    let Hud = stog Gameplay "Hud"
-    let HudBack = gtoe Hud "Back"
-    let HudSaveGame = gtoe Hud "SaveGame"
-    let HudHalt = gtoe Hud "Halt"
-    let HudFeeler = gtoe Hud "Feeler"
-    let HudDetailUp = gtoe Hud "DetailUp"
-    let HudDetailRight = gtoe Hud "DetailRight"
-    let HudDetailDown = gtoe Hud "DetailDown"
-    let HudDetailLeft = gtoe Hud "DetailLeft"
+    let Hud = Gameplay => "Hud"
+    let HudBack = Hud => "Back"
+    let HudSaveGame = Hud => "SaveGame"
+    let HudHalt = Hud => "Halt"
+    let HudFeeler = Hud => "Feeler"
+    let HudDetailUp = Hud => "DetailUp"
+    let HudDetailRight = Hud => "DetailRight"
+    let HudDetailDown = Hud => "DetailDown"
+    let HudDetailLeft = Hud => "DetailLeft"
     
     // scene group
-    let Scene = stog Gameplay "Scene"
-    let Field = gtoe Scene "Field"
-    let Player = gtoe Scene "Player"
+    let Scene = Gameplay => "Scene"
+    let Field = Scene => "Field"
+    let Player = Scene => "Player"

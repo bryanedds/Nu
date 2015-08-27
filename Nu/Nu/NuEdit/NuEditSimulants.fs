@@ -11,4 +11,4 @@ open NuEdit
 module Simulants =
 
     let EditorScreen = ntos "EditorScreen"
-    let EditorGroup = stog EditorScreen Constants.Engine.DefaultGroupName
+    let EditorGroup = EditorScreen => Constants.Engine.DefaultGroupName
