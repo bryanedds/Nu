@@ -376,6 +376,9 @@ and [<StructuralEquality; NoComparison>] Game =
     /// Get the full name of a game proxy.
     member this.GameFullName = Address.getFullName this.GameAddress
 
+    /// Get the  name of a game proxy.
+    member this.GameName = Address.getName this.GameAddress
+
     /// Concatenate two addresses, forcing the type of first address.
     static member acatf<'a> (address : 'a Address) (game : Game) = acatf address (atooa game.GameAddress)
 
@@ -398,11 +401,11 @@ and [<StructuralEquality; NoComparison>] Screen =
         member this.SimulantAddress = Address.changeType<Screen, Simulant> this.ScreenAddress
         end
 
-    /// Get the name of a screen proxy.
-    member this.ScreenName = Address.getName this.ScreenAddress
-
     /// Get the full name of a screen proxy.
     member this.ScreenFullName = Address.getFullName this.ScreenAddress
+
+    /// Get the name of a screen proxy.
+    member this.ScreenName = Address.getName this.ScreenAddress
 
     /// Concatenate two addresses, forcing the type of first address.
     static member acatf<'a> (address : 'a Address) (screen : Screen) = acatf address (atooa screen.ScreenAddress)

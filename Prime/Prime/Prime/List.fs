@@ -199,6 +199,13 @@ let last list =
     let length = List.length list
     List.nth list (length - 1)
 
+/// Get the last item from a list.
+/// TODO: speed this up with a single iteration?
+let tryLast list =
+    match List.length list with
+    | 0 -> None
+    | _ -> Some ^ last list
+
 /// Get all but the last item from a list.
 let allButLast list =
     take (List.length list - 1) list
