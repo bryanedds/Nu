@@ -174,6 +174,10 @@ module Address =
         Address<'a>.getFullName address
 
     /// TODO: document!
+    let getName address =
+        (List.last ^ getNameKeys address).Name
+
+    /// TODO: document!
     let getHashCode address =
         Address<'a>.getHashCode address
 
