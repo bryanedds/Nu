@@ -77,7 +77,7 @@ module WorldScreenModule =
         /// Get all the world's screens.
         static member proxyScreens world =
             World.getScreenStateMap world |>
-                Map.fold (fun screensRev screenName _ -> (Screen.proxy ^ ntoa screenName) :: screensRev) [] |>
+                Map.fold (fun screensRev screenName _ -> (ntos screenName) :: screensRev) [] |>
                 List.rev
 
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight
@@ -104,7 +104,7 @@ module WorldScreenModule =
             let dispatcher = Map.find dispatcherName world.Components.ScreenDispatchers
             let screenState = ScreenState.make dispatcher optName
             Reflection.attachFields dispatcher screenState
-            let screen = Screen.proxy ^ ntoa screenState.Name
+            let screen = ntos screenState.Name
             let world = World.addScreen false screenState screen world
             (screen, world)
         
@@ -164,7 +164,7 @@ module WorldScreenModule =
             Reflection.attachFields screenState.DispatcherNp screenState
             Reflection.readMemberValuesToTarget screenNode screenState
             let screenState = match optName with Some name -> { screenState with Name = name } | None -> screenState
-            let screen = Screen.proxy ^ ntoa screenState.Name
+            let screen = ntos screenState.Name
             let world = World.addScreen true screenState screen world
             let world = snd ^ World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName screen world
             (screen, world)

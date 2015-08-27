@@ -10,7 +10,5 @@ open NuEdit
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    let EditorScreenName = "EditorScreen"
-    let EditorScreen = Screen.proxy ^ ntoa EditorScreenName
-    let EditorGroupName = Constants.Engine.DefaultGroupName
-    let EditorGroup = Group.proxy ^ satoga EditorScreen.ScreenAddress EditorGroupName
+    let EditorScreen = ntos "EditorScreen"
+    let EditorGroup = stog EditorScreen Constants.Engine.DefaultGroupName
