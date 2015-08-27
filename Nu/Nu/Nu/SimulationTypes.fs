@@ -373,6 +373,9 @@ and [<StructuralEquality; NoComparison>] Game =
         member this.SimulantAddress = Address.changeType<Game, Simulant> this.GameAddress
         end
 
+    /// Get the full name of a game proxy.
+    member this.GameFullName = Address.getFullName this.GameAddress
+
     /// Concatenate two addresses, forcing the type of first address.
     static member acatf<'a> (address : 'a Address) (game : Game) = acatf address (atooa game.GameAddress)
 
@@ -396,7 +399,10 @@ and [<StructuralEquality; NoComparison>] Screen =
         end
 
     /// Get the name of a screen proxy.
-    member this.ScreenName = (Address.last this.ScreenAddress).Name
+    member this.ScreenName = Address.getName this.ScreenAddress
+
+    /// Get the full name of a screen proxy.
+    member this.ScreenFullName = Address.getFullName this.ScreenAddress
 
     /// Concatenate two addresses, forcing the type of first address.
     static member acatf<'a> (address : 'a Address) (screen : Screen) = acatf address (atooa screen.ScreenAddress)
@@ -419,8 +425,11 @@ and [<StructuralEquality; NoComparison>] Group =
         member this.SimulantAddress = Address.changeType<Group, Simulant> this.GroupAddress
         end
 
+    /// Get the full name of a group proxy.
+    member this.GroupFullName = Address.getFullName this.GroupAddress
+
     /// Get the name of a group proxy.
-    member this.GroupName = (Address.last this.GroupAddress).Name
+    member this.GroupName = Address.getName this.GroupAddress
 
     /// Concatenate two addresses, forcing the type of first address.
     static member acatf<'a> (address : 'a Address) (group : Group) = acatf address (atooa group.GroupAddress)
@@ -445,7 +454,10 @@ and [<StructuralEquality; NoComparison>] Entity =
         end
 
     /// Get the name of an entity proxy.
-    member this.EntityName = (Address.last this.EntityAddress).Name
+    member this.EntityFullName = Address.getFullName this.EntityAddress
+
+    /// Get the name of an entity proxy.
+    member this.EntityName = Address.getName this.EntityAddress
 
     /// Concatenate two addresses, forcing the type of first address.
     static member acatf<'a> (address : 'a Address) (entity : Entity) = acatf address (atooa entity.EntityAddress)
