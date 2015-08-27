@@ -419,6 +419,14 @@ and [<StructuralEquality; NoComparison>] Screen =
     /// Concatenate two addresses, forcing the type of first address.
     static member (->>-) (address, screen) = Screen.acatff address screen
 
+    /// Convert a screen's proxy to a group's by appending the group's name at the end.
+    /// NOTE: unfortunately, this operator does not resolve since it's not inside the string type definition.
+    /// TODO: see if this can be fixed.
+    static member (!>) screenName = { ScreenAddress = ntoa screenName }
+
+    /// Convert a screen's proxy to a group's by appending the group's name at the end.
+    static member (=>) (screen, groupName) = { GroupAddress = Address.changeType<Screen, Group> screen.ScreenAddress ->- ntoa groupName }
+
 /// Forms a logical group of entities.
 and [<StructuralEquality; NoComparison>] Group =
     { GroupAddress : Group Address }
@@ -445,6 +453,9 @@ and [<StructuralEquality; NoComparison>] Group =
 
     /// Concatenate two addresses, forcing the type of first address.
     static member (->>-) (address, group) = Group.acatff address group
+
+    /// Convert a group's proxy to an entity's by appending the entity's name at the end.
+    static member (=>) (group, entityName) = { EntityAddress = Address.changeType<Group, Entity> group.GroupAddress ->- ntoa entityName }
 
 /// The type around which the whole game engine is based! Used in combination with dispatchers
 /// to implement things like buttons, characters, blocks, and things of that sort.

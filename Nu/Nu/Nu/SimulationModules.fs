@@ -131,13 +131,13 @@ module SimulationOperators =
     let atoe address = Entity.proxy ^ Address.changeType<'a, Entity> address
 
     /// Convert a name to a screen's proxy.
-    let ntos screenName = Screen.proxy ^ atosa ^ ntoa screenName
+    let ntos screenName = Screen.proxy ^ ntoa screenName
 
     /// Convert a group's proxy to an entity's by appending the entity's name at the end.
-    let gtoe group entityName = Entity.proxy ^ Address.changeType<Group, Entity> group.GroupAddress ->- ntoa entityName
+    let gtoe (group : Group) entityName = group => entityName
 
     /// Convert a screen's proxy to a group's by appending the group's name at the end.
-    let stog screen groupName = Group.proxy ^ Address.changeType<Screen, Group> screen.ScreenAddress ->- ntoa groupName
+    let stog (screen : Screen) groupName = screen => groupName
 
     /// Convert a screen's proxy to an entity's by appending the group and entity's names at the end.
     let stoe screen groupName entityName = gtoe (stog screen groupName) entityName
