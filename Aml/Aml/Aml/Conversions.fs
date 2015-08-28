@@ -1,4 +1,4 @@
-﻿// Aml - A Modular Language.
+﻿// Aml - A Meta-Language.
 // Copyright (C) Bryan Edds, 2012-2015.
 
 namespace Aml
