@@ -392,19 +392,21 @@ and [<NoEquality; NoComparison>] DebugInfo =
       DIStackTrace : Expr list }
 
 /// The environment.
+/// TODO: make this an ADT.
 and [<NoEquality; NoComparison>] Env =
-    { EnvDeclarationFrame : DeclarationFrame
-      EnvProceduralFrames : ProceduralFrame list
-      EnvCachedDeclarationEntries : CachedEntry ref List
-      EnvAllowRedeclaration : bool
-      EnvDebugInfo : DebugInfo
-      EnvUsingFiles : string Set
-      EnvInterventionBranchLists : InterveneBranch list list
-      EnvOptLanguageModule : ILanguageModule option
-      EnvOptWorkBench : obj option
-      EnvPath : string
-      EnvRecordingCount : int
-      EnvRecordedEnvs : Env option list }
+    // private
+        { EnvDeclarationFrame : DeclarationFrame
+          EnvProceduralFrames : ProceduralFrame list
+          EnvCachedDeclarationEntries : CachedEntry ref List
+          EnvAllowRedeclaration : bool
+          EnvDebugInfo : DebugInfo
+          EnvUsingFiles : string Set
+          EnvInterventionBranchLists : InterveneBranch list list
+          EnvOptLanguageModule : ILanguageModule option
+          EnvOptWorkBench : obj option
+          EnvPath : string
+          EnvRecordingCount : int
+          EnvRecordedEnvs : Env option list }
 
 /// Interface for special object content.
 and ISpecialContent =
