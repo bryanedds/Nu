@@ -4,6 +4,8 @@
 namespace Aml
 open Aml.Ast
 open Prime
+
+// TODO: rename to Constants and re-org into sub-modules.
 module AmlConstants =
 
     let [<Literal>] AmlVersion = 0.045f
