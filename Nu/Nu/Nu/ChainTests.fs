@@ -30,7 +30,7 @@ module ChainTests =
                 do! pass
                 do! loop 0 inc (fun i _ -> i < 2) (fun _ -> update incUserStateTwiceNoEvent) }
         let observation = observe IntEventAddress Simulants.Game
-        let world = snd ^ Chain.runAssumingCascade chain observation world
+        let world = Chain.runAssumingCascade chain observation world |> snd
         Assert.Equal (0, World.getUserState world)
 
         // assert the first publish executes the first chained operation

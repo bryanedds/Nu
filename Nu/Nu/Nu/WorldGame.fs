@@ -118,12 +118,13 @@ module WorldGameModule =
             Reflection.readMemberValuesToTarget gameNode gameState
             let world = World.setGameState gameState world
             let world =
-                snd ^ World.readScreens
+                World.readScreens
                     gameNode
                     defaultScreenDispatcherName
                     defaultGroupDispatcherName
                     defaultEntityDispatcherName
-                    world
+                    world |>
+                    snd
             world
 
         /// Read a game from an xml file.
