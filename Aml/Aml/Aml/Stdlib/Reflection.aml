@@ -1,0 +1,14 @@
+; Aml Reflection library.
+; Copyright (C) Bryan Edds, 2012-2013.
+
+[usingFile "Core.aml"]
+[usingFile "Int.aml"]
+
+[def typeName [x]
+    doc: "Query the name of a value's type."
+    (let (t (type x)) t.name)]
+       
+#| Affirmations |#
+
+[affirmation typeNameWorks
+    (= (typeName 5) :t/int)]
