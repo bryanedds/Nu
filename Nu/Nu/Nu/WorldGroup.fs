@@ -181,7 +181,7 @@ module WorldGroupModule =
             let world = World.addGroup true groupState group world
 
             // read the group's entities
-            let world = snd ^ World.readEntities (groupNode : XmlNode) defaultEntityDispatcherName group world
+            let world = World.readEntities (groupNode : XmlNode) defaultEntityDispatcherName group world |> snd
             (group, world)
 
         /// Read a group from an xml file.

@@ -295,7 +295,7 @@ module GameplayScreenModule =
                 [0 .. Constants.BlazeVector.SectionCount - 1]
 
         static let createPlayerGroup world =
-            snd ^ World.readGroupFromFile Constants.FilePaths.PlayerGroup (Some Simulants.GameplayScene.GroupName) Simulants.Gameplay world
+            World.readGroupFromFile Constants.FilePaths.PlayerGroup (Some Simulants.GameplayScene.GroupName) Simulants.Gameplay world |> snd
 
         static let handleStartPlay _ world =
             let world = createPlayerGroup world
