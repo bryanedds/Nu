@@ -36,5 +36,5 @@ type InfinityDispatcher () =
         let world = createTitle world
         let world = createCredits world
         let world = createGameplay world
-        let (splash, world) = World.createSplashScreen false Constants.InfinityRpg.NuSplashData typeof<ScreenDispatcher>.Name Simulants.Title (Some Simulants.NuSplash.ScreenName) world
+        let (splash, world) = World.createSplashScreen false Constants.InfinityRpg.NuSplashData typeof<ScreenDispatcher>.Name Simulants.Title (Some Simulants.Splash.ScreenName) world
         World.selectScreen splash world

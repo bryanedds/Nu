@@ -7,7 +7,7 @@ open InfinityRpg
 module Simulants =
 
     // nu splash screen
-    let NuSplash = !> "Splash"
+    let Splash = !> "Splash"
 
     // title screen
     let Title = !> "Title"
