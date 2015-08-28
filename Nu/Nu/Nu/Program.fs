@@ -8,6 +8,22 @@ module Program =
 
     (* TODO: investigate NuEdit extensibility mechanism. *)
 
+    (* NOTE - On Nu's authoring story...
+    
+    Until F# code can be dynamically hot-loaded like a code from dynamic script language, Nu will
+    not have a general-purpose scripting language. Instead, it's authoring story will be like so -
+    
+    In addition to typical authoring tools like NuEdit, Nu will enhance certain domains of the
+    game authoring experience using domain-specific languages via Aml Language Modules. For
+    example, special-effects is a domain that will be exposed to the user via Aml with the Nufx
+    language module. In turn, NuEdit will provide a special text editor panel for applicable
+    simulant properties.
+
+    And so on for other game development domains that require interactive authoring experiences.
+    
+    This is not a perfect, all-powerful approach, but it will have to suffice given current
+    technology limitations. *)
+
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
     scaled to a back-buffer of a varying size, render each component unscaled to an off-screen
     buffer of a static size and then blit that with scaling to the back-buffer. NOTE: this only
