@@ -314,7 +314,7 @@ module Evaluator =
             match (firstValue, secondValue) with
             | (Violation _ as v, _) -> forwardEvalViolation v env
             | (_, (Violation _ as v)) -> forwardEvalViolation v env
-            | (Ref _, Ref _) -> makeEvalResult (Boolean (makeBooleanRecord (firstValue === secondValue) None)) env
+            | (Ref _, Ref _) -> makeEvalResult (Boolean (makeBooleanRecord (firstValue == secondValue) None)) env
             | (Ref _, _) -> makeEvalViolation ":v/contract/refEqualityOnNonRef" "Second argument of reference equal operation must be a reference." env
             | (_, Ref _) -> makeEvalViolation ":v/contract/refEqualityOnNonRef" "First argument of reference equal operation must be a reference." env
             | _ -> makeEvalViolation ":v/contract/refEqualityOnNonRef" "Both arguments of reference equal operation must be references." env
@@ -328,7 +328,7 @@ module Evaluator =
             match (firstValue, secondValue) with
             | (Violation _ as v, _) -> forwardEvalViolation v env
             | (_, (Violation _ as v)) -> forwardEvalViolation v env
-            | (Ref _, Ref _) -> makeEvalResult (Boolean (makeBooleanRecord (firstValue <<>> secondValue) None)) env
+            | (Ref _, Ref _) -> makeEvalResult (Boolean (makeBooleanRecord (not (firstValue == secondValue)) None)) env
             | (Ref _, _) -> makeEvalViolation ":v/contract/refInequalityOnNonRef" "Second argument of reference inequal operation must be a reference." env
             | (_, Ref _) -> makeEvalViolation ":v/contract/refInequalityOnNonRef" "First argument of reference inequal operation must be a reference." env
             | _ -> makeEvalViolation ":v/contract/refInequalityOnNonRef" "Both arguments of reference inequal operation must be references." env
