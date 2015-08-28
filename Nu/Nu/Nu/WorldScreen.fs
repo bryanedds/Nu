@@ -166,7 +166,7 @@ module WorldScreenModule =
             let screenState = match optName with Some name -> { screenState with Name = name } | None -> screenState
             let screen = ntos screenState.Name
             let world = World.addScreen true screenState screen world
-            let world = snd ^ World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName screen world
+            let world = World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName screen world |> snd
             (screen, world)
 
         /// Read a screen from an xml file.

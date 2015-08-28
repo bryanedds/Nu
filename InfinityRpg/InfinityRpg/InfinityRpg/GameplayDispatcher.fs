@@ -365,7 +365,7 @@ module GameplayDispatcherModule =
                         updateCharacterByNavigation navigationDescriptor character world
                     do! pass }}
             let observation = character |> observe Events.Update |> until (Events.Deselect ->- Simulants.Gameplay)
-            snd ^ runAssumingCascade chain observation world
+            runAssumingCascade chain observation world |> snd
 
         static let runCharacterAction newActionDescriptor (character : Entity) world =
             // NOTE: currently just implements attack
@@ -381,7 +381,7 @@ module GameplayDispatcherModule =
                         runCharacterReaction actionDescriptor character world
                     do! pass }}
             let observation = character |> observe Events.Update |> until (Events.Deselect ->- Simulants.Gameplay)
-            snd ^ runAssumingCascade chain observation world
+            runAssumingCascade chain observation world |> snd
 
         static let runCharacterNoActivity (character : Entity) world =
             character.SetActivityState NoActivity world
@@ -482,7 +482,7 @@ module GameplayDispatcherModule =
                     observe (Events.Click ->- Simulants.HudHalt) Simulants.Gameplay |>
                     sum Events.Update |>
                     until (Events.Deselect ->- Simulants.Gameplay)
-                snd ^ runAssumingCascade chain observation world
+                runAssumingCascade chain observation world |> snd
             else world
 
         static let handlePlayerChange _ world =
@@ -530,7 +530,7 @@ module GameplayDispatcherModule =
         static let handleLoadGame world =
 
             // get and initialize gameplay screen from read
-            let world = snd ^ World.readScreenFromFile Constants.FilePaths.SaveFile (Some ^ Simulants.Gameplay.ScreenName) world
+            let world = World.readScreenFromFile Constants.FilePaths.SaveFile (Some ^ Simulants.Gameplay.ScreenName) world |> snd
             let world = Simulants.Gameplay.SetTransitionStateNp IncomingState world
 
             // make rand from gameplay
