@@ -21,8 +21,6 @@ open OpenTK
 open TiledSharp
 open Prime
 open Nu
-open Nu.Constants
-open Nu.WorldConstants
 open Nu.Observation
 open Nu.Chain
 
