@@ -21,6 +21,9 @@ module Program =
 
     And so on for other game development domains that require interactive authoring experiences.
     
+    For ease of implementation, there will be one instance of Aml for each DSL. This is because
+    currently Aml only supports one Language Module at a time.
+
     This is not a perfect, all-powerful approach, but it will have to suffice given current
     technology limitations. *)
 
