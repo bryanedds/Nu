@@ -374,7 +374,7 @@ module Program =
             let world = World.destroyGroupImmediate Simulants.EditorGroup world
 
             // load and add group
-            let world = snd ^ World.readGroupFromFile filePath (Some Simulants.EditorGroup.GroupName) Simulants.EditorScreen world
+            let world = World.readGroupFromFile filePath (Some Simulants.EditorGroup.GroupName) Simulants.EditorScreen world |> snd
             let world = subscribeToEntityEvents form world
 
             // refresh tree view
@@ -546,7 +546,7 @@ module Program =
                 let entityTransform = { Entity.getTransform entity with Position = entityPosition }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let entityAddress = gatoea editorState.GroupAddress entity.Name
-                let world = snd ^ World.addEntityData entity entityAddress world
+                let world = World.addEntityData entity entityAddress world |> snd
                 selectEntity form entityAddress worldChangers refWorld world
                 world
             | None -> world)*)
@@ -741,8 +741,8 @@ module Program =
         let eitherWorld = World.tryMake false 0L editorState nuPlugin sdlDeps
         match eitherWorld with
         | Right world ->
-            let world = snd ^ World.createScreen typeof<ScreenDispatcher>.Name (Some Simulants.EditorScreen.ScreenName) world
-            let world = snd ^ World.createGroup typeof<GroupDispatcher>.Name (Some Simulants.EditorGroup.GroupName) Simulants.EditorScreen world
+            let world = World.createScreen typeof<ScreenDispatcher>.Name (Some Simulants.EditorScreen.ScreenName) world |> snd
+            let world = World.createGroup typeof<GroupDispatcher>.Name (Some Simulants.EditorGroup.GroupName) Simulants.EditorScreen world |> snd
             let world = World.setOptSelectedScreen (Some Simulants.EditorScreen) world 
             let world = World.subscribe4 (handleNuMouseRightDown form worldChangers refWorld) Events.MouseRightDown Simulants.Game world
             let world = World.subscribe4 (handleNuEntityDragBegin form worldChangers refWorld) Events.MouseLeftDown Simulants.Game world
