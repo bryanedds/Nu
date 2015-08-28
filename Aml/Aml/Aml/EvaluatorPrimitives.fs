@@ -168,7 +168,7 @@ module EvaluatorPrimitives =
     let isBuiltin expr env =
         match expr with
         | Symbol symbol ->
-            if not <| InitialBuiltinNames.Contains symbol.SymName then
+            if not ^ InitialBuiltinNames.Contains symbol.SymName then
                 match env.EnvOptLanguageModule with
                 | Some lm -> lm.IsSpecialBuiltin symbol.SymName env
                 | None -> false
