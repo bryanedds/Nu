@@ -66,7 +66,7 @@ module WorldScreenModule =
                 let world = World.setScreenStateWithoutEvent screenState screen world
                 if isNew then
                     let world = World.registerScreen screen world
-                    World.publish4 () (Events.ScreenAdd ->- screen) screen world
+                    World.publish () (Events.ScreenAdd ->- screen) screen world
                 else world
             else failwith ^ "Adding a screen that the world already contains at address '" + acstring screen.ScreenAddress + "'."
 
@@ -83,7 +83,7 @@ module WorldScreenModule =
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight
         /// publishing depends on the screen's existence. Use with caution.
         static member destroyScreenImmediate screen world =
-            let world = World.publish4 () (Events.ScreenRemoving ->- screen) screen world
+            let world = World.publish () (Events.ScreenRemoving ->- screen) screen world
             if World.containsScreen screen world then
                 let world = World.unregisterScreen screen world
                 let groups = World.proxyGroups screen world

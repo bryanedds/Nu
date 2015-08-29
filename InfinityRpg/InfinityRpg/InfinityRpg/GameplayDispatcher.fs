@@ -575,7 +575,7 @@ module GameplayDispatcherModule =
                 (observe (Events.Down ->- Simulants.HudDetailRight) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Rightward)) |>
                 (observe (Events.Down ->- Simulants.HudDetailDown) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Downward)) |>
                 (observe (Events.Down ->- Simulants.HudDetailLeft) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Leftward)) |>
-                (World.subscribe4 handleSelectTitle (Events.Select ->- Simulants.Title) gameplay) |>
-                (World.subscribe4 handleSelectGameplay (Events.Select ->- gameplay) gameplay) |>
-                (World.subscribe4 handleClickSaveGame (Events.Click ->- Simulants.HudSaveGame) gameplay) |>
-                (World.subscribe4 handleDeselectGameplay (Events.Deselect ->- gameplay) gameplay)
+                (World.subscribe handleSelectTitle (Events.Select ->- Simulants.Title) gameplay) |>
+                (World.subscribe handleSelectGameplay (Events.Select ->- gameplay) gameplay) |>
+                (World.subscribe handleClickSaveGame (Events.Click ->- Simulants.HudSaveGame) gameplay) |>
+                (World.subscribe handleDeselectGameplay (Events.Deselect ->- gameplay) gameplay)
