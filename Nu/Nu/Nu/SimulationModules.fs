@@ -208,7 +208,7 @@ module World =
         subscriptions
 
     /// Publish an event, using the given publishSorter procedure to arranging the order to which subscriptions are published.
-    let publish<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) (publisher : 'p) world =
+    let publish5<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) (publisher : 'p) world =
         let objEventAddress = atooa eventAddress
         let subscriptions = getSubscriptionsSorted publishSorter objEventAddress world
         let (_, world) =
@@ -228,29 +228,9 @@ module World =
         world
 
     /// Publish an event.
-    let publish4<'a, 'p when 'p :> Simulant>
+    let publish<'a, 'p when 'p :> Simulant>
         (eventData : 'a) (eventAddress : 'a Address) (publisher : 'p) world =
-        publish sortSubscriptionsByHierarchy eventData eventAddress publisher world
-
-    /// Subscribe to an event.
-    let subscribe<'a, 's when 's :> Simulant>
-        subscriptionKey (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world =
-        if not ^ Address.isEmpty eventAddress then
-            let objEventAddress = atooa eventAddress
-            let subscriptions =
-                let subscriptionEntry = (subscriptionKey, subscriber :> Simulant, boxSubscription subscription)
-                match Map.tryFind objEventAddress world.Callbacks.Subscriptions with
-                | Some subscriptionEntries -> Map.add objEventAddress (subscriptionEntry :: subscriptionEntries) world.Callbacks.Subscriptions
-                | None -> Map.add objEventAddress [subscriptionEntry] world.Callbacks.Subscriptions
-            let unsubscriptions = Map.add subscriptionKey (objEventAddress, subscriber :> Simulant) world.Callbacks.Unsubscriptions
-            let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
-            { world with Callbacks = callbacks }
-        else failwith "Event name cannot be empty."
-
-    /// Subscribe to an event.
-    let subscribe4<'a, 's when 's :> Simulant>
-        (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world =
-        subscribe (makeSubscriptionKey ()) subscription eventAddress subscriber world
+        publish5 sortSubscriptionsByHierarchy eventData eventAddress publisher world
 
     /// Unsubscribe from an event.
     let unsubscribe subscriptionKey world =
@@ -274,19 +254,50 @@ module World =
             | None -> world
         | None -> world
 
+    /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
+    let subscribePlus5<'a, 's when 's :> Simulant>
+        subscriptionKey (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world =
+        if not ^ Address.isEmpty eventAddress then
+            let objEventAddress = atooa eventAddress
+            let subscriptions =
+                let subscriptionEntry = (subscriptionKey, subscriber :> Simulant, boxSubscription subscription)
+                match Map.tryFind objEventAddress world.Callbacks.Subscriptions with
+                | Some subscriptionEntries -> Map.add objEventAddress (subscriptionEntry :: subscriptionEntries) world.Callbacks.Subscriptions
+                | None -> Map.add objEventAddress [subscriptionEntry] world.Callbacks.Subscriptions
+            let unsubscriptions = Map.add subscriptionKey (objEventAddress, subscriber :> Simulant) world.Callbacks.Unsubscriptions
+            let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
+            let world = { world with Callbacks = callbacks }
+            (unsubscribe subscriptionKey, world)
+        else failwith "Event name cannot be empty."
+
+    /// Subscribe to an event, and be provided with an unsubscription callback.
+    let subscribePlus<'a, 's when 's :> Simulant>
+        (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world =
+        subscribePlus5 (makeSubscriptionKey ()) subscription eventAddress subscriber world
+
+    /// Subscribe to an event using the given subscriptionKey.
+    let subscribe5<'a, 's when 's :> Simulant>
+        subscriptionKey (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world =
+        subscribePlus5 subscriptionKey (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world |> snd
+
+    /// Subscribe to an event.
+    let subscribe<'a, 's when 's :> Simulant>
+        (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world =
+        subscribe5 (makeSubscriptionKey ()) subscription eventAddress subscriber world
+
     /// Keep active a subscription for the lifetime of a simulant.
     let monitor<'a, 's when 's :> Simulant>
         (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world =
         if not ^ Address.isEmpty subscriber.SimulantAddress then
             let monitorKey = makeSubscriptionKey ()
             let removalKey = makeSubscriptionKey ()
-            let world = subscribe<'a, 's> monitorKey subscription eventAddress subscriber world
+            let world = subscribe5<'a, 's> monitorKey subscription eventAddress subscriber world
             let subscription' = fun _ world ->
                 let world = unsubscribe removalKey world
                 let world = unsubscribe monitorKey world
                 (Cascade, world)
             let removingEventAddress = ftoa<unit> (typeof<'s>.Name + "/Removing") ->>- subscriber.SimulantAddress
-            subscribe<unit, 's> removalKey subscription' removingEventAddress subscriber world
+            subscribe5<unit, 's> removalKey subscription' removingEventAddress subscriber world
         else failwith "Cannot monitor events with an anonymous subscriber."
 
     (* Subsystems *)
@@ -384,7 +395,7 @@ module World =
     let private setState state world =
         let oldWorld = world
         let world = setStateWithoutEvent state world
-        publish4 { WorldStateChangeData.OldWorld = oldWorld } Events.WorldStateChange Simulants.Game world
+        publish { WorldStateChangeData.OldWorld = oldWorld } Events.WorldStateChange Simulants.Game world
 
     /// Get the world's tick rate.
     let getTickRate world =
@@ -578,7 +589,7 @@ module World =
         let oldWorld = world
         let world = entityStateAdder entityState entity world
         if entityState.PublishChanges then
-            publish4
+            publish
                 { Simulant = entity; OldWorld = oldWorld }
                 (Events.EntityChange ->- entity)
                 entity
@@ -666,7 +677,7 @@ module World =
         let oldWorld = world
         let world = groupStateAdder groupState group world
         if groupState.PublishChanges then
-            publish4
+            publish
                 { Simulant = group; OldWorld = oldWorld }
                 (Events.GroupChange ->- group)
                 group
@@ -736,7 +747,7 @@ module World =
         let oldWorld = world
         let world = screenStateAdder screenState screen world
         if screenState.PublishChanges then
-            publish4
+            publish
                 { Simulant = screen; OldWorld = oldWorld }
                 (Events.ScreenChange ->- screen)
                 screen
@@ -763,7 +774,7 @@ module World =
         let screenStateMap = getScreenStateMap world
         let world = { world with SimulantStates = (gameState, screenStateMap) }
         if gameState.PublishChanges then
-            publish4
+            publish
                 { OldWorld = oldWorld; Simulant = Simulants.Game }
                 (Events.GameChange ->- Simulants.Game)
                 Simulants.Game
