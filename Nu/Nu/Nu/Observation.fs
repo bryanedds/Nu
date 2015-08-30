@@ -209,7 +209,7 @@ module Observation =
     /// Subscribe to an observation, handling each event with the given 'handleEvent' procedure,
     /// returning both an unsubscription procedure as well as the world as augmented with said
     /// subscription.
-    let [<DebuggerHidden; DebuggerStepThrough>] subscribeWithUnsub handleEvent observation world =
+    let [<DebuggerHidden; DebuggerStepThrough>] subscribePlus handleEvent observation world =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
             let subscriptionAddress = ntoa<'a> ^ acstring subscriptionKey
@@ -222,7 +222,7 @@ module Observation =
 
     /// Subscribe to an observation, handling each event with the given 'handleEvent' procedure.
     let [<DebuggerHidden; DebuggerStepThrough>] subscribe handleEvent observation world =
-        subscribeWithUnsub handleEvent observation world |> snd
+        subscribePlus handleEvent observation world |> snd
 
     /// Terminate an observation when an event at the given address is raised.
     let [<DebuggerHidden; DebuggerStepThrough>] until (eventAddress : unit Address) (observation : Observation<'a, 'o>) : Observation<'a, 'o> =
@@ -253,7 +253,7 @@ module Observation =
     /// returning both an unsubscription procedure as well as the world as augmented with said
     /// subscription.
     let [<DebuggerHidden; DebuggerStepThrough>] monitorWithUnsub eventAddress observation world =
-        (observation |> lifetime |> subscribeWithUnsub eventAddress) world
+        (observation |> lifetime |> subscribePlus eventAddress) world
 
     /// Subscribe to an observation until the observer is removed from the world.
     let [<DebuggerHidden; DebuggerStepThrough>] monitor eventAddress observation world =
