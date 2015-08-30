@@ -31,16 +31,21 @@ type SdlConfig =
       AudioChunkSize : int }
 
 /// The dependencies needed to initialize SDL.
-type SdlDeps =
+/// TODO: make this an ADT with the necessary getters.
+type [<ReferenceEquality>] SdlDeps =
     { OptRenderContext : nativeint option
       OptWindow : nativeint option
-      Config : SdlConfig }
+      Config : SdlConfig
+      Destroy : unit -> unit }
+    interface IDisposable with
+        member this.Dispose () =
+            this.Destroy ()
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module SdlViewConfig =
 
-    /// An empty SdlViewConfig.
-    let empty =
+    /// A default SdlViewConfig.
+    let defaultConfig =
         NewWindow
             { WindowTitle = "Nu Game"
               WindowX = SDL.SDL_WINDOWPOS_UNDEFINED
@@ -50,9 +55,9 @@ module SdlViewConfig =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module SdlConfig =
 
-    /// An empty SdlConfig.
-    let empty =
-        { ViewConfig = SdlViewConfig.empty
+    /// A default SdlConfig.
+    let defaultConfig =
+        { ViewConfig = SdlViewConfig.defaultConfig
           ViewW = Constants.Render.ResolutionX
           ViewH = Constants.Render.ResolutionY
           RendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
@@ -65,45 +70,79 @@ module SdlDeps =
     let empty =
         { OptRenderContext = None
           OptWindow = None
-          Config = SdlConfig.empty }
+          Config = SdlConfig.defaultConfig
+          Destroy = id }
+
+    /// Attempt to initalize an SDL module.
+    let attemptPerformSdlInit create destroy =
+        let initResult = create ()
+        let error = SDL.SDL_GetError ()
+        if initResult = 0 then Right ((), destroy)
+        else Left error
+
+    /// Attempt to initalize an SDL resource.
+    let attemptMakeSdlResource create destroy =
+        let resource = create ()
+        if resource <> IntPtr.Zero then Right (resource, destroy)
+        else
+            let error = "SDL2# resource creation failed due to '" + SDL.SDL_GetError () + "'."
+            Left error
+
+    /// Attempt to initalize a global SDL resource.
+    let attemptMakeSdlGlobalResource create destroy =
+        let resource = create ()
+        if resource = 0 then Right ((), destroy)
+        else
+            let error = "SDL2# global resource creation failed due to '" + SDL.SDL_GetError () + "'."
+            Left error
+
+    /// Attempt to make an SdlDeps instance.
+    let attemptMake sdlConfig =
+        // TODO: define either { } cexpr...
+        match attemptPerformSdlInit
+            (fun () -> SDL.SDL_Init SDL.SDL_INIT_EVERYTHING)
+            (fun () -> SDL.SDL_Quit ()) with
+        | Left error -> Left error
+        | Right ((), destroy) ->
+            match attemptMakeSdlResource
+                (fun () ->
+                    match sdlConfig.ViewConfig with
+                    | NewWindow windowConfig -> SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags)
+                    | ExistingWindow hwindow -> SDL.SDL_CreateWindowFrom hwindow)
+                (fun window -> SDL.SDL_DestroyWindow window; destroy ()) with
+            | Left error -> Left error
+            | Right (window, destroy) ->
+                match attemptMakeSdlResource
+                    (fun () -> SDL.SDL_CreateRenderer (window, -1, uint32 sdlConfig.RendererFlags))
+                    (fun renderContext -> SDL.SDL_DestroyRenderer renderContext; destroy window) with
+                | Left error -> Left error
+                | Right (renderContext, destroy) ->
+                    match attemptMakeSdlGlobalResource
+                        (fun () -> SDL_ttf.TTF_Init ())
+                        (fun () -> SDL_ttf.TTF_Quit (); destroy renderContext) with
+                    | Left error -> Left error
+                    | Right ((), destroy) ->
+                        match attemptMakeSdlGlobalResource
+#if MIX_INIT_OGG
+                            (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG) // NOTE: for some reason this line fails on 32-bit builds.. WHY?
+#else
+                            (fun () -> SDL_mixer.Mix_Init ^ enum<SDL_mixer.MIX_InitFlags> 0)
+#endif
+                            (fun () -> SDL_mixer.Mix_Quit (); destroy ()) with
+                        | Left error -> Left error
+                        | Right ((), destroy) ->
+                            match attemptMakeSdlGlobalResource
+                                (fun () -> SDL_mixer.Mix_OpenAudio (Constants.Audio.AudioFrequency, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
+                                (fun () -> SDL_mixer.Mix_CloseAudio (); destroy ()) with
+                            | Left error -> Left error
+                            | Right ((), destroy) ->
+                                let sdlDeps = { OptRenderContext = Some renderContext; OptWindow = Some window; Config = sdlConfig; Destroy = destroy }
+                                Right sdlDeps
 
 [<RequireQualifiedAccess>]
 module Sdl =
 
-    let resourceNop (_ : nativeint) = ()
-
-    /// Initalize SDL and continue into a given action (AKA, continuation).
-    let withSdlInit create destroy action =
-        let initResult = create ()
-        let error = SDL.SDL_GetError ()
-        if initResult <> 0 then
-            trace ^ "SDL2# initialization failed due to '" + error + "'."
-            Constants.Engine.FailureExitCode
-        else
-            try action ()
-            finally destroy ()
-
-    /// Initalize an SDL resources and continue into a given action (AKA, continuation).
-    let withSdlResource create destroy action =
-        let resource = create ()
-        if resource = IntPtr.Zero then
-            let error = SDL.SDL_GetError ()
-            trace ^ "SDL2# resource creation failed due to '" + error + "'."
-            Constants.Engine.FailureExitCode
-        else
-            try action resource
-            finally destroy resource
-
-    /// Initalize a global SDL resources and continue into a given action (AKA, continuation).
-    let withSdlGlobalResource create destroy action =
-        let resource = create ()
-        if resource <> 0 then
-            let error = SDL.SDL_GetError ()
-            trace ^ "SDL2# global resource creation failed due to '" + error + "'."
-            Constants.Engine.FailureExitCode
-        else
-            try action ()
-            finally destroy ()
+    let private resourceNop (_ : nativeint) = ()
 
     /// Update the game engine's state.
     let update handleEvent handleUpdate world =
@@ -171,43 +210,14 @@ module Sdl =
 
     /// Run the game engine with the given handlers.
     let run handleTryMakeWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig =
-        withSdlInit
-            (fun () -> SDL.SDL_Init SDL.SDL_INIT_EVERYTHING)
-            (fun () -> SDL.SDL_Quit ())
-            (fun () ->
-            withSdlResource
-                (fun () ->
-                    match sdlConfig.ViewConfig with
-                    | NewWindow windowConfig -> SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags)
-                    | ExistingWindow hwindow -> SDL.SDL_CreateWindowFrom hwindow)
-                (fun window -> SDL.SDL_DestroyWindow window)
-                (fun window ->
-                withSdlResource
-                    (fun () -> SDL.SDL_CreateRenderer (window, -1, uint32 sdlConfig.RendererFlags))
-                    (fun renderContext -> SDL.SDL_DestroyRenderer renderContext)
-                    (fun renderContext ->
-                    withSdlGlobalResource
-                        (fun () -> SDL_ttf.TTF_Init ())
-                        (fun () -> SDL_ttf.TTF_Quit ())
-                        (fun () ->
-                        withSdlGlobalResource
-#if MIX_INIT_OGG
-                            (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG) // NOTE: for some reason this line fails on 32-bit builds.. WHY?
-#else
-                            (fun () -> SDL_mixer.Mix_Init ^ enum<SDL_mixer.MIX_InitFlags> 0)
-#endif
-                            (fun () -> SDL_mixer.Mix_Quit ())
-                            (fun () ->
-                            withSdlGlobalResource
-                                (fun () -> SDL_mixer.Mix_OpenAudio (Constants.Audio.AudioFrequency, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
-                                (fun () -> SDL_mixer.Mix_CloseAudio ())
-                                (fun () ->
-                                    let sdlDeps = { OptRenderContext = Some renderContext; OptWindow = Some window; Config = sdlConfig }
-                                    let eitherWorld = handleTryMakeWorld sdlDeps
-                                    match eitherWorld with
-                                    | Right world ->
-                                        run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps None Running world
-                                        Constants.Engine.SuccessExitCode
-                                    | Left error ->
-                                        trace error
-                                        Constants.Engine.FailureExitCode))))))
+        match SdlDeps.attemptMake sdlConfig with
+        | Right sdlDeps ->
+            use sdlDeps = sdlDeps // bind explicitly to dispose automatically
+            match handleTryMakeWorld sdlDeps with
+            | Right world -> run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps None Running world
+            | Left error ->
+                trace error
+                Constants.Engine.FailureExitCode
+        | Left error ->
+            trace error
+            Constants.Engine.FailureExitCode

@@ -458,8 +458,10 @@ module WorldModule =
         /// TODO: document!
         static member cleanUp world =
             ignore ^ World.cleanUpSubsystems world
+            Constants.Engine.SuccessExitCode
 
         /// TODO: document!
+        /// TODO: make optFrames implemented as a predicate.
         static member runWithoutCleanUp handleUpdate handleRender sdlDeps optFrames liveness world =
             Sdl.runWithoutCleanUp 
                 World.processInput
