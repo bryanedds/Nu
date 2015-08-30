@@ -28,7 +28,7 @@ module ObservationTests =
         let world = World.makeEmpty 0
         let observation = observe UnitEventAddress Simulants.Game
         let world = subscribe incUserStateAndCascade observation world
-        let (unsubscribe, world) = subscribeWithUnsub incUserStateAndCascade observation world
+        let (unsubscribe, world) = subscribePlus incUserStateAndCascade observation world
         let world = unsubscribe world
         let world = World.publish () UnitEventAddress Simulants.Game world
         Assert.Equal (1, World.getUserState world)
@@ -36,7 +36,7 @@ module ObservationTests =
     let [<Fact>] unsubscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let (unsubscribe, world) = observe UnitEventAddress Simulants.Game |> subscribeWithUnsub incUserStateAndCascade <| world
+        let (unsubscribe, world) = observe UnitEventAddress Simulants.Game |> subscribePlus incUserStateAndCascade <| world
         let world = unsubscribe world
         let world = World.publish () UnitEventAddress Simulants.Game world
         Assert.True ^ Map.isEmpty world.Callbacks.Subscriptions
@@ -83,7 +83,7 @@ module ObservationTests =
         let (unsubscribe, world) =
             observe IntEventAddress Simulants.Game |>
             scan2 (fun a _ _ -> a) |>
-            subscribeWithUnsub incUserStateAndCascade <|
+            subscribePlus incUserStateAndCascade <|
             world
         let world = World.publish 0 IntEventAddress Simulants.Game world
         let world = unsubscribe world

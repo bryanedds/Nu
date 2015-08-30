@@ -285,20 +285,27 @@ module World =
         (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world =
         subscribe5 (makeSubscriptionKey ()) subscription eventAddress subscriber world
 
-    /// Keep active a subscription for the lifetime of a simulant.
-    let monitor<'a, 's when 's :> Simulant>
+    /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
+    let monitorPlus<'a, 's when 's :> Simulant>
         (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world =
         if not ^ Address.isEmpty subscriber.SimulantAddress then
             let monitorKey = makeSubscriptionKey ()
             let removalKey = makeSubscriptionKey ()
             let world = subscribe5<'a, 's> monitorKey subscription eventAddress subscriber world
-            let subscription' = fun _ world ->
+            let unsubscribe = fun world ->
                 let world = unsubscribe removalKey world
                 let world = unsubscribe monitorKey world
-                (Cascade, world)
+                world
+            let subscription' = fun _ world -> (Cascade, unsubscribe world)
             let removingEventAddress = ftoa<unit> (typeof<'s>.Name + "/Removing") ->>- subscriber.SimulantAddress
-            subscribe5<unit, 's> removalKey subscription' removingEventAddress subscriber world
+            let world = subscribe5<unit, 's> removalKey subscription' removingEventAddress subscriber world
+            (unsubscribe, world)
         else failwith "Cannot monitor events with an anonymous subscriber."
+
+    /// Keep active a subscription for the lifetime of a simulant.
+    let monitor<'a, 's when 's :> Simulant>
+        (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world =
+        monitorPlus subscription eventAddress subscriber world |> snd
 
     (* Subsystems *)
 
