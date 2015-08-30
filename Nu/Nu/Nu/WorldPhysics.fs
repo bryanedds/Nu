@@ -40,7 +40,7 @@ type [<ReferenceEquality>] IntegratorSubsystem =
                         { Normal = bodyCollisionMessage.Normal
                           Speed = bodyCollisionMessage.Speed
                           Collidee = Entity.proxy ^ atoa bodyCollisionMessage.CollideeAddress }
-                    World.publish4 collisionData collisionAddress Simulants.Game world
+                    World.publish collisionData collisionAddress Simulants.Game world
                 | None -> world
         | Exiting -> world
 
