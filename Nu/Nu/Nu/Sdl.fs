@@ -44,8 +44,8 @@ type [<ReferenceEquality>] SdlDeps =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module SdlViewConfig =
 
-    /// An empty SdlViewConfig.
-    let empty =
+    /// A default SdlViewConfig.
+    let defaultConfig =
         NewWindow
             { WindowTitle = "Nu Game"
               WindowX = SDL.SDL_WINDOWPOS_UNDEFINED
@@ -55,9 +55,9 @@ module SdlViewConfig =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module SdlConfig =
 
-    /// An empty SdlConfig.
-    let empty =
-        { ViewConfig = SdlViewConfig.empty
+    /// A default SdlConfig.
+    let defaultConfig =
+        { ViewConfig = SdlViewConfig.defaultConfig
           ViewW = Constants.Render.ResolutionX
           ViewH = Constants.Render.ResolutionY
           RendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
@@ -70,7 +70,7 @@ module SdlDeps =
     let empty =
         { OptRenderContext = None
           OptWindow = None
-          Config = SdlConfig.empty
+          Config = SdlConfig.defaultConfig
           Destroy = id }
 
     /// Attempt to initalize an SDL module.
@@ -212,7 +212,7 @@ module Sdl =
     let run handleTryMakeWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig =
         match SdlDeps.attemptMake sdlConfig with
         | Right sdlDeps ->
-            use sdlDeps = sdlDeps // bind manually to dispose automatically
+            use sdlDeps = sdlDeps // bind explicitly to dispose automatically
             match handleTryMakeWorld sdlDeps with
             | Right world -> run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps None Running world
             | Left error ->
