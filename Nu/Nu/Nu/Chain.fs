@@ -156,7 +156,7 @@ module Chain =
             let world = advance event world
             (eventHandling, world)
         let world = advance Unchecked.defaultof<Event<'a, 'o>> world
-        let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observation.Observer world
+        let world = World.subscribe5<'a, 'o> subscriptionKey subscription eventAddress observation.Observer world
         (unsubscribe, world)
 
     /// Run a chain over Nu's event system.

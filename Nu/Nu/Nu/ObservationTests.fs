@@ -20,7 +20,7 @@ module ObservationTests =
         World.init ()
         let world = World.makeEmpty 0
         let world = observe UnitEventAddress Simulants.Game |> subscribe incUserStateAndCascade <| world
-        let world = World.publish4 () UnitEventAddress Simulants.Game world
+        let world = World.publish () UnitEventAddress Simulants.Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeTwiceUnsubscribeOnceWorks () =
@@ -28,17 +28,17 @@ module ObservationTests =
         let world = World.makeEmpty 0
         let observation = observe UnitEventAddress Simulants.Game
         let world = subscribe incUserStateAndCascade observation world
-        let (unsubscribe, world) = subscribeWithUnsub incUserStateAndCascade observation world
+        let (unsubscribe, world) = subscribePlus incUserStateAndCascade observation world
         let world = unsubscribe world
-        let world = World.publish4 () UnitEventAddress Simulants.Game world
+        let world = World.publish () UnitEventAddress Simulants.Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let (unsubscribe, world) = observe UnitEventAddress Simulants.Game |> subscribeWithUnsub incUserStateAndCascade <| world
+        let (unsubscribe, world) = observe UnitEventAddress Simulants.Game |> subscribePlus incUserStateAndCascade <| world
         let world = unsubscribe world
-        let world = World.publish4 () UnitEventAddress Simulants.Game world
+        let world = World.publish () UnitEventAddress Simulants.Game world
         Assert.True ^ Map.isEmpty world.Callbacks.Subscriptions
         Assert.Equal (0, World.getUserState world)
 
@@ -50,8 +50,8 @@ module ObservationTests =
             filter (fun _ world -> World.getUserState world = 0) |>
             subscribe incUserStateAndCascade <|
             world
-        let world = World.publish4 () UnitEventAddress Simulants.Game world
-        let world = World.publish4 () UnitEventAddress Simulants.Game world
+        let world = World.publish () UnitEventAddress Simulants.Game world
+        let world = World.publish () UnitEventAddress Simulants.Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] mapWorks () =
@@ -62,7 +62,7 @@ module ObservationTests =
             map (fun event _ -> event.Data * 2) |>
             subscribe (fun event world -> (Cascade, World.updateUserState (fun _ -> event.Data) world)) <|
             world
-        let world = World.publish4 1 IntEventAddress Simulants.Game world
+        let world = World.publish 1 IntEventAddress Simulants.Game world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] scanWorks () =
@@ -73,8 +73,8 @@ module ObservationTests =
             scan (fun acc event _ -> acc + event.Data) 0 |>
             subscribe (fun event world -> (Cascade, World.updateUserState (fun _ -> event.Data) world)) <|
             world
-        let world = World.publish4 1 IntEventAddress Simulants.Game world
-        let world = World.publish4 2 IntEventAddress Simulants.Game world
+        let world = World.publish 1 IntEventAddress Simulants.Game world
+        let world = World.publish 2 IntEventAddress Simulants.Game world
         Assert.Equal (3, World.getUserState world)
 
     let [<Fact>] scanDoesntLeaveGarbage () =
@@ -83,9 +83,9 @@ module ObservationTests =
         let (unsubscribe, world) =
             observe IntEventAddress Simulants.Game |>
             scan2 (fun a _ _ -> a) |>
-            subscribeWithUnsub incUserStateAndCascade <|
+            subscribePlus incUserStateAndCascade <|
             world
-        let world = World.publish4 0 IntEventAddress Simulants.Game world
+        let world = World.publish 0 IntEventAddress Simulants.Game world
         let world = unsubscribe world
         Assert.True ^ Map.isEmpty world.Callbacks.CallbackStates
 

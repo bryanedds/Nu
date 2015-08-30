@@ -349,8 +349,8 @@ module Program =
 
     let subscribeToEntityEvents form world =
         world |>
-            World.subscribe Constants.SubscriptionKeys.AddEntity (handleNuEntityAdd form) (Events.EntityAdd ->- Simulants.EditorGroup ->- Events.Any) Simulants.Game |>
-            World.subscribe Constants.SubscriptionKeys.RemovingEntity (handleNuEntityRemoving form) (Events.EntityRemoving ->- Simulants.EditorGroup ->- Events.Any) Simulants.Game
+            World.subscribe5 Constants.SubscriptionKeys.AddEntity (handleNuEntityAdd form) (Events.EntityAdd ->- Simulants.EditorGroup ->- Events.Any) Simulants.Game |>
+            World.subscribe5 Constants.SubscriptionKeys.RemovingEntity (handleNuEntityRemoving form) (Events.EntityRemoving ->- Simulants.EditorGroup ->- Events.Any) Simulants.Game
 
     let unsubscribeFromEntityEvents world =
         world |>
@@ -744,11 +744,11 @@ module Program =
             let world = World.createScreen typeof<ScreenDispatcher>.Name (Some Simulants.EditorScreen.ScreenName) world |> snd
             let world = World.createGroup typeof<GroupDispatcher>.Name (Some Simulants.EditorGroup.GroupName) Simulants.EditorScreen world |> snd
             let world = World.setOptSelectedScreen (Some Simulants.EditorScreen) world 
-            let world = World.subscribe4 (handleNuMouseRightDown form worldChangers refWorld) Events.MouseRightDown Simulants.Game world
-            let world = World.subscribe4 (handleNuEntityDragBegin form worldChangers refWorld) Events.MouseLeftDown Simulants.Game world
-            let world = World.subscribe4 (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game world
-            let world = World.subscribe4 (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world
-            let world = World.subscribe4 (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world
+            let world = World.subscribe (handleNuMouseRightDown form worldChangers refWorld) Events.MouseRightDown Simulants.Game world
+            let world = World.subscribe (handleNuEntityDragBegin form worldChangers refWorld) Events.MouseLeftDown Simulants.Game world
+            let world = World.subscribe (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game world
+            let world = World.subscribe (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world
+            let world = World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world
             let world = subscribeToEntityEvents form world
             Right world
         | Left error -> Left error
