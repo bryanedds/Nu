@@ -795,5 +795,5 @@ module World =
 
     (* F# reach-arounds... *)
 
-    let internal rebuildEntityTree =
-        ref Unchecked.defaultof<World -> Entity QuadTree>
+    let mutable internal rebuildEntityTree =
+        Unchecked.defaultof<World -> Entity QuadTree>
