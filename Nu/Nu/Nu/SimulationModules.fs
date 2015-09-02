@@ -571,6 +571,15 @@ module World =
             | None -> world
         | _ -> failwith ^ "Invalid entity address '" + acstring entity.EntityAddress + "'."
 
+    let internal publishEntityChange entityState (entity : Entity) oldWorld world =
+        if entityState.PublishChanges then
+            publish
+                { Simulant = entity; OldWorld = oldWorld }
+                (Events.EntityChange ->- entity)
+                entity
+                world
+        else world
+
     let internal getEntityStateMap group world =
         match Address.getNameKeys group.GroupAddress with
         | [screenNameKey; groupNameKey] ->
@@ -600,13 +609,7 @@ module World =
     let internal setEntityState entityState (entity : Entity) world =
         let oldWorld = world
         let world = entityStateAdder entityState entity world
-        if entityState.PublishChanges then
-            publish
-                { Simulant = entity; OldWorld = oldWorld }
-                (Events.EntityChange ->- entity)
-                entity
-                world
-        else world
+        publishEntityChange entityState entity oldWorld world
 
     let internal updateEntityState updater entity world =
         let entityState = getEntityState entity world
