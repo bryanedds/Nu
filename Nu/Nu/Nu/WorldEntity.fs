@@ -18,20 +18,6 @@ module WorldEntityModule =
 
     type Entity with
 
-        member internal this.UpdateEntityInTree size position world =
-            let entityTree =
-                MutantCache.mutateMutant
-                    (fun () -> world)
-                    (fun () -> World.rebuildEntityTree world)
-                    (fun entityTree ->
-                        QuadTree.updateElement
-                            false (this.GetPosition world) (this.GetSize world)
-                            false position size
-                            this entityTree
-                        entityTree)
-                    world.State.EntityTree
-            { world with State = { world.State with EntityTree = entityTree }}
-
         member this.GetId world = (World.getEntityState this world).Id
         member this.GetName world = (World.getEntityState this world).Name
         member this.GetCreationTimeStampNp world = (World.getEntityState this world).CreationTimeStampNp
@@ -39,11 +25,19 @@ module WorldEntityModule =
         member this.GetFacetNames world = (World.getEntityState this world).FacetNames
         member this.GetFacetsNp world = (World.getEntityState this world).FacetsNp
         member this.GetPosition world = (World.getEntityState this world).Position
-        member this.SetPosition value world = let world = this.UpdateEntityInTree value (this.GetSize world) world in World.updateEntityState (fun (entityState : EntityState) -> { entityState with Position = value }) this world
+        member this.SetPosition value world =
+            let oldEntityState = World.getEntityState this world
+            let entityState = { oldEntityState with Position = value }
+            let world = World.setEntityState entityState this world
+            World.updateEntityInEntityTree oldEntityState.Position oldEntityState.Size this world
         member this.GetDepth world = (World.getEntityState this world).Depth
         member this.SetDepth value world = World.updateEntityState (fun entityState -> { entityState with Depth = value }) this world
         member this.GetSize world = (World.getEntityState this world).Size
-        member this.SetSize value world = let world = this.UpdateEntityInTree (this.GetPosition world) value world in World.updateEntityState (fun (entityState : EntityState) -> { entityState with Position = value }) this world
+        member this.SetSize value world =
+            let oldEntityState = World.getEntityState this world
+            let entityState = { oldEntityState with Size = value }
+            let world = World.setEntityState entityState this world
+            World.updateEntityInEntityTree oldEntityState.Position oldEntityState.Size this world
         member this.GetRotation world = (World.getEntityState this world).Rotation
         member this.SetRotation value world = World.updateEntityState (fun entityState -> { entityState with Rotation = value }) this world
         member this.GetVisible world = (World.getEntityState this world).Visible
@@ -122,6 +116,7 @@ module WorldEntityModule =
             let isNew = not ^ World.containsEntity entity world
             if isNew || mayReplace then
                 let world = World.setEntityStateWithoutEvent entityState entity world
+                let world = World.addEntityToEntityTree entity world
                 if isNew then
                     let world = World.registerEntity entity world
                     World.publish () (Events.EntityAdd ->- entity) entity world
@@ -146,6 +141,7 @@ module WorldEntityModule =
             let world = World.publish () (Events.EntityRemoving ->- entity) entity world
             if World.containsEntity entity world then
                 let world = World.unregisterEntity entity world
+                let world = World.removeEntityFromEntityTree entity world
                 World.setOptEntityStateWithoutEvent None entity world
             else world
 
@@ -302,10 +298,10 @@ module WorldEntityModule =
 
         /// Try to set an entity's overlay name.
         static member trySetEntityOptOverlayName optOverlayName entity world =
-            let entityState = World.getEntityState entity world
-            let optOldOverlayName = entityState.OptOverlayName
-            let entityState = { entityState with OptOverlayName = optOverlayName }
-            match (optOldOverlayName, optOverlayName) with
+            let oldEntityState = World.getEntityState entity world
+            let oldOptOverlayName = oldEntityState.OptOverlayName
+            let entityState = { oldEntityState with OptOverlayName = optOverlayName }
+            match (oldOptOverlayName, optOverlayName) with
             | (Some oldOverlayName, Some overlayName) ->
                 let (entityState, world) =
                     Overlayer.applyOverlayToFacetNames oldOverlayName overlayName entity world.State.Overlayer world.State.Overlayer // hacky copy elided
@@ -313,15 +309,20 @@ module WorldEntityModule =
                     | Right (entityState, world) -> (entityState, world)
                     | Left error -> debug error; (entityState, world)
                 let facetNames = World.getEntityFacetNamesReflectively entityState
-                Overlayer.applyOverlay oldOverlayName overlayName facetNames entityState world.State.Overlayer
-                Right ^ World.setEntityState entityState entity world
+                Overlayer.applyOverlay oldOverlayName overlayName facetNames entityState world.State.Overlayer // hacky copy elided
+                let world = World.setEntityState entityState entity world
+                let world = World.updateEntityInEntityTree oldEntityState.Position oldEntityState.Size entity world
+                Right world
             | (_, _) -> Left "Could not set the entity's overlay name."
 
         /// Try to set the entity's facet names.
         static member trySetEntityFacetNames facetNames entity world =
-            let entityState = World.getEntityState entity world
-            match World.trySetFacetNames4 facetNames entityState (Some entity) world with
-            | Right (entityState, world) -> Right ^ World.setEntityState entityState entity world
+            let oldEntityState = World.getEntityState entity world
+            match World.trySetFacetNames4 facetNames oldEntityState (Some entity) world with
+            | Right (entityState, world) ->
+                let world = World.setEntityState entityState entity world
+                let world = World.updateEntityInEntityTree oldEntityState.Position oldEntityState.Size entity world
+                Right world
             | Left error -> Left error
 
         /// Write an entity to an xml writer.
@@ -456,10 +457,11 @@ module WorldEntityModule =
                     { xtension with XFields = Map.add xfd.FieldName xField xtension.XFields })
                     world
             | EntityPropertyInfo propertyInfo ->
-                let entityState = World.getEntityState entity world
-                let entityState = { entityState with EntityState.Id = entityState.Id } // NOTE: hacky copy
+                let oldEntityState = World.getEntityState entity world
+                let entityState = { oldEntityState with EntityState.Id = oldEntityState.Id } // NOTE: hacky copy
                 propertyInfo.SetValue (entityState, value)
-                World.setEntityState entityState entity world
+                let world = World.setEntityState entityState entity world
+                World.updateEntityInEntityTree oldEntityState.Position oldEntityState.Size entity world
 
         // TODO: put this in a better place! And of course, document.
         static member getPropertyDescriptors makePropertyDescriptor optXtension =
