@@ -748,7 +748,7 @@ module WorldModule =
             Math.initTypeConverters ()
 
             // init F# reach-arounds
-            World.rebuildEntityTree := fun world ->
+            World.rebuildEntityTree <- fun world ->
                 let tree = QuadTree.make Constants.Engine.EntityTreeDepth (Constants.Engine.EntityTreeSize * -0.5f) Constants.Engine.EntityTreeSize
                 let entities = World.proxyEntities1 world
                 for entity in entities do QuadTree.addElement false (entity.GetPosition world) (entity.GetSize world) entity tree

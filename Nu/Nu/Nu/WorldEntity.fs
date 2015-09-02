@@ -22,7 +22,7 @@ module WorldEntityModule =
             let entityTree =
                 MutantCache.mutateMutant
                     (fun () -> world)
-                    (fun () -> !World.rebuildEntityTree world)
+                    (fun () -> World.rebuildEntityTree world)
                     (fun entityTree ->
                         QuadTree.updateElement
                             false (this.GetPosition world) (this.GetSize world)
@@ -31,7 +31,7 @@ module WorldEntityModule =
                         entityTree)
                     world.State.EntityTree
             { world with State = { world.State with EntityTree = entityTree }}
-        
+
         member this.GetId world = (World.getEntityState this world).Id
         member this.GetName world = (World.getEntityState this world).Name
         member this.GetCreationTimeStampNp world = (World.getEntityState this world).CreationTimeStampNp
