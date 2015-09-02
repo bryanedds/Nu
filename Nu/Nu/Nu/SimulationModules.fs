@@ -117,6 +117,11 @@ module Simulants =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module World =
 
+    (* F# reach-arounds... *)
+
+    let mutable internal rebuildEntityTree =
+        Unchecked.defaultof<World -> Entity QuadTree>
+
     (* Publishing *)
 
     let private AnyEventAddressesCache =
@@ -608,6 +613,42 @@ module World =
         let entityState = updater entityState
         setEntityState entityState entity world
 
+    let internal updateEntityInEntityTree oldPosition oldSize entity world =
+        let entityTree =
+            MutantCache.mutateMutant
+                (fun () -> world)
+                (fun () -> rebuildEntityTree world)
+                (fun entityTree ->
+                    QuadTree.updateElement
+                        false oldPosition oldSize
+                        false (getEntityState entity world).Position (getEntityState entity world).Size
+                        entity entityTree
+                    entityTree)
+                world.State.EntityTree
+        { world with State = { world.State with EntityTree = entityTree }}
+
+    let internal removeEntityFromEntityTree entity world =
+        let entityTree =
+            MutantCache.mutateMutant
+                (fun () -> world)
+                (fun () -> rebuildEntityTree world)
+                (fun entityTree ->
+                    QuadTree.removeElement false (getEntityState entity world).Position (getEntityState entity world).Size entity entityTree
+                    entityTree)
+                world.State.EntityTree
+        { world with State = { world.State with EntityTree = entityTree }}
+
+    let internal addEntityToEntityTree entity world =
+        let entityTree =
+            MutantCache.mutateMutant
+                (fun () -> world)
+                (fun () -> rebuildEntityTree world)
+                (fun entityTree ->
+                    QuadTree.addElement false (getEntityState entity world).Position (getEntityState entity world).Size entity entityTree
+                    entityTree)
+                world.State.EntityTree
+        { world with State = { world.State with EntityTree = entityTree }}
+
     (* GroupState *)
 
     let private optGroupStateFinder group world =
@@ -792,8 +833,3 @@ module World =
         let gameState = getGameState world
         let gameState = updater gameState
         setGameState gameState world
-
-    (* F# reach-arounds... *)
-
-    let mutable internal rebuildEntityTree =
-        Unchecked.defaultof<World -> Entity QuadTree>

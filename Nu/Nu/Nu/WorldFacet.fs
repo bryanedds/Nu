@@ -80,7 +80,6 @@ module WorldFacetModule =
                 let (entityState, world) =
                     match optEntity with
                     | Some entity ->
-                        let world = World.setEntityState entityState entity world
                         let world = facet.Unregister entity world
                         let entityState = World.getEntityState entity world
                         (entityState, world)
@@ -91,7 +90,7 @@ module WorldFacetModule =
                 Reflection.detachFieldsViaNames fieldNames entityState // hacky copy elided
                 let world =
                     match optEntity with
-                    | Some entity -> World.setEntityState entityState entity world
+                    | Some entity -> World.setEntityState entityState entity world // no need to update entity tree here
                     | None -> world
                 Right (entityState, world)
             | None -> Left ^ "Failure to remove facet '" + facetName + "' from entity."
@@ -105,7 +104,7 @@ module WorldFacetModule =
                     Reflection.attachFields facet entityState // hacky copy elided
                     match optEntity with
                     | Some entity ->
-                        let world = World.setEntityState entityState entity world
+                        let world = World.setEntityState entityState entity world // no need to update entity tree here
                         let world = facet.Register entity world
                         let entityState = World.getEntityState entity world
                         Right (entityState, world)

@@ -290,7 +290,7 @@ module WorldModule =
                                 | Right (entityState, world) ->
                                     let facetNames = World.getEntityFacetNamesReflectively entityState
                                     Overlayer.applyOverlay6 overlayName overlayName facetNames entityState oldOverlayer world.State.Overlayer
-                                    World.setEntityStateWithoutEvent entityState entity world
+                                    World.setEntityStateWithoutEvent entityState entity world // no need to update entity tree here
                                 | Left error -> note ^ "There was an issue in applying a reloaded overlay: " + error; world
                             | None -> world)
                         world
