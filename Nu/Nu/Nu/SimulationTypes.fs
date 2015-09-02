@@ -404,9 +404,7 @@ and [<StructuralEquality; NoComparison>] Screen =
     /// Concatenate two addresses, taking the type of first address.
     static member (->-) (address, screen) = Screen.acatf address screen
 
-    /// Convert a screen's proxy to a group's by appending the group's name at the end.
-    /// NOTE: unfortunately, this operator does not resolve since it's not inside the string type definition.
-    /// TODO: see if this can be fixed.
+    /// Convert a screen's name to it's proxy.
     static member (!>) screenName = Screen.proxy ^ ntoa screenName
 
     /// Convert a screen's proxy to a group's by appending the group's name at the end.
