@@ -792,3 +792,8 @@ module World =
         let gameState = getGameState world
         let gameState = updater gameState
         setGameState gameState world
+
+    (* F# reach-arounds... *)
+
+    let internal rebuildEntityTree =
+        ref Unchecked.defaultof<World -> Entity QuadTree>
