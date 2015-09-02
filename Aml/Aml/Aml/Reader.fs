@@ -930,7 +930,6 @@ module Reader =
     let readVariableOrFunction = (attempt readVariable) <|> readFunction
 
     /// Read an unconstrained function.
-    /// TODO: find a way to factor out commonality among this and readFunction.
     let readUnconstrainedFunction =
         parse {
             let! start = getPosition

@@ -433,7 +433,6 @@ module GameplayDispatcherModule =
 
             // determine (and set) enemy desired turns if applicable
             let world =
-                // TODO: raise the level of abstraction up here (use addresses only instead of raw entity values)
                 match optNewPlayerActivity with
                 | Some (Action _)
                 | Some (Navigation _) ->

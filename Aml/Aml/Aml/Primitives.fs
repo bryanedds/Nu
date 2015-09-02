@@ -811,6 +811,5 @@ module Primitives =
     let CompositeType = makeType CompositeTypeStr None
 
     /// Make a special content value.
-    /// TODO: consider if the function name is strange.
     let makeValueContent name value optPositions =
         Composite (makeCompositeRecord true name (Dictionary.singleton name (makeMember name value)) CompositeType null null optPositions)
