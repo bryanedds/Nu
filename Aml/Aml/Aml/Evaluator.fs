@@ -1113,7 +1113,7 @@ module Evaluator =
                 let (newCompositeMembers : MemberDictionary) =
                     let dictionary = Dictionary HashIdentity.Structural
                     dictionary.Consume composite.CompMembers
-                    dictionary // TODO
+                    dictionary // TODO: um... forgot to write what to do here... Have a guess?
                 for extendMember in extend.ExtMembers do ignore (newCompositeMembers.ForceAdd (extendMember.Key, extendMember.Value))
                 if newCompositeMembers.Count - composite.CompMembers.Count < extend.ExtMembers.Count
                 then makeEvalViolation ":v/eval/malformedExtendOperation" "Extend operation may not duplicate composite members." env

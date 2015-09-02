@@ -43,8 +43,7 @@ module Program =
 
     2x gain - Run app at 30fps instead of 60
     2x gain - put physics and rendering each in another process
-    1.5x gain - compile with .NET Native
-    ? gain - quadtree culling to avoid unecessary render descriptor queries
+    1.5x gain - compile with .NET Native or Mono AOT
     1.3x gain - store loaded assets in a Dictionary<string, Dictionary>> rather than a Map<string, Map>>, or...
     1.3x gain - alternatively, use short-term memoization with a temporary dictionary to cache asset queries during rendering / playing / etc.
     1.2x gain - optimize locality of address usage
@@ -100,10 +99,12 @@ module Program =
     the correct path forward. *)
 
     (* IDEA: Perhaps the constants needed to specify specific simulants and assets in code can be
-    type-provided rather than being authored manually, hopefully in a dynamic way. *)
+    type-provided rather than being authored manually, hopefully in a dynamic way. Not sure if this
+    would payoff to justify the add implementation complexity and increasing the 'magicality' of
+    the user experience. *)
 
     (* IDEA: Perhaps an FRP Signal abstraction could be build on top of the Observation type...? *)
-    
+
     let [<EntryPoint; STAThread>] main _ =
         Console.Write "Running Nu.exe"
         Constants.Engine.SuccessExitCode
