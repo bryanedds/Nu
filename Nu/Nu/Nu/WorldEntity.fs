@@ -17,6 +17,20 @@ open Nu
 module WorldEntityModule =
 
     type Entity with
+
+        member internal this.UpdateEntityInTree size position world =
+            let entityTree =
+                MutantCache.mutateMutant
+                    (fun () -> world)
+                    (fun () -> !World.rebuildEntityTree world)
+                    (fun entityTree ->
+                        QuadTree.updateElement
+                            false (this.GetPosition world) (this.GetSize world)
+                            false position size
+                            this entityTree
+                        entityTree)
+                    world.State.EntityTree
+            { world with State = { world.State with EntityTree = entityTree }}
         
         member this.GetId world = (World.getEntityState this world).Id
         member this.GetName world = (World.getEntityState this world).Name
@@ -25,11 +39,11 @@ module WorldEntityModule =
         member this.GetFacetNames world = (World.getEntityState this world).FacetNames
         member this.GetFacetsNp world = (World.getEntityState this world).FacetsNp
         member this.GetPosition world = (World.getEntityState this world).Position
-        member this.SetPosition value world = World.updateEntityState (fun (entityState : EntityState) -> { entityState with Position = value }) this world
+        member this.SetPosition value world = let world = this.UpdateEntityInTree value (this.GetSize world) world in World.updateEntityState (fun (entityState : EntityState) -> { entityState with Position = value }) this world
         member this.GetDepth world = (World.getEntityState this world).Depth
         member this.SetDepth value world = World.updateEntityState (fun entityState -> { entityState with Depth = value }) this world
         member this.GetSize world = (World.getEntityState this world).Size
-        member this.SetSize value world = World.updateEntityState (fun entityState -> { entityState with Size = value }) this world
+        member this.SetSize value world = let world = this.UpdateEntityInTree (this.GetPosition world) value world in World.updateEntityState (fun (entityState : EntityState) -> { entityState with Position = value }) this world
         member this.GetRotation world = (World.getEntityState this world).Rotation
         member this.SetRotation value world = World.updateEntityState (fun entityState -> { entityState with Rotation = value }) this world
         member this.GetVisible world = (World.getEntityState this world).Visible

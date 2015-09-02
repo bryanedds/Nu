@@ -65,7 +65,7 @@ module Miscellanea =
     let inline getPropertyValue indices (p : PropertyInfo) (x : obj) = p.GetValue (x, indices)
 
     /// Test for reference equality.
-    let inline referenceEquals x y = obj.ReferenceEquals (x, y)
+    let inline referenceEquals (x : 'a) (y : 'a) = obj.ReferenceEquals (x, y)
 
     /// Test just the value parts of a type for equality.
     /// NOTE: This function uses mad reflection, so is extremely slow, and should not be used in tight loops.

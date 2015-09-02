@@ -631,6 +631,7 @@ module WorldModule =
                       OverlayFilePath = Constants.Assets.OverlayFilePath
                       Camera = camera
                       OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
+                      EntityTree = Unchecked.defaultof<MutantCache<World, Entity QuadTree>>
                       UserState = userState }
 
                 // make the simulant states
@@ -646,6 +647,9 @@ module WorldModule =
 
                 // initialize OptEntityCache
                 let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}
+
+                // initialize EntityTree
+                let world = { world with State = { world.State with EntityTree = MutantCache.make referenceEquals QuadTree.clone world (QuadTree.make Constants.Engine.EntityTreeDepth (Constants.Engine.EntityTreeSize * -0.5f) Constants.Engine.EntityTreeSize) }}
 
                 // and finally, register the game
                 let world = World.registerGame world
@@ -703,6 +707,7 @@ module WorldModule =
                   Overlayer = { Overlays = XmlDocument () }
                   Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault) }
                   OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
+                  EntityTree = Unchecked.defaultof<MutantCache<World, Entity QuadTree>>
                   UserState = userState }
 
             // make the simulant states
@@ -718,6 +723,9 @@ module WorldModule =
 
             // initialize OptEntityCache
             let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}
+
+            // initialize EntityTree
+            let world = { world with State = { world.State with EntityTree = MutantCache.make referenceEquals QuadTree.clone world (QuadTree.make Constants.Engine.EntityTreeDepth (Constants.Engine.EntityTreeSize * -0.5f) Constants.Engine.EntityTreeSize) }}
 
             // and finally, register the game
             World.registerGame world
@@ -738,3 +746,10 @@ module WorldModule =
 
             // init type converters
             Math.initTypeConverters ()
+
+            // init F# reach-arounds
+            World.rebuildEntityTree := fun world ->
+                let tree = QuadTree.make Constants.Engine.EntityTreeDepth (Constants.Engine.EntityTreeSize * -0.5f) Constants.Engine.EntityTreeSize
+                let entities = World.proxyEntities1 world
+                for entity in entities do QuadTree.addElement false (entity.GetPosition world) (entity.GetSize world) entity tree
+                tree
