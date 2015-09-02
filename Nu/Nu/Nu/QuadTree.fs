@@ -39,20 +39,19 @@ module private QuadNode =
         else false
 
     let rec internal getElementsNearPoint position node =
-        if not ^ Seq.isEmpty node.Children then
-            let child = Seq.find (fun node -> Math.isPointInBounds3 position node.Position node.Size) node.Children
-            getElementsNearPoint position child
-        else node.Elements
+        if Math.isPointInBounds3 position node.Position node.Size then
+            match node.Children.Length with
+            | 0 -> List.ofSeq node.Elements
+            | _ -> List.ofSeq ^ Seq.concat ^ Seq.map (fun child -> getElementsNearPoint position child) node.Children
+        else []
 
     let rec internal getElementsNearBounds bounds node =
-        if not ^ Seq.isEmpty node.Children then
-            let child =
-                Seq.find (fun node ->
-                    let nodeBounds = Vector4 (node.Position.X, node.Position.Y, node.Position.X + node.Size.X, node.Position.Y + node.Size.Y)
-                    Math.isBoundsInBounds bounds nodeBounds)
-                    node.Children
-            getElementsNearBounds bounds child
-        else node.Elements
+        let nodeBounds = Vector4 (node.Position.X, node.Position.Y, node.Position.X + node.Size.X, node.Position.Y + node.Size.Y)
+        if Math.isBoundsInBounds bounds nodeBounds then
+            match node.Children.Length with
+            | 0 -> List.ofSeq node.Elements
+            | _ -> List.ofSeq ^ Seq.concat ^ Seq.map (fun child -> getElementsNearBounds bounds child) node.Children
+        else []
 
     let rec internal make<'e> depth position (size : Vector2) =
         if depth < 1 then failwith "Invalid depth for QuadNode. Expected depth >= 1."
@@ -60,7 +59,7 @@ module private QuadNode =
             if depth > 1 then 
                 [|for i in 0 .. 3 do
                     let childDepth = depth - 1
-                    let childSize = size * 0.25f
+                    let childSize = size * 0.5f
                     let childPosition = makeChildPosition i position childSize
                     yield make<'e> childDepth childPosition childSize|]
             else [||]
@@ -68,7 +67,7 @@ module private QuadNode =
           Position = position
           Size = size
           Children = (children : 'e QuadNode array)
-          Elements = HashSet () } : 'e QuadNode
+          Elements = HashSet () }
         
 type [<NoEquality; NoComparison>] 'e QuadTree =
     private
@@ -100,12 +99,12 @@ module QuadTree =
 
     let getElementsNearPoint position tree =
         let otherElements = QuadNode.getElementsNearPoint position tree.Node
-        Seq.append tree.OmnipresentElements otherElements |> List.ofSeq
+        List.ofSeq ^ Seq.append tree.OmnipresentElements ^ Seq.distinct otherElements
 
     let getElementsNearBounds bounds tree =
         let otherElements = QuadNode.getElementsNearBounds bounds tree.Node
-        Seq.append tree.OmnipresentElements otherElements |> List.ofSeq
+        List.ofSeq ^ Seq.append tree.OmnipresentElements ^ Seq.distinct otherElements
 
-    let make depth position size =
+    let make<'e> depth position size =
         { Node = QuadNode.make<'e> depth position size
           OmnipresentElements = HashSet () }
