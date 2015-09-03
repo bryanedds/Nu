@@ -84,7 +84,7 @@ module ReflectionModule =
 module Reflection =
 
     let private FieldDefinitionsCache =
-        Dictionary<Type, FieldDefinition list> ()
+        Dictionary<Type, FieldDefinition list> () // wonder if HashIdentity.Reference would work?
 
     /// Get the type name of a target.
     let getTypeName target =
@@ -475,7 +475,7 @@ module Reflection =
     let createIntrinsicOverlays hasFacetNamesField sourceTypes =
 
         // get the unique, decomposed source types
-        let sourceTypeHashSet = HashSet ()
+        let sourceTypeHashSet = HashSet () // wonder if HashIdentity.Reference would work?
         for sourceType in sourceTypes do
             for sourceTypeDecomposed in sourceType :: getBaseTypesExceptObject sourceType do
                 ignore ^ sourceTypeHashSet.Add sourceTypeDecomposed
