@@ -16,7 +16,7 @@ open Prime
 open Nu
 
 /// Identifies a target whose body can be found in the Integrator.
-type [<StructuralEquality; StructuralComparison>] PhysicsId =
+type [<CustomEquality; NoComparison>] PhysicsId =
     { SourceId : Guid
       BodyId : Guid }
 
@@ -24,9 +24,30 @@ type [<StructuralEquality; StructuralComparison>] PhysicsId =
     static member InvalidId =
         { SourceId = Constants.Engine.InvalidId; BodyId = Constants.Engine.InvalidId }
 
+    /// Hash a PhysicsId.
+    static member hash pid =
+        pid.SourceId.GetHashCode () ^^^ pid.BodyId.GetHashCode ()
+
+    /// Equate PhysicsIds.
+    static member equals pid pid2 =
+        pid.SourceId = pid2.SourceId &&
+        pid.BodyId = pid2.BodyId
+
     /// Make a PhysicsId for an external source.
     static member make (sourceId : Guid) =
         { SourceId = sourceId; BodyId = Core.makeId () }
+
+    interface PhysicsId IEquatable with
+        member this.Equals that =
+            PhysicsId.equals this that
+
+    override this.Equals that =
+        match that with
+        | :? PhysicsId as that -> PhysicsId.equals this that
+        | _ -> false
+
+    override this.GetHashCode () =
+        PhysicsId.hash this
 
 /// Physics-specific vertices type.
 type Vertices = Vector2 list
@@ -416,7 +437,7 @@ type [<ReferenceEquality>] Integrator =
     static member make gravity =
         let integrator =
             { PhysicsContext = FarseerPhysics.Dynamics.World (Integrator.toPhysicsV2 gravity)
-              Bodies = BodyDictionary HashIdentity.Structural
+              Bodies = BodyDictionary (HashIdentity.FromFunctions PhysicsId.hash PhysicsId.equals)
               PhysicsMessages = Queue.empty
               IntegrationMessages = List<IntegrationMessage> ()
               RebuildingHack = false }
