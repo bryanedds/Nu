@@ -29,21 +29,25 @@ module MutantCache =
         mutantCache.RefMutant := newMutant
         { mutantCache with RefOptConstantKey = ref ^ Some newKey }
 
-    let getMutant generateKey rebuildMutant (mutantCache : MutantCache<'k, 'm>) =
+    let private getMutantUncloned generateKey rebuildMutant (mutantCache : MutantCache<'k, 'm>) =
         match !mutantCache.RefOptConstantKey with
         | Some constantKey ->
             let mutantCache =
                 if not ^ mutantCache.KeyEquality !mutantCache.RefKey constantKey
                 then rebuildCache generateKey rebuildMutant mutantCache
                 else mutantCache
-            (mutantCache.CloneMutant !mutantCache.RefMutant, mutantCache)
+            (!mutantCache.RefMutant, mutantCache)
         | None ->
             mutantCache.RefOptConstantKey := None // break cycle
             let mutantCache = rebuildCache generateKey rebuildMutant mutantCache
-            (mutantCache.CloneMutant !mutantCache.RefMutant, mutantCache)
+            (!mutantCache.RefMutant, mutantCache)
+
+    let getMutant generateKey rebuildMutant (mutantCache : MutantCache<'k, 'm>) =
+        let (mutantUncloned, mutantCache) = getMutantUncloned generateKey rebuildMutant mutantCache
+        mutantCache.CloneMutant mutantUncloned
 
     let mutateMutant generateKey rebuildMutant mutateMutant mutantCache =
-        let (mutant : 'm, mutantCache) = getMutant generateKey rebuildMutant mutantCache
+        let (mutant : 'm, mutantCache) = getMutantUncloned generateKey rebuildMutant mutantCache
         let newKey = generateKey () : 'k
         mutantCache.RefKey := newKey
         mutantCache.RefMutant := mutateMutant mutant
