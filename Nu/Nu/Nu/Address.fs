@@ -19,18 +19,21 @@ type [<CustomEquality; NoComparison>] NameKey =
 
     interface NameKey IEquatable with
         member this.Equals that =
-            this.Name = that.Name
+            // OPTIMIZATION: ($) is faster than (=) here
+            this.Name $ that.Name
 
     override this.Equals that =
         match that with
-        | :? NameKey as that -> this.Name = that.Name
+        | :? NameKey as that ->
+            // OPTIMIZATION: ($) is faster than (=) here
+            this.Name $ that.Name
         | _ -> false
 
     override this.GetHashCode () =
         match this.OptHashCode with
         | Some hashCode -> hashCode
         | None ->
-            let hashCode = hash this.Name
+            let hashCode = this.Name.GetHashCode ()
             this.OptHashCode <- Some hashCode
             hashCode
 
@@ -106,7 +109,7 @@ and [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)
         match address.OptHashCode with
         | Some hashCode -> hashCode
         | None ->
-            let hashCode = hash ^ Address<'a>.getFullName address
+            let hashCode = let fullName = Address<'a>.getFullName address in fullName.GetHashCode ()
             address.OptHashCode <- Some hashCode
             hashCode
 

@@ -352,4 +352,4 @@ let rec inline compareStrings (list : string list) (list2 : string list) =
 /// Hash a list.
 /// NOTE: May be a pessimization.
 let inline hash list =
-    List.fold (fun hashValue name -> hashValue ^^^ hash name) 0 list
+    List.fold (fun hashValue name -> hashValue ^^^ name.GetHashCode ()) 0 list
