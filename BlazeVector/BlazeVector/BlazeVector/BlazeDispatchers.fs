@@ -63,9 +63,10 @@ module EnemyModule =
         member this.GetHealth world : int = (this.GetXtension world)?Health
         member this.SetHealth (value : int) world = this.UpdateXtension (fun xtension -> xtension?Health <- value) world
         
-        member this.HasAppeared world =
+        member this.IsOnScreen world =
             let camera = World.getCamera world
-            (this.GetPosition world).X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f
+            (this.GetPosition world).X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f &&
+            (this.GetPosition world).X - (camera.EyeCenter.X - camera.EyeSize.X * 0.5f) > 0.0f
 
     type EnemyDispatcher () =
         inherit EntityDispatcher ()
@@ -81,7 +82,7 @@ module EnemyModule =
 
         static let handleUpdate event world =
             let enemy = event.Subscriber : Entity
-            let world = if enemy.HasAppeared world then move enemy world else world
+            let world = if enemy.IsOnScreen world then move enemy world else world
             let world = if enemy.GetHealth world <= 0 then die enemy world else world
             (Cascade, world)
 
