@@ -61,6 +61,8 @@ module private QuadNode =
           Position = node.Position
           Size = node.Size
           Children = Array.map clone node.Children
+          // NOTE: it is inefficient to shallow-clone a HashSet like this, but sadly, .NET does not provide a proper
+          // Clone method! #ARGH!
           Elements = HashSet (node.Elements, HashIdentity.Structural) }
 
     let rec internal make<'e when 'e : equality> depth position (size : Vector2) =
