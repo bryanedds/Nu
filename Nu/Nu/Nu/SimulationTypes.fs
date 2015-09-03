@@ -217,7 +217,7 @@ and EntityDispatcher () =
          define? Visible true
          define? ViewType Relative
          define? Omnipresent false
-         define? PublishChanges true
+         define? PublishChanges false
          define? Persistent true]
 
     /// Register an entity when adding it to a group.
