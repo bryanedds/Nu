@@ -5,13 +5,10 @@
 /// just pass in the id function for make's cloneMutant arg, but make sure to NEVER mutate the
 /// returned mutant!
 /// TODO: document this type's functions!
-type [<ReferenceEquality>] MutantCache<'k, 'm when 'k : equality> =
+type [<ReferenceEquality>] 'm MutantCache =
     private
-        { KeyEquality : 'k -> 'k -> bool
-          CloneMutant : 'm -> 'm
-          RefOptConstantKey : 'k option ref
-          RefKey : 'k ref
-          RefMutant : 'm ref }
+        { CloneMutant : 'm -> 'm
+          mutable OptValidMutant : 'm option }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module MutantCache =
@@ -19,45 +16,28 @@ module MutantCache =
     let mutable private GlobalMutantRebuilds = 0L
     let getGlobalMutantRebuilds () = GlobalMutantRebuilds
 
-    let private rebuildCache generateKey rebuildMutant mutantCache =
+    let private rebuildCache rebuildMutant mutantCache =
 #if DEBUG
         GlobalMutantRebuilds <- GlobalMutantRebuilds + 1L
 #endif
-        let newKey = generateKey ()
-        let newMutant = rebuildMutant ()
-        mutantCache.RefKey := newKey
-        mutantCache.RefMutant := newMutant
-        { mutantCache with RefOptConstantKey = ref ^ Some newKey }
+        let validMutant = rebuildMutant ()
+        mutantCache.OptValidMutant <- None
+        { mutantCache with OptValidMutant = Some validMutant }
 
-    let private getMutantUncloned generateKey rebuildMutant (mutantCache : MutantCache<'k, 'm>) =
-        match !mutantCache.RefOptConstantKey with
-        | Some constantKey ->
-            let mutantCache =
-                if not ^ mutantCache.KeyEquality !mutantCache.RefKey constantKey
-                then rebuildCache generateKey rebuildMutant mutantCache
-                else mutantCache
-            (!mutantCache.RefMutant, mutantCache)
-        | None ->
-            mutantCache.RefOptConstantKey := None // break cycle
-            let mutantCache = rebuildCache generateKey rebuildMutant mutantCache
-            let mutantCache = { mutantCache with RefOptConstantKey = ref ^ Some !mutantCache.RefKey } // restore constant key
-            (!mutantCache.RefMutant, mutantCache)
+    let private getMutantUncloned rebuildMutant (mutantCache : 'm MutantCache) =
+        match mutantCache.OptValidMutant with
+        | Some mutant -> (mutant, mutantCache)
+        | None -> let mutantCache = rebuildCache rebuildMutant mutantCache in (mutantCache.OptValidMutant.Value, mutantCache)
 
-    let getMutant generateKey rebuildMutant (mutantCache : MutantCache<'k, 'm>) =
-        let (mutantUncloned, mutantCache) = getMutantUncloned generateKey rebuildMutant mutantCache
+    let getMutant rebuildMutant (mutantCache : 'm MutantCache) =
+        let (mutantUncloned, mutantCache) = getMutantUncloned rebuildMutant mutantCache
         mutantCache.CloneMutant mutantUncloned
 
-    let mutateMutant generateKey rebuildMutant mutateMutant mutantCache =
-        let (mutant : 'm, mutantCache) = getMutantUncloned generateKey rebuildMutant mutantCache
-        let newKey = generateKey () : 'k
-        mutantCache.RefKey := newKey
-        mutantCache.RefMutant := mutateMutant mutant
-        mutantCache.RefOptConstantKey := None // break cycle
-        { mutantCache with RefOptConstantKey = ref ^ Some newKey }
+    let mutateMutant rebuildMutant mutateMutant mutantCache =
+        let (mutant : 'm, mutantCache) = getMutantUncloned rebuildMutant mutantCache
+        mutantCache.OptValidMutant <- None
+        { mutantCache with OptValidMutant = Some ^ mutateMutant mutant }
 
-    let make keyEquality cloneMutant (key : 'k) (mutant : 'm) =
-        { KeyEquality = keyEquality
-          CloneMutant = cloneMutant
-          RefOptConstantKey = ref ^ Some key
-          RefKey = ref key
-          RefMutant = ref mutant }
+    let make cloneMutant (mutant : 'm) =
+        { CloneMutant = cloneMutant
+          OptValidMutant = Some mutant }

@@ -64,9 +64,8 @@ module EnemyModule =
         member this.SetHealth (value : int) world = this.UpdateXtension (fun xtension -> xtension?Health <- value) world
         
         member this.IsOnScreen world =
-            let camera = World.getCamera world
-            (this.GetPosition world).X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f &&
-            (this.GetPosition world).X - (camera.EyeCenter.X - camera.EyeSize.X * 0.5f) > 0.0f
+            let cameraBounds = World.getCameraBy Camera.getViewBoundsRelative world
+            Math.isPointInBounds (this.GetCenter world) cameraBounds
 
     type EnemyDispatcher () =
         inherit EntityDispatcher ()

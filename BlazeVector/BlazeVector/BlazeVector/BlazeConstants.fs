@@ -55,4 +55,4 @@ module Constants =
               SplashImage = { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image5" }}
 
         // and finally, this constant simply specifies how many sections are added to a game
-        let SectionCount = 16
+        let SectionCount = 32

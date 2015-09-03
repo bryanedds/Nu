@@ -620,7 +620,6 @@ module World =
     let internal updateEntityInEntityTree oldOmnipresent oldPosition oldSize entity world =
         let entityTree =
             MutantCache.mutateMutant
-                (fun () -> world)
                 (fun () -> rebuildEntityTree world)
                 (fun entityTree ->
                     let entityState = getEntityState entity world
@@ -635,7 +634,6 @@ module World =
     let internal removeEntityFromEntityTree entity world =
         let entityTree =
             MutantCache.mutateMutant
-                (fun () -> world)
                 (fun () -> rebuildEntityTree world)
                 (fun entityTree ->
                     let entityState = getEntityState entity world
@@ -647,7 +645,6 @@ module World =
     let internal addEntityToEntityTree entity world =
         let entityTree =
             MutantCache.mutateMutant
-                (fun () -> world)
                 (fun () -> rebuildEntityTree world)
                 (fun entityTree ->
                     let entityState = getEntityState entity world
