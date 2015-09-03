@@ -66,7 +66,7 @@ module EvaluatorPrimitives =
             List.tryFindPlus
                 (fun (frame : ProceduralFrame) ->
                     refOffset := !refOffset + 1
-                    refOptIndex := Array.tryFindIndexRev (fun (entryName, _) -> name = entryName) frame
+                    refOptIndex := Array.tryFindIndexRev (fun (entryName, _) -> name.Equals entryName) frame // OPTIMIZATION: faster than (=) here
                     match !refOptIndex with
                     | Some index -> (true, Some frame.[index])
                     | None -> (false, None))
@@ -81,7 +81,7 @@ module EvaluatorPrimitives =
         let optEntry =
             List.tryFindPlus
                 (fun (frame : ProceduralFrame) ->
-                    let optEntry = Array.tryFind (fun (entryName, _) -> name = entryName) frame
+                    let optEntry = Array.tryFind (fun (entryName, _) -> name.Equals entryName) frame // OPTIMIZATION: faster than (=) here
                     match optEntry with Some (_, entry) -> (true, Some entry) | None -> (false, None))
                 env.EnvProceduralFrames
         match optEntry with
@@ -204,7 +204,7 @@ module EvaluatorPrimitives =
     let hasType typeName value env =
         let vtype = getType value env
         match vtype with
-        | Composite composite -> composite.CompName = typeName
+        | Composite composite -> composite.CompName.Equals typeName // OPTIMIZATION: faster than (=) here
         | _ -> false
 
     /// Augment an environment with a protocol.
@@ -448,11 +448,11 @@ module EvaluatorPrimitives =
             | Labeled ->
                 match args1.Head with
                 | Package package ->
-                    if package.PkgName = larg.ArgName then
+                    if package.PkgName.Equals larg.ArgName then // OPTIMIZATION: faster than (=) here
                         let unifiedArg = Some (package.PkgExpr, larg)
                         makePartialUnifyResult unifiedArg args1.Tail 0 true
                     else
-                        let matchingLargIndex = List.findIndex (fun larg -> larg.ArgName = package.PkgName) largs1
+                        let matchingLargIndex = List.findIndex (fun larg -> larg.ArgName.Equals package.PkgName) largs1 // OPTIMIZATION: faster than (=) here
                         let matchingLarg = largs1.[matchingLargIndex]
                         let unifiedArg = Some (package.PkgExpr, matchingLarg)
                         makePartialUnifyResult unifiedArg args1.Tail matchingLargIndex true
@@ -510,7 +510,7 @@ module EvaluatorPrimitives =
             let optPrevConstraint = Map.tryFind parg matches
             match optPrevConstraint with
             | Some prevConstraint ->
-                if prevConstraint.ConstrName = constr.ConstrName then ((true, instance) :: instances, matches)
+                if prevConstraint.ConstrName.Equals constr.ConstrName then ((true, instance) :: instances, matches) // OPTIMIZATION: faster than (=) here
                 else ((false, instance) :: instances, matches)
             | None -> ((true, instance) :: instances, Map.add parg constr matches)
 
