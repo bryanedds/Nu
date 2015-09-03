@@ -27,7 +27,7 @@ module WorldModule =
     let private ScreenTransitionMouseX2Key = World.makeSubscriptionKey ()
     let private ScreenTransitionKeyboardKeyKey = World.makeSubscriptionKey ()
     let private SplashScreenUpdateKey = World.makeSubscriptionKey ()
-    let private LoadedAssemblies = Dictionary<string, Assembly> ()
+    let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
 
     type World with
 

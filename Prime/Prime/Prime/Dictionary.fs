@@ -13,7 +13,7 @@ module Dictionary =
 
     /// Map over a dictionary. A new dictionary is produced.
     let map (mapper : KeyValuePair<'k, 'v> -> 'v) (dictionary : Dictionary<'k, 'v>) =
-        let result = Dictionary<'k, 'v> ()
+        let result = Dictionary<'k, 'v> dictionary.Comparer
         for kvp in dictionary do result.Add (kvp.Key, mapper kvp)
         result
 

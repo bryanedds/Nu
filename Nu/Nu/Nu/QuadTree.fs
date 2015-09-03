@@ -4,7 +4,7 @@ open System.Collections.Generic
 open OpenTK
 open Prime
 
-type [<NoEquality; NoComparison>] private 'e QuadNode =
+type [<NoEquality; NoComparison>] private QuadNode<'e when 'e : equality> =
     private
         { Depth : int
           Position : Vector2
@@ -61,9 +61,9 @@ module private QuadNode =
           Position = node.Position
           Size = node.Size
           Children = Array.map clone node.Children
-          Elements = HashSet node.Elements }
+          Elements = HashSet (node.Elements, HashIdentity.Structural) }
 
-    let rec internal make<'e> depth position (size : Vector2) =
+    let rec internal make<'e when 'e : equality> depth position (size : Vector2) =
         if depth < 1 then failwith "Invalid depth for QuadNode. Expected depth >= 1."
         let children =
             if depth > 1 then 
@@ -77,9 +77,9 @@ module private QuadNode =
           Position = position
           Size = size
           Children = (children : 'e QuadNode array)
-          Elements = HashSet () }
+          Elements = HashSet HashIdentity.Structural }
         
-type [<NoEquality; NoComparison>] 'e QuadTree =
+type [<NoEquality; NoComparison>] QuadTree<'e when 'e : equality> =
     private
         { Node : 'e QuadNode
           OmnipresentElements : 'e HashSet }
@@ -120,8 +120,8 @@ module QuadTree =
 
     let clone tree =
         { Node = QuadNode.clone tree.Node
-          OmnipresentElements = HashSet tree.OmnipresentElements }
+          OmnipresentElements = HashSet (tree.OmnipresentElements, HashIdentity.Structural) }
 
-    let make<'e> depth position size =
+    let make<'e when 'e : equality> depth position size =
         { Node = QuadNode.make<'e> depth position size
-          OmnipresentElements = HashSet () }
+          OmnipresentElements = HashSet HashIdentity.Structural }
