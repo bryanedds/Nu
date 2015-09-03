@@ -40,6 +40,7 @@ module MutantCache =
         | None ->
             mutantCache.RefOptConstantKey := None // break cycle
             let mutantCache = rebuildCache generateKey rebuildMutant mutantCache
+            let mutantCache = { mutantCache with RefOptConstantKey = ref ^ Some !mutantCache.RefKey } // restore constant key
             (!mutantCache.RefMutant, mutantCache)
 
     let getMutant generateKey rebuildMutant (mutantCache : MutantCache<'k, 'm>) =
