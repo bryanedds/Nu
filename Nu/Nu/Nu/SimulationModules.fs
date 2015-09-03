@@ -76,6 +76,7 @@ module EntityState =
           Rotation = 0.0f
           Visible = true
           ViewType = Relative
+          Omnipresent = false
           PublishChanges = true
           Persistent = true
           CreationTimeStampNp = Core.getTimeStamp ()
@@ -616,15 +617,16 @@ module World =
         let entityState = updater entityState
         setEntityState entityState entity world
 
-    let internal updateEntityInEntityTree oldPosition oldSize entity world =
+    let internal updateEntityInEntityTree oldOmnipresent oldPosition oldSize entity world =
         let entityTree =
             MutantCache.mutateMutant
                 (fun () -> world)
                 (fun () -> rebuildEntityTree world)
                 (fun entityTree ->
+                    let entityState = getEntityState entity world
                     QuadTree.updateElement
-                        false oldPosition oldSize
-                        false (getEntityState entity world).Position (getEntityState entity world).Size
+                        oldOmnipresent oldPosition oldSize
+                        entityState.Omnipresent entityState.Position entityState.Size
                         entity entityTree
                     entityTree)
                 world.State.EntityTree
@@ -636,7 +638,8 @@ module World =
                 (fun () -> world)
                 (fun () -> rebuildEntityTree world)
                 (fun entityTree ->
-                    QuadTree.removeElement false (getEntityState entity world).Position (getEntityState entity world).Size entity entityTree
+                    let entityState = getEntityState entity world
+                    QuadTree.removeElement entityState.Omnipresent entityState.Position entityState.Size entity entityTree
                     entityTree)
                 world.State.EntityTree
         { world with State = { world.State with EntityTree = entityTree }}
@@ -647,7 +650,8 @@ module World =
                 (fun () -> world)
                 (fun () -> rebuildEntityTree world)
                 (fun entityTree ->
-                    QuadTree.addElement false (getEntityState entity world).Position (getEntityState entity world).Size entity entityTree
+                    let entityState = getEntityState entity world
+                    QuadTree.addElement entityState.Omnipresent entityState.Position entityState.Size entity entityTree
                     entityTree)
                 world.State.EntityTree
         { world with State = { world.State with EntityTree = entityTree }}
