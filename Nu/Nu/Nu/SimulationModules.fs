@@ -126,7 +126,7 @@ module World =
     (* Publishing *)
 
     let private AnyEventAddressesCache =
-        Dictionary<obj Address, obj Address list> HashIdentity.Structural
+        Dictionary<obj Address, obj Address list> (HashIdentity.FromFunctions Address<obj>.hash Address<obj>.equals)
 
     let internal sortFstDesc (priority : single, _) (priority2 : single, _) =
         // OPTIMIZATION: priority parameter is annotated as 'single' to decrease GC pressure.

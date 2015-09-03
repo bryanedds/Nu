@@ -17,25 +17,30 @@ type [<CustomEquality; NoComparison>] NameKey =
         { Name : string
           mutable OptHashCode : int option }
 
+    /// Hash a NameKey.
+    static member hash nameKey =
+        match nameKey.OptHashCode with
+        | Some hashCode -> hashCode
+        | None ->
+            let hashCode = nameKey.Name.GetHashCode ()
+            nameKey.OptHashCode <- Some hashCode
+            hashCode
+
+    /// Equate NameKeys.
+    static member equals nameKey nameKey2 =
+        nameKey.Name.Equals nameKey2.Name // OPTIMIZATION: faster than (=) here
+
     interface NameKey IEquatable with
         member this.Equals that =
-            // OPTIMIZATION: faster than (=) here
-            this.Name.Equals that.Name
+            NameKey.equals this that
 
     override this.Equals that =
         match that with
-        | :? NameKey as that ->
-            // OPTIMIZATION: faster than (=) here
-            this.Name.Equals that.Name
+        | :? NameKey as that -> NameKey.equals this that
         | _ -> false
 
     override this.GetHashCode () =
-        match this.OptHashCode with
-        | Some hashCode -> hashCode
-        | None ->
-            let hashCode = this.Name.GetHashCode ()
-            this.OptHashCode <- Some hashCode
-            hashCode
+        NameKey.hash this
 
     override this.ToString () =
         this.Name
@@ -105,35 +110,46 @@ and [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)
             address.OptFullName <- Some fullName
             fullName
 
-    static member internal getHashCode (address : 'a Address) =
+    /// Hash an Address.
+    static member hash (address : 'a Address) =
         match address.OptHashCode with
         | Some hashCode -> hashCode
         | None ->
             let hashCode = let fullName = Address<'a>.getFullName address in fullName.GetHashCode ()
             address.OptHashCode <- Some hashCode
             hashCode
+            
+    /// Equate Addresses.
+    static member equals address address2 =
+        let addressName = Address<'a>.getFullName address
+        let address2Name = Address<'a>.getFullName address2
+        addressName.Equals address2Name // OPTIMIZATION: faster than (=) here
+
+    /// Compare Addresses.
+    static member compare address address2 =
+        String.Compare (Address<'a>.getFullName address, Address<'a>.getFullName address2)
 
     interface 'a Address IComparable with
         member this.CompareTo that =
-            String.Compare (Address<'a>.getFullName this, Address<'a>.getFullName that)
+            Address<'a>.compare this that
 
     interface IComparable with
         member this.CompareTo that =
             match that with
-            | :? ('a Address) as that -> String.Compare (Address<'a>.getFullName this, Address<'a>.getFullName that)
+            | :? ('a Address) as that -> Address<'a>.compare this that
             | _ -> failwith "Invalid Address comparison (comparee not of type Address)."
 
     interface 'a Address IEquatable with
         member this.Equals that =
-            Address<'a>.getFullName this = Address<'a>.getFullName that
+            Address<'a>.equals this that
 
     override this.Equals that =
         match that with
-        | :? ('a Address) as that -> Address<'a>.getFullName this = Address<'a>.getFullName that
+        | :? ('a Address) as that -> Address<'a>.equals this that
         | _ -> false
 
     override this.GetHashCode () =
-        Address<'a>.getHashCode this
+        Address<'a>.hash this
     
     override this.ToString () =
         Address<'a>.getFullName this
@@ -178,7 +194,7 @@ module Address =
 
     /// TODO: document!
     let getHashCode address =
-        Address<'a>.getHashCode address
+        Address<'a>.hash address
 
     /// Take the head of an address.
     let head address =
