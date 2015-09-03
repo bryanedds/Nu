@@ -9,7 +9,7 @@ type [<ReferenceEquality>] MutantCache<'k, 'm when 'k : equality> =
     private
         { KeyEquality : 'k -> 'k -> bool
           CloneMutant : 'm -> 'm
-          ConstantKey : 'k
+          RefOptConstantKey : 'k option ref
           RefKey : 'k ref
           RefMutant : 'm ref }
 
@@ -27,25 +27,32 @@ module MutantCache =
         let newMutant = rebuildMutant ()
         mutantCache.RefKey := newKey
         mutantCache.RefMutant := newMutant
-        { mutantCache with ConstantKey = newKey }
+        { mutantCache with RefOptConstantKey = ref ^ Some newKey }
 
     let getMutant generateKey rebuildMutant (mutantCache : MutantCache<'k, 'm>) =
-        let mutantCache =
-            if not ^ mutantCache.KeyEquality !mutantCache.RefKey mutantCache.ConstantKey
-            then rebuildCache generateKey rebuildMutant mutantCache
-            else mutantCache
-        (mutantCache.CloneMutant !mutantCache.RefMutant, mutantCache)
+        match !mutantCache.RefOptConstantKey with
+        | Some constantKey ->
+            let mutantCache =
+                if not ^ mutantCache.KeyEquality !mutantCache.RefKey constantKey
+                then rebuildCache generateKey rebuildMutant mutantCache
+                else mutantCache
+            (mutantCache.CloneMutant !mutantCache.RefMutant, mutantCache)
+        | None ->
+            mutantCache.RefOptConstantKey := None // break cycle
+            let mutantCache = rebuildCache generateKey rebuildMutant mutantCache
+            (mutantCache.CloneMutant !mutantCache.RefMutant, mutantCache)
 
     let mutateMutant generateKey rebuildMutant mutateMutant mutantCache =
         let (mutant : 'm, mutantCache) = getMutant generateKey rebuildMutant mutantCache
         let newKey = generateKey () : 'k
         mutantCache.RefKey := newKey
         mutantCache.RefMutant := mutateMutant mutant
-        { mutantCache with ConstantKey = newKey }
+        mutantCache.RefOptConstantKey := None // break cycle
+        { mutantCache with RefOptConstantKey = ref ^ Some newKey }
 
     let make keyEquality cloneMutant (key : 'k) (mutant : 'm) =
         { KeyEquality = keyEquality
           CloneMutant = cloneMutant
-          ConstantKey = key
+          RefOptConstantKey = ref ^ Some key
           RefKey = ref key
           RefMutant = ref mutant }
