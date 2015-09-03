@@ -147,9 +147,6 @@ module Miscellanea =
     /// Test just the value parts of a type for equality.
     let inline (===) (x : 'a) (y : 'a) = similar x y
 
-    /// Test two strings for binary equality.
-    let inline ($) (s : string) (s2 : string) = s.Equals s2
-
     /// Combine the contents of two maps, taking an item from the second map in the case of a key
     /// conflict.
     let inline (@@) map map2 =
