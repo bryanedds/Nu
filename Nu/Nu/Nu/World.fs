@@ -633,7 +633,7 @@ module WorldModule =
                       OverlayFilePath = Constants.Assets.OverlayFilePath
                       Camera = camera
                       OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
-                      EntityTree = Unchecked.defaultof<MutantCache<World, Entity QuadTree>>
+                      EntityTree = Unchecked.defaultof<Entity QuadTree MutantCache>
                       UserState = userState }
 
                 // make the simulant states
@@ -651,7 +651,7 @@ module WorldModule =
                 let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}
 
                 // initialize EntityTree
-                let world = { world with State = { world.State with EntityTree = MutantCache.make referenceEquals QuadTree.clone world (QuadTree.make Constants.Engine.EntityTreeDepth (Constants.Engine.EntityTreeSize * -0.5f) Constants.Engine.EntityTreeSize) }}
+                let world = { world with State = { world.State with EntityTree = MutantCache.make QuadTree.clone (QuadTree.make Constants.Engine.EntityTreeDepth (Constants.Engine.EntityTreeSize * -0.5f) Constants.Engine.EntityTreeSize) }}
 
                 // and finally, register the game
                 let world = World.registerGame world
@@ -709,7 +709,7 @@ module WorldModule =
                   Overlayer = { Overlays = XmlDocument () }
                   Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault) }
                   OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
-                  EntityTree = Unchecked.defaultof<MutantCache<World, Entity QuadTree>>
+                  EntityTree = Unchecked.defaultof<Entity QuadTree MutantCache>
                   UserState = userState }
 
             // make the simulant states
@@ -727,7 +727,7 @@ module WorldModule =
             let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}
 
             // initialize EntityTree
-            let world = { world with State = { world.State with EntityTree = MutantCache.make referenceEquals QuadTree.clone world (QuadTree.make Constants.Engine.EntityTreeDepth (Constants.Engine.EntityTreeSize * -0.5f) Constants.Engine.EntityTreeSize) }}
+            let world = { world with State = { world.State with EntityTree = MutantCache.make QuadTree.clone (QuadTree.make Constants.Engine.EntityTreeDepth (Constants.Engine.EntityTreeSize * -0.5f) Constants.Engine.EntityTreeSize) }}
 
             // and finally, register the game
             World.registerGame world
