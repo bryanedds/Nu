@@ -53,6 +53,16 @@ module private QuadNode =
             | _ -> List.ofSeq ^ Seq.concat ^ Seq.map (fun child -> getElementsNearBounds bounds child) node.Children
         else []
 
+    let internal getDepth node =
+        node.Depth
+
+    let rec internal clone node =
+        { Depth = node.Depth
+          Position = node.Position
+          Size = node.Size
+          Children = Array.map clone node.Children
+          Elements = HashSet node.Elements }
+
     let rec internal make<'e> depth position (size : Vector2) =
         if depth < 1 then failwith "Invalid depth for QuadNode. Expected depth >= 1."
         let children =
@@ -104,6 +114,13 @@ module QuadTree =
     let getElementsNearBounds bounds tree =
         let otherElements = QuadNode.getElementsNearBounds bounds tree.Node
         List.ofSeq ^ Seq.append tree.OmnipresentElements ^ Seq.distinct otherElements
+
+    let getDepth tree =
+        QuadNode.getDepth tree.Node
+
+    let clone tree =
+        { Node = QuadNode.clone tree.Node
+          OmnipresentElements = HashSet tree.OmnipresentElements }
 
     let make<'e> depth position size =
         { Node = QuadNode.make<'e> depth position size

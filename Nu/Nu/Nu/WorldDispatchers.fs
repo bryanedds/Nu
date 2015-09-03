@@ -780,7 +780,8 @@ module TileMapDispatcherModule =
                 tileMapData.Map.Layers
 
         static member FieldDefinitions =
-            [define? Friction 0.0f
+            [define? Omnipresent true
+             define? Friction 0.0f
              define? Restitution 0.0f
              define? CollisionCategories "1"
              define? CollisionMask "*"
