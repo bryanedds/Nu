@@ -58,6 +58,17 @@ module WorldGroupModule =
                 else world
             else failwith ^ "Adding a group that the world already contains at address '" + acstring group.GroupAddress + "'."
 
+        /// Remove a group in the world. Can be dangerous if existing in-flight publishing depends on the group's
+        /// existence. Use with caution.
+        static member internal removeGroup group world =
+            let world = World.publish () (Events.GroupRemoving ->- group) group world
+            if World.containsGroup group world then
+                let world = World.unregisterGroup group world
+                let entities = World.proxyEntities group world
+                let world = World.destroyEntitiesImmediate entities world
+                World.setOptGroupStateWithoutEvent None group world
+            else world
+
         /// Query that the world contains a group.
         static member containsGroup group world =
             Option.isSome ^ World.getOptGroupState group world
@@ -69,35 +80,29 @@ module WorldGroupModule =
                 (fun (kvp : KeyValuePair<string, _>) -> stog screen kvp.Key)
                 groupStateMap
 
-        /// Destroy a group in the world immediately. Can be dangerous if existing in-flight
-        /// publishing depends on the group's existence. Use with caution.
+        /// Destroy a group in the world immediately. Can be dangerous if existing in-flight publishing depends on the
+        /// group's existence. Use with caution.
         static member destroyGroupImmediate group world =
-            let world = World.publish () (Events.GroupRemoving ->- group) group world
-            if World.containsGroup group world then
-                let world = World.unregisterGroup group world
-                let entities = World.proxyEntities group world
-                let world = World.destroyEntitiesImmediate entities world
-                World.setOptGroupStateWithoutEvent None group world
-            else world
+            World.removeGroup group world
 
-        /// Destroy a group in the world on the next tick. Use this rather than
-        /// destroyGroupImmediate unless you need the latter's specific behavior.
+        /// Destroy a group in the world on the next tick. Use this rather than destroyGroupImmediate unless you need
+        /// the latter's specific behavior.
         static member destroyGroup group world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
                   Operation = fun world -> World.destroyGroupImmediate group world }
             World.addTasklet tasklet world
             
-        /// Destroy multiple groups in the world immediately. Can be dangerous if existing
-        /// in-flight publishing depends on any of the groups' existences. Use with caution.
+        /// Destroy multiple groups in the world immediately. Can be dangerous if existing in-flight publishing depends
+        /// on any of the groups' existences. Use with caution.
         static member destroyGroupsImmediate groups world =
             List.foldBack
                 (fun group world -> World.destroyGroupImmediate group world)
                 (List.ofSeq groups)
                 world
 
-        /// Destroy multiple groups from the world. Use this rather than destroyEntitiesImmediate
-        /// unless you need the latter's specific behavior.
+        /// Destroy multiple groups from the world. Use this rather than destroyEntitiesImmediate unless you need the
+        /// latter's specific behavior.
         static member destroyGroups groups world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world

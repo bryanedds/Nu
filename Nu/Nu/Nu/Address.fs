@@ -12,6 +12,7 @@ open Nu
 
 /// A name key for optimized look-up in hashing containers.
 /// OPTIMIZATION: OptHashCode is lazy for speed.
+/// TODO: implement custom comparison.
 type [<CustomEquality; NoComparison>] NameKey =
     private
         { Name : string
