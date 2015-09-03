@@ -142,10 +142,10 @@ module Miscellanea =
     let inline (^) f g = f g
 
     /// Test for reference equality.
-    let (==) = referenceEquals
+    let inline (==) (x : 'a) (y : 'a) = referenceEquals x y
 
     /// Test just the value parts of a type for equality.
-    let (===) = similar
+    let inline (===) (x : 'a) (y : 'a) = similar x y
 
     /// Combine the contents of two maps, taking an item from the second map in the case of a key
     /// conflict.
