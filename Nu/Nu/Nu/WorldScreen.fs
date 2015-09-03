@@ -70,6 +70,17 @@ module WorldScreenModule =
                 else world
             else failwith ^ "Adding a screen that the world already contains at address '" + acstring screen.ScreenAddress + "'."
 
+        /// Remove a screen from the world. Can be dangerous if existing in-flight publishing depends on the screen's
+        /// existence. Use with caution.
+        static member removeScreen screen world =
+            let world = World.publish () (Events.ScreenRemoving ->- screen) screen world
+            if World.containsScreen screen world then
+                let world = World.unregisterScreen screen world
+                let groups = World.proxyGroups screen world
+                let world = World.destroyGroupsImmediate groups world
+                World.setOptScreenStateWithoutEvent None screen world
+            else world
+
         /// Query that the world contains a screen.
         static member containsScreen screen world =
             Option.isSome ^ World.getOptScreenState screen world
@@ -80,19 +91,13 @@ module WorldScreenModule =
                 Map.fold (fun screensRev screenName _ -> ntos screenName :: screensRev) [] |>
                 List.rev
 
-        /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight
-        /// publishing depends on the screen's existence. Use with caution.
+        /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight publishing depends on the
+        /// screen's existence. Use with caution.
         static member destroyScreenImmediate screen world =
-            let world = World.publish () (Events.ScreenRemoving ->- screen) screen world
-            if World.containsScreen screen world then
-                let world = World.unregisterScreen screen world
-                let groups = World.proxyGroups screen world
-                let world = World.destroyGroupsImmediate groups world
-                World.setOptScreenStateWithoutEvent None screen world
-            else world
+            World.removeScreen screen world
 
-        /// Destroy a screen in the world on the next tick. Use this rather than
-        /// destroyScreenImmediate unless you need the latter's specific behavior.
+        /// Destroy a screen in the world on the next tick. Use this rather than destroyScreenImmediate unless you need
+        /// the latter's specific behavior.
         static member destroyScreen screen world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
