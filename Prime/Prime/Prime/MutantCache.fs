@@ -19,21 +19,24 @@ module MutantCache =
     let mutable private GlobalMutantRebuilds = 0L
     let getGlobalMutantRebuilds () = GlobalMutantRebuilds
 
+    let private rebuildCache generateKey rebuildMutant mutantCache =
+#if DEBUG
+        GlobalMutantRebuilds <- GlobalMutantRebuilds + 1L
+#endif
+        let newKey = generateKey ()
+        let newMutant = rebuildMutant ()
+        mutantCache.RefKey := newKey
+        mutantCache.RefMutant := newMutant
+        { mutantCache with ConstantKey = newKey }
+
     let getMutant generateKey rebuildMutant (mutantCache : MutantCache<'k, 'm>) =
         let mutantCache =
-            if not ^ mutantCache.KeyEquality !mutantCache.RefKey mutantCache.ConstantKey then
-#if DEBUG
-                GlobalMutantRebuilds <- GlobalMutantRebuilds + 1L
-#endif
-                let newKey = generateKey ()
-                let newMutant = rebuildMutant ()
-                mutantCache.RefKey := newKey
-                mutantCache.RefMutant := newMutant
-                { mutantCache with ConstantKey = newKey }
+            if not ^ mutantCache.KeyEquality !mutantCache.RefKey mutantCache.ConstantKey
+            then rebuildCache generateKey rebuildMutant mutantCache
             else mutantCache
         (mutantCache.CloneMutant !mutantCache.RefMutant, mutantCache)
 
-    let mutateMutant rebuildMutant generateKey mutateMutant mutantCache =
+    let mutateMutant generateKey rebuildMutant mutateMutant mutantCache =
         let (mutant : 'm, mutantCache) = getMutant generateKey rebuildMutant mutantCache
         let newKey = generateKey () : 'k
         mutantCache.RefKey := newKey

@@ -76,6 +76,7 @@ module EntityState =
           Rotation = 0.0f
           Visible = true
           ViewType = Relative
+          Omnipresent = false
           PublishChanges = true
           Persistent = true
           CreationTimeStampNp = Core.getTimeStamp ()
@@ -116,6 +117,11 @@ module Simulants =
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module World =
+
+    (* F# reach-arounds... *)
+
+    let mutable internal rebuildEntityTree =
+        Unchecked.defaultof<World -> Entity QuadTree>
 
     (* Publishing *)
 
@@ -566,6 +572,15 @@ module World =
             | None -> world
         | _ -> failwith ^ "Invalid entity address '" + acstring entity.EntityAddress + "'."
 
+    let internal publishEntityChange entityState (entity : Entity) oldWorld world =
+        if entityState.PublishChanges then
+            publish
+                { Simulant = entity; OldWorld = oldWorld }
+                (Events.EntityChange ->- entity)
+                entity
+                world
+        else world
+
     let internal getEntityStateMap group world =
         match Address.getNameKeys group.GroupAddress with
         | [screenNameKey; groupNameKey] ->
@@ -595,18 +610,51 @@ module World =
     let internal setEntityState entityState (entity : Entity) world =
         let oldWorld = world
         let world = entityStateAdder entityState entity world
-        if entityState.PublishChanges then
-            publish
-                { Simulant = entity; OldWorld = oldWorld }
-                (Events.EntityChange ->- entity)
-                entity
-                world
-        else world
+        publishEntityChange entityState entity oldWorld world
 
     let internal updateEntityState updater entity world =
         let entityState = getEntityState entity world
         let entityState = updater entityState
         setEntityState entityState entity world
+
+    let internal updateEntityInEntityTree oldOmnipresent oldPosition oldSize entity world =
+        let entityTree =
+            MutantCache.mutateMutant
+                (fun () -> world)
+                (fun () -> rebuildEntityTree world)
+                (fun entityTree ->
+                    let entityState = getEntityState entity world
+                    QuadTree.updateElement
+                        oldOmnipresent oldPosition oldSize
+                        entityState.Omnipresent entityState.Position entityState.Size
+                        entity entityTree
+                    entityTree)
+                world.State.EntityTree
+        { world with State = { world.State with EntityTree = entityTree }}
+
+    let internal removeEntityFromEntityTree entity world =
+        let entityTree =
+            MutantCache.mutateMutant
+                (fun () -> world)
+                (fun () -> rebuildEntityTree world)
+                (fun entityTree ->
+                    let entityState = getEntityState entity world
+                    QuadTree.removeElement entityState.Omnipresent entityState.Position entityState.Size entity entityTree
+                    entityTree)
+                world.State.EntityTree
+        { world with State = { world.State with EntityTree = entityTree }}
+
+    let internal addEntityToEntityTree entity world =
+        let entityTree =
+            MutantCache.mutateMutant
+                (fun () -> world)
+                (fun () -> rebuildEntityTree world)
+                (fun entityTree ->
+                    let entityState = getEntityState entity world
+                    QuadTree.addElement entityState.Omnipresent entityState.Position entityState.Size entity entityTree
+                    entityTree)
+                world.State.EntityTree
+        { world with State = { world.State with EntityTree = entityTree }}
 
     (* GroupState *)
 

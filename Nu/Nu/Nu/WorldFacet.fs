@@ -75,12 +75,13 @@ module WorldFacetModule =
                 finalFieldDefinitionNameCounts
 
         static member private tryRemoveFacet facetName entityState optEntity world =
+            let oldEntityState = entityState
+            let oldWorld = world
             match List.tryFind (fun facet -> Reflection.getTypeName facet = facetName) entityState.FacetsNp with
             | Some facet ->
                 let (entityState, world) =
                     match optEntity with
                     | Some entity ->
-                        let world = World.setEntityState entityState entity world
                         let world = facet.Unregister entity world
                         let entityState = World.getEntityState entity world
                         (entityState, world)
@@ -89,14 +90,18 @@ module WorldFacetModule =
                 let entityState = { entityState with FacetsNp = List.remove ((=) facet) entityState.FacetsNp }
                 let fieldNames = World.getEntityFieldDefinitionNamesToDetach entityState facet
                 Reflection.detachFieldsViaNames fieldNames entityState // hacky copy elided
-                let world =
-                    match optEntity with
-                    | Some entity -> World.setEntityState entityState entity world
-                    | None -> world
-                Right (entityState, world)
+                match optEntity with
+                | Some entity ->
+                    let world = World.setEntityStateWithoutEvent entityState entity world
+                    let world = World.updateEntityInEntityTree oldEntityState.Omnipresent oldEntityState.Position oldEntityState.Size entity world
+                    let world = World.publishEntityChange entityState entity oldWorld world
+                    Right (World.getEntityState entity world, world)
+                | None -> Right (entityState, world)
             | None -> Left ^ "Failure to remove facet '" + facetName + "' from entity."
 
         static member private tryAddFacet facetName (entityState : EntityState) optEntity world =
+            let oldEntityState = entityState
+            let oldWorld = world
             match World.tryGetFacet facetName world with
             | Right facet ->
                 if World.isFacetCompatibleWithEntity world.Components.EntityDispatchers facet entityState then
@@ -105,10 +110,11 @@ module WorldFacetModule =
                     Reflection.attachFields facet entityState // hacky copy elided
                     match optEntity with
                     | Some entity ->
-                        let world = World.setEntityState entityState entity world
+                        let world = World.setEntityStateWithoutEvent entityState entity world
+                        let world = World.updateEntityInEntityTree oldEntityState.Omnipresent oldEntityState.Position oldEntityState.Size entity world
+                        let world = World.publishEntityChange entityState entity oldWorld world
                         let world = facet.Register entity world
-                        let entityState = World.getEntityState entity world
-                        Right (entityState, world)
+                        Right (World.getEntityState entity world, world)
                     | None -> Right (entityState, world)
                 else Left ^ "Facet '" + Reflection.getTypeName facet + "' is incompatible with entity '" + entityState.Name + "'."
             | Left error -> Left error

@@ -216,6 +216,7 @@ and EntityDispatcher () =
          define? Rotation 0.0f
          define? Visible true
          define? ViewType Relative
+         define? Omnipresent false
          define? PublishChanges true
          define? Persistent true]
 
@@ -328,6 +329,7 @@ and [<CLIMutable; StructuralEquality; NoComparison>] EntityState =
       Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
       Visible : bool
       ViewType : ViewType
+      Omnipresent : bool
       PublishChanges : bool
       Persistent : bool
       CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
@@ -544,6 +546,7 @@ and [<ReferenceEquality>] internal WorldState =
           OverlayFilePath : string
           Camera : Camera
           OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
+          EntityTree : MutantCache<World, Entity QuadTree>
           UserState : obj }
 
 /// The world, in a functional programming sense. Hosts the game object, the dependencies
