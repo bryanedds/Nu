@@ -32,6 +32,10 @@ module Program =
     This is not a perfect, all-powerful approach, but it will have to suffice given current
     technology limitations. *)
 
+    (* NOTE - On having huge, populated worlds in Nu...
+    
+    TODO: write about choke points and beacons with quarantining... *)
+
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
     scaled to a back-buffer of a varying size, render each component unscaled to an off-screen
     buffer of a static size and then blit that with scaling to the back-buffer. NOTE: this only
