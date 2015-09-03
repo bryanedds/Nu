@@ -129,6 +129,16 @@ module WorldEntityModule =
                 else world
             else failwith ^ "Adding an entity that the world already contains at address '" + acstring entity.EntityAddress + "'."
 
+        /// Remove an entity in the world. Can be dangerous if existing in-flight publishing depends on the entity's
+        /// existence. Use with caution.
+        static member internal removeEntity entity world =
+            let world = World.publish () (Events.EntityRemoving ->- entity) entity world
+            if World.containsEntity entity world then
+                let world = World.unregisterEntity entity world
+                let world = World.removeEntityFromEntityTree entity world
+                World.setOptEntityStateWithoutEvent None entity world
+            else world
+
         static member internal getEntityFacetNamesReflectively entityState =
             List.map Reflection.getTypeName entityState.FacetsNp
 
@@ -141,46 +151,40 @@ module WorldEntityModule =
             let entityStateMap = World.getEntityStateMap group world
             Seq.map (fun (kvp : KeyValuePair<string, _>) -> gtoe group kvp.Key) entityStateMap
 
-        /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight
-        /// publishing depends on the entity's existence. Use with caution.
+        /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight publishing depends on
+        /// the entity's existence. Use with caution.
         static member destroyEntityImmediate entity world =
-            let world = World.publish () (Events.EntityRemoving ->- entity) entity world
-            if World.containsEntity entity world then
-                let world = World.unregisterEntity entity world
-                let world = World.removeEntityFromEntityTree entity world
-                World.setOptEntityStateWithoutEvent None entity world
-            else world
+            World.removeEntity entity world
 
-        /// Destroy an entity in the world on the next tick. Use this rather than
-        /// destroyEntityImmediate unless you need the latter's specific behavior.
+        /// Destroy an entity in the world on the next tick. Use this rather than destroyEntityImmediate unless you
+        /// need the latter's specific behavior.
         static member destroyEntity entity world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
                   Operation = fun world -> World.destroyEntityImmediate entity world }
             World.addTasklet tasklet world
 
-        /// Destroy multiple entities in the world immediately. Can be dangerous if existing
-        /// in-flight publishing depends on any of the entities' existences. Use with caution.
+        /// Destroy multiple entities in the world immediately. Can be dangerous if existing in-flight publishing
+        /// depends on any of the entities' existences. Use with caution.
         static member destroyEntitiesImmediate entities world =
             List.foldBack
                 (fun entity world -> World.destroyEntityImmediate entity world)
                 (List.ofSeq entities)
                 world
 
-        /// Destroy multiple entities in the world. Use this rather than destroyEntitiesImmediate
-        /// unless you need the latter's specific behavior.
+        /// Destroy multiple entities in the world. Use this rather than destroyEntitiesImmediate unless you need the
+        /// latter's specific behavior.
         static member destroyEntities entities world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
                   Operation = fun world -> World.destroyEntitiesImmediate entities world }
             World.addTasklet tasklet world
 
-        /// Reassign an entity's identity and / or group. Note that since this destroys the
-        /// reassigned entity immediately, you should not call this inside an event handler that
-        /// involves the reassigned entity itself.
+        /// Reassign an entity's identity and / or group. Note that since this destroys the reassigned entity
+        /// immediately, you should not call this inside an event handler that involves the reassigned entity itself.
         static member reassignEntity entity optName group world =
             let entityState = World.getEntityState entity world
-            let world = World.destroyEntityImmediate entity world
+            let world = World.removeEntity entity world
             let id = Core.makeId ()
             let name = match optName with Some name -> name | None -> acstring id
             let entityState = { entityState with Id = id; Name = name }
