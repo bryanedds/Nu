@@ -93,7 +93,7 @@ module WorldFacetModule =
                 match optEntity with
                 | Some entity ->
                     let world = World.setEntityStateWithoutEvent entityState entity world
-                    let world = World.updateEntityInEntityTree oldEntityState.Position oldEntityState.Size entity world
+                    let world = World.updateEntityInEntityTree oldEntityState.Omnipresent oldEntityState.Position oldEntityState.Size entity world
                     let world = World.publishEntityChange entityState entity oldWorld world
                     Right (World.getEntityState entity world, world)
                 | None -> Right (entityState, world)
@@ -111,7 +111,7 @@ module WorldFacetModule =
                     match optEntity with
                     | Some entity ->
                         let world = World.setEntityStateWithoutEvent entityState entity world
-                        let world = World.updateEntityInEntityTree oldEntityState.Position oldEntityState.Size entity world
+                        let world = World.updateEntityInEntityTree oldEntityState.Omnipresent oldEntityState.Position oldEntityState.Size entity world
                         let world = World.publishEntityChange entityState entity oldWorld world
                         let world = facet.Register entity world
                         Right (World.getEntityState entity world, world)

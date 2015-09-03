@@ -292,7 +292,7 @@ module WorldModule =
                                     let facetNames = World.getEntityFacetNamesReflectively entityState
                                     Overlayer.applyOverlay6 overlayName overlayName facetNames entityState oldOverlayer world.State.Overlayer
                                     let world = World.setEntityStateWithoutEvent entityState entity world
-                                    World.updateEntityInEntityTree oldEntityState.Position oldEntityState.Size entity world
+                                    World.updateEntityInEntityTree oldEntityState.Omnipresent oldEntityState.Position oldEntityState.Size entity world
                                 | Left error -> note ^ "There was an issue in applying a reloaded overlay: " + error; world
                             | None -> world)
                         world
