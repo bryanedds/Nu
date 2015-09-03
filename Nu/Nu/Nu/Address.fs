@@ -19,14 +19,14 @@ type [<CustomEquality; NoComparison>] NameKey =
 
     interface NameKey IEquatable with
         member this.Equals that =
-            // OPTIMIZATION: ($) is faster than (=) here
-            this.Name $ that.Name
+            // OPTIMIZATION: faster than (=) here
+            this.Name.Equals that.Name
 
     override this.Equals that =
         match that with
         | :? NameKey as that ->
-            // OPTIMIZATION: ($) is faster than (=) here
-            this.Name $ that.Name
+            // OPTIMIZATION: faster than (=) here
+            this.Name.Equals that.Name
         | _ -> false
 
     override this.GetHashCode () =
