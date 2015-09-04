@@ -612,24 +612,51 @@ module World =
         let world = entityStateAdder entityState entity world
         publishEntityChange entityState entity oldWorld world
 
+    let internal updateEntityStateWithoutEvent updater entity world =
+        let entityState = getEntityState entity world
+        let entityState = updater entityState
+        setEntityStateWithoutEvent entityState entity world
+
     let internal updateEntityState updater entity world =
         let entityState = getEntityState entity world
         let entityState = updater entityState
         setEntityState entityState entity world
 
-    let internal updateEntityInEntityTree oldOmnipresent oldPosition oldSize entity world =
+    let internal updateEntityInEntityTree entity oldWorld world =
+
+        // TODO: put this in Math or something...
+        let getMaxBounds entityState =
+            // TODO: get up off yer arse and write an algorithm for tight-fitting bounds...
+            let center = entityState.Position + entityState.Size * 0.5f
+            let corner = entityState.Position + entityState.Size
+            let centerToCorner = corner - center
+            let quaternion = Quaternion.FromAxisAngle (Vector3.UnitZ, Constants.Math.DegreesToRadiansF * 45.0f)
+            let newSizeOver2 = Vector2 (Vector2.Transform (centerToCorner, quaternion)).Y
+            let newPosition = center - newSizeOver2
+            let newSize = newSizeOver2 * 2.0f
+            (newPosition, newSize)
+
         let entityTree =
             MutantCache.mutateMutant
                 (fun () -> rebuildEntityTree world)
                 (fun entityTree ->
+                    let oldEntityState = getEntityState entity oldWorld
+                    let oldEntityMaxBounds = getMaxBounds oldEntityState
                     let entityState = getEntityState entity world
+                    let entityMaxBounds = getMaxBounds entityState
                     QuadTree.updateElement
-                        oldOmnipresent oldPosition oldSize
-                        entityState.Omnipresent entityState.Position entityState.Size
+                        oldEntityState.Omnipresent (fst oldEntityMaxBounds) (snd oldEntityMaxBounds)
+                        entityState.Omnipresent (fst entityMaxBounds) (snd entityMaxBounds)
                         entity entityTree
                     entityTree)
                 world.State.EntityTree
         { world with State = { world.State with EntityTree = entityTree }}
+
+    let internal updateEntityStatePlus updater entity world =
+        let oldWorld = world
+        let world = updateEntityStateWithoutEvent updater entity world
+        let world = updateEntityInEntityTree entity oldWorld world
+        publishEntityChange (getEntityState entity world) entity oldWorld world
 
     let internal removeEntityFromEntityTree entity world =
         let entityTree =
