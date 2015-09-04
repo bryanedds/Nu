@@ -288,11 +288,11 @@ module WorldModule =
                                 Overlayer.applyOverlayToFacetNames overlayName overlayName entityState oldOverlayer world.State.Overlayer
                                 match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
                                 | Right (entityState, world) ->
-                                    let oldEntityState = { entityState with Id = entityState.Id } // hacky copy
-                                    let facetNames = World.getEntityFacetNamesReflectively entityState
+                                    let oldWorld = world
+                                    let facetNames = World.getEntityFacetNamesReflectively entityState // hacky copy elided
                                     Overlayer.applyOverlay6 overlayName overlayName facetNames entityState oldOverlayer world.State.Overlayer
                                     let world = World.setEntityStateWithoutEvent entityState entity world
-                                    World.updateEntityInEntityTree oldEntityState.Omnipresent oldEntityState.Position oldEntityState.Size entity world
+                                    World.updateEntityInEntityTree entity oldWorld world
                                 | Left error -> note ^ "There was an issue in applying a reloaded overlay: " + error; world
                             | None -> world)
                         world
