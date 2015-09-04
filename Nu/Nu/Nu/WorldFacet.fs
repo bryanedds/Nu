@@ -75,7 +75,6 @@ module WorldFacetModule =
                 finalFieldDefinitionNameCounts
 
         static member private tryRemoveFacet facetName entityState optEntity world =
-            let oldEntityState = entityState
             let oldWorld = world
             match List.tryFind (fun facet -> Reflection.getTypeName facet = facetName) entityState.FacetsNp with
             | Some facet ->
@@ -93,14 +92,13 @@ module WorldFacetModule =
                 match optEntity with
                 | Some entity ->
                     let world = World.setEntityStateWithoutEvent entityState entity world
-                    let world = World.updateEntityInEntityTree oldEntityState.Omnipresent oldEntityState.Position oldEntityState.Size entity world
+                    let world = World.updateEntityInEntityTree entity oldWorld world
                     let world = World.publishEntityChange entityState entity oldWorld world
                     Right (World.getEntityState entity world, world)
                 | None -> Right (entityState, world)
             | None -> Left ^ "Failure to remove facet '" + facetName + "' from entity."
 
         static member private tryAddFacet facetName (entityState : EntityState) optEntity world =
-            let oldEntityState = entityState
             let oldWorld = world
             match World.tryGetFacet facetName world with
             | Right facet ->
@@ -111,7 +109,7 @@ module WorldFacetModule =
                     match optEntity with
                     | Some entity ->
                         let world = World.setEntityStateWithoutEvent entityState entity world
-                        let world = World.updateEntityInEntityTree oldEntityState.Omnipresent oldEntityState.Position oldEntityState.Size entity world
+                        let world = World.updateEntityInEntityTree entity oldWorld world
                         let world = World.publishEntityChange entityState entity oldWorld world
                         let world = facet.Register entity world
                         Right (World.getEntityState entity world, world)
