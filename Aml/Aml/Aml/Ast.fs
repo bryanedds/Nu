@@ -402,7 +402,7 @@ and [<NoEquality; NoComparison>] Env =
           EnvDebugInfo : DebugInfo
           EnvUsingFiles : string Set
           EnvInterventionBranchLists : InterveneBranch list list
-          EnvOptLanguageModule : ILanguageModule option
+          EnvOptLanguagePlugin : ILanguagePlugin option
           EnvOptWorkBench : obj option
           EnvPath : string
           EnvRecordingCount : int
@@ -412,9 +412,9 @@ and [<NoEquality; NoComparison>] Env =
 and ISpecialContent =
     abstract ToValue : unit -> Expr
 
-/// Interface for a language module.
-and ILanguageModule =
-    /// Try to initialize the language module.
+/// Interface for a language plugin.
+and ILanguagePlugin =
+    /// Try to initialize the language plugin.
     abstract TryInitialize : Env -> Env option
     /// Convert a special value to a special object.
     abstract SpecialValueToSpecialObject : Expr -> Env -> Expr

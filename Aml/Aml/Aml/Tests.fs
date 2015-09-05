@@ -487,15 +487,15 @@ module Tests =
 
     let [<Fact>] interveneTest () = test {
         Expected = "0"
-        Actual = "(intervene {} (:v/languageModule 0))" }
+        Actual = "(intervene {} (:v/languagePlugin 0))" }
 
     let [<Fact>] intervene2Test () = test {
         Expected = "0"
-        Actual = "(let (f () {}) (intervene (f) (:v/languageModule 0)))" }
+        Actual = "(let (f () {}) (intervene (f) (:v/languagePlugin 0)))" }
 
     let [<Fact>] intervene3Test () = test {
-        Expected = "(violation :v/languageModule/missingLanguageModule)"
-        Actual = "(intervene {} (:v/languageModule {}))" }
+        Expected = "(violation :v/languagePlugin/missingLanguagePlugin)"
+        Actual = "(intervene {} (:v/languagePlugin {}))" }
 
     let [<Fact>] interveneHideTest () = test {
         Expected = "0"
