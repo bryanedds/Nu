@@ -35,6 +35,7 @@ module WorldScreenModule =
         member this.SetPersistent value world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) this world
         member this.GetXtension world = (World.getScreenState this world).Xtension
         member this.UpdateXtension updater world = World.updateScreenState (fun screenState -> { screenState with Xtension = updater screenState.Xtension}) this world
+        member this.GetEntityTree world = (World.getScreenState this world).EntityTree
 
         /// Get an xtension field by name.
         member this.GetXField name world =

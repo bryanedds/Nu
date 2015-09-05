@@ -8,36 +8,53 @@ open System.Diagnostics
 [<AutoOpen>]
 module Log =
 
+    let private getUtcNowStr () =
+        let now = DateTime.UtcNow
+        now.ToString "yyyy-MM-dd HH\:mm\:ss.ffff"
+
     /// Log a message with a Trace.WriteLine.
     let note message =
-        Trace.WriteLine message
-
-    /// Log a message with a Trace.Fail and call to note.
-    let trace message =
-        Trace.Fail message
-        note message
-
-    /// Conditional trace call where condition is eagerly evaluted.
-    let traceIf bl message =
-        if bl then trace message
+        Trace.WriteLine (getUtcNowStr () + "|Note|" + message)
 
     /// Log a message with Debug.Fail and call to note.
     let debug message =
 #if DEBUG
-        Debug.Fail message
-        note message
+        Debug.Fail (getUtcNowStr () + "|Debug|" + message)
 #else
-        let _ = message
-        ()
+        ignore message
 #endif
 
     /// Conditional debug call where condition is lazily evaluated.
     let debugIf predicate message =
 #if DEBUG
-        if predicate () then
-            Debug.Fail message
-            note message
+        if predicate () then debug message
 #else
-        let _ = (predicate, message)
-        ()
+        ignore (predicate, message)
 #endif
+
+    /// Log a message with a Trace.Fail and call to note.
+    let trace message =
+        Trace.Fail (getUtcNowStr () + "|Trace|" + message)
+
+    /// Conditional trace call where condition is eagerly evaluted.
+    let traceIf bl message =
+        if bl then trace message
+
+    /// Initialize logging.
+    let init (optFileName : string option) =
+
+        // add listeners
+        let listeners =
+#if DEBUG
+            Debug.Listeners
+#else
+            Trace.Listeners
+#endif
+        listeners.Add (new TextWriterTraceListener (Console.Out)) |> ignore
+        match optFileName with
+        | Some fileName -> listeners.Add (new TextWriterTraceListener (fileName)) |> ignore
+        | None -> ()
+
+        // automatically flush all logs
+        Debug.AutoFlush <- true
+        Trace.AutoFlush <- true
