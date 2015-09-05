@@ -478,7 +478,8 @@ module GameplayDispatcherModule =
                                 do! update ^ cancelNavigation Simulants.Player }}
                     do! update ^ Simulants.HudSaveGame.SetEnabled true }
                 let observation =
-                    observe (Events.Click ->- Simulants.HudHalt) Simulants.Gameplay |>
+                    Simulants.Gameplay |>
+                    observe (Events.Click ->- Simulants.HudHalt) |>
                     sum Events.Update |>
                     until (Events.Deselect ->- Simulants.Gameplay)
                 runAssumingCascade chain observation world |> snd
