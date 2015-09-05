@@ -36,18 +36,22 @@ module ScreenState =
     /// Make a screen state value.
     let make dispatcher optName =
         let id = Core.makeId ()
-        { Id = id
-          Name = match optName with Some name -> name | None -> acstring id
-          TransitionStateNp = IdlingState
-          TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
-          Incoming = TransitionDescriptor.make Incoming
-          Outgoing = TransitionDescriptor.make Outgoing
-          PublishChanges = true
-          Persistent = true
-          CreationTimeStampNp = Core.getTimeStamp ()
-          DispatcherNp = dispatcher
-          Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
-      
+        let screenState =
+            { Id = id
+              Name = match optName with Some name -> name | None -> acstring id
+              TransitionStateNp = IdlingState
+              TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
+              Incoming = TransitionDescriptor.make Incoming
+              Outgoing = TransitionDescriptor.make Outgoing
+              PublishChanges = true
+              Persistent = true
+              CreationTimeStampNp = Core.getTimeStamp ()
+              DispatcherNp = dispatcher
+              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }
+              EntityTree = Unchecked.defaultof<Entity QuadTree MutantCache>}
+        let quadTree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
+        { screenState with EntityTree = MutantCache.make Operators.id quadTree }
+
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module GroupState =
 
@@ -120,8 +124,8 @@ module World =
 
     (* F# reach-arounds... *)
 
-    let mutable internal rebuildEntityTree =
-        Unchecked.defaultof<World -> Entity QuadTree>
+    let mutable rebuildEntityTree =
+        Unchecked.defaultof<Screen -> World -> Entity QuadTree>
 
     (* Publishing *)
 
@@ -572,6 +576,21 @@ module World =
             | None -> world
         | _ -> failwith ^ "Invalid entity address '" + acstring entity.EntityAddress + "'."
 
+    let internal getEntityStateMaxBounds entityState =
+        // TODO: get up off yer arse and write an algorithm for tight-fitting bounds...
+        match entityState.Rotation with
+        | 0.0f ->
+            Vector4 (entityState.Position.X, entityState.Position.Y, entityState.Position.X + entityState.Size.X, entityState.Position.Y + entityState.Size.Y)
+        | _ ->
+            let center = entityState.Position + entityState.Size * 0.5f
+            let corner = entityState.Position + entityState.Size
+            let centerToCorner = corner - center
+            let quaternion = Quaternion.FromAxisAngle (Vector3.UnitZ, Constants.Math.DegreesToRadiansF * 45.0f)
+            let newSizeOver2 = Vector2 (Vector2.Transform (centerToCorner, quaternion)).Y
+            let newPosition = center - newSizeOver2
+            let newSize = newSizeOver2 * 2.0f
+            Vector4 (newPosition.X, newPosition.Y, newPosition.X + newSize.X, newPosition.Y + newSize.Y)
+
     let internal publishEntityChange entityState (entity : Entity) oldWorld world =
         if entityState.PublishChanges then
             publish
@@ -622,63 +641,9 @@ module World =
         let entityState = updater entityState
         setEntityState entityState entity world
 
-    let internal updateEntityInEntityTree entity oldWorld world =
-
-        // TODO: put this in Math or something...
-        let getMaxBounds entityState =
-            // TODO: get up off yer arse and write an algorithm for tight-fitting bounds...
-            let center = entityState.Position + entityState.Size * 0.5f
-            let corner = entityState.Position + entityState.Size
-            let centerToCorner = corner - center
-            let quaternion = Quaternion.FromAxisAngle (Vector3.UnitZ, Constants.Math.DegreesToRadiansF * 45.0f)
-            let newSizeOver2 = Vector2 (Vector2.Transform (centerToCorner, quaternion)).Y
-            let newPosition = center - newSizeOver2
-            let newSize = newSizeOver2 * 2.0f
-            (newPosition, newSize)
-
-        let entityTree =
-            MutantCache.mutateMutant
-                (fun () -> rebuildEntityTree world)
-                (fun entityTree ->
-                    let oldEntityState = getEntityState entity oldWorld
-                    let oldEntityMaxBounds = getMaxBounds oldEntityState
-                    let entityState = getEntityState entity world
-                    let entityMaxBounds = getMaxBounds entityState
-                    QuadTree.updateElement
-                        oldEntityState.Omnipresent (fst oldEntityMaxBounds) (snd oldEntityMaxBounds)
-                        entityState.Omnipresent (fst entityMaxBounds) (snd entityMaxBounds)
-                        entity entityTree
-                    entityTree)
-                world.State.EntityTree
-        { world with State = { world.State with EntityTree = entityTree }}
-
-    let internal updateEntityStatePlus updater entity world =
-        let oldWorld = world
-        let world = updateEntityStateWithoutEvent updater entity world
-        let world = updateEntityInEntityTree entity oldWorld world
-        publishEntityChange (getEntityState entity world) entity oldWorld world
-
-    let internal removeEntityFromEntityTree entity world =
-        let entityTree =
-            MutantCache.mutateMutant
-                (fun () -> rebuildEntityTree world)
-                (fun entityTree ->
-                    let entityState = getEntityState entity world
-                    QuadTree.removeElement entityState.Omnipresent entityState.Position entityState.Size entity entityTree
-                    entityTree)
-                world.State.EntityTree
-        { world with State = { world.State with EntityTree = entityTree }}
-
-    let internal addEntityToEntityTree entity world =
-        let entityTree =
-            MutantCache.mutateMutant
-                (fun () -> rebuildEntityTree world)
-                (fun entityTree ->
-                    let entityState = getEntityState entity world
-                    QuadTree.addElement entityState.Omnipresent entityState.Position entityState.Size entity entityTree
-                    entityTree)
-                world.State.EntityTree
-        { world with State = { world.State with EntityTree = entityTree }}
+    let getEntityMaxBounds entity world =
+        let entityState = getEntityState entity world
+        getEntityStateMaxBounds entityState
 
     (* GroupState *)
 
@@ -837,6 +802,62 @@ module World =
         let screenState = getScreenState screen world
         let screenState = updater screenState
         setScreenState screenState screen world
+
+    let internal updateEntityInEntityTree entity oldWorld world =
+        let screen = entity |> etog |> gtos
+        let screenState = getScreenState screen world
+        let entityTree =
+            MutantCache.mutateMutant
+                (fun () -> rebuildEntityTree screen world)
+                (fun entityTree ->
+                    let oldEntityState = getEntityState entity oldWorld
+                    let oldEntityMaxBounds = getEntityStateMaxBounds oldEntityState
+                    let entityState = getEntityState entity world
+                    let entityMaxBounds = getEntityStateMaxBounds entityState
+                    QuadTree.updateElement
+                        (oldEntityState.Omnipresent || oldEntityState.ViewType = Absolute) oldEntityMaxBounds
+                        (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds
+                        entity entityTree
+                    entityTree)
+                screenState.EntityTree
+        let screenState = { screenState with EntityTree = entityTree }
+        setScreenStateWithoutEvent screenState screen world
+
+    let internal removeEntityFromEntityTree entity world =
+        let screen = entity |> etog |> gtos
+        let screenState = getScreenState screen world
+        let entityTree =
+            MutantCache.mutateMutant
+                (fun () -> rebuildEntityTree screen world)
+                (fun entityTree ->
+                    let entityState = getEntityState entity world
+                    let entityMaxBounds = getEntityStateMaxBounds entityState
+                    QuadTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
+                    entityTree)
+                screenState.EntityTree
+        let screenState = { screenState with EntityTree = entityTree }
+        setScreenState screenState screen world
+
+    let internal addEntityToEntityTree entity world =
+        let screen = entity |> etog |> gtos
+        let screenState = getScreenState screen world
+        let entityTree =
+            MutantCache.mutateMutant
+                (fun () -> rebuildEntityTree screen world)
+                (fun entityTree ->
+                    let entityState = getEntityState entity world
+                    let entityMaxBounds = getEntityStateMaxBounds entityState
+                    QuadTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
+                    entityTree)
+                screenState.EntityTree
+        let screenState = { screenState with EntityTree = entityTree }
+        setScreenState screenState screen world
+
+    let internal updateEntityStatePlus updater entity world =
+        let oldWorld = world
+        let world = updateEntityStateWithoutEvent updater entity world
+        let world = updateEntityInEntityTree entity oldWorld world
+        publishEntityChange (getEntityState entity world) entity oldWorld world
 
     (* GameState *)
 

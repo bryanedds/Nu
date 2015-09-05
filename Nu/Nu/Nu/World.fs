@@ -633,7 +633,6 @@ module WorldModule =
                       OverlayFilePath = Constants.Assets.OverlayFilePath
                       Camera = camera
                       OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
-                      EntityTree = Unchecked.defaultof<Entity QuadTree MutantCache>
                       UserState = userState }
 
                 // make the simulant states
@@ -649,9 +648,6 @@ module WorldModule =
 
                 // initialize OptEntityCache
                 let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}
-
-                // initialize EntityTree
-                let world = { world with State = { world.State with EntityTree = MutantCache.make QuadTree.clone (QuadTree.make Constants.Engine.EntityTreeDepth (Constants.Engine.EntityTreeSize * -0.5f) Constants.Engine.EntityTreeSize) }}
 
                 // and finally, register the game
                 let world = World.registerGame world
@@ -709,7 +705,6 @@ module WorldModule =
                   Overlayer = { Overlays = XmlDocument () }
                   Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault) }
                   OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
-                  EntityTree = Unchecked.defaultof<Entity QuadTree MutantCache>
                   UserState = userState }
 
             // make the simulant states
@@ -725,9 +720,6 @@ module WorldModule =
 
             // initialize OptEntityCache
             let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}
-
-            // initialize EntityTree
-            let world = { world with State = { world.State with EntityTree = MutantCache.make QuadTree.clone (QuadTree.make Constants.Engine.EntityTreeDepth (Constants.Engine.EntityTreeSize * -0.5f) Constants.Engine.EntityTreeSize) }}
 
             // and finally, register the game
             World.registerGame world
@@ -746,12 +738,17 @@ module WorldModule =
             // ensure the current culture is invariate
             System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.InvariantCulture
 
+            // init logging
+            Log.init ^ Some "Log.txt"
+
             // init type converters
             Math.initTypeConverters ()
 
             // init F# reach-arounds
-            World.rebuildEntityTree <- fun world ->
-                let tree = QuadTree.make Constants.Engine.EntityTreeDepth (Constants.Engine.EntityTreeSize * -0.5f) Constants.Engine.EntityTreeSize
-                let entities = World.proxyEntities1 world
-                for entity in entities do QuadTree.addElement false (entity.GetPosition world) (entity.GetSize world) entity tree
+            World.rebuildEntityTree <- fun screen world ->
+                let tree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
+                let entities = screen |> flip World.proxyGroups world |> Seq.map (flip World.proxyEntities world) |> Seq.concat
+                for entity in entities do
+                    let entityMaxBounds = World.getEntityMaxBounds entity world
+                    QuadTree.addElement false entityMaxBounds entity tree
                 tree

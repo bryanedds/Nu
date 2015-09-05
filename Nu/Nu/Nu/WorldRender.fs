@@ -36,14 +36,13 @@ type [<ReferenceEquality>] RendererSubsystem =
         match World.getOptSelectedScreen world with
         | Some selectedScreen ->
             if World.containsScreen selectedScreen world then
-                let groups = World.proxyGroups selectedScreen world
+                let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
+                let entityTree = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTree world)
+                let entities = QuadTree.getElementsNearBounds viewBounds entityTree
                 let descriptors =
-                    Seq.map (fun group -> World.proxyEntities group world) groups |>
-                    Seq.concat |>
-                    Seq.filter (fun entity-> entity.GetVisible world) |>
-                    Seq.map (fun entity -> World.getEntityRenderDescriptors entity world) |>
-                    Seq.concat |>
-                    List.ofSeq
+                    entities |>
+                    List.choose (fun entity -> if entity.GetVisible world then Some ^ World.getEntityRenderDescriptors entity world else None) |>
+                    List.concat
                 match selectedScreen.GetTransitionStateNp world with
                 | IncomingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors (World.getCamera world) selectedScreen (selectedScreen.GetIncoming world) world
                 | OutgoingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors (World.getCamera world) selectedScreen (selectedScreen.GetOutgoing world) world
