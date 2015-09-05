@@ -637,7 +637,7 @@ module Evaluator =
 
     /// Apply a special builtin operation.
     and applySpecialBuiltin name args argCount env =
-        match env.EnvOptLanguageModule with
+        match env.EnvOptLanguagePlugin with
         | Some lm -> lm.ApplySpecialBuiltin name args argCount env
         | None -> makeEvalViolation ":v/eval/invalidBuiltinOperator" "Built-in operator not found." env
 
@@ -881,9 +881,9 @@ module Evaluator =
 
     /// Apply a special selector.
     and applySpecialSelector key target env =
-        match env.EnvOptLanguageModule with
+        match env.EnvOptLanguagePlugin with
         | Some lm -> lm.ApplySpecialSelector key target env
-        | None -> makeEvalViolation ":v/contract/missingLanguageModule" "Cannot evaluate a special selector without a language module." env
+        | None -> makeEvalViolation ":v/contract/missingLanguagePlugin" "Cannot evaluate a special selector without a language plugin." env
 
     /// Apply a composite selector.
     and applyCompositeSelector key selectorType members env =
@@ -969,22 +969,22 @@ module Evaluator =
 
     /// Evaluate a special value.
     and evalSpecialValue specialValue specialValueExpr env =
-        match env.EnvOptLanguageModule with
+        match env.EnvOptLanguagePlugin with
         | Some lm when lm.Name = specialValue.SVLanguageName ->
             let specialObject = lm.SpecialValueToSpecialObject specialValueExpr env
             match specialObject with
             | Violation _ as v -> forwardEvalViolation v env
             | SpecialObject _ as s -> evalExpr s env
             | _ -> failwith "Unexpected match failure in 'Aml.Evaluator.evalSpecialValue'."
-        | Some _ -> makeEvalViolation ":v/languageModule/mismatchedLanguageModule" "Wrong language module for special value evaluation." env
-        | None -> makeEvalViolation ":v/languageModule/missingLanguageModule" "Cannot evaluate a special value without a language module." env
+        | Some _ -> makeEvalViolation ":v/languagePlugin/mismatchedLanguagePlugin" "Wrong language plugin for special value evaluation." env
+        | None -> makeEvalViolation ":v/languagePlugin/missingLanguagePlugin" "Cannot evaluate a special value without a language plugin." env
 
     /// Evaluate a special object.
     and evalSpecialObject specialObject specialObjectExpr env =
-        match env.EnvOptLanguageModule with
+        match env.EnvOptLanguagePlugin with
         | Some lm when lm.Guid = specialObject.SOLanguageGuid -> lm.EvalSpecialObject specialObjectExpr env
-        | Some _ -> makeEvalViolation ":v/languageModule/mismatchedLanguageModule" "Wrong language module for special object evaluation." env
-        | None -> makeEvalViolation ":v/languageModule/missingLanguageModule" "Cannot evaluate a special object without a language module." env
+        | Some _ -> makeEvalViolation ":v/languagePlugin/mismatchedLanguagePlugin" "Wrong language plugin for special object evaluation." env
+        | None -> makeEvalViolation ":v/languagePlugin/missingLanguagePlugin" "Cannot evaluate a special object without a language plugin." env
 
     /// Evaluate a violation.
     and evalViolation violation vioExpr env =
@@ -997,9 +997,9 @@ module Evaluator =
 
     /// Evaluate a prefixed expressions.
     and evalPrefixed (_ : PrefixedRecord) pfxExpr env =
-        match env.EnvOptLanguageModule with
+        match env.EnvOptLanguagePlugin with
         | Some lm -> lm.EvalPrefixed pfxExpr env
-        | _ -> makeEvalViolation ":v/languageModule/missingLanguageModule" "Cannot evaluate prefixed expressions without a language module." env
+        | _ -> makeEvalViolation ":v/languagePlugin/missingLanguagePlugin" "Cannot evaluate prefixed expressions without a language plugin." env
 
     /// Evaluate an operation.
     and evalOperation (exprs : Expr list) exprCount env =
@@ -1370,27 +1370,27 @@ module Evaluator =
 
     /// Evaluate an Aml language.
     and evalUsingLanguage usingLanguage env =
-        match env.EnvOptLanguageModule with
-        // TODO: consider making a violation if a different LM than a current one is loaded
+        match env.EnvOptLanguagePlugin with
+        // TODO: consider making a violation if a different LP than a current one is loaded
         | Some _ -> makeEvalUnit env
         | None ->
             try let assembly = Reflection.Assembly.LoadFrom usingLanguage.ULPath
                 let instance = assembly.CreateInstance usingLanguage.ULType
-                if instance = null then makeEvalViolation ":v/languageModule/creationFailure" ("Could not make language module '" + usingLanguage.ULType + "'.") env
+                if instance = null then makeEvalViolation ":v/languagePlugin/creationFailure" ("Could not make language plugin '" + usingLanguage.ULType + "'.") env
                 else
-                    let languageModule = instance :?> ILanguageModule
-                    let envLm = { env with EnvOptLanguageModule = Some languageModule }
-                    let optEnvLm = languageModule.TryInitialize envLm
+                    let languagePlugin = instance :?> ILanguagePlugin
+                    let envLm = { env with EnvOptLanguagePlugin = Some languagePlugin }
+                    let optEnvLm = languagePlugin.TryInitialize envLm
                     match optEnvLm with
                     | Some envLm -> makeEvalUnit envLm
-                    | None -> makeEvalViolation ":v/languageModule/creationFailure" ("Could not make language module '" + usingLanguage.ULType + "' due to duplicate declaration names.") env
+                    | None -> makeEvalViolation ":v/languagePlugin/creationFailure" ("Could not make language plugin '" + usingLanguage.ULType + "' due to duplicate declaration names.") env
             with exn -> makeEvalExceptionViolation exn env
 
     /// Evaluate a special series.
     and evalSpecialSeries specialSeries env =
-        match env.EnvOptLanguageModule with
+        match env.EnvOptLanguagePlugin with
         | Some lm -> lm.EvalSpecialSeries specialSeries env
-        | _ -> makeEvalViolation ":v/languageModule/missingLanguageModule" "Cannot evaluate special series without a language module." env
+        | _ -> makeEvalViolation ":v/languagePlugin/missingLanguagePlugin" "Cannot evaluate special series without a language plugin." env
 
     /// Evaluate an Aml expression structure.
     and evalExpr expr env =
