@@ -184,7 +184,7 @@ type [<CustomEquality; NoComparison>] NavigationNode =
         | _ -> false
 
     override this.GetHashCode () =
-        hash this.PositionM
+        this.PositionM.GetHashCode ()
 
 type WalkState =
     | WalkFinished
