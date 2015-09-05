@@ -29,8 +29,9 @@ module Constants =
         let GroupPublishingPriority = ScreenPublishingPriority * 0.5f
         let EntityPublishingPriority = GroupPublishingPriority * 0.5f
         let DefaultEntitySize = Vector2 64.0f
-        let EntityTreeDepth = 5
+        let EntityTreeDepth = 8
         let EntityTreeSize = Vector2 (single ^ Math.Pow (2.0, 18.0))
+        let EntityTreeBounds = Vector4 (EntityTreeSize.X * -0.5f, EntityTreeSize.Y * -0.5f, EntityTreeSize.X * 0.5f, EntityTreeSize.Y * 0.5f)
         let InvalidId = Guid.Empty
 
     [<RequireQualifiedAccess>]
