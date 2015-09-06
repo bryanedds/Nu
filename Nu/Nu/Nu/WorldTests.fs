@@ -20,7 +20,7 @@ module WorldTests =
     let [<Fact>] runWorldForOneFrameThenCleanUp () =
         World.init ()
         let world = World.makeEmpty ()
-        World.run4 SdlDeps.empty (Some 1) Running world
+        World.run4 (fun world -> World.getTickTime world < 1L) SdlDeps.empty Running world
 
     let [<Fact>] subscribeWorks () =
         World.init ()
