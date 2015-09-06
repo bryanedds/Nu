@@ -75,7 +75,6 @@ module WorldFacetModule =
                 finalFieldDefinitionNameCounts
 
         static member private tryRemoveFacet facetName entityState optEntity world =
-            let oldWorld = world
             match List.tryFind (fun facet -> Reflection.getTypeName facet = facetName) entityState.FacetsNp with
             | Some facet ->
                 let (entityState, world) =
@@ -91,16 +90,15 @@ module WorldFacetModule =
                 Reflection.detachFieldsViaNames fieldNames entityState // hacky copy elided
                 match optEntity with
                 | Some entity ->
-                    let updateWorld = fun world -> World.setEntityStateWithoutEvent entityState entity world
-                    let rebuildEntityTree = (fun () -> World.rebuildEntityTree (entity |> etog |> gtos) world) >> fun (world, quadTree) -> (updateWorld world, quadTree)
-                    let world = updateWorld world |> World.updateEntityInEntityTree rebuildEntityTree entity
+                    let oldWorld = world
+                    let world = World.setEntityStateWithoutEvent entityState entity world
+                    let world = World.updateEntityInEntityTree entity oldWorld world
                     let world = World.publishEntityChange entityState entity oldWorld world
                     Right (World.getEntityState entity world, world)
                 | None -> Right (entityState, world)
             | None -> Left ^ "Failure to remove facet '" + facetName + "' from entity."
 
         static member private tryAddFacet facetName (entityState : EntityState) optEntity world =
-            let oldWorld = world
             match World.tryGetFacet facetName world with
             | Right facet ->
                 if World.isFacetCompatibleWithEntity world.Components.EntityDispatchers facet entityState then
@@ -109,9 +107,9 @@ module WorldFacetModule =
                     Reflection.attachFields facet entityState // hacky copy elided
                     match optEntity with
                     | Some entity ->
-                        let updateWorld = fun world -> World.setEntityStateWithoutEvent entityState entity world
-                        let rebuildEntityTree = (fun () -> World.rebuildEntityTree (entity |> etog |> gtos) world) >> fun (world, quadTree) -> (updateWorld world, quadTree)
-                        let world = updateWorld world |> World.updateEntityInEntityTree rebuildEntityTree entity
+                        let oldWorld = world
+                        let world = World.setEntityStateWithoutEvent entityState entity world
+                        let world = World.updateEntityInEntityTree entity oldWorld world
                         let world = World.publishEntityChange entityState entity oldWorld world
                         let world = facet.Register entity world
                         Right (World.getEntityState entity world, world)
