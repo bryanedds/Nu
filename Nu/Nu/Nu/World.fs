@@ -464,33 +464,33 @@ module WorldModule =
 
         /// TODO: document!
         /// TODO: make optFrames implemented as a predicate.
-        static member runWithoutCleanUp handleUpdate handleRender sdlDeps optFrames liveness world =
+        static member runWithoutCleanUp runWhile handleUpdate handleRender sdlDeps liveness world =
             Sdl.runWithoutCleanUp 
+                runWhile
                 World.processInput
                 (World.processUpdate handleUpdate)
                 (World.processRender handleRender)
                 World.processPlay
                 sdlDeps
-                optFrames
                 liveness
                 world
 
         /// TODO: document!
-        static member run6 handleUpdate handleRender sdlDeps optFrames liveness world =
+        static member run6 runWhile handleUpdate handleRender sdlDeps liveness world =
             Sdl.run8
+                runWhile
                 World.processInput
                 (World.processUpdate handleUpdate)
                 (World.processRender handleRender)
                 World.processPlay
                 World.cleanUp
                 sdlDeps
-                optFrames
                 liveness
                 world
 
         /// TODO: document!
-        static member run4 sdlDeps optFrames liveness world =
-            World.run6 id id sdlDeps optFrames liveness world
+        static member run4 runWhile sdlDeps liveness world =
+            World.run6 runWhile id id sdlDeps liveness world
 
         /// TODO: document!
         static member run tryMakeWorld handleUpdate handleRender sdlConfig =
