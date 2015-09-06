@@ -633,6 +633,7 @@ module WorldModule =
                       OverlayFilePath = Constants.Assets.OverlayFilePath
                       Camera = camera
                       OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
+                      Clipboard = ref None
                       UserState = userState }
 
                 // make the simulant states
@@ -705,6 +706,7 @@ module WorldModule =
                   Overlayer = { Overlays = XmlDocument () }
                   Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault) }
                   OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
+                  Clipboard = ref None
                   UserState = userState }
 
             // make the simulant states

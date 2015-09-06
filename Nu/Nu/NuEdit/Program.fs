@@ -21,7 +21,7 @@ open Prime
 open Nu
 
 // TODO: increase warning level to 5.
-// TODO: implement entity freezing, then quick size on create.
+// TODO: implement quick size on create.
 // TODO: implement selection box rendering.
 
 type WorldChanger = World -> World
@@ -44,8 +44,7 @@ type EditorState =
       DragEntityState : DragEntityState
       DragCameraState : DragCameraState
       PastWorlds : World list
-      FutureWorlds : World list
-      Clipboard : (Entity option) ref }
+      FutureWorlds : World list }
 
 [<AutoOpen>]
 module ProgramModule =
@@ -505,51 +504,33 @@ module Program =
             let (pastWorld, world) = (world, World.setTickRate tickRate world)
             if tickRate = 1L then pushPastWorld pastWorld world else world)
 
-    (* TODO: replace this cut paste functionality with a reflective approach
-    
+    let handleFormCopy (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+        ignore ^ worldChangers.Add (fun world ->
+            match form.propertyGrid.SelectedObject with
+            | null -> world
+            | :? EntityTypeDescriptorSource as entityTds -> World.copyToClipboard entityTds.DescribedEntity world; world
+            | _ -> trace ^ "Invalid copy operation (likely a code issue in NuEdit)."; world)
+
     let handleFormCut (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore ^ worldChangers.Add (fun world ->
             match form.propertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
                 let world = pushPastWorld world world
-                let entity = World.getEntity entityTds.Address world
-                let world = World.removeEntity entityTds.Address world
-                let world = World.updateUserState (fun editorState -> editorState.Clipboard := Some entity; editorState) world
+                let world = World.cutToClipboard entityTds.DescribedEntity world
                 form.propertyGrid.SelectedObject <- null
                 world
             | _ -> trace ^ "Invalid cut operation (likely a code issue in NuEdit)."; world)
-        
-    let handleFormCopy (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
-        ignore ^ worldChangers.Add (fun world ->
-            match form.propertyGrid.SelectedObject with
-            | null -> world
-            | :? EntityTypeDescriptorSource as entityTds ->
-                let entity = World.getEntity entityTds.Address world
-                World.updateUserState (fun editorState -> editorState.Clipboard := Some entity; editorState) world
-            | _ -> trace ^ "Invalid copy operation (likely a code issue in NuEdit)."; world)
 
     let handleFormPaste atMouse (form : NuEditForm) (worldChangers : WorldChangers) refWorld (_ : EventArgs) =
         ignore ^ worldChangers.Add (fun world ->
+            let world = pushPastWorld world world
+            let (positionSnap, rotationSnap) = getSnaps form
             let editorState = World.getUserState world
-            match !editorState.Clipboard with
-            | Some entity ->
-                let world = pushPastWorld world world
-                let (positionSnap, rotationSnap) = getSnaps form
-                let id = Core.makeId ()
-                let entity = { entity with Id = id; Name = acstring id }
-                let camera = World.getCamera world
-                let entityPosition =
-                    if atMouse
-                    then Camera.mouseToWorld entity.ViewType editorState.RightClickPosition camera
-                    else Camera.mouseToWorld entity.ViewType (camera.EyeSize * 0.5f) camera
-                let entityTransform = { Entity.getTransform entity with Position = entityPosition }
-                let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
-                let entityAddress = gatoea editorState.GroupAddress entity.Name
-                let world = World.addEntityData entity entityAddress world |> snd
-                selectEntity form entityAddress worldChangers refWorld world
-                world
-            | None -> world)*)
+            let (optEntity, world) = World.pasteFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap Simulants.EditorGroup world
+            match optEntity with
+            | Some entity -> selectEntity form entity worldChangers refWorld world; world
+            | None -> world)
 
     let handleFormQuickSize (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore ^ worldChangers.Add (fun world ->
@@ -715,12 +696,12 @@ module Program =
         form.redoButton.Click.Add (handleFormRedo form worldChangers)
         form.redoToolStripMenuItem.Click.Add (handleFormRedo form worldChangers)
         form.tickingButton.CheckedChanged.Add (handleFormInteractivityChanged form worldChangers)
-        (*form.cutToolStripMenuItem.Click.Add (handleFormCut form worldChangers)
+        form.cutToolStripMenuItem.Click.Add (handleFormCut form worldChangers)
         form.cutContextMenuItem.Click.Add (handleFormCut form worldChangers)
         form.copyToolStripMenuItem.Click.Add (handleFormCopy form worldChangers)
         form.copyContextMenuItem.Click.Add (handleFormCopy form worldChangers)
         form.pasteToolStripMenuItem.Click.Add (handleFormPaste false form worldChangers refWorld)
-        form.pasteContextMenuItem.Click.Add (handleFormPaste true form worldChangers refWorld)*)
+        form.pasteContextMenuItem.Click.Add (handleFormPaste true form worldChangers refWorld)
         form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form worldChangers)
         form.resetCameraButton.Click.Add (handleFormResetCamera form worldChangers)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form worldChangers)
@@ -736,8 +717,7 @@ module Program =
               DragEntityState = DragEntityNone
               DragCameraState = DragCameraNone
               PastWorlds = []
-              FutureWorlds = []
-              Clipboard = ref None }
+              FutureWorlds = [] }
         let eitherWorld = World.tryMake false 0L editorState nuPlugin sdlDeps
         match eitherWorld with
         | Right world ->
