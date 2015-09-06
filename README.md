@@ -76,3 +76,8 @@ End of License
 
 License TL;DR: The code in this repository is free and open source,
 but the art (images, music, sound effects, etc.) is not.
+
+## <a name="coc"></a> Code of Conduct
+This project adheres to No Code of Conduct.  We are all adults.  We accept everyone's contributions.  Nothing else matters.
+
+For more information please visit the [No Code of Conduct](https://github.com/domgetter/NCoC) homepage.
