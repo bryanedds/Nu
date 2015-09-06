@@ -87,6 +87,7 @@
     <Compile Include="WorldGame.fs" />
     <Compile Include="WorldSimulant.fs" />
     <Compile Include="WorldInput.fs" />
+    <Compile Include="WorldClipboard.fs" />
     <Compile Include="WorldPhysics.fs" />
     <Compile Include="WorldRender.fs" />
     <Compile Include="WorldAudio.fs" />
