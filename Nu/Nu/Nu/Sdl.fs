@@ -180,15 +180,8 @@ module Sdl =
         else handlePlay world
 
     /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
-    let rec runWithoutCleanUp handleEvent handleUpdate handleRender handlePlay sdlDeps optFrames liveness world =
-        let (anotherFrame, optFrames) =
-            match optFrames with
-            | Some frames ->
-                if frames > 0 then (true, Some ^ frames - 1)
-                elif frames < 0 then (true, Some frames)
-                else (false, Some frames)
-            | None -> (true, None)
-        if anotherFrame then
+    let rec runWithoutCleanUp runWhile handleEvent handleUpdate handleRender handlePlay sdlDeps liveness world =
+        if runWhile world then
             match liveness with
             | Running ->
                 let (liveness, world) = update handleEvent handleUpdate world
@@ -196,14 +189,14 @@ module Sdl =
                 | Running ->
                     let world = render handleRender sdlDeps world
                     let world = play handlePlay world
-                    runWithoutCleanUp handleEvent handleUpdate handleRender handlePlay sdlDeps optFrames liveness world
+                    runWithoutCleanUp runWhile handleEvent handleUpdate handleRender handlePlay sdlDeps liveness world
                 | Exiting -> world
             | Exiting -> world
         else world
 
     /// Run the game engine with the given handlers.
-    let run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps optFrames liveness world =
-        try let world = runWithoutCleanUp handleEvent handleUpdate handleRender handlePlay sdlDeps optFrames liveness world
+    let run8 runWhile handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps liveness world =
+        try let world = runWithoutCleanUp runWhile handleEvent handleUpdate handleRender handlePlay sdlDeps liveness world
             handleExit world
         with _ ->
             handleExit world
@@ -214,7 +207,7 @@ module Sdl =
         | Right sdlDeps ->
             use sdlDeps = sdlDeps // bind explicitly to dispose automatically
             match handleTryMakeWorld sdlDeps with
-            | Right world -> run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps None Running world
+            | Right world -> run8 tautology handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps Running world
             | Left error ->
                 trace error
                 Constants.Engine.FailureExitCode
