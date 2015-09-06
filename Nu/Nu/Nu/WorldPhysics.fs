@@ -7,11 +7,11 @@ open OpenTK
 open Prime
 open Nu
 
-/// The subsystem for the world's integrator.
-type [<ReferenceEquality>] IntegratorSubsystem =
+/// The subsystem for the world's physics system.
+type [<ReferenceEquality>] PhysicsEngineSubsystem =
     private
         { SubsystemOrder : single
-          Integrator : IIntegrator }
+          PhysicsEngine : IPhysicsEngine }
         
     static member private handleBodyTransformMessage (message : BodyTransformMessage) (entity : Entity) world =
         // OPTIMIZATION: entity is not changed (avoiding a change entity event) if position and rotation haven't changed.
@@ -29,7 +29,7 @@ type [<ReferenceEquality>] IntegratorSubsystem =
             | BodyTransformMessage bodyTransformMessage ->
                 let entity = Entity.proxy ^ atoa bodyTransformMessage.SourceAddress
                 if World.containsEntity entity world then
-                    IntegratorSubsystem.handleBodyTransformMessage bodyTransformMessage entity world
+                    PhysicsEngineSubsystem.handleBodyTransformMessage bodyTransformMessage entity world
                 else world
             | BodyCollisionMessage bodyCollisionMessage ->
                 let source = Entity.proxy ^ atoa bodyCollisionMessage.SourceAddress
@@ -44,34 +44,34 @@ type [<ReferenceEquality>] IntegratorSubsystem =
                 | None -> world
         | Exiting -> world
 
-    member this.BodyExists physicsId = this.Integrator.BodyExists physicsId
-    member this.GetBodyContactNormals physicsId = this.Integrator.GetBodyContactNormals physicsId
-    member this.GetBodyLinearVelocity physicsId = this.Integrator.GetBodyLinearVelocity physicsId
-    member this.GetBodyGroundContactNormals physicsId = this.Integrator.GetBodyGroundContactNormals physicsId
-    member this.GetBodyOptGroundContactNormal physicsId = this.Integrator.GetBodyOptGroundContactNormal physicsId
-    member this.GetBodyOptGroundContactTangent physicsId = this.Integrator.GetBodyOptGroundContactTangent physicsId
-    member this.BodyOnGround physicsId = this.Integrator.BodyOnGround physicsId
+    member this.BodyExists physicsId = this.PhysicsEngine.BodyExists physicsId
+    member this.GetBodyContactNormals physicsId = this.PhysicsEngine.GetBodyContactNormals physicsId
+    member this.GetBodyLinearVelocity physicsId = this.PhysicsEngine.GetBodyLinearVelocity physicsId
+    member this.GetBodyGroundContactNormals physicsId = this.PhysicsEngine.GetBodyGroundContactNormals physicsId
+    member this.GetBodyOptGroundContactNormal physicsId = this.PhysicsEngine.GetBodyOptGroundContactNormal physicsId
+    member this.GetBodyOptGroundContactTangent physicsId = this.PhysicsEngine.GetBodyOptGroundContactTangent physicsId
+    member this.BodyOnGround physicsId = this.PhysicsEngine.BodyOnGround physicsId
 
     interface Subsystem with
         member this.SubsystemType = UpdateType
         member this.SubsystemOrder = this.SubsystemOrder
-        member this.ClearMessages () = { this with Integrator = this.Integrator.ClearMessages () } :> Subsystem
-        member this.EnqueueMessage message = { this with Integrator = this.Integrator.EnqueueMessage (message :?> PhysicsMessage) } :> Subsystem
+        member this.ClearMessages () = { this with PhysicsEngine = this.PhysicsEngine.ClearMessages () } :> Subsystem
+        member this.EnqueueMessage message = { this with PhysicsEngine = this.PhysicsEngine.EnqueueMessage (message :?> PhysicsMessage) } :> Subsystem
             
         member this.ProcessMessages world =
             let tickRate = World.getTickRate world
-            let (integrationMessages, integrator) = this.Integrator.Integrate tickRate
-            (integrationMessages :> obj, { this with Integrator = integrator } :> Subsystem)
+            let (integrationMessages, physicsEngine) = this.PhysicsEngine.Integrate tickRate
+            (integrationMessages :> obj, { this with PhysicsEngine = physicsEngine } :> Subsystem)
 
         member this.ApplyResult integrationMessages world =
             let integrationMessages = integrationMessages :?> IntegrationMessage list
-            List.fold IntegratorSubsystem.handleIntegrationMessage world integrationMessages
+            List.fold PhysicsEngineSubsystem.handleIntegrationMessage world integrationMessages
 
         member this.CleanUp world = (this :> Subsystem, world)
 
-    static member make subsystemOrder integrator =
+    static member make subsystemOrder physicsEngine =
         { SubsystemOrder = subsystemOrder
-          Integrator = integrator }
+          PhysicsEngine = physicsEngine }
 
 [<AutoOpen>]
 module WorldPhysicsModule =
@@ -80,35 +80,35 @@ module WorldPhysicsModule =
 
         /// Add a physics message to the world.
         static member addPhysicsMessage (message : PhysicsMessage) world =
-            World.updateSubsystem (fun is _ -> is.EnqueueMessage message) Constants.Engine.IntegratorSubsystemName world
+            World.updateSubsystem (fun is _ -> is.EnqueueMessage message) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Query that the world contains a body with the given physics id?
         static member bodyExists physicsId world =
-            World.getSubsystemBy (fun (integrator : IntegratorSubsystem) -> integrator.BodyExists physicsId) Constants.Engine.IntegratorSubsystemName world
+            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.BodyExists physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Get the contact normals of the body with the given physics id.
         static member getBodyContactNormals physicsId world =
-            World.getSubsystemBy (fun (integrator : IntegratorSubsystem) -> integrator.GetBodyContactNormals physicsId) Constants.Engine.IntegratorSubsystemName world
+            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyContactNormals physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Get the linear velocity of the body with the given physics id.
         static member getBodyLinearVelocity physicsId world =
-            World.getSubsystemBy (fun (integrator : IntegratorSubsystem) -> integrator.GetBodyLinearVelocity physicsId) Constants.Engine.IntegratorSubsystemName world
+            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyLinearVelocity physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Get the contact normals where the body with the given physics id is touching the ground.
         static member getBodyGroundContactNormals physicsId world =
-            World.getSubsystemBy (fun (integrator : IntegratorSubsystem) -> integrator.GetBodyGroundContactNormals physicsId) Constants.Engine.IntegratorSubsystemName world
+            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyGroundContactNormals physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Try to get a contact normal where the body with the given physics id is touching the ground.
         static member getBodyOptGroundContactNormal physicsId world =
-            World.getSubsystemBy (fun (integrator : IntegratorSubsystem) -> integrator.GetBodyOptGroundContactNormal physicsId) Constants.Engine.IntegratorSubsystemName world
+            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyOptGroundContactNormal physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Try to get a contact tangent where the body with the given physics id is touching the ground.
         static member getBodyOptGroundContactTangent physicsId world =
-            World.getSubsystemBy (fun (integrator : IntegratorSubsystem) -> integrator.GetBodyOptGroundContactTangent physicsId) Constants.Engine.IntegratorSubsystemName world
+            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyOptGroundContactTangent physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Query that the body with the given physics id is on the ground.
         static member bodyOnGround physicsId world =
-            World.getSubsystemBy (fun (integrator : IntegratorSubsystem) -> integrator.BodyOnGround physicsId) Constants.Engine.IntegratorSubsystemName world
+            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.BodyOnGround physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Send a message to the physics system to create a physics body.
         static member createBody (entityAddress : Entity Address) entityId bodyProperties world =
