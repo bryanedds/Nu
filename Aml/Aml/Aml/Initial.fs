@@ -212,7 +212,7 @@ module Initial =
          (DoubleTypeStr, DoubleType, makeDoc "A 64-bit, floating point, fractional number (may be 80-bit on certain platforms).")
          (KeywordTypeStr, KeywordType, makeDoc "A purely symbolic value.")
          (PackageTypeStr, PackageType, makeDoc "Couples an optional parameter with a value.")
-         (SpecialValueTypeStr, SpecialValueType, makeDoc "A value that describes a corresponding value in a language module.")
+         (SpecialValueTypeStr, SpecialValueType, makeDoc "A value that describes a corresponding value in a language plugin.")
          (LambdaTypeStr, LambdaType, makeDoc "A lamda in terms of the lambda calculus.")
          (UnitTypeStr, UnitType, makeDoc "A unit type (a type with no values).")
          (RefTypeStr, RefType, makeDoc "A reference type for mutable values.")

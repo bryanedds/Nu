@@ -500,7 +500,7 @@ module Primitives =
             debugInfo
             usingFiles
             interventionBranchLists
-            optLanguageModule
+            optLanguagePlugin
             optWorkBench
             path
             recordingCount
@@ -512,7 +512,7 @@ module Primitives =
               EnvDebugInfo = debugInfo
               EnvUsingFiles = usingFiles
               EnvInterventionBranchLists = interventionBranchLists
-              EnvOptLanguageModule = optLanguageModule
+              EnvOptLanguagePlugin = optLanguagePlugin
               EnvOptWorkBench = optWorkBench
               EnvPath = path
               EnvRecordingCount = recordingCount

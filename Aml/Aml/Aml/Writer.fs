@@ -319,7 +319,7 @@ module Writer =
                 let firstFileLineTrimmed = if trimStartOfFirstLine then firstFileLine.Trim () else firstFileLine
                 let start = positions.ParStart
                 let startFile = if start.StreamName.Length <> 0 then start.StreamName else "[N/A]"
-                let startStr = "[Ln: " + acstring start.Line + ", Col: " + string start.Column + ", In: " + startFile + "]"
+                let startStr = "[Ln: " + acstring start.Line + ", Col: " + acstring start.Column + ", In: " + startFile + "]"
                 let result = firstFileLineTrimmed + "\n  " + startStr
                 Some result
             else None
