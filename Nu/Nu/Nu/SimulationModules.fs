@@ -125,7 +125,7 @@ module World =
     (* F# reach-arounds... *)
 
     let mutable rebuildEntityTree =
-        Unchecked.defaultof<Screen -> World -> Entity QuadTree>
+        Unchecked.defaultof<Screen -> World -> World * Entity QuadTree>
 
     (* Publishing *)
 
@@ -803,14 +803,14 @@ module World =
         let screenState = updater screenState
         setScreenState screenState screen world
 
-    let internal updateEntityInEntityTree entity oldWorld world =
+    let internal updateEntityInEntityTree rebuildEntityTree entity world =
         let screen = entity |> etog |> gtos
         let screenState = getScreenState screen world
-        let entityTree =
+        let (world, entityTree) =
             MutantCache.mutateMutant
-                (fun () -> rebuildEntityTree screen world)
-                (fun entityTree ->
-                    let oldEntityState = getEntityState entity oldWorld
+                rebuildEntityTree
+                (fun world entityTree ->
+                    let oldEntityState = getEntityState entity world
                     let oldEntityMaxBounds = getEntityStateMaxBounds oldEntityState
                     let entityState = getEntityState entity world
                     let entityMaxBounds = getEntityStateMaxBounds entityState
@@ -818,45 +818,49 @@ module World =
                         (oldEntityState.Omnipresent || oldEntityState.ViewType = Absolute) oldEntityMaxBounds
                         (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds
                         entity entityTree
-                    entityTree)
+                    (world, entityTree))
+                world
                 screenState.EntityTree
         let screenState = { screenState with EntityTree = entityTree }
         setScreenStateWithoutEvent screenState screen world
 
-    let internal removeEntityFromEntityTree entity world =
+    let internal removeEntityFromEntityTree rebuildEntityTree entity world =
+        let entityState = getEntityState entity world
         let screen = entity |> etog |> gtos
         let screenState = getScreenState screen world
-        let entityTree =
+        let (world, entityTree) =
             MutantCache.mutateMutant
-                (fun () -> rebuildEntityTree screen world)
-                (fun entityTree ->
-                    let entityState = getEntityState entity world
+                rebuildEntityTree
+                (fun world entityTree ->
                     let entityMaxBounds = getEntityStateMaxBounds entityState
                     QuadTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
-                    entityTree)
+                    (world, entityTree))
+                world
                 screenState.EntityTree
         let screenState = { screenState with EntityTree = entityTree }
         setScreenState screenState screen world
 
-    let internal addEntityToEntityTree entity world =
+    let internal addEntityToEntityTree rebuildEntityTree entity world =
         let screen = entity |> etog |> gtos
         let screenState = getScreenState screen world
-        let entityTree =
+        let (world, entityTree) =
             MutantCache.mutateMutant
-                (fun () -> rebuildEntityTree screen world)
-                (fun entityTree ->
+                rebuildEntityTree
+                (fun world entityTree ->
                     let entityState = getEntityState entity world
                     let entityMaxBounds = getEntityStateMaxBounds entityState
                     QuadTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
-                    entityTree)
+                    (world, entityTree))
+                world
                 screenState.EntityTree
         let screenState = { screenState with EntityTree = entityTree }
         setScreenState screenState screen world
 
     let internal updateEntityStatePlus updater entity world =
         let oldWorld = world
-        let world = updateEntityStateWithoutEvent updater entity world
-        let world = updateEntityInEntityTree entity oldWorld world
+        let updateWorld = fun world -> updateEntityStateWithoutEvent updater entity world
+        let rebuildEntityTree = (fun () -> rebuildEntityTree (entity |> etog |> gtos) world) >> fun (world, quadTree) -> (updateWorld world, quadTree)
+        let world = updateWorld world |> updateEntityInEntityTree rebuildEntityTree entity
         publishEntityChange (getEntityState entity world) entity oldWorld world
 
     (* GameState *)
