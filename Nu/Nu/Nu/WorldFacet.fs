@@ -91,8 +91,9 @@ module WorldFacetModule =
                 Reflection.detachFieldsViaNames fieldNames entityState // hacky copy elided
                 match optEntity with
                 | Some entity ->
-                    let world = World.setEntityStateWithoutEvent entityState entity world
-                    let world = World.updateEntityInEntityTree entity oldWorld world
+                    let updateWorld = fun world -> World.setEntityStateWithoutEvent entityState entity world
+                    let rebuildEntityTree = (fun () -> World.rebuildEntityTree (entity |> etog |> gtos) world) >> fun (world, quadTree) -> (updateWorld world, quadTree)
+                    let world = updateWorld world |> World.updateEntityInEntityTree rebuildEntityTree entity
                     let world = World.publishEntityChange entityState entity oldWorld world
                     Right (World.getEntityState entity world, world)
                 | None -> Right (entityState, world)
@@ -108,8 +109,9 @@ module WorldFacetModule =
                     Reflection.attachFields facet entityState // hacky copy elided
                     match optEntity with
                     | Some entity ->
-                        let world = World.setEntityStateWithoutEvent entityState entity world
-                        let world = World.updateEntityInEntityTree entity oldWorld world
+                        let updateWorld = fun world -> World.setEntityStateWithoutEvent entityState entity world
+                        let rebuildEntityTree = (fun () -> World.rebuildEntityTree (entity |> etog |> gtos) world) >> fun (world, quadTree) -> (updateWorld world, quadTree)
+                        let world = updateWorld world |> World.updateEntityInEntityTree rebuildEntityTree entity
                         let world = World.publishEntityChange entityState entity oldWorld world
                         let world = facet.Register entity world
                         Right (World.getEntityState entity world, world)
