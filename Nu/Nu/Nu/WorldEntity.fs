@@ -107,15 +107,42 @@ module WorldEntityModule =
             List.fold (fun world (facet : Facet) -> facet.Unregister entity world) world facets
 
         static member internal addEntity mayReplace entityState entity world =
+
+            // add entity only if it is new or is explicitly able to be replaced
             let isNew = not ^ World.containsEntity entity world
             if isNew || mayReplace then
-                let updateWorld = fun world -> World.setEntityStateWithoutEvent entityState entity world
-                let rebuildEntityTree = (fun () -> World.rebuildEntityTree (entity |> etog |> gtos) world) >> fun (world, quadTree) -> (updateWorld world, quadTree)
-                let world = updateWorld world |> World.addEntityToEntityTree rebuildEntityTree entity
+
+                // get old world for entity tree rebuild
+                let oldWorld = world
+                
+                // adding entity to world
+                let world = World.setEntityStateWithoutEvent entityState entity world
+                
+                // pulling out screen state
+                let screen = entity |> etog |> gtos
+                let screenState = World.getScreenState screen world
+
+                // mutate entity tree
+                let (world, entityTree) =
+                    MutantCache.mutateMutant
+                        (fun () -> World.rebuildEntityTree screen oldWorld)
+                        (fun world entityTree ->
+                            let entityState = World.getEntityState entity world
+                            let entityMaxBounds = World.getEntityStateMaxBounds entityState
+                            QuadTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
+                            (world, entityTree))
+                        world
+                        screenState.EntityTree
+                let screenState = { screenState with EntityTree = entityTree }
+                let world = World.setScreenState screenState screen world
+
+                // register entity if needed
                 if isNew then
                     let world = World.registerEntity entity world
                     World.publish () (Events.EntityAdd ->- entity) entity world
                 else world
+
+            // handle failure
             else failwith ^ "Adding an entity that the world already contains at address '" + acstring entity.EntityAddress + "'."
 
         /// Remove an entity in the world. Can be dangerous if existing in-flight publishing depends on the entity's
@@ -123,10 +150,33 @@ module WorldEntityModule =
         static member internal removeEntity entity world =
             let world = World.publish () (Events.EntityRemoving ->- entity) entity world
             if World.containsEntity entity world then
-                let updateWorld = fun world -> World.unregisterEntity entity world
-                let rebuildEntityTree = (fun () -> World.rebuildEntityTree (entity |> etog |> gtos) world) >> fun (world, quadTree) -> (updateWorld world, quadTree)
-                let world = updateWorld world |> World.removeEntityFromEntityTree rebuildEntityTree entity
+                let world = World.unregisterEntity entity world
+
+                // get old world for entity tree rebuild
+                let oldWorld = world
+                
+                // pulling out screen state
+                let screen = entity |> etog |> gtos
+                let screenState = World.getScreenState screen world
+
+                // mutate entity tree
+                let (world, entityTree) =
+                    MutantCache.mutateMutant
+                        (fun () -> World.rebuildEntityTree screen oldWorld)
+                        (fun world entityTree ->
+                            let entityState = World.getEntityState entity oldWorld
+                            let entityMaxBounds = World.getEntityStateMaxBounds entityState
+                            QuadTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
+                            (world, entityTree))
+                        world
+                        screenState.EntityTree
+                let screenState = { screenState with EntityTree = entityTree }
+                let world = World.setScreenState screenState screen world
+
+                // remove the entity from the world
                 World.setOptEntityStateWithoutEvent None entity world
+
+            // pass
             else world
 
         static member internal getEntityFacetNamesReflectively entityState =
@@ -298,8 +348,7 @@ module WorldEntityModule =
 
         /// Try to set an entity's overlay name.
         static member trySetEntityOptOverlayName optOverlayName entity world =
-            let oldWorld = world
-            let oldEntityState = World.getEntityState entity oldWorld
+            let oldEntityState = World.getEntityState entity world
             let oldOptOverlayName = oldEntityState.OptOverlayName
             let entityState = { oldEntityState with OptOverlayName = optOverlayName }
             match (oldOptOverlayName, optOverlayName) with
@@ -311,9 +360,9 @@ module WorldEntityModule =
                     | Left error -> debug error; (entityState, world)
                 let facetNames = World.getEntityFacetNamesReflectively entityState
                 Overlayer.applyOverlay oldOverlayName overlayName facetNames entityState world.State.Overlayer // hacky copy elided
-                let updateWorld = fun world -> World.setEntityStateWithoutEvent entityState entity world
-                let rebuildEntityTree = (fun () -> World.rebuildEntityTree (entity |> etog |> gtos) world) >> fun (world, quadTree) -> (updateWorld world, quadTree)
-                let world = updateWorld world |> World.updateEntityInEntityTree rebuildEntityTree entity
+                let oldWorld = world
+                let world = World.setEntityStateWithoutEvent entityState entity world
+                let world = World.updateEntityInEntityTree entity oldWorld world
                 let world = World.publishEntityChange entityState entity oldWorld world
                 Right world
             | (_, _) -> Left "Could not set the entity's overlay name."
@@ -324,9 +373,8 @@ module WorldEntityModule =
             match World.trySetFacetNames4 facetNames entityState (Some entity) world with
             | Right (entityState, world) ->
                 let oldWorld = world
-                let updateWorld = fun world -> World.setEntityStateWithoutEvent entityState entity world
-                let rebuildEntityTree = (fun () -> World.rebuildEntityTree (entity |> etog |> gtos) world) >> fun (world, quadTree) -> (updateWorld world, quadTree)
-                let world = updateWorld world |> World.updateEntityInEntityTree rebuildEntityTree entity
+                let world = World.setEntityStateWithoutEvent entityState entity world
+                let world = World.updateEntityInEntityTree entity oldWorld world
                 let world = World.publishEntityChange entityState entity oldWorld world
                 Right world
             | Left error -> Left error
@@ -463,14 +511,12 @@ module WorldEntityModule =
                     { xtension with XFields = Map.add xfd.FieldName xField xtension.XFields })
                     world
             | EntityPropertyInfo propertyInfo ->
-                let oldWorld = world
                 let entityState = World.getEntityState entity world
                 let entityState = { entityState with EntityState.Id = entityState.Id } // NOTE: hacky copy
                 propertyInfo.SetValue (entityState, value)
-                let updateWorld = fun world -> World.setEntityStateWithoutEvent entityState entity world
-                let rebuildEntityTree = (fun () -> World.rebuildEntityTree (entity |> etog |> gtos) world) >> fun (world, quadTree) -> (updateWorld world, quadTree)
-                let world = updateWorld world |> World.updateEntityInEntityTree rebuildEntityTree entity
-
+                let oldWorld = world
+                let world = World.setEntityStateWithoutEvent entityState entity world
+                let world = World.updateEntityInEntityTree entity oldWorld world
                 World.publishEntityChange entityState entity oldWorld world
 
         // TODO: put this in a better place! And of course, document.

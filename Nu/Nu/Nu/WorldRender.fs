@@ -37,16 +37,11 @@ type [<ReferenceEquality>] RendererSubsystem =
         | Some selectedScreen ->
             if World.containsScreen selectedScreen world then
                 let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
-                let rebuildEntityTree = fun () -> World.rebuildEntityTree selectedScreen world
-                let (world, entityTree) = MutantCache.getMutant rebuildEntityTree world (selectedScreen.GetEntityTree world)
+                let (world, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) world (selectedScreen.GetEntityTree world)
                 let entities = QuadTree.getElementsNearBounds viewBounds entityTree
                 let descriptors =
                     entities |>
-                    List.choose (fun entity ->
-                        // NOTE: entities in quadtree may not exist due... well, I'm not sure. TODO: investigate this!
-                        if World.containsEntity entity world && entity.GetVisible world
-                        then Some ^ World.getEntityRenderDescriptors entity world
-                        else None) |>
+                    List.choose (fun entity -> if entity.GetVisible world then Some ^ World.getEntityRenderDescriptors entity world else None) |>
                     List.concat
                 match selectedScreen.GetTransitionStateNp world with
                 | IncomingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors (World.getCamera world) selectedScreen (selectedScreen.GetIncoming world) world
