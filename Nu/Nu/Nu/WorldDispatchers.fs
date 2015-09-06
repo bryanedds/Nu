@@ -672,9 +672,10 @@ module TileMapDispatcherModule =
             let tileMapSize = Vector2i (mapSize.X * tileSize.X, mapSize.Y * tileSize.Y)
             let tileMapSizeF = Vector2 (single tileMapSize.X, single tileMapSize.Y)
             let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
-            let optTileSetWidth = tileSet.Image.Width
-            let optTileSetHeight = tileSet.Image.Height
-            let tileSetSize = Vector2i (optTileSetWidth.Value / tileSize.X, optTileSetHeight.Value / tileSize.Y)
+            let tileSetSize =
+                let optTileSetWidth = tileSet.Image.Width
+                let optTileSetHeight = tileSet.Image.Height
+                Vector2i (optTileSetWidth.Value / tileSize.X, optTileSetHeight.Value / tileSize.Y)
             { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileMapSize = tileMapSize; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
 
         static member makeTileData (tm : Entity) tmd (tl : TmxLayer) tileIndex world =
