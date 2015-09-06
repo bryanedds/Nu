@@ -196,7 +196,7 @@ module Address =
     let getName address =
         getNameKeys address |> List.last |> NameKey.getName
 
-    /// TODO: document!
+    /// Get the address's hash code.
     let getHashCode address =
         Address<'a>.hash address
 
