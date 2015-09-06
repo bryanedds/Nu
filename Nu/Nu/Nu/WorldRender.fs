@@ -37,7 +37,8 @@ type [<ReferenceEquality>] RendererSubsystem =
         | Some selectedScreen ->
             if World.containsScreen selectedScreen world then
                 let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
-                let entityTree = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTree world)
+                let rebuildEntityTree = fun () -> World.rebuildEntityTree selectedScreen world
+                let (world, entityTree) = MutantCache.getMutant rebuildEntityTree world (selectedScreen.GetEntityTree world)
                 let entities = QuadTree.getElementsNearBounds viewBounds entityTree
                 let descriptors =
                     entities |>

@@ -109,8 +109,9 @@ module WorldEntityModule =
         static member internal addEntity mayReplace entityState entity world =
             let isNew = not ^ World.containsEntity entity world
             if isNew || mayReplace then
-                let world = World.setEntityStateWithoutEvent entityState entity world
-                let world = World.addEntityToEntityTree entity world
+                let updateWorld = fun world -> World.setEntityStateWithoutEvent entityState entity world
+                let rebuildEntityTree = (fun () -> World.rebuildEntityTree (entity |> etog |> gtos) world) >> fun (world, quadTree) -> (updateWorld world, quadTree)
+                let world = updateWorld world |> World.addEntityToEntityTree rebuildEntityTree entity
                 if isNew then
                     let world = World.registerEntity entity world
                     World.publish () (Events.EntityAdd ->- entity) entity world
@@ -122,8 +123,9 @@ module WorldEntityModule =
         static member internal removeEntity entity world =
             let world = World.publish () (Events.EntityRemoving ->- entity) entity world
             if World.containsEntity entity world then
-                let world = World.unregisterEntity entity world
-                let world = World.removeEntityFromEntityTree entity world
+                let updateWorld = fun world -> World.unregisterEntity entity world
+                let rebuildEntityTree = (fun () -> World.rebuildEntityTree (entity |> etog |> gtos) world) >> fun (world, quadTree) -> (updateWorld world, quadTree)
+                let world = updateWorld world |> World.removeEntityFromEntityTree rebuildEntityTree entity
                 World.setOptEntityStateWithoutEvent None entity world
             else world
 
@@ -309,20 +311,22 @@ module WorldEntityModule =
                     | Left error -> debug error; (entityState, world)
                 let facetNames = World.getEntityFacetNamesReflectively entityState
                 Overlayer.applyOverlay oldOverlayName overlayName facetNames entityState world.State.Overlayer // hacky copy elided
-                let world = World.setEntityStateWithoutEvent entityState entity world
-                let world = World.updateEntityInEntityTree entity oldWorld world
+                let updateWorld = fun world -> World.setEntityStateWithoutEvent entityState entity world
+                let rebuildEntityTree = (fun () -> World.rebuildEntityTree (entity |> etog |> gtos) world) >> fun (world, quadTree) -> (updateWorld world, quadTree)
+                let world = updateWorld world |> World.updateEntityInEntityTree rebuildEntityTree entity
                 let world = World.publishEntityChange entityState entity oldWorld world
                 Right world
             | (_, _) -> Left "Could not set the entity's overlay name."
 
         /// Try to set the entity's facet names.
         static member trySetEntityFacetNames facetNames entity world =
-            let oldWorld = world
-            let oldEntityState = World.getEntityState entity oldWorld
-            match World.trySetFacetNames4 facetNames oldEntityState (Some entity) world with
+            let entityState = World.getEntityState entity world
+            match World.trySetFacetNames4 facetNames entityState (Some entity) world with
             | Right (entityState, world) ->
-                let world = World.setEntityStateWithoutEvent entityState entity world
-                let world = World.updateEntityInEntityTree entity oldWorld world
+                let oldWorld = world
+                let updateWorld = fun world -> World.setEntityStateWithoutEvent entityState entity world
+                let rebuildEntityTree = (fun () -> World.rebuildEntityTree (entity |> etog |> gtos) world) >> fun (world, quadTree) -> (updateWorld world, quadTree)
+                let world = updateWorld world |> World.updateEntityInEntityTree rebuildEntityTree entity
                 let world = World.publishEntityChange entityState entity oldWorld world
                 Right world
             | Left error -> Left error
@@ -463,8 +467,10 @@ module WorldEntityModule =
                 let entityState = World.getEntityState entity world
                 let entityState = { entityState with EntityState.Id = entityState.Id } // NOTE: hacky copy
                 propertyInfo.SetValue (entityState, value)
-                let world = World.setEntityStateWithoutEvent entityState entity world
-                let world = World.updateEntityInEntityTree entity oldWorld world
+                let updateWorld = fun world -> World.setEntityStateWithoutEvent entityState entity world
+                let rebuildEntityTree = (fun () -> World.rebuildEntityTree (entity |> etog |> gtos) world) >> fun (world, quadTree) -> (updateWorld world, quadTree)
+                let world = updateWorld world |> World.updateEntityInEntityTree rebuildEntityTree entity
+
                 World.publishEntityChange entityState entity oldWorld world
 
         // TODO: put this in a better place! And of course, document.

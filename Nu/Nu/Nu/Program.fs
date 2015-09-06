@@ -15,16 +15,16 @@ module Program =
     will be like so -
     
     In addition to typical authoring tools like NuEdit, Nu will enhance certain domains of the
-    game authoring experience using domain-specific languages via Aml Language Modules. For
+    game authoring experience using domain-specific languages via Aml language plugins. For
     example, special-effects is a domain that will be exposed to the user via Aml with the Nufx
-    language module. In turn, NuEdit will provide a special text editor panel for applicable
+    language plugin. In turn, NuEdit will provide a special text editor panel for applicable
     simulant properties.
 
     And so on for other game development domains that require interactive authoring experiences,
     including Nutelligence (ai scripting), Nuvie (movie-style scripting).
     
     For ease of implementation, there will be one instance of Aml for each DSL. This is because
-    currently Aml only supports one Language Module at a time.
+    currently Aml only supports one language plugin at a time.
 
     I could also build a visual language that compiles down to Aml code quite easily, which could
     be leverges by DSLs like Nuvie.
