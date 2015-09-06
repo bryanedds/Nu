@@ -612,13 +612,15 @@ module World =
             | None -> Map.empty
         | _ -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
 
-    let internal getOptEntityState entity world =
+    let inline internal getOptEntityState entity world =
         optEntityStateFinder entity world
 
     let internal getEntityState (entity : Entity) world =
-        (optEntityStateFinder entity world).Value // OPTIMIZATION: getting entity state as directly as possible
+        match getOptEntityState entity world with
+        | Some entityState -> entityState
+        | None -> failwith ^ "Could not find entity with address '" + acstring entity + "'."
 
-    let internal setEntityStateWithoutEvent entityState entity world =
+    let inline internal setEntityStateWithoutEvent entityState entity world =
         entityStateAdder entityState entity world
 
     let internal setOptEntityStateWithoutEvent optEntityState entity world =
@@ -703,13 +705,15 @@ module World =
             | None -> Map.empty
         | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
-    let internal getOptGroupState group world =
+    let inline internal getOptGroupState group world =
         optGroupStateFinder group world
 
-    let internal getGroupState group world =
-        (optGroupStateFinder group world).Value // OPTIMIZATION: getting entity state as directly as possible
+    let internal getGroupState (group : Group) world =
+        match getOptGroupState group world with
+        | Some groupState -> groupState
+        | None -> failwith ^ "Could not find group with address '" + acstring group + "'."
 
-    let internal setGroupStateWithoutEvent groupState group world =
+    let inline internal setGroupStateWithoutEvent groupState group world =
         groupStateAdder groupState group world
 
     let internal setOptGroupStateWithoutEvent optGroupState group world =
@@ -770,16 +774,18 @@ module World =
             | None -> world
         | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
-    let internal getScreenStateMap world =
+    let inline internal getScreenStateMap world =
         snd world.SimulantStates
 
-    let internal getOptScreenState screen world =
+    let inline internal getOptScreenState screen world =
         optScreenStateFinder screen world
 
-    let internal getScreenState screen world =
-        (optScreenStateFinder screen world).Value // OPTIMIZATION: getting entity state as directly as possible
+    let internal getScreenState (screen : Screen) world =
+        match getOptScreenState screen world with
+        | Some screenState -> screenState
+        | None -> failwith ^ "Could not find screen with address '" + acstring screen + "'."
 
-    let internal setScreenStateWithoutEvent screenState screen world =
+    let inline internal setScreenStateWithoutEvent screenState screen world =
         screenStateAdder screenState screen world
 
     let internal setOptScreenStateWithoutEvent optScreenState screen world =
