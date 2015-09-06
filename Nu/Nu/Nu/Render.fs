@@ -252,8 +252,7 @@ type [<ReferenceEquality>] Renderer =
         let tileSize = descriptor.TileSize
         let tileSet = descriptor.TileSet
         let tileSetImage = descriptor.TileSetImage
-        let optTileSetWidth = tileSet.Image.Width
-        let tileSetWidth = optTileSetWidth.Value
+        let tileSetWidth = let optTileSetWidth = tileSet.Image.Width in optTileSetWidth.Value
         let (renderer, optRenderAsset) = Renderer.tryLoadRenderAsset tileSetImage renderer
         match optRenderAsset with
         | Some renderAsset ->
