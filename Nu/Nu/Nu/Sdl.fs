@@ -198,8 +198,11 @@ module Sdl =
     let run8 runWhile handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps liveness world =
         try let world = runWithoutCleanUp runWhile handleEvent handleUpdate handleRender handlePlay sdlDeps liveness world
             handleExit world
-        with _ ->
+            Constants.Engine.SuccessExitCode
+        with exn ->
+            trace ^ acstring exn
             handleExit world
+            Constants.Engine.FailureExitCode
 
     /// Run the game engine with the given handlers.
     let run handleTryMakeWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig =
@@ -208,9 +211,5 @@ module Sdl =
             use sdlDeps = sdlDeps // bind explicitly to dispose automatically
             match handleTryMakeWorld sdlDeps with
             | Right world -> run8 tautology handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps Running world
-            | Left error ->
-                trace error
-                Constants.Engine.FailureExitCode
-        | Left error ->
-            trace error
-            Constants.Engine.FailureExitCode
+            | Left error -> trace error; Constants.Engine.FailureExitCode
+        | Left error -> trace error; Constants.Engine.FailureExitCode

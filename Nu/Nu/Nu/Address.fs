@@ -49,10 +49,13 @@ type [<CustomEquality; NoComparison>] NameKey =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module NameKey =
 
-    /// Make a name key from a single address name string.
-    let make addressName =
-        { Name = addressName
-          OptHashCode = None }
+    /// Make a name key from a non-empty name string.
+    let make name =
+        match name with
+        | "" -> failwith "Invalid name; must be a non-empty string."
+        | _ ->
+            { Name = name
+              OptHashCode = None }
 
     /// Get the name of a name key.
     let getName nameKey =
@@ -185,11 +188,11 @@ module Address =
     let changeType<'a, 'b> (address : 'a Address) =
         { NameKeys = address.NameKeys; OptFullName = None; OptHashCode = None; TypeCarrier = fun (_ : 'b) -> () }
 
-    /// TODO: document!
+    /// Get the full name of an address as a single string.
     let getFullName address =
         Address<'a>.getFullName address
 
-    /// TODO: document!
+    /// Get the name of an address as a string.
     let getName address =
         getNameKeys address |> List.last |> NameKey.getName
 
