@@ -460,7 +460,6 @@ module WorldModule =
         /// TODO: document!
         static member cleanUp world =
             ignore ^ World.cleanUpSubsystems world
-            Constants.Engine.SuccessExitCode
 
         /// TODO: document!
         /// TODO: make optFrames implemented as a predicate.
