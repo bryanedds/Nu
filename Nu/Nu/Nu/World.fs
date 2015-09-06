@@ -519,8 +519,8 @@ module WorldModule =
                 // make the world's subsystems
                 let subsystems =
                     let userSubsystems = Map.ofList ^ nuPlugin.MakeSubsystems ()
-                    let integrator = Integrator.make Constants.Physics.Gravity
-                    let integratorSubsystem = IntegratorSubsystem.make Constants.Engine.DefaultSubsystemOrder integrator :> Subsystem
+                    let physicsEngine = PhysicsEngine.make Constants.Physics.Gravity
+                    let physicsEngineSubsystem = PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder physicsEngine :> Subsystem
                     let renderer =
                         match sdlDeps.OptRenderContext with
                         | Some renderContext -> Renderer.make renderContext Constants.Assets.AssetGraphFilePath :> IRenderer
@@ -534,7 +534,7 @@ module WorldModule =
                     let audioPlayerSubsystem = AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder audioPlayer :> Subsystem
                     let defaultSubsystems =
                         Map.ofList
-                            [(Constants.Engine.IntegratorSubsystemName, integratorSubsystem)
+                            [(Constants.Engine.PhysicsEngineSubsystemName, physicsEngineSubsystem)
                              (Constants.Engine.RendererSubsystemName, rendererSubsystem)
                              (Constants.Engine.AudioPlayerSubsystemName, audioPlayerSubsystem)]
                     { SubsystemMap = defaultSubsystems @@ userSubsystems }
@@ -661,12 +661,12 @@ module WorldModule =
 
             // make the world's subsystems
             let subsystems =
-                let integratorSubsystem = IntegratorSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockIntegrator = () } :> Subsystem
+                let physicsEngineSubsystem = PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockPhysicsEngine = () } :> Subsystem
                 let rendererSubsystem = RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockRenderer = () } :> Subsystem
                 let audioPlayerSubsystem = AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockAudioPlayer = () } :> Subsystem
                 { SubsystemMap =
                     Map.ofList
-                        [(Constants.Engine.IntegratorSubsystemName, integratorSubsystem)
+                        [(Constants.Engine.PhysicsEngineSubsystemName, physicsEngineSubsystem)
                          (Constants.Engine.RendererSubsystemName, rendererSubsystem)
                          (Constants.Engine.AudioPlayerSubsystemName, audioPlayerSubsystem)] }
 
