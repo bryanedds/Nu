@@ -17,6 +17,8 @@ type [<ReferenceEquality>] PhysicsEngineSubsystem =
         // OPTIMIZATION: entity is not changed (avoiding a change entity event) if position and rotation haven't changed.
         if entity.GetPosition world <> message.Position || entity.GetRotation world <> message.Rotation then
             world |>
+                // TODO: ASAP: could shave off a lot of perf penalty by implementing an Entity.SetTransform that only updates
+                // the EntityTree once.
                 // TODO: see if the following center-offsetting can be encapsulated within the Physics module!
                 entity.SetPosition (message.Position - entity.GetSize world * 0.5f) |>
                 entity.SetRotation message.Rotation
