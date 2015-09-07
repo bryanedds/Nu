@@ -349,7 +349,7 @@ module WorldModule =
             List.filter (fun (_, subsystem) -> subsystem.SubsystemType = subsystemType) |>
             List.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
             List.fold (fun world (subsystemName, subsystem) ->
-                let (subsystemResult, subsystem) = subsystem.ProcessMessages world
+                let (subsystemResult, subsystem, world) = subsystem.ProcessMessages world
                 let world = subsystem.ApplyResult subsystemResult world
                 World.setSubsystem subsystem subsystemName world)
                 world
