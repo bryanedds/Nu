@@ -33,7 +33,7 @@ module MutantCache =
     let getMutant rebuildMutant (context : 'c) (mutantCache : 'm MutantCache) =
         let (context, mutantUncloned, mutantCache) = getMutantUncloned rebuildMutant context mutantCache
         let mutantCloned = mutantCache.CloneMutant mutantUncloned
-        (context, mutantCloned)
+        (context, mutantCloned, mutantCache)
 
     let mutateMutant rebuildMutant mutateMutant (context : 'c) (mutantCache : 'm MutantCache) : 'c * 'm MutantCache =
         let (context, mutant, mutantCache) = getMutantUncloned rebuildMutant context mutantCache
