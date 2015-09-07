@@ -20,7 +20,7 @@ type SdlWindowConfig =
 type SdlViewConfig =
     | NewWindow of SdlWindowConfig
     | ExistingWindow of nativeint
-    //| FullScreen TODO: B4V1: implement
+    //| FullScreen TODO: implement
 
 /// Describes the general configuration of SDL.
 type SdlConfig =
