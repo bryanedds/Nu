@@ -34,7 +34,7 @@ module Program =
 
     (* NOTE - On having huge, populated worlds in Nu...
     
-    TODO: write about choke points and beacons with quarantining... *)
+    TODO: write about choke points and beacons... *)
 
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
     scaled to a back-buffer of a varying size, render each component unscaled to an off-screen

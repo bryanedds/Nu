@@ -93,12 +93,15 @@ type [<StructuralEquality; NoComparison>] BodyProperties =
       Rotation : single
       Shape : BodyShape
       BodyType : BodyType
+      Awake : bool
       Density : single
       Friction : single
       Restitution : single
       FixedRotation : bool
-      LinearDamping : single
+      AngularVelocity : single
       AngularDamping : single
+      LinearVelocity : Vector2
+      LinearDamping : single
       GravityScale : single
       CollisionCategories : int
       CollisionMask : int
@@ -134,6 +137,16 @@ type [<StructuralEquality; NoComparison>] SetBodyPositionMessage =
 type [<StructuralEquality; NoComparison>] SetBodyRotationMessage =
     { PhysicsId : PhysicsId
       Rotation : single }
+
+/// A message to the physics system to set the angular velocity of a body.
+type [<StructuralEquality; NoComparison>] SetBodyAngularVelocityMessage =
+    { PhysicsId : PhysicsId
+      AngularVelocity : single }
+
+/// A message to the physics system to apply a angular impulse to a body.
+type [<StructuralEquality; NoComparison>] ApplyBodyAngularImpulseMessage =
+    { PhysicsId : PhysicsId
+      AngularImpulse : single }
 
 /// A message to the physics system to set the linear velocity of a body.
 type [<StructuralEquality; NoComparison>] SetBodyLinearVelocityMessage =
@@ -174,6 +187,8 @@ type [<StructuralEquality; NoComparison>] PhysicsMessage =
     | DestroyBodiesMessage of DestroyBodiesMessage
     | SetBodyPositionMessage of SetBodyPositionMessage
     | SetBodyRotationMessage of SetBodyRotationMessage
+    | SetBodyAngularVelocityMessage of SetBodyAngularVelocityMessage
+    | ApplyBodyAngularImpulseMessage of ApplyBodyAngularImpulseMessage
     | SetBodyLinearVelocityMessage of SetBodyLinearVelocityMessage
     | ApplyBodyLinearImpulseMessage of ApplyBodyLinearImpulseMessage
     | ApplyBodyForceMessage of ApplyBodyForceMessage
@@ -265,13 +280,16 @@ type [<ReferenceEquality>] PhysicsEngine =
         List.ofSeq contacts
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : Body) =
+        body.Awake <- bodyProperties.Awake
         body.Position <- PhysicsEngine.toPhysicsV2 bodyProperties.Position
         body.Rotation <- bodyProperties.Rotation
         body.Friction <- bodyProperties.Friction
         body.Restitution <- bodyProperties.Restitution
         body.FixedRotation <- bodyProperties.FixedRotation
-        body.LinearDamping <- bodyProperties.LinearDamping
+        body.AngularVelocity <- bodyProperties.AngularVelocity
         body.AngularDamping <- bodyProperties.AngularDamping
+        body.LinearVelocity <- PhysicsEngine.toPhysicsV2 bodyProperties.LinearVelocity
+        body.LinearDamping <- bodyProperties.LinearDamping
         body.GravityScale <- bodyProperties.GravityScale
         body.CollisionCategories <- enum<Category> bodyProperties.CollisionCategories
         body.CollidesWith <- enum<Category> bodyProperties.CollisionMask
@@ -384,6 +402,16 @@ type [<ReferenceEquality>] PhysicsEngine =
         | (true, body) -> body.Rotation <- setBodyRotationMessage.Rotation
         | (false, _) -> debug ^ "Could not set rotation of non-existent body with PhysicsId = " + acstring setBodyRotationMessage.PhysicsId + "'."
 
+    static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue setBodyAngularVelocityMessage.PhysicsId with
+        | (true, body) -> body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity
+        | (false, _) -> debug ^ "Could not set angular velocity of non-existent body with PhysicsId = " + acstring setBodyAngularVelocityMessage.PhysicsId + "'."
+
+    static member private applyBodyAngularImpulse (applyBodyAngularImpulseMessage : ApplyBodyAngularImpulseMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue applyBodyAngularImpulseMessage.PhysicsId with
+        | (true, body) -> body.ApplyAngularImpulse (applyBodyAngularImpulseMessage.AngularImpulse)
+        | (false, _) -> debug ^ "Could not apply angular impulse to non-existent body with PhysicsId = " + acstring applyBodyAngularImpulseMessage.PhysicsId + "'."
+
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyLinearVelocityMessage.PhysicsId with
         | (true, body) -> body.LinearVelocity <- PhysicsEngine.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity
@@ -407,6 +435,8 @@ type [<ReferenceEquality>] PhysicsEngine =
         | DestroyBodiesMessage destroyBodiesMessage -> PhysicsEngine.destroyBodies destroyBodiesMessage physicsEngine
         | SetBodyPositionMessage setBodyPositionMessage -> PhysicsEngine.setBodyPosition setBodyPositionMessage physicsEngine
         | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
+        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> PhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
+        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> PhysicsEngine.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
         | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> PhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine.applyBodyForce applyBodyForceMessage physicsEngine
@@ -535,7 +565,7 @@ module Physics =
         | _ -> Convert.ToInt32 (categoryExpr, 2)
 
     /// Evaluate a collision expression.
-    /// TODO: see if AlgebraicConverter can be used here instead of this shitty custom syntax.
+    /// TODO: B4V1: see if AlgebraicConverter can be used here instead of this shitty custom syntax.
     /// TODO: propagate errors rather than tracing in place
     let evalCollisionExpr (extent : Vector2) (expr : string) =
         let terms = List.ofArray ^ expr.Split '?'

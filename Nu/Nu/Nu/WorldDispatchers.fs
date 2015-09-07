@@ -14,13 +14,12 @@ module RigidBodyFacetModule =
 
     type Entity with
 
-        // TODO: consider implementing Awake, AngularVelocity, and LinearVelocity fields to make
-        // physics resets less destructive.
-
         member this.GetMinorId world : Guid = (this.GetXtension world)?MinorId
         member this.SetMinorId (value : Guid) world = this.UpdateXtension (fun xtension -> xtension?MinorId <- value) world
         member this.GetBodyType world : BodyType = (this.GetXtension world)?BodyType
         member this.SetBodyType (value : BodyType) world = this.UpdateXtension (fun xtension -> xtension?BodyType <- value) world
+        member this.GetAwake world : bool = (this.GetXtension world)?Awake
+        member this.SetAwake (value : bool) world = this.UpdateXtension (fun xtension -> xtension?Awake <- value) world
         member this.GetDensity world : single = (this.GetXtension world)?Density
         member this.SetDensity (value : single) world = this.UpdateXtension (fun xtension -> xtension?Density <- value) world
         member this.GetFriction world : single = (this.GetXtension world)?Friction
@@ -29,10 +28,14 @@ module RigidBodyFacetModule =
         member this.SetRestitution (value : single) world = this.UpdateXtension (fun xtension -> xtension?Restitution <- value) world
         member this.GetFixedRotation world : bool = (this.GetXtension world)?FixedRotation
         member this.SetFixedRotation (value : bool) world = this.UpdateXtension (fun xtension -> xtension?FixedRotation <- value) world
-        member this.GetLinearDamping world : single = (this.GetXtension world)?LinearDamping
-        member this.SetLinearDamping (value : single) world = this.UpdateXtension (fun xtension -> xtension?LinearDamping <- value) world
+        member this.GetAngularVelocity world : single = (this.GetXtension world)?AngularVelocity
+        member this.SetAngularVelocity (value : single) world = this.UpdateXtension (fun xtension -> xtension?AngularVelocity <- value) world
         member this.GetAngularDamping world : single = (this.GetXtension world)?AngularDamping
         member this.SetAngularDamping (value : single) world = this.UpdateXtension (fun xtension -> xtension?AngularDamping <- value) world
+        member this.GetLinearVelocity world : Vector2 = (this.GetXtension world)?LinearVelocity
+        member this.SetLinearVelocity (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?LinearVelocity <- value) world
+        member this.GetLinearDamping world : single = (this.GetXtension world)?LinearDamping
+        member this.SetLinearDamping (value : single) world = this.UpdateXtension (fun xtension -> xtension?LinearDamping <- value) world
         member this.GetGravityScale world : single = (this.GetXtension world)?GravityScale
         member this.SetGravityScale (value : single) world = this.UpdateXtension (fun xtension -> xtension?GravityScale <- value) world
         member this.GetCollisionCategories world : string = (this.GetXtension world)?CollisionCategories
@@ -56,12 +59,15 @@ module RigidBodyFacetModule =
         static member FieldDefinitions =
             [variable? MinorId ^ fun () -> Core.makeId ()
              define? BodyType Dynamic
+             define? Awake true
              define? Density Constants.Physics.NormalDensity
              define? Friction 0.0f
              define? Restitution 0.0f
              define? FixedRotation false
-             define? LinearDamping 1.0f
+             define? AngularVelocity 0.0f
              define? AngularDamping 1.0f
+             define? LinearVelocity Vector2.Zero
+             define? LinearDamping 1.0f
              define? GravityScale 1.0f
              define? CollisionCategories "1"
              define? CollisionMask "*"
@@ -76,12 +82,15 @@ module RigidBodyFacetModule =
                   Rotation = entity.GetRotation world
                   Shape = getBodyShape entity world
                   BodyType = entity.GetBodyType world
+                  Awake = entity.GetAwake world
                   Density = entity.GetDensity world
                   Friction = entity.GetFriction world
                   Restitution = entity.GetRestitution world
                   FixedRotation = entity.GetFixedRotation world
-                  LinearDamping = entity.GetLinearDamping world
+                  AngularVelocity = entity.GetAngularVelocity world
                   AngularDamping = entity.GetAngularDamping world
+                  LinearVelocity = entity.GetLinearVelocity world
+                  LinearDamping = entity.GetLinearDamping world
                   GravityScale = entity.GetGravityScale world
                   CollisionCategories = Physics.toCollisionCategories ^ entity.GetCollisionCategories world
                   CollisionMask = Physics.toCollisionCategories ^ entity.GetCollisionMask world
@@ -707,12 +716,15 @@ module TileMapDispatcherModule =
               Rotation = tm.GetRotation world
               Shape = tileShape
               BodyType = BodyType.Static
+              Awake = false
               Density = Constants.Physics.NormalDensity
               Friction = tm.GetFriction world
               Restitution = tm.GetRestitution world
               FixedRotation = true
-              LinearDamping = 0.0f
+              AngularVelocity = 0.0f
               AngularDamping = 0.0f
+              LinearVelocity = Vector2.Zero
+              LinearDamping = 0.0f
               GravityScale = 0.0f
               CollisionCategories = Physics.toCollisionCategories ^ tm.GetCollisionCategories world
               CollisionMask = Physics.toCollisionCategories ^ tm.GetCollisionMask world
