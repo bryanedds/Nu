@@ -9,7 +9,6 @@ open Prime
 open Nu
 
 /// Describes all the elements of a 2d transformation.
-/// TODO: for consistency with other math constructs, consider making this a struct.
 type [<StructuralEquality; NoComparison>] Transform =
     { Position : Vector2
       Depth : single

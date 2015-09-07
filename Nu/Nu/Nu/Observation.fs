@@ -34,8 +34,9 @@ module Observation =
     /// Combine an observation with the events from the given address. Combination is in 'product
     /// form', which is defined as a pair of the data of the combined events. Think of it as 'zip'
     /// for event streams.
+    /// NOTE: This function is currently broken.
+    /// TODO: fix by implementing this with callback state instead of the rat's nest of subscriptions.
     let [<DebuggerHidden; DebuggerStepThrough>] product (eventAddress : 'b Address) (observation : Observation<'a, 'o>) : Observation<'a * 'b, 'o> =
-        // TODO: implement this with callback state instead of the rat's nest of subscriptions.
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
             let subscriptionKey' = World.makeSubscriptionKey ()

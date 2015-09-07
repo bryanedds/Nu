@@ -140,6 +140,16 @@ module WorldPhysicsModule =
             let setBodyRotationMessage = SetBodyRotationMessage { PhysicsId = physicsId; Rotation = rotation }
             World.addPhysicsMessage setBodyRotationMessage world
 
+        /// Send a message to the physics system to set the angular velocity of a body with the given physics id.
+        static member setBodyAngularVelocity angularVelocity physicsId world =
+            let setBodyAngularVelocityMessage = SetBodyAngularVelocityMessage { PhysicsId = physicsId; AngularVelocity = angularVelocity }
+            World.addPhysicsMessage setBodyAngularVelocityMessage world
+
+        /// Send a message to the physics system to apply angular impulse to a body with the given physics id.
+        static member applyBodyAngularImpulse angularImpulse physicsId world =
+            let applyBodyAngularImpulseMessage = ApplyBodyAngularImpulseMessage { PhysicsId = physicsId; AngularImpulse = angularImpulse }
+            World.addPhysicsMessage applyBodyAngularImpulseMessage world
+
         /// Send a message to the physics system to set the linear velocity of a body with the given physics id.
         static member setBodyLinearVelocity linearVelocity physicsId world =
             let setBodyLinearVelocityMessage = SetBodyLinearVelocityMessage { PhysicsId = physicsId; LinearVelocity = linearVelocity }
