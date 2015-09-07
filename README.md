@@ -61,7 +61,7 @@ the non-text resources in your own project(s).
 
 All text resources in this repository (including all code) are public domain,
 with no guarantee of suitability for any purpose. You may freely use any of the
-text resources in any legal and ethical manner that you choose.
+text resources in any legal manner that you choose.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
