@@ -3,7 +3,7 @@ FP Works repository featuring the Nu Game Engine!
 
 What is the **Nu Game Engine**?
 
-*"The Nu Game Engine is a game development platform that aims to drastically reduce the cost of game development by providing a superior programming model for games via Iterative Functional Reactive Programming (IFRP). While the engine is still pre-1.0, the implementation has matured enough to prove both the efficacy and viability of pure functional programming in indie games in terms of performance, programmability, and reliability."*
+*"The Nu Game Engine is a game development platform that aims to drastically reduce the cost of game development by providing a superior programming model for games via Iterative Functional Reactive Programming (IFRP). After finally reaching v1.0.0.0, the implementation has matured enough to prove both the efficacy and viability of pure functional programming in indie games in terms of performance, programmability, and reliability."*
 
 ![Screenshot](BlazeVector/Promotional/BlastingAwayInBlazeVector.png?raw=true "Nu Game Engine demo game BlazeVector")
 
@@ -61,7 +61,7 @@ the non-text resources in your own project(s).
 
 All text resources in this repository (including all code) are public domain,
 with no guarantee of suitability for any purpose. You may freely use any of the
-text resources in any legal and ethical manner that you choose.
+text resources in any legal manner that you choose.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
