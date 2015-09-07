@@ -20,7 +20,7 @@ type SdlWindowConfig =
 type SdlViewConfig =
     | NewWindow of SdlWindowConfig
     | ExistingWindow of nativeint
-    //| FullScreen TODO: implement
+    //| FullScreen TODO: B4V1: implement
 
 /// Describes the general configuration of SDL.
 type SdlConfig =
@@ -31,12 +31,12 @@ type SdlConfig =
       AudioChunkSize : int }
 
 /// The dependencies needed to initialize SDL.
-/// TODO: make this an ADT with the necessary getters.
 type [<ReferenceEquality>] SdlDeps =
-    { OptRenderContext : nativeint option
-      OptWindow : nativeint option
-      Config : SdlConfig
-      Destroy : unit -> unit }
+    private
+        { OptRenderContext : nativeint option
+          OptWindow : nativeint option
+          Config : SdlConfig
+          Destroy : unit -> unit }
     interface IDisposable with
         member this.Dispose () =
             this.Destroy ()
@@ -73,15 +73,27 @@ module SdlDeps =
           Config = SdlConfig.defaultConfig
           Destroy = id }
 
+    /// Get an sdlDep's opt render context.
+    let getOptRenderContext sdlDeps =
+        sdlDeps.OptRenderContext
+
+    /// Get an sdlDep's opt window.
+    let getOptWindow sdlDeps =
+        sdlDeps.OptWindow
+
+    /// Get an sdlDep's config.
+    let getConfig sdlDeps =
+        sdlDeps.Config
+
     /// Attempt to initalize an SDL module.
-    let attemptPerformSdlInit create destroy =
+    let internal attemptPerformSdlInit create destroy =
         let initResult = create ()
         let error = SDL.SDL_GetError ()
         if initResult = 0 then Right ((), destroy)
         else Left error
 
     /// Attempt to initalize an SDL resource.
-    let attemptMakeSdlResource create destroy =
+    let internal attemptMakeSdlResource create destroy =
         let resource = create ()
         if resource <> IntPtr.Zero then Right (resource, destroy)
         else
@@ -89,7 +101,7 @@ module SdlDeps =
             Left error
 
     /// Attempt to initalize a global SDL resource.
-    let attemptMakeSdlGlobalResource create destroy =
+    let internal attemptMakeSdlGlobalResource create destroy =
         let resource = create ()
         if resource = 0 then Right ((), destroy)
         else
