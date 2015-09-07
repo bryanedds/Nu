@@ -53,14 +53,14 @@ module WorldEntityModule =
             let xField = Map.find name xtension.XFields
             xField.FieldValue
 
-        /// TODO: document!
+        /// Get an entity's transform.
         member this.GetTransform world =
             { Transform.Position = this.GetPosition world
               Depth = this.GetDepth world
               Size = this.GetSize world
               Rotation = this.GetRotation world }
 
-        /// TODO: document!
+        /// Set an entity's transform.
         member this.SetTransform (transform : Transform) world =
             world |>
                 this.SetPosition transform.Position |>

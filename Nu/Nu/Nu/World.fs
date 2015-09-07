@@ -462,7 +462,6 @@ module WorldModule =
             ignore ^ World.cleanUpSubsystems world
 
         /// TODO: document!
-        /// TODO: make optFrames implemented as a predicate.
         static member runWithoutCleanUp runWhile handleUpdate handleRender sdlDeps liveness world =
             Sdl.runWithoutCleanUp 
                 runWhile
