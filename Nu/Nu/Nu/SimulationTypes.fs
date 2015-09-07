@@ -158,7 +158,7 @@ and Subsystem =
         /// Enqueue a message for the subsystem.
         abstract EnqueueMessage : SubsystemMessage -> Subsystem
         /// Processed the queued messages with the subsystem.
-        abstract ProcessMessages : World -> SubsystemResult * Subsystem
+        abstract ProcessMessages : World -> SubsystemResult * Subsystem * World
         /// Apply the result of the message processing to the world.
         abstract ApplyResult : SubsystemResult -> World -> World
         /// Clean up any resources used by the subsystem.
