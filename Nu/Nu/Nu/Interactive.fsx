@@ -24,5 +24,8 @@ open Nu
 open Nu.Observation
 open Nu.Chain
 
+// set current directly to local for execution in VS F# interactive
 System.IO.Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
 
+// initialize Nu's ambient dependencies
+World.init ()
