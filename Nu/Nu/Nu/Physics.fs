@@ -565,24 +565,22 @@ module Physics =
         | _ -> Convert.ToInt32 (categoryExpr, 2)
 
     /// Evaluate a collision expression.
-    /// TODO: B4V1: see if AlgebraicConverter can be used here instead of this shitty custom syntax.
     /// TODO: propagate errors rather than tracing in place
     let evalCollisionExpr (extent : Vector2) (expr : string) =
-        let terms = List.ofArray ^ expr.Split '?'
-        let terms = List.map (fun (term : string) -> term.Trim ()) terms
         let defaultShape = BoxShape { Extent = extent * 0.5f; Center = Vector2.Zero }
-        match terms with
-        | [""] -> defaultShape
-        | ["Box"] -> defaultShape
-        | ["Circle"] -> CircleShape { Radius = extent.X * 0.5f; Center = Vector2.Zero }
-        | ["Capsule"] -> CapsuleShape { Height = extent.Y * 0.5f; Radius = extent.Y * 0.25f; Center = Vector2.Zero }
-        | ["Polygon"; verticesStr] ->
-            let vertexStrs = List.ofArray ^ verticesStr.Split '|'
-            try let vertices = List.map (fun str -> AlgebraicDescriptor.convertFromString str typeof<Vector2> :?> Vector2) vertexStrs
-                let vertices = List.map (fun vertex -> vertex - Vector2 0.5f) vertices
-                let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) vertices
-                PolygonShape { Vertices = vertices; Center = Vector2.Zero }
-            with :? NotSupportedException ->
-                trace ^ "Could not parse collision polygon vertices '" + verticesStr + "'. Format is 'Polygon? 0.0, 0.0 | 0.0, 1.0 | 1.0, 1.0 | 1.0, 0.0'"
+        match expr.Trim () with
+        | "" -> defaultShape
+        | _ ->
+            let converter = AlgebraicConverter typeof<BodyShape>
+            try let bodyShape = converter.ConvertFromString expr :?> BodyShape
+                match bodyShape with
+                | BoxShape boxShape -> BoxShape { boxShape with Extent = Vector2.Multiply (extent, boxShape.Extent) }
+                | CircleShape circleShape -> CircleShape { circleShape with Radius = extent.X * circleShape.Radius }
+                | CapsuleShape capsuleShape -> CapsuleShape { capsuleShape with Height = extent.Y * capsuleShape.Height; Radius = extent.Y * capsuleShape.Radius }
+                | PolygonShape polygonShape ->
+                    let vertices = List.map (fun vertex -> vertex - Vector2 0.5f) polygonShape.Vertices
+                    let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) vertices
+                    PolygonShape { polygonShape with Vertices = vertices }
+            with exn ->
+                trace ^ acstring exn
                 defaultShape
-        | _ -> trace ^ "Invalid tile collision expression '" + expr + "'."; defaultShape

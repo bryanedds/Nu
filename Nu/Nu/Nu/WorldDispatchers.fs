@@ -71,7 +71,7 @@ module RigidBodyFacetModule =
              define? GravityScale 1.0f
              define? CollisionCategories "1"
              define? CollisionMask "*"
-             define? CollisionExpr "Box"
+             define? CollisionExpr "[BoxShape | [0.5, 0.5 | 0.0, 0.0]]"
              define? IsBullet false
              define? IsSensor false]
 
@@ -640,7 +640,7 @@ module TopViewCharacterDispatcherModule =
             [define? FixedRotation true
              define? LinearDamping 10.0f
              define? GravityScale 0.0f
-             define? CollisionExpr "Circle"
+             define? CollisionExpr "[CircleShape | [0.5 | 0.0, 0.0]]"
              define? SpriteImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image7" }]
         
         static member IntrinsicFacetNames =
@@ -656,13 +656,13 @@ module SideViewCharacterDispatcherModule =
         static member FieldDefinitions =
             [define? FixedRotation true
              define? LinearDamping 3.0f
-             define? CollisionExpr "Capsule"
+             define? CollisionExpr "[CapsuleShape | [0.5 | 0.25 | 0.0, 0.0]]"
              define? SpriteImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image6" }]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
              typeof<SpriteFacet>.Name]
-             
+
 [<AutoOpen>]
 module TileMapDispatcherModule =
 
