@@ -32,7 +32,8 @@ module FieldDispatcherModule =
             Some tileInset
 
         static member FieldDefinitions =
-            [define? FieldMapNp DefaultFieldMap]
+            [define? Omnipresent true
+             define? FieldMapNp DefaultFieldMap]
 
         override dispatcher.GetRenderDescriptors field world =
             let viewType = field.GetViewType world
