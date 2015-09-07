@@ -574,13 +574,12 @@ module Physics =
             let converter = AlgebraicConverter typeof<BodyShape>
             try let bodyShape = converter.ConvertFromString expr :?> BodyShape
                 match bodyShape with
-                | BoxShape boxShape -> BoxShape { boxShape with Extent = Vector2.Multiply (extent, boxShape.Extent) }
-                | CircleShape circleShape -> CircleShape { circleShape with Radius = extent.X * circleShape.Radius }
-                | CapsuleShape capsuleShape -> CapsuleShape { capsuleShape with Height = extent.Y * capsuleShape.Height; Radius = extent.Y * capsuleShape.Radius }
+                | BoxShape boxShape -> BoxShape { Extent = Vector2.Multiply (extent, boxShape.Extent); Center = Vector2.Multiply (extent, boxShape.Center) }
+                | CircleShape circleShape -> CircleShape { Radius = extent.X * circleShape.Radius; Center = extent.X * circleShape.Center }
+                | CapsuleShape capsuleShape -> CapsuleShape { Height = extent.Y * capsuleShape.Height; Radius = extent.Y * capsuleShape.Radius; Center = extent.Y * capsuleShape.Center }
                 | PolygonShape polygonShape ->
-                    let vertices = List.map (fun vertex -> vertex - Vector2 0.5f) polygonShape.Vertices
-                    let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) vertices
-                    PolygonShape { polygonShape with Vertices = vertices }
+                    let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) polygonShape.Vertices
+                    PolygonShape { Vertices = vertices; Center = Vector2.Multiply (extent, polygonShape.Center) }
             with exn ->
                 trace ^ acstring exn
                 defaultShape
