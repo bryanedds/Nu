@@ -37,18 +37,23 @@ type [<ReferenceEquality>] RendererSubsystem =
         | Some selectedScreen ->
             if World.containsScreen selectedScreen world then
                 let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
-                let (world, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) world (selectedScreen.GetEntityTree world)
-                let entities = QuadTree.getElementsNearBounds viewBounds entityTree
+                let (world, quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) world (selectedScreen.GetEntityTree world)
+                let screenState = World.getScreenState selectedScreen world
+                let screenState = { screenState with EntityTree = entityTree }
+                let world = World.setScreenState screenState selectedScreen world
+                let entities = QuadTree.getElementsNearBounds viewBounds quadTree
                 let descriptors =
                     entities |>
                     List.choose (fun entity -> if entity.GetVisible world then Some ^ World.getEntityRenderDescriptors entity world else None) |>
                     List.concat
-                match selectedScreen.GetTransitionStateNp world with
-                | IncomingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors (World.getCamera world) selectedScreen (selectedScreen.GetIncoming world) world
-                | OutgoingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors (World.getCamera world) selectedScreen (selectedScreen.GetOutgoing world) world
-                | IdlingState -> descriptors
-            else []
-        | None -> []
+                let descriptors =
+                    match selectedScreen.GetTransitionStateNp world with
+                    | IncomingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors (World.getCamera world) selectedScreen (selectedScreen.GetIncoming world) world
+                    | OutgoingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors (World.getCamera world) selectedScreen (selectedScreen.GetOutgoing world) world
+                    | IdlingState -> descriptors
+                (descriptors, world)
+            else ([], world)
+        | None -> ([], world)
 
     interface Subsystem with
         member this.SubsystemType = RenderType
@@ -58,8 +63,8 @@ type [<ReferenceEquality>] RendererSubsystem =
 
         member this.ProcessMessages world =
             let camera = World.getCamera world
-            let renderDescriptors = RendererSubsystem.getRenderDescriptors world
-            (() :> obj, { this with Renderer = this.Renderer.Render camera renderDescriptors } :> Subsystem)
+            let (renderDescriptors, world) = RendererSubsystem.getRenderDescriptors world
+            (() :> obj, { this with Renderer = this.Renderer.Render camera renderDescriptors } :> Subsystem, world)
 
         member this.ApplyResult _ world = world
         member this.CleanUp world = (this :> Subsystem, world)

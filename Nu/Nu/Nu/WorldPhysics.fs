@@ -61,7 +61,7 @@ type [<ReferenceEquality>] PhysicsEngineSubsystem =
         member this.ProcessMessages world =
             let tickRate = World.getTickRate world
             let (integrationMessages, physicsEngine) = this.PhysicsEngine.Integrate tickRate
-            (integrationMessages :> obj, { this with PhysicsEngine = physicsEngine } :> Subsystem)
+            (integrationMessages :> obj, { this with PhysicsEngine = physicsEngine } :> Subsystem, world)
 
         member this.ApplyResult integrationMessages world =
             let integrationMessages = integrationMessages :?> IntegrationMessage list
