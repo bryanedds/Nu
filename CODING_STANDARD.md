@@ -6,7 +6,9 @@ Correctness, Consistency, Simplicity
 
 **First, a quick blurb on what people don't get about code standards -**
 
-* What people don't seem to understand is that code standards aren't meant to be weapons to enfoce one's own personal stylistic preferences on everyone else. Instead, they're about finding the simplest, lowest-cardinality, and least-detrimental ways for people to be consistent with one another. In that way, standards are more about logical, thoughtful reasoning processes than about having a war of attrition to enforce a cultural imperialism.
+What people don't seem to understand is that good code standards aren't designed to be used weapons to foce one's own personal stylistic preferences on everyone else. Instead, they're about finding the simplest, fewest, and least-detrimental ways to enable people to be consistent with one another. In that way, standards are more about following logical reasoning processes to their thougtful conclusion than about having a war of attrition to enforce a cultural imperialism.
+
+*For in a war of passions, only reason hopes to escape alive.*
 
 **A) Correctness**
 
