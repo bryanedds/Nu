@@ -3,7 +3,7 @@ Correctness, Consistency, Simplicity
 
 **An F\# Coding Standard Proposal for the wider F# Community.**
 
----
+-
 
 **A) Correctness**
 
@@ -37,27 +37,25 @@ Correctness, Consistency, Simplicity
 
 -   avoiding unnecessary laziness and asynchronicity (but since async being strewn throughout code is rarely avoidable, consider using the [*Vsync computation expression*](http://www.fssnip.net/rQ) instead!)
 
-14) Prefix option bindings as well as bindings to potentially null values with 'opt'.
+14) Prefix option bindings as well as bindings to potentially null values with `opt`.
 
-15) Prefix choice bindings with 'chc'.
+15) Prefix choice bindings with `chc`.
 
-16) Prefix functions that return an option or potential null with 'try', or another such indicator like 'getOpt'.
+16) Prefix functions that return an option or potential null with `try`, or another such indicator like `getOpt`.
 
-17) Prefix functions that return a choice with 'attempt', or another such indicator like 'getChc'.
+17) Prefix functions that return a choice with `attempt`, or another such indicator like `getChc`.
 
 18) Place constants and literals in a submodule inside a Constants module, in a place that is commonly accessible.
 
 19) Write tests and documentation comments for publicly-consumable types and functions.
 
-20) Use two or more words for each public field name or discriminated union to avoid inference ambiguity. For example, 'Id' is not a good public field name, but 'ProductId' might be.
+20) Use two or more words for each public field name or discriminated union to avoid inference ambiguity. For example, `Id` is not a good public field name, but `ProductId` might be.
 
 **B) Consistency**
 
 1) Use 4 spaces for indentation, not 2, nor 3. [*5 is right out.*](https://www.youtube.com/watch?v=xOrgLj9lOwk&t=1m48s)
 
-2) Use column 120 as the line length limit where practicable\*\*\*. Column 120 is not a hard limit, but is elegantly acheivable in most cases.
-
--   ​​​\*\*\* An exception to this rule is code that constructs error messages.
+2) Use column 120 as the line length limit where practicable. Column 120 is not a hard limit, but is elegantly acheivable in most cases. An exception to this rule is code that constructs error messages.
 
 3) Use the standard F\# naming conventions by -
 
@@ -68,11 +66,11 @@ Correctness, Consistency, Simplicity
 
 5) Use access specifiers for encapsulation rather than FSI files.
 
-6) Place 'open' statements at the top of each file, right below the current namespace declaration (if any).
+6) Place `open` statements at the top of each file, right below the current namespace declaration (if any).
 
 7) Order the parameters of functions from least to most important (that is, in the order of semantic impact).
 
-8) Prefer function modules to use \[&lt;RequireQualifiedAccess&gt;\] except for operators, core functions like 'flip', and DSL functions.
+8) Prefer function modules to use `[<RequireQualifiedAccess>]` except for operators, core functions like `flip`, and DSL functions.
 
 9) Prefer stepped indentation as it refactors better, keeps lines shorter, and keeps formatting normal and enforcible via automation. For example, write this -
 
@@ -155,8 +153,8 @@ let result =
 ```
     let fn optValue =
         match optValue with
-        | Some value -&gt; // do what we actually intended to do in this function
-        | None -&gt; // handle the missing case
+        | Some value -> // do what we actually intended to do in this function
+        | None -> // handle the missing case
 ```
 
 13) Surround tuples with parens to keep evaluation ordering and intent clear. For example, write this -
@@ -171,9 +169,9 @@ let result =
     let a, b = b, a
 ```
 
-14) Conceptually, () is unit, so please treat it as such. For example, write 'fn ()' rather than 'fn()'.
+14) Conceptually, () is unit, so please treat it as such. For example, write `fn ()` rather than `fn()`.
 
-15) Conceptually, (a, b, c) is a tuple, so please treat it as such. For example, write 'fn (a, b, c)' rather than 'fn(a, b, c)'.
+15) Conceptually, (a, b, c) is a tuple, so please treat it as such. For example, write `fn (a, b, c)` rather than `fn(a, b, c)`.
 
 **C) Simplicity**
 
