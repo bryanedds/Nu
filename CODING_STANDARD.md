@@ -74,78 +74,100 @@
 
 9) Prefer stepped indentation as it refactors better, keeps lines shorter, and keeps formatting normal and enforcible via automation. For example, write this -
 
-    let result =
-        ingest
-            apple
-            banana
-            caribou
+```
+let result =
+        ingest
+            apple
+            banana
+            caribou
+```
 
 - rather than this -
 
-    let result = ingest apple
-                        banana
-                        caribou
+```
+    let result = ingest apple
+        banana
+        caribou
+```
 
 10) F\# is based on ML, which is more based on Lisp than C, so use Lisp-style bracing instead of C-style. For example, write this -
 
-    let ys =
-        \[f x
-         g x
-         h x\]
+```
+    let ys =
+        \[ f x
+          g x
+          h x \]
+```
 
 - rather than this -
 
-    let ys =
-        \[
-            f x
-            g x
-            h x
-        \]
+```
+    let ys =
+        \[
+            f x
+            g x
+            h x
+        \]
+```
 
 - and this -
 
-    type T =
-        { M : int
-          N : single }
+```
+    type T =
+        { M : int
+          N : single }
+```
 
 - rather than this -
 
-    type T =
-        {
-          M : int
-          N : single
-        }
+```
+    type T =
+        {
+            M : int
+            N : single
+        }
+```
 
 11) Tab out discriminated union case definitions to keep them lined up with their members. For example, write this -
 
-    type T =
-        | A of int
-        | B of single
-        static member makeA i = A (i \* 2)
-        static member makeB s = B (s \* 2.0f)
+```
+    type T =
+        | A of int
+        | B of single
+        static member makeA i = A (i \* 2)
+        static member makeB s = B (s \* 2.0f)
+```
 
 - rather than this -
 
-    type T =
-    | A of int
-    | B of single
-        static member makeA i = A (i \* 2)
-        static member makeB s = B (s \* 2.0f)
+```
+    type T =
+    | A of int
+    | B of single
+        static member makeA i = A (i \* 2)
+        static member makeB s = B (s \* 2.0f)
+```
 
 12) Handle the intentional case first when matching / if'ing -
 
-    let fn optValue =
-        match optValue with
-        | Some value -&gt; // do what we actually intended to do in this function
-        | None -&gt; // handle the missing case
+```
+    let fn optValue =
+        match optValue with
+        | Some value -&gt; // do what we actually intended to do in this function
+        | None -&gt; // handle the missing case
+```
 
 13) Surround tuples with parens to keep evaluation ordering and intent clear. For example, write this -
 
-    let (a, b) = (b, a)
+```
+    let (a, b) = (b, a)
+```
 
 - rather than this -
 
-    let a, b = b, a
+```
+    let a, b = b, a
+```
 
 14) Conceptually, () is unit, so please treat it as such. For example, write 'fn ()' rather than 'fn()'.
 
@@ -166,9 +188,7 @@
 6) Consider making such a container an *abstract data type* by -
 
 -   privatizing all of its fields like so - type MyContainer = private { ... }
-
 -   exposing a narrow set of static member functions that provide only the desired functionality in a more abstract way.
-
 -   here are some detailed slides on leveraging abstract data types here - [*Structuring F\# Programs with Abstract Data Types*](https://jetecommerce.sharepoint.com/corporate/tech/Shared%20Documents/Tech%20Talk%20Presentations/%5bTranscripted%5d%20Structuring%20FSharp%20Programs%20with%20Abstract%20Data%20Types.pptx) (view presentation here - [*https://vimeo.com/128464151*](https://vimeo.com/128464151))
 
 **D) And Generally...**
