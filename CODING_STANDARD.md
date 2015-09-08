@@ -1,6 +1,6 @@
-**?Correctness, Consistency, Simplicity**
+**â€‹Correctness, Consistency, Simplicity**
 
-**An F\# Coding Standard Proposal for Jet.com.**
+**An F\# Coding Standard Proposal for the wider F# Community.**
 
 **A) Correctness**
 
@@ -14,7 +14,7 @@
 
 5) Prefer immutable types and referentially transparent functions.
 
-6) Make code clearly communicate its intent by its structure and / or via inline comments.
+6) Make code clearly communicate its intent by itsÂ structure and / or via inline comments.
 
 7) Make illegal states unrepresentable wherever feasible. [*Here's our friend Scott Wlaschin on the subject :)*](http://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/)
 
@@ -28,7 +28,7 @@
 
 12) Avoid arrays generally, and if they can't be avoided due to, say, interop, avoid exposing them to consuming functions by converting them to an immutable data structure, or at minimum, a seq.
 
-13) Try to preserve debuggability of code by -
+13) Try to preserve debuggability of codeÂ by -
 
 -   introducing local bindings to potentially-interesting intermediate results,
 
@@ -46,7 +46,7 @@
 
 19) Write tests and documentation comments for publicly-consumable types and functions.
 
-20) Use two or more words for each public field name or discriminated union to avoid inference ambiguity. For example, 'Id' is not a good public field name, but 'ProductId' might be.
+20) Use two or more words for each public field name or discriminated union to avoid inference ambiguity. For example, 'Id' is not a good public field name, butÂ 'ProductId' might be.
 
 **B) Consistency**
 
@@ -54,7 +54,7 @@
 
 2) Use column 120 as the line length limit where practicable\*\*\*. Column 120 is not a hard limit, but is elegantly acheivable in most cases.
 
--   ???\*\*\* An exception to this rule is code that constructs error messages.
+-   â€‹â€‹â€‹\*\*\* An exception to this rule is code that constructs error messages.
 
 3) Use the standard F\# naming conventions by -
 
@@ -68,84 +68,84 @@
 
 6) Place 'open' statements at the top of each file, right below the current namespace declaration (if any).
 
-7) Order the parameters of functions from least to most important (that is, in the order of semantic impact).
+7) Order the parameters of functions from leastÂ to mostÂ important (that is, in the order ofÂ semantic impact).
 
 8) Prefer function modules to use \[&lt;RequireQualifiedAccess&gt;\] except for operators, core functions like 'flip', and DSL functions.
 
 9) Prefer stepped indentation as it refactors better, keeps lines shorter, and keeps formatting normal and enforcible via automation. For example, write this -
 
-    let result =
-        ingest
-            apple
-            banana
-            caribou
+Â Â Â  let result =
+Â Â Â Â Â Â Â  ingest
+Â Â Â Â Â Â Â Â Â Â Â  apple
+Â Â Â Â Â Â Â Â Â Â Â  banana
+Â Â Â Â Â Â Â Â Â Â Â  caribou
 
 - rather than this -
 
-    let result = ingest apple
-                        banana
-                        caribou
+Â Â Â  let result = ingest apple
+Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â  banana
+Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â Â  caribou
 
 10) F\# is based on ML, which is more based on Lisp than C, so use Lisp-style bracing instead of C-style. For example, write this -
 
-    let ys =
-        \[f x
-         g x
-         h x\]
+Â Â Â  let ys =
+Â Â Â Â Â Â Â  \[f x
+Â Â Â Â Â Â Â Â  g x
+Â Â Â Â Â Â Â Â  h x\]
 
 - rather than this -
 
-    let ys =
-        \[
-            f x
-            g x
-            h x
-        \]
+Â Â Â  let ys =
+Â Â Â Â Â Â Â  \[
+Â Â Â Â Â Â Â Â Â Â Â  f x
+Â Â Â Â Â Â Â Â Â Â Â  g x
+Â Â Â Â Â Â Â Â Â Â Â  h x
+Â Â Â Â Â Â Â  \]
 
 - and this -
 
-    type T =
-        { M : int
-          N : single }
+Â Â Â  type T =
+Â Â Â Â Â Â Â  { M : int
+Â Â Â Â Â Â Â Â Â  N : single }
 
 - rather than this -
 
-    type T =
-        {
-          M : int
-          N : single
-        }
+Â Â Â  type T =
+Â Â Â Â Â Â Â  {
+Â Â Â Â Â Â Â Â Â  M : int
+Â Â Â Â Â Â Â Â Â  N : single
+Â Â Â Â Â Â Â  }
 
 11) Tab out discriminated union case definitions to keep them lined up with their members. For example, write this -
 
-    type T =
-        | A of int
-        | B of single
-        static member makeA i = A (i \* 2)
-        static member makeB s = B (s \* 2.0f)
+Â Â Â  type T =
+Â Â Â Â Â Â Â  | A of int
+Â Â Â Â Â Â Â  | B of single
+Â Â Â Â Â Â Â  static member makeA i = A (i \* 2)
+Â Â Â Â Â Â Â  static member makeB s = B (s \* 2.0f)
 
 - rather than this -
 
-    type T =
-    | A of int
-    | B of single
-        static member makeA i = A (i \* 2)
-        static member makeB s = B (s \* 2.0f)
+Â Â Â  type T =
+Â Â Â  | A of int
+Â Â Â  | B of single
+Â Â Â Â Â Â Â  static member makeA i = A (i \* 2)
+Â Â Â Â Â Â Â  static member makeB s = B (s \* 2.0f)
 
 12) Handle the intentional case first when matching / if'ing -
 
-    let fn optValue =
-        match optValue with
-        | Some value -&gt; // do what we actually intended to do in this function
-        | None -&gt; // handle the missing case
+Â Â Â  let fn optValue =
+Â Â Â Â Â Â Â  match optValue with
+Â Â Â Â Â Â Â  | Some value -&gt; // do what we actually intended to do in this function
+Â Â Â Â Â Â Â  | None -&gt; // handle the missing case
 
 13) Surround tuples with parens to keep evaluation ordering and intent clear. For example, write this -
 
-    let (a, b) = (b, a)
+Â Â Â  let (a, b) = (b, a)
 
 - rather than this -
 
-    let a, b = b, a
+Â Â Â  let a, b = b, a
 
 14) Conceptually, () is unit, so please treat it as such. For example, write 'fn ()' rather than 'fn()'.
 
@@ -163,9 +163,9 @@
 
 5) Consider passing around multiple dependency references in a single container (usually a record) rather than individually.
 
-6) Consider making such a container an *abstract data type* by -
+6) Consider making such a container anÂ *abstract data type* by -
 
--   privatizing all of its fields like so - type MyContainer = private { ... }
+-   privatizing all of itsÂ fields like so -Â typeÂ MyContainer =Â private { ... }
 
 -   exposing a narrow set of static member functions that provide only the desired functionality in a more abstract way.
 
