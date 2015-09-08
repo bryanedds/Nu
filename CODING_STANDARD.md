@@ -33,7 +33,7 @@ Correctness, Consistency, Simplicity
 13) Try to preserve debuggability of code by -
 
 -   introducing local bindings to potentially-interesting intermediate results,
--   avoiding unnecessary laziness and asynchronicity (but since async being strewn throughout code is rarely avoidable, consider using the [*Vsync computation expression*](http://www.fssnip.net/rQ) instead!)
+-   avoiding unnecessary laziness and asynchronicity (but since async being strewn throughout code is rarely avoidable, consider using the [*Vsync computation expression*](https://gist.github.com/bryanedds/45ef1193b79e06000a9a) instead!)
 
 14) Prefix option bindings as well as bindings to potentially null values with `opt`.
 
