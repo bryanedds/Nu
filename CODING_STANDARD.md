@@ -10,13 +10,13 @@ Correctness, Consistency, Simplicity
 
 2) Enable warnings as errors wherever possible.
 
-3) Enable --warnon:1182 wherever possible (warn on unused variables).
+3) Enable `--warnon:1182` wherever possible (warn on unused variables).
 
 4) Disable individual warnings in files as needed, and document that need.
 
 5) Prefer immutable types and referentially transparent functions.
 
-6) Make code clearly communicate its intent by its structure and / or via inline comments.
+6) Make code clearly communicate its intent by its structure and / or via inline comments.
 
 7) Make illegal states unrepresentable wherever feasible. [*Here's our friend Scott Wlaschin on the subject :)*](http://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/)
 
@@ -30,10 +30,9 @@ Correctness, Consistency, Simplicity
 
 12) Avoid arrays generally, and if they can't be avoided due to, say, interop, avoid exposing them to consuming functions by converting them to an immutable data structure, or at minimum, a seq.
 
-13) Try to preserve debuggability of code by -
+13) Try to preserve debuggability of code by -
 
 -   introducing local bindings to potentially-interesting intermediate results,
-
 -   avoiding unnecessary laziness and asynchronicity (but since async being strewn throughout code is rarely avoidable, consider using the [*Vsync computation expression*](http://www.fssnip.net/rQ) instead!)
 
 14) Prefix option bindings as well as bindings to potentially null values with `opt`.
@@ -48,7 +47,7 @@ Correctness, Consistency, Simplicity
 
 19) Write tests and documentation comments for publicly-consumable types and functions.
 
-20) Use two or more words for each public field name or discriminated union to avoid inference ambiguity. For example, `Id` is not a good public field name, but `ProductId` might be.
+20) Use two or more words for each public field name or discriminated union to avoid inference ambiguity. For example, `Id` is not a good public field name, but `ProductId` might be.
 
 **B) Consistency**
 
@@ -67,7 +66,7 @@ Correctness, Consistency, Simplicity
 
 6) Place `open` statements at the top of each file, right below the current namespace declaration (if any).
 
-7) Order the parameters of functions from least to most important (that is, in the order of semantic impact).
+7) Order the parameters of functions from least to most important (that is, in the order of semantic impact).
 
 8) Prefer function modules to use `[<RequireQualifiedAccess>]` except for operators, core functions like `flip`, and DSL functions.
 
@@ -184,9 +183,9 @@ let result =
 
 5) Consider passing around multiple dependency references in a single container (usually a record) rather than individually.
 
-6) Consider making such a container an *abstract data type* by -
+6) Consider making such a container an *abstract data type* by -
 
--   privatizing all of its fields like so - type MyContainer = private { ... }
+-   privatizing all of its fields like so - `type MyContainer = private { ... }
 -   exposing a narrow set of static member functions that provide only the desired functionality in a more abstract way.
 -   here are some detailed slides on leveraging abstract data types here - [*Structuring F\# Programs with Abstract Data Types*](https://jetecommerce.sharepoint.com/corporate/tech/Shared%20Documents/Tech%20Talk%20Presentations/%5bTranscripted%5d%20Structuring%20FSharp%20Programs%20with%20Abstract%20Data%20Types.pptx) (view presentation here - [*https://vimeo.com/128464151*](https://vimeo.com/128464151))
 
