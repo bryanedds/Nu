@@ -2,7 +2,6 @@ Correctness, Consistency, Simplicity
 ====================================
 
 **An F\# Coding Standard Proposal for the wider F# Community.**
-
 -
 
 **A) Correctness**
