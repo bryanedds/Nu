@@ -6,7 +6,8 @@ Correctness, Consistency, Simplicity
 
 **What people don't get about code standards, and what you should -**
 
-What people don't seem to understand is that code standards aren't about enforcing one's personal opinions on style. They're about finding the simplest, least-detrimental possible ways for people to be consistent with one another. In that, they are more about logical, thoughtful reasoning than an art of stylistic cultural imperialism.
+What people don't seem to understand is that code standards aren't about enforcing one's personal opinions on style. They are not about having a war of attrition to enforce a stylistic cultural imperialism. Instead, they're about finding the simplest, least-detrimental possible ways for people to be consistent with one another. In that way, they are more about logical, thoughtful reasoning.
+-
 
 **A) Correctness**
 
