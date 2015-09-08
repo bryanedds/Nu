@@ -4,6 +4,10 @@ Correctness, Consistency, Simplicity
 **An F\# Coding Standard Proposal for the wider F# Community.**
 -
 
+**What people don't get about code standards, and what you should -**
+
+What people don't seem to understand is that code standards aren't about enforcing one's personal opinions on style. They're about finding the simplest, least-detrimental possible ways for people to be consistent with one another. In that, they are more about logical, thoughtful reasoning than an art of stylistic cultural imperialism.
+
 **A) Correctness**
 
 1) Set warning levels to the highest level possible.
@@ -191,6 +195,6 @@ let result =
 
 **D) And Generally...**
 
-1) Use an automated code formatter to enforce this coding standard as much as possible. *Note that this is a work-in-progress due to a lack of existing tooling for F\#.*
+1) Use an automated code formatter to enforce this coding standard as much as possible. *Note that this is a work-in-progress due to a lack of existing tooling for F\#.* [*Discussion was left off here -)*]()
 
 2) When appending to this standard, prefer the style that is most enforceable by a reasonably intelligent automated code formatter.
