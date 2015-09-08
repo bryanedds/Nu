@@ -90,8 +90,8 @@ let result =
 
 ```
     let result = ingest apple
-        banana
-        caribou
+                        banana
+                        caribou
 ```
 
 10) F\# is based on ML, which is more based on Lisp than C, so use Lisp-style bracing instead of C-style. For example, write this -
