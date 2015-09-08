@@ -59,7 +59,6 @@
 3) Use the standard F\# naming conventions by -
 
 -   using UpperCamelCasing for Namespaces, Modules, Types, Fields, Constants, Properties, and InstanceMembers (but as said above, avoid authoring Properties and InstanceMembers in the first place).
-
 -   using lowerCamelCasing for variables, functions, staticMembers, parameters, and 'typeParameters.
 
 4) Use shadowing on different bindings with the same conceptual identity rather than ' suffixes (this also helps correctness significantly).
@@ -94,20 +93,20 @@ let result =
 
 ```
     let ys =
-        \[ f x
+        [ f x
           g x
-          h x \]
+          h x ]
 ```
 
 - rather than this -
 
 ```
     let ys =
-        \[
+        [
             f x
             g x
             h x
-        \]
+        ]
 ```
 
 - and this -
