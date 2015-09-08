@@ -3,6 +3,8 @@ Correctness, Consistency, Simplicity
 
 **An F\# Coding Standard Proposal for the wider F# Community.**
 
+---
+
 **A) Correctness**
 
 1) Set warning levels to the highest level possible.
@@ -134,8 +136,8 @@ let result =
     type T =
         | A of int
         | B of single
-        static member makeA i = A (i \* 2)
-        static member makeB s = B (s \* 2.0f)
+        static member makeA i = A (i * 2)
+        static member makeB s = B (s * 2.0f)
 ```
 
 - rather than this -
@@ -144,8 +146,8 @@ let result =
     type T =
     | A of int
     | B of single
-        static member makeA i = A (i \* 2)
-        static member makeB s = B (s \* 2.0f)
+        static member makeA i = A (i * 2)
+        static member makeB s = B (s * 2.0f)
 ```
 
 12) Handle the intentional case first when matching / if'ing -
