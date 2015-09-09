@@ -281,7 +281,7 @@ and internal SimulantState = interface end
 
 /// Hosts the ongoing state of a game. The end-user of this engine should never touch this
 /// type, and it's public _only_ to make [<CliMutable>] work.
-and [<CLIMutable; StructuralEquality; NoComparison>] GameState =
+and [<CLIMutable; NoEquality; NoComparison>] GameState =
     { Id : Guid
       OptSelectedScreen : Screen option
       PublishChanges : bool
@@ -292,7 +292,7 @@ and [<CLIMutable; StructuralEquality; NoComparison>] GameState =
 
 /// Hosts the ongoing state of a screen. The end-user of this engine should never touch this
 /// type, and it's public _only_ to make [<CliMutable>] work.
-and [<CLIMutable; StructuralEquality; NoComparison>] ScreenState =
+and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
     { Id : Guid
       Name : string
       TransitionStateNp : TransitionState
@@ -309,7 +309,7 @@ and [<CLIMutable; StructuralEquality; NoComparison>] ScreenState =
 
 /// Hosts the ongoing state of a group. The end-user of this engine should never touch this
 /// type, and it's public _only_ to make [<CliMutable>] work.
-and [<CLIMutable; StructuralEquality; NoComparison>] GroupState =
+and [<CLIMutable; NoEquality; NoComparison>] GroupState =
     { Id : Guid
       Name : string
       PublishChanges : bool
@@ -321,7 +321,7 @@ and [<CLIMutable; StructuralEquality; NoComparison>] GroupState =
 
 /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
 /// type, and it's public _only_ to make [<CliMutable>] work.
-and [<CLIMutable; StructuralEquality; NoComparison>] EntityState =
+and [<CLIMutable; NoEquality; NoComparison>] EntityState =
     { Id : Guid
       Name : string
       // Subtype : string // An alternative to using the dispatcher subtype system
