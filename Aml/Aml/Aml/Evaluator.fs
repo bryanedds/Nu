@@ -638,7 +638,7 @@ module Evaluator =
     /// Apply a special builtin operation.
     and applySpecialBuiltin name args argCount env =
         match env.EnvOptLanguagePlugin with
-        | Some lm -> lm.ApplySpecialBuiltin name args argCount env
+        | Some lm -> lm.ApplySpecialBuiltin (name, args, argCount, env)
         | None -> makeEvalViolation ":v/eval/invalidBuiltinOperator" "Built-in operator not found." env
 
     /// The appliable built-in lambdas.
@@ -882,7 +882,7 @@ module Evaluator =
     /// Apply a special selector.
     and applySpecialSelector key target env =
         match env.EnvOptLanguagePlugin with
-        | Some lm -> lm.ApplySpecialSelector key target env
+        | Some lm -> lm.ApplySpecialSelector (key, target, env)
         | None -> makeEvalViolation ":v/contract/missingLanguagePlugin" "Cannot evaluate a special selector without a language plugin." env
 
     /// Apply a composite selector.
@@ -971,7 +971,7 @@ module Evaluator =
     and evalSpecialValue specialValue specialValueExpr env =
         match env.EnvOptLanguagePlugin with
         | Some lm when lm.Name = specialValue.SVLanguageName ->
-            let specialObject = lm.SpecialValueToSpecialObject specialValueExpr env
+            let specialObject = lm.SpecialValueToSpecialObject (specialValueExpr, env)
             match specialObject with
             | Violation _ as v -> forwardEvalViolation v env
             | SpecialObject _ as s -> evalExpr s env
@@ -982,7 +982,7 @@ module Evaluator =
     /// Evaluate a special object.
     and evalSpecialObject specialObject specialObjectExpr env =
         match env.EnvOptLanguagePlugin with
-        | Some lm when lm.Guid = specialObject.SOLanguageGuid -> lm.EvalSpecialObject specialObjectExpr env
+        | Some lm when lm.Guid = specialObject.SOLanguageGuid -> lm.EvalSpecialObject (specialObjectExpr, env)
         | Some _ -> makeEvalViolation ":v/languagePlugin/mismatchedLanguagePlugin" "Wrong language plugin for special object evaluation." env
         | None -> makeEvalViolation ":v/languagePlugin/missingLanguagePlugin" "Cannot evaluate a special object without a language plugin." env
 
@@ -998,7 +998,7 @@ module Evaluator =
     /// Evaluate a prefixed expressions.
     and evalPrefixed (_ : PrefixedRecord) pfxExpr env =
         match env.EnvOptLanguagePlugin with
-        | Some lm -> lm.EvalPrefixed pfxExpr env
+        | Some lm -> lm.EvalPrefixed (pfxExpr, env)
         | _ -> makeEvalViolation ":v/languagePlugin/missingLanguagePlugin" "Cannot evaluate prefixed expressions without a language plugin." env
 
     /// Evaluate an operation.
@@ -1389,7 +1389,7 @@ module Evaluator =
     /// Evaluate a special series.
     and evalSpecialSeries specialSeries env =
         match env.EnvOptLanguagePlugin with
-        | Some lm -> lm.EvalSpecialSeries specialSeries env
+        | Some lm -> lm.EvalSpecialSeries (specialSeries, env)
         | _ -> makeEvalViolation ":v/languagePlugin/missingLanguagePlugin" "Cannot evaluate special series without a language plugin." env
 
     /// Evaluate an Aml expression structure.

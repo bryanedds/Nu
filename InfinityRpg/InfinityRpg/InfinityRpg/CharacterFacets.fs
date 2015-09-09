@@ -137,7 +137,7 @@ module CharacterAnimationFacetModule =
                       StartTime = 0L }
              define? CharacterAnimationSheet Constants.Assets.PlayerImage]
 
-        override facet.GetRenderDescriptors entity world =
+        override facet.GetRenderDescriptors (entity, world) =
             if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
                 [LayerableDescriptor
                     { Depth = entity.GetDepth world
@@ -186,5 +186,5 @@ module CharacterCameraFacetModule =
                     world
             (Cascade, world)
 
-        override facet.Register entity world =
+        override facet.Register (entity, world) =
             monitor handleUpdate (observe Events.Update entity) world

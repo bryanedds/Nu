@@ -160,7 +160,7 @@ and Subsystem =
         /// Processed the queued messages with the subsystem.
         abstract ProcessMessages : World -> SubsystemResult * Subsystem * World
         /// Apply the result of the message processing to the world.
-        abstract ApplyResult : SubsystemResult -> World -> World
+        abstract ApplyResult : SubsystemResult * World -> World
         /// Clean up any resources used by the subsystem.
         abstract CleanUp : World -> Subsystem * World
         end
@@ -173,8 +173,8 @@ and GameDispatcher () =
 
     /// Register a game when adding it to the world. Note that there is not corresponding
     /// Unregister method due to the inability to remove a game from the world.
-    abstract Register : Game -> World -> World
-    default dispatcher.Register _ world = world
+    abstract Register : Game * World -> World
+    default dispatcher.Register (_, world) = world
 
 /// The default dispatcher for screens.
 and ScreenDispatcher () =
@@ -184,12 +184,12 @@ and ScreenDispatcher () =
          define? Persistent true]
 
     /// Register a screen when adding it to the world.
-    abstract Register : Screen -> World -> World
-    default dispatcher.Register _ world = world
+    abstract Register : Screen * World -> World
+    default dispatcher.Register (_, world) = world
 
     /// Unregister a screen when removing it from the world.
-    abstract Unregister : Screen -> World -> World
-    default dispatcher.Unregister _ world = world
+    abstract Unregister : Screen * World -> World
+    default dispatcher.Unregister (_, world) = world
 
 /// The default dispatcher for groups.
 and GroupDispatcher () =
@@ -199,12 +199,12 @@ and GroupDispatcher () =
          define? Persistent true]
 
     /// Register a group when adding it to a screen.
-    abstract Register : Group -> World -> World
-    default dispatcher.Register _ world = world
+    abstract Register : Group * World -> World
+    default dispatcher.Register (_, world) = world
 
     /// Unregister a group when removing it from a screen.
-    abstract Unregister : Group -> World -> World
-    default dispatcher.Unregister _ world = world
+    abstract Unregister : Group * World -> World
+    default dispatcher.Unregister (_, world) = world
 
 /// The default dispatcher for entities.
 and EntityDispatcher () =
@@ -221,59 +221,59 @@ and EntityDispatcher () =
          define? Persistent true]
 
     /// Register an entity when adding it to a group.
-    abstract Register : Entity -> World -> World
-    default dispatcher.Register _ world = world
+    abstract Register : Entity * World -> World
+    default dispatcher.Register (_, world) = world
 
     /// Unregister an entity when removing it from a group.
-    abstract Unregister : Entity -> World -> World
-    default dispatcher.Unregister _ world = world
+    abstract Unregister : Entity * World -> World
+    default dispatcher.Unregister (_, world) = world
 
     /// Propagate an entity's physics properties from the physics subsystem.
-    abstract PropagatePhysics : Entity -> World -> World
-    default dispatcher.PropagatePhysics _ world = world
+    abstract PropagatePhysics : Entity * World -> World
+    default dispatcher.PropagatePhysics (_, world) = world
 
     /// Get the render descriptors needed to render an entity.
-    abstract GetRenderDescriptors : Entity -> World -> RenderDescriptor list
-    default dispatcher.GetRenderDescriptors _ _ = []
+    abstract GetRenderDescriptors : Entity * World -> RenderDescriptor list
+    default dispatcher.GetRenderDescriptors (_, _) = []
 
     /// Get the quick size of an entity (the appropriate user-define size for an entity).
-    abstract GetQuickSize : Entity -> World -> Vector2
-    default dispatcher.GetQuickSize _ _ = Vector2.One
+    abstract GetQuickSize : Entity * World -> Vector2
+    default dispatcher.GetQuickSize (_, _) = Vector2.One
 
     /// Get the priority with which an entity is picked in the editor.
-    abstract GetPickingPriority : Entity -> single -> World -> single
-    default dispatcher.GetPickingPriority _ depth _ = depth
+    abstract GetPickingPriority : Entity * single * World -> single
+    default dispatcher.GetPickingPriority (_, depth, _) = depth
 
 /// Dynamically augments an entity's behavior in a composable way.
 and Facet () =
 
     /// Register a facet when adding it to an entity.
-    abstract Register : Entity -> World -> World
-    default facet.Register entity world = facet.RegisterPhysics entity world
+    abstract Register : Entity * World -> World
+    default facet.Register (entity, world) = facet.RegisterPhysics (entity, world)
 
     /// Unregister a facet when removing it from an entity.
-    abstract Unregister : Entity -> World -> World
-    default facet.Unregister entity world = facet.UnregisterPhysics entity world
+    abstract Unregister : Entity * World -> World
+    default facet.Unregister (entity, world) = facet.UnregisterPhysics (entity, world)
 
     /// Participate in the registration of an entity's physics with the physics subsystem.
-    abstract RegisterPhysics : Entity -> World -> World
-    default facet.RegisterPhysics _ world = world
+    abstract RegisterPhysics : Entity * World -> World
+    default facet.RegisterPhysics (_, world) = world
 
     /// Participate in the unregistration of an entity's physics from the physics subsystem.
-    abstract UnregisterPhysics : Entity -> World -> World
-    default facet.UnregisterPhysics _ world = world
+    abstract UnregisterPhysics : Entity * World -> World
+    default facet.UnregisterPhysics (_, world) = world
 
     /// Participate in the propagation an entity's physics properties from the physics subsystem.
-    abstract PropagatePhysics : Entity -> World -> World
-    default facet.PropagatePhysics _ world = world
+    abstract PropagatePhysics : Entity * World -> World
+    default facet.PropagatePhysics (_, world) = world
 
     /// Participate in getting the render descriptors needed to render an entity.
-    abstract GetRenderDescriptors : Entity -> World -> RenderDescriptor list
-    default facet.GetRenderDescriptors _ _ = []
+    abstract GetRenderDescriptors : Entity * World -> RenderDescriptor list
+    default facet.GetRenderDescriptors (_, _) = []
 
     /// Participate in getting the priority with which an entity is picked in the editor.
-    abstract GetQuickSize : Entity -> World -> Vector2
-    default facet.GetQuickSize _ _ = Constants.Engine.DefaultEntitySize
+    abstract GetQuickSize : Entity * World -> Vector2
+    default facet.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
 
 /// A marker interface for the simulation state types (GameState, ScreenState, GroupState,
 /// and EntityState).
@@ -324,6 +324,7 @@ and [<CLIMutable; StructuralEquality; NoComparison>] GroupState =
 and [<CLIMutable; StructuralEquality; NoComparison>] EntityState =
     { Id : Guid
       Name : string
+      // Subtype : string // An alternative to using the dispatcher subtype system
       Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
       Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
       Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities

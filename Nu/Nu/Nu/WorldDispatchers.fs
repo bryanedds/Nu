@@ -75,7 +75,7 @@ module RigidBodyFacetModule =
              define? IsBullet false
              define? IsSensor false]
 
-        override facet.RegisterPhysics entity world =
+        override facet.RegisterPhysics (entity, world) =
             let bodyProperties = 
                 { BodyId = (entity.GetPhysicsId world).BodyId
                   Position = entity.GetPosition world + entity.GetSize world * 0.5f
@@ -98,12 +98,12 @@ module RigidBodyFacetModule =
                   IsSensor = entity.GetIsSensor world }
             World.createBody entity.EntityAddress (entity.GetId world) bodyProperties world
 
-        override facet.UnregisterPhysics entity world =
+        override facet.UnregisterPhysics (entity, world) =
             World.destroyBody (entity.GetPhysicsId world) world
 
-        override facet.PropagatePhysics entity world =
-            let world = facet.UnregisterPhysics entity world
-            facet.RegisterPhysics entity world
+        override facet.PropagatePhysics (entity, world) =
+            let world = facet.UnregisterPhysics (entity, world)
+            facet.RegisterPhysics (entity, world)
 
 [<AutoOpen>]
 module SpriteFacetModule =
@@ -119,7 +119,7 @@ module SpriteFacetModule =
         static member FieldDefinitions =
             [define? SpriteImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
 
-        override facet.GetRenderDescriptors entity world =
+        override facet.GetRenderDescriptors (entity, world) =
             if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
                 [LayerableDescriptor
                     { Depth = entity.GetDepth world
@@ -134,7 +134,7 @@ module SpriteFacetModule =
                               Color = Vector4.One }}]
             else []
 
-        override facet.GetQuickSize entity world =
+        override facet.GetQuickSize (entity, world) =
             match Metadata.tryGetTextureSizeAsVector2 (entity.GetSpriteImage world) world.State.AssetMetadataMap with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
@@ -176,7 +176,7 @@ module AnimatedSpriteFacetModule =
              define? AnimationStutter 4L
              define? AnimationSheet { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image7" }]
 
-        override facet.GetRenderDescriptors entity world =
+        override facet.GetRenderDescriptors (entity, world) =
             if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
                 [LayerableDescriptor
                     { Depth = entity.GetDepth world
@@ -191,7 +191,7 @@ module AnimatedSpriteFacetModule =
                               Color = Vector4.One }}]
             else []
 
-        override facet.GetQuickSize entity world =
+        override facet.GetQuickSize (entity, world) =
             entity.GetTileSize world
 
 [<AutoOpen>]
@@ -229,7 +229,7 @@ module GuiDispatcherModule =
              define? DisabledColor ^ Vector4 0.75f
              define? SwallowMouseLeft true]
 
-        override dispatcher.Register gui world =
+        override dispatcher.Register (gui, world) =
             world |>
                 World.monitor handleMouseLeft Events.MouseLeftDown gui |>
                 World.monitor handleMouseLeft Events.MouseLeftUp gui
@@ -294,12 +294,12 @@ module ButtonDispatcherModule =
              define? DownImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image2" }
              define? OptClickSound ^ Some { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Sound" }]
 
-        override dispatcher.Register button world =
+        override dispatcher.Register (button, world) =
             world |>
                 World.monitor handleMouseLeftDown Events.MouseLeftDown button |>
                 World.monitor handleMouseLeftUp Events.MouseLeftUp button
 
-        override dispatcher.GetRenderDescriptors button world =
+        override dispatcher.GetRenderDescriptors (button, world) =
             [LayerableDescriptor
                 { Depth = button.GetDepth world
                   LayeredDescriptor =
@@ -312,7 +312,7 @@ module ButtonDispatcherModule =
                           Image = if button.GetDown world then button.GetDownImage world else button.GetUpImage world
                           Color = if button.GetEnabled world then Vector4.One else button.GetDisabledColor world }}]
 
-        override dispatcher.GetQuickSize button world =
+        override dispatcher.GetQuickSize (button, world) =
             match Metadata.tryGetTextureSizeAsVector2 (button.GetUpImage world) world.State.AssetMetadataMap with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
@@ -332,7 +332,7 @@ module LabelDispatcherModule =
             [define? SwallowMouseLeft true
              define? LabelImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image4" }]
 
-        override dispatcher.GetRenderDescriptors label world =
+        override dispatcher.GetRenderDescriptors (label, world) =
             [LayerableDescriptor
                 { Depth = label.GetDepth world
                   LayeredDescriptor =
@@ -345,7 +345,7 @@ module LabelDispatcherModule =
                           Image = label.GetLabelImage world
                           Color = if label.GetEnabled world then Vector4.One else label.GetDisabledColor world }}]
 
-        override dispatcher.GetQuickSize label world =
+        override dispatcher.GetQuickSize (label, world) =
             match Metadata.tryGetTextureSizeAsVector2 (label.GetLabelImage world) world.State.AssetMetadataMap with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
@@ -377,7 +377,7 @@ module TextDispatcherModule =
              define? TextColor Vector4.One
              define? BackgroundImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image4" }]
 
-        override dispatcher.GetRenderDescriptors text world =
+        override dispatcher.GetRenderDescriptors (text, world) =
             [LayerableDescriptor
                 { Depth = text.GetDepth world
                   LayeredDescriptor =
@@ -400,7 +400,7 @@ module TextDispatcherModule =
                           Image = text.GetBackgroundImage world
                           Color = if text.GetEnabled world then Vector4.One else text.GetDisabledColor world }}]
 
-        override dispatcher.GetQuickSize text world =
+        override dispatcher.GetQuickSize (text, world) =
             match Metadata.tryGetTextureSizeAsVector2 (text.GetBackgroundImage world) world.State.AssetMetadataMap with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
@@ -468,12 +468,12 @@ module ToggleDispatcherModule =
              define? OnImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image2" }
              define? OptToggleSound ^ Some { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Sound" }]
 
-        override dispatcher.Register toggle world =
+        override dispatcher.Register (toggle, world) =
             world |>
                 World.monitor handleMouseLeftDown Events.MouseLeftDown toggle |>
                 World.monitor handleMouseLeftUp Events.MouseLeftUp toggle
 
-        override dispatcher.GetRenderDescriptors toggle world =
+        override dispatcher.GetRenderDescriptors (toggle, world) =
             [LayerableDescriptor
                 { Depth = toggle.GetDepth world
                   LayeredDescriptor =
@@ -486,7 +486,7 @@ module ToggleDispatcherModule =
                           Image = if toggle.GetOn world || toggle.GetPressed world then toggle.GetOnImage world else toggle.GetOffImage world
                           Color = if toggle.GetEnabled world then Vector4.One else toggle.GetDisabledColor world }}]
 
-        override dispatcher.GetQuickSize toggle world =
+        override dispatcher.GetQuickSize (toggle, world) =
             match Metadata.tryGetTextureSizeAsVector2 (toggle.GetOffImage world) world.State.AssetMetadataMap with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
@@ -532,12 +532,12 @@ module FeelerDispatcherModule =
             [define? SwallowMouseLeft false
              define? Touched false]
 
-        override dispatcher.Register feeler world =
+        override dispatcher.Register (feeler, world) =
             world |>
                 World.monitor handleMouseLeftDown Events.MouseLeftDown feeler |>
                 World.monitor handleMouseLeftUp Events.MouseLeftUp feeler
 
-        override dispatcher.GetQuickSize _ _ =
+        override dispatcher.GetQuickSize (_, _) =
             Vector2 64.0f
 
 [<AutoOpen>]
@@ -572,7 +572,7 @@ module FillBarDispatcherModule =
              define? FillImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image9" }
              define? BorderImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image10" }]
 
-        override dispatcher.GetRenderDescriptors fillBar world =
+        override dispatcher.GetRenderDescriptors (fillBar, world) =
             let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar world
             let fillBarColor = if fillBar.GetEnabled world then Vector4.One else fillBar.GetDisabledColor world
             [LayerableDescriptor
@@ -598,7 +598,7 @@ module FillBarDispatcherModule =
                           Image = fillBar.GetFillImage world
                           Color = fillBarColor }}]
 
-        override dispatcher.GetQuickSize fillBar world =
+        override dispatcher.GetQuickSize (fillBar, world) =
             match Metadata.tryGetTextureSizeAsVector2 (fillBar.GetBorderImage world) world.State.AssetMetadataMap with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
@@ -801,18 +801,18 @@ module TileMapDispatcherModule =
              define? TileMapAsset { PackageName = Constants.Assets.DefaultPackageName; AssetName = "TileMap" }
              define? Parallax 0.0f]
 
-        override dispatcher.Register tileMap world =
+        override dispatcher.Register (tileMap, world) =
             registerTileMapPhysics tileMap world
 
-        override dispatcher.Unregister tileMap world =
+        override dispatcher.Unregister (tileMap, world) =
             unregisterTileMapPhysics tileMap world
             
-        override dispatcher.PropagatePhysics tileMap world =
+        override dispatcher.PropagatePhysics (tileMap, world) =
             world |>
                 unregisterTileMapPhysics tileMap |>
                 registerTileMapPhysics tileMap
 
-        override dispatcher.GetRenderDescriptors tileMap world =
+        override dispatcher.GetRenderDescriptors (tileMap, world) =
             match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) world.State.AssetMetadataMap with
             | Some (_, images, map) ->
                 let camera = World.getCamera world
@@ -851,7 +851,7 @@ module TileMapDispatcherModule =
                     layers
             | None -> []
 
-        override dispatcher.GetQuickSize tileMap world =
+        override dispatcher.GetQuickSize (tileMap, world) =
             match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) world.State.AssetMetadataMap with
             | Some (_, _, map) -> Vector2 (single ^ map.Width * map.TileWidth, single ^ map.Height * map.TileHeight)
             | None -> Constants.Engine.DefaultEntitySize
