@@ -1,12 +1,12 @@
 Correctness, Consistency, Simplicity
 ====================================
 
-**An F\# Coding Standard for FPWorks Repository.**
+**An F\# Code Standard for FPWorks Repository.**
 -
 
-**First, a quick blurb on what people usually don't get about coding standards -**
+**First, a quick blurb on what people usually don't get about code standards -**
 
-What people don't seem to understand is that good coding standards aren't designed to be used as blunt instruments to foist upon others one's own stylistic preferences. Instead, they're about finding the fewest, simplest, and least  inhibiting rules that enable people to be consistent with each another (and even themselves!). In that way, code standards are more about following an informed reasoning process to its logical conclusion than about executing a war of attrition to pursue a stylistic cultural imperialism.
+What people don't seem to understand is that good code standards aren't designed to be used as blunt instruments to foist upon others one's own stylistic preferences. Instead, they're about finding the fewest, simplest, and least  inhibiting rules that enable people to be consistent with each another (and even themselves!). In that way, code standards are more about following an informed reasoning process to its logical conclusion than about executing a war of attrition to pursue a stylistic cultural imperialism.
 
 *Without reason in a decision-making process, all disagreements devolve into wars of passion... to be ended satisfactorily only by attrition... and to be relived anew by each succeeding generation.*
 
@@ -201,6 +201,6 @@ let result =
 
 **D) And Generally...**
 
-1) Use an automated code formatter to enforce this coding standard as much as possible. *Note that this is a work-in-progress due to a lack of existing tooling for F\#.* [*Discussion was left off here.*](https://github.com/fsprojects/VisualFSharpPowerTools/issues/1068)
+1) Use an automated code formatter to enforce this code standard as much as possible. *Note that this is a work-in-progress due to a lack of existing tooling for F\#.* [*Discussion was left off here.*](https://github.com/fsprojects/VisualFSharpPowerTools/issues/1068)
 
 2) When appending to this standard, prefer the style that is most enforceable by a reasonably intelligent automated code formatter.
