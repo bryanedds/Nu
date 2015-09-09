@@ -191,7 +191,7 @@ let result =
 
 6) Consider making such a container an *abstract data type* by -
 
--   privatizing all of its fields like so - `type MyContainer = private { ... }
+-   privatizing all of its fields like so - `type MyContainer = private { ... }`
 -   exposing a narrow set of static member functions that provide only the desired functionality in a more abstract way.
 -   here are some detailed slides on leveraging abstract data types here - [*Structuring F\# Programs with Abstract Data Types*](https://jetecommerce.sharepoint.com/corporate/tech/Shared%20Documents/Tech%20Talk%20Presentations/%5bTranscripted%5d%20Structuring%20FSharp%20Programs%20with%20Abstract%20Data%20Types.pptx) (view presentation here - [*https://vimeo.com/128464151*](https://vimeo.com/128464151))
 
