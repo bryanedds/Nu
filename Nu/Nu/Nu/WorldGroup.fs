@@ -42,11 +42,11 @@ module WorldGroupModule =
 
         static member private registerGroup (group : Group) world =
             let dispatcher = group.GetDispatcherNp world : GroupDispatcher
-            dispatcher.Register group world
+            dispatcher.Register (group, world)
 
         static member private unregisterGroup (group : Group) world =
             let dispatcher = group.GetDispatcherNp world : GroupDispatcher
-            dispatcher.Unregister group world
+            dispatcher.Unregister (group, world)
 
         static member internal addGroup mayReplace groupState group world =
             let isNew = not ^ World.containsGroup group world

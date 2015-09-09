@@ -64,9 +64,9 @@ type [<ReferenceEquality>] RendererSubsystem =
         member this.ProcessMessages world =
             let camera = World.getCamera world
             let (renderDescriptors, world) = RendererSubsystem.getRenderDescriptors world
-            (() :> obj, { this with Renderer = this.Renderer.Render camera renderDescriptors } :> Subsystem, world)
+            (() :> obj, { this with Renderer = this.Renderer.Render (camera, renderDescriptors) } :> Subsystem, world)
 
-        member this.ApplyResult _ world = world
+        member this.ApplyResult (_, world) = world
         member this.CleanUp world = (this :> Subsystem, world)
 
     static member make subsystemOrder renderer =

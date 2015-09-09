@@ -50,7 +50,7 @@ module BulletModule =
             [typeof<RigidBodyFacet>.Name
              typeof<SpriteFacet>.Name]
 
-        override dispatcher.Register bullet world =
+        override dispatcher.Register (bullet, world) =
             world |>
                 World.monitor handleUpdate Events.Update bullet |>
                 World.monitor handleCollision (Events.Collision ->- bullet) bullet
@@ -114,7 +114,7 @@ module EnemyModule =
             [typeof<RigidBodyFacet>.Name
              typeof<AnimatedSpriteFacet>.Name]
 
-        override dispatcher.Register enemy world =
+        override dispatcher.Register (enemy, world) =
             world |>
                 World.monitor handleUpdate Events.Update enemy |>
                 World.monitor handleCollision (Events.Collision ->- enemy) enemy
@@ -222,7 +222,7 @@ module PlayerModule =
             [typeof<RigidBodyFacet>.Name
              typeof<AnimatedSpriteFacet>.Name]
 
-        override dispatcher.Register player world =
+        override dispatcher.Register (player, world) =
             world |>
                 World.monitor handleSpawnBullet Events.Update player |>
                 World.monitor handleMovement Events.Update player |>
@@ -254,7 +254,7 @@ module PlayerGroupModule =
                 (Cascade, world)
             else (Cascade, world)
 
-        override dispatcher.Register group world =
+        override dispatcher.Register (group, world) =
             world |>
                 World.monitor handleAdjustCamera Events.Update group |>
                 World.monitor handlePlayerFall Events.Update group
@@ -315,7 +315,7 @@ module GameplayScreenModule =
             let world = World.destroyGroups groups world
             (Cascade, world)
 
-        override dispatcher.Register screen world =
+        override dispatcher.Register (screen, world) =
             world |>
                 World.monitor handleStartPlay (Events.Select ->- screen) screen |>
                 World.monitor handleStoppingPlay (Events.OutgoingStart ->- screen) screen |>

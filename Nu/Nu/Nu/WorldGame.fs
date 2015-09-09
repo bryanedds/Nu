@@ -41,7 +41,7 @@ module WorldGameModule =
 
         static member internal registerGame (world : World) : World =
             let dispatcher = Simulants.Game.GetDispatcherNp world : GameDispatcher
-            dispatcher.Register Simulants.Game world
+            dispatcher.Register (Simulants.Game, world)
 
         static member internal makeGameState dispatcher =
             let gameState = GameState.make dispatcher

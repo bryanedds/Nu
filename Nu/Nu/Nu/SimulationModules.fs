@@ -74,6 +74,7 @@ module EntityState =
         let id = Core.makeId ()
         { Id = id
           Name = match optName with Some name -> name | None -> acstring id
+          //Subtype = String.Empty
           Position = Vector2.Zero
           Depth = 0.0f
           Size = Constants.Engine.DefaultEntitySize

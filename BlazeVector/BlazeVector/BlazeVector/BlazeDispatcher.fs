@@ -61,7 +61,7 @@ module BlazeDispatcherModule =
             World.subscribe (World.handleAsScreenTransition Simulants.Title) (Events.Click ->- Simulants.GameplayBack) Simulants.Game world
 
         // game registration is where the game's high-level logic is set up!
-        override dispatcher.Register _ world =
+        override dispatcher.Register (_, world) =
 
             // hint to the renderer and audio system that the 'Gui' package should be loaded up front
             let world = World.hintRenderPackageUse Constants.Assets.GuiPackageName world
