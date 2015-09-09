@@ -197,6 +197,6 @@ let result =
 
 **D) And Generally...**
 
-1) Use an automated code formatter to enforce this coding standard as much as possible. *Note that this is a work-in-progress due to a lack of existing tooling for F\#.* [*Discussion was left off here.)*]()
+1) Use an automated code formatter to enforce this coding standard as much as possible. *Note that this is a work-in-progress due to a lack of existing tooling for F\#.* [*Discussion was left off here.)*](https://github.com/fsprojects/VisualFSharpPowerTools/issues/1068)
 
 2) When appending to this standard, prefer the style that is most enforceable by a reasonably intelligent automated code formatter.
