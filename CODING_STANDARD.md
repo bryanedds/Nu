@@ -8,7 +8,7 @@ Correctness, Consistency, Simplicity
 
 What people don't seem to understand is that good coding standards aren't designed to be used as blunt instruments to foist upon others one's most strongly-held stylistic preferences. Instead, they're about finding the simplest, most uninhibiting, and fewest number rules for enabling people to be consistent with themselves and with each another. In that way, code standards are more about following an informed reasoning process to its logical conclusion than about executing a war of attrition to pursue a stylistic cultural imperialism.
 
-*Without reason in a decision making process, all disagreements devolve into wars of passion... to be ended satisfactorily only by attrition... and to be relived anew by every succeeding generation.*
+*Without reason in a decision-making process, all disagreements devolve into wars of passion... to be ended satisfactorily only by attrition... and to be relived anew by every succeeding generation.*
 
 **A) Correctness**
 
