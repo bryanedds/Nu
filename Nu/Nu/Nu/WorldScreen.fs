@@ -55,11 +55,11 @@ module WorldScreenModule =
 
         static member private registerScreen (screen : Screen) world =
             let dispatcher = screen.GetDispatcherNp world : ScreenDispatcher
-            dispatcher.Register screen world
+            dispatcher.Register (screen, world)
 
         static member private unregisterScreen (screen : Screen) world =
             let dispatcher = screen.GetDispatcherNp world : ScreenDispatcher
-            dispatcher.Unregister screen world
+            dispatcher.Unregister (screen, world)
 
         static member internal addScreen mayReplace screenState screen world =
             let isNew = not ^ World.containsScreen screen world

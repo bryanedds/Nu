@@ -92,19 +92,37 @@ module WorldEntityModule =
         member this.DispatchesAs (dispatcherTargetType : Type) world =
             Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
 
+        /// Attach fields dynamically. Useful when eschewing the dispatcher sub-type system.
+        //member this.AttachFields fieldDefinitions world =
+        //    World.updateEntityState (fun entityState ->
+        //        let entityState = { entityState with Id = entityState.Id } // hacky copy
+        //        Reflection.attachFieldsViaDefinitions fieldDefinitions entityState
+        //        entityState)
+        //        this
+        //        world
+
+        /// Detach fields dynamically. Useful when eschewing the dispatcher sub-type system.
+        //member this.DetachFields fieldNames world =
+        //    World.updateEntityState (fun entityState ->
+        //        let entityState = { entityState with Id = entityState.Id } // hacky copy
+        //        Reflection.detachFieldsViaNames fieldNames entityState
+        //        entityState)
+        //        this
+        //        world
+
     type World with
 
         static member private registerEntity (entity : Entity) world =
             let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
             let facets = entity.GetFacetsNp world
-            let world = dispatcher.Register entity world
-            List.fold (fun world (facet : Facet) -> facet.Register entity world) world facets
+            let world = dispatcher.Register (entity, world)
+            List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
 
         static member private unregisterEntity (entity : Entity) world =
             let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
             let facets = entity.GetFacetsNp world
-            let world = dispatcher.Unregister entity world
-            List.fold (fun world (facet : Facet) -> facet.Unregister entity world) world facets
+            let world = dispatcher.Unregister (entity, world)
+            List.fold (fun world (facet : Facet) -> facet.Unregister (entity, world)) world facets
 
         static member internal addEntity mayReplace entityState entity world =
 
@@ -286,9 +304,9 @@ module WorldEntityModule =
         static member propagateEntityPhysics (entity : Entity) world =
             let dispatcher = entity.GetDispatcherNp world
             let facets = entity.GetFacetsNp world
-            let world = dispatcher.PropagatePhysics entity world
+            let world = dispatcher.PropagatePhysics (entity, world)
             List.fold
-                (fun world (facet : Facet) -> facet.PropagatePhysics entity world)
+                (fun world (facet : Facet) -> facet.PropagatePhysics (entity, world))
                 world
                 facets
         
@@ -296,10 +314,10 @@ module WorldEntityModule =
         static member getEntityRenderDescriptors (entity : Entity) world =
             let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
             let facets = entity.GetFacetsNp world
-            let renderDescriptors = dispatcher.GetRenderDescriptors entity world
+            let renderDescriptors = dispatcher.GetRenderDescriptors (entity, world)
             List.foldBack
                 (fun (facet : Facet) renderDescriptors ->
-                    let descriptors = facet.GetRenderDescriptors entity world
+                    let descriptors = facet.GetRenderDescriptors (entity, world)
                     descriptors @ renderDescriptors)
                 facets
                 renderDescriptors
@@ -308,10 +326,10 @@ module WorldEntityModule =
         static member getEntityQuickSize (entity : Entity) world =
             let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
             let facets = entity.GetFacetsNp world
-            let quickSize = dispatcher.GetQuickSize entity world
+            let quickSize = dispatcher.GetQuickSize (entity, world)
             List.fold
                 (fun (maxSize : Vector2) (facet : Facet) ->
-                    let quickSize = facet.GetQuickSize entity world
+                    let quickSize = facet.GetQuickSize (entity, world)
                     Vector2
                         (Math.Max (quickSize.X, maxSize.X),
                          Math.Max (quickSize.Y, maxSize.Y)))
@@ -322,7 +340,7 @@ module WorldEntityModule =
         static member getEntityPickingPriority entity world =
             let entityState = World.getEntityState entity world
             let dispatcher = entityState.DispatcherNp
-            dispatcher.GetPickingPriority entity entityState.Depth world
+            dispatcher.GetPickingPriority (entity, entityState.Depth, world)
 
         /// Sort subscriptions by their editor picking priority.
         static member sortSubscriptionsByPickingPriority subscriptions world =

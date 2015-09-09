@@ -567,7 +567,7 @@ module GameplayDispatcherModule =
              define? OngoingRandState Rand.DefaultSeedState
              define? ShallLoadGame false]
 
-        override dispatcher.Register gameplay world =
+        override dispatcher.Register (gameplay, world) =
             world |>
                 (observe (Events.EntityChange ->- Simulants.Player) gameplay |> subscribe handlePlayerChange) |>
                 (observe (Events.Touch ->- Simulants.HudFeeler) gameplay |> filter isObserverSelected |> monitor handleTouchFeeler) |>
