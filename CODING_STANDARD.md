@@ -4,7 +4,7 @@ Correctness, Consistency, Simplicity
 **An F\# Coding Standard Proposal for the wider F# Community.**
 -
 
-**First, a quick blurb on what people don't usually get about coding standards -**
+**First, a quick blurb on what people usually don't get about coding standards -**
 
 What people don't seem to understand is that good coding standards aren't designed to be used as blunt instruments to foist upon others one's most strongly-held stylistic preferences. Instead, they're about finding the simplest, least inhibitory, and fewest number rules needed to enable people to be consistent with themselves and with one another. In that way, code standards are more about following an informed reasoning process to its logical conclusion than about executing a war of attrition to pursue stylistic cultural imperialism.
 
