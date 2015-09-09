@@ -1,7 +1,7 @@
 Correctness, Consistency, Simplicity
 ====================================
 
-**An F\# Coding Standard Proposal for the wider F# Community.**
+**An F\# Coding Standard for FPWorks Repository.**
 -
 
 **First, a quick blurb on what people usually don't get about coding standards -**
