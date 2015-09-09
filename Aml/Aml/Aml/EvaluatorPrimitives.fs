@@ -170,7 +170,7 @@ module EvaluatorPrimitives =
         | Symbol symbol ->
             if not ^ InitialBuiltinNames.Contains symbol.SymName then
                 match env.EnvOptLanguagePlugin with
-                | Some lm -> lm.IsSpecialBuiltin symbol.SymName env
+                | Some lm -> lm.IsSpecialBuiltin (symbol.SymName, env)
                 | None -> false
             else true
         | _ -> false
@@ -192,7 +192,7 @@ module EvaluatorPrimitives =
         match value with
         | SpecialObject _ | Prefixed _ ->
             match env.EnvOptLanguagePlugin with
-            | Some lm -> lm.GetSpecialType value env
+            | Some lm -> lm.GetSpecialType (value, env)
             | None -> makeViolationWithPositions ":v/languagePlugin/missingLanguagePlugin" "Cannot get type of special value without a language plugin." env
         | _ ->
             let optType = tryFindTypeByValue value

@@ -12,6 +12,26 @@ open Nu
 [<AutoOpen>]
 module WorldFacetModule =
 
+    //type Facet with
+
+        /// Attach fields dynamically. Useful when eschewing the dispatcher sub-type system.
+        //member this.AttachFields fieldDefinitions entity world =
+        //    World.updateEntityState (fun entityState ->
+        //        let entityState = { entityState with Id = entityState.Id } // hacky copy
+        //        Reflection.attachFieldsViaDefinitions fieldDefinitions entityState
+        //        entityState)
+        //        entity
+        //        world
+
+        /// Detach fields dynamically. Useful when eschewing the dispatcher sub-type system.
+        //member this.DetachFields fieldNames entity world =
+        //    World.updateEntityState (fun entityState ->
+        //        let entityState = { entityState with Id = entityState.Id } // hacky copy
+        //        Reflection.detachFieldsViaNames fieldNames entityState
+        //        entityState)
+        //        entity
+        //        world
+
     type World with
 
         static member private tryGetFacet facetName world =
@@ -80,7 +100,7 @@ module WorldFacetModule =
                 let (entityState, world) =
                     match optEntity with
                     | Some entity ->
-                        let world = facet.Unregister entity world
+                        let world = facet.Unregister (entity, world)
                         let entityState = World.getEntityState entity world
                         (entityState, world)
                     | None -> (entityState, world)
@@ -111,7 +131,7 @@ module WorldFacetModule =
                         let world = World.setEntityStateWithoutEvent entityState entity world
                         let world = World.updateEntityInEntityTree entity oldWorld world
                         let world = World.publishEntityChange entityState entity oldWorld world
-                        let world = facet.Register entity world
+                        let world = facet.Register (entity, world)
                         Right (World.getEntityState entity world, world)
                     | None -> Right (entityState, world)
                 else Left ^ "Facet '" + Reflection.getTypeName facet + "' is incompatible with entity '" + entityState.Name + "'."

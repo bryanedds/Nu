@@ -417,21 +417,21 @@ and ILanguagePlugin =
     /// Try to initialize the language plugin.
     abstract TryInitialize : Env -> Env option
     /// Convert a special value to a special object.
-    abstract SpecialValueToSpecialObject : Expr -> Env -> Expr
+    abstract SpecialValueToSpecialObject : Expr * Env -> Expr
     /// Query that a symbol name represents a special built-in operator.
-    abstract IsSpecialBuiltin : string -> Env -> bool
+    abstract IsSpecialBuiltin : string * Env -> bool
     /// Get the type of a special object.
-    abstract GetSpecialType : Expr -> Env -> Expr
+    abstract GetSpecialType : Expr * Env -> Expr
     /// Apply a special built-in operator.
-    abstract ApplySpecialBuiltin : string -> Expr list -> int -> Env -> EvalResult
+    abstract ApplySpecialBuiltin : string * Expr list * int * Env -> EvalResult
     /// Apply a selector to a special object.
-    abstract ApplySpecialSelector : Expr -> Expr -> Env -> EvalResult
+    abstract ApplySpecialSelector : Expr * Expr * Env -> EvalResult
     /// Evaluate a prefixed expression.
-    abstract EvalPrefixed : Expr -> Env -> EvalResult
+    abstract EvalPrefixed : Expr * Env -> EvalResult
     /// Evaluate a special object.
-    abstract EvalSpecialObject : Expr -> Env -> EvalResult
+    abstract EvalSpecialObject : Expr * Env -> EvalResult
     /// Evaluate a special series expression.
-    abstract EvalSpecialSeries : Expr -> Env -> EvalResult
+    abstract EvalSpecialSeries : Expr * Env -> EvalResult
     /// The name of the language.
     abstract Name : string
     /// The unique identifier for the language.
