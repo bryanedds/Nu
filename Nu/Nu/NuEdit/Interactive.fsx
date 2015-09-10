@@ -12,6 +12,8 @@
 #r "../../../Nu/TiledSharp/Debug/TiledSharp.dll"
 #r "../../../SDL2Addendum/SDL2Addendum/SDL2Addendum/bin/Debug/SDL2Addendum.dll"
 #r "../../../Nu/Nu/Nu/bin/Debug/Nu.exe"
+#r "../../../Nu/Nu/NuEditDesign/bin/Debug/NuEditDesign.exe"
+#r "../../../Nu/Nu/NuEdit/bin/Debug/NuEdit.exe"
 
 open System
 open FSharpx
@@ -22,9 +24,23 @@ open Prime
 open Nu
 open Nu.Observation
 open Nu.Chain
+open NuEdit
 
 // set current directly to local for execution in VS F# interactive
 System.IO.Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
 
-// initialize Nu's ambient dependencies
+// initialize NuEdit's dependencies
 World.init ()
+let form = NuEdit.createForm ()
+let (targetDir, plugin) = NuEdit.selectTargetDirAndMakeNuPlugin ()
+let sdlDeps = Either.getRightValue ^ NuEdit.attemptMakeSdlDeps form
+
+// make world for NuEdit
+let world = Either.getRightValue ^ NuEdit.tryMakeEditorWorld targetDir sdlDeps form plugin
+
+let () =
+
+    // run for 60 frames
+    let world = NuEdit.runFromRepl (fun world -> World.getTickTime world < 60L) sdlDeps form world
+    let world = NuEdit.runFromRepl (fun world -> World.getTickTime world < 60L) sdlDeps form world
+    ignore world
