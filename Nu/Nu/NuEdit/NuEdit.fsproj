@@ -61,7 +61,10 @@
   <ItemGroup>
     <Compile Include="NuEditConstants.fs" />
     <Compile Include="NuEditSimulants.fs" />
+    <Compile Include="NuEditTypes.fs" />
+    <Compile Include="NuEditModules.fs" />
     <Compile Include="Program.fs" />
+    <None Include="Interactive.fsx" />
     <None Include="App.config" />
     <Content Include="AssetGraph.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
