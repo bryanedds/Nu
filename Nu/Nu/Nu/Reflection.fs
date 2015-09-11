@@ -478,7 +478,7 @@ module Reflection =
         let sourceTypeHashSet = HashSet () // wonder if HashIdentity.Reference would work?
         for sourceType in sourceTypes do
             for sourceTypeDecomposed in sourceType :: getBaseTypesExceptObject sourceType do
-                ignore ^ sourceTypeHashSet.Add sourceTypeDecomposed
+                sourceTypeHashSet.Add sourceTypeDecomposed |> ignore
         let sourceTypes = List.ofSeq sourceTypeHashSet
 
         // get the descriptors needed to construct the overlays
@@ -506,7 +506,7 @@ module Reflection =
             | _ :: _ ->
                 let includesAttribute = document.CreateAttribute Constants.Xml.IncludesAttributeName
                 includesAttribute.InnerText <- AlgebraicDescriptor.convertToString includeNames
-                ignore ^ overlayNode.Attributes.Append includesAttribute
+                overlayNode.Attributes.Append includesAttribute |> ignore
             | _ -> ()
 
             // construct the field nodes
@@ -516,18 +516,18 @@ module Reflection =
                 | Constant constant ->
                     let converter = AlgebraicConverter definition.FieldType
                     fieldNode.InnerText <- converter.ConvertToString constant
-                    ignore ^ overlayNode.AppendChild fieldNode
+                    overlayNode.AppendChild fieldNode |> ignore
                 | Variable _ -> ()
 
             // construct the "FacetNames" node if needed
             if hasFacetNamesField then
                 let facetNamesNode = document.CreateElement "FacetNames"
                 facetNamesNode.InnerText <- AlgebraicDescriptor.convertToString []
-                ignore ^ overlayNode.AppendChild facetNamesNode
+                overlayNode.AppendChild facetNamesNode |> ignore
 
             // append the overlay node
-            ignore ^ root.AppendChild overlayNode
+            root.AppendChild overlayNode |> ignore
 
         // append the root node
-        ignore ^ document.AppendChild root
+        document.AppendChild root |> ignore
         document

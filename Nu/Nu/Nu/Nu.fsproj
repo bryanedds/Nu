@@ -95,6 +95,7 @@
     <Compile Include="World.fs" />
     <Compile Include="Observation.fs" />
     <Compile Include="Chain.fs" />
+    <Compile Include="Nu.fs" />
     <Compile Include="AddressTests.fs" />
     <Compile Include="ReflectionTests.fs" />
     <Compile Include="WorldTests.fs" />

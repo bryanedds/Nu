@@ -308,7 +308,7 @@ let toDictionaryBy by list =
 /// Convert a list to a HashSet.
 let toHashSet list =
     let hashSet = HashSet HashIdentity.Structural
-    List.iter (fun item -> ignore ^ hashSet.Add item) list
+    List.iter (fun item -> hashSet.Add item |> ignore) list
     hashSet
 
 /// Implement a fold while predicate f passes.

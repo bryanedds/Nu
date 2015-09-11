@@ -66,10 +66,10 @@ type [<ReferenceEquality>] AudioPlayer =
           AssetGraphFilePath : string }
 
     static member private haltSound () =
-        ignore ^ SDL_mixer.Mix_HaltMusic ()
+        SDL_mixer.Mix_HaltMusic () |> ignore
         let (_, _, _, channelCount) =  SDL_mixer.Mix_QuerySpec ()
         for i in [0 .. channelCount - 1] do
-            ignore ^ SDL_mixer.Mix_HaltChannel i
+            SDL_mixer.Mix_HaltChannel i |> ignore
 
     static member private tryLoadAudioAsset2 (asset : Asset) =
         match Path.GetExtension asset.FilePath with
@@ -122,8 +122,8 @@ type [<ReferenceEquality>] AudioPlayer =
         match optAudioAsset with
         | Some (WavAsset _) -> note ^ "Cannot play wav file as song '" + acstring song + "'."
         | Some (OggAsset oggAsset) ->
-            ignore ^ SDL_mixer.Mix_VolumeMusic (int ^ playSongMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME)
-            ignore ^ SDL_mixer.Mix_FadeInMusic (oggAsset, -1, 256) // Mix_PlayMusic seems to somtimes cause audio 'popping' when starting a song, so a fade is used instead...
+            SDL_mixer.Mix_VolumeMusic (int ^ playSongMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME) |> ignore
+            SDL_mixer.Mix_FadeInMusic (oggAsset, -1, 256) |> ignore // Mix_PlayMusic seems to somtimes cause audio 'popping' when starting a song, so a fade is used instead... |> ignore
         | None -> note ^ "PlaySongMessage failed due to unloadable assets for '" + acstring song + "'."
         { audioPlayer with OptCurrentSong = Some playSongMessage }
 
@@ -149,8 +149,8 @@ type [<ReferenceEquality>] AudioPlayer =
         let (audioPlayer, optAudioAsset) = AudioPlayer.tryLoadAudioAsset sound audioPlayer
         match optAudioAsset with
         | Some (WavAsset wavAsset) ->
-            ignore ^ SDL_mixer.Mix_VolumeChunk (wavAsset, int ^ playSoundMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME)
-            ignore ^ SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0)
+            SDL_mixer.Mix_VolumeChunk (wavAsset, int ^ playSoundMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME) |> ignore
+            SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0) |> ignore
         | Some (OggAsset _) -> note ^ "Cannot play ogg file as sound '" + acstring sound + "'."
         | None -> note ^ "PlaySoundMessage failed due to unloadable assets for '" + acstring sound + "'."
         audioPlayer
@@ -160,9 +160,9 @@ type [<ReferenceEquality>] AudioPlayer =
             if audioPlayer.OptCurrentSong <> Some playSongMessage then
                 if  playSongMessage.TimeToFadeOutSongMs <> 0 &&
                     not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
-                    ignore ^ SDL_mixer.Mix_FadeOutMusic playSongMessage.TimeToFadeOutSongMs
+                    SDL_mixer.Mix_FadeOutMusic playSongMessage.TimeToFadeOutSongMs |> ignore
                 else
-                    ignore ^ SDL_mixer.Mix_HaltMusic ()
+                    SDL_mixer.Mix_HaltMusic () |> ignore
                 { audioPlayer with OptNextPlaySong = Some playSongMessage }
             else audioPlayer
         else AudioPlayer.playSong playSongMessage audioPlayer
@@ -170,14 +170,14 @@ type [<ReferenceEquality>] AudioPlayer =
     static member private handleFadeOutSong timeToFadeOutSongMs audioPlayer =
         if SDL_mixer.Mix_PlayingMusic () = 1 then
             if  timeToFadeOutSongMs <> 0 &&
-                not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
-                ignore ^ SDL_mixer.Mix_FadeOutMusic timeToFadeOutSongMs
+                SDL_mixer.Mix_FadingMusic () <> SDL_mixer.Mix_Fading.MIX_FADING_OUT then
+                SDL_mixer.Mix_FadeOutMusic timeToFadeOutSongMs |> ignore
             else
-                ignore ^ SDL_mixer.Mix_HaltMusic ()
+                SDL_mixer.Mix_HaltMusic () |> ignore
         audioPlayer
 
     static member private handleStopSong audioPlayer =
-        if SDL_mixer.Mix_PlayingMusic () = 1 then ignore ^ SDL_mixer.Mix_HaltMusic ()
+        if SDL_mixer.Mix_PlayingMusic () = 1 then SDL_mixer.Mix_HaltMusic () |> ignore
         audioPlayer
 
     static member private handleReloadAudioAssets audioPlayer =

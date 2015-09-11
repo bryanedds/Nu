@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open Nu
 module Program =
 
     (* TODO: investigate NuEdit extensibility mechanism. *)

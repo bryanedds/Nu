@@ -36,7 +36,7 @@ module Program =
     
         // this initializes miscellaneous values required by the engine. This should always be the
         // first line in your game program.
-        World.init ()
+        Nu.init ()
         
         // this specifies the manner in which the game is viewed. With this configuration, a new
         // window is created with a title of "BlazeVector".
@@ -65,14 +65,14 @@ module Program =
 
         // this is a callback that attempts to make 'the world' in a functional programming
         // sense. In a Nu game, the world is represented as an abstract data type named World.
-        let tryMakeWorld sdlDeps =
+        let attemptMakeWorld sdlDeps =
 
             // an instance of the above plugin
-            let nuPlugin = BlazePlugin ()
+            let plugin = BlazePlugin ()
 
             // here is an attempt to make the world with the various initial states, the engine
             // plugin, and SDL dependencies.
-            World.tryMake true 1L () nuPlugin sdlDeps
+            World.attemptMake true 1L () plugin sdlDeps
 
         // this is a callback that specifies your game's unique behavior when updating the world
         // every frame. The World value is the state of the world after the callback transforms
@@ -86,4 +86,4 @@ module Program =
         let renderWorld world = world
 
         // after some configuration it is time to run the game. We're off and running!
-        World.run tryMakeWorld updateWorld renderWorld sdlConfig
+        World.run attemptMakeWorld updateWorld renderWorld sdlConfig

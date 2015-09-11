@@ -1,5 +1,4 @@
-﻿#nowarn "9"
-#r "System.Configuration"
+﻿#r "System.Configuration"
 #r "../../../Prime/FSharpx.Core/FSharpx.Core.dll"
 #r "../../../Prime/FSharpx.Collections/FSharpx.Collections.dll"
 #r "../../../Prime/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
@@ -15,7 +14,6 @@
 
 open System
 open FSharpx
-open FParsec
 open SDL2
 open OpenTK
 open TiledSharp
@@ -28,4 +26,4 @@ open Nu.Chain
 System.IO.Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
 
 // initialize Nu's ambient dependencies
-World.init ()
+Nu.init ()

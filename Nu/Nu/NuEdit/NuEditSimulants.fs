@@ -10,5 +10,5 @@ open NuEdit
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    let EditorScreen = !> "EditorScreen"
-    let EditorGroup = EditorScreen => Constants.Engine.DefaultGroupName
+    let EditorScreen = !> Constants.Engine.DefaultScreenName
+    let DefaultEditorGroup = EditorScreen => Constants.Engine.DefaultGroupName
