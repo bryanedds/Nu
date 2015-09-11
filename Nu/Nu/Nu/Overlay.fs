@@ -179,7 +179,7 @@ module Overlayer =
         // create new overlay document into which all nodes will be inserted
         let overlays = XmlDocument ()
         let overlaysRoot = overlays.CreateElement Constants.Xml.RootNodeName
-        ignore ^ overlays.AppendChild overlaysRoot
+        overlays.AppendChild overlaysRoot |> ignore
 
         // load the user-defined overlay document from file
         let loadedOverlays = XmlDocument ()
@@ -192,7 +192,7 @@ module Overlayer =
                 (enumerable loadedOverlays.DocumentElement.ChildNodes)
         for node in childNodes do
             let imported = overlays.ImportNode (node, true)
-            ignore ^ overlays.DocumentElement.AppendChild imported
+            overlays.DocumentElement.AppendChild imported |> ignore
 
         // make overlay
         { Overlays = overlays }

@@ -150,8 +150,8 @@ module WorldEntityModule =
                             QuadTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
                             (world, entityTree))
                         world
-                        screenState.EntityTree
-                let screenState = { screenState with EntityTree = entityTree }
+                        screenState.EntityTreeNp
+                let screenState = { screenState with EntityTreeNp = entityTree }
                 let world = World.setScreenState screenState screen world
 
                 // register entity if needed
@@ -187,8 +187,8 @@ module WorldEntityModule =
                             QuadTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
                             (world, entityTree))
                         world
-                        screenState.EntityTree
-                let screenState = { screenState with EntityTree = entityTree }
+                        screenState.EntityTreeNp
+                let screenState = { screenState with EntityTreeNp = entityTree }
                 let world = World.setScreenState screenState screen world
 
                 // remove the entity from the world

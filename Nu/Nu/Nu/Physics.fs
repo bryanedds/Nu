@@ -337,7 +337,7 @@ type [<ReferenceEquality>] PhysicsEngine =
         body.UserData <- sourceAddress // BUG: ...so I set it again here :/
         // scale in the capsule's box to stop sticking
         let capsuleBox = body.FixtureList.[0].Shape :?> FarseerPhysics.Collision.Shapes.PolygonShape
-        ignore ^ capsuleBox.Vertices.Scale (Framework.Vector2 (0.75f, 1.0f))
+        capsuleBox.Vertices.Scale (Framework.Vector2 (0.75f, 1.0f)) |> ignore
         body
 
     static member private createPolygonBody sourceAddress bodyProperties polygonShape physicsEngine =
@@ -380,7 +380,7 @@ type [<ReferenceEquality>] PhysicsEngine =
     static member private destroyBody2 physicsId physicsEngine =
         match physicsEngine.Bodies.TryGetValue physicsId with
         | (true, body) ->
-            ignore ^ physicsEngine.Bodies.Remove physicsId
+            physicsEngine.Bodies.Remove physicsId |> ignore
             physicsEngine.PhysicsContext.RemoveBody body
         | (false, _) ->
             if not physicsEngine.RebuildingHack then
@@ -565,21 +565,17 @@ module Physics =
         | _ -> Convert.ToInt32 (categoryExpr, 2)
 
     /// Evaluate a collision expression.
-    /// TODO: propagate errors rather than tracing in place
     let evalCollisionExpr (extent : Vector2) (expr : string) =
         let defaultShape = BoxShape { Extent = extent * 0.5f; Center = Vector2.Zero }
         match expr.Trim () with
         | "" -> defaultShape
         | _ ->
             let converter = AlgebraicConverter typeof<BodyShape>
-            try let bodyShape = converter.ConvertFromString expr :?> BodyShape
-                match bodyShape with
-                | BoxShape boxShape -> BoxShape { Extent = Vector2.Multiply (extent, boxShape.Extent); Center = Vector2.Multiply (extent, boxShape.Center) }
-                | CircleShape circleShape -> CircleShape { Radius = extent.X * circleShape.Radius; Center = extent.X * circleShape.Center }
-                | CapsuleShape capsuleShape -> CapsuleShape { Height = extent.Y * capsuleShape.Height; Radius = extent.Y * capsuleShape.Radius; Center = extent.Y * capsuleShape.Center }
-                | PolygonShape polygonShape ->
-                    let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) polygonShape.Vertices
-                    PolygonShape { Vertices = vertices; Center = Vector2.Multiply (extent, polygonShape.Center) }
-            with exn ->
-                trace ^ acstring exn
-                defaultShape
+            let bodyShape = converter.ConvertFromString expr :?> BodyShape
+            match bodyShape with
+            | BoxShape boxShape -> BoxShape { Extent = Vector2.Multiply (extent, boxShape.Extent); Center = Vector2.Multiply (extent, boxShape.Center) }
+            | CircleShape circleShape -> CircleShape { Radius = extent.X * circleShape.Radius; Center = extent.X * circleShape.Center }
+            | CapsuleShape capsuleShape -> CapsuleShape { Height = extent.Y * capsuleShape.Height; Radius = extent.Y * capsuleShape.Radius; Center = extent.Y * capsuleShape.Center }
+            | PolygonShape polygonShape ->
+                let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) polygonShape.Vertices
+                PolygonShape { Vertices = vertices; Center = Vector2.Multiply (extent, polygonShape.Center) }

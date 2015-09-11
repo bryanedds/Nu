@@ -35,7 +35,7 @@ module WorldScreenModule =
         member this.SetPersistent value world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) this world
         member this.GetXtension world = (World.getScreenState this world).Xtension
         member this.UpdateXtension updater world = World.updateScreenState (fun screenState -> { screenState with Xtension = updater screenState.Xtension}) this world
-        member this.GetEntityTree world = (World.getScreenState this world).EntityTree
+        member this.GetEntityTree world = (World.getScreenState this world).EntityTreeNp
 
         /// Get an xtension field by name.
         member this.GetXField name world =
@@ -171,6 +171,7 @@ module WorldScreenModule =
             Reflection.readMemberValuesToTarget screenNode screenState
             let screenState = match optName with Some name -> { screenState with Name = name } | None -> screenState
             let screen = ntos screenState.Name
+            let screenState = if World.containsScreen screen world then { screenState with EntityTreeNp = screen.GetEntityTree world } else screenState
             let world = World.addScreen true screenState screen world
             let world = World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName screen world |> snd
             (screen, world)

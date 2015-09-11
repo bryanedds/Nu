@@ -9,7 +9,7 @@ module Program =
     
         // this initializes miscellaneous values required by the engine. This should always be the
         // first line in your game program.
-        World.init ()
+        Nu.init ()
         
         // this specifies the manner in which the game is viewed. With this configuration, a new
         // window is created with a title of "Infinity Rpg".
@@ -38,7 +38,7 @@ module Program =
 
         // after some configuration it is time to run the game. We're off and running!
         World.run
-            (fun sdlDeps -> World.tryMake true 1L () (InfinityRpgPlugin ()) sdlDeps)
+            (fun sdlDeps -> World.attemptMake true 1L () (InfinityRpgPlugin ()) sdlDeps)
             (fun world -> world)
             (fun world -> world)
             sdlConfig

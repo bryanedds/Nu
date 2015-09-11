@@ -27,7 +27,6 @@ module WorldModule =
     let private ScreenTransitionMouseX2Key = World.makeSubscriptionKey ()
     let private ScreenTransitionKeyboardKeyKey = World.makeSubscriptionKey ()
     let private SplashScreenUpdateKey = World.makeSubscriptionKey ()
-    let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
 
     type World with
 
@@ -459,7 +458,7 @@ module WorldModule =
 
         /// TODO: document!
         static member cleanUp world =
-            ignore ^ World.cleanUpSubsystems world
+            World.cleanUpSubsystems world |> ignore
 
         /// TODO: document!
         static member runWithoutCleanUp runWhile handleUpdate handleRender sdlDeps liveness world =
@@ -491,9 +490,9 @@ module WorldModule =
             World.run6 runWhile id id sdlDeps liveness world
 
         /// TODO: document!
-        static member run tryMakeWorld handleUpdate handleRender sdlConfig =
+        static member run attemptMakeWorld handleUpdate handleRender sdlConfig =
             Sdl.run
-                tryMakeWorld
+                attemptMakeWorld
                 World.processInput
                 (World.processUpdate handleUpdate)
                 (World.processRender handleRender)
@@ -509,7 +508,7 @@ module WorldModule =
 
         /// Try to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member tryMake useLoadedGameDispatcher tickRate userState (nuPlugin : NuPlugin) sdlDeps =
+        static member attemptMake useLoadedGameDispatcher tickRate userState (plugin : NuPlugin) sdlDeps =
 
             // attempt to generate asset metadata so the rest of the world can be created
             match Metadata.tryGenerateAssetMetadataMap Constants.Assets.AssetGraphFilePath with
@@ -517,7 +516,7 @@ module WorldModule =
 
                 // make the world's subsystems
                 let subsystems =
-                    let userSubsystems = Map.ofList ^ nuPlugin.MakeSubsystems ()
+                    let userSubsystems = Map.ofList ^ plugin.MakeSubsystems ()
                     let physicsEngine = PhysicsEngine.make Constants.Physics.Gravity
                     let physicsEngineSubsystem = PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder physicsEngine :> Subsystem
                     let renderer =
@@ -539,11 +538,11 @@ module WorldModule =
                     { SubsystemMap = defaultSubsystems @@ userSubsystems }
 
                 // make user-defined components
-                let userFacets = World.pairWithNames ^ nuPlugin.MakeFacets ()
-                let userEntityDispatchers = World.pairWithNames ^ nuPlugin.MakeEntityDispatchers ()
-                let userGroupDispatchers = World.pairWithNames ^ nuPlugin.MakeGroupDispatchers ()
-                let userScreenDispatchers = World.pairWithNames ^ nuPlugin.MakeScreenDispatchers ()
-                let userOptGameDispatcher = nuPlugin.MakeOptGameDispatcher ()
+                let userFacets = World.pairWithNames ^ plugin.MakeFacets ()
+                let userEntityDispatchers = World.pairWithNames ^ plugin.MakeEntityDispatchers ()
+                let userGroupDispatchers = World.pairWithNames ^ plugin.MakeGroupDispatchers ()
+                let userScreenDispatchers = World.pairWithNames ^ plugin.MakeScreenDispatchers ()
+                let userOptGameDispatcher = plugin.MakeOptGameDispatcher ()
 
                 // infer the active game dispatcher
                 let defaultGameDispatcher = GameDispatcher ()
@@ -618,7 +617,7 @@ module WorldModule =
                     let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH)
                     let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                     let intrinsicOverlays = World.createIntrinsicOverlays entityDispatchers facets
-                    let userOverlayRoutes = nuPlugin.MakeOverlayRoutes ()
+                    let userOverlayRoutes = plugin.MakeOverlayRoutes ()
                     { TickRate = tickRate
                       TickTime = 0L
                       UpdateCount = 0L
@@ -723,32 +722,3 @@ module WorldModule =
 
             // and finally, register the game
             World.registerGame world
-
-        /// Initialize the Nu game engine. Basically calls all the unavoidable imperative stuff
-        /// needed to set up the .NET environment appropriately. MUST be called before making the
-        /// world.
-        static member init () =
-
-            // make types load reflectively from pathed (non-static) assemblies
-            AppDomain.CurrentDomain.AssemblyLoad.Add
-                (fun args -> LoadedAssemblies.[args.LoadedAssembly.FullName] <- args.LoadedAssembly)
-            AppDomain.CurrentDomain.add_AssemblyResolve ^ ResolveEventHandler
-                (fun _ args -> snd ^ LoadedAssemblies.TryGetValue args.Name)
-
-            // ensure the current culture is invariate
-            System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.InvariantCulture
-
-            // init logging
-            Log.init ^ Some "Log.txt"
-
-            // init type converters
-            Math.initTypeConverters ()
-
-            // init F# reach-arounds
-            World.rebuildEntityTree <- fun screen world ->
-                let tree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
-                let entities = screen |> flip World.proxyGroups world |> Seq.map (flip World.proxyEntities world) |> Seq.concat
-                for entity in entities do
-                    let entityMaxBounds = World.getEntityMaxBounds entity world
-                    QuadTree.addElement false entityMaxBounds entity tree
-                (world, tree)

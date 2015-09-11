@@ -54,6 +54,12 @@
     <Compile Include="NuEditForm.Designer.cs">
       <DependentUpon>NuEditForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="NameEntryForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="NameEntryForm.Designer.cs">
+      <DependentUpon>NameEntryForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SelectablePanel.cs">
@@ -62,6 +68,9 @@
     <EmbeddedResource Include="NuEditForm.resx">
       <DependentUpon>NuEditForm.cs</DependentUpon>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NameEntryForm.resx">
+      <DependentUpon>NameEntryForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
