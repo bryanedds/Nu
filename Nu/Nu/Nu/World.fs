@@ -491,9 +491,9 @@ module WorldModule =
             World.run6 runWhile id id sdlDeps liveness world
 
         /// TODO: document!
-        static member run tryMakeWorld handleUpdate handleRender sdlConfig =
+        static member run attemptMakeWorld handleUpdate handleRender sdlConfig =
             Sdl.run
-                tryMakeWorld
+                attemptMakeWorld
                 World.processInput
                 (World.processUpdate handleUpdate)
                 (World.processRender handleRender)
@@ -509,7 +509,7 @@ module WorldModule =
 
         /// Try to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member tryMake useLoadedGameDispatcher tickRate userState (nuPlugin : NuPlugin) sdlDeps =
+        static member attemptMake useLoadedGameDispatcher tickRate userState (nuPlugin : NuPlugin) sdlDeps =
 
             // attempt to generate asset metadata so the rest of the world can be created
             match Metadata.tryGenerateAssetMetadataMap Constants.Assets.AssetGraphFilePath with

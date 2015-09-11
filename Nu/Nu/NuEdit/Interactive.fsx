@@ -35,12 +35,13 @@ let form = NuEdit.createForm ()
 let (targetDir, plugin) = NuEdit.selectTargetDirAndMakeNuPlugin ()
 let sdlDeps = Either.getRightValue ^ NuEdit.attemptMakeSdlDeps form
 
-// make world for NuEdit
-let world = Either.getRightValue ^ NuEdit.tryMakeEditorWorld targetDir sdlDeps form plugin
+// make world ready for use in NuEdit
+let world =
+    Either.getRightValue ^ World.attemptMake false 0L () plugin sdlDeps |>
+    World.createScreen typeof<ScreenDispatcher>.Name (Some Simulants.EditorScreen.ScreenName) |> snd |>
+    World.createGroup typeof<GroupDispatcher>.Name (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen |> snd |>
+    World.setOptSelectedScreen (Some Simulants.EditorScreen) |>
+    NuEdit.attachNuEditToWorld targetDir form
 
-let () =
-
-    // run for 60 frames
-    let world = NuEdit.runFromRepl (fun world -> World.getTickTime world < 60L) sdlDeps form world
-    let world = NuEdit.runFromRepl (fun world -> World.getTickTime world < 60L) sdlDeps form world
-    ignore world
+// example of running NuEdit for 60 frames
+NuEdit.runFromRepl (fun world -> World.getTickTime world < 60L) sdlDeps form world
