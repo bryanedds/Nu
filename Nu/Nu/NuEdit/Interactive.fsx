@@ -33,15 +33,14 @@ Nu.init ()
 let form = NuEdit.createForm ()
 form.Closing.Add (fun args -> args.Cancel <- true) // disable exiting
 let sdlDeps = Either.getRightValue ^ NuEdit.attemptMakeSdlDeps form
-let plugin = NuPlugin ()
+let (targetDir, plugin) = (".", NuPlugin ()) // alternatively, could pick these with NuEdit.selectTargetDirAndMakeNuPlugin ()
 
 // make world ready for use in NuEdit (could instead use NuEdit.attemptMakeWorld if less flexibility is needed)
 let world =
     World.attemptMake false 0L () plugin sdlDeps |> Either.getRightValue |>
     World.createScreen typeof<ScreenDispatcher>.Name (Some Simulants.EditorScreen.ScreenName) |> snd |>
     World.createGroup typeof<GroupDispatcher>.Name (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen |> snd |>
-    World.setOptSelectedScreen (Some Simulants.EditorScreen) |>
-    NuEdit.attachToWorld "." form
+    World.setOptSelectedScreen (Some Simulants.EditorScreen)
 
-// example of running world for 60 frames
-// let world = NuEdit.runFromRepl (fun world -> World.getTickTime world < 60L) sdlDeps form world
+// example of running Nu in NuEdit for 60 frames from repl
+NuEdit.runFromRepl (fun world -> World.getTickTime world < 60L) targetDir sdlDeps form 
