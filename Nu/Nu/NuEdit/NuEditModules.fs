@@ -574,6 +574,7 @@ module NuEdit =
         populateCreateComboBox form !RefWorld
         populateTreeViewGroups form !RefWorld
         populateGroupTabs form !RefWorld
+        form.tickingButton.CheckState <- CheckState.Unchecked
         World.runWithoutCleanUp
             runWhile
             (fun world -> let world = updateEditorWorld form world in (RefWorld := world; world))

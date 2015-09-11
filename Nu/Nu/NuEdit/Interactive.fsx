@@ -1,5 +1,4 @@
-﻿#nowarn "9"
-#r "System.Configuration"
+﻿#r "System.Configuration"
 #r "../../../Prime/FSharpx.Core/FSharpx.Core.dll"
 #r "../../../Prime/FSharpx.Collections/FSharpx.Collections.dll"
 #r "../../../Prime/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
@@ -32,6 +31,7 @@ System.IO.Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
 // initialize NuEdit's dependencies
 Nu.init ()
 let form = NuEdit.createForm ()
+form.Closing.Add (fun args -> args.Cancel <- true) // disable exiting
 let (targetDir, plugin) = NuEdit.selectTargetDirAndMakeNuPlugin ()
 let sdlDeps = Either.getRightValue ^ NuEdit.attemptMakeSdlDeps form
 
@@ -44,4 +44,4 @@ let world =
     NuEdit.attachToWorld targetDir form
 
 // example of running NuEdit for 60 frames
-NuEdit.runFromRepl (fun world -> World.getTickTime world < 60L) sdlDeps form world
+// let world = NuEdit.runFromRepl (fun world -> World.getTickTime world < 60L) sdlDeps form world
