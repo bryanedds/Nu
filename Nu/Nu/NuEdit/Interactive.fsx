@@ -32,8 +32,8 @@ System.IO.Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
 Nu.init ()
 let form = NuEdit.createForm ()
 form.Closing.Add (fun args -> args.Cancel <- true) // disable exiting
-let (targetDir, plugin) = NuEdit.selectTargetDirAndMakeNuPlugin ()
 let sdlDeps = Either.getRightValue ^ NuEdit.attemptMakeSdlDeps form
+let plugin = NuPlugin ()
 
 // make world ready for use in NuEdit (could instead use NuEdit.attemptMakeWorld if less flexibility is needed)
 let world =
@@ -41,7 +41,7 @@ let world =
     World.createScreen typeof<ScreenDispatcher>.Name (Some Simulants.EditorScreen.ScreenName) |> snd |>
     World.createGroup typeof<GroupDispatcher>.Name (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen |> snd |>
     World.setOptSelectedScreen (Some Simulants.EditorScreen) |>
-    NuEdit.attachToWorld targetDir form
+    NuEdit.attachToWorld "." form
 
-// example of running NuEdit for 60 frames
+// example of running world for 60 frames
 // let world = NuEdit.runFromRepl (fun world -> World.getTickTime world < 60L) sdlDeps form world

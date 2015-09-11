@@ -508,7 +508,7 @@ module WorldModule =
 
         /// Try to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member attemptMake useLoadedGameDispatcher tickRate userState (nuPlugin : NuPlugin) sdlDeps =
+        static member attemptMake useLoadedGameDispatcher tickRate userState (plugin : NuPlugin) sdlDeps =
 
             // attempt to generate asset metadata so the rest of the world can be created
             match Metadata.tryGenerateAssetMetadataMap Constants.Assets.AssetGraphFilePath with
@@ -516,7 +516,7 @@ module WorldModule =
 
                 // make the world's subsystems
                 let subsystems =
-                    let userSubsystems = Map.ofList ^ nuPlugin.MakeSubsystems ()
+                    let userSubsystems = Map.ofList ^ plugin.MakeSubsystems ()
                     let physicsEngine = PhysicsEngine.make Constants.Physics.Gravity
                     let physicsEngineSubsystem = PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder physicsEngine :> Subsystem
                     let renderer =
@@ -538,11 +538,11 @@ module WorldModule =
                     { SubsystemMap = defaultSubsystems @@ userSubsystems }
 
                 // make user-defined components
-                let userFacets = World.pairWithNames ^ nuPlugin.MakeFacets ()
-                let userEntityDispatchers = World.pairWithNames ^ nuPlugin.MakeEntityDispatchers ()
-                let userGroupDispatchers = World.pairWithNames ^ nuPlugin.MakeGroupDispatchers ()
-                let userScreenDispatchers = World.pairWithNames ^ nuPlugin.MakeScreenDispatchers ()
-                let userOptGameDispatcher = nuPlugin.MakeOptGameDispatcher ()
+                let userFacets = World.pairWithNames ^ plugin.MakeFacets ()
+                let userEntityDispatchers = World.pairWithNames ^ plugin.MakeEntityDispatchers ()
+                let userGroupDispatchers = World.pairWithNames ^ plugin.MakeGroupDispatchers ()
+                let userScreenDispatchers = World.pairWithNames ^ plugin.MakeScreenDispatchers ()
+                let userOptGameDispatcher = plugin.MakeOptGameDispatcher ()
 
                 // infer the active game dispatcher
                 let defaultGameDispatcher = GameDispatcher ()
@@ -617,7 +617,7 @@ module WorldModule =
                     let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH)
                     let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                     let intrinsicOverlays = World.createIntrinsicOverlays entityDispatchers facets
-                    let userOverlayRoutes = nuPlugin.MakeOverlayRoutes ()
+                    let userOverlayRoutes = plugin.MakeOverlayRoutes ()
                     { TickRate = tickRate
                       TickTime = 0L
                       UpdateCount = 0L

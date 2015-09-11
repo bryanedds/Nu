@@ -591,7 +591,7 @@ module NuEdit =
         let assemblyTypes = assembly.GetTypes ()
         let optDispatcherType = Array.tryFind (fun (aType : Type) -> aType.IsSubclassOf typeof<NuPlugin>) assemblyTypes
         match optDispatcherType with
-        | Some aType -> let nuPlugin = Activator.CreateInstance aType :?> NuPlugin in (dirName, nuPlugin)
+        | Some aType -> let plugin = Activator.CreateInstance aType :?> NuPlugin in (dirName, plugin)
         | None -> (".", NuPlugin ())
 
     /// Select a target directory for the desired plugin and its assets.
