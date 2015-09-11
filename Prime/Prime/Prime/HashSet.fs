@@ -19,5 +19,5 @@ module HashSetModule =
         /// Force the addition of an element, removing the existing one if necessary.
         member this.ForceAdd item =
             let forced = this.Remove item
-            ignore ^ this.Add item
+            this.Add item |> ignore
             forced

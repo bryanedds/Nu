@@ -178,8 +178,8 @@ module Sdl =
             match Constants.Render.ScreenClearing with
             | NoClear -> ()
             | ColorClear (r, g, b) ->
-                ignore ^ SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy)
-                ignore ^ SDL.SDL_RenderClear renderContext
+                SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy) |> ignore
+                SDL.SDL_RenderClear renderContext |> ignore
             let world = handleRender world
             SDL.SDL_RenderPresent renderContext
             world

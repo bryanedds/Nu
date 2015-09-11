@@ -40,9 +40,6 @@ module NuEdit =
         let selectedGroup = (World.getUserState world).SelectedGroup
         World.proxyEntities selectedGroup world
 
-    let private clearOtherWorlds world =
-        World.updateUserState (fun editorState -> { editorState with PastWorlds = []; FutureWorlds = [] }) world
-
     let private getSnaps (form : NuEditForm) =
         let positionSnap = snd ^ Int32.TryParse form.positionSnapTextBox.Text
         let rotationSnap = snd ^ Int32.TryParse form.rotationSnapTextBox.Text
@@ -80,7 +77,7 @@ module NuEdit =
         if not ^ treeCategory.Nodes.ContainsKey treeCategoryNodeName then
             let treeCategoryNode = TreeNode (entity.GetName world)
             treeCategoryNode.Name <- treeCategoryNodeName
-            ignore ^ treeCategory.Nodes.Add treeCategoryNode
+            treeCategory.Nodes.Add treeCategoryNode |> ignore
         else () // when changing an entity name, entity will be added twice - once from win forms, once from world
 
     let private clearTreeViewNodes (form : NuEditForm) =
@@ -89,14 +86,14 @@ module NuEdit =
     let private populateCreateComboBox (form : NuEditForm) world =
         form.createEntityComboBox.Items.Clear ()
         for dispatcherKvp in World.getEntityDispatchers world do
-            ignore ^ form.createEntityComboBox.Items.Add dispatcherKvp.Key
+            form.createEntityComboBox.Items.Add dispatcherKvp.Key |> ignore
         form.createEntityComboBox.SelectedIndex <- 0
 
     let private populateTreeViewGroups (form : NuEditForm) world =
         for dispatcherKvp in World.getEntityDispatchers world do
             let treeGroup = TreeNode dispatcherKvp.Key
             treeGroup.Name <- treeGroup.Text
-            ignore ^ form.treeView.Nodes.Add treeGroup
+            form.treeView.Nodes.Add treeGroup |> ignore
 
     let private populateTreeViewNodes (form : NuEditForm) world =
         let selectedGroup = (World.getUserState world).SelectedGroup
@@ -108,7 +105,7 @@ module NuEdit =
         groupTabPages.Clear ()
         let groups = World.proxyGroups Simulants.EditorScreen world
         for group in groups do
-            groupTabPages.Add group.GroupName
+            groupTabPages.Add (group.GroupName, group.GroupName)
 
     let private tryScrollTreeViewToPropertyGridSelection (form : NuEditForm) =
         match form.propertyGrid.SelectedObject with
@@ -140,10 +137,14 @@ module NuEdit =
         restoreExpansionState form.treeView treeState
         tryScrollTreeViewToPropertyGridSelection form
 
+    let private refreshGroupTabs (form : NuEditForm) world =
+        populateGroupTabs form world
+
     let private refreshFormOnUndoRedo (form : NuEditForm) world =
         form.tickingButton.Checked <- false
         refreshPropertyGrid form world
         refreshTreeView form world
+        refreshGroupTabs form world
 
     let private selectEntity (form : NuEditForm) entity world =
         RefWorld := world // must be set for property grid
@@ -184,7 +185,7 @@ module NuEdit =
     let private handleNuMouseRightDown (form : NuEditForm) (_ : Event<MouseButtonData, Game>) world =
         let handled = if World.isTicking world then Cascade else Resolve
         let mousePosition = World.getMousePositionF world
-        ignore ^ tryMousePick form mousePosition world
+        tryMousePick form mousePosition world |> ignore
         let world = World.updateUserState (fun editorState -> { editorState with RightClickPosition = mousePosition }) world
         (handled, world)
 
@@ -230,7 +231,6 @@ module NuEdit =
         | DragCameraNone -> (Resolve, world)
 
     let private subscribeToEntityEvents form world =
-        // TODO: change subscriptions when groups are changed
         let selectedGroup = (World.getUserState world).SelectedGroup
         world |>
             World.subscribe5 Constants.SubscriptionKeys.AddEntity (handleNuEntityAdd form) (Events.EntityAdd ->- selectedGroup ->- Events.Any) Simulants.Game |>
@@ -244,13 +244,7 @@ module NuEdit =
     let private trySaveFile filePath world =
         let selectedGroup = (World.getUserState world).SelectedGroup
         try World.writeGroupToFile filePath selectedGroup world
-        with exn ->
-            ignore ^
-                MessageBox.Show
-                    ("Could not save file due to: " + acstring exn,
-                     "File save error.",
-                     MessageBoxButtons.OK,
-                     MessageBoxIcon.Error)
+        with exn -> MessageBox.Show ("Could not save file due to: " + acstring exn, "File save error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
 
     let private tryLoadFile (form : NuEditForm) filePath world =
 
@@ -272,12 +266,7 @@ module NuEdit =
 
         // handle load failure
         with exn ->
-            ignore ^
-                MessageBox.Show
-                    ("Could not load file due to: " + acstring exn,
-                     "File load error.",
-                     MessageBoxButtons.OK,
-                     MessageBoxIcon.Error)
+            MessageBox.Show ("Could not load file due to: " + acstring exn, "File load error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             world
 
     let private handleFormExit (form : NuEditForm) (_ : EventArgs) =
@@ -325,7 +314,7 @@ module NuEdit =
                 let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
                 form.propertyGrid.SelectedObject <- entityTds
                 world
-            with exn -> ignore ^ MessageBox.Show (acstring exn); world)
+            with exn -> MessageBox.Show (acstring exn) |> ignore; world)
 
     let private handleFormDelete (form : NuEditForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
@@ -336,6 +325,23 @@ module NuEdit =
                 form.propertyGrid.SelectedObject <- null
                 world
             | _ -> world)
+
+    let private handleFormNew (form : NuEditForm) (_ : EventArgs) =
+        use groupNameEntryForm = new NameEntryForm ()
+        groupNameEntryForm.okButton.Click.Add (fun _ ->
+            ignore ^ WorldChangers.Add (fun world ->
+                let world = pushPastWorld world world
+                let groupName = groupNameEntryForm.nameTextBox.Text
+                try let world = World.createGroup typeof<GroupDispatcher>.Name (Some groupName) Simulants.EditorScreen world |> snd
+                    refreshGroupTabs form world
+                    form.groupTabs.SelectTab (form.groupTabs.TabPages.IndexOfKey groupName)
+                    world
+                with exn ->
+                    MessageBox.Show (acstring exn, "Group creation error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    world)
+            groupNameEntryForm.Close ())
+        groupNameEntryForm.cancelButton.Click.Add (fun _ -> groupNameEntryForm.Close ())
+        groupNameEntryForm.ShowDialog () |> ignore
 
     let private handleFormSave (form : NuEditForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
@@ -349,12 +355,25 @@ module NuEdit =
             let openFileResult = form.openFileDialog.ShowDialog form
             match openFileResult with
             | DialogResult.OK ->
+                let world = pushPastWorld world world
                 let world = tryLoadFile form form.openFileDialog.FileName world
-                let world = clearOtherWorlds world
                 form.propertyGrid.SelectedObject <- null
-                form.tickingButton.Checked <- false
                 world
             | _ -> world)
+
+    let private handleFormClose (form : NuEditForm) (_ : EventArgs) =
+        ignore ^ WorldChangers.Add (fun world ->
+            match form.groupTabs.TabPages.Count with
+            | 1 ->
+                MessageBox.Show ("Cannot destroy only remaining group.", "Group destruction error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                world
+            | _ ->
+                let world = pushPastWorld world world
+                let group = (World.getUserState world).SelectedGroup
+                let world = World.destroyGroupImmediate group world
+                form.propertyGrid.SelectedObject <- null
+                form.groupTabs.TabPages.RemoveByKey group.GroupName
+                world)
 
     let private handleFormUndo (form : NuEditForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
@@ -450,12 +469,7 @@ module NuEdit =
             match World.tryReloadAssets assetSourceDir targetDir RefinementDir world with
             | Right world -> world
             | Left error ->
-                ignore ^
-                    MessageBox.Show
-                        ("Asset reload error due to: " + error + "'.",
-                         "Asset reload error.",
-                         MessageBoxButtons.OK,
-                         MessageBoxIcon.Error)
+                MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world)
 
     let private handleFormReloadOverlays (form : NuEditForm) (_ : EventArgs) =
@@ -468,13 +482,23 @@ module NuEdit =
                 refreshPropertyGrid form world
                 world
             | Left error ->
-                ignore ^
-                    MessageBox.Show
-                        ("Overlay reload error due to: " + error + "'.",
-                         "Overlay reload error.",
-                         MessageBoxButtons.OK,
-                         MessageBoxIcon.Error)
+                MessageBox.Show ("Overlay reload error due to: " + error + "'.", "Overlay reload error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world)
+
+    let private handleFormGroupTabSelected (form : NuEditForm) (_ : EventArgs) =
+        ignore ^ WorldChangers.Add (fun world ->
+            let world = unsubscribeFromEntityEvents world
+            let world =
+                World.updateUserState (fun editorState ->
+                    let groupTabs = form.groupTabs
+                    let groupTab = groupTabs.SelectedTab
+                    { editorState with SelectedGroup = stog Simulants.EditorScreen groupTab.Text })
+                    world
+            let world = subscribeToEntityEvents form world
+            form.propertyGrid.SelectedObject <- null
+            refreshPropertyGrid form world
+            refreshTreeView form world
+            world)
 
     let private updateEntityDrag (form : NuEditForm) world =
         if not ^ canEditWithMouse form world then
@@ -548,14 +572,9 @@ module NuEdit =
         Directory.SetCurrentDirectory dirName
         let assembly = Assembly.LoadFrom filePath
         let assemblyTypes = assembly.GetTypes ()
-        let optDispatcherType =
-            Array.tryFind
-                (fun (aType : Type) -> aType.IsSubclassOf typeof<NuPlugin>)
-                assemblyTypes
+        let optDispatcherType = Array.tryFind (fun (aType : Type) -> aType.IsSubclassOf typeof<NuPlugin>) assemblyTypes
         match optDispatcherType with
-        | Some aType ->
-            let nuPlugin = Activator.CreateInstance aType :?> NuPlugin
-            (dirName, nuPlugin)
+        | Some aType -> let nuPlugin = Activator.CreateInstance aType :?> NuPlugin in (dirName, nuPlugin)
         | None -> (".", NuPlugin ())
 
     let selectTargetDirAndMakeNuPlugin () =
@@ -582,8 +601,10 @@ module NuEdit =
         form.deleteEntityButton.Click.Add (handleFormDelete form)
         form.deleteToolStripMenuItem.Click.Add (handleFormDelete form)
         form.deleteContextMenuItem.Click.Add (handleFormDelete form)
+        form.newToolStripMenuItem.Click.Add (handleFormNew form)
         form.saveToolStripMenuItem.Click.Add (handleFormSave form)
         form.openToolStripMenuItem.Click.Add (handleFormOpen form)
+        form.closeToolStripMenuItem.Click.Add (handleFormClose form)
         form.undoButton.Click.Add (handleFormUndo form)
         form.undoToolStripMenuItem.Click.Add (handleFormUndo form)
         form.redoButton.Click.Add (handleFormRedo form)
@@ -599,6 +620,7 @@ module NuEdit =
         form.resetCameraButton.Click.Add (handleFormResetCamera form)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
         form.reloadOverlaysButton.Click.Add (handleFormReloadOverlays form)
+        form.groupTabs.Selected.Add (handleFormGroupTabSelected form)
         form.Show ()
         form
 
@@ -669,7 +691,7 @@ module NuEdit =
             match tryMakeEditorWorld targetDir sdlDeps form plugin with
             | Right world ->
                 RefWorld := world
-                ignore ^ run5 tautology sdlDeps form
+                run5 tautology sdlDeps form |> ignore
                 Constants.Engine.SuccessExitCode
             | Left error -> failwith error
         | Left error -> failwith error
