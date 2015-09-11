@@ -119,7 +119,7 @@ and EntityPropertyDescriptor (property, attributes) =
         // NOTE: in order to update the view immediately, we have to apply the changer twice,
         // once immediately and once in the update function
         entityTds.RefWorld := changer !entityTds.RefWorld
-        ignore ^ entityTds.WorldChangers.Add changer
+        entityTds.WorldChangers.Add changer |> ignore
 
 and EntityTypeDescriptor (optSource : obj) =
     inherit CustomTypeDescriptor ()

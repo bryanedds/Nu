@@ -337,7 +337,7 @@ type [<ReferenceEquality>] PhysicsEngine =
         body.UserData <- sourceAddress // BUG: ...so I set it again here :/
         // scale in the capsule's box to stop sticking
         let capsuleBox = body.FixtureList.[0].Shape :?> FarseerPhysics.Collision.Shapes.PolygonShape
-        ignore ^ capsuleBox.Vertices.Scale (Framework.Vector2 (0.75f, 1.0f))
+        capsuleBox.Vertices.Scale (Framework.Vector2 (0.75f, 1.0f)) |> ignore
         body
 
     static member private createPolygonBody sourceAddress bodyProperties polygonShape physicsEngine =
@@ -380,7 +380,7 @@ type [<ReferenceEquality>] PhysicsEngine =
     static member private destroyBody2 physicsId physicsEngine =
         match physicsEngine.Bodies.TryGetValue physicsId with
         | (true, body) ->
-            ignore ^ physicsEngine.Bodies.Remove physicsId
+            physicsEngine.Bodies.Remove physicsId |> ignore
             physicsEngine.PhysicsContext.RemoveBody body
         | (false, _) ->
             if not physicsEngine.RebuildingHack then

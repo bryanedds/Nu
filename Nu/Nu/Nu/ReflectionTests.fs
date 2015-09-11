@@ -41,7 +41,7 @@ module ReflectionTests =
         let xtd = { Xtension = Xtension.mixed }
         let xtd = xtd?TestField <- 5
         use stream = writeToStream (Reflection.writeMemberValuesFromTarget tautology3) xtd
-        ignore ^ stream.Seek (0L, SeekOrigin.Begin)
+        stream.Seek (0L, SeekOrigin.Begin) |> ignore
         let xtdRead = { xtd with Xtension = xtd.Xtension } // hacky copy
         readFromStream (fun node target -> Reflection.readMemberValuesToTarget node target) stream { Xtension = Xtension.mixed }
         Assert.Equal (xtd, xtdRead)

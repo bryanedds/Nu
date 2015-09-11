@@ -219,8 +219,8 @@ type [<ReferenceEquality>] Renderer =
                 let mutable rotationCenter = SDL.SDL_Point ()
                 rotationCenter.x <- int ^ sizeView.X * 0.5f
                 rotationCenter.y <- int ^ sizeView.Y * 0.5f
-                ignore ^ SDL.SDL_SetTextureColorMod (texture, byte ^ 255.0f * color.X, byte ^ 255.0f * color.Y, byte ^ 255.0f * color.Z)
-                ignore ^ SDL.SDL_SetTextureAlphaMod (texture, byte ^ 255.0f * color.W)
+                SDL.SDL_SetTextureColorMod (texture, byte ^ 255.0f * color.X, byte ^ 255.0f * color.Y, byte ^ 255.0f * color.Z) |> ignore
+                SDL.SDL_SetTextureAlphaMod (texture, byte ^ 255.0f * color.W) |> ignore
                 let renderResult =
                     SDL.SDL_RenderCopyEx (
                         renderer.RenderContext,
@@ -337,7 +337,7 @@ type [<ReferenceEquality>] Renderer =
                     destRect.y <- int ^ -positionView.Y + camera.EyeSize.Y * 0.5f - single textureSizeY // negation for right-handedness
                     destRect.w <- textureSizeX
                     destRect.h <- textureSizeY
-                    if textTexture <> IntPtr.Zero then ignore ^ SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect)
+                    if textTexture <> IntPtr.Zero then SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect) |> ignore
                     SDL.SDL_DestroyTexture textTexture
                     SDL.SDL_FreeSurface textSurface
                 renderer
@@ -356,7 +356,7 @@ type [<ReferenceEquality>] Renderer =
         let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
         match targetResult with
         | 0 ->
-            ignore ^ SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD)
+            SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
             let renderDescriptorsRev = List.rev renderDescriptors
             let renderDescriptorsSorted = List.sortBy (fun (LayerableDescriptor descriptor) -> descriptor.Depth) renderDescriptorsRev
             let layeredDescriptors = List.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted

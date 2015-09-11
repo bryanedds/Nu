@@ -278,7 +278,7 @@ module Assets =
         let refinementFilePath = Path.Combine (refinementDirectory, refinementFileSubpath)
 
         // refine the asset
-        ignore ^ Directory.CreateDirectory ^ Path.GetDirectoryName refinementFilePath
+        Directory.CreateDirectory ^ Path.GetDirectoryName refinementFilePath |> ignore
         match refinement with
         | PsdToPng ->
             use image = new MagickImage (intermediateFilePath)
@@ -328,7 +328,7 @@ module Assets =
                 // attempt to copy the intermediate asset if output file is out of date
                 let intermediateFilePath = Path.Combine (intermediateDirectory, intermediateFileSubpath)
                 let outputFilePath = Path.Combine (outputDirectory, intermediateFileSubpath)
-                ignore ^ Directory.CreateDirectory ^ Path.GetDirectoryName outputFilePath
+                Directory.CreateDirectory ^ Path.GetDirectoryName outputFilePath |> ignore
                 try File.Copy (intermediateFilePath, outputFilePath, true)
                 with _ -> note ^ "Resource lock on '" + outputFilePath + "' has prevented build for asset '" + acstring asset.AssetTag + "'."
 

@@ -459,7 +459,7 @@ module WorldModule =
 
         /// TODO: document!
         static member cleanUp world =
-            ignore ^ World.cleanUpSubsystems world
+            World.cleanUpSubsystems world |> ignore
 
         /// TODO: document!
         static member runWithoutCleanUp runWhile handleUpdate handleRender sdlDeps liveness world =
