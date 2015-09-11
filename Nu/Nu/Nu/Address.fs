@@ -53,9 +53,8 @@ module NameKey =
     let make name =
         match name with
         | "" -> failwith "Invalid name; must be a non-empty string."
-        | _ ->
-            { Name = name
-              OptHashCode = None }
+        | _ when name.Contains "/" -> failwith "Invalid name; must have no '/' characters."
+        | _ -> { Name = name; OptHashCode = None }
 
     /// Get the name of a name key.
     let getName nameKey =

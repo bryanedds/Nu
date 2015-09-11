@@ -331,6 +331,7 @@ module NuEdit =
 
     let private handleFormNew (form : NuEditForm) (_ : EventArgs) =
         use groupNameEntryForm = new NameEntryForm ()
+        groupNameEntryForm.StartPosition <- FormStartPosition.CenterParent
         groupNameEntryForm.okButton.Click.Add (fun _ ->
             ignore ^ WorldChangers.Add (fun world ->
                 let world = pushPastWorld world world
@@ -344,7 +345,7 @@ module NuEdit =
                     world)
             groupNameEntryForm.Close ())
         groupNameEntryForm.cancelButton.Click.Add (fun _ -> groupNameEntryForm.Close ())
-        groupNameEntryForm.ShowDialog () |> ignore
+        groupNameEntryForm.ShowDialog form |> ignore
 
     let private handleFormSave (form : NuEditForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
