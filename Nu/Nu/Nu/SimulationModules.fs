@@ -47,8 +47,8 @@ module ScreenState =
               Persistent = true
               CreationTimeStampNp = Core.getTimeStamp ()
               DispatcherNp = dispatcher
-              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }
-              EntityTreeNp = Unchecked.defaultof<Entity QuadTree MutantCache>}
+              EntityTreeNp = Unchecked.defaultof<Entity QuadTree MutantCache>
+              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true } }
         let quadTree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
         { screenState with EntityTreeNp = MutantCache.make Operators.id quadTree }
 

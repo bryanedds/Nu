@@ -173,7 +173,7 @@ module WorldScreenModule =
             let screen = ntos screenState.Name
             let screenState = if World.containsScreen screen world then { screenState with EntityTreeNp = screen.GetEntityTree world } else screenState
             let world = World.addScreen true screenState screen world
-            let world = World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName screen world |> snd
+            let world = World.readGroups screenNode defaultGroupDispatcherName defaultEntityDispatcherName screen world |> snd
             (screen, world)
 
         /// Read a screen from an xml file.
