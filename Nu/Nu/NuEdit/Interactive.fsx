@@ -43,4 +43,4 @@ let world =
     World.setOptSelectedScreen (Some Simulants.EditorScreen)
 
 // example of running Nu in NuEdit for 60 frames from repl
-NuEdit.runFromRepl (fun world -> World.getTickTime world < 60L) targetDir sdlDeps form 
+NuEdit.runFromRepl (fun world -> World.getTickTime world < 60L) targetDir sdlDeps form
