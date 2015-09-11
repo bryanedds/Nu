@@ -13,6 +13,7 @@
 #r "../../../Nu/Nu/Nu/bin/Debug/Nu.exe"
 
 open System
+open System.IO
 open FSharpx
 open SDL2
 open OpenTK
@@ -23,7 +24,7 @@ open Nu.Observation
 open Nu.Chain
 
 // set current directly to local for execution in VS F# interactive
-System.IO.Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
+Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
 
 // initialize Nu's ambient dependencies
 Nu.init ()
