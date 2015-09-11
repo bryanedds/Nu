@@ -262,9 +262,6 @@ module NuEdit =
 
             // refresh tree view
             refreshTreeView form world
-
-            // update save file name
-            form.saveFileDialog.FileName <- Path.GetFileName filePath
             world
 
         // handle load failure
@@ -349,6 +346,8 @@ module NuEdit =
 
     let private handleFormSave (form : NuEditForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
+            form.saveFileDialog.Title <- "Save '" + (World.getUserState world).SelectedGroup.GroupName + "' As"
+            form.saveFileDialog.FileName <- String.Empty
             let saveFileResult = form.saveFileDialog.ShowDialog form
             match saveFileResult with
             | DialogResult.OK -> trySaveFile form.saveFileDialog.FileName world; world
@@ -356,6 +355,7 @@ module NuEdit =
 
     let private handleFormOpen (form : NuEditForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
+            form.openFileDialog.FileName <- String.Empty
             let openFileResult = form.openFileDialog.ShowDialog form
             match openFileResult with
             | DialogResult.OK ->
@@ -629,7 +629,7 @@ module NuEdit =
     let selectTargetDirAndMakeNuPlugin () =
         use openDialog = new OpenFileDialog ()
         openDialog.Filter <- "Executable Files (*.exe)|*.exe"
-        openDialog.Title <- "Select your game's executable file to make its assets and components available in the editor (or cancel for defaults)."
+        openDialog.Title <- "Select your game's executable file to make its assets and components available in the editor (or cancel for defaults)"
         if openDialog.ShowDialog () = DialogResult.OK
         then selectTargetDirAndMakeNuPluginFromFilePath openDialog.FileName
         else (".", NuPlugin ())
