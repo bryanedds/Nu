@@ -624,27 +624,40 @@ module NuEdit =
         form.Show ()
         form
 
-    let tryMakeEditorWorld targetDir sdlDeps form plugin =
-        let editorState =
-            { TargetDir = targetDir
-              RightClickPosition = Vector2.Zero
-              DragEntityState = DragEntityNone
-              DragCameraState = DragCameraNone
-              PastWorlds = []
-              FutureWorlds = []
-              SelectedGroup = Simulants.DefaultEditorGroup }
-        let eitherWorld = World.tryMake false 0L editorState plugin sdlDeps
+    let attachNuEditToWorld targetDir form world =
+        match World.getUserState world : obj with
+        | :? unit ->
+            if World.getSelectedScreen world = Simulants.EditorScreen then
+                if World.proxyGroups Simulants.EditorScreen world |> Seq.isEmpty |> not then
+                    let editorState =
+                        { TargetDir = targetDir
+                          RightClickPosition = Vector2.Zero
+                          DragEntityState = DragEntityNone
+                          DragCameraState = DragCameraNone
+                          PastWorlds = []
+                          FutureWorlds = []
+                          SelectedGroup = Simulants.DefaultEditorGroup }
+                    let world = World.setUserState editorState world
+                    let world = World.subscribe (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game world
+                    let world = World.subscribe (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game world
+                    let world = World.subscribe (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game world
+                    let world = World.subscribe (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world
+                    let world = World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world
+                    subscribeToEntityEvents form world
+                else failwith ^ "Cannot attach NuEdit to a world with no groups inside the '" + acstring Simulants.EditorScreen + "' screen."
+            else failwith ^ "Cannot attach NuEdit to a world with a screen selected other than '" + acstring Simulants.EditorScreen + "'."
+        | :? EditorState -> world // NOTE: here we, somewhat precariously, assume already attached
+        | _ -> failwith "Cannot attach NuEdit to a world that has a user state of a type other than unit or EditorState."
+
+    let attemptMakeEditorWorld sdlDeps form =
+        let (targetDir, plugin) = selectTargetDirAndMakeNuPlugin ()
+        let eitherWorld = World.attemptMake false 0L () plugin sdlDeps
         match eitherWorld with
         | Right world ->
             let world = World.createScreen typeof<ScreenDispatcher>.Name (Some Simulants.EditorScreen.ScreenName) world |> snd
             let world = World.createGroup typeof<GroupDispatcher>.Name (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen world |> snd
-            let world = World.setOptSelectedScreen (Some Simulants.EditorScreen) world 
-            let world = World.subscribe (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game world
-            let world = World.subscribe (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game world
-            let world = World.subscribe (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game world
-            let world = World.subscribe (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world
-            let world = World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world
-            let world = subscribeToEntityEvents form world
+            let world = World.setOptSelectedScreen (Some Simulants.EditorScreen) world
+            let world = attachNuEditToWorld targetDir form world
             Right world
         | Left error -> Left error
 
@@ -685,10 +698,9 @@ module NuEdit =
 
     let run () =
         use form = createForm ()
-        let (targetDir, plugin) = selectTargetDirAndMakeNuPlugin ()
         match attemptMakeSdlDeps form with
         | Right sdlDeps ->
-            match tryMakeEditorWorld targetDir sdlDeps form plugin with
+            match attemptMakeEditorWorld sdlDeps form with
             | Right world ->
                 RefWorld := world
                 run5 tautology sdlDeps form |> ignore

@@ -507,7 +507,8 @@ module World =
     let getUserState world : 'u =
         world.State.UserState :?> 'u
 
-    let private setUserState (userState : 'u) world =
+    /// Set the user state of the world.
+    let setUserState (userState : 'u) world =
         let state = { world.State with UserState = userState }
         setState state world
 

@@ -217,11 +217,11 @@ module Sdl =
             Constants.Engine.FailureExitCode
 
     /// Run the game engine with the given handlers.
-    let run handleTryMakeWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig =
+    let run handleAttemptMakeWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig =
         match SdlDeps.attemptMake sdlConfig with
         | Right sdlDeps ->
             use sdlDeps = sdlDeps // bind explicitly to dispose automatically
-            match handleTryMakeWorld sdlDeps with
+            match handleAttemptMakeWorld sdlDeps with
             | Right world -> run8 tautology handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps Running world
             | Left error -> trace error; Constants.Engine.FailureExitCode
         | Left error -> trace error; Constants.Engine.FailureExitCode
