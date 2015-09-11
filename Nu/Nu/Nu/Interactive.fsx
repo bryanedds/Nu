@@ -27,4 +27,4 @@ open Nu.Chain
 System.IO.Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
 
 // initialize Nu's ambient dependencies
-World.init ()
+Nu.init ()

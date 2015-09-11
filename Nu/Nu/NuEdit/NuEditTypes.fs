@@ -48,8 +48,9 @@ and EntityPropertyDescriptor (property, attributes) =
     let propertyCanWrite = match property with EntityXFieldDescriptor _ -> true | EntityPropertyInfo xfd -> xfd.CanWrite
 
     let pushPastWorld pastWorld world =
-        world |> World.updateUserState (fun editorState ->
-            { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = [] })
+        World.updateUserState
+            (fun editorState -> { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = [] })
+            world
 
     override this.ComponentType = propertyType.DeclaringType
     override this.PropertyType = propertyType

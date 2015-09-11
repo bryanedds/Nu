@@ -9,7 +9,7 @@ module Program =
     
         // this initializes miscellaneous values required by the engine. This should always be the
         // first line in your game program.
-        World.init ()
+        Nu.init ()
         
         // this specifies the manner in which the game is viewed. With this configuration, a new
         // window is created with a title of "Infinity Rpg".

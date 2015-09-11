@@ -17,20 +17,20 @@ module WorldTests =
     let incUserStateAndCascade (_ : Event<unit, Game>) world = (Cascade, World.updateUserState inc world)
     let incUserStateAndResolve (_ : Event<unit, Game>) world = (Resolve, World.updateUserState inc world)
 
-    let [<Fact>] runWorldForOneFrameThenCleanUp () =
-        World.init ()
+    let [<Fact>] runNuForOneFrameThenCleanUp () =
+        Nu.init ()
         let world = World.makeEmpty ()
         World.run4 (fun world -> World.getTickTime world < 1L) SdlDeps.empty Running world
 
     let [<Fact>] subscribeWorks () =
-        World.init ()
+        Nu.init ()
         let world = World.makeEmpty 0
         let world = World.subscribe incUserStateAndCascade UnitEventAddress Simulants.Game world
         let world = World.publish () UnitEventAddress Simulants.Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeAndPublishTwiceWorks () =
-        World.init ()
+        Nu.init ()
         let world = World.makeEmpty 0
         let world = World.subscribe incUserStateAndCascade UnitEventAddress Simulants.Game world
         let world = World.publish () UnitEventAddress Simulants.Game world
@@ -38,7 +38,7 @@ module WorldTests =
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeTwiceAndPublishWorks () =
-        World.init ()
+        Nu.init ()
         let world = World.makeEmpty 0
         let world = World.subscribe incUserStateAndCascade UnitEventAddress Simulants.Game world
         let world = World.subscribe incUserStateAndCascade UnitEventAddress Simulants.Game world
@@ -46,7 +46,7 @@ module WorldTests =
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeWithResolutionWorks () =
-        World.init ()
+        Nu.init ()
         let world = World.makeEmpty 0
         let world = World.subscribe incUserStateAndCascade UnitEventAddress Simulants.Game world
         let world = World.subscribe incUserStateAndResolve UnitEventAddress Simulants.Game world
@@ -54,7 +54,7 @@ module WorldTests =
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
-        World.init ()
+        Nu.init ()
         let world = World.makeEmpty 0
         let key = World.makeSubscriptionKey ()
         let world = World.subscribe5 key incUserStateAndResolve UnitEventAddress Simulants.Game world
@@ -63,7 +63,7 @@ module WorldTests =
         Assert.Equal (0, World.getUserState world)
 
     let [<Fact>] entitySubscribeWorks () =
-        World.init ()
+        Nu.init ()
         let world = World.makeEmpty ()
         let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some Constants.Engine.DefaultScreenName) world
         let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Constants.Engine.DefaultGroupName) screen world
@@ -75,7 +75,7 @@ module WorldTests =
 
     let [<Fact>] gameSerializationWorks () =
         // TODO: make stronger assertions in here!!!
-        World.init ()
+        Nu.init ()
         let world = World.makeEmpty ()
         let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some Constants.Engine.DefaultScreenName) world
         let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Constants.Engine.DefaultGroupName) screen world

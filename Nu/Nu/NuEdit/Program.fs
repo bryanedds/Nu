@@ -14,5 +14,5 @@ open Nu
 module Program =
 
     let [<EntryPoint; STAThread>] main _ =
-        World.init ()
+        Nu.init ()
         NuEdit.run ()
