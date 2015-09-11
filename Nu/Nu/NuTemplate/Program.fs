@@ -55,11 +55,11 @@ module Program =
         let attemptMakeWorld sdlDeps =
 
             // an instance of the above plugin
-            let nuPlugin = $safeprojectname$Plugin ()
+            let plugin = $safeprojectname$Plugin ()
 
             // here is an attempt to make the world with the various initial states, the engine
             // plugin, and SDL dependencies.
-            World.attemptMake true 1L () nuPlugin sdlDeps
+            World.attemptMake true 1L () plugin sdlDeps
 
         // this is a callback that specifies your game's unique behavior when updating the world
         // every frame. The World value is the state of the world after the callback transforms
