@@ -304,7 +304,7 @@ and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
       CreationTimeStampNp : int64
       DispatcherNp : ScreenDispatcher
       Xtension : Xtension
-      EntityTree : Entity QuadTree MutantCache }
+      EntityTreeNp : Entity QuadTree MutantCache }
     interface SimulantState
 
 /// Hosts the ongoing state of a group. The end-user of this engine should never touch this
