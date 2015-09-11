@@ -570,18 +570,48 @@ module NuEdit =
         then World.exit world
         else world
 
-    let private run3 runWhile sdlDeps (form : NuEditForm) =
-        populateCreateComboBox form !RefWorld
-        populateTreeViewGroups form !RefWorld
-        populateGroupTabs form !RefWorld
+    let private attachToWorld targetDir form world =
+        match World.getUserState world : obj with
+        | :? unit ->
+            if World.getSelectedScreen world = Simulants.EditorScreen then
+                if World.proxyGroups Simulants.EditorScreen world |> Seq.isEmpty |> not then
+                    let editorState =
+                        { TargetDir = targetDir
+                          RightClickPosition = Vector2.Zero
+                          DragEntityState = DragEntityNone
+                          DragCameraState = DragCameraNone
+                          PastWorlds = []
+                          FutureWorlds = []
+                          SelectedGroup = Simulants.DefaultEditorGroup }
+                    let world = World.setUserState editorState world
+                    let world = World.subscribe (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game world
+                    let world = World.subscribe (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game world
+                    let world = World.subscribe (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game world
+                    let world = World.subscribe (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world
+                    let world = World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world
+                    subscribeToEntityEvents form world
+                else failwith ^ "Cannot attach NuEdit to a world with no groups inside the '" + acstring Simulants.EditorScreen + "' screen."
+            else failwith ^ "Cannot attach NuEdit to a world with a screen selected other than '" + acstring Simulants.EditorScreen + "'."
+        | :? EditorState -> world // NOTE: assume already attached
+        | _ -> failwith "Cannot attach NuEdit to a world that has a user state of a type other than unit or EditorState."
+
+    let private run3 runWhile targetDir sdlDeps (form : NuEditForm) =
+        let world = !RefWorld
+        let world = attachToWorld targetDir form world
+        populateCreateComboBox form world
+        populateTreeViewGroups form world
+        populateGroupTabs form world
         form.tickingButton.CheckState <- CheckState.Unchecked
-        World.runWithoutCleanUp
-            runWhile
-            (fun world -> let world = updateEditorWorld form world in (RefWorld := world; world))
-            (fun world -> form.displayPanel.Invalidate (); world)
-            sdlDeps
-            Running
-            !RefWorld
+        let world =
+            World.runWithoutCleanUp
+                runWhile
+                (fun world -> let world = updateEditorWorld form world in (RefWorld := world; world))
+                (fun world -> form.displayPanel.Invalidate (); world)
+                sdlDeps
+                Running
+                world
+        RefWorld := world
+        world
 
     /// Select a target directory for the desired plugin and its assets from the give file path.
     let selectTargetDirAndMakeNuPluginFromFilePath filePath =
@@ -643,44 +673,16 @@ module NuEdit =
         form.Show ()
         form
 
-    /// Attach NuEdit to a world (and vice-versa).
-    let attachToWorld targetDir form world =
-        match World.getUserState world : obj with
-        | :? unit ->
-            if World.getSelectedScreen world = Simulants.EditorScreen then
-                if World.proxyGroups Simulants.EditorScreen world |> Seq.isEmpty |> not then
-                    let editorState =
-                        { TargetDir = targetDir
-                          RightClickPosition = Vector2.Zero
-                          DragEntityState = DragEntityNone
-                          DragCameraState = DragCameraNone
-                          PastWorlds = []
-                          FutureWorlds = []
-                          SelectedGroup = Simulants.DefaultEditorGroup }
-                    let world = World.setUserState editorState world
-                    let world = World.subscribe (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game world
-                    let world = World.subscribe (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game world
-                    let world = World.subscribe (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game world
-                    let world = World.subscribe (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world
-                    let world = World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world
-                    subscribeToEntityEvents form world
-                else failwith ^ "Cannot attach NuEdit to a world with no groups inside the '" + acstring Simulants.EditorScreen + "' screen."
-            else failwith ^ "Cannot attach NuEdit to a world with a screen selected other than '" + acstring Simulants.EditorScreen + "'."
-        | :? EditorState -> world // NOTE: here we, somewhat precariously, assume already attached
-        | _ -> failwith "Cannot attach NuEdit to a world that has a user state of a type other than unit or EditorState."
-
     /// Attempt to make a world for use in the NuEdit form.
     /// You can make your own world instead and use the NuEdit.attachToWorld instead (so long as the world satisfies said
     /// function's various requirements.
-    let attemptMakeWorld sdlDeps form =
-        let (targetDir, plugin) = selectTargetDirAndMakeNuPlugin ()
+    let attemptMakeWorld sdlDeps plugin =
         let eitherWorld = World.attemptMake false 0L () plugin sdlDeps
         match eitherWorld with
         | Right world ->
             let world = World.createScreen typeof<ScreenDispatcher>.Name (Some Simulants.EditorScreen.ScreenName) world |> snd
             let world = World.createGroup typeof<GroupDispatcher>.Name (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen world |> snd
             let world = World.setOptSelectedScreen (Some Simulants.EditorScreen) world
-            let world = attachToWorld targetDir form world
             Right world
         | Left error -> Left error
 
@@ -697,20 +699,21 @@ module NuEdit =
         SdlDeps.attemptMake sdlConfig
 
     /// Run NuEdit from the F# repl.
-    let runFromRepl runWhile sdlDeps form world =
+    let runFromRepl runWhile targetDir sdlDeps form world =
         WorldChangers.Clear ()
         RefWorld := world
-        run3 runWhile sdlDeps form
+        run3 runWhile targetDir sdlDeps form
 
     /// Run the NuEdit in isolation.
     let run () =
         use form = createForm ()
         match attemptMakeSdlDeps form with
         | Right sdlDeps ->
-            match attemptMakeWorld sdlDeps form with
+            let (targetDir, plugin) = selectTargetDirAndMakeNuPlugin ()
+            match attemptMakeWorld sdlDeps plugin with
             | Right world ->
                 RefWorld := world
-                run3 tautology sdlDeps form |> ignore
+                run3 tautology targetDir sdlDeps form |> ignore
                 Constants.Engine.SuccessExitCode
             | Left error -> failwith error
         | Left error -> failwith error
