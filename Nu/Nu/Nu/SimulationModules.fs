@@ -48,9 +48,9 @@ module ScreenState =
               CreationTimeStampNp = Core.getTimeStamp ()
               DispatcherNp = dispatcher
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }
-              EntityTree = Unchecked.defaultof<Entity QuadTree MutantCache>}
+              EntityTreeNp = Unchecked.defaultof<Entity QuadTree MutantCache>}
         let quadTree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
-        { screenState with EntityTree = MutantCache.make Operators.id quadTree }
+        { screenState with EntityTreeNp = MutantCache.make Operators.id quadTree }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module GroupState =
@@ -828,8 +828,8 @@ module World =
                         entity entityTree
                     (world, entityTree))
                 world
-                screenState.EntityTree
-        let screenState = { screenState with EntityTree = entityTree }
+                screenState.EntityTreeNp
+        let screenState = { screenState with EntityTreeNp = entityTree }
         setScreenStateWithoutEvent screenState screen world
 
     let internal updateEntityStatePlus updater entity world =
