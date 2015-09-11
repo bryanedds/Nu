@@ -29,12 +29,15 @@ module NuEdit =
     let private DefaultCreationDepth = 0.0f
     let private CameraSpeed = 4.0f // NOTE: might be nice to be able to configure this just like entity creation depth in the editor
     let private RefinementDir = "Refinement"
+
+    // g'lol'bals!
     let private WorldChangers = WorldChangers ()
     let private RefWorld = ref Unchecked.defaultof<World>
 
     let pushPastWorld pastWorld world =
-        world |> World.updateUserState (fun editorState ->
-            { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = [] })
+        World.updateUserState
+            (fun editorState -> { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = [] })
+            world
 
     let private getPickableEntities world =
         let selectedGroup = (World.getUserState world).SelectedGroup
@@ -567,7 +570,20 @@ module NuEdit =
         then World.exit world
         else world
 
-    let makeNuPlugin filePath =
+    let private run3 runWhile sdlDeps (form : NuEditForm) =
+        populateCreateComboBox form !RefWorld
+        populateTreeViewGroups form !RefWorld
+        populateGroupTabs form !RefWorld
+        World.runWithoutCleanUp
+            runWhile
+            (fun world -> let world = updateEditorWorld form world in (RefWorld := world; world))
+            (fun world -> form.displayPanel.Invalidate (); world)
+            sdlDeps
+            Running
+            !RefWorld
+
+    /// Select a target directory for the desired plugin and its assets from the give file path.
+    let selectTargetDirAndMakeNuPluginFromFilePath filePath =
         let dirName = Path.GetDirectoryName filePath
         Directory.SetCurrentDirectory dirName
         let assembly = Assembly.LoadFrom filePath
@@ -577,14 +593,16 @@ module NuEdit =
         | Some aType -> let nuPlugin = Activator.CreateInstance aType :?> NuPlugin in (dirName, nuPlugin)
         | None -> (".", NuPlugin ())
 
+    /// Select a target directory for the desired plugin and its assets.
     let selectTargetDirAndMakeNuPlugin () =
         use openDialog = new OpenFileDialog ()
         openDialog.Filter <- "Executable Files (*.exe)|*.exe"
         openDialog.Title <- "Select your game's executable file to make its assets and components available in the editor (or cancel for defaults)."
         if openDialog.ShowDialog () = DialogResult.OK
-        then makeNuPlugin openDialog.FileName
+        then selectTargetDirAndMakeNuPluginFromFilePath openDialog.FileName
         else (".", NuPlugin ())
 
+    /// Create a NuEdit form.
     let createForm () =
         let form = new NuEditForm ()
         form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
@@ -624,7 +642,8 @@ module NuEdit =
         form.Show ()
         form
 
-    let attachNuEditToWorld targetDir form world =
+    /// Attach NuEdit to a world (and vice-versa).
+    let attachToWorld targetDir form world =
         match World.getUserState world : obj with
         | :? unit ->
             if World.getSelectedScreen world = Simulants.EditorScreen then
@@ -649,7 +668,10 @@ module NuEdit =
         | :? EditorState -> world // NOTE: here we, somewhat precariously, assume already attached
         | _ -> failwith "Cannot attach NuEdit to a world that has a user state of a type other than unit or EditorState."
 
-    let attemptMakeEditorWorld sdlDeps form =
+    /// Attempt to make a world for use in the NuEdit form.
+    /// You can make your own world instead and use the NuEdit.attachToWorld instead (so long as the world satisfies said
+    /// function's various requirements.
+    let attemptMakeWorld sdlDeps form =
         let (targetDir, plugin) = selectTargetDirAndMakeNuPlugin ()
         let eitherWorld = World.attemptMake false 0L () plugin sdlDeps
         match eitherWorld with
@@ -657,10 +679,11 @@ module NuEdit =
             let world = World.createScreen typeof<ScreenDispatcher>.Name (Some Simulants.EditorScreen.ScreenName) world |> snd
             let world = World.createGroup typeof<GroupDispatcher>.Name (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen world |> snd
             let world = World.setOptSelectedScreen (Some Simulants.EditorScreen) world
-            let world = attachNuEditToWorld targetDir form world
+            let world = attachToWorld targetDir form world
             Right world
         | Left error -> Left error
 
+    /// Attempt to make SdlDeps needed to use in the NuEdit form.
     let attemptMakeSdlDeps (form : NuEditForm) =
         let sdlViewConfig = ExistingWindow form.displayPanel.Handle
         let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
@@ -672,38 +695,21 @@ module NuEdit =
               AudioChunkSize = Constants.Audio.AudioBufferSizeDefault }
         SdlDeps.attemptMake sdlConfig
 
-    let run5 runWhile sdlDeps (form : NuEditForm) =
-
-        populateCreateComboBox form !RefWorld
-        populateTreeViewGroups form !RefWorld
-        populateGroupTabs form !RefWorld
-
-        World.runWithoutCleanUp
-            runWhile
-            (fun world ->
-                let world = updateEditorWorld form world
-                RefWorld := world
-                world)
-            (fun world ->
-                form.displayPanel.Invalidate ()
-                world)
-            sdlDeps
-            Running
-            !RefWorld
-
+    /// Run NuEdit from the F# repl.
     let runFromRepl runWhile sdlDeps form world =
         WorldChangers.Clear ()
         RefWorld := world
-        run5 runWhile sdlDeps form
+        run3 runWhile sdlDeps form
 
+    /// Run the NuEdit in isolation.
     let run () =
         use form = createForm ()
         match attemptMakeSdlDeps form with
         | Right sdlDeps ->
-            match attemptMakeEditorWorld sdlDeps form with
+            match attemptMakeWorld sdlDeps form with
             | Right world ->
                 RefWorld := world
-                run5 tautology sdlDeps form |> ignore
+                run3 tautology sdlDeps form |> ignore
                 Constants.Engine.SuccessExitCode
             | Left error -> failwith error
         | Left error -> failwith error
