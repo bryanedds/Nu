@@ -630,7 +630,7 @@ module WorldModule =
                   Overlayer = Overlayer.makeEmpty ()
                   Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault) }
                   OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
-                  Clipboard = None
+                  RefClipboard = ref None
                   UserState = () }
 
             // make the simulant states

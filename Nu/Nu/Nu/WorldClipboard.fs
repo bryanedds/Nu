@@ -11,7 +11,7 @@ module WorldClipboard =
         /// Copy an entity to the clipboard.
         static member copyToClipboard entity world =
             let entityState = World.getEntityState entity world
-            world.State.Clipboard := Some entityState
+            world.State.RefClipboard := Some entityState
 
         /// Cut an entity to the clipboard.
         static member cutToClipboard entity world =
@@ -20,7 +20,7 @@ module WorldClipboard =
 
         /// Paste an entity from the clipboard.
         static member pasteFromClipboard atMouse rightClickPosition positionSnap rotationSnap group world =
-            match !world.State.Clipboard with
+            match !world.State.RefClipboard with
             | Some entityState ->
                 let id = Core.makeId ()
                 let name = acstring id
