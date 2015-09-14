@@ -19,8 +19,7 @@ module ChainTests =
     let [<Fact>] chainWorks () =
         
         // build everything
-        Nu.init ()
-        let world = World.makeEmpty 0
+        let world = World.empty |> World.setUserState 0
         let chain =
             chain {
                 let! e = next

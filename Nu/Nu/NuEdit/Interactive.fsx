@@ -30,7 +30,6 @@ open NuEdit
 Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
 
 // initialize NuEdit's dependencies
-Nu.init ()
 let form = NuEdit.createForm ()
 form.Closing.Add (fun args -> args.Cancel <- true) // disable exiting
 let sdlDeps = Either.getRightValue ^ NuEdit.attemptMakeSdlDeps form

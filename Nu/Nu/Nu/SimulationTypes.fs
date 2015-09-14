@@ -548,7 +548,7 @@ and [<ReferenceEquality>] internal WorldState =
           OverlayFilePath : string
           Camera : Camera
           OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
-          Clipboard : EntityState option ref
+          RefClipboard : EntityState option ref
           UserState : obj }
 
 /// The world, in a functional programming sense. Hosts the game object, the dependencies
