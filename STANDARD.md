@@ -70,7 +70,7 @@ This is required due to an unresolved compiler bug touched on here - http://stac
 -   using UpperCamelCasing for Namespaces, Modules, Types, Fields, Constants, Properties, and InstanceMembers (but as said above, avoid authoring Properties and InstanceMembers in the first place).
 -   using lowerCamelCasing for variables, functions, staticMembers, parameters, and 'typeParameters.
 
-4) Use shadowing on different bindings with the same conceptual identity rather than ' suffixes (this also helps correctness significantly).
+4) Use shadowing on different bindings with the same conceptual identity rather than ' suffixes (this also helps correctness significantly). 
 
 5) Use access specifiers for encapsulation rather than FSI files.
 
