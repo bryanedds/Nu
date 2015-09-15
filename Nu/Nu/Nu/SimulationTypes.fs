@@ -303,8 +303,8 @@ and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
       Persistent : bool
       CreationTimeStampNp : int64
       DispatcherNp : ScreenDispatcher
-      Xtension : Xtension
-      EntityTreeNp : Entity QuadTree MutantCache }
+      EntityTreeNp : Entity QuadTree MutantCache
+      Xtension : Xtension }
     interface SimulantState
 
 /// Hosts the ongoing state of a group. The end-user of this engine should never touch this
@@ -548,7 +548,7 @@ and [<ReferenceEquality>] internal WorldState =
           OverlayFilePath : string
           Camera : Camera
           OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
-          Clipboard : EntityState option ref
+          RefClipboard : EntityState option ref
           UserState : obj }
 
 /// The world, in a functional programming sense. Hosts the game object, the dependencies

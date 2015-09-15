@@ -172,6 +172,10 @@ module Overlayer =
     let shouldPropertySerialize5 facetNames propertyName propertyType target overlayer =
         not ^ isPropertyOverlaid5 facetNames propertyName propertyType target overlayer
 
+    /// Make an empty overlay.
+    let makeEmpty () =
+        { Overlays = XmlDocument () }
+
     /// Make an Overlayer by loading overlays from a file and then combining it with the given
     /// intrinsic overlays.
     let make (filePath : string) (intrinsicOverlays : XmlDocument) =

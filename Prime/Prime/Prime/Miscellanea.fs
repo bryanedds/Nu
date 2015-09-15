@@ -34,7 +34,13 @@ module Miscellanea =
     /// Convert any value to an obj.
     let inline objectify x = x :> obj
 
-    /// Flip two function parameters.
+    /// Tuple up two values.
+    let inline tuple f x y = f (x, y)
+
+    /// Untuple two values within function context f.
+    let inline untuple f (x, y) = f x y
+
+    /// Transforms a function by flipping the order of its arguments.
     let inline flip f x y = f y x
 
     /// Transforms a function by flipping the order of its arguments.

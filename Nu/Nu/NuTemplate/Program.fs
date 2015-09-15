@@ -21,10 +21,6 @@ module Program =
     // this the entry point for the your Nu application
     let [<EntryPoint; STAThread>] main _ =
 
-        // this initializes miscellaneous values required by the engine. This should always be the
-        // first line in your game program.
-        Nu.init ()
-
         // this specifies the manner in which the game is viewed. With this configuration, a new
         // window is created with a title of "$safeprojectname$".
         let sdlViewConfig =

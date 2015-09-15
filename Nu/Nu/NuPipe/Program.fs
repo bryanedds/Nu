@@ -6,7 +6,6 @@ open Nu
 module Program =
 
     let [<EntryPoint; STAThread>] main argv =
-        Nu.init ()
         match argv with
         | [|inputDirectory; outputDirectory; refinementDirectory; fullBuildStr|] ->
             let fullBuild = fullBuildStr = acstring true
