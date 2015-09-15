@@ -4,7 +4,7 @@ Correctness, Consistency, Simplicity
 **An F\# Code Standard for FPWorks Repository.**
 -
 
-**First, a quick blurb on what people usually don't get about code standards -**
+**First, a quick blurb on what people often don't get about code standards -**
 
 What people don't seem to understand is that good code standards aren't designed to be used as blunt instruments to foist upon others one's own stylistic preferences. Instead, they're about finding the fewest, simplest, and least  inhibiting rules that enable people to be consistent with each another (and even themselves!). In that way, code standards are more about following an informed reasoning process to its logical conclusion than about executing a war of attrition to pursue a stylistic cultural imperialism.
 
