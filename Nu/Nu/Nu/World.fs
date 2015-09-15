@@ -557,14 +557,11 @@ module WorldModule =
 
             // make the world's subsystems
             let subsystems =
-                let physicsEngineSubsystem = PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockPhysicsEngine = () } :> Subsystem
-                let rendererSubsystem = RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockRenderer = () } :> Subsystem
-                let audioPlayerSubsystem = AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockAudioPlayer = () } :> Subsystem
                 { SubsystemMap =
                     Map.ofList
-                        [(Constants.Engine.PhysicsEngineSubsystemName, physicsEngineSubsystem)
-                         (Constants.Engine.RendererSubsystemName, rendererSubsystem)
-                         (Constants.Engine.AudioPlayerSubsystemName, audioPlayerSubsystem)] }
+                        [(Constants.Engine.PhysicsEngineSubsystemName, PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockPhysicsEngine = () } :> Subsystem)
+                         (Constants.Engine.RendererSubsystemName, RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockRenderer = () } :> Subsystem)
+                         (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockAudioPlayer = () } :> Subsystem)] }
 
             // make default facets
             let defaultFacets =
@@ -597,7 +594,7 @@ module WorldModule =
             // make default screen dispatchers
             let defaultScreenDispatchers = Map.ofList [World.pairWithName ^ ScreenDispatcher ()]
 
-            // make default game dispatcher
+            // make active and default game dispatcher
             let activeGameDispatcher = GameDispatcher ()
             let defaultGameDispatchers = Map.ofList [World.pairWithName activeGameDispatcher]
 
@@ -713,7 +710,7 @@ module WorldModule =
                         GameDispatchers = untuple Map.add (World.pairWithName activeGameDispatcher) components.GameDispatchers }
                 let world = { world with Components = components }
 
-                // configures the world's with values pulled from parameters and from the plug-in
+                // configures the world's with values pulled from parameters and the given plug-in
                 let worldState = world.State
                 let worldState =
                     let intrinsicOverlays = World.createIntrinsicOverlays world.Components.EntityDispatchers world.Components.Facets
