@@ -15,4 +15,4 @@ module AddressTests =
 
     let [<Fact>] addressConverterConvertFromStringWorks () =
         let converter = AddressConverter (typeof<unit Address>)
-        Assert.Equal (ftoa<unit> "Some/Thing" :> obj, converter.ConvertFromString "Some/Thing")
+        Assert.Equal (ftoa<unit> "On/The/Wing" :> obj, converter.ConvertFromString "On/The/Wing")
