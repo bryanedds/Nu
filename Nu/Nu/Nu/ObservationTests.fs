@@ -17,15 +17,13 @@ module ObservationTests =
     let incUserStateAndResolve _ world = (Resolve, World.updateUserState inc world)
 
     let [<Fact>] subscribeWorks () =
-        Nu.init ()
-        let world = World.makeEmpty 0
+        let world = World.empty |> World.setUserState 0
         let world = observe UnitEventAddress Simulants.Game |> subscribe incUserStateAndCascade <| world
         let world = World.publish () UnitEventAddress Simulants.Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeTwiceUnsubscribeOnceWorks () =
-        Nu.init ()
-        let world = World.makeEmpty 0
+        let world = World.empty |> World.setUserState 0
         let observation = observe UnitEventAddress Simulants.Game
         let world = subscribe incUserStateAndCascade observation world
         let (unsubscribe, world) = subscribePlus incUserStateAndCascade observation world
@@ -34,8 +32,7 @@ module ObservationTests =
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
-        Nu.init ()
-        let world = World.makeEmpty 0
+        let world = World.empty |> World.setUserState 0
         let (unsubscribe, world) = observe UnitEventAddress Simulants.Game |> subscribePlus incUserStateAndCascade <| world
         let world = unsubscribe world
         let world = World.publish () UnitEventAddress Simulants.Game world
@@ -43,8 +40,7 @@ module ObservationTests =
         Assert.Equal (0, World.getUserState world)
 
     let [<Fact>] filterWorks () =
-        Nu.init ()
-        let world = World.makeEmpty 0
+        let world = World.empty |> World.setUserState 0
         let world =
             observe UnitEventAddress Simulants.Game |>
             filter (fun _ world -> World.getUserState world = 0) |>
@@ -55,8 +51,7 @@ module ObservationTests =
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] mapWorks () =
-        Nu.init ()
-        let world = World.makeEmpty 0
+        let world = World.empty |> World.setUserState 0
         let world =
             observe IntEventAddress Simulants.Game |>
             map (fun event _ -> event.Data * 2) |>
@@ -66,8 +61,7 @@ module ObservationTests =
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] scanWorks () =
-        Nu.init ()
-        let world = World.makeEmpty 0
+        let world = World.empty |> World.setUserState 0
         let world =
             observe IntEventAddress Simulants.Game |>
             scan (fun acc event _ -> acc + event.Data) 0 |>
@@ -78,8 +72,7 @@ module ObservationTests =
         Assert.Equal (3, World.getUserState world)
 
     let [<Fact>] scanDoesntLeaveGarbage () =
-        Nu.init ()
-        let world = World.makeEmpty 0
+        let world = World.empty |> World.setUserState 0
         let (unsubscribe, world) =
             observe IntEventAddress Simulants.Game |>
             scan2 (fun a _ _ -> a) |>
@@ -90,8 +83,7 @@ module ObservationTests =
         Assert.True ^ Map.isEmpty world.Callbacks.CallbackStates
 
     let [<Fact>] iterativeFrpWorks () =
-        Nu.init ()
-        let world = World.makeEmpty ()
+        let world = World.empty
         let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some Constants.Engine.DefaultScreenName) world
         let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Constants.Engine.DefaultGroupName) screen world
         let (jim, world) = World.createEntity typeof<EntityDispatcher>.Name (Some JimName) group world
@@ -102,8 +94,7 @@ module ObservationTests =
         Assert.False ^ jim.GetVisible world
 
     let [<Fact>] iterativeFrpCyclicWorks () =
-        Nu.init ()
-        let world = World.makeEmpty ()
+        let world = World.empty
         let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some Constants.Engine.DefaultScreenName) world
         let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Constants.Engine.DefaultGroupName) screen world
         let (jim, world) = World.createEntity typeof<EntityDispatcher>.Name (Some JimName) group world

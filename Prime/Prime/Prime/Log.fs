@@ -8,6 +8,9 @@ open System.Diagnostics
 [<AutoOpen>]
 module Log =
 
+    let mutable private initialized =
+        false
+
     let private getUtcNowStr () =
         let now = DateTime.UtcNow
         now.ToString "yyyy-MM-dd HH\:mm\:ss.ffff"
@@ -43,18 +46,24 @@ module Log =
     /// Initialize logging.
     let init (optFileName : string option) =
 
-        // add listeners
-        let listeners =
-#if DEBUG
-            Debug.Listeners
-#else
-            Trace.Listeners
-#endif
-        listeners.Add (new TextWriterTraceListener (Console.Out)) |> ignore
-        match optFileName with
-        | Some fileName -> listeners.Add (new TextWriterTraceListener (fileName)) |> ignore
-        | None -> ()
+        // init only once
+        if not initialized then
 
-        // automatically flush all logs
-        Debug.AutoFlush <- true
-        Trace.AutoFlush <- true
+            // add listeners
+            let listeners =
+#if DEBUG
+                Debug.Listeners
+#else
+                Trace.Listeners
+#endif
+            listeners.Add (new TextWriterTraceListener (Console.Out)) |> ignore
+            match optFileName with
+            | Some fileName -> listeners.Add (new TextWriterTraceListener (fileName)) |> ignore
+            | None -> ()
+
+            // automatically flush all logs
+            Debug.AutoFlush <- true
+            Trace.AutoFlush <- true
+
+            // mark as initialized
+            initialized <- true

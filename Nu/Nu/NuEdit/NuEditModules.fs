@@ -289,7 +289,7 @@ module NuEdit =
                 let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
                 form.propertyGrid.SelectedObject <- entityTds
                 world
-            | _ -> world) // not an entity address
+            | _ -> world) // don't have an entity address
 
     let private handleFormCreate atMouse (form : NuEditForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
