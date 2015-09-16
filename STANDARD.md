@@ -4,11 +4,11 @@ Correctness, Consistency, Simplicity
 **An F\# Code Standard for FPWorks Repository.**
 -
 
-**First, a quick blurb on what people often don't get about code standards -**
+**First, a quick assertion on what does, and does not, make a good code standard -**
 
-What people don't seem to understand is that good code standards aren't designed to be used as blunt instruments to foist upon others one's own stylistic preferences. Instead, they're about finding the fewest, simplest, and least  inhibiting rules that enable people to be consistent with each another (and even themselves!). In that way, code standards are more about following an informed reasoning process to its logical conclusion than about executing a war of attrition to pursue a stylistic cultural imperialism.
+Creating a good code standard is not about foisting upon others one's own stylistic preferences. Instead, it's about finding the fewest, simplest, and least inhibiting rules that enable people to be consistent with each other. In that way, creating a code standard is about following an informed reasoning process to its logical conclusions rather than executing a war of attrition to pursue a stylistic cultural imperialism.
 
-*Without reason in a decision-making process, all disagreements devolve into wars of passion... to be ended satisfactorily only by attrition... and to be relived anew by each succeeding generation.*
+More generally, the key to a good standard of any sort is following a well-reasoned decision-making process. *For without reason in a decision-making process, all disagreements devolve into wars of passion... to be ended satisfactorily only by attrition... and to be relived anew by each succeeding generation.*
 
 **A) Correctness**
 
@@ -65,22 +65,20 @@ This is required due to an unresolved compiler bug touched on here - http://stac
 
 2) Use column 120 as the line length limit where practicable. Column 120 is not a hard limit, but is elegantly acheivable in most cases. An exception to this rule is code that constructs error messages.
 
-3) Use the standard F\# naming conventions by -
+3) Use the standard F# naming conventions by -
 
 -   using UpperCamelCasing for Namespaces, Modules, Types, Fields, Constants, Properties, and InstanceMembers (but as said above, avoid authoring Properties and InstanceMembers in the first place).
 -   using lowerCamelCasing for variables, functions, staticMembers, parameters, and 'typeParameters.
 
-4) Use shadowing on different bindings with the same conceptual identity rather than ' suffixes (this also helps correctness significantly).
+4) Use access specifiers for encapsulation rather than FSI files.
 
-5) Use access specifiers for encapsulation rather than FSI files.
+5) Place `open` statements at the top of each file, right below the current namespace declaration (if any).
 
-6) Place `open` statements at the top of each file, right below the current namespace declaration (if any).
+6) Order the parameters of functions from least to most important (that is, in the order of semantic impact).
 
-7) Order the parameters of functions from least to most important (that is, in the order of semantic impact).
+7) Prefer function modules to use `[<RequireQualifiedAccess>]` except for operators, core functions like `flip`, and DSL functions.
 
-8) Prefer function modules to use `[<RequireQualifiedAccess>]` except for operators, core functions like `flip`, and DSL functions.
-
-9) Prefer stepped indentation as it refactors better, keeps lines shorter, and keeps formatting normal and enforcible via automation. For example, write this -
+8) Prefer stepped indentation as it refactors better, keeps lines shorter, and keeps formatting normal and enforcible via automation. For example, write this -
 
 ```
 let result =
@@ -98,7 +96,7 @@ let result =
                         caribou
 ```
 
-10) F\#'s syntax is based on ML, which is structurally derived from Lisp rather than C, so use Lisp-style bracing instead of C-style. For example, write this -
+9) F\#'s syntax is based on ML, which is structurally derived from Lisp rather than C, so use Lisp-style bracing instead of C-style. For example, write this -
 
 ```
     let ys =
@@ -136,7 +134,7 @@ let result =
         }
 ```
 
-11) Tab out discriminated union case definitions to keep them lined up with their members. For example, write this -
+10) Tab out discriminated union case definitions to keep them lined up with their members. For example, write this -
 
 ```
     type T =
@@ -156,7 +154,7 @@ let result =
         static member makeB s = B (s * 2.0f)
 ```
 
-12) Handle the intentional case first when matching / if'ing -
+11) Handle the intentional case first when matching / if'ing -
 
 ```
     let fn optValue =
@@ -164,6 +162,26 @@ let result =
         | Some value -> // do what we actually intended to do in this function
         | None -> // handle the missing case
 ```
+
+12) Use shadowing on different bindings with the same conceptual identity rather than ' suffixes (this also helps correctness significantly). For example, write this -
+
+```
+    let world = World.empty
+    let world = World.setUserState 0 world
+    let world = World.subscribe incUserStateAndCascade UnitEventAddress Simulants.Game world
+    let world = World.publish () UnitEventAddress Simulants.Game world
+```
+
+- rather than this -
+
+```
+    let world = World.empty
+    let world' = World.setUserState 0 world
+    let world'' = World.subscribe incUserStateAndCascade UnitEventAddress Simulants.Game world'
+    let world''' = World.publish () UnitEventAddress Simulants.Game world''
+```
+
+Of course, if you don't need explicit bindings for each result, you can just elide them with the `|>` operator.
 
 13) Surround tuples with parens to keep evaluation ordering and intent clear. For example, write this -
 
@@ -183,7 +201,7 @@ let result =
 
 **C) Simplicity**
 
-1) Use F\# as a functional-first language, rather than an object-oriented one. [*Here's our friend Rich Hickey on why object-orientation in inherently complex.*](http://www.infoq.com/presentations/Simple-Made-Easy)
+1) Use F# as a functional-first language, rather than an object-oriented one. [*Here's our friend Rich Hickey on why object-orientation in inherently complex.*](http://www.infoq.com/presentations/Simple-Made-Easy)
 
 2) For the mutation that you can't avoid, try to encapsulate its effects behind a referentially-transparent API wherever feasible.
 
