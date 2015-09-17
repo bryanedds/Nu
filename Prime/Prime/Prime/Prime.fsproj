@@ -60,6 +60,7 @@
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
     <Compile Include="Log.fs" />
+    <Compile Include="Operators.fs" />
     <Compile Include="Miscellanea.fs" />
     <Compile Include="Sectioning.fs" />
     <Compile Include="Option.fs" />
