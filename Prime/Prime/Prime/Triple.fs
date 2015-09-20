@@ -72,6 +72,18 @@ module Triple =
     let inline withC c (a, b, _) =
         (a, b, c)
 
+    /// Map over triple member a.
+    let inline mapA mapper (a, b, c) =
+        (mapper a, b, c)
+
+    /// Map over triple member b.
+    let inline mapB mapper (a, b, c) =
+        (a, mapper b, c)
+
+    /// Map over triple member c.
+    let inline mapC mapper (a, b, c) =
+        (a, b, mapper c)
+
     /// Make a triple.
     let make a b c =
         (a, b, c)

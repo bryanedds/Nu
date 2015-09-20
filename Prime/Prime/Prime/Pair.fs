@@ -3,7 +3,8 @@
 
 namespace Prime
 
-module Pair =
+[<AutoOpen>]
+module PairOperators =
 
     /// Replace pair member fst.
     let inline withFst fst (_, snd) =
@@ -20,6 +21,9 @@ module Pair =
     /// Map over pair member snd.
     let inline mapSnd mapper (fst, snd) =
         (fst, mapper snd)
+
+[<RequireQualifiedAccess>]
+module Pair =
 
     /// Make a pair.
     let make a b =
