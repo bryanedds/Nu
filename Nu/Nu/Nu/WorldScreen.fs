@@ -109,7 +109,7 @@ module WorldScreenModule =
         /// Create a screen and add it to the world.
         static member createScreen dispatcherName optSpecialization optName world =
             let dispatcher = Map.find dispatcherName world.Components.ScreenDispatchers
-            let screenState = ScreenState.make dispatcher optSpecialization optName
+            let screenState = ScreenState.make optSpecialization optName dispatcher
             Reflection.attachFields dispatcher screenState
             let screen = ntos screenState.Name
             let world = World.addScreen false screenState screen world
@@ -167,7 +167,7 @@ module WorldScreenModule =
                     note ^ "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<ScreenDispatcher>.Name
                     Map.find dispatcherName world.Components.ScreenDispatchers
-            let screenState = ScreenState.make dispatcher None None
+            let screenState = ScreenState.make None None dispatcher
             Reflection.attachFields screenState.DispatcherNp screenState
             Reflection.readMemberValuesToTarget screenNode screenState
             let screenState = match optName with Some name -> { screenState with Name = name } | None -> screenState

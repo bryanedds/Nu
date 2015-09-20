@@ -34,7 +34,7 @@ module GameState =
 module ScreenState =
 
     /// Make a screen state value.
-    let make dispatcher optSpecialization optName =
+    let make optSpecialization optName dispatcher =
         let id = Core.makeId ()
         let screenState =
             { Id = id
@@ -57,7 +57,7 @@ module ScreenState =
 module GroupState =
 
     /// Make a group state value.
-    let make dispatcher optSpecialization optName =
+    let make optSpecialization optName dispatcher =
         let id = Core.makeId ()
         { GroupState.Id = id
           Name = match optName with Some name -> name | None -> acstring id
@@ -72,7 +72,7 @@ module GroupState =
 module EntityState =
 
     /// Make an entity state value.
-    let make dispatcher optSpecialization optName optOverlayName =
+    let make optSpecialization optName optOverlayName dispatcher =
         let id = Core.makeId ()
         { Id = id
           Name = match optName with Some name -> name | None -> acstring id

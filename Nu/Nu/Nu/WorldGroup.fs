@@ -113,7 +113,7 @@ module WorldGroupModule =
         /// Create a group and add it to the world.
         static member createGroup dispatcherName optSpecialization optName screen world =
             let dispatcher = Map.find dispatcherName world.Components.GroupDispatchers
-            let groupState = GroupState.make dispatcher optSpecialization optName
+            let groupState = GroupState.make optSpecialization optName dispatcher
             Reflection.attachFields dispatcher groupState
             let group = stog screen groupState.Name
             let world = World.addGroup false groupState group world
@@ -171,7 +171,7 @@ module WorldGroupModule =
                     Map.find dispatcherName world.Components.GroupDispatchers
             
             // make the bare group state with name as id
-            let groupState = GroupState.make dispatcher None None
+            let groupState = GroupState.make None None dispatcher
 
             // attach the group state's instrinsic fields from its dispatcher if any
             Reflection.attachFields groupState.DispatcherNp groupState

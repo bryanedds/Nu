@@ -244,7 +244,7 @@ module WorldEntityModule =
             let defaultOptOverlayName = OverlayRouter.findOptOverlayName intrinsicOverlayName world.State.OverlayRouter
 
             // make the bare entity state (with name as id if none is provided)
-            let entityState = EntityState.make dispatcher optSpecialization optName defaultOptOverlayName
+            let entityState = EntityState.make optSpecialization optName defaultOptOverlayName dispatcher
 
             // attach the entity state's intrinsic facets and their fields
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
@@ -422,7 +422,7 @@ module WorldEntityModule =
             let defaultOptOverlayName = OverlayRouter.findOptOverlayName intrinsicOverlayName world.State.OverlayRouter
 
             // make the bare entity state with name as id
-            let entityState = EntityState.make dispatcher None None defaultOptOverlayName
+            let entityState = EntityState.make None None defaultOptOverlayName dispatcher
 
             // attach the entity state's intrinsic facets and their fields
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
