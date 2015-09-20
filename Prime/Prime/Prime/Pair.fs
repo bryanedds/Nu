@@ -13,6 +13,14 @@ module Pair =
     let inline withSnd snd (fst, _) =
         (fst, snd)
 
+    /// Map over pair member fst.
+    let inline mapFst mapper (fst, snd) =
+        (mapper fst, snd)
+
+    /// Map over pair member snd.
+    let inline mapSnd mapper (fst, snd) =
+        (fst, mapper snd)
+
     /// Make a pair.
     let make a b =
         (a, b)
