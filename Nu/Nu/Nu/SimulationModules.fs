@@ -34,11 +34,12 @@ module GameState =
 module ScreenState =
 
     /// Make a screen state value.
-    let make dispatcher optName =
+    let make dispatcher optSpecialization optName =
         let id = Core.makeId ()
         let screenState =
             { Id = id
               Name = match optName with Some name -> name | None -> acstring id
+              OptSpecialization = optSpecialization 
               TransitionStateNp = IdlingState
               TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
               Incoming = TransitionDescriptor.make Incoming
@@ -56,10 +57,11 @@ module ScreenState =
 module GroupState =
 
     /// Make a group state value.
-    let make dispatcher optName =
+    let make dispatcher optSpecialization optName =
         let id = Core.makeId ()
         { GroupState.Id = id
           Name = match optName with Some name -> name | None -> acstring id
+          OptSpecialization = optSpecialization
           PublishChanges = true
           Persistent = true
           CreationTimeStampNp = Core.getTimeStamp ()
@@ -70,11 +72,11 @@ module GroupState =
 module EntityState =
 
     /// Make an entity state value.
-    let make dispatcher optOverlayName optName =
+    let make dispatcher optSpecialization optName optOverlayName =
         let id = Core.makeId ()
         { Id = id
           Name = match optName with Some name -> name | None -> acstring id
-          //Subtype = String.Empty
+          OptSpecialization = optSpecialization
           Position = Vector2.Zero
           Depth = 0.0f
           Size = Constants.Engine.DefaultEntitySize

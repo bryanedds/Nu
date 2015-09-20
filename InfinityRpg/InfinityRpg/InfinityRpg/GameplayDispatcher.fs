@@ -57,7 +57,7 @@ module GameplayDispatcherModule =
         static let createField scene rand world =
             let pathEdgesM = [(Vector2i (1, 10), Vector2i (20, 10))]
             let (fieldMap, rand) = FieldMap.make Constants.Assets.FieldTileSheetImage (Vector2i 22) pathEdgesM rand
-            let (field, world) = World.createEntity typeof<FieldDispatcher>.Name (Some ^ Simulants.Field.EntityName) scene world
+            let (field, world) = World.createEntity typeof<FieldDispatcher>.Name None (Some ^ Simulants.Field.EntityName) scene world
             let world = field.SetFieldMapNp fieldMap world
             let world = field.SetSize (World.getEntityQuickSize field world) world
             let world = field.SetPersistent false world
@@ -69,7 +69,7 @@ module GameplayDispatcherModule =
             List.fold
                 (fun (enemies, rand, world) i ->
                     let enemyPosition = single i * Constants.Layout.TileSize * 2.0f
-                    let (enemy, world) = World.createEntity typeof<EnemyDispatcher>.Name None scene world
+                    let (enemy, world) = World.createEntity typeof<EnemyDispatcher>.Name None None scene world
                     let world = enemy.SetDepth Constants.Layout.CharacterDepth world
                     let world = enemy.SetPosition enemyPosition world
                     let world = enemy.SetCharacterAnimationSheet Constants.Assets.GoopyImage world
@@ -512,7 +512,7 @@ module GameplayDispatcherModule =
             let world = Simulants.Gameplay.SetOngoingRandState ongoingSeedState world
 
             // make scene group
-            let (scene, world) = World.createGroup typeof<GroupDispatcher>.Name (Some ^ Simulants.Scene.GroupName) Simulants.Gameplay world
+            let (scene, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some ^ Simulants.Scene.GroupName) Simulants.Gameplay world
 
             // make rand from gameplay
             let rand = Rand.make ^ Simulants.Gameplay.GetContentRandState world
@@ -521,7 +521,7 @@ module GameplayDispatcherModule =
             let (rand, world) = _bc ^ createField scene rand world
 
             // make player
-            let (player, world) = World.createEntity typeof<PlayerDispatcher>.Name (Some ^ Simulants.Player.EntityName) scene world
+            let (player, world) = World.createEntity typeof<PlayerDispatcher>.Name None (Some ^ Simulants.Player.EntityName) scene world
             let world = player.SetDepth Constants.Layout.CharacterDepth world
 
             // make enemies

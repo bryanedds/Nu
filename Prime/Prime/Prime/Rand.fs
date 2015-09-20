@@ -5,6 +5,7 @@ namespace Prime
 open System
 
 /// Implements an immutable random number generator using the xorshift* algorithm.
+/// TODO: document.
 type [<StructuralEquality; NoComparison>] Rand =
     { RandState : uint64 }
 

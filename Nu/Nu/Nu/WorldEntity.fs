@@ -20,6 +20,7 @@ module WorldEntityModule =
 
         member this.GetId world = (World.getEntityState this world).Id
         member this.GetName world = (World.getEntityState this world).Name
+        member this.GetOptSpecialization world = (World.getEntityState this world).OptSpecialization
         member this.GetCreationTimeStampNp world = (World.getEntityState this world).CreationTimeStampNp
         member this.GetDispatcherNp world = (World.getEntityState this world).DispatcherNp
         member this.GetFacetNames world = (World.getEntityState this world).FacetNames
@@ -91,24 +92,6 @@ module WorldEntityModule =
         /// Query that an entity dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world =
             Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
-
-        /// Attach fields dynamically. Useful when eschewing the dispatcher sub-type system.
-        //member this.AttachFields fieldDefinitions world =
-        //    World.updateEntityState (fun entityState ->
-        //        let entityState = { entityState with Id = entityState.Id } // hacky copy
-        //        Reflection.attachFieldsViaDefinitions fieldDefinitions entityState
-        //        entityState)
-        //        this
-        //        world
-
-        /// Detach fields dynamically. Useful when eschewing the dispatcher sub-type system.
-        //member this.DetachFields fieldNames world =
-        //    World.updateEntityState (fun entityState ->
-        //        let entityState = { entityState with Id = entityState.Id } // hacky copy
-        //        Reflection.detachFieldsViaNames fieldNames entityState
-        //        entityState)
-        //        this
-        //        world
 
     type World with
 
@@ -251,8 +234,8 @@ module WorldEntityModule =
             (transmutedEntity, world)
 
         /// Create an entity and add it to the world.
-        static member createEntity dispatcherName optName group world =
-            
+        static member createEntity dispatcherName optSpecialization optName group world =
+
             // find the entity's dispatcher
             let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
             
@@ -261,7 +244,7 @@ module WorldEntityModule =
             let defaultOptOverlayName = OverlayRouter.findOptOverlayName intrinsicOverlayName world.State.OverlayRouter
 
             // make the bare entity state (with name as id if none is provided)
-            let entityState = EntityState.make dispatcher defaultOptOverlayName optName
+            let entityState = EntityState.make dispatcher optSpecialization optName defaultOptOverlayName
 
             // attach the entity state's intrinsic facets and their fields
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
@@ -439,7 +422,7 @@ module WorldEntityModule =
             let defaultOptOverlayName = OverlayRouter.findOptOverlayName intrinsicOverlayName world.State.OverlayRouter
 
             // make the bare entity state with name as id
-            let entityState = EntityState.make dispatcher defaultOptOverlayName None
+            let entityState = EntityState.make dispatcher None None defaultOptOverlayName
 
             // attach the entity state's intrinsic facets and their fields
             let entityState = World.attachIntrinsicFacetsViaNames entityState world

@@ -295,7 +295,7 @@ module NuEdit =
         ignore ^ WorldChangers.Add (fun world ->
             try let world = pushPastWorld world world
                 let selectedGroup = (World.getUserState world).SelectedGroup
-                let (entity, world) = World.createEntity form.createEntityComboBox.Text None selectedGroup world
+                let (entity, world) = World.createEntity form.createEntityComboBox.Text None None selectedGroup world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
                 let camera = World.getCamera world
@@ -333,7 +333,7 @@ module NuEdit =
             ignore ^ WorldChangers.Add (fun world ->
                 let world = pushPastWorld world world
                 let groupName = groupNameEntryForm.nameTextBox.Text
-                try let world = World.createGroup typeof<GroupDispatcher>.Name (Some groupName) Simulants.EditorScreen world |> snd
+                try let world = World.createGroup typeof<GroupDispatcher>.Name None (Some groupName) Simulants.EditorScreen world |> snd
                     refreshGroupTabs form world
                     form.groupTabs.SelectTab (form.groupTabs.TabPages.IndexOfKey groupName)
                     world
@@ -681,8 +681,8 @@ module NuEdit =
         let eitherWorld = World.attemptMake false 0L () plugin sdlDeps
         match eitherWorld with
         | Right world ->
-            let world = World.createScreen typeof<ScreenDispatcher>.Name (Some Simulants.EditorScreen.ScreenName) world |> snd
-            let world = World.createGroup typeof<GroupDispatcher>.Name (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen world |> snd
+            let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.EditorScreen.ScreenName) world |> snd
+            let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen world |> snd
             let world = World.setOptSelectedScreen (Some Simulants.EditorScreen) world
             Right world
         | Left error -> Left error
