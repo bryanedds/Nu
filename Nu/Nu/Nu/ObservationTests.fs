@@ -88,6 +88,7 @@ module ObservationTests =
         let (group, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some Constants.Engine.DefaultGroupName) screen world
         let (jim, world) = World.createEntity typeof<EntityDispatcher>.Name None (Some JimName) group world
         let (bob, world) = World.createEntity typeof<EntityDispatcher>.Name None (Some BobName) group world
+        let world = world |> jim.SetPublishChanges true |> bob.SetPublishChanges true
         let world = world |> (bob, bob.GetVisible) *-> (jim, jim.SetVisible)
         let world = bob.SetVisible false world
         Assert.False ^ bob.GetVisible world
@@ -99,6 +100,7 @@ module ObservationTests =
         let (group, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some Constants.Engine.DefaultGroupName) screen world
         let (jim, world) = World.createEntity typeof<EntityDispatcher>.Name None (Some JimName) group world
         let (bob, world) = World.createEntity typeof<EntityDispatcher>.Name None (Some BobName) group world
+        let world = world |> jim.SetPublishChanges true |> bob.SetPublishChanges true
         let world =
             world |>
                 (bob, bob.GetVisible) *-> (jim, jim.SetVisible) |>
