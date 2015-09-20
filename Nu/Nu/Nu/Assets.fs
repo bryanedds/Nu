@@ -155,21 +155,19 @@ module Assets =
     /// Attempt to load all the assets from a package Xml node.
     let tryLoadAssetsFromPackageNode usingRawAssets optAssociation (node : XmlNode) =
         let assets =
-            Seq.fold
-                (fun assetsRev (assetNode : XmlNode) ->
-                    match assetNode.Name with
-                    | Constants.Xml.AssetNodeName ->
-                        match tryLoadAssetFromAssetNode assetNode with
-                        | Some asset -> asset :: assetsRev
-                        | None -> debug ^ "Invalid asset node in '" + node.Name + "' in asset graph."; assetsRev
-                    | Constants.Xml.AssetsNodeName ->
-                        match tryLoadAssetsFromAssetsNode usingRawAssets assetNode with
-                        | Some loadedAssets -> List.rev loadedAssets @ assetsRev
-                        | None -> debug ^ "Invalid assets node in '" + node.Name + "' in asset graph."; assetsRev
-                    | Constants.Xml.CommentNodeName -> assetsRev
-                    | invalidNodeType -> debug ^ "Invalid package child node type '" + invalidNodeType + "'."; assetsRev)
-                []
-                (enumerable node.ChildNodes) |>
+            enumerable node.ChildNodes |>
+            flip Seq.fold [] (fun assetsRev (assetNode : XmlNode) ->
+                match assetNode.Name with
+                | Constants.Xml.AssetNodeName ->
+                    match tryLoadAssetFromAssetNode assetNode with
+                    | Some asset -> asset :: assetsRev
+                    | None -> debug ^ "Invalid asset node in '" + node.Name + "' in asset graph."; assetsRev
+                | Constants.Xml.AssetsNodeName ->
+                    match tryLoadAssetsFromAssetsNode usingRawAssets assetNode with
+                    | Some loadedAssets -> List.rev loadedAssets @ assetsRev
+                    | None -> debug ^ "Invalid assets node in '" + node.Name + "' in asset graph."; assetsRev
+                | Constants.Xml.CommentNodeName -> assetsRev
+                | invalidNodeType -> debug ^ "Invalid package child node type '" + invalidNodeType + "'."; assetsRev) |>
             List.rev
         match optAssociation with
         | Some association -> List.filter (fun asset -> List.exists ((=) association) asset.Associations) assets
@@ -179,19 +177,17 @@ module Assets =
     let tryLoadAssetsFromRootNode usingRawAssets optAssociation (node : XmlNode) =
         let possiblePackageNodes = List.ofSeq ^ enumerable node.ChildNodes
         let packageNodes =
-            List.fold (fun packageNodesRev (node : XmlNode) ->
+            possiblePackageNodes |>
+            flip List.fold [] (fun packageNodesRev (node : XmlNode) ->
                 if node.Name = Constants.Xml.PackageNodeName
                 then node :: packageNodesRev
-                else packageNodesRev)
-                []
-                possiblePackageNodes |>
+                else packageNodesRev) |>
             List.rev
         let assetLists =
-            List.fold (fun assetListsRev packageNode ->
+            packageNodes |>
+            flip List.fold [] (fun assetListsRev packageNode ->
                 let assets = tryLoadAssetsFromPackageNode usingRawAssets optAssociation packageNode
-                assets :: assetListsRev)
-                []
-                packageNodes |>
+                assets :: assetListsRev) |>
             List.rev
         let assets = List.concat assetLists
         Right assets
