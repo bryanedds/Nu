@@ -25,7 +25,7 @@ type [<CustomEquality; NoComparison>] NameKey =
 
     /// Equate NameKeys.
     static member equals nameKey nameKey2 =
-        nameKey.Name.Equals nameKey2.Name // OPTIMIZATION: faster than (=) here
+        String.Equals (nameKey.Name, nameKey2.Name, StringComparison.Ordinal)
 
     interface NameKey IEquatable with
         member this.Equals that =

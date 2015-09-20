@@ -76,11 +76,11 @@ and [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)
     static member equals address address2 =
         let addressName = Address<'a>.getFullName address
         let address2Name = Address<'a>.getFullName address2
-        addressName.Equals address2Name // OPTIMIZATION: faster than (=) here
+        String.Equals (addressName, address2Name, StringComparison.Ordinal)
 
     /// Compare Addresses.
     static member compare address address2 =
-        String.Compare (Address<'a>.getFullName address, Address<'a>.getFullName address2)
+        String.Compare (Address<'a>.getFullName address, Address<'a>.getFullName address2, StringComparison.Ordinal)
 
     interface 'a Address IComparable with
         member this.CompareTo that =
