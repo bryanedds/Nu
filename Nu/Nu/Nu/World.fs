@@ -707,7 +707,7 @@ module WorldModule =
                         EntityDispatchers = Map.addMany pluginEntityDispatchers components.EntityDispatchers
                         GroupDispatchers = Map.addMany pluginGroupDispatchers components.GroupDispatchers
                         ScreenDispatchers = Map.addMany pluginScreenDispatchers components.ScreenDispatchers
-                        GameDispatchers = untuple Map.add (World.pairWithName activeGameDispatcher) components.GameDispatchers }
+                        GameDispatchers = uncurry Map.add (World.pairWithName activeGameDispatcher) components.GameDispatchers }
                 let world = { world with Components = components }
 
                 // configures the world's with values pulled from parameters and the given plug-in
