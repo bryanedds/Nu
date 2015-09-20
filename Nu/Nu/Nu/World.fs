@@ -99,7 +99,7 @@ module WorldModule =
                 | Some selectedScreen ->  World.publish () (Events.Deselect ->- selectedScreen) selectedScreen world
                 | None -> world
             let world = World.setScreenTransitionState IncomingState screen world
-            let world = World.setOptSelectedScreen (Some screen) world
+            let world = World.setSelectedScreen screen world
             World.publish () (Events.Select ->- screen) screen world
 
         /// Try to transition to the given screen if no other transition is in progress.
