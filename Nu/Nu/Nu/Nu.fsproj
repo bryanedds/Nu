@@ -64,6 +64,7 @@
     <Compile Include="RQueue.fs" />
     <Compile Include="Core.fs" />
     <Compile Include="Constants.fs" />
+    <Compile Include="NameKey.fs" />
     <Compile Include="Address.fs" />
     <Compile Include="Math.fs" />
     <Compile Include="QuadTree.fs" />
