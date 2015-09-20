@@ -650,7 +650,7 @@ module WorldModule =
 
         /// Try to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member attemptMake useLoadedGameDispatcher tickRate userState (plugin : NuPlugin) sdlDeps =
+        static member attemptMake preferPluginGameDispatcher tickRate userState (plugin : NuPlugin) sdlDeps =
 
             // start with an empty world value, and then transform it as needed
             let world = World.empty
@@ -693,7 +693,7 @@ module WorldModule =
                 // infer the active game dispatcher
                 let defaultGameDispatcher = GameDispatcher ()
                 let activeGameDispatcher =
-                    if useLoadedGameDispatcher then
+                    if preferPluginGameDispatcher then
                         match pluginOptGameDispatcher with
                         | Some gameDispatcher -> gameDispatcher
                         | None -> defaultGameDispatcher

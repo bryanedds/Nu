@@ -62,7 +62,7 @@ module Either =
     let getRightValue either =
         match either with
         | Right r -> r
-        | Left _ -> failwith "Could not get Left value from a Right value."
+        | Left _ -> failwith "Could not get Right value from a Left value."
 
     /// Get only the Left values of a sequence of an Either value.
     let getLeftValues eithers =
@@ -73,7 +73,7 @@ module Either =
     /// Get only the Right values of a sequence of an Either value.
     let getRightValues eithers =
         List.foldBack
-            (fun either rights -> match either with Right _ -> rights | Left right -> right :: rights)
+            (fun either rights -> match either with Right right -> right :: rights | Left _ -> rights)
             (List.ofSeq eithers)
 
     /// Map over the left side of an Either value.
