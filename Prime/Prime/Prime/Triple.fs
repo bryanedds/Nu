@@ -4,7 +4,7 @@
 namespace Prime
 
 [<AutoOpen>]
-module TripleModule =
+module TripleOperators =
 
     /// The first item in a triple.
     let inline a__ triple =

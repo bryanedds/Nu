@@ -30,7 +30,7 @@ module Dictionary =
         dictionary
 
 [<AutoOpen>]
-module DictionaryModule =
+module DictionaryExtension =
 
     /// Dictionary extension methods.
     type Dictionary<'k, 'v> with

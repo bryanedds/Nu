@@ -17,7 +17,7 @@ module Lens =
           Set = fun (a, b) s -> let s = lens.Set a s in lens2.Set b s }
 
 [<AutoOpen>]
-module LensModule =
+module LensOperators =
 
     /// Combine two lenses into a single subject.
     let (@->) (lens : Lens<'s, 'a>) (lens2 : Lens<'s, 'b>) =

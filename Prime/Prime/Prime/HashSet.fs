@@ -12,7 +12,7 @@ module HashSet =
         List.toHashSet [item]
 
 [<AutoOpen>]
-module HashSetModule =
+module HashSetExtension =
 
     type HashSet<'a> with
 

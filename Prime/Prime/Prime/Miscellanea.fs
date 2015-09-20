@@ -82,7 +82,7 @@ module Type =
             | None -> Seq.head properties
 
 [<AutoOpen>]
-module TypeModule =
+module TypeExtension =
 
     /// Type extension for Type.
     type Type with
