@@ -32,14 +32,14 @@ Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
 // initialize NuEdit's dependencies
 let form = NuEdit.createForm ()
 form.Closing.Add (fun args -> args.Cancel <- true) // disable exiting
-let sdlDeps = Either.getRightValue ^ NuEdit.attemptMakeSdlDeps form
+let sdlDeps = NuEdit.attemptMakeSdlDeps form |> Either.getRightValue
 let (targetDir, plugin) = (".", NuPlugin ()) // alternatively, could pick these with NuEdit.selectTargetDirAndMakeNuPlugin ()
 
 // make world ready for use in NuEdit (could instead use NuEdit.attemptMakeWorld if less flexibility is needed)
 let world =
     World.attemptMake false 0L () plugin sdlDeps |> Either.getRightValue |>
-    World.createScreen typeof<ScreenDispatcher>.Name (Some Simulants.EditorScreen.ScreenName) |> snd |>
-    World.createGroup typeof<GroupDispatcher>.Name (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen |> snd |>
+    World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.EditorScreen.ScreenName) |> snd |>
+    World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen |> snd |>
     World.setOptSelectedScreen (Some Simulants.EditorScreen)
 
 // example of running Nu in NuEdit for 60 frames from repl
