@@ -593,7 +593,7 @@ module NuEdit =
                     subscribeToEntityEvents form world
                 else failwith ^ "Cannot attach NuEdit to a world with no groups inside the '" + acstring Simulants.EditorScreen + "' screen."
             else failwith ^ "Cannot attach NuEdit to a world with a screen selected other than '" + acstring Simulants.EditorScreen + "'."
-        | :? EditorState -> world // NOTE: precariously assume already attached. TODO: makes this not to precarious
+        | :? EditorState -> world // NOTE: conclude world is already attached
         | _ -> failwith "Cannot attach NuEdit to a world that has a user state of a type other than unit or EditorState."
 
     let private run3 runWhile targetDir sdlDeps (form : NuEditForm) =

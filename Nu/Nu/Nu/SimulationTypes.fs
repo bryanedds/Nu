@@ -284,7 +284,8 @@ and Facet () =
 
 /// A marker interface for the simulation state types (GameState, ScreenState, GroupState,
 /// and EntityState).
-and internal SimulantState = interface end
+and internal SimulantState =
+    interface end
 
 /// Hosts the ongoing state of a game. The end-user of this engine should never touch this
 /// type, and it's public _only_ to make [<CliMutable>] work.
