@@ -58,23 +58,23 @@ module WorldTests =
 
     let [<Fact>] entitySubscribeWorks () =
         let world = World.empty
-        let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name None (Some Constants.Engine.DefaultScreenName) world
-        let (group, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some Constants.Engine.DefaultGroupName) screen world
-        let (entity, world) = World.createEntity typeof<EntityDispatcher>.Name None (Some Constants.Engine.DefaultEntityName) group world
+        let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.DefaultScreen.ScreenName) world |> snd
+        let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
+        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Simulants.DefaultEntity.EntityName) Simulants.DefaultGroup world |> snd
         let handleEvent = fun event world -> (Cascade, World.updateUserState (fun _ -> event.Subscriber) world)
-        let world = World.subscribe handleEvent StringEventAddress entity world
+        let world = World.subscribe handleEvent StringEventAddress Simulants.DefaultEntity world
         let world = World.publish String.Empty StringEventAddress Simulants.Game world
         Assert.Equal<Simulant> (Simulants.DefaultEntity :> Simulant, World.getUserState world)
 
     let [<Fact>] gameSerializationWorks () =
         // TODO: make stronger assertions in here!!!
         let world = World.empty
-        let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name None (Some Constants.Engine.DefaultScreenName) world
-        let (group, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some Constants.Engine.DefaultGroupName) screen world
-        let (entity, world) = World.createEntity typeof<EntityDispatcher>.Name None (Some Constants.Engine.DefaultEntityName) group world
+        let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.DefaultScreen.ScreenName) world |> snd
+        let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
+        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Simulants.DefaultEntity.EntityName) Simulants.DefaultGroup world |> snd
         let oldWorld = world
         World.writeGameToFile TestFilePath world
         let world = World.readGameFromFile TestFilePath world
-        Assert.Equal<string> (screen.GetName oldWorld, screen.GetName world)
-        Assert.Equal<string> (group.GetName oldWorld, group.GetName world)
-        Assert.Equal<string> (entity.GetName oldWorld, entity.GetName world)
+        Assert.Equal<string> (Simulants.DefaultScreen.GetName oldWorld, Simulants.DefaultScreen.GetName world)
+        Assert.Equal<string> (Simulants.DefaultGroup.GetName oldWorld, Simulants.DefaultGroup.GetName world)
+        Assert.Equal<string> (Simulants.DefaultEntity.GetName oldWorld, Simulants.DefaultEntity.GetName world)
