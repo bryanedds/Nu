@@ -121,29 +121,36 @@ and [<ReferenceEquality>] Event<'a, 's when 's :> Simulant> =
       Data : 'a }
 
 /// Describes an event subscription.
-and Subscription<'a, 's when 's :> Simulant> = Event<'a, 's> -> World -> EventHandling * World
+and internal Subscription<'a, 's when 's :> Simulant> =
+    Event<'a, 's> -> World -> EventHandling * World
 
 /// Describes an event subscription that can be boxed / unboxed.
-and BoxableSubscription = obj -> World -> EventHandling * World
+and internal BoxableSubscription =
+    obj -> World -> EventHandling * World
 
 /// An entry in the subscription map.
-and SubscriptionEntry = Guid * Simulant * obj
+and internal SubscriptionEntry =
+    Guid * Simulant * obj
 
 /// A map of event subscriptions.
-and SubscriptionEntries = Map<obj Address, SubscriptionEntry rQueue>
+and internal SubscriptionEntries =
+    Map<obj Address, SubscriptionEntry rQueue>
 
 /// Abstracts over a subscription sorting procedure.
-and SubscriptionSorter = SubscriptionEntry rQueue -> World -> SubscriptionEntry rQueue
+and internal SubscriptionSorter =
+    SubscriptionEntry rQueue -> World -> SubscriptionEntry rQueue
 
 /// A map of subscription keys to unsubscription data.
-and UnsubscriptionEntries = Map<Guid, obj Address * Simulant>
+and internal UnsubscriptionEntries =
+    Map<Guid, obj Address * Simulant>
 
 /// A tasklet to be completed at the given time, with time being accounted for by the world
 /// state's TickTime value.
 /// TODO: Make this an abstract data type.
 and [<ReferenceEquality>] Tasklet =
-    { ScheduledTime : int64
-      Operation : World -> World }
+    // private
+        { ScheduledTime : int64
+          Operation : World -> World }
 
 /// Represents a subsystem by which additional engine-level subsystems such as AI, optimized
 /// special FX, and the like can be added.
@@ -356,7 +363,8 @@ and Simulant =
 
 /// Operators for the Simulant type.
 and SimulantOperators =
-    private | SimulantOperators
+    private
+        | SimulantOperators
 
     /// Concatenate two addresses, forcing the type of first address.
     static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.SimulantAddress)
