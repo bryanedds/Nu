@@ -115,7 +115,7 @@ module WorldModule =
                             let world = World.setOptScreenTransitionDestination None world
                             let world = World.selectScreen destination world
                             (Cascade, world)
-                        | None -> failwith "No valid OptScreenTransitionDestinationAddress during screen transition!"
+                        | None -> failwith "No valid OptScreenTransitionDestination during screen transition!"
                     let world = World.setOptScreenTransitionDestination (Some destination) world
                     let world = World.setScreenTransitionState OutgoingState selectedScreen world
                     let world = World.subscribe5<unit, Screen> subscriptionKey subscription (Events.OutgoingFinish ->- selectedScreen) selectedScreen world
