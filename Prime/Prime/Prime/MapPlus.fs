@@ -6,6 +6,7 @@ open System
 
 /// A Map with additional key input (such as a version number).
 /// TODO: implement TypeConverter.
+/// TODO: document.
 type MapPlus<'p, 'm, 'v when 'm : comparison and 'p : comparison> =
     Map<'p, Map<'m, 'v>>
 

@@ -9,16 +9,19 @@ module WorldClipboard =
     type World with
         
         /// Copy an entity to the clipboard.
+        /// TODO: document mutation quite explicitly.
         static member copyToClipboard entity world =
             let entityState = World.getEntityState entity world
             world.State.RefClipboard := Some entityState
 
         /// Cut an entity to the clipboard.
+        /// TODO: document mutation quite explicitly.
         static member cutToClipboard entity world =
             World.copyToClipboard entity world
             World.destroyEntityImmediate entity world
 
         /// Paste an entity from the clipboard.
+        /// TODO: document mutation quite explicitly.
         static member pasteFromClipboard atMouse rightClickPosition positionSnap rotationSnap group world =
             match !world.State.RefClipboard with
             | Some entityState ->
