@@ -9,10 +9,10 @@ open Nu
 open Nu.Observation
 module ObservationTests =
 
+    let Jim = Simulants.DefaultGroup => "Jim"
+    let Bob = Simulants.DefaultGroup => "Bob"
     let IntEventAddress = ntoa<int> "Test"
     let UnitEventAddress = ntoa<unit> "Test"
-    let JimName = "Jim"
-    let BobName = "Bob"
     let incUserStateAndCascade _ world = (Cascade, World.updateUserState inc world)
     let incUserStateAndResolve _ world = (Resolve, World.updateUserState inc world)
 
@@ -84,27 +84,27 @@ module ObservationTests =
 
     let [<Fact>] iterativeFrpWorks () =
         let world = World.empty
-        let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name None (Some Constants.Engine.DefaultScreenName) world
-        let (group, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some Constants.Engine.DefaultGroupName) screen world
-        let (jim, world) = World.createEntity typeof<EntityDispatcher>.Name None (Some JimName) group world
-        let (bob, world) = World.createEntity typeof<EntityDispatcher>.Name None (Some BobName) group world
-        let world = world |> jim.SetPublishChanges true |> bob.SetPublishChanges true
-        let world = world |> (bob, bob.GetVisible) *-> (jim, jim.SetVisible)
-        let world = bob.SetVisible false world
-        Assert.False ^ bob.GetVisible world
-        Assert.False ^ jim.GetVisible world
+        let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.DefaultScreen.ScreenName) world |> snd
+        let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
+        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Jim.EntityName) Simulants.DefaultGroup world |> snd
+        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Bob.EntityName) Simulants.DefaultGroup world |> snd
+        let world = world |> Jim.SetPublishChanges true |> Bob.SetPublishChanges true
+        let world = world |> (Bob, Bob.GetVisible) *-> (Jim, Jim.SetVisible)
+        let world = Bob.SetVisible false world
+        Assert.False ^ Bob.GetVisible world
+        Assert.False ^ Jim.GetVisible world
 
     let [<Fact>] iterativeFrpCyclicWorks () =
         let world = World.empty
-        let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name None (Some Constants.Engine.DefaultScreenName) world
-        let (group, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some Constants.Engine.DefaultGroupName) screen world
-        let (jim, world) = World.createEntity typeof<EntityDispatcher>.Name None (Some JimName) group world
-        let (bob, world) = World.createEntity typeof<EntityDispatcher>.Name None (Some BobName) group world
-        let world = world |> jim.SetPublishChanges true |> bob.SetPublishChanges true
+        let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.DefaultScreen.ScreenName) world |> snd
+        let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
+        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Jim.EntityName) Simulants.DefaultGroup world |> snd
+        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Bob.EntityName) Simulants.DefaultGroup world |> snd
+        let world = world |> Jim.SetPublishChanges true |> Bob.SetPublishChanges true
         let world =
             world |>
-                (bob, bob.GetVisible) *-> (jim, jim.SetVisible) |>
-                (jim, jim.GetVisible) /-> (bob, not >> bob.SetVisible)
-        let world = bob.SetVisible false world
-        Assert.True ^ bob.GetVisible world
-        Assert.True ^ jim.GetVisible world
+                (Bob, Bob.GetVisible) *-> (Jim, Jim.SetVisible) |>
+                (Jim, Jim.GetVisible) /-> (Bob, not >> Bob.SetVisible)
+        let world = Bob.SetVisible false world
+        Assert.True ^ Bob.GetVisible world
+        Assert.True ^ Jim.GetVisible world
