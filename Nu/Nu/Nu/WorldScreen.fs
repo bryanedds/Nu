@@ -19,6 +19,7 @@ module WorldScreenModule =
 
         member this.GetId world = (World.getScreenState this world).Id
         member this.GetName world = (World.getScreenState this world).Name
+        member this.GetOptSpecialization world = (World.getScreenState this world).OptSpecialization
         member this.GetCreationTimeStampNp world = (World.getScreenState this world).CreationTimeStampNp
         member this.GetDispatcherNp world = (World.getScreenState this world).DispatcherNp
         member this.GetTransitionStateNp world = (World.getScreenState this world).TransitionStateNp
@@ -106,18 +107,18 @@ module WorldScreenModule =
             World.addTasklet tasklet world
 
         /// Create a screen and add it to the world.
-        static member createScreen dispatcherName optName world =
+        static member createScreen dispatcherName optSpecialization optName world =
             let dispatcher = Map.find dispatcherName world.Components.ScreenDispatchers
-            let screenState = ScreenState.make dispatcher optName
+            let screenState = ScreenState.make dispatcher optSpecialization optName
             Reflection.attachFields dispatcher screenState
             let screen = ntos screenState.Name
             let world = World.addScreen false screenState screen world
             (screen, world)
         
         /// Create a screen with a dissolving transition, and add it to the world.
-        static member createDissolveScreen dissolveData dispatcherName optName world =
+        static member createDissolveScreen dissolveData dispatcherName optSpecialization optName world =
             let optDissolveImage = Some dissolveData.DissolveImage
-            let (screen, world) = World.createScreen dispatcherName optName world
+            let (screen, world) = World.createScreen dispatcherName optSpecialization optName world
             let world = screen.SetIncoming { TransitionDescriptor.make Incoming with TransitionLifetime = dissolveData.IncomingTime; OptDissolveImage = optDissolveImage } world
             let world = screen.SetOutgoing { TransitionDescriptor.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; OptDissolveImage = optDissolveImage } world
             (screen, world)
@@ -166,7 +167,7 @@ module WorldScreenModule =
                     note ^ "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<ScreenDispatcher>.Name
                     Map.find dispatcherName world.Components.ScreenDispatchers
-            let screenState = ScreenState.make dispatcher None
+            let screenState = ScreenState.make dispatcher None None
             Reflection.attachFields screenState.DispatcherNp screenState
             Reflection.readMemberValuesToTarget screenNode screenState
             let screenState = match optName with Some name -> { screenState with Name = name } | None -> screenState

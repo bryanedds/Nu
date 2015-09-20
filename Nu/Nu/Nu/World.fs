@@ -236,11 +236,11 @@ module WorldModule =
             (Resolve, world)
 
         /// Create a splash screen that transitions to the given destination upon completion.
-        static member createSplashScreen persistent splashData dispatcherName destination optName world =
+        static member createSplashScreen persistent splashData destination dispatcherName optSpecialization optName world =
             let cameraEyeSize = World.getCameraBy (fun camera -> camera.EyeSize) world
-            let (splashScreen, world) = World.createDissolveScreen splashData.DissolveData dispatcherName optName world
-            let (splashGroup, world) = World.createGroup typeof<GroupDispatcher>.Name (Some "SplashGroup") splashScreen world
-            let (splashLabel, world) = World.createEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") splashGroup world
+            let (splashScreen, world) = World.createDissolveScreen splashData.DissolveData dispatcherName optSpecialization optName world
+            let (splashGroup, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some "SplashGroup") splashScreen world
+            let (splashLabel, world) = World.createEntity typeof<LabelDispatcher>.Name None (Some "SplashLabel") splashGroup world
             let world = splashScreen.SetPersistent persistent world
             let world = splashGroup.SetPersistent persistent world
             let world = splashLabel.SetPersistent persistent world
@@ -252,8 +252,8 @@ module WorldModule =
             (splashScreen, world)
 
         /// Create a dissolve screen whose contents is loaded from the given group file.
-        static member createDissolveScreenFromGroupFile persistent dissolveData dispatcherName groupFilePath optName world =
-            let (dissolveScreen, world) = World.createDissolveScreen dissolveData dispatcherName optName world
+        static member createDissolveScreenFromGroupFile persistent dissolveData groupFilePath dispatcherName optSpecialization optName world =
+            let (dissolveScreen, world) = World.createDissolveScreen dissolveData dispatcherName optSpecialization optName world
             let world = dissolveScreen.SetPersistent persistent world
             let world = World.readGroupFromFile groupFilePath None dissolveScreen world |> snd
             (dissolveScreen, world)

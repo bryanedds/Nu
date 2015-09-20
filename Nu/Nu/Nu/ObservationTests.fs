@@ -84,10 +84,10 @@ module ObservationTests =
 
     let [<Fact>] iterativeFrpWorks () =
         let world = World.empty
-        let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some Constants.Engine.DefaultScreenName) world
-        let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Constants.Engine.DefaultGroupName) screen world
-        let (jim, world) = World.createEntity typeof<EntityDispatcher>.Name (Some JimName) group world
-        let (bob, world) = World.createEntity typeof<EntityDispatcher>.Name (Some BobName) group world
+        let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name None (Some Constants.Engine.DefaultScreenName) world
+        let (group, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some Constants.Engine.DefaultGroupName) screen world
+        let (jim, world) = World.createEntity typeof<EntityDispatcher>.Name None (Some JimName) group world
+        let (bob, world) = World.createEntity typeof<EntityDispatcher>.Name None (Some BobName) group world
         let world = world |> (bob, bob.GetVisible) *-> (jim, jim.SetVisible)
         let world = bob.SetVisible false world
         Assert.False ^ bob.GetVisible world
@@ -95,10 +95,10 @@ module ObservationTests =
 
     let [<Fact>] iterativeFrpCyclicWorks () =
         let world = World.empty
-        let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name (Some Constants.Engine.DefaultScreenName) world
-        let (group, world) = World.createGroup typeof<GroupDispatcher>.Name (Some Constants.Engine.DefaultGroupName) screen world
-        let (jim, world) = World.createEntity typeof<EntityDispatcher>.Name (Some JimName) group world
-        let (bob, world) = World.createEntity typeof<EntityDispatcher>.Name (Some BobName) group world
+        let (screen, world) = World.createScreen typeof<ScreenDispatcher>.Name None (Some Constants.Engine.DefaultScreenName) world
+        let (group, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some Constants.Engine.DefaultGroupName) screen world
+        let (jim, world) = World.createEntity typeof<EntityDispatcher>.Name None (Some JimName) group world
+        let (bob, world) = World.createEntity typeof<EntityDispatcher>.Name None (Some BobName) group world
         let world =
             world |>
                 (bob, bob.GetVisible) *-> (jim, jim.SetVisible) |>

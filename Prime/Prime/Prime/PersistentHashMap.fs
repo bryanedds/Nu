@@ -6,6 +6,7 @@ module PersistentHashMap
 open FSharpx.Collections
 open Prime
 
+/// TODO: document all these fns.
 let singleton key value =
     PersistentHashMap.add key value PersistentHashMap.empty
 

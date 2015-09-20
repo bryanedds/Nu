@@ -295,6 +295,7 @@ and [<CLIMutable; NoEquality; NoComparison>] GameState =
 and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
     { Id : Guid
       Name : string
+      OptSpecialization : string option
       TransitionStateNp : TransitionState
       TransitionTicksNp : int64
       Incoming : TransitionDescriptor
@@ -312,6 +313,7 @@ and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
 and [<CLIMutable; NoEquality; NoComparison>] GroupState =
     { Id : Guid
       Name : string
+      OptSpecialization : string option
       PublishChanges : bool
       Persistent : bool
       CreationTimeStampNp : int64
@@ -324,7 +326,7 @@ and [<CLIMutable; NoEquality; NoComparison>] GroupState =
 and [<CLIMutable; NoEquality; NoComparison>] EntityState =
     { Id : Guid
       Name : string
-      // Subtype : string // An alternative to using the dispatcher subtype system
+      OptSpecialization : string option
       Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
       Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
       Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities

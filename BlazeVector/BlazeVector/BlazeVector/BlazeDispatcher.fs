@@ -28,7 +28,7 @@ module BlazeDispatcherModule =
         static let createTitleScreen world =
 
             // this creates a dissolve screen from the specified file with the given parameters
-            let world = World.createDissolveScreenFromGroupFile false Constants.BlazeVector.DissolveData typeof<ScreenDispatcher>.Name Constants.FilePaths.TitleGroup (Some Simulants.Title.ScreenName) world |> snd
+            let world = World.createDissolveScreenFromGroupFile false Constants.BlazeVector.DissolveData Constants.FilePaths.TitleGroup typeof<ScreenDispatcher>.Name None (Some Simulants.Title.ScreenName) world |> snd
 
             // this subscribes to the event that is raised when the Title screen is selected for
             // display and interaction, and handles the event by playing the song "Machinery".
@@ -52,12 +52,12 @@ module BlazeDispatcherModule =
 
         // pretty much the same as above, but for the Credits screen
         static let createCreditsScreen world =
-            let world = World.createDissolveScreenFromGroupFile false Constants.BlazeVector.DissolveData typeof<ScreenDispatcher>.Name Constants.FilePaths.CreditsGroup (Some Simulants.Credits.ScreenName) world |> snd
+            let world = World.createDissolveScreenFromGroupFile false Constants.BlazeVector.DissolveData Constants.FilePaths.CreditsGroup typeof<ScreenDispatcher>.Name None (Some Simulants.Credits.ScreenName) world |> snd
             World.subscribe (World.handleAsScreenTransition Simulants.Title) (Events.Click ->- Simulants.CreditsBack) Simulants.Game world
 
         // and so on.
         static let createGameplayScreen world =
-            let world = World.createDissolveScreenFromGroupFile false Constants.BlazeVector.DissolveData typeof<GameplayScreenDispatcher>.Name Constants.FilePaths.GameplayGroup (Some Simulants.Gameplay.ScreenName) world |> snd
+            let world = World.createDissolveScreenFromGroupFile false Constants.BlazeVector.DissolveData Constants.FilePaths.GameplayGroup typeof<GameplayScreenDispatcher>.Name None (Some Simulants.Gameplay.ScreenName) world |> snd
             World.subscribe (World.handleAsScreenTransition Simulants.Title) (Events.Click ->- Simulants.GameplayBack) Simulants.Game world
 
         // game registration is where the game's high-level logic is set up!
@@ -73,7 +73,7 @@ module BlazeDispatcherModule =
             let world = createGameplayScreen world
 
             // create a splash screen that automatically transitions to the Title screen
-            let (splash, world) = World.createSplashScreen false Constants.BlazeVector.SplashData typeof<ScreenDispatcher>.Name Simulants.Title (Some Simulants.Splash.ScreenName) world
+            let (splash, world) = World.createSplashScreen false Constants.BlazeVector.SplashData Simulants.Title typeof<ScreenDispatcher>.Name None (Some Simulants.Splash.ScreenName) world
 
             // play a neat sound effect, select the splash screen, and we're off!
             let world = World.playSound 1.0f Constants.Assets.NuSplashSound world

@@ -5,6 +5,7 @@ namespace Prime
 
 /// A tree onto which arbitrary recursive discriminated unions can be projected.
 /// TODO: implement TypeConverter.
+/// TODO: document.
 [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>]
 type 'a RduTree =
     | Leaf

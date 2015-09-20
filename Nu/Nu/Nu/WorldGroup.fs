@@ -19,6 +19,7 @@ module WorldGroupModule =
 
         member this.GetId world = (World.getGroupState this world).Id
         member this.GetName world = (World.getGroupState this world).Name
+        member this.GetOptSpecialization world = (World.getGroupState this world).OptSpecialization
         member this.GetCreationTimeStampNp world = (World.getGroupState this world).CreationTimeStampNp
         member this.GetDispatcherNp world = (World.getGroupState this world).DispatcherNp
         member this.GetPublishChanges world = (World.getGroupState this world).PublishChanges
@@ -110,9 +111,9 @@ module WorldGroupModule =
             World.addTasklet tasklet world
 
         /// Create a group and add it to the world.
-        static member createGroup dispatcherName optName screen world =
+        static member createGroup dispatcherName optSpecialization optName screen world =
             let dispatcher = Map.find dispatcherName world.Components.GroupDispatchers
-            let groupState = GroupState.make dispatcher optName
+            let groupState = GroupState.make dispatcher optSpecialization optName
             Reflection.attachFields dispatcher groupState
             let group = stog screen groupState.Name
             let world = World.addGroup false groupState group world
@@ -170,7 +171,7 @@ module WorldGroupModule =
                     Map.find dispatcherName world.Components.GroupDispatchers
             
             // make the bare group state with name as id
-            let groupState = GroupState.make dispatcher None
+            let groupState = GroupState.make dispatcher None None
 
             // attach the group state's instrinsic fields from its dispatcher if any
             Reflection.attachFields groupState.DispatcherNp groupState
