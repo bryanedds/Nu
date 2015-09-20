@@ -34,11 +34,11 @@ module Operators =
     /// Convert any value to an obj.
     let inline objectify x = x :> obj
 
-    /// Tuple up two values.
-    let inline tuple f x y = f (x, y)
+    /// Curry up two values.
+    let inline curry f x y = f (x, y)
 
-    /// Untuple two values within function context f.
-    let inline untuple f (x, y) = f x y
+    /// Uncurry two values.
+    let inline uncurry f (x, y) = f x y
 
     /// Transforms a function by flipping the order of its arguments.
     let inline flip f x y = f y x
