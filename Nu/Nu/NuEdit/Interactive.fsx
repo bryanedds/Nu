@@ -40,7 +40,7 @@ let world =
     World.attemptMake false 0L () plugin sdlDeps |> Either.getRightValue |>
     World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.EditorScreen.ScreenName) |> snd |>
     World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen |> snd |>
-    World.setOptSelectedScreen (Some Simulants.EditorScreen)
+    World.setSelectedScreen Simulants.EditorScreen
 
 // example of running Nu in NuEdit for 60 frames from repl
 NuEdit.runFromRepl (fun world -> World.getTickTime world < 60L) targetDir sdlDeps form world

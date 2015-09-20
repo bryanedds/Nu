@@ -683,7 +683,7 @@ module NuEdit =
         | Right world ->
             let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.EditorScreen.ScreenName) world |> snd
             let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen world |> snd
-            let world = World.setOptSelectedScreen (Some Simulants.EditorScreen) world
+            let world = World.setSelectedScreen Simulants.EditorScreen world
             Right world
         | Left error -> Left error
 
