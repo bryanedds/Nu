@@ -10,7 +10,7 @@ open Prime
 // TODO: for speed, use new F# 4.0 List functions that are implemented _without_ Seq functions!
 
 /// The missing cons function.
-let cons = Prime.Sectioning.cons
+let cons = Sectioning.cons
 
 /// Make a singleton list.
 let inline singleton item = [item]
