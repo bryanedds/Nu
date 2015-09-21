@@ -17,13 +17,13 @@ module ObservationTests =
     let incUserStateAndResolve _ world = (Resolve, World.updateUserState inc world)
 
     let [<Fact>] subscribeWorks () =
-        let world = World.empty |> World.setUserState 0
+        let world = World.makeEmpty 0
         let world = observe UnitEventAddress Simulants.Game |> subscribe incUserStateAndCascade <| world
         let world = World.publish () UnitEventAddress Simulants.Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeTwiceUnsubscribeOnceWorks () =
-        let world = World.empty |> World.setUserState 0
+        let world = World.makeEmpty 0
         let observation = observe UnitEventAddress Simulants.Game
         let world = subscribe incUserStateAndCascade observation world
         let (unsubscribe, world) = subscribePlus incUserStateAndCascade observation world
@@ -32,7 +32,7 @@ module ObservationTests =
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
-        let world = World.empty |> World.setUserState 0
+        let world = World.makeEmpty 0
         let (unsubscribe, world) = observe UnitEventAddress Simulants.Game |> subscribePlus incUserStateAndCascade <| world
         let world = unsubscribe world
         let world = World.publish () UnitEventAddress Simulants.Game world
@@ -40,7 +40,7 @@ module ObservationTests =
         Assert.Equal (0, World.getUserState world)
 
     let [<Fact>] filterWorks () =
-        let world = World.empty |> World.setUserState 0
+        let world = World.makeEmpty 0
         let world =
             observe UnitEventAddress Simulants.Game |>
             filter (fun _ world -> World.getUserState world = 0) |>
@@ -51,7 +51,7 @@ module ObservationTests =
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] mapWorks () =
-        let world = World.empty |> World.setUserState 0
+        let world = World.makeEmpty 0
         let world =
             observe IntEventAddress Simulants.Game |>
             map (fun event _ -> event.Data * 2) |>
@@ -61,7 +61,7 @@ module ObservationTests =
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] scanWorks () =
-        let world = World.empty |> World.setUserState 0
+        let world = World.makeEmpty 0
         let world =
             observe IntEventAddress Simulants.Game |>
             scan (fun acc event _ -> acc + event.Data) 0 |>
@@ -72,7 +72,7 @@ module ObservationTests =
         Assert.Equal (3, World.getUserState world)
 
     let [<Fact>] scanDoesntLeaveGarbage () =
-        let world = World.empty |> World.setUserState 0
+        let world = World.makeEmpty 0
         let (unsubscribe, world) =
             observe IntEventAddress Simulants.Game |>
             scan2 (fun a _ _ -> a) |>
@@ -83,7 +83,7 @@ module ObservationTests =
         Assert.True ^ Map.isEmpty world.Callbacks.CallbackStates
 
     let [<Fact>] iterativeFrpWorks () =
-        let world = World.empty
+        let world = World.makeEmpty ()
         let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.DefaultScreen.ScreenName) world |> snd
         let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Jim.EntityName) Simulants.DefaultGroup world |> snd
@@ -95,7 +95,7 @@ module ObservationTests =
         Assert.False ^ Jim.GetVisible world
 
     let [<Fact>] iterativeFrpCyclicWorks () =
-        let world = World.empty
+        let world = World.makeEmpty ()
         let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.DefaultScreen.ScreenName) world |> snd
         let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Jim.EntityName) Simulants.DefaultGroup world |> snd

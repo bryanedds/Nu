@@ -13,16 +13,16 @@ type InfinityRpgPlugin () =
     override this.MakeScreenDispatchers () =
         [GameplayDispatcher () :> ScreenDispatcher]
 
+    override this.MakeFacets () =
+        [CharacterStateFacet () :> Facet
+         CharacterAnimationFacet () :> Facet
+         CharacterCameraFacet () :> Facet]
+
     override this.MakeEntityDispatchers () =
         [FieldDispatcher () :> EntityDispatcher
          EnemyDispatcher () :> EntityDispatcher
          CharacterDispatcher () :> EntityDispatcher
          PlayerDispatcher () :> EntityDispatcher]
-
-    override this.MakeFacets () =
-        [CharacterStateFacet () :> Facet
-         CharacterAnimationFacet () :> Facet
-         CharacterCameraFacet () :> Facet]
 
     override this.MakeOverlayRoutes () =
         [typeof<ButtonDispatcher>.Name, Some "InfinityButtonDispatcher"]

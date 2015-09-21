@@ -491,6 +491,10 @@ and NuPlugin () =
     abstract MakeSubsystems : unit -> (string * Subsystem) list
     default this.MakeSubsystems () = []
     
+    /// Make user-defined assets such that Nu can utililize them at run-time.
+    abstract MakeFacets : unit -> Facet list
+    default this.MakeFacets () = []
+    
     /// Optionally make a user-defined game dispatchers such that Nu can utililize it at run-time.
     abstract MakeOptGameDispatcher : unit -> GameDispatcher option
     default this.MakeOptGameDispatcher () = None
@@ -506,10 +510,6 @@ and NuPlugin () =
     /// Make user-defined entity dispatchers such that Nu can utililize them at run-time.
     abstract MakeEntityDispatchers : unit -> EntityDispatcher list
     default this.MakeEntityDispatchers () = []
-    
-    /// Make user-defined assets such that Nu can utililize them at run-time.
-    abstract MakeFacets : unit -> Facet list
-    default this.MakeFacets () = []
     
     /// Make the overlay routes that will allow Nu to use different overlays for the specified
     /// types. For example, a returned router of (typeof<ButtonDispatcher>.Name, Some "CustomButtonOverlay")
@@ -528,11 +528,11 @@ and [<ReferenceEquality>] internal Subsystems =
 /// TODO: Make this an abstract data type.
 and [<ReferenceEquality>] internal Components =
     // private
-        { EntityDispatchers : Map<string, EntityDispatcher>
+        { Facets : Map<string, Facet>
+          EntityDispatchers : Map<string, EntityDispatcher>
           GroupDispatchers : Map<string, GroupDispatcher>
           ScreenDispatchers : Map<string, ScreenDispatcher>
-          GameDispatchers : Map<string, GameDispatcher>
-          Facets : Map<string, Facet> }
+          GameDispatchers : Map<string, GameDispatcher> }
 
 /// The world's simple callback facilities.
 /// TODO: Make this an abstract data type.
