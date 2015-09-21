@@ -43,12 +43,8 @@ form.Closing.Add (fun args ->
 // initialize sdl dependencies using the form as its rendering surface
 let sdlDeps = NuEdit.attemptMakeSdlDeps form |> Either.getRightValue
 
-// make world ready for use in NuEdit (could instead use NuEdit.attemptMakeWorld if less flexibility is needed)
-let world =
-    World.attemptMake false 0L () plugin sdlDeps |> Either.getRightValue |>
-    World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.EditorScreen.ScreenName) |> snd |>
-    World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen |> snd |>
-    World.setSelectedScreen Simulants.EditorScreen
+// make world ready for use in NuEdit
+let world = NuEdit.attemptMakeWorld plugin sdlDeps |> Either.getRightValue
 
 // example of running Nu in NuEdit for 60 frames from repl
 NuEdit.runFromRepl (fun world -> World.getTickTime world < 60L) targetDir sdlDeps form world
