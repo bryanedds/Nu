@@ -504,6 +504,11 @@ module NuEdit =
             refreshTreeView form world
             world)
 
+    let private handleFormClosing (_ : NuEditForm) (args : CancelEventArgs) =
+        match MessageBox.Show ("Are you sure you want to close NuEdit?", "Close NuEdit", MessageBoxButtons.YesNo) with
+        | DialogResult.No -> args.Cancel <- true
+        | _ -> ()
+
     let private updateEntityDrag (form : NuEditForm) world =
         if not ^ canEditWithMouse form world then
             match (World.getUserState world).DragEntityState with
@@ -671,6 +676,7 @@ module NuEdit =
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
         form.reloadOverlaysButton.Click.Add (handleFormReloadOverlays form)
         form.groupTabs.Selected.Add (handleFormGroupTabSelected form)
+        form.Closing.Add (handleFormClosing form)
         form.Show ()
         form
 

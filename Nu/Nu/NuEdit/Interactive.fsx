@@ -16,6 +16,7 @@
 
 open System
 open System.IO
+open System.Windows.Forms
 open FSharpx
 open SDL2
 open OpenTK
@@ -32,9 +33,14 @@ Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
 // decide on a target directory and plugin
 let (targetDir, plugin) = NuEdit.selectTargetDirAndMakeNuPlugin ()
 
-// initialize NuEdit's dependencies
+// initialize NuEdit's form
 let form = NuEdit.createForm ()
-form.Closing.Add (fun args -> args.Cancel <- true) // disable exiting
+form.Closing.Add (fun args ->
+    if not args.Cancel then
+        MessageBox.Show ("Cannot close NuEdit when running from F# Interactive.", "Cannot Close NuEdit") |> ignore
+        args.Cancel <- true)
+
+// initialize sdl dependencies using the form as its rendering surface
 let sdlDeps = NuEdit.attemptMakeSdlDeps form |> Either.getRightValue
 
 // make world ready for use in NuEdit (could instead use NuEdit.attemptMakeWorld if less flexibility is needed)
