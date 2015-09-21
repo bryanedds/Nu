@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<elements source="Stage (Stage.exe) version 12.1.1 build 10534 2015-07-30 21:18:12" version="1211" build="10534">
+ <element id="2" elementName="AlucardWalkLeft" elementFolder="AlucardWalkLeft" pixmapFormat="2" scanType="2" fieldChart="12" vectorType="2" rootFolder="elements"/>
+ <element id="3" elementName="AlucardWalkLeftA" elementFolder="AlucardWalkLeftA" pixmapFormat="2" scanType="2" fieldChart="12" vectorType="2" rootFolder="elements"/>
+ <element id="4" elementName="AlucardWalkLeftB" elementFolder="AlucardWalkLeftB" pixmapFormat="2" scanType="2" fieldChart="12" vectorType="2" rootFolder="elements"/>
+</elements>

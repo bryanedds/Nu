@@ -9,7 +9,7 @@ open Prime
 open Nu
 module HarmonyTests =
 
-    let TestFilePath = "../../TestData/Test.xstage"
+    let [<Literal>] TestFilePath = "../../Testing/Harmony/Alucard/Alucard.xstage"
 
     let [<Fact>] loadHarmonyProjectWorks () =
         let project = Harmony.readProjectFromFile TestFilePath

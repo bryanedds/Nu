@@ -1,0 +1,4 @@
+ToonBoomAnimationInc PaletteList 1
+palette-library/Alucards2Scene LINK "C:/FPWorksPrivate/Dracula/Artifacts/Alucard/Alucards2Scene/palette-library/Alucards2Scene.plt"
+palette-library/penstyle_opacity LINK "C:/FPWorksPrivate/Dracula/Artifacts/Alucard/AlucardScene/palette-library/penstyle_opacity.plt"
+palette-library/AlucardScene LINK "C:/FPWorksPrivate/Dracula/Artifacts/Alucard/Alucards2Scene/palette-library/AlucardScene.plt"
