@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open Nu.Tests
 module Program =
 
     (* TODO: investigate NuEdit extensibility mechanism. *)
@@ -110,4 +111,5 @@ module Program =
 
     let [<EntryPoint; STAThread>] main _ =
         Console.Write "Running Nu.exe"
+        HarmonyTests.loadHarmonyProjectTest ()
         Constants.Engine.SuccessExitCode
