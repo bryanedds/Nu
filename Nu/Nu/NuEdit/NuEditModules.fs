@@ -677,7 +677,7 @@ module NuEdit =
     /// Attempt to make a world for use in the NuEdit form.
     /// You can make your own world instead and use the NuEdit.attachToWorld instead (so long as the world satisfies said
     /// function's various requirements.
-    let attemptMakeWorld sdlDeps plugin =
+    let attemptMakeWorld plugin sdlDeps =
         let eitherWorld = World.attemptMake false 0L () plugin sdlDeps
         match eitherWorld with
         | Right world ->
@@ -707,11 +707,11 @@ module NuEdit =
 
     /// Run the NuEdit in isolation.
     let run () =
+        let (targetDir, plugin) = selectTargetDirAndMakeNuPlugin ()
         use form = createForm ()
         match attemptMakeSdlDeps form with
         | Right sdlDeps ->
-            let (targetDir, plugin) = selectTargetDirAndMakeNuPlugin ()
-            match attemptMakeWorld sdlDeps plugin with
+            match attemptMakeWorld plugin sdlDeps with
             | Right world ->
                 RefWorld := world
                 run3 tautology targetDir sdlDeps form |> ignore
