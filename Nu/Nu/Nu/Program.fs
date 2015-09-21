@@ -111,5 +111,5 @@ module Program =
 
     let [<EntryPoint; STAThread>] main _ =
         Console.Write "Running Nu.exe"
-        HarmonyTests.loadHarmonyProjectTest ()
+        HarmonyTests.loadHarmonyProjectWorks ()
         Constants.Engine.SuccessExitCode

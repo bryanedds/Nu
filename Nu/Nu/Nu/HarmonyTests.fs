@@ -3,6 +3,7 @@
 
 namespace Nu.Tests
 open System
+open OpenTK
 open Xunit
 open Prime
 open Nu
@@ -10,6 +11,7 @@ module HarmonyTests =
 
     let TestFilePath = "../../TestData/Test.xstage"
 
-    let [<Fact>] loadHarmonyProjectTest () =
-        let project = Harmony.readHarmonyProjectFromFile TestFilePath
+    let [<Fact>] loadHarmonyProjectWorks () =
+        let project = Harmony.readProjectFromFile TestFilePath
         Assert.True (project.Creator = "harmony")
+        Assert.True (project.ProjectOptions.Resolution = Vector2i (512, 512))
