@@ -29,11 +29,13 @@ open NuEdit
 // set current directly to local for execution in VS F# interactive
 Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
 
+// decide on a target directory and plugin
+let (targetDir, plugin) = NuEdit.selectTargetDirAndMakeNuPlugin ()
+
 // initialize NuEdit's dependencies
 let form = NuEdit.createForm ()
 form.Closing.Add (fun args -> args.Cancel <- true) // disable exiting
 let sdlDeps = NuEdit.attemptMakeSdlDeps form |> Either.getRightValue
-let (targetDir, plugin) = (".", NuPlugin ()) // alternatively, could pick these with NuEdit.selectTargetDirAndMakeNuPlugin ()
 
 // make world ready for use in NuEdit (could instead use NuEdit.attemptMakeWorld if less flexibility is needed)
 let world =
