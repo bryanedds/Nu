@@ -32,7 +32,7 @@ type AddressConverter (targetType : Type) =
     override this.ConvertFrom (_, _, source) =
         match source with
         | :? string ->
-            let ftoaFunction = targetType.GetMethod ("ftoa", BindingFlags.Static ||| BindingFlags.Public)
+            let ftoaFunction = targetType.GetMethod ("makeFromFullName", BindingFlags.Static ||| BindingFlags.Public)
             ftoaFunction.Invoke (null, [|source|])
         | _ ->
             if targetType.IsInstanceOfType source then source
@@ -62,6 +62,13 @@ and [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)
             let fullName = address.NameKeys |> Seq.map (fun nameKey -> nameKey.Name) |> Address<'a>.join
             address.OptFullName <- Some fullName
             fullName
+
+    /// Make an address from a '/' delimited string.
+    /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
+    static member makeFromFullName fullName =
+        let namesList = Address<'a>.split fullName
+        let nameKeys = List.map NameKey.make namesList
+        { NameKeys = nameKeys; OptFullName = Some fullName; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
 
     /// Hash an Address.
     static member hash (address : 'a Address) =
@@ -125,9 +132,7 @@ module Address =
 
     /// Make an address from a '/' delimited string.
     let makeFromFullName<'a> fullName =
-        let namesList = Address<'a>.split fullName
-        let nameKeys = List.map NameKey.make namesList
-        { NameKeys = nameKeys; OptFullName = Some fullName; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
+        Address<'a>.makeFromFullName fullName
 
     /// Get the name keys of an address.
     let getNameKeys address =
