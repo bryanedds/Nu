@@ -13,7 +13,7 @@ type Either<'l, 'r> =
     | Left of 'l
 
 [<AutoOpen>]
-module EitherModule =
+module EitherOperators =
 
     /// Monadic return for Either.
     let internal returnM r = Right r

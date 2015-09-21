@@ -384,6 +384,10 @@ module World =
 
     (* Components *)
 
+    /// Get the facet of the world.
+    let getFacets world =
+        world.Components.Facets
+
     /// Get the entity dispatchers of the world.
     let getEntityDispatchers world =
         world.Components.EntityDispatchers
@@ -396,13 +400,9 @@ module World =
     let getScreenDispatchers world =
         world.Components.ScreenDispatchers
 
-    /// Get the entity dispatchers of the world.
+    /// Get the game dispatchers of the world.
     let getGameDispatchers world =
         world.Components.GameDispatchers
-
-    /// Get the entity dispatchers of the world.
-    let getFacets world =
-        world.Components.Facets
 
     (* WorldState *)
 

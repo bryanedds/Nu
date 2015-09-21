@@ -17,12 +17,50 @@ open TiledSharp
 open Prime
 open Nu
 
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Nu =
+
+    let mutable private Initialized = false
+    let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
+
+    /// Initialize the game engine.
+    let init () =
+
+        // init only if needed
+        if not Initialized then
+
+            // make types load reflectively from pathed (non-static) assemblies
+            AppDomain.CurrentDomain.AssemblyLoad.Add
+                (fun args -> LoadedAssemblies.[args.LoadedAssembly.FullName] <- args.LoadedAssembly)
+            AppDomain.CurrentDomain.add_AssemblyResolve ^ ResolveEventHandler
+                (fun _ args -> snd ^ LoadedAssemblies.TryGetValue args.Name)
+
+            // ensure the current culture is invariate
+            System.Threading.Thread.CurrentThread.CurrentCulture <-
+                System.Globalization.CultureInfo.InvariantCulture
+
+            // init logging
+            Log.init ^ Some "Log.txt"
+
+            // init type converters
+            Math.initTypeConverters ()
+
+            // init F# reach-arounds
+            // TODO: define this somewhere else...
+            World.rebuildEntityTree <- fun screen world ->
+                let tree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
+                let entities = screen |> flip World.proxyGroups world |> Seq.map (flip World.proxyEntities world) |> Seq.concat
+                for entity in entities do
+                    let entityMaxBounds = World.getEntityMaxBounds entity world
+                    QuadTree.addElement false entityMaxBounds entity tree
+                (world, tree)
+
+            // mark init flag
+            Initialized <- true
+
 [<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module WorldModule =
 
-    let mutable private Initialized = false
-    let mutable private OptEmptyWorld = None
-    let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
     let private ScreenTransitionMouseLeftKey = World.makeSubscriptionKey ()
     let private ScreenTransitionMouseCenterKey = World.makeSubscriptionKey ()
     let private ScreenTransitionMouseRightKey = World.makeSubscriptionKey ()
@@ -35,6 +73,38 @@ module WorldModule =
 
         static member private pairWithName source =
             (Reflection.getTypeName source, source)
+
+        static member private makeDefaultFacets () =
+            Map.ofList
+                [(typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet)
+                 (typeof<SpriteFacet>.Name, SpriteFacet () :> Facet)
+                 (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
+
+        static member private makeDefaultEntityDispatchers () =
+            // TODO: see if we can reflectively generate these
+            Map.ofListBy World.pairWithName ^
+                [EntityDispatcher ()
+                 GuiDispatcher () :> EntityDispatcher
+                 ButtonDispatcher () :> EntityDispatcher
+                 LabelDispatcher () :> EntityDispatcher
+                 TextDispatcher () :> EntityDispatcher
+                 ToggleDispatcher () :> EntityDispatcher
+                 FeelerDispatcher () :> EntityDispatcher
+                 FillBarDispatcher () :> EntityDispatcher
+                 BlockDispatcher () :> EntityDispatcher
+                 BoxDispatcher () :> EntityDispatcher
+                 TopViewCharacterDispatcher () :> EntityDispatcher
+                 SideViewCharacterDispatcher () :> EntityDispatcher
+                 TileMapDispatcher () :> EntityDispatcher]
+
+        static member private makeDefaultGroupDispatchers () =
+            Map.ofList [World.pairWithName ^ GroupDispatcher ()]
+            
+        static member private makeDefaultScreenDispatchers () =
+            Map.ofList [World.pairWithName ^ ScreenDispatcher ()]
+
+        static member private makeDefaultGameDispatchers () =
+            Map.ofList [World.pairWithName ^ GameDispatcher ()]
 
         /// Ignore all handled events.
         static member handleAsPass<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
@@ -99,7 +169,7 @@ module WorldModule =
                 | Some selectedScreen ->  World.publish () (Events.Deselect ->- selectedScreen) selectedScreen world
                 | None -> world
             let world = World.setScreenTransitionState IncomingState screen world
-            let world = World.setOptSelectedScreen (Some screen) world
+            let world = World.setSelectedScreen screen world
             World.publish () (Events.Select ->- screen) screen world
 
         /// Try to transition to the given screen if no other transition is in progress.
@@ -258,10 +328,10 @@ module WorldModule =
             let world = World.readGroupFromFile groupFilePath None dissolveScreen world |> snd
             (dissolveScreen, world)
 
-        static member private createIntrinsicOverlays entityDispatchers facets =
+        static member private createIntrinsicOverlays facets entityDispatchers =
             let hasFacetNamesField = fun sourceType -> sourceType = typeof<EntityDispatcher>
-            let entityDispatchers = Map.toValueListBy objectify entityDispatchers
             let facets = Map.toValueListBy (fun facet -> facet :> obj) facets
+            let entityDispatchers = Map.toValueListBy objectify entityDispatchers
             let sources = facets @ entityDispatchers
             let sourceTypes = List.map (fun source -> source.GetType ()) sources
             Reflection.createIntrinsicOverlays hasFacetNamesField sourceTypes
@@ -506,54 +576,11 @@ module WorldModule =
                 World.cleanUp
                 sdlConfig
 
-        /// The empty world.
-        static member empty =
-            // NOTE: implemented with memoization since adding a 'field' with a type extension must be done with a property
-            match OptEmptyWorld with
-            | Some emptyWorld -> emptyWorld
-            | None ->
-                let emptyWorld = World.makeEmpty ()
-                OptEmptyWorld <- Some emptyWorld
-                emptyWorld
+        /// Make an empty world.
+        static member makeEmpty userState =
 
-        static member private init () =
-
-            // init only if needed
-            if not Initialized then
-
-                // make types load reflectively from pathed (non-static) assemblies
-                AppDomain.CurrentDomain.AssemblyLoad.Add
-                    (fun args -> LoadedAssemblies.[args.LoadedAssembly.FullName] <- args.LoadedAssembly)
-                AppDomain.CurrentDomain.add_AssemblyResolve ^ ResolveEventHandler
-                    (fun _ args -> snd ^ LoadedAssemblies.TryGetValue args.Name)
-
-                // ensure the current culture is invariate
-                System.Threading.Thread.CurrentThread.CurrentCulture <-
-                    System.Globalization.CultureInfo.InvariantCulture
-
-                // init logging
-                Log.init ^ Some "Log.txt"
-
-                // init type converters
-                Math.initTypeConverters ()
-
-                // init F# reach-arounds
-                // TODO: define this somewhere else...
-                World.rebuildEntityTree <- fun screen world ->
-                    let tree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
-                    let entities = screen |> flip World.proxyGroups world |> Seq.map (flip World.proxyEntities world) |> Seq.concat
-                    for entity in entities do
-                        let entityMaxBounds = World.getEntityMaxBounds entity world
-                        QuadTree.addElement false entityMaxBounds entity tree
-                    (world, tree)
-
-                // mark init flag
-                Initialized <- true
-
-        static member private makeEmpty () =
-
-            // init world
-            World.init ()
+            // ensure game engine is initialized
+            Nu.init ()
 
             // make the world's subsystems
             let subsystems =
@@ -563,48 +590,13 @@ module WorldModule =
                          (Constants.Engine.RendererSubsystemName, RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockRenderer = () } :> Subsystem)
                          (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockAudioPlayer = () } :> Subsystem)] }
 
-            // make default facets
-            let defaultFacets =
-                Map.ofList
-                    [(typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet)
-                     (typeof<SpriteFacet>.Name, SpriteFacet () :> Facet)
-                     (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
-
-            // make default entity dispatchers
-            // TODO: see if we can reflectively generate these
-            let defaultEntityDispatchers =
-                Map.ofListBy World.pairWithName ^
-                    [EntityDispatcher ()
-                     GuiDispatcher () :> EntityDispatcher
-                     ButtonDispatcher () :> EntityDispatcher
-                     LabelDispatcher () :> EntityDispatcher
-                     TextDispatcher () :> EntityDispatcher
-                     ToggleDispatcher () :> EntityDispatcher
-                     FeelerDispatcher () :> EntityDispatcher
-                     FillBarDispatcher () :> EntityDispatcher
-                     BlockDispatcher () :> EntityDispatcher
-                     BoxDispatcher () :> EntityDispatcher
-                     TopViewCharacterDispatcher () :> EntityDispatcher
-                     SideViewCharacterDispatcher () :> EntityDispatcher
-                     TileMapDispatcher () :> EntityDispatcher]
-
-            // make default group dispatchers
-            let defaultGroupDispatchers = Map.ofList [World.pairWithName ^ GroupDispatcher ()]
-            
-            // make default screen dispatchers
-            let defaultScreenDispatchers = Map.ofList [World.pairWithName ^ ScreenDispatcher ()]
-
-            // make active and default game dispatcher
-            let activeGameDispatcher = GameDispatcher ()
-            let defaultGameDispatchers = Map.ofList [World.pairWithName activeGameDispatcher]
-
             // make the world's components
             let components =
-                { EntityDispatchers = defaultEntityDispatchers
-                  GroupDispatchers = defaultGroupDispatchers
-                  ScreenDispatchers = defaultScreenDispatchers
-                  GameDispatchers = defaultGameDispatchers
-                  Facets = defaultFacets }
+                { Facets = World.makeDefaultFacets ()
+                  EntityDispatchers = World.makeDefaultEntityDispatchers ()
+                  GroupDispatchers = World.makeDefaultGroupDispatchers ()
+                  ScreenDispatchers = World.makeDefaultScreenDispatchers ()
+                  GameDispatchers = World.makeDefaultGameDispatchers () }
 
             // make the world's callbacks
             let callbacks =
@@ -622,17 +614,18 @@ module WorldModule =
                   OptScreenTransitionDestination = None
                   AssetMetadataMap = Map.empty
                   AssetGraphFilePath = String.Empty
-                  OverlayRouter = OverlayRouter.make (Map.ofList [World.pairWithName defaultEntityDispatchers]) []
+                  OverlayRouter = OverlayRouter.make components.EntityDispatchers []
                   OverlayFilePath = String.Empty
                   Overlayer = Overlayer.makeEmpty ()
                   Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault) }
                   OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                   RefClipboard = ref None
-                  UserState = () }
+                  UserState = userState }
 
             // make the simulant states
             let simulantStates =
-                (World.makeGameState activeGameDispatcher, Map.empty)
+                let gameDispatcher = components.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
+                (World.makeGameState gameDispatcher, Map.empty)
 
             // make the world itself
             let world =
@@ -644,23 +637,22 @@ module WorldModule =
 
             // initialize OptEntityCache after the fact due to back reference
             let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}
-            
-            // finally, register the game (which does nothing since it uses the vanilla GameDispatcher)
+
+            // finally, register the game
             World.registerGame world
 
         /// Try to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
         static member attemptMake preferPluginGameDispatcher tickRate userState (plugin : NuPlugin) sdlDeps =
 
-            // start with an empty world value, and then transform it as needed
-            let world = World.empty
+            // ensure game engine is initialized
+            Nu.init ()
 
             // attempt to generate asset metadata so the rest of the world can be created
             match Metadata.tryGenerateAssetMetadataMap Constants.Assets.AssetGraphFilePath with
             | Right assetMetadataMap ->
 
-                // add subsystems from plug-in
-                let subsystems = world.Subsystems
+                // make world's subsystems
                 let subsystems =
                     let userSubsystems = plugin.MakeSubsystems ()
                     let physicsEngine = PhysicsEngine.make Constants.Physics.Gravity
@@ -680,8 +672,7 @@ module WorldModule =
                         [(Constants.Engine.PhysicsEngineSubsystemName, physicsEngineSubsystem)
                          (Constants.Engine.RendererSubsystemName, rendererSubsystem)
                          (Constants.Engine.AudioPlayerSubsystemName, audioPlayerSubsystem)]
-                    { SubsystemMap = Map.addMany (defaultSubsystems @ userSubsystems) subsystems.SubsystemMap }
-                let world = { world with Subsystems = subsystems }
+                    { SubsystemMap = Map.ofList (defaultSubsystems @ userSubsystems) }
 
                 // make plug-in components
                 let pluginFacets = plugin.MakeFacets () |> List.map World.pairWithName
@@ -699,39 +690,58 @@ module WorldModule =
                         | None -> defaultGameDispatcher
                     else defaultGameDispatcher
 
-                // add plug-in components
-                let components = world.Components
+                // make the world's components
                 let components =
-                    { components with
-                        Facets = Map.addMany pluginFacets components.Facets
-                        EntityDispatchers = Map.addMany pluginEntityDispatchers components.EntityDispatchers
-                        GroupDispatchers = Map.addMany pluginGroupDispatchers components.GroupDispatchers
-                        ScreenDispatchers = Map.addMany pluginScreenDispatchers components.ScreenDispatchers
-                        GameDispatchers = uncurry Map.add (World.pairWithName activeGameDispatcher) components.GameDispatchers }
-                let world = { world with Components = components }
+                    { Facets = Map.addMany pluginFacets ^ World.makeDefaultFacets ()
+                      EntityDispatchers = Map.addMany pluginEntityDispatchers ^ World.makeDefaultEntityDispatchers ()
+                      GroupDispatchers = Map.addMany pluginGroupDispatchers ^ World.makeDefaultGroupDispatchers ()
+                      ScreenDispatchers = Map.addMany pluginScreenDispatchers ^ World.makeDefaultScreenDispatchers ()
+                      GameDispatchers = Map.addMany [World.pairWithName activeGameDispatcher] ^ World.makeDefaultGameDispatchers () }
 
-                // configures the world's with values pulled from parameters and the given plug-in
-                let worldState = world.State
+                // make the world's state
                 let worldState =
-                    let intrinsicOverlays = World.createIntrinsicOverlays world.Components.EntityDispatchers world.Components.Facets
+                    let intrinsicOverlays = World.createIntrinsicOverlays components.Facets components.EntityDispatchers
                     let pluginOverlayRoutes = plugin.MakeOverlayRoutes ()
                     let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH)
                     let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
-                    { worldState with
-                        TickRate = tickRate
-                        AssetMetadataMap = assetMetadataMap
-                        Overlayer = Overlayer.make Constants.Assets.OverlayFilePath intrinsicOverlays
-                        OverlayRouter = OverlayRouter.make world.Components.EntityDispatchers pluginOverlayRoutes
-                        Camera = camera
-                        UserState = userState :> obj }
-                let world = { world with State = worldState }
+                    { TickRate = tickRate
+                      TickTime = 0L
+                      UpdateCount = 0L
+                      Liveness = Running
+                      OptScreenTransitionDestination = None
+                      AssetMetadataMap = assetMetadataMap
+                      AssetGraphFilePath = String.Empty
+                      OverlayRouter = OverlayRouter.make components.EntityDispatchers pluginOverlayRoutes
+                      OverlayFilePath = String.Empty
+                      Overlayer = Overlayer.make Constants.Assets.OverlayFilePath intrinsicOverlays
+                      Camera = camera
+                      OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
+                      RefClipboard = ref None
+                      UserState = userState :> obj }
 
-                // configure the world's simulant states
-                let simulantStates = world.SimulantStates
-                let simulantStates = (World.makeGameState activeGameDispatcher, snd simulantStates)
-                let world = { world with SimulantStates = simulantStates }
+                // make the world's callbacks
+                let callbacks =
+                    { Subscriptions = Map.empty
+                      Unsubscriptions = Map.empty
+                      Tasklets = Queue.empty
+                      CallbackStates = Map.empty }
 
-                // and finally, register the game
+                // make the world's simulant states
+                let simulantStates =
+                    (World.makeGameState activeGameDispatcher, Map.empty)
+
+                // make the world itself, and register the game
+                let world =
+                    { Subsystems = subsystems
+                      Components = components
+                      Callbacks = callbacks
+                      State = worldState
+                      SimulantStates = simulantStates }
+
+                // initialize OptEntityCache after the fact due to back reference
+                let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}
+
+                // finally, register the game
                 let world = World.registerGame world
                 Right world
 
