@@ -71,7 +71,6 @@
     <Compile Include="Overlay.fs" />
     <Compile Include="Reflection.fs" />
     <Compile Include="Camera.fs" />
-    <Compile Include="Harmony.fs" />
     <Compile Include="Assets.fs" />
     <Compile Include="Physics.fs" />
     <Compile Include="Render.fs" />
@@ -99,7 +98,6 @@
     <Compile Include="Chain.fs" />
     <Compile Include="AddressTests.fs" />
     <Compile Include="ReflectionTests.fs" />
-    <Compile Include="HarmonyTests.fs" />
     <Compile Include="WorldTests.fs" />
     <Compile Include="ObservationTests.fs" />
     <Compile Include="ChainTests.fs" />
