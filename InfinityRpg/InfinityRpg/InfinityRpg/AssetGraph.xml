@@ -8,14 +8,14 @@
     <Assets directory="Assets/Default" extension="tmx"/>
   </Package>
   <Package name="Gui">
-    <Assets directory="Assets/Gui" extension="psd" associations="[Render]" refinements="[PsdToPng | OldSchool]"/>
+    <Assets directory="Assets/Gui" extension="psd" associations="[Render]" refinements="[PsdToPng OldSchool]"/>
     <Assets directory="Assets/Gui" extension="png" associations="[Render]" refinements="[OldSchool]"/>
     <Assets directory="Assets/Gui" extension="wav" associations="[Audio]"/>
     <Assets directory="Assets/Gui" extension="ogg" associations="[Audio]"/>
     <Assets directory="Assets/Gui" extension="nugroup"/>
   </Package>
   <Package name="Gameplay">
-    <Assets directory="Assets/Gameplay" extension="psd" associations="[Render]" refinements="[PsdToPng | OldSchool]"/>
+    <Assets directory="Assets/Gameplay" extension="psd" associations="[Render]" refinements="[PsdToPng OldSchool]"/>
     <Assets directory="Assets/Gameplay" extension="png" associations="[Render]" refinements="[OldSchool]"/>
     <Assets directory="Assets/Gameplay" extension="wav" associations="[Audio]"/>
     <Assets directory="Assets/Gameplay" extension="ogg" associations="[Audio]"/>

@@ -7,17 +7,17 @@
     <Entities>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Back</Name>
-        <Position>216, -264</Position>
+        <Position>[216 -264]</Position>
         <Depth>10</Depth>
-        <Size>256, 64</Size>
-        <DownImage>[Gui | BackButtonDown]</DownImage>
-        <UpImage>[Gui | BackButtonUp]</UpImage>
+        <Size>[256 64]</Size>
+        <DownImage>[Gui BackButtonDown]</DownImage>
+        <UpImage>[Gui BackButtonUp]</UpImage>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
-        <Position>-480, -272</Position>
+        <Position>[-480 -272]</Position>
         <Depth>-100</Depth>
-        <Size>960, 544</Size>
-        <LabelImage>[Default | Image8]</LabelImage>
+        <Size>[960 544]</Size>
+        <LabelImage>[Default Image8]</LabelImage>
       </Entity>
     </Entities>
   </Group>

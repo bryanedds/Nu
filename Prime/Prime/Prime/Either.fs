@@ -12,25 +12,16 @@ type Either<'l, 'r> =
     | Right of 'r
     | Left of 'l
 
-[<AutoOpen>]
-module EitherOperators =
-
-    /// Monadic return for Either.
-    let internal returnM r = Right r
-
-    /// Monadic bind for Either.
-    let internal bind either fn =
-        match either with
-        | Right r -> fn r
-        | Left l -> Left l
-
 module Either =
 
     /// Monadic return for Either.
-    let returnM = returnM
+    let returnM r = Right r
     
     /// Monadic bind for Either.
-    let bind = bind
+    let bind either fn =
+        match either with
+        | Right r -> fn r
+        | Left l -> Left l
 
     /// Builds an either monad.
     type EitherBuilder () =

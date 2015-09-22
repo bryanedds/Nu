@@ -49,7 +49,7 @@ module NameKey =
     let make name =
         match name with
         | "" -> failwith "Invalid name; must be a non-empty string."
-        | _ when name.Contains "/" -> failwith "Invalid name; must have no '/' characters."
+        | _ when name.IndexOfAny [|'\n'; '\r'; '\t'; ' '; '/'|] <> -1 -> failwith "Invalid name; must have no whitespace or '/' characters."
         | _ -> { Name = name; OptHashCode = None }
 
     /// Get the name of a name key.

@@ -77,6 +77,7 @@
     <Compile Include="Audio.fs" />
     <Compile Include="Metadata.fs" />
     <Compile Include="Input.fs" />
+    <Compile Include="Effect.fs" />
     <Compile Include="Sdl.fs" />
     <Compile Include="SimulationTypes.fs" />
     <Compile Include="SimulationEvents.fs" />
@@ -98,6 +99,7 @@
     <Compile Include="Chain.fs" />
     <Compile Include="AddressTests.fs" />
     <Compile Include="ReflectionTests.fs" />
+    <Compile Include="EffectTests.fs" />
     <Compile Include="WorldTests.fs" />
     <Compile Include="ObservationTests.fs" />
     <Compile Include="ChainTests.fs" />
@@ -164,6 +166,12 @@
     </ProjectReference>
     <Reference Include="FarseerPhysics">
       <HintPath>..\..\Farseer\FarseerPhysics.dll</HintPath>
+    </Reference>
+    <Reference Include="FParsec">
+      <HintPath>..\..\..\Prime\FParsec\FParsec.dll</HintPath>
+    </Reference>
+    <Reference Include="FParsecCS">
+      <HintPath>..\..\..\Prime\FParsec\FParsecCS.dll</HintPath>
     </Reference>
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
