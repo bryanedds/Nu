@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group dispatcherName="GroupDispatcher">
     <Name>Hud</Name>
@@ -6,73 +6,73 @@
     <Entities>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>SaveGame</Name>
-        <Position>88, -184</Position>
+        <Position>[88 -184]</Position>
         <Depth>10</Depth>
-        <Size>384, 64</Size>
-        <DownImage>[Gui | SaveGameDown]</DownImage>
-        <UpImage>[Gui | SaveGameUp]</UpImage>
+        <Size>[384 64]</Size>
+        <DownImage>[Gui SaveGameDown]</DownImage>
+        <UpImage>[Gui SaveGameUp]</UpImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Halt</Name>
-        <Position>88, -112</Position>
+        <Position>[88 -112]</Position>
         <Depth>10</Depth>
-        <Size>384, 64</Size>
-        <DownImage>[Gui | HaltDown]</DownImage>
+        <Size>[384 64]</Size>
+        <DownImage>[Gui HaltDown]</DownImage>
         <Enabled>False</Enabled>
-        <UpImage>[Gui | HaltUp]</UpImage>
+        <UpImage>[Gui HaltUp]</UpImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Back</Name>
-        <Position>88, -256</Position>
+        <Position>[88 -256]</Position>
         <Depth>10</Depth>
-        <Size>384, 64</Size>
-        <DownImage>[Gui | BackDown]</DownImage>
-        <UpImage>[Gui | BackUp]</UpImage>
+        <Size>[384 64]</Size>
+        <DownImage>[Gui BackDown]</DownImage>
+        <UpImage>[Gui BackUp]</UpImage>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Name>DetailBacking</Name>
-        <Position>-448, -240</Position>
+        <Position>[-448 -240]</Position>
         <Depth>9</Depth>
-        <Size>224, 224</Size>
-        <LabelImage>[Gui | DetailBacking]</LabelImage>
+        <Size>[224 224]</Size>
+        <LabelImage>[Gui DetailBacking]</LabelImage>
       </Entity>
       <Entity dispatcherName="FeelerDispatcher">
         <Name>Feeler</Name>
-        <Position>-480, -272</Position>
+        <Position>[-480 -272]</Position>
         <Depth>8</Depth>
-        <Size>960, 544</Size>
+        <Size>[960 544]</Size>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>DetailDown</Name>
-        <Position>-368, -232</Position>
+        <Position>[-368 -232]</Position>
         <Depth>10</Depth>
-        <DownImage>[Gui | DetailDownwardDown]</DownImage>
+        <DownImage>[Gui DetailDownwardDown]</DownImage>
         <OptClickSound>None</OptClickSound>
-        <UpImage>[Gui | DetailDownwardUp]</UpImage>
+        <UpImage>[Gui DetailDownwardUp]</UpImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>DetailLeft</Name>
-        <Position>-440, -160</Position>
+        <Position>[-440 -160]</Position>
         <Depth>10</Depth>
-        <DownImage>[Gui | DetailLeftwardDown]</DownImage>
+        <DownImage>[Gui DetailLeftwardDown]</DownImage>
         <OptClickSound>None</OptClickSound>
-        <UpImage>[Gui | DetailLeftwardUp]</UpImage>
+        <UpImage>[Gui DetailLeftwardUp]</UpImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>DetailRight</Name>
-        <Position>-296, -160</Position>
+        <Position>[-296 -160]</Position>
         <Depth>10</Depth>
-        <DownImage>[Gui | DetailRightwardDown]</DownImage>
+        <DownImage>[Gui DetailRightwardDown]</DownImage>
         <OptClickSound>None</OptClickSound>
-        <UpImage>[Gui | DetailRightwardUp]</UpImage>
+        <UpImage>[Gui DetailRightwardUp]</UpImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>DetailUp</Name>
-        <Position>-368, -88</Position>
+        <Position>[-368 -88]</Position>
         <Depth>10</Depth>
-        <DownImage>[Gui | DetailUpwardDown]</DownImage>
+        <DownImage>[Gui DetailUpwardDown]</DownImage>
         <OptClickSound>None</OptClickSound>
-        <UpImage>[Gui | DetailUpwardUp]</UpImage>
+        <UpImage>[Gui DetailUpwardUp]</UpImage>
       </Entity>
     </Entities>
   </Group>
