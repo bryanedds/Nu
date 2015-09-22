@@ -52,33 +52,33 @@ type [<CustomEquality; NoComparison>] PhysicsId =
 /// Physics-specific vertices type.
 type Vertices = Vector2 list
 
-/// The shape of a physics box.
-type [<StructuralEquality; NoComparison>] BoxShape =
+/// The shape of a physics body box.
+type [<StructuralEquality; NoComparison>] BodyBox =
     { Extent : Vector2
       Center : Vector2 } // NOTE: I guess this is like a center offset for the shape?
 
-/// The shape of a physics circle.
-type [<StructuralEquality; NoComparison>] CircleShape =
+/// The shape of a physics body circle.
+type [<StructuralEquality; NoComparison>] BodyCircle =
     { Radius : single
       Center : Vector2 } // NOTE: I guess this is like a center offset for the shape?
 
-/// The shape of a physics capsule.
-type [<StructuralEquality; NoComparison>] CapsuleShape =
+/// The shape of a physics body capsule.
+type [<StructuralEquality; NoComparison>] BodyCapsule =
     { Height : single
       Radius : single
       Center : Vector2 } // NOTE: I guess this is like a center offset for the shape?
 
-/// The shape of a physics polygon.
-type [<StructuralEquality; NoComparison>] PolygonShape =
+/// The shape of a physics body polygon.
+type [<StructuralEquality; NoComparison>] BodyPolygon =
     { Vertices : Vertices
       Center : Vector2 } // NOTE: I guess this is like a center offset for the shape?
 
 /// The shape of a physics body.
 type [<StructuralEquality; NoComparison>] BodyShape =
-    | BoxShape of BoxShape
-    | CircleShape of CircleShape
-    | CapsuleShape of CapsuleShape
-    | PolygonShape of PolygonShape
+    | BodyBox of BodyBox
+    | BodyCircle of BodyCircle
+    | BodyCapsule of BodyCapsule
+    | BodyPolygon of BodyPolygon
 
 /// The type of a physics body; Static, Kinematic, or Dynamic.
 type BodyType =
@@ -297,40 +297,40 @@ type [<ReferenceEquality>] PhysicsEngine =
         body.IsSensor <- bodyProperties.IsSensor
         body.SleepingAllowed <- true
 
-    static member private createBoxBody sourceAddress bodyProperties boxShape physicsEngine =
+    static member private createBoxBody sourceAddress bodyProperties bodyBox physicsEngine =
         let body =
             Factories.BodyFactory.CreateRectangle
                 (physicsEngine.PhysicsContext,
-                 PhysicsEngine.toPhysicsPolygonDiameter ^ boxShape.Extent.X * 2.0f,
-                 PhysicsEngine.toPhysicsPolygonDiameter ^ boxShape.Extent.Y * 2.0f,
+                 PhysicsEngine.toPhysicsPolygonDiameter ^ bodyBox.Extent.X * 2.0f,
+                 PhysicsEngine.toPhysicsPolygonDiameter ^ bodyBox.Extent.Y * 2.0f,
                  bodyProperties.Density,
-                 PhysicsEngine.toPhysicsV2 boxShape.Center,
+                 PhysicsEngine.toPhysicsV2 bodyBox.Center,
                  0.0f,
                  PhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
                  sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
         body.UserData <- sourceAddress // BUG: ...so I set it again here :/
         body
 
-    static member private createCircleBody sourceAddress bodyProperties (circleShape : CircleShape) physicsEngine =
+    static member private createCircleBody sourceAddress bodyProperties (bodyCircle : BodyCircle) physicsEngine =
         let body =
             Factories.BodyFactory.CreateCircle
                 (physicsEngine.PhysicsContext,
-                 PhysicsEngine.toPhysicsPolygonRadius circleShape.Radius,
+                 PhysicsEngine.toPhysicsPolygonRadius bodyCircle.Radius,
                  bodyProperties.Density,
-                 PhysicsEngine.toPhysicsV2 circleShape.Center,
+                 PhysicsEngine.toPhysicsV2 bodyCircle.Center,
                  PhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
                  sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
         body.UserData <- sourceAddress // BUG: ...so I set it again here :/
         body
 
-    static member private createCapsuleBody sourceAddress bodyProperties capsuleShape physicsEngine =
+    static member private createCapsuleBody sourceAddress bodyProperties bodyCapsule physicsEngine =
         let body =
             Factories.BodyFactory.CreateCapsule
                 (physicsEngine.PhysicsContext,
-                 PhysicsEngine.toPhysicsPolygonDiameter capsuleShape.Height,
-                 PhysicsEngine.toPhysicsPolygonRadius capsuleShape.Radius,
+                 PhysicsEngine.toPhysicsPolygonDiameter bodyCapsule.Height,
+                 PhysicsEngine.toPhysicsPolygonRadius bodyCapsule.Radius,
                  bodyProperties.Density,
-                 PhysicsEngine.toPhysicsV2 capsuleShape.Center,
+                 PhysicsEngine.toPhysicsV2 bodyCapsule.Center,
                  0.0f,
                  PhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
                  sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
@@ -340,13 +340,13 @@ type [<ReferenceEquality>] PhysicsEngine =
         capsuleBox.Vertices.Scale (Framework.Vector2 (0.75f, 1.0f)) |> ignore
         body
 
-    static member private createPolygonBody sourceAddress bodyProperties polygonShape physicsEngine =
+    static member private createPolygonBody sourceAddress bodyProperties bodyPolygon physicsEngine =
         let body =
             Factories.BodyFactory.CreatePolygon
                 (physicsEngine.PhysicsContext,
-                 FarseerPhysics.Common.Vertices (List.map PhysicsEngine.toPhysicsV2 polygonShape.Vertices),
+                 FarseerPhysics.Common.Vertices (List.map PhysicsEngine.toPhysicsV2 bodyPolygon.Vertices),
                  bodyProperties.Density,
-                 PhysicsEngine.toPhysicsV2 polygonShape.Center,
+                 PhysicsEngine.toPhysicsV2 bodyPolygon.Center,
                  0.0f,
                  PhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
                  sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
@@ -358,10 +358,10 @@ type [<ReferenceEquality>] PhysicsEngine =
         // make and configure the body
         let body =
             match bodyProperties.Shape with
-            | BoxShape boxShape -> PhysicsEngine.createBoxBody sourceAddress bodyProperties boxShape physicsEngine
-            | CircleShape circleShape -> PhysicsEngine.createCircleBody sourceAddress bodyProperties circleShape physicsEngine
-            | CapsuleShape capsuleShape -> PhysicsEngine.createCapsuleBody sourceAddress bodyProperties capsuleShape physicsEngine
-            | PolygonShape polygonShape -> PhysicsEngine.createPolygonBody sourceAddress bodyProperties polygonShape physicsEngine
+            | BodyBox bodyBox -> PhysicsEngine.createBoxBody sourceAddress bodyProperties bodyBox physicsEngine
+            | BodyCircle bodyCircle -> PhysicsEngine.createCircleBody sourceAddress bodyProperties bodyCircle physicsEngine
+            | BodyCapsule bodyCapsule -> PhysicsEngine.createCapsuleBody sourceAddress bodyProperties bodyCapsule physicsEngine
+            | BodyPolygon bodyPolygon -> PhysicsEngine.createPolygonBody sourceAddress bodyProperties bodyPolygon physicsEngine
         PhysicsEngine.configureBodyProperties bodyProperties body
         body.add_OnCollision (fun fn fn2 collision -> PhysicsEngine.handleCollision physicsEngine fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
 
@@ -566,16 +566,16 @@ module Physics =
 
     /// Evaluate a collision expression.
     let evalCollisionExpr (extent : Vector2) (expr : string) =
-        let defaultShape = BoxShape { Extent = extent * 0.5f; Center = Vector2.Zero }
+        let defaultShape = BodyBox { Extent = extent * 0.5f; Center = Vector2.Zero }
         match expr.Trim () with
         | "" -> defaultShape
         | _ ->
             let converter = AlgebraicConverter typeof<BodyShape>
             let bodyShape = converter.ConvertFromString expr :?> BodyShape
             match bodyShape with
-            | BoxShape boxShape -> BoxShape { Extent = Vector2.Multiply (extent, boxShape.Extent); Center = Vector2.Multiply (extent, boxShape.Center) }
-            | CircleShape circleShape -> CircleShape { Radius = extent.X * circleShape.Radius; Center = extent.X * circleShape.Center }
-            | CapsuleShape capsuleShape -> CapsuleShape { Height = extent.Y * capsuleShape.Height; Radius = extent.Y * capsuleShape.Radius; Center = extent.Y * capsuleShape.Center }
-            | PolygonShape polygonShape ->
-                let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) polygonShape.Vertices
-                PolygonShape { Vertices = vertices; Center = Vector2.Multiply (extent, polygonShape.Center) }
+            | BodyBox bodyBox -> BodyBox { Extent = Vector2.Multiply (extent, bodyBox.Extent); Center = Vector2.Multiply (extent, bodyBox.Center) }
+            | BodyCircle bodyCircle -> BodyCircle { Radius = extent.X * bodyCircle.Radius; Center = extent.X * bodyCircle.Center }
+            | BodyCapsule bodyCapsule -> BodyCapsule { Height = extent.Y * bodyCapsule.Height; Radius = extent.Y * bodyCapsule.Radius; Center = extent.Y * bodyCapsule.Center }
+            | BodyPolygon bodyPolygon ->
+                let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) bodyPolygon.Vertices
+                BodyPolygon { Vertices = vertices; Center = Vector2.Multiply (extent, bodyPolygon.Center) }

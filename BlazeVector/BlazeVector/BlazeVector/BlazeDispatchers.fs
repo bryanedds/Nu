@@ -42,7 +42,7 @@ module BulletModule =
              define? LinearDamping 0.0f
              define? GravityScale 0.0f
              define? IsBullet true
-             define? CollisionExpr "[CircleShape | [0.5 | 0.0, 0.0]]"
+             define? CollisionExpr "[BodyCircle [0.5 [0.0 0.0]]]"
              define? SpriteImage Constants.Assets.PlayerBulletImage
              define? Age 0L]
 
@@ -102,7 +102,7 @@ module EnemyModule =
              define? FixedRotation true
              define? LinearDamping 3.0f
              define? GravityScale 0.0f
-             define? CollisionExpr "[CapsuleShape | [0.5 | 0.25 | 0.0, 0.0]]"
+             define? CollisionExpr "[BodyCapsule [0.5 0.25 [0.0 0.0]]]"
              define? TileCount 6
              define? TileRun 4
              define? TileSize ^ Vector2 (48.0f, 96.0f)
@@ -209,7 +209,7 @@ module PlayerModule =
              define? FixedRotation true
              define? LinearDamping 3.0f
              define? GravityScale 0.0f
-             define? CollisionExpr "[CapsuleShape | [0.5 | 0.25 | 0.0, 0.0]]"
+             define? CollisionExpr "[BodyCapsule [0.5 0.25 [0.0 0.0]]]"
              define? TileCount 16
              define? TileRun 4
              define? TileSize ^ Vector2 (48.0f, 96.0f)

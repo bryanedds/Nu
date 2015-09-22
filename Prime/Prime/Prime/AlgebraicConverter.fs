@@ -9,6 +9,9 @@ open System.Reflection
 open Microsoft.FSharp.Reflection
 open Prime
 
+type [<NoEquality; NoComparison>] AlgebraicSource =
+    { AlgebraicValue : obj }
+
 type AlgebraicConverter (targetType : Type) =
     inherit TypeConverter ()
 
@@ -34,15 +37,15 @@ type AlgebraicConverter (targetType : Type) =
             let typeConverterType = typeConverter.GetType ()
             let convertToString = typeConverterType.GetMethod ("ConvertToString", [|typeof<obj>|])
             convertToString.Invoke (typeConverter, [|source|]) :?> string
-        
         | None ->
+
             if sourceType.Name = typedefof<_ list>.Name then
                 let items = objToObjList source
                 let itemsStrs =
                     List.map
                         (fun item -> toString item (sourceType.GetGenericArguments ()).[0])
                         items
-                let itemsStr = String.Join (AlgebraicReader.SpacedSeparatorStr, itemsStrs)
+                let itemsStr = String.Join (AlgebraicReader.SeparatorStr, itemsStrs)
                 AlgebraicReader.OpenComplexValueStr + itemsStr + AlgebraicReader.CloseComplexValueStr
         
             elif sourceType.Name = typedefof<_ Set>.Name then
@@ -51,7 +54,7 @@ type AlgebraicConverter (targetType : Type) =
                     Set.map
                         (fun item -> toString item (sourceType.GetGenericArguments ()).[0])
                         items
-                let itemsStr = String.Join (AlgebraicReader.SpacedSeparatorStr, itemsStrs)
+                let itemsStr = String.Join (AlgebraicReader.SeparatorStr, itemsStrs)
                 AlgebraicReader.OpenComplexValueStr + itemsStr + AlgebraicReader.CloseComplexValueStr
 
             elif FSharpType.IsTuple sourceType then
@@ -62,9 +65,9 @@ type AlgebraicConverter (targetType : Type) =
                             let tupleFieldType = (FSharpType.GetTupleElements sourceType).[i]
                             toString tupleField tupleFieldType)
                         (List.ofArray tupleFields)
-                let tupleStr = String.Join (AlgebraicReader.SpacedSeparatorStr, tupleFieldStrs)
+                let tupleStr = String.Join (AlgebraicReader.SeparatorStr, tupleFieldStrs)
                 AlgebraicReader.OpenComplexValueStr + tupleStr + AlgebraicReader.CloseComplexValueStr
-    
+
             elif FSharpType.IsRecord sourceType then
                 let recordFields = FSharpValue.GetRecordFields source
                 let recordFieldStrs =
@@ -73,7 +76,7 @@ type AlgebraicConverter (targetType : Type) =
                             let recordFieldType = (FSharpType.GetRecordFields sourceType).[i].PropertyType
                             toString recordField recordFieldType)
                         (List.ofArray recordFields)
-                let recordStr = String.Join (AlgebraicReader.SpacedSeparatorStr, recordFieldStrs)
+                let recordStr = String.Join (AlgebraicReader.SeparatorStr, recordFieldStrs)
                 AlgebraicReader.OpenComplexValueStr + recordStr + AlgebraicReader.CloseComplexValueStr
 
             elif FSharpType.IsUnion sourceType then
@@ -86,10 +89,10 @@ type AlgebraicConverter (targetType : Type) =
                                 toString unionField unionFieldType)
                             (List.ofArray unionFields)
                     let unionStrs = unionCase.Name :: unionFieldStrs
-                    let unionStr = String.Join (AlgebraicReader.SpacedSeparatorStr, unionStrs)
+                    let unionStr = String.Join (AlgebraicReader.SeparatorStr, unionStrs)
                     AlgebraicReader.OpenComplexValueStr + unionStr + AlgebraicReader.CloseComplexValueStr
                 else unionCase.Name
-    
+
             else (TypeDescriptor.GetConverter sourceType).ConvertToString source
 
     let rec fromReaderValue (destType : Type) (readerValue : obj) =
@@ -166,10 +169,11 @@ type AlgebraicConverter (targetType : Type) =
                     let unionCase = Array.find (fun (unionCase : UnionCaseInfo) -> unionCase.Name = unionName) unionCases
                     FSharpValue.MakeUnion (unionCase, [||])
                 | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
-    
+
             else
-                let readerValueStr = readerValue :?> string
-                (TypeDescriptor.GetConverter destType).ConvertFromString readerValueStr
+                match readerValue with
+                | :? string as readerValueStr -> (TypeDescriptor.GetConverter destType).ConvertFromString readerValueStr
+                | _ -> (TypeDescriptor.GetConverter destType).ConvertFrom { AlgebraicValue = readerValue }
 
     let fromString (destType : Type) (source : string) =
         let readerValue = AlgebraicReader.stringToValue source

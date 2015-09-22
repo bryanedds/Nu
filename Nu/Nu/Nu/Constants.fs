@@ -67,11 +67,11 @@ module Constants =
         let [<Literal>] AssetGraphFilePath = "AssetGraph.xml"
         let [<Literal>] OverlayFilePath = "Overlay.xml"
         let [<Literal>] DefaultPackageName = "Default"
-        let [<Literal>] DefaultImageValue = "[Default | Image]"
-        let [<Literal>] DefaultTileMapAssetValue = "[Default | TileMap]"
-        let [<Literal>] DefaultFontValue = "[Default | Font]"
-        let [<Literal>] DefaultSoundValue = "[Default | Sound]"
-        let [<Literal>] DefaultSongValue = "[Default | Song]"
+        let [<Literal>] DefaultImageValue = "[Default Image]"
+        let [<Literal>] DefaultTileMapAssetValue = "[Default TileMap]"
+        let [<Literal>] DefaultFontValue = "[Default Font]"
+        let [<Literal>] DefaultSoundValue = "[Default Sound]"
+        let [<Literal>] DefaultSongValue = "[Default Song]"
 
     [<RequireQualifiedAccess>]
     module Render =

@@ -7,35 +7,35 @@
     <Entities>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Credits</Name>
-        <Position>-128, -160</Position>
-        <Size>256, 64</Size>
-        <DownImage>[Gui | CreditsButtonDown]</DownImage>
-        <UpImage>[Gui | CreditsButtonUp]</UpImage>
+        <Position>[-128 -160]</Position>
+        <Size>[256 64]</Size>
+        <DownImage>[Gui CreditsButtonDown]</DownImage>
+        <UpImage>[Gui CreditsButtonUp]</UpImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Exit</Name>
-        <Position>-128, -224</Position>
-        <Size>256, 64</Size>
-        <DownImage>[Gui | ExitButtonDown]</DownImage>
-        <UpImage>[Gui | ExitButtonUp]</UpImage>
+        <Position>[-128 -224]</Position>
+        <Size>[256 64]</Size>
+        <DownImage>[Gui ExitButtonDown]</DownImage>
+        <UpImage>[Gui ExitButtonUp]</UpImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Play</Name>
-        <Position>-128, -96</Position>
-        <Size>256, 64</Size>
-        <DownImage>[Gui | PlayButtonDown]</DownImage>
-        <UpImage>[Gui | PlayButtonUp]</UpImage>
+        <Position>[-128 -96]</Position>
+        <Size>[256 64]</Size>
+        <DownImage>[Gui PlayButtonDown]</DownImage>
+        <UpImage>[Gui PlayButtonUp]</UpImage>
       </Entity>
       <Entity dispatcherName="TextDispatcher">
-        <Position>-320, 96</Position>
-        <Size>640, 128</Size>
+        <Position>[-320 96]</Position>
+        <Size>[640 128]</Size>
         <Text>BlazeVector</Text>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
-        <Position>-480, -272</Position>
+        <Position>[-480 -272]</Position>
         <Depth>-1</Depth>
-        <Size>960, 544</Size>
-        <LabelImage>[Default | Image8]</LabelImage>
+        <Size>[960 544]</Size>
+        <LabelImage>[Default Image8]</LabelImage>
       </Entity>
     </Entities>
   </Group>

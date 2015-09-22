@@ -6,32 +6,32 @@
     <Persistent>True</Persistent>
     <Entities>
       <Entity dispatcherName="LabelDispatcher">
-        <Position>-480, -272</Position>
+        <Position>[-480 -272]</Position>
         <Depth>-1</Depth>
-        <Size>960, 544</Size>
-        <LabelImage>[Default | Image8]</LabelImage>
+        <Size>[960 544]</Size>
+        <LabelImage>[Default Image8]</LabelImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Back</Name>
-        <Position>-128, -224</Position>
-        <Size>256, 64</Size>
-        <DownImage>[Gui | BackButtonDown]</DownImage>
-        <UpImage>[Gui | BackButtonUp]</UpImage>
+        <Position>[-128 -224]</Position>
+        <Size>[256 64]</Size>
+        <DownImage>[Gui BackButtonDown]</DownImage>
+        <UpImage>[Gui BackButtonUp]</UpImage>
       </Entity>
       <Entity dispatcherName="TextDispatcher">
-        <Position>-320, 96</Position>
-        <Size>640, 128</Size>
+        <Position>[-320 96]</Position>
+        <Size>[640 128]</Size>
         <Text>Credits</Text>
       </Entity>
       <Entity dispatcherName="TextDispatcher">
-        <Position>-320, 0</Position>
-        <Size>640, 64</Size>
-        <Text>Code + Music + SFX: Bryan Edds</Text>
+        <Position>[-320 0]</Position>
+        <Size>[640 64]</Size>
+        <Text>Code_+_Music_+_SFX:_Bryan_Edds</Text>
       </Entity>
       <Entity dispatcherName="TextDispatcher">
-        <Position>-320, -96</Position>
-        <Size>640, 64</Size>
-        <Text>Art: MindChamber</Text>
+        <Position>[-320 -96]</Position>
+        <Size>[640 64]</Size>
+        <Text>Art:_MindChamber</Text>
       </Entity>
     </Entities>
   </Group>
