@@ -33,21 +33,20 @@ type Vector2Converter () =
     override this.ConvertTo (_, culture, source, destType) =
         if destType = typeof<string> then
             let v2 = source :?> Vector2
-            String.Format (culture, "{0}, {1}", v2.X, v2.Y) :> obj
+            String.Format (culture, "[{0} {1}]", v2.X, v2.Y) :> obj
         elif destType = typeof<Vector2> then source
         else failwith "Invalid Vector2Converter conversion to source."
 
     override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<string> ||
+        sourceType = typeof<AlgebraicSource> ||
         sourceType = typeof<Vector2>
 
     override this.ConvertFrom (_, _, source) =
         match source with
-        | :? string ->
-            let args = (source :?> string).Split ','
-            let args = Array.map (fun (args : string) -> args.Trim ()) args
-            let argFs = Array.map (fun arg -> Single.Parse arg) args
-            Vector2 (argFs.[0], argFs.[1]) :> obj
+        | :? AlgebraicSource as algebraic ->
+            match algebraic.AlgebraicValue :?> obj list |> List.map (string >> Single.Parse) with
+            | [x; y] -> Vector2 (x, y) :> obj
+            | _ -> failwith "Invalid Vector2Converter conversion from source."
         | :? Vector2 -> source
         | _ -> failwith "Invalid Vector2Converter conversion from source."
 
@@ -62,7 +61,7 @@ type Vector3Converter () =
     override this.ConvertTo (_, culture, source, destType) =
         if destType = typeof<string> then
             let v3 = source :?> Vector3
-            String.Format (culture, "{0}, {1}, {2}", v3.X, v3.Y, v3.Z) :> obj
+            String.Format (culture, "[{0} {1} {2}]", v3.X, v3.Y, v3.Z) :> obj
         elif destType = typeof<Vector3> then source
         else failwith "Invalid Vector3Converter conversion to source."
 
@@ -72,11 +71,10 @@ type Vector3Converter () =
 
     override this.ConvertFrom (_, _, source) =
         match source with
-        | :? string ->
-            let args = (source :?> string).Split ','
-            let args = Array.map (fun (args : string) -> args.Trim ()) args
-            let argFs = Array.map (fun arg -> Single.Parse arg) args
-            Vector3 (argFs.[0], argFs.[1], argFs.[2]) :> obj
+        | :? AlgebraicSource as algebraic ->
+            match algebraic.AlgebraicValue :?> obj list |> List.map (string >> Single.Parse) with
+            | [x; y; z] -> Vector3 (x, y, z) :> obj
+            | _ -> failwith "Invalid Vector3Converter conversion from source."
         | :? Vector3 -> source
         | _ -> failwith "Invalid Vector3Converter conversion from source."
 
@@ -91,21 +89,20 @@ type Vector4Converter () =
     override this.ConvertTo (_, culture, source, destType) =
         if destType = typeof<string> then
             let v4 = source :?> Vector4
-            String.Format (culture, "{0}, {1}, {2}, {3}", v4.X, v4.Y, v4.Z, v4.W) :> obj
+            String.Format (culture, "[{0} {1} {2} {3}]", v4.X, v4.Y, v4.Z, v4.W) :> obj
         elif destType = typeof<Vector4> then source
         else failwith "Invalid Vector4Converter conversion to source."
 
     override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<string> ||
+        sourceType = typeof<AlgebraicSource> ||
         sourceType = typeof<Vector4>
 
     override this.ConvertFrom (_, _, source) =
         match source with
-        | :? string ->
-            let args = (source :?> string).Split ','
-            let args = Array.map (fun (args : string) -> args.Trim ()) args
-            let argFs = Array.map (fun arg -> Single.Parse arg) args
-            Vector4 (argFs.[0], argFs.[1], argFs.[2], argFs.[3]) :> obj
+        | :? AlgebraicSource as algebraic ->
+            match algebraic.AlgebraicValue :?> obj list |> List.map (string >> Single.Parse) with
+            | [x; y; z; w] -> Vector4 (x, y, z, w) :> obj
+            | _ -> failwith "Invalid Vector4Converter conversion from source."
         | :? Vector4 -> source
         | _ -> failwith "Invalid Vector4Converter conversion from source."
 

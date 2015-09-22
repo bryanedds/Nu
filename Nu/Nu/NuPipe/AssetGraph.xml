@@ -8,6 +8,6 @@
     <Assets directory="Assets/Default" extension="tmx"/>
   </Package>
   <Package name="Test">
-    <Assets directory="Assets/Test" extension="psd" associations="[Render]" refinements="[PsdToPng | OldSchool]"/>
+    <Assets directory="Assets/Test" extension="psd" associations="[Render]" refinements="[PsdToPng OldSchool]"/>
   </Package>
 </Root>

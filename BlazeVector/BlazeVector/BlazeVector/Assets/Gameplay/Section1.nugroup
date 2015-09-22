@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group dispatcherName="GroupDispatcher">
     <Name>Group</Name>
@@ -6,43 +6,43 @@
     <Persistent>True</Persistent>
     <Entities>
       <Entity dispatcherName="TileMapDispatcher">
-        <Position>-480, -304</Position>
-        <TileMapAsset>[Gameplay | Section1TileMap]</TileMapAsset>
+        <Position>[-480 -304]</Position>
+        <TileMapAsset>[Gameplay Section1TileMap]</TileMapAsset>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
-        <Position>1114.274, -207.68</Position>
+        <Position>[1114.274 -207.68]</Position>
         <Depth>1</Depth>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
-        <Position>1472, -175.68</Position>
+        <Position>[1472 -175.68]</Position>
         <Depth>1</Depth>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
-        <Position>-480, -304</Position>
+        <Position>[-480 -304]</Position>
         <Depth>-4</Depth>
         <Parallax>0.1</Parallax>
-        <TileMapAsset>[Gameplay | BackgroundB]</TileMapAsset>
+        <TileMapAsset>[Gameplay BackgroundB]</TileMapAsset>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
-        <Position>-480, -304</Position>
+        <Position>[-480 -304]</Position>
         <Depth>-8</Depth>
         <Parallax>0.1</Parallax>
-        <TileMapAsset>[Gameplay | BackgroundA]</TileMapAsset>
+        <TileMapAsset>[Gameplay BackgroundA]</TileMapAsset>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
-        <Position>416, -79.68001</Position>
+        <Position>[416 -79.68001]</Position>
         <Depth>1</Depth>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
-        <Position>1328, -175.68</Position>
+        <Position>[1328 -175.68]</Position>
         <Depth>1</Depth>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
-        <Position>96, -79.68001</Position>
+        <Position>[96 -79.68001]</Position>
         <Depth>1</Depth>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
-        <Position>-159.8438, -175.68</Position>
+        <Position>[-159.8438 -175.68]</Position>
         <Depth>1</Depth>
       </Entity>
     </Entities>

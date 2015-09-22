@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group dispatcherName="GroupDispatcher">
     <Name>Group</Name>
@@ -6,44 +6,44 @@
     <Persistent>True</Persistent>
     <Entities>
       <Entity dispatcherName="TileMapDispatcher">
-        <Position>-480, -304</Position>
-        <TileMapAsset>[Gameplay | Section0TileMap]</TileMapAsset>
+        <Position>[-480 -304]</Position>
+        <TileMapAsset>[Gameplay Section0TileMap]</TileMapAsset>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
-        <Position>-480, -304</Position>
+        <Position>[-480 -304]</Position>
         <Depth>-8</Depth>
         <Parallax>0.1</Parallax>
-        <TileMapAsset>[Gameplay | BackgroundA]</TileMapAsset>
+        <TileMapAsset>[Gameplay BackgroundA]</TileMapAsset>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
-        <Position>928, 112.32</Position>
+        <Position>[928 112.32]</Position>
         <Depth>4</Depth>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
-        <Position>1256, 112.32</Position>
+        <Position>[1256 112.32]</Position>
         <Depth>4</Depth>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
-        <Position>1464, -15.6805</Position>
+        <Position>[1464 -15.6805]</Position>
         <Depth>4</Depth>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
-        <Position>112, 48.31998</Position>
+        <Position>[112 48.31998]</Position>
         <Depth>4</Depth>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
-        <Position>1376, -175.68</Position>
+        <Position>[1376 -175.68]</Position>
         <Depth>4</Depth>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
-        <Position>176, -72</Position>
+        <Position>[176 -72]</Position>
         <Depth>4</Depth>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
-        <Position>-480, -304</Position>
+        <Position>[-480 -304]</Position>
         <Depth>-4</Depth>
         <Parallax>0.1</Parallax>
-        <TileMapAsset>[Gameplay | BackgroundB]</TileMapAsset>
+        <TileMapAsset>[Gameplay BackgroundB]</TileMapAsset>
       </Entity>
     </Entities>
   </Group>
