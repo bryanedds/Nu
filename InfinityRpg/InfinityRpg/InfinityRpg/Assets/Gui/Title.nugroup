@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group dispatcherName="GroupDispatcher">
     <Name>Gui</Name>
@@ -6,38 +6,38 @@
     <Entities>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Credits</Name>
-        <Position>-416, -200</Position>
-        <Size>384, 64</Size>
-        <DownImage>[Gui | CreditsDown]</DownImage>
-        <UpImage>[Gui | CreditsUp]</UpImage>
+        <Position>[-416 -200]</Position>
+        <Size>[384 64]</Size>
+        <DownImage>[Gui CreditsDown]</DownImage>
+        <UpImage>[Gui CreditsUp]</UpImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Exit</Name>
-        <Position>32, -200</Position>
-        <Size>384, 64</Size>
-        <DownImage>[Gui | ExitDown]</DownImage>
-        <UpImage>[Gui | ExitUp]</UpImage>
+        <Position>[32 -200]</Position>
+        <Size>[384 64]</Size>
+        <DownImage>[Gui ExitDown]</DownImage>
+        <UpImage>[Gui ExitUp]</UpImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>LoadGame</Name>
-        <Position>32, -80</Position>
-        <Size>384, 64</Size>
-        <DownImage>[Gui | LoadGameDown]</DownImage>
-        <UpImage>[Gui | LoadGameUp]</UpImage>
+        <Position>[32 -80]</Position>
+        <Size>[384 64]</Size>
+        <DownImage>[Gui LoadGameDown]</DownImage>
+        <UpImage>[Gui LoadGameUp]</UpImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>NewGame</Name>
-        <Position>-416, -80</Position>
-        <Size>384, 64</Size>
-        <DownImage>[Gui | NewGameDown]</DownImage>
-        <UpImage>[Gui | NewGameUp]</UpImage>
+        <Position>[-416 -80]</Position>
+        <Size>[384 64]</Size>
+        <DownImage>[Gui NewGameDown]</DownImage>
+        <UpImage>[Gui NewGameUp]</UpImage>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Name>Title</Name>
-        <Position>-504, 0</Position>
+        <Position>[-504 0]</Position>
         <Depth>-1</Depth>
-        <Size>1024, 256</Size>
-        <LabelImage>[Gui | TitleLabel]</LabelImage>
+        <Size>[1024 256]</Size>
+        <LabelImage>[Gui TitleLabel]</LabelImage>
       </Entity>
     </Entities>
   </Group>

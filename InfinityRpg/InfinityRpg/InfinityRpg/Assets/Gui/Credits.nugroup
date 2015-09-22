@@ -1,42 +1,42 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group dispatcherName="GroupDispatcher">
     <Name>Gui</Name>
     <Persistent>True</Persistent>
     <Entities>
       <Entity dispatcherName="LabelDispatcher">
-        <Position>-456, -40</Position>
-        <Size>512, 128</Size>
-        <LabelImage>[Gui | ProgrammingLabel]</LabelImage>
+        <Position>[-456 -40]</Position>
+        <Size>[512 128]</Size>
+        <LabelImage>[Gui ProgrammingLabel]</LabelImage>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Back</Name>
-        <Position>-184, -224</Position>
-        <Size>384, 64</Size>
-        <DownImage>[Gui | BackDown]</DownImage>
-        <UpImage>[Gui | BackUp]</UpImage>
+        <Position>[-184 -224]</Position>
+        <Size>[384 64]</Size>
+        <DownImage>[Gui BackDown]</DownImage>
+        <UpImage>[Gui BackUp]</UpImage>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Name>Credits</Name>
-        <Position>-512, 32</Position>
+        <Position>[-512 32]</Position>
         <Depth>-1</Depth>
-        <Size>1024, 256</Size>
-        <LabelImage>[Gui | CreditsLabel]</LabelImage>
+        <Size>[1024 256]</Size>
+        <LabelImage>[Gui CreditsLabel]</LabelImage>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
-        <Position>32, -144</Position>
-        <Size>512, 128</Size>
-        <LabelImage>[Gui | BryanEddsLabel]</LabelImage>
+        <Position>[32 -144]</Position>
+        <Size>[512 128]</Size>
+        <LabelImage>[Gui BryanEddsLabel]</LabelImage>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
-        <Position>-424, -144</Position>
-        <Size>512, 128</Size>
-        <LabelImage>[Gui | MusicAndArtLabel]</LabelImage>
+        <Position>[-424 -144]</Position>
+        <Size>[512 128]</Size>
+        <LabelImage>[Gui MusicAndArtLabel]</LabelImage>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
-        <Position>64, -40</Position>
-        <Size>512, 128</Size>
-        <LabelImage>[Gui | BryanEddsLabel]</LabelImage>
+        <Position>[64 -40]</Position>
+        <Size>[512 128]</Size>
+        <LabelImage>[Gui BryanEddsLabel]</LabelImage>
       </Entity>
     </Entities>
   </Group>
