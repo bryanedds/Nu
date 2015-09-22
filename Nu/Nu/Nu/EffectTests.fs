@@ -14,10 +14,9 @@ module EffectTests =
     let readEffectWorks () =
         Math.initTypeConverters ()
         let effectStr =
-           "[Sprite |
-             [Esper |
-              [0 | 10] |
-              [[Linear2 | [Position | 0, 0 | 10, 10]] |
-               [Linear2 | [Size | 0, 0 | 10, 10]]]]]"
+           "[Sprite
+             [Esper [0 10]
+              [[Linear2 [Position [0 0] [10 10]]]
+               [Linear2 [Size [0 0] [10 10]]]]]]"
         let effect = (AlgebraicConverter typeof<Effect>).ConvertFromString effectStr :?> Effect
         match effect with Sprite sprite -> Assert.Equal<string> ("Esper", sprite.Name)
