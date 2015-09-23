@@ -30,6 +30,9 @@ open NuEdit
 // set current directly to local for execution in VS F# interactive
 Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
 
+// initialize Nu
+Nu.init ()
+
 // decide on a target directory and plugin
 let (targetDir, plugin) = NuEdit.selectTargetDirAndMakeNuPlugin ()
 
