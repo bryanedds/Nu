@@ -1,22 +1,36 @@
 ﻿namespace Nu
 open OpenTK
 
-type [<NoComparison>] Linear2 =
+type Playback =
+    | Once
+    | Loop
+    | Bounce
+
+type Application =
+    | Or
+    | Xor
+    | And
+    | Nand
+    | Nor
+    | Add
+    | Sub
+    | Mul
+    | Div
+    | Ovr
+
+type StaticSpriteEffect =
+    { SpriteAsset : AssetTag }
+
+type Effect =
+    | StaticSprite of StaticSpriteEffect
+
+type [<NoComparison>] Template =
     { Name : string
-      Begin : Vector2
-      End : Vector2 }
+      Playback : Playback
+      Effect : Effect
+      Gestures : unit list
+      Instances : unit list }
 
-type Lifetime =
-    { Begin : single
-      End : single }
-
-type [<NoComparison>] Tween =
-    | Linear2 of Linear2
-
-type [<NoComparison>] EffectSprite =
-    { Name : string
-      Lifetime : Lifetime
-      Tweens : Tween list }
-
-type [<NoComparison>] Effect =
-    | Sprite of EffectSprite
+type [<NoComparison>] EffectExpr =
+    | Template of Template
+    | Instance of unit

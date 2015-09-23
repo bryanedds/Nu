@@ -106,18 +106,18 @@ module RigidBodyFacetModule =
             facet.RegisterPhysics (entity, world)
 
 [<AutoOpen>]
-module SpriteFacetModule =
+module StaticSpriteFacetModule =
 
     type Entity with
 
-        member this.GetSpriteImage world : AssetTag = (this.GetXtension world)?SpriteImage
-        member this.SetSpriteImage (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?SpriteImage <- value) world
+        member this.GetStaticImage world : AssetTag = (this.GetXtension world)?StaticImage
+        member this.SetStaticImage (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?StaticImage <- value) world
 
-    type SpriteFacet () =
+    type StaticSpriteFacet () =
         inherit Facet ()
 
         static member FieldDefinitions =
-            [define? SpriteImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
+            [define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
 
         override facet.GetRenderDescriptors (entity, world) =
             if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
@@ -130,12 +130,12 @@ module SpriteFacetModule =
                               Rotation = entity.GetRotation world
                               ViewType = entity.GetViewType world
                               OptInset = None
-                              Image = entity.GetSpriteImage world
+                              Image = entity.GetStaticImage world
                               Color = Vector4.One }}]
             else []
 
         override facet.GetQuickSize (entity, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (entity.GetSpriteImage world) world.State.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 (entity.GetStaticImage world) world.State.AssetMetadataMap with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -611,11 +611,11 @@ module BlockDispatcherModule =
 
         static member FieldDefinitions =
             [define? BodyType Static
-             define? SpriteImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
+             define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
-             typeof<SpriteFacet>.Name]
+             typeof<StaticSpriteFacet>.Name]
 
 [<AutoOpen>]
 module BoxDispatcherModule =
@@ -624,11 +624,11 @@ module BoxDispatcherModule =
         inherit EntityDispatcher ()
 
         static member FieldDefinitions =
-            [define? SpriteImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
+            [define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
-             typeof<SpriteFacet>.Name]
+             typeof<StaticSpriteFacet>.Name]
 
 [<AutoOpen>]
 module TopViewCharacterDispatcherModule =
@@ -641,11 +641,11 @@ module TopViewCharacterDispatcherModule =
              define? LinearDamping 10.0f
              define? GravityScale 0.0f
              define? CollisionExpr "[BodyCircle [0.5 [0.0 0.0]]]"
-             define? SpriteImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image7" }]
+             define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image7" }]
         
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
-             typeof<SpriteFacet>.Name]
+             typeof<StaticSpriteFacet>.Name]
 
 [<AutoOpen>]
 module SideViewCharacterDispatcherModule =
@@ -657,11 +657,11 @@ module SideViewCharacterDispatcherModule =
             [define? FixedRotation true
              define? LinearDamping 3.0f
              define? CollisionExpr "[BodyCapsule [0.5 0.25 [0.0 0.0]]]"
-             define? SpriteImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image6" }]
+             define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image6" }]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
-             typeof<SpriteFacet>.Name]
+             typeof<StaticSpriteFacet>.Name]
 
 [<AutoOpen>]
 module TileMapDispatcherModule =

@@ -81,6 +81,7 @@ module EntityState =
           Depth = 0.0f
           Size = Constants.Engine.DefaultEntitySize
           Rotation = 0.0f
+          Slop = Vector2.One // TODO: expose and use this
           Visible = true
           ViewType = Relative
           Omnipresent = false

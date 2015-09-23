@@ -339,6 +339,7 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
       Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
       Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
       Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
+      Slop : Vector2
       Visible : bool
       ViewType : ViewType
       Omnipresent : bool
