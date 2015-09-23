@@ -14,9 +14,16 @@ module EffectTests =
     let [<Fact>] readEffectWorks () =
         Nu.init ()
         let effectStr =
-           "[Sprite
-             [Esper [0 10]
-              [[Linear2 [Position [0 0] [10 10]]]
-               [Linear2 [Size [0 0] [10 10]]]]]]"
-        let effect = (AlgebraicConverter typeof<Effect>).ConvertFromString effectStr :?> Effect
-        match effect with Sprite sprite -> Assert.Equal<string> ("Esper", sprite.Name)
+           "[Template
+             [Ifrit Loop 20
+              [AnimatedSprite [Gameplay Esper] [16 16] [4 4]]
+              [[Gesture [Position Linear Add [[0 0] 10] [[10 10] 0]]]
+               [Gesture [Color Flip Ovr [[FFFFFFAA 0]]]]
+               [Gesture [Visible Flip And [[False 2] [True 16] [False 0]]]]
+              [[Instance
+                [Shiva Looping 20
+                 [[Gesture [Position Linear Sum [[0 0] 10] [[10 10] 0]]]]]]]]]"
+        let effect = (AlgebraicConverter typeof<EffectExpr>).ConvertFromString effectStr :?> EffectExpr
+        match effect with
+        | Template template -> Assert.Equal<string> ("Ifrit", template.Name)
+        | _ -> failwithumf ()

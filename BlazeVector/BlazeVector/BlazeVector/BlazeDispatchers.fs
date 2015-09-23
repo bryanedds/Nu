@@ -43,12 +43,12 @@ module BulletModule =
              define? GravityScale 0.0f
              define? IsBullet true
              define? CollisionExpr "[BodyCircle [0.5 [0.0 0.0]]]"
-             define? SpriteImage Constants.Assets.PlayerBulletImage
+             define? StaticImage Constants.Assets.PlayerBulletImage
              define? Age 0L]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
-             typeof<SpriteFacet>.Name]
+             typeof<StaticSpriteFacet>.Name]
 
         override dispatcher.Register (bullet, world) =
             world |>
