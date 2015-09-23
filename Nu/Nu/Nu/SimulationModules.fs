@@ -128,7 +128,7 @@ module World =
     (* F# reach-arounds... *)
 
     let mutable rebuildEntityTree =
-        Unchecked.defaultof<Screen -> World -> World * Entity QuadTree>
+        Unchecked.defaultof<Screen -> World -> Entity QuadTree>
 
     (* Publishing *)
 
@@ -816,10 +816,10 @@ module World =
     let internal updateEntityInEntityTree entity oldWorld world =
         let screen = entity |> etog |> gtos
         let screenState = getScreenState screen world
-        let (world, entityTree) =
+        let entityTree =
             MutantCache.mutateMutant
                 (fun () -> rebuildEntityTree screen oldWorld)
-                (fun world entityTree ->
+                (fun entityTree ->
                     let oldEntityState = getEntityState entity oldWorld
                     let oldEntityMaxBounds = getEntityStateMaxBounds oldEntityState
                     let entityState = getEntityState entity world
@@ -828,8 +828,7 @@ module World =
                         (oldEntityState.Omnipresent || oldEntityState.ViewType = Absolute) oldEntityMaxBounds
                         (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds
                         entity entityTree
-                    (world, entityTree))
-                world
+                    entityTree)
                 screenState.EntityTreeNp
         let screenState = { screenState with EntityTreeNp = entityTree }
         setScreenStateWithoutEvent screenState screen world

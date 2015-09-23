@@ -16,31 +16,30 @@ module MutantCache =
     let mutable private GlobalMutantRebuilds = 0L
     let getGlobalMutantRebuilds () = GlobalMutantRebuilds
 
-    let private rebuildCache (rebuildMutant : unit -> 'c * 'm) (mutantCache : 'm MutantCache)=
+    let private rebuildCache (rebuildMutant : unit -> 'm) (mutantCache : 'm MutantCache)=
 #if DEBUG
         GlobalMutantRebuilds <- GlobalMutantRebuilds + 1L
 #endif
-        let (context, validMutant) = rebuildMutant ()
+        let validMutant = rebuildMutant ()
         mutantCache.OptValidMutant <- None
         let mutantCache = { mutantCache with OptValidMutant = Some validMutant }
-        (context, validMutant, mutantCache)
+        (validMutant, mutantCache)
 
-    let private getMutantUncloned rebuildMutant (context : 'c) (mutantCache : 'm MutantCache) =
+    let private getMutantUncloned rebuildMutant (mutantCache : 'm MutantCache) =
         match mutantCache.OptValidMutant with
-        | Some mutant -> (context, mutant, mutantCache)
+        | Some mutant -> (mutant, mutantCache)
         | None -> rebuildCache rebuildMutant mutantCache
 
-    let getMutant rebuildMutant (context : 'c) (mutantCache : 'm MutantCache) =
-        let (context, mutantUncloned, mutantCache) = getMutantUncloned rebuildMutant context mutantCache
+    let getMutant rebuildMutant (mutantCache : 'm MutantCache) =
+        let (mutantUncloned, mutantCache) = getMutantUncloned rebuildMutant mutantCache
         let mutantCloned = mutantCache.CloneMutant mutantUncloned
-        (context, mutantCloned, mutantCache)
+        (mutantCloned, mutantCache)
 
-    let mutateMutant rebuildMutant mutateMutant (context : 'c) (mutantCache : 'm MutantCache) : 'c * 'm MutantCache =
-        let (context, mutant, mutantCache) = getMutantUncloned rebuildMutant context mutantCache
+    let mutateMutant rebuildMutant mutateMutant (mutantCache : 'm MutantCache) : 'm MutantCache =
+        let (mutant, mutantCache) = getMutantUncloned rebuildMutant mutantCache
         mutantCache.OptValidMutant <- None
-        let (context, mutant) = mutateMutant context mutant
-        let mutantCache = { mutantCache with OptValidMutant = Some mutant }
-        (context, mutantCache)
+        let mutant = mutateMutant mutant
+        { mutantCache with OptValidMutant = Some mutant }
 
     let make cloneMutant (mutant : 'm) =
         { CloneMutant = cloneMutant
