@@ -11,8 +11,8 @@ open Prime
 open Nu
 module EffectTests =
 
-    let readEffectWorks () =
-        Math.initTypeConverters ()
+    let [<Fact>] readEffectWorks () =
+        Nu.init ()
         let effectStr =
            "[Sprite
              [Esper [0 10]

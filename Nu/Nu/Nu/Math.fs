@@ -123,11 +123,15 @@ module Matrix3 =
 [<RequireQualifiedAccess>]
 module Math =
 
+    let mutable private Initialized = false
+
     /// Initializes the type converters found in NuMathModule.
-    let initTypeConverters () =
-        assignTypeConverter<Vector2, Vector2Converter> ()
-        assignTypeConverter<Vector3, Vector3Converter> ()
-        assignTypeConverter<Vector4, Vector4Converter> ()
+    let init () =
+        if not Initialized then
+            assignTypeConverter<Vector2, Vector2Converter> ()
+            assignTypeConverter<Vector3, Vector3Converter> ()
+            assignTypeConverter<Vector4, Vector4Converter> ()
+            Initialized <- true
 
     /// The identity transform.
     let transformIdentity =

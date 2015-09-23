@@ -42,8 +42,8 @@ module Nu =
             // init logging
             Log.init ^ Some "Log.txt"
 
-            // init type converters
-            Math.initTypeConverters ()
+            // initialize math module
+            Math.init ()
 
             // init F# reach-arounds
             // TODO: define this somewhere else...
