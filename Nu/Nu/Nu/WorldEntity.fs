@@ -124,15 +124,14 @@ module WorldEntityModule =
                 let screenState = World.getScreenState screen world
 
                 // mutate entity tree
-                let (world, entityTree) =
+                let entityTree =
                     MutantCache.mutateMutant
                         (fun () -> World.rebuildEntityTree screen oldWorld)
-                        (fun world entityTree ->
+                        (fun entityTree ->
                             let entityState = World.getEntityState entity world
                             let entityMaxBounds = World.getEntityStateMaxBounds entityState
                             QuadTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
-                            (world, entityTree))
-                        world
+                            entityTree)
                         screenState.EntityTreeNp
                 let screenState = { screenState with EntityTreeNp = entityTree }
                 let world = World.setScreenState screenState screen world
@@ -161,15 +160,14 @@ module WorldEntityModule =
                 let screenState = World.getScreenState screen world
 
                 // mutate entity tree
-                let (world, entityTree) =
+                let entityTree =
                     MutantCache.mutateMutant
                         (fun () -> World.rebuildEntityTree screen oldWorld)
-                        (fun world entityTree ->
+                        (fun entityTree ->
                             let entityState = World.getEntityState entity oldWorld
                             let entityMaxBounds = World.getEntityStateMaxBounds entityState
                             QuadTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
-                            (world, entityTree))
-                        world
+                            entityTree)
                         screenState.EntityTreeNp
                 let screenState = { screenState with EntityTreeNp = entityTree }
                 let world = World.setScreenState screenState screen world
