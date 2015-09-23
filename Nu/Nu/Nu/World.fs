@@ -53,7 +53,7 @@ module Nu =
                 for entity in entities do
                     let entityMaxBounds = World.getEntityMaxBounds entity world
                     QuadTree.addElement false entityMaxBounds entity tree
-                (world, tree)
+                tree
 
             // mark init flag
             Initialized <- true
