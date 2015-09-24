@@ -9,6 +9,9 @@ module Program =
 
     (* TODO: investigate NuEdit extensibility mechanism. *)
 
+    (* WISDOM: Keep all animation frame numbers even. That way, you can simply halve them if you need to
+    move the app from 60fps to 30fps. *)
+
     (* NOTE - On Nu's authoring story...
     
     Until F# code can be dynamically hot-loaded and hot-swapped like code from a dynamic scripting

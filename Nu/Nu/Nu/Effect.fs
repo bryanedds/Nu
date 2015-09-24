@@ -1,36 +1,57 @@
 ﻿namespace Nu
 open OpenTK
 
-type Playback =
+type PlaybackValue =
     | Once
-    | Loop
-    | Bounce
+    | Loop of int
+    | Bounce of int
 
-type Application =
+type Playback =
+    | PlaybackValue of PlaybackValue
+    | PlaybackVar of string
+
+type App =
     | Or
+    | Nor
     | Xor
+    | Xnor
     | And
     | Nand
-    | Nor
-    | Add
-    | Sub
-    | Mul
-    | Div
-    | Ovr
+    | Sum
+    | Diff
+    | Mult
+    | Ratio
+    | Over
+
+type Resource =
+    | Resource of AssetTag
+    | ResourceVar of string
+
+type Gesture =
+    | Tween of unit
+    | Mount of unit
+    | Emit of unit
+    | GestureVar of string
 
 type StaticSpriteEffect =
-    { SpriteAsset : AssetTag }
+    { SpriteResource : AssetTag }
 
-type Effect =
+type Animation =
+    | Container of unit
     | StaticSprite of StaticSpriteEffect
+    | AnimatedSprite of unit
+    | AnimationVar of unit
 
-type [<NoComparison>] Template =
+type Define =
+    | PlaybackDefine of PlaybackValue
+    | TweenDefine of unit
+    | MountDefine of unit
+    | EmitDefine of unit
+    | ResourceDefine of unit
+
+type [<NoComparison>] Effect =
     { Name : string
       Playback : Playback
-      Effect : Effect
-      Gestures : unit list
-      Instances : unit list }
-
-type [<NoComparison>] EffectExpr =
-    | Template of Template
-    | Instance of unit
+      Animations : Map<string, Animation>
+      Defines : Map<string, Define>
+      Gestures : unit list }
