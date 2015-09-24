@@ -65,3 +65,7 @@ module AlgebraicConverterTests =
         // each tuple element must be tested individually as Assert.Equal doesn't seem to support tuple unions...
         Assert.Equal (ComplexUnion 0, fst value)
         Assert.Equal (ComplexUnion2 (1, 2), snd value)
+
+    let [<Fact>] canConvertStringToMapIntInt () =
+        let value = (AlgebraicConverter typeof<Map<int, int>>).ConvertFromString "[[0 1]]" :?> Map<int, int>
+        ignore value // TODO: assert for values

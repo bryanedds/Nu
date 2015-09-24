@@ -40,29 +40,44 @@ type AlgebraicConverter (targetType : Type) =
         | None ->
 
             if sourceType.Name = typedefof<_ list>.Name then
+                let gargs = sourceType.GetGenericArguments ()
                 let items = objToObjList source
                 let itemsStrs =
                     List.map
-                        (fun item -> toString item (sourceType.GetGenericArguments ()).[0])
-                        items
-                let itemsStr = String.Join (AlgebraicReader.SeparatorStr, itemsStrs)
-                AlgebraicReader.OpenComplexValueStr + itemsStr + AlgebraicReader.CloseComplexValueStr
-        
-            elif sourceType.Name = typedefof<_ Set>.Name then
-                let items = objToComparableSet source
-                let itemsStrs =
-                    Set.map
-                        (fun item -> toString item (sourceType.GetGenericArguments ()).[0])
+                        (fun item -> toString item gargs.[0])
                         items
                 let itemsStr = String.Join (AlgebraicReader.SeparatorStr, itemsStrs)
                 AlgebraicReader.OpenComplexValueStr + itemsStr + AlgebraicReader.CloseComplexValueStr
 
+            elif sourceType.Name = typedefof<_ Set>.Name then
+                let gargs = sourceType.GetGenericArguments ()
+                let items = objToComparableSet source
+                let itemsStrs =
+                    Set.map
+                        (fun item -> toString item gargs.[0])
+                        items
+                let itemsStr = String.Join (AlgebraicReader.SeparatorStr, itemsStrs)
+                AlgebraicReader.OpenComplexValueStr + itemsStr + AlgebraicReader.CloseComplexValueStr
+
+            elif sourceType.Name = typedefof<Map<_, _>>.Name then
+                // NOTE: using a pretty bullshit way to do this, but it seemed to be easier than reflection hell
+                source |>
+                    string |>
+                    (fun str -> str.Substring(5).Split(';')) |>
+                    (Array.map (fun str ->
+                        str.Replace("(", AlgebraicReader.OpenComplexValueStr).
+                            Replace(")", AlgebraicReader.CloseComplexValueStr).
+                            Replace(",", String.Empty))) |>
+                    (fun strs -> String.Join (AlgebraicReader.SeparatorStr, strs)) |>
+                    (fun str -> AlgebraicReader.OpenComplexValueStr + str + AlgebraicReader.CloseComplexValueStr)
+
             elif FSharpType.IsTuple sourceType then
                 let tupleFields = FSharpValue.GetTupleFields source
+                let tupleElementTypes = FSharpType.GetTupleElements sourceType
                 let tupleFieldStrs =
                     List.mapi
                         (fun i tupleField ->
-                            let tupleFieldType = (FSharpType.GetTupleElements sourceType).[i]
+                            let tupleFieldType = tupleElementTypes.[i]
                             toString tupleField tupleFieldType)
                         (List.ofArray tupleFields)
                 let tupleStr = String.Join (AlgebraicReader.SeparatorStr, tupleFieldStrs)
@@ -70,10 +85,11 @@ type AlgebraicConverter (targetType : Type) =
 
             elif FSharpType.IsRecord sourceType then
                 let recordFields = FSharpValue.GetRecordFields source
+                let recordFieldTypes = FSharpType.GetRecordFields sourceType
                 let recordFieldStrs =
                     List.mapi
                         (fun i recordField ->
-                            let recordFieldType = (FSharpType.GetRecordFields sourceType).[i].PropertyType
+                            let recordFieldType = recordFieldTypes.[i].PropertyType
                             toString recordField recordFieldType)
                         (List.ofArray recordFields)
                 let recordStr = String.Join (AlgebraicReader.SeparatorStr, recordFieldStrs)
@@ -81,11 +97,12 @@ type AlgebraicConverter (targetType : Type) =
 
             elif FSharpType.IsUnion sourceType then
                 let (unionCase, unionFields) = FSharpValue.GetUnionFields (source, sourceType)
+                let unionFieldTypes = unionCase.GetFields ()
                 if not ^ Array.isEmpty unionFields then
                     let unionFieldStrs =
                         List.mapi
                             (fun i unionField ->
-                                let unionFieldType = (unionCase.GetFields ()).[i].PropertyType
+                                let unionFieldType = unionFieldTypes.[i].PropertyType
                                 toString unionField unionFieldType)
                             (List.ofArray unionFields)
                     let unionStrs = unionCase.Name :: unionFieldStrs
@@ -127,6 +144,19 @@ type AlgebraicConverter (targetType : Type) =
                     let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
                     let ofSeq = ((FSharpCoreAssembly.GetType "Microsoft.FSharp.Collections.SetModule").GetMethod ("OfSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
                     ofSeq.Invoke (null, [|cast.Invoke (null, [|list|])|])
+                | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
+
+            elif destType.Name = typedefof<Map<_, _>>.Name then
+                match readerValue with
+                | :? (obj list) as readerPairList ->
+                    match destType.GetGenericArguments () with
+                    | [|fstType; sndType|] ->
+                        let pairType = typedefof<Tuple<_, _>>.MakeGenericType [|fstType; sndType|]
+                        let pairList = List.map (fromReaderValue pairType) readerPairList
+                        let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|pairType|]
+                        let ofSeq = ((FSharpCoreAssembly.GetType "Microsoft.FSharp.Collections.MapModule").GetMethod ("OfSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|fstType; sndType|]
+                        ofSeq.Invoke (null, [|cast.Invoke (null, [|pairList|])|])
+                    | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
                 | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
 
             elif FSharpType.IsTuple destType then

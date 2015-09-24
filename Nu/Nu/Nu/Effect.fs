@@ -42,16 +42,15 @@ type Animation =
     | AnimatedSprite of unit
     | AnimationVar of unit
 
-type Define =
-    | PlaybackDefine of PlaybackValue
-    | TweenDefine of unit
-    | MountDefine of unit
-    | EmitDefine of unit
-    | ResourceDefine of unit
+type AsDefinition =
+    | AsPlayback of PlaybackValue
+    | AsTween of unit
+    | AsMount of unit
+    | AsEmit of unit
+    | AsResource of unit
 
 type [<NoComparison>] Effect =
     { Name : string
       Playback : Playback
-      Animations : Map<string, Animation>
-      Defines : Map<string, Define>
-      Gestures : unit list }
+      Definitions : Map<string, AsDefinition>
+      Animations : Map<string, Animation> }
