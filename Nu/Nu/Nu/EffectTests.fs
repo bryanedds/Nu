@@ -13,17 +13,31 @@ module EffectTests =
 
     let [<Fact>] readEffectWorks () =
         Nu.init ()
+
         let effectStr =
-           "[Template
-             [Ifrit Loop 20
-              [AnimatedSprite [Gameplay Esper] [16 16] [4 4]]
-              [[Gesture [Position Linear Add [[0 0] 10] [[10 10] 0]]]
-               [Gesture [Color Flip Ovr [[FFFFFFAA 0]]]]
-               [Gesture [Visible Flip And [[False 2] [True 16] [False 0]]]]
-              [[Instance
-                [Shiva Looping 20
-                 [[Gesture [Position Linear Sum [[0 0] 10] [[10 10] 0]]]]]]]]]"
-        let effect = (AlgebraicConverter typeof<EffectExpr>).ConvertFromString effectStr :?> EffectExpr
-        match effect with
-        | Template template -> Assert.Equal<string> ("Ifrit", template.Name)
-        | _ -> failwithumf ()
+            "[Effect [Ifrit [Loop 10] 20
+                [[DefineResource [FlameResource []
+                    [Resource [Gameplay Esper]]]
+                 [DefineAnimation [FlameSprite [FlamePosition]
+                    [StaticSprite [ExpandResource FlameResource []]
+                        [[ExpandGesture FlamePosition []]]
+                         [Tween [Color Constant Over [[FFFFFFAA 0]]]]]
+                 [DefineAnimation [IfritSprite []
+                    [AnimatedSprite [Resource [Gameplay Esper]] [4 4] [16 16] 6
+                        [[Tween [Position Linear Sum [[0 0] 10] [[10 10] 0]]]
+                         [Tween [Visible Constant Sum [[False 2] [True 16] [False 0]]
+                         [Mount [ExpandSprite [FlameSprite [[PassGesture [Tween [Position Linear Sum [[0 0] 10] [[10 10] 0]]]
+                         [Mount [ExpandSprite [FlameSprite [[PassGesture [Tween [Position Linear Sum [[10 0] 10] [[0 10] 0]]]
+                         [Emit ...]]]
+                [ExpandAnimation IfritSprite []]]]"
+
+        let alucard =
+            "[Effect [Alucard [Loop 16] 16
+                [[DefineResource [Pose []
+                    [Resource [Gameplay AlucardWalkLeft]]]]
+                [[AnimatedSprite [ResourceVar Pose] [4 4] [48 48] 5
+                    [...]]]]"
+        ignore alucard
+
+        let effect = (AlgebraicConverter typeof<Effect>).ConvertFromString effectStr :?> Effect
+        Assert.Equal<string> ("Ifrit", effect.Name)
