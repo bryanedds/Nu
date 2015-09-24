@@ -16,13 +16,13 @@ module EffectTests =
 
         let effectStr =
             "[Effect [Ifrit [Loop 10] 20
-                [[DefineResource [FlameResource []
+                [[FlameResource [AsResource [[]
                     [Resource [Gameplay Esper]]]
-                 [DefineAnimation [FlameSprite [FlamePosition]
+                 [FlameSprite [AsAnimation [[FlamePosition]
                     [StaticSprite [ExpandResource FlameResource []]
                         [[ExpandGesture FlamePosition []]]
                          [Tween [Color Constant Over [[FFFFFFAA 0]]]]]
-                 [DefineAnimation [IfritSprite []
+                 [IfritSprite [AsAnimation [[]
                     [AnimatedSprite [Resource [Gameplay Esper]] [4 4] [16 16] 6
                         [[Tween [Position Linear Sum [[0 0] 10] [[10 10] 0]]]
                          [Tween [Visible Constant Sum [[False 2] [True 16] [False 0]]
@@ -33,7 +33,7 @@ module EffectTests =
 
         let alucard =
             "[Effect [Alucard [Loop 16] 16
-                [[DefineResource [Pose []
+                [[Pose [AsResource [[]
                     [Resource [Gameplay AlucardWalkLeft]]]]
                 [[AnimatedSprite [ResourceVar Pose] [4 4] [48 48] 5
                     [...]]]]"
