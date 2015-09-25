@@ -107,8 +107,16 @@ type [<NoComparison>] Effect =
       Definitions : Map<string, Definition>
       Animation : Animation }
 
-    static member evalAnimation : Animation -> Map<string, Definition> -> Either<string, Animation> =
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Animation =
+
+    let eval (env : Map<string, Definition>) (animation : Animation) : Either<string, Animation> =
+        ignore (animation, env)
         failwith ""
 
-    static member eval : int -> Map<string, Definition> -> Effect -> string option * Realization list =
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Effect =
+
+    let eval (t : int) (globalEnv : Map<string, Definition>) (effect : Effect) : string option * Realization list =
+        ignore (t, globalEnv, effect)
         failwith ""

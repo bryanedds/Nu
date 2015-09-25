@@ -16,7 +16,7 @@ module Program =
     
     Until F# code can be dynamically hot-loaded and hot-swapped like code from a dynamic scripting
     language, Nu will not have a general-purpose scripting language. Instead, its authoring story
-    will be like so -
+    might be like so -
     
     In addition to typical authoring tools like NuEdit, Nu will enhance certain domains of the
     game authoring experience using domain-specific languages via Aml language plugins. For
@@ -25,13 +25,10 @@ module Program =
     simulant properties.
 
     And so on for other game development domains that require interactive authoring experiences,
-    including Nutelligence (ai scripting), Nuvie (movie-style scripting).
+    including Nutelligence (ai scripting).
     
     For ease of implementation, there will be one instance of Aml for each DSL. This is because
     currently Aml only supports one language plugin at a time.
-
-    I could also build a visual language that compiles down to Aml code quite easily, which could
-    be leverges by DSLs like Nuvie.
 
     This is not a perfect, all-powerful approach, but it will have to suffice given current
     technology limitations. *)
