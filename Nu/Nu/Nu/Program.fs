@@ -9,33 +9,60 @@ module Program =
 
     (* TODO: investigate NuEdit extensibility mechanism. *)
 
-    (* WISDOM: Keep all animation frame numbers even. That way, you can simply halve them if you need to
-    move the app from 60fps to 30fps. *)
+    (* WISDOM: Keep all animation frame numbers even. That way, you can simply halve them if you
+    need to move the app from 60fps to 30fps. *)
 
     (* NOTE - On Nu's authoring story...
-    
-    Until F# code can be dynamically hot-loaded and hot-swapped like code from a dynamic scripting
-    language, Nu will not have a general-purpose scripting language. Instead, its authoring story
-    might be like so -
-    
-    In addition to typical authoring tools like NuEdit, Nu will enhance certain domains of the
-    game authoring experience using domain-specific languages via Aml language plugins. For
-    example, special-effects is a domain that will be exposed to the user via Aml with the Nufx
-    language plugin. In turn, NuEdit will provide a special text editor panel for applicable
-    simulant properties.
 
-    And so on for other game development domains that require interactive authoring experiences,
-    including Nutelligence (ai scripting).
-    
-    For ease of implementation, there will be one instance of Aml for each DSL. This is because
-    currently Aml only supports one language plugin at a time.
+    Instead of using a general purpose scripting language for authoring tasks in Nu, we use a small
+    set of domain-specific languages. For example, the simulant system uses XML, as does the
+    overlay and asset graph systems. The effect system uses algebraic expressions, and simulation
+    interactions are defined with chains.
 
-    This is not a perfect, all-powerful approach, but it will have to suffice given current
-    technology limitations. *)
+    system          | language      | editor
+    -----------------------------------------------
+    simulant        | xml           | NuEdit
+    overlay         | xml           | vs xml editor
+    asset graph     | xml           | vs xml editor
+    effect          | a-exprs       | NuEffect (TBA)
+    decision (AI)   | a-exprs (TBA) | NuDecision (TBA)
+    interaction     | chains (F#)   | vs F# editor
+
+    The advantages and limitations that fall out of this is as such -
+
+    Most of these systems are interpreted, and unlike code in F#, allow for hot-reloading for
+    optimal authoring experiences. For these systems, however, no static checking is in place,
+    allowing for trivial syntactic errors to proliferate.
+
+    For the system that isn't interpreted, a strong type system is in place to make sure complex
+    data-flow dependencies are made explicit and checked with good error messages. For this system,
+    however, no hot-reloading is possible, negatively impacting the authoring experience.
+
+    The trade-offs for each given domain does seem to be appropriate. While the simulant system
+    MUST be run-time in order to be WYSIWYG editable, the interaction system isn't too badly
+    affected by the need for program restarts, and benefits proportinately from having an
+    expressive type system.
+    
+    That being said, I really, really, really, really want Edit and Continue for interaction
+    authoring to get the best of both worlds -
+    https://www.reddit.com/r/fsharp/comments/3mdklt/can_someone_with_the_requisite_insight_summarize/ *)
 
     (* NOTE - On having huge, populated worlds in Nu...
     
-    TODO: write about choke points and beacons... *)
+    Say you have a large world in your game with 10000 entities that all need ticking. You can
+    not, and should not, keep all of these entities ticking all the time when 90%+ are out of the
+    range of the player's purview.
+
+    So, you have to use the concept of 'tick beacons' to remove and add entity tick subscriptions.
+    For example, a large map will be divided up into 10x10 areas. In each area is a beacon that is
+    always observing the player's position. When they player gets within the distance of a given
+    beacon, that beacon will query the screen's entity tree for related entities, and then enable
+    their tick subscriptions. And vice versa, as the player moves away from a beacon, it will be
+    responsible for disabling said subscriptions.
+    
+    Finally, entities that can move will have to change their beacon association as they get much
+    closer to one beacon than another, or will need some way to keep themselves from moving that
+    far in the first place.*)
 
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
     scaled to a back-buffer of a varying size, render each component unscaled to an off-screen
