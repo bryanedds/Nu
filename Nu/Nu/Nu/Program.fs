@@ -9,10 +9,7 @@ module Program =
 
     (* TODO: investigate NuEdit extensibility mechanism. *)
 
-    (* WISDOM: Keep all animation frame numbers even. That way, you can simply halve them if you
-    need to move the app from 60fps to 30fps. *)
-
-    (* NOTE - On Nu's authoring story...
+    (* DISCUSSION - On Nu's authoring story...
 
     Instead of using a general purpose scripting language for authoring tasks in Nu, we use a small
     set of domain-specific languages. For example, the simulant system uses XML, as does the
@@ -21,11 +18,11 @@ module Program =
 
     system          | language      | editor
     -----------------------------------------------
-    simulant        | xml           | NuEdit
-    overlay         | xml           | vs xml editor
     asset graph     | xml           | vs xml editor
-    effect          | a-exprs       | NuEffect (TBA)
-    decision (AI)   | a-exprs (TBA) | NuDecision (TBA)
+    overlay         | xml           | vs xml editor
+    simulant        | xml           | NuEdit
+    effect          | a-exprs       | NuFx (TBA)
+    goal (AI)       | a-exprs (TBA) | NuGoal (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
     interaction     | chains (F#)   | vs F# editor
 
     The advantages and limitations that fall out of this is as such -
@@ -45,9 +42,19 @@ module Program =
     
     That being said, I really, really, really, really want Edit and Continue for interaction
     authoring to get the best of both worlds -
-    https://www.reddit.com/r/fsharp/comments/3mdklt/can_someone_with_the_requisite_insight_summarize/ *)
+    https://www.reddit.com/r/fsharp/comments/3mdklt/can_someone_with_the_requisite_insight_summarize/
+    
+    Another question that arises in this discussion is why the simulant system uses xml whereas it
+    could just as well use a-exprs. My current understanding is that the simulant system, due to
+    how it is WYSIWYG edited, conforms better to a document model. That is, it makes sense as a
+    document model since it is meant to be imported, its live representation edited directly, and
+    the exported back out. In contrast, the effect and goal systems are unlike WYSIWIG documents,
+    and more like interpreted languages.
+    
+    Finally, the asset graph and overlay systems could go either way, but since they're so simple, perhaps they're
+    more easily implemented with simpler document model. Maybe :) *)
 
-    (* NOTE - On having huge, populated worlds in Nu...
+    (* DISCUSSION - On having huge, populated worlds in Nu...
     
     Say you have a large world in your game with 10000 entities that all need ticking. You can
     not, and should not, keep all of these entities ticking all the time when 90%+ are out of the
@@ -100,6 +107,9 @@ module Program =
     This should keep debugging easy and even possibly give a boost to GC latency what with
     spreading collection pauses across two separate collectors. *)
 
+    (* WISDOM: Keep all animation frame numbers even. That way, you can simply halve them if you
+    need to move the app from 60fps to 30fps. *)
+
     (* IDEA: Simplified networking...
 
     For networking, perhaps instead of having a useful Game value that synchronizes across players,
@@ -115,27 +125,6 @@ module Program =
     scenarios, it may well be of sufficient value. Additionally, on the possible occasion that the
     current physics engine be replaceable with pure functional one, improvements to the feature may
     be implementable in time. *)
-
-    (* IDEA: Faster feedback / iteration times with dynamic Nu plug-ins -
-    
-    Edit & Continue is a God-send to languages that support it. Unfortunately, F# does not.
-    
-    However, it was pointed out to me by Andrea Magnorsky that some amount of hot-swapping of F#
-    code is currently acheived in the Onikira: Demon Killer by cordoning F# code behind dynamically
-    loaded .NET assemibles. This seems like it would also be applicable with Nu currently since
-    it also uses a plug-in model. On the other hand, I was informed that step-debugging for this
-    hot-loaded code was not yet working (and I'm not sure if it could without further
-    investigation).
-
-    Regardless, the approach of dynamic Nu plug-ins to enable hot-swapping of F# code looks to be
-    the correct path forward. *)
-
-    (* IDEA: Perhaps the constants needed to specify specific simulants and assets in code can be
-    type-provided rather than being authored manually, hopefully in a dynamic way. Not sure if this
-    would payoff to justify the add implementation complexity and increasing the 'magicality' of
-    the user experience. *)
-
-    (* IDEA: Perhaps an FRP Signal abstraction could be build on top of the Observation type...? *)
 
     let [<EntryPoint; STAThread>] main _ =
         Console.Write "Running Nu.exe"
