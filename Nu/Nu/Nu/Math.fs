@@ -106,6 +106,34 @@ type Vector4Converter () =
         | :? Vector4 -> source
         | _ -> failwith "Invalid Vector4Converter conversion from source."
 
+/// Converts Vector2i types.
+type Vector2iConverter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string> ||
+        destType = typeof<Vector2i>
+
+    override this.ConvertTo (_, culture, source, destType) =
+        if destType = typeof<string> then
+            let v2 = source :?> Vector2i
+            String.Format (culture, "[{0} {1}]", v2.X, v2.Y) :> obj
+        elif destType = typeof<Vector2i> then source
+        else failwith "Invalid Vector2iConverter conversion to source."
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<AlgebraicSource> ||
+        sourceType = typeof<Vector2i>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? AlgebraicSource as algebraic ->
+            match algebraic.AlgebraicValue :?> obj list |> List.map (string >> Int32.Parse) with
+            | [x; y] -> Vector2i (x, y) :> obj
+            | _ -> failwith "Invalid Vector2iConverter conversion from source."
+        | :? Vector2i -> source
+        | _ -> failwith "Invalid Vector2iConverter conversion from source."
+
 [<RequireQualifiedAccess>]
 module Matrix3 =
 
@@ -131,6 +159,7 @@ module Math =
             assignTypeConverter<Vector2, Vector2Converter> ()
             assignTypeConverter<Vector3, Vector3Converter> ()
             assignTypeConverter<Vector4, Vector4Converter> ()
+            assignTypeConverter<Vector2i, Vector2iConverter> ()
             Initialized <- true
 
     /// The identity transform.

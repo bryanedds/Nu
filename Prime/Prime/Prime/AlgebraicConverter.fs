@@ -129,7 +129,8 @@ type AlgebraicConverter (targetType : Type) =
             if destType.Name = typedefof<_ list>.Name then
                 match readerValue with
                 | :? (obj list) as readerValueList ->
-                    let elementType = (destType.GetGenericArguments ()).[0]
+                    let gargs = destType.GetGenericArguments ()
+                    let elementType = gargs.[0]
                     let list = List.map (fromReaderValue elementType) readerValueList
                     let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
                     let ofSeq = ((FSharpCoreAssembly.GetType "Microsoft.FSharp.Collections.ListModule").GetMethod ("OfSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
@@ -139,7 +140,8 @@ type AlgebraicConverter (targetType : Type) =
             elif destType.Name = typedefof<_ Set>.Name then
                 match readerValue with
                 | :? (obj list) as readerValueList ->
-                    let elementType = (destType.GetGenericArguments ()).[0]
+                    let gargs = destType.GetGenericArguments ()
+                    let elementType = gargs.[0]
                     let list = List.map (fromReaderValue elementType) readerValueList
                     let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
                     let ofSeq = ((FSharpCoreAssembly.GetType "Microsoft.FSharp.Collections.SetModule").GetMethod ("OfSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
@@ -149,7 +151,8 @@ type AlgebraicConverter (targetType : Type) =
             elif destType.Name = typedefof<Map<_, _>>.Name then
                 match readerValue with
                 | :? (obj list) as readerPairList ->
-                    match destType.GetGenericArguments () with
+                    let gargs = destType.GetGenericArguments ()
+                    match gargs with
                     | [|fstType; sndType|] ->
                         let pairType = typedefof<Tuple<_, _>>.MakeGenericType [|fstType; sndType|]
                         let pairList = List.map (fromReaderValue pairType) readerPairList
@@ -161,20 +164,22 @@ type AlgebraicConverter (targetType : Type) =
 
             elif FSharpType.IsTuple destType then
                 let tupleReaderValues = readerValue :?> obj list
+                let tupleElementTypes = FSharpType.GetTupleElements destType
                 let tupleValues =
                     List.mapi
                         (fun i tupleReaderValue ->
-                            let tupleElementType = (FSharpType.GetTupleElements destType).[i]
+                            let tupleElementType = tupleElementTypes.[i]
                             fromReaderValue tupleElementType tupleReaderValue)
                         tupleReaderValues
                 FSharpValue.MakeTuple (Array.ofList tupleValues, destType)
     
             elif FSharpType.IsRecord destType then
                 let recordReaderValues = readerValue :?> obj list
+                let recordFieldTypes = FSharpType.GetRecordFields destType
                 let recordValues =
                     List.mapi
                         (fun i recordReaderValue ->
-                            let recordFieldType = (FSharpType.GetRecordFields destType).[i].PropertyType
+                            let recordFieldType = recordFieldTypes.[i].PropertyType
                             fromReaderValue recordFieldType recordReaderValue)
                         recordReaderValues
                 FSharpValue.MakeRecord (destType, Array.ofList recordValues)
@@ -187,11 +192,12 @@ type AlgebraicConverter (targetType : Type) =
                     | readerValueHead :: readerValueTail ->
                         let unionName = readerValueHead :?> string
                         let unionCase = Array.find (fun (unionCase : UnionCaseInfo) -> unionCase.Name = unionName) unionCases
+                        let unionFieldTypes = unionCase.GetFields ()
                         let unionValues =
                             List.mapi
                                 (fun i unionReaderValue ->
-                                    let unionCaseType = (unionCase.GetFields ()).[i].PropertyType
-                                    fromReaderValue unionCaseType unionReaderValue)
+                                    let unionFieldType = unionFieldTypes.[i].PropertyType
+                                    fromReaderValue unionFieldType unionReaderValue)
                                 readerValueTail
                         FSharpValue.MakeUnion (unionCase, Array.ofList unionValues)
                     | _ -> failwith "Invalid AlgebraicConverter conversion from union reader value."
