@@ -1,4 +1,5 @@
 ﻿namespace Nu
+open Prime
 open OpenTK
 
 type Algorithm =
@@ -94,9 +95,20 @@ type [<NoComparison>] Definition =
     | AsGesture of Gesture
     | AsAnimation of string list * Animation
 
+type [<NoComparison>] Realization =
+    | RenderRealization of RenderDescriptor list
+    | SoundRealization of PlaySoundMessage
+    | SongRealization of PlaySongMessage
+
 type [<NoComparison>] Effect =
     { Name : string
       Playback : Playback
       Lifetime : int
       Definitions : Map<string, Definition>
       Animation : Animation }
+
+    static member evalAnimation : Animation -> Map<string, Definition> -> Either<string, Animation> =
+        failwith ""
+
+    static member eval : int -> Map<string, Definition> -> Effect -> string option * Realization list =
+        failwith ""
