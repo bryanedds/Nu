@@ -12,7 +12,8 @@ open Nu
 module EffectTests =
 
     let [<Fact>] readEffectWorks () =
-        Nu.init ()
+
+        Math.init ()
 
         let effectStr =
             "[Ifrit [Loop 10] 20
@@ -21,7 +22,7 @@ module EffectTests =
                  [FlameSprite [AsAnimation [FlamePosition]
                     [StaticSprite [ExpandResource FlameResource []]
                         [[ExpandGesture FlamePosition]
-                         [Tween4 Color Over Linear [[[1 1 1 1] 5] [[0.8 0.25 0.25 0.75] 5]]]]]]]
+                         [Tween4 Color Over Linear [[[1 1 1 1] 10] [[0.8 0.25 0.25 0.75] 0]]]]]]]
                  [IfritSprite [AsAnimation []
                     [AnimatedSprite [Resource Gameplay Esper] [4 4] [16 16] 6
                         [[Flip Visible Over [[False 2] [True 16] [False 0]]]
