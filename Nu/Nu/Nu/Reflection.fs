@@ -93,9 +93,9 @@ module Reflection =
 
     /// Is a property with the given name persistent?
     let isPropertyPersistentByName (propertyName : string) =
-        not ^ propertyName.EndsWith "Id" && // don't write an Id
-        not ^ propertyName.EndsWith "Ids" && // don't write multiple Ids
-        not ^ propertyName.EndsWith "Np" // don't write non-persistent properties
+        not ^ propertyName.EndsWith ("Id", StringComparison.Ordinal) && // don't write an Id
+        not ^ propertyName.EndsWith ("Ids", StringComparison.Ordinal) && // don't write multiple Ids
+        not ^ propertyName.EndsWith ("Np", StringComparison.Ordinal) // don't write non-persistent properties
 
     /// Is a property with the given name persistent?
     let isPropertyPersistent target (property : PropertyInfo) =
