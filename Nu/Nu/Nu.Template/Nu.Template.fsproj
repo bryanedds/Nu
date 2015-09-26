@@ -1,0 +1,141 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>4dbbaa23-56ba-43cb-ab63-c45d5fc1016f</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>$safeprojectname$</RootNamespace>
+    <AssemblyName>$safeprojectname$</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFSharpCoreVersion>4.3.0.0</TargetFSharpCoreVersion>
+    <Name>$safeprojectname$</Name>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <Tailcalls>false</Tailcalls>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>5</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+    <DocumentationFile>bin\Debug\$safeprojectname$.XML</DocumentationFile>
+    <Prefer32Bit>false</Prefer32Bit>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <OtherFlags>--warnon:1182</OtherFlags>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <Tailcalls>true</Tailcalls>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>5</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+    <DocumentationFile>bin\Release\$safeprojectname$.XML</DocumentationFile>
+    <Prefer32Bit>false</Prefer32Bit>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+  </PropertyGroup>
+  <PropertyGroup>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
+  </PropertyGroup>
+  <Choose>
+    <When Condition="'$(VisualStudioVersion)' == '11.0'">
+      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')">
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets')">
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  <Import Project="$(FSharpTargetsPath)" />
+  <PropertyGroup>
+    <PreBuildEvent />
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>"$(ProjectDir)..\..\..\Nu\Nu\Nu.Pipe\bin\$(ConfigurationName)\Nu.Pipe.exe" "$(ProjectDir)\" "$(TargetDir)\" "$(ProjectDir)Refinement" False</PostBuildEvent>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+    <None Include="App.config" />
+    <Content Include="AssetGraph.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Overlay.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Resource Include="Assets/Default/Image.png" />
+    <Resource Include="Assets/Default/Image2.png" />
+    <Resource Include="Assets/Default/Image3.png" />
+    <Resource Include="Assets/Default/Image4.png" />
+    <Resource Include="Assets/Default/Image5.png" />
+    <Resource Include="Assets/Default/Image6.png" />
+    <Resource Include="Assets/Default/Image7.png" />
+    <Resource Include="Assets/Default/Image8.png" />
+    <Resource Include="Assets/Default/Image9.png" />
+    <Resource Include="Assets/Default/Image10.png" />
+    <Resource Include="Assets/Default/FreeMonoBold.032.ttf" />
+    <Resource Include="Assets/Default/Song.ogg" />
+    <Resource Include="Assets/Default/Sound.wav" />
+    <Resource Include="Assets/Default/TileMap.tmx" />
+    <Resource Include="Assets/Default/TileSet.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\SDL2Addendum\SDL2Addendum\SDL2Addendum\SDL2Addendum.csproj">
+      <Name>SDL2Addendum</Name>
+      <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Nu.Pipe\Nu.Pipe.fsproj">
+      <Name>Nu.Pipe</Name>
+      <Project>{85d631a5-821a-4755-a68e-c1ffc64e469a}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <Reference Include="FarseerPhysics">
+      <HintPath>..\..\..\Nu\Farseer\FarseerPhysics.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpx.Collections">
+      <HintPath>..\..\..\Prime\FSharpx.Collections\FSharpx.Collections.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpx.Core">
+      <HintPath>..\..\..\Prime\FSharpx.Core\FSharpx.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="mscorlib" />
+    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SDL2#">
+      <HintPath>..\..\..\Nu\SDL2#\Release\SDL2#.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+    <ProjectReference Include="..\..\..\Prime\Prime\Prime\Prime.fsproj">
+      <Name>Prime</Name>
+      <Project>{fe09ae81-b66b-42e0-8192-eadecefc9893}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Nu\Nu\Nu\Nu.fsproj">
+      <Name>Nu</Name>
+      <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <Reference Include="System.Xml" />
+    <Reference Include="TiledSharp">
+      <HintPath>..\..\..\Nu\TiledSharp\Release\TiledSharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <Target Name="AfterClean">
+    <RemoveDir Directories="$(OutDir)Assets" />
+    <RemoveDir Directories="$(OutDir)Refinement" />
+  </Target>
+</Project>

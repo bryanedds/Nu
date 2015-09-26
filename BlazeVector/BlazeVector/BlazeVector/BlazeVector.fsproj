@@ -74,6 +74,11 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Nu\Nu\Nu.Pipe\Nu.Pipe.fsproj">
+      <Name>Nu.Pipe</Name>
+      <Project>{85d631a5-821a-4755-a68e-c1ffc64e469a}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\SDL2Addendum\SDL2Addendum\SDL2Addendum\SDL2Addendum.csproj">
       <Name>SDL2Addendum</Name>
       <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>
@@ -99,11 +104,6 @@
     <Reference Include="TiledSharp">
       <HintPath>..\..\..\Nu\TiledSharp\Release\TiledSharp.dll</HintPath>
     </Reference>
-    <ProjectReference Include="..\..\..\Nu\Nu\NuPipe\NuPipe.fsproj">
-      <Name>NuPipe</Name>
-      <Project>{85d631a5-821a-4755-a68e-c1ffc64e469a}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\Nu\Nu\Nu\Nu.fsproj">
       <Name>Nu</Name>
       <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
@@ -116,7 +116,7 @@
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
-    <PostBuildEvent>"$(ProjectDir)..\..\..\Nu\Nu\NuPipe\bin\$(ConfigurationName)\NuPipe.exe" "$(ProjectDir)\" "$(TargetDir)\" "$(ProjectDir)Refinement" False</PostBuildEvent>
+    <PostBuildEvent>"$(ProjectDir)..\..\..\Nu\Nu\Nu.Pipe\bin\$(ConfigurationName)\Nu.Pipe.exe" "$(ProjectDir)\" "$(TargetDir)\" "$(ProjectDir)Refinement" False</PostBuildEvent>
   </PropertyGroup>
   <Target Name="AfterClean">
     <RemoveDir Directories="$(OutDir)Assets" />

@@ -7,7 +7,7 @@ open Nu
 open BlazeVector
 
 /// Creates BlazeVector-specific values (here dispatchers and facets).
-/// Allows BlazeVector simulation types to be created in the game as well as in NuEdit.
+/// Allows BlazeVector simulation types to be created in the game as well as in Gaia.
 type BlazePlugin () =
     inherit NuPlugin ()
 
