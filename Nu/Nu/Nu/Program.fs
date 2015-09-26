@@ -57,8 +57,12 @@ module Program =
     Say you have a large world in your game with 50000 updating entities. You can not, and should
     not, always update all these entities when 90%+ are out of the bounds of the player's purview.
 
-    To address this, you should subscribe said entities to the (Update ->- entity) event rather
-    than the global one. *)
+    To address this, you must do these two things -
+    
+    1) subscribe said entities to their (Update ->- entity) event rather than the global Update
+    2) make sure that their names end with "Lu" to signify that local updating is enabled.
+    
+    That latter is a bit hacky to have to do, but it works for now :) *)
 
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
     scaled to a back-buffer of a varying size, render each component unscaled to an off-screen

@@ -168,12 +168,14 @@ module World =
             subscriptions
             []
             
+    /// TODO: document.
     let getSubscriptionsSpecific (publishSorter : SubscriptionSorter) eventAddress world =
         match Map.tryFind eventAddress world.Callbacks.Subscriptions with
         | Some subList -> publishSorter subList world
         | None -> []
 
-    let private getSubscriptions (publishSorter : SubscriptionSorter) eventAddress world =
+    /// TODO: document.
+    let getSubscriptions (publishSorter : SubscriptionSorter) eventAddress world =
         let anyEventAddresses = getAnyEventAddresses eventAddress
         let optSubLists = List.map (fun anyEventAddress -> Map.tryFind anyEventAddress world.Callbacks.Subscriptions) anyEventAddresses
         let optSubLists = Map.tryFind eventAddress world.Callbacks.Subscriptions :: optSubLists
