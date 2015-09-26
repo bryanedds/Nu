@@ -7,8 +7,6 @@ open global.Nu
 open Nu.Tests
 module Program =
 
-    (* TODO: investigate NuEdit extensibility mechanism. *)
-
     (* DISCUSSION - On Nu's authoring story...
 
     Instead of using a general purpose scripting language for authoring tasks in Nu, we use a small
@@ -20,9 +18,9 @@ module Program =
     -----------------------------------------------
     asset graph     | xml           | vs xml editor
     overlay         | xml           | vs xml editor
-    simulant        | xml           | NuEdit
-    effect          | a-exprs       | NuFx (TBA)
-    goal (AI)       | a-exprs (TBA) | NuGoal (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
+    simulant        | xml           | NuEdit - rename this to Gaia
+    effect          | a-exprs       | Aether (TBA)
+    mind (TBA)      | a-exprs       | Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
     interaction     | chains (F#)   | vs F# editor
 
     The advantages and limitations that fall out of this is as such -
@@ -125,6 +123,8 @@ module Program =
     scenarios, it may well be of sufficient value. Additionally, on the possible occasion that the
     current physics engine be replaceable with pure functional one, improvements to the feature may
     be implementable in time. *)
+
+    (* TODO: investigate NuEdit extensibility mechanism. *)
 
     let [<EntryPoint; STAThread>] main _ =
         Console.Write "Running Nu.exe"
