@@ -453,7 +453,11 @@ type [<ReferenceEquality>] PhysicsEngine =
         physicsEngine.RebuildingHack <- false
 
     static member private createTransformMessages physicsEngine =
-        // TODO: ASAP: do an AABB query for scalability!
+        // NOTE: We should really be querying these bodies from the physics engine internally-maintained awake-body
+        // list. Note also that I tried building Farseer with #define USE_AWAKE_BODY_SET so we can query from that
+        // AwakeBodyList, but there are compilation errors that, when I tried to fix, broken the whole system :)
+        //
+        // In truth, we just need a better physics engine implementation :)
         for body in physicsEngine.PhysicsContext.BodyList do
             if body.Awake && not body.IsStatic then
                 let bodyTransformMessage =
