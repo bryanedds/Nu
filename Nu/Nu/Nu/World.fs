@@ -500,7 +500,7 @@ module WorldModule =
             (world.State.Liveness, world)
 
         static member private processLocalUpdate (entity : Entity) world =
-            if entity.EntityName.EndsWith ("Lu", StringComparison.Ordinal) // denotes that entity has local updating enabled
+            if entity.EntityName.EndsWith ("Ul", StringComparison.Ordinal) // denotes that entity has updating locally enabled
             then World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Update ->- entity) Simulants.Game world
             else world
 

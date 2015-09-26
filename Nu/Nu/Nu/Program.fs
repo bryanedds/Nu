@@ -60,7 +60,7 @@ module Program =
     To address this, you must do these two things -
     
     1) subscribe said entities to their (Update ->- entity) event rather than the global Update
-    2) make sure that their names end with "Lu" to signify that local updating is enabled.
+    2) make sure that their names end with "Ul" to signify that updating locally is enabled.
     
     That latter is a bit hacky to have to do, but it works for now :) *)
 
