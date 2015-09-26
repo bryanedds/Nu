@@ -453,7 +453,9 @@ type [<ReferenceEquality>] PhysicsEngine =
         physicsEngine.RebuildingHack <- false
 
     static member private createTransformMessages physicsEngine =
-        // TODO: ASAP: do an AABB query for scalability!
+        // TODO: ASAP: get a build of Farseer with #define USE_AWAKE_BODY_SET so we can query from the AwakeBodyList
+        // rather than the entire BodyList. And while at this, consider also #defining the related optimizations in
+        // Farseer.
         for body in physicsEngine.PhysicsContext.BodyList do
             if body.Awake && not body.IsStatic then
                 let bodyTransformMessage =
