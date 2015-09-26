@@ -49,25 +49,16 @@ module Program =
     the exported back out. In contrast, the effect and goal systems are unlike WYSIWIG documents,
     and more like interpreted languages.
     
-    Finally, the asset graph and overlay systems could go either way, but since they're so simple, perhaps they're
-    more easily implemented with simpler document model. Maybe :) *)
+    Finally, the asset graph and overlay systems could go either way, but since they're so simple,
+    perhaps they're more easily implemented with simpler document model. Maybe :) *)
 
     (* DISCUSSION - On having huge, populated worlds in Nu...
     
-    Say you have a large world in your game with 10000 entities that all need ticking. You can
-    not, and should not, keep all of these entities ticking all the time when 90%+ are out of the
-    range of the player's purview.
+    Say you have a large world in your game with 50000 updating entities. You can not, and should
+    not, always update all these entities when 90%+ are out of the bounds of the player's purview.
 
-    So, you have to use the concept of 'tick beacons' to remove and add entity tick subscriptions.
-    For example, a large map will be divided up into 10x10 areas. In each area is a beacon that is
-    always observing the player's position. When they player gets within the distance of a given
-    beacon, that beacon will query the screen's entity tree for related entities, and then enable
-    their tick subscriptions. And vice versa, as the player moves away from a beacon, it will be
-    responsible for disabling said subscriptions.
-    
-    Finally, entities that can move will have to change their beacon association as they get much
-    closer to one beacon than another, or will need some way to keep themselves from moving that
-    far in the first place.*)
+    To address this, you should subscribe said entities to the (Update ->- entity) event rather
+    than the global one. *)
 
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
     scaled to a back-buffer of a varying size, render each component unscaled to an off-screen
