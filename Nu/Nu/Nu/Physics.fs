@@ -458,7 +458,7 @@ type [<ReferenceEquality>] PhysicsEngine =
         // AwakeBodyList, but there are compilation errors that, when I tried to fix, broken the whole system :)
         //
         // In truth, we just need a better physics engine implementation :)
-        for body in physicsEngine.PhysicsContext.AwakeBodySet do
+        for body in physicsEngine.PhysicsContext.BodyList do
             if body.Awake && not body.IsStatic then
                 let bodyTransformMessage =
                     BodyTransformMessage
