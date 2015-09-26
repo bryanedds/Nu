@@ -499,6 +499,21 @@ module WorldModule =
                 | _ -> world
             (world.State.Liveness, world)
 
+        static member private processLocalUpdate (entity : Entity) world =
+            World.publish () (Events.Update ->- entity) Simulants.Game world
+
+        static member private processLocalUpdates world =
+            match World.getOptSelectedScreen world with
+            | Some selectedScreen ->
+                let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
+                let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTree world)
+                let screenState = World.getScreenState selectedScreen world
+                let screenState = { screenState with EntityTreeNp = entityTree }
+                let world = World.setScreenState screenState selectedScreen world
+                let entities = QuadTree.getElementsNearBounds viewBounds quadTree
+                Seq.fold (flip World.processLocalUpdate) world entities
+            | None -> world
+
         /// Update the game engine once per frame, updating its subsystems and publishing the
         /// Update event.
         static member processUpdate handleUpdate world =
@@ -512,6 +527,7 @@ module WorldModule =
                     match world.State.Liveness with
                     | Running ->
                         let world = World.publish () Events.Update Simulants.Game world
+                        let world = World.processLocalUpdates world
                         match world.State.Liveness with
                         | Running ->
                             let world = World.processTasklets world
