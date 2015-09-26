@@ -453,7 +453,8 @@ type [<ReferenceEquality>] PhysicsEngine =
         physicsEngine.RebuildingHack <- false
 
     static member private createTransformMessages physicsEngine =
-        for body in physicsEngine.Bodies.Values do
+        // TODO: ASAP: do an AABB query for scalability!
+        for body in physicsEngine.PhysicsContext.BodyList do
             if body.Awake && not body.IsStatic then
                 let bodyTransformMessage =
                     BodyTransformMessage
