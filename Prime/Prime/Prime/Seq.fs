@@ -54,6 +54,7 @@ let tryTake (n : int) (s : _ seq) =
 
 /// Implement a fold while fn results in Some.
 /// Implementation thanks to Tomas Petricek!
+/// TODO: ASAP: implement this imperatively!
 let foldWhile fn initial input =
     input |>
         Seq.scan (fun stateOpt inp -> stateOpt |> Option.bind (fun state -> fn state inp)) (Some initial) |>

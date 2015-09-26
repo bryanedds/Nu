@@ -167,8 +167,15 @@ module World =
                 subscription :: subscriptions)
             subscriptions
             []
+            
+    /// TODO: document.
+    let getSubscriptionsSpecific (publishSorter : SubscriptionSorter) eventAddress world =
+        match Map.tryFind eventAddress world.Callbacks.Subscriptions with
+        | Some subList -> publishSorter subList world
+        | None -> []
 
-    let private getSubscriptionsSorted (publishSorter : SubscriptionSorter) eventAddress world =
+    /// TODO: document.
+    let getSubscriptions (publishSorter : SubscriptionSorter) eventAddress world =
         let anyEventAddresses = getAnyEventAddresses eventAddress
         let optSubLists = List.map (fun anyEventAddress -> Map.tryFind anyEventAddress world.Callbacks.Subscriptions) anyEventAddresses
         let optSubLists = Map.tryFind eventAddress world.Callbacks.Subscriptions :: optSubLists
@@ -221,10 +228,10 @@ module World =
     let sortSubscriptionsNone (subscriptions : SubscriptionEntry list) (_ : World) =
         subscriptions
 
-    /// Publish an event, using the given publishSorter procedure to arranging the order to which subscriptions are published.
-    let publish5<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) (publisher : 'p) world =
+    /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
+    let publish6<'a, 'p when 'p :> Simulant> getSubscriptions publishSorter (eventData : 'a) (eventAddress : 'a Address) (publisher : 'p) world =
         let objEventAddress = atooa eventAddress
-        let subscriptions = getSubscriptionsSorted publishSorter objEventAddress world
+        let subscriptions = getSubscriptions publishSorter objEventAddress world
         let (_, world) =
             List.foldWhile
                 (fun (eventHandling, world) (_, subscriber : Simulant, subscription) ->
@@ -240,6 +247,10 @@ module World =
                 (Cascade, world)
                 subscriptions
         world
+
+    /// Publish an event, using the given publishSorter procedure to arrange the order to which subscriptions are published.
+    let publish5<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) (publisher : 'p) world =
+        publish6 getSubscriptions publishSorter eventData eventAddress publisher world
 
     /// Publish an event.
     let publish<'a, 'p when 'p :> Simulant>

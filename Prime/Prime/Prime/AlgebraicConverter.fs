@@ -19,7 +19,7 @@ type AlgebraicConverter (targetType : Type) =
     // access ListModule.OfSeq dynamically.
     static let FSharpCoreAssembly =
         Array.find
-            (fun (assembly : Assembly) -> assembly.FullName.StartsWith "FSharp.Core,")
+            (fun (assembly : Assembly) -> assembly.FullName.StartsWith ("FSharp.Core,", StringComparison.Ordinal))
             (AppDomain.CurrentDomain.GetAssemblies ())
 
     let objToObjList (source : obj) =
