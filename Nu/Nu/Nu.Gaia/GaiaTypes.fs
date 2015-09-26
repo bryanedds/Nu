@@ -1,8 +1,7 @@
-﻿// NuEdit - The Nu Game Engine editor.
+﻿// Gaia - The Nu Game Engine editor.
 // Copyright (C) Bryan Edds, 2013-2015.
 
-namespace NuEdit
-open NuEditDesign
+namespace Nu.Gaia
 open OpenTK
 open Prime
 open System
@@ -10,6 +9,8 @@ open System.ComponentModel
 open System.Collections.Generic
 open Prime
 open Nu
+open Nu.Gaia
+open Nu.Gaia.Design
 
 type WorldChanger = World -> World
 
@@ -35,7 +36,7 @@ type EditorState =
 
 type [<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>] EntityTypeDescriptorSource =
     { DescribedEntity : Entity
-      Form : NuEditForm
+      Form : GaiaForm
       WorldChangers : WorldChangers
       RefWorld : World ref }
 

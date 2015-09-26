@@ -1,7 +1,7 @@
-﻿// NuEdit - The Nu Game Engine editor.
+﻿// Gaia - The Nu Game Engine editor.
 // Copyright (C) Bryan Edds, 2013-2015.
 
-namespace NuEdit
+namespace Nu.Gaia
 open Prime
 open System
 open Prime
@@ -15,4 +15,4 @@ module Program =
 
     let [<EntryPoint; STAThread>] main _ =
         Nu.init ()
-        NuEdit.run ()
+        Gaia.run ()

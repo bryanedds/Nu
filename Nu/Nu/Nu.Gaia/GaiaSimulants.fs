@@ -1,11 +1,11 @@
-﻿// NuEdit - The Nu Game Engine editor.
+﻿// Gaia - The Nu Game Engine editor.
 // Copyright (C) Bryan Edds, 2013-2015.
 
-namespace NuEdit
+namespace Nu.Gaia
 open System
 open Prime
 open Nu
-open NuEdit
+open Nu.Gaia
 
 [<RequireQualifiedAccess>]
 module Simulants =

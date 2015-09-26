@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace NuEditDesign
+namespace Nu.Gaia.Design
 {
     public partial class NameEntryForm : Form
     {

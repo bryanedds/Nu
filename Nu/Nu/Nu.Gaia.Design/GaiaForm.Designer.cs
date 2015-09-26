@@ -1,6 +1,6 @@
-﻿namespace NuEditDesign
+﻿namespace Nu.Gaia.Design
 {
-    partial class NuEditForm
+    partial class GaiaForm
     {
         /// <summary>
         /// Required designer variable.
@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(NuEditForm));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(GaiaForm));
             this.menuStrip = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.newToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -96,7 +96,7 @@
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.closeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator10 = new System.Windows.Forms.ToolStripSeparator();
-            this.displayPanel = new NuEditDesign.SelectablePanel();
+            this.displayPanel = new Nu.Gaia.Design.SelectablePanel();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -677,7 +677,7 @@
             this.displayPanel.TabIndex = 0;
             this.displayPanel.TabStop = true;
             // 
-            // NuEditForm
+            // GaiaForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -687,8 +687,8 @@
             this.Controls.Add(this.menuStrip);
             this.MainMenuStrip = this.menuStrip;
             this.Margin = new System.Windows.Forms.Padding(2);
-            this.Name = "NuEditForm";
-            this.Text = "NuEdit";
+            this.Name = "GaiaForm";
+            this.Text = "Gaia";
             this.menuStrip.ResumeLayout(false);
             this.menuStrip.PerformLayout();
             this.contextMenuStrip.ResumeLayout(false);
@@ -719,7 +719,7 @@
         public System.Windows.Forms.ToolStripMenuItem openToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
-        public NuEditDesign.SelectablePanel displayPanel;
+        public Nu.Gaia.Design.SelectablePanel displayPanel;
         public System.Windows.Forms.OpenFileDialog openFileDialog;
         public System.Windows.Forms.SaveFileDialog saveFileDialog;
         public System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;

@@ -7,8 +7,8 @@
     <ProjectGuid>{F67217C1-6BB3-4180-916B-B7B4CDC14C2D}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>NuEditDesign</RootNamespace>
-    <AssemblyName>NuEditDesign</AssemblyName>
+    <RootNamespace>Nu.Gaia.Design</RootNamespace>
+    <AssemblyName>Nu.Gaia.Design</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -48,11 +48,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="NuEditForm.cs">
+    <Compile Include="GaiaForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="NuEditForm.Designer.cs">
-      <DependentUpon>NuEditForm.cs</DependentUpon>
+    <Compile Include="GaiaForm.Designer.cs">
+      <DependentUpon>GaiaForm.cs</DependentUpon>
     </Compile>
     <Compile Include="NameEntryForm.cs">
       <SubType>Form</SubType>
@@ -65,8 +65,8 @@
     <Compile Include="SelectablePanel.cs">
       <SubType>Component</SubType>
     </Compile>
-    <EmbeddedResource Include="NuEditForm.resx">
-      <DependentUpon>NuEditForm.cs</DependentUpon>
+    <EmbeddedResource Include="GaiaForm.resx">
+      <DependentUpon>GaiaForm.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="NameEntryForm.resx">
@@ -80,6 +80,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

@@ -16,12 +16,12 @@ module Program =
 
     system          | language      | editor
     -----------------------------------------------
-    asset graph     | xml           | vs xml editor
-    overlay         | xml           | vs xml editor
-    simulant        | xml           | NuEdit - rename this to Gaia
+    asset graph     | xml           | Visual Studio
+    overlay         | xml           | Visual Studio
+    simulant        | xml           | Gaia
     effect          | a-exprs       | Aether (TBA)
     mind (TBA)      | a-exprs       | Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
-    interaction     | chains (F#)   | vs F# editor
+    interaction     | chains (F#)   | Visual Studio
 
     The advantages and limitations that fall out of this is as such -
 
@@ -124,7 +124,7 @@ module Program =
     current physics engine be replaceable with pure functional one, improvements to the feature may
     be implementable in time. *)
 
-    (* TODO: investigate NuEdit extensibility mechanism. *)
+    (* TODO: investigate Gaia extensibility mechanism. *)
 
     let [<EntryPoint; STAThread>] main _ =
         Console.Write "Running Nu.exe"

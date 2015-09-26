@@ -1,8 +1,8 @@
-﻿// NuEdit - The Nu Game Engine editor.
+﻿// Gaia - The Nu Game Engine editor.
 // Copyright (C) Bryan Edds, 2013-2015.
 
-namespace NuEdit
-open NuEditDesign
+namespace Nu.Gaia
+open Nu.Gaia.Design
 open SDL2
 open OpenTK
 open TiledSharp
@@ -21,7 +21,7 @@ open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
-module NuEdit =
+module Gaia =
 
     // TODO: move these into Constants
     let private DefaultPositionSnap = 8
@@ -43,12 +43,12 @@ module NuEdit =
         let selectedGroup = (World.getUserState world).SelectedGroup
         World.proxyEntities selectedGroup world
 
-    let private getSnaps (form : NuEditForm) =
+    let private getSnaps (form : GaiaForm) =
         let positionSnap = snd ^ Int32.TryParse form.positionSnapTextBox.Text
         let rotationSnap = snd ^ Int32.TryParse form.rotationSnapTextBox.Text
         (positionSnap, rotationSnap)
     
-    let private getCreationDepth (form : NuEditForm) =
+    let private getCreationDepth (form : GaiaForm) =
         snd ^ Single.TryParse form.createDepthTextBox.Text
 
     let private getExpansionState (treeView : TreeView) =
@@ -73,7 +73,7 @@ module NuEdit =
                     else node.Collapse ())
             treeState
 
-    let private addTreeViewNode (form : NuEditForm) (entity : Entity) world =
+    let private addTreeViewNode (form : GaiaForm) (entity : Entity) world =
         let entityCategoryName = Reflection.getTypeName ^ entity.GetDispatcherNp world
         let treeCategory = form.treeView.Nodes.[entityCategoryName]
         let treeCategoryNodeName = acstring entity.EntityAddress
@@ -83,34 +83,34 @@ module NuEdit =
             treeCategory.Nodes.Add treeCategoryNode |> ignore
         else () // when changing an entity name, entity will be added twice - once from win forms, once from world
 
-    let private clearTreeViewNodes (form : NuEditForm) =
+    let private clearTreeViewNodes (form : GaiaForm) =
         form.treeView.Nodes.Clear ()
 
-    let private populateCreateComboBox (form : NuEditForm) world =
+    let private populateCreateComboBox (form : GaiaForm) world =
         form.createEntityComboBox.Items.Clear ()
         for dispatcherKvp in World.getEntityDispatchers world do
             form.createEntityComboBox.Items.Add dispatcherKvp.Key |> ignore
         form.createEntityComboBox.SelectedIndex <- 0
 
-    let private populateTreeViewGroups (form : NuEditForm) world =
+    let private populateTreeViewGroups (form : GaiaForm) world =
         for dispatcherKvp in World.getEntityDispatchers world do
             let treeGroup = TreeNode dispatcherKvp.Key
             treeGroup.Name <- treeGroup.Text
             form.treeView.Nodes.Add treeGroup |> ignore
 
-    let private populateTreeViewNodes (form : NuEditForm) world =
+    let private populateTreeViewNodes (form : GaiaForm) world =
         let selectedGroup = (World.getUserState world).SelectedGroup
         for entity in World.proxyEntities selectedGroup world do
             addTreeViewNode form entity world
 
-    let private populateGroupTabs (form : NuEditForm) world =
+    let private populateGroupTabs (form : GaiaForm) world =
         let groupTabPages = form.groupTabs.TabPages
         groupTabPages.Clear ()
         let groups = World.proxyGroups Simulants.EditorScreen world
         for group in groups do
             groupTabPages.Add (group.GroupName, group.GroupName)
 
-    let private tryScrollTreeViewToPropertyGridSelection (form : NuEditForm) =
+    let private tryScrollTreeViewToPropertyGridSelection (form : GaiaForm) =
         match form.propertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             match form.treeView.Nodes.Find (acstring entityTds.DescribedEntity.EntityAddress, true) with
@@ -123,7 +123,7 @@ module NuEdit =
                 else form.treeView.SelectedNode <- null
         | _ -> ()
 
-    let private refreshPropertyGrid (form : NuEditForm) world =
+    let private refreshPropertyGrid (form : GaiaForm) world =
         match form.propertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             entityTds.RefWorld := world // must be set for property grid
@@ -132,7 +132,7 @@ module NuEdit =
             else form.propertyGrid.SelectedObject <- null
         | _ -> form.propertyGrid.SelectedObject <- null
 
-    let private refreshTreeView (form : NuEditForm) world =
+    let private refreshTreeView (form : GaiaForm) world =
         let treeState = getExpansionState form.treeView
         clearTreeViewNodes form
         populateTreeViewGroups form world
@@ -140,25 +140,25 @@ module NuEdit =
         restoreExpansionState form.treeView treeState
         tryScrollTreeViewToPropertyGridSelection form
 
-    let private refreshGroupTabs (form : NuEditForm) world =
+    let private refreshGroupTabs (form : GaiaForm) world =
         populateGroupTabs form world
 
-    let private refreshFormOnUndoRedo (form : NuEditForm) world =
+    let private refreshFormOnUndoRedo (form : GaiaForm) world =
         form.tickingButton.Checked <- false
         refreshPropertyGrid form world
         refreshTreeView form world
         refreshGroupTabs form world
 
-    let private selectEntity (form : NuEditForm) entity world =
+    let private selectEntity (form : GaiaForm) entity world =
         RefWorld := world // must be set for property grid
         form.propertyGrid.SelectedObject <- { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
         tryScrollTreeViewToPropertyGridSelection form
 
-    let private canEditWithMouse (form : NuEditForm) world =
+    let private canEditWithMouse (form : GaiaForm) world =
         World.isTicking world &&
         not form.editWhileInteractiveCheckBox.Checked
 
-    let private tryMousePick (form : NuEditForm) mousePosition world =
+    let private tryMousePick (form : GaiaForm) mousePosition world =
         let entities = getPickableEntities world
         let optPicked = World.tryPickEntity mousePosition entities world
         match optPicked with
@@ -167,11 +167,11 @@ module NuEdit =
             Some entity
         | None -> None
 
-    let private handleNuEntityAdd (form : NuEditForm) event world =
+    let private handleNuEntityAdd (form : GaiaForm) event world =
         addTreeViewNode form (Entity.proxy ^ atoa event.Publisher.SimulantAddress) world
         (Cascade, world)
 
-    let private handleNuEntityRemoving (form : NuEditForm) event world =
+    let private handleNuEntityRemoving (form : GaiaForm) event world =
         match form.treeView.Nodes.Find (acstring event.Publisher.SimulantAddress, true) with
         | [||] -> () // when changing an entity name, entity will be removed twice - once from winforms, once from world
         | treeNodes -> form.treeView.Nodes.Remove treeNodes.[0]
@@ -183,16 +183,16 @@ module NuEdit =
                 let world = World.updateUserState (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
                 (Cascade, world)
             else (Cascade, world)
-        | _ -> failwith "Unexpected match failure in NuEdit.Program.handleNuEntityRemoving."
+        | _ -> failwith "Unexpected match failure in Nu.Gaia.Program.handleNuEntityRemoving."
 
-    let private handleNuMouseRightDown (form : NuEditForm) (_ : Event<MouseButtonData, Game>) world =
+    let private handleNuMouseRightDown (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         let handled = if World.isTicking world then Cascade else Resolve
         let mousePosition = World.getMousePositionF world
         tryMousePick form mousePosition world |> ignore
         let world = World.updateUserState (fun editorState -> { editorState with RightClickPosition = mousePosition }) world
         (handled, world)
 
-    let private handleNuEntityDragBegin (form : NuEditForm) (_ : Event<MouseButtonData, Game>) world =
+    let private handleNuEntityDragBegin (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         if not ^ canEditWithMouse form world then
             let handled = if World.isTicking world then Cascade else Resolve
             let mousePosition = World.getMousePositionF world
@@ -206,7 +206,7 @@ module NuEdit =
             | None -> (handled, world)
         else (Cascade, world)
 
-    let private handleNuEntityDragEnd (form : NuEditForm) (_ : Event<MouseButtonData, Game>) world =
+    let private handleNuEntityDragEnd (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         if canEditWithMouse form world then (Cascade, world)
         else
             let handled = if World.isTicking world then Cascade else Resolve
@@ -218,7 +218,7 @@ module NuEdit =
                 (handled, world)
             | DragEntityNone -> (Resolve, world)
 
-    let private handleNuCameraDragBegin (_ : NuEditForm) (_ : Event<MouseButtonData, Game>) world =
+    let private handleNuCameraDragBegin (_ : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         let camera = World.getCamera world
         let mousePosition = World.getMousePositionF world
         let mousePositionScreen = Camera.mouseToScreen mousePosition camera
@@ -226,7 +226,7 @@ module NuEdit =
         let world = World.updateUserState (fun editorState -> { editorState with DragCameraState = dragState }) world
         (Resolve, world)
 
-    let private handleNuCameraDragEnd (_ : NuEditForm) (_ : Event<MouseButtonData, Game>) world =
+    let private handleNuCameraDragEnd (_ : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         match (World.getUserState world).DragCameraState with
         | DragCameraPosition _ ->
             let world = World.updateUserState (fun editorState -> { editorState with DragCameraState = DragCameraNone }) world
@@ -249,7 +249,7 @@ module NuEdit =
         try World.writeGroupToFile filePath selectedGroup world
         with exn -> MessageBox.Show ("Could not save file due to: " + acstring exn, "File save error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
 
-    let private tryLoadFile (form : NuEditForm) filePath world =
+    let private tryLoadFile (form : GaiaForm) filePath world =
 
         try // destroy current group
             let selectedGroup = (World.getUserState world).SelectedGroup
@@ -269,18 +269,18 @@ module NuEdit =
             MessageBox.Show ("Could not load file due to: " + acstring exn, "File load error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             world
 
-    let private handleFormExit (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormExit (form : GaiaForm) (_ : EventArgs) =
         form.Close ()
 
-    let private handleFormCreateDepthPlusClick (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormCreateDepthPlusClick (form : GaiaForm) (_ : EventArgs) =
         let depth = snd ^ Single.TryParse form.createDepthTextBox.Text
         form.createDepthTextBox.Text <- acstring ^ depth + 1.0f
 
-    let private handleFormCreateDepthMinusClick (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormCreateDepthMinusClick (form : GaiaForm) (_ : EventArgs) =
         let depth = snd ^ Single.TryParse form.createDepthTextBox.Text
         form.createDepthTextBox.Text <- acstring ^ depth - 1.0f
 
-    let private handleFormTreeViewNodeSelect (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             let entity = Entity.proxy ^ ftoa form.treeView.SelectedNode.Name
             match Address.getNameKeys entity.EntityAddress with
@@ -291,7 +291,7 @@ module NuEdit =
                 world
             | _ -> world) // don't have an entity address
 
-    let private handleFormCreate atMouse (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormCreate atMouse (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             try let world = pushPastWorld world world
                 let selectedGroup = (World.getUserState world).SelectedGroup
@@ -316,7 +316,7 @@ module NuEdit =
                 world
             with exn -> MessageBox.Show (acstring exn) |> ignore; world)
 
-    let private handleFormDelete (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormDelete (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             let world = pushPastWorld world world
             match form.propertyGrid.SelectedObject with
@@ -326,7 +326,7 @@ module NuEdit =
                 world
             | _ -> world)
 
-    let private handleFormNew (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormNew (form : GaiaForm) (_ : EventArgs) =
         use groupNameEntryForm = new NameEntryForm ()
         groupNameEntryForm.StartPosition <- FormStartPosition.CenterParent
         groupNameEntryForm.okButton.Click.Add (fun _ ->
@@ -344,7 +344,7 @@ module NuEdit =
         groupNameEntryForm.cancelButton.Click.Add (fun _ -> groupNameEntryForm.Close ())
         groupNameEntryForm.ShowDialog form |> ignore
 
-    let private handleFormSave (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormSave (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             form.saveFileDialog.Title <- "Save '" + (World.getUserState world).SelectedGroup.GroupName + "' As"
             form.saveFileDialog.FileName <- String.Empty
@@ -353,7 +353,7 @@ module NuEdit =
             | DialogResult.OK -> trySaveFile form.saveFileDialog.FileName world; world
             | _ -> world)
 
-    let private handleFormOpen (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormOpen (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             form.openFileDialog.FileName <- String.Empty
             let openFileResult = form.openFileDialog.ShowDialog form
@@ -365,7 +365,7 @@ module NuEdit =
                 world
             | _ -> world)
 
-    let private handleFormClose (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormClose (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             match form.groupTabs.TabPages.Count with
             | 1 ->
@@ -379,7 +379,7 @@ module NuEdit =
                 form.groupTabs.TabPages.RemoveByKey group.GroupName
                 world)
 
-    let private handleFormUndo (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormUndo (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             match (World.getUserState world).PastWorlds with
             | [] -> world
@@ -395,7 +395,7 @@ module NuEdit =
                 refreshFormOnUndoRedo form world
                 world)
 
-    let private handleFormRedo (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormRedo (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             match (World.getUserState world).FutureWorlds with
             | [] -> world
@@ -411,20 +411,20 @@ module NuEdit =
                 refreshFormOnUndoRedo form world
                 world)
 
-    let private handleFormInteractivityChanged (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormInteractivityChanged (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             let tickRate = if form.tickingButton.Checked then 1L else 0L
             let (pastWorld, world) = (world, World.setTickRate tickRate world)
             if tickRate = 1L then pushPastWorld pastWorld world else world)
 
-    let private handleFormCopy (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormCopy (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             match form.propertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds -> World.copyToClipboard entityTds.DescribedEntity world; world
-            | _ -> trace ^ "Invalid copy operation (likely a code issue in NuEdit)."; world)
+            | _ -> trace ^ "Invalid copy operation (likely a code issue in Gaia)."; world)
 
-    let private handleFormCut (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormCut (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             match form.propertyGrid.SelectedObject with
             | null -> world
@@ -433,9 +433,9 @@ module NuEdit =
                 let world = World.cutToClipboard entityTds.DescribedEntity world
                 form.propertyGrid.SelectedObject <- null
                 world
-            | _ -> trace ^ "Invalid cut operation (likely a code issue in NuEdit)."; world)
+            | _ -> trace ^ "Invalid cut operation (likely a code issue in Gaia)."; world)
 
-    let private handleFormPaste atMouse (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             let world = pushPastWorld world world
             let selectedGroup = (World.getUserState world).SelectedGroup
@@ -446,7 +446,7 @@ module NuEdit =
             | Some entity -> selectEntity form entity world; world
             | None -> world)
 
-    let private handleFormQuickSize (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormQuickSize (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             let optEntityTds = form.propertyGrid.SelectedObject
             match optEntityTds with
@@ -459,13 +459,13 @@ module NuEdit =
                 entityTds.RefWorld := world // must be set for property grid
                 form.propertyGrid.Refresh ()
                 world
-            | _ -> trace ^ "Invalid quick size operation (likely a code issue in NuEdit)."; world)
+            | _ -> trace ^ "Invalid quick size operation (likely a code issue in Gaia)."; world)
 
-    let private handleFormResetCamera (_ : NuEditForm) (_ : EventArgs) =
+    let private handleFormResetCamera (_ : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             World.updateCamera (fun camera -> { camera with EyeCenter = Vector2.Zero }) world)
 
-    let private handleFormReloadAssets (_ : NuEditForm) (_ : EventArgs) =
+    let private handleFormReloadAssets (_ : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             let editorState = World.getUserState world
             let targetDir = editorState.TargetDir
@@ -476,7 +476,7 @@ module NuEdit =
                 MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world)
 
-    let private handleFormReloadOverlays (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormReloadOverlays (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             let world = pushPastWorld world world
             let targetDir = (World.getUserState world).TargetDir
@@ -489,7 +489,7 @@ module NuEdit =
                 MessageBox.Show ("Overlay reload error due to: " + error + "'.", "Overlay reload error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world)
 
-    let private handleFormGroupTabSelected (form : NuEditForm) (_ : EventArgs) =
+    let private handleFormGroupTabSelected (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             let world = unsubscribeFromEntityEvents world
             let world =
@@ -504,12 +504,12 @@ module NuEdit =
             refreshTreeView form world
             world)
 
-    let private handleFormClosing (_ : NuEditForm) (args : CancelEventArgs) =
-        match MessageBox.Show ("Are you sure you want to close NuEdit?", "Close NuEdit", MessageBoxButtons.YesNo) with
+    let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
+        match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia", MessageBoxButtons.YesNo) with
         | DialogResult.No -> args.Cancel <- true
         | _ -> ()
 
-    let private updateEntityDrag (form : NuEditForm) world =
+    let private updateEntityDrag (form : GaiaForm) world =
         if not ^ canEditWithMouse form world then
             match (World.getUserState world).DragEntityState with
             | DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) ->
@@ -529,7 +529,7 @@ module NuEdit =
             | DragEntityNone -> world
         else world
 
-    let private updateCameraDrag (_ : NuEditForm) world =
+    let private updateCameraDrag (_ : GaiaForm) world =
         match (World.getUserState world).DragCameraState with
         | DragCameraPosition (pickOffset, mousePositionScreenOrig) ->
             let world =
@@ -545,7 +545,7 @@ module NuEdit =
         | DragCameraNone -> world
 
     // TODO: remove code duplication with below
-    let private updateUndoButton (form : NuEditForm) world =
+    let private updateUndoButton (form : GaiaForm) world =
         if form.undoToolStripMenuItem.Enabled then
             if List.isEmpty (World.getUserState world).PastWorlds then
                 form.undoButton.Enabled <- false
@@ -554,7 +554,7 @@ module NuEdit =
             form.undoButton.Enabled <- true
             form.undoToolStripMenuItem.Enabled <- true
 
-    let private updateRedoButton (form : NuEditForm) world =
+    let private updateRedoButton (form : GaiaForm) world =
         let editorState = World.getUserState world
         if form.redoToolStripMenuItem.Enabled then
             if List.isEmpty editorState.FutureWorlds then
@@ -596,12 +596,12 @@ module NuEdit =
                     let world = World.subscribe (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world
                     let world = World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world
                     subscribeToEntityEvents form world
-                else failwith ^ "Cannot attach NuEdit to a world with no groups inside the '" + acstring Simulants.EditorScreen + "' screen."
-            else failwith ^ "Cannot attach NuEdit to a world with a screen selected other than '" + acstring Simulants.EditorScreen + "'."
+                else failwith ^ "Cannot attach Gaia to a world with no groups inside the '" + acstring Simulants.EditorScreen + "' screen."
+            else failwith ^ "Cannot attach Gaia to a world with a screen selected other than '" + acstring Simulants.EditorScreen + "'."
         | :? EditorState -> world // NOTE: conclude world is already attached
-        | _ -> failwith "Cannot attach NuEdit to a world that has a user state of a type other than unit or EditorState."
+        | _ -> failwith "Cannot attach Gaia to a world that has a user state of a type other than unit or EditorState."
 
-    let private run3 runWhile targetDir sdlDeps (form : NuEditForm) =
+    let private run3 runWhile targetDir sdlDeps (form : GaiaForm) =
         let world = !RefWorld
         let world = attachToWorld targetDir form world
         populateCreateComboBox form world
@@ -639,9 +639,9 @@ module NuEdit =
         then selectTargetDirAndMakeNuPluginFromFilePath openDialog.FileName
         else (".", NuPlugin ())
 
-    /// Create a NuEdit form.
+    /// Create a Gaia form.
     let createForm () =
-        let form = new NuEditForm ()
+        let form = new GaiaForm ()
         form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
         form.positionSnapTextBox.Text <- acstring DefaultPositionSnap
         form.rotationSnapTextBox.Text <- acstring DefaultRotationSnap
@@ -680,8 +680,8 @@ module NuEdit =
         form.Show ()
         form
 
-    /// Attempt to make a world for use in the NuEdit form.
-    /// You can make your own world instead and use the NuEdit.attachToWorld instead (so long as the world satisfies said
+    /// Attempt to make a world for use in the Gaia form.
+    /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
     /// function's various requirements.
     let attemptMakeWorld plugin sdlDeps =
         let eitherWorld = World.attemptMake false 0L () plugin sdlDeps
@@ -693,8 +693,8 @@ module NuEdit =
             Right world
         | Left error -> Left error
 
-    /// Attempt to make SdlDeps needed to use in the NuEdit form.
-    let attemptMakeSdlDeps (form : NuEditForm) =
+    /// Attempt to make SdlDeps needed to use in the Gaia form.
+    let attemptMakeSdlDeps (form : GaiaForm) =
         let sdlViewConfig = ExistingWindow form.displayPanel.Handle
         let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
         let sdlConfig =
@@ -705,13 +705,13 @@ module NuEdit =
               AudioChunkSize = Constants.Audio.AudioBufferSizeDefault }
         SdlDeps.attemptMake sdlConfig
 
-    /// Run NuEdit from the F# repl.
+    /// Run Gaia from the F# repl.
     let runFromRepl runWhile targetDir sdlDeps form world =
         WorldChangers.Clear ()
         RefWorld := world
         run3 runWhile targetDir sdlDeps form
 
-    /// Run the NuEdit in isolation.
+    /// Run the Gaia in isolation.
     let run () =
         let (targetDir, plugin) = selectTargetDirAndMakeNuPlugin ()
         use form = createForm ()

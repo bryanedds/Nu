@@ -1,4 +1,4 @@
-﻿// NuEdit - The Nu Game Engine editor.
+﻿// Gaia - The Nu Game Engine editor.
 // Copyright (C) Bryan Edds, 2013-2015.
 
 using System;
@@ -7,7 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace NuEditDesign
+namespace Nu.Gaia.Design
 {
     static class Program
     {
@@ -19,7 +19,7 @@ namespace NuEditDesign
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new NuEditForm());
+            Application.Run(new GaiaForm());
         }
     }
 }

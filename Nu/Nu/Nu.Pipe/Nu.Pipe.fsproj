@@ -8,11 +8,11 @@
     <ProjectGuid>85d631a5-821a-4755-a68e-c1ffc64e469a</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>NuPipe</RootNamespace>
-    <AssemblyName>NuPipe</AssemblyName>
+    <AssemblyName>Nu.Pipe</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFSharpCoreVersion>4.3.0.0</TargetFSharpCoreVersion>
-    <Name>NuPipe</Name>
+    <Name>Nu.Pipe</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -23,7 +23,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
-    <DocumentationFile>bin\Debug\NuPipe.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\Nu.Pipe.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
@@ -38,7 +38,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
-    <DocumentationFile>bin\Release\NuPipe.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\Nu.Pipe.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />

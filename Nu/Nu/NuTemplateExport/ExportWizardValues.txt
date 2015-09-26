@@ -1,3 +1,0 @@
-NuGame
-Create a game with the Nu Game Engine.
-C:\Development\FPWorks\Nu\Promotional\Nu Icon.png

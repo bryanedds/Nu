@@ -8,9 +8,9 @@
     <ProjectGuid>f1768f36-9ed3-4c36-9dce-9535aefb0732</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>NuEdit</RootNamespace>
-    <AssemblyName>NuEdit</AssemblyName>
+    <AssemblyName>Nu.Gaia</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <Name>NuEdit</Name>
+    <Name>Nu.Gaia</Name>
     <TargetFSharpCoreVersion>4.3.0.0</TargetFSharpCoreVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -22,7 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
-    <DocumentationFile>bin\Debug\NuEdit.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\Nu.Gaia.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
@@ -36,7 +36,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
-    <DocumentationFile>bin\Release\NuEdit.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\Nu.Gaia.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
@@ -59,10 +59,10 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
-    <Compile Include="NuEditConstants.fs" />
-    <Compile Include="NuEditSimulants.fs" />
-    <Compile Include="NuEditTypes.fs" />
-    <Compile Include="NuEditModules.fs" />
+    <Compile Include="GaiaConstants.fs" />
+    <Compile Include="GaiaSimulants.fs" />
+    <Compile Include="GaiaTypes.fs" />
+    <Compile Include="GaiaModules.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="App.config" />
@@ -104,8 +104,8 @@
       <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\NuEditDesign\NuEditDesign.csproj">
-      <Name>NuEditDesign</Name>
+    <ProjectReference Include="..\Nu.Gaia.Design\Nu.Gaia.Design.csproj">
+      <Name>Nu.Gaia.Design</Name>
       <Project>{f67217c1-6bb3-4180-916b-b7b4cdc14c2d}</Project>
       <Private>True</Private>
     </ProjectReference>
@@ -116,7 +116,7 @@
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
-    <PostBuildEvent>"$(ProjectDir)..\..\..\Nu\Nu\NuPipe\bin\$(ConfigurationName)\NuPipe.exe" "$(ProjectDir)\" "$(TargetDir)\" "$(ProjectDir)Refinement" False</PostBuildEvent>
+    <PostBuildEvent>"$(ProjectDir)..\..\..\Nu\Nu\Nu.Pipe\bin\$(ConfigurationName)\Nu.Pipe.exe" "$(ProjectDir)\" "$(TargetDir)\" "$(ProjectDir)Refinement" False</PostBuildEvent>
   </PropertyGroup>
   <Target Name="AfterClean">
     <RemoveDir Directories="$(OutDir)Assets" />

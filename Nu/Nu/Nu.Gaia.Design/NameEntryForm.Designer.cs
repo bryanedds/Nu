@@ -1,4 +1,4 @@
-﻿namespace NuEditDesign
+﻿namespace Nu.Gaia.Design
 {
     partial class NameEntryForm
     {

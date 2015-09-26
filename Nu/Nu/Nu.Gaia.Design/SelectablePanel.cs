@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace NuEditDesign
+namespace Nu.Gaia.Design
 {
     public class SelectablePanel : Panel
     {

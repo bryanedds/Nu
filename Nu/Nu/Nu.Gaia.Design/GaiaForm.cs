@@ -8,11 +8,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace NuEditDesign
+namespace Nu.Gaia.Design
 {
-    public partial class NuEditForm : Form
+    public partial class GaiaForm : Form
     {
-        public NuEditForm()
+        public GaiaForm()
         {
             InitializeComponent();
         }
