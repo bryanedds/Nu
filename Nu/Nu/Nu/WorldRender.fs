@@ -42,15 +42,17 @@ type [<ReferenceEquality>] RendererSubsystem =
                 let screenState = { screenState with EntityTreeNp = entityTree }
                 let world = World.setScreenState screenState selectedScreen world
                 let entities = QuadTree.getElementsNearBounds viewBounds quadTree
-                let descriptors =
+                let entityDescriptors =
                     entities |>
+                    List.ofSeq |>
                     List.choose (fun entity -> if entity.GetVisible world then Some ^ World.getEntityRenderDescriptors entity world else None) |>
                     List.concat
-                let descriptors =
+                let transitionDescriptors = 
                     match selectedScreen.GetTransitionStateNp world with
-                    | IncomingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors (World.getCamera world) selectedScreen (selectedScreen.GetIncoming world) world
-                    | OutgoingState -> descriptors @ RendererSubsystem.getScreenTransitionRenderDescriptors (World.getCamera world) selectedScreen (selectedScreen.GetOutgoing world) world
-                    | IdlingState -> descriptors
+                    | IncomingState -> RendererSubsystem.getScreenTransitionRenderDescriptors (World.getCamera world) selectedScreen (selectedScreen.GetIncoming world) world
+                    | OutgoingState -> RendererSubsystem.getScreenTransitionRenderDescriptors (World.getCamera world) selectedScreen (selectedScreen.GetOutgoing world) world
+                    | IdlingState -> []
+                let descriptors = transitionDescriptors @ entityDescriptors
                 (descriptors, world)
             else ([], world)
         | None -> ([], world)

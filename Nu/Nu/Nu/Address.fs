@@ -140,7 +140,7 @@ module Address =
 
     /// Change the type of an address.
     let changeType<'a, 'b> (address : 'a Address) =
-        { NameKeys = address.NameKeys; OptFullName = None; OptHashCode = None; TypeCarrier = fun (_ : 'b) -> () }
+        { NameKeys = address.NameKeys; OptFullName = address.OptFullName; OptHashCode = address.OptHashCode; TypeCarrier = fun (_ : 'b) -> () }
 
     /// Get the full name of an address as a single string.
     let getFullName address =
@@ -215,7 +215,7 @@ module AddressOperators =
 
     /// Convert any address to an obj Address.
     let atooa<'a> (address : 'a Address) =
-        { NameKeys = address.NameKeys; OptFullName = None; OptHashCode = None; TypeCarrier = fun (_ : obj) -> () }
+        { NameKeys = address.NameKeys; OptFullName = address.OptFullName; OptHashCode = address.OptHashCode; TypeCarrier = fun (_ : obj) -> () }
 
     /// Concatenate two addresses of the same type.
     let acat<'a> (address : 'a Address) (address2 : 'a Address) =

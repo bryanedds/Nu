@@ -49,16 +49,16 @@ module private QuadNode =
     let rec internal getElementsNearPoint position node =
         if Math.isPointInBounds position node.Bounds then
             match node.OptElements with
-            | Some elements -> List.ofSeq elements
-            | None -> List.ofSeq ^ Seq.concat ^ Seq.map (fun child -> getElementsNearPoint position child) node.Children
-        else []
+            | Some elements -> elements :> _ seq
+            | None -> Seq.concat ^ Seq.map (fun child -> getElementsNearPoint position child) node.Children
+        else Seq.empty
 
     let rec internal getElementsNearBounds bounds node =
         if Math.isBoundsInBounds bounds node.Bounds then
             match node.OptElements with
-            | Some elements -> List.ofSeq elements
-            | None -> List.ofSeq ^ Seq.concat ^ Seq.map (fun child -> getElementsNearBounds bounds child) node.Children
-        else []
+            | Some elements -> elements :> _ seq
+            | None -> Seq.concat ^ Seq.map (fun child -> getElementsNearBounds bounds child) node.Children
+        else Seq.empty
 
     let internal getDepth node =
         node.Depth
@@ -118,11 +118,11 @@ module QuadTree =
 
     let getElementsNearPoint position tree =
         let otherElements = QuadNode.getElementsNearPoint position tree.Node
-        List.ofSeq ^ Seq.append tree.OmnipresentElements ^ Seq.distinct otherElements
+        Seq.append tree.OmnipresentElements ^ Seq.distinct otherElements
 
     let getElementsNearBounds bounds tree =
         let otherElements = QuadNode.getElementsNearBounds bounds tree.Node
-        List.ofSeq ^ Seq.append tree.OmnipresentElements ^ Seq.distinct otherElements
+        Seq.append tree.OmnipresentElements ^ Seq.distinct otherElements
 
     let getDepth tree =
         QuadNode.getDepth tree.Node

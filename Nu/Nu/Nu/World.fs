@@ -500,7 +500,7 @@ module WorldModule =
             (world.State.Liveness, world)
 
         static member private processLocalUpdate (entity : Entity) world =
-            World.publish () (Events.Update ->- entity) Simulants.Game world
+            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Update ->- entity) Simulants.Game world
 
         static member private processLocalUpdates world =
             match World.getOptSelectedScreen world with
