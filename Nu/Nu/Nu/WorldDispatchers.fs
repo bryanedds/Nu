@@ -33,7 +33,7 @@ module EffectFacetModule =
              define? EffectTimeOffset 0L] // TODO: also implement similar time offset for AnimatedSpriteFacet
 
         override facet.Actualize (entity, world) =
-            if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
+            if entity.InView world then
                 let time = World.getTickTime world
                 let timeOffset = entity.GetEffectTimeOffset world
                 let effectTime = time - timeOffset
@@ -165,7 +165,7 @@ module StaticSpriteFacetModule =
             [define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
 
         override facet.Actualize (entity, world) =
-            if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
+            if entity.InView world then
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
@@ -226,7 +226,7 @@ module AnimatedSpriteFacetModule =
              define? AnimationSheet { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image7" }]
 
         override facet.Actualize (entity, world) =
-            if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
+            if entity.InView world then
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
@@ -269,7 +269,7 @@ module GuiDispatcherModule =
                     let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (gui.GetViewType world) data.Position) world
                     if data.Down &&
                        gui.GetSwallowMouseLeft world &&
-                       Math.isPointInBounds3 mousePositionWorld (gui.GetPosition world) (gui.GetSize world) then
+                       Math.isPointInBounds mousePositionWorld (gui.GetBounds world) then
                        Resolve
                     else Cascade
                 else Cascade
@@ -309,7 +309,7 @@ module ButtonDispatcherModule =
             if World.isSimulantSelected button world then
                 let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (button.GetViewType world) data.Position) world
                 if  button.GetVisible world &&
-                    Math.isPointInBounds3 mousePositionWorld (button.GetPosition world) (button.GetSize world) then
+                    Math.isPointInBounds mousePositionWorld (button.GetBounds world) then
                     if button.GetEnabled world then
                         let world = button.SetDown true world
                         let world = World.publish () (Events.Down ->- button) button world
@@ -326,7 +326,7 @@ module ButtonDispatcherModule =
                 let world = button.SetDown false world
                 let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (button.GetViewType world) data.Position) world
                 if  button.GetVisible world &&
-                    Math.isPointInBounds3 mousePositionWorld (button.GetPosition world) (button.GetSize world) then
+                    Math.isPointInBounds mousePositionWorld (button.GetBounds world) then
                     if button.GetEnabled world && wasDown then
                         let world = World.publish () (Events.Up ->- button) button world
                         let world = World.publish () (Events.Click ->- button) button world
@@ -491,7 +491,7 @@ module ToggleDispatcherModule =
             if World.isSimulantSelected toggle world then
                 let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (toggle.GetViewType world) data.Position) world
                 if  toggle.GetVisible world &&
-                    Math.isPointInBounds3 mousePositionWorld (toggle.GetPosition world) (toggle.GetSize world) then
+                    Math.isPointInBounds mousePositionWorld (toggle.GetBounds world) then
                     if toggle.GetEnabled world then
                         let world = toggle.SetPressed true world
                         (Resolve, world)
@@ -507,7 +507,7 @@ module ToggleDispatcherModule =
                 let world = toggle.SetPressed false world
                 let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (toggle.GetViewType world) data.Position) world
                 if  toggle.GetVisible world &&
-                    Math.isPointInBounds3 mousePositionWorld (toggle.GetPosition world) (toggle.GetSize world) then
+                    Math.isPointInBounds mousePositionWorld (toggle.GetBounds world) then
                     if toggle.GetEnabled world && wasPressed then
                         let world = toggle.SetOn (not ^ toggle.GetOn world) world
                         let eventAddress = if toggle.GetOn world then Events.On else Events.Off
@@ -572,7 +572,7 @@ module FeelerDispatcherModule =
             if World.isSimulantSelected feeler world then
                 let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (feeler.GetViewType world) data.Position) world
                 if  feeler.GetVisible world &&
-                    Math.isPointInBounds3 mousePositionWorld (feeler.GetPosition world) (feeler.GetSize world) then
+                    Math.isPointInBounds mousePositionWorld (feeler.GetBounds world) then
                     if feeler.GetEnabled world then
                         let world = feeler.SetTouched true world
                         let world = World.publish data.Position (Events.Touch ->- feeler) feeler world
@@ -896,7 +896,7 @@ module TileMapDispatcherModule =
                             | Relative -> tileMap.GetParallax world * depth * -camera.EyeCenter
                         let parallaxPosition = tileMap.GetPosition world + parallaxTranslation
                         let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
-                        if World.getCameraBy (Camera.inView3 viewType parallaxPosition size) world then
+                        if World.getCameraBy (Camera.inView viewType (Math.makeBounds parallaxPosition size)) world then
                             World.addRenderMessage
                                 (RenderDescriptorsMessage
                                     [LayerableDescriptor 

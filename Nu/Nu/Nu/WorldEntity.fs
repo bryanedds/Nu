@@ -33,6 +33,8 @@ module WorldEntityModule =
         member this.SetRotation value world = World.updateEntityStatePlus (fun entityState -> { entityState with Rotation = value }) this world
         member this.GetDepth world = (World.getEntityState this world).Depth
         member this.SetDepth value world = World.updateEntityState (fun entityState -> { entityState with Depth = value }) this world
+        member this.GetOverflow world = (World.getEntityState this world).Overflow
+        member this.SetOverflow value world = World.updateEntityState (fun entityState -> { entityState with Overflow = value }) this world
         member this.GetVisible world = (World.getEntityState this world).Visible
         member this.SetVisible value world = World.updateEntityState (fun entityState -> { entityState with Visible = value }) this world
         member this.GetViewType world = (World.getEntityState this world).ViewType
@@ -53,6 +55,27 @@ module WorldEntityModule =
             let xtension = this.GetXtension world
             let xField = Map.find name xtension.XFields
             xField.FieldValue
+
+        /// Get an entity's bounds, not taking into account its overflow.
+        member this.GetBounds world =
+            Math.makeBounds
+                (this.GetPosition world)
+                (this.GetSize world)
+
+        /// Get an entity's bounds, taking into account its overflow.
+        member this.GetBoundsOverflow world =
+            Math.makeBoundsOverflow
+                (this.GetPosition world)
+                (this.GetSize world)
+                (this.GetOverflow world)
+
+        /// Query than an entity is in the camera's view.
+        member this.InView world =
+            let camera = World.getCamera world
+            Camera.inView
+                (this.GetViewType world)
+                (this.GetBoundsOverflow world)
+                camera
 
         /// Get an entity's transform.
         member this.GetTransform world =
@@ -129,7 +152,7 @@ module WorldEntityModule =
                         (fun () -> World.rebuildEntityTree screen oldWorld)
                         (fun entityTree ->
                             let entityState = World.getEntityState entity world
-                            let entityMaxBounds = World.getEntityStateMaxBounds entityState
+                            let entityMaxBounds = World.getEntityStateBoundsMax entityState
                             QuadTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
                             entityTree)
                         screenState.EntityTreeNp
@@ -165,7 +188,7 @@ module WorldEntityModule =
                         (fun () -> World.rebuildEntityTree screen oldWorld)
                         (fun entityTree ->
                             let entityState = World.getEntityState entity oldWorld
-                            let entityMaxBounds = World.getEntityStateMaxBounds entityState
+                            let entityMaxBounds = World.getEntityStateBoundsMax entityState
                             QuadTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
                             entityTree)
                         screenState.EntityTreeNp
@@ -344,8 +367,7 @@ module WorldEntityModule =
             List.tryFind
                 (fun (entity : Entity) ->
                     let positionWorld = World.getCameraBy (Camera.mouseToWorld (entity.GetViewType world) position) world
-                    let transform = entity.GetTransform world
-                    let picked = Math.isPointInBounds3 positionWorld transform.Position transform.Size
+                    let picked = Math.isPointInBounds positionWorld (entity.GetBounds world)
                     picked)
                 entitiesSorted
 

@@ -138,7 +138,7 @@ module CharacterAnimationFacetModule =
              define? CharacterAnimationSheet Constants.Assets.PlayerImage]
 
         override facet.Actualize (entity, world) =
-            if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
+            if entity.InView world then
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor

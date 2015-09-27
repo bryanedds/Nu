@@ -273,7 +273,9 @@ type [<ReferenceEquality>] Renderer =
                             Vector2
                                 (positionView.X + tileSize.X * single i + camera.EyeSize.X * 0.5f,
                                  -(positionView.Y - tileSize.Y * single j + sizeView.Y) + camera.EyeSize.Y * 0.5f) // negation for right-handedness
-                        if Math.isBoundsInBounds3 tilePosition tileSize ^ Vector4 (0.0f, 0.0f, camera.EyeSize.X, camera.EyeSize.Y) then
+                        let tileBounds = Math.makeBounds tilePosition tileSize
+                        let viewBounds = Math.makeBounds Vector2.Zero camera.EyeSize
+                        if Math.isBoundsInBounds tileBounds viewBounds then
                             let gid = tiles.[n].Gid - tileSet.FirstGid
                             let gidPosition = gid * tileSourceSize.X
                             let tileSourcePosition =
