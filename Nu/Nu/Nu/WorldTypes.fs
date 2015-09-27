@@ -245,6 +245,7 @@ and EntityDispatcher () =
          define? Size Constants.Engine.DefaultEntitySize
          define? Rotation 0.0f
          define? Depth 0.0f
+         define? Overdraw Vector2.Zero
          define? Visible true
          define? ViewType Relative
          define? Omnipresent false
