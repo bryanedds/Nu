@@ -10,6 +10,50 @@ open TiledSharp
 open Nu
 
 [<AutoOpen>]
+module EffectFacetModule =
+
+    type Entity with
+    
+        member this.GetEffectDefinitions world : Definitions = (this.GetXtension world)?EffectDefinitions
+        member this.SetEffectDefinitions (value : Definitions) world = this.UpdateXtension (fun xtension -> xtension?EffectDefinitions <- value) world
+        member this.GetEffect world : Effect = (this.GetXtension world)?Effect
+        member this.SetEffect (value : Effect) world = this.UpdateXtension (fun xtension -> xtension?Effect <- value) world
+        member this.GetEffectTimeOffset world : int64 = (this.GetXtension world)?EffectTimeOffset
+        member this.SetEffectTimeOffset (value : int64) world = this.UpdateXtension (fun xtension -> xtension?EffectTimeOffset <- value) world
+
+    type EffectFacet () =
+        inherit Facet ()
+
+        static member FieldDefinitions =
+            [define? EffectDefinitions (Map.empty : Definitions)
+             define? Effect Effect.empty
+             define? EffectTimeOffset 0L] // TODO: also implement similar time offset for AnimatedSpriteFacet
+
+        override facet.GetRenderDescriptors (entity, world) =
+            if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
+                let time = World.getTickTime world
+                let timeOffset = entity.GetEffectTimeOffset world
+                let globalEnv = entity.GetEffectDefinitions world
+                let effect = entity.GetEffect world
+                let (optError, realizations) = Effect.eval (time - timeOffset) globalEnv effect
+
+                [LayerableDescriptor
+                    { Depth = entity.GetDepth world
+                      LayeredDescriptor =
+                        SpriteDescriptor
+                            { Position = entity.GetPosition world
+                              Size = entity.GetSize world
+                              Rotation = entity.GetRotation world
+                              ViewType = entity.GetViewType world
+                              OptInset = getOptSpriteInset entity world
+                              Image = entity.GetAnimationSheet world
+                              Color = Vector4.One }}]
+            else []
+
+        override facet.GetQuickSize (entity, world) =
+            entity.GetTileSize world
+
+[<AutoOpen>]
 module RigidBodyFacetModule =
 
     type Entity with
