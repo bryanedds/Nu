@@ -27,12 +27,12 @@ module WorldEntityModule =
         member this.GetFacetsNp world = (World.getEntityState this world).FacetsNp
         member this.GetPosition world = (World.getEntityState this world).Position
         member this.SetPosition value world = World.updateEntityStatePlus (fun entityState -> { entityState with Position = value }) this world
-        member this.GetDepth world = (World.getEntityState this world).Depth
-        member this.SetDepth value world = World.updateEntityState (fun entityState -> { entityState with Depth = value }) this world
         member this.GetSize world = (World.getEntityState this world).Size
         member this.SetSize value world = World.updateEntityStatePlus (fun entityState -> { entityState with Size = value }) this world
         member this.GetRotation world = (World.getEntityState this world).Rotation
         member this.SetRotation value world = World.updateEntityStatePlus (fun entityState -> { entityState with Rotation = value }) this world
+        member this.GetDepth world = (World.getEntityState this world).Depth
+        member this.SetDepth value world = World.updateEntityState (fun entityState -> { entityState with Depth = value }) this world
         member this.GetVisible world = (World.getEntityState this world).Visible
         member this.SetVisible value world = World.updateEntityState (fun entityState -> { entityState with Visible = value }) this world
         member this.GetViewType world = (World.getEntityState this world).ViewType
@@ -57,17 +57,17 @@ module WorldEntityModule =
         /// Get an entity's transform.
         member this.GetTransform world =
             { Transform.Position = this.GetPosition world
-              Depth = this.GetDepth world
               Size = this.GetSize world
-              Rotation = this.GetRotation world }
+              Rotation = this.GetRotation world
+              Depth = this.GetDepth world }
 
         /// Set an entity's transform.
         member this.SetTransform (transform : Transform) world =
             world |>
                 this.SetPosition transform.Position |>
-                this.SetDepth transform.Depth |>
                 this.SetSize transform.Size |>
-                this.SetRotation transform.Rotation
+                this.SetRotation transform.Rotation |>
+                this.SetDepth transform.Depth
 
         /// Get the center position of an entity.
         member this.GetCenter world =

@@ -18,6 +18,8 @@ module EffectFacetModule =
         member this.SetEffectDefinitions (value : Definitions) world = this.UpdateXtension (fun xtension -> xtension?EffectDefinitions <- value) world
         member this.GetEffect world : Effect = (this.GetXtension world)?Effect
         member this.SetEffect (value : Effect) world = this.UpdateXtension (fun xtension -> xtension?Effect <- value) world
+        member this.GetEffectOffset world : Vector2 = (this.GetXtension world)?EffectOffset
+        member this.SetEffectOffset (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?EffectOffset <- value) world
         member this.GetEffectTimeOffset world : int64 = (this.GetXtension world)?EffectTimeOffset
         member this.SetEffectTimeOffset (value : int64) world = this.UpdateXtension (fun xtension -> xtension?EffectTimeOffset <- value) world
 
@@ -27,31 +29,28 @@ module EffectFacetModule =
         static member FieldDefinitions =
             [define? EffectDefinitions (Map.empty : Definitions)
              define? Effect Effect.empty
+             define? EffectOffset (Vector2 0.5f)
              define? EffectTimeOffset 0L] // TODO: also implement similar time offset for AnimatedSpriteFacet
 
         override facet.GetRenderDescriptors (entity, world) =
             if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
                 let time = World.getTickTime world
                 let timeOffset = entity.GetEffectTimeOffset world
-                let globalEnv = entity.GetEffectDefinitions world
+                let effectTime = time - timeOffset
+                let effectSize = entity.GetSize world
+                let effectPosition = entity.GetPosition world + Vector2.Multiply (effectSize, entity.GetEffectOffset world)
+                let effectRotation = entity.GetRotation world
+                let effectDepth = entity.GetDepth world
+                let effectViewType = entity.GetViewType world
                 let effect = entity.GetEffect world
-                let (optError, realizations) = Effect.eval (time - timeOffset) globalEnv effect
-
-                [LayerableDescriptor
-                    { Depth = entity.GetDepth world
-                      LayeredDescriptor =
-                        SpriteDescriptor
-                            { Position = entity.GetPosition world
-                              Size = entity.GetSize world
-                              Rotation = entity.GetRotation world
-                              ViewType = entity.GetViewType world
-                              OptInset = getOptSpriteInset entity world
-                              Image = entity.GetAnimationSheet world
-                              Color = Vector4.One }}]
+                let globalEnv = entity.GetEffectDefinitions world
+                let (optError, realizations) = Effect.eval effectPosition effectSize effectRotation effectDepth effectViewType (Vector4.One) effectTime globalEnv effect
+                ignore (optError, realizations)
+                []
             else []
 
-        override facet.GetQuickSize (entity, world) =
-            entity.GetTileSize world
+        //override facet.GetQuickSize (entity, world) =
+        //    entity.GetTileSize world
 
 [<AutoOpen>]
 module RigidBodyFacetModule =
@@ -188,12 +187,13 @@ module AnimatedSpriteFacetModule =
 
     type Entity with
     
-        member this.GetTileCount world : int = (this.GetXtension world)?TileCount
-        member this.SetTileCount (value : int) world = this.UpdateXtension (fun xtension -> xtension?TileCount <- value) world
-        member this.GetTileRun world : int = (this.GetXtension world)?TileRun
-        member this.SetTileRun (value : int) world = this.UpdateXtension (fun xtension -> xtension?TileRun <- value) world
+        // TODO: see if we can rename the 'tile' concept here to 'cel'
         member this.GetTileSize world : Vector2 = (this.GetXtension world)?TileSize
         member this.SetTileSize (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?TileSize <- value) world
+        member this.GetTileRun world : int = (this.GetXtension world)?TileRun
+        member this.SetTileRun (value : int) world = this.UpdateXtension (fun xtension -> xtension?TileRun <- value) world
+        member this.GetTileCount world : int = (this.GetXtension world)?TileCount
+        member this.SetTileCount (value : int) world = this.UpdateXtension (fun xtension -> xtension?TileCount <- value) world
         member this.GetAnimationStutter world : int64 = (this.GetXtension world)?AnimationStutter
         member this.SetAnimationStutter (value : int64) world = this.UpdateXtension (fun xtension -> xtension?AnimationStutter <- value) world
         member this.GetAnimationSheet world : AssetTag = (this.GetXtension world)?AnimationSheet
@@ -204,8 +204,8 @@ module AnimatedSpriteFacetModule =
 
         static let getOptSpriteInset (entity : Entity) world =
             let tile = int (World.getTickTime world / entity.GetAnimationStutter world) % entity.GetTileCount world
-            let tileRun = entity.GetTileRun world
             let tileSize = entity.GetTileSize world
+            let tileRun = entity.GetTileRun world
             let tileI = tile % tileRun
             let tileJ = tile / tileRun
             let tileX = single tileI * tileSize.X
@@ -215,8 +215,8 @@ module AnimatedSpriteFacetModule =
 
         static member FieldDefinitions =
             [define? TileCount 16 
-             define? TileRun 4
              define? TileSize ^ Vector2 (16.0f, 16.0f)
+             define? TileRun 4
              define? AnimationStutter 4L
              define? AnimationSheet { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image7" }]
 

@@ -78,9 +78,9 @@ module EntityState =
           Name = match optName with Some name -> name | None -> acstring id
           OptSpecialization = optSpecialization
           Position = Vector2.Zero
-          Depth = 0.0f
           Size = Constants.Engine.DefaultEntitySize
           Rotation = 0.0f
+          Depth = 0.0f
           Overdraw = Vector2.Zero // TODO: expose and use this as bounds = (Vector4 ((position - scale * overdraw), (position + scale * (overdraw + 1.0)))
           Visible = true
           ViewType = Relative

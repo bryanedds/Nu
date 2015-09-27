@@ -70,8 +70,8 @@ module GameplayDispatcherModule =
                 (fun (enemies, rand, world) i ->
                     let enemyPosition = single i * Constants.Layout.TileSize * 2.0f
                     let (enemy, world) = World.createEntity typeof<EnemyDispatcher>.Name None None scene world
-                    let world = enemy.SetDepth Constants.Layout.CharacterDepth world
                     let world = enemy.SetPosition enemyPosition world
+                    let world = enemy.SetDepth Constants.Layout.CharacterDepth world
                     let world = enemy.SetCharacterAnimationSheet Constants.Assets.GoopyImage world
                     (enemy :: enemies, rand, world))
                 ([], rand, world)
