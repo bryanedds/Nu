@@ -68,11 +68,6 @@ module Camera =
         let viewBounds = getViewBounds viewType camera
         Math.isBoundsInBounds bounds viewBounds
 
-    /// Query that the given bounds is within the camera's sight.
-    let inView3 viewType (position : Vector2) (size : Vector2) camera =
-        let viewBounds = getViewBounds viewType camera
-        Math.isBoundsInBounds3 position size viewBounds
-
     /// Transform the given mouse position to screen space.
     let mouseToScreen (mousePosition : Vector2) camera =
         let positionScreen =

@@ -51,7 +51,7 @@ module Nu =
                 let tree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
                 let entities = screen |> flip World.proxyGroups world |> Seq.map (flip World.proxyEntities world) |> Seq.concat
                 for entity in entities do
-                    let entityMaxBounds = World.getEntityMaxBounds entity world
+                    let entityMaxBounds = World.getEntityBoundsMax entity world
                     QuadTree.addElement false entityMaxBounds entity tree
                 tree
 

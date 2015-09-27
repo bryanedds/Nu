@@ -245,7 +245,7 @@ and EntityDispatcher () =
          define? Size Constants.Engine.DefaultEntitySize
          define? Rotation 0.0f
          define? Depth 0.0f
-         define? Overdraw Vector2.Zero
+         define? Overflow Vector2.Zero
          define? Visible true
          define? ViewType Relative
          define? Omnipresent false
@@ -372,7 +372,7 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
       Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
       Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
       Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
-      Overdraw : Vector2
+      Overflow : Vector2
       Visible : bool
       ViewType : ViewType
       Omnipresent : bool

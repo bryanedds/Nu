@@ -205,10 +205,6 @@ module Math =
         point.Y >= bounds.Y &&
         point.Y <= bounds.W
 
-    /// Queries that a point is within the given bounds.
-    let isPointInBounds3 (point : Vector2) (boxPos : Vector2) (boxSize : Vector2) =
-        isPointInBounds point ^ Vector4 (boxPos.X, boxPos.Y, boxPos.X + boxSize.X, boxPos.Y + boxSize.Y)
-
     /// Queries that a bounds is within the given bounds.
     let isBoundsInBounds (bounds : Vector4) (bounds2 : Vector4) =
         bounds.X < bounds2.Z &&
@@ -216,7 +212,15 @@ module Math =
         bounds.Y < bounds2.W &&
         bounds.W > bounds2.Y
 
-    /// Queries that a bounds is within the given bounds.
-    let isBoundsInBounds3 (position : Vector2) (size : Vector2) bounds =
-        let bounds2 = Vector4 (position.X, position.Y, position.X + size.X, position.Y + size.Y)
-        isBoundsInBounds bounds2 bounds
+    /// Make a Vector4 bounds value.
+    let makeBounds (position : Vector2) (size : Vector2) =
+        Vector4 (position.X, position.Y, position.X + size.X, position.Y + size.Y)
+
+    /// Make a Vector4 bounds value, taking into consideration overflow.
+    let makeBoundsOverflow (position : Vector2) (size : Vector2) (overflow : Vector2) =
+        let sizeHalf = size * 0.5f
+        let center = position + sizeHalf
+        let sizeHalfOverflow = Vector2.Multiply (sizeHalf, overflow + Vector2.One)
+        let xy = center - sizeHalfOverflow
+        let x2y2 = center + sizeHalfOverflow
+        Vector4 (xy.X, xy.Y, x2y2.X, x2y2.Y)
