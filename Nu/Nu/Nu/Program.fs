@@ -52,16 +52,6 @@ module Program =
     Finally, the asset graph and overlay systems could go either way, but since they're so simple,
     perhaps they're more easily implemented with simpler document model. Maybe :) *)
 
-    (* DISCUSSION - On having huge, populated worlds in Nu...
-    
-    Say you have a large world in your game with 50000 updating entities. You can not, and should
-    not, always update all these entities when 90%+ are out of the bounds of the player's purview.
-
-    To address this, you must do these two things -
-    
-    1) subscribe said entities to their (Update ->- entity) event rather than the global Update.
-    2) enable the update local feature for each by setting entity.SetUpdateLocal to true. *)
-
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
     scaled to a back-buffer of a varying size, render each component unscaled to an off-screen
     buffer of a static size and then blit that with scaling to the back-buffer. NOTE: this only
@@ -100,6 +90,14 @@ module Program =
 
     (* WISDOM: Keep all animation frame numbers even. That way, you can simply halve them if you
     need to move the app from 60fps to 30fps. *)
+
+    (* NOTE - On having huge, populated worlds in Nu...
+    
+    Say you have a large world in your game with 50000 updating entities. You can not, and should
+    not, always update all these entities when 90%+ are out of the bounds of the player's purview.
+
+    To address this, Nu uses updating only on entities that are either Omnipresent, or within
+    a certain range of the camera. *)
 
     (* IDEA: Simplified networking...
 

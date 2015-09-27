@@ -364,7 +364,7 @@ module GameplayDispatcherModule =
                             | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
                         updateCharacterByNavigation navigationDescriptor character world
                     do! pass }}
-            let observation = character |> observe Events.Update |> until (Events.Deselect ->- Simulants.Gameplay)
+            let observation = character |> observe (Events.Update ->- character) |> until (Events.Deselect ->- Simulants.Gameplay)
             runAssumingCascade chain observation world |> snd
 
         static let runCharacterAction newActionDescriptor (character : Entity) world =
@@ -380,7 +380,7 @@ module GameplayDispatcherModule =
                         let world = updateCharacterByAction actionDescriptor character world
                         runCharacterReaction actionDescriptor character world
                     do! pass }}
-            let observation = character |> observe Events.Update |> until (Events.Deselect ->- Simulants.Gameplay)
+            let observation = character |> observe (Events.Update ->- character) |> until (Events.Deselect ->- Simulants.Gameplay)
             runAssumingCascade chain observation world |> snd
 
         static let runCharacterNoActivity (character : Entity) world =
@@ -480,7 +480,7 @@ module GameplayDispatcherModule =
                 let observation =
                     Simulants.Gameplay |>
                     observe (Events.Click ->- Simulants.HudHalt) |>
-                    sum Events.Update |>
+                    sum (Events.Update ->- Simulants.Player) |>
                     until (Events.Deselect ->- Simulants.Gameplay)
                 runAssumingCascade chain observation world |> snd
             else world

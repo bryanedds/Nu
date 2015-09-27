@@ -37,8 +37,6 @@ module WorldEntityModule =
         member this.SetVisible value world = World.updateEntityState (fun entityState -> { entityState with Visible = value }) this world
         member this.GetViewType world = (World.getEntityState this world).ViewType
         member this.SetViewType value world = World.updateEntityState (fun entityState -> { entityState with ViewType = value }) this world
-        member this.GetUpdateLocal world = (World.getEntityState this world).UpdateLocal
-        member this.SetUpdateLocal value world = World.updateEntityState (fun entityState -> { entityState with UpdateLocal = value }) this world
         member this.GetOmnipresent world = (World.getEntityState this world).Omnipresent
         member this.SetOmnipresent value world = World.updateEntityStatePlus (fun entityState -> { entityState with Omnipresent = value }) this world
         member this.GetPublishChanges world = (World.getEntityState this world).PublishChanges
@@ -292,19 +290,23 @@ module WorldEntityModule =
                 (fun world (facet : Facet) -> facet.PropagatePhysics (entity, world))
                 world
                 facets
-        
-        /// Get the render descriptors needed to render an entity.
-        static member getEntityRenderDescriptors (entity : Entity) world =
+
+        /// Update an entity.
+        static member updateEntity (entity : Entity) world =
             let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
             let facets = entity.GetFacetsNp world
-            let renderDescriptors = dispatcher.GetRenderDescriptors (entity, world)
-            List.foldBack
-                (fun (facet : Facet) renderDescriptors ->
-                    let descriptors = facet.GetRenderDescriptors (entity, world)
-                    descriptors @ renderDescriptors)
-                facets
-                renderDescriptors
+            let world = dispatcher.Update (entity, world)
+            let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
+            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Update ->- entity) Simulants.Game world
         
+        /// Actualize an entity.
+        static member actualizeEntity (entity : Entity) world =
+            let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
+            let facets = entity.GetFacetsNp world
+            let world = dispatcher.Actualize (entity, world)
+            let world = List.foldBack (fun (facet : Facet) world -> facet.Actualize (entity, world)) facets world
+            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Actualize ->- entity) Simulants.Game world
+
         /// Get the quick size of an entity (the appropriate user-defined size for an entity).
         static member getEntityQuickSize (entity : Entity) world =
             let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
@@ -324,18 +326,6 @@ module WorldEntityModule =
             let entityState = World.getEntityState entity world
             let dispatcher = entityState.DispatcherNp
             dispatcher.GetPickingPriority (entity, entityState.Depth, world)
-        
-        /// Update an entity locally.
-        static member updateLocalEntity (entity : Entity) world =
-            let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
-            let facets = entity.GetFacetsNp world
-            let world = dispatcher.UpdateLocal (entity, world)
-            let world =
-                List.foldBack
-                    (fun (facet : Facet) world -> facet.UpdateLocal (entity, world))
-                    facets
-                    world
-            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Update ->- entity) Simulants.Game world
 
         /// Sort subscriptions by their editor picking priority.
         static member sortSubscriptionsByPickingPriority subscriptions world =
