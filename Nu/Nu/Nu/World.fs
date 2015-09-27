@@ -512,7 +512,7 @@ module WorldModule =
                 let screenState = { screenState with EntityTreeNp = entityTree }
                 let world = World.setScreenState screenState selectedScreen world
                 let entities = QuadTree.getElementsNearBounds viewBounds quadTree
-                Seq.fold (fun world (entity : Entity) -> World.updateEntity entity world) world entities
+                List.fold (fun world (entity : Entity) -> World.updateEntity entity world) world entities
             | None -> world
 
         static member private actualizeScreenTransition camera (screen : Screen) transition world =
@@ -555,7 +555,7 @@ module WorldModule =
                 let screenState = { screenState with EntityTreeNp = entityTree }
                 let world = World.setScreenState screenState selectedScreen world
                 let entities = QuadTree.getElementsNearBounds viewBounds quadTree
-                Seq.fold (fun world (entity : Entity) -> World.actualizeEntity entity world) world entities
+                List.fold (fun world (entity : Entity) -> World.actualizeEntity entity world) world entities
             | None -> world
 
         /// Update the game engine once per frame, updating its subsystems and publishing the

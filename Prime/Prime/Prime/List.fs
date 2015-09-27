@@ -142,54 +142,54 @@ let replaceHead list head =
     head :: List.tail list
 
 /// Truncate for lists.
-let truncate count list =
+let truncate count (list : _ list) =
     let results = Seq.truncate count list
     List.ofSeq results
 
 /// Forall for lists.
-let rec forall pred list =
+let rec forall pred (list : _ list) =
     match list with
     | [] -> true
     | head :: tail -> pred head && forall pred tail
 
 /// Fornone for lists.
-let rec fornone pred list =
+let rec fornone pred (list : _ list) =
     match list with
     | [] -> true
     | head :: tail -> not (pred head) && fornone pred tail
     
 /// Foldi for lists.
-let foldi folder state (list : 'a list) =
+let foldi folder state (list : _ list) =
     Seq.foldi folder state list
     
 /// Take for lists.
-let rec take number (list : 'a list) =
+let rec take number (list : _ list) =
     let result = Seq.take number list
     List.ofSeq result
 
 /// Skip for lists.
-let rec skip number (list : 'a list) =
+let rec skip number (list : _ list) =
     match number with
     | 0 -> list
     | _ -> skip (number - 1) list.Tail
 
 /// Take while for lists.
-let takeWhile pred list =
+let takeWhile pred (list : _ list) =
     let results = Seq.takeWhile pred list
     List.ofSeq results
 
 /// Skip while for lists.
-let skipWhile pred list =
+let skipWhile pred (list : _ list) =
     let results = Seq.skipWhile pred list
     List.ofSeq results
 
 /// Distinct for lists.
-let distinct list =
+let distinct (list : _ list) =
     let results = Seq.distinct list
     List.ofSeq results
 
 /// DistinctBy for lists.
-let distinctBy by list =
+let distinctBy by (list : _ list) =
     let results = Seq.distinctBy by list
     List.ofSeq results
 
