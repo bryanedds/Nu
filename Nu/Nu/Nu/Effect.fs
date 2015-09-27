@@ -14,7 +14,6 @@ type LogicApplicator =
     | Or
     | Nor
     | Xor
-    //| Xnor TODO: implement
     | And
     | Nand
     | Over

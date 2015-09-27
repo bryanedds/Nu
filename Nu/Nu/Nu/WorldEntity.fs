@@ -37,6 +37,8 @@ module WorldEntityModule =
         member this.SetVisible value world = World.updateEntityState (fun entityState -> { entityState with Visible = value }) this world
         member this.GetViewType world = (World.getEntityState this world).ViewType
         member this.SetViewType value world = World.updateEntityState (fun entityState -> { entityState with ViewType = value }) this world
+        member this.GetUpdateLocal world = (World.getEntityState this world).UpdateLocal
+        member this.SetUpdateLocal value world = World.updateEntityState (fun entityState -> { entityState with UpdateLocal = value }) this world
         member this.GetOmnipresent world = (World.getEntityState this world).Omnipresent
         member this.SetOmnipresent value world = World.updateEntityStatePlus (fun entityState -> { entityState with Omnipresent = value }) this world
         member this.GetPublishChanges world = (World.getEntityState this world).PublishChanges
@@ -322,6 +324,18 @@ module WorldEntityModule =
             let entityState = World.getEntityState entity world
             let dispatcher = entityState.DispatcherNp
             dispatcher.GetPickingPriority (entity, entityState.Depth, world)
+        
+        /// Update an entity locally.
+        static member updateLocalEntity (entity : Entity) world =
+            let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
+            let facets = entity.GetFacetsNp world
+            let world = dispatcher.UpdateLocal (entity, world)
+            let world =
+                List.foldBack
+                    (fun (facet : Facet) world -> facet.UpdateLocal (entity, world))
+                    facets
+                    world
+            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Update ->- entity) Simulants.Game world
 
         /// Sort subscriptions by their editor picking priority.
         static member sortSubscriptionsByPickingPriority subscriptions world =

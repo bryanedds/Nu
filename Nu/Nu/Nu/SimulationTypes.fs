@@ -222,6 +222,7 @@ and EntityDispatcher () =
          define? Rotation 0.0f
          define? Depth 0.0f
          define? Visible true
+         define? UpdateLocal true
          define? ViewType Relative
          define? Omnipresent false
          define? PublishChanges false
@@ -250,6 +251,10 @@ and EntityDispatcher () =
     /// Get the priority with which an entity is picked in the editor.
     abstract GetPickingPriority : Entity * single * World -> single
     default dispatcher.GetPickingPriority (_, depth, _) = depth
+
+    /// Update an entity locally.
+    abstract UpdateLocal : Entity * World -> World
+    default dispatcher.UpdateLocal (_, world) = world
 
 /// Dynamically augments an entity's behavior in a composable way.
 and Facet () =
@@ -281,6 +286,10 @@ and Facet () =
     /// Participate in getting the priority with which an entity is picked in the editor.
     abstract GetQuickSize : Entity * World -> Vector2
     default facet.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
+
+    /// Update a facet locally.
+    abstract UpdateLocal : Entity * World -> World
+    default facet.UpdateLocal (_, world) = world
 
 /// A marker interface for the simulation state types (GameState, ScreenState, GroupState,
 /// and EntityState).
@@ -342,6 +351,7 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
       Overdraw : Vector2
       Visible : bool
       ViewType : ViewType
+      UpdateLocal : bool
       Omnipresent : bool
       PublishChanges : bool
       Persistent : bool
