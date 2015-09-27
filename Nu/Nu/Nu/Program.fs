@@ -59,10 +59,8 @@ module Program =
 
     To address this, you must do these two things -
     
-    1) subscribe said entities to their (Update ->- entity) event rather than the global Update
-    2) make sure that their names end with "Ul" to signify that updating locally is enabled.
-    
-    That latter is a bit hacky to have to do, but it works for now :) *)
+    1) subscribe said entities to their (Update ->- entity) event rather than the global Update.
+    2) enable the update local feature for each by setting entity.SetUpdateLocal to true. *)
 
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
     scaled to a back-buffer of a varying size, render each component unscaled to an off-screen

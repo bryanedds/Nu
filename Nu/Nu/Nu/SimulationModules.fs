@@ -84,6 +84,7 @@ module EntityState =
           Overdraw = Vector2.Zero // TODO: expose and use this as bounds = (Vector4 ((position - scale * overdraw), (position + scale * (overdraw + 1.0)))
           Visible = true
           ViewType = Relative
+          UpdateLocal = false
           Omnipresent = false
           PublishChanges = true
           Persistent = true

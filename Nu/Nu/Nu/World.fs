@@ -499,12 +499,7 @@ module WorldModule =
                 | _ -> world
             (world.State.Liveness, world)
 
-        static member private processLocalUpdate (entity : Entity) world =
-            if entity.EntityName.EndsWith ("Ul", StringComparison.Ordinal) // denotes that entity has updating locally enabled
-            then World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Update ->- entity) Simulants.Game world
-            else world
-
-        static member private processLocalUpdates world =
+        static member private updateLocalEntities world =
             match World.getOptSelectedScreen world with
             | Some selectedScreen ->
                 let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
@@ -513,7 +508,12 @@ module WorldModule =
                 let screenState = { screenState with EntityTreeNp = entityTree }
                 let world = World.setScreenState screenState selectedScreen world
                 let entities = QuadTree.getElementsNearBounds viewBounds quadTree
-                Seq.fold (flip World.processLocalUpdate) world entities
+                Seq.fold (fun world (entity : Entity) ->
+                    if entity.GetUpdateLocal world
+                    then World.updateLocalEntity entity world
+                    else world)
+                    world
+                    entities
             | None -> world
 
         /// Update the game engine once per frame, updating its subsystems and publishing the
@@ -529,7 +529,7 @@ module WorldModule =
                     match world.State.Liveness with
                     | Running ->
                         let world = World.publish () Events.Update Simulants.Game world
-                        let world = World.processLocalUpdates world
+                        let world = World.updateLocalEntities world
                         match world.State.Liveness with
                         | Running ->
                             let world = World.processTasklets world
