@@ -35,16 +35,16 @@ module WorldClipboard =
                     else Camera.mouseToWorld entityState.ViewType (camera.EyeSize * 0.5f) camera
                 let entityTransform =
                     { Transform.Position = entityPosition
-                      Depth = entityState.Depth
                       Size = entityState.Size
-                      Rotation = entityState.Rotation }
+                      Rotation = entityState.Rotation
+                      Depth = entityState.Depth }
                 let entityTransform = Math.snapTransform positionSnap rotationSnap entityTransform
                 let entityState =
                     { entityState with
                         Position = entityTransform.Position
-                        Depth = entityTransform.Depth
                         Size = entityTransform.Size
-                        Rotation = entityTransform.Rotation }
+                        Rotation = entityTransform.Rotation
+                        Depth = entityTransform.Depth }
                 let entity = gtoe group name
                 let world = World.addEntity false entityState entity world
                 (Some entity, world)

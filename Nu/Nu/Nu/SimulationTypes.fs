@@ -218,9 +218,9 @@ and EntityDispatcher () =
 
     static member FieldDefinitions =
         [define? Position Vector2.Zero
-         define? Depth 0.0f
          define? Size Constants.Engine.DefaultEntitySize
          define? Rotation 0.0f
+         define? Depth 0.0f
          define? Visible true
          define? ViewType Relative
          define? Omnipresent false
@@ -336,9 +336,9 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
       Name : string
       OptSpecialization : string option
       Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-      Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
       Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
       Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
+      Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
       Overdraw : Vector2
       Visible : bool
       ViewType : ViewType

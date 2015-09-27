@@ -11,9 +11,9 @@ open Nu
 /// Describes all the elements of a 2d transformation.
 type [<StructuralEquality; NoComparison>] Transform =
     { Position : Vector2
-      Depth : single
       Size : Vector2
-      Rotation : single }
+      Rotation : single
+      Depth : single }
 
 /// Depicts whether a view is purposed to render in relative or absolute space. For
 /// example, Gui entities are rendered in absolute space since they remain still no matter
@@ -165,9 +165,9 @@ module Math =
     /// The identity transform.
     let transformIdentity =
         { Position = Vector2.Zero
-          Depth = 0.0f
           Size = Vector2.One
-          Rotation = 0.0f }
+          Rotation = 0.0f
+          Depth = 0.0f }
 
     /// Snap an int value to an offset.
     let snap offset value =
