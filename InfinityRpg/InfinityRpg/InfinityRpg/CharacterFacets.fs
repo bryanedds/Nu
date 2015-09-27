@@ -137,20 +137,23 @@ module CharacterAnimationFacetModule =
                       StartTime = 0L }
              define? CharacterAnimationSheet Constants.Assets.PlayerImage]
 
-        override facet.GetRenderDescriptors (entity, world) =
+        override facet.Actualize (entity, world) =
             if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
-                [LayerableDescriptor
-                    { Depth = entity.GetDepth world
-                      LayeredDescriptor =
-                        SpriteDescriptor
-                            { Position = entity.GetPosition world
-                              Size = entity.GetSize world
-                              Rotation = entity.GetRotation world
-                              ViewType = entity.GetViewType world
-                              OptInset = getOptSpriteInset entity world
-                              Image = entity.GetCharacterAnimationSheet world
-                              Color = Vector4.One }}]
-            else []
+                World.addRenderMessage
+                    (RenderDescriptorsMessage
+                        [LayerableDescriptor
+                            { Depth = entity.GetDepth world
+                              LayeredDescriptor =
+                                SpriteDescriptor
+                                    { Position = entity.GetPosition world
+                                      Size = entity.GetSize world
+                                      Rotation = entity.GetRotation world
+                                      ViewType = entity.GetViewType world
+                                      OptInset = getOptSpriteInset entity world
+                                      Image = entity.GetCharacterAnimationSheet world
+                                      Color = Vector4.One }}])
+                    world
+            else world
 
 [<AutoOpen>]
 module CharacterCameraFacetModule =
@@ -187,4 +190,4 @@ module CharacterCameraFacetModule =
             (Cascade, world)
 
         override facet.Register (entity, world) =
-            monitor handleUpdate (observe Events.Update entity) world
+            monitor handleUpdate (observe (Events.Update ->- entity) entity) world

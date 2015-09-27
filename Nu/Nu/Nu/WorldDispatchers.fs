@@ -32,7 +32,7 @@ module EffectFacetModule =
              define? EffectOffset (Vector2 0.5f)
              define? EffectTimeOffset 0L] // TODO: also implement similar time offset for AnimatedSpriteFacet
 
-        override facet.GetRenderDescriptors (entity, world) =
+        override facet.Actualize (entity, world) =
             if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
                 let time = World.getTickTime world
                 let timeOffset = entity.GetEffectTimeOffset world
@@ -45,12 +45,14 @@ module EffectFacetModule =
                 let effect = entity.GetEffect world
                 let globalEnv = entity.GetEffectDefinitions world
                 let (optError, realizations) = Effect.eval effectPosition effectSize effectRotation effectDepth effectViewType (Vector4.One) effectTime globalEnv effect
-                ignore (optError, realizations)
-                []
-            else []
-
-        //override facet.GetQuickSize (entity, world) =
-        //    entity.GetTileSize world
+                Option.map note optError |> ignore
+                List.fold (fun world realization ->
+                    match realization with
+                    | RenderRealization renderMessage -> World.addRenderMessage renderMessage world
+                    | AudioRealization audioMessage -> World.addAudioMessage audioMessage world)
+                    world
+                    realizations
+            else world
 
 [<AutoOpen>]
 module RigidBodyFacetModule =
@@ -162,20 +164,23 @@ module StaticSpriteFacetModule =
         static member FieldDefinitions =
             [define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
 
-        override facet.GetRenderDescriptors (entity, world) =
+        override facet.Actualize (entity, world) =
             if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
-                [LayerableDescriptor
-                    { Depth = entity.GetDepth world
-                      LayeredDescriptor =
-                        SpriteDescriptor
-                            { Position = entity.GetPosition world
-                              Size = entity.GetSize world
-                              Rotation = entity.GetRotation world
-                              ViewType = entity.GetViewType world
-                              OptInset = None
-                              Image = entity.GetStaticImage world
-                              Color = Vector4.One }}]
-            else []
+                World.addRenderMessage
+                    (RenderDescriptorsMessage
+                        [LayerableDescriptor
+                            { Depth = entity.GetDepth world
+                              LayeredDescriptor =
+                                SpriteDescriptor
+                                    { Position = entity.GetPosition world
+                                      Size = entity.GetSize world
+                                      Rotation = entity.GetRotation world
+                                      ViewType = entity.GetViewType world
+                                      OptInset = None
+                                      Image = entity.GetStaticImage world
+                                      Color = Vector4.One }}])
+                    world
+            else world
 
         override facet.GetQuickSize (entity, world) =
             match Metadata.tryGetTextureSizeAsVector2 (entity.GetStaticImage world) world.State.AssetMetadataMap with
@@ -220,20 +225,23 @@ module AnimatedSpriteFacetModule =
              define? AnimationStutter 4L
              define? AnimationSheet { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image7" }]
 
-        override facet.GetRenderDescriptors (entity, world) =
+        override facet.Actualize (entity, world) =
             if World.getCameraBy (Camera.inView3 (entity.GetViewType world) (entity.GetPosition world) (entity.GetSize world)) world then
-                [LayerableDescriptor
-                    { Depth = entity.GetDepth world
-                      LayeredDescriptor =
-                        SpriteDescriptor
-                            { Position = entity.GetPosition world
-                              Size = entity.GetSize world
-                              Rotation = entity.GetRotation world
-                              ViewType = entity.GetViewType world
-                              OptInset = getOptSpriteInset entity world
-                              Image = entity.GetAnimationSheet world
-                              Color = Vector4.One }}]
-            else []
+                World.addRenderMessage
+                    (RenderDescriptorsMessage
+                        [LayerableDescriptor
+                            { Depth = entity.GetDepth world
+                              LayeredDescriptor =
+                                SpriteDescriptor
+                                    { Position = entity.GetPosition world
+                                      Size = entity.GetSize world
+                                      Rotation = entity.GetRotation world
+                                      ViewType = entity.GetViewType world
+                                      OptInset = getOptSpriteInset entity world
+                                      Image = entity.GetAnimationSheet world
+                                      Color = Vector4.One }}])
+                    world
+            else world
 
         override facet.GetQuickSize (entity, world) =
             entity.GetTileSize world
@@ -343,18 +351,21 @@ module ButtonDispatcherModule =
                 World.monitor handleMouseLeftDown Events.MouseLeftDown button |>
                 World.monitor handleMouseLeftUp Events.MouseLeftUp button
 
-        override dispatcher.GetRenderDescriptors (button, world) =
-            [LayerableDescriptor
-                { Depth = button.GetDepth world
-                  LayeredDescriptor =
-                    SpriteDescriptor
-                        { Position = button.GetPosition world
-                          Size = button.GetSize world
-                          Rotation = 0.0f
-                          ViewType = Absolute
-                          OptInset = None
-                          Image = if button.GetDown world then button.GetDownImage world else button.GetUpImage world
-                          Color = if button.GetEnabled world then Vector4.One else button.GetDisabledColor world }}]
+        override dispatcher.Actualize (button, world) =
+            World.addRenderMessage
+                (RenderDescriptorsMessage
+                    [LayerableDescriptor
+                        { Depth = button.GetDepth world
+                          LayeredDescriptor =
+                            SpriteDescriptor
+                                { Position = button.GetPosition world
+                                  Size = button.GetSize world
+                                  Rotation = 0.0f
+                                  ViewType = Absolute
+                                  OptInset = None
+                                  Image = if button.GetDown world then button.GetDownImage world else button.GetUpImage world
+                                  Color = if button.GetEnabled world then Vector4.One else button.GetDisabledColor world }}])
+                world
 
         override dispatcher.GetQuickSize (button, world) =
             match Metadata.tryGetTextureSizeAsVector2 (button.GetUpImage world) world.State.AssetMetadataMap with
@@ -376,18 +387,21 @@ module LabelDispatcherModule =
             [define? SwallowMouseLeft true
              define? LabelImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image4" }]
 
-        override dispatcher.GetRenderDescriptors (label, world) =
-            [LayerableDescriptor
-                { Depth = label.GetDepth world
-                  LayeredDescriptor =
-                    SpriteDescriptor
-                        { Position = label.GetPosition world
-                          Size = label.GetSize world
-                          Rotation = 0.0f
-                          ViewType = Absolute
-                          OptInset = None
-                          Image = label.GetLabelImage world
-                          Color = if label.GetEnabled world then Vector4.One else label.GetDisabledColor world }}]
+        override dispatcher.Actualize (label, world) =
+            World.addRenderMessage
+                (RenderDescriptorsMessage
+                    [LayerableDescriptor
+                        { Depth = label.GetDepth world
+                          LayeredDescriptor =
+                            SpriteDescriptor
+                                { Position = label.GetPosition world
+                                  Size = label.GetSize world
+                                  Rotation = 0.0f
+                                  ViewType = Absolute
+                                  OptInset = None
+                                  Image = label.GetLabelImage world
+                                  Color = if label.GetEnabled world then Vector4.One else label.GetDisabledColor world }}])
+                world
 
         override dispatcher.GetQuickSize (label, world) =
             match Metadata.tryGetTextureSizeAsVector2 (label.GetLabelImage world) world.State.AssetMetadataMap with
@@ -421,28 +435,31 @@ module TextDispatcherModule =
              define? TextColor Vector4.One
              define? BackgroundImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image4" }]
 
-        override dispatcher.GetRenderDescriptors (text, world) =
-            [LayerableDescriptor
-                { Depth = text.GetDepth world
-                  LayeredDescriptor =
-                    TextDescriptor
-                        { Text = text.GetText world
-                          Position = (text.GetPosition world + text.GetTextOffset world)
-                          Size = text.GetSize world - text.GetTextOffset world
-                          ViewType = Absolute
-                          Font = text.GetTextFont world
-                          Color = text.GetTextColor world }}
-             LayerableDescriptor
-                { Depth = text.GetDepth world
-                  LayeredDescriptor =
-                    SpriteDescriptor
-                        { Position = text.GetPosition world
-                          Size = text.GetSize world
-                          Rotation = 0.0f
-                          ViewType = Absolute
-                          OptInset = None
-                          Image = text.GetBackgroundImage world
-                          Color = if text.GetEnabled world then Vector4.One else text.GetDisabledColor world }}]
+        override dispatcher.Actualize (text, world) =
+            World.addRenderMessage
+                (RenderDescriptorsMessage
+                    [LayerableDescriptor
+                        { Depth = text.GetDepth world
+                          LayeredDescriptor =
+                            TextDescriptor
+                                { Text = text.GetText world
+                                  Position = (text.GetPosition world + text.GetTextOffset world)
+                                  Size = text.GetSize world - text.GetTextOffset world
+                                  ViewType = Absolute
+                                  Font = text.GetTextFont world
+                                  Color = text.GetTextColor world }}
+                     LayerableDescriptor
+                        { Depth = text.GetDepth world
+                          LayeredDescriptor =
+                            SpriteDescriptor
+                                { Position = text.GetPosition world
+                                  Size = text.GetSize world
+                                  Rotation = 0.0f
+                                  ViewType = Absolute
+                                  OptInset = None
+                                  Image = text.GetBackgroundImage world
+                                  Color = if text.GetEnabled world then Vector4.One else text.GetDisabledColor world }}])
+                world
 
         override dispatcher.GetQuickSize (text, world) =
             match Metadata.tryGetTextureSizeAsVector2 (text.GetBackgroundImage world) world.State.AssetMetadataMap with
@@ -517,18 +534,21 @@ module ToggleDispatcherModule =
                 World.monitor handleMouseLeftDown Events.MouseLeftDown toggle |>
                 World.monitor handleMouseLeftUp Events.MouseLeftUp toggle
 
-        override dispatcher.GetRenderDescriptors (toggle, world) =
-            [LayerableDescriptor
-                { Depth = toggle.GetDepth world
-                  LayeredDescriptor =
-                    SpriteDescriptor
-                        { Position = toggle.GetPosition world
-                          Size = toggle.GetSize world
-                          Rotation = 0.0f
-                          ViewType = Absolute
-                          OptInset = None
-                          Image = if toggle.GetOn world || toggle.GetPressed world then toggle.GetOnImage world else toggle.GetOffImage world
-                          Color = if toggle.GetEnabled world then Vector4.One else toggle.GetDisabledColor world }}]
+        override dispatcher.Actualize (toggle, world) =
+            World.addRenderMessage
+                (RenderDescriptorsMessage
+                    [LayerableDescriptor
+                        { Depth = toggle.GetDepth world
+                          LayeredDescriptor =
+                            SpriteDescriptor
+                                { Position = toggle.GetPosition world
+                                  Size = toggle.GetSize world
+                                  Rotation = 0.0f
+                                  ViewType = Absolute
+                                  OptInset = None
+                                  Image = if toggle.GetOn world || toggle.GetPressed world then toggle.GetOnImage world else toggle.GetOffImage world
+                                  Color = if toggle.GetEnabled world then Vector4.One else toggle.GetDisabledColor world }}])
+                world
 
         override dispatcher.GetQuickSize (toggle, world) =
             match Metadata.tryGetTextureSizeAsVector2 (toggle.GetOffImage world) world.State.AssetMetadataMap with
@@ -616,31 +636,34 @@ module FillBarDispatcherModule =
              define? FillImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image9" }
              define? BorderImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image10" }]
 
-        override dispatcher.GetRenderDescriptors (fillBar, world) =
+        override dispatcher.Actualize (fillBar, world) =
             let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar world
             let fillBarColor = if fillBar.GetEnabled world then Vector4.One else fillBar.GetDisabledColor world
-            [LayerableDescriptor
-                { Depth = fillBar.GetDepth world
-                  LayeredDescriptor =
-                    SpriteDescriptor
-                        { Position = fillBar.GetPosition world
-                          Size = fillBar.GetSize world
-                          Rotation = 0.0f
-                          ViewType = Absolute
-                          OptInset = None
-                          Image = fillBar.GetBorderImage world
-                          Color = fillBarColor }}
-             LayerableDescriptor
-                { Depth = fillBar.GetDepth world
-                  LayeredDescriptor =
-                    SpriteDescriptor
-                        { Position = fillBarSpritePosition
-                          Size = fillBarSpriteSize
-                          Rotation = 0.0f
-                          ViewType = Absolute
-                          OptInset = None
-                          Image = fillBar.GetFillImage world
-                          Color = fillBarColor }}]
+            World.addRenderMessage
+                (RenderDescriptorsMessage
+                    [LayerableDescriptor
+                        { Depth = fillBar.GetDepth world
+                          LayeredDescriptor =
+                            SpriteDescriptor
+                                { Position = fillBar.GetPosition world
+                                  Size = fillBar.GetSize world
+                                  Rotation = 0.0f
+                                  ViewType = Absolute
+                                  OptInset = None
+                                  Image = fillBar.GetBorderImage world
+                                  Color = fillBarColor }}
+                     LayerableDescriptor
+                        { Depth = fillBar.GetDepth world
+                          LayeredDescriptor =
+                            SpriteDescriptor
+                                { Position = fillBarSpritePosition
+                                  Size = fillBarSpriteSize
+                                  Rotation = 0.0f
+                                  ViewType = Absolute
+                                  OptInset = None
+                                  Image = fillBar.GetFillImage world
+                                  Color = fillBarColor }}])
+                world
 
         override dispatcher.GetQuickSize (fillBar, world) =
             match Metadata.tryGetTextureSizeAsVector2 (fillBar.GetBorderImage world) world.State.AssetMetadataMap with
@@ -856,7 +879,7 @@ module TileMapDispatcherModule =
                 unregisterTileMapPhysics tileMap |>
                 registerTileMapPhysics tileMap
 
-        override dispatcher.GetRenderDescriptors (tileMap, world) =
+        override dispatcher.Actualize (tileMap, world) =
             match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) world.State.AssetMetadataMap with
             | Some (_, images, map) ->
                 let camera = World.getCamera world
@@ -865,7 +888,7 @@ module TileMapDispatcherModule =
                 let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
                 let viewType = tileMap.GetViewType world
                 List.foldi
-                    (fun i descriptors (layer : TmxLayer) ->
+                    (fun i world (layer : TmxLayer) ->
                         let depth = tileMap.GetDepth world + single i * 2.0f // MAGIC_VALUE: assumption
                         let parallaxTranslation =
                             match viewType with
@@ -874,26 +897,27 @@ module TileMapDispatcherModule =
                         let parallaxPosition = tileMap.GetPosition world + parallaxTranslation
                         let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
                         if World.getCameraBy (Camera.inView3 viewType parallaxPosition size) world then
-                            let descriptor =
-                                LayerableDescriptor 
-                                    { Depth = depth
-                                      LayeredDescriptor =
-                                        TileLayerDescriptor
-                                            { Position = parallaxPosition
-                                              Size = size
-                                              Rotation = tileMap.GetRotation world
-                                              ViewType = viewType
-                                              MapSize = Vector2i (map.Width, map.Height)
-                                              Tiles = layer.Tiles
-                                              TileSourceSize = tileSourceSize
-                                              TileSize = tileSize
-                                              TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                                              TileSetImage = List.head images }} // MAGIC_VALUE: for same reason as above
-                            descriptor :: descriptors
-                        else descriptors)
-                    []
+                            World.addRenderMessage
+                                (RenderDescriptorsMessage
+                                    [LayerableDescriptor 
+                                        { Depth = depth
+                                          LayeredDescriptor =
+                                            TileLayerDescriptor
+                                                { Position = parallaxPosition
+                                                  Size = size
+                                                  Rotation = tileMap.GetRotation world
+                                                  ViewType = viewType
+                                                  MapSize = Vector2i (map.Width, map.Height)
+                                                  Tiles = layer.Tiles
+                                                  TileSourceSize = tileSourceSize
+                                                  TileSize = tileSize
+                                                  TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
+                                                  TileSetImage = List.head images }}]) // MAGIC_VALUE: for same reason as above
+                                world
+                        else world)
+                    world
                     layers
-            | None -> []
+            | None -> world
 
         override dispatcher.GetQuickSize (tileMap, world) =
             match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) world.State.AssetMetadataMap with

@@ -117,9 +117,8 @@ type [<NoComparison>] Definition =
     | AsAnimation of string list * Animation
 
 type [<NoComparison>] Realization =
-    | RenderRealization of RenderDescriptor
-    | SoundRealization of PlaySoundMessage
-    | SongRealization of PlaySongMessage
+    | RenderRealization of RenderMessage
+    | AudioRealization of AudioMessage
 
 type Definitions =
     Map<string, Definition>
@@ -322,18 +321,19 @@ module Effect =
 
                 let renderRealizations =
                     if sprite.Visible then
-                        [RenderRealization ^
-                            LayerableDescriptor
-                                { Depth = sprite.Depth
-                                  LayeredDescriptor =
-                                    SpriteDescriptor 
-                                        { Position = sprite.Position
-                                          Size = sprite.Size
-                                          Rotation = sprite.Rotation
-                                          OptInset = None
-                                          Image = image
-                                          ViewType = viewType
-                                          Color = sprite.Color }}]
+                        [RenderRealization
+                            (RenderDescriptorsMessage
+                                [LayerableDescriptor
+                                    { Depth = sprite.Depth
+                                      LayeredDescriptor =
+                                        SpriteDescriptor 
+                                            { Position = sprite.Position
+                                              Size = sprite.Size
+                                              Rotation = sprite.Rotation
+                                              OptInset = None
+                                              Image = image
+                                              ViewType = viewType
+                                              Color = sprite.Color }}])]
                     else []
 
                 (None, renderRealizations)

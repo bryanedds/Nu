@@ -499,21 +499,63 @@ module WorldModule =
                 | _ -> world
             (world.State.Liveness, world)
 
-        static member private updateLocalEntities world =
+        static member private updateSimulants world =
+            let world = World.updateGame world
             match World.getOptSelectedScreen world with
             | Some selectedScreen ->
+                let world = World.updateScreen selectedScreen world
+                let groups = World.proxyGroups selectedScreen world
+                let world = Seq.fold (fun world group -> World.updateGroup group world) world groups
                 let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
                 let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTree world)
                 let screenState = World.getScreenState selectedScreen world
                 let screenState = { screenState with EntityTreeNp = entityTree }
                 let world = World.setScreenState screenState selectedScreen world
                 let entities = QuadTree.getElementsNearBounds viewBounds quadTree
-                Seq.fold (fun world (entity : Entity) ->
-                    if entity.GetUpdateLocal world
-                    then World.updateLocalEntity entity world
-                    else world)
+                Seq.fold (fun world (entity : Entity) -> World.updateEntity entity world) world entities
+            | None -> world
+
+        static member private actualizeScreenTransition camera (screen : Screen) transition world =
+            match transition.OptDissolveImage with
+            | Some dissolveImage ->
+                let progress = single (screen.GetTransitionTicksNp world) / single transition.TransitionLifetime
+                let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
+                let color = Vector4 (Vector3.One, alpha)
+                World.addRenderMessage
+                    (RenderDescriptorsMessage
+                        [LayerableDescriptor
+                            { Depth = Single.MaxValue
+                              LayeredDescriptor =
+                                SpriteDescriptor
+                                    { Position = -camera.EyeSize * 0.5f // negation for right-handedness
+                                      Size = camera.EyeSize
+                                      Rotation = 0.0f
+                                      ViewType = Absolute
+                                      OptInset = None
+                                      Image = dissolveImage
+                                      Color = color }}])
                     world
-                    entities
+            | None -> world
+
+        static member private actualizeSimulants world =
+            let world = World.actualizeGame world
+            match World.getOptSelectedScreen world with
+            | Some selectedScreen ->
+                let world = World.actualizeScreen selectedScreen world
+                let world =
+                    match selectedScreen.GetTransitionStateNp world with
+                    | IncomingState -> World.actualizeScreenTransition (World.getCamera world) selectedScreen (selectedScreen.GetIncoming world) world
+                    | OutgoingState -> World.actualizeScreenTransition (World.getCamera world) selectedScreen (selectedScreen.GetOutgoing world) world
+                    | IdlingState -> world
+                let groups = World.proxyGroups selectedScreen world
+                let world = Seq.fold (fun world group -> World.actualizeGroup group world) world groups
+                let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
+                let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTree world)
+                let screenState = World.getScreenState selectedScreen world
+                let screenState = { screenState with EntityTreeNp = entityTree }
+                let world = World.setScreenState screenState selectedScreen world
+                let entities = QuadTree.getElementsNearBounds viewBounds quadTree
+                Seq.fold (fun world (entity : Entity) -> World.actualizeEntity entity world) world entities
             | None -> world
 
         /// Update the game engine once per frame, updating its subsystems and publishing the
@@ -528,12 +570,15 @@ module WorldModule =
                     let world = World.processSubsystems UpdateType world
                     match world.State.Liveness with
                     | Running ->
-                        let world = World.publish () Events.Update Simulants.Game world
-                        let world = World.updateLocalEntities world
+                        let world = World.updateSimulants world
                         match world.State.Liveness with
                         | Running ->
                             let world = World.processTasklets world
-                            (world.State.Liveness, world)
+                            match world.State.Liveness with
+                            | Running ->
+                                let world = World.actualizeSimulants world
+                                (world.State.Liveness, world)
+                            | Exiting -> (Exiting, world)
                         | Exiting -> (Exiting, world)
                     | Exiting -> (Exiting, world)
                 | Exiting -> (Exiting, world)

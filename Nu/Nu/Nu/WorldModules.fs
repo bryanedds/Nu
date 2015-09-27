@@ -10,9 +10,9 @@ open Prime
 open Nu
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module TransitionDescriptor =
+module Transition =
 
-    /// Make a screen transition descriptor.
+    /// Make a screen transition.
     let make transitionType =
         { TransitionType = transitionType
           TransitionLifetime = 0L
@@ -42,8 +42,8 @@ module ScreenState =
               OptSpecialization = optSpecialization 
               TransitionStateNp = IdlingState
               TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
-              Incoming = TransitionDescriptor.make Incoming
-              Outgoing = TransitionDescriptor.make Outgoing
+              Incoming = Transition.make Incoming
+              Outgoing = Transition.make Outgoing
               PublishChanges = true
               Persistent = true
               CreationTimeStampNp = Core.getTimeStamp ()
@@ -84,7 +84,6 @@ module EntityState =
           Overdraw = Vector2.Zero // TODO: expose and use this as bounds = (Vector4 ((position - scale * overdraw), (position + scale * (overdraw + 1.0)))
           Visible = true
           ViewType = Relative
-          UpdateLocal = false
           Omnipresent = false
           PublishChanges = true
           Persistent = true

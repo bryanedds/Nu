@@ -26,7 +26,7 @@ type TransitionState =
     | IdlingState
 
 /// Describes one of a screen's transition processes.
-type [<CLIMutable; StructuralEquality; NoComparison>] TransitionDescriptor =
+type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
     { TransitionType : TransitionType
       TransitionLifetime : int64
       OptDissolveImage : AssetTag option }
@@ -183,6 +183,14 @@ and GameDispatcher () =
     abstract Register : Game * World -> World
     default dispatcher.Register (_, world) = world
 
+    /// Update a game.
+    abstract Update : Game * World -> World
+    default dispatcher.Update (_, world) = world
+
+    /// Actualize a game.
+    abstract Actualize : Game * World -> World
+    default dispatcher.Actualize (_, world) = world
+
 /// The default dispatcher for screens.
 and ScreenDispatcher () =
 
@@ -197,6 +205,14 @@ and ScreenDispatcher () =
     /// Unregister a screen when removing it from the world.
     abstract Unregister : Screen * World -> World
     default dispatcher.Unregister (_, world) = world
+
+    /// Update a screen.
+    abstract Update : Screen * World -> World
+    default dispatcher.Update (_, world) = world
+
+    /// Actualize a screen.
+    abstract Actualize : Screen * World -> World
+    default dispatcher.Actualize (_, world) = world
 
 /// The default dispatcher for groups.
 and GroupDispatcher () =
@@ -213,6 +229,14 @@ and GroupDispatcher () =
     abstract Unregister : Group * World -> World
     default dispatcher.Unregister (_, world) = world
 
+    /// Update a group.
+    abstract Update : Group * World -> World
+    default dispatcher.Update (_, world) = world
+
+    /// Actualize a group.
+    abstract Actualize : Group * World -> World
+    default dispatcher.Actualize (_, world) = world
+
 /// The default dispatcher for entities.
 and EntityDispatcher () =
 
@@ -222,7 +246,6 @@ and EntityDispatcher () =
          define? Rotation 0.0f
          define? Depth 0.0f
          define? Visible true
-         define? UpdateLocal true
          define? ViewType Relative
          define? Omnipresent false
          define? PublishChanges false
@@ -240,9 +263,13 @@ and EntityDispatcher () =
     abstract PropagatePhysics : Entity * World -> World
     default dispatcher.PropagatePhysics (_, world) = world
 
-    /// Get the render descriptors needed to render an entity.
-    abstract GetRenderDescriptors : Entity * World -> RenderDescriptor list
-    default dispatcher.GetRenderDescriptors (_, _) = []
+    /// Update an entity.
+    abstract Update : Entity * World -> World
+    default dispatcher.Update (_, world) = world
+
+    /// Actualize an entity.
+    abstract Actualize : Entity * World -> World
+    default dispatcher.Actualize (_, world) = world
 
     /// Get the quick size of an entity (the appropriate user-define size for an entity).
     abstract GetQuickSize : Entity * World -> Vector2
@@ -251,10 +278,6 @@ and EntityDispatcher () =
     /// Get the priority with which an entity is picked in the editor.
     abstract GetPickingPriority : Entity * single * World -> single
     default dispatcher.GetPickingPriority (_, depth, _) = depth
-
-    /// Update an entity locally.
-    abstract UpdateLocal : Entity * World -> World
-    default dispatcher.UpdateLocal (_, world) = world
 
 /// Dynamically augments an entity's behavior in a composable way.
 and Facet () =
@@ -279,17 +302,17 @@ and Facet () =
     abstract PropagatePhysics : Entity * World -> World
     default facet.PropagatePhysics (_, world) = world
 
-    /// Participate in getting the render descriptors needed to render an entity.
-    abstract GetRenderDescriptors : Entity * World -> RenderDescriptor list
-    default facet.GetRenderDescriptors (_, _) = []
+    /// Update a facet.
+    abstract Update : Entity * World -> World
+    default facet.Update (_, world) = world
+
+    /// Actualize a facet.
+    abstract Actualize : Entity * World -> World
+    default facet.Actualize (_, world) = world
 
     /// Participate in getting the priority with which an entity is picked in the editor.
     abstract GetQuickSize : Entity * World -> Vector2
     default facet.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
-
-    /// Update a facet locally.
-    abstract UpdateLocal : Entity * World -> World
-    default facet.UpdateLocal (_, world) = world
 
 /// A marker interface for the simulation state types (GameState, ScreenState, GroupState,
 /// and EntityState).
@@ -315,8 +338,8 @@ and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
       OptSpecialization : string option
       TransitionStateNp : TransitionState
       TransitionTicksNp : int64
-      Incoming : TransitionDescriptor
-      Outgoing : TransitionDescriptor
+      Incoming : Transition
+      Outgoing : Transition
       PublishChanges : bool
       Persistent : bool
       CreationTimeStampNp : int64
@@ -351,7 +374,6 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
       Overdraw : Vector2
       Visible : bool
       ViewType : ViewType
-      UpdateLocal : bool
       Omnipresent : bool
       PublishChanges : bool
       Persistent : bool
