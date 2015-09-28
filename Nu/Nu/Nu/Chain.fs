@@ -15,7 +15,7 @@ type [<NoComparison; NoEquality>] Chain<'e, 'a> =
 [<AutoOpen>]
 module ChainBuilder =
 
-    // World -> (World * CHoice<'E -> Chain<'E, 'A>, 'A> -> 'A) -> 'A
+    // World -> (World * Choice<'E -> Chain<'E, 'A>, 'A> -> 'A) -> 'A
 
     /// Monadic return for the chain monad.
     let [<DebuggerHidden; DebuggerStepThrough>] internal returnM (a : 'a) : Chain<'e, 'a> =
