@@ -145,14 +145,14 @@ module Chain =
             let world = World.removeCallbackState callbackKey world
             let world = unsubscribe world
             World.unsubscribe subscriptionKey world
-        let advance = fun event world ->
+        let advance = fun evt world ->
             let chain = World.getCallbackState callbackKey world : Event<'a, 'o> -> Chain<Event<'a, 'o>, unit>
-            let (world, advanceResult) = advance chain event world
+            let (world, advanceResult) = advance chain evt world
             match advanceResult with
             | Right () -> unsubscribe world
             | Left chainNext -> World.addCallbackState callbackKey chainNext world
-        let subscription = fun event world ->
-            let world = advance event world
+        let subscription = fun evt world ->
+            let world = advance evt world
             (eventHandling, world)
         let world = advance Unchecked.defaultof<Event<'a, 'o>> world
         let world = World.subscribe5<'a, 'o> subscriptionKey subscription eventAddress observation.Observer world
