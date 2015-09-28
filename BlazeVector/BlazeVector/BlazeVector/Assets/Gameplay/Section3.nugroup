@@ -1,7 +1,8 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group dispatcherName="GroupDispatcher">
     <Name>Group</Name>
+    <OptSpecialization>None</OptSpecialization>
     <PublishChanges>True</PublishChanges>
     <Persistent>True</Persistent>
     <Entities>
@@ -11,6 +12,7 @@
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
         <Position>[-480 -304]</Position>
+        <PublishUpdates>False</PublishUpdates>
         <TileMapAsset>[Gameplay Section3TileMap]</TileMapAsset>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
@@ -22,12 +24,13 @@
         <Depth>1</Depth>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
-        <Position>[152 -15.68001]</Position>
+        <Position>[157.4512 -13.33078]</Position>
         <Depth>1</Depth>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
         <Position>[-480 -304]</Position>
         <Depth>-4</Depth>
+        <PublishUpdates>False</PublishUpdates>
         <Parallax>0.1</Parallax>
         <TileMapAsset>[Gameplay BackgroundB]</TileMapAsset>
       </Entity>
@@ -38,6 +41,7 @@
       <Entity dispatcherName="TileMapDispatcher">
         <Position>[-480 -304]</Position>
         <Depth>-8</Depth>
+        <PublishUpdates>False</PublishUpdates>
         <Parallax>0.1</Parallax>
         <TileMapAsset>[Gameplay BackgroundA]</TileMapAsset>
       </Entity>
