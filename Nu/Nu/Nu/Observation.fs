@@ -23,9 +23,9 @@ module Observation =
             let subscriptionKey = World.makeSubscriptionKey ()
             let subscriptionAddress = ntoa<'a> ^ acstring subscriptionKey
             let unsubscribe = fun world -> World.unsubscribe subscriptionKey world
-            let subscription = fun event world ->
-                let eventTrace = "Observation.observe" :: event.Trace
-                let world = World.publish5<'a, Simulant> World.sortSubscriptionsNone event.Data subscriptionAddress eventTrace event.Publisher world
+            let subscription = fun event_ world ->
+                let eventTrace = "Observation.observe" :: event_.Trace
+                let world = World.publish5<'a, Simulant> World.sortSubscriptionsNone event_.Data subscriptionAddress eventTrace event_.Publisher world
                 (Cascade, world)
             let world = World.subscribe5<'a, 'o> subscriptionKey subscription eventAddress observer world
             (subscriptionAddress, unsubscribe, world)
@@ -48,11 +48,11 @@ module Observation =
                 let world = unsubscribe world
                 let world = World.unsubscribe subscriptionKey world
                 World.unsubscribe subscriptionKey' world
-            let subscription = fun event world ->
+            let subscription = fun event_ world ->
                 let subscription' = fun event' world ->
-                    let eventTrace = "Observation.product" :: event.Trace
-                    let eventData = (event.Data, event'.Data)
-                    let world = World.publish5<'a * 'b, Simulant> World.sortSubscriptionsNone eventData subscriptionAddress'' eventTrace event.Publisher world
+                    let eventTrace = "Observation.product" :: event_.Trace
+                    let eventData = (event_.Data, event'.Data)
+                    let world = World.publish5<'a * 'b, Simulant> World.sortSubscriptionsNone eventData subscriptionAddress'' eventTrace event_.Publisher world
                     let world = World.unsubscribe subscriptionKey' world
                     (Cascade, world)
                 let world = World.subscribe5<'b, 'o> subscriptionKey' subscription' subscriptionAddress' observation.Observer world
@@ -76,15 +76,15 @@ module Observation =
                 let world = unsubscribe world
                 let world = World.unsubscribe subscriptionKey world
                 World.unsubscribe subscriptionKey' world
-            let subscription = fun event world ->
-                let eventTrace = "Observation.sum" :: event.Trace
-                let eventData = Left event.Data
-                let world = World.publish5<Either<'a, 'b>, Simulant> World.sortSubscriptionsNone eventData subscriptionAddress'' eventTrace event.Publisher world
+            let subscription = fun event_ world ->
+                let eventTrace = "Observation.sum" :: event_.Trace
+                let eventData = Left event_.Data
+                let world = World.publish5<Either<'a, 'b>, Simulant> World.sortSubscriptionsNone eventData subscriptionAddress'' eventTrace event_.Publisher world
                 (Cascade, world)
-            let subscription' = fun event world ->
-                let eventTrace = "Observation.sum" :: event.Trace
-                let eventData = Right event.Data
-                let world = World.publish5<Either<'a, 'b>, Simulant> World.sortSubscriptionsNone eventData subscriptionAddress'' eventTrace event.Publisher world
+            let subscription' = fun event_ world ->
+                let eventTrace = "Observation.sum" :: event_.Trace
+                let eventData = Right event_.Data
+                let world = World.publish5<Either<'a, 'b>, Simulant> World.sortSubscriptionsNone eventData subscriptionAddress'' eventTrace event_.Publisher world
                 (Cascade, world)
             let world = World.subscribe5<'b, 'o> subscriptionKey' subscription' subscriptionAddress' observation.Observer world
             let world = World.subscribe5<'a, 'o> subscriptionKey subscription subscriptionAddress observation.Observer world
@@ -98,11 +98,11 @@ module Observation =
             let subscriptionAddress = ntoa<'a> ^ acstring subscriptionKey
             let (eventAddress, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world -> let world = unsubscribe world in World.unsubscribe subscriptionKey world
-            let subscription = fun event world ->
+            let subscription = fun event_ world ->
                 let world =
-                    if pred event world then
-                        let eventTrace = "Observation.filter" :: event.Trace
-                        World.publish5<'a, Simulant> World.sortSubscriptionsNone event.Data subscriptionAddress eventTrace event.Publisher world
+                    if pred event_ world then
+                        let eventTrace = "Observation.filter" :: event_.Trace
+                        World.publish5<'a, Simulant> World.sortSubscriptionsNone event_.Data subscriptionAddress eventTrace event_.Publisher world
                     else world
                 (Cascade, world)
             let world = World.subscribe5<'a, 'o> subscriptionKey subscription eventAddress observation.Observer world
@@ -116,9 +116,9 @@ module Observation =
             let subscriptionAddress = ntoa<'b> ^ acstring subscriptionKey
             let (eventAddress, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world -> let world = unsubscribe world in World.unsubscribe subscriptionKey world
-            let subscription = fun event world ->
-                let eventTrace = "Observation.map" :: event.Trace
-                let world = World.publish5<'b, Simulant> World.sortSubscriptionsNone (mapper event world) subscriptionAddress eventTrace event.Publisher world
+            let subscription = fun event_ world ->
+                let eventTrace = "Observation.map" :: event_.Trace
+                let world = World.publish5<'b, Simulant> World.sortSubscriptionsNone (mapper event_ world) subscriptionAddress eventTrace event_.Publisher world
                 (Cascade, world)
             let world = World.subscribe5<'a, 'o> subscriptionKey subscription eventAddress observation.Observer world
             (subscriptionAddress, unsubscribe, world)
@@ -141,15 +141,15 @@ module Observation =
                 let world = World.removeCallbackState callbackKey world
                 let world = unsubscribe world
                 World.unsubscribe subscriptionKey world
-            let subscription = fun event world ->
+            let subscription = fun event_ world ->
                 let state = World.getCallbackState callbackKey world
-                let (state, tracked) = tracker state event world
+                let (state, tracked) = tracker state event_ world
                 let world = World.addCallbackState callbackKey state world
                 let world =
                     if tracked then
-                        let eventTrace = "Observation.track4" :: event.Trace
+                        let eventTrace = "Observation.track4" :: event_.Trace
                         let eventData = transformer state
-                        World.publish5<'b, Simulant> World.sortSubscriptionsNone eventData subscriptionAddress eventTrace event.Publisher world
+                        World.publish5<'b, Simulant> World.sortSubscriptionsNone eventData subscriptionAddress eventTrace event_.Publisher world
                     else world
                 (Cascade, world)
             let world = World.subscribe5<'a, 'o> subscriptionKey subscription eventAddress observation.Observer world
@@ -171,15 +171,15 @@ module Observation =
                 let world = World.removeCallbackState callbackKey world
                 let world = unsubscribe world
                 World.unsubscribe subscriptionKey world
-            let subscription = fun event world ->
+            let subscription = fun event_ world ->
                 let optState = World.getCallbackState callbackKey world
-                let state = match optState with Some state -> state | None -> event.Data
-                let (state, tracked) = tracker state event world
+                let state = match optState with Some state -> state | None -> event_.Data
+                let (state, tracked) = tracker state event_ world
                 let world = World.addCallbackState callbackKey state world
                 let world =
                     if tracked then
-                        let eventTrace = "Observation.track2" :: event.Trace
-                        World.publish5<'a, Simulant> World.sortSubscriptionsNone state subscriptionAddress eventTrace event.Publisher world
+                        let eventTrace = "Observation.track2" :: event_.Trace
+                        World.publish5<'a, Simulant> World.sortSubscriptionsNone state subscriptionAddress eventTrace event_.Publisher world
                     else world
                 (Cascade, world)
             let world = World.subscribe5<'a, 'o> subscriptionKey subscription eventAddress observation.Observer world
@@ -202,14 +202,14 @@ module Observation =
                 let world = World.removeCallbackState callbackKey world
                 let world = unsubscribe world
                 World.unsubscribe subscriptionKey world
-            let subscription = fun event world ->
+            let subscription = fun event_ world ->
                 let state = World.getCallbackState callbackKey world
                 let (state, tracked) = tracker state world
                 let world = World.addCallbackState callbackKey state world
                 let world =
                     if tracked then
-                        let eventTrace = "Observation.track" :: event.Trace
-                        World.publish5<'a, Simulant> World.sortSubscriptionsNone event.Data subscriptionAddress eventTrace event.Publisher world
+                        let eventTrace = "Observation.track" :: event_.Trace
+                        World.publish5<'a, Simulant> World.sortSubscriptionsNone event_.Data subscriptionAddress eventTrace event_.Publisher world
                     else world
                 (Cascade, world)
             let world = World.subscribe5<'a, 'o> subscriptionKey subscription eventAddress observation.Observer world
@@ -247,9 +247,9 @@ module Observation =
                 World.unsubscribe eventKey world
             let handleEvent = fun _ world -> let world = unsubscribe world in (Cascade, world)
             let world = World.subscribe5 eventKey handleEvent eventAddress observation.Observer world
-            let subscription = fun event world ->
-                let eventTrace = "Observation.until" :: event.Trace
-                let world = World.publish5<'a, Simulant> World.sortSubscriptionsNone event.Data subscriptionAddress eventTrace event.Publisher world
+            let subscription = fun event_ world ->
+                let eventTrace = "Observation.until" :: event_.Trace
+                let world = World.publish5<'a, Simulant> World.sortSubscriptionsNone event_.Data subscriptionAddress eventTrace event_.Publisher world
                 (Cascade, world)
             let world = World.subscribe5<'a, 'o> subscriptionKey subscription eventAddress' observation.Observer world
             (subscriptionAddress, unsubscribe, world)
@@ -384,7 +384,7 @@ module Observation =
 
     /// Take events from an observation only when the observer is selected in the world (see
     /// documentation for World.isAddressSelected for what this means (it's very useful!)).
-    let [<DebuggerHidden; DebuggerStepThrough>] isObserverSelected event world = World.isSimulantSelected event.Subscriber world
+    let [<DebuggerHidden; DebuggerStepThrough>] isObserverSelected event_ world = World.isSimulantSelected event_.Subscriber world
 
     /// Take events from an observation only when the currently selected screen is idling (that
     /// is, there is no screen transition in progress).
