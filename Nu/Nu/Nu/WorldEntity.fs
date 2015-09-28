@@ -41,6 +41,10 @@ module WorldEntityModule =
         member this.SetViewType value world = World.updateEntityState (fun entityState -> { entityState with ViewType = value }) this world
         member this.GetOmnipresent world = (World.getEntityState this world).Omnipresent
         member this.SetOmnipresent value world = World.updateEntityStatePlus (fun entityState -> { entityState with Omnipresent = value }) this world
+        member this.GetPublishUpdates world = (World.getEntityState this world).PublishUpdates
+        member this.SetPublishUpdates value world = World.updateEntityState (fun entityState -> { entityState with PublishUpdates = value }) this world
+        member this.GetPublishActualizes world = (World.getEntityState this world).PublishActualizes
+        member this.SetPublishActualizes value world = World.updateEntityState (fun entityState -> { entityState with PublishActualizes = value }) this world
         member this.GetPublishChanges world = (World.getEntityState this world).PublishChanges
         member this.SetPublishChanges value world = World.updateEntityState (fun entityState -> { entityState with PublishChanges = value }) this world
         member this.GetPersistent world = (World.getEntityState this world).Persistent
@@ -309,10 +313,7 @@ module WorldEntityModule =
             let dispatcher = entity.GetDispatcherNp world
             let facets = entity.GetFacetsNp world
             let world = dispatcher.PropagatePhysics (entity, world)
-            List.fold
-                (fun world (facet : Facet) -> facet.PropagatePhysics (entity, world))
-                world
-                facets
+            List.fold (fun world (facet : Facet) -> facet.PropagatePhysics (entity, world)) world facets
 
         /// Update an entity.
         static member updateEntity (entity : Entity) world =
@@ -320,7 +321,9 @@ module WorldEntityModule =
             let facets = entity.GetFacetsNp world
             let world = dispatcher.Update (entity, world)
             let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
-            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Update ->- entity) Simulants.Game world
+            if entity.GetPublishUpdates world
+            then World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Update ->- entity) Simulants.Game world
+            else world
         
         /// Actualize an entity.
         static member actualizeEntity (entity : Entity) world =
@@ -328,7 +331,9 @@ module WorldEntityModule =
             let facets = entity.GetFacetsNp world
             let world = dispatcher.Actualize (entity, world)
             let world = List.foldBack (fun (facet : Facet) world -> facet.Actualize (entity, world)) facets world
-            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Actualize ->- entity) Simulants.Game world
+            if entity.GetPublishActualizes world
+            then World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Actualize ->- entity) Simulants.Game world
+            else world
 
         /// Get the quick size of an entity (the appropriate user-defined size for an entity).
         static member getEntityQuickSize (entity : Entity) world =
