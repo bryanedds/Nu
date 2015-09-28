@@ -44,23 +44,25 @@ let fornone pred seq =
     Seq.forall notPred seq
 
 /// A more tolerant and open-minded take.
-let tryTake (n : int) (s : _ seq) =
-    let e = s.GetEnumerator ()
+let tryTake (n : int) (seq_ : _ seq) =
+    let e = seq_.GetEnumerator ()
     let i = ref 0
     seq {
         while e.MoveNext () && !i < n do
             i := !i + 1
             yield e.Current }
 
-/// Implement a fold while fn results in Some.
-/// Implementation thanks to Tomas Petricek!
-/// TODO: ASAP: implement this imperatively!
-let foldWhile fn initial input =
-    input |>
-        Seq.scan (fun stateOpt inp -> stateOpt |> Option.bind (fun state -> fn state inp)) (Some initial) |>
-        Seq.takeWhile Option.isSome |>
-        Seq.last |>
-        Option.get
+/// Implement a fold while folder results in Some.
+let foldWhile folder (state : 's) (seq : 't seq) =
+    let mutable lastState = state
+    let mutable optState = Some lastState
+    let mutable enr = seq.GetEnumerator ()
+    while optState.IsSome && enr.MoveNext () do
+        lastState <- optState.Value
+        optState <- folder lastState enr.Current
+    match optState with
+    | Some state -> state
+    | None -> lastState
 
 /// Check that a predicate passes for NO items in a sequence.
 let rec notExists pred seq =
