@@ -249,6 +249,8 @@ and EntityDispatcher () =
          define? Visible true
          define? ViewType Relative
          define? Omnipresent false
+         define? PublishUpdates true
+         define? PublishActualizes false
          define? PublishChanges false
          define? Persistent true]
 
@@ -376,6 +378,8 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
       Visible : bool
       ViewType : ViewType
       Omnipresent : bool
+      PublishUpdates : bool
+      PublishActualizes : bool
       PublishChanges : bool
       Persistent : bool
       CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
