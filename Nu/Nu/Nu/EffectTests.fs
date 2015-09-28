@@ -20,7 +20,7 @@ module EffectTests =
                 [[FlameResource [AsResource
                     [Resource Gameplay Esper]]]
                  [FlameSprite [AsAnimation [FlamePosition]
-                    [StaticSprite [ExpandResource FlameResource []]
+                    [StaticSprite [ExpandResource FlameResource]
                         [[ExpandGesture FlamePosition]
                          [Color Over Linear [[[1 1 1 1] 10] [[0.8 0.25 0.25 0.75] 0]]]]]]]
                  [IfritSprite [AsAnimation []
