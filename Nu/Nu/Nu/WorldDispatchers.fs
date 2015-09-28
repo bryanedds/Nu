@@ -261,9 +261,9 @@ module GuiDispatcherModule =
     type GuiDispatcher () =
         inherit EntityDispatcher ()
 
-        static let handleMouseLeft event world =
-            let gui = event.Subscriber : Entity
-            let data = event.Data : MouseButtonData
+        static let handleMouseLeft event_ world =
+            let gui = event_.Subscriber : Entity
+            let data = event_.Data : MouseButtonData
             let eventHandling =
                 if World.isSimulantSelected gui world && gui.GetVisible world then
                     let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (gui.GetViewType world) data.Position) world
@@ -303,9 +303,9 @@ module ButtonDispatcherModule =
     type ButtonDispatcher () =
         inherit GuiDispatcher ()
 
-        let handleMouseLeftDown event world =
-            let button = event.Subscriber : Entity
-            let data = event.Data : MouseButtonData
+        let handleMouseLeftDown event_ world =
+            let button = event_.Subscriber : Entity
+            let data = event_.Data : MouseButtonData
             if World.isSimulantSelected button world then
                 let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (button.GetViewType world) data.Position) world
                 if  button.GetVisible world &&
@@ -318,9 +318,9 @@ module ButtonDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        let handleMouseLeftUp event world =
-            let button = event.Subscriber : Entity
-            let data = event.Data : MouseButtonData
+        let handleMouseLeftUp event_ world =
+            let button = event_.Subscriber : Entity
+            let data = event_.Data : MouseButtonData
             if World.isSimulantSelected button world then
                 let wasDown = button.GetDown world
                 let world = button.SetDown false world
@@ -485,9 +485,9 @@ module ToggleDispatcherModule =
     type ToggleDispatcher () =
         inherit GuiDispatcher ()
         
-        let handleMouseLeftDown event world =
-            let toggle = event.Subscriber : Entity
-            let data = event.Data : MouseButtonData
+        let handleMouseLeftDown event_ world =
+            let toggle = event_.Subscriber : Entity
+            let data = event_.Data : MouseButtonData
             if World.isSimulantSelected toggle world then
                 let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (toggle.GetViewType world) data.Position) world
                 if  toggle.GetVisible world &&
@@ -499,9 +499,9 @@ module ToggleDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        let handleMouseLeftUp event world =
-            let toggle = event.Subscriber : Entity
-            let data = event.Data : MouseButtonData
+        let handleMouseLeftUp event_ world =
+            let toggle = event_.Subscriber : Entity
+            let data = event_.Data : MouseButtonData
             if World.isSimulantSelected toggle world then
                 let wasPressed = toggle.GetPressed world
                 let world = toggle.SetPressed false world
@@ -566,9 +566,9 @@ module FeelerDispatcherModule =
     type FeelerDispatcher () =
         inherit GuiDispatcher ()
 
-        let handleMouseLeftDown event world =
-            let feeler = event.Subscriber : Entity
-            let data = event.Data : MouseButtonData
+        let handleMouseLeftDown event_ world =
+            let feeler = event_.Subscriber : Entity
+            let data = event_.Data : MouseButtonData
             if World.isSimulantSelected feeler world then
                 let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (feeler.GetViewType world) data.Position) world
                 if  feeler.GetVisible world &&
@@ -581,9 +581,9 @@ module FeelerDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        let handleMouseLeftUp event world =
-            let feeler = event.Subscriber : Entity
-            let data = event.Data : MouseButtonData
+        let handleMouseLeftUp event_ world =
+            let feeler = event_.Subscriber : Entity
+            let data = event_.Data : MouseButtonData
             if World.isSimulantSelected feeler world && feeler.GetVisible world then
                 if feeler.GetEnabled world then
                     let world = feeler.SetTouched false world

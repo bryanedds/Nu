@@ -19,8 +19,8 @@ module BulletModule =
 
         static let [<Literal>] BulletLifetime = 27L
 
-        static let handleUpdate event world =
-            let bullet = event.Subscriber : Entity
+        static let handleUpdate event_ world =
+            let bullet = event_.Subscriber : Entity
             let world = bullet.SetAge (bullet.GetAge world + World.getTickRate world) world
             let world =
                 if bullet.GetAge world > BulletLifetime
@@ -28,8 +28,8 @@ module BulletModule =
                 else world
             (Cascade, world)
 
-        static let handleCollision event world =
-            let bullet = event.Subscriber : Entity
+        static let handleCollision event_ world =
+            let bullet = event_.Subscriber : Entity
             if World.isTicking world then
                 let world = World.destroyEntity bullet world
                 (Cascade, world)
@@ -79,16 +79,16 @@ module EnemyModule =
             let world = World.destroyEntity enemy world
             World.playSound 1.0f Constants.Assets.ExplosionSound world
 
-        static let handleUpdate event world =
-            let enemy = event.Subscriber : Entity
+        static let handleUpdate event_ world =
+            let enemy = event_.Subscriber : Entity
             let world = if enemy.IsOnScreen world then move enemy world else world
             let world = if enemy.GetHealth world <= 0 then die enemy world else world
             (Cascade, world)
 
-        static let handleCollision event world =
-            let enemy = event.Subscriber : Entity
+        static let handleCollision event_ world =
+            let enemy = event_.Subscriber : Entity
             if World.isTicking world then
-                let collidee = event.Data.Collidee
+                let collidee = event_.Data.Collidee
                 let isBullet = collidee.DispatchesAs typeof<BulletDispatcher> world
                 if isBullet then
                     let world = enemy.SetHealth (enemy.GetHealth world - 1) world
@@ -154,8 +154,8 @@ module PlayerModule =
             let (bullet, world) = createBullet playerTransform world
             propelBullet bullet world
 
-        static let handleSpawnBullet event world =
-            let player = event.Subscriber : Entity
+        static let handleSpawnBullet event_ world =
+            let player = event_.Subscriber : Entity
             if World.isTicking world then
                 if not ^ player.HasFallen world then
                     if World.getTickTime world % 6L = 0L then
@@ -170,8 +170,8 @@ module PlayerModule =
             then player.GetLastTimeOnGroundNp world
             else World.getTickTime world
 
-        static let handleMovement event world =
-            let player = event.Subscriber : Entity
+        static let handleMovement event_ world =
+            let player = event_.Subscriber : Entity
             let lastTimeOnGround = getLastTimeOnGround player world
             let world = player.SetLastTimeOnGroundNp lastTimeOnGround world
             let physicsId = player.GetPhysicsId world
@@ -186,8 +186,8 @@ module PlayerModule =
             let world = World.applyBodyForce force physicsId world
             (Cascade, world)
 
-        static let handleJump event world =
-            let player = event.Subscriber : Entity
+        static let handleJump event_ world =
+            let player = event_.Subscriber : Entity
             let tickTime = World.getTickTime world
             if  tickTime >= player.GetLastTimeJumpNp world + 12L &&
                 tickTime <= player.GetLastTimeOnGroundNp world + 10L then
@@ -197,10 +197,10 @@ module PlayerModule =
                 (Cascade, world)
             else (Cascade, world)
 
-        static let handleJumpByKeyboardKey event world =
+        static let handleJumpByKeyboardKey event_ world =
             if World.isSelectedScreenIdling world then
-                match (enum<SDL.SDL_Scancode> event.Data.ScanCode, event.Data.Repeated) with
-                | (SDL.SDL_Scancode.SDL_SCANCODE_SPACE, false) -> handleJump event world
+                match (enum<SDL.SDL_Scancode> event_.Data.ScanCode, event_.Data.Repeated) with
+                | (SDL.SDL_Scancode.SDL_SCANCODE_SPACE, false) -> handleJump event_ world
                 | _ -> (Cascade, world)
             else (Cascade, world)
 
@@ -307,8 +307,8 @@ module GameplayScreenModule =
             let world = World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
             (Cascade, world)
 
-        static let handleStopPlay event world =
-            let screen = event.Subscriber : Screen
+        static let handleStopPlay event_ world =
+            let screen = event_.Subscriber : Screen
             let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield SectionName + acstring i]
             let groupNames = Simulants.GameplayScene.GroupName :: sectionNames
             let groups = List.map (fun groupName -> screen => groupName) groupNames

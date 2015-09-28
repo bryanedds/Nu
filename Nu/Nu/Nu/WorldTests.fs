@@ -61,7 +61,7 @@ module WorldTests =
         let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.DefaultScreen.ScreenName) world |> snd
         let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Simulants.DefaultEntity.EntityName) Simulants.DefaultGroup world |> snd
-        let handleEvent = fun event world -> (Cascade, World.updateUserState (fun _ -> event.Subscriber) world)
+        let handleEvent = fun event_ world -> (Cascade, World.updateUserState (fun _ -> event_.Subscriber) world)
         let world = World.subscribe handleEvent StringEventAddress Simulants.DefaultEntity world
         let world = World.publish String.Empty StringEventAddress ["Test"] Simulants.Game world
         Assert.Equal<Simulant> (Simulants.DefaultEntity :> Simulant, World.getUserState world)
