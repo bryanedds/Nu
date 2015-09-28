@@ -62,6 +62,16 @@ module WorldScreenModule =
             let dispatcher = screen.GetDispatcherNp world : ScreenDispatcher
             dispatcher.Unregister (screen, world)
 
+        static member internal updateScreen (screen : Screen) world =
+            let dispatcher = screen.GetDispatcherNp world
+            let world = dispatcher.Update (screen, world)
+            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Update ->- screen) Simulants.Game world
+
+        static member internal actualizeScreen (screen : Screen) world =
+            let dispatcher = screen.GetDispatcherNp world
+            let world = dispatcher.Actualize (screen, world)
+            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Actualize ->- screen) Simulants.Game world
+
         static member internal addScreen mayReplace screenState screen world =
             let isNew = not ^ World.containsScreen screen world
             if isNew || mayReplace then
@@ -119,8 +129,8 @@ module WorldScreenModule =
         static member createDissolveScreen dissolveData dispatcherName optSpecialization optName world =
             let optDissolveImage = Some dissolveData.DissolveImage
             let (screen, world) = World.createScreen dispatcherName optSpecialization optName world
-            let world = screen.SetIncoming { TransitionDescriptor.make Incoming with TransitionLifetime = dissolveData.IncomingTime; OptDissolveImage = optDissolveImage } world
-            let world = screen.SetOutgoing { TransitionDescriptor.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; OptDissolveImage = optDissolveImage } world
+            let world = screen.SetIncoming { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; OptDissolveImage = optDissolveImage } world
+            let world = screen.SetOutgoing { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; OptDissolveImage = optDissolveImage } world
             (screen, world)
 
         /// Write a screen to an xml writer.

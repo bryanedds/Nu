@@ -73,6 +73,7 @@ type [<StructuralEquality; NoComparison>] HintRenderPackageDisuseMessage =
 
 /// A message to the rendering system.
 type [<StructuralEquality; NoComparison>] RenderMessage =
+    | RenderDescriptorsMessage of RenderDescriptor list
     | HintRenderPackageUseMessage of HintRenderPackageUseMessage
     | HintRenderPackageDisuseMessage of HintRenderPackageDisuseMessage
     | ReloadRenderAssetsMessage
@@ -92,7 +93,7 @@ type IRenderer =
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> IRenderer
     /// Render a frame of the game.
-    abstract Render : Camera * RenderDescriptor list -> IRenderer
+    abstract Render : Camera -> IRenderer
 
 /// The primary implementation of IRenderer.
 type [<ReferenceEquality>] Renderer =
@@ -100,6 +101,7 @@ type [<ReferenceEquality>] Renderer =
         { RenderContext : nativeint
           RenderAssetMap : RenderAsset AssetMap
           RenderMessages : RenderMessage Queue
+          RenderDescriptors : RenderDescriptor list
           AssetGraphFilePath : string }
 
     static member private freeRenderAsset renderAsset =
@@ -179,9 +181,10 @@ type [<ReferenceEquality>] Renderer =
 
     static member private handleRenderMessage renderer renderMessage =
         match renderMessage with
+        | RenderDescriptorsMessage renderDescriptors -> { renderer with RenderDescriptors = renderDescriptors @ renderer.RenderDescriptors }
         | HintRenderPackageUseMessage hintPackageUse -> Renderer.handleHintRenderPackageUse hintPackageUse renderer
         | HintRenderPackageDisuseMessage hintPackageDisuse -> Renderer.handleHintRenderPackageDisuse hintPackageDisuse renderer
-        | ReloadRenderAssetsMessage  -> Renderer.handleReloadRenderAssets renderer
+        | ReloadRenderAssetsMessage -> Renderer.handleReloadRenderAssets renderer
 
     static member private handleRenderMessages renderMessages renderer =
         Queue.fold Renderer.handleRenderMessage renderer renderMessages
@@ -270,7 +273,9 @@ type [<ReferenceEquality>] Renderer =
                             Vector2
                                 (positionView.X + tileSize.X * single i + camera.EyeSize.X * 0.5f,
                                  -(positionView.Y - tileSize.Y * single j + sizeView.Y) + camera.EyeSize.Y * 0.5f) // negation for right-handedness
-                        if Math.isBoundsInBounds3 tilePosition tileSize ^ Vector4 (0.0f, 0.0f, camera.EyeSize.X, camera.EyeSize.Y) then
+                        let tileBounds = Math.makeBounds tilePosition tileSize
+                        let viewBounds = Math.makeBounds Vector2.Zero camera.EyeSize
+                        if Math.isBoundsInBounds tileBounds viewBounds then
                             let gid = tiles.[n].Gid - tileSet.FirstGid
                             let gidPosition = gid * tileSourceSize.X
                             let tileSourcePosition =
@@ -373,6 +378,7 @@ type [<ReferenceEquality>] Renderer =
             { RenderContext = renderContext
               RenderAssetMap = Map.empty
               RenderMessages = Queue.empty
+              RenderDescriptors = []
               AssetGraphFilePath = assetGraphFilePath }
         renderer
 
@@ -387,10 +393,12 @@ type [<ReferenceEquality>] Renderer =
             let renderer = { renderer with RenderMessages = renderMessages }
             renderer :> IRenderer
 
-        member renderer.Render (camera, renderDescriptors) =
+        member renderer.Render camera =
             let renderMessages = renderer.RenderMessages
             let renderer = { renderer with RenderMessages = Queue.empty }
             let renderer = Renderer.handleRenderMessages renderMessages renderer
+            let renderDescriptors = renderer.RenderDescriptors
+            let renderer = { renderer with RenderDescriptors = [] }
             let renderer = Renderer.renderDescriptors camera renderDescriptors renderer
             renderer :> IRenderer
 
@@ -409,7 +417,7 @@ type [<ReferenceEquality>] MockRenderer =
     interface IRenderer with
         member renderer.ClearMessages () = renderer :> IRenderer
         member renderer.EnqueueMessage _ = renderer :> IRenderer
-        member renderer.Render (_, _) = renderer :> IRenderer
+        member renderer.Render _ = renderer :> IRenderer
         member renderer.CleanUp () = renderer :> IRenderer
 
     static member make () =
