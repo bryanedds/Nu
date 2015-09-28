@@ -277,13 +277,16 @@ let setBinop binop firstList secondList =
     binop firstSet secondSet
 
 /// Query that the first list a subset of the second list.
-let isSubset firstList secondList = setBinop Set.isSubset firstList secondList
+let isSubset firstList secondList =
+    setBinop Set.isSubset firstList secondList
 
 /// Query that the first list a superset of the second list.
-let isSuperset firstList secondList = setBinop Set.isSuperset firstList secondList
+let isSuperset firstList secondList =
+    setBinop Set.isSuperset firstList secondList
 
 /// Get the set interesection of two lists.
-let intersect firstList secondList = setBinop Set.intersect firstList secondList
+let intersect firstList secondList =
+    setBinop Set.intersect firstList secondList
 
 /// Add a list of pairs to a Dictionary.
 let addToDictionary (dictionary : Dictionary<'k, 'v>) list =
@@ -311,9 +314,9 @@ let toHashSet list =
     List.iter (fun item -> hashSet.Add item |> ignore) list
     hashSet
 
-/// Implement a fold while predicate f passes.
-let foldWhile fn initial input =
-    Seq.foldWhile fn initial ^ List.toSeq input
+/// Implement a fold while folder results in Some.
+let foldWhile folder (state : 's) (list : 't list) =
+    Seq.foldWhile folder state ^ List.toSeq list
 
 /// Remove all elements from a list that satisfy a predicate.
 /// TODO: see if List.rev can be removed.
