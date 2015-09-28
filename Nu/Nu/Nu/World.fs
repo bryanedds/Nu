@@ -244,43 +244,40 @@ module WorldModule =
                 (true, screen.SetTransitionTicksNp 0L world)
             else (false, screen.SetTransitionTicksNp (transitionTicks + World.getTickRate world) world)
 
-        static member private updateScreenTransition world =
+        static member private updateScreenTransition (selectedScreen : Screen) world =
             // TODO: split this function up...
-            match World.getOptSelectedScreen world with
-            | Some selectedScreen ->
-                match selectedScreen.GetTransitionStateNp world with
-                | IncomingState ->
-                    match world.State.Liveness with
-                    | Running ->
-                        let world =
-                            if selectedScreen.GetTransitionTicksNp world = 0L
-                            then World.publish () (Events.IncomingStart ->- selectedScreen) selectedScreen world
-                            else world
-                        match world.State.Liveness with
-                        | Running ->
-                            let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetIncoming world) world
-                            if finished then
-                                let world = World.setScreenTransitionState IdlingState selectedScreen world
-                                World.publish () (Events.IncomingFinish ->- selectedScreen) selectedScreen world
-                            else world
-                        | Exiting -> world
-                    | Exiting -> world
-                | OutgoingState ->
+            match selectedScreen.GetTransitionStateNp world with
+            | IncomingState ->
+                match world.State.Liveness with
+                | Running ->
                     let world =
-                        if selectedScreen.GetTransitionTicksNp world <> 0L then world
-                        else World.publish () (Events.OutgoingStart ->- selectedScreen) selectedScreen world
+                        if selectedScreen.GetTransitionTicksNp world = 0L
+                        then World.publish () (Events.IncomingStart ->- selectedScreen) selectedScreen world
+                        else world
                     match world.State.Liveness with
                     | Running ->
-                        let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetOutgoing world) world
+                        let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetIncoming world) world
                         if finished then
                             let world = World.setScreenTransitionState IdlingState selectedScreen world
-                            match world.State.Liveness with
-                            | Running -> World.publish () (Events.OutgoingFinish ->- selectedScreen) selectedScreen world
-                            | Exiting -> world
+                            World.publish () (Events.IncomingFinish ->- selectedScreen) selectedScreen world
                         else world
                     | Exiting -> world
-                | IdlingState -> world
-            | None -> world
+                | Exiting -> world
+            | OutgoingState ->
+                let world =
+                    if selectedScreen.GetTransitionTicksNp world <> 0L then world
+                    else World.publish () (Events.OutgoingStart ->- selectedScreen) selectedScreen world
+                match world.State.Liveness with
+                | Running ->
+                    let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetOutgoing world) world
+                    if finished then
+                        let world = World.setScreenTransitionState IdlingState selectedScreen world
+                        match world.State.Liveness with
+                        | Running -> World.publish () (Events.OutgoingFinish ->- selectedScreen) selectedScreen world
+                        | Exiting -> world
+                    else world
+                | Exiting -> world
+            | IdlingState -> world
 
         static member private handleSplashScreenIdleUpdate idlingTime ticks event world =
             let world = World.unsubscribe SplashScreenUpdateKey world
@@ -301,8 +298,8 @@ module WorldModule =
                     trace "Program Error: Could not handle splash screen update due to no selected screen."
                     (Resolve, World.exit world)
 
-        static member private handleSplashScreenIdle idlingTime event world =
-            let world = World.subscribe5 SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) Events.Update event.Subscriber world
+        static member private handleSplashScreenIdle idlingTime (splashScreen : Screen) event world =
+            let world = World.subscribe5 SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update ->- splashScreen) event.Subscriber world
             (Resolve, world)
 
         /// Create a splash screen that transitions to the given destination upon completion.
@@ -317,7 +314,7 @@ module WorldModule =
             let world = splashLabel.SetSize cameraEyeSize world
             let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
             let world = splashLabel.SetLabelImage splashData.SplashImage world
-            let world = World.monitor (World.handleSplashScreenIdle splashData.IdlingTime) (Events.IncomingFinish ->- splashScreen) splashScreen world
+            let world = World.monitor (World.handleSplashScreenIdle splashData.IdlingTime splashScreen) (Events.IncomingFinish ->- splashScreen) splashScreen world
             let world = World.monitor (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish ->- splashScreen) splashScreen world
             (splashScreen, world)
 
@@ -504,6 +501,7 @@ module WorldModule =
             match World.getOptSelectedScreen world with
             | Some selectedScreen ->
                 let world = World.updateScreen selectedScreen world
+                let world = World.updateScreenTransition selectedScreen world
                 let groups = World.proxyGroups selectedScreen world
                 let world = Seq.fold (fun world group -> World.updateGroup group world) world groups
                 let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
@@ -564,21 +562,17 @@ module WorldModule =
             let world = handleUpdate world
             match world.State.Liveness with
             | Running ->
-                let world = World.updateScreenTransition world
+                let world = World.processSubsystems UpdateType world
                 match world.State.Liveness with
                 | Running ->
-                    let world = World.processSubsystems UpdateType world
+                    let world = World.updateSimulants world
                     match world.State.Liveness with
                     | Running ->
-                        let world = World.updateSimulants world
+                        let world = World.processTasklets world
                         match world.State.Liveness with
                         | Running ->
-                            let world = World.processTasklets world
-                            match world.State.Liveness with
-                            | Running ->
-                                let world = World.actualizeSimulants world
-                                (world.State.Liveness, world)
-                            | Exiting -> (Exiting, world)
+                            let world = World.actualizeSimulants world
+                            (world.State.Liveness, world)
                         | Exiting -> (Exiting, world)
                     | Exiting -> (Exiting, world)
                 | Exiting -> (Exiting, world)
