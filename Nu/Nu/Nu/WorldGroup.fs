@@ -52,12 +52,11 @@ module WorldGroupModule =
         static member internal updateGroup (group : Group) world =
             let dispatcher = group.GetDispatcherNp world
             let world = dispatcher.Update (group, world)
-            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Update ->- group) Simulants.Game world
+            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Update ->- group) ["World.updateGroup"] Simulants.Game world
 
         static member internal actualizeGroup (group : Group) world =
             let dispatcher = group.GetDispatcherNp world
-            let world = dispatcher.Actualize (group, world)
-            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Actualize ->- group) Simulants.Game world
+            dispatcher.Actualize (group, world)
 
         static member internal addGroup mayReplace groupState group world =
             let isNew = not ^ World.containsGroup group world
@@ -65,14 +64,14 @@ module WorldGroupModule =
                 let world = World.setGroupStateWithoutEvent groupState group world
                 if isNew then
                     let world = World.registerGroup group world
-                    World.publish () (Events.GroupAdd ->- group) group world
+                    World.publish () (Events.GroupAdd ->- group) ["World.addGroup"] group world
                 else world
             else failwith ^ "Adding a group that the world already contains at address '" + acstring group.GroupAddress + "'."
 
         /// Remove a group in the world. Can be dangerous if existing in-flight publishing depends on the group's
         /// existence. Use with caution.
         static member internal removeGroup group world =
-            let world = World.publish () (Events.GroupRemoving ->- group) group world
+            let world = World.publish () (Events.GroupRemoving ->- group) ["World.removeGroup"] group world
             if World.containsGroup group world then
                 let world = World.unregisterGroup group world
                 let entities = World.proxyEntities group world

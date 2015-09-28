@@ -33,19 +33,19 @@ module ChainTests =
         Assert.Equal (0, World.getUserState world)
 
         // assert the first publish executes the first chained operation
-        let world = World.publish 1 IntEventAddress Simulants.Game world
+        let world = World.publish 1 IntEventAddress ["Test"] Simulants.Game world
         Assert.Equal (1, World.getUserState world)
 
         // assert the second publish executes the second chained operation
-        let world = World.publish 2 IntEventAddress Simulants.Game world
+        let world = World.publish 2 IntEventAddress ["Test"] Simulants.Game world
         Assert.Equal (2, World.getUserState world)
         
         // and so on...
-        let world = World.publish 3 IntEventAddress Simulants.Game world
+        let world = World.publish 3 IntEventAddress ["Test"] Simulants.Game world
         Assert.Equal (3, World.getUserState world)
         
         // and so on...
-        let world = World.publish 4 IntEventAddress Simulants.Game world
+        let world = World.publish 4 IntEventAddress ["Test"] Simulants.Game world
         Assert.Equal (7, World.getUserState world)
         
         // assert no garbage is left over after chained computation is concluded

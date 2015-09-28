@@ -129,10 +129,10 @@ module Overlayer =
                         (List.ofSeq xtension.XFields)
                         []
                 let xFields =
-                    List.foldBack (fun (aType, node : XmlNode) xFields ->
-                        if isPropertyOverlaid oldOverlayName facetNames node.Name aType target oldOverlayer then
-                            let value = AlgebraicDescriptor.convertFromString node.InnerText aType
-                            let xField = { FieldValue = value; FieldType = aType }
+                    List.foldBack (fun (type_, node : XmlNode) xFields ->
+                        if isPropertyOverlaid oldOverlayName facetNames node.Name type_ target oldOverlayer then
+                            let value = AlgebraicDescriptor.convertFromString node.InnerText type_
+                            let xField = { FieldValue = value; FieldType = type_ }
                             (node.Name, xField) :: xFields
                         else xFields)
                         nodes

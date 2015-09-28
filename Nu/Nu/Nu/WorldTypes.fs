@@ -115,10 +115,11 @@ and [<StructuralEquality; NoComparison>] SimulantChangeData<'s when 's :> Simula
 
 /// An event used by the game engine's purely-functional event system.
 and [<ReferenceEquality>] Event<'a, 's when 's :> Simulant> =
-    { Subscriber : 's
-      Publisher : Simulant // TODO: consider making this a list so that Observer can provide all useful addresses
-      EventAddress : 'a Address
-      Data : 'a }
+    { Data : 'a
+      Address : 'a Address
+      Trace : string list
+      Publisher : Simulant
+      Subscriber : 's }
 
 /// Describes an event subscription.
 and internal Subscription<'a, 's when 's :> Simulant> =
@@ -178,7 +179,7 @@ and GameDispatcher () =
     static member FieldDefinitions =
         [define? PublishChanges true]
 
-    /// Register a game when adding it to the world. Note that there is not corresponding
+    /// Register a game when adding it to the world. Note that there is no corresponding
     /// Unregister method due to the inability to remove a game from the world.
     abstract Register : Game * World -> World
     default dispatcher.Register (_, world) = world
@@ -195,7 +196,8 @@ and GameDispatcher () =
 and ScreenDispatcher () =
 
     static member FieldDefinitions =
-        [define? PublishChanges true
+        [define? OptSpecialization (None : string option)
+         define? PublishChanges true
          define? Persistent true]
 
     /// Register a screen when adding it to the world.
@@ -218,7 +220,8 @@ and ScreenDispatcher () =
 and GroupDispatcher () =
 
     static member FieldDefinitions =
-        [define? PublishChanges true
+        [define? OptSpecialization (None : string option)
+         define? PublishChanges true
          define? Persistent true]
 
     /// Register a group when adding it to a screen.
@@ -241,7 +244,8 @@ and GroupDispatcher () =
 and EntityDispatcher () =
 
     static member FieldDefinitions =
-        [define? Position Vector2.Zero
+        [define? OptSpecialization (None : string option)
+         define? Position Vector2.Zero
          define? Size Constants.Engine.DefaultEntitySize
          define? Rotation 0.0f
          define? Depth 0.0f
@@ -249,6 +253,7 @@ and EntityDispatcher () =
          define? Visible true
          define? ViewType Relative
          define? Omnipresent false
+         define? PublishUpdates true
          define? PublishChanges false
          define? Persistent true]
 
@@ -376,6 +381,7 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
       Visible : bool
       ViewType : ViewType
       Omnipresent : bool
+      PublishUpdates : bool
       PublishChanges : bool
       Persistent : bool
       CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes

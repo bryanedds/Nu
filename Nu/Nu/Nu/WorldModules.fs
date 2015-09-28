@@ -85,7 +85,8 @@ module EntityState =
           Visible = true
           ViewType = Relative
           Omnipresent = false
-          PublishChanges = true
+          PublishUpdates = true
+          PublishChanges = false
           Persistent = true
           CreationTimeStampNp = Core.getTimeStamp ()
           DispatcherNp = dispatcher
@@ -184,8 +185,8 @@ module World =
         publishSorter subList world
 
     let private boxSubscription<'a, 's when 's :> Simulant> (subscription : Subscription<'a, 's>) =
-        let boxableSubscription = fun (event : obj) world ->
-            try subscription (event :?> Event<'a, 's>) world
+        let boxableSubscription = fun (event_ : obj) world ->
+            try subscription (event_ :?> Event<'a, 's>) world
             with
             | :? InvalidCastException ->
                 // NOTE: If you've reached this exception, then you've probably inadvertantly mixed
@@ -195,14 +196,15 @@ module World =
         box boxableSubscription
 
     let private publishEvent<'a, 'p, 's when 'p :> Simulant and 's :> Simulant>
-        (subscriber : Simulant) (publisher : 'p) (eventAddress : 'a Address) (eventData : 'a) subscription world =
-        let event =
-            { Subscriber = subscriber :?> 's
-              Publisher = publisher :> Simulant
-              EventAddress = eventAddress
-              Data = eventData }
+        (subscriber : Simulant) (publisher : 'p) (eventData : 'a) (eventAddress : 'a Address) eventTrace subscription world =
+        let event_ =
+            { Data = eventData
+              Address = eventAddress
+              Trace = eventTrace
+              Subscriber = subscriber :?> 's
+              Publisher = publisher :> Simulant }
         let callableSubscription = unbox<BoxableSubscription> subscription
-        let result = callableSubscription event world
+        let result = callableSubscription event_ world
         Some result
 
     /// Make a key used to track an unsubscription with a subscription.
@@ -229,7 +231,7 @@ module World =
         subscriptions
 
     /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
-    let publish6<'a, 'p when 'p :> Simulant> getSubscriptions publishSorter (eventData : 'a) (eventAddress : 'a Address) (publisher : 'p) world =
+    let publish6<'a, 'p when 'p :> Simulant> getSubscriptions publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
         let objEventAddress = atooa eventAddress
         let subscriptions = getSubscriptions publishSorter objEventAddress world
         let (_, world) =
@@ -238,10 +240,10 @@ module World =
                     if  (match eventHandling with Cascade -> true | Resolve -> false) &&
                         (match world.State.Liveness with Running -> true | Exiting -> false) then
                         match Address.getNameKeys subscriber.SimulantAddress with
-                        | [] -> publishEvent<'a, 'p, Game> subscriber publisher eventAddress eventData subscription world
-                        | [_] -> publishEvent<'a, 'p, Screen> subscriber publisher eventAddress eventData subscription world
-                        | [_; _] -> publishEvent<'a, 'p, Group> subscriber publisher eventAddress eventData subscription world
-                        | [_; _; _] -> publishEvent<'a, 'p, Entity> subscriber publisher eventAddress eventData subscription world
+                        | [] -> publishEvent<'a, 'p, Game> subscriber publisher eventData eventAddress eventTrace subscription world
+                        | [_] -> publishEvent<'a, 'p, Screen> subscriber publisher eventData eventAddress eventTrace subscription world
+                        | [_; _] -> publishEvent<'a, 'p, Group> subscriber publisher eventData eventAddress eventTrace subscription world
+                        | [_; _; _] -> publishEvent<'a, 'p, Entity> subscriber publisher eventData eventAddress eventTrace subscription world
                         | _ -> failwith "Unexpected match failure in 'Nu.World.publish.'"
                     else None)
                 (Cascade, world)
@@ -249,13 +251,13 @@ module World =
         world
 
     /// Publish an event, using the given publishSorter procedure to arrange the order to which subscriptions are published.
-    let publish5<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) (publisher : 'p) world =
-        publish6 getSubscriptions publishSorter eventData eventAddress publisher world
+    let publish5<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
+        publish6 getSubscriptions publishSorter eventData eventAddress eventTrace publisher world
 
     /// Publish an event.
     let publish<'a, 'p when 'p :> Simulant>
-        (eventData : 'a) (eventAddress : 'a Address) (publisher : 'p) world =
-        publish5 sortSubscriptionsByHierarchy eventData eventAddress publisher world
+        (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
+        publish5 sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher world
 
     /// Unsubscribe from an event.
     let unsubscribe subscriptionKey world =
@@ -427,7 +429,7 @@ module World =
     let private setState state world =
         let oldWorld = world
         let world = setStateWithoutEvent state world
-        publish { WorldStateChangeData.OldWorld = oldWorld } Events.WorldStateChange Simulants.Game world
+        publish { WorldStateChangeData.OldWorld = oldWorld } Events.WorldStateChange ["World.setState"] Simulants.Game world
 
     /// Get the world's tick rate.
     let getTickRate world =
@@ -616,6 +618,7 @@ module World =
             publish
                 { Simulant = entity; OldWorld = oldWorld }
                 (Events.EntityChange ->- entity)
+                ["World.publishEntityChange"]
                 entity
                 world
         else world
@@ -748,6 +751,7 @@ module World =
             publish
                 { Simulant = group; OldWorld = oldWorld }
                 (Events.GroupChange ->- group)
+                ["World.setGroupState"]
                 group
                 world
         else world
@@ -820,6 +824,7 @@ module World =
             publish
                 { Simulant = screen; OldWorld = oldWorld }
                 (Events.ScreenChange ->- screen)
+                ["World.setScreenState"]
                 screen
                 world
         else world
@@ -873,6 +878,7 @@ module World =
             publish
                 { OldWorld = oldWorld; Simulant = Simulants.Game }
                 (Events.GameChange ->- Simulants.Game)
+                ["World.setGameState"]
                 Simulants.Game
                 world
         else world
