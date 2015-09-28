@@ -164,7 +164,7 @@ module WorldEntityModule =
                 // register entity if needed
                 if isNew then
                     let world = World.registerEntity entity world
-                    World.publish () (Events.EntityAdd ->- entity) entity world
+                    World.publish () (Events.EntityAdd ->- entity) ["World.addEntity"] entity world
                 else world
 
             // handle failure
@@ -173,7 +173,7 @@ module WorldEntityModule =
         /// Remove an entity in the world. Can be dangerous if existing in-flight publishing depends on the entity's
         /// existence. Use with caution.
         static member internal removeEntity entity world =
-            let world = World.publish () (Events.EntityRemoving ->- entity) entity world
+            let world = World.publish () (Events.EntityRemoving ->- entity) ["World.removeEntity"] entity world
             if World.containsEntity entity world then
                 let world = World.unregisterEntity entity world
 
@@ -320,7 +320,7 @@ module WorldEntityModule =
             let world = dispatcher.Update (entity, world)
             let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
             if entity.GetPublishUpdates world
-            then World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Update ->- entity) Simulants.Game world
+            then World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Update ->- entity) ["World.updateEntity"] Simulants.Game world
             else world
         
         /// Actualize an entity.

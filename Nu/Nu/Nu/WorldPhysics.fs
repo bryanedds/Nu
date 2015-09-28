@@ -42,7 +42,7 @@ type [<ReferenceEquality>] PhysicsEngineSubsystem =
                         { Normal = bodyCollisionMessage.Normal
                           Speed = bodyCollisionMessage.Speed
                           Collidee = Entity.proxy ^ atoa bodyCollisionMessage.CollideeAddress }
-                    World.publish collisionData collisionAddress Simulants.Game world
+                    World.publish collisionData collisionAddress ["World.handleIntegrationMessage"] Simulants.Game world
                 | None -> world
         | Exiting -> world
 
