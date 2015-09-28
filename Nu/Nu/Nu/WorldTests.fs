@@ -24,28 +24,28 @@ module WorldTests =
     let [<Fact>] subscribeWorks () =
         let world = World.makeEmpty 0
         let world = World.subscribe incUserStateAndCascade UnitEventAddress Simulants.Game world
-        let world = World.publish () UnitEventAddress Simulants.Game world
+        let world = World.publish () UnitEventAddress ["Test"] Simulants.Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeAndPublishTwiceWorks () =
         let world = World.makeEmpty 0
         let world = World.subscribe incUserStateAndCascade UnitEventAddress Simulants.Game world
-        let world = World.publish () UnitEventAddress Simulants.Game world
-        let world = World.publish () UnitEventAddress Simulants.Game world
+        let world = World.publish () UnitEventAddress ["Test"] Simulants.Game world
+        let world = World.publish () UnitEventAddress ["Test"] Simulants.Game world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeTwiceAndPublishWorks () =
         let world = World.makeEmpty 0
         let world = World.subscribe incUserStateAndCascade UnitEventAddress Simulants.Game world
         let world = World.subscribe incUserStateAndCascade UnitEventAddress Simulants.Game world
-        let world = World.publish () UnitEventAddress Simulants.Game world
+        let world = World.publish () UnitEventAddress ["Test"] Simulants.Game world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeWithResolutionWorks () =
         let world = World.makeEmpty 0
         let world = World.subscribe incUserStateAndCascade UnitEventAddress Simulants.Game world
         let world = World.subscribe incUserStateAndResolve UnitEventAddress Simulants.Game world
-        let world = World.publish () UnitEventAddress Simulants.Game world
+        let world = World.publish () UnitEventAddress ["Test"] Simulants.Game world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
@@ -53,7 +53,7 @@ module WorldTests =
         let world = World.makeEmpty 0
         let world = World.subscribe5 key incUserStateAndResolve UnitEventAddress Simulants.Game world
         let world = World.unsubscribe key world
-        let world = World.publish () UnitEventAddress Simulants.Game world
+        let world = World.publish () UnitEventAddress ["Test"] Simulants.Game world
         Assert.Equal (0, World.getUserState world)
 
     let [<Fact>] entitySubscribeWorks () =
@@ -63,7 +63,7 @@ module WorldTests =
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Simulants.DefaultEntity.EntityName) Simulants.DefaultGroup world |> snd
         let handleEvent = fun event world -> (Cascade, World.updateUserState (fun _ -> event.Subscriber) world)
         let world = World.subscribe handleEvent StringEventAddress Simulants.DefaultEntity world
-        let world = World.publish String.Empty StringEventAddress Simulants.Game world
+        let world = World.publish String.Empty StringEventAddress ["Test"] Simulants.Game world
         Assert.Equal<Simulant> (Simulants.DefaultEntity :> Simulant, World.getUserState world)
 
     let [<Fact>] gameSerializationWorks () =

@@ -115,10 +115,11 @@ and [<StructuralEquality; NoComparison>] SimulantChangeData<'s when 's :> Simula
 
 /// An event used by the game engine's purely-functional event system.
 and [<ReferenceEquality>] Event<'a, 's when 's :> Simulant> =
-    { Subscriber : 's
-      Publisher : Simulant // TODO: consider making this a list so that Observer can provide all useful addresses
-      EventAddress : 'a Address
-      Data : 'a }
+    { Data : 'a
+      Address : 'a Address
+      Trace : string list
+      Publisher : Simulant
+      Subscriber : 's }
 
 /// Describes an event subscription.
 and internal Subscription<'a, 's when 's :> Simulant> =
