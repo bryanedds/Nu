@@ -185,8 +185,8 @@ module World =
         publishSorter subList world
 
     let private boxSubscription<'a, 's when 's :> Simulant> (subscription : Subscription<'a, 's>) =
-        let boxableSubscription = fun (event : obj) world ->
-            try subscription (event :?> Event<'a, 's>) world
+        let boxableSubscription = fun (evt : obj) world ->
+            try subscription (evt :?> Event<'a, 's>) world
             with
             | :? InvalidCastException ->
                 // NOTE: If you've reached this exception, then you've probably inadvertantly mixed
@@ -197,14 +197,14 @@ module World =
 
     let private publishEvent<'a, 'p, 's when 'p :> Simulant and 's :> Simulant>
         (subscriber : Simulant) (publisher : 'p) (eventData : 'a) (eventAddress : 'a Address) eventTrace subscription world =
-        let event =
+        let evt =
             { Data = eventData
               Address = eventAddress
               Trace = eventTrace
               Subscriber = subscriber :?> 's
               Publisher = publisher :> Simulant }
         let callableSubscription = unbox<BoxableSubscription> subscription
-        let result = callableSubscription event world
+        let result = callableSubscription evt world
         Some result
 
     /// Make a key used to track an unsubscription with a subscription.
