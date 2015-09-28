@@ -11,7 +11,6 @@ module Events =
 
     let Any = ntoa<obj> "*"
     let Update = ntoa<unit> "Update"
-    let Actualize = ntoa<unit> "Actualize"
     let Select = ntoa<unit> "Select"
     let Deselect = ntoa<unit> "Deselect"
     let Down = ntoa<unit> "Down"

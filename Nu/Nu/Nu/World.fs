@@ -166,11 +166,11 @@ module WorldModule =
         static member selectScreen screen world =
             let world =
                 match World.getOptSelectedScreen world with
-                | Some selectedScreen ->  World.publish () (Events.Deselect ->- selectedScreen) selectedScreen world
+                | Some selectedScreen ->  World.publish () (Events.Deselect ->- selectedScreen) ["World.selectScreen"] selectedScreen world
                 | None -> world
             let world = World.setScreenTransitionState IncomingState screen world
             let world = World.setSelectedScreen screen world
-            World.publish () (Events.Select ->- screen) screen world
+            World.publish () (Events.Select ->- screen) ["World.selectScreen"] screen world
 
         /// Try to transition to the given screen if no other transition is in progress.
         static member tryTransitionScreen destination world =
@@ -205,15 +205,15 @@ module WorldModule =
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the given destination screen.
-        static member handleAsScreenTransitionFromSplash<'a, 's when 's :> Simulant> destination event world =
-            World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destination event world
+        static member handleAsScreenTransitionFromSplash<'a, 's when 's :> Simulant> destination event_ world =
+            World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destination event_ world
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the given destination screen, as well as with additional
         /// handling provided via the 'by' procedure.
-        static member handleAsScreenTransitionFromSplashBy<'a, 's when 's :> Simulant> by destination event (world : World) =
-            let (eventHandling, world) = by event world
-            World.handleAsScreenTransitionFromSplash4<'a, 's> eventHandling destination event world
+        static member handleAsScreenTransitionFromSplashBy<'a, 's when 's :> Simulant> by destination event_ (world : World) =
+            let (eventHandling, world) = by event_ world
+            World.handleAsScreenTransitionFromSplash4<'a, 's> eventHandling destination event_ world
 
         static member private handleAsScreenTransition4<'a, 's when 's :> Simulant>
             eventHandling destination (_ : Event<'a, 's>) world =
@@ -225,15 +225,15 @@ module WorldModule =
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the given destination screen.
-        static member handleAsScreenTransition<'a, 's when 's :> Simulant> destination event world =
-            World.handleAsScreenTransition4<'a, 's> Cascade destination event world
+        static member handleAsScreenTransition<'a, 's when 's :> Simulant> destination event_ world =
+            World.handleAsScreenTransition4<'a, 's> Cascade destination event_ world
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the given destination screen, as well as with additional
         /// handling provided via the 'by' procedure.
-        static member handleAsScreenTransitionBy<'a, 's when 's :> Simulant> by destination event (world : World) =
-            let (eventHandling, world) = by event world
-            World.handleAsScreenTransition4<'a, 's> eventHandling destination event world
+        static member handleAsScreenTransitionBy<'a, 's when 's :> Simulant> by destination event_ (world : World) =
+            let (eventHandling, world) = by event_ world
+            World.handleAsScreenTransition4<'a, 's> eventHandling destination event_ world
 
         static member private updateScreenTransition1 (screen : Screen) transition world =
             let transitionTicks = screen.GetTransitionTicksNp world
@@ -244,49 +244,46 @@ module WorldModule =
                 (true, screen.SetTransitionTicksNp 0L world)
             else (false, screen.SetTransitionTicksNp (transitionTicks + World.getTickRate world) world)
 
-        static member private updateScreenTransition world =
+        static member private updateScreenTransition (selectedScreen : Screen) world =
             // TODO: split this function up...
-            match World.getOptSelectedScreen world with
-            | Some selectedScreen ->
-                match selectedScreen.GetTransitionStateNp world with
-                | IncomingState ->
-                    match world.State.Liveness with
-                    | Running ->
-                        let world =
-                            if selectedScreen.GetTransitionTicksNp world = 0L
-                            then World.publish () (Events.IncomingStart ->- selectedScreen) selectedScreen world
-                            else world
-                        match world.State.Liveness with
-                        | Running ->
-                            let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetIncoming world) world
-                            if finished then
-                                let world = World.setScreenTransitionState IdlingState selectedScreen world
-                                World.publish () (Events.IncomingFinish ->- selectedScreen) selectedScreen world
-                            else world
-                        | Exiting -> world
-                    | Exiting -> world
-                | OutgoingState ->
+            match selectedScreen.GetTransitionStateNp world with
+            | IncomingState ->
+                match world.State.Liveness with
+                | Running ->
                     let world =
-                        if selectedScreen.GetTransitionTicksNp world <> 0L then world
-                        else World.publish () (Events.OutgoingStart ->- selectedScreen) selectedScreen world
+                        if selectedScreen.GetTransitionTicksNp world = 0L
+                        then World.publish () (Events.IncomingStart ->- selectedScreen) ["World.updateScreenTransition"] selectedScreen world
+                        else world
                     match world.State.Liveness with
                     | Running ->
-                        let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetOutgoing world) world
+                        let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetIncoming world) world
                         if finished then
                             let world = World.setScreenTransitionState IdlingState selectedScreen world
-                            match world.State.Liveness with
-                            | Running -> World.publish () (Events.OutgoingFinish ->- selectedScreen) selectedScreen world
-                            | Exiting -> world
+                            World.publish () (Events.IncomingFinish ->- selectedScreen) ["World.updateScreenTransition"] selectedScreen world
                         else world
                     | Exiting -> world
-                | IdlingState -> world
-            | None -> world
+                | Exiting -> world
+            | OutgoingState ->
+                let world =
+                    if selectedScreen.GetTransitionTicksNp world <> 0L then world
+                    else World.publish () (Events.OutgoingStart ->- selectedScreen) ["World.updateScreenTransition"] selectedScreen world
+                match world.State.Liveness with
+                | Running ->
+                    let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetOutgoing world) world
+                    if finished then
+                        let world = World.setScreenTransitionState IdlingState selectedScreen world
+                        match world.State.Liveness with
+                        | Running -> World.publish () (Events.OutgoingFinish ->- selectedScreen) ["World.updateScreenTransition"] selectedScreen world
+                        | Exiting -> world
+                    else world
+                | Exiting -> world
+            | IdlingState -> world
 
-        static member private handleSplashScreenIdleUpdate idlingTime ticks event world =
+        static member private handleSplashScreenIdleUpdate idlingTime ticks event_ world =
             let world = World.unsubscribe SplashScreenUpdateKey world
             if ticks < idlingTime then
                 let subscription = World.handleSplashScreenIdleUpdate idlingTime (inc ticks)
-                let world = World.subscribe5 SplashScreenUpdateKey subscription event.EventAddress event.Subscriber world
+                let world = World.subscribe5 SplashScreenUpdateKey subscription event_.Address event_.Subscriber world
                 (Cascade, world)
             else
                 match World.getOptSelectedScreen world with
@@ -301,8 +298,8 @@ module WorldModule =
                     trace "Program Error: Could not handle splash screen update due to no selected screen."
                     (Resolve, World.exit world)
 
-        static member private handleSplashScreenIdle idlingTime event world =
-            let world = World.subscribe5 SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) Events.Update event.Subscriber world
+        static member private handleSplashScreenIdle idlingTime (splashScreen : Screen) event_ world =
+            let world = World.subscribe5 SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update ->- splashScreen) event_.Subscriber world
             (Resolve, world)
 
         /// Create a splash screen that transitions to the given destination upon completion.
@@ -317,7 +314,7 @@ module WorldModule =
             let world = splashLabel.SetSize cameraEyeSize world
             let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
             let world = splashLabel.SetLabelImage splashData.SplashImage world
-            let world = World.monitor (World.handleSplashScreenIdle splashData.IdlingTime) (Events.IncomingFinish ->- splashScreen) splashScreen world
+            let world = World.monitor (World.handleSplashScreenIdle splashData.IdlingTime splashScreen) (Events.IncomingFinish ->- splashScreen) splashScreen world
             let world = World.monitor (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish ->- splashScreen) splashScreen world
             (splashScreen, world)
 
@@ -454,48 +451,48 @@ module WorldModule =
             World.restoreTasklets taskletsNotRun world
 
         /// Process an input event from SDL and ultimately publish any related game events.
-        static member processInput (event : SDL.SDL_Event) world =
+        static member processInput (event_ : SDL.SDL_Event) world =
             let world =
-                match event.``type`` with
+                match event_.``type`` with
                 | SDL.SDL_EventType.SDL_QUIT ->
                     World.exit world
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
-                    let mousePosition = Vector2 (single event.button.x, single event.button.y)
+                    let mousePosition = Vector2 (single event_.button.x, single event_.button.y)
                     let world =
                         if World.isMouseButtonDown MouseLeft world
-                        then World.publish5 World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseDrag Simulants.Game world
+                        then World.publish5 World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseDrag ["World.processInput"] Simulants.Game world
                         else world
-                    World.publish5 World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseMove Simulants.Game world
+                    World.publish5 World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseMove ["World.processInput"] Simulants.Game world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
-                    let mouseButton = World.toNuMouseButton ^ uint32 event.button.button
+                    let mouseButton = World.toNuMouseButton ^ uint32 event_.button.button
                     let mouseButtonEventAddress = ntoa ^ MouseButton.toEventName mouseButton
                     let mouseButtonDownEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Down"
                     let mouseButtonChangeEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
-                    let world = World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonDownEventAddress Simulants.Game world
-                    World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress Simulants.Game world
+                    let world = World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonDownEventAddress ["World.processInput"] Simulants.Game world
+                    World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress ["World.processInput"] Simulants.Game world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
-                    let mouseButton = World.toNuMouseButton ^ uint32 event.button.button
+                    let mouseButton = World.toNuMouseButton ^ uint32 event_.button.button
                     let mouseButtonEventAddress = ntoa ^ MouseButton.toEventName mouseButton
                     let mouseButtonUpEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Up"
                     let mouseButtonChangeEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
-                    let world = World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEventAddress Simulants.Game world
-                    World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress Simulants.Game world
+                    let world = World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEventAddress ["World.processInput"] Simulants.Game world
+                    World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress ["World.processInput"] Simulants.Game world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
-                    let keyboard = event.key
+                    let keyboard = event_.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = true }
-                    let world = World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyDown Simulants.Game world
-                    World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange Simulants.Game world
+                    let world = World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyDown ["World.processInput"] Simulants.Game world
+                    World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange ["World.processInput"] Simulants.Game world
                 | SDL.SDL_EventType.SDL_KEYUP ->
-                    let keyboard = event.key
+                    let keyboard = event_.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = false }
-                    let world = World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyUp Simulants.Game world
-                    World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange Simulants.Game world
+                    let world = World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyUp ["World.processInput"] Simulants.Game world
+                    World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange ["World.processInput"] Simulants.Game world
                 | _ -> world
             (world.State.Liveness, world)
 
@@ -504,6 +501,7 @@ module WorldModule =
             match World.getOptSelectedScreen world with
             | Some selectedScreen ->
                 let world = World.updateScreen selectedScreen world
+                let world = World.updateScreenTransition selectedScreen world
                 let groups = World.proxyGroups selectedScreen world
                 let world = Seq.fold (fun world group -> World.updateGroup group world) world groups
                 let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
@@ -564,21 +562,17 @@ module WorldModule =
             let world = handleUpdate world
             match world.State.Liveness with
             | Running ->
-                let world = World.updateScreenTransition world
+                let world = World.processSubsystems UpdateType world
                 match world.State.Liveness with
                 | Running ->
-                    let world = World.processSubsystems UpdateType world
+                    let world = World.updateSimulants world
                     match world.State.Liveness with
                     | Running ->
-                        let world = World.updateSimulants world
+                        let world = World.processTasklets world
                         match world.State.Liveness with
                         | Running ->
-                            let world = World.processTasklets world
-                            match world.State.Liveness with
-                            | Running ->
-                                let world = World.actualizeSimulants world
-                                (world.State.Liveness, world)
-                            | Exiting -> (Exiting, world)
+                            let world = World.actualizeSimulants world
+                            (world.State.Liveness, world)
                         | Exiting -> (Exiting, world)
                     | Exiting -> (Exiting, world)
                 | Exiting -> (Exiting, world)

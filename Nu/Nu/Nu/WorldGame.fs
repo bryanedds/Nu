@@ -46,12 +46,11 @@ module WorldGameModule =
         static member internal updateGame world =
             let dispatcher = Simulants.Game.GetDispatcherNp world
             let world = dispatcher.Update (Simulants.Game, world)
-            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () Events.Update Simulants.Game world
+            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () Events.Update ["World.updateGame"] Simulants.Game world
         
         static member internal actualizeGame world =
             let dispatcher = Simulants.Game.GetDispatcherNp world
-            let world = dispatcher.Actualize (Simulants.Game, world)
-            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () Events.Actualize Simulants.Game world
+            dispatcher.Actualize (Simulants.Game, world)
 
         static member internal makeGameState dispatcher =
             let gameState = GameState.make dispatcher

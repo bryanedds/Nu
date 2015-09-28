@@ -65,12 +65,11 @@ module WorldScreenModule =
         static member internal updateScreen (screen : Screen) world =
             let dispatcher = screen.GetDispatcherNp world
             let world = dispatcher.Update (screen, world)
-            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Update ->- screen) Simulants.Game world
+            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Update ->- screen) ["World.updateScreen"] Simulants.Game world
 
         static member internal actualizeScreen (screen : Screen) world =
             let dispatcher = screen.GetDispatcherNp world
-            let world = dispatcher.Actualize (screen, world)
-            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Actualize ->- screen) Simulants.Game world
+            dispatcher.Actualize (screen, world)
 
         static member internal addScreen mayReplace screenState screen world =
             let isNew = not ^ World.containsScreen screen world
@@ -78,14 +77,14 @@ module WorldScreenModule =
                 let world = World.setScreenStateWithoutEvent screenState screen world
                 if isNew then
                     let world = World.registerScreen screen world
-                    World.publish () (Events.ScreenAdd ->- screen) screen world
+                    World.publish () (Events.ScreenAdd ->- screen) ["World.addScreen"] screen world
                 else world
             else failwith ^ "Adding a screen that the world already contains at address '" + acstring screen.ScreenAddress + "'."
 
         /// Remove a screen from the world. Can be dangerous if existing in-flight publishing depends on the screen's
         /// existence. Use with caution.
         static member removeScreen screen world =
-            let world = World.publish () (Events.ScreenRemoving ->- screen) screen world
+            let world = World.publish () (Events.ScreenRemoving ->- screen) ["World.removeScreen"] screen world
             if World.containsScreen screen world then
                 let world = World.unregisterScreen screen world
                 let groups = World.proxyGroups screen world
