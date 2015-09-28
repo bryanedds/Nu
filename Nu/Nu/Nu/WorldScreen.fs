@@ -69,8 +69,7 @@ module WorldScreenModule =
 
         static member internal actualizeScreen (screen : Screen) world =
             let dispatcher = screen.GetDispatcherNp world
-            let world = dispatcher.Actualize (screen, world)
-            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Actualize ->- screen) Simulants.Game world
+            dispatcher.Actualize (screen, world)
 
         static member internal addScreen mayReplace screenState screen world =
             let isNew = not ^ World.containsScreen screen world

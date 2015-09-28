@@ -56,8 +56,7 @@ module WorldGroupModule =
 
         static member internal actualizeGroup (group : Group) world =
             let dispatcher = group.GetDispatcherNp world
-            let world = dispatcher.Actualize (group, world)
-            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Actualize ->- group) Simulants.Game world
+            dispatcher.Actualize (group, world)
 
         static member internal addGroup mayReplace groupState group world =
             let isNew = not ^ World.containsGroup group world

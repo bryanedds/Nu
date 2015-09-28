@@ -86,7 +86,6 @@ module EntityState =
           ViewType = Relative
           Omnipresent = false
           PublishUpdates = true
-          PublishActualizes = false
           PublishChanges = false
           Persistent = true
           CreationTimeStampNp = Core.getTimeStamp ()
