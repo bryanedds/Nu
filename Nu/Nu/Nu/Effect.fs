@@ -97,11 +97,13 @@ type [<NoComparison>] Gesture =
     | Color of TweenApplicator * Algorithm * Tween4Node list
     | Mount of Animation
     | Emit // TODO
+    | Bone // TODO
 
 and [<NoComparison>] Animation =
     | ExpandAnimation of string * Argument list
     | StaticSprite of Resource * Gesture list
     | AnimatedSprite of Resource * Vector2i * int * int * int * Gesture list
+    | PhysicsShape of BodyShape * string * string * Gesture list
     | Container of Gesture list
 
 and [<NoComparison>] Argument =
@@ -178,6 +180,7 @@ module Gesture =
         | Color _ -> Right gesture
         | Mount _ -> Right gesture
         | Emit -> Right gesture
+        | Bone -> Right gesture
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Animation =
@@ -202,6 +205,7 @@ module Animation =
             | None -> Left "Expected Animation argument but received none."
         | StaticSprite _ -> Right animation
         | AnimatedSprite _ -> Right animation
+        | PhysicsShape _ -> Right animation
         | Container _ -> Right animation
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -315,7 +319,8 @@ module Effect =
                                 let applied = applyTween Vector4.Multiply Vector4.Divide color tweened applicator
                                 { sprite with Color = applied }
                             | Mount _ -> failwith "Unimplemented."
-                            | Emit -> failwith "Unimplemented.")
+                            | Emit -> failwith "Unimplemented."
+                            | Bone -> failwith "Unimplemented.")
                         sprite
                         gestures
 
@@ -340,6 +345,10 @@ module Effect =
 
             | AnimatedSprite (resource, celSize, celRun, celCount, stutter, gestures) ->
                 ignore (resource, celSize, celRun, celCount, stutter, gestures)
+                failwith "TODO"
+
+            | PhysicsShape (bodyShape, collisionCategories, collisionMask, gestures) ->
+                ignore (bodyShape, collisionCategories, collisionMask, gestures) 
                 failwith "TODO"
 
             | Container gestures ->
