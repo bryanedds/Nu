@@ -178,7 +178,7 @@ and GameDispatcher () =
     static member FieldDefinitions =
         [define? PublishChanges true]
 
-    /// Register a game when adding it to the world. Note that there is not corresponding
+    /// Register a game when adding it to the world. Note that there is no corresponding
     /// Unregister method due to the inability to remove a game from the world.
     abstract Register : Game * World -> World
     default dispatcher.Register (_, world) = world
@@ -195,7 +195,8 @@ and GameDispatcher () =
 and ScreenDispatcher () =
 
     static member FieldDefinitions =
-        [define? PublishChanges true
+        [define? OptSpecialization (None : string option)
+         define? PublishChanges true
          define? Persistent true]
 
     /// Register a screen when adding it to the world.
@@ -218,7 +219,8 @@ and ScreenDispatcher () =
 and GroupDispatcher () =
 
     static member FieldDefinitions =
-        [define? PublishChanges true
+        [define? OptSpecialization (None : string option)
+         define? PublishChanges true
          define? Persistent true]
 
     /// Register a group when adding it to a screen.
@@ -241,7 +243,8 @@ and GroupDispatcher () =
 and EntityDispatcher () =
 
     static member FieldDefinitions =
-        [define? Position Vector2.Zero
+        [define? OptSpecialization (None : string option)
+         define? Position Vector2.Zero
          define? Size Constants.Engine.DefaultEntitySize
          define? Rotation 0.0f
          define? Depth 0.0f
