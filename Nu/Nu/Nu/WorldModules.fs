@@ -10,9 +10,9 @@ open Prime
 open Nu
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module TransitionDescriptor =
+module Transition =
 
-    /// Make a screen transition descriptor.
+    /// Make a screen transition.
     let make transitionType =
         { TransitionType = transitionType
           TransitionLifetime = 0L
@@ -42,8 +42,8 @@ module ScreenState =
               OptSpecialization = optSpecialization 
               TransitionStateNp = IdlingState
               TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
-              Incoming = TransitionDescriptor.make Incoming
-              Outgoing = TransitionDescriptor.make Outgoing
+              Incoming = Transition.make Incoming
+              Outgoing = Transition.make Outgoing
               PublishChanges = true
               Persistent = true
               CreationTimeStampNp = Core.getTimeStamp ()
@@ -78,10 +78,10 @@ module EntityState =
           Name = match optName with Some name -> name | None -> acstring id
           OptSpecialization = optSpecialization
           Position = Vector2.Zero
-          Depth = 0.0f
           Size = Constants.Engine.DefaultEntitySize
           Rotation = 0.0f
-          Overdraw = Vector2.Zero // TODO: expose and use this as bounds = (Vector4 ((position - scale * overdraw), (position + scale * (overdraw + 1.0)))
+          Depth = 0.0f
+          Overflow = Vector2.Zero // TODO: expose and use this as bounds = (Vector4 ((position - scale * overflow), (position + scale * (overflow + 1.0)))
           Visible = true
           ViewType = Relative
           Omnipresent = false
@@ -592,14 +592,18 @@ module World =
             | None -> world
         | _ -> failwith ^ "Invalid entity address '" + acstring entity.EntityAddress + "'."
 
-    let internal getEntityStateMaxBounds entityState =
+    let internal getEntityStateBoundsMax entityState =
         // TODO: get up off yer arse and write an algorithm for tight-fitting bounds...
         match entityState.Rotation with
         | 0.0f ->
-            Vector4 (entityState.Position.X, entityState.Position.Y, entityState.Position.X + entityState.Size.X, entityState.Position.Y + entityState.Size.Y)
+            let boundsOverflow = Math.makeBoundsOverflow entityState.Position entityState.Size entityState.Overflow
+            boundsOverflow // no need to transform is unrotated
         | _ ->
-            let center = entityState.Position + entityState.Size * 0.5f
-            let corner = entityState.Position + entityState.Size
+            let boundsOverflow = Math.makeBoundsOverflow entityState.Position entityState.Size entityState.Overflow
+            let position = boundsOverflow.Xy
+            let size = Vector2 (boundsOverflow.Z, boundsOverflow.W) - position
+            let center = position + size * 0.5f
+            let corner = position + size
             let centerToCorner = corner - center
             let quaternion = Quaternion.FromAxisAngle (Vector3.UnitZ, Constants.Math.DegreesToRadiansF * 45.0f)
             let newSizeOver2 = Vector2 (Vector2.Transform (centerToCorner, quaternion)).Y
@@ -659,9 +663,9 @@ module World =
         let entityState = updater entityState
         setEntityState entityState entity world
 
-    let getEntityMaxBounds entity world =
+    let getEntityBoundsMax entity world =
         let entityState = getEntityState entity world
-        getEntityStateMaxBounds entityState
+        getEntityStateBoundsMax entityState
 
     (* GroupState *)
 
@@ -833,12 +837,12 @@ module World =
                 (fun () -> rebuildEntityTree screen oldWorld)
                 (fun entityTree ->
                     let oldEntityState = getEntityState entity oldWorld
-                    let oldEntityMaxBounds = getEntityStateMaxBounds oldEntityState
+                    let oldEntityBoundsMax = getEntityStateBoundsMax oldEntityState
                     let entityState = getEntityState entity world
-                    let entityMaxBounds = getEntityStateMaxBounds entityState
+                    let entityBoundsMax = getEntityStateBoundsMax entityState
                     QuadTree.updateElement
-                        (oldEntityState.Omnipresent || oldEntityState.ViewType = Absolute) oldEntityMaxBounds
-                        (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds
+                        (oldEntityState.Omnipresent || oldEntityState.ViewType = Absolute) oldEntityBoundsMax
+                        (entityState.Omnipresent || entityState.ViewType = Absolute) entityBoundsMax
                         entity entityTree
                     entityTree)
                 screenState.EntityTreeNp

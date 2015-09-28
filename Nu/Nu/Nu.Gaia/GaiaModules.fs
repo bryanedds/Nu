@@ -305,9 +305,9 @@ module Gaia =
                     else Camera.mouseToWorld (entity.GetViewType world) (camera.EyeSize * 0.5f) camera
                 let entityTransform =
                     { Transform.Position = entityPosition
-                      Depth = getCreationDepth form
                       Size = entity.GetSize world
-                      Rotation = entity.GetRotation world }
+                      Rotation = entity.GetRotation world
+                      Depth = getCreationDepth form }
                 let world = entity.SetTransformSnapped positionSnap rotationSnap entityTransform world
                 let world = World.propagateEntityPhysics entity world
                 RefWorld := world // must be set for property grid

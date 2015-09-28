@@ -70,8 +70,8 @@ module GameplayDispatcherModule =
                 (fun (enemies, rand, world) i ->
                     let enemyPosition = single i * Constants.Layout.TileSize * 2.0f
                     let (enemy, world) = World.createEntity typeof<EnemyDispatcher>.Name None None scene world
-                    let world = enemy.SetDepth Constants.Layout.CharacterDepth world
                     let world = enemy.SetPosition enemyPosition world
+                    let world = enemy.SetDepth Constants.Layout.CharacterDepth world
                     let world = enemy.SetCharacterAnimationSheet Constants.Assets.GoopyImage world
                     (enemy :: enemies, rand, world))
                 ([], rand, world)
@@ -364,7 +364,7 @@ module GameplayDispatcherModule =
                             | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
                         updateCharacterByNavigation navigationDescriptor character world
                     do! pass }}
-            let observation = character |> observe Events.Update |> until (Events.Deselect ->- Simulants.Gameplay)
+            let observation = character |> observe (Events.Update ->- character) |> until (Events.Deselect ->- Simulants.Gameplay)
             runAssumingCascade chain observation world |> snd
 
         static let runCharacterAction newActionDescriptor (character : Entity) world =
@@ -380,7 +380,7 @@ module GameplayDispatcherModule =
                         let world = updateCharacterByAction actionDescriptor character world
                         runCharacterReaction actionDescriptor character world
                     do! pass }}
-            let observation = character |> observe Events.Update |> until (Events.Deselect ->- Simulants.Gameplay)
+            let observation = character |> observe (Events.Update ->- character) |> until (Events.Deselect ->- Simulants.Gameplay)
             runAssumingCascade chain observation world |> snd
 
         static let runCharacterNoActivity (character : Entity) world =
@@ -480,7 +480,7 @@ module GameplayDispatcherModule =
                 let observation =
                     Simulants.Gameplay |>
                     observe (Events.Click ->- Simulants.HudHalt) |>
-                    sum Events.Update |>
+                    sum (Events.Update ->- Simulants.Player) |>
                     until (Events.Deselect ->- Simulants.Gameplay)
                 runAssumingCascade chain observation world |> snd
             else world

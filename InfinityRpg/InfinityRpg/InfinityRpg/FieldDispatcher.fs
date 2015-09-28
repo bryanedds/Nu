@@ -35,11 +35,15 @@ module FieldDispatcherModule =
             [define? Omnipresent true
              define? FieldMapNp DefaultFieldMap]
 
-        override dispatcher.GetRenderDescriptors (field, world) =
-            let viewType = field.GetViewType world
-            let position = field.GetPosition world
-            let size = Vector2.Multiply (Constants.Layout.TileSize, Constants.Layout.TileSheetSize)
-            if World.getCameraBy (Camera.inView3 viewType position size) world then
+        override dispatcher.Actualize (field, world) =
+            let viewType =
+                field.GetViewType world
+            let bounds =
+                Math.makeBoundsOverflow
+                    (field.GetPosition world)
+                    (Vector2.Multiply (Constants.Layout.TileSize, Constants.Layout.TileSheetSize))
+                    (field.GetOverflow world)
+            if World.getCameraBy (Camera.inView viewType bounds) world then
                 let fieldMap = field.GetFieldMapNp world
                 let sprites =
                     Map.foldBack
@@ -57,8 +61,10 @@ module FieldDispatcherModule =
                             sprite :: sprites)
                         fieldMap.FieldTiles
                         []
-                [LayerableDescriptor { Depth = field.GetDepth world; LayeredDescriptor = SpritesDescriptor sprites }]
-            else []
+                World.addRenderMessage
+                    (RenderDescriptorsMessage [LayerableDescriptor { Depth = field.GetDepth world; LayeredDescriptor = SpritesDescriptor sprites }])
+                    world
+            else world
 
         override dispatcher.GetQuickSize (field, world) =
             vmtovf (field.GetFieldMapNp world).FieldSizeM

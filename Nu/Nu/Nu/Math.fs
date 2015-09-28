@@ -11,9 +11,9 @@ open Nu
 /// Describes all the elements of a 2d transformation.
 type [<StructuralEquality; NoComparison>] Transform =
     { Position : Vector2
-      Depth : single
       Size : Vector2
-      Rotation : single }
+      Rotation : single
+      Depth : single }
 
 /// Depicts whether a view is purposed to render in relative or absolute space. For
 /// example, Gui entities are rendered in absolute space since they remain still no matter
@@ -165,9 +165,9 @@ module Math =
     /// The identity transform.
     let transformIdentity =
         { Position = Vector2.Zero
-          Depth = 0.0f
           Size = Vector2.One
-          Rotation = 0.0f }
+          Rotation = 0.0f
+          Depth = 0.0f }
 
     /// Snap an int value to an offset.
     let snap offset value =
@@ -200,23 +200,27 @@ module Math =
 
     /// Queries that a point is within the given bounds.
     let isPointInBounds (point : Vector2) (bounds : Vector4) =
-        not
-            (point.X < bounds.X ||
-             point.X > bounds.Z ||
-             point.Y < bounds.Y ||
-             point.Y > bounds.W)
-
-    /// Queries that a point is within the given bounds.
-    let isPointInBounds3 (point : Vector2) (boxPos : Vector2) (boxSize : Vector2) =
-        isPointInBounds point ^ Vector4 (boxPos.X, boxPos.Y, boxPos.X + boxSize.X, boxPos.Y + boxSize.Y)
+        point.X >= bounds.X &&
+        point.X <= bounds.Z &&
+        point.Y >= bounds.Y &&
+        point.Y <= bounds.W
 
     /// Queries that a bounds is within the given bounds.
     let isBoundsInBounds (bounds : Vector4) (bounds2 : Vector4) =
-        not
-            (bounds.X > bounds2.Z || bounds.Z < bounds2.X ||
-             bounds.Y > bounds2.W || bounds.W < bounds2.Y)
+        bounds.X < bounds2.Z &&
+        bounds.Z > bounds2.X &&
+        bounds.Y < bounds2.W &&
+        bounds.W > bounds2.Y
 
-    /// Queries that a bounds is within the given bounds.
-    let isBoundsInBounds3 (position : Vector2) (size : Vector2) bounds =
-        let bounds2 = Vector4 (position.X, position.Y, position.X + size.X, position.Y + size.Y)
-        isBoundsInBounds bounds2 bounds
+    /// Make a Vector4 bounds value.
+    let makeBounds (position : Vector2) (size : Vector2) =
+        Vector4 (position.X, position.Y, position.X + size.X, position.Y + size.Y)
+
+    /// Make a Vector4 bounds value, taking into consideration overflow.
+    let makeBoundsOverflow (position : Vector2) (size : Vector2) (overflow : Vector2) =
+        let sizeHalf = size * 0.5f
+        let center = position + sizeHalf
+        let sizeHalfOverflow = Vector2.Multiply (sizeHalf, overflow + Vector2.One)
+        let xy = center - sizeHalfOverflow
+        let x2y2 = center + sizeHalfOverflow
+        Vector4 (xy.X, xy.Y, x2y2.X, x2y2.Y)

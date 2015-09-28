@@ -26,7 +26,7 @@ type TransitionState =
     | IdlingState
 
 /// Describes one of a screen's transition processes.
-type [<CLIMutable; StructuralEquality; NoComparison>] TransitionDescriptor =
+type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
     { TransitionType : TransitionType
       TransitionLifetime : int64
       OptDissolveImage : AssetTag option }
@@ -183,6 +183,14 @@ and GameDispatcher () =
     abstract Register : Game * World -> World
     default dispatcher.Register (_, world) = world
 
+    /// Update a game.
+    abstract Update : Game * World -> World
+    default dispatcher.Update (_, world) = world
+
+    /// Actualize a game.
+    abstract Actualize : Game * World -> World
+    default dispatcher.Actualize (_, world) = world
+
 /// The default dispatcher for screens.
 and ScreenDispatcher () =
 
@@ -197,6 +205,14 @@ and ScreenDispatcher () =
     /// Unregister a screen when removing it from the world.
     abstract Unregister : Screen * World -> World
     default dispatcher.Unregister (_, world) = world
+
+    /// Update a screen.
+    abstract Update : Screen * World -> World
+    default dispatcher.Update (_, world) = world
+
+    /// Actualize a screen.
+    abstract Actualize : Screen * World -> World
+    default dispatcher.Actualize (_, world) = world
 
 /// The default dispatcher for groups.
 and GroupDispatcher () =
@@ -213,14 +229,23 @@ and GroupDispatcher () =
     abstract Unregister : Group * World -> World
     default dispatcher.Unregister (_, world) = world
 
+    /// Update a group.
+    abstract Update : Group * World -> World
+    default dispatcher.Update (_, world) = world
+
+    /// Actualize a group.
+    abstract Actualize : Group * World -> World
+    default dispatcher.Actualize (_, world) = world
+
 /// The default dispatcher for entities.
 and EntityDispatcher () =
 
     static member FieldDefinitions =
         [define? Position Vector2.Zero
-         define? Depth 0.0f
          define? Size Constants.Engine.DefaultEntitySize
          define? Rotation 0.0f
+         define? Depth 0.0f
+         define? Overflow Vector2.Zero
          define? Visible true
          define? ViewType Relative
          define? Omnipresent false
@@ -239,9 +264,13 @@ and EntityDispatcher () =
     abstract PropagatePhysics : Entity * World -> World
     default dispatcher.PropagatePhysics (_, world) = world
 
-    /// Get the render descriptors needed to render an entity.
-    abstract GetRenderDescriptors : Entity * World -> RenderDescriptor list
-    default dispatcher.GetRenderDescriptors (_, _) = []
+    /// Update an entity.
+    abstract Update : Entity * World -> World
+    default dispatcher.Update (_, world) = world
+
+    /// Actualize an entity.
+    abstract Actualize : Entity * World -> World
+    default dispatcher.Actualize (_, world) = world
 
     /// Get the quick size of an entity (the appropriate user-define size for an entity).
     abstract GetQuickSize : Entity * World -> Vector2
@@ -274,9 +303,13 @@ and Facet () =
     abstract PropagatePhysics : Entity * World -> World
     default facet.PropagatePhysics (_, world) = world
 
-    /// Participate in getting the render descriptors needed to render an entity.
-    abstract GetRenderDescriptors : Entity * World -> RenderDescriptor list
-    default facet.GetRenderDescriptors (_, _) = []
+    /// Update a facet.
+    abstract Update : Entity * World -> World
+    default facet.Update (_, world) = world
+
+    /// Actualize a facet.
+    abstract Actualize : Entity * World -> World
+    default facet.Actualize (_, world) = world
 
     /// Participate in getting the priority with which an entity is picked in the editor.
     abstract GetQuickSize : Entity * World -> Vector2
@@ -306,8 +339,8 @@ and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
       OptSpecialization : string option
       TransitionStateNp : TransitionState
       TransitionTicksNp : int64
-      Incoming : TransitionDescriptor
-      Outgoing : TransitionDescriptor
+      Incoming : Transition
+      Outgoing : Transition
       PublishChanges : bool
       Persistent : bool
       CreationTimeStampNp : int64
@@ -336,10 +369,10 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
       Name : string
       OptSpecialization : string option
       Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-      Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
       Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
       Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
-      Overdraw : Vector2
+      Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
+      Overflow : Vector2
       Visible : bool
       ViewType : ViewType
       Omnipresent : bool

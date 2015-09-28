@@ -22,13 +22,13 @@ module EffectTests =
                  [FlameSprite [AsAnimation [FlamePosition]
                     [StaticSprite [ExpandResource FlameResource []]
                         [[ExpandGesture FlamePosition]
-                         [Tween4 Color Over Linear [[[1 1 1 1] 10] [[0.8 0.25 0.25 0.75] 0]]]]]]]
+                         [Color Over Linear [[[1 1 1 1] 10] [[0.8 0.25 0.25 0.75] 0]]]]]]]
                  [IfritSprite [AsAnimation []
-                    [AnimatedSprite [Resource Gameplay Esper] [4 4] [16 16] 6
-                        [[Flip Visible Over [[False 2] [True 16] [False 0]]]
-                         [Tween2 Position Sum Linear [[[0 0] 10] [[10 10] 0]]]
-                         [Mount [ExpandAnimation FlameSprite [[PassGesture [Tween2 Position Sum Linear [[[0 0] 10] [[10 10] 0]]]]]]]
-                         [Mount [ExpandAnimation FlameSprite [[PassGesture [Tween2 Position Sum Linear [[[10 0] 10] [[0 10] 0]]]]]]]
+                    [AnimatedSprite [Resource Gameplay Esper] [4 4] 4 16 6
+                        [[Visible Over [[False 2] [True 16] [False 0]]]
+                         [Position Sum Linear [[[0 0] 10] [[10 10] 0]]]
+                         [Mount [ExpandAnimation FlameSprite [[PassGesture [Position Sum Linear [[[0 0] 10] [[10 10] 0]]]]]]]
+                         [Mount [ExpandAnimation FlameSprite [[PassGesture [Position Sum Linear [[[10 0] 10] [[0 10] 0]]]]]]]
                          [Emit]]]]]]
                 [ExpandAnimation IfritSprite []]]"
 

@@ -27,12 +27,14 @@ module WorldEntityModule =
         member this.GetFacetsNp world = (World.getEntityState this world).FacetsNp
         member this.GetPosition world = (World.getEntityState this world).Position
         member this.SetPosition value world = World.updateEntityStatePlus (fun entityState -> { entityState with Position = value }) this world
-        member this.GetDepth world = (World.getEntityState this world).Depth
-        member this.SetDepth value world = World.updateEntityState (fun entityState -> { entityState with Depth = value }) this world
         member this.GetSize world = (World.getEntityState this world).Size
         member this.SetSize value world = World.updateEntityStatePlus (fun entityState -> { entityState with Size = value }) this world
         member this.GetRotation world = (World.getEntityState this world).Rotation
         member this.SetRotation value world = World.updateEntityStatePlus (fun entityState -> { entityState with Rotation = value }) this world
+        member this.GetDepth world = (World.getEntityState this world).Depth
+        member this.SetDepth value world = World.updateEntityState (fun entityState -> { entityState with Depth = value }) this world
+        member this.GetOverflow world = (World.getEntityState this world).Overflow
+        member this.SetOverflow value world = World.updateEntityState (fun entityState -> { entityState with Overflow = value }) this world
         member this.GetVisible world = (World.getEntityState this world).Visible
         member this.SetVisible value world = World.updateEntityState (fun entityState -> { entityState with Visible = value }) this world
         member this.GetViewType world = (World.getEntityState this world).ViewType
@@ -54,20 +56,41 @@ module WorldEntityModule =
             let xField = Map.find name xtension.XFields
             xField.FieldValue
 
+        /// Get an entity's bounds, not taking into account its overflow.
+        member this.GetBounds world =
+            Math.makeBounds
+                (this.GetPosition world)
+                (this.GetSize world)
+
+        /// Get an entity's bounds, taking into account its overflow.
+        member this.GetBoundsOverflow world =
+            Math.makeBoundsOverflow
+                (this.GetPosition world)
+                (this.GetSize world)
+                (this.GetOverflow world)
+
+        /// Query than an entity is in the camera's view.
+        member this.InView world =
+            let camera = World.getCamera world
+            Camera.inView
+                (this.GetViewType world)
+                (this.GetBoundsOverflow world)
+                camera
+
         /// Get an entity's transform.
         member this.GetTransform world =
             { Transform.Position = this.GetPosition world
-              Depth = this.GetDepth world
               Size = this.GetSize world
-              Rotation = this.GetRotation world }
+              Rotation = this.GetRotation world
+              Depth = this.GetDepth world }
 
         /// Set an entity's transform.
         member this.SetTransform (transform : Transform) world =
             world |>
                 this.SetPosition transform.Position |>
-                this.SetDepth transform.Depth |>
                 this.SetSize transform.Size |>
-                this.SetRotation transform.Rotation
+                this.SetRotation transform.Rotation |>
+                this.SetDepth transform.Depth
 
         /// Get the center position of an entity.
         member this.GetCenter world =
@@ -129,7 +152,7 @@ module WorldEntityModule =
                         (fun () -> World.rebuildEntityTree screen oldWorld)
                         (fun entityTree ->
                             let entityState = World.getEntityState entity world
-                            let entityMaxBounds = World.getEntityStateMaxBounds entityState
+                            let entityMaxBounds = World.getEntityStateBoundsMax entityState
                             QuadTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
                             entityTree)
                         screenState.EntityTreeNp
@@ -165,7 +188,7 @@ module WorldEntityModule =
                         (fun () -> World.rebuildEntityTree screen oldWorld)
                         (fun entityTree ->
                             let entityState = World.getEntityState entity oldWorld
-                            let entityMaxBounds = World.getEntityStateMaxBounds entityState
+                            let entityMaxBounds = World.getEntityStateBoundsMax entityState
                             QuadTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
                             entityTree)
                         screenState.EntityTreeNp
@@ -290,19 +313,23 @@ module WorldEntityModule =
                 (fun world (facet : Facet) -> facet.PropagatePhysics (entity, world))
                 world
                 facets
-        
-        /// Get the render descriptors needed to render an entity.
-        static member getEntityRenderDescriptors (entity : Entity) world =
+
+        /// Update an entity.
+        static member updateEntity (entity : Entity) world =
             let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
             let facets = entity.GetFacetsNp world
-            let renderDescriptors = dispatcher.GetRenderDescriptors (entity, world)
-            List.foldBack
-                (fun (facet : Facet) renderDescriptors ->
-                    let descriptors = facet.GetRenderDescriptors (entity, world)
-                    descriptors @ renderDescriptors)
-                facets
-                renderDescriptors
+            let world = dispatcher.Update (entity, world)
+            let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
+            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Update ->- entity) Simulants.Game world
         
+        /// Actualize an entity.
+        static member actualizeEntity (entity : Entity) world =
+            let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
+            let facets = entity.GetFacetsNp world
+            let world = dispatcher.Actualize (entity, world)
+            let world = List.foldBack (fun (facet : Facet) world -> facet.Actualize (entity, world)) facets world
+            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsNone () (Events.Actualize ->- entity) Simulants.Game world
+
         /// Get the quick size of an entity (the appropriate user-defined size for an entity).
         static member getEntityQuickSize (entity : Entity) world =
             let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
@@ -340,8 +367,7 @@ module WorldEntityModule =
             List.tryFind
                 (fun (entity : Entity) ->
                     let positionWorld = World.getCameraBy (Camera.mouseToWorld (entity.GetViewType world) position) world
-                    let transform = entity.GetTransform world
-                    let picked = Math.isPointInBounds3 positionWorld transform.Position transform.Size
+                    let picked = Math.isPointInBounds positionWorld (entity.GetBounds world)
                     picked)
                 entitiesSorted
 
