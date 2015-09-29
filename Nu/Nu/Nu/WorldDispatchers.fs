@@ -22,6 +22,8 @@ module EffectFacetModule =
         member this.SetEffectOffset (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?EffectOffset <- value) world
         member this.GetEffectTimeOffset world : int64 = (this.GetXtension world)?EffectTimeOffset
         member this.SetEffectTimeOffset (value : int64) world = this.UpdateXtension (fun xtension -> xtension?EffectTimeOffset <- value) world
+        member this.GetEffectPhysicsShapesNp world : unit = (this.GetXtension world)?EffectPhysicsShapesNp // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
+        member private this.SetEffectPhysicsShapesNp (value : unit) world = this.UpdateXtension (fun xtension -> xtension?EffectPhysicsShapesNp <- value) world
 
     type EffectFacet () =
         inherit Facet ()
@@ -30,7 +32,8 @@ module EffectFacetModule =
             [define? EffectDefinitions (Map.empty : Definitions)
              define? Effect Effect.empty
              define? EffectOffset (Vector2 0.5f)
-             define? EffectTimeOffset 0L] // TODO: also implement similar time offset for AnimatedSpriteFacet
+             define? EffectTimeOffset 0L // TODO: also implement similar time offset for AnimatedSpriteFacet
+             define? EffectPhysicsShapesNp ()]
 
         override facet.Actualize (entity, world) =
             if entity.InView world then
@@ -44,14 +47,14 @@ module EffectFacetModule =
                 let effectViewType = entity.GetViewType world
                 let effect = entity.GetEffect world
                 let globalEnv = entity.GetEffectDefinitions world
-                let (optError, realizations) = Effect.eval effectPosition effectSize effectRotation effectDepth effectViewType (Vector4.One) effectTime globalEnv effect
+                let (optError, artifacts) = Effect.eval effectViewType effectPosition effectSize effectRotation effectDepth (Vector4.One) globalEnv effect effectTime
                 Option.map note optError |> ignore
-                List.fold (fun world realization ->
-                    match realization with
-                    | RenderRealization renderMessage -> World.addRenderMessage renderMessage world
-                    | AudioRealization audioMessage -> World.addAudioMessage audioMessage world)
+                List.fold (fun world artifact ->
+                    match artifact with
+                    | RenderArtifact renderMessage -> World.addRenderMessage renderMessage world
+                    | AudioArtifact audioMessage -> World.addAudioMessage audioMessage world)
                     world
-                    realizations
+                    artifacts
             else world
 
 [<AutoOpen>]
