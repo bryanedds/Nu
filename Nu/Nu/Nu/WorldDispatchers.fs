@@ -21,7 +21,11 @@ module EffectFacetModule =
         member this.GetEffectOffset world : Vector2 = (this.GetXtension world)?EffectOffset
         member this.SetEffectOffset (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?EffectOffset <- value) world
         member this.GetEffectTimeOffset world : int64 = (this.GetXtension world)?EffectTimeOffset
-        member this.SetEffectTimeOffset (value : int64) world = this.UpdateXtension (fun xtension -> xtension?EffectTimeOffset <- value) world
+        member this.SetEffectTimeOffset (value : int64) world = this.UpdateXtension (fun xtension -> xtension?EffectHistoryMax <- value) world
+        member this.GetEffectHistoryMax world : int = (this.GetXtension world)?EffectHistoryMax
+        member this.SetEffectHistoryMax (value : int) world = this.UpdateXtension (fun xtension -> xtension?EffectHistoryMax <- value) world
+        member this.GetEffectHistoryNp world : Slice list = (this.GetXtension world)?EffectHistoryNp
+        member private this.SetEffectHistoryNp (value : Slice list) world = this.UpdateXtension (fun xtension -> xtension?EffectSliceNp <- value) world
         member this.GetEffectPhysicsShapesNp world : unit = (this.GetXtension world)?EffectPhysicsShapesNp // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
         member private this.SetEffectPhysicsShapesNp (value : unit) world = this.UpdateXtension (fun xtension -> xtension?EffectPhysicsShapesNp <- value) world
 
@@ -33,6 +37,8 @@ module EffectFacetModule =
              define? Effect Effect.empty
              define? EffectOffset (Vector2 0.5f)
              define? EffectTimeOffset 0L // TODO: also implement similar time offset for AnimatedSpriteFacet
+             define? EffectHistoryMax 256
+             define? EffectHistoryNp ([] : Slice list)
              define? EffectPhysicsShapesNp ()]
 
         override facet.Actualize (entity, world) =
@@ -40,19 +46,30 @@ module EffectFacetModule =
                 let time = World.getTickTime world
                 let timeOffset = entity.GetEffectTimeOffset world
                 let effectTime = time - timeOffset
-                let effectSize = entity.GetSize world
-                let effectPosition = entity.GetPosition world + Vector2.Multiply (effectSize, entity.GetEffectOffset world)
-                let effectRotation = entity.GetRotation world
-                let effectDepth = entity.GetDepth world
+
                 let effectViewType = entity.GetViewType world
-                let effect = entity.GetEffect world
+                let effectSize = entity.GetSize world
+                let effectSlice =
+                    { Position = entity.GetPosition world + Vector2.Multiply (effectSize, entity.GetEffectOffset world)
+                      Size = effectSize
+                      Rotation = entity.GetRotation world
+                      Depth = entity.GetDepth world
+                      Color = Vector4.One
+                      Visible = true }
+
+                let effectHistoryMax = entity.GetEffectHistoryMax world
+                let effectHistory = entity.GetEffectHistoryNp world
+                let world = entity.SetEffectHistoryNp (effectSlice :: effectHistory |> Seq.tryTake effectHistoryMax |> List.ofSeq) world
+
                 let globalEnv = entity.GetEffectDefinitions world
-                match Effect.eval effectViewType effectPosition effectSize effectRotation effectDepth (Vector4.One) globalEnv effect effectTime with
+                let effect = entity.GetEffect world
+
+                match Effect.eval effectViewType effectSlice effectHistory globalEnv effect effectTime with
                 | Right artifacts ->
                     List.fold (fun world artifact ->
                         match artifact with
-                        | RenderArtifact renderMessage -> World.addRenderMessage renderMessage world
-                        | AudioArtifact audioMessage -> World.addAudioMessage audioMessage world)
+                        | RenderArtifact renderDescriptors -> World.addRenderMessage (RenderDescriptorsMessage renderDescriptors) world
+                        | SoundArtifact soundMessage -> World.addAudioMessage (PlaySoundMessage soundMessage) world)
                         world
                         artifacts
                 | Left error ->

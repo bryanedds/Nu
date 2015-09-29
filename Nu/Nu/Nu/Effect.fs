@@ -117,8 +117,8 @@ type [<NoComparison>] Definition =
     | AsContent of string list * Content
 
 type [<NoComparison>] EffectArtifect =
-    | RenderArtifact of RenderMessage
-    | AudioArtifact of AudioMessage
+    | RenderArtifact of RenderDescriptor list
+    | SoundArtifact of PlaySoundMessage
 
 type Definitions =
     Map<string, Definition>
@@ -264,7 +264,7 @@ module Effect =
         let celSize = Vector2 (single celSize.X, single celSize.Y)
         Math.makeBounds celPosition celSize
 
-    let rec evalAspects viewType slice aspects time =
+    let rec evalAspects viewType slice history aspects time =
         List.fold
             (fun (slice, artifacts) aspect ->
                 match aspect with
@@ -304,15 +304,17 @@ module Effect =
                     let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
                     ({ slice with Color = applied }, artifacts)
                 | Mount content ->
-                    (slice, evalContent viewType slice content time @ artifacts)
+                    (slice, evalContent viewType slice history content time @ artifacts)
                 | Emit ->
+                    // emitted = (max time lifetimes) / stutter
+                    Seq.unfold
                     failwith "Unimplemented."
                 | Bone ->
-                    failwith "Unimplemented.")
+                    (slice, []))
             (slice, [])
             aspects
 
-    and evalStaticSprite viewType slice resource aspects time =
+    and evalStaticSprite viewType slice history resource aspects time =
 
         // pull image from resource
         let image =
@@ -322,28 +324,27 @@ module Effect =
 
         // eval aspects
         let (slice, artifacts) =
-            evalAspects viewType slice aspects time
+            evalAspects viewType slice history aspects time
 
         // return artifacts
         if slice.Visible then
             let artifact =
                 RenderArtifact
-                    (RenderDescriptorsMessage
-                        [LayerableDescriptor
-                            { Depth = slice.Depth
-                              LayeredDescriptor =
-                                SpriteDescriptor 
-                                    { Position = slice.Position
-                                      Size = slice.Size
-                                      Rotation = slice.Rotation
-                                      OptInset = None
-                                      Image = image
-                                      ViewType = viewType
-                                      Color = slice.Color }}])
+                    [LayerableDescriptor
+                        { Depth = slice.Depth
+                          LayeredDescriptor =
+                            SpriteDescriptor 
+                                { Position = slice.Position
+                                  Size = slice.Size
+                                  Rotation = slice.Rotation
+                                  OptInset = None
+                                  Image = image
+                                  ViewType = viewType
+                                  Color = slice.Color }}]
             artifact :: artifacts
         else artifacts
 
-    and evalAnimatedSprite viewType slice resource celSize celRun celCount stutter aspects time =
+    and evalAnimatedSprite viewType slice history resource celSize celRun celCount stutter aspects time =
 
         // pull image from resource
         let image =
@@ -353,7 +354,7 @@ module Effect =
 
         // eval aspects
         let (slice, artifacts) =
-            evalAspects viewType slice aspects time
+            evalAspects viewType slice history aspects time
 
         // eval inset
         let inset =
@@ -363,50 +364,42 @@ module Effect =
         if slice.Visible then
             let artifact =
                 RenderArtifact
-                    (RenderDescriptorsMessage
-                        [LayerableDescriptor
-                            { Depth = slice.Depth
-                              LayeredDescriptor =
-                                SpriteDescriptor 
-                                    { Position = slice.Position
-                                      Size = slice.Size
-                                      Rotation = slice.Rotation
-                                      OptInset = Some inset
-                                      Image = image
-                                      ViewType = viewType
-                                      Color = slice.Color }}])
+                    [LayerableDescriptor
+                        { Depth = slice.Depth
+                          LayeredDescriptor =
+                            SpriteDescriptor 
+                                { Position = slice.Position
+                                  Size = slice.Size
+                                  Rotation = slice.Rotation
+                                  OptInset = Some inset
+                                  Image = image
+                                  ViewType = viewType
+                                  Color = slice.Color }}]
             artifact :: artifacts
         else artifacts
 
-    and evalComposite viewType slice aspects time =
-        let (_, artifacts) = evalAspects viewType slice aspects time
+    and evalComposite viewType slice history aspects time =
+        let (_, artifacts) = evalAspects viewType slice history aspects time
         artifacts
 
-    and evalContent viewType slice content time =
+    and evalContent viewType slice history content time =
         match content with
         | ExpandContent _ ->
             failwithumf ()
         | StaticSprite (resource, aspects) ->
-            evalStaticSprite viewType slice resource aspects time
+            evalStaticSprite viewType slice history resource aspects time
         | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects) ->
-            evalAnimatedSprite viewType slice resource celSize celRun celCount stutter aspects time
+            evalAnimatedSprite viewType slice history resource celSize celRun celCount stutter aspects time
         | PhysicsShape (label, bodyShape, collisionCategories, collisionMask, aspects) ->
             ignore (label, bodyShape, collisionCategories, collisionMask, aspects); failwith "TODO"
         | Composite aspects ->
-            evalComposite viewType slice aspects time
+            evalComposite viewType slice history aspects time
 
-    let eval viewType position size rotation depth color (globalEnv : Definitions) (effect : Effect) (time : int64) : Either<string, EffectArtifect list> =
+    let eval viewType slice history (globalEnv : Definitions) (effect : Effect) (time : int64) : Either<string, EffectArtifect list> =
         let localTime = time % effect.Lifetime
         match Content.expand (globalEnv @@ effect.Definitions) effect.Content with
         | Right content ->
-            let slice =
-                { Position = position
-                  Size = size
-                  Rotation = rotation
-                  Depth = depth
-                  Color = color
-                  Visible = true }
-            let artifacts = evalContent viewType slice content localTime
+            let artifacts = evalContent viewType slice history content localTime
             Right artifacts
         | Left error -> Left error
 
