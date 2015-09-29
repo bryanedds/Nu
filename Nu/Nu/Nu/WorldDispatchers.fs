@@ -47,12 +47,12 @@ module EffectFacetModule =
                 let effectViewType = entity.GetViewType world
                 let effect = entity.GetEffect world
                 let globalEnv = entity.GetEffectDefinitions world
-                let (optError, realizations) = Effect.eval effectPosition effectSize effectRotation effectDepth effectViewType (Vector4.One) effectTime globalEnv effect
+                let (optError, realizations) = Effect.eval effectViewType effectPosition effectSize effectRotation effectDepth (Vector4.One) globalEnv effect effectTime
                 Option.map note optError |> ignore
-                List.fold (fun world realization ->
-                    match realization with
-                    | RenderRealization renderMessage -> World.addRenderMessage renderMessage world
-                    | AudioRealization audioMessage -> World.addAudioMessage audioMessage world)
+                List.fold (fun world artifact ->
+                    match artifact with
+                    | RenderArtifact renderMessage -> World.addRenderMessage renderMessage world
+                    | AudioArtifact audioMessage -> World.addAudioMessage audioMessage world)
                     world
                     realizations
             else world
