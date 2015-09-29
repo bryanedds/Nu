@@ -126,7 +126,7 @@ type Definitions =
 type [<NoComparison>] Effect =
     { EffectName : string
       Playback : Playback
-      Lifetime : int64
+      OptLifetime : int64 option
       Definitions : Definitions
       Content : Content }
 
@@ -307,7 +307,7 @@ module Effect =
                     (slice, evalContent viewType slice history content time @ artifacts)
                 | Emit ->
                     // emitted = (max time lifetimes) / stutter
-                    Seq.unfold
+                    //Seq.unfold
                     failwith "Unimplemented."
                 | Bone ->
                     (slice, []))
@@ -396,7 +396,10 @@ module Effect =
             evalComposite viewType slice history aspects time
 
     let eval viewType slice history (globalEnv : Definitions) (effect : Effect) (time : int64) : Either<string, EffectArtifect list> =
-        let localTime = time % effect.Lifetime
+        let localTime =
+            match effect.OptLifetime with
+            | Some lifetime -> time % lifetime
+            | None -> time
         match Content.expand (globalEnv @@ effect.Definitions) effect.Content with
         | Right content ->
             let artifacts = evalContent viewType slice history content localTime
@@ -406,6 +409,6 @@ module Effect =
     let empty =
         { EffectName = "Anonymous"
           Playback = Once
-          Lifetime = 0L
+          OptLifetime = None
           Definitions = Map.empty
           Content = Composite [] }
