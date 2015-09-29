@@ -383,7 +383,8 @@ module Effect =
         else artifacts
 
     and evalComposite viewType slice aspects time =
-        evalAspects viewType slice aspects time |> snd
+        let (_, artifacts) = evalAspects viewType slice aspects time
+        artifacts
 
     and evalContent viewType slice content time =
         match content with
@@ -398,7 +399,7 @@ module Effect =
         | Composite aspects ->
             evalComposite viewType slice aspects time
 
-    let eval viewType position size rotation depth color (globalEnv : Definitions) (effect : Effect) (time : int64) : string option * EffectArtifect list =
+    let eval viewType position size rotation depth color (globalEnv : Definitions) (effect : Effect) (time : int64) : Either<string, EffectArtifect list> =
         let localTime = time % effect.Lifetime
         match Content.expand (globalEnv @@ effect.Definitions) effect.Content with
         | Right content ->
@@ -409,8 +410,9 @@ module Effect =
                   Depth = depth
                   Color = color
                   Visible = true }
-            (None, evalContent viewType slice content localTime)
-        | Left error -> (Some error, [])
+            let artifacts = evalContent viewType slice content localTime
+            Right artifacts
+        | Left error -> Left error
 
     let empty =
         { EffectName = "Anonymous"
