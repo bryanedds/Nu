@@ -16,7 +16,7 @@ module EffectTests =
         Math.init ()
 
         let effectStr =
-            "[Ifrit [Loop 10] 20
+            "[Ifrit [Loop 10] [Some 20]
                 [[FlameResource [AsResource
                     [Resource Gameplay Esper]]]
                  [FlameSprite [AsContent [FlamePosition]

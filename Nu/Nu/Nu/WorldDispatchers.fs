@@ -57,24 +57,29 @@ module EffectFacetModule =
                       Color = Vector4.One
                       Visible = true }
 
-                let effectHistoryMax = entity.GetEffectHistoryMax world
                 let effectHistory = entity.GetEffectHistoryNp world
-                let world = entity.SetEffectHistoryNp (effectSlice :: effectHistory |> Seq.tryTake effectHistoryMax |> List.ofSeq) world
-
-                let globalEnv = entity.GetEffectDefinitions world
+                let effectEnv = entity.GetEffectDefinitions world
                 let effect = entity.GetEffect world
 
-                match Effect.eval effectViewType effectSlice effectHistory globalEnv effect effectTime with
-                | Right artifacts ->
-                    List.fold (fun world artifact ->
-                        match artifact with
-                        | RenderArtifact renderDescriptors -> World.addRenderMessage (RenderDescriptorsMessage renderDescriptors) world
-                        | SoundArtifact soundMessage -> World.addAudioMessage (PlaySoundMessage soundMessage) world)
+                let world =
+                    match Effect.eval effectViewType effectSlice effectHistory effectEnv effect effectTime with
+                    | Right artifacts ->
+                        List.fold (fun world artifact ->
+                            match artifact with
+                            | RenderArtifact renderDescriptors -> World.addRenderMessage (RenderDescriptorsMessage renderDescriptors) world
+                            | SoundArtifact soundMessage -> World.addAudioMessage (PlaySoundMessage soundMessage) world)
+                            world
+                            artifacts
+                    | Left error ->
+                        note error
                         world
-                        artifacts
-                | Left error ->
-                    note error
-                    world
+
+                let world =
+                    let effectHistoryMax = entity.GetEffectHistoryMax world
+                    let effectHistory = effectSlice :: effectHistory |> Seq.tryTake effectHistoryMax |> List.ofSeq
+                    entity.SetEffectHistoryNp effectHistory world
+
+                world
             else world
 
 [<AutoOpen>]
