@@ -135,7 +135,7 @@ type [<NoComparison>] Effect =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Argument =
 
-    let eval (argument : Argument) : Definition =
+    let expand (argument : Argument) : Definition =
         match argument with
         | PassPlayback playback -> AsPlayback playback
         | PassResource resource -> AsResource resource
@@ -145,13 +145,13 @@ module Argument =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Resource =
 
-    let rec eval (env : Definitions) (resource : Resource) : Either<string, Resource> =
+    let rec expand (env : Definitions) (resource : Resource) : Either<string, Resource> =
         match resource with
         | ExpandResource resourceName ->
             match Map.tryFind resourceName env with
             | Some resource ->
                 match resource with
-                | AsResource resource -> eval env resource
+                | AsResource resource -> expand env resource
                 | AsPlayback _ -> Left "Expected Resource argument but received Playback."
                 | AsAspect _ -> Left "Expected Resource argument but received Aspect."
                 | AsContent _ -> Left "Expected Resource argument but received Content."
@@ -161,13 +161,13 @@ module Resource =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Aspect =
 
-    let rec eval (env : Definitions) (aspect : Aspect) : Either<string, Aspect> =
+    let rec expand (env : Definitions) (aspect : Aspect) : Either<string, Aspect> =
         match aspect with
         | ExpandAspect aspectName ->
             match Map.tryFind aspectName env with
             | Some aspect ->
                 match aspect with
-                | AsAspect aspect -> eval env aspect
+                | AsAspect aspect -> expand env aspect
                 | AsPlayback _ -> Left "Expected Aspect argument but received Playback."
                 | AsResource _ -> Left "Expected Aspect argument but received Resource."
                 | AsContent _ -> Left "Expected Aspect argument but received Content."
@@ -185,19 +185,19 @@ module Aspect =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Content =
 
-    let rec eval (env : Definitions) (content : Content) : Either<string, Content> =
+    let rec expand (env : Definitions) (content : Content) : Either<string, Content> =
         match content with
         | ExpandContent (contentName, arguments) ->
             match Map.tryFind contentName env with
             | Some definition ->
                 match definition with
                 | AsContent (parameters, content) ->
-                    let localDefinitions = List.map Argument.eval arguments
+                    let localDefinitions = List.map Argument.expand arguments
                     match (try List.zip parameters localDefinitions |> Some with _ -> None) with
                     | Some localDefinitionEntries ->
                         let localEnv = Map.ofList localDefinitionEntries
                         let env = env @@ localEnv
-                        eval env content
+                        expand env content
                     | None -> Left "Wrong number of arguments provided to ExpandContent."
                 | AsPlayback _ -> Left "Expected Content argument but received Playback."
                 | AsResource _ -> Left "Expected Content argument but received Resource."
@@ -397,7 +397,7 @@ module Effect =
 
     let eval viewType position size rotation depth color (globalEnv : Definitions) (effect : Effect) (time : int64) : string option * EffectArtifect list =
         let localTime = time % effect.Lifetime
-        match Content.eval (globalEnv @@ effect.Definitions) effect.Content with
+        match Content.expand (globalEnv @@ effect.Definitions) effect.Content with
         | Right content ->
             let slice =
                 { Position = position

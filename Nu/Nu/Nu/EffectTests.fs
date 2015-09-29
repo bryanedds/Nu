@@ -19,18 +19,18 @@ module EffectTests =
             "[Ifrit [Loop 10] 20
                 [[FlameResource [AsResource
                     [Resource Gameplay Esper]]]
-                 [FlameSprite [AsArtifact [FlamePosition]
+                 [FlameSprite [AsContent [FlamePosition]
                     [StaticSprite [ExpandResource FlameResource]
                         [[ExpandAspect FlamePosition]
                          [Color Over Linear [[[1 1 1 1] 10] [[0.8 0.25 0.25 0.75] 0]]]]]]]
-                 [IfritSprite [AsArtifact []
+                 [IfritSprite [AsContent []
                     [AnimatedSprite [Resource Gameplay Esper] [4 4] 4 16 6
                         [[Visible Over [[False 2] [True 16] [False 0]]]
                          [Position Sum Linear [[[0 0] 10] [[10 10] 0]]]
-                         [Mount [ExpandArtifact FlameSprite [[PassAspect [Position Sum Linear [[[0 0] 10] [[10 10] 0]]]]]]]
-                         [Mount [ExpandArtifact FlameSprite [[PassAspect [Position Sum Linear [[[10 0] 10] [[0 10] 0]]]]]]]
+                         [Mount [ExpandContent FlameSprite [[PassAspect [Position Sum Linear [[[0 0] 10] [[10 10] 0]]]]]]]
+                         [Mount [ExpandContent FlameSprite [[PassAspect [Position Sum Linear [[[10 0] 10] [[0 10] 0]]]]]]]
                          [Emit]]]]]]
-                [ExpandArtifact IfritSprite []]]"
+                [ExpandContent IfritSprite []]]"
 
         let alucard =
             "[Alucard [Loop 16] 16
