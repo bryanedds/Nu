@@ -6,9 +6,7 @@ open OpenTK
 type Algorithm =
     | Constant
     | Linear
-    | EaseIn
-    | EaseOut
-    | Ease
+    | Ease // TODO: EaseIn and Out
 
 type LogicApplicator =
     | Or
@@ -235,8 +233,6 @@ module Effect =
         match algorithm with
         | Constant -> value2
         | Linear -> scale (value2 - value, progress)
-        | EaseIn -> failwith "TODO"
-        | EaseOut -> failwith "TODO"
         | Ease ->
             let progressEaseIn = single ^ Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0)
             scale (value2 - value, progressEaseIn)
