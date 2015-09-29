@@ -382,6 +382,9 @@ module Effect =
             artifact :: artifacts
         else artifacts
 
+    and evalComposite viewType slice aspects time =
+        evalAspects viewType slice aspects time |> snd
+
     and evalContent viewType slice content time =
         match content with
         | ExpandContent _ ->
@@ -393,7 +396,7 @@ module Effect =
         | PhysicsShape (label, bodyShape, collisionCategories, collisionMask, aspects) ->
             ignore (label, bodyShape, collisionCategories, collisionMask, aspects); failwith "TODO"
         | Composite aspects ->
-            ignore aspects; failwith "TODO"
+            evalComposite viewType slice aspects time
 
     let eval viewType position size rotation depth color (globalEnv : Definitions) (effect : Effect) (time : int64) : string option * EffectArtifect list =
         let localTime = time % effect.Lifetime
@@ -410,7 +413,7 @@ module Effect =
         | Left error -> (Some error, [])
 
     let empty =
-        { EffectName = "Empty"
+        { EffectName = "Anonymous"
           Playback = Once
           Lifetime = 0L
           Definitions = Map.empty
