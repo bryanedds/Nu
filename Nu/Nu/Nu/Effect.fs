@@ -25,7 +25,7 @@ type TweenApplicator =
     | Ratio
     | Over
 
-type [<StructuralEquality; NoComparison>] RenderSprite =
+type [<StructuralEquality; NoComparison>] Slice =
     { Position : Vector2
       Size : Vector2
       Rotation : single
@@ -87,50 +87,50 @@ type Resource =
     | ExpandResource of string
     | Resource of string * string
 
-type [<NoComparison>] Gesture =
-    | ExpandGesture of string
+type [<NoComparison>] Aspect =
+    | ExpandAspect of string
     | Visible of LogicApplicator * LogicNode list
     | Position of TweenApplicator * Algorithm * Tween2Node list
     | Size of TweenApplicator * Algorithm * Tween2Node list
     | Rotation of TweenApplicator * Algorithm * TweenNode list
     | Depth of TweenApplicator * Algorithm * TweenNode list
     | Color of TweenApplicator * Algorithm * Tween4Node list
-    | Mount of Animation
+    | Mount of Content
     | Emit // TODO
     | Bone // TODO
 
-and [<NoComparison>] Animation =
-    | ExpandAnimation of string * Argument list
-    | StaticSprite of Resource * Gesture list
-    | AnimatedSprite of Resource * Vector2i * int * int * int * Gesture list
-    | PhysicsShape of BodyShape * string * string * Gesture list
-    | Container of Gesture list
+and [<NoComparison>] Content =
+    | ExpandContent of string * Argument list
+    | StaticSprite of Resource * Aspect list
+    | AnimatedSprite of Resource * Vector2i * int * int * int64 * Aspect list
+    | PhysicsShape of BodyShape * string * string * string * Aspect list
+    | Composite of Aspect list
 
 and [<NoComparison>] Argument =
     | PassPlayback of Playback
     | PassResource of Resource
-    | PassGesture of Gesture
-    | PassAnimation of Animation
+    | PassAspect of Aspect
+    | PassContent of Content
 
 type [<NoComparison>] Definition =
     | AsPlayback of Playback
     | AsResource of Resource
-    | AsGesture of Gesture
-    | AsAnimation of string list * Animation
+    | AsAspect of Aspect
+    | AsContent of string list * Content
 
-type [<NoComparison>] Realization =
-    | RenderRealization of RenderMessage
-    | AudioRealization of AudioMessage
+type [<NoComparison>] EffectArtifect =
+    | RenderArtifact of RenderMessage
+    | AudioArtifact of AudioMessage
 
 type Definitions =
     Map<string, Definition>
 
 type [<NoComparison>] Effect =
-    { Name : string
+    { EffectName : string
       Playback : Playback
       Lifetime : int64
       Definitions : Definitions
-      Animation : Animation }
+      Content : Content }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Argument =
@@ -139,8 +139,8 @@ module Argument =
         match argument with
         | PassPlayback playback -> AsPlayback playback
         | PassResource resource -> AsResource resource
-        | PassGesture gesture -> AsGesture gesture
-        | PassAnimation animation -> AsAnimation ([], animation)
+        | PassAspect aspect -> AsAspect aspect
+        | PassContent content -> AsContent ([], content)
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Resource =
@@ -153,60 +153,60 @@ module Resource =
                 match resource with
                 | AsResource resource -> eval env resource
                 | AsPlayback _ -> Left "Expected Resource argument but received Playback."
-                | AsGesture _ -> Left "Expected Resource argument but received Gesture."
-                | AsAnimation _ -> Left "Expected Resource argument but received Animation."
-            | None -> Left "Expected Animation argument but received none."
+                | AsAspect _ -> Left "Expected Resource argument but received Aspect."
+                | AsContent _ -> Left "Expected Resource argument but received Content."
+            | None -> Left "Expected Content argument but received none."
         | Resource _ -> Right resource
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Gesture =
+module Aspect =
 
-    let rec eval (env : Definitions) (gesture : Gesture) : Either<string, Gesture> =
-        match gesture with
-        | ExpandGesture gestureName ->
-            match Map.tryFind gestureName env with
-            | Some gesture ->
-                match gesture with
-                | AsGesture gesture -> eval env gesture
-                | AsPlayback _ -> Left "Expected Gesture argument but received Playback."
-                | AsResource _ -> Left "Expected Gesture argument but received Resource."
-                | AsAnimation _ -> Left "Expected Gesture argument but received Animation."
-            | None -> Left "Expected Animation argument but received none."
-        | Visible _ -> Right gesture
-        | Position _ -> Right gesture
-        | Size _ -> Right gesture
-        | Rotation _ -> Right gesture
-        | Depth _ -> Right gesture
-        | Color _ -> Right gesture
-        | Mount _ -> Right gesture
-        | Emit -> Right gesture
-        | Bone -> Right gesture
+    let rec eval (env : Definitions) (aspect : Aspect) : Either<string, Aspect> =
+        match aspect with
+        | ExpandAspect aspectName ->
+            match Map.tryFind aspectName env with
+            | Some aspect ->
+                match aspect with
+                | AsAspect aspect -> eval env aspect
+                | AsPlayback _ -> Left "Expected Aspect argument but received Playback."
+                | AsResource _ -> Left "Expected Aspect argument but received Resource."
+                | AsContent _ -> Left "Expected Aspect argument but received Content."
+            | None -> Left "Expected Content argument but received none."
+        | Visible _ -> Right aspect
+        | Position _ -> Right aspect
+        | Size _ -> Right aspect
+        | Rotation _ -> Right aspect
+        | Depth _ -> Right aspect
+        | Color _ -> Right aspect
+        | Mount _ -> Right aspect
+        | Emit -> Right aspect
+        | Bone -> Right aspect
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Animation =
+module Content =
 
-    let rec eval (env : Definitions) (animation : Animation) : Either<string, Animation> =
-        match animation with
-        | ExpandAnimation (animationName, arguments) ->
-            match Map.tryFind animationName env with
+    let rec eval (env : Definitions) (content : Content) : Either<string, Content> =
+        match content with
+        | ExpandContent (contentName, arguments) ->
+            match Map.tryFind contentName env with
             | Some definition ->
                 match definition with
-                | AsAnimation (parameters, animation) ->
+                | AsContent (parameters, content) ->
                     let localDefinitions = List.map Argument.eval arguments
                     match (try List.zip parameters localDefinitions |> Some with _ -> None) with
                     | Some localDefinitionEntries ->
                         let localEnv = Map.ofList localDefinitionEntries
                         let env = env @@ localEnv
-                        eval env animation
-                    | None -> Left "Wrong number of arguments provided to ExpandAnimation."
-                | AsPlayback _ -> Left "Expected Animation argument but received Playback."
-                | AsResource _ -> Left "Expected Animation argument but received Resource."
-                | AsGesture _ -> Left "Expected Animation argument but received Gesture."
-            | None -> Left "Expected Animation argument but received none."
-        | StaticSprite _ -> Right animation
-        | AnimatedSprite _ -> Right animation
-        | PhysicsShape _ -> Right animation
-        | Container _ -> Right animation
+                        eval env content
+                    | None -> Left "Wrong number of arguments provided to ExpandContent."
+                | AsPlayback _ -> Left "Expected Content argument but received Playback."
+                | AsResource _ -> Left "Expected Content argument but received Resource."
+                | AsAspect _ -> Left "Expected Content argument but received Aspect."
+            | None -> Left "Expected Content argument but received none."
+        | StaticSprite _ -> Right content
+        | AnimatedSprite _ -> Right content
+        | PhysicsShape _ -> Right content
+        | Composite _ -> Right content
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Effect =
@@ -253,114 +253,165 @@ module Effect =
     let inline applyTween scale ratio (value : ^a) (value2 : ^a) applicator =
         match applicator with
         | Sum -> value + value2
-        | Diff -> value2 - value // TODO: make sure this is correct difference semantics
+        | Diff -> value2 - value
         | Scale -> scale (value, value2)
         | Ratio -> ratio (value, value2)
         | TweenApplicator.Over -> value2
 
-    let eval position size rotation depth viewType color (time : int64) (globalEnv : Definitions) (effect : Effect) : string option * Realization list =
+    let evalInset (celSize : Vector2i) celRun celCount stutter time =
+        let cel = int (time / stutter) % celCount
+        let celI = cel % celRun
+        let celJ = cel / celRun
+        let celX = celI * celSize.X
+        let celY = celJ * celSize.Y
+        let celPosition = Vector2 (single celX, single celY)
+        let celSize = Vector2 (single celSize.X, single celSize.Y)
+        Math.makeBounds celPosition celSize
+
+    let rec evalAspects viewType slice aspects time =
+        List.fold
+            (fun (slice, artifacts) aspect ->
+                match aspect with
+                | ExpandAspect _ -> failwithumf ()
+                | Visible (applicator, nodes) ->
+                    let (_, _, node) = selectNodes time nodes
+                    let applied = applyLogic true node.LogicValue applicator
+                    ({ slice with Visible = applied }, artifacts)
+                | Position (applicator, algorithm, nodes) ->
+                    let (nodeTime, node, node2) = selectNodes time nodes
+                    let progress = single nodeTime / single node.TweenLength
+                    let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm
+                    let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
+                    ({ slice with Position = applied }, artifacts)
+                | Size (applicator, algorithm, nodes) ->
+                    let (nodeTime, node, node2) = selectNodes time nodes
+                    let progress = single nodeTime / single node.TweenLength
+                    let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm
+                    let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
+                    ({ slice with Size = applied }, artifacts)
+                | Rotation (applicator, algorithm, nodes) ->
+                    let (nodeTime, node, node2) = selectNodes time nodes
+                    let progress = single nodeTime / single node.TweenLength
+                    let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm
+                    let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Rotation tweened applicator
+                    ({ slice with Rotation = applied }, artifacts)
+                | Depth (applicator, algorithm, nodes) ->
+                    let (nodeTime, node, node2) = selectNodes time nodes
+                    let progress = single nodeTime / single node.TweenLength
+                    let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm
+                    let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Depth tweened applicator
+                    ({ slice with Depth = applied }, artifacts)
+                | Color (applicator, algorithm, nodes) ->
+                    let (nodeTime, node, node2) = selectNodes time nodes
+                    let progress = single nodeTime / single node.TweenLength
+                    let tweened = tween Vector4.op_Multiply node.TweenValue node2.TweenValue progress algorithm
+                    let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
+                    ({ slice with Color = applied }, artifacts)
+                | Mount content ->
+                    (slice, evalContent viewType slice content time @ artifacts)
+                | Emit ->
+                    failwith "Unimplemented."
+                | Bone ->
+                    failwith "Unimplemented.")
+            (slice, [])
+            aspects
+
+    and evalStaticSprite viewType slice resource aspects time =
+
+        // pull image from resource
+        let image =
+            match resource with
+            | ExpandResource _ -> failwithumf ()
+            | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
+
+        // eval aspects
+        let (slice, artifacts) =
+            evalAspects viewType slice aspects time
+
+        // return artifacts
+        if slice.Visible then
+            let artifact =
+                RenderArtifact
+                    (RenderDescriptorsMessage
+                        [LayerableDescriptor
+                            { Depth = slice.Depth
+                              LayeredDescriptor =
+                                SpriteDescriptor 
+                                    { Position = slice.Position
+                                      Size = slice.Size
+                                      Rotation = slice.Rotation
+                                      OptInset = None
+                                      Image = image
+                                      ViewType = viewType
+                                      Color = slice.Color }}])
+            artifact :: artifacts
+        else artifacts
+
+    and evalAnimatedSprite viewType slice resource celSize celRun celCount stutter aspects time =
+
+        // pull image from resource
+        let image =
+            match resource with
+            | ExpandResource _ -> failwithumf ()
+            | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
+
+        // eval aspects
+        let (slice, artifacts) =
+            evalAspects viewType slice aspects time
+
+        // eval inset
+        let inset =
+            evalInset celSize celRun celCount stutter time
+
+        // return artifacts
+        if slice.Visible then
+            let artifact =
+                RenderArtifact
+                    (RenderDescriptorsMessage
+                        [LayerableDescriptor
+                            { Depth = slice.Depth
+                              LayeredDescriptor =
+                                SpriteDescriptor 
+                                    { Position = slice.Position
+                                      Size = slice.Size
+                                      Rotation = slice.Rotation
+                                      OptInset = Some inset
+                                      Image = image
+                                      ViewType = viewType
+                                      Color = slice.Color }}])
+            artifact :: artifacts
+        else artifacts
+
+    and evalContent viewType slice content time =
+        match content with
+        | ExpandContent _ ->
+            failwithumf ()
+        | StaticSprite (resource, aspects) ->
+            evalStaticSprite viewType slice resource aspects time
+        | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects) ->
+            evalAnimatedSprite viewType slice resource celSize celRun celCount stutter aspects time
+        | PhysicsShape (label, bodyShape, collisionCategories, collisionMask, aspects) ->
+            ignore (label, bodyShape, collisionCategories, collisionMask, aspects); failwith "TODO"
+        | Composite aspects ->
+            ignore aspects; failwith "TODO"
+
+    let eval viewType position size rotation depth color (globalEnv : Definitions) (effect : Effect) (time : int64) : string option * EffectArtifect list =
         let localTime = time % effect.Lifetime
-        match Animation.eval (effect.Definitions @@ globalEnv) effect.Animation with
-        | Right animation ->
-            match animation with
-            | ExpandAnimation _ -> failwithumf ()
-            | StaticSprite (resource, gestures) ->
-
-                let image =
-                    match resource with
-                    | ExpandResource _ -> failwithumf ()
-                    | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
-
-                let sprite =
-                    { Position = position
-                      Size = size
-                      Rotation = rotation
-                      Depth = depth
-                      Color = Vector4.One
-                      Visible = true }
-
-                let sprite =
-                    List.fold
-                        (fun sprite gesture ->
-                            match gesture with
-                            | ExpandGesture _ -> failwithumf ()
-                            | Visible (applicator, nodes) ->
-                                let (_, _, node) = selectNodes localTime nodes
-                                let applied = applyLogic true node.LogicValue applicator
-                                { sprite with Visible = applied }
-                            | Position (applicator, algorithm, nodes) ->
-                                let (nodeLocalTime, node, node2) = selectNodes localTime nodes
-                                let progress = single nodeLocalTime / single node.TweenLength
-                                let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm
-                                let applied = applyTween Vector2.Multiply Vector2.Divide position tweened applicator
-                                { sprite with Position = applied }
-                            | Size (applicator, algorithm, nodes) ->
-                                let (nodeLocalTime, node, node2) = selectNodes localTime nodes
-                                let progress = single nodeLocalTime / single node.TweenLength
-                                let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm
-                                let applied = applyTween Vector2.Multiply Vector2.Divide size tweened applicator
-                                { sprite with Size = applied }
-                            | Rotation (applicator, algorithm, nodes) ->
-                                let (nodeLocalTime, node, node2) = selectNodes localTime nodes
-                                let progress = single nodeLocalTime / single node.TweenLength
-                                let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm
-                                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) rotation tweened applicator
-                                { sprite with Rotation = applied }
-                            | Depth (applicator, algorithm, nodes) ->
-                                let (nodeLocalTime, node, node2) = selectNodes localTime nodes
-                                let progress = single nodeLocalTime / single node.TweenLength
-                                let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm
-                                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) depth tweened applicator
-                                { sprite with Depth = applied }
-                            | Color (applicator, algorithm, nodes) ->
-                                let (nodeLocalTime, node, node2) = selectNodes localTime nodes
-                                let progress = single nodeLocalTime / single node.TweenLength
-                                let tweened = tween Vector4.op_Multiply node.TweenValue node2.TweenValue progress algorithm
-                                let applied = applyTween Vector4.Multiply Vector4.Divide color tweened applicator
-                                { sprite with Color = applied }
-                            | Mount _ -> failwith "Unimplemented."
-                            | Emit -> failwith "Unimplemented."
-                            | Bone -> failwith "Unimplemented.")
-                        sprite
-                        gestures
-
-                let renderRealizations =
-                    if sprite.Visible then
-                        [RenderRealization
-                            (RenderDescriptorsMessage
-                                [LayerableDescriptor
-                                    { Depth = sprite.Depth
-                                      LayeredDescriptor =
-                                        SpriteDescriptor 
-                                            { Position = sprite.Position
-                                              Size = sprite.Size
-                                              Rotation = sprite.Rotation
-                                              OptInset = None
-                                              Image = image
-                                              ViewType = viewType
-                                              Color = sprite.Color }}])]
-                    else []
-
-                (None, renderRealizations)
-
-            | AnimatedSprite (resource, celSize, celRun, celCount, stutter, gestures) ->
-                ignore (resource, celSize, celRun, celCount, stutter, gestures)
-                failwith "TODO"
-
-            | PhysicsShape (bodyShape, collisionCategories, collisionMask, gestures) ->
-                ignore (bodyShape, collisionCategories, collisionMask, gestures) 
-                failwith "TODO"
-
-            | Container gestures ->
-                ignore gestures
-                failwith "TODO"
-
-        | Left error ->
-            (Some error, [])
+        match Content.eval (globalEnv @@ effect.Definitions) effect.Content with
+        | Right content ->
+            let slice =
+                { Position = position
+                  Size = size
+                  Rotation = rotation
+                  Depth = depth
+                  Color = color
+                  Visible = true }
+            (None, evalContent viewType slice content localTime)
+        | Left error -> (Some error, [])
 
     let empty =
-        { Name = "Empty"
+        { EffectName = "Empty"
           Playback = Once
           Lifetime = 0L
           Definitions = Map.empty
-          Animation = Container [] }
+          Content = Composite [] }
