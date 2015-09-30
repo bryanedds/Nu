@@ -310,8 +310,7 @@ module Effect =
                 | Repeat ->
                     (slice, []) // TODO: implement
                 | Emit ->
-                    //List.map fn (slice :: history)
-                    (slice, []) // TODO: implement
+                    (slice, []) // TODO: implement with a map over (slice :: history)
                 | Bone ->
                     (slice, [])) // TODO: implement
             (slice, [])
@@ -410,7 +409,7 @@ module Effect =
         | Left error -> Left error
 
     let empty =
-        { EffectName = "Anonymous"
+        { EffectName = "Empty"
           Playback = Once
           OptLifetime = None
           Definitions = Map.empty
