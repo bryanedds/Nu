@@ -94,6 +94,7 @@ type [<NoComparison>] Aspect =
     | Depth of TweenApplicator * Algorithm * TweenNode list
     | Color of TweenApplicator * Algorithm * Tween4Node list
     | Mount of Content
+    | Repeat // TODO
     | Emit // TODO
     | Bone // TODO
 
@@ -177,6 +178,7 @@ module Aspect =
         | Depth _ -> Right aspect
         | Color _ -> Right aspect
         | Mount _ -> Right aspect
+        | Repeat -> Right aspect
         | Emit -> Right aspect
         | Bone -> Right aspect
 
@@ -305,12 +307,13 @@ module Effect =
                     ({ slice with Color = applied }, artifacts)
                 | Mount content ->
                     (slice, evalContent viewType slice history content time @ artifacts)
+                | Repeat ->
+                    (slice, []) // TODO: implement
                 | Emit ->
-                    // emitted = (max time lifetimes) / stutter
-                    //Seq.unfold
-                    failwith "Unimplemented."
+                    //List.map fn (slice :: history)
+                    (slice, []) // TODO: implement
                 | Bone ->
-                    (slice, []))
+                    (slice, [])) // TODO: implement
             (slice, [])
             aspects
 
@@ -391,7 +394,7 @@ module Effect =
         | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects) ->
             evalAnimatedSprite viewType slice history resource celSize celRun celCount stutter aspects time
         | PhysicsShape (label, bodyShape, collisionCategories, collisionMask, aspects) ->
-            ignore (label, bodyShape, collisionCategories, collisionMask, aspects); failwith "TODO"
+            ignore (label, bodyShape, collisionCategories, collisionMask, aspects); [] // TODO: implement
         | Composite aspects ->
             evalComposite viewType slice history aspects time
 
