@@ -29,7 +29,8 @@ type [<StructuralEquality; NoComparison>] Slice =
       Rotation : single
       Depth : single
       Color : Vector4
-      Visible : bool }
+      Visible : bool
+      Enabled : bool }
 
 type INode =
     abstract NodeLength : int64
@@ -88,6 +89,7 @@ type Resource =
 type [<NoComparison>] Aspect =
     | ExpandAspect of string
     | Visible of LogicApplicator * LogicNode list
+    | Enabled of LogicApplicator * LogicNode list
     | Position of TweenApplicator * Algorithm * Tween2Node list
     | Size of TweenApplicator * Algorithm * Tween2Node list
     | Rotation of TweenApplicator * Algorithm * TweenNode list
@@ -171,15 +173,16 @@ module Aspect =
                 | AsResource _ -> Left "Expected Aspect argument but received Resource."
                 | AsContent _ -> Left "Expected Aspect argument but received Content."
             | None -> Left "Expected Content argument but received none."
-        | Visible _ -> Right aspect
-        | Position _ -> Right aspect
-        | Size _ -> Right aspect
-        | Rotation _ -> Right aspect
-        | Depth _ -> Right aspect
-        | Color _ -> Right aspect
-        | Mount _ -> Right aspect
-        | Repeat -> Right aspect
-        | Emit -> Right aspect
+        | Visible _
+        | Enabled _
+        | Position _
+        | Size _
+        | Rotation _
+        | Depth _
+        | Color _
+        | Mount _
+        | Repeat
+        | Emit
         | Bone -> Right aspect
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -203,9 +206,9 @@ module Content =
                 | AsResource _ -> Left "Expected Content argument but received Resource."
                 | AsAspect _ -> Left "Expected Content argument but received Aspect."
             | None -> Left "Expected Content argument but received none."
-        | StaticSprite _ -> Right content
-        | AnimatedSprite _ -> Right content
-        | PhysicsShape _ -> Right content
+        | StaticSprite _
+        | AnimatedSprite _
+        | PhysicsShape _
         | Composite _ -> Right content
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -275,6 +278,10 @@ module Effect =
                     let (_, _, node) = selectNodes time nodes
                     let applied = applyLogic true node.LogicValue applicator
                     ({ slice with Visible = applied }, artifacts)
+                | Enabled (applicator, nodes) ->
+                    let (_, _, node) = selectNodes time nodes
+                    let applied = applyLogic true node.LogicValue applicator
+                    ({ slice with Enabled = applied }, artifacts)
                 | Position (applicator, algorithm, nodes) ->
                     let (nodeTime, node, node2) = selectNodes time nodes
                     let progress = single nodeTime / single node.TweenLength
