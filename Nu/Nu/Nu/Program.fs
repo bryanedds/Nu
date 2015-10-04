@@ -3,7 +3,7 @@
 
 namespace Nu
 open System
-open global.Nu
+open global.Nu // TODO: see if this explicit qualification is due to a compiler bug
 open Nu.Tests
 module Program =
 
@@ -27,7 +27,7 @@ module Program =
 
     Most of these systems are interpreted, and unlike code in F#, allow for hot-reloading for
     optimal authoring experiences. For these systems, however, no static checking is in place,
-    allowing for trivial syntactic errors to proliferate.
+    allowing for trivial syntactic errors.
 
     For the system that isn't interpreted, a strong type system is in place to make sure complex
     data-flow dependencies are made explicit and checked with good error messages. For this system,
