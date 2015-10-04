@@ -280,7 +280,7 @@ module WorldEntityModule =
                     Overlayer.applyOverlayToFacetNames intrinsicOverlayName defaultOverlayName entityState overlayer overlayer
 
                     // synchronize the entity's facets (and attach their fields)
-                    match World.trySynchronizeFacetsToNames [] entityState None world with
+                    match World.trySynchronizeFacetsToNames Set.empty entityState None world with
                     | Right (entityState, _) -> entityState
                     | Left error -> debug error; entityState
                 | None -> entityState
@@ -467,7 +467,7 @@ module WorldEntityModule =
             
             // synchronize the entity state's facets (and attach their fields)
             let entityState =
-                match World.trySynchronizeFacetsToNames [] entityState None world with
+                match World.trySynchronizeFacetsToNames Set.empty entityState None world with
                 | Right (entityState, _) -> entityState
                 | Left error -> debug error; entityState
 

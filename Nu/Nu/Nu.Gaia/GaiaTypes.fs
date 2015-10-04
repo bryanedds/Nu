@@ -94,7 +94,7 @@ and EntityPropertyDescriptor (property, attributes) =
 
             // TODO: comment
             | "FacetNames" ->
-                let facetNames = value :?> string list
+                let facetNames = value :?> string Set
                 let entity = entityTds.DescribedEntity
                 let world =
                     match World.trySetEntityFacetNames facetNames entity world with

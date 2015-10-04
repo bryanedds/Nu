@@ -108,7 +108,7 @@ module Overlayer =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         for property in targetProperties do
-            if property.Name <> "FacetNames" && property.PropertyType <> typeof<string list> then
+            if property.Name <> "FacetNames" && property.PropertyType <> typeof<string Set> then
                 match trySelectNode newOverlayName property.Name newOverlayer with
                 | Some fieldNode -> tryApplyOverlayToRecordField facetNames property fieldNode oldOverlayName target oldOverlayer
                 | None -> ()

@@ -90,7 +90,7 @@ module EntityState =
           Persistent = true
           CreationTimeStampNp = Core.getTimeStamp ()
           DispatcherNp = dispatcher
-          FacetNames = []
+          FacetNames = Set.empty
           FacetsNp = []
           OptOverlayName = optOverlayName
           Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
