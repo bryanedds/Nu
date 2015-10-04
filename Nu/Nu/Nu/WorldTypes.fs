@@ -430,9 +430,15 @@ and [<StructuralEquality; NoComparison>] Game =
 
     /// Concatenate two addresses, taking the type of first address.
     static member acatf<'a> (address : 'a Address) (game : Game) = acatf address (atooa game.GameAddress)
+    
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatff<'a> (address : 'a Address) (entity : Entity) = acatff address entity.EntityAddress
 
     /// Concatenate two addresses, taking the type of first address.
     static member (->-) (address, game) = Game.acatf address game
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member (->>-) (address, game) = acatff address game
 
 /// The screen type that allows transitioning to and from other screens, and also hosts the
 /// currently interactive groups of entities.
@@ -455,9 +461,15 @@ and [<StructuralEquality; NoComparison>] Screen =
 
     /// Concatenate two addresses, taking the type of first address.
     static member acatf<'a> (address : 'a Address) (screen : Screen) = acatf address (atooa screen.ScreenAddress)
+    
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatff<'a> (address : 'a Address) (screen : Entity) = acatff address screen.EntityAddress
 
     /// Concatenate two addresses, taking the type of first address.
     static member (->-) (address, screen) = Screen.acatf address screen
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member (->>-) (address, screen) = acatff address screen
 
     /// Convert a screen's name to it's proxy.
     static member (!>) screenName = Screen.proxy ^ ntoa screenName
@@ -485,6 +497,9 @@ and [<StructuralEquality; NoComparison>] Group =
 
     /// Concatenate two addresses, taking the type of first address.
     static member acatf<'a> (address : 'a Address) (group : Group) = acatf address (atooa group.GroupAddress)
+    
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatff<'a> (address : 'a Address) (group : Entity) = acatff address group.EntityAddress
 
     /// Convert a group's proxy to its screen's.
     static member (!<) group = Screen.proxy ^ Address.allButLast group.GroupAddress
@@ -494,6 +509,9 @@ and [<StructuralEquality; NoComparison>] Group =
 
     /// Concatenate two addresses, taking the type of first address.
     static member (->-) (address, group) = Group.acatf address group
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member (->>-) (address, group) = acatff address group
 
 /// The type around which the whole game engine is based! Used in combination with dispatchers
 /// to implement things like buttons, characters, blocks, and things of that sort.
@@ -516,12 +534,18 @@ and [<StructuralEquality; NoComparison>] Entity =
 
     /// Concatenate two addresses, taking the type of first address.
     static member acatf<'a> (address : 'a Address) (entity : Entity) = acatf address (atooa entity.EntityAddress)
+    
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatff<'a> (address : 'a Address) (entity : Entity) = acatff address entity.EntityAddress
 
     /// Convert an entity's proxy to its group's.
     static member (!<) entity = Group.proxy ^ Address.allButLast entity.EntityAddress
 
     /// Concatenate two addresses, taking the type of first address.
     static member (->-) (address, entity) = Entity.acatf address entity
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member (->>-) (address, entity) = acatff address entity
 
 /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
 /// specific values.

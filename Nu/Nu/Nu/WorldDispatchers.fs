@@ -14,33 +14,54 @@ module MountLocalFacetModule =
 
     type Entity with
     
-        member this.GetOptTarget world : Entity option = (this.GetXtension world)?OptTarget
-        member this.SetOptTarget (value : Entity option) world = this.UpdateXtension (fun xtension -> xtension?OptTarget <- value) world
+        member this.GetOptTargetAddress world : Entity Address option = (this.GetXtension world)?OptTargetAddress
+        member this.SetOptTargetAddress (value : Entity Address option) world = this.UpdateXtension (fun xtension -> xtension?OptTargetAddress <- value) world
         member this.GetPositionLocal world : Vector2 = (this.GetXtension world)?PositionLocal
         member this.SetPositionLocal (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?PositionLocal <- value) world
         member this.GetDepthLocal world : single = (this.GetXtension world)?DepthLocal
         member this.SetDepthLocal (value : single) world = this.UpdateXtension (fun xtension -> xtension?DepthLocal <- value) world
+        member private this.GetMountLocalUnsubscribeNp world : World -> World = (this.GetXtension world)?MountLocalUnsubscribeNp
+        member private this.SetMountLocalUnsubscribeNp (value : World -> World) world = this.UpdateXtension (fun xtension -> xtension?MountLocalUnsubscribeNp <- value) world
 
     type MountLocalFacet () =
         inherit Facet ()
 
-        static member FieldDefinitions =
-            [define? OptTarget (None : Entity option)
-             define? PositionLocal Vector2.Zero
-             define? DepthLocal 0.0f]
+        static let handleTargetChange event_ world =
+            let entity = event_.Subscriber : Entity
+            let target = event_.Publisher :?> Entity
+            let transform = target.GetTransform world
+            if transform <> target.GetTransform event_.Data.OldWorld then
+                let transform =
+                    { transform with
+                        Position = transform.Position + entity.GetPositionLocal world
+                        Depth = transform.Depth + entity.GetDepthLocal world }
+                let world = entity.SetTransform transform world
+                (Cascade, world)
+            else (Cascade, world)
 
-        override facet.Update (entity, world) =
-            match entity.GetOptTarget world with
-            | Some target ->
-                if World.containsEntity target world then
-                    let transform = target.GetTransform world
-                    let transform =
-                        { transform with
-                            Position = transform.Position + entity.GetPositionLocal world
-                            Depth = transform.Depth + entity.GetDepthLocal world }
-                    entity.SetTransform transform world
-                else world
-            | None -> world
+        static let rec handleEntityChange event_ world =
+            let entity = event_.Subscriber : Entity
+            if entity.GetOptTargetAddress event_.Data.OldWorld <> entity.GetOptTargetAddress world then
+                let world = (entity.GetMountLocalUnsubscribeNp world) world
+                let (unsubscribe, world) = World.monitorPlus handleTargetChange (Events.EntityChange ->- entity) entity world
+                let world = entity.SetMountLocalUnsubscribeNp unsubscribe world
+                (Cascade, world)
+            else (Cascade, world)
+
+        static member FieldDefinitions =
+            [define? PublishChanges true
+             define? OptTargetAddress (None : Entity Address option)
+             define? PositionLocal Vector2.Zero
+             define? DepthLocal 0.0f
+             define? MountLocalUnsubscribeNp (id : World -> World)]
+
+        override facet.Register (entity, world) =
+            let world = World.monitor handleEntityChange (Events.EntityChange ->- entity) entity world
+            let (unsubscribe, world) =
+                match entity.GetOptTargetAddress world with
+                | Some targetAddress -> World.monitorPlus handleTargetChange (Events.EntityChange ->>- targetAddress) entity world
+                | None -> (id, world)
+            entity.SetMountLocalUnsubscribeNp unsubscribe world
 
 [<AutoOpen>]
 module EffectFacetModule =
