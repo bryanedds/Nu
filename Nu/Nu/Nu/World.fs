@@ -52,7 +52,7 @@ module Nu =
                 let entities = screen |> flip World.proxyGroups world |> Seq.map (flip World.proxyEntities world) |> Seq.concat
                 for entity in entities do
                     let entityMaxBounds = World.getEntityBoundsMax entity world
-                    QuadTree.addElement false entityMaxBounds entity tree
+                    QuadTree.addElement (entity.GetOmnipresent world || entity.GetViewType world = Absolute) entityMaxBounds entity tree
                 tree
 
             // mark init flag
