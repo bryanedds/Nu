@@ -117,7 +117,8 @@ module EffectFacetModule =
                       Rotation = entity.GetRotation world
                       Depth = entity.GetDepth world
                       Color = Vector4.One
-                      Visible = true }
+                      Visible = true
+                      Enabled = true }
 
                 let effectHistory = entity.GetEffectHistoryNp world
                 let effectEnv = entity.GetEffectDefinitions world
@@ -345,8 +346,6 @@ module GuiDispatcherModule =
 
     type Entity with
     
-        member this.GetEnabled world : bool = (this.GetXtension world)?Enabled
-        member this.SetEnabled (value : bool) world = this.UpdateXtension (fun xtension -> xtension?Enabled <- value) world
         member this.GetDisabledColor world : Vector4 = (this.GetXtension world)?DisabledColor
         member this.SetDisabledColor (value : Vector4) world = this.UpdateXtension (fun xtension -> xtension?DisabledColor <- value) world
         member this.GetSwallowMouseLeft world : bool = (this.GetXtension world)?SwallowMouseLeft
