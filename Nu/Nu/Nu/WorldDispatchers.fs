@@ -20,8 +20,8 @@ module MountFacetModule =
         member this.SetPositionLocal (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?PositionLocal <- value) world
         member this.GetDepthLocal world : single = (this.GetXtension world)?DepthLocal
         member this.SetDepthLocal (value : single) world = this.UpdateXtension (fun xtension -> xtension?DepthLocal <- value) world
-        member private this.GetMountChangeTimeNp world : int64 = (this.GetXtension world)?MountChangeTimeNp
-        member private this.SetMountChangeTimeNp (value : int64) world = this.UpdateXtension (fun xtension -> xtension?MountChangeTimeNp <- value) world
+        member private this.GetMountUpdateCountNp world : int64 = (this.GetXtension world)?MountUpdateCountNp
+        member private this.SetMountUpdateCountNp (value : int64) world = this.UpdateXtension (fun xtension -> xtension?MountUpdateCountNp <- value) world
         member private this.GetMountUnsubscribeNp world : World -> World = (this.GetXtension world)?MountUnsubscribeNp
         member private this.SetMountUnsubscribeNp (value : World -> World) world = this.UpdateXtension (fun xtension -> xtension?MountUnsubscribeNp <- value) world
 
@@ -32,15 +32,15 @@ module MountFacetModule =
             let entity = event_.Subscriber : Entity
             let target = event_.Publisher :?> Entity
             let transform = target.GetTransform world
-            let tickTime = World.getTickTime world
+            let updateCount = World.getUpdateCount world
             if  transform <> target.GetTransform event_.Data.OldWorld &&
-                tickTime <> entity.GetMountChangeTimeNp world then
+                updateCount <> entity.GetMountUpdateCountNp world then
                 let transform =
                     { transform with
                         Position = transform.Position + entity.GetPositionLocal world
                         Depth = transform.Depth + entity.GetDepthLocal world }
                 let world = entity.SetTransform transform world
-                let world = entity.SetMountChangeTimeNp tickTime world
+                let world = entity.SetMountUpdateCountNp updateCount world
                 (Cascade, world)
             else (Cascade, world)
 
@@ -58,7 +58,7 @@ module MountFacetModule =
              define? OptMountRelation (None : Entity Relation option)
              define? PositionLocal Vector2.Zero
              define? DepthLocal 0.0f
-             define? MountChangeTimeNp 0L
+             define? MountUpdateCountNp Int64.MinValue
              define? MountUnsubscribeNp (id : World -> World)]
 
         override facet.Register (entity, world) =
