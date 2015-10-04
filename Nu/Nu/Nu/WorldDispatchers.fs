@@ -10,7 +10,7 @@ open TiledSharp
 open Nu
 
 [<AutoOpen>]
-module MountLocalFacetModule =
+module MountFacetModule =
 
     type Entity with
     
@@ -20,12 +20,12 @@ module MountLocalFacetModule =
         member this.SetPositionLocal (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?PositionLocal <- value) world
         member this.GetDepthLocal world : single = (this.GetXtension world)?DepthLocal
         member this.SetDepthLocal (value : single) world = this.UpdateXtension (fun xtension -> xtension?DepthLocal <- value) world
-        member private this.GetMountLocalChangeTimeNp world : int64 = (this.GetXtension world)?MountLocalChangeTimeNp
-        member private this.SetMountLocalChangeTimeNp (value : int64) world = this.UpdateXtension (fun xtension -> xtension?MountLocalChangeTimeNp <- value) world
-        member private this.GetMountLocalUnsubscribeNp world : World -> World = (this.GetXtension world)?MountLocalUnsubscribeNp
-        member private this.SetMountLocalUnsubscribeNp (value : World -> World) world = this.UpdateXtension (fun xtension -> xtension?MountLocalUnsubscribeNp <- value) world
+        member private this.GetMountChangeTimeNp world : int64 = (this.GetXtension world)?MountChangeTimeNp
+        member private this.SetMountChangeTimeNp (value : int64) world = this.UpdateXtension (fun xtension -> xtension?MountChangeTimeNp <- value) world
+        member private this.GetMountUnsubscribeNp world : World -> World = (this.GetXtension world)?MountUnsubscribeNp
+        member private this.SetMountUnsubscribeNp (value : World -> World) world = this.UpdateXtension (fun xtension -> xtension?MountUnsubscribeNp <- value) world
 
-    type MountLocalFacet () =
+    type MountFacet () =
         inherit Facet ()
 
         static let handleRelationChange event_ world =
@@ -34,22 +34,22 @@ module MountLocalFacetModule =
             let transform = target.GetTransform world
             let tickTime = World.getTickTime world
             if  transform <> target.GetTransform event_.Data.OldWorld &&
-                tickTime <> entity.GetMountLocalChangeTimeNp world then
+                tickTime <> entity.GetMountChangeTimeNp world then
                 let transform =
                     { transform with
                         Position = transform.Position + entity.GetPositionLocal world
                         Depth = transform.Depth + entity.GetDepthLocal world }
                 let world = entity.SetTransform transform world
-                let world = entity.SetMountLocalChangeTimeNp tickTime world
+                let world = entity.SetMountChangeTimeNp tickTime world
                 (Cascade, world)
             else (Cascade, world)
 
         static let rec handleEntityChange event_ world =
             let entity = event_.Subscriber : Entity
             if entity.GetOptMountRelation event_.Data.OldWorld <> entity.GetOptMountRelation world then
-                let world = (entity.GetMountLocalUnsubscribeNp world) world
+                let world = (entity.GetMountUnsubscribeNp world) world
                 let (unsubscribe, world) = World.monitorPlus handleRelationChange (Events.EntityChange ->- entity) entity world
-                let world = entity.SetMountLocalUnsubscribeNp unsubscribe world
+                let world = entity.SetMountUnsubscribeNp unsubscribe world
                 (Cascade, world)
             else (Cascade, world)
 
@@ -58,8 +58,8 @@ module MountLocalFacetModule =
              define? OptMountRelation (None : Entity Relation option)
              define? PositionLocal Vector2.Zero
              define? DepthLocal 0.0f
-             define? MountLocalChangeTimeNp 0L
-             define? MountLocalUnsubscribeNp (id : World -> World)]
+             define? MountChangeTimeNp 0L
+             define? MountUnsubscribeNp (id : World -> World)]
 
         override facet.Register (entity, world) =
             let world = World.monitor handleEntityChange (Events.EntityChange ->- entity) entity world
@@ -69,21 +69,7 @@ module MountLocalFacetModule =
                     let address = Relation.resolve entity.EntityAddress target
                     World.monitorPlus handleRelationChange (Events.EntityChange ->>- address) entity world
                 | None -> (id, world)
-            entity.SetMountLocalUnsubscribeNp unsubscribe world
-
-        override facet.Update (entity, world) =
-            match entity.GetOptMountRelation world with
-            | Some target ->
-                let targetEntity = Entity.proxy ^ Relation.resolve entity.EntityAddress target
-                if World.containsEntity targetEntity world then
-                    let transform = targetEntity.GetTransform world
-                    let transform =
-                        { transform with
-                            Position = transform.Position + entity.GetPositionLocal world
-                            Depth = transform.Depth + entity.GetDepthLocal world }
-                    entity.SetTransform transform world
-                else world
-            | None -> world
+            entity.SetMountUnsubscribeNp unsubscribe world
 
 [<AutoOpen>]
 module EffectFacetModule =
