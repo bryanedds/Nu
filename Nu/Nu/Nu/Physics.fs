@@ -94,6 +94,7 @@ type [<StructuralEquality; NoComparison>] BodyProperties =
       Shape : BodyShape
       BodyType : BodyType
       Awake : bool
+      Enabled : bool
       Density : single
       Friction : single
       Restitution : single
@@ -281,6 +282,7 @@ type [<ReferenceEquality>] PhysicsEngine =
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : Body) =
         body.Awake <- bodyProperties.Awake
+        body.Enabled <- bodyProperties.Enabled
         body.Position <- PhysicsEngine.toPhysicsV2 bodyProperties.Position
         body.Rotation <- bodyProperties.Rotation
         body.Friction <- bodyProperties.Friction

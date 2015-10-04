@@ -155,6 +155,8 @@ module RigidBodyFacetModule =
         member this.SetBodyType (value : BodyType) world = this.UpdateXtension (fun xtension -> xtension?BodyType <- value) world
         member this.GetAwake world : bool = (this.GetXtension world)?Awake
         member this.SetAwake (value : bool) world = this.UpdateXtension (fun xtension -> xtension?Awake <- value) world
+        member this.GetEnabled world : bool = (this.GetXtension world)?Enabled
+        member this.SetEnabled (value : bool) world = this.UpdateXtension (fun xtension -> xtension?Enabled <- value) world
         member this.GetDensity world : single = (this.GetXtension world)?Density
         member this.SetDensity (value : single) world = this.UpdateXtension (fun xtension -> xtension?Density <- value) world
         member this.GetFriction world : single = (this.GetXtension world)?Friction
@@ -195,6 +197,7 @@ module RigidBodyFacetModule =
             [variable? MinorId ^ fun () -> Core.makeId ()
              define? BodyType Dynamic
              define? Awake true
+             define? Enabled true
              define? Density Constants.Physics.NormalDensity
              define? Friction 0.0f
              define? Restitution 0.0f
@@ -218,6 +221,7 @@ module RigidBodyFacetModule =
                   Shape = getBodyShape entity world
                   BodyType = entity.GetBodyType world
                   Awake = entity.GetAwake world
+                  Enabled = entity.GetEnabled world
                   Density = entity.GetDensity world
                   Friction = entity.GetFriction world
                   Restitution = entity.GetRestitution world
@@ -874,6 +878,7 @@ module TileMapDispatcherModule =
               Shape = tileShape
               BodyType = BodyType.Static
               Awake = false
+              Enabled = true
               Density = Constants.Physics.NormalDensity
               Friction = tm.GetFriction world
               Restitution = tm.GetRestitution world
