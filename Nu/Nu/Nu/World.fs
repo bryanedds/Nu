@@ -76,7 +76,8 @@ module WorldModule =
 
         static member private makeDefaultFacets () =
             Map.ofList
-                [(typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet)
+                [(typeof<MountLocalFacet>.Name, MountLocalFacet () :> Facet)
+                 (typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet)
                  (typeof<StaticSpriteFacet>.Name, StaticSpriteFacet () :> Facet)
                  (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
 
