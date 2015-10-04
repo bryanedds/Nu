@@ -14,54 +14,76 @@ module MountLocalFacetModule =
 
     type Entity with
     
-        member this.GetOptTargetAddress world : Entity Address option = (this.GetXtension world)?OptTargetAddress
-        member this.SetOptTargetAddress (value : Entity Address option) world = this.UpdateXtension (fun xtension -> xtension?OptTargetAddress <- value) world
+        member this.GetOptMountRelation world : Entity Relation option = (this.GetXtension world)?OptMountRelation
+        member this.SetOptMountRelation (value : Entity Relation option) world = this.UpdateXtension (fun xtension -> xtension?OptMountRelation <- value) world
         member this.GetPositionLocal world : Vector2 = (this.GetXtension world)?PositionLocal
         member this.SetPositionLocal (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?PositionLocal <- value) world
         member this.GetDepthLocal world : single = (this.GetXtension world)?DepthLocal
         member this.SetDepthLocal (value : single) world = this.UpdateXtension (fun xtension -> xtension?DepthLocal <- value) world
+        member private this.GetMountLocalChangeTimeNp world : int64 = (this.GetXtension world)?MountLocalChangeTimeNp
+        member private this.SetMountLocalChangeTimeNp (value : int64) world = this.UpdateXtension (fun xtension -> xtension?MountLocalChangeTimeNp <- value) world
         member private this.GetMountLocalUnsubscribeNp world : World -> World = (this.GetXtension world)?MountLocalUnsubscribeNp
         member private this.SetMountLocalUnsubscribeNp (value : World -> World) world = this.UpdateXtension (fun xtension -> xtension?MountLocalUnsubscribeNp <- value) world
 
     type MountLocalFacet () =
         inherit Facet ()
 
-        static let handleTargetChange event_ world =
+        static let handleRelationChange event_ world =
             let entity = event_.Subscriber : Entity
             let target = event_.Publisher :?> Entity
             let transform = target.GetTransform world
-            if transform <> target.GetTransform event_.Data.OldWorld then
+            let tickTime = World.getTickTime world
+            if  transform <> target.GetTransform event_.Data.OldWorld &&
+                tickTime <> entity.GetMountLocalChangeTimeNp world then
                 let transform =
                     { transform with
                         Position = transform.Position + entity.GetPositionLocal world
                         Depth = transform.Depth + entity.GetDepthLocal world }
                 let world = entity.SetTransform transform world
+                let world = entity.SetMountLocalChangeTimeNp tickTime world
                 (Cascade, world)
             else (Cascade, world)
 
         static let rec handleEntityChange event_ world =
             let entity = event_.Subscriber : Entity
-            if entity.GetOptTargetAddress event_.Data.OldWorld <> entity.GetOptTargetAddress world then
+            if entity.GetOptMountRelation event_.Data.OldWorld <> entity.GetOptMountRelation world then
                 let world = (entity.GetMountLocalUnsubscribeNp world) world
-                let (unsubscribe, world) = World.monitorPlus handleTargetChange (Events.EntityChange ->- entity) entity world
+                let (unsubscribe, world) = World.monitorPlus handleRelationChange (Events.EntityChange ->- entity) entity world
                 let world = entity.SetMountLocalUnsubscribeNp unsubscribe world
                 (Cascade, world)
             else (Cascade, world)
 
         static member FieldDefinitions =
             [define? PublishChanges true
-             define? OptTargetAddress (None : Entity Address option)
+             define? OptMountRelation (None : Entity Relation option)
              define? PositionLocal Vector2.Zero
              define? DepthLocal 0.0f
+             define? MountLocalChangeTimeNp 0L
              define? MountLocalUnsubscribeNp (id : World -> World)]
 
         override facet.Register (entity, world) =
             let world = World.monitor handleEntityChange (Events.EntityChange ->- entity) entity world
             let (unsubscribe, world) =
-                match entity.GetOptTargetAddress world with
-                | Some targetAddress -> World.monitorPlus handleTargetChange (Events.EntityChange ->>- targetAddress) entity world
+                match entity.GetOptMountRelation world with
+                | Some target ->
+                    let address = Relation.resolve entity.EntityAddress target
+                    World.monitorPlus handleRelationChange (Events.EntityChange ->>- address) entity world
                 | None -> (id, world)
             entity.SetMountLocalUnsubscribeNp unsubscribe world
+
+        override facet.Update (entity, world) =
+            match entity.GetOptMountRelation world with
+            | Some target ->
+                let targetEntity = Entity.proxy ^ Relation.resolve entity.EntityAddress target
+                if World.containsEntity targetEntity world then
+                    let transform = targetEntity.GetTransform world
+                    let transform =
+                        { transform with
+                            Position = transform.Position + entity.GetPositionLocal world
+                            Depth = transform.Depth + entity.GetDepthLocal world }
+                    entity.SetTransform transform world
+                else world
+            | None -> world
 
 [<AutoOpen>]
 module EffectFacetModule =
@@ -130,7 +152,7 @@ module EffectFacetModule =
 
                 let world =
                     let effectHistoryMax = entity.GetEffectHistoryMax world
-                    let effectHistory = effectSlice :: effectHistory |> Seq.tryTake effectHistoryMax |> List.ofSeq
+                    let effectHistory = effectSlice :: effectHistory |> List.tryTake effectHistoryMax
                     entity.SetEffectHistoryNp effectHistory world
 
                 world

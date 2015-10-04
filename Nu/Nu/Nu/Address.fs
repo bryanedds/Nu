@@ -42,7 +42,7 @@ type AddressConverter (targetType : Type) =
 /// OPTIMIZATION: NameKeys are used in case we can manage some sort of hashing look-up with them.
 /// OPTIMIZATION: Comparison is done using the full string of names for speed.
 /// OPTIMIZATION: OptFullName and OptHashCode are lazy for speed.
-and [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
+type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
     private
         { NameKeys : NameKey list
           mutable OptFullName : string option
