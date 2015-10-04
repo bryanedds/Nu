@@ -35,7 +35,7 @@ type [<StructuralEquality; NoComparison>] Asset =
     { AssetTag : AssetTag
       FilePath : string
       Refinements : Refinement list
-      Associations : string list }
+      Associations : string Set }
 
 /// All assets must belong to an asset Package, which is a unit of asset loading.
 ///
@@ -72,8 +72,8 @@ module Assets =
 
     let private getAssetAssociations (node : XmlNode) =
         match node.Attributes.GetNamedItem Constants.Xml.AssociationsAttributeName with
-        | null -> []
-        | associations -> AlgebraicDescriptor.convertFromString associations.InnerText typeof<string list> :?> string list
+        | null -> Set.empty
+        | associations -> AlgebraicDescriptor.convertFromString associations.InnerText typeof<string Set> :?> string Set
 
     let private getAssetExtension2 rawAssetExtension refinement =
         match refinement with
@@ -144,8 +144,8 @@ module Assets =
                             (fun filePath ->
                                 { AssetTag = { PackageName = node.ParentNode.Name; AssetName = Path.GetFileNameWithoutExtension filePath }
                                   FilePath = filePath
-                                  Associations = associations
-                                  Refinements = refinements })
+                                  Refinements = refinements
+                                  Associations = associations })
                             filePaths
                     Some ^ List.ofArray assets
                 with exn -> debug ^ "Invalid directory '" + directory + "'."; None
@@ -170,7 +170,7 @@ module Assets =
                 | invalidNodeType -> debug ^ "Invalid package child node type '" + invalidNodeType + "'."; assetsRev) |>
             List.rev
         match optAssociation with
-        | Some association -> List.filter (fun asset -> List.exists ((=) association) asset.Associations) assets
+        | Some association -> List.filter (fun asset -> Set.contains association asset.Associations) assets
         | None -> assets
 
     /// Attempt to load all the assets from the document root Xml node.

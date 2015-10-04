@@ -39,13 +39,11 @@ module Overlayer =
                     match optIncludeNames with
                     | null -> None
                     | includeNames ->
-                        let includeNames = AlgebraicDescriptor.convertFromString includeNames.InnerXml typeof<string list>
-                        let includeNames = includeNames :?> string list |> Array.ofList
+                        let includeNames = AlgebraicDescriptor.convertFromString includeNames.InnerXml typeof<string list> :?> string list
                         let mutable optNode = None
-                        let mutable enr = includeNames.GetEnumerator ()
+                        let mutable enr = (includeNames :> _ seq).GetEnumerator ()
                         while enr.MoveNext () && Option.isNone optNode do
-                            let includeName = enr.Current :?> string // must be cast since Array.GetEnumerator is not generic...
-                            let includeName = includeName.Trim ()
+                            let includeName = enr.Current.Trim ()
                             optNode <- trySelectNode includeName propertyName overlayer
                         optNode
                 | leaf -> Some leaf
