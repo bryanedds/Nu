@@ -10,6 +10,39 @@ open TiledSharp
 open Nu
 
 [<AutoOpen>]
+module MountLocalFacetModule =
+
+    type Entity with
+    
+        member this.GetOptTarget world : Entity option = (this.GetXtension world)?OptTarget
+        member this.SetOptTarget (value : Entity option) world = this.UpdateXtension (fun xtension -> xtension?OptTarget <- value) world
+        member this.GetPositionLocal world : Vector2 = (this.GetXtension world)?PositionLocal
+        member this.SetPositionLocal (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?PositionLocal <- value) world
+        member this.GetDepthLocal world : single = (this.GetXtension world)?DepthLocal
+        member this.SetDepthLocal (value : single) world = this.UpdateXtension (fun xtension -> xtension?DepthLocal <- value) world
+
+    type MountLocalFacet () =
+        inherit Facet ()
+
+        static member FieldDefinitions =
+            [define? OptTarget (None : Entity option)
+             define? PositionLocal Vector2.Zero
+             define? DepthLocal 0.0f]
+
+        override facet.Update (entity, world) =
+            match entity.GetOptTarget world with
+            | Some target ->
+                if World.containsEntity target world then
+                    let transform = target.GetTransform world
+                    let transform =
+                        { transform with
+                            Position = transform.Position + entity.GetPositionLocal world
+                            Depth = transform.Depth + entity.GetDepthLocal world }
+                    entity.SetTransform transform world
+                else world
+            | None -> world
+
+[<AutoOpen>]
 module EffectFacetModule =
 
     type Entity with
