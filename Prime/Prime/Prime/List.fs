@@ -136,7 +136,15 @@ let zipBy by first second =
 /// Get Some head of the list or None.
 let tryHead list =
     List.tryFind (fun _ -> true) list
-    
+
+/// A more tolerant and open-minded take.
+let tryTake (n : int) (list_ : _ list) =
+    Seq.tryTake n list_ |> List.ofSeq
+
+/// Project the first list onto the second.
+let project pred (list_ : 'a list) (list2 : 'b option list) =
+    Seq.project pred list_ list2 |> List.ofSeq
+
 /// Replace a list's head.
 let replaceHead list head =
     head :: List.tail list
