@@ -341,7 +341,7 @@ module Reflection =
     /// Read facet names from an xml node.
     let readFacetNames (node : XmlNode) =
         let facetNames = node.InnerText
-        AlgebraicDescriptor.convertFromString facetNames typeof<string list> :?> string list
+        AlgebraicDescriptor.convertFromString facetNames typeof<string Set> :?> string list
 
     /// Try to read just the target's OptOverlayName from Xml.
     let tryReadOptOverlayNameToTarget (targetNode : XmlNode) target =
@@ -371,7 +371,7 @@ module Reflection =
             Array.find
                 (fun (property : PropertyInfo) ->
                     property.Name = "FacetNames" &&
-                    property.PropertyType = typeof<string list> &&
+                    property.PropertyType = typeof<string Set> &&
                     property.CanWrite)
                 targetProperties
         match targetNode.[facetNamesProperty.Name] with

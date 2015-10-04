@@ -34,16 +34,10 @@ module WorldFacetModule =
             else false
 
         static member private getFacetNamesToAdd oldFacetNames newFacetNames =
-            let newFacetNames = Set.ofList newFacetNames
-            let oldFacetNames = Set.ofList oldFacetNames
-            let facetNamesToAdd = Set.difference newFacetNames oldFacetNames
-            List.ofSeq facetNamesToAdd
+            Set.difference newFacetNames oldFacetNames
 
         static member private getFacetNamesToRemove oldFacetNames newFacetNames =
-            let newFacetNames = Set.ofList newFacetNames
-            let oldFacetNames = Set.ofList oldFacetNames
-            let facetNamesToRemove = Set.difference oldFacetNames newFacetNames
-            List.ofSeq facetNamesToRemove
+            Set.difference oldFacetNames newFacetNames
 
         static member private getEntityFieldDefinitionNamesToDetach entityState facetToRemove =
 
@@ -84,6 +78,7 @@ module WorldFacetModule =
                         let entityState = World.getEntityState entity world
                         (entityState, world)
                     | None -> (entityState, world)
+                let entityState = { entityState with FacetNames = Set.remove facetName entityState.FacetNames }
                 let entityState = { entityState with FacetsNp = List.remove ((=) facet) entityState.FacetsNp }
                 let fieldNames = World.getEntityFieldDefinitionNamesToDetach entityState facet
                 Reflection.detachFieldsViaNames fieldNames entityState // hacky copy elided
@@ -101,6 +96,7 @@ module WorldFacetModule =
             match World.tryGetFacet facetName world with
             | Right facet ->
                 if World.isFacetCompatibleWithEntity world.Components.EntityDispatchers facet entityState then
+                    let entityState = { entityState with FacetNames = Set.add facetName entityState.FacetNames }
                     let entityState = { entityState with FacetsNp = facet :: entityState.FacetsNp }
                     Reflection.attachFields facet entityState // hacky copy elided
                     match optEntity with
@@ -116,7 +112,7 @@ module WorldFacetModule =
             | Left error -> Left error
 
         static member private tryRemoveFacets facetNamesToRemove entityState optEntity world =
-            List.fold
+            Set.fold
                 (fun eitherEntityWorld facetName ->
                     match eitherEntityWorld with
                     | Right (entityState, world) -> World.tryRemoveFacet facetName entityState optEntity world
@@ -125,7 +121,7 @@ module WorldFacetModule =
                 facetNamesToRemove
 
         static member private tryAddFacets facetNamesToAdd entityState optEntity world =
-            List.fold
+            Set.fold
                 (fun eitherEntityStateWorld facetName ->
                     match eitherEntityStateWorld with
                     | Right (entityState, world) -> World.tryAddFacet facetName entityState optEntity world
@@ -137,15 +133,7 @@ module WorldFacetModule =
             let facetNamesToRemove = World.getFacetNamesToRemove entityState.FacetNames facetNames
             let facetNamesToAdd = World.getFacetNamesToAdd entityState.FacetNames facetNames
             match World.tryRemoveFacets facetNamesToRemove entityState optEntity world with
-            | Right (entityState, world) ->
-                match World.tryAddFacets facetNamesToAdd entityState optEntity world with
-                | Right (entityState, world) ->
-                    match optEntity with
-                    | Some entity ->
-                        let entityState = { entityState with FacetNames = facetNames }
-                        Right (entityState, World.setEntityState entityState entity world)
-                    | None -> Right (entityState, world)
-                | Left _ as left -> left
+            | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
             | Left _ as left -> left
 
         static member internal trySynchronizeFacetsToNames oldFacetNames entityState optEntity world =

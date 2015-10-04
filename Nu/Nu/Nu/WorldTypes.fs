@@ -386,7 +386,7 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
       Persistent : bool
       CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
       DispatcherNp : EntityDispatcher
-      FacetNames : string list
+      FacetNames : string Set
       FacetsNp : Facet list
       OptOverlayName : string option
       Xtension : Xtension }
