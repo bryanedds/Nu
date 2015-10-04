@@ -395,7 +395,7 @@ module WorldEntityModule =
         /// Try to set the entity's facet names.
         static member trySetEntityFacetNames facetNames entity world =
             let entityState = World.getEntityState entity world
-            match World.trySetFacetNames4 facetNames entityState (Some entity) world with
+            match World.trySetFacetNames facetNames entityState (Some entity) world with
             | Right (entityState, world) ->
                 let oldWorld = world
                 let world = World.setEntityStateWithoutEvent entityState entity world
@@ -461,15 +461,15 @@ module WorldEntityModule =
 
             // read the entity state's facet names
             Reflection.readFacetNamesToTarget entityNode entityState
+
+            // attach the entity state's dispatcher fields
+            Reflection.attachFields dispatcher entityState
             
             // synchronize the entity state's facets (and attach their fields)
             let entityState =
                 match World.trySynchronizeFacetsToNames [] entityState None world with
                 | Right (entityState, _) -> entityState
                 | Left error -> debug error; entityState
-
-            // attach the entity state's dispatcher fields
-            Reflection.attachFields dispatcher entityState
 
             // attempt to apply the entity state's overlay
             match entityState.OptOverlayName with

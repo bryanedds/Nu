@@ -84,7 +84,6 @@ module WorldFacetModule =
                         let entityState = World.getEntityState entity world
                         (entityState, world)
                     | None -> (entityState, world)
-                let entityState = { entityState with FacetNames = List.remove ((=) facetName) entityState.FacetNames }
                 let entityState = { entityState with FacetsNp = List.remove ((=) facet) entityState.FacetsNp }
                 let fieldNames = World.getEntityFieldDefinitionNamesToDetach entityState facet
                 Reflection.detachFieldsViaNames fieldNames entityState // hacky copy elided
@@ -102,7 +101,6 @@ module WorldFacetModule =
             match World.tryGetFacet facetName world with
             | Right facet ->
                 if World.isFacetCompatibleWithEntity world.Components.EntityDispatchers facet entityState then
-                    let entityState = { entityState with FacetNames = facetName :: entityState.FacetNames }
                     let entityState = { entityState with FacetsNp = facet :: entityState.FacetsNp }
                     Reflection.attachFields facet entityState // hacky copy elided
                     match optEntity with
@@ -135,11 +133,19 @@ module WorldFacetModule =
                 (Right (entityState, world))
                 facetNamesToAdd
 
-        static member internal trySetFacetNames4 facetNames entityState optEntity world =
+        static member internal trySetFacetNames facetNames entityState optEntity world =
             let facetNamesToRemove = World.getFacetNamesToRemove entityState.FacetNames facetNames
             let facetNamesToAdd = World.getFacetNamesToAdd entityState.FacetNames facetNames
             match World.tryRemoveFacets facetNamesToRemove entityState optEntity world with
-            | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
+            | Right (entityState, world) ->
+                match World.tryAddFacets facetNamesToAdd entityState optEntity world with
+                | Right (entityState, world) ->
+                    match optEntity with
+                    | Some entity ->
+                        let entityState = { entityState with FacetNames = facetNames }
+                        Right (entityState, World.setEntityState entityState entity world)
+                    | None -> Right (entityState, world)
+                | Left _ as left -> left
             | Left _ as left -> left
 
         static member internal trySynchronizeFacetsToNames oldFacetNames entityState optEntity world =
