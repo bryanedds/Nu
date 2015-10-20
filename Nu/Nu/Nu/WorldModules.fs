@@ -278,7 +278,7 @@ module World =
                 let unsubscriptions = Map.remove subscriptionKey world.Callbacks.Unsubscriptions
                 let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
                 { world with Callbacks = callbacks }
-            | None -> world
+            | None -> world // TODO: consider an assert fail here?
         | None -> world
 
     /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
