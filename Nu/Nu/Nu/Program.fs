@@ -68,7 +68,8 @@ module Program =
     1.3x gain - alternatively, use short-term memoization with a temporary dictionary to cache asset queries during rendering / playing / etc.
     1.2x gain - optimize locality of address usage
     1.2x gain - render tiles layers to their own buffer so that each whole layer can be blitted directly with a single draw call (though this might cause overdraw).
-    ? gain - avoid rendering clear tiles! *)
+    ? gain - avoid rendering clear tiles!
+    ? gain - generally use Clojure-style persistent hash maps rather than F# Map *)
 
     (* WISDOM: On avoiding threads where possible...
     
