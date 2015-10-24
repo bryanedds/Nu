@@ -18,7 +18,7 @@ module AlgebraicReader =
         0
         None
         [2 2]
-        "Hello World"
+        Hello_World
         CharacterAnimationFacing
 
         (* Complex Values *)

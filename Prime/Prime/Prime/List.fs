@@ -138,12 +138,12 @@ let tryHead list =
     List.tryFind (fun _ -> true) list
 
 /// A more tolerant and open-minded take.
-let tryTake (n : int) (list_ : _ list) =
-    Seq.tryTake n list_ |> List.ofSeq
+let tryTake (n : int) (list : _ list) =
+    Seq.tryTake n list |> List.ofSeq
 
 /// Project the first list onto the second.
-let project pred (list_ : 'a list) (list2 : 'b option list) =
-    Seq.project pred list_ list2 |> List.ofSeq
+let project pred (list : 'a list) (list2 : 'b option list) =
+    Seq.project pred list list2 |> List.ofSeq
 
 /// Replace a list's head.
 let replaceHead list head =
@@ -356,7 +356,7 @@ let rec inline compareStrings (list : string list) (list2 : string list) =
     | (_ :: _, []) -> 1
     | ([], _ :: _) -> -1
     | (head :: tail, head2 :: tail2) ->
-        let result = head.CompareTo head2
+        let result = String.Compare (head, head2, StringComparison.Ordinal)
         if result = 0 then compare tail tail2
         else result
 
