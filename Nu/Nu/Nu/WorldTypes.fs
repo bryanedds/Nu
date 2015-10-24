@@ -147,11 +147,9 @@ and internal UnsubscriptionEntries =
 
 /// A tasklet to be completed at the given time, with time being accounted for by the world
 /// state's TickTime value.
-/// TODO: Make this an abstract data type.
 and [<ReferenceEquality>] Tasklet =
-    // private
-        { ScheduledTime : int64
-          Operation : World -> World }
+    { ScheduledTime : int64
+      Operation : World -> World }
 
 /// Represents a subsystem by which additional engine-level subsystems such as AI, optimized
 /// special FX, and the like can be added.
@@ -583,15 +581,13 @@ and NuPlugin () =
     default this.MakeOverlayRoutes () = []
 
 /// The world's subsystems.
-/// TODO: Make this an abstract data type.
-and [<ReferenceEquality>] internal Subsystems =
-    // private
+and [<ReferenceEquality>] Subsystems =
+    private
         { SubsystemMap : Map<string, Subsystem> }
 
 /// The world's components.
-/// TODO: Make this an abstract data type.
-and [<ReferenceEquality>] internal Components =
-    // private
+and [<ReferenceEquality>] Components =
+    private
         { Facets : Map<string, Facet>
           EntityDispatchers : Map<string, EntityDispatcher>
           GroupDispatchers : Map<string, GroupDispatcher>
@@ -599,9 +595,8 @@ and [<ReferenceEquality>] internal Components =
           GameDispatchers : Map<string, GameDispatcher> }
 
 /// The world's simple callback facilities.
-/// TODO: Make this an abstract data type.
-and [<ReferenceEquality>] internal Callbacks =
-    // private
+and [<ReferenceEquality>] Callbacks =
+    private
         { Subscriptions : SubscriptionEntries
           Unsubscriptions : UnsubscriptionEntries
           Tasklets : Tasklet Queue
@@ -609,13 +604,13 @@ and [<ReferenceEquality>] internal Callbacks =
 
 /// The world's state.
 /// TODO: Make this an abstract data type.
-and [<ReferenceEquality>] internal WorldState =
-    // private
+and [<ReferenceEquality>] WorldState =
+    private
         { TickRate : int64
           TickTime : int64
           UpdateCount : int64
           Liveness : Liveness
-          OptScreenTransitionDestination : Screen option // TODO: move this into Game?
+          OptScreenTransitionDestination : Screen option // TODO: move this into GameState
           AssetMetadataMap : AssetMetadataMap
           AssetGraphFilePath : string
           Overlayer : Overlayer
@@ -623,7 +618,7 @@ and [<ReferenceEquality>] internal WorldState =
           OverlayFilePath : string
           Camera : Camera
           OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
-          RefClipboard : EntityState option ref // NOTE: this makes for suboptimal value semantics for WorldState
+          RefClipboard : EntityState option ref // NOTE: this makes for _strange_ value semantics for WorldState
           UserState : obj }
 
 /// The world, in a functional programming sense. Hosts the game object, the dependencies

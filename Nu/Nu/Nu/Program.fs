@@ -3,7 +3,7 @@
 
 namespace Nu
 open System
-open global.Nu // TODO: see if this explicit qualification is due to a compiler bug
+open global.Nu // TODO: see if this req'd explicit qualification is due to a compiler bug
 open Nu.Tests
 module Program =
 
@@ -92,13 +92,10 @@ module Program =
     (* WISDOM: Keep all animation frame numbers even. That way, you can simply halve them if you
     need to move the app from 60fps to 30fps. *)
 
-    (* NOTE - On having huge, populated worlds in Nu...
+    (* WISDOM: Nu's event system should have been implemented in Prime...
     
-    Say you have a large world in your game with 50000 updating entities. You can not, and should
-    not, always update all these entities when 90%+ are out of the bounds of the player's purview.
-
-    To address this, Nu uses updating only on entities that are either Omnipresent, or within
-    a certain range of the camera. *)
+    Unfortunately, it's going to be too difficult to extricate Nu's event system. So this coupling
+    is a complexity Nu is going to have to live with until end of days... *)
 
     (* IDEA: Simplified networking...
 
