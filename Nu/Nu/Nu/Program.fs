@@ -57,19 +57,18 @@ module Program =
     buffer of a static size and then blit that with scaling to the back-buffer. NOTE: this only
     applies to 2D ~ will not apply to 3D once implemented in Nu (for obvious reasons). *)
 
-    (* WISDOM: From benchmarks. it looks like our mobile target will cost us anywhere from a 25% to
-    50% decrease in speed as compared to the dev machine. However, this can be mitigated in a few
-    ways with approximate speed-ups -
+    (* WISDOM: Performance concerns remain a long-standing subject of interest. However, this can
+    be mitigated in a few ways with approximate speed-ups -
 
     2x gain - Run app at 30fps instead of 60
     2x gain - put physics and rendering each in another process
     1.5x gain - compile with .NET Native or Mono AOT
     1.3x gain - store loaded assets in a Dictionary<string, Dictionary>> rather than a Map<string, Map>>, or...
     1.3x gain - alternatively, use short-term memoization with a temporary dictionary to cache asset queries during rendering / playing / etc.
-    1.2x gain - optimize locality of address usage
     1.2x gain - render tiles layers to their own buffer so that each whole layer can be blitted directly with a single draw call (though this might cause overdraw).
-    ? gain - avoid rendering clear tiles!
-    ? gain - generally use Clojure-style persistent hash maps rather than F# Map *)
+    1.2x gain - TODO: upgrade to F# 4.1.
+    ? gain - TODO: use Clojure-style persistent hash maps with NameKeys rather than F# Map, and possibly write the hash map from scratch since I don't quite trust the one in FSharpx...
+    ? gain - avoid rendering clear tiles! *)
 
     (* WISDOM: On avoiding threads where possible...
     
