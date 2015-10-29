@@ -205,7 +205,7 @@ let distinctBy by (list : _ list) =
 /// TODO: speed this up with a single iteration?
 let last list =
     let length = List.length list
-    List.nth list (length - 1)
+    List.item (length - 1) list
 
 /// Get the last item from a list.
 /// TODO: speed this up with a single iteration?
