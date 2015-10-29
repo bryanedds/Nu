@@ -167,18 +167,18 @@ module Gaia =
             Some entity
         | None -> None
 
-    let private handleNuEntityAdd (form : GaiaForm) event_ world =
-        addTreeViewNode form (Entity.proxy ^ atoa event_.Publisher.SimulantAddress) world
+    let private handleNuEntityAdd (form : GaiaForm) evt world =
+        addTreeViewNode form (Entity.proxy ^ atoa evt.Publisher.SimulantAddress) world
         (Cascade, world)
 
-    let private handleNuEntityRemoving (form : GaiaForm) event_ world =
-        match form.treeView.Nodes.Find (acstring event_.Publisher.SimulantAddress, true) with
+    let private handleNuEntityRemoving (form : GaiaForm) evt world =
+        match form.treeView.Nodes.Find (acstring evt.Publisher.SimulantAddress, true) with
         | [||] -> () // when changing an entity name, entity will be removed twice - once from winforms, once from world
         | treeNodes -> form.treeView.Nodes.Remove treeNodes.[0]
         match form.propertyGrid.SelectedObject with
         | null -> (Cascade, world)
         | :? EntityTypeDescriptorSource as entityTds ->
-            if atoa event_.Publisher.SimulantAddress = entityTds.DescribedEntity.EntityAddress then
+            if atoa evt.Publisher.SimulantAddress = entityTds.DescribedEntity.EntityAddress then
                 form.propertyGrid.SelectedObject <- null
                 let world = World.updateUserState (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
                 (Cascade, world)
@@ -625,9 +625,9 @@ module Gaia =
         Directory.SetCurrentDirectory dirName
         let assembly = Assembly.LoadFrom filePath
         let assemblyTypes = assembly.GetTypes ()
-        let optDispatcherType = Array.tryFind (fun (type_ : Type) -> type_.IsSubclassOf typeof<NuPlugin>) assemblyTypes
+        let optDispatcherType = Array.tryFind (fun (ty : Type) -> ty.IsSubclassOf typeof<NuPlugin>) assemblyTypes
         match optDispatcherType with
-        | Some type_ -> let plugin = Activator.CreateInstance type_ :?> NuPlugin in (dirName, plugin)
+        | Some ty -> let plugin = Activator.CreateInstance ty :?> NuPlugin in (dirName, plugin)
         | None -> (".", NuPlugin ())
 
     /// Select a target directory for the desired plugin and its assets.

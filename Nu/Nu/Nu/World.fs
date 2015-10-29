@@ -206,15 +206,15 @@ module WorldModule =
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the given destination screen.
-        static member handleAsScreenTransitionFromSplash<'a, 's when 's :> Simulant> destination event_ world =
-            World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destination event_ world
+        static member handleAsScreenTransitionFromSplash<'a, 's when 's :> Simulant> destination evt world =
+            World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destination evt world
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the given destination screen, as well as with additional
         /// handling provided via the 'by' procedure.
-        static member handleAsScreenTransitionFromSplashBy<'a, 's when 's :> Simulant> by destination event_ (world : World) =
-            let (eventHandling, world) = by event_ world
-            World.handleAsScreenTransitionFromSplash4<'a, 's> eventHandling destination event_ world
+        static member handleAsScreenTransitionFromSplashBy<'a, 's when 's :> Simulant> by destination evt (world : World) =
+            let (eventHandling, world) = by evt world
+            World.handleAsScreenTransitionFromSplash4<'a, 's> eventHandling destination evt world
 
         static member private handleAsScreenTransition4<'a, 's when 's :> Simulant>
             eventHandling destination (_ : Event<'a, 's>) world =
@@ -226,15 +226,15 @@ module WorldModule =
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the given destination screen.
-        static member handleAsScreenTransition<'a, 's when 's :> Simulant> destination event_ world =
-            World.handleAsScreenTransition4<'a, 's> Cascade destination event_ world
+        static member handleAsScreenTransition<'a, 's when 's :> Simulant> destination evt world =
+            World.handleAsScreenTransition4<'a, 's> Cascade destination evt world
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the given destination screen, as well as with additional
         /// handling provided via the 'by' procedure.
-        static member handleAsScreenTransitionBy<'a, 's when 's :> Simulant> by destination event_ (world : World) =
-            let (eventHandling, world) = by event_ world
-            World.handleAsScreenTransition4<'a, 's> eventHandling destination event_ world
+        static member handleAsScreenTransitionBy<'a, 's when 's :> Simulant> by destination evt (world : World) =
+            let (eventHandling, world) = by evt world
+            World.handleAsScreenTransition4<'a, 's> eventHandling destination evt world
 
         static member private updateScreenTransition1 (screen : Screen) transition world =
             let transitionTicks = screen.GetTransitionTicksNp world
@@ -280,11 +280,11 @@ module WorldModule =
                 | Exiting -> world
             | IdlingState -> world
 
-        static member private handleSplashScreenIdleUpdate idlingTime ticks event_ world =
+        static member private handleSplashScreenIdleUpdate idlingTime ticks evt world =
             let world = World.unsubscribe SplashScreenUpdateKey world
             if ticks < idlingTime then
                 let subscription = World.handleSplashScreenIdleUpdate idlingTime (inc ticks)
-                let world = World.subscribe5 SplashScreenUpdateKey subscription event_.Address event_.Subscriber world
+                let world = World.subscribe5 SplashScreenUpdateKey subscription evt.Address evt.Subscriber world
                 (Cascade, world)
             else
                 match World.getOptSelectedScreen world with
@@ -299,8 +299,8 @@ module WorldModule =
                     trace "Program Error: Could not handle splash screen update due to no selected screen."
                     (Resolve, World.exit world)
 
-        static member private handleSplashScreenIdle idlingTime (splashScreen : Screen) event_ world =
-            let world = World.subscribe5 SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update ->- splashScreen) event_.Subscriber world
+        static member private handleSplashScreenIdle idlingTime (splashScreen : Screen) evt world =
+            let world = World.subscribe5 SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update ->- splashScreen) evt.Subscriber world
             (Resolve, world)
 
         /// Create a splash screen that transitions to the given destination upon completion.
@@ -452,13 +452,13 @@ module WorldModule =
             World.restoreTasklets taskletsNotRun world
 
         /// Process an input event from SDL and ultimately publish any related game events.
-        static member processInput (event_ : SDL.SDL_Event) world =
+        static member processInput (evt : SDL.SDL_Event) world =
             let world =
-                match event_.``type`` with
+                match evt.``type`` with
                 | SDL.SDL_EventType.SDL_QUIT ->
                     World.exit world
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
-                    let mousePosition = Vector2 (single event_.button.x, single event_.button.y)
+                    let mousePosition = Vector2 (single evt.button.x, single evt.button.y)
                     let world =
                         if World.isMouseButtonDown MouseLeft world
                         then World.publish5 World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseDrag ["World.processInput"] Simulants.Game world
@@ -466,7 +466,7 @@ module WorldModule =
                     World.publish5 World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseMove ["World.processInput"] Simulants.Game world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
-                    let mouseButton = World.toNuMouseButton ^ uint32 event_.button.button
+                    let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
                     let mouseButtonEventAddress = ntoa ^ MouseButton.toEventName mouseButton
                     let mouseButtonDownEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Down"
                     let mouseButtonChangeEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
@@ -475,7 +475,7 @@ module WorldModule =
                     World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress ["World.processInput"] Simulants.Game world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
-                    let mouseButton = World.toNuMouseButton ^ uint32 event_.button.button
+                    let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
                     let mouseButtonEventAddress = ntoa ^ MouseButton.toEventName mouseButton
                     let mouseButtonUpEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Up"
                     let mouseButtonChangeEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
@@ -483,13 +483,13 @@ module WorldModule =
                     let world = World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEventAddress ["World.processInput"] Simulants.Game world
                     World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress ["World.processInput"] Simulants.Game world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
-                    let keyboard = event_.key
+                    let keyboard = evt.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = true }
                     let world = World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyDown ["World.processInput"] Simulants.Game world
                     World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange ["World.processInput"] Simulants.Game world
                 | SDL.SDL_EventType.SDL_KEYUP ->
-                    let keyboard = event_.key
+                    let keyboard = evt.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = false }
                     let world = World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyUp ["World.processInput"] Simulants.Game world
