@@ -79,21 +79,21 @@ module Operators =
         if isNull x then isNull y
         elif isNull y then false
         elif referenceEquals (getType x) (getType y) then
-            let type_ = getType x
-            if  type_.IsValueType ||
-                type_ = typeof<string> then
+            let ty = getType x
+            if  ty.IsValueType ||
+                ty = typeof<string> then
                 x = y
-            else if type_.IsSubclassOf typeof<Stream> then
+            else if ty.IsSubclassOf typeof<Stream> then
                 // NOTE: Stream has a screwed up contract that its Length property can throw if seeking is not
                 // supported. They should have returned nullable int instead, but nooooo....
                 true
             else
                 let fieldsSimilar =
-                    type_
+                    ty
                     |> getFields
                     |> Array.forall (fun i -> similar (getFieldValue i x) (getFieldValue i y))
                 let propertiesSimilar =
-                    type_
+                    ty
                     |> getProperties
                     |> Array.filter (fun p -> (p.GetIndexParameters ()).Length = 0)
                     |> Array.forall (fun i -> similar (getPropertyValue null i x) (getPropertyValue null i y))

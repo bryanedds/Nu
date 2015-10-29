@@ -61,15 +61,15 @@ module Type =
                     (fun (assembly : Assembly) ->
                         match assembly.GetType name with
                         | null -> None
-                        | type_ -> Some type_)
+                        | ty -> Some ty)
                     allAssemblies
             Seq.tryFind (fun _ -> true) types
-        | type_ -> Some type_
+        | ty -> Some ty
 
     /// Get an existing type with the given unqualified name. Time-intensive.
     let GetTypeUnqualified name =
         match TryGetTypeUnqualified name with
-        | Some type_ -> type_
+        | Some ty -> ty
         | None -> failwith ^ "Could not find type with unqualified name '" + name + "'."
 
     /// TODO: document!

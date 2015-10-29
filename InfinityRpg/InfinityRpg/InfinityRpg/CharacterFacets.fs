@@ -161,8 +161,8 @@ module CharacterCameraFacetModule =
     type CharacterCameraFacet () =
         inherit Facet ()
 
-        static let handleUpdate event_ world =
-            let character = event_.Subscriber : Entity
+        static let handleUpdate evt world =
+            let character = evt.Subscriber : Entity
             let world =
                 World.updateCamera (fun camera ->
                     let eyeCenter = character.GetPosition world + character.GetSize world * 0.5f

@@ -114,8 +114,8 @@ module Reflection =
         result
 
     /// Get the concrete base types of a type excepting the object type.
-    let rec getBaseTypesExceptObject (type_ : Type) =
-        match type_.BaseType with
+    let rec getBaseTypesExceptObject (ty : Type) =
+        match ty.BaseType with
         | null -> []
         | baseType ->
             if baseType <> typeof<obj>
@@ -143,7 +143,7 @@ module Reflection =
     /// Get the field definitions of a target type.
     let getFieldDefinitions (targetType : Type) =
         let targetTypes = targetType :: getBaseTypesExceptObject targetType
-        let fieldDefinitionLists = List.map (fun type_ -> getFieldDefinitionsNoInherit type_) targetTypes
+        let fieldDefinitionLists = List.map (fun ty -> getFieldDefinitionsNoInherit ty) targetTypes
         let fieldDefinitionLists = List.rev fieldDefinitionLists
         List.concat fieldDefinitionLists
 
@@ -222,7 +222,7 @@ module Reflection =
     /// or facets, organized in a map from the containing type's name to the field definition.
     let getReflectiveFieldDefinitionMap target =
         let containerTypes = getReflectiveFieldContainerTypes target
-        Map.ofListBy (fun (type_ : Type) -> (type_.Name, getFieldDefinitions type_)) containerTypes
+        Map.ofListBy (fun (ty : Type) -> (ty.Name, getFieldDefinitions ty)) containerTypes
 
     /// Get all the unique reflective field definitions of a type, including those of its
     /// dispatcher and / or facets.
@@ -247,7 +247,7 @@ module Reflection =
     /// Get the intrinsic facet names of a target type.
     let getIntrinsicFacetNames (targetType : Type) =
         let targetTypes = targetType :: getBaseTypesExceptObject targetType
-        let intrinsicFacetNamesLists = List.map (fun type_ -> getIntrinsicFacetNamesNoInherit type_) targetTypes
+        let intrinsicFacetNamesLists = List.map (fun ty -> getIntrinsicFacetNamesNoInherit ty) targetTypes
         let intrinsicFacetNamesLists = List.rev intrinsicFacetNamesLists
         List.concat intrinsicFacetNamesLists
 
