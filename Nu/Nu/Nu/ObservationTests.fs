@@ -54,8 +54,8 @@ module ObservationTests =
         let world = World.makeEmpty 0
         let world =
             observe IntEventAddress Simulants.Game |>
-            map (fun event_ _ -> event_.Data * 2) |>
-            subscribe (fun event_ world -> (Cascade, World.updateUserState (fun _ -> event_.Data) world)) <|
+            map (fun evt _ -> evt.Data * 2) |>
+            subscribe (fun evt world -> (Cascade, World.updateUserState (fun _ -> evt.Data) world)) <|
             world
         let world = World.publish 1 IntEventAddress ["Test"] Simulants.Game world
         Assert.Equal (2, World.getUserState world)
@@ -64,8 +64,8 @@ module ObservationTests =
         let world = World.makeEmpty 0
         let world =
             observe IntEventAddress Simulants.Game |>
-            scan (fun acc event_ _ -> acc + event_.Data) 0 |>
-            subscribe (fun event_ world -> (Cascade, World.updateUserState (fun _ -> event_.Data) world)) <|
+            scan (fun acc evt _ -> acc + evt.Data) 0 |>
+            subscribe (fun evt world -> (Cascade, World.updateUserState (fun _ -> evt.Data) world)) <|
             world
         let world = World.publish 1 IntEventAddress ["Test"] Simulants.Game world
         let world = World.publish 2 IntEventAddress ["Test"] Simulants.Game world
