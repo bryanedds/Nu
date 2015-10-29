@@ -466,8 +466,8 @@ module GameplayDispatcherModule =
                 let chain = chain {
                     do! update ^ Simulants.HudSaveGame.SetEnabled false
                     do! loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress world) ^ fun i -> chain {
-                        let! event_ = next
-                        do! match event_.Data with
+                        let! evt = next
+                        do! match evt.Data with
                             | Right _ -> chain {
                                 let! playerTurn =
                                     if i = 0
@@ -490,8 +490,8 @@ module GameplayDispatcherModule =
             let world = Simulants.HudHalt.SetEnabled playerNavigatingPath world
             (Cascade, world)
 
-        static let handleTouchFeeler event_ world =
-            let playerInput = TouchInput event_.Data
+        static let handleTouchFeeler evt world =
+            let playerInput = TouchInput evt.Data
             let world = tryRunPlayerTurn playerInput world
             (Cascade, world)
 
@@ -522,6 +522,7 @@ module GameplayDispatcherModule =
 
             // make player
             let (player, world) = World.createEntity typeof<PlayerDispatcher>.Name None (Some ^ Simulants.Player.EntityName) scene world
+            let world = player.SetPublishChanges true world
             let world = player.SetDepth Constants.Layout.CharacterDepth world
 
             // make enemies
@@ -553,8 +554,8 @@ module GameplayDispatcherModule =
             let world = World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Constants.Assets.HerosVengeanceSong world
             (Cascade, world)
 
-        static let handleClickSaveGame event_ world =
-            let gameplay = event_.Subscriber
+        static let handleClickSaveGame evt world =
+            let gameplay = evt.Subscriber
             World.writeScreenToFile Constants.FilePaths.SaveFile gameplay world
             (Cascade, world)
 
