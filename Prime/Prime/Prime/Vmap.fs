@@ -28,13 +28,19 @@ type internal Vnode<'k, 'v when 'k : comparison> =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module internal Vnode =
 
-    let private makeArray () =
-        Array.create 32 Nil
+    let inline cloneArray (arr : Vnode<'k, 'v> array) : Vnode<'k, 'v> array =
+#if SIMPLE_CLONE_ARRAY
+        arr.Clone () :?> Vnode<'k, 'v> array
+#else // use of this presumes Array.Clone () is slower
+        let arr' = Array.zeroCreate 32 // there's an unecessary check against the size here, but that's the only inefficiency
+        Array.Copy (arr, 0, arr', 0, 32)
+        arr'
+#endif
 
-    let private hashToIndex h dep =
+    let inline private hashToIndex h dep =
         (h >>> (dep * 5)) &&& 0x1F
 
-    let rec private add5 (hkv : Hkv<'k, 'v>) (dep : int) (mdep : int) (node : Vnode<'k, 'v>) : Vnode<'k, 'v> =
+    let rec add (hkv : Hkv<'k, 'v>) (earr : Vnode<'k, 'v> array) (mdep : int) (dep : int) (node : Vnode<'k, 'v>) : Vnode<'k, 'v> =
         if dep <= mdep then
 
             // handle non-clash cases
@@ -50,7 +56,7 @@ module internal Vnode =
                 let idx = hashToIndex hkv.H dep
                 let idx' = hashToIndex hkv'.H dep
                 if idx <> idx' then
-                    let arr = makeArray ()
+                    let arr = cloneArray earr
                     arr.[idx] <- Singlet hkv
                     arr.[idx'] <- Singlet hkv'
                     Multiple arr
@@ -62,9 +68,9 @@ module internal Vnode =
                 // add entry with same idx
                 else
                     let dep' = dep + 1
-                    let node' = add5 hkv dep' mdep Nil
-                    let node' = add5 hkv' dep' mdep node'
-                    let arr = makeArray ()
+                    let node' = add hkv earr mdep dep' Nil
+                    let node' = add hkv' earr mdep dep' node'
+                    let arr = cloneArray earr
                     arr.[idx'] <- node'
                     Multiple arr
 
@@ -73,8 +79,8 @@ module internal Vnode =
                 // add entry with recursion
                 let idx = hashToIndex hkv.H dep
                 let entry = arr.[idx]
-                let arr = arr.Clone () :?> Vnode<'k, 'v> array
-                arr.[idx] <- add5 hkv (dep + 1) mdep entry
+                let arr = cloneArray arr
+                arr.[idx] <- add hkv earr mdep (dep + 1) entry
                 Multiple arr
 
             | Clash _ ->
@@ -95,17 +101,15 @@ module internal Vnode =
             | Clash clashMap ->
                 Clash ^ Map.add hkv.K hkv.V clashMap
 
-    let add k v node =
-        add5 (Hkv (k, v)) 0 node
-
     let empty =
         Nil
 
 /// Variant map.
 type Vmap<'k, 'v when 'k : comparison> =
     private
-        { Mdep : int
-          Vnode : Vnode<'k, 'v> }
+        { Vnode : Vnode<'k, 'v>
+          EmptyArray : Vnode<'k, 'v> array
+          MaxDepth : int }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Vmap =
@@ -113,7 +117,7 @@ module Vmap =
     let makeEmpty mdep =
         if mdep > 6 then failwith "Vmap max depth should not be greater than 6."
         elif mdep < 0 then failwith "Vmap max depth should not be less than 0."
-        else { Mdep = mdep; Vnode = Vnode.empty }
+        else { Vnode = Vnode.empty; EmptyArray = Array.create 32 Vnode.empty; MaxDepth = mdep }
 
-    let add k v map =
-        { map with Vnode = Vnode.add k v map.Mdep map.Vnode }
+    let add (k : 'k) (v : 'v) map =
+        { map with Vnode = Vnode.add (Hkv (k, v)) map.EmptyArray map.MaxDepth 0 map.Vnode }
