@@ -39,6 +39,7 @@ type RelationConverter (targetType : Type) =
             else failwith "Invalid RelationConverter conversion from source."
 
 /// A relation that can be resolved to an address via projection.
+/// TODO: make use Name instead of NameKey, and move into Prime.
 type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>] 'a Relation =
     private
         { OptNameKeys : NameKey option list
