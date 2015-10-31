@@ -22,7 +22,7 @@ type internal Hkv<'k, 'v when 'k : comparison> =
 type internal Vnode<'k, 'v when 'k : comparison> =
     private
         | Nil
-        | Singlet of Hkv<'k, 'v>
+        | Singleton of Hkv<'k, 'v>
         | Multiple of Vnode<'k, 'v> array
         | Clash of Map<'k, 'v>
 
@@ -49,22 +49,22 @@ module internal Vnode =
             | Nil ->
 
                 // make singleton entry
-                Singlet hkv
+                Singleton hkv
 
-            | Singlet hkv' ->
+            | Singleton hkv' ->
                 
-                // if additional entry; convert Singlet to Multiple
+                // if additional entry; convert Singleton to Multiple
                 let idx = hashToIndex hkv.H dep
                 let idx' = hashToIndex hkv'.H dep
                 if idx <> idx' then
                     let arr = cloneArray earr
-                    arr.[idx] <- Singlet hkv
-                    arr.[idx'] <- Singlet hkv'
+                    arr.[idx] <- Singleton hkv
+                    arr.[idx'] <- Singleton hkv'
                     Multiple arr
 
-                // if replace entry; remain Singlet
+                // if replace entry; remain Singleton
                 elif hkv.K = hkv'.K then
-                    Singlet hkv
+                    Singleton hkv
 
                 // if add entry with same idx; add both in new node
                 else
@@ -96,7 +96,7 @@ module internal Vnode =
             match node with
             | Nil ->
                 Clash ^ Map.singleton hkv.K hkv.V
-            | Singlet hkv' ->
+            | Singleton hkv' ->
                 Clash ^ Map.add hkv.K hkv.V ^ Map.singleton hkv'.K hkv'.V
             | Multiple _ ->
                 failwithumf ()
