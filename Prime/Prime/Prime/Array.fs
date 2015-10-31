@@ -4,10 +4,6 @@
 [<RequireQualifiedAccess>]
 module Array
 
-/// Index into an array.
-let inline at index (arr : 'a array)=
-    arr.[index]
-
 /// Try to find an index in reverse.
 let tryFindIndexRev pred arr =
     let mutable index = Array.length arr - 1
@@ -16,9 +12,3 @@ let tryFindIndexRev pred arr =
         if pred arr.[index] then found <- true
         else index <- index - 1
     if found then Some index else None
-
-/// Get the last element of an array
-let last arr =
-    let arrLength = Array.length arr
-    if arrLength = 0 then failwith "Cannot get the last element of an empty array."
-    arr.[arrLength - 1]

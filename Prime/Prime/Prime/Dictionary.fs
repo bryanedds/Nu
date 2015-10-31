@@ -9,7 +9,7 @@ module Dictionary =
 
     /// Make a dictionary with a single element.
     let singleton key value =
-        List.toDictionary [(key, value)]
+        List.toDict [(key, value)]
 
     /// Map over a dictionary. A new dictionary is produced.
     let map (mapper : KeyValuePair<'k, 'v> -> 'v) (dictionary : Dictionary<'k, 'v>) =
