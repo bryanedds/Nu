@@ -7,20 +7,11 @@ open System
 open System.Collections.Generic
 open Prime
 
-// TODO: for speed, use new F# 4.0 List functions that are implemented _without_ Seq functions!
-
 /// The missing cons function.
 let cons = Sectioning.cons
 
-/// Make a singleton list.
-let inline singleton item = [item]
-
 /// Cons with flipped arguments.
 let inline flipCons tail head = head :: tail
-
-/// Index into a list.
-let inline at index (list : 'a list) =
-    list.[index]
 
 /// Check that a predicate passes for NO items in a list.
 let rec notExists pred list =
@@ -123,19 +114,11 @@ let rec roll roller state (list : 'a list) =
         if rest.Tail.IsEmpty then state
         else roll roller state rest
 
-/// Windowed for lists.
-let windowed count (list : 'a list) =
-    List.ofSeq ^ Seq.windowed count list
-
 /// Zip two lists by a function.
 /// TODO: optimize with program fusion.
 let zipBy by first second =
     let zipped = List.zip first second
     List.map by zipped
-
-/// Get Some head of the list or None.
-let tryHead list =
-    List.tryFind (fun _ -> true) list
 
 /// A more tolerant and open-minded take.
 let tryTake (n : int) (list : _ list) =
@@ -149,17 +132,6 @@ let project pred (list : 'a list) (list2 : 'b option list) =
 let replaceHead list head =
     head :: List.tail list
 
-/// Truncate for lists.
-let truncate count (list : _ list) =
-    let results = Seq.truncate count list
-    List.ofSeq results
-
-/// Forall for lists.
-let rec forall pred (list : _ list) =
-    match list with
-    | [] -> true
-    | head :: tail -> pred head && forall pred tail
-
 /// Fornone for lists.
 let rec fornone pred (list : _ list) =
     match list with
@@ -169,54 +141,10 @@ let rec fornone pred (list : _ list) =
 /// Foldi for lists.
 let foldi folder state (list : _ list) =
     Seq.foldi folder state list
-    
-/// Take for lists.
-let rec take number (list : _ list) =
-    let result = Seq.take number list
-    List.ofSeq result
-
-/// Skip for lists.
-let rec skip number (list : _ list) =
-    match number with
-    | 0 -> list
-    | _ -> skip (number - 1) list.Tail
-
-/// Take while for lists.
-let takeWhile pred (list : _ list) =
-    let results = Seq.takeWhile pred list
-    List.ofSeq results
-
-/// Skip while for lists.
-let skipWhile pred (list : _ list) =
-    let results = Seq.skipWhile pred list
-    List.ofSeq results
-
-/// Distinct for lists.
-let distinct (list : _ list) =
-    let results = Seq.distinct list
-    List.ofSeq results
-
-/// DistinctBy for lists.
-let distinctBy by (list : _ list) =
-    let results = Seq.distinctBy by list
-    List.ofSeq results
-
-/// Get the last item from a list.
-/// TODO: speed this up with a single iteration?
-let last list =
-    let length = List.length list
-    List.item (length - 1) list
-
-/// Get the last item from a list.
-/// TODO: speed this up with a single iteration?
-let tryLast list =
-    match List.length list with
-    | 0 -> None
-    | _ -> Some ^ last list
 
 /// Get all but the last item from a list.
 let allButLast list =
-    take (List.length list - 1) list
+    List.take (List.length list - 1) list
 
 /// Convert option values to definite values.
 let definitize opts =
@@ -236,7 +164,7 @@ let allOrEmptyBy by list =
 
 /// Pad a list with count instances of its last item.
 let padWithLast count list =
-    let lastElem = last list
+    let lastElem = List.last list
     let padding = List.init count (fun _ -> lastElem)
     list @ padding
 
@@ -274,8 +202,8 @@ let takeTillInclusive pred list =
     match optIndex with
     | Some index ->
         let incIndex = index + 1
-        if hasAtLeast incIndex list then take incIndex list
-        else take index list
+        if hasAtLeast incIndex list then List.take incIndex list
+        else List.take index list
     | None -> list
 
 /// Runs a binary set operation on two lists that are converted to sets.
@@ -297,23 +225,23 @@ let intersect firstList secondList =
     setBinop Set.intersect firstList secondList
 
 /// Add a list of pairs to a Dictionary.
-let addToDictionary (dictionary : Dictionary<'k, 'v>) list =
+let addToDict (dictionary : Dictionary<'k, 'v>) list =
     List.iter (fun (k, v) -> dictionary.Add (k, v)) list
     
 /// Add a list of values to a Dictionary.
-let addToDictionaryBy by (dictionary : Dictionary<'k, 'v>) list =
+let addToDictBy by (dictionary : Dictionary<'k, 'v>) list =
     List.iter (fun value -> dictionary.Add (by value)) list
 
 /// Convert a list of pairs to a Dictionary.
-let toDictionary list =
+let toDict list =
     let dictionary = Dictionary HashIdentity.Structural
-    addToDictionary dictionary list
+    addToDict dictionary list
     dictionary
 
 /// Convert a list of values to a Dictionary.
-let toDictionaryBy by list =
+let toDictBy by list =
     let dictionary = Dictionary HashIdentity.Structural
-    addToDictionaryBy by dictionary list
+    addToDictBy by dictionary list
     dictionary
 
 /// Convert a list to a HashSet.
@@ -340,7 +268,7 @@ let rec remove pred list =
 /// Example - [0, 1, 2] becomes [[]; [0]; [0; 1]; [0; 1; 2]]
 let collapseLeft list =
     [for x in 0 .. List.length list do
-        yield take x list]
+        yield List.take x list]
 
 /// Find the duplicates in a list.
 /// TODO: speed this up with a Set internally?

@@ -163,8 +163,8 @@ module Address =
         makeFromNameKeys<'a> ^ List.tail address.NameKeys
 
     /// Take a name key of an address.
-    let at index address =
-        List.at index address.NameKeys
+    let item index address =
+        List.item index address.NameKeys
 
     /// Take an address composed of the name keys of an address minus a skipped amount of name keys.
     let skip<'a, 'b> n (address : 'a Address) =
