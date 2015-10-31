@@ -28,20 +28,18 @@ type internal Vnode<'k, 'v when 'k : comparison> =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module internal Vnode =
 
+    /// OPTIMIZATION: Array.Clone () is not user since it's been profiled to be slower
     let inline cloneArray (arr : Vnode<'k, 'v> array) : Vnode<'k, 'v> array =
-#if SIMPLE_CLONE_ARRAY
-        arr.Clone () :?> Vnode<'k, 'v> array
-#else // use of this presumes Array.Clone () is slower
         let arr' = Array.zeroCreate 32 // there's an unecessary check against the size here, but that's the only inefficiency
-        Array.Copy (arr, 0, arr', 0, 32)
+        Array.Copy (arr, 0, arr', 0, 32) // param checkss are inefficient, but hopefully there's at least a memcpy underneath...
         arr'
-#endif
 
     let inline private hashToIndex h dep =
         (h >>> (dep * 5)) &&& 0x1F
 
+    /// OPTIMIZATION: Requires an empty array to use the source of new array clones in order to avoid Array.create.
     let rec add (hkv : Hkv<'k, 'v>) (earr : Vnode<'k, 'v> array) (mdep : int) (dep : int) (node : Vnode<'k, 'v>) : Vnode<'k, 'v> =
-        if dep <= mdep then
+        if dep < mdep then
 
             // handle non-clash cases
             match node with
@@ -115,7 +113,7 @@ type Vmap<'k, 'v when 'k : comparison> =
 module Vmap =
 
     let makeEmpty mdep =
-        if mdep > 6 then failwith "Vmap max depth should not be greater than 6."
+        if mdep > 7 then failwith "Vmap max depth should not be greater than 7."
         elif mdep < 0 then failwith "Vmap max depth should not be less than 0."
         else { Vnode = Vnode.empty; EmptyArray = Array.create 32 Vnode.empty; MaxDepth = mdep }
 
