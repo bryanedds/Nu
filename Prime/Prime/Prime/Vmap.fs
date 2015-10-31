@@ -7,10 +7,10 @@ open Prime
 
 type internal Hkv<'k, 'v when 'k : comparison> =
     struct
-        new (h, k, v) = { h = h; k = k; v = v }
-        val h : int
-        val k : 'k
-        val v : 'v
+        new (k, v) = { H = k.GetHashCode (); K = k; V = v }
+        val H : int
+        val K : 'k
+        val V : 'v
         end
 
 /// TODO: there is an F# issue where UseNullAsTrueValue does not work on unions with 4 or more
@@ -21,7 +21,7 @@ type internal Hkv<'k, 'v when 'k : comparison> =
 type internal Vnode<'k, 'v when 'k : comparison> =
     private
         | Nil
-        | Single of Hkv<'k, 'v>
+        | Singlet of Hkv<'k, 'v>
         | Multiple of Vnode<'k, 'v> array
         | Clash of Map<'k, 'v>
 
@@ -32,9 +32,9 @@ module internal Vnode =
         Array.create 32 Nil
 
     let private hashToIndex h dep =
-        (h >>> dep * 5) &&& 0x1F
+        (h >>> (dep * 5)) &&& 0x1F
 
-    let rec private add5 (h : int) (k : 'k) (v : 'v) (dep : int) (mdep : int) (node : Vnode<'k, 'v>) : Vnode<'k, 'v> =
+    let rec private add5 (hkv : Hkv<'k, 'v>) (dep : int) (mdep : int) (node : Vnode<'k, 'v>) : Vnode<'k, 'v> =
         if dep <= mdep then
 
             // handle non-clash cases
@@ -42,38 +42,39 @@ module internal Vnode =
             | Nil ->
 
                 // make singleton entry
-                Single ^ Hkv (h, k, v)
+                Singlet hkv
 
-            | Single hkv ->
-                let idx = hashToIndex hkv.h dep
-                let idx' = hashToIndex h dep
+            | Singlet hkv' ->
                 
-                // additional entry; convert Single to Multiple
+                // additional entry; convert Singlet to Multiple
+                let idx = hashToIndex hkv.H dep
+                let idx' = hashToIndex hkv'.H dep
                 if idx <> idx' then
                     let arr = makeArray ()
-                    arr.[idx] <- Single hkv
-                    arr.[idx'] <- Single ^ Hkv (h, k, v)
+                    arr.[idx] <- Singlet hkv
+                    arr.[idx'] <- Singlet hkv'
                     Multiple arr
 
-                // replace entry; remain Single
-                elif hkv.k = k then
-                    Single ^ Hkv (h, k, v)
+                // replace entry; remain Singlet
+                elif hkv.K = hkv'.K then
+                    Singlet hkv
 
                 // add entry with same idx
                 else
-                    let node' = add5 hkv.h hkv.k hkv.v (inc dep) mdep Nil
-                    let node' = add5 h k v (inc dep) mdep node'
+                    let dep' = dep + 1
+                    let node' = add5 hkv dep' mdep Nil
+                    let node' = add5 hkv' dep' mdep node'
                     let arr = makeArray ()
-                    arr.[idx] <- node'
+                    arr.[idx'] <- node'
                     Multiple arr
 
             | Multiple arr ->
 
                 // add entry with recursion
-                let idx = hashToIndex h dep
+                let idx = hashToIndex hkv.H dep
                 let entry = arr.[idx]
                 let arr = arr.Clone () :?> Vnode<'k, 'v> array
-                arr.[idx] <- add5 h k v (inc dep) mdep entry
+                arr.[idx] <- add5 hkv (dep + 1) mdep entry
                 Multiple arr
 
             | Clash _ ->
@@ -86,16 +87,16 @@ module internal Vnode =
             // handle clash cases
             match node with
             | Nil ->
-                Clash ^ Map.singleton k v
-            | Single hkv ->
-                Clash ^ Map.add k v ^ Map.singleton hkv.k hkv.v
+                Clash ^ Map.singleton hkv.K hkv.V
+            | Singlet hkv' ->
+                Clash ^ Map.add hkv.K hkv.V ^ Map.singleton hkv'.K hkv'.V
             | Multiple _ ->
                 failwithumf ()
             | Clash clashMap ->
-                Clash ^ Map.add k v clashMap
+                Clash ^ Map.add hkv.K hkv.V clashMap
 
     let add k v node =
-        add5 (k.GetHashCode ()) k v 0 node
+        add5 (Hkv (k, v)) 0 node
 
     let empty =
         Nil
