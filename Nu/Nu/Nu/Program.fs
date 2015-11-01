@@ -60,10 +60,10 @@ module Program =
     (* WISDOM: Performance concerns remain a long-standing subject of interest. However, this can
     be mitigated in a few ways with approximate speed-ups -
 
-    2x gain - put physics and rendering each in another process
-    2x gain - run at 30fps instead of 60
-    1.?x gain - use Clojure-style persistent hash maps with NameKeys rather than F# Map, and possibly write the PHM from scratch since I don't quite trust the one in FSharpx...
-    1.?x gain - compile with .NET Native or Mono AOT
+    2x gain - put physics and rendering each in another process.
+    2x gain - run at 30fps instead of 60.
+    1.?x gain - use Prime.Vmap with appropriate depth configuration rather than F# Map.
+    1.?x gain - compile with .NET Native or Mono AOT.
     1.?x gain - upgrade to F# 4.1.
     1.?x gain - target x64 instead of x86.
     1.2x gain - store loaded assets in a Dictionary<string, Dictionary>> rather than a Map<string, Map>>, or...
