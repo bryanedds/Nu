@@ -213,7 +213,7 @@ module WorldEntityModule =
         /// Proxy all the entities contained by a group.
         static member proxyEntities group world =
             let entityStateMap = World.getEntityStateMap group world
-            Seq.map (fun (kvp : KeyValuePair<string, _>) -> gtoe group kvp.Key) entityStateMap
+            Seq.map (fun (kvp : KeyValuePair<_, _>) -> gtoe group kvp.Key) entityStateMap
 
         /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight publishing depends on
         /// the entity's existence. Use with caution.
@@ -250,7 +250,7 @@ module WorldEntityModule =
             let entityState = World.getEntityState entity world
             let world = World.removeEntity entity world
             let id = Core.makeId ()
-            let name = match optName with Some name -> name | None -> acstring id
+            let name = match optName with Some name -> name | None -> Name.make ^ acstring id
             let entityState = { entityState with Id = id; Name = name }
             let transmutedEntity = gtoe group name
             let world = World.addEntity false entityState transmutedEntity world

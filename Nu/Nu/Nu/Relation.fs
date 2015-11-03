@@ -31,42 +31,43 @@ type RelationConverter (targetType : Type) =
         
     override this.ConvertFrom (_, _, source) =
         match source with
-        | :? string ->
+        | :? string as nameStr ->
+            let fullName = !!nameStr
             let ftoaFunction = targetType.GetMethod ("makeFromFullName", BindingFlags.Static ||| BindingFlags.Public)
-            ftoaFunction.Invoke (null, [|source|])
+            ftoaFunction.Invoke (null, [|fullName|])
         | _ ->
             if targetType.IsInstanceOfType source then source
             else failwith "Invalid RelationConverter conversion from source."
 
 /// A relation that can be resolved to an address via projection.
-/// TODO: make use Name instead of NameKey, and move into Prime.
+/// TODO: move into Prime.
 type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>] 'a Relation =
     private
-        { OptNameKeys : NameKey option list
+        { OptNames : Name option list
           TypeCarrier : 'a -> unit }
 
-    static member internal split (str : string) =
-        List.ofArray ^ str.Split '/'
+    static member internal split (name : Name) =
+        Name.split [|'/'|] name
 
     static member internal getFullName (relation : 'a Relation) =
-        relation.OptNameKeys |>
-        List.map (fun optNameKey -> match optNameKey with Some nameKey -> nameKey.Name | None -> ".") |>
-        List.join "/"
+        relation.OptNames |>
+        List.map ^ Option.getOrDefault !!"." |>
+        Name.join "/"
 
     /// Make a relation from a '/' delimited string where '.' are empty.
     /// NOTE: do not move this function as the RelationConverter's reflection code relies on it being exactly here!
     static member makeFromFullName fullName =
-        let namesList = Relation<'a>.split fullName
-        let optNameKeys = List.map (fun name -> match name with "." -> None | _ -> Some ^ NameKey.make name) namesList
-        { OptNameKeys = optNameKeys; TypeCarrier = fun (_ : 'a) -> () }
+        let namesList = Relation<'a>.split fullName |> List.ofSeq
+        let optNames = List.map (fun name -> match Name.getNameStr name with "." -> None | _ -> Some name) namesList
+        { OptNames = optNames; TypeCarrier = fun (_ : 'a) -> () }
 
     /// Hash a Relation.
     static member hash (relation : 'a Relation) =
-        List.hash relation.OptNameKeys
+        List.hash relation.OptNames
             
     /// Equate Relations.
     static member equals relation relation2 =
-        relation.OptNameKeys = relation2.OptNameKeys
+        relation.OptNames = relation2.OptNames
 
     interface 'a Relation IEquatable with
         member this.Equals that =
@@ -81,20 +82,19 @@ type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>]
         Relation<'a>.hash this
     
     override this.ToString () =
-        Relation<'a>.getFullName this
+        Relation<'a>.getFullName this |> Name.getNameStr
 
 [<RequireQualifiedAccess>]
 module Relation =
     
     /// Resolve a relationship to an address.
     let resolve<'a> (address : 'a Address) (relation : 'a Relation) =
-        let nameKeys = List.project id address.NameKeys relation.OptNameKeys
-        Address.makeFromNameKeys<'a> nameKeys
+        let names = List.project id address.Names relation.OptNames
+        Address.makeFromNames<'a> names
 
     /// Make a relation from a list of option names.
     let makeFromOptNamesList<'a> optNamesList =
-        let optNameKeys = List.map (Option.map NameKey.make) optNamesList
-        { OptNameKeys = optNameKeys; TypeCarrier = fun (_ : 'a) -> () }
+        { OptNames = optNamesList |> List.ofSeq; TypeCarrier = fun (_ : 'a) -> () }
 
     /// Make an address from a '/' delimited string.
     let makeFromFullName<'a> fullName =

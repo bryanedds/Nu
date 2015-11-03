@@ -11,8 +11,8 @@ open Prime
 open Nu
 module WorldTests =
 
-    let UnitEventAddress = ntoa<unit> "Unit"
-    let StringEventAddress = ntoa<string> "String"
+    let UnitEventAddress = ntoa<unit> !!"Unit"
+    let StringEventAddress = ntoa<string> !!"String"
     let TestFilePath = "TestFile.xml"
     let incUserStateAndCascade (_ : Event<unit, Game>) world = (Cascade, World.updateUserState inc world)
     let incUserStateAndResolve (_ : Event<unit, Game>) world = (Resolve, World.updateUserState inc world)
@@ -75,6 +75,6 @@ module WorldTests =
         let oldWorld = world
         World.writeGameToFile TestFilePath world
         let world = World.readGameFromFile TestFilePath world
-        Assert.Equal<string> (Simulants.DefaultScreen.GetName oldWorld, Simulants.DefaultScreen.GetName world)
-        Assert.Equal<string> (Simulants.DefaultGroup.GetName oldWorld, Simulants.DefaultGroup.GetName world)
-        Assert.Equal<string> (Simulants.DefaultEntity.GetName oldWorld, Simulants.DefaultEntity.GetName world)
+        Assert.Equal<Name> (Simulants.DefaultScreen.GetName oldWorld, Simulants.DefaultScreen.GetName world)
+        Assert.Equal<Name> (Simulants.DefaultGroup.GetName oldWorld, Simulants.DefaultGroup.GetName world)
+        Assert.Equal<Name> (Simulants.DefaultEntity.GetName oldWorld, Simulants.DefaultEntity.GetName world)

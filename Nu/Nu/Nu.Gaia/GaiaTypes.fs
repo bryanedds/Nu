@@ -81,13 +81,17 @@ and EntityPropertyDescriptor (property, attributes) =
             let world = pushPastWorld world world
             match propertyName with
             | "Name" ->
-                let valueStr = acstring value
-                if fst ^ Int64.TryParse valueStr then
-                    trace ^ "Invalid entity name '" + valueStr + "' (must not be a number)."
+                let name = value :?> Name
+                let nameStr = Name.getNameStr name
+                if fst ^ Int64.TryParse nameStr then
+                    trace ^ "Invalid entity name '" + nameStr + "' (must not be a number)."
+                    world
+                elif nameStr.IndexOf '/' <> -1 then
+                    trace ^ "Invalid entity name '" + nameStr + "' (must not contain '/')."
                     world
                 else
                     let entity = entityTds.DescribedEntity
-                    let (entity, world) = World.reassignEntity entity (Some valueStr) (etog entity) world
+                    let (entity, world) = World.reassignEntity entity (Some name) (etog entity) world
                     entityTds.RefWorld := world // must be set for property grid
                     entityTds.Form.propertyGrid.SelectedObject <- { entityTds with DescribedEntity = entity }
                     world

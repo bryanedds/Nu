@@ -105,12 +105,12 @@ module World =
             match AnyEventAddressesCache.TryGetValue anyEventAddressesKey with
             | (true, anyEventAddresses) -> anyEventAddresses
             | (false, _) ->
-                let eventAddressNameKeys = Address.getNameKeys eventAddress
-                let anyEventAddressNameKeys = Address.getNameKeys Events.Any
+                let eventAddressNames = Address.getNames eventAddress
+                let anyEventAddressNames = Address.getNames Events.Any
                 let anyEventAddresses =
-                    [for i in 0 .. List.length eventAddressNameKeys - 1 do
-                        let subNameKeys = List.take i eventAddressNameKeys @ anyEventAddressNameKeys
-                        yield ktoa subNameKeys]
+                    [for i in 0 .. List.length eventAddressNames - 1 do
+                        let subNames = List.take i eventAddressNames @ anyEventAddressNames
+                        yield ltoa subNames]
                 AnyEventAddressesCache.Add (anyEventAddressesKey, anyEventAddresses)
                 anyEventAddresses
         else failwith "Event name cannot be empty."
@@ -194,7 +194,7 @@ module World =
                 (fun (eventHandling, world) (_, subscriber : Simulant, subscription) ->
                     if  (match eventHandling with Cascade -> true | Resolve -> false) &&
                         (match world.State.Liveness with Running -> true | Exiting -> false) then
-                        match Address.getNameKeys subscriber.SimulantAddress with
+                        match Address.getNames subscriber.SimulantAddress with
                         | [] -> publishEvent<'a, 'p, Game> subscriber publisher eventData eventAddress eventTrace subscription world
                         | [_] -> publishEvent<'a, 'p, Screen> subscriber publisher eventData eventAddress eventTrace subscription world
                         | [_; _] -> publishEvent<'a, 'p, Group> subscriber publisher eventData eventAddress eventTrace subscription world
@@ -279,7 +279,7 @@ module World =
                 let world = unsubscribe monitorKey world
                 world
             let subscription' = fun _ world -> (Cascade, unsubscribe world)
-            let removingEventAddress = ftoa<unit> (typeof<'s>.Name + "/Removing") ->>- subscriber.SimulantAddress
+            let removingEventAddress = ftoa<unit> !!(typeof<'s>.Name + "/Removing") ->>- subscriber.SimulantAddress
             let world = subscribe5<unit, 's> removalKey subscription' removingEventAddress subscriber world
             (unsubscribe, world)
         else failwith "Cannot monitor events with an anonymous subscriber."
@@ -400,13 +400,13 @@ module World =
 
     let private optEntityGetFreshKeyAndValue entity world =
         let optEntityState =
-            match Address.getNameKeys entity.EntityAddress with
-            | [screenNameKey; groupNameKey; entityNameKey] ->
+            match Address.getNames entity.EntityAddress with
+            | [screenName; groupName; entityName] ->
                 let (_, screenStateMap) = world.SimulantStates 
-                match Map.tryFind screenNameKey.Name screenStateMap with
+                match Map.tryFind screenName screenStateMap with
                 | Some (_, groupStateMap) ->
-                    match Map.tryFind groupNameKey.Name groupStateMap with
-                    | Some (_, entityStateMap) -> Map.tryFind entityNameKey.Name entityStateMap
+                    match Map.tryFind groupName groupStateMap with
+                    | Some (_, entityStateMap) -> Map.tryFind entityName entityStateMap
                     | None -> None
                 | None -> None
             | _ -> failwith ^ "Invalid entity address '" + acstring entity.EntityAddress + "'."
@@ -420,32 +420,32 @@ module World =
             world.State.OptEntityCache
 
     let private entityStateAdder (entityState : EntityState) entity world =
-        match Address.getNameKeys entity.EntityAddress with
-        | [screenNameKey; groupNameKey; entityNameKey] ->
+        match Address.getNames entity.EntityAddress with
+        | [screenName; groupName; entityName] ->
             let (gameState, screenStateMap) = world.SimulantStates 
-            match Map.tryFind screenNameKey.Name screenStateMap with
+            match Map.tryFind screenName screenStateMap with
             | Some (screenState, groupStateMap) ->
-                match Map.tryFind groupNameKey.Name groupStateMap with
+                match Map.tryFind groupName groupStateMap with
                 | Some (groupState, entityStateMap) ->
-                    let entityStateMap = Map.add entityNameKey.Name entityState entityStateMap
-                    let groupStateMap = Map.add groupNameKey.Name (groupState, entityStateMap) groupStateMap
-                    let screenStateMap = Map.add screenNameKey.Name (screenState, groupStateMap) screenStateMap
+                    let entityStateMap = Map.add entityName entityState entityStateMap
+                    let groupStateMap = Map.add groupName (groupState, entityStateMap) groupStateMap
+                    let screenStateMap = Map.add screenName (screenState, groupStateMap) screenStateMap
                     { world with SimulantStates = (gameState, screenStateMap) }
                 | None -> failwith ^ "Cannot add entity '" + acstring entity.EntityAddress + "' to non-existent group."
             | None -> failwith ^ "Cannot add entity '" + acstring entity.EntityAddress + "' to non-existent screen."
         | _ -> failwith ^ "Invalid entity address '" + acstring entity.EntityAddress + "'."
 
     let private entityStateRemover entity world =
-        match Address.getNameKeys entity.EntityAddress with
-        | [screenNameKey; groupNameKey; entityNameKey] ->
+        match Address.getNames entity.EntityAddress with
+        | [screenName; groupName; entityName] ->
             let (gameState, screenStateMap) = world.SimulantStates 
-            match Map.tryFind screenNameKey.Name screenStateMap with
+            match Map.tryFind screenName screenStateMap with
             | Some (screenState, groupStateMap) ->
-                match Map.tryFind groupNameKey.Name groupStateMap with
+                match Map.tryFind groupName groupStateMap with
                 | Some (groupState, entityStateMap) ->
-                    let entityStateMap = Map.remove entityNameKey.Name entityStateMap
-                    let groupStateMap = Map.add groupNameKey.Name (groupState, entityStateMap) groupStateMap
-                    let screenStateMap = Map.add screenNameKey.Name (screenState, groupStateMap) screenStateMap
+                    let entityStateMap = Map.remove entityName entityStateMap
+                    let groupStateMap = Map.add groupName (groupState, entityStateMap) groupStateMap
+                    let screenStateMap = Map.add screenName (screenState, groupStateMap) screenStateMap
                     { world with SimulantStates = (gameState, screenStateMap) }
                 | None -> world
             | None -> world
@@ -481,12 +481,12 @@ module World =
         else world
 
     let internal getEntityStateMap group world =
-        match Address.getNameKeys group.GroupAddress with
-        | [screenNameKey; groupNameKey] ->
+        match Address.getNames group.GroupAddress with
+        | [screenName; groupName] ->
             let (_, screenStateMap) = world.SimulantStates
-            match Map.tryFind screenNameKey.Name screenStateMap with
+            match Map.tryFind screenName screenStateMap with
             | Some (_, groupStateMap) ->
-                match Map.tryFind groupNameKey.Name groupStateMap with
+                match Map.tryFind groupName groupStateMap with
                 | Some (_, entityStateMap) -> entityStateMap
                 | None -> Map.empty
             | None -> Map.empty
@@ -530,46 +530,46 @@ module World =
     (* GroupState *)
 
     let private optGroupStateFinder group world =
-        match Address.getNameKeys group.GroupAddress with
-        | [screenNameKey; groupNameKey] ->
+        match Address.getNames group.GroupAddress with
+        | [screenName; groupName] ->
             let (_, screenStateMap) = world.SimulantStates
-            match Map.tryFind screenNameKey.Name screenStateMap with
+            match Map.tryFind screenName screenStateMap with
             | Some (_, groupStateMap) ->
-                match Map.tryFind groupNameKey.Name groupStateMap with
+                match Map.tryFind groupName groupStateMap with
                 | Some (groupState, _) -> Some groupState
                 | None -> None
             | None -> None
         | _ -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
 
     let private groupStateAdder (groupState : GroupState) group world =
-        match Address.getNameKeys group.GroupAddress with
-        | [screenNameKey; groupNameKey] ->
+        match Address.getNames group.GroupAddress with
+        | [screenName; groupName] ->
             let (gameState, screenStateMap) = world.SimulantStates 
-            match Map.tryFind screenNameKey.Name screenStateMap with
+            match Map.tryFind screenName screenStateMap with
             | Some (screenState, groupStateMap) ->
-                match Map.tryFind groupNameKey.Name groupStateMap with
+                match Map.tryFind groupName groupStateMap with
                 | Some (_, entityStateMap) ->
-                    let groupStateMap = Map.add groupNameKey.Name (groupState, entityStateMap) groupStateMap
-                    let screenStateMap = Map.add screenNameKey.Name (screenState, groupStateMap) screenStateMap
+                    let groupStateMap = Map.add groupName (groupState, entityStateMap) groupStateMap
+                    let screenStateMap = Map.add screenName (screenState, groupStateMap) screenStateMap
                     { world with SimulantStates = (gameState, screenStateMap) }
                 | None ->
-                    let groupStateMap = Map.add groupNameKey.Name (groupState, Map.empty) groupStateMap
-                    let screenStateMap = Map.add screenNameKey.Name (screenState, groupStateMap) screenStateMap
+                    let groupStateMap = Map.add groupName (groupState, Map.empty) groupStateMap
+                    let screenStateMap = Map.add screenName (screenState, groupStateMap) screenStateMap
                     { world with SimulantStates = (gameState, screenStateMap) }
             | None -> failwith ^ "Cannot add group '" + acstring group.GroupAddress + "' to non-existent screen."
         | _ -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
 
     let private groupStateRemover group world =
-        match Address.getNameKeys group.GroupAddress with
-        | [screenNameKey; groupNameKey] ->
+        match Address.getNames group.GroupAddress with
+        | [screenName; groupName] ->
             let (gameState, screenStateMap) = world.SimulantStates 
-            match Map.tryFind screenNameKey.Name screenStateMap with
+            match Map.tryFind screenName screenStateMap with
             | Some (screenState, groupStateMap) ->
-                match Map.tryFind groupNameKey.Name groupStateMap with
+                match Map.tryFind groupName groupStateMap with
                 | Some (_, entityStateMap) ->
                     if Map.isEmpty entityStateMap then
-                        let groupStateMap = Map.remove groupNameKey.Name groupStateMap
-                        let screenStateMap = Map.add screenNameKey.Name (screenState, groupStateMap) screenStateMap
+                        let groupStateMap = Map.remove groupName groupStateMap
+                        let screenStateMap = Map.add screenName (screenState, groupStateMap) screenStateMap
                         { world with SimulantStates = (gameState, screenStateMap) }
                     else failwith ^ "Cannot remove group " + acstring group.GroupAddress + ", which still contains entities."
                 | None -> world
@@ -577,10 +577,10 @@ module World =
         | _ -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
 
     let internal getGroupStateMap screen world =
-        match Address.getNameKeys screen.ScreenAddress with
-        | [screenNameKey] ->
+        match Address.getNames screen.ScreenAddress with
+        | [screenName] ->
             let (_, screenStateMap) = world.SimulantStates
-            match Map.tryFind screenNameKey.Name screenStateMap with
+            match Map.tryFind screenName screenStateMap with
             | Some (_, groupStateMap) -> groupStateMap
             | None -> Map.empty
         | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
@@ -621,35 +621,35 @@ module World =
     (* ScreenState *)
 
     let private optScreenStateFinder screen world =
-        match Address.getNameKeys screen.ScreenAddress with
-        | [screenNameKey] ->
+        match Address.getNames screen.ScreenAddress with
+        | [screenName] ->
             let (_, screenStateMap) = world.SimulantStates 
-            match Map.tryFind screenNameKey.Name screenStateMap with
+            match Map.tryFind screenName screenStateMap with
             | Some (screenState, _) -> Some screenState
             | None -> None
         | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
     let private screenStateAdder (screenState : ScreenState) screen world =
-        match Address.getNameKeys screen.ScreenAddress with
-        | [screenNameKey] ->
+        match Address.getNames screen.ScreenAddress with
+        | [screenName] ->
             let (gameState, screenStateMap) = world.SimulantStates 
-            match Map.tryFind screenNameKey.Name screenStateMap with
+            match Map.tryFind screenName screenStateMap with
             | Some (_, groupStateMap) ->
-                let screenStateMap = Map.add screenNameKey.Name (screenState, groupStateMap) screenStateMap
+                let screenStateMap = Map.add screenName (screenState, groupStateMap) screenStateMap
                 { world with SimulantStates = (gameState, screenStateMap) }
             | None ->
-                let screenStateMap = Map.add screenNameKey.Name (screenState, Map.empty) screenStateMap
+                let screenStateMap = Map.add screenName (screenState, Map.empty) screenStateMap
                 { world with SimulantStates = (gameState, screenStateMap) }
         | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
     let private screenStateRemover screen world =
-        match Address.getNameKeys screen.ScreenAddress with
-        | [screenNameKey] ->
+        match Address.getNames screen.ScreenAddress with
+        | [screenName] ->
             let (gameState, screenStateMap) = world.SimulantStates 
-            match Map.tryFind screenNameKey.Name screenStateMap with
+            match Map.tryFind screenName screenStateMap with
             | Some (_, groupStateMap) ->
                 if Map.isEmpty groupStateMap then
-                    let screenStateMap = Map.remove screenNameKey.Name screenStateMap
+                    let screenStateMap = Map.remove screenName screenStateMap
                     { world with SimulantStates = (gameState, screenStateMap) }
                 else failwith ^ "Cannot remove screen " + acstring screen.ScreenAddress + ", which still contains groups."
             | None -> world

@@ -87,7 +87,7 @@ module WorldGroupModule =
         static member proxyGroups screen world =
             let groupStateMap = World.getGroupStateMap screen world
             Seq.map
-                (fun (kvp : KeyValuePair<string, _>) -> stog screen kvp.Key)
+                (fun (kvp : KeyValuePair<_, _>) -> stog screen kvp.Key)
                 groupStateMap
 
         /// Destroy a group in the world immediately. Can be dangerous if existing in-flight publishing depends on the
