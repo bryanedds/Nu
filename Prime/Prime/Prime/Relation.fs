@@ -1,14 +1,13 @@
-﻿// Nu Game Engine.
+﻿// Prime - A PRIMitivEs code library.
 // Copyright (C) Bryan Edds, 2013-2015.
 
-namespace Nu
+namespace Prime
 open System
 open System.Configuration
 open System.ComponentModel
 open System.Reflection
 open System.Text
 open Prime
-open Nu
     
 /// Converts Relation types.
 type RelationConverter (targetType : Type) =
@@ -40,7 +39,6 @@ type RelationConverter (targetType : Type) =
             else failwith "Invalid RelationConverter conversion from source."
 
 /// A relation that can be resolved to an address via projection.
-/// TODO: move into Prime.
 type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>] 'a Relation =
     private
         { OptNames : Name option list

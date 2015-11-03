@@ -81,6 +81,9 @@
     <Compile Include="Dictionary.fs" />
     <Compile Include="Lens.fs" />
     <Compile Include="Rand.fs" />
+    <Compile Include="Name.fs" />
+    <Compile Include="Address.fs" />
+    <Compile Include="Relation.fs" />
     <Compile Include="KeyedCache.fs" />
     <Compile Include="MutantCache.fs" />
     <Compile Include="AlgebraicReader.fs" />

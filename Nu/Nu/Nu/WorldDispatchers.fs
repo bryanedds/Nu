@@ -7,6 +7,7 @@ open System.ComponentModel
 open OpenTK
 open Prime
 open TiledSharp
+open Prime
 open Nu
 
 [<AutoOpen>]

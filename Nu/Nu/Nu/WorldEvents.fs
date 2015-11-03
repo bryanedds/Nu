@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open OpenTK
+open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
