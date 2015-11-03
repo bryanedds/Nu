@@ -21,7 +21,7 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] observe<'a, 'o when 'o :> Simulant> (eventAddress : 'a Address) (observer : 'o) : Observation<'a, 'o> =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
-            let subscriptionAddress = ntoa<'a> ^ acstring subscriptionKey
+            let subscriptionAddress = ntoa<'a> ^ Name.make ^ acstring subscriptionKey
             let unsubscribe = fun world -> World.unsubscribe subscriptionKey world
             let subscription = fun evt world ->
                 let eventTrace = "Observation.observe" :: evt.Trace
@@ -43,7 +43,7 @@ module Observation =
             let subscriptionKey'' = World.makeSubscriptionKey ()
             let (subscriptionAddress, unsubscribe, world) = observation.Subscribe world
             let subscriptionAddress' = eventAddress
-            let subscriptionAddress'' = ntoa<'a * 'b> ^ acstring subscriptionKey''
+            let subscriptionAddress'' = ntoa<'a * 'b> ^ Name.make ^ acstring subscriptionKey''
             let unsubscribe = fun world ->
                 let world = unsubscribe world
                 let world = World.unsubscribe subscriptionKey world
@@ -71,7 +71,7 @@ module Observation =
             let subscriptionKey'' = World.makeSubscriptionKey ()
             let (subscriptionAddress, unsubscribe, world) = observation.Subscribe world
             let subscriptionAddress' = eventAddress
-            let subscriptionAddress'' = ntoa<Either<'a, 'b>> ^ acstring subscriptionKey''
+            let subscriptionAddress'' = ntoa<Either<'a, 'b>> ^ Name.make ^ acstring subscriptionKey''
             let unsubscribe = fun world ->
                 let world = unsubscribe world
                 let world = World.unsubscribe subscriptionKey world
@@ -95,7 +95,7 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] filter (pred : Event<'a, 'o> -> World -> bool) (observation : Observation<'a, 'o>) =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
-            let subscriptionAddress = ntoa<'a> ^ acstring subscriptionKey
+            let subscriptionAddress = ntoa<'a> ^ Name.make ^ acstring subscriptionKey
             let (eventAddress, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world -> let world = unsubscribe world in World.unsubscribe subscriptionKey world
             let subscription = fun evt world ->
@@ -113,7 +113,7 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] map (mapper : Event<'a, 'o> -> World -> 'b) (observation : Observation<'a, 'o>) : Observation<'b, 'o> =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
-            let subscriptionAddress = ntoa<'b> ^ acstring subscriptionKey
+            let subscriptionAddress = ntoa<'b> ^ Name.make ^ acstring subscriptionKey
             let (eventAddress, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world -> let world = unsubscribe world in World.unsubscribe subscriptionKey world
             let subscription = fun evt world ->
@@ -135,7 +135,7 @@ module Observation =
             let callbackKey = World.makeCallbackKey ()
             let world = World.addCallbackState callbackKey state world
             let subscriptionKey = World.makeSubscriptionKey ()
-            let subscriptionAddress = ntoa<'b> ^ acstring subscriptionKey
+            let subscriptionAddress = ntoa<'b> ^ Name.make ^ acstring subscriptionKey
             let (eventAddress, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world ->
                 let world = World.removeCallbackState callbackKey world
@@ -165,7 +165,7 @@ module Observation =
             let callbackKey = World.makeCallbackKey ()
             let world = World.addCallbackState callbackKey None world
             let subscriptionKey = World.makeSubscriptionKey ()
-            let subscriptionAddress = ntoa<'a> ^ acstring subscriptionKey
+            let subscriptionAddress = ntoa<'a> ^ Name.make ^ acstring subscriptionKey
             let (eventAddress, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world ->
                 let world = World.removeCallbackState callbackKey world
@@ -196,7 +196,7 @@ module Observation =
             let callbackKey = World.makeCallbackKey ()
             let world = World.addCallbackState callbackKey state world
             let subscriptionKey = World.makeSubscriptionKey ()
-            let subscriptionAddress = ntoa<'a> ^ acstring subscriptionKey
+            let subscriptionAddress = ntoa<'a> ^ Name.make ^ acstring subscriptionKey
             let (eventAddress, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world ->
                 let world = World.removeCallbackState callbackKey world
@@ -222,7 +222,7 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] subscribePlus handleEvent observation world =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
-            let subscriptionAddress = ntoa<'a> ^ acstring subscriptionKey
+            let subscriptionAddress = ntoa<'a> ^ Name.make ^ acstring subscriptionKey
             let (address, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world -> let world = unsubscribe world in World.unsubscribe subscriptionKey world
             let world = World.subscribe5<'a, 'o> subscriptionKey handleEvent address observation.Observer world
@@ -239,7 +239,7 @@ module Observation =
         let subscribe = fun world ->
             let eventKey = World.makeSubscriptionKey ()
             let subscriptionKey = World.makeSubscriptionKey ()
-            let subscriptionAddress = ntoa<'a> ^ acstring subscriptionKey
+            let subscriptionAddress = ntoa<'a> ^ Name.make ^ acstring subscriptionKey
             let (eventAddress', unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world ->
                 let world = unsubscribe world
@@ -257,7 +257,7 @@ module Observation =
 
     /// Terminate an observation when the observer is removed from the world.
     let [<DebuggerHidden; DebuggerStepThrough>] lifetime (observation : Observation<'a, 'o>) : Observation<'a, 'o> =
-        let removingEventAddress = ftoa<unit> (typeof<'o>.Name + "/Removing") ->>- observation.Observer.SimulantAddress
+        let removingEventAddress = ftoa<unit> !!(typeof<'o>.Name + "/Removing") ->>- observation.Observer.SimulantAddress
         until removingEventAddress observation
 
     /// Subscribe to an observation until the observer is removed from the world,
@@ -415,7 +415,7 @@ module ObservationModule =
 
     /// Make an observation of the observer's change events.
     let [<DebuggerHidden; DebuggerStepThrough>] ( *-- ) (simulant : 'a, valueGetter : World -> 'b) (observer : 'o) =
-        let changeEventAddress = ftoa<'a SimulantChangeData> (typeof<'a>.Name + "/Change") ->>- simulant.SimulantAddress
+        let changeEventAddress = ftoa<'a SimulantChangeData> !!(typeof<'a>.Name + "/Change") ->>- simulant.SimulantAddress
         observe changeEventAddress observer |> simulantValue valueGetter
 
     /// Make an observation of one of the observer's change events per frame.

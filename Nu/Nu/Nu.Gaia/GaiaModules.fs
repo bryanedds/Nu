@@ -78,7 +78,7 @@ module Gaia =
         let treeCategory = form.treeView.Nodes.[entityCategoryName]
         let treeCategoryNodeName = acstring entity.EntityAddress
         if not ^ treeCategory.Nodes.ContainsKey treeCategoryNodeName then
-            let treeCategoryNode = TreeNode (entity.GetName world)
+            let treeCategoryNode = TreeNode (Name.getNameStr ^ entity.GetName world)
             treeCategoryNode.Name <- treeCategoryNodeName
             treeCategory.Nodes.Add treeCategoryNode |> ignore
         else () // when changing an entity name, entity will be added twice - once from win forms, once from world
@@ -108,7 +108,7 @@ module Gaia =
         groupTabPages.Clear ()
         let groups = World.proxyGroups Simulants.EditorScreen world
         for group in groups do
-            groupTabPages.Add (group.GroupName, group.GroupName)
+            groupTabPages.Add (Name.getNameStr ^ group.GroupName, Name.getNameStr ^ group.GroupName)
 
     let private tryScrollTreeViewToPropertyGridSelection (form : GaiaForm) =
         match form.propertyGrid.SelectedObject with
@@ -282,8 +282,8 @@ module Gaia =
 
     let private handleFormTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
-            let entity = Entity.proxy ^ ftoa form.treeView.SelectedNode.Name
-            match Address.getNameKeys entity.EntityAddress with
+            let entity = Entity.proxy ^ ftoa ^ name form.treeView.SelectedNode.Name
+            match Address.getNames entity.EntityAddress with
             | [_; _; _] ->
                 RefWorld := world // must be set for property grid
                 let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
@@ -333,7 +333,7 @@ module Gaia =
             ignore ^ WorldChangers.Add (fun world ->
                 let world = pushPastWorld world world
                 let groupName = groupNameEntryForm.nameTextBox.Text
-                try let world = World.createGroup typeof<GroupDispatcher>.Name None (Some groupName) Simulants.EditorScreen world |> snd
+                try let world = World.createGroup typeof<GroupDispatcher>.Name None (Some ^ name groupName) Simulants.EditorScreen world |> snd
                     refreshGroupTabs form world
                     form.groupTabs.SelectTab (form.groupTabs.TabPages.IndexOfKey groupName)
                     world
@@ -346,7 +346,8 @@ module Gaia =
 
     let private handleFormSave (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
-            form.saveFileDialog.Title <- "Save '" + (World.getUserState world).SelectedGroup.GroupName + "' As"
+            let groupNameStr = Name.getNameStr (World.getUserState world).SelectedGroup.GroupName
+            form.saveFileDialog.Title <- "Save '" + groupNameStr + "' As"
             form.saveFileDialog.FileName <- String.Empty
             let saveFileResult = form.saveFileDialog.ShowDialog form
             match saveFileResult with
@@ -376,7 +377,7 @@ module Gaia =
                 let group = (World.getUserState world).SelectedGroup
                 let world = World.destroyGroupImmediate group world
                 form.propertyGrid.SelectedObject <- null
-                form.groupTabs.TabPages.RemoveByKey group.GroupName
+                form.groupTabs.TabPages.RemoveByKey ^ Name.getNameStr group.GroupName
                 world)
 
     let private handleFormUndo (form : GaiaForm) (_ : EventArgs) =
@@ -496,7 +497,7 @@ module Gaia =
                 World.updateUserState (fun editorState ->
                     let groupTabs = form.groupTabs
                     let groupTab = groupTabs.SelectedTab
-                    { editorState with SelectedGroup = stog Simulants.EditorScreen groupTab.Text })
+                    { editorState with SelectedGroup = stog Simulants.EditorScreen ^ name groupTab.Text })
                     world
             let world = subscribeToEntityEvents form world
             form.propertyGrid.SelectedObject <- null
