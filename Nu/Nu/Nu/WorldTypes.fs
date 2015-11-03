@@ -338,7 +338,7 @@ and [<CLIMutable; NoEquality; NoComparison>] GameState =
 /// type, and it's public _only_ to make [<CliMutable>] work.
 and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
     { Id : Guid
-      Name : string
+      Name : Name
       OptSpecialization : string option
       TransitionStateNp : TransitionState
       TransitionTicksNp : int64
@@ -356,7 +356,7 @@ and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
 /// type, and it's public _only_ to make [<CliMutable>] work.
 and [<CLIMutable; NoEquality; NoComparison>] GroupState =
     { Id : Guid
-      Name : string
+      Name : Name
       OptSpecialization : string option
       PublishChanges : bool
       Persistent : bool
@@ -369,7 +369,7 @@ and [<CLIMutable; NoEquality; NoComparison>] GroupState =
 /// type, and it's public _only_ to make [<CliMutable>] work.
 and [<CLIMutable; NoEquality; NoComparison>] EntityState =
     { Id : Guid
-      Name : string
+      Name : Name
       OptSpecialization : string option
       Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
       Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
@@ -469,11 +469,14 @@ and [<StructuralEquality; NoComparison>] Screen =
     /// Concatenate two addresses, forcing the type of first address.
     static member (->>-) (address, screen) = acatff address screen
 
-    /// Convert a screen's name to it's proxy.
-    static member (!>) screenName = Screen.proxy ^ ntoa screenName
+    /// Convert a name string to a screen's proxy.
+    static member (!>) screenNameStr = Screen.proxy ^ ntoa !!screenNameStr
 
     /// Convert a screen's proxy to a group's by appending the group's name at the end.
-    static member (=>) (screen, groupName : string) = Group.proxy ^ atoa<Screen, Group> screen.ScreenAddress ->- ntoa groupName
+    static member (=>) (screen, groupName) = Group.proxy ^ atoa<Screen, Group> screen.ScreenAddress ->- ntoa groupName
+
+    /// Convert a screen's proxy to a group's by appending the group's name at the end.
+    static member (=>) (screen : Screen, groupNameStr) = screen => !!groupNameStr
 
 /// Forms a logical group of entities.
 and [<StructuralEquality; NoComparison>] Group =
@@ -504,6 +507,9 @@ and [<StructuralEquality; NoComparison>] Group =
 
     /// Convert a group's proxy to an entity's by appending the entity's name at the end.
     static member (=>) (group, entityName) = Entity.proxy ^ atoa<Group, Entity> group.GroupAddress ->- ntoa entityName
+
+    /// Convert a group's proxy to an entity's by appending the entity's name at the end.
+    static member (=>) (group : Group, entityNameStr) = group => !!entityNameStr
 
     /// Concatenate two addresses, taking the type of first address.
     static member (->-) (address, group) = Group.acatf address group
@@ -630,4 +636,4 @@ and [<ReferenceEquality>] World =
           Components : Components
           Callbacks : Callbacks
           State : WorldState
-          SimulantStates : GameState * Map<string, ScreenState * Map<string, GroupState * Map<string, EntityState>>> }
+          SimulantStates : GameState * Map<Name, ScreenState * Map<Name, GroupState * Map<Name, EntityState>>> }

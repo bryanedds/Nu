@@ -5,9 +5,10 @@ namespace Prime
 open System
 open Prime
 
+/// Hash, key, value triple in a struct for efficiency.
 type internal Hkv<'k, 'v when 'k : comparison> =
     struct
-        new (k, v) = { H = k.GetHashCode (); K = k; V = v }
+        new (h, k, v) = { H = h; K = k; V = v }
         val H : int
         val K : 'k
         val V : 'v
@@ -21,17 +22,17 @@ type internal Hkv<'k, 'v when 'k : comparison> =
 type internal Vnode<'k, 'v when 'k : comparison> =
     private
         | Nil
-        | Singlet of Hkv<'k, 'v>
+        | Singleton of Hkv<'k, 'v>
         | Multiple of Vnode<'k, 'v> array
         | Clash of Map<'k, 'v>
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module internal Vnode =
 
-    /// OPTIMIZATION: Array.Clone () is not user since it's been profiled to be slower
+    /// OPTIMIZATION: Array.Clone () is not used since it's been profiled to be slower
     let inline cloneArray (arr : Vnode<'k, 'v> array) : Vnode<'k, 'v> array =
         let arr' = Array.zeroCreate 32 // there's an unecessary check against the size here, but that's the only inefficiency
-        Array.Copy (arr, 0, arr', 0, 32) // param checkss are inefficient, but hopefully there's at least a memcpy underneath...
+        Array.Copy (arr, 0, arr', 0, 32) // param checks are inefficient, but hopefully there's at least a memcpy underneath...
         arr'
 
     let inline private hashToIndex h dep =
@@ -39,6 +40,8 @@ module internal Vnode =
 
     /// OPTIMIZATION: Requires an empty array to use the source of new array clones in order to avoid Array.create.
     let rec add (hkv : Hkv<'k, 'v>) (earr : Vnode<'k, 'v> array) (mdep : int) (dep : int) (node : Vnode<'k, 'v>) : Vnode<'k, 'v> =
+
+        // lower than max depth, non-clashing
         if dep < mdep then
 
             // handle non-clash cases
@@ -46,30 +49,30 @@ module internal Vnode =
             | Nil ->
 
                 // make singleton entry
-                Singlet hkv
+                Singleton hkv
 
-            | Singlet hkv' ->
+            | Singleton hkv' ->
                 
-                // additional entry; convert Singlet to Multiple
+                // if additional entry; convert Singleton to Multiple
                 let idx = hashToIndex hkv.H dep
                 let idx' = hashToIndex hkv'.H dep
                 if idx <> idx' then
                     let arr = cloneArray earr
-                    arr.[idx] <- Singlet hkv
-                    arr.[idx'] <- Singlet hkv'
+                    arr.[idx] <- Singleton hkv
+                    arr.[idx'] <- Singleton hkv'
                     Multiple arr
 
-                // replace entry; remain Singlet
+                // if replace entry; remain Singleton
                 elif hkv.K = hkv'.K then
-                    Singlet hkv
+                    Singleton hkv
 
-                // add entry with same idx
+                // if add entry with same idx; add both in new node
                 else
                     let dep' = dep + 1
                     let node' = add hkv earr mdep dep' Nil
                     let node' = add hkv' earr mdep dep' node'
                     let arr = cloneArray earr
-                    arr.[idx'] <- node'
+                    arr.[idx] <- node'
                     Multiple arr
 
             | Multiple arr ->
@@ -86,13 +89,14 @@ module internal Vnode =
                 // logically should never hit here
                 failwithumf ()
 
+        // clashing
         else
             
             // handle clash cases
             match node with
             | Nil ->
                 Clash ^ Map.singleton hkv.K hkv.V
-            | Singlet hkv' ->
+            | Singleton hkv' ->
                 Clash ^ Map.add hkv.K hkv.V ^ Map.singleton hkv'.K hkv'.V
             | Multiple _ ->
                 failwithumf ()
@@ -105,7 +109,7 @@ module internal Vnode =
 /// Variant map.
 type Vmap<'k, 'v when 'k : comparison> =
     private
-        { Vnode : Vnode<'k, 'v>
+        { Node : Vnode<'k, 'v>
           EmptyArray : Vnode<'k, 'v> array
           MaxDepth : int }
 
@@ -115,7 +119,9 @@ module Vmap =
     let makeEmpty mdep =
         if mdep > 7 then failwith "Vmap max depth should not be greater than 7."
         elif mdep < 0 then failwith "Vmap max depth should not be less than 0."
-        else { Vnode = Vnode.empty; EmptyArray = Array.create 32 Vnode.empty; MaxDepth = mdep }
+        else { Node = Vnode.empty; EmptyArray = Array.create 32 Vnode.empty; MaxDepth = mdep }
 
     let add (k : 'k) (v : 'v) map =
-        { map with Vnode = Vnode.add (Hkv (k, v)) map.EmptyArray map.MaxDepth 0 map.Vnode }
+        let hkv = Hkv (k.GetHashCode (), k, v)
+        let node = Vnode.add hkv map.EmptyArray map.MaxDepth 0 map.Node
+        { map with Node = node }
