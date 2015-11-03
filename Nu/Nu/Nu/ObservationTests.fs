@@ -11,8 +11,8 @@ module ObservationTests =
 
     let Jim = Simulants.DefaultGroup => "Jim"
     let Bob = Simulants.DefaultGroup => "Bob"
-    let IntEventAddress = ntoa<int> "Test"
-    let UnitEventAddress = ntoa<unit> "Test"
+    let IntEventAddress = ntoa<int> !!"Test"
+    let UnitEventAddress = ntoa<unit> !!"Test"
     let incUserStateAndCascade _ world = (Cascade, World.updateUserState inc world)
     let incUserStateAndResolve _ world = (Resolve, World.updateUserState inc world)
 

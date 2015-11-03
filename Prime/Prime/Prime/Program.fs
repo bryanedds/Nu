@@ -4,6 +4,7 @@
 namespace Prime
 open System
 open System.Diagnostics
+open FSharpx.Collections
 open Prime
 open Prime.Tests
 module Program =
@@ -14,6 +15,15 @@ module Program =
     for _ in 0 .. 15 do
         let watch = Stopwatch.StartNew ()
         let map = Array.fold (fun map (k, v) -> Vmap.add k v map) (Vmap.makeEmpty 6) entries
+        watch.Stop ()
+        printfn "%A" watch.Elapsed
+        ignore map
+
+    printfn "%s" "NEXT"
+
+    for _ in 0 .. 15 do
+        let watch = Stopwatch.StartNew ()
+        let map = Array.fold (fun map (k, v) -> PersistentHashMap.add k v map) PersistentHashMap.empty entries
         watch.Stop ()
         printfn "%A" watch.Elapsed
         ignore map

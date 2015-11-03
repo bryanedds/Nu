@@ -307,8 +307,8 @@ module WorldModule =
         static member createSplashScreen persistent splashData destination dispatcherName optSpecialization optName world =
             let cameraEyeSize = World.getCameraBy (fun camera -> camera.EyeSize) world
             let (splashScreen, world) = World.createDissolveScreen splashData.DissolveData dispatcherName optSpecialization optName world
-            let (splashGroup, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some "SplashGroup") splashScreen world
-            let (splashLabel, world) = World.createEntity typeof<LabelDispatcher>.Name None (Some "SplashLabel") splashGroup world
+            let (splashGroup, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some !!"SplashGroup") splashScreen world
+            let (splashLabel, world) = World.createEntity typeof<LabelDispatcher>.Name None (Some !!"SplashLabel") splashGroup world
             let world = splashScreen.SetPersistent persistent world
             let world = splashGroup.SetPersistent persistent world
             let world = splashLabel.SetPersistent persistent world
@@ -468,8 +468,8 @@ module WorldModule =
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
                     let mouseButtonEventAddress = ntoa ^ MouseButton.toEventName mouseButton
-                    let mouseButtonDownEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Down"
-                    let mouseButtonChangeEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
+                    let mouseButtonDownEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> !!"Down"
+                    let mouseButtonChangeEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> !!"Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
                     let world = World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonDownEventAddress ["World.processInput"] Simulants.Game world
                     World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress ["World.processInput"] Simulants.Game world
@@ -477,8 +477,8 @@ module WorldModule =
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
                     let mouseButtonEventAddress = ntoa ^ MouseButton.toEventName mouseButton
-                    let mouseButtonUpEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Up"
-                    let mouseButtonChangeEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> "Change"
+                    let mouseButtonUpEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> !!"Up"
+                    let mouseButtonChangeEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> !!"Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
                     let world = World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEventAddress ["World.processInput"] Simulants.Game world
                     World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress ["World.processInput"] Simulants.Game world

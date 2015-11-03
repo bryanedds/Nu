@@ -37,7 +37,7 @@ module ScreenState =
         let id = Core.makeId ()
         let screenState =
             { Id = id
-              Name = match optName with Some name -> name | None -> acstring id
+              Name = match optName with Some name -> name | None -> Name.make ^ acstring id
               OptSpecialization = optSpecialization 
               TransitionStateNp = IdlingState
               TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
@@ -59,7 +59,7 @@ module GroupState =
     let make optSpecialization optName dispatcher =
         let id = Core.makeId ()
         { GroupState.Id = id
-          Name = match optName with Some name -> name | None -> acstring id
+          Name = match optName with Some name -> name | None -> Name.make ^ acstring id
           OptSpecialization = optSpecialization
           PublishChanges = true
           Persistent = true
@@ -74,13 +74,13 @@ module EntityState =
     let make optSpecialization optName optOverlayName dispatcher =
         let id = Core.makeId ()
         { Id = id
-          Name = match optName with Some name -> name | None -> acstring id
+          Name = match optName with Some name -> name | None -> Name.make ^ acstring id
           OptSpecialization = optSpecialization
           Position = Vector2.Zero
           Size = Constants.Engine.DefaultEntitySize
           Rotation = 0.0f
           Depth = 0.0f
-          Overflow = Vector2.Zero // TODO: expose and use this as bounds = (Vector4 ((position - scale * overflow), (position + scale * (overflow + 1.0)))
+          Overflow = Vector2.Zero
           Visible = true
           ViewType = Relative
           Omnipresent = false
@@ -97,17 +97,17 @@ module EntityState =
 [<AutoOpen>]
 module SimulationOperators =
 
-    /// Convert a name to a screen's proxy.
-    let (!>) screenName = Screen.proxy ^ ntoa screenName
+    /// Convert a name string to a screen's proxy.
+    let (!>) screenNameStr = Screen.proxy ^ ntoa ^ Name.make screenNameStr
 
     /// Convert a name to a screen's proxy.
-    let ntos screenName = !> screenName
+    let ntos screenName = Screen.proxy ^ ntoa screenName
 
     /// Convert a group's proxy to an entity's by appending the entity's name at the end.
-    let gtoe (group : Group) entityName = group => entityName
+    let gtoe (group : Group) entityName = Entity.proxy ^ atoa<Group, Entity> group.GroupAddress ->- ntoa entityName
 
     /// Convert a screen's proxy to a group's by appending the group's name at the end.
-    let stog (screen : Screen) groupName = screen => groupName
+    let stog (screen : Screen) groupName = Group.proxy ^ atoa<Screen, Group> screen.ScreenAddress ->- ntoa groupName
 
     /// Convert an entity's proxy to a group's by removing the entity's name from the end.
     let etog (entity : Entity) = !< entity
