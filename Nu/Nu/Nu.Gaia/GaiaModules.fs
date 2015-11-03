@@ -282,7 +282,7 @@ module Gaia =
 
     let private handleFormTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
-            let entity = Entity.proxy ^ ftoa ^ name form.treeView.SelectedNode.Name
+            let entity = Entity.proxy ^ ftoa ^ Name.make form.treeView.SelectedNode.Name
             match Address.getNames entity.EntityAddress with
             | [_; _; _] ->
                 RefWorld := world // must be set for property grid
@@ -333,7 +333,7 @@ module Gaia =
             ignore ^ WorldChangers.Add (fun world ->
                 let world = pushPastWorld world world
                 let groupName = groupNameEntryForm.nameTextBox.Text
-                try let world = World.createGroup typeof<GroupDispatcher>.Name None (Some ^ name groupName) Simulants.EditorScreen world |> snd
+                try let world = World.createGroup typeof<GroupDispatcher>.Name None (Some ^ Name.make groupName) Simulants.EditorScreen world |> snd
                     refreshGroupTabs form world
                     form.groupTabs.SelectTab (form.groupTabs.TabPages.IndexOfKey groupName)
                     world
@@ -497,7 +497,7 @@ module Gaia =
                 World.updateUserState (fun editorState ->
                     let groupTabs = form.groupTabs
                     let groupTab = groupTabs.SelectedTab
-                    { editorState with SelectedGroup = stog Simulants.EditorScreen ^ name groupTab.Text })
+                    { editorState with SelectedGroup = stog Simulants.EditorScreen ^ Name.make groupTab.Text })
                     world
             let world = subscribeToEntityEvents form world
             form.propertyGrid.SelectedObject <- null

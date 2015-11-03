@@ -1,14 +1,13 @@
-﻿// Nu Game Engine.
+﻿// Prime - A PRIMitivEs code library.
 // Copyright (C) Bryan Edds, 2013-2015.
 
-namespace Nu
+namespace Prime
 open System
 open System.Configuration
 open System.ComponentModel
 open System.Reflection
 open System.Text
 open Prime
-open Nu
 
 /// Converts Address types.
 type AddressConverter (targetType : Type) =
