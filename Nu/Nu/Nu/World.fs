@@ -642,48 +642,38 @@ module WorldModule =
 
             // make the world's subsystems
             let subsystems =
-                { SubsystemMap =
+                Subsystems.make ^
                     Map.ofList
                         [(Constants.Engine.PhysicsEngineSubsystemName, PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockPhysicsEngine = () } :> Subsystem)
                          (Constants.Engine.RendererSubsystemName, RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockRenderer = () } :> Subsystem)
-                         (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockAudioPlayer = () } :> Subsystem)] }
+                         (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockAudioPlayer = () } :> Subsystem)]
 
             // make the world's components
             let components =
-                { Facets = World.makeDefaultFacets ()
-                  EntityDispatchers = World.makeDefaultEntityDispatchers ()
-                  GroupDispatchers = World.makeDefaultGroupDispatchers ()
-                  ScreenDispatchers = World.makeDefaultScreenDispatchers ()
-                  GameDispatchers = World.makeDefaultGameDispatchers () }
+                Components.make
+                    (World.makeDefaultFacets ())
+                    (World.makeDefaultEntityDispatchers ())
+                    (World.makeDefaultGroupDispatchers ())
+                    (World.makeDefaultScreenDispatchers ())
+                    (World.makeDefaultGameDispatchers ())
 
             // make the world's callbacks
             let callbacks =
-                { Subscriptions = Vmap.makeEmpty (KeyEq Address.equals) Constants.Engine.SubscriptionMapDepth
-                  Unsubscriptions = Vmap.makeEmpty (KeyEq (=)) Constants.Engine.SubscriptionMapDepth
-                  Tasklets = Queue.empty
-                  CallbackStates = Vmap.makeEmpty (KeyEq (=)) Constants.Engine.CallbackStateMapDepth }
+                Callbacks.make ()
 
             // make the world's state
             let worldState =
-                { TickRate = 1L
-                  TickTime = 0L
-                  UpdateCount = 0L
-                  Liveness = Running
-                  OptScreenTransitionDestination = None
-                  AssetMetadataMap = Map.empty
-                  AssetGraphFilePath = String.Empty
-                  OverlayRouter = OverlayRouter.make components.EntityDispatchers []
-                  OverlayFilePath = String.Empty
-                  Overlayer = Overlayer.makeEmpty ()
-                  Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault) }
-                  OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
-                  RefClipboard = ref None
-                  UserState = userState }
+                let overlayRouter = OverlayRouter.make components.EntityDispatchers []
+                let overlayer = Overlayer.makeEmpty ()
+                let eyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault)
+                let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
+                WorldState.make 1L Map.empty overlayRouter overlayer camera userState
 
             // make the simulant states
             let simulantStates =
                 let gameDispatcher = components.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
-                (World.makeGameState gameDispatcher, Vmap.makeEmpty (KeyEq Name.equals) Constants.Engine.ScreenMapDepth)
+                let gameState = World.makeGameState gameDispatcher
+                (gameState, Vmap.makeEmpty (KeyEq Name.equals) Constants.Engine.ScreenMapDepth)
 
             // make the world itself
             let world =
@@ -730,7 +720,7 @@ module WorldModule =
                         [(Constants.Engine.PhysicsEngineSubsystemName, physicsEngineSubsystem)
                          (Constants.Engine.RendererSubsystemName, rendererSubsystem)
                          (Constants.Engine.AudioPlayerSubsystemName, audioPlayerSubsystem)]
-                    { SubsystemMap = Map.ofList (defaultSubsystems @ userSubsystems) }
+                    Subsystems.make ^ Map.ofList (defaultSubsystems @ userSubsystems)
 
                 // make plug-in components
                 let pluginFacets = plugin.MakeFacets () |> List.map World.pairWithName
@@ -750,43 +740,31 @@ module WorldModule =
 
                 // make the world's components
                 let components =
-                    { Facets = Map.addMany pluginFacets ^ World.makeDefaultFacets ()
-                      EntityDispatchers = Map.addMany pluginEntityDispatchers ^ World.makeDefaultEntityDispatchers ()
-                      GroupDispatchers = Map.addMany pluginGroupDispatchers ^ World.makeDefaultGroupDispatchers ()
-                      ScreenDispatchers = Map.addMany pluginScreenDispatchers ^ World.makeDefaultScreenDispatchers ()
-                      GameDispatchers = Map.addMany [World.pairWithName activeGameDispatcher] ^ World.makeDefaultGameDispatchers () }
+                    Components.make
+                        (Map.addMany pluginFacets ^ World.makeDefaultFacets ())
+                        (Map.addMany pluginEntityDispatchers ^ World.makeDefaultEntityDispatchers ())
+                        (Map.addMany pluginGroupDispatchers ^ World.makeDefaultGroupDispatchers ())
+                        (Map.addMany pluginScreenDispatchers ^ World.makeDefaultScreenDispatchers ())
+                        (Map.addMany [World.pairWithName activeGameDispatcher] ^ World.makeDefaultGameDispatchers ())
+
+                // make the world's callbacks
+                let callbacks =
+                    Callbacks.make ()
 
                 // make the world's state
                 let worldState =
                     let intrinsicOverlays = World.createIntrinsicOverlays components.Facets components.EntityDispatchers
                     let pluginOverlayRoutes = plugin.MakeOverlayRoutes ()
+                    let overlayRouter = OverlayRouter.make components.EntityDispatchers pluginOverlayRoutes
+                    let overlayer = Overlayer.make Constants.Assets.OverlayFilePath intrinsicOverlays
                     let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH)
                     let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
-                    { TickRate = tickRate
-                      TickTime = 0L
-                      UpdateCount = 0L
-                      Liveness = Running
-                      OptScreenTransitionDestination = None
-                      AssetMetadataMap = assetMetadataMap
-                      AssetGraphFilePath = String.Empty
-                      OverlayRouter = OverlayRouter.make components.EntityDispatchers pluginOverlayRoutes
-                      OverlayFilePath = String.Empty
-                      Overlayer = Overlayer.make Constants.Assets.OverlayFilePath intrinsicOverlays
-                      Camera = camera
-                      OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
-                      RefClipboard = ref None
-                      UserState = userState :> obj }
-
-                // make the world's callbacks
-                let callbacks =
-                    { Subscriptions = Vmap.makeEmpty (KeyEq Address.equals) Constants.Engine.SubscriptionMapDepth
-                      Unsubscriptions = Vmap.makeEmpty (KeyEq (=)) Constants.Engine.SubscriptionMapDepth
-                      Tasklets = Queue.empty
-                      CallbackStates = Vmap.makeEmpty (KeyEq (=)) Constants.Engine.CallbackStateMapDepth }
+                    WorldState.make tickRate assetMetadataMap overlayRouter overlayer camera userState
 
                 // make the world's simulant states
                 let simulantStates =
-                    (World.makeGameState activeGameDispatcher, Vmap.makeEmpty (KeyEq (Name.equals)) Constants.Engine.ScreenMapDepth)
+                    let gameState = World.makeGameState activeGameDispatcher
+                    (gameState, Vmap.makeEmpty (KeyEq (Name.equals)) Constants.Engine.ScreenMapDepth)
 
                 // make the world itself, and register the game
                 let world =

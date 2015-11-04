@@ -36,26 +36,17 @@ type NameConverter (targetType : Type) =
             else failwith "Invalid NameConverter conversion from source."
 
 /// A name for optimized look-up in hashing containers.
-/// OPTIMIZATION: OptHashCode is lazy for speed.
+/// OPTIMIZATION: HashCode is cached for speed.
 type [<CustomEquality; CustomComparison; TypeConverter (typeof<NameConverter>)>] Name =
     private
         { NameStr : string
-          mutable OptHashCode : int option }
+          HashCode : int }
 
     /// Make a name from a non-empty string without whitespace.
     static member make (nameStr : string) =
         match nameStr with
         | _ when nameStr.IndexOfAny [|'\n'; '\r'; '\t'; ' '|] <> -1 -> failwith "Invalid name; must have no whitespace characters."
-        | _ -> { NameStr = nameStr; OptHashCode = None }
-
-    /// Hash a Name.
-    static member hash name =
-        match name.OptHashCode with
-        | Some hashCode -> hashCode
-        | None ->
-            let hashCode = name.NameStr.GetHashCode ()
-            name.OptHashCode <- Some hashCode
-            hashCode
+        | _ -> { NameStr = nameStr; HashCode = nameStr.GetHashCode () }
 
     /// Equate Names.
     static member equals name name2 =
@@ -85,7 +76,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<NameConverter>)>]
         | _ -> false
 
     override this.GetHashCode () =
-        Name.hash this
+        this.HashCode
 
     override this.ToString () =
         this.NameStr
