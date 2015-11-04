@@ -21,7 +21,7 @@ type 'k KeyEq = delegate of 'k * 'k -> bool
 
 /// TODO: there is an F# issue where UseNullAsTrueValue does not work on unions with 4 or more
 /// cases - https://github.com/fsharp/fsharp/issues/510 . Once resolved, should use it and be able
-/// to make arrays with Array.zeroCreate instead of Array.create.
+/// to make arrays with Array.zeroCreate aone instead of copying over the empty array.
 /// NOTE: Turning this into a C-style union value will give faster look-up, but slower
 /// modification.
 type internal Vnode<'k, 'v when 'k : comparison> =
