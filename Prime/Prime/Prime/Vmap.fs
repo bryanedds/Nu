@@ -145,7 +145,9 @@ module internal Vnode =
     let empty =
         Nil
 
-/// Variant map.
+/// A persistent hash map with depth variations.
+/// TODO: document.
+/// TODO: implement fold, map, and filter.
 type [<NoEquality; NoComparison>] Vmap<'k, 'v when 'k : comparison> =
     private
         { Vnode : Vnode<'k, 'v>
