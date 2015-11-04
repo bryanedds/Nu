@@ -658,7 +658,7 @@ module WorldModule =
 
             // make the world's callbacks
             let callbacks =
-                { Subscriptions = Vmap.makeEmpty (KeyEq (=)) Constants.Engine.SubscriptionMapDepth
+                { Subscriptions = Vmap.makeEmpty (KeyEq Address.equals) Constants.Engine.SubscriptionMapDepth
                   Unsubscriptions = Vmap.makeEmpty (KeyEq (=)) Constants.Engine.SubscriptionMapDepth
                   Tasklets = Queue.empty
                   CallbackStates = Vmap.makeEmpty (KeyEq (=)) Constants.Engine.CallbackStateMapDepth }
@@ -779,7 +779,7 @@ module WorldModule =
 
                 // make the world's callbacks
                 let callbacks =
-                    { Subscriptions = Vmap.makeEmpty (KeyEq (=)) Constants.Engine.SubscriptionMapDepth
+                    { Subscriptions = Vmap.makeEmpty (KeyEq Address.equals) Constants.Engine.SubscriptionMapDepth
                       Unsubscriptions = Vmap.makeEmpty (KeyEq (=)) Constants.Engine.SubscriptionMapDepth
                       Tasklets = Queue.empty
                       CallbackStates = Vmap.makeEmpty (KeyEq (=)) Constants.Engine.CallbackStateMapDepth }
