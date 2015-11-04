@@ -396,7 +396,7 @@ module World =
     let private optEntityStateKeyEquality 
         (entityAddress : Entity Address, world : World)
         (entityAddress2 : Entity Address, world2 : World) =
-        entityAddress == entityAddress2 && world == world2
+        refEq entityAddress entityAddress2 && refEq world world2
 
     let private optEntityGetFreshKeyAndValue entity world =
         let optEntityState =
@@ -488,8 +488,8 @@ module World =
             | Some (_, groupStateMap) ->
                 match Vmap.tryFind groupName groupStateMap with
                 | Some (_, entityStateMap) -> entityStateMap
-                | None -> Vmap.makeEmpty (KeyEq Name.equals) Constants.Engine.EntityMapDepth
-            | None -> Vmap.makeEmpty (KeyEq Name.equals) Constants.Engine.EntityMapDepth
+                | None -> Vmap.makeEmpty Constants.Engine.EntityMapDepth
+            | None -> Vmap.makeEmpty Constants.Engine.EntityMapDepth
         | _ -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
 
     let inline internal getOptEntityState entity world =
@@ -553,7 +553,7 @@ module World =
                     let screenStateMap = Vmap.add screenName (screenState, groupStateMap) screenStateMap
                     { world with SimulantStates = (gameState, screenStateMap) }
                 | None ->
-                    let groupStateMap = Vmap.add groupName (groupState, Vmap.makeEmpty (KeyEq Name.equals) Constants.Engine.EntityMapDepth) groupStateMap
+                    let groupStateMap = Vmap.add groupName (groupState, Vmap.makeEmpty Constants.Engine.EntityMapDepth) groupStateMap
                     let screenStateMap = Vmap.add screenName (screenState, groupStateMap) screenStateMap
                     { world with SimulantStates = (gameState, screenStateMap) }
             | None -> failwith ^ "Cannot add group '" + acstring group.GroupAddress + "' to non-existent screen."
@@ -582,7 +582,7 @@ module World =
             let (_, screenStateMap) = world.SimulantStates
             match Vmap.tryFind screenName screenStateMap with
             | Some (_, groupStateMap) -> groupStateMap
-            | None -> Vmap.makeEmpty (KeyEq Name.equals) Constants.Engine.GroupMapDepth
+            | None -> Vmap.makeEmpty Constants.Engine.GroupMapDepth
         | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
     let inline internal getOptGroupState group world =
@@ -638,7 +638,7 @@ module World =
                 let screenStateMap = Vmap.add screenName (screenState, groupStateMap) screenStateMap
                 { world with SimulantStates = (gameState, screenStateMap) }
             | None ->
-                let screenStateMap = Vmap.add screenName (screenState, Vmap.makeEmpty (KeyEq Name.equals) Constants.Engine.GroupMapDepth) screenStateMap
+                let screenStateMap = Vmap.add screenName (screenState, Vmap.makeEmpty Constants.Engine.GroupMapDepth) screenStateMap
                 { world with SimulantStates = (gameState, screenStateMap) }
         | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 

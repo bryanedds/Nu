@@ -38,8 +38,8 @@ type AddressConverter (targetType : Type) =
             if targetType.IsInstanceOfType source then source
             else failwith "Invalid AddressConverter conversion from source."
 
-/// Specifies the address of an element in a game, or name of an event.
-/// OPTIMIZATION: Comparison is done using the full string of names for speed.
+/// Specifies the address of an identifiable value.
+/// OPTIMIZATION: Comparison is done using full names for speed.
 /// OPTIMIZATION: OptFullName and OptHashCode are lazy for speed.
 type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
     private
