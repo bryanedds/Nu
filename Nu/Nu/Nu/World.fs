@@ -673,7 +673,7 @@ module WorldModule =
             let simulantStates =
                 let gameDispatcher = components.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
                 let gameState = World.makeGameState gameDispatcher
-                (gameState, Vmap.makeEmpty (KeyEq Name.equals) Constants.Engine.ScreenMapDepth)
+                (gameState, Vmap.makeEmpty Constants.Engine.ScreenMapDepth)
 
             // make the world itself
             let world =
@@ -764,7 +764,7 @@ module WorldModule =
                 // make the world's simulant states
                 let simulantStates =
                     let gameState = World.makeGameState activeGameDispatcher
-                    (gameState, Vmap.makeEmpty (KeyEq (Name.equals)) Constants.Engine.ScreenMapDepth)
+                    (gameState, Vmap.makeEmpty Constants.Engine.ScreenMapDepth)
 
                 // make the world itself, and register the game
                 let world =

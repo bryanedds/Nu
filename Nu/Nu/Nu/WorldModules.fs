@@ -187,10 +187,10 @@ module Callbacks =
 
     /// Make a callbacks value.
     let make () =
-        { Subscriptions = Vmap.makeEmpty (KeyEq Address.equals) Constants.Engine.SubscriptionMapDepth
-          Unsubscriptions = Vmap.makeEmpty (KeyEq (=)) Constants.Engine.SubscriptionMapDepth
+        { Subscriptions = Vmap.makeEmpty Constants.Engine.SubscriptionMapDepth
+          Unsubscriptions = Vmap.makeEmpty Constants.Engine.SubscriptionMapDepth
           Tasklets = Queue.empty
-          CallbackStates = Vmap.makeEmpty (KeyEq (=)) Constants.Engine.CallbackStateMapDepth }
+          CallbackStates = Vmap.makeEmpty Constants.Engine.CallbackStateMapDepth }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Components =

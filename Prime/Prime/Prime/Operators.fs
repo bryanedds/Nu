@@ -76,15 +76,18 @@ module Operators =
     /// Get the value of a property.
     let inline getPropertyValue indices (p : PropertyInfo) (x : obj) = p.GetValue (x, indices)
 
+    /// Test for equality, usually faster than (=).
+    let inline fastEq (x : 'a) (y : 'a) = System.IEquatable<'a>.Equals (x, y)
+
     /// Test for reference equality.
-    let inline referenceEquals (x : 'a) (y : 'a) = obj.ReferenceEquals (x, y)
+    let inline refEq (x : 'a) (y : 'a) = obj.ReferenceEquals (x, y)
 
     /// Test just the value parts of a type for equality.
     /// NOTE: This function uses mad reflection, so is extremely slow, and should not be used in tight loops.
     let rec similar (x : obj) (y : obj) =
         if isNull x then isNull y
         elif isNull y then false
-        elif referenceEquals (getType x) (getType y) then
+        elif refEq (getType x) (getType y) then
             let ty = getType x
             if  ty.IsValueType ||
                 ty = typeof<string> then
@@ -144,10 +147,10 @@ module Operators =
     /// Sequences two functions like Haskell ($).
     let inline (^) f g = f g
 
-    /// Test for reference equality.
-    let inline (==) (x : 'a) (y : 'a) = referenceEquals x y
+    /// Test for equality, usually faster than (=).
+    let inline (==) (x : 'a) (y : 'a) = fastEq x y
 
-    /// Test just the value parts of a type for equality.
+    /// Test just the value parts of a type for equality. Reflective and slow.
     let inline (===) (x : 'a) (y : 'a) = similar x y
 
     /// Combine the contents of two maps, taking an item from the second map in the case of a key
