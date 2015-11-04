@@ -67,8 +67,8 @@ module Program =
     1.?x gain - target x64 instead of x86.
     1.2x gain - store loaded assets (and asset metadata?) in a Dictionary<string, Dictionary>> rather than a Map<string, Map>>, or...
     1.2x gain - alternatively, use short-term memoization with a temporary dictionary to cache asset queries during rendering / playing / etc.
-    1.2x gain - render tiles layers to their own buffer so that each whole layer can be blitted directly with a single draw call (though this might cause overdraw).
-    ? gain - avoid rendering clear tiles! *)
+    1.5x gain - leverage a proper sprite batching system.
+    1.?x gain - avoid rendering clear tiles! *)
 
     (* WISDOM: On avoiding threads where possible...
     
