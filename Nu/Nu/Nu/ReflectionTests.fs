@@ -10,7 +10,7 @@ open Prime
 open Nu
 module ReflectionTests =
 
-    type [<CLIMutable; NoComparison>] TestXtended =
+    type [<CLIMutable; NoEquality; NoComparison>] TestXtended =
         { Xtension : Xtension }
 
         static member (?) (this : TestXtended, memberName) =
