@@ -8,7 +8,7 @@ open System.Xml
 open Xunit
 open Prime
 
-type [<CLIMutable; NoComparison>] TestXtended =
+type [<CLIMutable; NoEquality; NoComparison>] TestXtended =
     { Xtension : Xtension }
 
     static member (?) (this : TestXtended, memberName) =
