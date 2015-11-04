@@ -62,7 +62,6 @@ module Program =
 
     2x gain - put physics and rendering each in another process.
     2x gain - run at 30fps instead of 60.
-    1.?x gain - use Prime.Vmap with appropriate depth configuration rather than F# Map.
     1.?x gain - compile with .NET Native or Mono AOT.
     1.?x gain - upgrade to F# 4.1.
     1.?x gain - target x64 instead of x86.

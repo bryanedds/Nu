@@ -16,6 +16,9 @@ type internal Hkv<'k, 'v when 'k : comparison> =
         val V : 'v
         end
 
+/// A fast way to compare two keys.
+type 'k KeyEq = delegate of 'k * 'k -> bool
+
 /// TODO: there is an F# issue where UseNullAsTrueValue does not work on unions with 4 or more
 /// cases - https://github.com/fsharp/fsharp/issues/510 . Once resolved, should use it and be able
 /// to make arrays with Array.zeroCreate instead of Array.create.
@@ -41,7 +44,9 @@ module internal Vnode =
         (h >>> (dep * 5)) &&& 0x1F
 
     let isEmpty node =
-        match node with Nil -> true | _ -> false
+        match node with
+        | Nil -> true
+        | _ -> false
 
     let rec toSeq node =
         seq {
@@ -52,7 +57,7 @@ module internal Vnode =
             | Clash clashMap -> yield! clashMap }
 
     /// OPTIMIZATION: Requires an empty array to use the source of new array clones in order to avoid Array.create.
-    let rec add (hkv : Hkv<'k, 'v>) (earr : Vnode<'k, 'v> array) (mdep : int) (dep : int) (node : Vnode<'k, 'v>) : Vnode<'k, 'v> =
+    let rec add (hkv : Hkv<'k, 'v>) (keyEq : 'k KeyEq) (earr : Vnode<'k, 'v> array) (mdep : int) (dep : int) (node : Vnode<'k, 'v>) : Vnode<'k, 'v> =
 
         // lower than max depth, non-clashing
         if dep < mdep then
@@ -76,14 +81,14 @@ module internal Vnode =
                     Multiple arr
 
                 // if replace entry; remain Singleton
-                elif hkv.K = hkv'.K then
+                elif keyEq.Invoke (hkv.K, hkv'.K) then
                     Singleton hkv
 
                 // if add entry with same idx; add both in new node
                 else
                     let dep' = dep + 1
-                    let node' = add hkv earr mdep dep' Nil
-                    let node' = add hkv' earr mdep dep' node'
+                    let node' = add hkv keyEq earr mdep dep' Nil
+                    let node' = add hkv' keyEq earr mdep dep' node'
                     let arr = cloneArray earr
                     arr.[idx] <- node'
                     Multiple arr
@@ -94,7 +99,7 @@ module internal Vnode =
                 let idx = hashToIndex hkv.H dep
                 let entry = arr.[idx]
                 let arr = cloneArray arr
-                arr.[idx] <- add hkv earr mdep (dep + 1) entry
+                arr.[idx] <- add hkv keyEq earr mdep (dep + 1) entry
                 Multiple arr
 
             | Clash _ ->
@@ -116,34 +121,35 @@ module internal Vnode =
             | Clash clashMap ->
                 Clash ^ Map.add hkv.K hkv.V clashMap
 
-    let rec remove (h : int) (k : 'k) (dep : int) (node : Vnode<'k, 'v>) : Vnode<'k, 'v> =
+    let rec remove (h : int) (k : 'k) (keyEq : 'k KeyEq) (dep : int) (node : Vnode<'k, 'v>) : Vnode<'k, 'v> =
         match node with
         | Nil -> node
-        | Singleton hkv -> if hkv.K = k then Nil else node
+        | Singleton hkv -> if keyEq.Invoke (hkv.K, k) then Nil else node
         | Multiple arr ->
             let idx = hashToIndex h dep
             let entry = arr.[idx]
             let arr = cloneArray arr
-            arr.[idx] <- remove h k (dep + 1) entry
-            if Array.forall isEmpty arr then Nil else Multiple arr // does not collapse Multiple to Singleton
+            arr.[idx] <- remove h k keyEq (dep + 1) entry
+            if Array.forall isEmpty arr then Nil else Multiple arr // does not collapse Multiple to Singleton, tho could?
         | Clash clashMap ->
             let clashMap = Map.remove k clashMap
             if Map.isEmpty clashMap then Nil else Clash clashMap
 
-    let rec tryFind (h : int) (k : 'k) (dep : int) (node : Vnode<'k, 'v>) : 'v option =
+    let rec tryFind (h : int) (k : 'k) (keyEq : 'k KeyEq) (dep : int) (node : Vnode<'k, 'v>) : 'v option =
         match node with
         | Nil -> None
-        | Singleton hkv -> if hkv.K = k then Some hkv.V else None
-        | Multiple arr -> let idx = hashToIndex h dep in tryFind h k (dep + 1) arr.[idx]
+        | Singleton hkv -> if keyEq.Invoke (hkv.K, k) then Some hkv.V else None
+        | Multiple arr -> let idx = hashToIndex h dep in tryFind h k keyEq (dep + 1) arr.[idx]
         | Clash clashMap -> Map.tryFind k clashMap
 
     let empty =
         Nil
 
 /// Variant map.
-type Vmap<'k, 'v when 'k : comparison> =
+type [<NoEquality; NoComparison>] Vmap<'k, 'v when 'k : comparison> =
     private
         { Vnode : Vnode<'k, 'v>
+          KeyEq : 'k KeyEq
           EmptyArray : Vnode<'k, 'v> array
           MaxDepth : int }
 
@@ -159,14 +165,14 @@ module Vmap =
     let isEmpty map =
         Vnode.isEmpty map.Vnode
 
-    let makeEmpty mdep =
+    let makeEmpty keyEq mdep =
         if mdep > 7 then failwith "Vmap max depth should not be greater than 7."
         elif mdep < 0 then failwith "Vmap max depth should not be less than 0."
-        else { Vnode = Vnode.empty; EmptyArray = Array.create 32 Vnode.empty; MaxDepth = mdep }
+        else { Vnode = Vnode.empty; KeyEq = keyEq; EmptyArray = Array.create 32 Vnode.empty; MaxDepth = mdep }
 
     let add (k : 'k) (v : 'v) map =
         let hkv = Hkv (k.GetHashCode (), k, v)
-        let node = Vnode.add hkv map.EmptyArray map.MaxDepth 0 map.Vnode
+        let node = Vnode.add hkv map.KeyEq map.EmptyArray map.MaxDepth 0 map.Vnode
         { map with Vnode = node }
 
     let addMany entries map =
@@ -174,11 +180,11 @@ module Vmap =
 
     let remove (k : 'k) map =
         let h = k.GetHashCode ()
-        { map with Vnode = Vnode.remove h k 0 map.Vnode }
+        { map with Vnode = Vnode.remove h k map.KeyEq 0 map.Vnode }
 
     let tryFind (k : 'k) map : 'v option =
         let h = k.GetHashCode ()
-        Vnode.tryFind h k 0 map.Vnode
+        Vnode.tryFind h k map.KeyEq 0 map.Vnode
 
     let find (k : 'k) map : 'v =
         tryFind k map |> Option.get
