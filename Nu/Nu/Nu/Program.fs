@@ -66,7 +66,7 @@ module Program =
     1.?x gain - compile with .NET Native or Mono AOT.
     1.?x gain - upgrade to F# 4.1.
     1.?x gain - target x64 instead of x86.
-    1.2x gain - store loaded assets in a Dictionary<string, Dictionary>> rather than a Map<string, Map>>, or...
+    1.2x gain - store loaded assets (and asset metadata?) in a Dictionary<string, Dictionary>> rather than a Map<string, Map>>, or...
     1.2x gain - alternatively, use short-term memoization with a temporary dictionary to cache asset queries during rendering / playing / etc.
     1.2x gain - render tiles layers to their own buffer so that each whole layer can be blitted directly with a single draw call (though this might cause overdraw).
     ? gain - avoid rendering clear tiles! *)
