@@ -30,7 +30,7 @@ module WorldGameModule =
         /// Get an xtension field by name.
         member this.GetXField name world =
             let xtension = this.GetXtension world
-            let xField = Map.find name xtension.XFields
+            let xField = Vmap.find name xtension.XFields
             xField.FieldValue
 
         /// Query that a game dispatches in the same manner as the dispatcher with the target type.
@@ -154,6 +154,7 @@ namespace Debug
 open Prime
 open Nu
 open System.Reflection
+open System.Collections.Generic
 type Game =
 
     /// Provides a view of all the properties of a game. Useful for debugging such as with
@@ -167,7 +168,8 @@ type Game =
     /// with the Watch feature in Visual Studio.
     static member viewXFields world =
         let state = World.getGameState world
-        Map.map (fun _ field -> field.FieldValue) state.Xtension.XFields
+        let fields = Map.ofSeqBy (fun (kvp : KeyValuePair<_, _>) -> (kvp.Key, kvp.Value)) state.Xtension.XFields
+        Map.map (fun _ field -> field.FieldValue) fields
 
     /// Provides a full view of all the member values of a game. Useful for debugging such
     /// as with the Watch feature in Visual Studio.

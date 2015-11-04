@@ -36,7 +36,7 @@ module ObservationTests =
         let (unsubscribe, world) = observe UnitEventAddress Simulants.Game |> subscribePlus incUserStateAndCascade <| world
         let world = unsubscribe world
         let world = World.publish () UnitEventAddress ["Test"] Simulants.Game world
-        Assert.True ^ Map.isEmpty world.Callbacks.Subscriptions
+        Assert.True ^ Vmap.isEmpty world.Callbacks.Subscriptions
         Assert.Equal (0, World.getUserState world)
 
     let [<Fact>] filterWorks () =
@@ -80,7 +80,7 @@ module ObservationTests =
             world
         let world = World.publish 0 IntEventAddress ["Test"] Simulants.Game world
         let world = unsubscribe world
-        Assert.True ^ Map.isEmpty world.Callbacks.CallbackStates
+        Assert.True ^ Vmap.isEmpty world.Callbacks.CallbackStates
 
     let [<Fact>] iterativeFrpWorks () =
         let world = World.makeEmpty ()

@@ -27,7 +27,7 @@ module GameState =
           PublishChanges = true
           CreationTimeStampNp = Core.getTimeStamp ()
           DispatcherNp = dispatcher
-          Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
+          Xtension = Xtension.safe }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module ScreenState =
@@ -48,7 +48,7 @@ module ScreenState =
               CreationTimeStampNp = Core.getTimeStamp ()
               DispatcherNp = dispatcher
               EntityTreeNp = Unchecked.defaultof<Entity QuadTree MutantCache>
-              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true } }
+              Xtension = Xtension.safe }
         let quadTree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
         { screenState with EntityTreeNp = MutantCache.make Operators.id quadTree }
 
@@ -65,8 +65,8 @@ module GroupState =
           Persistent = true
           CreationTimeStampNp = Core.getTimeStamp ()
           DispatcherNp = dispatcher
-          Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
-      
+          Xtension = Xtension.safe }
+
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module EntityState =
 
@@ -92,7 +92,7 @@ module EntityState =
           FacetNames = Set.empty
           FacetsNp = []
           OptOverlayName = optOverlayName
-          Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
+          Xtension = Xtension.safe }
 
 [<AutoOpen>]
 module SimulationOperators =
@@ -171,15 +171,15 @@ module Callbacks =
 
     /// Add callback state.
     let addCallbackState key state callbacks =
-        { callbacks with CallbackStates = Map.add key (state :> obj) callbacks.CallbackStates }
+        { callbacks with CallbackStates = Vmap.add key (state :> obj) callbacks.CallbackStates }
 
     /// Remove callback state.
     let removeCallbackState key callbacks =
-        { callbacks with CallbackStates = Map.remove key callbacks.CallbackStates }
+        { callbacks with CallbackStates = Vmap.remove key callbacks.CallbackStates }
 
     /// Get callback state.
     let getCallbackState<'a> key callbacks =
-        let state = Map.find key callbacks.CallbackStates
+        let state = Vmap.find key callbacks.CallbackStates
         state :?> 'a
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]

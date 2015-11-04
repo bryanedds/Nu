@@ -41,7 +41,7 @@ module WorldScreenModule =
         /// Get an xtension field by name.
         member this.GetXField name world =
             let xtension = this.GetXtension world
-            let xField = Map.find name xtension.XFields
+            let xField = Vmap.find name xtension.XFields
             xField.FieldValue
 
         /// Query that a screen is in an idling state (not transitioning in nor out).
@@ -99,7 +99,7 @@ module WorldScreenModule =
         /// Get all the world's screens.
         static member proxyScreens world =
             World.getScreenStateMap world |>
-                Map.fold (fun screensRev screenName _ -> ntos screenName :: screensRev) [] |>
+                Seq.fold (fun screensRev kvp -> ntos kvp.Key :: screensRev) [] |>
                 List.rev
 
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight publishing depends on the
@@ -212,6 +212,7 @@ namespace Debug
 open Prime
 open Nu
 open System.Reflection
+open System.Collections.Generic
 type Screen =
 
     /// Provides a view of all the properties of a screen. Useful for debugging such as with
@@ -225,7 +226,8 @@ type Screen =
     /// with the Watch feature in Visual Studio.
     static member viewXFields screen world =
         let state = World.getScreenState screen world
-        Map.map (fun _ field -> field.FieldValue) state.Xtension.XFields
+        let fields = Map.ofSeqBy (fun (kvp : KeyValuePair<_, _>) -> (kvp.Key, kvp.Value)) state.Xtension.XFields
+        Map.map (fun _ field -> field.FieldValue) fields
 
     /// Provides a full view of all the member values of a screen. Useful for debugging such
     /// as with the Watch feature in Visual Studio.

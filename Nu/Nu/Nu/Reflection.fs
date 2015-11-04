@@ -264,7 +264,7 @@ module Reflection =
                     match xtensionProperty.GetValue target with
                     | :? Xtension as xtension ->
                         let xField = { FieldValue = fieldValue; FieldType = fieldDefinition.FieldType }
-                        let xFields = Map.add fieldDefinition.FieldName xField xtension.XFields
+                        let xFields = Vmap.add fieldDefinition.FieldName xField xtension.XFields
                         let xtension = { xtension with XFields = xFields }
                         xtensionProperty.SetValue (target, xtension)
                     | _ -> failwith ^ "Invalid field '" + fieldDefinition.FieldName + "' for target type '" + targetType.Name + "'."
@@ -281,7 +281,7 @@ module Reflection =
                 | xtensionProperty ->
                     match xtensionProperty.GetValue target with
                     | :? Xtension as xtension ->
-                        let xFields = Map.remove fieldName xtension.XFields
+                        let xFields = Vmap.remove fieldName xtension.XFields
                         let xtension = { xtension with XFields = xFields }
                         xtensionProperty.SetValue (target, xtension)
                     | _ -> failwith ^ "Invalid field '" + fieldName + "' for target type '" + targetType.Name + "'."
@@ -412,7 +412,7 @@ module Reflection =
                 let converter = AlgebraicConverter fieldDefinition.FieldType
                 if converter.CanConvertFrom typeof<string> then
                     let xField = { FieldValue = converter.ConvertFromString fieldNode.InnerText; FieldType = fieldDefinition.FieldType }
-                    Map.add fieldDefinition.FieldName xField targetXFields
+                    Vmap.add fieldDefinition.FieldName xField targetXFields
                 else debug ^ "Cannot convert string '" + fieldNode.InnerText + "' to type '" + fieldDefinition.FieldType.Name + "'."; targetXFields
         else targetXFields
 

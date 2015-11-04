@@ -55,7 +55,7 @@ module WorldEntityModule =
         /// Get an xtension field by name.
         member this.GetXField name world =
             let xtension = this.GetXtension world
-            let xField = Map.find name xtension.XFields
+            let xField = Vmap.find name xtension.XFields
             xField.FieldValue
 
         /// Get an entity's bounds, not taking into account its overflow.
@@ -522,7 +522,7 @@ module WorldEntityModule =
             match property with
             | EntityXFieldDescriptor xfd ->
                 let xtension = entity.GetXtension world
-                (Map.find xfd.FieldName xtension.XFields).FieldValue
+                (Vmap.find xfd.FieldName xtension.XFields).FieldValue
             | EntityPropertyInfo propertyInfo ->
                 let entityState = World.getEntityState entity world
                 propertyInfo.GetValue entityState
@@ -533,7 +533,7 @@ module WorldEntityModule =
             | EntityXFieldDescriptor xfd ->
                 entity.UpdateXtension (fun xtension ->
                     let xField = { FieldValue = value; FieldType = xfd.FieldType }
-                    { xtension with XFields = Map.add xfd.FieldName xField xtension.XFields })
+                    { xtension with XFields = Vmap.add xfd.FieldName xField xtension.XFields })
                     world
             | EntityPropertyInfo propertyInfo ->
                 let entityState = World.getEntityState entity world
@@ -576,6 +576,7 @@ namespace Debug
 open Prime
 open Nu
 open System.Reflection
+open System.Collections.Generic
 type Entity =
 
     /// Provides a view of all the properties of an entity. Useful for debugging such as with
@@ -589,7 +590,8 @@ type Entity =
     /// with the Watch feature in Visual Studio.
     static member viewXFields entity world =
         let state = World.getEntityState entity world
-        Map.map (fun _ field -> field.FieldValue) state.Xtension.XFields
+        let fields = Map.ofSeqBy (fun (kvp : KeyValuePair<_, _>) -> (kvp.Key, kvp.Value)) state.Xtension.XFields
+        Map.map (fun _ field -> field.FieldValue) fields
 
     /// Provides a full view of all the member values of an entity. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
