@@ -55,6 +55,12 @@ module Operators =
     /// Test for non-null.
     let inline isNotNull x = not (isNull x)
 
+    /// Test for string equality.
+    let inline strEq str str2 = String.Equals (str, str2, StringComparison.Ordinal)
+
+    /// Compare two strings.
+    let inline strCmp str str2 = String.Compare (str, str2, StringComparison.Ordinal)
+
     /// Convert any value to its type.
     let inline getType x = x.GetType ()
 
