@@ -150,6 +150,9 @@ module Subsystems =
     let clearSubsystemsMessages subsystems world =
         updateSubsystems (fun is _ -> is.ClearMessages ()) subsystems world
 
+    let make subsystems =
+        { SubsystemMap = subsystems }
+
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Callbacks =
 
@@ -182,6 +185,13 @@ module Callbacks =
         let state = Vmap.find key callbacks.CallbackStates
         state :?> 'a
 
+    /// Make a callbacks value.
+    let make () =
+        { Subscriptions = Vmap.makeEmpty (KeyEq Address.equals) Constants.Engine.SubscriptionMapDepth
+          Unsubscriptions = Vmap.makeEmpty (KeyEq (=)) Constants.Engine.SubscriptionMapDepth
+          Tasklets = Queue.empty
+          CallbackStates = Vmap.makeEmpty (KeyEq (=)) Constants.Engine.CallbackStateMapDepth }
+
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Components =
 
@@ -204,6 +214,14 @@ module Components =
     /// Get the game dispatchers.
     let getGameDispatchers components =
         components.GameDispatchers
+
+    /// Make a subsystems value.
+    let make facets entityDispatchers groupDispatchers screenDispatchers gameDispatchers =
+        { Facets = facets
+          EntityDispatchers = entityDispatchers
+          GroupDispatchers = groupDispatchers
+          ScreenDispatchers = screenDispatchers
+          GameDispatchers = gameDispatchers }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module WorldState =
@@ -300,3 +318,20 @@ module WorldState =
         let userState = getUserState state
         let userState = updater userState
         setUserState userState state
+
+    /// Make a world state value.
+    let make tickRate assetMetadataMap overlayRouter overlayer camera userState =
+        { TickRate = tickRate
+          TickTime = 0L
+          UpdateCount = 0L
+          Liveness = Running
+          OptScreenTransitionDestination = None
+          AssetMetadataMap = assetMetadataMap
+          AssetGraphFilePath = String.Empty
+          OverlayRouter = overlayRouter
+          OverlayFilePath = String.Empty
+          Overlayer = overlayer
+          Camera = camera
+          OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
+          RefClipboard = ref None
+          UserState = userState }
