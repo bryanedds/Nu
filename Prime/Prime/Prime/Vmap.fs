@@ -3,9 +3,11 @@
 
 namespace Prime
 open System
+open System.Collections
+open System.Collections.Generic
 open Prime
 
-/// Hash, key, value triple in a struct for efficiency.
+/// A hash-key-value triple, implemented with a struct for efficiency.
 type internal Hkv<'k, 'v when 'k : comparison> =
     struct
         new (h, k, v) = { H = h; K = k; V = v }
@@ -37,6 +39,17 @@ module internal Vnode =
 
     let inline private hashToIndex h dep =
         (h >>> (dep * 5)) &&& 0x1F
+
+    let isEmpty node =
+        match node with Nil -> true | _ -> false
+
+    let rec toSeq node =
+        seq {
+            match node with
+            | Nil -> yield! Seq.empty
+            | Singleton hkv -> yield KeyValuePair<'k, 'v> (hkv.K, hkv.V)
+            | Multiple arr -> for n in arr do yield! toSeq n
+            | Clash clashMap -> yield! clashMap }
 
     /// OPTIMIZATION: Requires an empty array to use the source of new array clones in order to avoid Array.create.
     let rec add (hkv : Hkv<'k, 'v>) (earr : Vnode<'k, 'v> array) (mdep : int) (dep : int) (node : Vnode<'k, 'v>) : Vnode<'k, 'v> =
@@ -99,9 +112,30 @@ module internal Vnode =
             | Singleton hkv' ->
                 Clash ^ Map.add hkv.K hkv.V ^ Map.singleton hkv'.K hkv'.V
             | Multiple _ ->
-                failwithumf ()
+                failwithumf () // should never hit here
             | Clash clashMap ->
                 Clash ^ Map.add hkv.K hkv.V clashMap
+
+    let rec remove (h : int) (k : 'k) (dep : int) (node : Vnode<'k, 'v>) : Vnode<'k, 'v> =
+        match node with
+        | Nil -> node
+        | Singleton hkv -> if hkv.K = k then Nil else node
+        | Multiple arr ->
+            let idx = hashToIndex h dep
+            let entry = arr.[idx]
+            let arr = cloneArray arr
+            arr.[idx] <- remove h k (dep + 1) entry
+            if Array.forall isEmpty arr then Nil else Multiple arr // does not collapse Multiple to Singleton
+        | Clash clashMap ->
+            let clashMap = Map.remove k clashMap
+            if Map.isEmpty clashMap then Nil else Clash clashMap
+
+    let rec tryFind (h : int) (k : 'k) (dep : int) (node : Vnode<'k, 'v>) : 'v option =
+        match node with
+        | Nil -> None
+        | Singleton hkv -> if hkv.K = k then Some hkv.V else None
+        | Multiple arr -> let idx = hashToIndex h dep in tryFind h k (dep + 1) arr.[idx]
+        | Clash clashMap -> Map.tryFind k clashMap
 
     let empty =
         Nil
@@ -109,19 +143,50 @@ module internal Vnode =
 /// Variant map.
 type Vmap<'k, 'v when 'k : comparison> =
     private
-        { Node : Vnode<'k, 'v>
+        { Vnode : Vnode<'k, 'v>
           EmptyArray : Vnode<'k, 'v> array
           MaxDepth : int }
+
+    interface IEnumerable<KeyValuePair<'k, 'v>> with
+        member this.GetEnumerator () = (Vnode.toSeq this.Vnode).GetEnumerator ()
+
+    interface IEnumerable with
+        member this.GetEnumerator () = (Vnode.toSeq this.Vnode).GetEnumerator () :> IEnumerator
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Vmap =
 
+    let isEmpty map =
+        Vnode.isEmpty map.Vnode
+
     let makeEmpty mdep =
         if mdep > 7 then failwith "Vmap max depth should not be greater than 7."
         elif mdep < 0 then failwith "Vmap max depth should not be less than 0."
-        else { Node = Vnode.empty; EmptyArray = Array.create 32 Vnode.empty; MaxDepth = mdep }
+        else { Vnode = Vnode.empty; EmptyArray = Array.create 32 Vnode.empty; MaxDepth = mdep }
 
     let add (k : 'k) (v : 'v) map =
         let hkv = Hkv (k.GetHashCode (), k, v)
-        let node = Vnode.add hkv map.EmptyArray map.MaxDepth 0 map.Node
-        { map with Node = node }
+        let node = Vnode.add hkv map.EmptyArray map.MaxDepth 0 map.Vnode
+        { map with Vnode = node }
+
+    let addMany entries map =
+        Seq.fold (fun map (k : 'k, v : 'v) -> add k v map) map entries
+
+    let remove (k : 'k) map =
+        let h = k.GetHashCode ()
+        { map with Vnode = Vnode.remove h k 0 map.Vnode }
+
+    let tryFind (k : 'k) map : 'v option =
+        let h = k.GetHashCode ()
+        Vnode.tryFind h k 0 map.Vnode
+
+    let find (k : 'k) map : 'v =
+        tryFind k map |> Option.get
+
+    let containsKey k map =
+        match tryFind k map with
+        | Some _ -> true
+        | None -> false
+
+    let toSeq (map : Vmap<'k, 'v>) =
+        map :> IEnumerable<KeyValuePair<'k, 'v>>

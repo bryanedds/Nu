@@ -135,7 +135,7 @@ and internal SubscriptionEntry =
 
 /// A map of event subscriptions.
 and internal SubscriptionEntries =
-    Map<obj Address, SubscriptionEntry rQueue>
+    Vmap<obj Address, SubscriptionEntry rQueue>
 
 /// Abstracts over a subscription sorting procedure.
 and internal SubscriptionSorter =
@@ -143,7 +143,7 @@ and internal SubscriptionSorter =
 
 /// A map of subscription keys to unsubscription data.
 and internal UnsubscriptionEntries =
-    Map<Guid, obj Address * Simulant>
+    Vmap<Guid, obj Address * Simulant>
 
 /// A tasklet to be completed at the given time, with time being accounted for by the world
 /// state's TickTime value.
@@ -606,7 +606,7 @@ and [<ReferenceEquality>] Callbacks =
         { Subscriptions : SubscriptionEntries
           Unsubscriptions : UnsubscriptionEntries
           Tasklets : Tasklet Queue
-          CallbackStates : Map<Guid, obj> }
+          CallbackStates : Vmap<Guid, obj> }
 
 /// The world's state.
 /// TODO: Make this an abstract data type.
@@ -636,4 +636,4 @@ and [<ReferenceEquality>] World =
           Components : Components
           Callbacks : Callbacks
           State : WorldState
-          SimulantStates : GameState * Map<Name, ScreenState * Map<Name, GroupState * Map<Name, EntityState>>> }
+          SimulantStates : GameState * Vmap<Name, ScreenState * Vmap<Name, GroupState * Vmap<Name, EntityState>>> }

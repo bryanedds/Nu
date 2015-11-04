@@ -24,7 +24,7 @@ type [<StructuralEquality; NoComparison>] XField =
       FieldType : Type }
 
 /// An indexible collection of XFields.
-type XFields = Map<string, XField>
+type XFields = Vmap<string, XField>
 
 /// Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way
 /// to implement dynamic fields.
@@ -61,7 +61,7 @@ type [<StructuralEquality; NoComparison>] Xtension =
     static member (?) (xtension, memberName) : 'r =
 
         // check if dynamic member is an existing field
-        match Map.tryFind memberName xtension.XFields with
+        match Vmap.tryFind memberName xtension.XFields with
         | Some field ->
             
             // return field directly if the return type matches, otherwise the default value for that type
@@ -82,24 +82,26 @@ type [<StructuralEquality; NoComparison>] Xtension =
         // NOTE: nop'ed outside of debug mode for efficiency
         // TODO: consider writing a 'Map.addDidContainKey' function to efficently add and return a
         // result that the key was already contained.
-        if xtension.Sealed && not ^ Map.containsKey fieldName xtension.XFields
+        if xtension.Sealed && not ^ Vmap.containsKey fieldName xtension.XFields
         then failwith "Cannot add field to a sealed Xtension."
         else
 #endif
-            let xFields = Map.add fieldName { FieldValue = value :> obj; FieldType = typeof<'a> } xtension.XFields
+            let xFields = Vmap.add fieldName { FieldValue = value :> obj; FieldType = typeof<'a> } xtension.XFields
             { xtension with XFields = xFields }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Xtension =
 
+    let [<Literal>] private FieldMapDepth = 3
+
     /// An Xtension that can default and isn't sealed.
-    let empty = { XFields = Map.empty; CanDefault = true; Sealed = false }
+    let empty = { XFields = Vmap.makeEmpty FieldMapDepth; CanDefault = true; Sealed = false }
 
     /// An Xtension that cannot default and is sealed.
-    let safe = { XFields = Map.empty; CanDefault = false; Sealed = true }
+    let safe = { XFields = Vmap.makeEmpty FieldMapDepth; CanDefault = false; Sealed = true }
 
     /// An Xtension that cannot default and isn't sealed.
-    let mixed = { XFields = Map.empty; CanDefault = false; Sealed = false }
+    let mixed = { XFields = Vmap.makeEmpty FieldMapDepth; CanDefault = false; Sealed = false }
 
     /// Make an extension with custom safety.
-    let make canDefault isSealed = { XFields = Map.empty; CanDefault = canDefault; Sealed = isSealed }
+    let make canDefault isSealed = { XFields = Vmap.makeEmpty 3; CanDefault = canDefault; Sealed = isSealed }

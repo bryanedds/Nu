@@ -126,15 +126,15 @@ module World =
             
     /// TODO: document.
     let getSubscriptionsSpecific (publishSorter : SubscriptionSorter) eventAddress world =
-        match Map.tryFind eventAddress world.Callbacks.Subscriptions with
+        match Vmap.tryFind eventAddress world.Callbacks.Subscriptions with
         | Some subList -> publishSorter subList world
         | None -> []
 
     /// TODO: document.
     let getSubscriptions (publishSorter : SubscriptionSorter) eventAddress world =
         let anyEventAddresses = getAnyEventAddresses eventAddress
-        let optSubLists = List.map (fun anyEventAddress -> Map.tryFind anyEventAddress world.Callbacks.Subscriptions) anyEventAddresses
-        let optSubLists = Map.tryFind eventAddress world.Callbacks.Subscriptions :: optSubLists
+        let optSubLists = List.map (fun anyEventAddress -> Vmap.tryFind anyEventAddress world.Callbacks.Subscriptions) anyEventAddresses
+        let optSubLists = Vmap.tryFind eventAddress world.Callbacks.Subscriptions :: optSubLists
         let subLists = List.definitize optSubLists
         let subList = List.concat subLists
         publishSorter subList world
@@ -216,9 +216,9 @@ module World =
 
     /// Unsubscribe from an event.
     let unsubscribe subscriptionKey world =
-        match Map.tryFind subscriptionKey world.Callbacks.Unsubscriptions with
+        match Vmap.tryFind subscriptionKey world.Callbacks.Unsubscriptions with
         | Some (eventAddress, subscriber) ->
-            match Map.tryFind eventAddress world.Callbacks.Subscriptions with
+            match Vmap.tryFind eventAddress world.Callbacks.Subscriptions with
             | Some subscriptionList ->
                 let subscriptionList =
                     List.remove
@@ -228,9 +228,9 @@ module World =
                         subscriptionList
                 let subscriptions = 
                     match subscriptionList with
-                    | [] -> Map.remove eventAddress world.Callbacks.Subscriptions
-                    | _ -> Map.add eventAddress subscriptionList world.Callbacks.Subscriptions
-                let unsubscriptions = Map.remove subscriptionKey world.Callbacks.Unsubscriptions
+                    | [] -> Vmap.remove eventAddress world.Callbacks.Subscriptions
+                    | _ -> Vmap.add eventAddress subscriptionList world.Callbacks.Subscriptions
+                let unsubscriptions = Vmap.remove subscriptionKey world.Callbacks.Unsubscriptions
                 let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
                 { world with Callbacks = callbacks }
             | None -> world // TODO: consider an assert fail here?
@@ -243,10 +243,10 @@ module World =
             let objEventAddress = atooa eventAddress
             let subscriptions =
                 let subscriptionEntry = (subscriptionKey, subscriber :> Simulant, boxSubscription subscription)
-                match Map.tryFind objEventAddress world.Callbacks.Subscriptions with
-                | Some subscriptionEntries -> Map.add objEventAddress (subscriptionEntry :: subscriptionEntries) world.Callbacks.Subscriptions
-                | None -> Map.add objEventAddress [subscriptionEntry] world.Callbacks.Subscriptions
-            let unsubscriptions = Map.add subscriptionKey (objEventAddress, subscriber :> Simulant) world.Callbacks.Unsubscriptions
+                match Vmap.tryFind objEventAddress world.Callbacks.Subscriptions with
+                | Some subscriptionEntries -> Vmap.add objEventAddress (subscriptionEntry :: subscriptionEntries) world.Callbacks.Subscriptions
+                | None -> Vmap.add objEventAddress [subscriptionEntry] world.Callbacks.Subscriptions
+            let unsubscriptions = Vmap.add subscriptionKey (objEventAddress, subscriber :> Simulant) world.Callbacks.Unsubscriptions
             let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
             let world = { world with Callbacks = callbacks }
             (unsubscribe subscriptionKey, world)
@@ -403,10 +403,10 @@ module World =
             match Address.getNames entity.EntityAddress with
             | [screenName; groupName; entityName] ->
                 let (_, screenStateMap) = world.SimulantStates 
-                match Map.tryFind screenName screenStateMap with
+                match Vmap.tryFind screenName screenStateMap with
                 | Some (_, groupStateMap) ->
-                    match Map.tryFind groupName groupStateMap with
-                    | Some (_, entityStateMap) -> Map.tryFind entityName entityStateMap
+                    match Vmap.tryFind groupName groupStateMap with
+                    | Some (_, entityStateMap) -> Vmap.tryFind entityName entityStateMap
                     | None -> None
                 | None -> None
             | _ -> failwith ^ "Invalid entity address '" + acstring entity.EntityAddress + "'."
@@ -423,13 +423,13 @@ module World =
         match Address.getNames entity.EntityAddress with
         | [screenName; groupName; entityName] ->
             let (gameState, screenStateMap) = world.SimulantStates 
-            match Map.tryFind screenName screenStateMap with
+            match Vmap.tryFind screenName screenStateMap with
             | Some (screenState, groupStateMap) ->
-                match Map.tryFind groupName groupStateMap with
+                match Vmap.tryFind groupName groupStateMap with
                 | Some (groupState, entityStateMap) ->
-                    let entityStateMap = Map.add entityName entityState entityStateMap
-                    let groupStateMap = Map.add groupName (groupState, entityStateMap) groupStateMap
-                    let screenStateMap = Map.add screenName (screenState, groupStateMap) screenStateMap
+                    let entityStateMap = Vmap.add entityName entityState entityStateMap
+                    let groupStateMap = Vmap.add groupName (groupState, entityStateMap) groupStateMap
+                    let screenStateMap = Vmap.add screenName (screenState, groupStateMap) screenStateMap
                     { world with SimulantStates = (gameState, screenStateMap) }
                 | None -> failwith ^ "Cannot add entity '" + acstring entity.EntityAddress + "' to non-existent group."
             | None -> failwith ^ "Cannot add entity '" + acstring entity.EntityAddress + "' to non-existent screen."
@@ -439,13 +439,13 @@ module World =
         match Address.getNames entity.EntityAddress with
         | [screenName; groupName; entityName] ->
             let (gameState, screenStateMap) = world.SimulantStates 
-            match Map.tryFind screenName screenStateMap with
+            match Vmap.tryFind screenName screenStateMap with
             | Some (screenState, groupStateMap) ->
-                match Map.tryFind groupName groupStateMap with
+                match Vmap.tryFind groupName groupStateMap with
                 | Some (groupState, entityStateMap) ->
-                    let entityStateMap = Map.remove entityName entityStateMap
-                    let groupStateMap = Map.add groupName (groupState, entityStateMap) groupStateMap
-                    let screenStateMap = Map.add screenName (screenState, groupStateMap) screenStateMap
+                    let entityStateMap = Vmap.remove entityName entityStateMap
+                    let groupStateMap = Vmap.add groupName (groupState, entityStateMap) groupStateMap
+                    let screenStateMap = Vmap.add screenName (screenState, groupStateMap) screenStateMap
                     { world with SimulantStates = (gameState, screenStateMap) }
                 | None -> world
             | None -> world
@@ -484,12 +484,12 @@ module World =
         match Address.getNames group.GroupAddress with
         | [screenName; groupName] ->
             let (_, screenStateMap) = world.SimulantStates
-            match Map.tryFind screenName screenStateMap with
+            match Vmap.tryFind screenName screenStateMap with
             | Some (_, groupStateMap) ->
-                match Map.tryFind groupName groupStateMap with
+                match Vmap.tryFind groupName groupStateMap with
                 | Some (_, entityStateMap) -> entityStateMap
-                | None -> Map.empty
-            | None -> Map.empty
+                | None -> Vmap.makeEmpty Constants.Engine.EntityMapDepth
+            | None -> Vmap.makeEmpty Constants.Engine.EntityMapDepth
         | _ -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
 
     let inline internal getOptEntityState entity world =
@@ -533,9 +533,9 @@ module World =
         match Address.getNames group.GroupAddress with
         | [screenName; groupName] ->
             let (_, screenStateMap) = world.SimulantStates
-            match Map.tryFind screenName screenStateMap with
+            match Vmap.tryFind screenName screenStateMap with
             | Some (_, groupStateMap) ->
-                match Map.tryFind groupName groupStateMap with
+                match Vmap.tryFind groupName groupStateMap with
                 | Some (groupState, _) -> Some groupState
                 | None -> None
             | None -> None
@@ -545,16 +545,16 @@ module World =
         match Address.getNames group.GroupAddress with
         | [screenName; groupName] ->
             let (gameState, screenStateMap) = world.SimulantStates 
-            match Map.tryFind screenName screenStateMap with
+            match Vmap.tryFind screenName screenStateMap with
             | Some (screenState, groupStateMap) ->
-                match Map.tryFind groupName groupStateMap with
+                match Vmap.tryFind groupName groupStateMap with
                 | Some (_, entityStateMap) ->
-                    let groupStateMap = Map.add groupName (groupState, entityStateMap) groupStateMap
-                    let screenStateMap = Map.add screenName (screenState, groupStateMap) screenStateMap
+                    let groupStateMap = Vmap.add groupName (groupState, entityStateMap) groupStateMap
+                    let screenStateMap = Vmap.add screenName (screenState, groupStateMap) screenStateMap
                     { world with SimulantStates = (gameState, screenStateMap) }
                 | None ->
-                    let groupStateMap = Map.add groupName (groupState, Map.empty) groupStateMap
-                    let screenStateMap = Map.add screenName (screenState, groupStateMap) screenStateMap
+                    let groupStateMap = Vmap.add groupName (groupState, Vmap.makeEmpty Constants.Engine.EntityMapDepth) groupStateMap
+                    let screenStateMap = Vmap.add screenName (screenState, groupStateMap) screenStateMap
                     { world with SimulantStates = (gameState, screenStateMap) }
             | None -> failwith ^ "Cannot add group '" + acstring group.GroupAddress + "' to non-existent screen."
         | _ -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
@@ -563,13 +563,13 @@ module World =
         match Address.getNames group.GroupAddress with
         | [screenName; groupName] ->
             let (gameState, screenStateMap) = world.SimulantStates 
-            match Map.tryFind screenName screenStateMap with
+            match Vmap.tryFind screenName screenStateMap with
             | Some (screenState, groupStateMap) ->
-                match Map.tryFind groupName groupStateMap with
+                match Vmap.tryFind groupName groupStateMap with
                 | Some (_, entityStateMap) ->
-                    if Map.isEmpty entityStateMap then
-                        let groupStateMap = Map.remove groupName groupStateMap
-                        let screenStateMap = Map.add screenName (screenState, groupStateMap) screenStateMap
+                    if Vmap.isEmpty entityStateMap then
+                        let groupStateMap = Vmap.remove groupName groupStateMap
+                        let screenStateMap = Vmap.add screenName (screenState, groupStateMap) screenStateMap
                         { world with SimulantStates = (gameState, screenStateMap) }
                     else failwith ^ "Cannot remove group " + acstring group.GroupAddress + ", which still contains entities."
                 | None -> world
@@ -580,9 +580,9 @@ module World =
         match Address.getNames screen.ScreenAddress with
         | [screenName] ->
             let (_, screenStateMap) = world.SimulantStates
-            match Map.tryFind screenName screenStateMap with
+            match Vmap.tryFind screenName screenStateMap with
             | Some (_, groupStateMap) -> groupStateMap
-            | None -> Map.empty
+            | None -> Vmap.makeEmpty Constants.Engine.GroupMapDepth
         | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
     let inline internal getOptGroupState group world =
@@ -624,7 +624,7 @@ module World =
         match Address.getNames screen.ScreenAddress with
         | [screenName] ->
             let (_, screenStateMap) = world.SimulantStates 
-            match Map.tryFind screenName screenStateMap with
+            match Vmap.tryFind screenName screenStateMap with
             | Some (screenState, _) -> Some screenState
             | None -> None
         | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
@@ -633,12 +633,12 @@ module World =
         match Address.getNames screen.ScreenAddress with
         | [screenName] ->
             let (gameState, screenStateMap) = world.SimulantStates 
-            match Map.tryFind screenName screenStateMap with
+            match Vmap.tryFind screenName screenStateMap with
             | Some (_, groupStateMap) ->
-                let screenStateMap = Map.add screenName (screenState, groupStateMap) screenStateMap
+                let screenStateMap = Vmap.add screenName (screenState, groupStateMap) screenStateMap
                 { world with SimulantStates = (gameState, screenStateMap) }
             | None ->
-                let screenStateMap = Map.add screenName (screenState, Map.empty) screenStateMap
+                let screenStateMap = Vmap.add screenName (screenState, Vmap.makeEmpty Constants.Engine.GroupMapDepth) screenStateMap
                 { world with SimulantStates = (gameState, screenStateMap) }
         | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
@@ -646,10 +646,10 @@ module World =
         match Address.getNames screen.ScreenAddress with
         | [screenName] ->
             let (gameState, screenStateMap) = world.SimulantStates 
-            match Map.tryFind screenName screenStateMap with
+            match Vmap.tryFind screenName screenStateMap with
             | Some (_, groupStateMap) ->
-                if Map.isEmpty groupStateMap then
-                    let screenStateMap = Map.remove screenName screenStateMap
+                if Vmap.isEmpty groupStateMap then
+                    let screenStateMap = Vmap.remove screenName screenStateMap
                     { world with SimulantStates = (gameState, screenStateMap) }
                 else failwith ^ "Cannot remove screen " + acstring screen.ScreenAddress + ", which still contains groups."
             | None -> world

@@ -658,10 +658,10 @@ module WorldModule =
 
             // make the world's callbacks
             let callbacks =
-                { Subscriptions = Map.empty
-                  Unsubscriptions = Map.empty
+                { Subscriptions = Vmap.makeEmpty Constants.Engine.SubscriptionMapDepth
+                  Unsubscriptions = Vmap.makeEmpty Constants.Engine.SubscriptionMapDepth
                   Tasklets = Queue.empty
-                  CallbackStates = Map.empty }
+                  CallbackStates = Vmap.makeEmpty Constants.Engine.CallbackStateMapDepth }
 
             // make the world's state
             let worldState =
@@ -683,7 +683,7 @@ module WorldModule =
             // make the simulant states
             let simulantStates =
                 let gameDispatcher = components.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
-                (World.makeGameState gameDispatcher, Map.empty)
+                (World.makeGameState gameDispatcher, Vmap.makeEmpty Constants.Engine.ScreenMapDepth)
 
             // make the world itself
             let world =
@@ -779,14 +779,14 @@ module WorldModule =
 
                 // make the world's callbacks
                 let callbacks =
-                    { Subscriptions = Map.empty
-                      Unsubscriptions = Map.empty
+                    { Subscriptions = Vmap.makeEmpty Constants.Engine.SubscriptionMapDepth
+                      Unsubscriptions = Vmap.makeEmpty Constants.Engine.SubscriptionMapDepth
                       Tasklets = Queue.empty
-                      CallbackStates = Map.empty }
+                      CallbackStates = Vmap.makeEmpty Constants.Engine.CallbackStateMapDepth }
 
                 // make the world's simulant states
                 let simulantStates =
-                    (World.makeGameState activeGameDispatcher, Map.empty)
+                    (World.makeGameState activeGameDispatcher, Vmap.makeEmpty Constants.Engine.ScreenMapDepth)
 
                 // make the world itself, and register the game
                 let world =
