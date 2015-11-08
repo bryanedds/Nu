@@ -74,6 +74,7 @@
     <Compile Include="List.fs" />
     <Compile Include="Set.fs" />
     <Compile Include="Map.fs" />
+    <Compile Include="MapOperators.fs" />
     <Compile Include="MapPlus.fs" />
     <Compile Include="RduTree.fs" />
     <Compile Include="Vmap.fs" />

@@ -189,6 +189,12 @@ module Vmap =
         match tryFind k map with
         | Some _ -> true
         | None -> false
+        
+    /// Combine the contents of two maps, taking an item from the second map in the case of a key
+    /// conflict.
+    let concat map map2 =
+        Seq.fold (fun map (kvp : KeyValuePair<_, _>) -> add kvp.Key kvp.Value map) map map2
 
+    /// Convert a Vmap to a sequence of KeyValuePairs.
     let toSeq (map : Vmap<'k, 'v>) =
         map :> IEnumerable<KeyValuePair<'k, 'v>>
