@@ -3,8 +3,8 @@
 
 namespace Prime
 open System
-open System.Diagnostics
 open System.ComponentModel
+open System.Diagnostics
 open System.Reflection
 open System.IO
 
@@ -152,11 +152,3 @@ module Operators =
 
     /// Test just the value parts of a type for equality. Reflective and slow.
     let inline (===) (x : 'a) (y : 'a) = similar x y
-
-    /// Combine the contents of two maps, taking an item from the second map in the case of a key
-    /// conflict.
-    let inline (@@) map map2 =
-        Map.fold
-            (fun map key value -> Map.add key value map)
-            map
-            map2

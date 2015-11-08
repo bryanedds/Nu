@@ -3,6 +3,7 @@
 
 [<RequireQualifiedAccess>]
 module Map
+open System.Collections.Generic
 open Prime
 
 /// Make a singleton map.
@@ -75,3 +76,8 @@ let toValueListBy by map =
 /// Convert any map value to an obj.
 let inline objectify _ x =
     objectify x
+
+/// Combine the contents of two maps, taking an item from the second map in the case of a key
+/// conflict.
+let concat map map2 =
+    Seq.fold (fun map (kvp : KeyValuePair<_, _>) -> Map.add kvp.Key kvp.Value map) map map2

@@ -124,9 +124,9 @@ type [<NoComparison>] EffectArtifect =
     | SoundArtifact of PlaySoundMessage
 
 type Definitions =
-    Map<string, Definition>
+    Vmap<string, Definition>
 
-type [<NoComparison>] Effect =
+type [<NoEquality; NoComparison>] Effect =
     { EffectName : string
       Playback : Playback
       OptLifetime : int64 option
@@ -149,7 +149,7 @@ module Resource =
     let rec expand (env : Definitions) (resource : Resource) : Either<string, Resource> =
         match resource with
         | ExpandResource resourceName ->
-            match Map.tryFind resourceName env with
+            match Vmap.tryFind resourceName env with
             | Some resource ->
                 match resource with
                 | AsResource resource -> expand env resource
@@ -165,7 +165,7 @@ module Aspect =
     let rec expand (env : Definitions) (aspect : Aspect) : Either<string, Aspect> =
         match aspect with
         | ExpandAspect aspectName ->
-            match Map.tryFind aspectName env with
+            match Vmap.tryFind aspectName env with
             | Some aspect ->
                 match aspect with
                 | AsAspect aspect -> expand env aspect
@@ -191,15 +191,14 @@ module Content =
     let rec expand (env : Definitions) (content : Content) : Either<string, Content> =
         match content with
         | ExpandContent (contentName, arguments) ->
-            match Map.tryFind contentName env with
+            match Vmap.tryFind contentName env with
             | Some definition ->
                 match definition with
                 | AsContent (parameters, content) ->
                     let localDefinitions = List.map Argument.expand arguments
                     match (try List.zip parameters localDefinitions |> Some with _ -> None) with
                     | Some localDefinitionEntries ->
-                        let localEnv = Map.ofList localDefinitionEntries
-                        let env = env @@ localEnv
+                        let env = Vmap.addMany localDefinitionEntries env
                         expand env content
                     | None -> Left "Wrong number of arguments provided to ExpandContent."
                 | AsPlayback _ -> Left "Expected Content argument but received Playback."
@@ -409,7 +408,8 @@ module Effect =
             match effect.OptLifetime with
             | Some lifetime -> time % lifetime
             | None -> time
-        match Content.expand (globalEnv @@ effect.Definitions) effect.Content with
+        let env = Vmap.concat globalEnv effect.Definitions
+        match Content.expand env effect.Content with
         | Right content ->
             let artifacts = evalContent viewType slice history content localTime
             Right artifacts
@@ -419,5 +419,5 @@ module Effect =
         { EffectName = "Empty"
           Playback = Once
           OptLifetime = None
-          Definitions = Map.empty
+          Definitions = Vmap.makeEmpty Constants.Engine.EffectDefinitionMapDepth
           Content = Composite [] }
