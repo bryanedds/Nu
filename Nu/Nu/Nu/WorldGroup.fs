@@ -89,7 +89,7 @@ module WorldGroupModule =
             | [screenName] ->
                 match Vmap.tryFind screenName world.ScreenDirectory with
                 | Some (_, groupDirectory) ->
-                    groupDirectory |> Vmap.toSeq |> Seq.map (fun kvp -> Group.proxy ^ fst kvp.Value)
+                    Vmap.fold (fun state _ (groupAddress, _) -> Group.proxy groupAddress :: state) [] groupDirectory :> _ seq
                 | None -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
             | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
