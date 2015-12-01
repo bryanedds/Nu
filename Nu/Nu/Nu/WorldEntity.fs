@@ -217,7 +217,8 @@ module WorldEntityModule =
                 match Vmap.tryFind screenName world.ScreenDirectory with
                 | Some (_, groupDirectory) ->
                     match Vmap.tryFind groupName groupDirectory with
-                    | Some (_, entityDirectory) -> entityDirectory |> Vmap.toSeq |> Seq.map (fun kvp -> Entity.proxy kvp.Value)
+                    | Some (_, entityDirectory) ->
+                        Vmap.fold (fun state _ entityAddress -> Entity.proxy entityAddress :: state) [] entityDirectory :> _ seq
                     | None -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
                 | None -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
             | _ -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."

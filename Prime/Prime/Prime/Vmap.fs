@@ -43,6 +43,14 @@ module internal Vnode =
         | Nil -> true
         | _ -> false
 
+    let rec fold folder state node =
+        match node with
+        | Nil -> state
+        | Singleton hkv -> folder state hkv.K hkv.V
+        | Multiple arr -> Array.fold (fold folder) state arr
+        | Clash clashMap -> Map.fold folder state clashMap
+
+    /// NOTE: This function seems to profile as being very slow. I don't know if it's the seq / yields syntax or what.
     let rec toSeq node =
         seq {
             match node with
@@ -145,42 +153,42 @@ module internal Vnode =
 /// TODO: implement fold, map, and filter.
 type [<NoEquality; NoComparison>] Vmap<'k, 'v when 'k : comparison> =
     private
-        { Vnode : Vnode<'k, 'v>
+        { Node : Vnode<'k, 'v>
           EmptyArray : Vnode<'k, 'v> array
           MaxDepth : int }
 
     interface IEnumerable<KeyValuePair<'k, 'v>> with
-        member this.GetEnumerator () = (Vnode.toSeq this.Vnode).GetEnumerator ()
+        member this.GetEnumerator () = (Vnode.toSeq this.Node).GetEnumerator ()
 
     interface IEnumerable with
-        member this.GetEnumerator () = (Vnode.toSeq this.Vnode).GetEnumerator () :> IEnumerator
+        member this.GetEnumerator () = (Vnode.toSeq this.Node).GetEnumerator () :> IEnumerator
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Vmap =
 
     let isEmpty map =
-        Vnode.isEmpty map.Vnode
+        Vnode.isEmpty map.Node
 
     let makeEmpty mdep =
         if mdep > 7 then failwith "Vmap max depth should not be greater than 7."
         elif mdep < 0 then failwith "Vmap max depth should not be less than 0."
-        else { Vnode = Vnode.empty; EmptyArray = Array.create 32 Vnode.empty; MaxDepth = mdep }
+        else { Node = Vnode.empty; EmptyArray = Array.create 32 Vnode.empty; MaxDepth = mdep }
 
     let add (k : 'k) (v : 'v) map =
         let hkv = Hkv (k.GetHashCode (), k, v)
-        let node = Vnode.add hkv map.EmptyArray map.MaxDepth 0 map.Vnode
-        { map with Vnode = node }
+        let node = Vnode.add hkv map.EmptyArray map.MaxDepth 0 map.Node
+        { map with Node = node }
 
     let addMany entries map =
         Seq.fold (fun map (k : 'k, v : 'v) -> add k v map) map entries
 
     let remove (k : 'k) map =
         let h = k.GetHashCode ()
-        { map with Vnode = Vnode.remove h k 0 map.Vnode }
+        { map with Node = Vnode.remove h k 0 map.Node }
 
     let tryFind (k : 'k) map : 'v option =
         let h = k.GetHashCode ()
-        Vnode.tryFind h k 0 map.Vnode
+        Vnode.tryFind h k 0 map.Node
 
     let find (k : 'k) map : 'v =
         tryFind k map |> Option.get
@@ -194,6 +202,17 @@ module Vmap =
     /// conflict.
     let concat map map2 =
         Seq.fold (fun map (kvp : KeyValuePair<_, _>) -> add kvp.Key kvp.Value map) map map2
+
+    /// Fold over a Vmap.
+    let fold folder state (map : Vmap<'k, 'v>) =
+        Vnode.fold folder state map.Node
+
+    /// Map over a Vmap.
+    let map mapper (map : Vmap<'k, 'v>) =
+        fold
+            (fun state k v -> add k (mapper v) state)
+            (makeEmpty map.MaxDepth)
+            map
 
     /// Convert a Vmap to a sequence of KeyValuePairs.
     let toSeq (map : Vmap<'k, 'v>) =
