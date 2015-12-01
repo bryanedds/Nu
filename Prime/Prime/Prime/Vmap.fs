@@ -215,5 +215,7 @@ module Vmap =
             map
 
     /// Convert a Vmap to a sequence of KeyValuePairs.
+    /// NOTE: This function seems to profile as being very slow. I don't know if it's the seq / yields syntax or what.
+    /// Don't use it unless you need its laziness.
     let toSeq (map : Vmap<'k, 'v>) =
         map :> IEnumerable<KeyValuePair<'k, 'v>>
