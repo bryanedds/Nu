@@ -33,6 +33,7 @@ module Constants =
         let EntityMapDepth = 4
         let SubscriptionMapDepth = 5
         let CallbackStateMapDepth = 5
+        let EffectDefinitionMapDepth = 3
         let DefaultEntitySize = Vector2 64.0f
         let EntityTreeDepth = 9
         let EntityTreeSize = Vector2 (single ^ Math.Pow (2.0, 18.0))

@@ -61,7 +61,7 @@ module WorldGroupModule =
         static member internal addGroup mayReplace groupState group world =
             let isNew = not ^ World.containsGroup group world
             if isNew || mayReplace then
-                let world = World.setGroupStateWithoutEvent groupState group world
+                let world = World.addGroupState groupState group world
                 if isNew then
                     let world = World.registerGroup group world
                     World.publish () (Events.GroupAdd ->- group) ["World.addGroup"] group world
@@ -76,7 +76,7 @@ module WorldGroupModule =
                 let world = World.unregisterGroup group world
                 let entities = World.proxyEntities group world
                 let world = World.destroyEntitiesImmediate entities world
-                World.setOptGroupStateWithoutEvent None group world
+                World.removeGroupState group world
             else world
 
         /// Query that the world contains a group.
@@ -85,10 +85,13 @@ module WorldGroupModule =
 
         /// Get all the groups in a screen.
         static member proxyGroups screen world =
-            let groupStateMap = World.getGroupStateMap screen world
-            Seq.map
-                (fun (kvp : KeyValuePair<_, _>) -> stog screen kvp.Key)
-                groupStateMap
+            match Address.getNames screen.ScreenAddress with
+            | [screenName] ->
+                match Vmap.tryFind screenName world.ScreenDirectory with
+                | Some (_, groupDirectory) ->
+                    groupDirectory |> Vmap.toSeq |> Seq.map (fun kvp -> Group.proxy ^ fst kvp.Value)
+                | None -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
+            | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
 
         /// Destroy a group in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// group's existence. Use with caution.

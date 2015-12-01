@@ -96,7 +96,7 @@ module EffectFacetModule =
         inherit Facet ()
 
         static member FieldDefinitions =
-            [define? EffectDefinitions (Map.empty : Definitions)
+            [define? EffectDefinitions (Vmap.makeEmpty Constants.Engine.EffectDefinitionMapDepth : Definitions)
              define? Effect Effect.empty
              define? EffectOffset (Vector2 0.5f)
              define? EffectTimeOffset 0L // TODO: also implement similar time offset for AnimatedSpriteFacet
