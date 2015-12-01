@@ -98,7 +98,7 @@ module WorldScreenModule =
 
         /// Get all the world's screens.
         static member proxyScreens world =
-            world.ScreenDirectory |> Vmap.toSeq |> Seq.map (fun kvp -> Screen.proxy ^ fst kvp.Value)
+            Vmap.fold (fun state _ (screenAddress, _) -> Screen.proxy screenAddress :: state) [] world.ScreenDirectory :> _ seq
 
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// screen's existence. Use with caution.
