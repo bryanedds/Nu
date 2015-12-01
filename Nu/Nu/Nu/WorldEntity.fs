@@ -142,7 +142,7 @@ module WorldEntityModule =
                 let oldWorld = world
                 
                 // adding entity to world
-                let world = World.setEntityStateWithoutEvent entityState entity world
+                let world = World.addEntityState entityState entity world
                 
                 // pulling out screen state
                 let screen = entity |> etog |> gtos
@@ -198,7 +198,7 @@ module WorldEntityModule =
                 let world = World.setScreenState screenState screen world
 
                 // remove the entity from the world
-                World.setOptEntityStateWithoutEvent None entity world
+                World.removeEntityState entity world
 
             // pass
             else world
@@ -212,8 +212,15 @@ module WorldEntityModule =
 
         /// Proxy all the entities contained by a group.
         static member proxyEntities group world =
-            let entityStateMap = World.getEntityStateMap group world
-            Seq.map (fun (kvp : KeyValuePair<_, _>) -> gtoe group kvp.Key) entityStateMap
+            match Address.getNames group.GroupAddress with
+            | [screenName; groupName] ->
+                match Vmap.tryFind screenName world.ScreenDirectory with
+                | Some (_, groupDirectory) ->
+                    match Vmap.tryFind groupName groupDirectory with
+                    | Some (_, entityDirectory) -> entityDirectory |> Vmap.toSeq |> Seq.map (fun kvp -> Entity.proxy kvp.Value)
+                    | None -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
+                | None -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
+            | _ -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
 
         /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight publishing depends on
         /// the entity's existence. Use with caution.

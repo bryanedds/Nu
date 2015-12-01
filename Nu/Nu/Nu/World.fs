@@ -669,11 +669,10 @@ module WorldModule =
                 let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                 WorldState.make 1L Map.empty overlayRouter overlayer camera userState
 
-            // make the simulant states
-            let simulantStates =
+            // make the game state
+            let gameState =
                 let gameDispatcher = components.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
-                let gameState = World.makeGameState gameDispatcher
-                (gameState, Vmap.makeEmpty Constants.Engine.ScreenMapDepth)
+                World.makeGameState gameDispatcher
 
             // make the world itself
             let world =
@@ -681,7 +680,11 @@ module WorldModule =
                   Components = components
                   Callbacks = callbacks
                   State = worldState
-                  SimulantStates = simulantStates }
+                  GameState = gameState
+                  ScreenStates = Vmap.makeEmpty Constants.Engine.ScreenMapDepth
+                  GroupStates = Vmap.makeEmpty Constants.Engine.GroupMapDepth
+                  EntityStates = Vmap.makeEmpty Constants.Engine.EntityMapDepth
+                  ScreenDirectory = Vmap.makeEmpty Constants.Engine.ScreenMapDepth }
 
             // initialize OptEntityCache after the fact due to back reference
             let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}
@@ -761,18 +764,17 @@ module WorldModule =
                     let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                     WorldState.make tickRate assetMetadataMap overlayRouter overlayer camera userState
 
-                // make the world's simulant states
-                let simulantStates =
-                    let gameState = World.makeGameState activeGameDispatcher
-                    (gameState, Vmap.makeEmpty Constants.Engine.ScreenMapDepth)
-
-                // make the world itself, and register the game
+                // make the world itself
                 let world =
                     { Subsystems = subsystems
                       Components = components
                       Callbacks = callbacks
                       State = worldState
-                      SimulantStates = simulantStates }
+                      GameState = World.makeGameState activeGameDispatcher
+                      ScreenStates = Vmap.makeEmpty Constants.Engine.ScreenMapDepth
+                      GroupStates = Vmap.makeEmpty Constants.Engine.GroupMapDepth
+                      EntityStates = Vmap.makeEmpty Constants.Engine.EntityMapDepth
+                      ScreenDirectory = Vmap.makeEmpty Constants.Engine.ScreenMapDepth }
 
                 // initialize OptEntityCache after the fact due to back reference
                 let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}
