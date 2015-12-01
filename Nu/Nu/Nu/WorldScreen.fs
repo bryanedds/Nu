@@ -74,7 +74,7 @@ module WorldScreenModule =
         static member internal addScreen mayReplace screenState screen world =
             let isNew = not ^ World.containsScreen screen world
             if isNew || mayReplace then
-                let world = World.setScreenStateWithoutEvent screenState screen world
+                let world = World.addScreenState screenState screen world
                 if isNew then
                     let world = World.registerScreen screen world
                     World.publish () (Events.ScreenAdd ->- screen) ["World.addScreen"] screen world
@@ -89,7 +89,7 @@ module WorldScreenModule =
                 let world = World.unregisterScreen screen world
                 let groups = World.proxyGroups screen world
                 let world = World.destroyGroupsImmediate groups world
-                World.setOptScreenStateWithoutEvent None screen world
+                World.removeScreenState screen world
             else world
 
         /// Query that the world contains a screen.
@@ -98,9 +98,7 @@ module WorldScreenModule =
 
         /// Get all the world's screens.
         static member proxyScreens world =
-            World.getScreenStateMap world |>
-                Seq.fold (fun screensRev kvp -> ntos kvp.Key :: screensRev) [] |>
-                List.rev
+            world.ScreenDirectory |> Vmap.toSeq |> Seq.map (fun kvp -> Screen.proxy ^ fst kvp.Value)
 
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// screen's existence. Use with caution.

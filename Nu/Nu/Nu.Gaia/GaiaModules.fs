@@ -108,7 +108,8 @@ module Gaia =
         groupTabPages.Clear ()
         let groups = World.proxyGroups Simulants.EditorScreen world
         for group in groups do
-            groupTabPages.Add (Name.getNameStr ^ group.GroupName, Name.getNameStr ^ group.GroupName)
+            let groupNameStr = Name.getNameStr group.GroupName
+            groupTabPages.Add (groupNameStr, groupNameStr)
 
     let private tryScrollTreeViewToPropertyGridSelection (form : GaiaForm) =
         match form.propertyGrid.SelectedObject with
