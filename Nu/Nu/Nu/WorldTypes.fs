@@ -636,4 +636,8 @@ and [<ReferenceEquality>] World =
           Components : Components
           Callbacks : Callbacks
           State : WorldState
-          SimulantStates : GameState * Vmap<Name, ScreenState * Vmap<Name, GroupState * Vmap<Name, EntityState>>> }
+          GameState : GameState
+          ScreenStates : Vmap<Screen Address, ScreenState>
+          GroupStates : Vmap<Group Address, GroupState>
+          EntityStates : Vmap<Entity Address, EntityState>
+          ScreenDirectory : Vmap<Name, Screen Address * Vmap<Name, Group Address * Vmap<Name, Entity Address>>> }
