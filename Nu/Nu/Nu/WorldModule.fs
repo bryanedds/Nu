@@ -660,7 +660,15 @@ module World =
         setScreenState screenState screen world
 
     let internal updateEntityInEntityTree entity oldWorld world =
-        let screen = entity |> etog |> gtos
+
+        // OPTIMIZATION: attempt to avoid constructing a screen address on each call to decrease address hashing
+        // OPTIMIZATION: assumes a valid entity address with List.head on its names
+        let screen =
+            match world.GameState.OptSelectedScreen with
+            | Some screen when screen.ScreenName = List.head ^ Address.getNames entity.EntityAddress -> screen
+            | Some _ | None -> entity |> etog |> gtos
+
+        // proceed with updating entity in entity tree
         let screenState = getScreenState screen world
         let entityTree =
             MutantCache.mutateMutant
