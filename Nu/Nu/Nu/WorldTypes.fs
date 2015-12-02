@@ -519,8 +519,11 @@ and [<StructuralEquality; NoComparison>] Group =
 
 /// The type around which the whole game engine is based! Used in combination with dispatchers
 /// to implement things like buttons, characters, blocks, and things of that sort.
+/// OPTIMIZATION: Includes pre-constructed entity update event address to avoid reconstructing one
+/// for each entity every frame.
 and [<StructuralEquality; NoComparison>] Entity =
-    { EntityAddress : Entity Address }
+    { EntityAddress : Entity Address
+      UpdateAddress : unit Address }
 
     interface Simulant with
         member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
@@ -534,7 +537,9 @@ and [<StructuralEquality; NoComparison>] Entity =
     member this.EntityName = Address.getName this.EntityAddress
 
     /// Create an Entity proxy from an address.
-    static member proxy address = { EntityAddress = address }
+    static member proxy address =
+        { EntityAddress = address
+          UpdateAddress = ntoa !!"Update" ->>- address }
 
     /// Concatenate two addresses, taking the type of first address.
     static member acatf<'a> (address : 'a Address) (entity : Entity) = acatf address (atooa entity.EntityAddress)
