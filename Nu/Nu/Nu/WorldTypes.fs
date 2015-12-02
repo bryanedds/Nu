@@ -609,7 +609,7 @@ and [<ReferenceEquality>] Callbacks =
           CallbackStates : Vmap<Guid, obj> }
 
 /// The world's state.
-/// TODO: Make this an abstract data type.
+/// TODO: There are improper places accessing this directly - fix them.
 and [<ReferenceEquality>] WorldState =
     private
         { TickRate : int64
