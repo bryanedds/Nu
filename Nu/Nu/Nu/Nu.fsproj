@@ -70,7 +70,7 @@
     <Compile Include="Overlay.fs" />
     <Compile Include="Reflection.fs" />
     <Compile Include="Camera.fs" />
-    <Compile Include="Assets.fs" />
+    <Compile Include="AssetSystem.fs" />
     <Compile Include="Physics.fs" />
     <Compile Include="Render.fs" />
     <Compile Include="Audio.fs" />
