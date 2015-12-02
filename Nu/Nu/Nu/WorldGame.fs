@@ -168,7 +168,7 @@ type Game =
     /// with the Watch feature in Visual Studio.
     static member viewXFields world =
         let state = World.getGameState world
-        let fields = Map.ofSeqBy (fun (kvp : KeyValuePair<_, _>) -> (kvp.Key, kvp.Value)) state.Xtension.XFields
+        let fields = Map.ofSeq state.Xtension.XFields
         Map.map (fun _ field -> field.FieldValue) fields
 
     /// Provides a full view of all the member values of a game. Useful for debugging such

@@ -55,9 +55,9 @@ module internal Vnode =
         seq {
             match node with
             | Nil -> yield! Seq.empty
-            | Singleton hkv -> yield KeyValuePair<'k, 'v> (hkv.K, hkv.V)
+            | Singleton hkv -> yield (hkv.K, hkv.V)
             | Multiple arr -> for n in arr do yield! toSeq n
-            | Clash clashMap -> yield! clashMap }
+            | Clash clashMap -> yield! Map.toSeq clashMap }
 
     /// OPTIMIZATION: Requires an empty array to use the source of new array clones in order to avoid Array.create.
     let rec add (hkv : Hkv<'k, 'v>) (earr : Vnode<'k, 'v> array) (mdep : int) (dep : int) (node : Vnode<'k, 'v>) : Vnode<'k, 'v> =
@@ -157,7 +157,7 @@ type [<NoEquality; NoComparison>] Vmap<'k, 'v when 'k : comparison> =
           EmptyArray : Vnode<'k, 'v> array
           MaxDepth : int }
 
-    interface IEnumerable<KeyValuePair<'k, 'v>> with
+    interface IEnumerable<'k * 'v> with
         member this.GetEnumerator () = (Vnode.toSeq this.Node).GetEnumerator ()
 
     interface IEnumerable with
@@ -201,7 +201,7 @@ module Vmap =
     /// Combine the contents of two maps, taking an item from the second map in the case of a key
     /// conflict.
     let concat map map2 =
-        Seq.fold (fun map (kvp : KeyValuePair<_, _>) -> add kvp.Key kvp.Value map) map map2
+        Seq.fold (fun map (k, v) -> add k v map) map map2
 
     /// Fold over a Vmap.
     let fold folder state (map : Vmap<'k, 'v>) =
@@ -214,8 +214,8 @@ module Vmap =
             (makeEmpty map.MaxDepth)
             map
 
-    /// Convert a Vmap to a sequence of KeyValuePairs.
+    /// Convert a Vmap to a sequence of pairs of keys and values.
     /// NOTE: This function seems to profile as being very slow. I don't know if it's the seq / yields syntax or what.
-    /// Don't use it unless you need its laziness.
+    /// Don't use it unless you need its laziness or if performance won't be affected significantly.
     let toSeq (map : Vmap<'k, 'v>) =
-        map :> IEnumerable<KeyValuePair<'k, 'v>>
+        map :> IEnumerable<'k * 'v>

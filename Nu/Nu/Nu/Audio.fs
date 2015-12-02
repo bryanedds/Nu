@@ -62,8 +62,7 @@ type [<ReferenceEquality>] AudioPlayer =
           AudioAssetMap : AudioAsset AssetMap
           AudioMessages : AudioMessage Queue
           OptCurrentSong : PlaySongMessage option
-          OptNextPlaySong : PlaySongMessage option
-          AssetGraphFilePath : string }
+          OptNextPlaySong : PlaySongMessage option }
 
     static member private haltSound () =
         SDL_mixer.Mix_HaltMusic () |> ignore
@@ -90,7 +89,7 @@ type [<ReferenceEquality>] AudioPlayer =
         | extension -> trace ^ "Could not load audio asset '" + acstring asset + "' due to unknown extension '" + extension + "'."; None
 
     static member private tryLoadAudioPackage packageName audioPlayer =
-        match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Xml.AudioAssociation) packageName audioPlayer.AssetGraphFilePath with
+        match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Xml.AudioAssociation) packageName Constants.Assets.AssetGraphFilePath with
         | Right assets ->
             let optAudioAssets = List.map AudioPlayer.tryLoadAudioAsset2 assets
             let audioAssets = List.definitize optAudioAssets
@@ -103,7 +102,7 @@ type [<ReferenceEquality>] AudioPlayer =
                 let audioAssetMap = Map.ofSeq audioAssets
                 { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap audioPlayer.AudioAssetMap }
         | Left error ->
-            trace ^ "HintAudioPackageUseMessage failed due unloadable assets '" + error + "' for '" + acstring (packageName, audioPlayer.AssetGraphFilePath) + "'."
+            trace ^ "HintAudioPackageUseMessage failed due unloadable assets '" + error + "' for '" + acstring (packageName, Constants.Assets.AssetGraphFilePath) + "'."
             audioPlayer
         
     static member private tryLoadAudioAsset (assetTag : AssetTag) audioPlayer =
@@ -220,7 +219,7 @@ type [<ReferenceEquality>] AudioPlayer =
             AudioPlayer.tryUpdateNextSong
 
     /// Make an AudioPlayer.
-    static member make assetGraphFilePath =
+    static member make () =
         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO = 0u then
             failwith "Cannot create an AudioPlayer without SDL audio initialized."
         let audioPlayer =
@@ -228,8 +227,7 @@ type [<ReferenceEquality>] AudioPlayer =
               AudioAssetMap = Map.empty
               AudioMessages = Queue.empty
               OptCurrentSong = None
-              OptNextPlaySong = None
-              AssetGraphFilePath = assetGraphFilePath }
+              OptNextPlaySong = None }
         audioPlayer
 
     interface IAudioPlayer with

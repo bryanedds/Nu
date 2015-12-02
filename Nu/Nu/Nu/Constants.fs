@@ -31,6 +31,7 @@ module Constants =
         let ScreenMapDepth = 2
         let GroupMapDepth = 3
         let EntityMapDepth = 4
+        let SubsystemMapDepth = 2
         let SubscriptionMapDepth = 5
         let CallbackStateMapDepth = 5
         let EffectDefinitionMapDepth = 3

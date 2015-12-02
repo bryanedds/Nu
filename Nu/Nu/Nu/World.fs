@@ -338,8 +338,8 @@ module WorldModule =
         static member tryReloadOverlays inputDirectory outputDirectory world =
             
             // try to reload overlay file
-            let inputOverlayFilePath = Path.Combine (inputDirectory, world.State.OverlayFilePath)
-            let outputOverlayFilePath = Path.Combine (outputDirectory, world.State.OverlayFilePath)
+            let inputOverlayFilePath = Path.Combine (inputDirectory, Constants.Assets.OverlayFilePath)
+            let outputOverlayFilePath = Path.Combine (outputDirectory, Constants.Assets.OverlayFilePath)
             try File.Copy (inputOverlayFilePath, outputOverlayFilePath, true)
 
                 // cache old overlayer and make new one
@@ -383,15 +383,15 @@ module WorldModule =
             
             // try to reload asset graph file
             try File.Copy
-                    (Path.Combine (inputDirectory, world.State.AssetGraphFilePath),
-                     Path.Combine (outputDirectory, world.State.AssetGraphFilePath), true)
+                    (Path.Combine (inputDirectory, Constants.Assets.AssetGraphFilePath),
+                     Path.Combine (outputDirectory, Constants.Assets.AssetGraphFilePath), true)
 
                 // reload asset graph
-                match AssetGraph.tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory false world.State.AssetGraphFilePath with
+                match AssetGraph.tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory false Constants.Assets.AssetGraphFilePath with
                 | Right () ->
 
                     // reload asset metadata
-                    match Metadata.tryGenerateAssetMetadataMap world.State.AssetGraphFilePath with
+                    match Metadata.tryGenerateAssetMetadataMap Constants.Assets.AssetGraphFilePath with
                     | Right assetMetadataMap ->
                     
                         // reload assets
@@ -418,7 +418,8 @@ module WorldModule =
             Seq.fold (flip World.propagateEntityPhysics) world entities
 
         static member private processSubsystems subsystemType world =
-            Map.toList world.Subsystems.SubsystemMap |>
+            Vmap.toSeq world.Subsystems.SubsystemMap |>
+            List.ofSeq |>
             List.filter (fun (_, subsystem) -> subsystem.SubsystemType = subsystemType) |>
             List.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
             List.fold (fun world (subsystemName, subsystem) ->
@@ -428,7 +429,8 @@ module WorldModule =
                 world
 
         static member private cleanUpSubsystems world =
-            Map.toList world.Subsystems.SubsystemMap |>
+            Vmap.toSeq world.Subsystems.SubsystemMap |>
+            List.ofSeq |>
             List.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
             List.fold (fun world (subsystemName, subsystem) ->
                 let (subsystem, world) = subsystem.CleanUp world
@@ -642,11 +644,14 @@ module WorldModule =
 
             // make the world's subsystems
             let subsystems =
-                Subsystems.make ^
-                    Map.ofList
+                let subsystemMap = Vmap.makeEmpty Constants.Engine.SubsystemMapDepth
+                let subsystemMap =
+                    Vmap.addMany
                         [(Constants.Engine.PhysicsEngineSubsystemName, PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockPhysicsEngine = () } :> Subsystem)
                          (Constants.Engine.RendererSubsystemName, RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockRenderer = () } :> Subsystem)
                          (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockAudioPlayer = () } :> Subsystem)]
+                        subsystemMap
+                Subsystems.make subsystemMap
 
             // make the world's components
             let components =
@@ -710,20 +715,24 @@ module WorldModule =
                     let physicsEngineSubsystem = PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder physicsEngine :> Subsystem
                     let renderer =
                         match sdlDeps.OptRenderContext with
-                        | Some renderContext -> Renderer.make renderContext Constants.Assets.AssetGraphFilePath :> IRenderer
+                        | Some renderContext -> Renderer.make renderContext :> IRenderer
                         | None -> MockRenderer.make () :> IRenderer
                     let renderer = renderer.EnqueueMessage ^ HintRenderPackageUseMessage { PackageName = Constants.Assets.DefaultPackageName }
                     let rendererSubsystem = RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder renderer :> Subsystem
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
-                        then AudioPlayer.make Constants.Assets.AssetGraphFilePath :> IAudioPlayer
+                        then AudioPlayer.make () :> IAudioPlayer
                         else MockAudioPlayer.make () :> IAudioPlayer
                     let audioPlayerSubsystem = AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder audioPlayer :> Subsystem
-                    let defaultSubsystems =
-                        [(Constants.Engine.PhysicsEngineSubsystemName, physicsEngineSubsystem)
-                         (Constants.Engine.RendererSubsystemName, rendererSubsystem)
-                         (Constants.Engine.AudioPlayerSubsystemName, audioPlayerSubsystem)]
-                    Subsystems.make ^ Map.ofList (defaultSubsystems @ userSubsystems)
+                    let defaultSubsystemMap = Vmap.makeEmpty Constants.Engine.SubsystemMapDepth
+                    let defaultSubsystemMap =
+                        Vmap.addMany
+                            [(Constants.Engine.PhysicsEngineSubsystemName, physicsEngineSubsystem)
+                             (Constants.Engine.RendererSubsystemName, rendererSubsystem)
+                             (Constants.Engine.AudioPlayerSubsystemName, audioPlayerSubsystem)]
+                            defaultSubsystemMap
+                    let subsystemMap = Vmap.addMany userSubsystems defaultSubsystemMap
+                    Subsystems.make subsystemMap
 
                 // make plug-in components
                 let pluginFacets = plugin.MakeFacets () |> List.map World.pairWithName
