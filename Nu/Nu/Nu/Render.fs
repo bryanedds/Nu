@@ -101,8 +101,7 @@ type [<ReferenceEquality>] Renderer =
         { RenderContext : nativeint
           RenderAssetMap : RenderAsset AssetMap
           RenderMessages : RenderMessage Queue
-          RenderDescriptors : RenderDescriptor list
-          AssetGraphFilePath : string }
+          RenderDescriptors : RenderDescriptor list }
 
     static member private freeRenderAsset renderAsset =
         match renderAsset with
@@ -134,7 +133,7 @@ type [<ReferenceEquality>] Renderer =
         | extension -> trace ^ "Could not load render asset '" + acstring asset + "' due to unknown extension '" + extension + "'."; None
 
     static member private tryLoadRenderPackage packageName renderer =
-        match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Xml.RenderAssociation) packageName renderer.AssetGraphFilePath with
+        match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Xml.RenderAssociation) packageName Constants.Assets.AssetGraphFilePath with
         | Right assets ->
             let optRenderAssets = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
             let renderAssets = List.definitize optRenderAssets
@@ -373,13 +372,12 @@ type [<ReferenceEquality>] Renderer =
             renderer
 
     /// Make a Renderer.
-    static member make renderContext assetGraphFilePath =
+    static member make renderContext =
         let renderer =
             { RenderContext = renderContext
               RenderAssetMap = Map.empty
               RenderMessages = Queue.empty
-              RenderDescriptors = []
-              AssetGraphFilePath = assetGraphFilePath }
+              RenderDescriptors = [] }
         renderer
 
     interface IRenderer with

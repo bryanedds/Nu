@@ -565,12 +565,11 @@ module WorldEntityModule =
                 match optXtension with
                 | Some xtension ->
                     let xFieldDescriptors =
-                        Seq.fold
-                            (fun xFieldDescriptors (xFieldKvp : KeyValuePair<string, XField>) ->
-                                let fieldName = xFieldKvp.Key
-                                let fieldType = xFieldKvp.Value.FieldType
-                                if Reflection.isPropertyPersistentByName fieldName then
-                                    let xFieldDescriptor = EntityXFieldDescriptor { FieldName = fieldName; FieldType = fieldType }
+                        Vmap.fold
+                            (fun xFieldDescriptors xFieldName (xField : XField) ->
+                                let xFieldType = xField.FieldType
+                                if Reflection.isPropertyPersistentByName xFieldName then
+                                    let xFieldDescriptor = EntityXFieldDescriptor { FieldName = xFieldName; FieldType = xFieldType }
                                     let xFieldDescriptor : PropertyDescriptor = makePropertyDescriptor (xFieldDescriptor, [|typeConverterAttribute|])
                                     xFieldDescriptor :: xFieldDescriptors
                                 else xFieldDescriptors)
@@ -598,7 +597,7 @@ type Entity =
     /// with the Watch feature in Visual Studio.
     static member viewXFields entity world =
         let state = World.getEntityState entity world
-        let fields = Map.ofSeqBy (fun (kvp : KeyValuePair<_, _>) -> (kvp.Key, kvp.Value)) state.Xtension.XFields
+        let fields = Map.ofSeq state.Xtension.XFields
         Map.map (fun _ field -> field.FieldValue) fields
 
     /// Provides a full view of all the member values of an entity. Useful for debugging such

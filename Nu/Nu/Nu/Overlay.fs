@@ -120,9 +120,9 @@ module Overlayer =
             match xtensionProperty.GetValue target with
             | :? Xtension as xtension ->
                 let nodes =
-                    List.foldBack (fun (kvp : KeyValuePair<string, XField>) optNodes ->
-                        match trySelectNode newOverlayName kvp.Key newOverlayer with
-                        | Some node -> (kvp.Value.FieldType, node) :: optNodes
+                    List.foldBack (fun (xFieldName, xField) optNodes ->
+                        match trySelectNode newOverlayName xFieldName newOverlayer with
+                        | Some node -> (xField.FieldType, node) :: optNodes
                         | None -> optNodes)
                         (List.ofSeq xtension.XFields)
                         []

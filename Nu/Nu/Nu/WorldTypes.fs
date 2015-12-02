@@ -589,7 +589,7 @@ and NuPlugin () =
 /// The world's subsystems.
 and [<ReferenceEquality>] Subsystems =
     private
-        { SubsystemMap : Map<string, Subsystem> }
+        { SubsystemMap : Vmap<string, Subsystem> }
 
 /// The world's components.
 and [<ReferenceEquality>] Components =
@@ -618,10 +618,8 @@ and [<ReferenceEquality>] WorldState =
           Liveness : Liveness
           OptScreenTransitionDestination : Screen option // TODO: move this into GameState
           AssetMetadataMap : AssetMetadataMap
-          AssetGraphFilePath : string
           Overlayer : Overlayer
           OverlayRouter : OverlayRouter
-          OverlayFilePath : string
           Camera : Camera
           OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
           RefClipboard : EntityState option ref // NOTE: this makes for _strange_ value semantics for WorldState
