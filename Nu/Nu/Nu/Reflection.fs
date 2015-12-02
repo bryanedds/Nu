@@ -443,10 +443,9 @@ module Reflection =
     /// NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
     /// XmlWriter.Create ^ (document.CreateNavigator ()).AppendChild ()
     let writeXtension shouldWriteProperty (writer : XmlWriter) xtension =
-        for xFieldKvp in xtension.XFields do
-            let xFieldName = xFieldKvp.Key
-            let xFieldType = xFieldKvp.Value.FieldType
-            let xFieldValue = xFieldKvp.Value.FieldValue
+        for (xFieldName, xField) in xtension.XFields do
+            let xFieldType = xField.FieldType
+            let xFieldValue = xField.FieldValue
             if  isPropertyPersistentByName xFieldName &&
                 shouldWriteProperty xFieldName xFieldType xFieldValue then
                 let xFieldValueStr = (AlgebraicConverter xFieldType).ConvertToString xFieldValue
