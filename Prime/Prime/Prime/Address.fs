@@ -39,13 +39,11 @@ type AddressConverter (targetType : Type) =
             else failwith "Invalid AddressConverter conversion from source."
 
 /// Specifies the address of an identifiable value.
-/// OPTIMIZATION: Comparison is done using full names for speed.
-/// OPTIMIZATION: OptFullName and OptHashCode are lazy for speed.
+/// OPTIMIZATION: HashCode is cached for speed.
 type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
     private
         { Names : Name list
-          mutable OptFullName : Name option
-          mutable OptHashCode : int option
+          HashCode : int
           TypeCarrier : 'a -> unit }
 
     static member internal join (names : Name seq) =
@@ -55,27 +53,17 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
         Name.split [|'/'|] name
 
     static member internal getFullName (address : 'a Address) =
-        match address.OptFullName with
-        | Some fullName -> fullName
-        | None ->
-            let fullName = Address<'a>.join address.Names
-            address.OptFullName <- Some fullName
-            fullName
+        Address<'a>.join address.Names
 
     /// Make an address from a '/' delimited string.
     /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
     static member makeFromFullName fullName =
         let names = Address<'a>.split fullName |> List.ofSeq
-        { Names = names; OptFullName = Some fullName; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
+        { Names = names; HashCode = Name.hashNames names; TypeCarrier = fun (_ : 'a) -> () }
 
     /// Hash an Address.
     static member hash (address : 'a Address) =
-        match address.OptHashCode with
-        | Some hashCode -> hashCode
-        | None ->
-            let hashCode = Name.hashNames address.Names
-            address.OptHashCode <- Some hashCode
-            hashCode
+        address.HashCode
             
     /// Equate Addresses.
     static member equals address address2 =
@@ -115,11 +103,11 @@ module Address =
 
     /// The empty address.
     let empty<'a> =
-        { Names = []; OptFullName = Some Name.empty; OptHashCode = Some 0; TypeCarrier = fun (_ : 'a) -> () }
+        { Names = []; HashCode = 0; TypeCarrier = fun (_ : 'a) -> () }
 
     /// Make an address from names.
     let makeFromNames<'a> names =
-        { Names = names |> List.ofSeq; OptFullName = None; OptHashCode = None; TypeCarrier = fun (_ : 'a) -> () }
+        { Names = names |> List.ofSeq; HashCode = Name.hashNames names; TypeCarrier = fun (_ : 'a) -> () }
 
     /// Make an address from a '/' delimited string.
     let makeFromFullName<'a> fullName =
@@ -131,7 +119,7 @@ module Address =
 
     /// Change the type of an address.
     let changeType<'a, 'b> (address : 'a Address) =
-        { Names = address.Names; OptFullName = address.OptFullName; OptHashCode = address.OptHashCode; TypeCarrier = fun (_ : 'b) -> () }
+        { Names = address.Names; HashCode = address.HashCode; TypeCarrier = fun (_ : 'b) -> () }
 
     /// Get the full name of an address.
     let getFullName address =
@@ -202,7 +190,7 @@ module AddressOperators =
 
     /// Convert any address to an obj Address.
     let atooa<'a> (address : 'a Address) =
-        { Names = address.Names; OptFullName = address.OptFullName; OptHashCode = address.OptHashCode; TypeCarrier = fun (_ : obj) -> () }
+        { Names = address.Names; HashCode = address.HashCode; TypeCarrier = fun (_ : obj) -> () }
 
     /// Concatenate two addresses of the same type.
     let acat<'a> (address : 'a Address) (address2 : 'a Address) =
