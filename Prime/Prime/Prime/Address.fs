@@ -73,23 +73,17 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
         match address.OptHashCode with
         | Some hashCode -> hashCode
         | None ->
-            let hashCode = let fullName = Address<'a>.getFullName address in fullName.GetHashCode ()
+            let hashCode = Name.hashNames address.Names
             address.OptHashCode <- Some hashCode
             hashCode
             
     /// Equate Addresses.
     static member equals address address2 =
-        String.Equals
-            (Address<'a>.getFullName address |> Name.getNameStr,
-             Address<'a>.getFullName address2 |> Name.getNameStr,
-             StringComparison.Ordinal)
+        Name.equateNames address.Names address2.Names
 
     /// Compare Addresses.
     static member compare address address2 =
-        String.Compare
-            (Address<'a>.getFullName address |> Name.getNameStr,
-             Address<'a>.getFullName address2 |> Name.getNameStr,
-             StringComparison.Ordinal)
+        Name.compareNames address.Names address2.Names
 
     interface 'a Address IComparable with
         member this.CompareTo that =
