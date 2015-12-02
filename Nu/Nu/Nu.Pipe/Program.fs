@@ -9,7 +9,7 @@ module Program =
         match argv with
         | [|inputDirectory; outputDirectory; refinementDirectory; fullBuildStr|] ->
             let fullBuild = fullBuildStr = acstring true
-            match AssetSystem.tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory fullBuild Constants.Assets.AssetGraphFilePath with
+            match AssetGraph.tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory fullBuild Constants.Assets.AssetGraphFilePath with
             | Right () -> Constants.Engine.SuccessExitCode
             | Left error ->
                 Console.WriteLine error
