@@ -58,7 +58,7 @@ type [<StructuralEquality; NoComparison>] Package =
 type 'a AssetMap = Map<string, Map<string, 'a>>
 
 [<RequireQualifiedAccess>]
-module Assets =
+module AssetSystem =
 
     let private tryGetAssetFilePath (node : XmlNode) =
         match node.Attributes.GetNamedItem Constants.Xml.FileAttributeName with
