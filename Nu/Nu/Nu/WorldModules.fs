@@ -127,14 +127,18 @@ module Simulants =
 module Subsystems =
 
     let getSubsystem<'s when 's :> Subsystem> name subsystems =
-        Map.find name subsystems.SubsystemMap :?> 's
+        Vmap.find name subsystems.SubsystemMap :?> 's
 
     let getSubsystemBy<'s, 't when 's :> Subsystem> by name subsystems : 't =
         let subsystem = getSubsystem<'s> name subsystems
         by subsystem
 
     let setSubsystem<'s when 's :> Subsystem> (subsystem : 's) name subsystems =
-        { SubsystemMap = Map.add name (subsystem :> Subsystem) subsystems.SubsystemMap }
+#if DEBUG
+        if not ^ Vmap.containsKey name subsystems.SubsystemMap then
+            failwith ^ "Cannot set the state of a non-existent subsystem '" + name + "'"
+#endif
+        { SubsystemMap = Vmap.add name (subsystem :> Subsystem) subsystems.SubsystemMap }
 
     let updateSubsystem<'s, 'w when 's :> Subsystem> (updater : 's -> 'w -> 's) name subsystems world =
         let subsystem = getSubsystem<'s> name subsystems
@@ -142,7 +146,7 @@ module Subsystems =
         setSubsystem subsystem name subsystems
 
     let updateSubsystems (updater : Subsystem -> 'w -> Subsystem) subsystems world =
-        Map.fold
+        Vmap.fold
             (fun subsystems name subsystem -> let subsystem = updater subsystem world in setSubsystem subsystem name subsystems)
             subsystems
             subsystems.SubsystemMap
@@ -327,9 +331,7 @@ module WorldState =
           Liveness = Running
           OptScreenTransitionDestination = None
           AssetMetadataMap = assetMetadataMap
-          AssetGraphFilePath = String.Empty
           OverlayRouter = overlayRouter
-          OverlayFilePath = String.Empty
           Overlayer = overlayer
           Camera = camera
           OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
