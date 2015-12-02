@@ -88,17 +88,46 @@ module Name =
     let getNameStr name =
         name.NameStr
 
+    /// Join a list of names by a separator string.
     let join sep names =
         let nameStrs = Seq.map getNameStr names
         let namesStr = String.Join (sep, nameStrs)
         Name.make namesStr
 
+    /// Split a name on a separator char array.
     let split sep name =
-        name |>
-        getNameStr |>
+        name.NameStr |>
         (fun nameStr -> nameStr.Split sep) |>
         Array.map Name.make |>
         Seq.ofArray
+
+    /// Query for equality a list of names lexicographically.
+    let rec equateNames (names : Name list) (names2 : Name list) =
+        match (names, names2) with
+        | ([], []) -> true
+        | (_ :: _, []) -> false
+        | ([], _ :: _) -> false
+        | (head :: tail, head2 :: tail2) ->
+            let result = String.Equals (head.NameStr, head2.NameStr, StringComparison.Ordinal)
+            if result then equateNames tail tail2
+            else result
+
+    /// Compare a list of names lexicographically.
+    let rec compareNames (names : Name list) (names2 : Name list) =
+        match (names, names2) with
+        | ([], []) -> 0
+        | (_ :: _, []) -> 1
+        | ([], _ :: _) -> -1
+        | (head :: tail, head2 :: tail2) ->
+            let result = String.Compare (head.NameStr, head2.NameStr, StringComparison.Ordinal)
+            if result = 0 then compareNames tail tail2
+            else result
+
+    /// Hash a list of names.
+    let hashNames (names : Name list) =
+        let mutable hashValue = 0 // OPTIMIZATION: mutation for speed
+        for name in names do hashValue <- hashValue ^^^ name.GetHashCode ()
+        hashValue
 
     let empty =
         Name.make String.Empty
