@@ -134,7 +134,7 @@ type [<ReferenceEquality>] Renderer =
         | extension -> trace ^ "Could not load render asset '" + acstring asset + "' due to unknown extension '" + extension + "'."; None
 
     static member private tryLoadRenderPackage packageName renderer =
-        match AssetSystem.tryLoadAssetsFromPackage true (Some Constants.Xml.RenderAssociation) packageName renderer.AssetGraphFilePath with
+        match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Xml.RenderAssociation) packageName renderer.AssetGraphFilePath with
         | Right assets ->
             let optRenderAssets = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
             let renderAssets = List.definitize optRenderAssets
