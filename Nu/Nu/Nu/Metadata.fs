@@ -89,8 +89,8 @@ module Metadata =
         let assets =
             Seq.fold (fun assetsRev (node : XmlNode) ->
                 match node.Name with
-                | Constants.Xml.AssetNodeName -> match AssetSystem.tryLoadAssetFromAssetNode node with Some asset -> asset :: assetsRev | None -> assetsRev
-                | Constants.Xml.AssetsNodeName -> match AssetSystem.tryLoadAssetsFromAssetsNode true node with Some assets' -> List.rev assets' @ assetsRev | None -> assetsRev
+                | Constants.Xml.AssetNodeName -> match AssetGraph.tryLoadAssetFromAssetNode node with Some asset -> asset :: assetsRev | None -> assetsRev
+                | Constants.Xml.AssetsNodeName -> match AssetGraph.tryLoadAssetsFromAssetsNode true node with Some assets' -> List.rev assets' @ assetsRev | None -> assetsRev
                 | Constants.Xml.CommentNodeName -> assetsRev
                 | _ -> [])
                 []

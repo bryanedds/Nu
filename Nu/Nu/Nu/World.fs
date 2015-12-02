@@ -387,7 +387,7 @@ module WorldModule =
                      Path.Combine (outputDirectory, world.State.AssetGraphFilePath), true)
 
                 // reload asset graph
-                match AssetSystem.tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory false world.State.AssetGraphFilePath with
+                match AssetGraph.tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory false world.State.AssetGraphFilePath with
                 | Right () ->
 
                     // reload asset metadata
