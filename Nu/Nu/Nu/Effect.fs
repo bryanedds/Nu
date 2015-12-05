@@ -4,11 +4,11 @@ open Prime
 open OpenTK
 
 type Algorithm =
-    | Constant
+    | Const
     | Linear
     | Ease // TODO: EaseIn and Out
-    | Sine
-    | Cosine
+    | Sin
+    | Cos
 
 type LogicApplicator =
     | Or
@@ -243,17 +243,17 @@ module Effect =
         let progress = progress + progressOffset
         let progress = if progress > 1.0f then progress - 1.0f else progress
         match algorithm with
-        | Constant -> value2
+        | Const -> value2
         | Linear -> scale (value2 - value, progress)
         | Ease ->
             let progressEaseIn = single ^ Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0)
             scale (value2 - value, progressEaseIn)
-        | Sine ->
+        | Sin ->
             let progressScaled = float progress * Math.PI * 2.0
             let progressScaledSin = Math.Sin progressScaled
             let progressPolar = progressScaledSin / (Math.PI * 2.0)
             scale (value2 - value, single progressPolar)
-        | Cosine ->
+        | Cos ->
             let progressScaled = float progress * Math.PI * 2.0
             let progressScaledCos = Math.Cos progressScaled
             let progressPolar = progressScaledCos / (Math.PI * 2.0)
