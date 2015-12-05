@@ -7,6 +7,8 @@ type Algorithm =
     | Constant
     | Linear
     | Ease // TODO: EaseIn and Out
+    | Sine
+    | Cosine
 
 type LogicApplicator =
     | Or
@@ -14,14 +16,14 @@ type LogicApplicator =
     | Xor
     | And
     | Nand
-    | Over
+    | Put
 
 type TweenApplicator =
     | Sum
     | Diff
     | Scale
     | Ratio
-    | Over
+    | Put
 
 type [<StructuralEquality; NoComparison>] Slice =
     { Position : Vector2
@@ -82,6 +84,10 @@ type Playback =
     | Loop of int64
     | Bounce of int64
 
+type Repetition =
+    | Cycle of int
+    | Iterate of int
+
 type Resource =
     | ExpandResource of string
     | Resource of string * string
@@ -96,7 +102,7 @@ type [<NoComparison>] Aspect =
     | Depth of TweenApplicator * Algorithm * TweenNode list
     | Color of TweenApplicator * Algorithm * Tween4Node list
     | Mount of Content
-    | Repeat // TODO
+    | Repeat of Repetition * Aspect list * Content
     | Emit // TODO
     | Bone // TODO
 
@@ -119,7 +125,7 @@ type [<NoComparison>] Definition =
     | AsAspect of Aspect
     | AsContent of string list * Content
 
-type [<NoComparison>] EffectArtifect =
+type [<NoComparison>] EffectArtifact =
     | RenderArtifact of RenderDescriptor list
     | SoundArtifact of PlaySoundMessage
 
@@ -181,7 +187,7 @@ module Aspect =
         | Depth _
         | Color _
         | Mount _
-        | Repeat
+        | Repeat _
         | Emit
         | Bone -> Right aspect
 
@@ -233,13 +239,25 @@ module Effect =
             selectNodes2 localTime |>
             fun (fst, snd, thd) -> (fst, snd :?> 'n, thd :?> 'n)
 
-    let inline tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) (progress : single) algorithm =
+    let inline tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) (progress : single) (progressOffset : single) algorithm =
+        let progress = progress + progressOffset
+        let progress = if progress > 1.0f then progress - 1.0f else progress
         match algorithm with
         | Constant -> value2
         | Linear -> scale (value2 - value, progress)
         | Ease ->
             let progressEaseIn = single ^ Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0)
             scale (value2 - value, progressEaseIn)
+        | Sine ->
+            let progressScaled = float progress * Math.PI * 2.0
+            let progressScaledSin = Math.Sin progressScaled
+            let progressPolar = progressScaledSin / (Math.PI * 2.0)
+            scale (value2 - value, single progressPolar)
+        | Cosine ->
+            let progressScaled = float progress * Math.PI * 2.0
+            let progressScaledCos = Math.Cos progressScaled
+            let progressPolar = progressScaledCos / (Math.PI * 2.0)
+            scale (value2 - value, single progressPolar)
 
     let applyLogic value value2 applicator =
         match applicator with
@@ -248,7 +266,7 @@ module Effect =
         | Xor -> value <> value2
         | And -> value && value2
         | Nand -> not (value && value2)
-        | LogicApplicator.Over -> value2
+        | LogicApplicator.Put -> value2
 
     let inline applyTween scale ratio (value : ^a) (value2 : ^a) applicator =
         match applicator with
@@ -256,7 +274,7 @@ module Effect =
         | Diff -> value2 - value
         | Scale -> scale (value, value2)
         | Ratio -> ratio (value, value2)
-        | TweenApplicator.Over -> value2
+        | TweenApplicator.Put -> value2
 
     let evalInset (celSize : Vector2i) celRun celCount stutter time =
         let cel = int (time / stutter) % celCount
@@ -268,61 +286,101 @@ module Effect =
         let celSize = Vector2 (single celSize.X, single celSize.Y)
         Math.makeBounds celPosition celSize
 
-    let rec evalAspects viewType slice history aspects time =
+    let rec iterateArtifacts viewType slice history incrementers content artifacts progressOffset time =
+        List.fold
+            (fun (slice, artifacts') incrementer ->
+                let (slice, ignoredArtifacts) = evalAspect viewType slice history incrementer progressOffset time
+                if List.isEmpty ignoredArtifacts then
+                    let artifacts'' = evalContent viewType slice history content 0.0f time
+                    (slice, artifacts'' @ artifacts')
+                else (slice, artifacts')) // TODO: issue a syntax warning here?
+            (slice, artifacts)
+            incrementers |>
+        snd
+
+    and cycleArtifacts viewType slice history incrementers content artifacts progressOffset time =
+        List.fold
+            (fun artifacts' incrementer ->
+                let (slice, ignoredArtifacts) = evalAspect viewType slice history incrementer progressOffset time
+                if List.isEmpty ignoredArtifacts then
+                    let artifacts'' = evalContent viewType slice history content 0.0f time
+                    artifacts'' @ artifacts'
+                else artifacts') // TODO: issue a syntax warning here?
+            artifacts
+            incrementers
+
+    and evalAspect viewType slice history aspect progressOffset time =
+        match aspect with
+        | ExpandAspect _ -> failwithumf ()
+        | Visible (applicator, nodes) ->
+            let (_, _, node) = selectNodes time nodes
+            let applied = applyLogic true node.LogicValue applicator
+            ({ slice with Visible = applied }, [])
+        | Enabled (applicator, nodes) ->
+            let (_, _, node) = selectNodes time nodes
+            let applied = applyLogic true node.LogicValue applicator
+            ({ slice with Enabled = applied }, [])
+        | Position (applicator, algorithm, nodes) ->
+            let (nodeTime, node, node2) = selectNodes time nodes
+            let progress = single nodeTime / single node.TweenLength
+            let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress progressOffset algorithm
+            let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
+            ({ slice with Position = applied }, [])
+        | Size (applicator, algorithm, nodes) ->
+            let (nodeTime, node, node2) = selectNodes time nodes
+            let progress = single nodeTime / single node.TweenLength
+            let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress progressOffset algorithm
+            let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
+            ({ slice with Size = applied }, [])
+        | Rotation (applicator, algorithm, nodes) ->
+            let (nodeTime, node, node2) = selectNodes time nodes
+            let progress = single nodeTime / single node.TweenLength
+            let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress progressOffset algorithm
+            let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Rotation tweened applicator
+            ({ slice with Rotation = applied }, [])
+        | Depth (applicator, algorithm, nodes) ->
+            let (nodeTime, node, node2) = selectNodes time nodes
+            let progress = single nodeTime / single node.TweenLength
+            let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress progressOffset algorithm
+            let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Depth tweened applicator
+            ({ slice with Depth = applied }, [])
+        | Color (applicator, algorithm, nodes) ->
+            let (nodeTime, node, node2) = selectNodes time nodes
+            let progress = single nodeTime / single node.TweenLength
+            let tweened = tween Vector4.op_Multiply node.TweenValue node2.TweenValue progress progressOffset algorithm
+            let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
+            ({ slice with Color = applied }, [])
+        | Mount content ->
+            let artifacts = evalContent viewType slice history content progressOffset time
+            (slice, artifacts)
+        | Repeat (repetition, incrementers, content) ->
+            let artifacts =
+                match repetition with
+                | Iterate count ->
+                    List.fold
+                        (fun artifacts _ -> iterateArtifacts viewType slice history incrementers content artifacts progressOffset time)
+                        [] [0 .. count - 1]
+                | Cycle count ->
+                    List.fold
+                        (fun artifacts i ->
+                            let progressOffset = 1.0f / single count * single i
+                            cycleArtifacts viewType slice history incrementers content artifacts progressOffset time)
+                        [] [0 .. count - 1]
+            (slice, artifacts)
+        | Emit ->
+            (slice, []) // TODO: implement with a map over (slice :: history)
+        | Bone ->
+            (slice, []) // TODO: implement
+
+    and evalAspects viewType slice history aspects progressOffset time =
         List.fold
             (fun (slice, artifacts) aspect ->
-                match aspect with
-                | ExpandAspect _ -> failwithumf ()
-                | Visible (applicator, nodes) ->
-                    let (_, _, node) = selectNodes time nodes
-                    let applied = applyLogic true node.LogicValue applicator
-                    ({ slice with Visible = applied }, artifacts)
-                | Enabled (applicator, nodes) ->
-                    let (_, _, node) = selectNodes time nodes
-                    let applied = applyLogic true node.LogicValue applicator
-                    ({ slice with Enabled = applied }, artifacts)
-                | Position (applicator, algorithm, nodes) ->
-                    let (nodeTime, node, node2) = selectNodes time nodes
-                    let progress = single nodeTime / single node.TweenLength
-                    let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm
-                    let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
-                    ({ slice with Position = applied }, artifacts)
-                | Size (applicator, algorithm, nodes) ->
-                    let (nodeTime, node, node2) = selectNodes time nodes
-                    let progress = single nodeTime / single node.TweenLength
-                    let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm
-                    let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
-                    ({ slice with Size = applied }, artifacts)
-                | Rotation (applicator, algorithm, nodes) ->
-                    let (nodeTime, node, node2) = selectNodes time nodes
-                    let progress = single nodeTime / single node.TweenLength
-                    let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm
-                    let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Rotation tweened applicator
-                    ({ slice with Rotation = applied }, artifacts)
-                | Depth (applicator, algorithm, nodes) ->
-                    let (nodeTime, node, node2) = selectNodes time nodes
-                    let progress = single nodeTime / single node.TweenLength
-                    let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm
-                    let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Depth tweened applicator
-                    ({ slice with Depth = applied }, artifacts)
-                | Color (applicator, algorithm, nodes) ->
-                    let (nodeTime, node, node2) = selectNodes time nodes
-                    let progress = single nodeTime / single node.TweenLength
-                    let tweened = tween Vector4.op_Multiply node.TweenValue node2.TweenValue progress algorithm
-                    let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
-                    ({ slice with Color = applied }, artifacts)
-                | Mount content ->
-                    (slice, evalContent viewType slice history content time @ artifacts)
-                | Repeat ->
-                    (slice, []) // TODO: implement
-                | Emit ->
-                    (slice, []) // TODO: implement with a map over (slice :: history)
-                | Bone ->
-                    (slice, [])) // TODO: implement
+                let (slice, artifacts') = evalAspect viewType slice history aspect progressOffset time
+                (slice, artifacts' @ artifacts))
             (slice, [])
             aspects
 
-    and evalStaticSprite viewType slice history resource aspects time =
+    and evalStaticSprite viewType slice history resource aspects progressOffset time =
 
         // pull image from resource
         let image =
@@ -332,7 +390,7 @@ module Effect =
 
         // eval aspects
         let (slice, artifacts) =
-            evalAspects viewType slice history aspects time
+            evalAspects viewType slice history aspects progressOffset time
 
         // return artifacts
         if slice.Visible then
@@ -352,7 +410,7 @@ module Effect =
             artifact :: artifacts
         else artifacts
 
-    and evalAnimatedSprite viewType slice history resource celSize celRun celCount stutter aspects time =
+    and evalAnimatedSprite viewType slice history resource celSize celRun celCount stutter aspects progressOffset time =
 
         // pull image from resource
         let image =
@@ -362,7 +420,7 @@ module Effect =
 
         // eval aspects
         let (slice, artifacts) =
-            evalAspects viewType slice history aspects time
+            evalAspects viewType slice history aspects progressOffset time
 
         // eval inset
         let inset =
@@ -386,24 +444,24 @@ module Effect =
             artifact :: artifacts
         else artifacts
 
-    and evalComposite viewType slice history aspects time =
-        let (_, artifacts) = evalAspects viewType slice history aspects time
+    and evalComposite viewType slice history aspects progressOffset time =
+        let (_, artifacts) = evalAspects viewType slice history aspects progressOffset time
         artifacts
 
-    and evalContent viewType slice history content time =
+    and evalContent viewType slice history content progressOffset time =
         match content with
         | ExpandContent _ ->
             failwithumf ()
         | StaticSprite (resource, aspects) ->
-            evalStaticSprite viewType slice history resource aspects time
+            evalStaticSprite viewType slice history resource aspects progressOffset time
         | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects) ->
-            evalAnimatedSprite viewType slice history resource celSize celRun celCount stutter aspects time
+            evalAnimatedSprite viewType slice history resource celSize celRun celCount stutter aspects progressOffset time
         | PhysicsShape (label, bodyShape, collisionCategories, collisionMask, aspects) ->
             ignore (label, bodyShape, collisionCategories, collisionMask, aspects); [] // TODO: implement
         | Composite aspects ->
-            evalComposite viewType slice history aspects time
+            evalComposite viewType slice history aspects progressOffset time
 
-    let eval viewType slice history (globalEnv : Definitions) (effect : Effect) (time : int64) : Either<string, EffectArtifect list> =
+    let eval viewType slice history (globalEnv : Definitions) (effect : Effect) (time : int64) : Either<string, EffectArtifact list> =
         let localTime =
             match effect.OptLifetime with
             | Some lifetime -> time % lifetime
@@ -411,7 +469,7 @@ module Effect =
         let env = Vmap.concat globalEnv effect.Definitions
         match Content.expand env effect.Content with
         | Right content ->
-            let artifacts = evalContent viewType slice history content localTime
+            let artifacts = evalContent viewType slice history content 0.0f localTime
             Right artifacts
         | Left error -> Left error
 
