@@ -102,18 +102,17 @@ type [<NoComparison>] Aspect =
     | Rotation of TweenApplicator * Algorithm * TweenNode list
     | Depth of TweenApplicator * Algorithm * TweenNode list
     | Color of TweenApplicator * Algorithm * Tween4Node list
+
+and [<NoComparison>] Content =
+    | ExpandContent of string * Argument list
+    | StaticSprite of Resource * Aspect list * Content
+    | AnimatedSprite of Resource * Vector2i * int * int * int64 * Aspect list * Content
+    | PhysicsShape of BodyShape * string * string * string * Aspect list * Content
+    | Composite of Content list
     | Mount of Aspect list * Content
     | Repeat of Repetition * Aspect list * Content
     | Emit // TODO
     | Bone // TODO
-
-and [<NoComparison>] Content =
-    | ExpandContent of string * Argument list
-    | StaticSprite of Resource * Aspect list
-    | AnimatedSprite of Resource * Vector2i * int * int * int64 * Aspect list
-    | PhysicsShape of BodyShape * string * string * string * Aspect list
-    | Composite of Aspect list
-    | Singleton of Aspect
 
 and [<NoComparison>] Argument =
     | PassPlayback of Playback
@@ -187,11 +186,7 @@ module Aspect =
         | Size _
         | Rotation _
         | Depth _
-        | Color _
-        | Mount _
-        | Repeat _
-        | Emit
-        | Bone -> Right aspect
+        | Color _ -> Right aspect
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Content =
@@ -217,7 +212,10 @@ module Content =
         | AnimatedSprite _
         | PhysicsShape _
         | Composite _
-        | Singleton _ -> Right content
+        | Mount _
+        | Repeat _
+        | Emit
+        | Bone -> Right content
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Effect =
@@ -297,11 +295,8 @@ module Effect =
     let rec iterateArtifacts viewType slice history incrementers content artifacts progressOffset time =
         List.fold
             (fun (slice, artifacts') incrementer ->
-                let (slice, ignoredArtifacts) = evalAspect viewType slice history incrementer progressOffset time
-                let artifacts'' =
-                    match ignoredArtifacts with
-                    | [] -> evalContent viewType slice history content 0.0f time
-                    | _ -> [] // TODO: issue a syntax warning here?
+                let slice = evalAspect slice incrementer progressOffset time
+                let artifacts'' = evalContent viewType slice history content 0.0f time
                 (slice, artifacts'' @ artifacts')) 
             (slice, artifacts)
             incrementers |>
@@ -310,63 +305,150 @@ module Effect =
     and cycleArtifacts viewType slice history incrementers content artifacts progressOffset time =
         List.fold
             (fun artifacts' incrementer ->
-                let (slice, ignoredArtifacts) = evalAspect viewType slice history incrementer progressOffset time
-                let artifacts'' =
-                    match ignoredArtifacts with
-                    | [] -> evalContent viewType slice history content 0.0f time
-                    | _ -> [] // TODO: issue a syntax warning here?
+                let slice = evalAspect slice incrementer progressOffset time
+                let artifacts'' = evalContent viewType slice history content 0.0f time
                 (artifacts'' @ artifacts')) 
             artifacts
             incrementers
 
-    and evalAspect viewType slice history aspect progressOffset time =
+    and evalAspect slice aspect progressOffset time =
         match aspect with
         | ExpandAspect _ -> failwithumf ()
         | Visible (applicator, nodes) ->
             let (_, _, node) = selectNodes time nodes
             let applied = applyLogic true node.LogicValue applicator
-            ({ slice with Visible = applied }, [])
+            { slice with Visible = applied }
         | Enabled (applicator, nodes) ->
             let (_, _, node) = selectNodes time nodes
             let applied = applyLogic true node.LogicValue applicator
-            ({ slice with Enabled = applied }, [])
+            { slice with Enabled = applied }
         | Position (applicator, algorithm, nodes) ->
             let (nodeTime, node, node2) = selectNodes time nodes
             let progress = single nodeTime / single node.TweenLength
             let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress progressOffset algorithm
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
-            ({ slice with Position = applied }, [])
+            { slice with Position = applied }
         | Size (applicator, algorithm, nodes) ->
             let (nodeTime, node, node2) = selectNodes time nodes
             let progress = single nodeTime / single node.TweenLength
             let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress progressOffset algorithm
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
-            ({ slice with Size = applied }, [])
+            { slice with Size = applied }
         | Rotation (applicator, algorithm, nodes) ->
             let (nodeTime, node, node2) = selectNodes time nodes
             let progress = single nodeTime / single node.TweenLength
             let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress progressOffset algorithm
             let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Rotation tweened applicator
-            ({ slice with Rotation = applied }, [])
+            { slice with Rotation = applied }
         | Depth (applicator, algorithm, nodes) ->
             let (nodeTime, node, node2) = selectNodes time nodes
             let progress = single nodeTime / single node.TweenLength
             let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress progressOffset algorithm
             let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Depth tweened applicator
-            ({ slice with Depth = applied }, [])
+            { slice with Depth = applied }
         | Color (applicator, algorithm, nodes) ->
             let (nodeTime, node, node2) = selectNodes time nodes
             let progress = single nodeTime / single node.TweenLength
             let tweened = tween Vector4.op_Multiply node.TweenValue node2.TweenValue progress progressOffset algorithm
             let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
-            ({ slice with Color = applied }, [])
+            { slice with Color = applied }
+
+    and evalAspects slice aspects progressOffset time =
+        List.fold
+            (fun slice aspect -> evalAspect slice aspect progressOffset time)
+            slice
+            aspects
+
+    and evalStaticSprite viewType slice history resource aspects content progressOffset time =
+
+        // pull image from resource
+        let image =
+            match resource with
+            | ExpandResource _ -> failwithumf ()
+            | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
+
+        // eval aspects
+        let slice = evalAspects slice aspects progressOffset time
+
+        // build sprite artifacts
+        let spriteArtifacts =
+            if slice.Visible then
+                [RenderArtifact
+                    [LayerableDescriptor
+                        { Depth = slice.Depth
+                          LayeredDescriptor =
+                            SpriteDescriptor 
+                                { Position = slice.Position
+                                  Size = slice.Size
+                                  Rotation = slice.Rotation
+                                  OptInset = None
+                                  Image = image
+                                  ViewType = viewType
+                                  Color = slice.Color }}]]
+            else []
+
+        // build stacked content
+        let stackedArtifacts = evalContent viewType slice history content progressOffset time
+
+        // return artifacts
+        stackedArtifacts @ spriteArtifacts
+
+    and evalAnimatedSprite viewType slice history resource celSize celRun celCount stutter aspects content progressOffset time =
+
+        // pull image from resource
+        let image =
+            match resource with
+            | ExpandResource _ -> failwithumf ()
+            | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
+
+        // eval aspects
+        let slice = evalAspects slice aspects progressOffset time
+
+        // eval inset
+        let inset = evalInset celSize celRun celCount stutter time
+
+        // build animated sprite artifacts
+        let animatedSpriteArtifacts =
+            if slice.Visible then
+                [RenderArtifact
+                    [LayerableDescriptor
+                        { Depth = slice.Depth
+                          LayeredDescriptor =
+                            SpriteDescriptor 
+                                { Position = slice.Position
+                                  Size = slice.Size
+                                  Rotation = slice.Rotation
+                                  OptInset = Some inset
+                                  Image = image
+                                  ViewType = viewType
+                                  Color = slice.Color }}]]
+            else []
+
+        // build stacked content
+        let stackedArtifacts = evalContent viewType slice history content progressOffset time
+
+        // return artifacts
+        stackedArtifacts @ animatedSpriteArtifacts
+
+    and evalComposite viewType slice history contents progressOffset time =
+        evalContents viewType slice history contents progressOffset time
+
+    and evalContent viewType slice history content progressOffset time =
+        match content with
+        | ExpandContent _ ->
+            failwithumf ()
+        | StaticSprite (resource, aspects, content) ->
+            evalStaticSprite viewType slice history resource aspects content progressOffset time
+        | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects, content) ->
+            evalAnimatedSprite viewType slice history resource celSize celRun celCount stutter aspects content progressOffset time
+        | PhysicsShape (label, bodyShape, collisionCategories, collisionMask, aspects, content) ->
+            ignore (label, bodyShape, collisionCategories, collisionMask, aspects, content); [] // TODO: implement
+        | Composite contents ->
+            evalComposite viewType slice history contents progressOffset time
         | Mount (aspects, content) ->
-            let (slice', ignoredArtifacts) = evalAspects viewType slice history aspects progressOffset time
-            let artifacts =
-                match ignoredArtifacts with
-                | [] -> evalContent viewType slice' history content progressOffset time
-                | _ -> [] // TODO: issue a syntax warning here?
-            (slice, artifacts) 
+            let slice = evalAspects slice aspects progressOffset time
+            let artifacts = evalContent viewType slice history content progressOffset time
+            artifacts
         | Repeat (repetition, incrementers, content) ->
             let artifacts =
                 match repetition with
@@ -380,107 +462,19 @@ module Effect =
                             let progressOffset = 1.0f / single count * single i
                             cycleArtifacts viewType slice history incrementers content artifacts progressOffset time)
                         [] [0 .. count - 1]
-            (slice, artifacts)
+            artifacts
         | Emit ->
-            
-            (slice, []) // TODO: implement with a map over (slice :: history)
+            [] // TODO: implement with a map over (slice :: history)
         | Bone ->
-            (slice, []) // TODO: implement
+            [] // TODO: implement
 
-    and evalAspects viewType slice history aspects progressOffset time =
+    and evalContents viewType slice history contents progressOffset time =
         List.fold
-            (fun (slice, artifacts) aspect ->
-                let (slice, artifacts') = evalAspect viewType slice history aspect progressOffset time
-                (slice, artifacts' @ artifacts))
-            (slice, [])
-            aspects
-
-    and evalStaticSprite viewType slice history resource aspects progressOffset time =
-
-        // pull image from resource
-        let image =
-            match resource with
-            | ExpandResource _ -> failwithumf ()
-            | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
-
-        // eval aspects
-        let (slice, artifacts) =
-            evalAspects viewType slice history aspects progressOffset time
-
-        // return artifacts
-        if slice.Visible then
-            let artifact =
-                RenderArtifact
-                    [LayerableDescriptor
-                        { Depth = slice.Depth
-                          LayeredDescriptor =
-                            SpriteDescriptor 
-                                { Position = slice.Position
-                                  Size = slice.Size
-                                  Rotation = slice.Rotation
-                                  OptInset = None
-                                  Image = image
-                                  ViewType = viewType
-                                  Color = slice.Color }}]
-            artifact :: artifacts
-        else artifacts
-
-    and evalAnimatedSprite viewType slice history resource celSize celRun celCount stutter aspects progressOffset time =
-
-        // pull image from resource
-        let image =
-            match resource with
-            | ExpandResource _ -> failwithumf ()
-            | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
-
-        // eval aspects
-        let (slice, artifacts) =
-            evalAspects viewType slice history aspects progressOffset time
-
-        // eval inset
-        let inset =
-            evalInset celSize celRun celCount stutter time
-
-        // return artifacts
-        if slice.Visible then
-            let artifact =
-                RenderArtifact
-                    [LayerableDescriptor
-                        { Depth = slice.Depth
-                          LayeredDescriptor =
-                            SpriteDescriptor 
-                                { Position = slice.Position
-                                  Size = slice.Size
-                                  Rotation = slice.Rotation
-                                  OptInset = Some inset
-                                  Image = image
-                                  ViewType = viewType
-                                  Color = slice.Color }}]
-            artifact :: artifacts
-        else artifacts
-
-    and evalComposite viewType slice history aspects progressOffset time =
-        let (_, artifacts) = evalAspects viewType slice history aspects progressOffset time
-        artifacts
-
-    and evalSingleton viewType slice history aspect progressOffset time =
-        let (_, artifacts) = evalAspect viewType slice history aspect progressOffset time
-        artifacts
-
-    and evalContent viewType slice history content progressOffset time =
-        match content with
-        | ExpandContent _ ->
-            failwithumf ()
-        | StaticSprite (resource, aspects) ->
-            evalStaticSprite viewType slice history resource aspects progressOffset time
-        | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects) ->
-            evalAnimatedSprite viewType slice history resource celSize celRun celCount stutter aspects progressOffset time
-        | PhysicsShape (label, bodyShape, collisionCategories, collisionMask, aspects) ->
-            ignore (label, bodyShape, collisionCategories, collisionMask, aspects); [] // TODO: implement
-        | Composite aspects ->
-            evalComposite viewType slice history aspects progressOffset time
-        | Singleton aspect ->
-            evalSingleton viewType slice history aspect progressOffset time
+            (fun artifacts content ->
+                let artifacts' = evalContent viewType slice history content progressOffset time
+                artifacts' @ artifacts)
+            []
+            contents
 
     let eval viewType slice history (globalEnv : Definitions) (effect : Effect) (time : int64) : Either<string, EffectArtifact list> =
         let localTime =
