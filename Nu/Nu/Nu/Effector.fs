@@ -9,7 +9,7 @@ type [<NoEquality; NoComparison>] Effector =
           History : Slice list
           ProgressOffset : single
           Time : int64
-          Random : System.Random }
+          Chaos : System.Random }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Effector =
@@ -112,9 +112,8 @@ module Effector =
             scale (value2 - value, randValue)
         | Chaos ->
             // NOTE: chaos in non-deterministically based on progress
-            let random = System.Random () // seeded by system time
-            let randomValue = single ^ random.NextDouble ()
-            scale (value2 - value, randomValue)
+            let chaosValue = single ^ effector.Chaos.NextDouble ()
+            scale (value2 - value, chaosValue)
         | Ease ->
             let progressEaseIn = single ^ Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0)
             scale (value2 - value, progressEaseIn)
@@ -361,4 +360,4 @@ module Effector =
           History = history
           ProgressOffset = 0.0f
           Time = time
-          Random = System.Random () }
+          Chaos = System.Random () }
