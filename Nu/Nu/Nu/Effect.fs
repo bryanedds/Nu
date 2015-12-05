@@ -102,7 +102,7 @@ type [<NoComparison>] Aspect =
     | Rotation of TweenApplicator * Algorithm * TweenNode list
     | Depth of TweenApplicator * Algorithm * TweenNode list
     | Color of TweenApplicator * Algorithm * Tween4Node list
-    | Mount of Content
+    | Mount of Aspect list * Content
     | Repeat of Repetition * Aspect list * Content
     | Emit // TODO
     | Bone // TODO
@@ -113,6 +113,7 @@ and [<NoComparison>] Content =
     | AnimatedSprite of Resource * Vector2i * int * int * int64 * Aspect list
     | PhysicsShape of BodyShape * string * string * string * Aspect list
     | Composite of Aspect list
+    | Singleton of Aspect
 
 and [<NoComparison>] Argument =
     | PassPlayback of Playback
@@ -215,7 +216,8 @@ module Content =
         | StaticSprite _
         | AnimatedSprite _
         | PhysicsShape _
-        | Composite _ -> Right content
+        | Composite _
+        | Singleton _ -> Right content
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Effect =
@@ -296,10 +298,11 @@ module Effect =
         List.fold
             (fun (slice, artifacts') incrementer ->
                 let (slice, ignoredArtifacts) = evalAspect viewType slice history incrementer progressOffset time
-                if List.isEmpty ignoredArtifacts then
-                    let artifacts'' = evalContent viewType slice history content 0.0f time
-                    (slice, artifacts'' @ artifacts')
-                else (slice, artifacts')) // TODO: issue a syntax warning here?
+                let artifacts'' =
+                    match ignoredArtifacts with
+                    | [] -> evalContent viewType slice history content 0.0f time
+                    | _ -> [] // TODO: issue a syntax warning here?
+                (slice, artifacts'' @ artifacts')) 
             (slice, artifacts)
             incrementers |>
         snd
@@ -308,10 +311,11 @@ module Effect =
         List.fold
             (fun artifacts' incrementer ->
                 let (slice, ignoredArtifacts) = evalAspect viewType slice history incrementer progressOffset time
-                if List.isEmpty ignoredArtifacts then
-                    let artifacts'' = evalContent viewType slice history content 0.0f time
-                    artifacts'' @ artifacts'
-                else artifacts') // TODO: issue a syntax warning here?
+                let artifacts'' =
+                    match ignoredArtifacts with
+                    | [] -> evalContent viewType slice history content 0.0f time
+                    | _ -> [] // TODO: issue a syntax warning here?
+                (artifacts'' @ artifacts')) 
             artifacts
             incrementers
 
@@ -356,9 +360,13 @@ module Effect =
             let tweened = tween Vector4.op_Multiply node.TweenValue node2.TweenValue progress progressOffset algorithm
             let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
             ({ slice with Color = applied }, [])
-        | Mount content ->
-            let artifacts = evalContent viewType slice history content progressOffset time
-            (slice, artifacts)
+        | Mount (aspects, content) ->
+            let (slice', ignoredArtifacts) = evalAspects viewType slice history aspects progressOffset time
+            let artifacts =
+                match ignoredArtifacts with
+                | [] -> evalContent viewType slice' history content progressOffset time
+                | _ -> [] // TODO: issue a syntax warning here?
+            (slice, artifacts) 
         | Repeat (repetition, incrementers, content) ->
             let artifacts =
                 match repetition with
@@ -455,6 +463,10 @@ module Effect =
         let (_, artifacts) = evalAspects viewType slice history aspects progressOffset time
         artifacts
 
+    and evalSingleton viewType slice history aspect progressOffset time =
+        let (_, artifacts) = evalAspect viewType slice history aspect progressOffset time
+        artifacts
+
     and evalContent viewType slice history content progressOffset time =
         match content with
         | ExpandContent _ ->
@@ -467,6 +479,8 @@ module Effect =
             ignore (label, bodyShape, collisionCategories, collisionMask, aspects); [] // TODO: implement
         | Composite aspects ->
             evalComposite viewType slice history aspects progressOffset time
+        | Singleton aspect ->
+            evalSingleton viewType slice history aspect progressOffset time
 
     let eval viewType slice history (globalEnv : Definitions) (effect : Effect) (time : int64) : Either<string, EffectArtifact list> =
         let localTime =
