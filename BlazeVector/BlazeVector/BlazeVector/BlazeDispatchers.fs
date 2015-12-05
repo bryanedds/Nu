@@ -282,7 +282,7 @@ module GameplayScreenModule =
             shiftEntities xShift sectionEntities world
 
         static let createSectionGroups world =
-            let random = Random ()
+            let random = System.Random ()
             let sectionFilePaths = List.toArray Constants.FilePaths.Sections
             List.fold
                 (fun world i ->

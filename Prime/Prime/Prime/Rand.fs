@@ -59,14 +59,14 @@ module Rand =
         let (numberInt, rand) = nextInt rand
         (numberInt % max, rand)
 
-    let make seedState =
+    let makeFromSeedState seedState =
         if seedState = 0UL then failwith "Seed for Rand may not be zero."
         { RandState = seedState }
-
-    let makeDefault () =
-        make DefaultSeedState
 
     let makeFromInt (seedState : int) =
         let seedStateMultiplier = UInt64.MaxValue / uint64 UInt32.MaxValue
         let seedStateUi64 = uint64 seedState * seedStateMultiplier
-        make seedStateUi64
+        makeFromSeedState seedStateUi64
+
+    let make () =
+        makeFromSeedState DefaultSeedState

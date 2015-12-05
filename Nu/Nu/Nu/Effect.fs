@@ -6,6 +6,7 @@ open OpenTK
 type Algorithm =
     | Const
     | Linear
+    | Random
     | Ease // TODO: EaseIn and Out
     | Sin
     | Cos
@@ -245,6 +246,11 @@ module Effect =
         match algorithm with
         | Const -> value2
         | Linear -> scale (value2 - value, progress)
+        | Random ->
+            // NOTE: random is implemented deterministically based on progress
+            let rand = Rand.makeFromInt ^ int ^ double progress * double Int32.MaxValue
+            let randValue = fst ^ Rand.nextSingle rand
+            scale (value2 - value, randValue)
         | Ease ->
             let progressEaseIn = single ^ Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0)
             scale (value2 - value, progressEaseIn)
@@ -368,6 +374,7 @@ module Effect =
                         [] [0 .. count - 1]
             (slice, artifacts)
         | Emit ->
+            
             (slice, []) // TODO: implement with a map over (slice :: history)
         | Bone ->
             (slice, []) // TODO: implement
