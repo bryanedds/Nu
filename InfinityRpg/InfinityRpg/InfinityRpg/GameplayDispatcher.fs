@@ -436,7 +436,7 @@ module GameplayDispatcherModule =
                 match optNewPlayerActivity with
                 | Some (Action _)
                 | Some (Navigation _) ->
-                    let rand = Rand.make ^ Simulants.Gameplay.GetOngoingRandState world
+                    let rand = Rand.makeFromSeedState ^ Simulants.Gameplay.GetOngoingRandState world
                     let enemies = proxyEnemies world
                     let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns occupationMap Simulants.Player enemies rand world
                     let world = Seq.fold2 (fun world (enemy : Entity) turn -> enemy.SetDesiredTurn turn world) world enemies enemyDesiredTurns
@@ -503,7 +503,7 @@ module GameplayDispatcherModule =
         static let handleNewGame world =
 
             // generate non-deterministic random numbers
-            let sysrandom = Random ()
+            let sysrandom = System.Random ()
             let contentSeedState = uint64 ^ sysrandom.Next ()
             let ongoingSeedState = uint64 ^ sysrandom.Next ()
 
@@ -515,7 +515,7 @@ module GameplayDispatcherModule =
             let (scene, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some ^ Simulants.Scene.GroupName) Simulants.Gameplay world
 
             // make rand from gameplay
-            let rand = Rand.make ^ Simulants.Gameplay.GetContentRandState world
+            let rand = Rand.makeFromSeedState ^ Simulants.Gameplay.GetContentRandState world
 
             // make field
             let (rand, world) = _bc ^ createField scene rand world
@@ -535,7 +535,7 @@ module GameplayDispatcherModule =
             let world = Simulants.Gameplay.SetTransitionStateNp IncomingState world
 
             // make rand from gameplay
-            let rand = Rand.make ^ Simulants.Gameplay.GetContentRandState world
+            let rand = Rand.makeFromSeedState ^ Simulants.Gameplay.GetContentRandState world
 
             // make field from rand (field is not serialized, but generated deterministically with ContentRandState)
             __c ^ createField Simulants.Scene rand world

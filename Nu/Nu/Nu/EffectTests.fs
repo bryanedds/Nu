@@ -33,7 +33,7 @@ module EffectTests =
                             [[Position Sum Sin [[[0 0] 10] [[0 10] 0]]]
                              [Position Sum Cos [[[0 0] 10] [[10 0] 0]]]]
                             [StaticSprite [Resource Gameplay Spark]]]
-                         [Emit]]]]]]
+                         [Emit 5 ]]]]]]
                 [ExpandContent IfritSprite []]]"
 
         let alucard =

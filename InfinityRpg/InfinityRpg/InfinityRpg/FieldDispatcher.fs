@@ -16,7 +16,7 @@ module FieldDispatcherModule =
     type FieldDispatcher () =
         inherit EntityDispatcher ()
 
-        static let DefaultRand = Rand.makeDefault ()
+        static let DefaultRand = Rand.make ()
         static let DefaultSizeM = Vector2i (4, 4)
         static let DefaultPathEdgesM = [(Vector2i (1, 1), Vector2i (2, 2))]
         static let DefaultFieldMap = fst ^ FieldMap.make Constants.Assets.FieldTileSheetImage DefaultSizeM DefaultPathEdgesM DefaultRand
