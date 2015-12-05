@@ -30,8 +30,8 @@ module EffectTests =
                          [Mount [ExpandContent FlameSprite [[PassAspect [Position Sum Linear [[[0 0] 10] [[10 10] 0]]]]]]]
                          [Mount [ExpandContent FlameSprite [[PassAspect [Position Sum Linear [[[10 0] 10] [[0 10] 0]]]]]]]
                          [Repeat [Cycle 5]
-                            [[Position Sum Sine [[[0 0] 10] [[0 10] 0]]]
-                             [Position Sum Cosine [[[0 0] 10] [[10 0] 0]]]]
+                            [[Position Sum Sin [[[0 0] 10] [[0 10] 0]]]
+                             [Position Sum Cos [[[0 0] 10] [[10 0] 0]]]]
                             [StaticSprite [Resource Gameplay Spark]]]
                          [Emit]]]]]]
                 [ExpandContent IfritSprite []]]"
