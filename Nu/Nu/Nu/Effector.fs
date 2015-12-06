@@ -9,8 +9,8 @@ type [<NoEquality; NoComparison>] Effector =
           History : Slice list
           HistoryLength : int
           ProgressOffset : single
-          TickRate : int64
-          TickTime : int64
+          EffectRate : int64
+          EffectTime : int64
           Chaos : System.Random }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -148,7 +148,7 @@ module Effector =
         | TweenApplicator.Put -> value2
 
     let private evalInset (celSize : Vector2i) celRun celCount stutter effector =
-        let cel = int (effector.TickTime / stutter) % celCount
+        let cel = int (effector.EffectTime / stutter) % celCount
         let celI = cel % celRun
         let celJ = cel / celRun
         let celX = celI * celSize.X
@@ -182,39 +182,39 @@ module Effector =
         match aspect with
         | ExpandAspect _ -> failwithumf ()
         | Visible (applicator, nodes) ->
-            let (_, _, node) = selectNodes effector.TickTime nodes
+            let (_, _, node) = selectNodes effector.EffectTime nodes
             let applied = applyLogic true node.LogicValue applicator
             { slice with Visible = applied }
         | Enabled (applicator, nodes) ->
-            let (_, _, node) = selectNodes effector.TickTime nodes
+            let (_, _, node) = selectNodes effector.EffectTime nodes
             let applied = applyLogic true node.LogicValue applicator
             { slice with Enabled = applied }
         | Position (applicator, algorithm, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.TickTime nodes
+            let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
             let progress = single nodeTime / single node.TweenLength
             let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
             { slice with Position = applied }
         | Size (applicator, algorithm, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.TickTime nodes
+            let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
             let progress = single nodeTime / single node.TweenLength
             let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
             { slice with Size = applied }
         | Rotation (applicator, algorithm, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.TickTime nodes
+            let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
             let progress = single nodeTime / single node.TweenLength
             let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Rotation tweened applicator
             { slice with Rotation = applied }
         | Depth (applicator, algorithm, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.TickTime nodes
+            let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
             let progress = single nodeTime / single node.TweenLength
             let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Depth tweened applicator
             { slice with Depth = applied }
         | Color (applicator, algorithm, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.TickTime nodes
+            let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
             let progress = single nodeTime / single node.TweenLength
             let tweened = tween Vector4.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
@@ -331,7 +331,11 @@ module Effector =
             List.foldi
                 (fun i artifacts slice ->
                     // the following line is actually wrong; the history of the tick rate also needs to be accounted for
-                    let effector = { effector with TickTime = effector.TickTime + effector.TickRate * int64 i }
+                    let effector = { effector with EffectTime = effector.EffectTime + effector.EffectRate * int64 i }
+                    let rateTrunc = single ^ Math.Truncate (double rate)
+                    let emitFrac = (rate - rateTrunc) * 0.01f
+                    let emitFracCount = int effector.EffectTime % int emitFrac
+                    let emitCount = int rateTrunc + emitFracCount
                     let artifacts' =
                         List.fold
                             (fun artifacts' _ ->
@@ -342,7 +346,7 @@ module Effector =
                                     else []
                                 artifacts'' @ artifacts')
                             []
-                            [0 .. int rate - 1]
+                            [0 .. emitCount - 1]
                     artifacts' @ artifacts)
                 []
                 (slice :: effector.History)
@@ -360,12 +364,12 @@ module Effector =
     let eval slice (globalEnv : Definitions) (effect : Effect) (effector : Effector) : Either<string, EffectArtifact list> =
         let localTime =
             match effect.OptLifetime with
-            | Some lifetime -> effector.TickTime % lifetime
-            | None -> effector.TickTime
+            | Some lifetime -> effector.EffectTime % lifetime
+            | None -> effector.EffectTime
         let env = Vmap.concat globalEnv effect.Definitions
         match expandContent env effect.Content with
         | Right content ->
-            let effector = { effector with TickTime = localTime }
+            let effector = { effector with EffectTime = localTime }
             let artifacts = evalContent slice content effector
             Right artifacts
         | Left error -> Left error
@@ -375,6 +379,6 @@ module Effector =
           History = history
           HistoryLength = List.length history
           ProgressOffset = 0.0f
-          TickRate = tickRate
-          TickTime = tickTime
+          EffectRate = tickRate
+          EffectTime = tickTime
           Chaos = System.Random () }
