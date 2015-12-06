@@ -328,23 +328,24 @@ module Effector =
                         cycleArtifacts slice incrementers content artifacts effector)
                     [] [0 .. count - 1]
         | Emit (Rate rate, aspects, content) ->
-            // NOTE: the Enabled field turns emission on and off
-            let artifactLists =
-                List.mapi
-                    (fun i slice ->
-                        // the following is actually wrong; the history of the tick rate also needs to be accounted for
-                        let effector = { effector with TickTime = effector.TickTime + effector.TickRate * int64 i }
-                        let artifacts =
-                            List.fold
-                                (fun artifacts _ ->
-                                    let slice = evalAspects slice aspects effector
-                                    let artifacts' = evalContent slice content effector
-                                    artifacts' @ artifacts)
-                                []
-                                [0 .. int rate - 1]
-                        artifacts)
-                    (slice :: effector.History)
-            List.concat artifactLists
+            List.foldi
+                (fun i artifacts slice ->
+                    // the following line is actually wrong; the history of the tick rate also needs to be accounted for
+                    let effector = { effector with TickTime = effector.TickTime + effector.TickRate * int64 i }
+                    let artifacts' =
+                        List.fold
+                            (fun artifacts' _ ->
+                                let slice = evalAspects slice aspects effector
+                                let artifacts'' =
+                                    if slice.Enabled
+                                    then evalContent slice content effector
+                                    else []
+                                artifacts'' @ artifacts')
+                            []
+                            [0 .. int rate - 1]
+                    artifacts' @ artifacts)
+                []
+                (slice :: effector.History)
         | Bone ->
             [] // TODO: implement
 
