@@ -108,12 +108,10 @@ module Effector =
         | Const -> value2
         | Linear -> scale (value2 - value, progress)
         | Random ->
-            // NOTE: random is deterministically based on progress
             let rand = Rand.makeFromInt ^ int ^ double progress * double Int32.MaxValue
             let randValue = fst ^ Rand.nextSingle rand
             scale (value2 - value, randValue)
         | Chaos ->
-            // NOTE: chaos in non-deterministically based on progress
             let chaosValue = single ^ effector.Chaos.NextDouble ()
             scale (value2 - value, chaosValue)
         | Ease ->
@@ -122,13 +120,13 @@ module Effector =
         | Sin ->
             let progressScaled = float progress * Math.PI * 2.0
             let progressScaledSin = Math.Sin progressScaled
-            let progressPolar = progressScaledSin / (Math.PI * 2.0)
-            scale (value2 - value, single progressPolar)
+            let progressSin = progressScaledSin / (Math.PI * 2.0)
+            scale (value2 - value, single progressSin)
         | Cos ->
             let progressScaled = float progress * Math.PI * 2.0
             let progressScaledCos = Math.Cos progressScaled
-            let progressPolar = progressScaledCos / (Math.PI * 2.0)
-            scale (value2 - value, single progressPolar)
+            let progressCos = progressScaledCos / (Math.PI * 2.0)
+            scale (value2 - value, single progressCos)
 
     let private applyLogic value value2 applicator =
         match applicator with
@@ -351,7 +349,8 @@ module Effector =
                 []
                 (slice :: effector.History)
         | Bone ->
-            [] // TODO: implement
+            // TODO: implement
+            []
 
     and private evalContents slice contents effector =
         List.fold
