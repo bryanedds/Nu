@@ -9,7 +9,7 @@ open OpenTK
 open Xunit
 open Prime
 open Nu
-module EffectTests =
+module EffectorTests =
 
     let [<Fact>] readEffectWorks () =
 
@@ -26,15 +26,17 @@ module EffectTests =
                  [IfritSprite [AsContent []
                     [AnimatedSprite [Resource Gameplay Esper] [4 4] 4 16 6
                         [[Visible Put [[False 2] [True 16] [False 0]]]
-                         [Position Sum Linear [[[0 0] 10] [[10 10] 0]]]
-                         [Mount [ExpandContent FlameSprite [[PassAspect [Position Sum Linear [[[0 0] 10] [[10 10] 0]]]]]]]
-                         [Mount [ExpandContent FlameSprite [[PassAspect [Position Sum Linear [[[10 0] 10] [[0 10] 0]]]]]]]
-                         [Repeat [Cycle 5]
-                            [[Position Sum Sin [[[0 0] 10] [[0 10] 0]]]
-                             [Position Sum Cos [[[0 0] 10] [[10 0] 0]]]]
-                            [StaticSprite [Resource Gameplay Spark]]]
-                         [Emit 5 ]]]]]]
-                [ExpandContent IfritSprite []]]"
+                         [Position Sum Linear [[[0 0] 10] [[10 10] 0]]]]
+                        [Composite
+                            [[Mount [] [ExpandContent FlameSprite [[PassAspect [Position Sum Linear [[[0 0] 10] [[10 10] 0]]]]]]]
+                             [Mount [] [ExpandContent FlameSprite [[PassAspect [Position Sum Linear [[[10 0] 10] [[0 10] 0]]]]]]]
+                             [Repeat [Cycle 5]
+                                [[Position Sum Sin [[[0 0] 10] [[0 10] 0]]]
+                                 [Position Sum Cos [[[0 0] 10] [[10 0] 0]]]]
+                                [StaticSprite [Resource Gameplay Spark]]]
+                             [Emit [Rate 0.5]
+                                ]]]]]]]
+                [ExpandContent IfritSprite []]]]"
 
         let alucard =
             "[Alucard [Loop 16] 16

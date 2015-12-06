@@ -109,6 +109,7 @@ module EffectFacetModule =
                 let time = World.getTickTime world
                 let timeOffset = entity.GetEffectTimeOffset world
                 let effectTime = time - timeOffset
+                let effectRate = World.getTickRate world
 
                 let effectViewType = entity.GetViewType world
                 let effectSize = entity.GetSize world
@@ -125,8 +126,9 @@ module EffectFacetModule =
                 let effectEnv = entity.GetEffectDefinitions world
                 let effect = entity.GetEffect world
 
+                let effector = Effector.make effectViewType effectHistory effectRate effectTime
                 let world =
-                    match Effect.eval effectViewType effectSlice effectHistory effectEnv effect effectTime with
+                    match Effector.eval effectSlice effectEnv effect effector with
                     | Right artifacts ->
                         List.fold (fun world artifact ->
                             match artifact with
