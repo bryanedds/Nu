@@ -93,9 +93,6 @@ type Repetition =
 type Rate =
     Rate of single
 
-type Capacity =
-    Capacity of int
-
 type Resource =
     | ExpandResource of string
     | Resource of string * string
@@ -118,7 +115,7 @@ and [<NoComparison>] Content =
     | Composite of Content list
     | Mount of Aspect list * Content
     | Repeat of Repetition * Aspect list * Content
-    | Emit of Rate * Capacity * Aspect list * Content
+    | Emit of Rate * Aspect list * Content
     | Bone // TODO
 
 and [<NoComparison>] Argument =

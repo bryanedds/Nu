@@ -9,7 +9,7 @@ open OpenTK
 open Xunit
 open Prime
 open Nu
-module EffectTests =
+module EffectorTests =
 
     let [<Fact>] readEffectWorks () =
 
@@ -34,7 +34,7 @@ module EffectTests =
                                 [[Position Sum Sin [[[0 0] 10] [[0 10] 0]]]
                                  [Position Sum Cos [[[0 0] 10] [[10 0] 0]]]]
                                 [StaticSprite [Resource Gameplay Spark]]]
-                             [Emit [Rate 0.5] [Capacity 32]
+                             [Emit [Rate 0.5]
                                 ]]]]]]]
                 [ExpandContent IfritSprite []]]]"
 
