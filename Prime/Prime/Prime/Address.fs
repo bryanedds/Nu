@@ -30,8 +30,8 @@ type AddressConverter (targetType : Type) =
         
     override this.ConvertFrom (_, _, source) =
         match source with
-        | :? string as nameStr ->
-            let fullName = Name.make nameStr
+        | :? string as addressStr ->
+            let fullName = Name.make addressStr
             let ftoaFunction = targetType.GetMethod ("makeFromFullName", BindingFlags.Static ||| BindingFlags.Public)
             ftoaFunction.Invoke (null, [|fullName|])
         | _ ->

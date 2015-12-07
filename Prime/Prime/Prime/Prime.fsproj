@@ -76,8 +76,6 @@
     <Compile Include="Map.fs" />
     <Compile Include="MapOperators.fs" />
     <Compile Include="MapPlus.fs" />
-    <Compile Include="RduTree.fs" />
-    <Compile Include="Vmap.fs" />
     <Compile Include="HashSet.fs" />
     <Compile Include="Dictionary.fs" />
     <Compile Include="Lens.fs" />
@@ -91,6 +89,8 @@
     <Compile Include="AlgebraicConverter.fs" />
     <Compile Include="AlgebraicDescriptor.fs" />
     <Compile Include="AlgebraicString.fs" />
+    <Compile Include="Vmap.fs" />
+    <Compile Include="RduTree.fs" />
     <Compile Include="Xtension.fs" />
     <Compile Include="Implicit.fs" />
     <Compile Include="DuckTyping.fs" />

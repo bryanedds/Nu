@@ -191,10 +191,10 @@ module Callbacks =
 
     /// Make a callbacks value.
     let make () =
-        { Subscriptions = Vmap.makeEmpty Constants.Engine.SubscriptionMapDepth
-          Unsubscriptions = Vmap.makeEmpty Constants.Engine.SubscriptionMapDepth
+        { Subscriptions = Vmap.make ()
+          Unsubscriptions = Vmap.make ()
           Tasklets = Queue.empty
-          CallbackStates = Vmap.makeEmpty Constants.Engine.CallbackStateMapDepth }
+          CallbackStates = Vmap.make () }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Components =

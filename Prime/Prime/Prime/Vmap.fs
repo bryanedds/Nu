@@ -5,7 +5,45 @@ namespace Prime
 open System
 open System.Collections
 open System.Collections.Generic
+open System.ComponentModel
+open System.Reflection
+open Microsoft.FSharp.Reflection
 open Prime
+
+/// Converts Vmap types.
+type VmapConverter (targetType : Type) =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string> ||
+        destType = targetType
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<string> then
+            let toStringMethod = targetType.GetMethod "ToString"
+            toStringMethod.Invoke (source, null)
+        elif destType = targetType then source
+        else failwith "Invalid VmapConverter conversion to source."
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<string> ||
+        sourceType = targetType
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? string as vmapStr ->
+            let gargs = targetType.GetGenericArguments ()
+            match gargs with
+            | [|fstType; sndType|] ->
+                let pairList = acvalue<obj list> vmapStr
+                let pairType = typedefof<Tuple<_, _>>.MakeGenericType [|fstType; sndType|]
+                let ofSeq = (((Assembly.GetExecutingAssembly ()).GetType "Prime.VmapModule").GetMethod ("ofSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|fstType; sndType|]
+                let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|pairType|]
+                ofSeq.Invoke (null, [|cast.Invoke (null, [|pairList|])|])
+            | _ -> failwith "Unexpected match failure in Nu.VmapConverter.ConvertFrom."
+        | _ ->
+            if targetType.IsInstanceOfType source then source
+            else failwith "Invalid AddressConverter conversion from source."
 
 /// A hash-key-value triple, implemented with a struct for efficiency.
 type internal Hkv<'k, 'v when 'k : comparison> =
@@ -60,10 +98,10 @@ module internal Vnode =
             | Clash clashMap -> yield! Map.toSeq clashMap }
 
     /// OPTIMIZATION: Requires an empty array to use the source of new array clones in order to avoid Array.create.
-    let rec add (hkv : Hkv<'k, 'v>) (earr : Vnode<'k, 'v> array) (mdep : int) (dep : int) (node : Vnode<'k, 'v>) : Vnode<'k, 'v> =
+    let rec add (hkv : Hkv<'k, 'v>) (earr : Vnode<'k, 'v> array) (dep : int) (node : Vnode<'k, 'v>) : Vnode<'k, 'v> =
 
         // lower than max depth, non-clashing
-        if dep < mdep then
+        if dep < 8 then
 
             // handle non-clash cases
             match node with
@@ -90,8 +128,8 @@ module internal Vnode =
                 // if add entry with same idx; add both in new node
                 else
                     let dep' = dep + 1
-                    let node' = add hkv earr mdep dep' Nil
-                    let node' = add hkv' earr mdep dep' node'
+                    let node' = add hkv earr dep' Nil
+                    let node' = add hkv' earr dep' node'
                     let arr = cloneArray earr
                     arr.[idx] <- node'
                     Multiple arr
@@ -102,7 +140,7 @@ module internal Vnode =
                 let idx = hashToIndex hkv.H dep
                 let entry = arr.[idx]
                 let arr = cloneArray arr
-                arr.[idx] <- add hkv earr mdep (dep + 1) entry
+                arr.[idx] <- add hkv earr (dep + 1) entry
                 Multiple arr
 
             | Clash _ ->
@@ -148,14 +186,13 @@ module internal Vnode =
     let empty =
         Nil
 
-/// A persistent hash map with depth variations.
+/// A highly-optimized persistent hash map.
 /// TODO: document.
-/// TODO: implement fold, map, and filter.
-type [<NoEquality; NoComparison>] Vmap<'k, 'v when 'k : comparison> =
+/// TODO: implement filter.
+type [<NoEquality; NoComparison; TypeConverter (typeof<VmapConverter>)>] Vmap<'k, 'v when 'k : comparison> =
     private
         { Node : Vnode<'k, 'v>
-          EmptyArray : Vnode<'k, 'v> array
-          MaxDepth : int }
+          EmptyArray : Vnode<'k, 'v> array }
 
     interface IEnumerable<'k * 'v> with
         member this.GetEnumerator () = (Vnode.toSeq this.Node).GetEnumerator ()
@@ -163,20 +200,23 @@ type [<NoEquality; NoComparison>] Vmap<'k, 'v when 'k : comparison> =
     interface IEnumerable with
         member this.GetEnumerator () = (Vnode.toSeq this.Node).GetEnumerator () :> IEnumerator
 
+    override this.ToString () =
+        let pairList = this :> _ seq |> List.ofSeq
+        acstring pairList
+
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Vmap =
 
     let isEmpty map =
         Vnode.isEmpty map.Node
 
-    let makeEmpty mdep =
-        if mdep > 7 then failwith "Vmap max depth should not be greater than 7."
-        elif mdep < 0 then failwith "Vmap max depth should not be less than 0."
-        else { Node = Vnode.empty; EmptyArray = Array.create 32 Vnode.empty; MaxDepth = mdep }
+    let make () =
+        { Node = Vnode.empty
+          EmptyArray = Array.create 32 Vnode.empty }
 
     let add (k : 'k) (v : 'v) map =
         let hkv = Hkv (k.GetHashCode (), k, v)
-        let node = Vnode.add hkv map.EmptyArray map.MaxDepth 0 map.Node
+        let node = Vnode.add hkv map.EmptyArray 0 map.Node
         { map with Node = node }
 
     let addMany entries map =
@@ -211,7 +251,7 @@ module Vmap =
     let map mapper (map : Vmap<'k, 'v>) =
         fold
             (fun state k v -> add k (mapper v) state)
-            (makeEmpty map.MaxDepth)
+            (make ())
             map
 
     /// Convert a Vmap to a sequence of pairs of keys and values.
@@ -219,3 +259,10 @@ module Vmap =
     /// Don't use it unless you need its laziness or if performance won't be affected significantly.
     let toSeq (map : Vmap<'k, 'v>) =
         map :> IEnumerable<'k * 'v>
+
+    /// Convert a sequence of keys and values to a Vmap.
+    let ofSeq kvps =
+        Seq.fold
+            (fun map (k, v) -> add k v map)
+            (make ())
+            kvps

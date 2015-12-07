@@ -537,7 +537,7 @@ module World =
                         let groupDirectory = Vmap.add groupName (groupAddress, entityDirectory) groupDirectory
                         Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
                     | None ->
-                        let entityDirectory = Vmap.makeEmpty Constants.Engine.EntityMapDepth
+                        let entityDirectory = Vmap.make ()
                         let groupDirectory = Vmap.add groupName (group.GroupAddress, entityDirectory) groupDirectory
                         Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
                 | None -> failwith ^ "Cannot add group '" + acstring group.GroupAddress + "' to non-existent screen."
@@ -611,7 +611,7 @@ module World =
                     // NOTE: this is logically a redundant operation...
                     Vmap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
                 | None ->
-                    let groupDirectory = Vmap.makeEmpty Constants.Engine.GroupMapDepth
+                    let groupDirectory = Vmap.make ()
                     Vmap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
             | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
         let screenStates = Vmap.add screen.ScreenAddress screenState world.ScreenStates
