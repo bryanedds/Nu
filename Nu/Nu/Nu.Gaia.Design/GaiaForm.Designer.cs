@@ -487,6 +487,7 @@
             this.propertyValueTextBox.Size = new System.Drawing.Size(770, 220);
             this.propertyValueTextBox.TabIndex = 0;
             this.propertyValueTextBox.Text = "";
+            this.propertyValueTextBox.WordWrap = false;
             // 
             // splitContainer3
             // 
