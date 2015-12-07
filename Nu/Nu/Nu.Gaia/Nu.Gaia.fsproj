@@ -82,9 +82,6 @@
       <HintPath>..\..\..\Prime\FSharpx.Core\FSharpx.Core.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
-    <Reference Include="PropertyGridEx">
-      <HintPath>..\..\PropertyGridEx\PropertyGridEx.dll</HintPath>
-    </Reference>
     <Reference Include="SDL2#">
       <HintPath>..\..\SDL2#\Release\SDL2#.dll</HintPath>
     </Reference>

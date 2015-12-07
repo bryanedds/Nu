@@ -17,7 +17,6 @@ open System.ComponentModel
 open System.Xml
 open System.Xml.Serialization
 open Microsoft.FSharp.Reflection
-open PropertyGridEx
 open Prime
 open Nu
 
@@ -125,9 +124,9 @@ module Gaia =
                 else form.treeView.SelectedNode <- null
         | _ -> ()
 
-    let showEffectForm entity (sender : CustomProperty) (form : GaiaForm) =
+    let showEffectForm entity (form : GaiaForm) =
         use effectForm = new EffectForm ()
-        effectForm.effectText.Text <- string sender.Value
+        effectForm.effectText.Text <- String.Empty // TODO: set
         effectForm.StartPosition <- FormStartPosition.CenterParent
         effectForm.applyButton.Click.Add (fun _ ->
             ignore ^ WorldChangers.Add (fun world ->
@@ -148,12 +147,6 @@ module Gaia =
         match form.propertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             entityTds.RefWorld := world // must be set for property grid
-            for item in enumerable<CustomProperty> form.propertyGrid.Item do
-                if item.Type = typeof<Effect> then
-                    item.OnClick <- (fun sender args ->
-                        let entity = entityTds.DescribedEntity
-                        let sender = sender :?> CustomProperty
-                        showEffectForm entity sender form)
             if World.containsEntity entityTds.DescribedEntity world
             then form.propertyGrid.Refresh ()
             else form.propertyGrid.SelectedObject <- null
@@ -476,8 +469,7 @@ module Gaia =
 
     let private handleFormQuickSize (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
-            let optEntityTds = form.propertyGrid.SelectedObject
-            match optEntityTds with
+            match form.propertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
                 let world = pushPastWorld world world
