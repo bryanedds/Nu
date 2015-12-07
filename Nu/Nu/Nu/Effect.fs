@@ -151,5 +151,5 @@ module Effect =
         { EffectName = "Empty"
           Playback = Once
           OptLifetime = None
-          Definitions = Vmap.makeEmpty Constants.Engine.EffectDefinitionMapDepth
+          Definitions = Vmap.make ()
           Content = Composite [] }

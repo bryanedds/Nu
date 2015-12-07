@@ -184,7 +184,9 @@ module Gaia =
                 let world = World.updateUserState (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
                 (Cascade, world)
             else (Cascade, world)
-        | _ -> failwith "Unexpected match failure in Nu.Gaia.Program.handleNuEntityRemoving."
+        | _ ->
+            trace "Unexpected match failure in Nu.Gaia.Program.handleNuEntityRemoving (probably a bug in Gaia or Nu)."
+            (Cascade, world)
 
     let private handleNuMouseRightDown (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         let handled = if World.isTicking world then Cascade else Resolve
@@ -280,6 +282,58 @@ module Gaia =
     let private handleFormCreateDepthMinusClick (form : GaiaForm) (_ : EventArgs) =
         let depth = snd ^ Single.TryParse form.createDepthTextBox.Text
         form.createDepthTextBox.Text <- acstring ^ depth - 1.0f
+
+    let private refreshPropertyEditor (form : GaiaForm) =
+        match form.propertyGrid.SelectedGridItem with
+        | null ->
+            form.propertyEditor.Enabled <- false
+            form.propertyNameLabel.Text <- String.Empty
+            form.propertyDescriptionTextBox.Text <- String.Empty
+            form.propertyValueTextBox.Text <- String.Empty
+        | selectedGridItem ->
+            match selectedGridItem.GridItemType with
+            | GridItemType.Property ->
+                let typeConverter = AlgebraicConverter selectedGridItem.PropertyDescriptor.PropertyType
+                form.propertyEditor.Enabled <- true
+                form.propertyNameLabel.Text <- acstring selectedGridItem.Label
+                form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
+                form.propertyValueTextBox.Text <- typeConverter.ConvertToString selectedGridItem.Value
+            | _ ->
+                form.propertyEditor.Enabled <- false
+                form.propertyNameLabel.Text <- String.Empty
+                form.propertyDescriptionTextBox.Text <- String.Empty
+                form.propertyValueTextBox.Text <- String.Empty
+
+    let private applyPropertyEditor (form : GaiaForm) =
+        match form.propertyGrid.SelectedObject with
+        | null -> ()
+        | :? EntityTypeDescriptorSource as entityTds ->
+            match form.propertyGrid.SelectedGridItem with
+            | null -> trace "Invalid apply property operation (likely a code issue in Gaia)."
+            | selectedGridItem ->
+                match selectedGridItem.GridItemType with
+                | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
+                    let propertyDescriptor = selectedGridItem.PropertyDescriptor :?> EntityPropertyDescriptor
+                    let typeConverter = AlgebraicConverter (selectedGridItem.PropertyDescriptor.PropertyType)
+                    try let propertyValue = typeConverter.ConvertFromString form.propertyValueTextBox.Text
+                        propertyDescriptor.SetValue (entityTds, propertyValue)
+                    with exn ->
+                        trace ^ "Invalid apply property operation due to: " + acstring exn
+                        form.propertyValueTextBox.Text <- typeConverter.ConvertToString selectedGridItem.Value
+                | _ -> trace "Invalid apply property operation (likely a code issue in Gaia)."
+        | _ -> trace "Invalid apply property operation (likely a code issue in Gaia)."
+
+    let private handleFormPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
+        refreshPropertyEditor form
+
+    let private handleFormPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
+        refreshPropertyEditor form
+
+    let private handleFormPropertyRefreshClick (form : GaiaForm) (_ : EventArgs) =
+        refreshPropertyEditor form
+
+    let private handleFormPropertyApplyClick (form : GaiaForm) (_ : EventArgs) =
+        applyPropertyEditor form
 
     let private handleFormTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
@@ -450,8 +504,7 @@ module Gaia =
 
     let private handleFormQuickSize (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
-            let optEntityTds = form.propertyGrid.SelectedObject
-            match optEntityTds with
+            match form.propertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
                 let world = pushPastWorld world world
@@ -651,6 +704,10 @@ module Gaia =
         form.exitToolStripMenuItem.Click.Add (handleFormExit form)
         form.createDepthPlusButton.Click.Add (handleFormCreateDepthPlusClick form)
         form.createDepthMinusButton.Click.Add (handleFormCreateDepthMinusClick form)
+        form.propertyGrid.SelectedGridItemChanged.Add (handleFormPropertyGridSelectedGridItemChanged form)
+        form.propertyGrid.SelectedObjectsChanged.Add (handleFormPropertyGridSelectedObjectsChanged form)
+        form.propertyRefreshLabel.Click.Add (handleFormPropertyRefreshClick form)
+        form.propertyApplyLabel.Click.Add (handleFormPropertyApplyClick form)
         form.treeView.AfterSelect.Add (handleFormTreeViewNodeSelect form)
         form.createEntityButton.Click.Add (handleFormCreate false form)
         form.createToolStripMenuItem.Click.Add (handleFormCreate false form)

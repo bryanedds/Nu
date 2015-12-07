@@ -577,8 +577,7 @@ module Physics =
         match expr.Trim () with
         | "" -> defaultShape
         | _ ->
-            let converter = AlgebraicConverter typeof<BodyShape>
-            let bodyShape = converter.ConvertFromString expr :?> BodyShape
+            let bodyShape = acvalue<BodyShape> expr
             match bodyShape with
             | BodyBox bodyBox -> BodyBox { Extent = Vector2.Multiply (extent, bodyBox.Extent); Center = Vector2.Multiply (extent, bodyBox.Center) }
             | BodyCircle bodyCircle -> BodyCircle { Radius = extent.X * bodyCircle.Radius; Center = extent.X * bodyCircle.Center }
