@@ -14,6 +14,16 @@ open Prime
 type VmapConverter (targetType : Type) =
     inherit TypeConverter ()
 
+    let convertFromPairList (pairList : obj list) =
+        let gargs = targetType.GetGenericArguments ()
+        match gargs with
+        | [|fstType; sndType|] ->
+            let pairType = typedefof<Tuple<_, _>>.MakeGenericType [|fstType; sndType|]
+            let ofSeq = (((Assembly.GetExecutingAssembly ()).GetType "Prime.VmapModule").GetMethod ("ofSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|fstType; sndType|]
+            let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|pairType|]
+            ofSeq.Invoke (null, [|cast.Invoke (null, [|pairList|])|])
+        | _ -> failwith "Unexpected match failure in Nu.VmapConverter.ConvertFrom."
+
     override this.CanConvertTo (_, destType) =
         destType = typeof<string> ||
         destType = targetType
@@ -31,19 +41,14 @@ type VmapConverter (targetType : Type) =
 
     override this.ConvertFrom (_, _, source) =
         match source with
-        | :? string as vmapStr ->
-            let gargs = targetType.GetGenericArguments ()
-            match gargs with
-            | [|fstType; sndType|] ->
-                let pairList = acvalue<obj list> vmapStr
-                let pairType = typedefof<Tuple<_, _>>.MakeGenericType [|fstType; sndType|]
-                let ofSeq = (((Assembly.GetExecutingAssembly ()).GetType "Prime.VmapModule").GetMethod ("ofSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|fstType; sndType|]
-                let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|pairType|]
-                ofSeq.Invoke (null, [|cast.Invoke (null, [|pairList|])|])
-            | _ -> failwith "Unexpected match failure in Nu.VmapConverter.ConvertFrom."
+        | :? string as mapStr ->
+            let pairList = acvalue<obj list> mapStr
+            convertFromPairList pairList
+        | :? (obj list) as pairList ->
+            convertFromPairList pairList
         | _ ->
             if targetType.IsInstanceOfType source then source
-            else failwith "Invalid AddressConverter conversion from source."
+            else failwith "Invalid VmapConverter conversion from source."
 
 /// A hash-key-value triple, implemented with a struct for efficiency.
 type internal Hkv<'k, 'v when 'k : comparison> =
