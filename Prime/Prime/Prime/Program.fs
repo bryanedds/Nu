@@ -16,7 +16,7 @@ module Program =
     for _ in 0 .. 31 do
         GC.Collect ()
         let watch = Stopwatch.StartNew ()
-        let map = Array.fold (fun map (k, v) -> Vmap.add k v map) (Vmap.makeEmpty 5) entries
+        let map = Array.fold (fun map (k, v) -> Vmap.add k v map) (Vmap.make ()) entries
         watch.Stop ()
         Array.iter (fun (k, _) -> ignore ^ Vmap.find k map) entries
         printfn "%A" watch.Elapsed

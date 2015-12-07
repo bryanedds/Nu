@@ -17,6 +17,7 @@ open System.ComponentModel
 open System.Xml
 open System.Xml.Serialization
 open Microsoft.FSharp.Reflection
+open PropertyGridEx
 open Prime
 open Nu
 
@@ -124,10 +125,35 @@ module Gaia =
                 else form.treeView.SelectedNode <- null
         | _ -> ()
 
+    let showEffectForm entity (sender : CustomProperty) (form : GaiaForm) =
+        use effectForm = new EffectForm ()
+        effectForm.effectText.Text <- string sender.Value
+        effectForm.StartPosition <- FormStartPosition.CenterParent
+        effectForm.applyButton.Click.Add (fun _ ->
+            ignore ^ WorldChangers.Add (fun world ->
+                if World.containsEntity entity world
+                then entity.SetEffect (acvalue<Effect> effectForm.effectText.Text) world
+                else world))
+        effectForm.okButton.Click.Add (fun _ ->
+            ignore ^ WorldChangers.Add (fun world ->
+                if World.containsEntity entity world
+                then entity.SetEffect (acvalue<Effect> effectForm.effectText.Text) world
+                else world)
+            effectForm.Close ())
+        effectForm.cancelButton.Click.Add (fun _ -> effectForm.Close ())
+        effectForm.ShowDialog form |> ignore
+        effectForm.effectText.Text :> obj
+
     let private refreshPropertyGrid (form : GaiaForm) world =
         match form.propertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             entityTds.RefWorld := world // must be set for property grid
+            for item in enumerable<CustomProperty> form.propertyGrid.Item do
+                if item.Type = typeof<Effect> then
+                    item.OnClick <- (fun sender args ->
+                        let entity = entityTds.DescribedEntity
+                        let sender = sender :?> CustomProperty
+                        showEffectForm entity sender form)
             if World.containsEntity entityTds.DescribedEntity world
             then form.propertyGrid.Refresh ()
             else form.propertyGrid.SelectedObject <- null

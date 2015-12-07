@@ -46,5 +46,5 @@ module EffectorTests =
                     [...]]]"
         ignore alucard
 
-        let effect = (AlgebraicConverter typeof<Effect>).ConvertFromString effectStr :?> Effect
+        let effect = acvalue<Effect> effectStr
         Assert.Equal<string> ("Ifrit", effect.EffectName)

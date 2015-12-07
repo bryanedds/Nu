@@ -58,7 +58,7 @@
             this.pasteContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
-            this.propertyGrid = new System.Windows.Forms.PropertyGrid();
+            this.propertyGrid = new PropertyGridEx.PropertyGridEx();
             this.treeView = new System.Windows.Forms.TreeView();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
@@ -764,7 +764,7 @@
         public System.Windows.Forms.ToolStripSeparator toolStripSeparator6;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
         public System.Windows.Forms.ToolStripButton quickSizeToolStripButton;
-        public System.Windows.Forms.PropertyGrid propertyGrid;
+        public PropertyGridEx.PropertyGridEx propertyGrid;
         public System.Windows.Forms.ToolStripButton editWhileInteractiveCheckBox;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
         public System.Windows.Forms.ToolStripButton reloadOverlaysButton;
