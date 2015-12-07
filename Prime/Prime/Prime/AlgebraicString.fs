@@ -12,3 +12,8 @@ module AlgebraicStringModule =
     let acstring (source : obj) =
         let converter = AlgebraicConverter (source.GetType ())
         converter.ConvertToString source
+
+    /// Uses an algebraic converter to a string to a value.
+    let acvalue<'a> (str : string) =
+        let converter = AlgebraicConverter typeof<'a>
+        converter.ConvertFromString str :?> 'a

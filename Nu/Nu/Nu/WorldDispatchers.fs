@@ -88,7 +88,7 @@ module EffectFacetModule =
         member this.GetEffectHistoryMax world : int = (this.GetXtension world)?EffectHistoryMax
         member this.SetEffectHistoryMax (value : int) world = this.UpdateXtension (fun xtension -> xtension?EffectHistoryMax <- value) world
         member this.GetEffectHistoryNp world : Slice list = (this.GetXtension world)?EffectHistoryNp
-        member private this.SetEffectHistoryNp (value : Slice list) world = this.UpdateXtension (fun xtension -> xtension?EffectSliceNp <- value) world
+        member private this.SetEffectHistoryNp (value : Slice list) world = this.UpdateXtension (fun xtension -> xtension?EffectHistoryNp <- value) world
         member this.GetEffectPhysicsShapesNp world : unit = (this.GetXtension world)?EffectPhysicsShapesNp // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
         member private this.SetEffectPhysicsShapesNp (value : unit) world = this.UpdateXtension (fun xtension -> xtension?EffectPhysicsShapesNp <- value) world
 
@@ -96,7 +96,7 @@ module EffectFacetModule =
         inherit Facet ()
 
         static member FieldDefinitions =
-            [define? EffectDefinitions (Vmap.makeEmpty Constants.Engine.EffectDefinitionMapDepth : Definitions)
+            [define? EffectDefinitions (Vmap.make () : Definitions)
              define? Effect Effect.empty
              define? EffectOffset (Vector2 0.5f)
              define? EffectTimeOffset 0L // TODO: also implement similar time offset for AnimatedSpriteFacet

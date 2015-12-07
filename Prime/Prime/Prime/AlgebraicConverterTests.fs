@@ -21,51 +21,51 @@ type [<StructuralEquality; NoComparison>] ComplexUnion =
 module AlgebraicConverterTests =
     
     let [<Fact>] canConvertStringToInt () =
-        let value = (AlgebraicConverter typeof<int>).ConvertFromString "0" :?> int
+        let value = acvalue<int> "0"
         Assert.Equal (0, value)
 
     let [<Fact>] canConvertStringToNone () =
-        let value = (AlgebraicConverter typeof<string option>).ConvertFromString "None" :?> string option
+        let value = acvalue<string option> "None"
         Assert.Equal<string option> (None, value)
 
     let [<Fact>] canConvertStringToSomeString () =
-        let value = (AlgebraicConverter typeof<string option>).ConvertFromString "[Some string]" :?> string option
+        let value = acvalue<string option> "[Some string]"
         Assert.Equal<string option> (Some "string", value)
 
     let [<Fact>] canConvertStringToRightString () =
-        let value = (AlgebraicConverter typeof<Either<unit, string>>).ConvertFromString "[Right string]" :?> Either<unit, string>
+        let value = acvalue<Either<unit, string>> "[Right string]"
         Assert.Equal<Either<unit, string>> (Right "string", value)
 
     let [<Fact>] canConvertStringToIntList () =
-        let value = (AlgebraicConverter typeof<int list>).ConvertFromString "[0 1]" :?> int list
+        let value = acvalue<int list> "[0 1]"
         Assert.Equal<int list> ([0; 1], value)
 
     let [<Fact>] canConvertStringToTuple () =
-        let value = (AlgebraicConverter typeof<int * int>).ConvertFromString "[0 1]" :?> int * int
+        let value = acvalue<int * int> "[0 1]"
         Assert.Equal ((0, 1), value)
 
     let [<Fact>] canConvertStringToTupleTuple () =
-        let value = (AlgebraicConverter typeof<(int * int) * (int * int)>).ConvertFromString "[[0 1] | [2 3]]" :?> (int * int) * (int * int)
+        let value = acvalue<(int * int) * (int * int)> "[[0 1] | [2 3]]"
         Assert.Equal (((0, 1), (2, 3)), value)
 
     let [<Fact>] canConvertStringToRecord () =
-        let value = (AlgebraicConverter typeof<IntIntRecord>).ConvertFromString "[0 1]" :?> IntIntRecord
+        let value = acvalue<IntIntRecord> "[0 1]"
         Assert.Equal ({ Int = 0; Int2 = 1 }, value)
 
     let [<Fact>] canConvertStringToSimpleUnion () =
-        let value = (AlgebraicConverter typeof<SimpleUnion>).ConvertFromString "SimpleUnion" :?> SimpleUnion
+        let value = acvalue<SimpleUnion> "SimpleUnion"
         Assert.Equal (SimpleUnion, value)
 
     let [<Fact>] canConvertStringToComplexUnion () =
-        let value = (AlgebraicConverter typeof<ComplexUnion>).ConvertFromString "[ComplexUnion 0]" :?> ComplexUnion
+        let value = acvalue<ComplexUnion> "[ComplexUnion 0]"
         Assert.Equal (ComplexUnion 0, value)
 
     let [<Fact>] canConvertStringToComplexUnionTuple () =
-        let value = (AlgebraicConverter typeof<ComplexUnion * ComplexUnion>).ConvertFromString "[[ComplexUnion 0] [ComplexUnion2 1 2]]" :?> ComplexUnion * ComplexUnion
+        let value = acvalue<ComplexUnion * ComplexUnion> "[[ComplexUnion 0] [ComplexUnion2 1 2]]"
         // each tuple element must be tested individually as Assert.Equal doesn't seem to support tuple unions...
         Assert.Equal (ComplexUnion 0, fst value)
         Assert.Equal (ComplexUnion2 (1, 2), snd value)
 
     let [<Fact>] canConvertStringToMapIntInt () =
-        let value = (AlgebraicConverter typeof<Map<int, int>>).ConvertFromString "[[0 1]]" :?> Map<int, int>
+        let value = acvalue<Map<int, int>> "[[0 1]]"
         ignore value // TODO: assert for values

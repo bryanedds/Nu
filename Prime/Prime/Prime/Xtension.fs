@@ -95,13 +95,13 @@ module Xtension =
     let [<Literal>] private FieldMapDepth = 3
 
     /// An Xtension that can default and isn't sealed.
-    let empty = { XFields = Vmap.makeEmpty FieldMapDepth; CanDefault = true; Sealed = false }
+    let empty = { XFields = Vmap.make (); CanDefault = true; Sealed = false }
 
     /// An Xtension that cannot default and is sealed.
-    let safe = { XFields = Vmap.makeEmpty FieldMapDepth; CanDefault = false; Sealed = true }
+    let safe = { XFields = Vmap.make (); CanDefault = false; Sealed = true }
 
     /// An Xtension that cannot default and isn't sealed.
-    let mixed = { XFields = Vmap.makeEmpty FieldMapDepth; CanDefault = false; Sealed = false }
+    let mixed = { XFields = Vmap.make (); CanDefault = false; Sealed = false }
 
     /// Make an extension with custom safety.
-    let make canDefault isSealed = { XFields = Vmap.makeEmpty FieldMapDepth; CanDefault = canDefault; Sealed = isSealed }
+    let make canDefault isSealed = { XFields = Vmap.make (); CanDefault = canDefault; Sealed = isSealed }

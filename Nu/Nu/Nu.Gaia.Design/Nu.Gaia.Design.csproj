@@ -37,6 +37,9 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="PropertyGridEx">
+      <HintPath>..\..\PropertyGridEx\PropertyGridEx.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -49,6 +52,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EffectForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="EffectForm.Designer.cs">
+      <DependentUpon>EffectForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="GaiaForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -66,6 +75,9 @@
     <Compile Include="SelectablePanel.cs">
       <SubType>Component</SubType>
     </Compile>
+    <EmbeddedResource Include="EffectForm.resx">
+      <DependentUpon>EffectForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="GaiaForm.resx">
       <DependentUpon>GaiaForm.cs</DependentUpon>
       <SubType>Designer</SubType>
