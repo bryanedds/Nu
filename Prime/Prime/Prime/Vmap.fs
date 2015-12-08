@@ -10,46 +10,6 @@ open System.Reflection
 open Microsoft.FSharp.Reflection
 open Prime
 
-/// Converts Vmap types.
-type VmapConverter (targetType : Type) =
-    inherit TypeConverter ()
-
-    let convertFromPairList (pairList : obj list) =
-        let gargs = targetType.GetGenericArguments ()
-        match gargs with
-        | [|fstType; sndType|] ->
-            let pairType = typedefof<Tuple<_, _>>.MakeGenericType [|fstType; sndType|]
-            let ofSeq = (((Assembly.GetExecutingAssembly ()).GetType "Prime.VmapModule").GetMethod ("ofSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|fstType; sndType|]
-            let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|pairType|]
-            ofSeq.Invoke (null, [|cast.Invoke (null, [|pairList|])|])
-        | _ -> failwith "Unexpected match failure in Nu.VmapConverter.ConvertFrom."
-
-    override this.CanConvertTo (_, destType) =
-        destType = typeof<string> ||
-        destType = targetType
-
-    override this.ConvertTo (_, _, source, destType) =
-        if destType = typeof<string> then
-            let toStringMethod = targetType.GetMethod "ToString"
-            toStringMethod.Invoke (source, null)
-        elif destType = targetType then source
-        else failwith "Invalid VmapConverter conversion to source."
-
-    override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<string> ||
-        sourceType = targetType
-
-    override this.ConvertFrom (_, _, source) =
-        match source with
-        | :? string as mapStr ->
-            let pairList = acvalue<obj list> mapStr
-            convertFromPairList pairList
-        | :? (obj list) as pairList ->
-            convertFromPairList pairList
-        | _ ->
-            if targetType.IsInstanceOfType source then source
-            else failwith "Invalid VmapConverter conversion from source."
-
 /// A hash-key-value triple, implemented with a struct for efficiency.
 type internal Hkv<'k, 'v when 'k : comparison> =
     struct
@@ -194,7 +154,7 @@ module internal Vnode =
 /// A highly-optimized persistent hash map.
 /// TODO: document.
 /// TODO: implement filter.
-type [<NoEquality; NoComparison; TypeConverter (typeof<VmapConverter>)>] Vmap<'k, 'v when 'k : comparison> =
+type [<NoEquality; NoComparison>] Vmap<'k, 'v when 'k : comparison> =
     private
         { Node : Vnode<'k, 'v>
           EmptyArray : Vnode<'k, 'v> array }
@@ -205,17 +165,13 @@ type [<NoEquality; NoComparison; TypeConverter (typeof<VmapConverter>)>] Vmap<'k
     interface IEnumerable with
         member this.GetEnumerator () = (Vnode.toSeq this.Node).GetEnumerator () :> IEnumerator
 
-    override this.ToString () =
-        let pairList = this :> _ seq |> List.ofSeq
-        acstring pairList
-
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Vmap =
 
     let isEmpty map =
         Vnode.isEmpty map.Node
 
-    let make () =
+    let makeEmpty () =
         { Node = Vnode.empty
           EmptyArray = Array.create 32 Vnode.empty }
 
@@ -256,7 +212,7 @@ module Vmap =
     let map mapper (map : Vmap<'k, 'v>) =
         fold
             (fun state k v -> add k (mapper v) state)
-            (make ())
+            (makeEmpty ())
             map
 
     /// Convert a Vmap to a sequence of pairs of keys and values.
@@ -269,5 +225,5 @@ module Vmap =
     let ofSeq kvps =
         Seq.fold
             (fun map (k, v) -> add k v map)
-            (make ())
+            (makeEmpty ())
             kvps
