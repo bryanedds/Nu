@@ -297,7 +297,16 @@ module Gaia =
                 form.propertyEditor.Enabled <- true
                 form.propertyNameLabel.Text <- acstring selectedGridItem.Label
                 form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
-                form.propertyValueTextBox.Text <- typeConverter.ConvertToString selectedGridItem.Value
+                let valueStr = typeConverter.ConvertToString selectedGridItem.Value
+                let tabLocations = AlgebraicReader.stringToTabLocations valueStr
+                let builder = Text.StringBuilder (valueStr)
+                List.iteri
+                    (fun i tabLocation ->
+                        if tabLocation.OpenIndex <> 0L then
+                            ignore ^ builder.Insert (int tabLocation.OpenIndex + i * 2, "\n" + String.replicate (inc i) "  ")
+                            ignore ^ builder.Insert (int tabLocation.CloseIndex + (inc ^ inc i) * 2, "\n" + String.replicate i "  "))
+                    tabLocations
+                form.propertyValueTextBox.Text <- builder.ToString ()
             | _ ->
                 form.propertyEditor.Enabled <- false
                 form.propertyNameLabel.Text <- String.Empty

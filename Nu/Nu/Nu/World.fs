@@ -650,7 +650,7 @@ module WorldModule =
                         [(Constants.Engine.PhysicsEngineSubsystemName, PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockPhysicsEngine = () } :> Subsystem)
                          (Constants.Engine.RendererSubsystemName, RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockRenderer = () } :> Subsystem)
                          (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockAudioPlayer = () } :> Subsystem)]
-                        (Vmap.make ())
+                        (Vmap.makeEmpty ())
                 Subsystems.make subsystemMap
 
             // make the world's components
@@ -686,10 +686,10 @@ module WorldModule =
                   Callbacks = callbacks
                   State = worldState
                   GameState = gameState
-                  ScreenStates = Vmap.make ()
-                  GroupStates = Vmap.make ()
-                  EntityStates = Vmap.make ()
-                  ScreenDirectory = Vmap.make () }
+                  ScreenStates = Vmap.makeEmpty ()
+                  GroupStates = Vmap.makeEmpty ()
+                  EntityStates = Vmap.makeEmpty ()
+                  ScreenDirectory = Vmap.makeEmpty () }
 
             // initialize OptEntityCache after the fact due to back reference
             let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}
@@ -724,7 +724,7 @@ module WorldModule =
                         then AudioPlayer.make () :> IAudioPlayer
                         else MockAudioPlayer.make () :> IAudioPlayer
                     let audioPlayerSubsystem = AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder audioPlayer :> Subsystem
-                    let defaultSubsystemMap = Vmap.make ()
+                    let defaultSubsystemMap = Vmap.makeEmpty ()
                     let defaultSubsystemMap =
                         Vmap.addMany
                             [(Constants.Engine.PhysicsEngineSubsystemName, physicsEngineSubsystem)
@@ -780,10 +780,10 @@ module WorldModule =
                       Callbacks = callbacks
                       State = worldState
                       GameState = World.makeGameState activeGameDispatcher
-                      ScreenStates = Vmap.make ()
-                      GroupStates = Vmap.make ()
-                      EntityStates = Vmap.make ()
-                      ScreenDirectory = Vmap.make () }
+                      ScreenStates = Vmap.makeEmpty ()
+                      GroupStates = Vmap.makeEmpty ()
+                      EntityStates = Vmap.makeEmpty ()
+                      ScreenDirectory = Vmap.makeEmpty () }
 
                 // initialize OptEntityCache after the fact due to back reference
                 let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}

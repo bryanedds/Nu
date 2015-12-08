@@ -47,9 +47,7 @@ module EffectorTests =
                              [Position Sum Cos
                                 [[[0 0] 10]
                                  [[10 0] 0]]]]
-                            [StaticSprite [Resource Gameplay Spark]]]
-                         [Emit [Rate 0.5]
-                            ]]]]]]]
+                            [StaticSprite [Resource Gameplay Spark]]]]]]]]]
                 [ExpandContent IfritSprite []]]]"
 
         let alucard =

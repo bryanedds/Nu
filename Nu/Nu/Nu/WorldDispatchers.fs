@@ -96,8 +96,10 @@ module EffectFacetModule =
         inherit Facet ()
 
         static member FieldDefinitions =
-            [define? EffectDefinitions (Vmap.make () : Definitions)
+            [define? EffectDefinitions (Vmap.makeEmpty () : Definitions)
              define? Effect Effect.empty
+             define? EffectTest Effect.empty
+             define? EffectTest2 (Vmap.makeEmpty () : Vmap<string, string>)
              define? EffectOffset (Vector2 0.5f)
              define? EffectTimeOffset 0L // TODO: also implement similar time offset for AnimatedSpriteFacet
              define? EffectHistoryMax 256
