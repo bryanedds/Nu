@@ -22,7 +22,8 @@ module EffectorTests =
                     [[ExpandAspect FlamePosition]
                      [Color Put Linear
                         [[[1 1 1 1] 10]
-                         [[0.8 0.25 0.25 0.75] 0]]]]]]]
+                         [[0.8 0.25 0.25 0.75] 0]]]]
+                    [Composite []]]]]
                  [IfritSprite [AsContent [] [AnimatedSprite [Resource Gameplay Esper] [4 4] 4 16 6
                     [[Visible Put
                         [[False 2]

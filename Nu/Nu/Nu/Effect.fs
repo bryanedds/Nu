@@ -135,7 +135,7 @@ type [<NoComparison>] EffectArtifact =
     | SoundArtifact of PlaySoundMessage
 
 type Definitions =
-    Vmap<string, Definition>
+    Map<string, Definition>
 
 type [<NoEquality; NoComparison>] Effect =
     { EffectName : string
@@ -151,5 +151,5 @@ module Effect =
         { EffectName = "Empty"
           Playback = Once
           OptLifetime = None
-          Definitions = Vmap.makeEmpty ()
+          Definitions = Map.empty
           Content = Composite [] }

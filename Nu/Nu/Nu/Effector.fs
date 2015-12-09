@@ -26,7 +26,7 @@ module Effector =
     let rec expandResource (env : Definitions) (resource : Resource) : Either<string, Resource> =
         match resource with
         | ExpandResource resourceName ->
-            match Vmap.tryFind resourceName env with
+            match Map.tryFind resourceName env with
             | Some resource ->
                 match resource with
                 | AsResource resource -> expandResource env resource
@@ -39,7 +39,7 @@ module Effector =
     let rec expandAspect (env : Definitions) (aspect : Aspect) : Either<string, Aspect> =
         match aspect with
         | ExpandAspect aspectName ->
-            match Vmap.tryFind aspectName env with
+            match Map.tryFind aspectName env with
             | Some aspect ->
                 match aspect with
                 | AsAspect aspect -> expandAspect env aspect
@@ -58,14 +58,14 @@ module Effector =
     let rec expandContent (env : Definitions) (content : Content) : Either<string, Content> =
         match content with
         | ExpandContent (contentName, arguments) ->
-            match Vmap.tryFind contentName env with
+            match Map.tryFind contentName env with
             | Some definition ->
                 match definition with
                 | AsContent (parameters, content) ->
                     let localDefinitions = List.map expandArgument arguments
                     match (try List.zip parameters localDefinitions |> Some with _ -> None) with
                     | Some localDefinitionEntries ->
-                        let env = Vmap.addMany localDefinitionEntries env
+                        let env = Map.addMany localDefinitionEntries env
                         expandContent env content
                     | None -> Left "Wrong number of arguments provided to ExpandContent."
                 | AsPlayback _ -> Left "Expected Content argument but received Playback."
@@ -365,7 +365,7 @@ module Effector =
             match effect.OptLifetime with
             | Some lifetime -> effector.EffectTime % lifetime
             | None -> effector.EffectTime
-        let env = Vmap.concat globalEnv effect.Definitions
+        let env = Map.concat globalEnv effect.Definitions
         match expandContent env effect.Content with
         | Right content ->
             let effector = { effector with EffectTime = localTime }
