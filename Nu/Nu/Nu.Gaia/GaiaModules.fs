@@ -302,28 +302,27 @@ module Gaia =
                 let mutable indexOffset = 0
                 match AlgebraicReader.stringToOptIndexLocation valueStr with
                 | Some indexLocation ->
-                    let rec f tabDepth optParentIndexLocation childIndex indexLocation =
+                    let rec f tabDepth tabParentIndexes childIndex indexLocation =
                         match indexLocation with
-                        | TabLocation (openIndex, _, indexLocations) ->
-                            if openIndex > 0L then
-                                match optParentIndexLocation with
-                                | None
-                                | Some (ContentLocation _) ->
+                        | TabLocation (openIndex, indexLocations) ->
+                            match openIndex with
+                            | 0L -> ()
+                            | _ ->
+                                match (tabParentIndexes, childIndex) with
+                                | ([], _) ->
                                     let whitespace = "\n" + String.replicate tabDepth " "
                                     ignore ^ builder.Insert (int openIndex + indexOffset, whitespace)
                                     indexOffset <- indexOffset + whitespace.Length
-                                    List.iteri (f (tabDepth + 2) (Some indexLocation)) indexLocations
-                                | Some (TabLocation _) when childIndex = 0 ->
-                                    List.iteri (f tabDepth (Some indexLocation)) indexLocations
-                                | Some (TabLocation _) ->
-                                    let whitespace = "\n" + String.replicate (tabDepth - 1) " "
+                                | (_, 0) ->
+                                    ()
+                                | (_, _) ->
+                                    let whitespace = "\n" + String.replicate tabDepth " "
                                     ignore ^ builder.Insert (int openIndex + indexOffset, whitespace)
                                     indexOffset <- indexOffset + whitespace.Length
-                                    List.iteri (f (tabDepth + 2) (Some indexLocation)) indexLocations
-                            else List.iteri (f tabDepth (Some indexLocation)) indexLocations
-                        | ContentLocation indexLocations ->
-                            List.iteri (f tabDepth (Some indexLocation)) indexLocations
-                    f 2 None 0 indexLocation
+                            List.iteri (f (tabDepth + 1) (openIndex :: tabParentIndexes)) indexLocations
+                        | ContentLocation (_, indexLocations) ->
+                            List.iteri (f (tabDepth + 1) []) indexLocations
+                    f 0 [] 0 indexLocation
                 | None -> ()
                 form.propertyValueTextBox.Text <- builder.ToString ()
             | _ ->
