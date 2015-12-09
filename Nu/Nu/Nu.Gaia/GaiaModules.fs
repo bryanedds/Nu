@@ -298,14 +298,33 @@ module Gaia =
                 form.propertyNameLabel.Text <- acstring selectedGridItem.Label
                 form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
                 let valueStr = typeConverter.ConvertToString selectedGridItem.Value
-                let tabLocations = AlgebraicReader.stringToTabLocations valueStr
-                let builder = Text.StringBuilder (valueStr)
-                List.iteri
-                    (fun i tabLocation ->
-                        if tabLocation.OpenIndex <> 0L then
-                            ignore ^ builder.Insert (int tabLocation.OpenIndex + i * 2, "\n" + String.replicate (inc i) "  ")
-                            ignore ^ builder.Insert (int tabLocation.CloseIndex + (inc ^ inc i) * 2, "\n" + String.replicate i "  "))
-                    tabLocations
+                let builder = Text.StringBuilder valueStr
+                let mutable indexOffset = 0
+                match AlgebraicReader.stringToOptIndexLocation valueStr with
+                | Some indexLocation ->
+                    let rec f tabDepth optParentIndexLocation childIndex indexLocation =
+                        match indexLocation with
+                        | TabLocation (openIndex, _, indexLocations) ->
+                            if openIndex > 0L then
+                                match optParentIndexLocation with
+                                | None
+                                | Some (ContentLocation _) ->
+                                    let whitespace = "\n" + String.replicate tabDepth " "
+                                    ignore ^ builder.Insert (int openIndex + indexOffset, whitespace)
+                                    indexOffset <- indexOffset + whitespace.Length
+                                    List.iteri (f (tabDepth + 2) (Some indexLocation)) indexLocations
+                                | Some (TabLocation _) when childIndex = 0 ->
+                                    List.iteri (f tabDepth (Some indexLocation)) indexLocations
+                                | Some (TabLocation _) ->
+                                    let whitespace = "\n" + String.replicate (tabDepth - 1) " "
+                                    ignore ^ builder.Insert (int openIndex + indexOffset, whitespace)
+                                    indexOffset <- indexOffset + whitespace.Length
+                                    List.iteri (f (tabDepth + 2) (Some indexLocation)) indexLocations
+                            else List.iteri (f tabDepth (Some indexLocation)) indexLocations
+                        | ContentLocation indexLocations ->
+                            List.iteri (f tabDepth (Some indexLocation)) indexLocations
+                    f 2 None 0 indexLocation
+                | None -> ()
                 form.propertyValueTextBox.Text <- builder.ToString ()
             | _ ->
                 form.propertyEditor.Enabled <- false
