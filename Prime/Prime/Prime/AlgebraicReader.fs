@@ -9,8 +9,8 @@ open FParsec
 open Prime
 
 type IndexLocation =
-    | TabLocation of int64 * int64 * IndexLocation list
-    | ContentLocation of IndexLocation list
+    | TabLocation of int64 * IndexLocation list
+    | ContentLocation of int64 * IndexLocation list
 
 [<RequireQualifiedAccess>]
 module AlgebraicReader =
@@ -67,17 +67,16 @@ module AlgebraicReader =
                 do! openComplexValueForm
                 do! skipWhitespace
                 let! indexLocations = many readIndexLocation
-                let! closePosition = getPosition
                 do! closeComplexValueForm
                 do! skipWhitespace
-                return TabLocation (openPosition.Index, closePosition.Index, indexLocations) }
+                return TabLocation (openPosition.Index, indexLocations) }
 
         let readContentLocation =
             parse {
-                let! _ = readSimpleValueChars
-                do! skipWhitespace
+                let! openPosition = getPosition
+                let! _ = many1 (readSimpleValueChars .>> skipWhitespace)
                 let! indexLocations = many readIndexLocation
-                return ContentLocation indexLocations }
+                return ContentLocation (openPosition.Index, indexLocations) }
 
         do refReadIndexLocation :=
             attempt readTabLocation <|>
