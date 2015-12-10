@@ -53,6 +53,7 @@ module Effector =
         | Size _
         | Rotation _
         | Depth _
+        | Offset _
         | Color _ -> Right aspect
 
     let rec expandContent (env : Definitions) (content : Content) : Either<string, Content> =
@@ -212,6 +213,12 @@ module Effector =
             let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Depth tweened applicator
             { slice with Depth = applied }
+        | Offset (applicator, algorithm, nodes) ->
+            let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
+            let progress = evalProgress nodeTime node.TweenLength effector
+            let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
+            let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
+            { slice with Offset = applied }
         | Color (applicator, algorithm, nodes) ->
             let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
             let progress = evalProgress nodeTime node.TweenLength effector
@@ -247,6 +254,7 @@ module Effector =
                                 { Position = slice.Position
                                   Size = slice.Size
                                   Rotation = slice.Rotation
+                                  Offset = slice.Offset
                                   OptInset = None
                                   Image = image
                                   ViewType = effector.ViewType
@@ -284,6 +292,7 @@ module Effector =
                                 { Position = slice.Position
                                   Size = slice.Size
                                   Rotation = slice.Rotation
+                                  Offset = slice.Offset
                                   OptInset = Some inset
                                   Image = image
                                   ViewType = effector.ViewType

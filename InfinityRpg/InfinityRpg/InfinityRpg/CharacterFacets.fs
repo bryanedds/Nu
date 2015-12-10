@@ -148,6 +148,7 @@ module CharacterAnimationFacetModule =
                                     { Position = entity.GetPosition world
                                       Size = entity.GetSize world
                                       Rotation = entity.GetRotation world
+                                      Offset = Vector2.Zero
                                       ViewType = entity.GetViewType world
                                       OptInset = getOptSpriteInset entity world
                                       Image = entity.GetCharacterAnimationSheet world
