@@ -98,7 +98,7 @@ module EffectFacetModule =
         static member FieldDefinitions =
             [define? EffectDefinitions (Map.empty : Definitions)
              define? Effect Effect.empty
-             define? EffectOffset (Vector2 0.5f)
+             define? EffectOffset Vector2.Zero
              define? EffectTimeOffset 0L // TODO: also implement similar time offset for AnimatedSpriteFacet
              define? EffectHistoryMax 256
              define? EffectHistoryNp ([] : Slice list)

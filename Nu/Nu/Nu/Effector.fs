@@ -84,15 +84,13 @@ module Effector =
     let rec private selectNodes2 localTime (nodes : INode list) =
         match nodes with
         | [] -> failwithumf ()
-        | head :: tail ->
+        | head :: [] -> (localTime, head, head)
+        | head :: next :: tail ->
             if localTime > head.NodeLength then
                 match tail with
-                | [] -> (localTime, head, head)
-                | _ :: _ -> selectNodes2 (localTime - head.NodeLength) tail
-            else
-                match tail with
-                | [] -> (localTime, head, head)
-                | next :: _ -> (localTime, head, next)
+                | _ :: _ -> selectNodes2 (localTime - head.NodeLength) (next :: tail)
+                | [] -> (head.NodeLength, head, next)
+            else (localTime, head, next)
 
     let private selectNodes<'n when 'n :> INode> localTime (nodes : 'n list) =
         nodes |>
