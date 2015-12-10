@@ -32,6 +32,7 @@ type [<StructuralEquality; NoComparison>] Slice =
       Size : Vector2
       Rotation : single
       Depth : single
+      Offset : Vector2
       Color : Vector4
       Visible : bool
       Enabled : bool }
@@ -102,6 +103,7 @@ type [<NoComparison>] Aspect =
     | Visible of LogicApplicator * LogicNode list
     | Enabled of LogicApplicator * LogicNode list
     | Position of TweenApplicator * Algorithm * Tween2Node list
+    | Offset of TweenApplicator * Algorithm * Tween2Node list
     | Size of TweenApplicator * Algorithm * Tween2Node list
     | Rotation of TweenApplicator * Algorithm * TweenNode list
     | Depth of TweenApplicator * Algorithm * TweenNode list
@@ -135,7 +137,7 @@ type [<NoComparison>] EffectArtifact =
     | SoundArtifact of PlaySoundMessage
 
 type Definitions =
-    Vmap<string, Definition>
+    Map<string, Definition>
 
 type [<NoEquality; NoComparison>] Effect =
     { EffectName : string
@@ -151,5 +153,5 @@ module Effect =
         { EffectName = "Empty"
           Playback = Once
           OptLifetime = None
-          Definitions = Vmap.make ()
+          Definitions = Map.empty
           Content = Composite [] }

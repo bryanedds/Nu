@@ -320,6 +320,10 @@ module World =
     let rec setTickRate tickRate world =
         addTasklet { ScheduledTime = getTickTime world; Operation = fun world -> setTickRateImmediately tickRate world } world
 
+    /// Reset the tick time to 0.
+    and resetTickTime world =
+        addTasklet { ScheduledTime = getTickTime world; Operation = fun world -> setState (WorldState.resetTickTime world.State) world } world
+
     /// Get the world's tick time.
     and getTickTime world =
         WorldState.getTickTime world.State
@@ -537,7 +541,7 @@ module World =
                         let groupDirectory = Vmap.add groupName (groupAddress, entityDirectory) groupDirectory
                         Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
                     | None ->
-                        let entityDirectory = Vmap.make ()
+                        let entityDirectory = Vmap.makeEmpty ()
                         let groupDirectory = Vmap.add groupName (group.GroupAddress, entityDirectory) groupDirectory
                         Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
                 | None -> failwith ^ "Cannot add group '" + acstring group.GroupAddress + "' to non-existent screen."
@@ -611,7 +615,7 @@ module World =
                     // NOTE: this is logically a redundant operation...
                     Vmap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
                 | None ->
-                    let groupDirectory = Vmap.make ()
+                    let groupDirectory = Vmap.makeEmpty ()
                     Vmap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
             | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
         let screenStates = Vmap.add screen.ScreenAddress screenState world.ScreenStates

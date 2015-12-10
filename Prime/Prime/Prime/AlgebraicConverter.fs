@@ -4,6 +4,7 @@
 namespace Prime
 open System
 open System.Collections
+open System.Collections.Generic
 open System.ComponentModel
 open System.Reflection
 open Microsoft.FSharp.Reflection
@@ -26,6 +27,12 @@ type AlgebraicConverter (targetType : Type) =
         let iEnumerable = source :?> IEnumerable
         List.ofSeq ^ enumerable<obj> iEnumerable
 
+    let objToKeyValuePair (source : obj) =
+        let kvpType = source.GetType ()
+        let key = (kvpType.GetProperty "Key").GetValue source
+        let value = (kvpType.GetProperty "Value").GetValue source
+        KeyValuePair (key, value)
+
     let objToComparableSet (source : obj) =
         let iEnumerable = source :?> IEnumerable
         Set.ofSeq ^ enumerable<IComparable> iEnumerable
@@ -39,37 +46,42 @@ type AlgebraicConverter (targetType : Type) =
             convertToString.Invoke (typeConverter, [|source|]) :?> string
         | None ->
 
-            if sourceType.Name = typedefof<_ list>.Name then
+            if sourceType.Name = typedefof<KeyValuePair<_, _>>.Name then
+                let gargs = sourceType.GetGenericArguments ()
+                let kvp = objToKeyValuePair source
+                let kvpStrs = KeyValuePair (toString kvp.Key gargs.[0], toString kvp.Value gargs.[1])
+                let kvpsStr = kvpStrs.Key + AlgebraicReader.SeparatorStr + kvpStrs.Value
+                AlgebraicReader.OpenComplexValueStr + kvpsStr + AlgebraicReader.CloseComplexValueStr
+
+            elif sourceType.Name = typedefof<_ list>.Name then
                 let gargs = sourceType.GetGenericArguments ()
                 let items = objToObjList source
-                let itemsStrs =
-                    List.map
-                        (fun item -> toString item gargs.[0])
-                        items
+                let itemsStrs = List.map (fun item -> toString item gargs.[0]) items
                 let itemsStr = String.Join (AlgebraicReader.SeparatorStr, itemsStrs)
                 AlgebraicReader.OpenComplexValueStr + itemsStr + AlgebraicReader.CloseComplexValueStr
 
             elif sourceType.Name = typedefof<_ Set>.Name then
                 let gargs = sourceType.GetGenericArguments ()
                 let items = objToComparableSet source
-                let itemsStrs =
-                    Set.map
-                        (fun item -> toString item gargs.[0])
-                        items
+                let itemsStrs = Set.map (fun item -> toString item gargs.[0]) items
                 let itemsStr = String.Join (AlgebraicReader.SeparatorStr, itemsStrs)
                 AlgebraicReader.OpenComplexValueStr + itemsStr + AlgebraicReader.CloseComplexValueStr
 
             elif sourceType.Name = typedefof<Map<_, _>>.Name then
-                // NOTE: using a pretty bullshit way to do this, but it seemed to be easier than reflection hell
-                source |>
-                    string |>
-                    (fun str -> str.Substring(5).Split(';')) |>
-                    (Array.map (fun str ->
-                        str.Replace("(", AlgebraicReader.OpenComplexValueStr).
-                            Replace(")", AlgebraicReader.CloseComplexValueStr).
-                            Replace(",", String.Empty))) |>
-                    (fun strs -> String.Join (AlgebraicReader.SeparatorStr, strs)) |>
-                    (fun str -> AlgebraicReader.OpenComplexValueStr + str + AlgebraicReader.CloseComplexValueStr)
+                let gargs = sourceType.GetGenericArguments ()
+                let itemType = typedefof<KeyValuePair<_, _>>.MakeGenericType [|gargs.[0]; gargs.[1]|]
+                let items = objToObjList source
+                let itemsStrs = List.map (fun item -> toString item itemType) items
+                let itemsStr = String.Join (AlgebraicReader.SeparatorStr, itemsStrs)
+                AlgebraicReader.OpenComplexValueStr + itemsStr + AlgebraicReader.CloseComplexValueStr
+
+            elif sourceType.Name = typedefof<Vmap<_, _>>.Name then
+                let gargs = sourceType.GetGenericArguments ()
+                let itemType = typedefof<Tuple<_, _>>.MakeGenericType [|gargs.[0]; gargs.[1]|]
+                let items = objToObjList source
+                let itemsStrs = List.map (fun item -> toString item itemType) items
+                let itemsStr = String.Join (AlgebraicReader.SeparatorStr, itemsStrs)
+                AlgebraicReader.OpenComplexValueStr + itemsStr + AlgebraicReader.CloseComplexValueStr
 
             elif FSharpType.IsTuple sourceType then
                 let tupleFields = FSharpValue.GetTupleFields source
@@ -114,18 +126,22 @@ type AlgebraicConverter (targetType : Type) =
 
     let rec fromReaderValue (destType : Type) (readerValue : obj) =
 
-        match destType.TryGetCustomTypeConverter () with
-        | Some typeConverter ->
-            let typeConverterType = typeConverter.GetType ()
-            match readerValue with
-            | :? string ->
-                let convertFromString = typeConverterType.GetMethod ("ConvertFromString", [|typeof<string>|])
-                convertFromString.Invoke (typeConverter, [|readerValue|])
-            | _ ->
-                let convertFrom = typeConverterType.GetMethod ("ConvertFrom", [|typeof<obj>|])
-                convertFrom.Invoke (typeConverter, [|readerValue|])
+        // determine if conversion is trivial enough to ask of a custom TypeConverter
+        let conversionIsTrivial =
+            let readerValueType = readerValue.GetType ()
+            readerValueType = typeof<string> || readerValueType = destType
 
-        | None ->
+        // convert reader value to destination type
+        match destType.TryGetCustomTypeConverter () with
+        | Some typeConverter when conversionIsTrivial ->
+
+            // convert using custom TypeConverter
+            let typeConverterType = typeConverter.GetType ()
+            let convertFrom = typeConverterType.GetMethod ("ConvertFrom", [|typeof<obj>|])
+            convertFrom.Invoke (typeConverter, [|readerValue|])
+
+        // convert using more detailed algebraic conversion process
+        | Some _ | None ->
             if destType.Name = typedefof<_ list>.Name then
                 match readerValue with
                 | :? (obj list) as readerValueList ->
@@ -158,6 +174,20 @@ type AlgebraicConverter (targetType : Type) =
                         let pairList = List.map (fromReaderValue pairType) readerPairList
                         let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|pairType|]
                         let ofSeq = ((FSharpCoreAssembly.GetType "Microsoft.FSharp.Collections.MapModule").GetMethod ("OfSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|fstType; sndType|]
+                        ofSeq.Invoke (null, [|cast.Invoke (null, [|pairList|])|])
+                    | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
+                | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
+
+            elif destType.Name = typedefof<Vmap<_, _>>.Name then
+                match readerValue with
+                | :? (obj list) as readerPairList ->
+                    let gargs = destType.GetGenericArguments ()
+                    match gargs with
+                    | [|fstType; sndType|] ->
+                        let pairType = typedefof<Tuple<_, _>>.MakeGenericType [|fstType; sndType|]
+                        let pairList = List.map (fromReaderValue pairType) readerPairList
+                        let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|pairType|]
+                        let ofSeq = ((typedefof<Vmap<_, _>>.Assembly.GetType "Prime.VmapModule").GetMethod ("ofSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|fstType; sndType|]
                         ofSeq.Invoke (null, [|cast.Invoke (null, [|pairList|])|])
                     | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
                 | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."

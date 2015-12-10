@@ -191,10 +191,10 @@ module Callbacks =
 
     /// Make a callbacks value.
     let make () =
-        { Subscriptions = Vmap.make ()
-          Unsubscriptions = Vmap.make ()
+        { Subscriptions = Vmap.makeEmpty ()
+          Unsubscriptions = Vmap.makeEmpty ()
           Tasklets = Queue.empty
-          CallbackStates = Vmap.make () }
+          CallbackStates = Vmap.makeEmpty () }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Components =
@@ -243,6 +243,10 @@ module WorldState =
     /// consequences.
     let setTickRateImmediately tickRate state =
         { state with TickRate = tickRate }
+
+    /// Reset the tick time to 0.
+    let resetTickTime state =
+        { state with TickTime = 0L }
 
     /// Get the tick time.
     let getTickTime state =

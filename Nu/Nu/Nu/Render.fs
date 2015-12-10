@@ -18,6 +18,7 @@ type [<StructuralEquality; NoComparison>] Sprite =
     { Position : Vector2
       Size : Vector2
       Rotation : single
+      Offset : Vector2
       ViewType : ViewType
       OptInset : Vector4 option
       Image : AssetTag
@@ -190,7 +191,8 @@ type [<ReferenceEquality>] Renderer =
 
     static member private renderSprite (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (sprite : Sprite) renderer =
         let view = match sprite.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
-        let positionView = sprite.Position * view
+        let position = sprite.Position - Vector2.Multiply (sprite.Offset, sprite.Size)
+        let positionView = position * view
         let sizeView = sprite.Size * view.ExtractScaleMatrix ()
         let color = sprite.Color
         let image = sprite.Image
