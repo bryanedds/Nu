@@ -85,15 +85,14 @@ module Effector =
         match nodes with
         | [] -> failwithumf ()
         | head :: tail ->
-            let nodeLocalTime = head.NodeLength - localTime
-            if nodeLocalTime >= head.NodeLength then // TODO: ensure this is supposed to be (>=)
+            if localTime > head.NodeLength then
                 match tail with
-                | [] -> (nodeLocalTime, head, head)
-                | _ :: _ -> selectNodes2 localTime tail
+                | [] -> (localTime, head, head)
+                | _ :: _ -> selectNodes2 (localTime - head.NodeLength) tail
             else
                 match tail with
-                | [] -> (nodeLocalTime, head, head)
-                | next :: _ -> (nodeLocalTime, head, next)
+                | [] -> (localTime, head, head)
+                | next :: _ -> (localTime, head, next)
 
     let private selectNodes<'n when 'n :> INode> localTime (nodes : 'n list) =
         nodes |>
@@ -101,32 +100,31 @@ module Effector =
         selectNodes2 localTime |>
         fun (fst, snd, thd) -> (fst, snd :?> 'n, thd :?> 'n)
 
-    let inline private tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) (progress : single) algorithm effector =
-        let progress = progress + effector.ProgressOffset
-        let progress = if progress > 1.0f then progress - 1.0f else progress
+    let inline private tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) progress algorithm effector =
         match algorithm with
         | Const -> value2
-        | Linear -> scale (value2 - value, progress)
+        | Linear ->
+            value + scale (value2 - value, progress)
         | Random ->
-            let rand = Rand.makeFromInt ^ int ^ double progress * double Int32.MaxValue
+            let rand = Rand.makeFromInt ^ int ^ (Math.Max (double progress, 0.000000001)) * double Int32.MaxValue
             let randValue = fst ^ Rand.nextSingle rand
-            scale (value2 - value, randValue)
+            value + scale (value2 - value, randValue)
         | Chaos ->
             let chaosValue = single ^ effector.Chaos.NextDouble ()
-            scale (value2 - value, chaosValue)
+            value + scale (value2 - value, chaosValue)
         | Ease ->
             let progressEaseIn = single ^ Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0)
-            scale (value2 - value, progressEaseIn)
+            value + scale (value2 - value, progressEaseIn)
         | Sin ->
             let progressScaled = float progress * Math.PI * 2.0
             let progressScaledSin = Math.Sin progressScaled
             let progressSin = progressScaledSin / (Math.PI * 2.0)
-            scale (value2 - value, single progressSin)
+            value + scale (value2 - value, single progressSin)
         | Cos ->
             let progressScaled = float progress * Math.PI * 2.0
             let progressScaledCos = Math.Cos progressScaled
             let progressCos = progressScaledCos / (Math.PI * 2.0)
-            scale (value2 - value, single progressCos)
+            value + scale (value2 - value, single progressCos)
 
     let private applyLogic value value2 applicator =
         match applicator with
@@ -176,6 +174,11 @@ module Effector =
             artifacts
             incrementers
 
+    and private evalProgress nodeTime nodeLength effector =
+        let progress = if nodeLength = 0L then 1.0f else single nodeTime / single nodeLength
+        let progress = progress + effector.ProgressOffset
+        if progress > 1.0f then progress - 1.0f else progress
+
     and private evalAspect slice aspect effector =
         match aspect with
         | ExpandAspect _ -> failwithumf ()
@@ -189,31 +192,31 @@ module Effector =
             { slice with Enabled = applied }
         | Position (applicator, algorithm, nodes) ->
             let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
-            let progress = single nodeTime / single node.TweenLength
+            let progress = evalProgress nodeTime node.TweenLength effector
             let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
             { slice with Position = applied }
         | Size (applicator, algorithm, nodes) ->
             let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
-            let progress = single nodeTime / single node.TweenLength
+            let progress = evalProgress nodeTime node.TweenLength effector
             let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
             { slice with Size = applied }
         | Rotation (applicator, algorithm, nodes) ->
             let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
-            let progress = single nodeTime / single node.TweenLength
+            let progress = evalProgress nodeTime node.TweenLength effector
             let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Rotation tweened applicator
             { slice with Rotation = applied }
         | Depth (applicator, algorithm, nodes) ->
             let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
-            let progress = single nodeTime / single node.TweenLength
+            let progress = evalProgress nodeTime node.TweenLength effector
             let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Depth tweened applicator
             { slice with Depth = applied }
         | Color (applicator, algorithm, nodes) ->
             let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
-            let progress = single nodeTime / single node.TweenLength
+            let progress = evalProgress nodeTime node.TweenLength effector
             let tweened = tween Vector4.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
             { slice with Color = applied }

@@ -320,6 +320,10 @@ module World =
     let rec setTickRate tickRate world =
         addTasklet { ScheduledTime = getTickTime world; Operation = fun world -> setTickRateImmediately tickRate world } world
 
+    /// Reset the tick time to 0.
+    and resetTickTime world =
+        addTasklet { ScheduledTime = getTickTime world; Operation = fun world -> setState (WorldState.resetTickTime world.State) world } world
+
     /// Get the world's tick time.
     and getTickTime world =
         WorldState.getTickTime world.State
