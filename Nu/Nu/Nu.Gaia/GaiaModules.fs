@@ -319,9 +319,7 @@ module Gaia =
                     let typeConverter = AlgebraicConverter (selectedGridItem.PropertyDescriptor.PropertyType)
                     try let propertyValue = typeConverter.ConvertFromString form.propertyValueTextBox.Text
                         propertyDescriptor.SetValue (entityTds, propertyValue)
-                    with exn ->
-                        trace ^ "Invalid apply property operation due to: " + acstring exn
-                        form.propertyValueTextBox.Text <- typeConverter.ConvertToString selectedGridItem.Value
+                    with exn -> trace ^ "Invalid apply property operation due to: " + acstring exn
                 | _ -> trace "Invalid apply property operation (likely a code issue in Gaia)."
         | _ -> trace "Invalid apply property operation (likely a code issue in Gaia)."
 
