@@ -469,11 +469,16 @@ module Gaia =
                 refreshFormOnUndoRedo form world
                 world)
 
-    let private handleFormInteractivityChanged (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormTickingChanged (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             let tickRate = if form.tickingButton.Checked then 1L else 0L
             let (pastWorld, world) = (world, World.setTickRate tickRate world)
             if tickRate = 1L then pushPastWorld pastWorld world else world)
+
+    let private handleFormResetTickTime (_ : GaiaForm) (_ : EventArgs) =
+        ignore ^ WorldChangers.Add (fun world ->
+            let (pastWorld, world) = (world, World.resetTickTime world)
+            pushPastWorld pastWorld world)
 
     let private handleFormCopy (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
@@ -725,7 +730,8 @@ module Gaia =
         form.undoToolStripMenuItem.Click.Add (handleFormUndo form)
         form.redoButton.Click.Add (handleFormRedo form)
         form.redoToolStripMenuItem.Click.Add (handleFormRedo form)
-        form.tickingButton.CheckedChanged.Add (handleFormInteractivityChanged form)
+        form.tickingButton.CheckedChanged.Add (handleFormTickingChanged form)
+        form.resetTickTime.Click.Add (handleFormResetTickTime form)
         form.cutToolStripMenuItem.Click.Add (handleFormCut form)
         form.cutContextMenuItem.Click.Add (handleFormCut form)
         form.copyToolStripMenuItem.Click.Add (handleFormCopy form)

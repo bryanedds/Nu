@@ -244,6 +244,10 @@ module WorldState =
     let setTickRateImmediately tickRate state =
         { state with TickRate = tickRate }
 
+    /// Reset the tick time to 0.
+    let resetTickTime state =
+        { state with TickTime = 0L }
+
     /// Get the tick time.
     let getTickTime state =
         state.TickTime

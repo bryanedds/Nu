@@ -98,7 +98,6 @@ module EffectFacetModule =
         static member FieldDefinitions =
             [define? EffectDefinitions (Map.empty : Definitions)
              define? Effect Effect.empty
-             define? EffectTest Effect.empty
              define? EffectOffset (Vector2 0.5f)
              define? EffectTimeOffset 0L // TODO: also implement similar time offset for AnimatedSpriteFacet
              define? EffectHistoryMax 256
@@ -126,8 +125,9 @@ module EffectFacetModule =
                 let effectHistory = entity.GetEffectHistoryNp world
                 let effectEnv = entity.GetEffectDefinitions world
                 let effect = entity.GetEffect world
-
+                
                 let effector = Effector.make effectViewType effectHistory effectRate effectTime
+                
                 let world =
                     match Effector.eval effectSlice effectEnv effect effector with
                     | Right artifacts ->
