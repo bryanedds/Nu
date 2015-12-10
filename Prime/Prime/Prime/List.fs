@@ -77,18 +77,6 @@ let rec tryFindAt n list =
         if n = 0 then Some head
         else tryFindAt (n - 1) tail
 
-/// Pair up a list.
-let pairUp list =
-    let even = ref false
-    let (evens, odds) =
-        List.partition
-            (fun _ ->
-                let result = not !even
-                even := result
-                result)
-            list
-    List.zip evens odds
-
 /// For all 2 that indicates uneven lists by returning false rather than raising.
 let rec forall2Plus pred list list2 =
     match list with

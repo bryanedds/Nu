@@ -96,9 +96,9 @@ module EffectFacetModule =
         inherit Facet ()
 
         static member FieldDefinitions =
-            [define? EffectDefinitions (Vmap.make () : Definitions)
+            [define? EffectDefinitions (Map.empty : Definitions)
              define? Effect Effect.empty
-             define? EffectOffset (Vector2 0.5f)
+             define? EffectOffset Vector2.Zero
              define? EffectTimeOffset 0L // TODO: also implement similar time offset for AnimatedSpriteFacet
              define? EffectHistoryMax 256
              define? EffectHistoryNp ([] : Slice list)
@@ -114,10 +114,11 @@ module EffectFacetModule =
                 let effectViewType = entity.GetViewType world
                 let effectSize = entity.GetSize world
                 let effectSlice =
-                    { Position = entity.GetPosition world + Vector2.Multiply (effectSize, entity.GetEffectOffset world)
+                    { Position = entity.GetPosition world
                       Size = effectSize
                       Rotation = entity.GetRotation world
                       Depth = entity.GetDepth world
+                      Offset = entity.GetEffectOffset world
                       Color = Vector4.One
                       Visible = true
                       Enabled = true }
@@ -125,8 +126,9 @@ module EffectFacetModule =
                 let effectHistory = entity.GetEffectHistoryNp world
                 let effectEnv = entity.GetEffectDefinitions world
                 let effect = entity.GetEffect world
-
+                
                 let effector = Effector.make effectViewType effectHistory effectRate effectTime
+                
                 let world =
                     match Effector.eval effectSlice effectEnv effect effector with
                     | Right artifacts ->
@@ -273,6 +275,7 @@ module StaticSpriteFacetModule =
                                     { Position = entity.GetPosition world
                                       Size = entity.GetSize world
                                       Rotation = entity.GetRotation world
+                                      Offset = Vector2.Zero
                                       ViewType = entity.GetViewType world
                                       OptInset = None
                                       Image = entity.GetStaticImage world
@@ -334,6 +337,7 @@ module AnimatedSpriteFacetModule =
                                     { Position = entity.GetPosition world
                                       Size = entity.GetSize world
                                       Rotation = entity.GetRotation world
+                                      Offset = Vector2.Zero
                                       ViewType = entity.GetViewType world
                                       OptInset = getOptSpriteInset entity world
                                       Image = entity.GetAnimationSheet world
@@ -457,6 +461,7 @@ module ButtonDispatcherModule =
                                 { Position = button.GetPosition world
                                   Size = button.GetSize world
                                   Rotation = 0.0f
+                                  Offset = Vector2.Zero
                                   ViewType = Absolute
                                   OptInset = None
                                   Image = if button.GetDown world then button.GetDownImage world else button.GetUpImage world
@@ -493,6 +498,7 @@ module LabelDispatcherModule =
                                 { Position = label.GetPosition world
                                   Size = label.GetSize world
                                   Rotation = 0.0f
+                                  Offset = Vector2.Zero
                                   ViewType = Absolute
                                   OptInset = None
                                   Image = label.GetLabelImage world
@@ -551,6 +557,7 @@ module TextDispatcherModule =
                                 { Position = text.GetPosition world
                                   Size = text.GetSize world
                                   Rotation = 0.0f
+                                  Offset = Vector2.Zero
                                   ViewType = Absolute
                                   OptInset = None
                                   Image = text.GetBackgroundImage world
@@ -640,6 +647,7 @@ module ToggleDispatcherModule =
                                 { Position = toggle.GetPosition world
                                   Size = toggle.GetSize world
                                   Rotation = 0.0f
+                                  Offset = Vector2.Zero
                                   ViewType = Absolute
                                   OptInset = None
                                   Image = if toggle.GetOn world || toggle.GetPressed world then toggle.GetOnImage world else toggle.GetOffImage world
@@ -744,6 +752,7 @@ module FillBarDispatcherModule =
                                 { Position = fillBar.GetPosition world
                                   Size = fillBar.GetSize world
                                   Rotation = 0.0f
+                                  Offset = Vector2.Zero
                                   ViewType = Absolute
                                   OptInset = None
                                   Image = fillBar.GetBorderImage world
@@ -755,6 +764,7 @@ module FillBarDispatcherModule =
                                 { Position = fillBarSpritePosition
                                   Size = fillBarSpriteSize
                                   Rotation = 0.0f
+                                  Offset = Vector2.Zero
                                   ViewType = Absolute
                                   OptInset = None
                                   Image = fillBar.GetFillImage world

@@ -54,6 +54,7 @@ module FieldDispatcherModule =
                                 { Position = tilePosition
                                   Size = Constants.Layout.TileSize
                                   Rotation = 0.0f // NOTE: rotation assumed zero
+                                  Offset = Vector2.Zero
                                   ViewType = Relative // NOTE: ViewType assumed relative
                                   OptInset = optTileInset
                                   Image = fieldMap.FieldTileSheet
