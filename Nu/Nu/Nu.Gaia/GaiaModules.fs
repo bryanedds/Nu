@@ -297,34 +297,9 @@ module Gaia =
                 form.propertyEditor.Enabled <- true
                 form.propertyNameLabel.Text <- acstring selectedGridItem.Label
                 form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
-                let valueStr = typeConverter.ConvertToString selectedGridItem.Value
-                let builder = Text.StringBuilder valueStr
-                let mutable indexOffset = 0
-                match AlgebraicReader.stringToOptIndexLocation valueStr with
-                | Some indexLocation ->
-                    let rec f tabDepth tabParentIndexes childIndex indexLocation =
-                        match indexLocation with
-                        | TabLocation (openIndex, indexLocations) ->
-                            match openIndex with
-                            | 0L -> ()
-                            | _ ->
-                                match (tabParentIndexes, childIndex) with
-                                | ([], _) ->
-                                    let whitespace = "\n" + String.replicate tabDepth " "
-                                    ignore ^ builder.Insert (int openIndex + indexOffset, whitespace)
-                                    indexOffset <- indexOffset + whitespace.Length
-                                | (_, 0) ->
-                                    ()
-                                | (_, _) ->
-                                    let whitespace = "\n" + String.replicate tabDepth " "
-                                    ignore ^ builder.Insert (int openIndex + indexOffset, whitespace)
-                                    indexOffset <- indexOffset + whitespace.Length
-                            List.iteri (f (tabDepth + 1) (openIndex :: tabParentIndexes)) indexLocations
-                        | ContentLocation (_, indexLocations) ->
-                            List.iteri (f (tabDepth + 1) []) indexLocations
-                    f 0 [] 0 indexLocation
-                | None -> ()
-                form.propertyValueTextBox.Text <- builder.ToString ()
+                let str = typeConverter.ConvertToString selectedGridItem.Value
+                let strPretty = AlgebraicReader.prettyPrint str
+                form.propertyValueTextBox.Text <- strPretty
             | _ ->
                 form.propertyEditor.Enabled <- false
                 form.propertyNameLabel.Text <- String.Empty

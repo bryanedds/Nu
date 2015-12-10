@@ -8,9 +8,9 @@ open Microsoft.FSharp.Reflection
 open FParsec
 open Prime
 
-type IndexLocation =
-    | TabLocation of int64 * IndexLocation list
-    | ContentLocation of int64 * IndexLocation list
+type SymbolIndex =
+    | ListIndex of int64 * SymbolIndex list
+    | ContentIndex of int64 * SymbolIndex list
 
 [<RequireQualifiedAccess>]
 module AlgebraicReader =
@@ -56,31 +56,31 @@ module AlgebraicReader =
             attempt readSimpleValue <|>
             readComplexValue
 
-    module private AlgebraicTabReader =
+    module private AlgebraicSymbolIndexer =
 
-        let (readIndexLocation : Parser<IndexLocation, unit>, refReadIndexLocation : Parser<IndexLocation, unit> ref) =
+        let (readSymbolIndex : Parser<SymbolIndex, unit>, refReadSymbolIndex : Parser<SymbolIndex, unit> ref) =
             createParserForwardedToRef ()
 
-        let readTabLocation =
+        let readListIndex =
             parse {
                 let! openPosition = getPosition
                 do! openComplexValueForm
                 do! skipWhitespace
-                let! indexLocations = many readIndexLocation
+                let! symbolIndices = many readSymbolIndex
                 do! closeComplexValueForm
                 do! skipWhitespace
-                return TabLocation (openPosition.Index, indexLocations) }
+                return ListIndex (openPosition.Index, symbolIndices) }
 
-        let readContentLocation =
+        let readContentIndex =
             parse {
                 let! openPosition = getPosition
                 let! _ = many1 (readSimpleValueChars .>> skipWhitespace)
-                let! indexLocations = many readIndexLocation
-                return ContentLocation (openPosition.Index, indexLocations) }
+                let! symbolIndices = many readSymbolIndex
+                return ContentIndex (openPosition.Index, symbolIndices) }
 
-        do refReadIndexLocation :=
-            attempt readTabLocation <|>
-            readContentLocation
+        do refReadSymbolIndex :=
+            attempt readListIndex <|>
+            readContentIndex
 
     /// Convert a string to an algebraic value, with the following parses:
     /// 
@@ -104,9 +104,28 @@ module AlgebraicReader =
         | Failure (error, _, _) -> failwith error
 
     /// Convert a string to a list of its tab locations.
-    let stringToOptIndexLocation str =
+    let stringToOptSymbolIndex str =
         if String.IsNullOrWhiteSpace str then None
         else
-            match run (skipWhitespace >>. AlgebraicTabReader.readIndexLocation) str with
+            match run (skipWhitespace >>. AlgebraicSymbolIndexer.readSymbolIndex) str with
             | Success (value, _, _) -> Some value
             | Failure (error, _, _) -> failwith error
+
+    /// Pretty-print a string in the form an algebraic-expression.
+    let prettyPrint (str : string) =
+        let builder = Text.StringBuilder str
+        let mutable builderIndex = 0
+        let rec advance hasContentParent tabDepth childIndex symbolIndex =
+            match symbolIndex with
+            | ListIndex (index, symbolIndices) ->
+                if index <> 0L && (hasContentParent || childIndex <> 0) then
+                    let whitespace = "\n" + String.replicate tabDepth " "
+                    ignore ^ builder.Insert (int index + builderIndex, whitespace)
+                    builderIndex <- builderIndex + whitespace.Length
+                List.iteri (advance false (tabDepth + 1)) symbolIndices
+            | ContentIndex (_, symbolIndices) ->
+                List.iteri (advance true (tabDepth + 1)) symbolIndices
+        match stringToOptSymbolIndex str with
+        | Some indexLocation -> advance false 0 0 indexLocation
+        | None -> ()
+        builder.ToString ()
