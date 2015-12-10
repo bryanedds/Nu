@@ -532,6 +532,7 @@ module WorldModule =
                                     { Position = -camera.EyeSize * 0.5f // negation for right-handedness
                                       Size = camera.EyeSize
                                       Rotation = 0.0f
+                                      Offset = Vector2.Zero
                                       ViewType = Absolute
                                       OptInset = None
                                       Image = dissolveImage
