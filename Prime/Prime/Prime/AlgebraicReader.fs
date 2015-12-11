@@ -124,7 +124,7 @@ module AlgebraicReader =
                     builderIndex <- builderIndex + whitespace.Length
                 List.iteri (advance false (tabDepth + 1)) symbolIndices
             | ContentIndex (_, symbolIndices) ->
-                List.iteri (advance true (tabDepth + 1)) symbolIndices
+                List.iteri (advance true tabDepth) symbolIndices
         match stringToOptSymbolIndex str with
         | Some indexLocation -> advance false 0 0 indexLocation
         | None -> ()
