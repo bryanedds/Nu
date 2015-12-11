@@ -76,11 +76,12 @@ module Effector =
         | StaticSprite _
         | AnimatedSprite _
         | PhysicsShape _
-        | Composite _
         | Mount _
         | Repeat _
         | Emit _
-        | Bone -> Right content
+        | Bone
+        | Composite _
+        | End -> Right content
 
     let rec private selectNodes2 localTime (nodes : INode list) =
         match nodes with
@@ -137,7 +138,7 @@ module Effector =
     let inline private applyTween scale ratio (value : ^a) (value2 : ^a) applicator =
         match applicator with
         | Sum -> value + value2
-        | Diff -> value2 - value
+        | Diff -> value - value2
         | Scale -> scale (value, value2)
         | Ratio -> ratio (value, value2)
         | TweenApplicator.Put -> value2
@@ -318,12 +319,12 @@ module Effector =
             evalAnimatedSprite slice resource celSize celRun celCount stutter aspects content effector
         | PhysicsShape (label, bodyShape, collisionCategories, collisionMask, aspects, content) ->
             ignore (label, bodyShape, collisionCategories, collisionMask, aspects, content); [] // TODO: implement
-        | Composite contents ->
-            evalComposite slice contents effector
-        | Mount (aspects, content) ->
+        | Mount (Shift shift, aspects, content) ->
+            let slice = { slice with Depth = slice.Depth + shift }
             let slice = evalAspects slice aspects effector
             evalContent slice content effector
-        | Repeat (repetition, incrementers, content) ->
+        | Repeat (Shift shift, repetition, incrementers, content) ->
+            let slice = { slice with Depth = slice.Depth + shift }
             match repetition with
             | Iterate count ->
                 List.fold
@@ -335,7 +336,8 @@ module Effector =
                         let effector = { effector with ProgressOffset = 1.0f / single count * single i }
                         cycleArtifacts slice incrementers content artifacts effector)
                     [] [0 .. count - 1]
-        | Emit (Rate rate, aspects, content) ->
+        | Emit (Shift shift, Rate rate, aspects, content) ->
+            let slice = { slice with Depth = slice.Depth + shift }
             List.foldi
                 (fun i artifacts slice ->
                     // the following line is actually wrong; the history of the tick rate also needs to be accounted for
@@ -358,9 +360,11 @@ module Effector =
                     artifacts' @ artifacts)
                 []
                 (slice :: effector.History)
-        | Bone ->
-            // TODO: implement
-            []
+        | Bone -> [] // TODO: implement
+        | Composite (Shift shift, contents) ->
+            let slice = { slice with Depth = slice.Depth + shift }
+            evalComposite slice contents effector
+        | End -> []
 
     and private evalContents slice contents effector =
         List.fold
