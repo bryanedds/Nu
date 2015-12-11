@@ -300,6 +300,7 @@ module Gaia =
                 let str = typeConverter.ConvertToString selectedGridItem.Value
                 let strPretty = AlgebraicReader.prettyPrint str
                 form.propertyValueTextBox.Text <- strPretty
+                // NOTE: can probably use form.propertyValueTextBox.Rtf to highlight matching brace
             | _ ->
                 form.propertyEditor.Enabled <- false
                 form.propertyNameLabel.Text <- String.Empty

@@ -110,25 +110,20 @@ module EffectFacetModule =
                 let timeOffset = entity.GetEffectTimeOffset world
                 let effectTime = time - timeOffset
                 let effectRate = World.getTickRate world
-
                 let effectViewType = entity.GetViewType world
-                let effectSize = entity.GetSize world
                 let effectSlice =
-                    { Position = entity.GetPosition world
-                      Size = effectSize
+                    { Position = entity.GetPosition world + Vector2.Multiply (entity.GetSize world, entity.GetEffectOffset world)
+                      Size = entity.GetSize world
                       Rotation = entity.GetRotation world
                       Depth = entity.GetDepth world
-                      Offset = entity.GetEffectOffset world
+                      Offset = Vector2 0.5f
                       Color = Vector4.One
                       Visible = true
                       Enabled = true }
-
                 let effectHistory = entity.GetEffectHistoryNp world
                 let effectEnv = entity.GetEffectDefinitions world
                 let effect = entity.GetEffect world
-                
                 let effector = Effector.make effectViewType effectHistory effectRate effectTime
-                
                 let world =
                     match Effector.eval effectSlice effectEnv effect effector with
                     | Right artifacts ->
@@ -141,13 +136,9 @@ module EffectFacetModule =
                     | Left error ->
                         note error
                         world
-
-                let world =
-                    let effectHistoryMax = entity.GetEffectHistoryMax world
-                    let effectHistory = effectSlice :: effectHistory |> List.tryTake effectHistoryMax
-                    entity.SetEffectHistoryNp effectHistory world
-
-                world
+                let effectHistoryMax = entity.GetEffectHistoryMax world
+                let effectHistory = effectSlice :: effectHistory |> List.tryTake effectHistoryMax
+                entity.SetEffectHistoryNp effectHistory world
             else world
 
 [<AutoOpen>]

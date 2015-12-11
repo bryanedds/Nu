@@ -76,27 +76,40 @@ module Effector =
         | StaticSprite _
         | AnimatedSprite _
         | PhysicsShape _
-        | Composite _
         | Mount _
         | Repeat _
         | Emit _
-        | Bone -> Right content
+        | Bone
+        | Composite _
+        | End -> Right content
 
-    let rec private selectNodes2 localTime (nodes : INode list) =
-        match nodes with
-        | [] -> failwithumf ()
-        | head :: [] -> (localTime, head, head)
-        | head :: next :: tail ->
-            if localTime > head.NodeLength then
-                match tail with
-                | _ :: _ -> selectNodes2 (localTime - head.NodeLength) (next :: tail)
-                | [] -> (head.NodeLength, head, next)
-            else (localTime, head, next)
+    let rec private selectNodes2 localTime playback (nodes : INode list) =
+        match playback with
+        | Once ->
+            match nodes with
+            | [] -> failwithumf ()
+            | head :: [] -> (localTime, head, head)
+            | head :: next :: tail ->
+                if localTime > head.NodeLength then
+                    match tail with
+                    | _ :: _ -> selectNodes2 (localTime - head.NodeLength) playback (next :: tail)
+                    | [] -> (head.NodeLength, head, next)
+                else (localTime, head, next)
+        | Loop ->
+            let totalTime = List.fold (fun totalTime (node : INode) -> totalTime + node.NodeLength) 0L nodes 
+            let moduloTime = localTime % totalTime
+            selectNodes2 moduloTime Once nodes
+        | Bounce ->
+            let totalTime = List.fold (fun totalTime (node : INode) -> totalTime + node.NodeLength) 0L nodes 
+            let moduloTime = localTime % totalTime
+            let bouncing = localTime / totalTime % 2L = 1L
+            let bounceTime = if bouncing then totalTime - moduloTime else moduloTime
+            selectNodes2 bounceTime Once nodes
 
-    let private selectNodes<'n when 'n :> INode> localTime (nodes : 'n list) =
+    let private selectNodes<'n when 'n :> INode> localTime playback (nodes : 'n list) =
         nodes |>
         List.map (fun node -> node :> INode) |>
-        selectNodes2 localTime |>
+        selectNodes2 localTime playback |>
         fun (fst, snd, thd) -> (fst, snd :?> 'n, thd :?> 'n)
 
     let inline private tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) progress algorithm effector =
@@ -116,13 +129,11 @@ module Effector =
             value + scale (value2 - value, progressEaseIn)
         | Sin ->
             let progressScaled = float progress * Math.PI * 2.0
-            let progressScaledSin = Math.Sin progressScaled
-            let progressSin = progressScaledSin / (Math.PI * 2.0)
+            let progressSin = Math.Sin progressScaled
             value + scale (value2 - value, single progressSin)
         | Cos ->
             let progressScaled = float progress * Math.PI * 2.0
-            let progressScaledCos = Math.Cos progressScaled
-            let progressCos = progressScaledCos / (Math.PI * 2.0)
+            let progressCos = Math.Cos progressScaled
             value + scale (value2 - value, single progressCos)
 
     let private applyLogic value value2 applicator =
@@ -137,7 +148,7 @@ module Effector =
     let inline private applyTween scale ratio (value : ^a) (value2 : ^a) applicator =
         match applicator with
         | Sum -> value + value2
-        | Diff -> value2 - value
+        | Diff -> value - value2
         | Scale -> scale (value, value2)
         | Ratio -> ratio (value, value2)
         | TweenApplicator.Put -> value2
@@ -152,26 +163,14 @@ module Effector =
         let celSize = Vector2 (single celSize.X, single celSize.Y)
         Math.makeBounds celPosition celSize
 
-    let rec private iterateArtifacts slice incrementers content artifacts effector =
-        List.fold
-            (fun (slice, artifacts') incrementer ->
-                let effector = { effector with ProgressOffset = 0.0f }
-                let slice = evalAspect slice incrementer effector
-                let artifacts'' = evalContent slice content effector
-                (slice, artifacts'' @ artifacts')) 
-            (slice, artifacts)
-            incrementers |>
-        snd
+    let rec private iterateArtifacts slice incrementers content effector =
+        let effector = { effector with ProgressOffset = 0.0f }
+        let slice = evalAspects slice incrementers effector
+        (slice, evalContent slice content effector)
 
-    and private cycleArtifacts slice incrementers content artifacts effector =
-        List.fold
-            (fun artifacts' incrementer ->
-                let effector = { effector with ProgressOffset = 0.0f }
-                let slice = evalAspect slice incrementer effector
-                let artifacts'' = evalContent slice content effector
-                (artifacts'' @ artifacts')) 
-            artifacts
-            incrementers
+    and private cycleArtifacts slice incrementers content effector =
+        let slice = evalAspects slice incrementers effector
+        evalContent slice content effector
 
     and private evalProgress nodeTime nodeLength effector =
         let progress = if nodeLength = 0L then 1.0f else single nodeTime / single nodeLength
@@ -181,46 +180,46 @@ module Effector =
     and private evalAspect slice aspect effector =
         match aspect with
         | ExpandAspect _ -> failwithumf ()
-        | Visible (applicator, nodes) ->
-            let (_, _, node) = selectNodes effector.EffectTime nodes
+        | Visible (applicator, playback, nodes) ->
+            let (_, _, node) = selectNodes effector.EffectTime playback nodes
             let applied = applyLogic true node.LogicValue applicator
             { slice with Visible = applied }
-        | Enabled (applicator, nodes) ->
-            let (_, _, node) = selectNodes effector.EffectTime nodes
+        | Enabled (applicator, playback, nodes) ->
+            let (_, _, node) = selectNodes effector.EffectTime playback nodes
             let applied = applyLogic true node.LogicValue applicator
             { slice with Enabled = applied }
-        | Position (applicator, algorithm, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
+        | Position (applicator, algorithm, playback, nodes) ->
+            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
             let progress = evalProgress nodeTime node.TweenLength effector
             let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
             { slice with Position = applied }
-        | Size (applicator, algorithm, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
+        | Size (applicator, algorithm, playback, nodes) ->
+            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
             let progress = evalProgress nodeTime node.TweenLength effector
             let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
             { slice with Size = applied }
-        | Rotation (applicator, algorithm, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
+        | Rotation (applicator, algorithm, playback, nodes) ->
+            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
             let progress = evalProgress nodeTime node.TweenLength effector
             let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Rotation tweened applicator
             { slice with Rotation = applied }
-        | Depth (applicator, algorithm, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
+        | Depth (applicator, algorithm, playback, nodes) ->
+            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
             let progress = evalProgress nodeTime node.TweenLength effector
             let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Depth tweened applicator
             { slice with Depth = applied }
-        | Offset (applicator, algorithm, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
+        | Offset (applicator, algorithm, playback, nodes) ->
+            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
             let progress = evalProgress nodeTime node.TweenLength effector
             let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
             { slice with Offset = applied }
-        | Color (applicator, algorithm, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.EffectTime nodes
+        | Color (applicator, algorithm, playback, nodes) ->
+            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
             let progress = evalProgress nodeTime node.TweenLength effector
             let tweened = tween Vector4.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
@@ -318,24 +317,30 @@ module Effector =
             evalAnimatedSprite slice resource celSize celRun celCount stutter aspects content effector
         | PhysicsShape (label, bodyShape, collisionCategories, collisionMask, aspects, content) ->
             ignore (label, bodyShape, collisionCategories, collisionMask, aspects, content); [] // TODO: implement
-        | Composite contents ->
-            evalComposite slice contents effector
-        | Mount (aspects, content) ->
+        | Mount (Shift shift, aspects, content) ->
+            let slice = { slice with Depth = slice.Depth + shift }
             let slice = evalAspects slice aspects effector
             evalContent slice content effector
-        | Repeat (repetition, incrementers, content) ->
+        | Repeat (Shift shift, repetition, incrementers, content) ->
+            let slice = { slice with Depth = slice.Depth + shift }
             match repetition with
             | Iterate count ->
                 List.fold
-                    (fun artifacts _ -> iterateArtifacts slice incrementers content artifacts effector)
-                    [] [0 .. count - 1]
+                    (fun (slice, artifacts) _ ->
+                        let (slice, artifacts') = iterateArtifacts slice incrementers content effector
+                        (slice, artifacts @ artifacts'))
+                    (slice, [])
+                    [0 .. count - 1] |>
+                snd
             | Cycle count ->
                 List.fold
                     (fun artifacts i ->
                         let effector = { effector with ProgressOffset = 1.0f / single count * single i }
-                        cycleArtifacts slice incrementers content artifacts effector)
+                        let artifacts' = cycleArtifacts slice incrementers content effector
+                        artifacts @ artifacts')
                     [] [0 .. count - 1]
-        | Emit (Rate rate, aspects, content) ->
+        | Emit (Shift shift, Rate rate, aspects, content) ->
+            let slice = { slice with Depth = slice.Depth + shift }
             List.foldi
                 (fun i artifacts slice ->
                     // the following line is actually wrong; the history of the tick rate also needs to be accounted for
@@ -358,9 +363,11 @@ module Effector =
                     artifacts' @ artifacts)
                 []
                 (slice :: effector.History)
-        | Bone ->
-            // TODO: implement
-            []
+        | Bone -> [] // TODO: implement
+        | Composite (Shift shift, contents) ->
+            let slice = { slice with Depth = slice.Depth + shift }
+            evalComposite slice contents effector
+        | End -> []
 
     and private evalContents slice contents effector =
         List.fold
