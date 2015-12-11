@@ -84,8 +84,8 @@ type Tween2INode =
 
 type Playback =
     | Once
-    | Loop of int64
-    | Bounce of int64
+    | Loop
+    | Bounce
 
 type Repetition =
     | Cycle of int
@@ -103,14 +103,14 @@ type Resource =
 
 type [<NoComparison>] Aspect =
     | ExpandAspect of string
-    | Visible of LogicApplicator * LogicNode list
-    | Enabled of LogicApplicator * LogicNode list
-    | Position of TweenApplicator * Algorithm * Tween2Node list
-    | Offset of TweenApplicator * Algorithm * Tween2Node list
-    | Size of TweenApplicator * Algorithm * Tween2Node list
-    | Rotation of TweenApplicator * Algorithm * TweenNode list
-    | Depth of TweenApplicator * Algorithm * TweenNode list
-    | Color of TweenApplicator * Algorithm * Tween4Node list
+    | Visible of LogicApplicator * Playback * LogicNode list
+    | Enabled of LogicApplicator * Playback * LogicNode list
+    | Position of TweenApplicator * Algorithm * Playback * Tween2Node list
+    | Offset of TweenApplicator * Algorithm * Playback * Tween2Node list
+    | Size of TweenApplicator * Algorithm * Playback * Tween2Node list
+    | Rotation of TweenApplicator * Algorithm * Playback * TweenNode list
+    | Depth of TweenApplicator * Algorithm * Playback * TweenNode list
+    | Color of TweenApplicator * Algorithm * Playback * Tween4Node list
 
 and [<NoComparison>] Content =
     | ExpandContent of string * Argument list
@@ -145,7 +145,6 @@ type Definitions =
 
 type [<NoEquality; NoComparison>] Effect =
     { EffectName : string
-      Playback : Playback
       OptLifetime : int64 option
       Definitions : Definitions
       Content : Content }
@@ -155,7 +154,6 @@ module Effect =
 
     let empty =
         { EffectName = "Empty"
-          Playback = Once
           OptLifetime = None
           Definitions = Map.empty
           Content = Composite (Shift 0.0f, []) }
