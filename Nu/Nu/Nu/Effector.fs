@@ -129,13 +129,11 @@ module Effector =
             value + scale (value2 - value, progressEaseIn)
         | Sin ->
             let progressScaled = float progress * Math.PI * 2.0
-            let progressScaledSin = Math.Sin progressScaled
-            let progressSin = progressScaledSin / (Math.PI * 2.0)
+            let progressSin = Math.Sin progressScaled
             value + scale (value2 - value, single progressSin)
         | Cos ->
             let progressScaled = float progress * Math.PI * 2.0
-            let progressScaledCos = Math.Cos progressScaled
-            let progressCos = progressScaledCos / (Math.PI * 2.0)
+            let progressCos = Math.Cos progressScaled
             value + scale (value2 - value, single progressCos)
 
     let private applyLogic value value2 applicator =
@@ -165,26 +163,14 @@ module Effector =
         let celSize = Vector2 (single celSize.X, single celSize.Y)
         Math.makeBounds celPosition celSize
 
-    let rec private iterateArtifacts slice incrementers content artifacts effector =
-        List.fold
-            (fun (slice, artifacts') incrementer ->
-                let effector = { effector with ProgressOffset = 0.0f }
-                let slice = evalAspect slice incrementer effector
-                let artifacts'' = evalContent slice content effector
-                (slice, artifacts'' @ artifacts')) 
-            (slice, artifacts)
-            incrementers |>
-        snd
+    let rec private iterateArtifacts slice incrementers content effector =
+        let effector = { effector with ProgressOffset = 0.0f }
+        let slice = evalAspects slice incrementers effector
+        (slice, evalContent slice content effector)
 
-    and private cycleArtifacts slice incrementers content artifacts effector =
-        List.fold
-            (fun artifacts' incrementer ->
-                let effector = { effector with ProgressOffset = 0.0f }
-                let slice = evalAspect slice incrementer effector
-                let artifacts'' = evalContent slice content effector
-                (artifacts'' @ artifacts')) 
-            artifacts
-            incrementers
+    and private cycleArtifacts slice incrementers content effector =
+        let slice = evalAspects slice incrementers effector
+        evalContent slice content effector
 
     and private evalProgress nodeTime nodeLength effector =
         let progress = if nodeLength = 0L then 1.0f else single nodeTime / single nodeLength
@@ -340,13 +326,18 @@ module Effector =
             match repetition with
             | Iterate count ->
                 List.fold
-                    (fun artifacts _ -> iterateArtifacts slice incrementers content artifacts effector)
-                    [] [0 .. count - 1]
+                    (fun (slice, artifacts) _ ->
+                        let (slice, artifacts') = iterateArtifacts slice incrementers content effector
+                        (slice, artifacts @ artifacts'))
+                    (slice, [])
+                    [0 .. count - 1] |>
+                snd
             | Cycle count ->
                 List.fold
                     (fun artifacts i ->
                         let effector = { effector with ProgressOffset = 1.0f / single count * single i }
-                        cycleArtifacts slice incrementers content artifacts effector)
+                        let artifacts' = cycleArtifacts slice incrementers content effector
+                        artifacts @ artifacts')
                     [] [0 .. count - 1]
         | Emit (Shift shift, Rate rate, aspects, content) ->
             let slice = { slice with Depth = slice.Depth + shift }
