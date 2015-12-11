@@ -112,13 +112,12 @@ module EffectFacetModule =
                 let effectRate = World.getTickRate world
 
                 let effectViewType = entity.GetViewType world
-                let effectSize = entity.GetSize world
                 let effectSlice =
-                    { Position = entity.GetPosition world
-                      Size = effectSize
+                    { Position = entity.GetPosition world + Vector2.Multiply (entity.GetSize world, entity.GetEffectOffset world)
+                      Size = entity.GetSize world
                       Rotation = entity.GetRotation world
                       Depth = entity.GetDepth world
-                      Offset = entity.GetEffectOffset world
+                      Offset = Vector2 0.5f
                       Color = Vector4.One
                       Visible = true
                       Enabled = true }

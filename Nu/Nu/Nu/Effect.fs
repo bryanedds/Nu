@@ -94,6 +94,9 @@ type Repetition =
 type Rate =
     Rate of single
 
+type Shift =
+    Shift of single
+
 type Resource =
     | ExpandResource of string
     | Resource of string * string
@@ -114,11 +117,12 @@ and [<NoComparison>] Content =
     | StaticSprite of Resource * Aspect list * Content
     | AnimatedSprite of Resource * Vector2i * int * int * int64 * Aspect list * Content
     | PhysicsShape of BodyShape * string * string * string * Aspect list * Content
-    | Composite of Content list
-    | Mount of Aspect list * Content
-    | Repeat of Repetition * Aspect list * Content
-    | Emit of Rate * Aspect list * Content
+    | Mount of Shift * Aspect list * Content
+    | Repeat of Shift * Repetition * Aspect list * Content
+    | Emit of Shift * Rate * Aspect list * Content
     | Bone // TODO
+    | Composite of Shift * Content list
+    | End
 
 and [<NoComparison>] Argument =
     | PassPlayback of Playback
@@ -154,4 +158,4 @@ module Effect =
           Playback = Once
           OptLifetime = None
           Definitions = Map.empty
-          Content = Composite [] }
+          Content = Composite (Shift 0.0f, []) }
