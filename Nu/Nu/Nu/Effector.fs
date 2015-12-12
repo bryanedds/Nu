@@ -183,18 +183,17 @@ module Effector =
         | ExpandAspect _ -> failwithumf ()
         | Visible (applicator, playback, nodes) ->
             let (_, _, node) = selectNodes effector.EffectTime playback nodes
-            let applied = applyLogic true node.LogicValue applicator
+            let applied = applyLogic slice.Visible node.LogicValue applicator
             { slice with Visible = applied }
         | Enabled (applicator, playback, nodes) ->
             let (_, _, node) = selectNodes effector.EffectTime playback nodes
-            let applied = applyLogic true node.LogicValue applicator
+            let applied = applyLogic slice.Enabled node.LogicValue applicator
             { slice with Enabled = applied }
         | Position (applicator, algorithm, playback, nodes) ->
             let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
             let progress = evalProgress nodeTime node.TweenLength effector
             let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
-            let oriented = Vector2.Transform (tweened, Quaternion.FromAxisAngle (Vector3.UnitZ, slice.Rotation))
-            let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position oriented applicator
+            let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
             { slice with Position = applied }
         | Size (applicator, algorithm, playback, nodes) ->
             let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
@@ -346,11 +345,11 @@ module Effector =
                 List.foldi
                     (fun i artifacts (slice : Slice) ->
                         let slice = { slice with Depth = slice.Depth + shift }
-                        let slice = evalAspects slice emitterAspects { effector with EffectTime = effector.EffectTime + int64 i }
-                        let emitCountLastFrame = (single effector.EffectTime - single i - 1.0f) * rate
-                        let emitCountThisFrame = (single effector.EffectTime - single i) * rate
+                        let slice = evalAspects slice emitterAspects { effector with EffectTime = effector.EffectTime + int64 i * effector.EffectRate }
+                        let emitCountLastFrame = single (effector.EffectTime - (int64 i + 1L) * effector.EffectRate) * rate
+                        let emitCountThisFrame = single (effector.EffectTime - int64 i * effector.EffectRate) * rate
                         let emitCount = int emitCountThisFrame - int emitCountLastFrame
-                        let effector = { effector with EffectTime = int64 i }
+                        let effector = { effector with EffectTime = int64 i * effector.EffectRate }
                         let artifacts' =
                             List.fold
                                 (fun artifacts' _ ->
