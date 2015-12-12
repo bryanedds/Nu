@@ -114,7 +114,8 @@ module Effector =
 
     let inline private tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) progress algorithm effector =
         match algorithm with
-        | Const -> value2
+        | Constant ->
+            value2
         | Linear ->
             value + scale (value2 - value, progress)
         | Random ->
@@ -348,7 +349,7 @@ module Effector =
                         let emitCountLastFrame = (single effector.EffectTime - single i - 1.0f) * rate
                         let emitCountThisFrame = (single effector.EffectTime - single i) * rate
                         let emitCount = int emitCountThisFrame - int emitCountLastFrame
-                        let effector = { effector with EffectTime = effector.EffectTime + int64 i }
+                        let effector = { effector with EffectTime = int64 i }
                         let artifacts' =
                             List.fold
                                 (fun artifacts' _ ->
