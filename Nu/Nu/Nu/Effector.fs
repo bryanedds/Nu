@@ -183,11 +183,11 @@ module Effector =
         | ExpandAspect _ -> failwithumf ()
         | Visible (applicator, playback, nodes) ->
             let (_, _, node) = selectNodes effector.EffectTime playback nodes
-            let applied = applyLogic true node.LogicValue applicator
+            let applied = applyLogic slice.Visible node.LogicValue applicator
             { slice with Visible = applied }
         | Enabled (applicator, playback, nodes) ->
             let (_, _, node) = selectNodes effector.EffectTime playback nodes
-            let applied = applyLogic true node.LogicValue applicator
+            let applied = applyLogic slice.Enabled node.LogicValue applicator
             { slice with Enabled = applied }
         | Position (applicator, algorithm, playback, nodes) ->
             let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
