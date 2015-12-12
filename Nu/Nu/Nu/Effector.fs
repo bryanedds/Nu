@@ -114,7 +114,8 @@ module Effector =
 
     let inline private tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) progress algorithm effector =
         match algorithm with
-        | Const -> value2
+        | Constant ->
+            value2
         | Linear ->
             value + scale (value2 - value, progress)
         | Random ->
@@ -192,7 +193,8 @@ module Effector =
             let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
             let progress = evalProgress nodeTime node.TweenLength effector
             let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
-            let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
+            let oriented = Vector2.Transform (tweened, Quaternion.FromAxisAngle (Vector3.UnitZ, slice.Rotation))
+            let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position oriented applicator
             { slice with Position = applied }
         | Size (applicator, algorithm, playback, nodes) ->
             let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
@@ -339,30 +341,31 @@ module Effector =
                         let artifacts' = cycleArtifacts slice incrementers content effector
                         artifacts @ artifacts')
                     [] [0 .. count - 1]
-        | Emit (Shift shift, Rate rate, aspects, content) ->
-            let slice = { slice with Depth = slice.Depth + shift }
-            List.foldi
-                (fun i artifacts slice ->
-                    // the following line is actually wrong; the history of the tick rate also needs to be accounted for
-                    let effector = { effector with EffectTime = effector.EffectTime + effector.EffectRate * int64 i }
-                    let rateTrunc = single ^ Math.Truncate (double rate)
-                    let emitFrac = (rate - rateTrunc) * 0.01f
-                    let emitFracCount = int effector.EffectTime % int emitFrac
-                    let emitCount = int rateTrunc + emitFracCount
-                    let artifacts' =
-                        List.fold
-                            (fun artifacts' _ ->
-                                let slice = evalAspects slice aspects effector
-                                let artifacts'' =
-                                    if slice.Enabled
-                                    then evalContent slice content effector
-                                    else []
-                                artifacts'' @ artifacts')
-                            []
-                            [0 .. emitCount - 1]
-                    artifacts' @ artifacts)
-                []
-                (slice :: effector.History)
+        | Emit (Shift shift, Rate rate, emitterAspects, aspects, content) ->
+            let artifacts =
+                List.foldi
+                    (fun i artifacts (slice : Slice) ->
+                        let slice = { slice with Depth = slice.Depth + shift }
+                        let slice = evalAspects slice emitterAspects { effector with EffectTime = effector.EffectTime + int64 i }
+                        let emitCountLastFrame = (single effector.EffectTime - single i - 1.0f) * rate
+                        let emitCountThisFrame = (single effector.EffectTime - single i) * rate
+                        let emitCount = int emitCountThisFrame - int emitCountLastFrame
+                        let effector = { effector with EffectTime = int64 i }
+                        let artifacts' =
+                            List.fold
+                                (fun artifacts' _ ->
+                                    let slice = evalAspects slice aspects effector
+                                    let artifacts'' =
+                                        if slice.Enabled
+                                        then evalContent slice content effector
+                                        else []
+                                    artifacts'' @ artifacts')
+                                []
+                                [0 .. emitCount - 1]
+                        artifacts' @ artifacts)
+                    []
+                    effector.History
+            artifacts // temp for debuggability
         | Bone -> [] // TODO: implement
         | Composite (Shift shift, contents) ->
             let slice = { slice with Depth = slice.Depth + shift }
