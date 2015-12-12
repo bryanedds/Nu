@@ -4,7 +4,7 @@ open Prime
 open OpenTK
 
 type Algorithm =
-    | Const
+    | Constant
     | Linear
     | Random
     | Chaos
