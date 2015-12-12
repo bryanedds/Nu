@@ -117,6 +117,7 @@ and [<NoComparison>] Content =
     | StaticSprite of Resource * Aspect list * Content
     | AnimatedSprite of Resource * Vector2i * int * int * int64 * Aspect list * Content
     | PhysicsShape of BodyShape * string * string * string * Aspect list * Content
+    | Tag of string
     | Mount of Shift * Aspect list * Content
     | Repeat of Shift * Repetition * Aspect list * Content
     | Emit of Shift * Rate * Aspect list * Aspect list * Content
@@ -139,6 +140,7 @@ type [<NoComparison>] Definition =
 type [<NoComparison>] EffectArtifact =
     | RenderArtifact of RenderDescriptor list
     | SoundArtifact of PlaySoundMessage
+    | TagArtifact of string * Slice
 
 type Definitions =
     Map<string, Definition>
