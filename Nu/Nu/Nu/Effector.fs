@@ -50,6 +50,7 @@ module Effector =
         | Visible _
         | Enabled _
         | Position _
+        | Translation _
         | Size _
         | Rotation _
         | Depth _
@@ -76,6 +77,7 @@ module Effector =
         | StaticSprite _
         | AnimatedSprite _
         | PhysicsShape _
+        | Tag _
         | Mount _
         | Repeat _
         | Emit _
@@ -194,6 +196,13 @@ module Effector =
             let progress = evalProgress nodeTime node.TweenLength effector
             let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
+            { slice with Position = applied }
+        | Translation (applicator, algorithm, playback, nodes) ->
+            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
+            let progress = evalProgress nodeTime node.TweenLength effector
+            let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
+            let oriented = Vector2.Transform (tweened, Quaternion.FromAxisAngle (Vector3.UnitZ, slice.Rotation))
+            let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position oriented applicator
             { slice with Position = applied }
         | Size (applicator, algorithm, playback, nodes) ->
             let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
@@ -318,6 +327,8 @@ module Effector =
             evalAnimatedSprite slice resource celSize celRun celCount stutter aspects content effector
         | PhysicsShape (label, bodyShape, collisionCategories, collisionMask, aspects, content) ->
             ignore (label, bodyShape, collisionCategories, collisionMask, aspects, content); [] // TODO: implement
+        | Tag name ->
+            [TagArtifact (name, slice)]
         | Mount (Shift shift, aspects, content) ->
             let slice = { slice with Depth = slice.Depth + shift }
             let slice = evalAspects slice aspects effector
@@ -344,12 +355,13 @@ module Effector =
             let artifacts =
                 List.foldi
                     (fun i artifacts (slice : Slice) ->
+                        let timePassed = int64 i * effector.EffectRate
                         let slice = { slice with Depth = slice.Depth + shift }
-                        let slice = evalAspects slice emitterAspects { effector with EffectTime = effector.EffectTime + int64 i * effector.EffectRate }
-                        let emitCountLastFrame = single (effector.EffectTime - (int64 i + 1L) * effector.EffectRate) * rate
-                        let emitCountThisFrame = single (effector.EffectTime - int64 i * effector.EffectRate) * rate
+                        let slice = evalAspects slice emitterAspects { effector with EffectTime = effector.EffectTime - timePassed }
+                        let emitCountLastFrame = single (effector.EffectTime - timePassed - effector.EffectRate) * rate
+                        let emitCountThisFrame = single (effector.EffectTime - timePassed) * rate
                         let emitCount = int emitCountThisFrame - int emitCountLastFrame
-                        let effector = { effector with EffectTime = int64 i * effector.EffectRate }
+                        let effector = { effector with EffectTime = timePassed }
                         let artifacts' =
                             List.fold
                                 (fun artifacts' _ ->
