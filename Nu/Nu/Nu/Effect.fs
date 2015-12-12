@@ -4,7 +4,7 @@ open Prime
 open OpenTK
 
 type Algorithm =
-    | Const
+    | Constant
     | Linear
     | Random
     | Chaos
@@ -119,7 +119,7 @@ and [<NoComparison>] Content =
     | PhysicsShape of BodyShape * string * string * string * Aspect list * Content
     | Mount of Shift * Aspect list * Content
     | Repeat of Shift * Repetition * Aspect list * Content
-    | Emit of Shift * Rate * Aspect list * Content
+    | Emit of Shift * Rate * Aspect list * Aspect list * Content
     | Bone // TODO
     | Composite of Shift * Content list
     | End
