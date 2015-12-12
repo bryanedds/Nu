@@ -106,6 +106,7 @@ type [<NoComparison>] Aspect =
     | Visible of LogicApplicator * Playback * LogicNode list
     | Enabled of LogicApplicator * Playback * LogicNode list
     | Position of TweenApplicator * Algorithm * Playback * Tween2Node list
+    | Translation of TweenApplicator * Algorithm * Playback * Tween2Node list
     | Offset of TweenApplicator * Algorithm * Playback * Tween2Node list
     | Size of TweenApplicator * Algorithm * Playback * Tween2Node list
     | Rotation of TweenApplicator * Algorithm * Playback * TweenNode list
@@ -117,6 +118,7 @@ and [<NoComparison>] Content =
     | StaticSprite of Resource * Aspect list * Content
     | AnimatedSprite of Resource * Vector2i * int * int * int64 * Aspect list * Content
     | PhysicsShape of BodyShape * string * string * string * Aspect list * Content
+    | Tag of string
     | Mount of Shift * Aspect list * Content
     | Repeat of Shift * Repetition * Aspect list * Content
     | Emit of Shift * Rate * Aspect list * Aspect list * Content
@@ -139,6 +141,7 @@ type [<NoComparison>] Definition =
 type [<NoComparison>] EffectArtifact =
     | RenderArtifact of RenderDescriptor list
     | SoundArtifact of PlaySoundMessage
+    | TagArtifact of string * Slice
 
 type Definitions =
     Map<string, Definition>

@@ -91,6 +91,8 @@ module EffectFacetModule =
         member private this.SetEffectHistoryNp (value : Slice list) world = this.UpdateXtension (fun xtension -> xtension?EffectHistoryNp <- value) world
         member this.GetEffectPhysicsShapesNp world : unit = (this.GetXtension world)?EffectPhysicsShapesNp // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
         member private this.SetEffectPhysicsShapesNp (value : unit) world = this.UpdateXtension (fun xtension -> xtension?EffectPhysicsShapesNp <- value) world
+        member this.GetEffectTagsNp world : Map<string, Slice list> = (this.GetXtension world)?EffectTagsNp
+        member private this.SetEffectTagsNp (value : Map<string, Slice list>) world = this.UpdateXtension (fun xtension -> xtension?EffectTagsNp <- value) world
 
     type EffectFacet () =
         inherit Facet ()
@@ -102,10 +104,12 @@ module EffectFacetModule =
              define? EffectTimeOffset 0L // TODO: also implement similar time offset for AnimatedSpriteFacet
              define? EffectHistoryMax 180 // 3 seconds. TODO: make a constant
              define? EffectHistoryNp ([] : Slice list)
-             define? EffectPhysicsShapesNp ()]
+             define? EffectPhysicsShapesNp ()
+             define? EffectTagsNp (Map.empty : Map<string, Slice list>)]
 
         override facet.Actualize (entity, world) =
             if entity.InView world then
+                let world = entity.SetEffectTagsNp Map.empty world
                 let time = World.getTickTime world
                 let timeOffset = entity.GetEffectTimeOffset world
                 let effectTime = time - timeOffset
@@ -130,7 +134,14 @@ module EffectFacetModule =
                         List.fold (fun world artifact ->
                             match artifact with
                             | RenderArtifact renderDescriptors -> World.addRenderMessage (RenderDescriptorsMessage renderDescriptors) world
-                            | SoundArtifact soundMessage -> World.addAudioMessage (PlaySoundMessage soundMessage) world)
+                            | SoundArtifact soundMessage -> World.addAudioMessage (PlaySoundMessage soundMessage) world
+                            | TagArtifact (name, slice) ->
+                                let effectTags = entity.GetEffectTagsNp world
+                                let effectTags =
+                                    match Map.tryFind name effectTags with
+                                    | Some slices -> Map.add name (slice :: slices) effectTags
+                                    | None -> Map.add name [slice] effectTags
+                                entity.SetEffectTagsNp effectTags world)
                             world
                             artifacts
                     | Left error ->
