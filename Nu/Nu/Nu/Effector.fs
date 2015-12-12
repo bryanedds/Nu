@@ -193,8 +193,7 @@ module Effector =
             let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
             let progress = evalProgress nodeTime node.TweenLength effector
             let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
-            let oriented = Vector2.Transform (tweened, Quaternion.FromAxisAngle (Vector3.UnitZ, slice.Rotation))
-            let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position oriented applicator
+            let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
             { slice with Position = applied }
         | Size (applicator, algorithm, playback, nodes) ->
             let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
