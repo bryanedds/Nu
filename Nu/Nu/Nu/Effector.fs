@@ -345,11 +345,11 @@ module Effector =
                 List.foldi
                     (fun i artifacts (slice : Slice) ->
                         let slice = { slice with Depth = slice.Depth + shift }
-                        let slice = evalAspects slice emitterAspects { effector with EffectTime = effector.EffectTime + int64 i }
-                        let emitCountLastFrame = (single effector.EffectTime - single i - 1.0f) * rate
-                        let emitCountThisFrame = (single effector.EffectTime - single i) * rate
+                        let slice = evalAspects slice emitterAspects { effector with EffectTime = effector.EffectTime + int64 i * effector.EffectRate }
+                        let emitCountLastFrame = single (effector.EffectTime - (int64 i + 1L) * effector.EffectRate) * rate
+                        let emitCountThisFrame = single (effector.EffectTime - int64 i * effector.EffectRate) * rate
                         let emitCount = int emitCountThisFrame - int emitCountLastFrame
-                        let effector = { effector with EffectTime = int64 i }
+                        let effector = { effector with EffectTime = int64 i * effector.EffectRate }
                         let artifacts' =
                             List.fold
                                 (fun artifacts' _ ->
