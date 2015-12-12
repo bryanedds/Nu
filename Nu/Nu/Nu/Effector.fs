@@ -50,6 +50,7 @@ module Effector =
         | Visible _
         | Enabled _
         | Position _
+        | Translation _
         | Size _
         | Rotation _
         | Depth _
@@ -191,6 +192,12 @@ module Effector =
             let applied = applyLogic slice.Enabled node.LogicValue applicator
             { slice with Enabled = applied }
         | Position (applicator, algorithm, playback, nodes) ->
+            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
+            let progress = evalProgress nodeTime node.TweenLength effector
+            let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
+            let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
+            { slice with Position = applied }
+        | Translation (applicator, algorithm, playback, nodes) ->
             let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
             let progress = evalProgress nodeTime node.TweenLength effector
             let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
@@ -349,10 +356,9 @@ module Effector =
                 List.foldi
                     (fun i artifacts (slice : Slice) ->
                         let timePassed = int64 i * effector.EffectRate
-                        let timePassedLastFrame = timePassed + effector.EffectRate
                         let slice = { slice with Depth = slice.Depth + shift }
                         let slice = evalAspects slice emitterAspects { effector with EffectTime = effector.EffectTime - timePassed }
-                        let emitCountLastFrame = single (effector.EffectTime - timePassedLastFrame) * rate
+                        let emitCountLastFrame = single (effector.EffectTime - timePassed - effector.EffectRate) * rate
                         let emitCountThisFrame = single (effector.EffectTime - timePassed) * rate
                         let emitCount = int emitCountThisFrame - int emitCountLastFrame
                         let effector = { effector with EffectTime = timePassed }

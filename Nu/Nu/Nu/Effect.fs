@@ -106,6 +106,7 @@ type [<NoComparison>] Aspect =
     | Visible of LogicApplicator * Playback * LogicNode list
     | Enabled of LogicApplicator * Playback * LogicNode list
     | Position of TweenApplicator * Algorithm * Playback * Tween2Node list
+    | Translation of TweenApplicator * Algorithm * Playback * Tween2Node list
     | Offset of TweenApplicator * Algorithm * Playback * Tween2Node list
     | Size of TweenApplicator * Algorithm * Playback * Tween2Node list
     | Rotation of TweenApplicator * Algorithm * Playback * TweenNode list
