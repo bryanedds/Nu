@@ -100,7 +100,7 @@ module EffectFacetModule =
              define? Effect Effect.empty
              define? EffectOffset Vector2.Zero
              define? EffectTimeOffset 0L // TODO: also implement similar time offset for AnimatedSpriteFacet
-             define? EffectHistoryMax 256
+             define? EffectHistoryMax 180 // 3 seconds. TODO: make a constant
              define? EffectHistoryNp ([] : Slice list)
              define? EffectPhysicsShapesNp ()]
 
