@@ -3,6 +3,7 @@ open System
 open Prime
 open OpenTK
 
+/// An abstract data type for executing Effects.
 type [<NoEquality; NoComparison>] Effector =
     private
         { ViewType : ViewType
@@ -100,22 +101,22 @@ module Effector =
 
     let evalArgument (argument : Argument) : Definition =
         match argument with
-        | PassPlayback playback -> AsPlayback playback
-        | PassResource resource -> AsResource resource
-        | PassAspect aspect -> AsAspect aspect
-        | PassContent content -> AsContent ([], content)
+        | AlgebraicCompressionA resource ->
+            { DefinitionParams = []; DefinitionBody = AlgebraicCompressionA resource }
+        | AlgebraicCompressionB (AlgebraicCompressionA aspect) ->
+            { DefinitionParams = []; DefinitionBody = AlgebraicCompressionB (AlgebraicCompressionA aspect) }
+        | AlgebraicCompressionB (AlgebraicCompressionB content) ->
+            { DefinitionParams = []; DefinitionBody = AlgebraicCompressionB (AlgebraicCompressionB content) }
 
     let rec evalResource resource effector : AssetTag =
         match resource with
-        | ExpandResource definitionName ->
+        | Resource.Expand (definitionName, _) -> // NOTE: currently no use for arguments
             match Map.tryFind definitionName effector.EffectEnv with
             | Some definition ->
-                match definition with
-                | AsResource resource -> evalResource resource effector
-                | AsPlayback _
-                | AsAspect _
-                | AsContent _ ->
-                    note ^ "Expected AsResource for argument but received '" + Reflection.getTypeName definition + "'."
+                match definition.DefinitionBody with
+                | AlgebraicCompressionA resource -> evalResource resource effector
+                | _ ->
+                    note ^ "Expected Resource for definition '" + definitionName + "."
                     acvalue<AssetTag> Constants.Assets.DefaultImageValue
             | None ->
                 note ^ "Could not find definition with name '" + definitionName + "'."
@@ -138,14 +139,12 @@ module Effector =
 
     and private evalAspect slice aspect effector =
         match aspect with
-        | ExpandAspect definitionName ->
+        | Aspect.Expand (definitionName, _) -> // NOTE: currently no use for arguments
             match Map.tryFind definitionName effector.EffectEnv with
             | Some definition ->
-                match definition with
-                | AsAspect aspect -> evalAspect slice aspect effector
-                | AsPlayback _
-                | AsResource _
-                | AsContent _ -> note ^ "Expected AsAspect for argument but received '" + Reflection.getTypeName definition + "'."; slice
+                match definition.DefinitionBody with
+                | AlgebraicCompressionB (AlgebraicCompressionA aspect) -> evalAspect slice aspect effector
+                | _ -> note ^ "Expected Aspect for definition '" + definitionName + "'."; slice
             | None -> note ^ "Could not find definition with name '" + definitionName + "'."; slice
         | Visible (applicator, playback, nodes) ->
             let (_, _, node) = selectNodes effector.EffectTime playback nodes
@@ -274,20 +273,18 @@ module Effector =
 
     and private evalContent slice content effector =
         match content with
-        | ExpandContent (definitionName, arguments) ->
+        | Content.Expand (definitionName, arguments) ->
             match Map.tryFind definitionName effector.EffectEnv with
             | Some definition ->
-                match definition with
-                | AsContent (parameters, content) ->
+                match definition.DefinitionBody with
+                |  AlgebraicCompressionB (AlgebraicCompressionB content) ->
                     let localDefinitions = List.map evalArgument arguments
-                    match (try List.zip parameters localDefinitions |> Some with _ -> None) with
+                    match (try List.zip definition.DefinitionParams localDefinitions |> Some with _ -> None) with
                     | Some localDefinitionEntries ->
                         let effector = { effector with EffectEnv = Map.addMany localDefinitionEntries effector.EffectEnv }
                         evalContent slice content effector
                     | None -> note "Wrong number of arguments provided to ExpandContent."; []
-                | AsPlayback _
-                | AsResource _
-                | AsAspect _ -> note ^ "Expected AsContent for argument but received '" + Reflection.getTypeName definition + "'."; []
+                | _ -> note ^ "Expected Content for definition '" + definitionName + "'."; []
             | None -> note ^ "Could not find definition with name '" + definitionName + "'."; []
         | StaticSprite (resource, aspects, content) ->
             evalStaticSprite slice resource aspects content effector
@@ -325,11 +322,25 @@ module Effector =
                     (fun i artifacts (slice : Slice) ->
                         let timePassed = int64 i * effector.EffectRate
                         let slice = { slice with Depth = slice.Depth + shift }
-                        let slice = evalAspects slice emitterAspects { effector with EffectTime = effector.EffectTime - timePassed }
+                        let baseEffector = { effector with EffectTime = effector.EffectTime - timePassed }
+                        let slice = evalAspects slice emitterAspects baseEffector
                         let emitCountLastFrame = single (effector.EffectTime - timePassed - effector.EffectRate) * rate
                         let emitCountThisFrame = single (effector.EffectTime - timePassed) * rate
                         let emitCount = int emitCountThisFrame - int emitCountLastFrame
-                        let effector = { effector with EffectTime = timePassed }
+                        let effector =
+                            let history = effector.History
+                                (*match content with
+                                | Emit _ ->
+                                    List.mapi
+                                        (fun i slice ->
+                                            let timePassed = int64 i * baseEffector.EffectRate
+                                            let baseEffector = { effector with EffectTime = baseEffector.EffectTime - timePassed }
+                                            evalAspects slice aspects baseEffector)
+                                        baseEffector.History
+                                | _ -> effector.History*)
+                            { effector with
+                                History = history
+                                EffectTime = timePassed }
                         let artifacts' =
                             List.fold
                                 (fun artifacts' _ ->
@@ -349,7 +360,7 @@ module Effector =
         | Composite (Shift shift, contents) ->
             let slice = { slice with Depth = slice.Depth + shift }
             evalComposite slice contents effector
-        | End -> []
+        | Nil -> []
 
     and private evalContents slice contents effector =
         List.fold
