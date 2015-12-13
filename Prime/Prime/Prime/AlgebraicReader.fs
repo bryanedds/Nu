@@ -8,6 +8,9 @@ open Microsoft.FSharp.Reflection
 open FParsec
 open Prime
 
+type AlgebraicQuote =
+    | AlgebraicQuote of string
+
 type SymbolIndex =
     | ListIndex of int64 * SymbolIndex list
     | ContentIndex of int64 * SymbolIndex list
@@ -23,26 +26,47 @@ module AlgebraicReader =
     let [<Literal>] OpenComplexValueStr = "["
     let [<Literal>] CloseComplexValueChar = ']'
     let [<Literal>] CloseComplexValueStr = "]"
-    let [<Literal>] StructureChars = "[]"
+    let [<Literal>] OpenQuoteChar = '`'
+    let [<Literal>] OpenQuoteStr = "`"
+    let [<Literal>] CloseQuoteChar = '\''
+    let [<Literal>] CloseQuoteStr = "\'"
+    let [<Literal>] StructureChars = "[]`\'"
 
     let skipWhitespaceChar = skipAnyOf WhitespaceChars
     let skipWhitespace = skipMany skipWhitespaceChar
 
     let charForm character = skipChar character >>. skipWhitespace
-    let openComplexValueForm = charForm OpenComplexValueChar
-    let closeComplexValueForm = charForm CloseComplexValueChar
-    let readSimpleValueChars = many1 (noneOf (StructureChars + WhitespaceChars))
+    let openComplexValueForm = skipChar OpenComplexValueChar
+    let closeComplexValueForm = skipChar CloseComplexValueChar
+    let openQuoteForm = charForm OpenQuoteChar
+    let closeQuoteForm = charForm CloseQuoteChar
+    
+    let readAtomicValueChars = many1 (noneOf (StructureChars + WhitespaceChars))
+    let readQuoteChars = many (noneOf [CloseQuoteChar])
+    let readContentChars =
+        many1
+            ((attempt (openQuoteForm >>. readQuoteChars .>> closeQuoteForm)) <|>
+             readAtomicValueChars .>>
+             skipWhitespace)
 
     module private AlgebraicValueReader =
 
         let (readValue : Parser<obj, unit>, refReadValue : Parser<obj, unit> ref) =
             createParserForwardedToRef ()
 
-        let readSimpleValue =
+        let readAtomicValue =
             parse {
-                let! chars = readSimpleValueChars
+                let! chars = readAtomicValueChars
                 do! skipWhitespace
                 return chars |> String.implode |> (fun str -> str.TrimEnd ()) |> objectify }
+
+        let readQuoteValue =
+            parse {
+                do! openQuoteForm
+                let! quoteChars = readQuoteChars // TODO: enable reading quotes that have inner quotes
+                do! closeQuoteForm
+                do! skipWhitespace
+                return quoteChars |> String.implode |> AlgebraicQuote |> objectify }
 
         let readComplexValue =
             parse {
@@ -53,7 +77,8 @@ module AlgebraicReader =
                 return values :> obj }
 
         do refReadValue :=
-            attempt readSimpleValue <|>
+            attempt readQuoteValue <|>
+            attempt readAtomicValue <|>
             readComplexValue
 
     module private AlgebraicSymbolIndexer =
@@ -74,7 +99,7 @@ module AlgebraicReader =
         let readContentIndex =
             parse {
                 let! openPosition = getPosition
-                let! _ = many1 (readSimpleValueChars .>> skipWhitespace)
+                let! _ = readContentChars
                 let! symbolIndices = many readSymbolIndex
                 return ContentIndex (openPosition.Index, symbolIndices) }
 
@@ -84,7 +109,7 @@ module AlgebraicReader =
 
     /// Convert a string to an algebraic value, with the following parses:
     /// 
-    /// (* Simple Values *)
+    /// (* Atomic Values *)
     /// 
     /// 0
     /// None
@@ -93,11 +118,13 @@ module AlgebraicReader =
     /// CharacterAnimationFacing
     /// 
     /// (* Complex Values *)
+    ///
     /// []
     /// [Some 0]
     /// [Left 0]
     /// [[0 1] [2 4]]
     /// [AnimationData 4 8]
+    ///
     let stringToValue str =
         match run (skipWhitespace >>. AlgebraicValueReader.readValue) str with
         | Success (value, _, _) -> value

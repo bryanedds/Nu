@@ -15,6 +15,14 @@ namespace Nu.Gaia.Design
         public GaiaForm()
         {
             InitializeComponent();
+            Load += GaiaForm_Load;
+        }
+
+        private void GaiaForm_Load(object sender, EventArgs e)
+        {
+            // HACK: next 2 lines solves this bug - http://stackoverflow.com/a/3679036/1082782
+            propertyValueTextBox.AutoWordSelection = true;
+            propertyValueTextBox.AutoWordSelection = false;
         }
     }
 }

@@ -46,7 +46,11 @@ type AlgebraicConverter (targetType : Type) =
             convertToString.Invoke (typeConverter, [|source|]) :?> string
         | None ->
 
-            if sourceType.Name = typedefof<KeyValuePair<_, _>>.Name then
+            if sourceType.Name = typeof<AlgebraicQuote>.Name then
+                let (AlgebraicQuote quoteStr) = source :> obj :?> AlgebraicQuote
+                AlgebraicReader.OpenQuoteStr + quoteStr + AlgebraicReader.CloseQuoteStr
+
+            elif sourceType.Name = typedefof<KeyValuePair<_, _>>.Name then
                 let gargs = sourceType.GetGenericArguments ()
                 let kvp = objToKeyValuePair source
                 let kvpStrs = KeyValuePair (toString kvp.Key gargs.[0], toString kvp.Value gargs.[1])
@@ -234,6 +238,8 @@ type AlgebraicConverter (targetType : Type) =
                 | :? string as unionName ->
                     let unionCase = Array.find (fun (unionCase : UnionCaseInfo) -> unionCase.Name = unionName) unionCases
                     FSharpValue.MakeUnion (unionCase, [||])
+                | :? AlgebraicQuote as quote ->
+                    quote :> obj
                 | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
 
             else
