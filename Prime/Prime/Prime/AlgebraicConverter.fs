@@ -10,6 +10,11 @@ open System.Reflection
 open Microsoft.FSharp.Reflection
 open Prime
 
+/// Compresses two unions into a single union in an algebraic expression.
+type AlgebraicCompression<'a, 'b> =
+    | AlgebraicCompressionA of 'a
+    | AlgebraicCompressionB of 'b
+
 type [<NoEquality; NoComparison>] AlgebraicSource =
     { AlgebraicValue : obj }
 
@@ -87,6 +92,18 @@ type AlgebraicConverter (targetType : Type) =
                 let itemsStr = String.Join (AlgebraicReader.SeparatorStr, itemsStrs)
                 AlgebraicReader.OpenComplexValueStr + itemsStr + AlgebraicReader.CloseComplexValueStr
 
+            elif sourceType.Name = typedefof<AlgebraicCompression<_, _>>.Name then
+                let (unionCase, unionFields) = FSharpValue.GetUnionFields (source, sourceType)
+                let value = unionFields.[0]
+                let valueType = value.GetType ()
+                if unionCase.Tag = 0 then
+                    toString value valueType
+                else
+                    let (_, unionFields) = FSharpValue.GetUnionFields (value, valueType)
+                    let value = unionFields.[0]
+                    let valueType = value.GetType ()
+                    toString value valueType
+
             elif FSharpType.IsTuple sourceType then
                 let tupleFields = FSharpValue.GetTupleFields source
                 let tupleElementTypes = FSharpType.GetTupleElements sourceType
@@ -155,7 +172,7 @@ type AlgebraicConverter (targetType : Type) =
                     let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
                     let ofSeq = ((FSharpCoreAssembly.GetType "Microsoft.FSharp.Collections.ListModule").GetMethod ("OfSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
                     ofSeq.Invoke (null, [|cast.Invoke (null, [|list|])|])
-                | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
+                | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue. TODO: better error message!"
 
             elif destType.Name = typedefof<_ Set>.Name then
                 match readerValue with
@@ -166,7 +183,7 @@ type AlgebraicConverter (targetType : Type) =
                     let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
                     let ofSeq = ((FSharpCoreAssembly.GetType "Microsoft.FSharp.Collections.SetModule").GetMethod ("OfSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
                     ofSeq.Invoke (null, [|cast.Invoke (null, [|list|])|])
-                | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
+                | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue. TODO: better error message!"
 
             elif destType.Name = typedefof<Map<_, _>>.Name then
                 match readerValue with
@@ -179,8 +196,8 @@ type AlgebraicConverter (targetType : Type) =
                         let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|pairType|]
                         let ofSeq = ((FSharpCoreAssembly.GetType "Microsoft.FSharp.Collections.MapModule").GetMethod ("OfSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|fstType; sndType|]
                         ofSeq.Invoke (null, [|cast.Invoke (null, [|pairList|])|])
-                    | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
-                | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
+                    | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue. TODO: better error message!"
+                | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue. TODO: better error message!"
 
             elif destType.Name = typedefof<Vmap<_, _>>.Name then
                 match readerValue with
@@ -193,8 +210,29 @@ type AlgebraicConverter (targetType : Type) =
                         let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|pairType|]
                         let ofSeq = ((typedefof<Vmap<_, _>>.Assembly.GetType "Prime.VmapModule").GetMethod ("ofSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|fstType; sndType|]
                         ofSeq.Invoke (null, [|cast.Invoke (null, [|pairList|])|])
-                    | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
-                | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
+                    | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue. TODO: better error message!"
+                | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue. TODO: better error message!"
+
+            elif destType.Name = typedefof<AlgebraicCompression<_, _>>.Name then
+                match readerValue with
+                | :? (obj list) ->
+                    match readerValue :?> obj list with
+                    | readerValueHead :: _ ->
+                        let gargs = destType.GetGenericArguments ()
+                        let aType = gargs.[0]
+                        let aCases = FSharpType.GetUnionCases aType
+                        match Array.tryFind (fun (unionCase : UnionCaseInfo) -> unionCase.Name = (readerValueHead :?> string)) aCases with
+                        | Some aCase ->
+                            let a = fromReaderValue aCase.DeclaringType readerValue
+                            let compressionUnion = (FSharpType.GetUnionCases destType).[0]
+                            FSharpValue.MakeUnion (compressionUnion, [|a|])
+                        | None ->
+                            let bType = gargs.[1]
+                            let b = fromReaderValue bType readerValue
+                            let compressionUnion = (FSharpType.GetUnionCases destType).[1]
+                            FSharpValue.MakeUnion (compressionUnion, [|b|])
+                    | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue. TODO: better error message!"
+                | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue. TODO: better error message!"
 
             elif FSharpType.IsTuple destType then
                 let tupleReaderValues = readerValue :?> obj list
@@ -234,13 +272,12 @@ type AlgebraicConverter (targetType : Type) =
                                     fromReaderValue unionFieldType unionReaderValue)
                                 readerValueTail
                         FSharpValue.MakeUnion (unionCase, Array.ofList unionValues)
-                    | _ -> failwith "Invalid AlgebraicConverter conversion from union reader value."
+                    | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue. TODO: better error message!"
                 | :? string as unionName ->
                     let unionCase = Array.find (fun (unionCase : UnionCaseInfo) -> unionCase.Name = unionName) unionCases
                     FSharpValue.MakeUnion (unionCase, [||])
-                | :? AlgebraicQuote as quote ->
-                    quote :> obj
-                | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
+                | :? AlgebraicQuote as quote -> quote :> obj // TODO: move this up to a more explicit check
+                | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue. TODO: better error message!"
 
             else
                 match readerValue with
