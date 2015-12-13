@@ -118,11 +118,13 @@ module AlgebraicReader =
     /// CharacterAnimationFacing
     /// 
     /// (* Complex Values *)
+    ///
     /// []
     /// [Some 0]
     /// [Left 0]
     /// [[0 1] [2 4]]
     /// [AnimationData 4 8]
+    ///
     let stringToValue str =
         match run (skipWhitespace >>. AlgebraicValueReader.readValue) str with
         | Success (value, _, _) -> value
