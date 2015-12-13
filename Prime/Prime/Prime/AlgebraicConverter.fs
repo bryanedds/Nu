@@ -87,6 +87,12 @@ type AlgebraicConverter (targetType : Type) =
                 let itemsStr = String.Join (AlgebraicReader.SeparatorStr, itemsStrs)
                 AlgebraicReader.OpenComplexValueStr + itemsStr + AlgebraicReader.CloseComplexValueStr
 
+            elif sourceType.Name = typedefof<AlgebraicCompress<_, _>>.Name then
+                let value = AlgebraicCompress.reflect source
+                let valueType = value.GetType ()
+                let valueStr = toString value valueType
+                AlgebraicReader.OpenComplexValueStr + valueStr + AlgebraicReader.CloseComplexValueStr
+
             elif FSharpType.IsTuple sourceType then
                 let tupleFields = FSharpValue.GetTupleFields source
                 let tupleElementTypes = FSharpType.GetTupleElements sourceType
@@ -238,9 +244,8 @@ type AlgebraicConverter (targetType : Type) =
                 | :? string as unionName ->
                     let unionCase = Array.find (fun (unionCase : UnionCaseInfo) -> unionCase.Name = unionName) unionCases
                     FSharpValue.MakeUnion (unionCase, [||])
-                | :? AlgebraicQuote as quote ->
-                    quote :> obj
-                | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
+                | :? AlgebraicQuote as quote -> quote :> obj // TODO: move this up to a more explicit check
+                | _ -> failwithumf ()
 
             else
                 match readerValue with

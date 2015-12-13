@@ -11,6 +11,48 @@ open Prime
 type AlgebraicQuote =
     | AlgebraicQuote of string
 
+type AlgebraicCompress<'a, 'b> =
+    | AlgebraicCompressA of 'a
+    | AlgebraicCompressB of 'b
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module AlgebraicCompress =
+
+    let rec reflect (obj : obj) =
+        let objType = obj.GetType ()
+        if objType.Name <> typedefof<AlgebraicCompress<_, _>>.Name then
+            failwith "Cannot reflect this way on a non-AlgebraicCompress."
+        let (unionCase, unionFields) = FSharpValue.GetUnionFields (obj, objType)
+        if unionCase.Name = "AlgebraicCompressA" then // MAGIC_VALUE: not sure how to get this symbol reflectively...
+            let a = unionFields.[0]
+            a
+        else
+            let b = unionFields.[1]
+            let bType = b.GetType ()
+            if bType.Name = typedefof<AlgebraicCompress<_, _>>.Name
+            then reflect b
+            else b
+
+    let rec build (destType : Type) (compressedName : string) (obj : obj) =
+        if destType.Name <> typedefof<AlgebraicCompress<_, _>>.Name then
+            failwith "Cannot build an AlgebraicCompress with the given type."
+        let gargs = destType.GetGenericArguments ()
+        let aType = gargs.[0]
+        if aType.Name = compressedName then
+            let unionCases = FSharpType.GetUnionCases destType
+            let unionCase = unionCases.[0]
+            let a = FSharpValue.MakeUnion (unionCase, [|obj|])
+            a
+        else
+            let bType = gargs.[1]
+            let b =
+                if bType.Name = typedefof<AlgebraicCompress<_, _>>.Name
+                then build bType compressedName obj
+                else obj
+            let unionCases = FSharpType.GetUnionCases destType
+            let unionCase = unionCases.[1]
+            FSharpValue.MakeUnion (unionCase, [|b|])
+
 type SymbolIndex =
     | ListIndex of int64 * SymbolIndex list
     | ContentIndex of int64 * SymbolIndex list
