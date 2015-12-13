@@ -11,79 +11,11 @@ type [<NoEquality; NoComparison>] Effector =
           ProgressOffset : single
           EffectRate : int64
           EffectTime : int64
+          EffectEnv : Definitions
           Chaos : System.Random }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Effector =
-
-    let expandArgument (argument : Argument) : Definition =
-        match argument with
-        | PassPlayback playback -> AsPlayback playback
-        | PassResource resource -> AsResource resource
-        | PassAspect aspect -> AsAspect aspect
-        | PassContent content -> AsContent ([], content)
-
-    let rec expandResource (env : Definitions) (resource : Resource) : Either<string, Resource> =
-        match resource with
-        | ExpandResource resourceName ->
-            match Map.tryFind resourceName env with
-            | Some resource ->
-                match resource with
-                | AsResource resource -> expandResource env resource
-                | AsPlayback _ -> Left "Expected Resource argument but received Playback."
-                | AsAspect _ -> Left "Expected Resource argument but received Aspect."
-                | AsContent _ -> Left "Expected Resource argument but received Content."
-            | None -> Left "Expected Content argument but received none."
-        | Resource _ -> Right resource
-
-    let rec expandAspect (env : Definitions) (aspect : Aspect) : Either<string, Aspect> =
-        match aspect with
-        | ExpandAspect aspectName ->
-            match Map.tryFind aspectName env with
-            | Some aspect ->
-                match aspect with
-                | AsAspect aspect -> expandAspect env aspect
-                | AsPlayback _ -> Left "Expected Aspect argument but received Playback."
-                | AsResource _ -> Left "Expected Aspect argument but received Resource."
-                | AsContent _ -> Left "Expected Aspect argument but received Content."
-            | None -> Left "Expected Content argument but received none."
-        | Visible _
-        | Enabled _
-        | Position _
-        | Translation _
-        | Size _
-        | Rotation _
-        | Depth _
-        | Offset _
-        | Color _ -> Right aspect
-
-    let rec expandContent (env : Definitions) (content : Content) : Either<string, Content> =
-        match content with
-        | ExpandContent (contentName, arguments) ->
-            match Map.tryFind contentName env with
-            | Some definition ->
-                match definition with
-                | AsContent (parameters, content) ->
-                    let localDefinitions = List.map expandArgument arguments
-                    match (try List.zip parameters localDefinitions |> Some with _ -> None) with
-                    | Some localDefinitionEntries ->
-                        let env = Map.addMany localDefinitionEntries env
-                        expandContent env content
-                    | None -> Left "Wrong number of arguments provided to ExpandContent."
-                | AsPlayback _ -> Left "Expected Content argument but received Playback."
-                | AsResource _ -> Left "Expected Content argument but received Resource."
-                | AsAspect _ -> Left "Expected Content argument but received Aspect."
-            | None -> Left "Expected Content argument but received none."
-        | StaticSprite _
-        | AnimatedSprite _
-        | PhysicsShape _
-        | Tag _
-        | Mount _
-        | Repeat _
-        | Emit _
-        | Bone
-        | Composite _
-        | End -> Right content
 
     let rec private selectNodes2 localTime playback (nodes : INode list) =
         match playback with
@@ -166,6 +98,30 @@ module Effector =
         let celSize = Vector2 (single celSize.X, single celSize.Y)
         Math.makeBounds celPosition celSize
 
+    let evalArgument (argument : Argument) : Definition =
+        match argument with
+        | PassPlayback playback -> AsPlayback playback
+        | PassResource resource -> AsResource resource
+        | PassAspect aspect -> AsAspect aspect
+        | PassContent content -> AsContent ([], content)
+
+    let rec evalResource resource effector : AssetTag =
+        match resource with
+        | ExpandResource definitionName ->
+            match Map.tryFind definitionName effector.EffectEnv with
+            | Some definition ->
+                match definition with
+                | AsResource resource -> evalResource resource effector
+                | AsPlayback _
+                | AsAspect _
+                | AsContent _ ->
+                    note ^ "Expected AsResource for argument but received '" + Reflection.getTypeName definition + "'."
+                    acvalue<AssetTag> Constants.Assets.DefaultImageValue
+            | None ->
+                note ^ "Could not find definition with name '" + definitionName + "'."
+                acvalue<AssetTag> Constants.Assets.DefaultImageValue
+        | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
+
     let rec private iterateArtifacts slice incrementers content effector =
         let effector = { effector with ProgressOffset = 0.0f }
         let slice = evalAspects slice incrementers effector
@@ -182,7 +138,15 @@ module Effector =
 
     and private evalAspect slice aspect effector =
         match aspect with
-        | ExpandAspect _ -> failwithumf ()
+        | ExpandAspect definitionName ->
+            match Map.tryFind definitionName effector.EffectEnv with
+            | Some definition ->
+                match definition with
+                | AsAspect aspect -> evalAspect slice aspect effector
+                | AsPlayback _
+                | AsResource _
+                | AsContent _ -> note ^ "Expected AsAspect for argument but received '" + Reflection.getTypeName definition + "'."; slice
+            | None -> note ^ "Could not find definition with name '" + definitionName + "'."; slice
         | Visible (applicator, playback, nodes) ->
             let (_, _, node) = selectNodes effector.EffectTime playback nodes
             let applied = applyLogic slice.Visible node.LogicValue applicator
@@ -236,18 +200,12 @@ module Effector =
             { slice with Color = applied }
 
     and private evalAspects slice aspects effector =
-        List.fold
-            (fun slice aspect -> evalAspect slice aspect effector)
-            slice
-            aspects
+        List.fold (fun slice aspect -> evalAspect slice aspect effector) slice aspects
 
     and private evalStaticSprite slice resource aspects content effector =
 
         // pull image from resource
-        let image =
-            match resource with
-            | ExpandResource _ -> failwithumf ()
-            | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
+        let image = evalResource resource effector
 
         // eval aspects
         let slice = evalAspects slice aspects effector
@@ -279,10 +237,7 @@ module Effector =
     and private evalAnimatedSprite slice resource celSize celRun celCount stutter aspects content effector =
 
         // pull image from resource
-        let image =
-            match resource with
-            | ExpandResource _ -> failwithumf ()
-            | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
+        let image = evalResource resource effector
 
         // eval aspects
         let slice = evalAspects slice aspects effector
@@ -319,8 +274,21 @@ module Effector =
 
     and private evalContent slice content effector =
         match content with
-        | ExpandContent _ ->
-            failwithumf ()
+        | ExpandContent (definitionName, arguments) ->
+            match Map.tryFind definitionName effector.EffectEnv with
+            | Some definition ->
+                match definition with
+                | AsContent (parameters, content) ->
+                    let localDefinitions = List.map evalArgument arguments
+                    match (try List.zip parameters localDefinitions |> Some with _ -> None) with
+                    | Some localDefinitionEntries ->
+                        let effector = { effector with EffectEnv = Map.addMany localDefinitionEntries effector.EffectEnv }
+                        evalContent slice content effector
+                    | None -> note "Wrong number of arguments provided to ExpandContent."; []
+                | AsPlayback _
+                | AsResource _
+                | AsAspect _ -> note ^ "Expected AsContent for argument but received '" + Reflection.getTypeName definition + "'."; []
+            | None -> note ^ "Could not find definition with name '" + definitionName + "'."; []
         | StaticSprite (resource, aspects, content) ->
             evalStaticSprite slice resource aspects content effector
         | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects, content) ->
@@ -391,24 +359,23 @@ module Effector =
             []
             contents
 
-    let eval slice (globalEnv : Definitions) (effect : Effect) (effector : Effector) : Either<string, EffectArtifact list> =
+    let eval slice (effect : Effect) (effector : Effector) : EffectArtifact list =
         let localTime =
             match effect.OptLifetime with
             | Some lifetime -> effector.EffectTime % lifetime
             | None -> effector.EffectTime
-        let env = Map.concat globalEnv effect.Definitions
-        match expandContent env effect.Content with
-        | Right content ->
-            let effector = { effector with EffectTime = localTime }
-            let artifacts = evalContent slice content effector
-            Right artifacts
-        | Left error -> Left error
+        let effector =
+            { effector with
+                EffectEnv = Map.concat effector.EffectEnv effect.Definitions
+                EffectTime = localTime }
+        evalContent slice effect.Content effector
 
-    let make viewType history tickRate tickTime = 
+    let make viewType history tickRate tickTime globalEnv = 
         { ViewType = viewType
           History = history
           HistoryLength = List.length history
           ProgressOffset = 0.0f
           EffectRate = tickRate
           EffectTime = tickTime
+          EffectEnv = globalEnv
           Chaos = System.Random () }
