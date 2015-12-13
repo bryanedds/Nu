@@ -17,89 +17,6 @@ type [<NoEquality; NoComparison>] Effector =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Effector =
 
-    let expandArgument (argument : Argument) : Definition =
-        match argument with
-        | PassPlayback playback -> AsPlayback playback
-        | PassResource resource -> AsResource resource
-        | PassAspect aspect -> AsAspect aspect
-        | PassContent content -> AsContent ([], content)
-
-    let rec expandResource resource effector : AssetTag =
-        match resource with
-        | ExpandResource definitionName ->
-            match Map.tryFind definitionName effector.EffectEnv with
-            | Some definition ->
-                match definition with
-                | AsResource resource -> expandResource resource effector
-                | AsPlayback _
-                | AsAspect _
-                | AsContent _ ->
-                    note ^ "Expected AsResource for argument but received '" + Reflection.getTypeName definition + "'."
-                    acvalue<AssetTag> Constants.Assets.DefaultImageValue
-            | None ->
-                note ^ "Could not find definition with name '" + definitionName + "'."
-                acvalue<AssetTag> Constants.Assets.DefaultImageValue
-        | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
-
-    let rec expandAspect aspect effector : Aspect =
-        match aspect with
-        | ExpandAspect definitionName ->
-            match Map.tryFind definitionName effector.EffectEnv with
-            | Some definition ->
-                match definition with
-                | AsAspect aspect -> expandAspect aspect effector
-                | AsPlayback _
-                | AsResource _
-                | AsContent _ ->
-                    note ^ "Expected AsAspect for argument but received '" + Reflection.getTypeName definition + "'."
-                    acvalue<Aspect> "[Position Sum Linear Once [[[0 0] 0]]]"
-            | None ->
-                note ^ "Could not find definition with name '" + definitionName + "'."
-                acvalue<Aspect> "[Position Sum Linear Once [[[0 0] 0]]]"
-        | Visible _
-        | Enabled _
-        | Position _
-        | Translation _
-        | Size _
-        | Rotation _
-        | Depth _
-        | Offset _
-        | Color _ -> aspect
-
-    let rec expandContent content effector : Content =
-        match content with
-        | ExpandContent (definitionName, arguments) ->
-            match Map.tryFind definitionName effector.EffectEnv with
-            | Some definition ->
-                match definition with
-                | AsContent (parameters, content) ->
-                    let localDefinitions = List.map expandArgument arguments
-                    match (try List.zip parameters localDefinitions |> Some with _ -> None) with
-                    | Some localDefinitionEntries ->
-                        let effector = { effector with EffectEnv = Map.addMany localDefinitionEntries effector.EffectEnv }
-                        expandContent content effector
-                    | None ->
-                        note "Wrong number of arguments provided to ExpandContent."
-                        End
-                | AsPlayback _
-                | AsResource _
-                | AsAspect _ ->
-                    note ^ "Expected AsContent for argument but received '" + Reflection.getTypeName definition + "'."
-                    End
-            | None ->
-                note ^ "Could not find definition with name '" + definitionName + "'."
-                End
-        | StaticSprite _
-        | AnimatedSprite _
-        | PhysicsShape _
-        | Tag _
-        | Mount _
-        | Repeat _
-        | Emit _
-        | Bone
-        | Composite _
-        | End -> content
-
     let rec private selectNodes2 localTime playback (nodes : INode list) =
         match playback with
         | Once ->
@@ -181,6 +98,30 @@ module Effector =
         let celSize = Vector2 (single celSize.X, single celSize.Y)
         Math.makeBounds celPosition celSize
 
+    let evalArgument (argument : Argument) : Definition =
+        match argument with
+        | PassPlayback playback -> AsPlayback playback
+        | PassResource resource -> AsResource resource
+        | PassAspect aspect -> AsAspect aspect
+        | PassContent content -> AsContent ([], content)
+
+    let rec evalResource resource effector : AssetTag =
+        match resource with
+        | ExpandResource definitionName ->
+            match Map.tryFind definitionName effector.EffectEnv with
+            | Some definition ->
+                match definition with
+                | AsResource resource -> evalResource resource effector
+                | AsPlayback _
+                | AsAspect _
+                | AsContent _ ->
+                    note ^ "Expected AsResource for argument but received '" + Reflection.getTypeName definition + "'."
+                    acvalue<AssetTag> Constants.Assets.DefaultImageValue
+            | None ->
+                note ^ "Could not find definition with name '" + definitionName + "'."
+                acvalue<AssetTag> Constants.Assets.DefaultImageValue
+        | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
+
     let rec private iterateArtifacts slice incrementers content effector =
         let effector = { effector with ProgressOffset = 0.0f }
         let slice = evalAspects slice incrementers effector
@@ -197,7 +138,15 @@ module Effector =
 
     and private evalAspect slice aspect effector =
         match aspect with
-        | ExpandAspect _ -> failwithumf ()
+        | ExpandAspect definitionName ->
+            match Map.tryFind definitionName effector.EffectEnv with
+            | Some definition ->
+                match definition with
+                | AsAspect aspect -> evalAspect slice aspect effector
+                | AsPlayback _
+                | AsResource _
+                | AsContent _ -> note ^ "Expected AsAspect for argument but received '" + Reflection.getTypeName definition + "'."; slice
+            | None -> note ^ "Could not find definition with name '" + definitionName + "'."; slice
         | Visible (applicator, playback, nodes) ->
             let (_, _, node) = selectNodes effector.EffectTime playback nodes
             let applied = applyLogic slice.Visible node.LogicValue applicator
@@ -256,7 +205,7 @@ module Effector =
     and private evalStaticSprite slice resource aspects content effector =
 
         // pull image from resource
-        let image = expandResource resource effector
+        let image = evalResource resource effector
 
         // eval aspects
         let slice = evalAspects slice aspects effector
@@ -288,7 +237,7 @@ module Effector =
     and private evalAnimatedSprite slice resource celSize celRun celCount stutter aspects content effector =
 
         // pull image from resource
-        let image = expandResource resource effector
+        let image = evalResource resource effector
 
         // eval aspects
         let slice = evalAspects slice aspects effector
@@ -325,8 +274,21 @@ module Effector =
 
     and private evalContent slice content effector =
         match content with
-        | ExpandContent _ ->
-            failwithumf ()
+        | ExpandContent (definitionName, arguments) ->
+            match Map.tryFind definitionName effector.EffectEnv with
+            | Some definition ->
+                match definition with
+                | AsContent (parameters, content) ->
+                    let localDefinitions = List.map evalArgument arguments
+                    match (try List.zip parameters localDefinitions |> Some with _ -> None) with
+                    | Some localDefinitionEntries ->
+                        let effector = { effector with EffectEnv = Map.addMany localDefinitionEntries effector.EffectEnv }
+                        evalContent slice content effector
+                    | None -> note "Wrong number of arguments provided to ExpandContent."; []
+                | AsPlayback _
+                | AsResource _
+                | AsAspect _ -> note ^ "Expected AsContent for argument but received '" + Reflection.getTypeName definition + "'."; []
+            | None -> note ^ "Could not find definition with name '" + definitionName + "'."; []
         | StaticSprite (resource, aspects, content) ->
             evalStaticSprite slice resource aspects content effector
         | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects, content) ->
@@ -402,10 +364,11 @@ module Effector =
             match effect.OptLifetime with
             | Some lifetime -> effector.EffectTime % lifetime
             | None -> effector.EffectTime
-        let effector = { effector with EffectEnv = Map.concat effector.EffectEnv effect.Definitions }
-        let content = expandContent effect.Content effector
-        let effector = { effector with EffectTime = localTime }
-        evalContent slice content effector
+        let effector =
+            { effector with
+                EffectEnv = Map.concat effector.EffectEnv effect.Definitions
+                EffectTime = localTime }
+        evalContent slice effect.Content effector
 
     let make viewType history tickRate tickTime globalEnv = 
         { ViewType = viewType
