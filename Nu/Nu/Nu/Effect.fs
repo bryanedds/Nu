@@ -137,11 +137,11 @@ type [<NoComparison>] Definition =
     | AsAspect of Aspect
     | AsContent of string list * Content
 
-type ArgumentCompress =
-    AlgebraicCompress<Resource, AlgebraicCompress<Aspect, Content>>
+type Argument' =
+    AlgebraicCompression<Resource, AlgebraicCompression<Aspect, Content>>
 
-type DefinitionCompress =
-    AlgebraicCompress<Playback, AlgebraicCompress<Resource, AlgebraicCompress<Aspect, string list * Content>>>
+type Definition' =
+    AlgebraicCompression<Playback, AlgebraicCompression<Resource, AlgebraicCompression<Aspect, string list * Content>>>
 
 type [<NoComparison>] EffectArtifact =
     | RenderArtifact of RenderDescriptor list
