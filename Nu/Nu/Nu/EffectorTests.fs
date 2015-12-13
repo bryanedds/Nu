@@ -16,48 +16,29 @@ module EffectorTests =
         Math.init ()
 
         let effectStr =
-            "[Ifrit [Loop 10] [Some 20]
-                [[FlameResource [[] [Resource Gameplay Esper]]]
-                 [FlameSprite [[FlamePosition] [StaticSprite [ExpandResource FlameResource]
-                    [[ExpandAspect FlamePosition]
-                     [Color Put Linear
-                        [[[1 1 1 1] 10]
-                         [[0.8 0.25 0.25 0.75] 0]]]]
-                    [Composite []]]]]
-                 [IfritSprite [AsContent [] [AnimatedSprite [Resource Gameplay Esper] [4 4] 4 16 6
-                    [[Visible Put
-                        [[False 2]
-                         [True 16]
-                         [False 0]]]
-                     [Position Sum Linear
-                        [[[0 0] 10]
-                         [[10 10] 0]]]]
-                    [Composite
-                        [[Mount [] [ExpandContent FlameSprite
-                            [[PassAspect [Position Sum Linear
-                                [[[0 0] 10]
-                                 [[10 10] 0]]]]]]]
-                         [Mount [] [ExpandContent FlameSprite
-                            [[PassAspect [Position Sum Linear
-                                [[[10 0] 10]
-                                 [[0 10] 0]]]]]]]
-                         [Repeat [Cycle 5]
-                            [[Position Sum Sin
-                                [[[0 0] 10]
-                                 [[0 10] 0]]]
-                             [Position Sum Cos
-                                [[[0 0] 10]
-                                 [[10 0] 0]]]]
-                            [StaticSprite [Resource Gameplay Spark]]]]]]]]]
-                [ExpandContent IfritSprite []]]]"
-
-        let alucard =
-            "[Alucard [Loop 16] 16
-                [[Pose [AsResource
-                    [Resource Gameplay AlucardWalkLeft]]]
-                [AnimatedSprite [ResourceVar Pose] [4 4] [48 48] 5
-                    [...]]]"
-        ignore alucard
+            "[TestEffect None 
+             [[BoxSprite 
+               [[] 
+                [StaticSprite 
+                 [Resource Default Image] 
+                 [] Nil]]]] 
+             [Emit 
+              [Shift 0.1] 
+              [Rate 0.1] 
+              [[Rotation Sum Ease Bounce 
+                [[-1 180] 
+                 [1 0]]]] 
+              [[Translation Sum Linear Once 
+                [[[0 0] 180] 
+                 [[80 500] 0]]] 
+               [Size Scale Linear Once 
+                [[[0 0] 180] 
+                 [[1 1] 0]]] 
+               [Color Put Linear Bounce 
+                [[[1 0 1 1] 180] 
+                 [[1 1 0 0] 0]]]] 
+              [Expand BoxSprite 
+               []]]]"
 
         let effect = acvalue<Effect> effectStr
-        Assert.Equal<string> ("Ifrit", effect.EffectName)
+        Assert.Equal<string> ("TestEffect", effect.EffectName)
