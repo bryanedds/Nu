@@ -127,7 +127,6 @@ and [<NoComparison>] Content =
     | End
 
 and [<NoComparison>] Argument =
-    | PassPlayback of Playback
     | PassResource of Resource
     | PassAspect of Aspect
     | PassContent of Content
@@ -137,6 +136,12 @@ type [<NoComparison>] Definition =
     | AsResource of Resource
     | AsAspect of Aspect
     | AsContent of string list * Content
+
+type ArgumentCompress =
+    AlgebraicCompress<Resource, AlgebraicCompress<Aspect, Content>>
+
+type DefinitionCompress =
+    AlgebraicCompress<Playback, AlgebraicCompress<Resource, AlgebraicCompress<Aspect, string list * Content>>>
 
 type [<NoComparison>] EffectArtifact =
     | RenderArtifact of RenderDescriptor list

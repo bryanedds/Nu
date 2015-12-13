@@ -3,6 +3,7 @@ open System
 open Prime
 open OpenTK
 
+/// An abstract data type for executing Effects.
 type [<NoEquality; NoComparison>] Effector =
     private
         { ViewType : ViewType
@@ -100,7 +101,6 @@ module Effector =
 
     let evalArgument (argument : Argument) : Definition =
         match argument with
-        | PassPlayback playback -> AsPlayback playback
         | PassResource resource -> AsResource resource
         | PassAspect aspect -> AsAspect aspect
         | PassContent content -> AsContent ([], content)
@@ -115,7 +115,7 @@ module Effector =
                 | AsPlayback _
                 | AsAspect _
                 | AsContent _ ->
-                    note ^ "Expected AsResource for argument but received '" + Reflection.getTypeName definition + "'."
+                    note ^ "Expected AsResource but received '" + Reflection.getTypeName definition + "'."
                     acvalue<AssetTag> Constants.Assets.DefaultImageValue
             | None ->
                 note ^ "Could not find definition with name '" + definitionName + "'."
@@ -145,7 +145,7 @@ module Effector =
                 | AsAspect aspect -> evalAspect slice aspect effector
                 | AsPlayback _
                 | AsResource _
-                | AsContent _ -> note ^ "Expected AsAspect for argument but received '" + Reflection.getTypeName definition + "'."; slice
+                | AsContent _ -> note ^ "Expected AsAspect but received '" + Reflection.getTypeName definition + "'."; slice
             | None -> note ^ "Could not find definition with name '" + definitionName + "'."; slice
         | Visible (applicator, playback, nodes) ->
             let (_, _, node) = selectNodes effector.EffectTime playback nodes
@@ -287,7 +287,7 @@ module Effector =
                     | None -> note "Wrong number of arguments provided to ExpandContent."; []
                 | AsPlayback _
                 | AsResource _
-                | AsAspect _ -> note ^ "Expected AsContent for argument but received '" + Reflection.getTypeName definition + "'."; []
+                | AsAspect _ -> note ^ "Expected AsContent but received '" + Reflection.getTypeName definition + "'."; []
             | None -> note ^ "Could not find definition with name '" + definitionName + "'."; []
         | StaticSprite (resource, aspects, content) ->
             evalStaticSprite slice resource aspects content effector
@@ -325,11 +325,25 @@ module Effector =
                     (fun i artifacts (slice : Slice) ->
                         let timePassed = int64 i * effector.EffectRate
                         let slice = { slice with Depth = slice.Depth + shift }
-                        let slice = evalAspects slice emitterAspects { effector with EffectTime = effector.EffectTime - timePassed }
+                        let baseEffector = { effector with EffectTime = effector.EffectTime - timePassed }
+                        let slice = evalAspects slice emitterAspects baseEffector
                         let emitCountLastFrame = single (effector.EffectTime - timePassed - effector.EffectRate) * rate
                         let emitCountThisFrame = single (effector.EffectTime - timePassed) * rate
                         let emitCount = int emitCountThisFrame - int emitCountLastFrame
-                        let effector = { effector with EffectTime = timePassed }
+                        let effector =
+                            let history = effector.History
+                                (*match content with
+                                | Emit _ ->
+                                    List.mapi
+                                        (fun i slice ->
+                                            let timePassed = int64 i * baseEffector.EffectRate
+                                            let baseEffector = { effector with EffectTime = baseEffector.EffectTime - timePassed }
+                                            evalAspects slice aspects baseEffector)
+                                        baseEffector.History
+                                | _ -> effector.History*)
+                            { effector with
+                                History = history
+                                EffectTime = timePassed }
                         let artifacts' =
                             List.fold
                                 (fun artifacts' _ ->
