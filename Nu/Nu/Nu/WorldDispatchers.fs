@@ -130,26 +130,22 @@ module EffectFacetModule =
                 let effectHistory = entity.GetEffectHistoryNp world
                 let effectEnv = entity.GetEffectDefinitions world
                 let effect = entity.GetEffect world
-                let effector = Effector.make effectViewType effectHistory effectRate effectTime
+                let effector = Effector.make effectViewType effectHistory effectRate effectTime effectEnv
                 let world =
-                    match Effector.eval effectSlice effectEnv effect effector with
-                    | Right artifacts ->
-                        List.fold (fun world artifact ->
-                            match artifact with
-                            | RenderArtifact renderDescriptors -> World.addRenderMessage (RenderDescriptorsMessage renderDescriptors) world
-                            | SoundArtifact soundMessage -> World.addAudioMessage (PlaySoundMessage soundMessage) world
-                            | TagArtifact (name, metadata, slice) ->
-                                let effectTags = entity.GetEffectTagsNp world
-                                let effectTags =
-                                    match Map.tryFind name effectTags with
-                                    | Some (metadata, slices) -> Map.add name (metadata, slice :: slices) effectTags
-                                    | None -> Map.add name (metadata, [slice]) effectTags
-                                entity.SetEffectTagsNp effectTags world)
-                            world
-                            artifacts
-                    | Left error ->
-                        note error
+                    let artifacts = Effector.eval effectSlice effect effector
+                    List.fold (fun world artifact ->
+                        match artifact with
+                        | RenderArtifact renderDescriptors -> World.addRenderMessage (RenderDescriptorsMessage renderDescriptors) world
+                        | SoundArtifact soundMessage -> World.addAudioMessage (PlaySoundMessage soundMessage) world
+                        | TagArtifact (name, metadata, slice) ->
+                            let effectTags = entity.GetEffectTagsNp world
+                            let effectTags =
+                                match Map.tryFind name effectTags with
+                                | Some (metadata, slices) -> Map.add name (metadata, slice :: slices) effectTags
+                                | None -> Map.add name (metadata, [slice]) effectTags
+                            entity.SetEffectTagsNp effectTags world)
                         world
+                        artifacts
                 let effectHistoryMax = entity.GetEffectHistoryMax world
                 let effectHistory = effectSlice :: effectHistory |> List.tryTake effectHistoryMax
                 entity.SetEffectHistoryNp effectHistory world
