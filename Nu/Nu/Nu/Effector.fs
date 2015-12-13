@@ -327,8 +327,8 @@ module Effector =
             evalAnimatedSprite slice resource celSize celRun celCount stutter aspects content effector
         | PhysicsShape (label, bodyShape, collisionCategories, collisionMask, aspects, content) ->
             ignore (label, bodyShape, collisionCategories, collisionMask, aspects, content); [] // TODO: implement
-        | Tag name ->
-            [TagArtifact (name, slice)]
+        | Tag (name, metadata) ->
+            [TagArtifact (name, metadata, slice)]
         | Mount (Shift shift, aspects, content) ->
             let slice = { slice with Depth = slice.Depth + shift }
             let slice = evalAspects slice aspects effector
