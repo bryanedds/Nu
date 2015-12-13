@@ -75,6 +75,9 @@ module MountFacetModule =
 [<AutoOpen>]
 module EffectFacetModule =
 
+    type EffectTags =
+        Map<string, AlgebraicQuote * Slice list>
+
     type Entity with
     
         member this.GetEffectDefinitions world : Definitions = (this.GetXtension world)?EffectDefinitions
@@ -91,8 +94,8 @@ module EffectFacetModule =
         member private this.SetEffectHistoryNp (value : Slice list) world = this.UpdateXtension (fun xtension -> xtension?EffectHistoryNp <- value) world
         member this.GetEffectPhysicsShapesNp world : unit = (this.GetXtension world)?EffectPhysicsShapesNp // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
         member private this.SetEffectPhysicsShapesNp (value : unit) world = this.UpdateXtension (fun xtension -> xtension?EffectPhysicsShapesNp <- value) world
-        member this.GetEffectTagsNp world : Map<string, Slice list> = (this.GetXtension world)?EffectTagsNp
-        member private this.SetEffectTagsNp (value : Map<string, Slice list>) world = this.UpdateXtension (fun xtension -> xtension?EffectTagsNp <- value) world
+        member this.GetEffectTagsNp world : EffectTags = (this.GetXtension world)?EffectTagsNp
+        member private this.SetEffectTagsNp (value : EffectTags) world = this.UpdateXtension (fun xtension -> xtension?EffectTagsNp <- value) world
 
     type EffectFacet () =
         inherit Facet ()
@@ -103,9 +106,9 @@ module EffectFacetModule =
              define? EffectOffset Vector2.Zero
              define? EffectTimeOffset 0L // TODO: also implement similar time offset for AnimatedSpriteFacet
              define? EffectHistoryMax 180 // 3 seconds. TODO: make a constant
-             define? EffectHistoryNp ([] : Slice list)
+             define? EffectHistoryNp ([] : Slice list) // TODO: consider making this an imperative Queue for speed
              define? EffectPhysicsShapesNp ()
-             define? EffectTagsNp (Map.empty : Map<string, Slice list>)]
+             define? EffectTagsNp (Map.empty : EffectTags)]
 
         override facet.Actualize (entity, world) =
             if entity.InView world then
@@ -135,12 +138,12 @@ module EffectFacetModule =
                             match artifact with
                             | RenderArtifact renderDescriptors -> World.addRenderMessage (RenderDescriptorsMessage renderDescriptors) world
                             | SoundArtifact soundMessage -> World.addAudioMessage (PlaySoundMessage soundMessage) world
-                            | TagArtifact (name, slice) ->
+                            | TagArtifact (name, metadata, slice) ->
                                 let effectTags = entity.GetEffectTagsNp world
                                 let effectTags =
                                     match Map.tryFind name effectTags with
-                                    | Some slices -> Map.add name (slice :: slices) effectTags
-                                    | None -> Map.add name [slice] effectTags
+                                    | Some (metadata, slices) -> Map.add name (metadata, slice :: slices) effectTags
+                                    | None -> Map.add name (metadata, [slice]) effectTags
                                 entity.SetEffectTagsNp effectTags world)
                             world
                             artifacts

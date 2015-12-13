@@ -60,7 +60,6 @@
             this.pasteContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer4 = new System.Windows.Forms.SplitContainer();
-            this.displayPanel = new Nu.Gaia.Design.SelectablePanel();
             this.rolloutTabControl = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.propertyEditor = new System.Windows.Forms.SplitContainer();
@@ -103,11 +102,12 @@
             this.reloadOverlaysButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.tickingButton = new System.Windows.Forms.ToolStripButton();
+            this.resetTickTime = new System.Windows.Forms.ToolStripButton();
             this.editWhileInteractiveCheckBox = new System.Windows.Forms.ToolStripButton();
             this.groupTabs = new System.Windows.Forms.TabControl();
             this.tabPage = new System.Windows.Forms.TabPage();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
-            this.resetTickTime = new System.Windows.Forms.ToolStripButton();
+            this.displayPanel = new Nu.Gaia.Design.SelectablePanel();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -362,7 +362,7 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer3);
             this.splitContainer1.Size = new System.Drawing.Size(1334, 801);
-            this.splitContainer1.SplitterDistance = 965;
+            this.splitContainer1.SplitterDistance = 966;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
             // 
@@ -380,20 +380,9 @@
             // splitContainer4.Panel2
             // 
             this.splitContainer4.Panel2.Controls.Add(this.rolloutTabControl);
-            this.splitContainer4.Size = new System.Drawing.Size(965, 801);
+            this.splitContainer4.Size = new System.Drawing.Size(966, 801);
             this.splitContainer4.SplitterDistance = 545;
             this.splitContainer4.TabIndex = 1;
-            // 
-            // displayPanel
-            // 
-            this.displayPanel.ContextMenuStrip = this.contextMenuStrip;
-            this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.displayPanel.Location = new System.Drawing.Point(0, 0);
-            this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
-            this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(965, 545);
-            this.displayPanel.TabIndex = 0;
-            this.displayPanel.TabStop = true;
             // 
             // rolloutTabControl
             // 
@@ -402,7 +391,7 @@
             this.rolloutTabControl.Location = new System.Drawing.Point(0, 0);
             this.rolloutTabControl.Name = "rolloutTabControl";
             this.rolloutTabControl.SelectedIndex = 0;
-            this.rolloutTabControl.Size = new System.Drawing.Size(965, 252);
+            this.rolloutTabControl.Size = new System.Drawing.Size(966, 252);
             this.rolloutTabControl.TabIndex = 0;
             // 
             // tabPage1
@@ -411,7 +400,7 @@
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(957, 226);
+            this.tabPage1.Size = new System.Drawing.Size(958, 226);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Property Editor";
             this.tabPage1.UseVisualStyleBackColor = true;
@@ -430,7 +419,7 @@
             // propertyEditor.Panel2
             // 
             this.propertyEditor.Panel2.Controls.Add(this.propertyValueTextBox);
-            this.propertyEditor.Size = new System.Drawing.Size(951, 220);
+            this.propertyEditor.Size = new System.Drawing.Size(952, 220);
             this.propertyEditor.SplitterDistance = 176;
             this.propertyEditor.TabIndex = 0;
             // 
@@ -496,7 +485,7 @@
             this.propertyValueTextBox.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.propertyValueTextBox.Location = new System.Drawing.Point(0, 0);
             this.propertyValueTextBox.Name = "propertyValueTextBox";
-            this.propertyValueTextBox.Size = new System.Drawing.Size(771, 220);
+            this.propertyValueTextBox.Size = new System.Drawing.Size(772, 220);
             this.propertyValueTextBox.TabIndex = 0;
             this.propertyValueTextBox.Text = "";
             this.propertyValueTextBox.WordWrap = false;
@@ -515,7 +504,7 @@
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.treeView);
-            this.splitContainer3.Size = new System.Drawing.Size(366, 801);
+            this.splitContainer3.Size = new System.Drawing.Size(365, 801);
             this.splitContainer3.SplitterDistance = 527;
             this.splitContainer3.TabIndex = 2;
             // 
@@ -526,7 +515,7 @@
             this.propertyGrid.Location = new System.Drawing.Point(0, 0);
             this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(366, 527);
+            this.propertyGrid.Size = new System.Drawing.Size(365, 527);
             this.propertyGrid.TabIndex = 0;
             this.propertyGrid.ToolbarVisible = false;
             // 
@@ -535,7 +524,7 @@
             this.treeView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeView.Location = new System.Drawing.Point(0, 0);
             this.treeView.Name = "treeView";
-            this.treeView.Size = new System.Drawing.Size(366, 270);
+            this.treeView.Size = new System.Drawing.Size(365, 270);
             this.treeView.TabIndex = 1;
             // 
             // openFileDialog
@@ -583,7 +572,7 @@
             this.editWhileInteractiveCheckBox});
             this.toolStrip.Location = new System.Drawing.Point(92, 2);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1270, 25);
+            this.toolStrip.Size = new System.Drawing.Size(1239, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -779,6 +768,15 @@
             this.tickingButton.Size = new System.Drawing.Size(50, 22);
             this.tickingButton.Text = "&Ticking";
             // 
+            // resetTickTime
+            // 
+            this.resetTickTime.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.resetTickTime.Image = ((System.Drawing.Image)(resources.GetObject("resetTickTime.Image")));
+            this.resetTickTime.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.resetTickTime.Name = "resetTickTime";
+            this.resetTickTime.Size = new System.Drawing.Size(53, 22);
+            this.resetTickTime.Text = "Tick = 0";
+            // 
             // editWhileInteractiveCheckBox
             // 
             this.editWhileInteractiveCheckBox.Checked = true;
@@ -828,14 +826,16 @@
             this.splitContainer2.SplitterDistance = 30;
             this.splitContainer2.TabIndex = 5;
             // 
-            // resetTickTime
+            // displayPanel
             // 
-            this.resetTickTime.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.resetTickTime.Image = ((System.Drawing.Image)(resources.GetObject("resetTickTime.Image")));
-            this.resetTickTime.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.resetTickTime.Name = "resetTickTime";
-            this.resetTickTime.Size = new System.Drawing.Size(53, 22);
-            this.resetTickTime.Text = "Tick = 0";
+            this.displayPanel.ContextMenuStrip = this.contextMenuStrip;
+            this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.displayPanel.Location = new System.Drawing.Point(0, 0);
+            this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
+            this.displayPanel.Name = "displayPanel";
+            this.displayPanel.Size = new System.Drawing.Size(966, 545);
+            this.displayPanel.TabIndex = 0;
+            this.displayPanel.TabStop = true;
             // 
             // GaiaForm
             // 
