@@ -11,51 +11,9 @@ open Prime
 type AlgebraicQuote =
     | AlgebraicQuote of string
 
-type AlgebraicCompress<'a, 'b> =
-    | AlgebraicCompressA of 'a
-    | AlgebraicCompressB of 'b
-
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module AlgebraicCompress =
-
-    let rec reflect (obj : obj) =
-        let objType = obj.GetType ()
-        if objType.Name <> typedefof<AlgebraicCompress<_, _>>.Name then
-            failwith "Cannot reflect this way on a non-AlgebraicCompress."
-        let (unionCase, unionFields) = FSharpValue.GetUnionFields (obj, objType)
-        if unionCase.Name = "AlgebraicCompressA" then // MAGIC_VALUE: not sure how to get this symbol reflectively...
-            let a = unionFields.[0]
-            a
-        else
-            let b = unionFields.[1]
-            let bType = b.GetType ()
-            if bType.Name = typedefof<AlgebraicCompress<_, _>>.Name
-            then reflect b
-            else b
-
-    let rec build (destType : Type) (compressedName : string) (obj : obj) =
-        if destType.Name <> typedefof<AlgebraicCompress<_, _>>.Name then
-            failwith "Cannot build an AlgebraicCompress with the given type."
-        let gargs = destType.GetGenericArguments ()
-        let aType = gargs.[0]
-        if aType.Name = compressedName then
-            let unionCases = FSharpType.GetUnionCases destType
-            let unionCase = unionCases.[0]
-            let a = FSharpValue.MakeUnion (unionCase, [|obj|])
-            a
-        else
-            let bType = gargs.[1]
-            let b =
-                if bType.Name = typedefof<AlgebraicCompress<_, _>>.Name
-                then build bType compressedName obj
-                else obj
-            let unionCases = FSharpType.GetUnionCases destType
-            let unionCase = unionCases.[1]
-            FSharpValue.MakeUnion (unionCase, [|b|])
-
-type SymbolIndex =
-    | ListIndex of int64 * SymbolIndex list
-    | ContentIndex of int64 * SymbolIndex list
+type AlgebraicIndex =
+    | ListIndex of int64 * AlgebraicIndex list
+    | ContentIndex of int64 * AlgebraicIndex list
 
 [<RequireQualifiedAccess>]
 module AlgebraicReader =
@@ -123,9 +81,9 @@ module AlgebraicReader =
             attempt readAtomicValue <|>
             readComplexValue
 
-    module private AlgebraicSymbolIndexer =
+    module private AlgebraicIndexer =
 
-        let (readSymbolIndex : Parser<SymbolIndex, unit>, refReadSymbolIndex : Parser<SymbolIndex, unit> ref) =
+        let (readAlgebraicIndex : Parser<AlgebraicIndex, unit>, refReadAlgebraicIndex : Parser<AlgebraicIndex, unit> ref) =
             createParserForwardedToRef ()
 
         let readListIndex =
@@ -133,19 +91,19 @@ module AlgebraicReader =
                 let! openPosition = getPosition
                 do! openComplexValueForm
                 do! skipWhitespace
-                let! symbolIndices = many readSymbolIndex
+                let! algebraicIndices = many readAlgebraicIndex
                 do! closeComplexValueForm
                 do! skipWhitespace
-                return ListIndex (openPosition.Index, symbolIndices) }
+                return ListIndex (openPosition.Index, algebraicIndices) }
 
         let readContentIndex =
             parse {
                 let! openPosition = getPosition
                 let! _ = readContentChars
-                let! symbolIndices = many readSymbolIndex
-                return ContentIndex (openPosition.Index, symbolIndices) }
+                let! algebraicIndices = many readAlgebraicIndex
+                return ContentIndex (openPosition.Index, algebraicIndices) }
 
-        do refReadSymbolIndex :=
+        do refReadAlgebraicIndex :=
             attempt readListIndex <|>
             readContentIndex
 
@@ -173,10 +131,10 @@ module AlgebraicReader =
         | Failure (error, _, _) -> failwith error
 
     /// Convert a string to a list of its tab locations.
-    let stringToOptSymbolIndex str =
+    let stringToOptAlgebraicIndex str =
         if String.IsNullOrWhiteSpace str then None
         else
-            match run (skipWhitespace >>. AlgebraicSymbolIndexer.readSymbolIndex) str with
+            match run (skipWhitespace >>. AlgebraicIndexer.readAlgebraicIndex) str with
             | Success (value, _, _) -> Some value
             | Failure (error, _, _) -> failwith error
 
@@ -184,17 +142,17 @@ module AlgebraicReader =
     let prettyPrint (str : string) =
         let builder = Text.StringBuilder str
         let mutable builderIndex = 0
-        let rec advance hasContentParent tabDepth childIndex symbolIndex =
-            match symbolIndex with
-            | ListIndex (index, symbolIndices) ->
+        let rec advance hasContentParent tabDepth childIndex algebraicIndex =
+            match algebraicIndex with
+            | ListIndex (index, algebraicIndices) ->
                 if index <> 0L && (hasContentParent || childIndex <> 0) then
                     let whitespace = "\n" + String.replicate tabDepth " "
                     ignore ^ builder.Insert (int index + builderIndex, whitespace)
                     builderIndex <- builderIndex + whitespace.Length
-                List.iteri (advance false (tabDepth + 1)) symbolIndices
-            | ContentIndex (_, symbolIndices) ->
-                List.iteri (advance true tabDepth) symbolIndices
-        match stringToOptSymbolIndex str with
+                List.iteri (advance false (tabDepth + 1)) algebraicIndices
+            | ContentIndex (_, algebraicIndices) ->
+                List.iteri (advance true tabDepth) algebraicIndices
+        match stringToOptAlgebraicIndex str with
         | Some indexLocation -> advance false 0 0 indexLocation
         | None -> ()
         builder.ToString ()
