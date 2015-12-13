@@ -97,12 +97,12 @@ type Rate =
 type Shift =
     Shift of single
 
-type Resource =
-    | ExpandResource of string
+type [<NoComparison>] Resource =
+    | Expand of string * Argument list
     | Resource of string * string
 
-type [<NoComparison>] Aspect =
-    | ExpandAspect of string
+and [<NoComparison>] Aspect =
+    | Expand of string * Argument list
     | Visible of LogicApplicator * Playback * LogicNode list
     | Enabled of LogicApplicator * Playback * LogicNode list
     | Position of TweenApplicator * Algorithm * Playback * Tween2Node list
@@ -114,7 +114,7 @@ type [<NoComparison>] Aspect =
     | Color of TweenApplicator * Algorithm * Playback * Tween4Node list
 
 and [<NoComparison>] Content =
-    | ExpandContent of string * Argument list
+    | Expand of string * Argument list
     | StaticSprite of Resource * Aspect list * Content
     | AnimatedSprite of Resource * Vector2i * int * int * int64 * Aspect list * Content
     | PhysicsShape of BodyShape * string * string * string * Aspect list * Content
@@ -124,24 +124,14 @@ and [<NoComparison>] Content =
     | Emit of Shift * Rate * Aspect list * Aspect list * Content
     | Bone // TODO
     | Composite of Shift * Content list
-    | End
+    | Nil
 
-and [<NoComparison>] Argument =
-    | PassResource of Resource
-    | PassAspect of Aspect
-    | PassContent of Content
-
-type [<NoComparison>] Definition =
-    | AsPlayback of Playback
-    | AsResource of Resource
-    | AsAspect of Aspect
-    | AsContent of string list * Content
-
-type Argument' =
+and Argument =
     AlgebraicCompression<Resource, AlgebraicCompression<Aspect, Content>>
 
-type Definition' =
-    AlgebraicCompression<Playback, AlgebraicCompression<Resource, AlgebraicCompression<Aspect, string list * Content>>>
+type [<NoComparison>] Definition =
+    { DefinitionParams : string list
+      DefinitionBody : AlgebraicCompression<Resource, AlgebraicCompression<Aspect, Content>> }
 
 type [<NoComparison>] EffectArtifact =
     | RenderArtifact of RenderDescriptor list

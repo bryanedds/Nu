@@ -93,11 +93,16 @@ type AlgebraicConverter (targetType : Type) =
                 AlgebraicReader.OpenComplexValueStr + itemsStr + AlgebraicReader.CloseComplexValueStr
 
             elif sourceType.Name = typedefof<AlgebraicCompression<_, _>>.Name then
-                let (_, unionFields) = FSharpValue.GetUnionFields (source, sourceType)
+                let (unionCase, unionFields) = FSharpValue.GetUnionFields (source, sourceType)
                 let value = unionFields.[0]
                 let valueType = value.GetType ()
-                let valueStr = toString value valueType
-                AlgebraicReader.OpenComplexValueStr + valueStr + AlgebraicReader.CloseComplexValueStr
+                if unionCase.Tag = 0 then
+                    toString value valueType
+                else
+                    let (_, unionFields) = FSharpValue.GetUnionFields (value, valueType)
+                    let value = unionFields.[0]
+                    let valueType = value.GetType ()
+                    toString value valueType
 
             elif FSharpType.IsTuple sourceType then
                 let tupleFields = FSharpValue.GetTupleFields source

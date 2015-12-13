@@ -17,8 +17,8 @@ module EffectorTests =
 
         let effectStr =
             "[Ifrit [Loop 10] [Some 20]
-                [[FlameResource [AsResource [Resource Gameplay Esper]]]
-                 [FlameSprite [AsContent [FlamePosition] [StaticSprite [ExpandResource FlameResource]
+                [[FlameResource [[] [Resource Gameplay Esper]]]
+                 [FlameSprite [[FlamePosition] [StaticSprite [ExpandResource FlameResource]
                     [[ExpandAspect FlamePosition]
                      [Color Put Linear
                         [[[1 1 1 1] 10]
