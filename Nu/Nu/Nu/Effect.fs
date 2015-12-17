@@ -118,12 +118,12 @@ and [<NoComparison>] Content =
     | StaticSprite of Resource * Aspect list * Content
     | AnimatedSprite of Resource * Vector2i * int * int * int64 * Aspect list * Content
     | PhysicsShape of BodyShape * string * string * string * Aspect list * Content
-    | Tag of string * AlgebraicQuote
     | Mount of Shift * Aspect list * Content
     | Repeat of Shift * Repetition * Aspect list * Content
     | Emit of Shift * Rate * Aspect list * Aspect list * Content
     | Bone // TODO
     | Composite of Shift * Content list
+    | Tag of string * AlgebraicQuote
     | Nil
 
 and Argument =

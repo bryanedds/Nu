@@ -123,13 +123,13 @@ module Effector =
                 acvalue<AssetTag> Constants.Assets.DefaultImageValue
         | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
 
-    let rec private iterateArtifacts slice incrementers content effector =
+    let rec private iterateArtifacts slice incrementAspects content effector =
         let effector = { effector with ProgressOffset = 0.0f }
-        let slice = evalAspects slice incrementers effector
+        let slice = evalAspects slice incrementAspects effector
         (slice, evalContent slice content effector)
 
-    and private cycleArtifacts slice incrementers content effector =
-        let slice = evalAspects slice incrementers effector
+    and private cycleArtifacts slice incrementAspects content effector =
+        let slice = evalAspects slice incrementAspects effector
         evalContent slice content effector
 
     and private evalProgress nodeTime nodeLength effector =
@@ -292,19 +292,17 @@ module Effector =
             evalAnimatedSprite slice resource celSize celRun celCount stutter aspects content effector
         | PhysicsShape (label, bodyShape, collisionCategories, collisionMask, aspects, content) ->
             ignore (label, bodyShape, collisionCategories, collisionMask, aspects, content); [] // TODO: implement
-        | Tag (name, metadata) ->
-            [TagArtifact (name, metadata, slice)]
         | Mount (Shift shift, aspects, content) ->
             let slice = { slice with Depth = slice.Depth + shift }
             let slice = evalAspects slice aspects effector
             evalContent slice content effector
-        | Repeat (Shift shift, repetition, incrementers, content) ->
+        | Repeat (Shift shift, repetition, incrementAspects, content) ->
             let slice = { slice with Depth = slice.Depth + shift }
             match repetition with
             | Iterate count ->
                 List.fold
                     (fun (slice, artifacts) _ ->
-                        let (slice, artifacts') = iterateArtifacts slice incrementers content effector
+                        let (slice, artifacts') = iterateArtifacts slice incrementAspects content effector
                         (slice, artifacts @ artifacts'))
                     (slice, [])
                     [0 .. count - 1] |>
@@ -313,7 +311,7 @@ module Effector =
                 List.fold
                     (fun artifacts i ->
                         let effector = { effector with ProgressOffset = 1.0f / single count * single i }
-                        let artifacts' = cycleArtifacts slice incrementers content effector
+                        let artifacts' = cycleArtifacts slice incrementAspects content effector
                         artifacts @ artifacts')
                     [] [0 .. count - 1]
         | Emit (Shift shift, Rate rate, emitterAspects, aspects, content) ->
@@ -360,6 +358,8 @@ module Effector =
         | Composite (Shift shift, contents) ->
             let slice = { slice with Depth = slice.Depth + shift }
             evalComposite slice contents effector
+        | Tag (name, metadata) ->
+            [TagArtifact (name, metadata, slice)]
         | Nil -> []
 
     and private evalContents slice contents effector =
