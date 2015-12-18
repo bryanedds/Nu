@@ -28,7 +28,7 @@ module Effector =
                 if localTime > head.NodeLength then
                     match tail with
                     | _ :: _ -> selectNodes2 (localTime - head.NodeLength) playback (next :: tail)
-                    | [] -> (head.NodeLength, head, next)
+                    | [] -> (head.NodeLength, next, next)
                 else (localTime, head, next)
         | Loop ->
             let totalTime = List.fold (fun totalTime (node : INode) -> totalTime + node.NodeLength) 0L nodes 
@@ -154,12 +154,8 @@ module Effector =
                 | AlgebraicCompressionB (AlgebraicCompressionA aspect) -> evalAspect slice aspect effector
                 | _ -> note ^ "Expected Aspect for definition '" + definitionName + "'."; slice
             | None -> note ^ "Could not find definition with name '" + definitionName + "'."; slice
-        | Visible (applicator, playback, nodes) ->
-            let (_, _, node) = selectNodes effector.EffectTime playback nodes
-            let applied = applyLogic slice.Visible node.LogicValue applicator
-            { slice with Visible = applied }
         | Enabled (applicator, playback, nodes) ->
-            let (_, _, node) = selectNodes effector.EffectTime playback nodes
+            let (_, node, _) = selectNodes effector.EffectTime playback nodes
             let applied = applyLogic slice.Enabled node.LogicValue applicator
             { slice with Enabled = applied }
         | Position (applicator, algorithm, playback, nodes) ->
@@ -205,6 +201,12 @@ module Effector =
             let tweened = tween Vector4.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
             { slice with Color = applied }
+        | Volume (applicator, algorithm, playback, nodes) ->
+            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
+            let progress = evalProgress nodeTime node.TweenLength effector
+            let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm effector
+            let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Volume tweened applicator
+            { slice with Volume = applied }
 
     and private evalAspects slice aspects effector =
         List.fold (fun slice aspect -> evalAspect slice aspect effector) slice aspects
@@ -219,7 +221,7 @@ module Effector =
 
         // build sprite artifacts
         let spriteArtifacts =
-            if slice.Visible then
+            if slice.Enabled then
                 [RenderArtifact
                     [LayerableDescriptor
                         { Depth = slice.Depth
@@ -254,7 +256,7 @@ module Effector =
 
         // build animated sprite artifacts
         let animatedSpriteArtifacts =
-            if slice.Visible then
+            if slice.Enabled then
                 [RenderArtifact
                     [LayerableDescriptor
                         { Depth = slice.Depth
@@ -275,6 +277,26 @@ module Effector =
 
         // return artifacts
         mountedArtifacts @ animatedSpriteArtifacts
+
+    and private evalSoundEffect slice resource aspects content effector =
+
+        // pull sound from resource
+        let sound = evalResource resource effector
+
+        // eval aspects
+        let slice = evalAspects slice aspects effector
+
+        // build sprite artifacts
+        let soundArtifacts =
+            if slice.Enabled
+            then [SoundArtifact (slice.Volume, sound)]
+            else []
+
+        // build implicitly mounted content
+        let mountedArtifacts = evalContent slice content effector
+
+        // return artifacts
+        mountedArtifacts @ soundArtifacts
 
     and private evalComposite slice contents effector =
         evalContents slice contents effector
@@ -298,8 +320,8 @@ module Effector =
             evalStaticSprite slice resource aspects content effector
         | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects, content) ->
             evalAnimatedSprite slice resource celSize celRun celCount stutter aspects content effector
-        | SoundEffect ->
-            [] // TODO
+        | SoundEffect (resource, aspects, content)->
+            evalSoundEffect slice resource aspects content effector
         | Mount (Shift shift, aspects, content) ->
             let slice = { slice with Depth = slice.Depth + shift }
             let slice = evalAspects slice aspects effector
