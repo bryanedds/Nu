@@ -207,6 +207,7 @@ module Effector =
             let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Volume tweened applicator
             { slice with Volume = applied }
+        | Bone -> slice
 
     and private evalAspects slice aspects effector =
         List.fold (fun slice aspect -> evalAspect slice aspect effector) slice aspects
@@ -381,8 +382,7 @@ module Effector =
                         artifacts' @ artifacts)
                     []
                     effector.History
-            artifacts // temp for debuggability
-        | Bone -> [] // TODO: implement
+            artifacts
         | Composite (Shift shift, contents) ->
             let slice = { slice with Depth = slice.Depth + shift }
             evalComposite slice contents effector

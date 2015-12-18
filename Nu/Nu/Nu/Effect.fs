@@ -114,6 +114,7 @@ and [<NoComparison>] Aspect =
     | Depth of TweenApplicator * Algorithm * Playback * TweenNode list
     | Color of TweenApplicator * Algorithm * Playback * Tween4Node list
     | Volume of TweenApplicator * Algorithm * Playback * TweenNode list
+    | Bone // TODO: implement bone aspect
 
 and [<NoComparison>] Content =
     | Expand of string * Argument list
@@ -123,7 +124,6 @@ and [<NoComparison>] Content =
     | Mount of Shift * Aspect list * Content
     | Repeat of Shift * Repetition * Aspect list * Content
     | Emit of Shift * Rate * Aspect list * Aspect list * Content
-    | Bone // TODO
     | Composite of Shift * Content list
     | Tag of string * AlgebraicQuote
     | Nil
