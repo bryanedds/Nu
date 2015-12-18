@@ -8,7 +8,9 @@ type Algorithm =
     | Linear
     | Random
     | Chaos
-    | Ease // TODO: EaseIn and Out
+    | Ease
+    | EaseIn
+    | EaseOut
     | Sin
     | Cos
 
@@ -34,7 +36,7 @@ type [<StructuralEquality; NoComparison>] Slice =
       Depth : single
       Offset : Vector2
       Color : Vector4
-      Visible : bool
+      Volume : single
       Enabled : bool }
 
 type INode =
@@ -103,7 +105,6 @@ type [<NoComparison>] Resource =
 
 and [<NoComparison>] Aspect =
     | Expand of string * Argument list
-    | Visible of LogicApplicator * Playback * LogicNode list
     | Enabled of LogicApplicator * Playback * LogicNode list
     | Position of TweenApplicator * Algorithm * Playback * Tween2Node list
     | Translation of TweenApplicator * Algorithm * Playback * Tween2Node list
@@ -112,16 +113,17 @@ and [<NoComparison>] Aspect =
     | Rotation of TweenApplicator * Algorithm * Playback * TweenNode list
     | Depth of TweenApplicator * Algorithm * Playback * TweenNode list
     | Color of TweenApplicator * Algorithm * Playback * Tween4Node list
+    | Volume of TweenApplicator * Algorithm * Playback * TweenNode list
+    | Bone // TODO: implement bone aspect
 
 and [<NoComparison>] Content =
     | Expand of string * Argument list
     | StaticSprite of Resource * Aspect list * Content
     | AnimatedSprite of Resource * Vector2i * int * int * int64 * Aspect list * Content
-    | PhysicsShape of BodyShape * string * string * string * Aspect list * Content
+    | SoundEffect of Resource * Aspect list * Content
     | Mount of Shift * Aspect list * Content
     | Repeat of Shift * Repetition * Aspect list * Content
     | Emit of Shift * Rate * Aspect list * Aspect list * Content
-    | Bone // TODO
     | Composite of Shift * Content list
     | Tag of string * AlgebraicQuote
     | Nil
@@ -135,7 +137,7 @@ type [<NoComparison>] Definition =
 
 type [<NoComparison>] EffectArtifact =
     | RenderArtifact of RenderDescriptor list
-    | SoundArtifact of PlaySoundMessage
+    | SoundArtifact of single * AssetTag
     | TagArtifact of string * AlgebraicQuote * Slice
 
 type Definitions =

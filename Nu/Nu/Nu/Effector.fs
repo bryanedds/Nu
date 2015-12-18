@@ -28,7 +28,7 @@ module Effector =
                 if localTime > head.NodeLength then
                     match tail with
                     | _ :: _ -> selectNodes2 (localTime - head.NodeLength) playback (next :: tail)
-                    | [] -> (head.NodeLength, head, next)
+                    | [] -> (head.NodeLength, next, next)
                 else (localTime, head, next)
         | Loop ->
             let totalTime = List.fold (fun totalTime (node : INode) -> totalTime + node.NodeLength) 0L nodes 
@@ -61,8 +61,16 @@ module Effector =
             let chaosValue = single ^ effector.Chaos.NextDouble ()
             value + scale (value2 - value, chaosValue)
         | Ease ->
-            let progressEaseIn = single ^ Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0)
-            value + scale (value2 - value, progressEaseIn)
+            let progressEase = single ^ Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0)
+            value + scale (value2 - value, progressEase)
+        | EaseIn ->
+            let progressScaled = float progress * Math.PI * 0.5
+            let progressEaseIn = 1.0 + Math.Sin (progressScaled + Math.PI * 1.5)
+            value + scale (value2 - value, single progressEaseIn)
+        | EaseOut ->
+            let progressScaled = float progress * Math.PI * 0.5
+            let progressEaseOut = Math.Sin progressScaled
+            value + scale (value2 - value, single progressEaseOut)
         | Sin ->
             let progressScaled = float progress * Math.PI * 2.0
             let progressSin = Math.Sin progressScaled
@@ -146,12 +154,8 @@ module Effector =
                 | AlgebraicCompressionB (AlgebraicCompressionA aspect) -> evalAspect slice aspect effector
                 | _ -> note ^ "Expected Aspect for definition '" + definitionName + "'."; slice
             | None -> note ^ "Could not find definition with name '" + definitionName + "'."; slice
-        | Visible (applicator, playback, nodes) ->
-            let (_, _, node) = selectNodes effector.EffectTime playback nodes
-            let applied = applyLogic slice.Visible node.LogicValue applicator
-            { slice with Visible = applied }
         | Enabled (applicator, playback, nodes) ->
-            let (_, _, node) = selectNodes effector.EffectTime playback nodes
+            let (_, node, _) = selectNodes effector.EffectTime playback nodes
             let applied = applyLogic slice.Enabled node.LogicValue applicator
             { slice with Enabled = applied }
         | Position (applicator, algorithm, playback, nodes) ->
@@ -197,6 +201,13 @@ module Effector =
             let tweened = tween Vector4.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
             let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
             { slice with Color = applied }
+        | Volume (applicator, algorithm, playback, nodes) ->
+            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
+            let progress = evalProgress nodeTime node.TweenLength effector
+            let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm effector
+            let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Volume tweened applicator
+            { slice with Volume = applied }
+        | Bone -> slice
 
     and private evalAspects slice aspects effector =
         List.fold (fun slice aspect -> evalAspect slice aspect effector) slice aspects
@@ -211,7 +222,7 @@ module Effector =
 
         // build sprite artifacts
         let spriteArtifacts =
-            if slice.Visible then
+            if slice.Enabled then
                 [RenderArtifact
                     [LayerableDescriptor
                         { Depth = slice.Depth
@@ -246,7 +257,7 @@ module Effector =
 
         // build animated sprite artifacts
         let animatedSpriteArtifacts =
-            if slice.Visible then
+            if slice.Enabled then
                 [RenderArtifact
                     [LayerableDescriptor
                         { Depth = slice.Depth
@@ -268,7 +279,28 @@ module Effector =
         // return artifacts
         mountedArtifacts @ animatedSpriteArtifacts
 
-    and private evalComposite slice contents effector =
+    and private evalSoundEffect slice resource aspects content effector =
+
+        // pull sound from resource
+        let sound = evalResource resource effector
+
+        // eval aspects
+        let slice = evalAspects slice aspects effector
+
+        // build sprite artifacts
+        let soundArtifacts =
+            if slice.Enabled
+            then [SoundArtifact (slice.Volume, sound)]
+            else []
+
+        // build implicitly mounted content
+        let mountedArtifacts = evalContent slice content effector
+
+        // return artifacts
+        mountedArtifacts @ soundArtifacts
+
+    and private evalComposite (slice : Slice) shift contents effector =
+        let slice = { slice with Depth = slice.Depth + shift }
         evalContents slice contents effector
 
     and private evalContent slice content effector =
@@ -290,8 +322,8 @@ module Effector =
             evalStaticSprite slice resource aspects content effector
         | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects, content) ->
             evalAnimatedSprite slice resource celSize celRun celCount stutter aspects content effector
-        | PhysicsShape (label, bodyShape, collisionCategories, collisionMask, aspects, content) ->
-            ignore (label, bodyShape, collisionCategories, collisionMask, aspects, content); [] // TODO: implement
+        | SoundEffect (resource, aspects, content)->
+            evalSoundEffect slice resource aspects content effector
         | Mount (Shift shift, aspects, content) ->
             let slice = { slice with Depth = slice.Depth + shift }
             let slice = evalAspects slice aspects effector
@@ -320,8 +352,7 @@ module Effector =
                     (fun i artifacts (slice : Slice) ->
                         let timePassed = int64 i * effector.EffectRate
                         let slice = { slice with Depth = slice.Depth + shift }
-                        let baseEffector = { effector with EffectTime = effector.EffectTime - timePassed }
-                        let slice = evalAspects slice emitterAspects baseEffector
+                        let slice = evalAspects slice emitterAspects { effector with EffectTime = effector.EffectTime - timePassed }
                         let emitCountLastFrame = single (effector.EffectTime - timePassed - effector.EffectRate) * rate
                         let emitCountThisFrame = single (effector.EffectTime - timePassed) * rate
                         let emitCount = int emitCountThisFrame - int emitCountLastFrame
@@ -330,11 +361,10 @@ module Effector =
                                 (*match content with
                                 | Emit _ ->
                                     List.mapi
-                                        (fun i slice ->
-                                            let timePassed = int64 i * baseEffector.EffectRate
-                                            let baseEffector = { effector with EffectTime = baseEffector.EffectTime - timePassed }
-                                            evalAspects slice aspects baseEffector)
-                                        baseEffector.History
+                                        (fun j slice ->
+                                            let timePassed = int64 (i + j) * effector.EffectRate
+                                            evalAspects slice emitterAspects { effector with EffectTime = effector.EffectTime - timePassed })
+                                        effector.History
                                 | _ -> effector.History*)
                             { effector with
                                 History = history
@@ -353,11 +383,9 @@ module Effector =
                         artifacts' @ artifacts)
                     []
                     effector.History
-            artifacts // temp for debuggability
-        | Bone -> [] // TODO: implement
+            artifacts
         | Composite (Shift shift, contents) ->
-            let slice = { slice with Depth = slice.Depth + shift }
-            evalComposite slice contents effector
+            evalComposite slice shift contents effector
         | Tag (name, metadata) ->
             [TagArtifact (name, metadata, slice)]
         | Nil -> []

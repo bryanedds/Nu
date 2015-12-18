@@ -125,8 +125,8 @@ module EffectFacetModule =
                       Depth = entity.GetDepth world
                       Offset = Vector2 0.5f
                       Color = Vector4.One
-                      Visible = true
-                      Enabled = true }
+                      Enabled = true
+                      Volume = 1.0f }
                 let effectHistory = entity.GetEffectHistoryNp world
                 let effectEnv = entity.GetEffectDefinitions world
                 let effect = entity.GetEffect world
@@ -136,7 +136,7 @@ module EffectFacetModule =
                     List.fold (fun world artifact ->
                         match artifact with
                         | RenderArtifact renderDescriptors -> World.addRenderMessage (RenderDescriptorsMessage renderDescriptors) world
-                        | SoundArtifact soundMessage -> World.addAudioMessage (PlaySoundMessage soundMessage) world
+                        | SoundArtifact (volume, sound) -> World.playSound volume sound world
                         | TagArtifact (name, metadata, slice) ->
                             let effectTags = entity.GetEffectTagsNp world
                             let effectTags =
