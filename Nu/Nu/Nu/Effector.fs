@@ -299,7 +299,8 @@ module Effector =
         // return artifacts
         mountedArtifacts @ soundArtifacts
 
-    and private evalComposite slice contents effector =
+    and private evalComposite (slice : Slice) shift contents effector =
+        let slice = { slice with Depth = slice.Depth + shift }
         evalContents slice contents effector
 
     and private evalContent slice content effector =
@@ -384,8 +385,7 @@ module Effector =
                     effector.History
             artifacts
         | Composite (Shift shift, contents) ->
-            let slice = { slice with Depth = slice.Depth + shift }
-            evalComposite slice contents effector
+            evalComposite slice shift contents effector
         | Tag (name, metadata) ->
             [TagArtifact (name, metadata, slice)]
         | Nil -> []
