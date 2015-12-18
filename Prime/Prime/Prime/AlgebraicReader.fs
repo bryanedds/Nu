@@ -130,7 +130,7 @@ module AlgebraicReader =
         | Success (value, _, _) -> value
         | Failure (error, _, _) -> failwith error
 
-    /// Convert a string to a list of its tab locations.
+    /// Attempt to convert a string to a its algebraic indices.
     let stringToOptAlgebraicIndex str =
         if String.IsNullOrWhiteSpace str then None
         else
