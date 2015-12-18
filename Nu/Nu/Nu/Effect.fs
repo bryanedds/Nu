@@ -8,7 +8,9 @@ type Algorithm =
     | Linear
     | Random
     | Chaos
-    | Ease // TODO: EaseIn and Out
+    | Ease
+    | EaseIn
+    | EaseOut
     | Sin
     | Cos
 
@@ -117,7 +119,7 @@ and [<NoComparison>] Content =
     | Expand of string * Argument list
     | StaticSprite of Resource * Aspect list * Content
     | AnimatedSprite of Resource * Vector2i * int * int * int64 * Aspect list * Content
-    | PhysicsShape of BodyShape * string * string * string * Aspect list * Content
+    | SoundEffect // TODO
     | Mount of Shift * Aspect list * Content
     | Repeat of Shift * Repetition * Aspect list * Content
     | Emit of Shift * Rate * Aspect list * Aspect list * Content
