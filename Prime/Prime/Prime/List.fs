@@ -272,7 +272,7 @@ let rec inline compareStrings (list : string list) (list2 : string list) =
     | (_ :: _, []) -> 1
     | ([], _ :: _) -> -1
     | (head :: tail, head2 :: tail2) ->
-        let result = String.Compare (head, head2, StringComparison.Ordinal)
+        let result = strCmp head head2
         if result = 0 then compare tail tail2
         else result
 

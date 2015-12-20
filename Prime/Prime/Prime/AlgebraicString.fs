@@ -8,12 +8,12 @@ open Prime
 [<AutoOpen>]
 module AlgebraicStringModule =
 
-    /// Uses an algebraic converter to convert source to a string.
-    let acstring (source : obj) =
-        let converter = AlgebraicConverter (source.GetType ())
-        converter.ConvertToString source
+    /// Uses an algebraic converter to convert a value to a string.
+    let acstring (value : obj) =
+        let converter = AlgebraicConverter (value.GetType ())
+        converter.ConvertToString value
 
-    /// Uses an algebraic converter to a string to a value.
+    /// Uses an algebraic converter to convert a string to a value.
     let acvalue<'a> (str : string) =
         let converter = AlgebraicConverter typeof<'a>
         converter.ConvertFromString str :?> 'a
