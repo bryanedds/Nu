@@ -46,11 +46,11 @@ module Program =
     could just as well use a-exprs. My current understanding is that the simulant system, due to
     how it is WYSIWYG edited, conforms better to a document model. That is, it makes sense as a
     document model since it is meant to be imported, its live representation edited directly, and
-    the exported back out. In contrast, the effect and goal systems are unlike WYSIWIG documents,
+    the exported back out. In contrast, the effect and mind systems are unlike WYSIWIG documents,
     and more like interpreted languages.
     
     Finally, the asset graph and overlay systems could go either way, but since they're so simple,
-    perhaps they're more easily implemented with simpler document model. Maybe :) *)
+    perhaps they're more easily implemented with a basic document model. Maybe :) *)
 
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
     scaled to a back-buffer of a varying size, render each component unscaled to an off-screen
@@ -94,7 +94,8 @@ module Program =
     (* WISDOM: Nu's event system should have been implemented in Prime...
     
     Unfortunately, it's going to be too difficult to extricate Nu's event system. So this coupling
-    is a complexity Nu is going to have to live with until end of days... *)
+    is a complexity Nu is going to have to live with until end of days... unless some enterprising
+    engineer undertakes a non-trivial effort to extract it out somehow :) *)
 
     (* IDEA: Simplified networking...
 

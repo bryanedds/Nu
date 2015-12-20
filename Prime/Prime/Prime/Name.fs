@@ -50,11 +50,11 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<NameConverter>)>]
 
     /// Equate Names.
     static member equals name name2 =
-        String.Equals (name.NameStr, name2.NameStr, StringComparison.Ordinal)
+        strEq name.NameStr name2.NameStr
 
     /// Compare Names.
     static member compare name name2 =
-        String.Compare (name.NameStr, name2.NameStr, StringComparison.Ordinal)
+        strCmp name.NameStr name2.NameStr
 
     interface Name IComparable with
         member this.CompareTo that =
@@ -108,7 +108,7 @@ module Name =
         | (_ :: _, []) -> false
         | ([], _ :: _) -> false
         | (head :: tail, head2 :: tail2) ->
-            let result = String.Equals (head.NameStr, head2.NameStr, StringComparison.Ordinal)
+            let result = strEq head.NameStr head2.NameStr
             if result then equateNames tail tail2
             else result
 
@@ -119,7 +119,7 @@ module Name =
         | (_ :: _, []) -> 1
         | ([], _ :: _) -> -1
         | (head :: tail, head2 :: tail2) ->
-            let result = String.Compare (head.NameStr, head2.NameStr, StringComparison.Ordinal)
+            let result = strCmp head.NameStr head2.NameStr
             if result = 0 then compareNames tail tail2
             else result
 
