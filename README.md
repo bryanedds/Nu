@@ -19,14 +19,14 @@ Here is some media on the Nu Game Engine -
 ![Screenshot](BlazeVector/Promotional/PlayingABitOfBlazeVector.png?raw=true)
 Blasting away in BlazeVector!
 
-
 ![Screenshot](BlazeVector/Promotional/EditingASectionOfABlazeVectorStage.png?raw=true)
 Editing a section of a BlazeVector stage.
 
+![Screenshot](Nu/Promotional/Nu Special Effects.png?raw=true)
+Editing a special effect in Nu.
 
 ![Screenshot](InfinityRpg/Promotional/InfinityRpg.png?raw=true)
 Screenshot of Nu's new game in progress, InfinityRpg.
-
 
 Getting Started
 ===============
