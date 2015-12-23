@@ -18,33 +18,33 @@ type [<NoEquality; NoComparison>] Effector =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Effector =
 
-    let rec private selectNodes2 localTime playback (nodes : INode list) =
+    let rec private selectKeyFrames2 localTime playback (keyFrames : IKeyFrame list) =
         match playback with
         | Once ->
-            match nodes with
+            match keyFrames with
             | [] -> failwithumf ()
             | head :: [] -> (localTime, head, head)
             | head :: next :: tail ->
-                if localTime > head.NodeLength then
+                if localTime > head.KeyFrameLength then
                     match tail with
-                    | _ :: _ -> selectNodes2 (localTime - head.NodeLength) playback (next :: tail)
-                    | [] -> (head.NodeLength, next, next)
+                    | _ :: _ -> selectKeyFrames2 (localTime - head.KeyFrameLength) playback (next :: tail)
+                    | [] -> (head.KeyFrameLength, next, next)
                 else (localTime, head, next)
         | Loop ->
-            let totalTime = List.fold (fun totalTime (node : INode) -> totalTime + node.NodeLength) 0L nodes 
+            let totalTime = List.fold (fun totalTime (keyFrame : IKeyFrame) -> totalTime + keyFrame.KeyFrameLength) 0L keyFrames 
             let moduloTime = localTime % totalTime
-            selectNodes2 moduloTime Once nodes
+            selectKeyFrames2 moduloTime Once keyFrames
         | Bounce ->
-            let totalTime = List.fold (fun totalTime (node : INode) -> totalTime + node.NodeLength) 0L nodes 
+            let totalTime = List.fold (fun totalTime (keyFrame : IKeyFrame) -> totalTime + keyFrame.KeyFrameLength) 0L keyFrames 
             let moduloTime = localTime % totalTime
             let bouncing = localTime / totalTime % 2L = 1L
             let bounceTime = if bouncing then totalTime - moduloTime else moduloTime
-            selectNodes2 bounceTime Once nodes
+            selectKeyFrames2 bounceTime Once keyFrames
 
-    let private selectNodes<'n when 'n :> INode> localTime playback (nodes : 'n list) =
-        nodes |>
-        List.map (fun node -> node :> INode) |>
-        selectNodes2 localTime playback |>
+    let private selectKeyFrames<'n when 'n :> IKeyFrame> localTime playback (keyFrames : 'n list) =
+        keyFrames |>
+        List.map (fun keyFrame -> keyFrame :> IKeyFrame) |>
+        selectKeyFrames2 localTime playback |>
         fun (fst, snd, thd) -> (fst, snd :?> 'n, thd :?> 'n)
 
     let inline private tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) progress algorithm effector =
@@ -140,8 +140,8 @@ module Effector =
         let slice = evalAspects slice incrementAspects effector
         evalContent slice content effector
 
-    and private evalProgress nodeTime nodeLength effector =
-        let progress = if nodeLength = 0L then 1.0f else single nodeTime / single nodeLength
+    and private evalProgress keyFrameTime keyFrameLength effector =
+        let progress = if keyFrameLength = 0L then 1.0f else single keyFrameTime / single keyFrameLength
         let progress = progress + effector.ProgressOffset
         if progress > 1.0f then progress - 1.0f else progress
 
@@ -154,57 +154,57 @@ module Effector =
                 | AlgebraicCompressionB (AlgebraicCompressionA aspect) -> evalAspect slice aspect effector
                 | _ -> note ^ "Expected Aspect for definition '" + definitionName + "'."; slice
             | None -> note ^ "Could not find definition with name '" + definitionName + "'."; slice
-        | Enabled (applicator, playback, nodes) ->
-            let (_, node, _) = selectNodes effector.EffectTime playback nodes
-            let applied = applyLogic slice.Enabled node.LogicValue applicator
+        | Enabled (applicator, playback, keyFrames) ->
+            let (_, keyFrame, _) = selectKeyFrames effector.EffectTime playback keyFrames
+            let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
             { slice with Enabled = applied }
-        | Position (applicator, algorithm, playback, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
-            let progress = evalProgress nodeTime node.TweenLength effector
-            let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
+        | Position (applicator, algorithm, playback, keyFrames) ->
+            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effector.EffectTime playback keyFrames
+            let progress = evalProgress keyFrameTime keyFrame.TweenLength effector
+            let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effector
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
             { slice with Position = applied }
-        | Translation (applicator, algorithm, playback, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
-            let progress = evalProgress nodeTime node.TweenLength effector
-            let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
+        | Translation (applicator, algorithm, playback, keyFrames) ->
+            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effector.EffectTime playback keyFrames
+            let progress = evalProgress keyFrameTime keyFrame.TweenLength effector
+            let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effector
             let oriented = Vector2.Transform (tweened, Quaternion.FromAxisAngle (Vector3.UnitZ, slice.Rotation))
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position oriented applicator
             { slice with Position = applied }
-        | Size (applicator, algorithm, playback, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
-            let progress = evalProgress nodeTime node.TweenLength effector
-            let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
+        | Size (applicator, algorithm, playback, keyFrames) ->
+            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effector.EffectTime playback keyFrames
+            let progress = evalProgress keyFrameTime keyFrame.TweenLength effector
+            let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effector
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
             { slice with Size = applied }
-        | Rotation (applicator, algorithm, playback, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
-            let progress = evalProgress nodeTime node.TweenLength effector
-            let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm effector
+        | Rotation (applicator, algorithm, playback, keyFrames) ->
+            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effector.EffectTime playback keyFrames
+            let progress = evalProgress keyFrameTime keyFrame.TweenLength effector
+            let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effector
             let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Rotation tweened applicator
             { slice with Rotation = applied }
-        | Depth (applicator, algorithm, playback, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
-            let progress = evalProgress nodeTime node.TweenLength effector
-            let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm effector
+        | Depth (applicator, algorithm, playback, keyFrames) ->
+            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effector.EffectTime playback keyFrames
+            let progress = evalProgress keyFrameTime keyFrame.TweenLength effector
+            let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effector
             let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Depth tweened applicator
             { slice with Depth = applied }
-        | Offset (applicator, algorithm, playback, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
-            let progress = evalProgress nodeTime node.TweenLength effector
-            let tweened = tween Vector2.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
+        | Offset (applicator, algorithm, playback, keyFrames) ->
+            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effector.EffectTime playback keyFrames
+            let progress = evalProgress keyFrameTime keyFrame.TweenLength effector
+            let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effector
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
             { slice with Offset = applied }
-        | Color (applicator, algorithm, playback, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
-            let progress = evalProgress nodeTime node.TweenLength effector
-            let tweened = tween Vector4.op_Multiply node.TweenValue node2.TweenValue progress algorithm effector
+        | Color (applicator, algorithm, playback, keyFrames) ->
+            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effector.EffectTime playback keyFrames
+            let progress = evalProgress keyFrameTime keyFrame.TweenLength effector
+            let tweened = tween Vector4.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effector
             let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
             { slice with Color = applied }
-        | Volume (applicator, algorithm, playback, nodes) ->
-            let (nodeTime, node, node2) = selectNodes effector.EffectTime playback nodes
-            let progress = evalProgress nodeTime node.TweenLength effector
-            let tweened = tween (fun (x, y) -> x * y) node.TweenValue node2.TweenValue progress algorithm effector
+        | Volume (applicator, algorithm, playback, keyFrames) ->
+            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effector.EffectTime playback keyFrames
+            let progress = evalProgress keyFrameTime keyFrame.TweenLength effector
+            let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effector
             let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Volume tweened applicator
             { slice with Volume = applied }
         | Bone -> slice

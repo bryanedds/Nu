@@ -39,50 +39,50 @@ type [<StructuralEquality; NoComparison>] Slice =
       Volume : single
       Enabled : bool }
 
-type INode =
-    abstract NodeLength : int64
+type IKeyFrame =
+    abstract KeyFrameLength : int64
 
-type LogicNode =
+type LogicKeyFrame =
     { LogicValue : bool
       LogicLength : int64 }
-    interface INode with
-        member this.NodeLength = this.LogicLength
+    interface IKeyFrame with
+        member this.KeyFrameLength = this.LogicLength
 
-type TweenNode =
+type TweenKeyFrame =
     { TweenValue : single
       TweenLength : int64 }
-    interface INode with
-        member this.NodeLength = this.TweenLength
+    interface IKeyFrame with
+        member this.KeyFrameLength = this.TweenLength
 
-type [<NoComparison>] Tween2Node =
+type [<NoComparison>] Tween2KeyFrame =
     { TweenValue : Vector2
       TweenLength : int64 }
-    interface INode with
-        member this.NodeLength = this.TweenLength
+    interface IKeyFrame with
+        member this.KeyFrameLength = this.TweenLength
 
-type [<NoComparison>] Tween3Node =
+type [<NoComparison>] Tween3KeyFrame =
     { TweenValue : Vector3
       TweenLength : int64 }
-    interface INode with
-        member this.NodeLength = this.TweenLength
+    interface IKeyFrame with
+        member this.KeyFrameLength = this.TweenLength
 
-type [<NoComparison>] Tween4Node =
+type [<NoComparison>] Tween4KeyFrame =
     { TweenValue : Vector4
       TweenLength : int64 }
-    interface INode with
-        member this.NodeLength = this.TweenLength
+    interface IKeyFrame with
+        member this.KeyFrameLength = this.TweenLength
 
-type TweenINode =
+type TweenIKeyFrame =
     { TweenValue : int
       TweenLength : int64 }
-    interface INode with
-        member this.NodeLength = this.TweenLength
+    interface IKeyFrame with
+        member this.KeyFrameLength = this.TweenLength
 
-type Tween2INode =
+type Tween2IKeyFrame =
     { TweenValue : Vector2i
       TweenLength : int64 }
-    interface INode with
-        member this.NodeLength = this.TweenLength
+    interface IKeyFrame with
+        member this.KeyFrameLength = this.TweenLength
 
 type Playback =
     | Once
@@ -105,15 +105,15 @@ type [<NoComparison>] Resource =
 
 and [<NoComparison>] Aspect =
     | Expand of string * Argument list
-    | Enabled of LogicApplicator * Playback * LogicNode list
-    | Position of TweenApplicator * Algorithm * Playback * Tween2Node list
-    | Translation of TweenApplicator * Algorithm * Playback * Tween2Node list
-    | Offset of TweenApplicator * Algorithm * Playback * Tween2Node list
-    | Size of TweenApplicator * Algorithm * Playback * Tween2Node list
-    | Rotation of TweenApplicator * Algorithm * Playback * TweenNode list
-    | Depth of TweenApplicator * Algorithm * Playback * TweenNode list
-    | Color of TweenApplicator * Algorithm * Playback * Tween4Node list
-    | Volume of TweenApplicator * Algorithm * Playback * TweenNode list
+    | Enabled of LogicApplicator * Playback * LogicKeyFrame list
+    | Position of TweenApplicator * Algorithm * Playback * Tween2KeyFrame list
+    | Translation of TweenApplicator * Algorithm * Playback * Tween2KeyFrame list
+    | Offset of TweenApplicator * Algorithm * Playback * Tween2KeyFrame list
+    | Size of TweenApplicator * Algorithm * Playback * Tween2KeyFrame list
+    | Rotation of TweenApplicator * Algorithm * Playback * TweenKeyFrame list
+    | Depth of TweenApplicator * Algorithm * Playback * TweenKeyFrame list
+    | Color of TweenApplicator * Algorithm * Playback * Tween4KeyFrame list
+    | Volume of TweenApplicator * Algorithm * Playback * TweenKeyFrame list
     | Bone // TODO: implement bone aspect
 
 and [<NoComparison>] Content =
