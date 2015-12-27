@@ -91,7 +91,7 @@ module WorldGameModule =
         static member writeGame (writer : XmlWriter) world =
             let gameState = World.getGameState world
             let screens = World.proxyScreens world
-            writer.WriteAttributeString (Constants.Xml.DispatcherNameAttributeName, Reflection.getTypeName gameState.DispatcherNp)
+            writer.WriteAttributeString (Constants.Xml.DispatcherNameAttributeName, getTypeName gameState.DispatcherNp)
             Reflection.writeMemberValuesFromTarget tautology3 writer gameState
             writer.WriteStartElement Constants.Xml.ScreensNodeName
             World.writeScreens writer screens world

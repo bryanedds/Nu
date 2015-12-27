@@ -89,10 +89,10 @@ module WorldEntityModule =
         /// Set an entity's transform.
         member this.SetTransform (transform : Transform) world =
             world |>
-                this.SetPosition transform.Position |>
-                this.SetSize transform.Size |>
-                this.SetRotation transform.Rotation |>
-                this.SetDepth transform.Depth
+            this.SetPosition transform.Position |>
+            this.SetSize transform.Size |>
+            this.SetRotation transform.Rotation |>
+            this.SetDepth transform.Depth
 
         /// Get the center position of an entity.
         member this.GetCenter world =
@@ -204,7 +204,7 @@ module WorldEntityModule =
             else world
 
         static member internal getEntityFacetNamesReflectively entityState =
-            List.map Reflection.getTypeName entityState.FacetsNp
+            List.map getTypeName entityState.FacetsNp
 
         /// Query that the world contains an entity.
         static member containsEntity entity world =
@@ -415,7 +415,7 @@ module WorldEntityModule =
         /// Write an entity to an xml writer.
         static member writeEntity (writer : XmlWriter) (entity : Entity) world =
             let entityState = World.getEntityState entity world
-            let dispatcherTypeName = Reflection.getTypeName entityState.DispatcherNp
+            let dispatcherTypeName = getTypeName entityState.DispatcherNp
             writer.WriteAttributeString (Constants.Xml.DispatcherNameAttributeName, dispatcherTypeName)
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
                 if propertyName = "OptOverlayName" && propertyType = typeof<string option> then
