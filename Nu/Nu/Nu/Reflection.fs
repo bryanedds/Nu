@@ -86,11 +86,6 @@ module Reflection =
     let private FieldDefinitionsCache =
         Dictionary<Type, FieldDefinition list> () // wonder if HashIdentity.Reference would work?
 
-    /// Get the type name of a target.
-    let getTypeName target =
-        let targetType = target.GetType ()
-        targetType.Name
-
     /// Is a property with the given name persistent?
     let isPropertyPersistentByName (propertyName : string) =
         not ^ propertyName.EndsWith ("Id", StringComparison.Ordinal) && // don't write an Id

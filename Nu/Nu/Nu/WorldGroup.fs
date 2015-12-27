@@ -135,7 +135,7 @@ module WorldGroupModule =
         static member writeGroup (writer : XmlWriter) group world =
             let groupState = World.getGroupState group world
             let entities = World.proxyEntities group world
-            writer.WriteAttributeString (Constants.Xml.DispatcherNameAttributeName, Reflection.getTypeName groupState.DispatcherNp)
+            writer.WriteAttributeString (Constants.Xml.DispatcherNameAttributeName, getTypeName groupState.DispatcherNp)
             Reflection.writeMemberValuesFromTarget tautology3 writer groupState
             writer.WriteStartElement Constants.Xml.EntitiesNodeName
             World.writeEntities writer entities world

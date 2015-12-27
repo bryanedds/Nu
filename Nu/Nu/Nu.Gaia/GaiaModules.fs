@@ -74,7 +74,7 @@ module Gaia =
             treeState
 
     let private addTreeViewNode (form : GaiaForm) (entity : Entity) world =
-        let entityCategoryName = Reflection.getTypeName ^ entity.GetDispatcherNp world
+        let entityCategoryName = getTypeName ^ entity.GetDispatcherNp world
         let treeCategory = form.treeView.Nodes.[entityCategoryName]
         let treeCategoryNodeName = acstring entity.EntityAddress
         if not ^ treeCategory.Nodes.ContainsKey treeCategoryNodeName then

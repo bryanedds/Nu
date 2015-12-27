@@ -61,8 +61,11 @@ module Operators =
     /// Compare two strings.
     let inline strCmp str str2 = String.Compare (str, str2, StringComparison.Ordinal)
 
-    /// Convert any value to its type.
-    let inline getType x = x.GetType ()
+    /// Get the .NET type of a target.
+    let inline getType target = target.GetType ()
+
+    /// Get the .NET type name of a target.
+    let inline getTypeName target = (getType target).Name
 
     /// Get the fields of a type.
     let inline getFields (t : Type) = t.GetFields (BindingFlags.Instance ||| BindingFlags.Public)
