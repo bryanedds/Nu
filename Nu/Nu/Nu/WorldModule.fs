@@ -395,6 +395,20 @@ module World =
     let updateUserState (updater : 'u -> 'v) world =
         setState (WorldState.updateUserState updater world.State) world
 
+    (* Built-in Event Handlers *)
+
+    /// Ignore all handled events.
+    let handleAsPass<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
+        (Cascade, world)
+
+    /// Swallow all handled events.
+    let handleAsSwallow<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
+        (Resolve, world)
+        
+    /// Handle event by exiting app.
+    let handleAsExit<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
+        (Resolve, exit world)
+
     (* EntityState *)
 
     let private optEntityStateKeyEquality 

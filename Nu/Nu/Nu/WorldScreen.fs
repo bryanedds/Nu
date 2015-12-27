@@ -134,7 +134,7 @@ module WorldScreenModule =
         static member writeScreen (writer : XmlWriter) screen world =
             let screenState = World.getScreenState screen world
             let groups = World.proxyGroups screen world
-            writer.WriteAttributeString (Constants.Xml.DispatcherNameAttributeName, Reflection.getTypeName screenState.DispatcherNp)
+            writer.WriteAttributeString (Constants.Xml.DispatcherNameAttributeName, getTypeName screenState.DispatcherNp)
             Reflection.writeMemberValuesFromTarget tautology3 writer screenState
             writer.WriteStartElement Constants.Xml.GroupsNodeName
             World.writeGroups writer groups world

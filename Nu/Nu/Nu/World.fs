@@ -72,7 +72,7 @@ module WorldModule =
     type World with
 
         static member private pairWithName source =
-            (Reflection.getTypeName source, source)
+            (getTypeName source, source)
 
         static member private makeDefaultFacets () =
             Map.ofList
@@ -107,18 +107,6 @@ module WorldModule =
 
         static member private makeDefaultGameDispatchers () =
             Map.ofList [World.pairWithName ^ GameDispatcher ()]
-
-        /// Ignore all handled events.
-        static member handleAsPass<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
-            (Cascade, world)
-
-        /// Swallow all handled events.
-        static member handleAsSwallow<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
-            (Resolve, world)
-        
-        /// Handle event by exiting app.
-        static member handleAsExit<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
-            (Resolve, World.exit world)
 
         /// Try to query that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
@@ -304,28 +292,30 @@ module WorldModule =
             let world = World.subscribe5 SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update ->- splashScreen) evt.Subscriber world
             (Resolve, world)
 
-        /// Create a splash screen that transitions to the given destination upon completion.
-        static member createSplashScreen persistent splashData destination dispatcherName optSpecialization optName world =
-            let cameraEyeSize = World.getCameraBy (fun camera -> camera.EyeSize) world
-            let (splashScreen, world) = World.createDissolveScreen splashData.DissolveData dispatcherName optSpecialization optName world
-            let (splashGroup, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some !!"SplashGroup") splashScreen world
-            let (splashLabel, world) = World.createEntity typeof<LabelDispatcher>.Name None (Some !!"SplashLabel") splashGroup world
-            let world = splashScreen.SetPersistent persistent world
-            let world = splashGroup.SetPersistent persistent world
-            let world = splashLabel.SetPersistent persistent world
-            let world = splashLabel.SetSize cameraEyeSize world
-            let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
-            let world = splashLabel.SetLabelImage splashData.SplashImage world
-            let world = World.monitor (World.handleSplashScreenIdle splashData.IdlingTime splashScreen) (Events.IncomingFinish ->- splashScreen) splashScreen world
-            let world = World.monitor (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish ->- splashScreen) splashScreen world
-            (splashScreen, world)
-
         /// Create a dissolve screen whose contents is loaded from the given group file.
         static member createDissolveScreenFromGroupFile persistent dissolveData groupFilePath dispatcherName optSpecialization optName world =
             let (dissolveScreen, world) = World.createDissolveScreen dissolveData dispatcherName optSpecialization optName world
             let world = dissolveScreen.SetPersistent persistent world
             let world = World.readGroupFromFile groupFilePath None dissolveScreen world |> snd
             (dissolveScreen, world)
+
+        /// Create a splash screen that transitions to the given destination upon completion.
+        static member createSplashScreen persistent splashData destination dispatcherName optSpecialization optName world =
+            let cameraEyeSize = World.getCameraBy (fun camera -> camera.EyeSize) world
+            let (splashScreen, world) = World.createDissolveScreen splashData.DissolveData dispatcherName optSpecialization optName world
+            let (splashGroup, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some !!"SplashGroup") splashScreen world
+            let (splashLabel, world) = World.createEntity typeof<LabelDispatcher>.Name None (Some !!"SplashLabel") splashGroup world
+            let world =
+                splashScreen.SetPersistent persistent world |>
+                splashGroup.SetPersistent persistent |>
+                splashLabel.SetPersistent persistent |>
+                splashLabel.SetSize cameraEyeSize |>
+                splashLabel.SetPosition (-cameraEyeSize * 0.5f) |>
+                splashLabel.SetLabelImage splashData.SplashImage
+            let world =
+                World.monitor (World.handleSplashScreenIdle splashData.IdlingTime splashScreen) (Events.IncomingFinish ->- splashScreen) splashScreen world |>
+                World.monitor (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish ->- splashScreen) splashScreen
+            (splashScreen, world)
 
         static member private createIntrinsicOverlays facets entityDispatchers =
             let hasFacetNamesField = fun sourceType -> sourceType = typeof<EntityDispatcher>
