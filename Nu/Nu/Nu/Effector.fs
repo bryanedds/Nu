@@ -358,6 +358,8 @@ module Effector =
                         let emitCount = int emitCountThisFrame - int emitCountLastFrame
                         let effector =
                             let history = effector.History
+                                // TODO: make history computations lazy with seq rather than list
+                                // TODO: include previous states of effect in history to allow changes to effect over time
                                 (*match content with
                                 | Emit _ ->
                                     List.mapi
