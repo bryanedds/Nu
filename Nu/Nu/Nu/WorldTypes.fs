@@ -627,7 +627,7 @@ and [<ReferenceEquality>] WorldState =
           OverlayRouter : OverlayRouter
           Camera : Camera
           OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
-          RefClipboard : EntityState option ref // NOTE: this makes for _strange_ value semantics for WorldState
+          RefClipboard : EntityState option ref // TODO: make this an internal global variable to purify this type.
           UserState : obj }
 
 /// The world, in a functional programming sense. Hosts the game object, the dependencies
