@@ -912,8 +912,7 @@ module TileMapDispatcherModule =
             | Some tileSetTile ->
                 match tileSetTile.Properties.TryGetValue Constants.Physics.CollisionProperty with
                 | (true, collisionProperty) ->
-                    let collisionExpr = acstring collisionProperty
-                    let tileBodyProperties = getTileBodyProperties6 tm tmd tli td ti collisionExpr world
+                    let tileBodyProperties = getTileBodyProperties6 tm tmd tli td ti collisionProperty world
                     Some tileBodyProperties
                 | (false, _) -> None
             | None -> None
