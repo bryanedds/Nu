@@ -26,28 +26,35 @@ module AlgebraicReader =
     let [<Literal>] OpenComplexValueStr = "["
     let [<Literal>] CloseComplexValueChar = ']'
     let [<Literal>] CloseComplexValueStr = "]"
+    let [<Literal>] OpenStringChar = '\"'
+    let [<Literal>] OpenStringStr = "\""
+    let [<Literal>] CloseStringChar = '\"'
+    let [<Literal>] CloseStringStr = "\""
     let [<Literal>] OpenQuoteChar = '`'
     let [<Literal>] OpenQuoteStr = "`"
     let [<Literal>] CloseQuoteChar = '\''
     let [<Literal>] CloseQuoteStr = "\'"
-    let [<Literal>] StructureChars = "[]`\'"
+    let [<Literal>] StructureChars = "[]\"`\'"
 
-    let skipWhitespaceChar = skipAnyOf WhitespaceChars
-    let skipWhitespace = skipMany skipWhitespaceChar
+    let skipWhitespace = skipAnyOf WhitespaceChars
+    let skipWhitespaces = skipMany skipWhitespace
 
-    let charForm character = skipChar character >>. skipWhitespace
-    let openComplexValueForm = skipChar OpenComplexValueChar
-    let closeComplexValueForm = skipChar CloseComplexValueChar
+    let charForm character = skipChar character >>. skipWhitespaces
+    let openComplexValueForm = charForm OpenComplexValueChar
+    let closeComplexValueForm = charForm CloseComplexValueChar
+    let openStringForm = skipChar OpenStringChar
+    let closeStringForm = charForm CloseStringChar
     let openQuoteForm = charForm OpenQuoteChar
     let closeQuoteForm = charForm CloseQuoteChar
-    
+
     let readAtomicValueChars = many1 (noneOf (StructureChars + WhitespaceChars))
+    let readStringChars = many (noneOf [CloseStringChar])
     let readQuoteChars = many (noneOf [CloseQuoteChar])
     let readContentChars =
         many1
             ((attempt (openQuoteForm >>. readQuoteChars .>> closeQuoteForm)) <|>
-             readAtomicValueChars .>>
-             skipWhitespace)
+             (attempt (openStringForm >>. readStringChars .>> closeStringForm)) <|>
+             (readAtomicValueChars .>> skipWhitespaces))
 
     module private AlgebraicValueReader =
 
@@ -57,15 +64,21 @@ module AlgebraicReader =
         let readAtomicValue =
             parse {
                 let! chars = readAtomicValueChars
-                do! skipWhitespace
+                do! skipWhitespaces
                 return chars |> String.implode |> (fun str -> str.TrimEnd ()) |> objectify }
+
+        let readStringValue =
+            parse {
+                do! openStringForm
+                let! stringChars = readStringChars
+                do! closeStringForm
+                return stringChars |> String.implode |> (fun str -> OpenStringStr + str + CloseStringStr) |> objectify }
 
         let readQuoteValue =
             parse {
                 do! openQuoteForm
                 let! quoteChars = readQuoteChars // TODO: enable reading quotes that have inner quotes
                 do! closeQuoteForm
-                do! skipWhitespace
                 return quoteChars |> String.implode |> AlgebraicQuote |> objectify }
 
         let readComplexValue =
@@ -73,10 +86,10 @@ module AlgebraicReader =
                 do! openComplexValueForm
                 let! values = many readValue
                 do! closeComplexValueForm
-                do! skipWhitespace
                 return values :> obj }
 
         do refReadValue :=
+            attempt readStringValue <|>
             attempt readQuoteValue <|>
             attempt readAtomicValue <|>
             readComplexValue
@@ -90,10 +103,8 @@ module AlgebraicReader =
             parse {
                 let! openPosition = getPosition
                 do! openComplexValueForm
-                do! skipWhitespace
                 let! algebraicIndices = many readAlgebraicIndex
                 do! closeComplexValueForm
-                do! skipWhitespace
                 return ListIndex (openPosition.Index, algebraicIndices) }
 
         let readContentIndex =
@@ -116,6 +127,8 @@ module AlgebraicReader =
     /// [2 2]
     /// Hello_World
     /// CharacterAnimationFacing
+    /// "String with quoted spaces."
+    /// String_with_underscores_for_spaces.
     /// 
     /// (* Complex Values *)
     ///
@@ -124,9 +137,10 @@ module AlgebraicReader =
     /// [Left 0]
     /// [[0 1] [2 4]]
     /// [AnimationData 4 8]
+    /// [Gem `[Some 1]']
     ///
     let stringToValue str =
-        match run (skipWhitespace >>. AlgebraicValueReader.readValue) str with
+        match run (skipWhitespaces >>. AlgebraicValueReader.readValue) str with
         | Success (value, _, _) -> value
         | Failure (error, _, _) -> failwith error
 
@@ -134,7 +148,7 @@ module AlgebraicReader =
     let stringToOptAlgebraicIndex str =
         if String.IsNullOrWhiteSpace str then None
         else
-            match run (skipWhitespace >>. AlgebraicIndexer.readAlgebraicIndex) str with
+            match run (skipWhitespaces >>. AlgebraicIndexer.readAlgebraicIndex) str with
             | Success (value, _, _) -> Some value
             | Failure (error, _, _) -> failwith error
 

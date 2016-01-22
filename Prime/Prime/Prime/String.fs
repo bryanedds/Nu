@@ -23,6 +23,12 @@ module String =
         let sb = StringBuilder ()
         List.iter (fun (chr : char) -> ignore (sb.Append chr)) chars
         sb.ToString ()
+
+    /// Textualize a string for usage as text.
+    let textualize (str : string) =
+        let str = str.Replace ('_', ' ')
+        let str = str.Replace ("\"", "")
+        str
     
     /// Get the string with the given ending.
     let withEnd str target =
