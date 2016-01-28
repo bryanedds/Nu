@@ -911,8 +911,8 @@ module TileMapDispatcherModule =
             match td.OptTileSetTile with
             | Some tileSetTile ->
                 match tileSetTile.Properties.TryGetValue Constants.Physics.CollisionProperty with
-                | (true, collisionProperty) ->
-                    let tileBodyProperties = getTileBodyProperties6 tm tmd tli td ti collisionProperty world
+                | (true, cexpr) ->
+                    let tileBodyProperties = getTileBodyProperties6 tm tmd tli td ti cexpr world
                     Some tileBodyProperties
                 | (false, _) -> None
             | None -> None
