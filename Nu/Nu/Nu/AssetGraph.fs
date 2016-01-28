@@ -25,7 +25,6 @@ module Refinement =
         | _ -> failwith ^ "Invalid refinement '" + str + "'."
 
 /// Describes a means for looking up an asset.
-/// TODO: consider if we could / should use a TypeCarrier (phantom type) here.
 type AssetTag =
     { PackageName : string
       AssetName : string }
