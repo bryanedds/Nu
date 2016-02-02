@@ -15,6 +15,9 @@ type AlgebraicCompression<'a, 'b> =
     | AlgebraicCompressionA of 'a
     | AlgebraicCompressionB of 'b
 
+/// TODO: consider reimplementing this converter to use an intermediate symbolic representation
+/// instead of this weird, weakly-typed recursive DU. An example is here -
+/// https://github.com/bryanedds/om/blob/master/src/hpp/ax/symbol.hpp
 type [<NoEquality; NoComparison>] AlgebraicSource =
     { AlgebraicValue : obj }
 
