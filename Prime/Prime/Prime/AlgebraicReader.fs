@@ -72,7 +72,7 @@ module AlgebraicReader =
                 do! openStringForm
                 let! stringChars = readStringChars
                 do! closeStringForm
-                return stringChars |> String.implode |> (fun str -> OpenStringStr + str + CloseStringStr) |> objectify }
+                return stringChars |> String.implode |> objectify }
 
         let readQuoteValue =
             parse {
