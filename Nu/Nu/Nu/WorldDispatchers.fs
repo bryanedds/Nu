@@ -285,7 +285,7 @@ module StaticSpriteFacetModule =
             else world
 
         override facet.GetQuickSize (entity, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (entity.GetStaticImage world) world.State.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 (entity.GetStaticImage world) (World.getAssetMetadataMap world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -470,7 +470,7 @@ module ButtonDispatcherModule =
                 world
 
         override dispatcher.GetQuickSize (button, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (button.GetUpImage world) world.State.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 (button.GetUpImage world) (World.getAssetMetadataMap world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -507,7 +507,7 @@ module LabelDispatcherModule =
                 world
 
         override dispatcher.GetQuickSize (label, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (label.GetLabelImage world) world.State.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 (label.GetLabelImage world) (World.getAssetMetadataMap world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -566,7 +566,7 @@ module TextDispatcherModule =
                 world
 
         override dispatcher.GetQuickSize (text, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (text.GetBackgroundImage world) world.State.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 (text.GetBackgroundImage world) (World.getAssetMetadataMap world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -656,7 +656,7 @@ module ToggleDispatcherModule =
                 world
 
         override dispatcher.GetQuickSize (toggle, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (toggle.GetOffImage world) world.State.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 (toggle.GetOffImage world) (World.getAssetMetadataMap world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -773,7 +773,7 @@ module FillBarDispatcherModule =
                 world
 
         override dispatcher.GetQuickSize (fillBar, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (fillBar.GetBorderImage world) world.State.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 (fillBar.GetBorderImage world) (World.getAssetMetadataMap world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -848,7 +848,8 @@ module TileMapDispatcherModule =
         member this.SetParallax (value : single) world = this.UpdateXtension (fun xtension -> xtension?Parallax <- value) world
 
         static member makeTileMapData (tileMapAsset : AssetTag) world =
-            let map = __c ^ Metadata.getTileMapMetadata tileMapAsset world.State.AssetMetadataMap
+            let metadataMap = World.getAssetMetadataMap world
+            let map = __c ^ Metadata.getTileMapMetadata tileMapAsset metadataMap
             let mapSize = Vector2i (map.Width, map.Height)
             let tileSize = Vector2i (map.TileWidth, map.TileHeight)
             let tileSizeF = Vector2 (single tileSize.X, single tileSize.Y)
@@ -987,7 +988,7 @@ module TileMapDispatcherModule =
                 registerTileMapPhysics tileMap
 
         override dispatcher.Actualize (tileMap, world) =
-            match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) world.State.AssetMetadataMap with
+            match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getAssetMetadataMap world) with
             | Some (_, images, map) ->
                 let camera = World.getCamera world
                 let layers = List.ofSeq map.Layers
@@ -1027,6 +1028,6 @@ module TileMapDispatcherModule =
             | None -> world
 
         override dispatcher.GetQuickSize (tileMap, world) =
-            match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) world.State.AssetMetadataMap with
+            match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getAssetMetadataMap world) with
             | Some (_, _, map) -> Vector2 (single ^ map.Width * map.TileWidth, single ^ map.Height * map.TileHeight)
             | None -> Constants.Engine.DefaultEntitySize

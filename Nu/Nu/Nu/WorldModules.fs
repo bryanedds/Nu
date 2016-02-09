@@ -24,6 +24,7 @@ module GameState =
     let make dispatcher =
         { Id = Core.makeId ()
           OptSelectedScreen = None
+          OptScreenTransitionDestination = None
           PublishChanges = true
           CreationTimeStampNp = Core.getTimeStamp ()
           DispatcherNp = dispatcher
@@ -126,6 +127,9 @@ module Simulants =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Subsystems =
 
+    let internal getSubsystemMap subsystems =
+        subsystems.SubsystemMap
+
     let getSubsystem<'s when 's :> Subsystem> name subsystems =
         Vmap.find name subsystems.SubsystemMap :?> 's
 
@@ -160,6 +164,10 @@ module Subsystems =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Callbacks =
 
+    /// Get all tasklets.
+    let getTasklets callbacks =
+        callbacks.Tasklets
+
     /// Clear all held tasklets.
     let clearTasklets callbacks =
         { callbacks with Tasklets = Queue.empty }
@@ -183,6 +191,22 @@ module Callbacks =
     /// Remove callback state.
     let removeCallbackState key callbacks =
         { callbacks with CallbackStates = Vmap.remove key callbacks.CallbackStates }
+
+    /// Get subscriptions.
+    let getSubscriptions callbacks =
+        callbacks.Subscriptions
+
+    /// Get unsubscriptions.
+    let getUnsubscriptions callbacks =
+        callbacks.Unsubscriptions
+
+    /// Set subscriptions.
+    let internal setSubscriptions subscriptions callbacks =
+        { callbacks with Subscriptions = subscriptions }
+
+    /// Set unsubscriptions.
+    let internal setUnsubscriptions unsubscriptions callbacks =
+        { callbacks with Unsubscriptions = unsubscriptions }
 
     /// Get callback state.
     let getCallbackState<'a> key callbacks =
@@ -293,25 +317,29 @@ module WorldState =
         let camera = updater ^ getCamera state
         setCamera camera state
 
-    /// Get the current destination screen if a screen transition is currently underway.
-    let getOptScreenTransitionDestination state =
-        state.OptScreenTransitionDestination
-
-    /// Set the current destination screen if a screen transition is currently underway.
-    let internal setOptScreenTransitionDestination destination state =
-        { state with OptScreenTransitionDestination = destination }
+    /// Get the opt entity cache.
+    let internal getOptEntityCache state =
+        state.OptEntityCache
 
     /// Get the asset metadata map.
-    let getAssetMetadataMap world =
-        world.State.AssetMetadataMap
+    let getAssetMetadataMap state =
+        state.AssetMetadataMap
 
     /// Set the asset metadata map.
     let setAssetMetadataMap assetMetadataMap state =
         { state with AssetMetadataMap = assetMetadataMap }
 
+    /// Get the overlayer.
+    let getOverlayer state =
+        state.Overlayer
+
     /// Set the overlayer.
     let setOverlayer overlayer state =
         { state with Overlayer = overlayer }
+
+    /// Get the overlay router.
+    let getOverlayRouter state =
+        state.OverlayRouter
 
     /// Get the user-defined state, casted to 'u.
     let getUserState state : 'u =
@@ -333,11 +361,9 @@ module WorldState =
           TickTime = 0L
           UpdateCount = 0L
           Liveness = Running
-          OptScreenTransitionDestination = None
           AssetMetadataMap = assetMetadataMap
           OverlayRouter = overlayRouter
           Overlayer = overlayer
           Camera = camera
           OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
-          RefClipboard = ref None
           UserState = userState }
