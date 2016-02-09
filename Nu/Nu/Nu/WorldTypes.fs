@@ -328,6 +328,7 @@ and internal SimulantState =
 and [<CLIMutable; NoEquality; NoComparison>] GameState =
     { Id : Guid
       OptSelectedScreen : Screen option
+      OptScreenTransitionDestination : Screen option
       PublishChanges : bool
       CreationTimeStampNp : int64
       DispatcherNp : GameDispatcher
@@ -614,20 +615,18 @@ and [<ReferenceEquality>] Callbacks =
           CallbackStates : Vmap<Guid, obj> }
 
 /// The world's state.
-/// TODO: There are improper places accessing this directly - fix them.
+/// TODO: There were improper places accessing fields directly - report the issue in the F# compiler.
 and [<ReferenceEquality>] WorldState =
     private
         { TickRate : int64
           TickTime : int64
           UpdateCount : int64
           Liveness : Liveness
-          OptScreenTransitionDestination : Screen option // TODO: move this into GameState
           AssetMetadataMap : AssetMetadataMap
           Overlayer : Overlayer
           OverlayRouter : OverlayRouter
           Camera : Camera
           OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
-          RefClipboard : EntityState option ref // TODO: make this an internal global variable to purify this type.
           UserState : obj }
 
 /// The world, in a functional programming sense. Hosts the game object, the dependencies

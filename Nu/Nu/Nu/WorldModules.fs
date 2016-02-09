@@ -24,6 +24,7 @@ module GameState =
     let make dispatcher =
         { Id = Core.makeId ()
           OptSelectedScreen = None
+          OptScreenTransitionDestination = None
           PublishChanges = true
           CreationTimeStampNp = Core.getTimeStamp ()
           DispatcherNp = dispatcher
@@ -316,13 +317,9 @@ module WorldState =
         let camera = updater ^ getCamera state
         setCamera camera state
 
-    /// Get the current destination screen if a screen transition is currently underway.
-    let getOptScreenTransitionDestination state =
-        state.OptScreenTransitionDestination
-
-    /// Set the current destination screen if a screen transition is currently underway.
-    let internal setOptScreenTransitionDestination destination state =
-        { state with OptScreenTransitionDestination = destination }
+    /// Get the opt entity cache.
+    let internal getOptEntityCache state =
+        state.OptEntityCache
 
     /// Get the asset metadata map.
     let getAssetMetadataMap state =
@@ -356,11 +353,9 @@ module WorldState =
           TickTime = 0L
           UpdateCount = 0L
           Liveness = Running
-          OptScreenTransitionDestination = None
           AssetMetadataMap = assetMetadataMap
           OverlayRouter = overlayRouter
           Overlayer = overlayer
           Camera = camera
           OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
-          RefClipboard = ref None
           UserState = userState }
