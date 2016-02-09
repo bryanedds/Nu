@@ -409,7 +409,8 @@ module WorldModule =
             Seq.fold (flip World.propagateEntityPhysics) world entities
 
         static member private processSubsystems subsystemType world =
-            Vmap.toSeq world.Subsystems.SubsystemMap |>
+            Subsystems.getSubsystemMap world.Subsystems |>
+            Vmap.toSeq |>
             List.ofSeq |>
             List.filter (fun (_, subsystem) -> subsystem.SubsystemType = subsystemType) |>
             List.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
@@ -439,7 +440,7 @@ module WorldModule =
             else (Queue.conj tasklet taskletsNotRun, world)
 
         static member private processTasklets world =
-            let tasklets = world.Callbacks.Tasklets
+            let tasklets = World.getTasklets world
             let world = World.clearTasklets world
             let (taskletsNotRun, world) = Queue.fold World.processTasklet (Queue.empty, world) tasklets
             World.restoreTasklets taskletsNotRun world

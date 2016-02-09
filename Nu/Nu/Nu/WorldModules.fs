@@ -126,6 +126,9 @@ module Simulants =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Subsystems =
 
+    let internal getSubsystemMap subsystems =
+        subsystems.SubsystemMap
+
     let getSubsystem<'s when 's :> Subsystem> name subsystems =
         Vmap.find name subsystems.SubsystemMap :?> 's
 
@@ -160,6 +163,10 @@ module Subsystems =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Callbacks =
 
+    /// Get all tasklets.
+    let getTasklets callbacks =
+        callbacks.Tasklets
+
     /// Clear all held tasklets.
     let clearTasklets callbacks =
         { callbacks with Tasklets = Queue.empty }
@@ -187,6 +194,18 @@ module Callbacks =
     /// Get subscriptions.
     let getSubscriptions callbacks =
         callbacks.Subscriptions
+
+    /// Get unsubscriptions.
+    let getUnsubscriptions callbacks =
+        callbacks.Unsubscriptions
+
+    /// Set subscriptions.
+    let internal setSubscriptions subscriptions callbacks =
+        { callbacks with Subscriptions = subscriptions }
+
+    /// Set unsubscriptions.
+    let internal setUnsubscriptions unsubscriptions callbacks =
+        { callbacks with Unsubscriptions = unsubscriptions }
 
     /// Get callback state.
     let getCallbackState<'a> key callbacks =

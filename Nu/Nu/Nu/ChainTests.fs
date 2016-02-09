@@ -49,4 +49,4 @@ module ChainTests =
         Assert.Equal (7, World.getUserState world)
         
         // assert no garbage is left over after chained computation is concluded
-        Assert.True ^ Vmap.isEmpty world.Callbacks.CallbackStates
+        Assert.True ^ Vmap.isEmpty ^ World.getSubscriptions world

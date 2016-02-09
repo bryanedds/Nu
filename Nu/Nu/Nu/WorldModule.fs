@@ -39,6 +39,9 @@ module World =
 
     (* Callbacks *)
 
+    let internal getTasklets world =
+        Callbacks.getTasklets world.Callbacks
+
     let internal clearTasklets world =
         { world with Callbacks = Callbacks.clearTasklets world.Callbacks }
 
@@ -56,6 +59,22 @@ module World =
     /// Get callback subscriptions.
     let getSubscriptions world =
         Callbacks.getSubscriptions world.Callbacks
+
+    /// Get callback unsubscriptions.
+    let getUnsubscriptions world =
+        Callbacks.getUnsubscriptions world.Callbacks
+
+    /// Set callback subscriptions.
+    let internal setSubscriptions subscriptions world =
+        { world with Callbacks = Callbacks.setSubscriptions subscriptions world.Callbacks }
+
+    /// Set callback unsubscriptions.
+    let internal setUnsubscriptions unsubscriptions world =
+        { world with Callbacks = Callbacks.setUnsubscriptions unsubscriptions world.Callbacks }
+
+    /// Get callback unsubscriptions.
+    let internal getUnsubscriptions world =
+        Callbacks.getUnsubscriptions world.Callbacks
 
     /// Add callback state to the world.
     let addCallbackState key state world =
@@ -199,7 +218,7 @@ module World =
             List.foldWhile
                 (fun (eventHandling, world) (_, subscriber : Simulant, subscription) ->
                     if  (match eventHandling with Cascade -> true | Resolve -> false) &&
-                        (match world.State.Liveness with Running -> true | Exiting -> false) then
+                        (match WorldState.getLiveness world.State with Running -> true | Exiting -> false) then
                         match Address.getNames subscriber.SimulantAddress with
                         | [] -> publishEvent<'a, 'p, Game> subscriber publisher eventData eventAddress eventTrace subscription world
                         | [_] -> publishEvent<'a, 'p, Screen> subscriber publisher eventData eventAddress eventTrace subscription world
@@ -222,9 +241,10 @@ module World =
 
     /// Unsubscribe from an event.
     let unsubscribe subscriptionKey world =
-        match Vmap.tryFind subscriptionKey world.Callbacks.Unsubscriptions with
+        let (subscriptions, unsubscriptions) = (getSubscriptions world, getUnsubscriptions world)
+        match Vmap.tryFind subscriptionKey unsubscriptions with
         | Some (eventAddress, subscriber) ->
-            match Vmap.tryFind eventAddress world.Callbacks.Subscriptions with
+            match Vmap.tryFind eventAddress subscriptions with
             | Some subscriptionList ->
                 let subscriptionList =
                     List.remove
@@ -234,11 +254,10 @@ module World =
                         subscriptionList
                 let subscriptions = 
                     match subscriptionList with
-                    | [] -> Vmap.remove eventAddress world.Callbacks.Subscriptions
-                    | _ -> Vmap.add eventAddress subscriptionList world.Callbacks.Subscriptions
-                let unsubscriptions = Vmap.remove subscriptionKey world.Callbacks.Unsubscriptions
-                let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
-                { world with Callbacks = callbacks }
+                    | [] -> Vmap.remove eventAddress subscriptions
+                    | _ -> Vmap.add eventAddress subscriptionList subscriptions
+                let unsubscriptions = Vmap.remove subscriptionKey unsubscriptions
+                world |> setSubscriptions subscriptions |> setUnsubscriptions unsubscriptions
             | None -> world // TODO: consider an assert fail here?
         | None -> world
 
@@ -247,14 +266,14 @@ module World =
         subscriptionKey (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world =
         if not ^ Address.isEmpty eventAddress then
             let objEventAddress = atooa eventAddress
+            let (subscriptions, unsubscriptions) = (getSubscriptions world, getUnsubscriptions world)
             let subscriptions =
                 let subscriptionEntry = (subscriptionKey, subscriber :> Simulant, boxSubscription subscription)
-                match Vmap.tryFind objEventAddress world.Callbacks.Subscriptions with
-                | Some subscriptionEntries -> Vmap.add objEventAddress (subscriptionEntry :: subscriptionEntries) world.Callbacks.Subscriptions
-                | None -> Vmap.add objEventAddress [subscriptionEntry] world.Callbacks.Subscriptions
-            let unsubscriptions = Vmap.add subscriptionKey (objEventAddress, subscriber :> Simulant) world.Callbacks.Unsubscriptions
-            let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
-            let world = { world with Callbacks = callbacks }
+                match Vmap.tryFind objEventAddress subscriptions with
+                | Some subscriptionEntries -> Vmap.add objEventAddress (subscriptionEntry :: subscriptionEntries) subscriptions
+                | None -> Vmap.add objEventAddress [subscriptionEntry] subscriptions
+            let unsubscriptions = Vmap.add subscriptionKey (objEventAddress, subscriber :> Simulant) unsubscriptions
+            let world = world |> setSubscriptions subscriptions |> setUnsubscriptions unsubscriptions
             (unsubscribe subscriptionKey, world)
         else failwith "Event name cannot be empty."
 
