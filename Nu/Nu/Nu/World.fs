@@ -334,7 +334,7 @@ module WorldModule =
             try File.Copy (inputOverlayFilePath, outputOverlayFilePath, true)
 
                 // cache old overlayer and make new one
-                let oldOverlayer = world.State.Overlayer
+                let oldOverlayer = World.getOverlayer world
                 let entityDispatchers = World.getEntityDispatchers world
                 let facets = World.getFacets world
                 let intrinsicOverlays = World.createIntrinsicOverlays entityDispatchers facets
@@ -351,12 +351,12 @@ module WorldModule =
                             | Some overlayName ->
                                 let oldFacetNames = entityState.FacetNames
                                 let entityState = { entityState with Id = entityState.Id } // hacky copy
-                                Overlayer.applyOverlayToFacetNames overlayName overlayName entityState oldOverlayer world.State.Overlayer
+                                Overlayer.applyOverlayToFacetNames overlayName overlayName entityState oldOverlayer overlayer
                                 match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
                                 | Right (entityState, world) ->
                                     let oldWorld = world
                                     let facetNames = World.getEntityFacetNamesReflectively entityState // hacky copy elided
-                                    Overlayer.applyOverlay6 overlayName overlayName facetNames entityState oldOverlayer world.State.Overlayer
+                                    Overlayer.applyOverlay6 overlayName overlayName facetNames entityState oldOverlayer overlayer
                                     let world = World.setEntityStateWithoutEvent entityState entity world
                                     World.updateEntityInEntityTree entity oldWorld world
                                 | Left error -> note ^ "There was an issue in applying a reloaded overlay: " + error; world

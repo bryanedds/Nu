@@ -329,9 +329,17 @@ module WorldState =
     let setAssetMetadataMap assetMetadataMap state =
         { state with AssetMetadataMap = assetMetadataMap }
 
+    /// Get the overlayer.
+    let getOverlayer state =
+        state.Overlayer
+
     /// Set the overlayer.
     let setOverlayer overlayer state =
         { state with Overlayer = overlayer }
+
+    /// Get the overlay router.
+    let getOverlayRouter state =
+        state.OverlayRouter
 
     /// Get the user-defined state, casted to 'u.
     let getUserState state : 'u =
