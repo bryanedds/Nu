@@ -19,6 +19,9 @@ module World =
 
     (* Subsystems *)
 
+    let internal getSubsystemMap world =
+        Subsystems.getSubsystemMap world.Subsystems
+
     let internal getSubsystem<'s when 's :> Subsystem> name world =
         Subsystems.getSubsystem<'s> name world.Subsystems
 
@@ -39,6 +42,9 @@ module World =
 
     (* Callbacks *)
 
+    let internal getTasklets world =
+        Callbacks.getTasklets world.Callbacks
+
     let internal clearTasklets world =
         { world with Callbacks = Callbacks.clearTasklets world.Callbacks }
 
@@ -52,6 +58,22 @@ module World =
     /// Add multiple tasklets to be executed by the engine at the scheduled times.
     let addTasklets tasklets world =
         { world with Callbacks = Callbacks.addTasklets tasklets world.Callbacks }
+
+    /// Get callback subscriptions.
+    let getSubscriptions world =
+        Callbacks.getSubscriptions world.Callbacks
+
+    /// Get callback unsubscriptions.
+    let getUnsubscriptions world =
+        Callbacks.getUnsubscriptions world.Callbacks
+
+    /// Set callback subscriptions.
+    let internal setSubscriptions subscriptions world =
+        { world with Callbacks = Callbacks.setSubscriptions subscriptions world.Callbacks }
+
+    /// Set callback unsubscriptions.
+    let internal setUnsubscriptions unsubscriptions world =
+        { world with Callbacks = Callbacks.setUnsubscriptions unsubscriptions world.Callbacks }
 
     /// Add callback state to the world.
     let addCallbackState key state world =
@@ -67,7 +89,7 @@ module World =
 
     (* Components *)
 
-    /// Get the facet of the world.
+    /// Get the facets of the world.
     let getFacets world =
         Components.getFacets world.Components
 
@@ -125,16 +147,18 @@ module World =
             []
             
     /// TODO: document.
-    let getSubscriptionsSpecific (publishSorter : SubscriptionSorter) eventAddress world =
-        match Vmap.tryFind eventAddress world.Callbacks.Subscriptions with
+    let getSubscriptionsSorted (publishSorter : SubscriptionSorter) eventAddress world =
+        let subscriptions = getSubscriptions world
+        match Vmap.tryFind eventAddress subscriptions with
         | Some subList -> publishSorter subList world
         | None -> []
 
     /// TODO: document.
-    let getSubscriptions (publishSorter : SubscriptionSorter) eventAddress world =
+    let getSubscriptionsSorted3 (publishSorter : SubscriptionSorter) eventAddress world =
+        let subscriptions = getSubscriptions world
         let anyEventAddresses = getAnyEventAddresses eventAddress
-        let optSubLists = List.map (fun anyEventAddress -> Vmap.tryFind anyEventAddress world.Callbacks.Subscriptions) anyEventAddresses
-        let optSubLists = Vmap.tryFind eventAddress world.Callbacks.Subscriptions :: optSubLists
+        let optSubLists = List.map (fun anyEventAddress -> Vmap.tryFind anyEventAddress subscriptions) anyEventAddresses
+        let optSubLists = Vmap.tryFind eventAddress subscriptions :: optSubLists
         let subLists = List.definitize optSubLists
         let subList = List.concat subLists
         publishSorter subList world
@@ -193,7 +217,7 @@ module World =
             List.foldWhile
                 (fun (eventHandling, world) (_, subscriber : Simulant, subscription) ->
                     if  (match eventHandling with Cascade -> true | Resolve -> false) &&
-                        (match world.State.Liveness with Running -> true | Exiting -> false) then
+                        (match WorldState.getLiveness world.State with Running -> true | Exiting -> false) then
                         match Address.getNames subscriber.SimulantAddress with
                         | [] -> publishEvent<'a, 'p, Game> subscriber publisher eventData eventAddress eventTrace subscription world
                         | [_] -> publishEvent<'a, 'p, Screen> subscriber publisher eventData eventAddress eventTrace subscription world
@@ -207,7 +231,7 @@ module World =
 
     /// Publish an event, using the given publishSorter procedure to arrange the order to which subscriptions are published.
     let publish5<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-        publish6 getSubscriptions publishSorter eventData eventAddress eventTrace publisher world
+        publish6 getSubscriptionsSorted3 publishSorter eventData eventAddress eventTrace publisher world
 
     /// Publish an event.
     let publish<'a, 'p when 'p :> Simulant>
@@ -216,9 +240,10 @@ module World =
 
     /// Unsubscribe from an event.
     let unsubscribe subscriptionKey world =
-        match Vmap.tryFind subscriptionKey world.Callbacks.Unsubscriptions with
+        let (subscriptions, unsubscriptions) = (getSubscriptions world, getUnsubscriptions world)
+        match Vmap.tryFind subscriptionKey unsubscriptions with
         | Some (eventAddress, subscriber) ->
-            match Vmap.tryFind eventAddress world.Callbacks.Subscriptions with
+            match Vmap.tryFind eventAddress subscriptions with
             | Some subscriptionList ->
                 let subscriptionList =
                     List.remove
@@ -228,11 +253,10 @@ module World =
                         subscriptionList
                 let subscriptions = 
                     match subscriptionList with
-                    | [] -> Vmap.remove eventAddress world.Callbacks.Subscriptions
-                    | _ -> Vmap.add eventAddress subscriptionList world.Callbacks.Subscriptions
-                let unsubscriptions = Vmap.remove subscriptionKey world.Callbacks.Unsubscriptions
-                let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
-                { world with Callbacks = callbacks }
+                    | [] -> Vmap.remove eventAddress subscriptions
+                    | _ -> Vmap.add eventAddress subscriptionList subscriptions
+                let unsubscriptions = Vmap.remove subscriptionKey unsubscriptions
+                world |> setSubscriptions subscriptions |> setUnsubscriptions unsubscriptions
             | None -> world // TODO: consider an assert fail here?
         | None -> world
 
@@ -241,14 +265,14 @@ module World =
         subscriptionKey (subscription : Subscription<'a, 's>) (eventAddress : 'a Address) (subscriber : 's) world =
         if not ^ Address.isEmpty eventAddress then
             let objEventAddress = atooa eventAddress
+            let (subscriptions, unsubscriptions) = (getSubscriptions world, getUnsubscriptions world)
             let subscriptions =
                 let subscriptionEntry = (subscriptionKey, subscriber :> Simulant, boxSubscription subscription)
-                match Vmap.tryFind objEventAddress world.Callbacks.Subscriptions with
-                | Some subscriptionEntries -> Vmap.add objEventAddress (subscriptionEntry :: subscriptionEntries) world.Callbacks.Subscriptions
-                | None -> Vmap.add objEventAddress [subscriptionEntry] world.Callbacks.Subscriptions
-            let unsubscriptions = Vmap.add subscriptionKey (objEventAddress, subscriber :> Simulant) world.Callbacks.Unsubscriptions
-            let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
-            let world = { world with Callbacks = callbacks }
+                match Vmap.tryFind objEventAddress subscriptions with
+                | Some subscriptionEntries -> Vmap.add objEventAddress (subscriptionEntry :: subscriptionEntries) subscriptions
+                | None -> Vmap.add objEventAddress [subscriptionEntry] subscriptions
+            let unsubscriptions = Vmap.add subscriptionKey (objEventAddress, subscriber :> Simulant) unsubscriptions
+            let world = world |> setSubscriptions subscriptions |> setUnsubscriptions unsubscriptions
             (unsubscribe subscriptionKey, world)
         else failwith "Event name cannot be empty."
 
@@ -368,20 +392,31 @@ module World =
 
     /// Get the current destination screen if a screen transition is currently underway.
     let getOptScreenTransitionDestination world =
-        world.State.OptScreenTransitionDestination
+        world.GameState.OptScreenTransitionDestination
 
     let internal setOptScreenTransitionDestination destination world =
-        setState (WorldState.setOptScreenTransitionDestination destination world.State) world
+        let gameState = { world.GameState with OptScreenTransitionDestination = destination }
+        { world with GameState = gameState }
 
     /// Get the asset metadata map.
     let getAssetMetadataMap world =
-        world.State.AssetMetadataMap
+        WorldState.getAssetMetadataMap world.State
+
+    /// Get the opt entity cache.
+    let internal getOptEntityCache world =
+        WorldState.getOptEntityCache world.State
 
     let internal setAssetMetadataMap assetMetadataMap world =
         setState (WorldState.setAssetMetadataMap assetMetadataMap world.State) world
 
+    let internal getOverlayer world =
+        WorldState.getOverlayer world.State
+
     let internal setOverlayer overlayer world =
         setState (WorldState.setOverlayer overlayer world.State) world
+
+    let internal getOverlayRouter world =
+        WorldState.getOverlayRouter world.State
 
     /// Get the user state of the world, casted to 'u.
     let getUserState world : 'u =
@@ -425,7 +460,7 @@ module World =
             optEntityStateKeyEquality
             (fun () -> optEntityGetFreshKeyAndValue entity world)
             (entity.EntityAddress, world)
-            world.State.OptEntityCache
+            (getOptEntityCache world)
 
     let private entityStateSetter entityState entity world =
 #if DEBUG

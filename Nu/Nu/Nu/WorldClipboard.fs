@@ -6,13 +6,16 @@ open Nu
 [<AutoOpen>]
 module WorldClipboard =
 
+    // Mutable clipboard that allows its state to persist beyond undo / redo.
+    let private RefClipboard : EntityState option ref = ref None
+
     type World with
         
         /// Copy an entity to the clipboard.
         /// TODO: document mutation quite explicitly.
         static member copyToClipboard entity world =
             let entityState = World.getEntityState entity world
-            world.State.RefClipboard := Some entityState
+            RefClipboard := Some entityState
 
         /// Cut an entity to the clipboard.
         /// TODO: document mutation quite explicitly.
@@ -23,7 +26,7 @@ module WorldClipboard =
         /// Paste an entity from the clipboard.
         /// TODO: document mutation quite explicitly.
         static member pasteFromClipboard atMouse rightClickPosition positionSnap rotationSnap group world =
-            match !world.State.RefClipboard with
+            match !RefClipboard with
             | Some entityState ->
                 let id = Core.makeId ()
                 let name = Name.make ^ acstring id

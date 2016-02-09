@@ -169,7 +169,7 @@ module WorldModule =
                 if World.containsScreen selectedScreen world then
                     let subscriptionKey = World.makeSubscriptionKey ()
                     let subscription = fun (_ : Event<unit, Screen>) world ->
-                        match world.State.OptScreenTransitionDestination with
+                        match World.getOptScreenTransitionDestination world with
                         | Some destination ->
                             let world = World.unsubscribe subscriptionKey world
                             let world = World.setOptScreenTransitionDestination None world
@@ -238,13 +238,13 @@ module WorldModule =
             // TODO: split this function up...
             match selectedScreen.GetTransitionStateNp world with
             | IncomingState ->
-                match world.State.Liveness with
+                match World.getLiveness world with
                 | Running ->
                     let world =
                         if selectedScreen.GetTransitionTicksNp world = 0L
                         then World.publish () (Events.IncomingStart ->- selectedScreen) ["World.updateScreenTransition"] selectedScreen world
                         else world
-                    match world.State.Liveness with
+                    match World.getLiveness world with
                     | Running ->
                         let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetIncoming world) world
                         if finished then
@@ -257,12 +257,12 @@ module WorldModule =
                 let world =
                     if selectedScreen.GetTransitionTicksNp world <> 0L then world
                     else World.publish () (Events.OutgoingStart ->- selectedScreen) ["World.updateScreenTransition"] selectedScreen world
-                match world.State.Liveness with
+                match World.getLiveness world with
                 | Running ->
                     let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetOutgoing world) world
                     if finished then
                         let world = World.setScreenTransitionState IdlingState selectedScreen world
-                        match world.State.Liveness with
+                        match World.getLiveness world with
                         | Running -> World.publish () (Events.OutgoingFinish ->- selectedScreen) ["World.updateScreenTransition"] selectedScreen world
                         | Exiting -> world
                     else world
@@ -334,8 +334,10 @@ module WorldModule =
             try File.Copy (inputOverlayFilePath, outputOverlayFilePath, true)
 
                 // cache old overlayer and make new one
-                let oldOverlayer = world.State.Overlayer
-                let intrinsicOverlays = World.createIntrinsicOverlays world.Components.EntityDispatchers world.Components.Facets
+                let oldOverlayer = World.getOverlayer world
+                let entityDispatchers = World.getEntityDispatchers world
+                let facets = World.getFacets world
+                let intrinsicOverlays = World.createIntrinsicOverlays entityDispatchers facets
                 let overlayer = Overlayer.make outputOverlayFilePath intrinsicOverlays
                 let world = World.setOverlayer overlayer world
 
@@ -349,12 +351,12 @@ module WorldModule =
                             | Some overlayName ->
                                 let oldFacetNames = entityState.FacetNames
                                 let entityState = { entityState with Id = entityState.Id } // hacky copy
-                                Overlayer.applyOverlayToFacetNames overlayName overlayName entityState oldOverlayer world.State.Overlayer
+                                Overlayer.applyOverlayToFacetNames overlayName overlayName entityState oldOverlayer overlayer
                                 match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
                                 | Right (entityState, world) ->
                                     let oldWorld = world
                                     let facetNames = World.getEntityFacetNamesReflectively entityState // hacky copy elided
-                                    Overlayer.applyOverlay6 overlayName overlayName facetNames entityState oldOverlayer world.State.Overlayer
+                                    Overlayer.applyOverlay6 overlayName overlayName facetNames entityState oldOverlayer overlayer
                                     let world = World.setEntityStateWithoutEvent entityState entity world
                                     World.updateEntityInEntityTree entity oldWorld world
                                 | Left error -> note ^ "There was an issue in applying a reloaded overlay: " + error; world
@@ -409,7 +411,8 @@ module WorldModule =
             Seq.fold (flip World.propagateEntityPhysics) world entities
 
         static member private processSubsystems subsystemType world =
-            Vmap.toSeq world.Subsystems.SubsystemMap |>
+            World.getSubsystemMap world |>
+            Vmap.toSeq |>
             List.ofSeq |>
             List.filter (fun (_, subsystem) -> subsystem.SubsystemType = subsystemType) |>
             List.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
@@ -420,7 +423,8 @@ module WorldModule =
                 world
 
         static member private cleanUpSubsystems world =
-            Vmap.toSeq world.Subsystems.SubsystemMap |>
+            World.getSubsystemMap world |>
+            Vmap.toSeq |>
             List.ofSeq |>
             List.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
             List.fold (fun world (subsystemName, subsystem) ->
@@ -439,7 +443,7 @@ module WorldModule =
             else (Queue.conj tasklet taskletsNotRun, world)
 
         static member private processTasklets world =
-            let tasklets = world.Callbacks.Tasklets
+            let tasklets = World.getTasklets world
             let world = World.clearTasklets world
             let (taskletsNotRun, world) = Queue.fold World.processTasklet (Queue.empty, world) tasklets
             World.restoreTasklets taskletsNotRun world
@@ -488,7 +492,7 @@ module WorldModule =
                     let world = World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyUp ["World.processInput"] Simulants.Game world
                     World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange ["World.processInput"] Simulants.Game world
                 | _ -> world
-            (world.State.Liveness, world)
+            (World.getLiveness world, world)
 
         static member private updateSimulants world =
             let world = World.updateGame world
@@ -555,19 +559,19 @@ module WorldModule =
         /// Update event.
         static member processUpdate handleUpdate world =
             let world = handleUpdate world
-            match world.State.Liveness with
+            match World.getLiveness world with
             | Running ->
                 let world = World.processSubsystems UpdateType world
-                match world.State.Liveness with
+                match World.getLiveness world with
                 | Running ->
                     let world = World.updateSimulants world
-                    match world.State.Liveness with
+                    match World.getLiveness world with
                     | Running ->
                         let world = World.processTasklets world
-                        match world.State.Liveness with
+                        match World.getLiveness world with
                         | Running ->
                             let world = World.actualizeSimulants world
-                            (world.State.Liveness, world)
+                            (World.getLiveness world, world)
                         | Exiting -> (Exiting, world)
                     | Exiting -> (Exiting, world)
                 | Exiting -> (Exiting, world)

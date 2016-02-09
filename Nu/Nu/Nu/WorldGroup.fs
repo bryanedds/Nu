@@ -52,7 +52,7 @@ module WorldGroupModule =
         static member internal updateGroup (group : Group) world =
             let dispatcher = group.GetDispatcherNp world
             let world = dispatcher.Update (group, world)
-            World.publish6 World.getSubscriptionsSpecific World.sortSubscriptionsByHierarchy () (Events.Update ->- group) ["World.updateGroup"] Simulants.Game world
+            World.publish6 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () (Events.Update ->- group) ["World.updateGroup"] Simulants.Game world
 
         static member internal actualizeGroup (group : Group) world =
             let dispatcher = group.GetDispatcherNp world
@@ -124,7 +124,8 @@ module WorldGroupModule =
 
         /// Create a group and add it to the world.
         static member createGroup dispatcherName optSpecialization optName screen world =
-            let dispatcher = Map.find dispatcherName world.Components.GroupDispatchers
+            let dispatchers = World.getGroupDispatchers world
+            let dispatcher = Map.find dispatcherName dispatchers
             let groupState = GroupState.make optSpecialization optName dispatcher
             Reflection.attachFields dispatcher groupState
             let group = stog screen groupState.Name
@@ -173,14 +174,15 @@ module WorldGroupModule =
         static member readGroup groupNode defaultDispatcherName defaultEntityDispatcherName optName screen world =
 
             // read in the dispatcher name and create the dispatcher
+            let dispatchers = World.getGroupDispatchers world
             let dispatcherName = Reflection.readDispatcherName defaultDispatcherName groupNode
             let dispatcher =
-                match Map.tryFind dispatcherName world.Components.GroupDispatchers with
+                match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
                     note ^ "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<GroupDispatcher>.Name
-                    Map.find dispatcherName world.Components.GroupDispatchers
+                    Map.find dispatcherName dispatchers
             
             // make the bare group state with name as id
             let groupState = GroupState.make None None dispatcher

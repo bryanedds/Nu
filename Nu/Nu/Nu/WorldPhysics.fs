@@ -25,7 +25,7 @@ type [<ReferenceEquality>] PhysicsEngineSubsystem =
         else world
 
     static member private handleIntegrationMessage world integrationMessage =
-        match world.State.Liveness with
+        match World.getLiveness world with
         | Running ->
             match integrationMessage with
             | BodyTransformMessage bodyTransformMessage ->
