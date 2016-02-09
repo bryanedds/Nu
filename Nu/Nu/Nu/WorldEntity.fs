@@ -268,7 +268,8 @@ module WorldEntityModule =
         static member createEntity dispatcherName optSpecialization optName group world =
 
             // find the entity's dispatcher
-            let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
+            let dispatchers = World.getEntityDispatchers world
+            let dispatcher = Map.find dispatcherName dispatchers
             
             // compute the default opt overlay name
             let intrinsicOverlayName = dispatcherName
@@ -328,7 +329,7 @@ module WorldEntityModule =
             let world = dispatcher.Update (entity, world)
             let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
             if entity.GetPublishUpdates world
-            then World.publish6 World.getSubscriptionsSorted3 World.sortSubscriptionsByHierarchy () entity.UpdateAddress ["World.updateEntity"] Simulants.Game world
+            then World.publish6 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () entity.UpdateAddress ["World.updateEntity"] Simulants.Game world
             else world
         
         /// Actualize an entity.
@@ -439,14 +440,15 @@ module WorldEntityModule =
         static member readEntity entityNode defaultDispatcherName optName group world =
 
             // read in the dispatcher name and create the dispatcher
+            let dispatchers = World.getEntityDispatchers world
             let dispatcherName = Reflection.readDispatcherName defaultDispatcherName entityNode
             let (dispatcherName, dispatcher) =
-                match Map.tryFind dispatcherName world.Components.EntityDispatchers with
+                match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> (dispatcherName, dispatcher)
                 | None ->
                     note ^ "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<EntityDispatcher>.Name
-                    let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
+                    let dispatcher = Map.find dispatcherName dispatchers
                     (dispatcherName, dispatcher)
 
             // compute the default overlay names

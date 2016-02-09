@@ -335,7 +335,9 @@ module WorldModule =
 
                 // cache old overlayer and make new one
                 let oldOverlayer = world.State.Overlayer
-                let intrinsicOverlays = World.createIntrinsicOverlays world.Components.EntityDispatchers world.Components.Facets
+                let entityDispatchers = World.getEntityDispatchers world
+                let facets = World.getFacets world
+                let intrinsicOverlays = World.createIntrinsicOverlays entityDispatchers facets
                 let overlayer = Overlayer.make outputOverlayFilePath intrinsicOverlays
                 let world = World.setOverlayer overlayer world
 
@@ -409,7 +411,7 @@ module WorldModule =
             Seq.fold (flip World.propagateEntityPhysics) world entities
 
         static member private processSubsystems subsystemType world =
-            Subsystems.getSubsystemMap world.Subsystems |>
+            World.getSubsystemMap world |>
             Vmap.toSeq |>
             List.ofSeq |>
             List.filter (fun (_, subsystem) -> subsystem.SubsystemType = subsystemType) |>
@@ -421,7 +423,8 @@ module WorldModule =
                 world
 
         static member private cleanUpSubsystems world =
-            Vmap.toSeq world.Subsystems.SubsystemMap |>
+            World.getSubsystemMap world |>
+            Vmap.toSeq |>
             List.ofSeq |>
             List.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
             List.fold (fun world (subsystemName, subsystem) ->
