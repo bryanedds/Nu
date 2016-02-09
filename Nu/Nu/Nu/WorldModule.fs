@@ -19,6 +19,9 @@ module World =
 
     (* Subsystems *)
 
+    let internal getSubsystemMap world =
+        Subsystems.getSubsystemMap world.Subsystems
+
     let internal getSubsystem<'s when 's :> Subsystem> name world =
         Subsystems.getSubsystem<'s> name world.Subsystems
 
@@ -72,10 +75,6 @@ module World =
     let internal setUnsubscriptions unsubscriptions world =
         { world with Callbacks = Callbacks.setUnsubscriptions unsubscriptions world.Callbacks }
 
-    /// Get callback unsubscriptions.
-    let internal getUnsubscriptions world =
-        Callbacks.getUnsubscriptions world.Callbacks
-
     /// Add callback state to the world.
     let addCallbackState key state world =
         { world with Callbacks = Callbacks.addCallbackState key state world.Callbacks }
@@ -90,7 +89,7 @@ module World =
 
     (* Components *)
 
-    /// Get the facet of the world.
+    /// Get the facets of the world.
     let getFacets world =
         Components.getFacets world.Components
 
@@ -148,14 +147,14 @@ module World =
             []
             
     /// TODO: document.
-    let getSubscriptionsSorted3 (publishSorter : SubscriptionSorter) eventAddress world =
+    let getSubscriptionsSorted (publishSorter : SubscriptionSorter) eventAddress world =
         let subscriptions = getSubscriptions world
         match Vmap.tryFind eventAddress subscriptions with
         | Some subList -> publishSorter subList world
         | None -> []
 
     /// TODO: document.
-    let getSubscriptionsSorted (publishSorter : SubscriptionSorter) eventAddress world =
+    let getSubscriptionsSorted3 (publishSorter : SubscriptionSorter) eventAddress world =
         let subscriptions = getSubscriptions world
         let anyEventAddresses = getAnyEventAddresses eventAddress
         let optSubLists = List.map (fun anyEventAddress -> Vmap.tryFind anyEventAddress subscriptions) anyEventAddresses
@@ -232,7 +231,7 @@ module World =
 
     /// Publish an event, using the given publishSorter procedure to arrange the order to which subscriptions are published.
     let publish5<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-        publish6 getSubscriptionsSorted publishSorter eventData eventAddress eventTrace publisher world
+        publish6 getSubscriptionsSorted3 publishSorter eventData eventAddress eventTrace publisher world
 
     /// Publish an event.
     let publish<'a, 'p when 'p :> Simulant>

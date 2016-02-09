@@ -65,7 +65,7 @@ module WorldScreenModule =
         static member internal updateScreen (screen : Screen) world =
             let dispatcher = screen.GetDispatcherNp world
             let world = dispatcher.Update (screen, world)
-            World.publish6 World.getSubscriptionsSorted3 World.sortSubscriptionsByHierarchy () (Events.Update ->- screen) ["World.updateScreen"] Simulants.Game world
+            World.publish6 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () (Events.Update ->- screen) ["World.updateScreen"] Simulants.Game world
 
         static member internal actualizeScreen (screen : Screen) world =
             let dispatcher = screen.GetDispatcherNp world
@@ -115,7 +115,8 @@ module WorldScreenModule =
 
         /// Create a screen and add it to the world.
         static member createScreen dispatcherName optSpecialization optName world =
-            let dispatcher = Map.find dispatcherName world.Components.ScreenDispatchers
+            let dispatchers = World.getScreenDispatchers world
+            let dispatcher = Map.find dispatcherName dispatchers
             let screenState = ScreenState.make optSpecialization optName dispatcher
             Reflection.attachFields dispatcher screenState
             let screen = ntos screenState.Name
@@ -166,14 +167,15 @@ module WorldScreenModule =
 
         /// Read a screen from an xml node.
         static member readScreen (screenNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName optName world =
+            let dispatchers = World.getScreenDispatchers world
             let dispatcherName = Reflection.readDispatcherName defaultDispatcherName screenNode
             let dispatcher =
-                match Map.tryFind dispatcherName world.Components.ScreenDispatchers with
+                match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
                     note ^ "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<ScreenDispatcher>.Name
-                    Map.find dispatcherName world.Components.ScreenDispatchers
+                    Map.find dispatcherName dispatchers
             let screenState = ScreenState.make None None dispatcher
             Reflection.attachFields screenState.DispatcherNp screenState
             Reflection.readMemberValuesToTarget screenNode screenState

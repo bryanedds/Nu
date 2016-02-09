@@ -46,7 +46,7 @@ module WorldGameModule =
         static member internal updateGame world =
             let dispatcher = Simulants.Game.GetDispatcherNp world
             let world = dispatcher.Update (Simulants.Game, world)
-            World.publish6 World.getSubscriptionsSorted3 World.sortSubscriptionsByHierarchy () Events.Update ["World.updateGame"] Simulants.Game world
+            World.publish6 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () Events.Update ["World.updateGame"] Simulants.Game world
         
         static member internal actualizeGame world =
             let dispatcher = Simulants.Game.GetDispatcherNp world
@@ -115,14 +115,15 @@ module WorldGameModule =
         /// Read a game from an xml node.
         static member readGame
             gameNode defaultDispatcherName defaultScreenDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
+            let dispatchers = World.getGameDispatchers world
             let dispatcherName = Reflection.readDispatcherName defaultDispatcherName gameNode
             let dispatcher =
-                match Map.tryFind dispatcherName world.Components.GameDispatchers with
+                match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
                     note ^ "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<GameDispatcher>.Name
-                    Map.find dispatcherName world.Components.GameDispatchers
+                    Map.find dispatcherName dispatchers
             let gameState = World.makeGameState dispatcher
             Reflection.readMemberValuesToTarget gameNode gameState
             let world = World.setGameState gameState world

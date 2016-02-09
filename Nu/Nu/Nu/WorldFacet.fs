@@ -15,7 +15,8 @@ module WorldFacetModule =
     type World with
 
         static member private tryGetFacet facetName world =
-            match Map.tryFind facetName world.Components.Facets with
+            let facets = World.getFacets world
+            match Map.tryFind facetName facets with
             | Some facet -> Right facet
             | None -> Left ^ "Invalid facet name '" + facetName + "'."
 
@@ -95,7 +96,8 @@ module WorldFacetModule =
         static member private tryAddFacet facetName (entityState : EntityState) optEntity world =
             match World.tryGetFacet facetName world with
             | Right facet ->
-                if World.isFacetCompatibleWithEntity world.Components.EntityDispatchers facet entityState then
+                let entityDispatchers = World.getEntityDispatchers world
+                if World.isFacetCompatibleWithEntity entityDispatchers facet entityState then
                     let entityState = { entityState with FacetNames = Set.add facetName entityState.FacetNames }
                     let entityState = { entityState with FacetsNp = facet :: entityState.FacetsNp }
                     Reflection.attachFields facet entityState // hacky copy elided
