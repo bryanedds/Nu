@@ -409,8 +409,14 @@ module World =
     let internal setAssetMetadataMap assetMetadataMap world =
         setState (WorldState.setAssetMetadataMap assetMetadataMap world.State) world
 
+    let internal getOverlayer world =
+        WorldState.getOverlayer world.State
+
     let internal setOverlayer overlayer world =
         setState (WorldState.setOverlayer overlayer world.State) world
+
+    let internal getOverlayRouter world =
+        WorldState.getOverlayRouter world.State
 
     /// Get the user state of the world, casted to 'u.
     let getUserState world : 'u =
