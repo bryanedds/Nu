@@ -1,4 +1,4 @@
-FP Works repository featuring the Nu Game Engine!
+Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/bryanedds/NuGameEngine/blob/master/LICENSE.md) 
 =
 
 What is the **Nu Game Engine**?
@@ -36,7 +36,7 @@ The best way to get started is to pull down the repository with a git client, an
 The current documentation for the **Nu Game Engine** is found here - https://github.com/bryanedds/FPWorks/blob/master/Nu/Documentation/Nu%20Game%20Engine.pdf?raw=true
 
 There is additional documentation on **advanced Nu game programming techniques** in an 'experience report' found here -
-https://github.com/bryanedds/FPWorks/blob/master/Nu/Documentation/Iterative%20Functional%20Reactive%20Programming%20with%20the%20Nu%20Game%20Engine.pdf?raw=true
+https://github.com/bryanedds/NuGameEngine/blob/master/Nu/Documentation/Iterative%20Functional%20Reactive%20Programming%20with%20the%20Nu%20Game%20Engine.pdf?raw=true
 
 Finally, please check out the license for this repository below!
 
@@ -51,32 +51,6 @@ Project Vlog
 ============
 
 Keep up with the state of development and get some insight on how the projects are implemented here - https://www.youtube.com/channel/UCPoDCc41MwqEwhIHp32LpSA
-
-License
-=======
-
-Copyright (c) 2013-2015 Bryan Edds
-
-All non-text resources in this repository are private. You may not use any of
-the non-text resources in your own project(s).
-
-All text resources in this repository (including all code) are public domain,
-with no guarantee of suitability for any purpose. You may freely use any of the
-text resources in any legal manner that you choose.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-
-End of License
-==============
-
-License TL;DR: The code in this repository is free and open source,
-but the art (images, music, sound effects, etc.) is not.
 
 Code of Conduct
 ===============
