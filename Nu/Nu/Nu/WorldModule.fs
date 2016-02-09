@@ -392,14 +392,19 @@ module World =
 
     /// Get the current destination screen if a screen transition is currently underway.
     let getOptScreenTransitionDestination world =
-        world.State.OptScreenTransitionDestination
+        world.GameState.OptScreenTransitionDestination
 
     let internal setOptScreenTransitionDestination destination world =
-        setState (WorldState.setOptScreenTransitionDestination destination world.State) world
+        let gameState = { world.GameState with OptScreenTransitionDestination = destination }
+        { world with GameState = gameState }
 
     /// Get the asset metadata map.
     let getAssetMetadataMap world =
-        world.State.AssetMetadataMap
+        WorldState.getAssetMetadataMap world.State
+
+    /// Get the opt entity cache.
+    let internal getOptEntityCache world =
+        WorldState.getOptEntityCache world.State
 
     let internal setAssetMetadataMap assetMetadataMap world =
         setState (WorldState.setAssetMetadataMap assetMetadataMap world.State) world
@@ -449,7 +454,7 @@ module World =
             optEntityStateKeyEquality
             (fun () -> optEntityGetFreshKeyAndValue entity world)
             (entity.EntityAddress, world)
-            world.State.OptEntityCache
+            (getOptEntityCache world)
 
     let private entityStateSetter entityState entity world =
 #if DEBUG

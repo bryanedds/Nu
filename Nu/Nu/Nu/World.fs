@@ -169,7 +169,7 @@ module WorldModule =
                 if World.containsScreen selectedScreen world then
                     let subscriptionKey = World.makeSubscriptionKey ()
                     let subscription = fun (_ : Event<unit, Screen>) world ->
-                        match world.State.OptScreenTransitionDestination with
+                        match World.getOptScreenTransitionDestination world with
                         | Some destination ->
                             let world = World.unsubscribe subscriptionKey world
                             let world = World.setOptScreenTransitionDestination None world
@@ -238,13 +238,13 @@ module WorldModule =
             // TODO: split this function up...
             match selectedScreen.GetTransitionStateNp world with
             | IncomingState ->
-                match world.State.Liveness with
+                match World.getLiveness world with
                 | Running ->
                     let world =
                         if selectedScreen.GetTransitionTicksNp world = 0L
                         then World.publish () (Events.IncomingStart ->- selectedScreen) ["World.updateScreenTransition"] selectedScreen world
                         else world
-                    match world.State.Liveness with
+                    match World.getLiveness world with
                     | Running ->
                         let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetIncoming world) world
                         if finished then
@@ -257,12 +257,12 @@ module WorldModule =
                 let world =
                     if selectedScreen.GetTransitionTicksNp world <> 0L then world
                     else World.publish () (Events.OutgoingStart ->- selectedScreen) ["World.updateScreenTransition"] selectedScreen world
-                match world.State.Liveness with
+                match World.getLiveness world with
                 | Running ->
                     let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetOutgoing world) world
                     if finished then
                         let world = World.setScreenTransitionState IdlingState selectedScreen world
-                        match world.State.Liveness with
+                        match World.getLiveness world with
                         | Running -> World.publish () (Events.OutgoingFinish ->- selectedScreen) ["World.updateScreenTransition"] selectedScreen world
                         | Exiting -> world
                     else world
@@ -492,7 +492,7 @@ module WorldModule =
                     let world = World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyUp ["World.processInput"] Simulants.Game world
                     World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange ["World.processInput"] Simulants.Game world
                 | _ -> world
-            (world.State.Liveness, world)
+            (World.getLiveness world, world)
 
         static member private updateSimulants world =
             let world = World.updateGame world
@@ -559,19 +559,19 @@ module WorldModule =
         /// Update event.
         static member processUpdate handleUpdate world =
             let world = handleUpdate world
-            match world.State.Liveness with
+            match World.getLiveness world with
             | Running ->
                 let world = World.processSubsystems UpdateType world
-                match world.State.Liveness with
+                match World.getLiveness world with
                 | Running ->
                     let world = World.updateSimulants world
-                    match world.State.Liveness with
+                    match World.getLiveness world with
                     | Running ->
                         let world = World.processTasklets world
-                        match world.State.Liveness with
+                        match World.getLiveness world with
                         | Running ->
                             let world = World.actualizeSimulants world
-                            (world.State.Liveness, world)
+                            (World.getLiveness world, world)
                         | Exiting -> (Exiting, world)
                     | Exiting -> (Exiting, world)
                 | Exiting -> (Exiting, world)
