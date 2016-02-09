@@ -184,6 +184,10 @@ module Callbacks =
     let removeCallbackState key callbacks =
         { callbacks with CallbackStates = Vmap.remove key callbacks.CallbackStates }
 
+    /// Get subscriptions.
+    let getSubscriptions callbacks =
+        callbacks.Subscriptions
+
     /// Get callback state.
     let getCallbackState<'a> key callbacks =
         let state = Vmap.find key callbacks.CallbackStates
@@ -302,8 +306,8 @@ module WorldState =
         { state with OptScreenTransitionDestination = destination }
 
     /// Get the asset metadata map.
-    let getAssetMetadataMap world =
-        world.State.AssetMetadataMap
+    let getAssetMetadataMap state =
+        state.AssetMetadataMap
 
     /// Set the asset metadata map.
     let setAssetMetadataMap assetMetadataMap state =
