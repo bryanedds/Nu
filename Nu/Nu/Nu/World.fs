@@ -55,6 +55,8 @@ module Nu =
                     QuadTree.addElement (entity.GetOmnipresent world || entity.GetViewType world = Absolute) entityMaxBounds entity tree
                 tree
 
+            // TODO: init Vsync with incoming parameter
+
             // mark init flag
             Initialized <- true
 
