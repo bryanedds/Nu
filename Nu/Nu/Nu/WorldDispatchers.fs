@@ -90,8 +90,8 @@ module EffectFacetModule =
         member this.SetEffectTimeOffset (value : int64) world = this.UpdateXtension (fun xtension -> xtension?EffectHistoryMax <- value) world
         member this.GetEffectHistoryMax world : int = (this.GetXtension world)?EffectHistoryMax
         member this.SetEffectHistoryMax (value : int) world = this.UpdateXtension (fun xtension -> xtension?EffectHistoryMax <- value) world
-        member this.GetEffectHistoryNp world : Slice list = (this.GetXtension world)?EffectHistoryNp
-        member private this.SetEffectHistoryNp (value : Slice list) world = this.UpdateXtension (fun xtension -> xtension?EffectHistoryNp <- value) world
+        member this.GetEffectHistoryNp world : Slice seq = (this.GetXtension world)?EffectHistoryNp
+        member private this.SetEffectHistoryNp (value : Slice seq) world = this.UpdateXtension (fun xtension -> xtension?EffectHistoryNp <- value) world
         member this.GetEffectPhysicsShapesNp world : unit = (this.GetXtension world)?EffectPhysicsShapesNp // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
         member private this.SetEffectPhysicsShapesNp (value : unit) world = this.UpdateXtension (fun xtension -> xtension?EffectPhysicsShapesNp <- value) world
         member this.GetEffectTagsNp world : EffectTags = (this.GetXtension world)?EffectTagsNp
@@ -106,7 +106,7 @@ module EffectFacetModule =
              define? EffectOffset Vector2.Zero
              define? EffectTimeOffset 0L // TODO: also implement similar time offset for AnimatedSpriteFacet
              define? EffectHistoryMax 180 // 3 seconds. TODO: make a constant
-             define? EffectHistoryNp ([] : Slice list) // TODO: consider making this an imperative Queue for speed
+             define? EffectHistoryNp Seq.empty<Slice>
              define? EffectPhysicsShapesNp ()
              define? EffectTagsNp (Map.empty : EffectTags)]
 
@@ -115,6 +115,7 @@ module EffectFacetModule =
                 let world = entity.SetEffectTagsNp Map.empty world
                 let time = World.getTickTime world
                 let timeOffset = entity.GetEffectTimeOffset world
+                let effect = entity.GetEffect world
                 let effectTime = time - timeOffset
                 let effectRate = World.getTickRate world
                 let effectViewType = entity.GetViewType world
@@ -129,10 +130,9 @@ module EffectFacetModule =
                       Volume = 1.0f }
                 let effectHistory = entity.GetEffectHistoryNp world
                 let effectEnv = entity.GetEffectDefinitions world
-                let effect = entity.GetEffect world
                 let effector = Effector.make effectViewType effectHistory effectRate effectTime effectEnv
                 let world =
-                    let artifacts = Effector.eval effectSlice effect effector
+                    let artifacts = Effector.eval effect effectSlice effector
                     List.fold (fun world artifact ->
                         match artifact with
                         | RenderArtifact renderDescriptors -> World.addRenderMessage (RenderDescriptorsMessage renderDescriptors) world
@@ -147,7 +147,7 @@ module EffectFacetModule =
                         world
                         artifacts
                 let effectHistoryMax = entity.GetEffectHistoryMax world
-                let effectHistory = effectSlice :: effectHistory |> List.tryTake effectHistoryMax
+                let effectHistory = effectSlice :: List.ofSeq effectHistory |> Seq.tryTake effectHistoryMax
                 entity.SetEffectHistoryNp effectHistory world
             else world
 

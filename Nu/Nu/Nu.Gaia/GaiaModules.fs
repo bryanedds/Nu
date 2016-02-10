@@ -338,14 +338,16 @@ module Gaia =
 
     let private handleFormTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
-            let entity = Entity.proxy ^ ftoa ^ Name.make form.treeView.SelectedNode.Name
-            match Address.getNames entity.EntityAddress with
-            | [_; _; _] ->
-                RefWorld := world // must be set for property grid
-                let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
-                form.propertyGrid.SelectedObject <- entityTds
-                world
-            | _ -> world) // don't have an entity address
+            if isNotNull form.treeView.SelectedNode then
+                let entity = Entity.proxy ^ ftoa ^ Name.make form.treeView.SelectedNode.Name
+                match Address.getNames entity.EntityAddress with
+                | [_; _; _] ->
+                    RefWorld := world // must be set for property grid
+                    let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
+                    form.propertyGrid.SelectedObject <- entityTds
+                    world
+                | _ -> world // don't have an entity address
+            else world)
 
     let private handleFormCreate atMouse (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
