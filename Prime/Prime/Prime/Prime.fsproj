@@ -85,8 +85,8 @@
     <Compile Include="Relation.fs" />
     <Compile Include="KeyedCache.fs" />
     <Compile Include="MutantCache.fs" />
-    <Compile Include="Vmap.fs" />
     <Compile Include="Vsync.fs" />
+    <Compile Include="Vmap.fs" />
     <Compile Include="RduTree.fs" />
     <Compile Include="AlgebraicReader.fs" />
     <Compile Include="AlgebraicConverter.fs" />
