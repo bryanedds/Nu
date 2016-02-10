@@ -117,7 +117,7 @@ module Effector =
 
     let rec evalResource resource effector : AssetTag =
         match resource with
-        | Resource.Expand (definitionName, _) -> // NOTE: currently no use for arguments
+        | Resource.Expand (definitionName, _) ->
             match Map.tryFind definitionName effector.EffectEnv with
             | Some definition ->
                 match definition.DefinitionBody with
@@ -146,7 +146,7 @@ module Effector =
 
     and private evalAspect aspect slice effector =
         match aspect with
-        | Aspect.Expand (definitionName, _) -> // NOTE: currently no use for arguments
+        | Aspect.Expand (definitionName, _) ->
             match Map.tryFind definitionName effector.EffectEnv with
             | Some definition ->
                 match definition.DefinitionBody with
@@ -318,8 +318,12 @@ module Effector =
         evalContent content slice effector
 
     and private evalRepeat shift repetition incrementAspects content (slice : Slice) effector =
+        
+        // eval repeat either as iterative or cylcing
         let slice = { slice with Depth = slice.Depth + shift }
         match repetition with
+        
+        // eval iterative repeat
         | Iterate count ->
             List.fold
                 (fun (slice, artifacts) _ ->
@@ -328,6 +332,8 @@ module Effector =
                 (slice, [])
                 [0 .. count - 1] |>
             snd
+
+        // eval cycling repeat
         | Cycle count ->
             List.fold
                 (fun artifacts i ->
@@ -357,17 +363,12 @@ module Effector =
                                         evalAspects emitterAspects slice { effector with EffectTime = effector.EffectTime - timePassed })
                                     effector.History
                             | _ -> effector.History
-                        { effector with
-                            History = history
-                            EffectTime = timePassed }
+                        { effector with History = history; EffectTime = timePassed }
                     let artifacts' =
                         List.fold
                             (fun artifacts' _ ->
                                 let slice = evalAspects aspects slice effector
-                                let artifacts'' =
-                                    if slice.Enabled
-                                    then evalContent content slice effector
-                                    else []
+                                let artifacts'' = if slice.Enabled then evalContent content slice effector else []
                                 artifacts'' @ artifacts')
                             []
                             [0 .. emitCount - 1]
@@ -380,17 +381,26 @@ module Effector =
         let slice = { slice with Depth = slice.Depth + shift }
         evalContents contents slice effector
 
-    and private evalContent content slice effector =
+    and private evalContent (content : Content) slice effector =
         match content with
-        | Content.Expand (definitionName, arguments) -> evalExpand definitionName arguments slice effector
-        | StaticSprite (resource, aspects, content) -> evalStaticSprite resource aspects content slice effector
-        | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects, content) -> evalAnimatedSprite resource celSize celRun celCount stutter aspects content slice effector
-        | SoundEffect (resource, aspects, content)-> evalSoundEffect resource aspects content slice effector
-        | Mount (Shift shift, aspects, content) -> evalMount shift aspects content slice effector
-        | Repeat (Shift shift, repetition, incrementAspects, content) -> evalRepeat shift repetition incrementAspects content slice effector
-        | Emit (Shift shift, Rate rate, emitterAspects, aspects, content) -> evalEmit shift rate emitterAspects aspects content effector
-        | Composite (Shift shift, contents) -> evalComposite shift contents slice effector
-        | Tag (name, metadata) -> [TagArtifact (name, metadata, slice)]
+        | Expand (definitionName, arguments) ->
+            evalExpand definitionName arguments slice effector
+        | StaticSprite (resource, aspects, content) ->
+            evalStaticSprite resource aspects content slice effector
+        | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects, content) ->
+            evalAnimatedSprite resource celSize celRun celCount stutter aspects content slice effector
+        | SoundEffect (resource, aspects, content) ->
+            evalSoundEffect resource aspects content slice effector
+        | Mount (Shift shift, aspects, content) ->
+            evalMount shift aspects content slice effector
+        | Repeat (Shift shift, repetition, incrementAspects, content) ->
+            evalRepeat shift repetition incrementAspects content slice effector
+        | Emit (Shift shift, Rate rate, emitterAspects, aspects, content) ->
+            evalEmit shift rate emitterAspects aspects content effector
+        | Composite (Shift shift, contents) ->
+            evalComposite shift contents slice effector
+        | Tag (name, metadata) ->
+            [TagArtifact (name, metadata, slice)]
         | Nil -> []
 
     and private evalContents contents slice effector =
