@@ -1,5 +1,5 @@
 ﻿// Gaia - The Nu Game Engine editor.
-// Copyright (C) Bryan Edds, 2013-2015.
+// Copyright (C) Bryan Edds, 2012-2016.
 
 namespace Nu.Gaia
 open Prime
