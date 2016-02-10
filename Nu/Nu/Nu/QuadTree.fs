@@ -1,4 +1,7 @@
-﻿namespace Nu
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds, 2012-2016.
+
+namespace Nu
 open System
 open System.Collections.Generic
 open OpenTK

@@ -1,5 +1,5 @@
 ﻿// Prime - A PRIMitivEs code library.
-// Copyright (C) Bryan Edds, 2012-2015.
+// Copyright (C) Bryan Edds, 2012-2016.
 
 namespace Prime.Samples
 

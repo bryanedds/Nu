@@ -1,4 +1,7 @@
-﻿namespace Prime
+﻿// Prime - A PRIMitivEs code library.
+// Copyright (C) Bryan Edds, 2012-2016.
+
+namespace Prime
 
 /// Presents a purely-functional interface to a cached value.
 /// TODO: document this type's functions!

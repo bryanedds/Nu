@@ -62,7 +62,6 @@
   <ItemGroup>
     <Compile Include="Log.fs" />
     <Compile Include="Operators.fs" />
-    <Compile Include="Miscellanea.fs" />
     <Compile Include="Sectioning.fs" />
     <Compile Include="Option.fs" />
     <Compile Include="Pair.fs" />
@@ -85,6 +84,7 @@
     <Compile Include="Relation.fs" />
     <Compile Include="KeyedCache.fs" />
     <Compile Include="MutantCache.fs" />
+    <Compile Include="Reflection.fs" />
     <Compile Include="Vsync.fs" />
     <Compile Include="Vmap.fs" />
     <Compile Include="RduTree.fs" />
@@ -104,6 +104,7 @@
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="App.config" />
+    <Compile Include="Id.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FParsec">
