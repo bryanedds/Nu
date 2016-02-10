@@ -7,8 +7,7 @@ open OpenTK
 type [<NoEquality; NoComparison>] Effector =
     private
         { ViewType : ViewType
-          History : Slice list
-          HistoryLength : int
+          History : Slice seq
           ProgressOffset : single
           EffectRate : int64
           EffectTime : int64
@@ -131,27 +130,27 @@ module Effector =
                 acvalue<AssetTag> Constants.Assets.DefaultImageValue
         | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
 
-    let rec private iterateArtifacts slice incrementAspects content effector =
+    let rec private iterateArtifacts incrementAspects content slice effector =
         let effector = { effector with ProgressOffset = 0.0f }
-        let slice = evalAspects slice incrementAspects effector
-        (slice, evalContent slice content effector)
+        let slice = evalAspects incrementAspects slice effector
+        (slice, evalContent content slice effector)
 
-    and private cycleArtifacts slice incrementAspects content effector =
-        let slice = evalAspects slice incrementAspects effector
-        evalContent slice content effector
+    and private cycleArtifacts incrementAspects content slice effector =
+        let slice = evalAspects incrementAspects slice effector
+        evalContent content slice effector
 
     and private evalProgress keyFrameTime keyFrameLength effector =
         let progress = if keyFrameLength = 0L then 1.0f else single keyFrameTime / single keyFrameLength
         let progress = progress + effector.ProgressOffset
         if progress > 1.0f then progress - 1.0f else progress
 
-    and private evalAspect slice aspect effector =
+    and private evalAspect aspect slice effector =
         match aspect with
         | Aspect.Expand (definitionName, _) -> // NOTE: currently no use for arguments
             match Map.tryFind definitionName effector.EffectEnv with
             | Some definition ->
                 match definition.DefinitionBody with
-                | AlgebraicCompressionB (AlgebraicCompressionA aspect) -> evalAspect slice aspect effector
+                | AlgebraicCompressionB (AlgebraicCompressionA aspect) -> evalAspect aspect slice effector
                 | _ -> note ^ "Expected Aspect for definition '" + definitionName + "'."; slice
             | None -> note ^ "Could not find definition with name '" + definitionName + "'."; slice
         | Enabled (applicator, playback, keyFrames) ->
@@ -209,16 +208,30 @@ module Effector =
             { slice with Volume = applied }
         | Bone -> slice
 
-    and private evalAspects slice aspects effector =
-        List.fold (fun slice aspect -> evalAspect slice aspect effector) slice aspects
+    and private evalAspects aspects slice effector =
+        List.fold (fun slice aspect -> evalAspect aspect slice effector) slice aspects
 
-    and private evalStaticSprite slice resource aspects content effector =
+    and private evalExpand definitionName arguments slice effector =
+        match Map.tryFind definitionName effector.EffectEnv with
+        | Some definition ->
+            match definition.DefinitionBody with
+            |  AlgebraicCompressionB (AlgebraicCompressionB content) ->
+                let localDefinitions = List.map evalArgument arguments
+                match (try List.zip definition.DefinitionParams localDefinitions |> Some with _ -> None) with
+                | Some localDefinitionEntries ->
+                    let effector = { effector with EffectEnv = Map.addMany localDefinitionEntries effector.EffectEnv }
+                    evalContent content slice effector
+                | None -> note "Wrong number of arguments provided to ExpandContent."; []
+            | _ -> note ^ "Expected Content for definition '" + definitionName + "'."; []
+        | None -> note ^ "Could not find definition with name '" + definitionName + "'."; []
+
+    and private evalStaticSprite resource aspects content slice effector =
 
         // pull image from resource
         let image = evalResource resource effector
 
         // eval aspects
-        let slice = evalAspects slice aspects effector
+        let slice = evalAspects aspects slice effector
 
         // build sprite artifacts
         let spriteArtifacts =
@@ -239,18 +252,18 @@ module Effector =
             else []
 
         // build implicitly mounted content
-        let mountedArtifacts = evalContent slice content effector
+        let mountedArtifacts = evalContent content slice effector
 
         // return artifacts
         mountedArtifacts @ spriteArtifacts
 
-    and private evalAnimatedSprite slice resource celSize celRun celCount stutter aspects content effector =
+    and private evalAnimatedSprite resource celSize celRun celCount stutter aspects content slice effector =
 
         // pull image from resource
         let image = evalResource resource effector
 
         // eval aspects
-        let slice = evalAspects slice aspects effector
+        let slice = evalAspects aspects slice effector
 
         // eval inset
         let inset = evalInset celSize celRun celCount stutter effector
@@ -274,18 +287,18 @@ module Effector =
             else []
 
         // build implicitly mounted content
-        let mountedArtifacts = evalContent slice content effector
+        let mountedArtifacts = evalContent content slice effector
 
         // return artifacts
         mountedArtifacts @ animatedSpriteArtifacts
 
-    and private evalSoundEffect slice resource aspects content effector =
+    and private evalSoundEffect resource aspects content slice effector =
 
         // pull sound from resource
         let sound = evalResource resource effector
 
         // eval aspects
-        let slice = evalAspects slice aspects effector
+        let slice = evalAspects aspects slice effector
 
         // build sprite artifacts
         let soundArtifacts =
@@ -294,113 +307,101 @@ module Effector =
             else []
 
         // build implicitly mounted content
-        let mountedArtifacts = evalContent slice content effector
+        let mountedArtifacts = evalContent content slice effector
 
         // return artifacts
         mountedArtifacts @ soundArtifacts
 
-    and private evalComposite (slice : Slice) shift contents effector =
+    and private evalMount shift aspects content (slice : Slice) effector =
         let slice = { slice with Depth = slice.Depth + shift }
-        evalContents slice contents effector
+        let slice = evalAspects aspects slice effector
+        evalContent content slice effector
 
-    and private evalContent slice content effector =
+    and private evalRepeat shift repetition incrementAspects content (slice : Slice) effector =
+        let slice = { slice with Depth = slice.Depth + shift }
+        match repetition with
+        | Iterate count ->
+            List.fold
+                (fun (slice, artifacts) _ ->
+                    let (slice, artifacts') = iterateArtifacts incrementAspects content slice effector
+                    (slice, artifacts @ artifacts'))
+                (slice, [])
+                [0 .. count - 1] |>
+            snd
+        | Cycle count ->
+            List.fold
+                (fun artifacts i ->
+                    let effector = { effector with ProgressOffset = 1.0f / single count * single i }
+                    let artifacts' = cycleArtifacts incrementAspects content slice effector
+                    artifacts @ artifacts')
+                [] [0 .. count - 1]
+
+    and private evalEmit shift rate emitterAspects aspects content effector =
+        let artifacts =
+            Seq.foldi
+                (fun i artifacts (slice : Slice) ->
+                    let timePassed = int64 i * effector.EffectRate
+                    let slice = { slice with Depth = slice.Depth + shift }
+                    let slice = evalAspects emitterAspects slice { effector with EffectTime = effector.EffectTime - timePassed }
+                    let emitCountLastFrame = single (effector.EffectTime - timePassed - effector.EffectRate) * rate
+                    let emitCountThisFrame = single (effector.EffectTime - timePassed) * rate
+                    let emitCount = int emitCountThisFrame - int emitCountLastFrame
+                    let effector =
+                        let history =
+                            // TODO: include previous states of effect in history to allow changes to effect over time
+                            match content with
+                            | Emit _ ->
+                                Seq.mapi
+                                    (fun j slice ->
+                                        let timePassed = int64 (i + j) * effector.EffectRate
+                                        evalAspects emitterAspects slice { effector with EffectTime = effector.EffectTime - timePassed })
+                                    effector.History
+                            | _ -> effector.History
+                        { effector with
+                            History = history
+                            EffectTime = timePassed }
+                    let artifacts' =
+                        List.fold
+                            (fun artifacts' _ ->
+                                let slice = evalAspects aspects slice effector
+                                let artifacts'' =
+                                    if slice.Enabled
+                                    then evalContent content slice effector
+                                    else []
+                                artifacts'' @ artifacts')
+                            []
+                            [0 .. emitCount - 1]
+                    artifacts' @ artifacts)
+                []
+                effector.History
+        artifacts
+
+    and private evalComposite shift contents (slice : Slice) effector =
+        let slice = { slice with Depth = slice.Depth + shift }
+        evalContents contents slice effector
+
+    and private evalContent content slice effector =
         match content with
-        | Content.Expand (definitionName, arguments) ->
-            match Map.tryFind definitionName effector.EffectEnv with
-            | Some definition ->
-                match definition.DefinitionBody with
-                |  AlgebraicCompressionB (AlgebraicCompressionB content) ->
-                    let localDefinitions = List.map evalArgument arguments
-                    match (try List.zip definition.DefinitionParams localDefinitions |> Some with _ -> None) with
-                    | Some localDefinitionEntries ->
-                        let effector = { effector with EffectEnv = Map.addMany localDefinitionEntries effector.EffectEnv }
-                        evalContent slice content effector
-                    | None -> note "Wrong number of arguments provided to ExpandContent."; []
-                | _ -> note ^ "Expected Content for definition '" + definitionName + "'."; []
-            | None -> note ^ "Could not find definition with name '" + definitionName + "'."; []
-        | StaticSprite (resource, aspects, content) ->
-            evalStaticSprite slice resource aspects content effector
-        | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects, content) ->
-            evalAnimatedSprite slice resource celSize celRun celCount stutter aspects content effector
-        | SoundEffect (resource, aspects, content)->
-            evalSoundEffect slice resource aspects content effector
-        | Mount (Shift shift, aspects, content) ->
-            let slice = { slice with Depth = slice.Depth + shift }
-            let slice = evalAspects slice aspects effector
-            evalContent slice content effector
-        | Repeat (Shift shift, repetition, incrementAspects, content) ->
-            let slice = { slice with Depth = slice.Depth + shift }
-            match repetition with
-            | Iterate count ->
-                List.fold
-                    (fun (slice, artifacts) _ ->
-                        let (slice, artifacts') = iterateArtifacts slice incrementAspects content effector
-                        (slice, artifacts @ artifacts'))
-                    (slice, [])
-                    [0 .. count - 1] |>
-                snd
-            | Cycle count ->
-                List.fold
-                    (fun artifacts i ->
-                        let effector = { effector with ProgressOffset = 1.0f / single count * single i }
-                        let artifacts' = cycleArtifacts slice incrementAspects content effector
-                        artifacts @ artifacts')
-                    [] [0 .. count - 1]
-        | Emit (Shift shift, Rate rate, emitterAspects, aspects, content) ->
-            let artifacts =
-                List.foldi
-                    (fun i artifacts (slice : Slice) ->
-                        let timePassed = int64 i * effector.EffectRate
-                        let slice = { slice with Depth = slice.Depth + shift }
-                        let slice = evalAspects slice emitterAspects { effector with EffectTime = effector.EffectTime - timePassed }
-                        let emitCountLastFrame = single (effector.EffectTime - timePassed - effector.EffectRate) * rate
-                        let emitCountThisFrame = single (effector.EffectTime - timePassed) * rate
-                        let emitCount = int emitCountThisFrame - int emitCountLastFrame
-                        let effector =
-                            let history = effector.History
-                                // TODO: make history computations lazy with seq rather than list
-                                // TODO: include previous states of effect in history to allow changes to effect over time
-                                (*match content with
-                                | Emit _ ->
-                                    List.mapi
-                                        (fun j slice ->
-                                            let timePassed = int64 (i + j) * effector.EffectRate
-                                            evalAspects slice emitterAspects { effector with EffectTime = effector.EffectTime - timePassed })
-                                        effector.History
-                                | _ -> effector.History*)
-                            { effector with
-                                History = history
-                                EffectTime = timePassed }
-                        let artifacts' =
-                            List.fold
-                                (fun artifacts' _ ->
-                                    let slice = evalAspects slice aspects effector
-                                    let artifacts'' =
-                                        if slice.Enabled
-                                        then evalContent slice content effector
-                                        else []
-                                    artifacts'' @ artifacts')
-                                []
-                                [0 .. emitCount - 1]
-                        artifacts' @ artifacts)
-                    []
-                    effector.History
-            artifacts
-        | Composite (Shift shift, contents) ->
-            evalComposite slice shift contents effector
-        | Tag (name, metadata) ->
-            [TagArtifact (name, metadata, slice)]
+        | Content.Expand (definitionName, arguments) -> evalExpand definitionName arguments slice effector
+        | StaticSprite (resource, aspects, content) -> evalStaticSprite resource aspects content slice effector
+        | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects, content) -> evalAnimatedSprite resource celSize celRun celCount stutter aspects content slice effector
+        | SoundEffect (resource, aspects, content)-> evalSoundEffect resource aspects content slice effector
+        | Mount (Shift shift, aspects, content) -> evalMount shift aspects content slice effector
+        | Repeat (Shift shift, repetition, incrementAspects, content) -> evalRepeat shift repetition incrementAspects content slice effector
+        | Emit (Shift shift, Rate rate, emitterAspects, aspects, content) -> evalEmit shift rate emitterAspects aspects content effector
+        | Composite (Shift shift, contents) -> evalComposite shift contents slice effector
+        | Tag (name, metadata) -> [TagArtifact (name, metadata, slice)]
         | Nil -> []
 
-    and private evalContents slice contents effector =
+    and private evalContents contents slice effector =
         List.fold
             (fun artifacts content ->
-                let artifacts' = evalContent slice content effector
+                let artifacts' = evalContent content slice effector
                 artifacts' @ artifacts)
             []
             contents
 
-    let eval slice (effect : Effect) (effector : Effector) : EffectArtifact list =
+    let eval (effect : Effect) slice (effector : Effector) : EffectArtifact list =
         let localTime =
             match effect.OptLifetime with
             | Some lifetime -> effector.EffectTime % lifetime
@@ -409,12 +410,11 @@ module Effector =
             { effector with
                 EffectEnv = Map.concat effector.EffectEnv effect.Definitions
                 EffectTime = localTime }
-        evalContent slice effect.Content effector
+        evalContent effect.Content slice effector
 
     let make viewType history tickRate tickTime globalEnv = 
         { ViewType = viewType
           History = history
-          HistoryLength = List.length history
           ProgressOffset = 0.0f
           EffectRate = tickRate
           EffectTime = tickTime

@@ -44,13 +44,8 @@ let fornone pred seq =
     Seq.forall notPred seq
 
 /// A more tolerant and open-minded take.
-let tryTake (n : int) (seq_ : _ seq) =
-    let e = seq_.GetEnumerator ()
-    let i = ref 0
-    seq {
-        while e.MoveNext () && !i < n do
-            i := !i + 1
-            yield e.Current }
+let tryTake (n : int) (seq : _ seq) =
+    System.Linq.Enumerable.Take (seq, n)
 
 /// Project the first sequence onto the second.
 let project projector (seq_ : 'a seq) (seq2 : 'b option seq) =
