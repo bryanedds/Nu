@@ -28,21 +28,23 @@ module Async =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Vsync =
 
-    let mutable private optSync =
-        None
+    /// Configures whether to use synchronized processing.
+    let mutable private OptSync = None
 
+    /// Initialize Vsync to use synchronized or asynchronous processing.
     let init sync =
-        match optSync with
+        match OptSync with
         | Some _ -> debug "Cannot init Vsync.sync once it's been set. Consider calling init earlier in your program."
-        | None -> optSync <- Some sync
+        | None -> OptSync <- Some sync
 
+    /// Query whether Vsync is using synchronized or asynchronous processing.
     let isSync () =
-        match optSync with
+        match OptSync with
         | Some sync -> sync
         | None ->
             debug "Sync not set manually before first invocation; automatically setting to true."
             let result = true
-            optSync <- Some result
+            OptSync <- Some result
             result
 
     let [<DebuggerHidden; DebuggerStepThrough>] private Extract v =
