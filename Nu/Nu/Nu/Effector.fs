@@ -348,7 +348,7 @@ module Effector =
                     let emitCount = int emitCountThisFrame - int emitCountLastFrame
                     let effector =
                         let history =
-                            // TODO: include previous states of effect in history to allow changes to effect over time
+                            // TODO: emits on emits is broken, so fix this!
                             match content with
                             | Emit _ ->
                                 Seq.mapi
