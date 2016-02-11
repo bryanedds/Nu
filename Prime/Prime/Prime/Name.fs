@@ -35,12 +35,11 @@ type NameConverter (targetType : Type) =
             if targetType.IsInstanceOfType source then source
             else failwith "Invalid NameConverter conversion from source."
 
-/// A name for optimized look-up in hashing containers.
-/// OPTIMIZATION: HashCode is cached for speed.
+/// A name for optimized keying in hashing containers.
 type [<CustomEquality; CustomComparison; TypeConverter (typeof<NameConverter>)>] Name =
     private
         { NameStr : string
-          HashCode : int }
+          HashCode : int } // OPTIMIZATION: hash cached for speed
 
     /// Make a name from a non-empty string without whitespace.
     static member make (nameStr : string) =

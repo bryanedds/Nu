@@ -39,11 +39,10 @@ type AddressConverter (targetType : Type) =
             else failwith "Invalid AddressConverter conversion from source."
 
 /// Specifies the address of an identifiable value.
-/// OPTIMIZATION: HashCode is cached for speed.
 type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
     private
         { Names : Name list
-          HashCode : int
+          HashCode : int // OPTIMIZATION: hash cached for speed
           TypeCarrier : 'a -> unit }
 
     static member internal join (names : Name seq) =
