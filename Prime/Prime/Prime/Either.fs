@@ -7,7 +7,6 @@ open System.ComponentModel
 open Prime
 
 /// Haskell-style Either type.
-/// TODO: more nice operator definitions.
 type Either<'l, 'r> =
     | Right of 'r
     | Left of 'l
