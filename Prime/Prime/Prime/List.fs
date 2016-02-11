@@ -243,14 +243,11 @@ let foldWhile folder (state : 's) (list : 't list) =
     Seq.foldWhile folder state ^ List.toSeq list
 
 /// Remove all elements from a list that satisfy a predicate.
-/// TODO: see if List.rev can be removed.
 let rec remove pred list =
-    let listRev =
-        List.fold
-            (fun listAcc item -> if pred item then listAcc else item :: listAcc)
-            []
-            list
-    List.rev listRev
+    List.foldBack
+        (fun item listAcc -> if pred item then listAcc else item :: listAcc)
+        list
+        []
 
 /// Collapse a list from the left.
 /// Example - [0, 1, 2] becomes [[]; [0]; [0; 1]; [0; 1; 2]]
@@ -279,4 +276,7 @@ let rec inline compareStrings (list : string list) (list2 : string list) =
 /// Hash a list.
 /// NOTE: May be a pessimization.
 let inline hash list =
-    List.fold (fun hashValue name -> hashValue ^^^ name.GetHashCode ()) 0 list
+    List.fold
+        (fun hashValue name -> hashValue ^^^ name.GetHashCode ())
+        0
+        list

@@ -16,7 +16,6 @@ module Id =
 
     /// Make a function that gets a unique number.
     /// TODO: place a mutex lock in this
-    /// TODO: see if returned function can be optimized by minimizing dereferences
     let makeIdMaker () =
         let id = ref InvalidId
         let makeId =
