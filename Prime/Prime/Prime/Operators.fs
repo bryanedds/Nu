@@ -155,3 +155,6 @@ module Operators =
 
     /// Test just the value parts of a type for equality. Reflective and slow.
     let inline (===) (x : 'a) (y : 'a) = similar x y
+
+    /// As close as we can get to F# implicits.
+    let inline implicit arg = (^a : (static member op_Implicit : ^b -> ^a) arg)
