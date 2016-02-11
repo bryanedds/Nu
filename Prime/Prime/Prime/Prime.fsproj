@@ -97,6 +97,8 @@
     <Compile Include="AlgebraicConverterTests.fs" />
     <Compile Include="XtensionTests.fs" />
     <Compile Include="Program.fs" />
+    <Compile Include="Symbolic.fs" />
+    <Compile Include="SymbolicConverter.fs" />
     <None Include="Interactive.fsx" />
     <None Include="App.config" />
   </ItemGroup>

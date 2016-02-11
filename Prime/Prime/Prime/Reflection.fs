@@ -7,25 +7,25 @@ open System.ComponentModel
 open System.Reflection
 open System.IO
 
-/// Along with the Symbol binding, is used to elaborate the name of a symbol without using a
+/// Along with the Label binding, is used to elaborate the name of a target without using a
 /// string literal.
-type SymbolName =
+type LabelName =
     { DummyField : unit }
     static member (?) (_, name) = name
 
 [<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module SymbolName =
+module LabelName =
 
-    /// Along with the SymbolName type, is used to elaborate the name of a field without using a
-    /// string literal.
+    /// Along with the LabelName type, is used to elaborate the name of a target without
+    /// using a string literal.
     ///
     /// Usage:
-    ///     let fieldName = Symbol?MySymbolName
-    let Symbol = { DummyField = () }
+    ///     let fieldName = Label?MyFieldName
+    let Label = { DummyField = () }
     
-    /// Symbol alias for module names.
+    /// Label for module names.
     /// Needed since we can't utter something like typeof<MyModule>.
-    let Module = Symbol
+    let Module = Label
 
 module Type =
 
@@ -74,8 +74,8 @@ module TypeExtension =
                 let typeConverterTypeName = typeConverterAttribute.ConverterTypeName
                 let typeConverterType = Type.GetType typeConverterTypeName
                 match typeConverterType.GetConstructor [|typeof<Type>|] with
-                | null -> Some ^ (typeConverterType.GetConstructor [||]).Invoke [||]
-                | constructor1 -> Some ^ constructor1.Invoke [|this|]
+                | null -> (typeConverterType.GetConstructor [||]).Invoke [||] :?> TypeConverter |> Some
+                | constructor1 -> constructor1.Invoke [|this|] :?> TypeConverter |> Some
             else None
 
         member this.GetPropertyWritable propertyName =
