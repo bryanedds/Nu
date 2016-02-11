@@ -10,6 +10,7 @@ open Prime
 open Prime.Tests
 module Program =
 
+    // some ad-hoc tests to compare performance of Vmap, Map, and Dictionary.
     let rand = Random 1
     let entries = [|for _ in 0 .. 65535 do yield (let n = rand.Next () in (string n, (string n, string n)))|]
 
