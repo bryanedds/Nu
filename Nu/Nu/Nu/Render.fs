@@ -131,7 +131,7 @@ type [<ReferenceEquality>] Renderer =
                     else Log.trace ^ "Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."; None
                 | (false, _) -> Log.trace ^ "Could not load font due to file name being too short: '" + asset.FilePath + "'."; None
             else Log.trace ^ "Could not load font '" + asset.FilePath + "'."; None
-        | extension -> Log.trace ^ "Could not load render asset '" + acstring asset + "' due to unknown extension '" + extension + "'."; None
+        | extension -> Log.trace ^ "Could not load render asset '" + symstring asset + "' due to unknown extension '" + extension + "'."; None
 
     static member private tryLoadRenderPackage packageName renderer =
         match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Xml.RenderAssociation) packageName Constants.Assets.AssetGraphFilePath with
@@ -234,10 +234,10 @@ type [<ReferenceEquality>] Renderer =
                         rotation,
                         ref rotationCenter,
                         SDL.SDL_RendererFlip.SDL_FLIP_NONE)
-                if renderResult <> 0 then Log.note ^ "Render error - could not render texture for sprite '" + acstring image + "' due to '" + SDL.SDL_GetError () + "."
+                if renderResult <> 0 then Log.note ^ "Render error - could not render texture for sprite '" + symstring image + "' due to '" + SDL.SDL_GetError () + "."
                 renderer
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."; renderer
-        | None -> Log.note ^ "SpriteDescriptor failed to render due to unloadable assets for '" + acstring image + "'."; renderer
+        | None -> Log.note ^ "SpriteDescriptor failed to render due to unloadable assets for '" + symstring image + "'."; renderer
 
     static member private renderSprites viewAbsolute viewRelative camera sprites renderer =
         List.fold
@@ -301,11 +301,11 @@ type [<ReferenceEquality>] Renderer =
                             refTileDestRect := destRect
                             refTileRotationCenter := rotationCenter
                             let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, refTileSourceRect, refTileDestRect, rotation, refTileRotationCenter, SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
-                            if renderResult <> 0 then Log.note ^ "Render error - could not render texture for tile '" + acstring descriptor + "' due to '" + SDL.SDL_GetError () + ".")
+                            if renderResult <> 0 then Log.note ^ "Render error - could not render texture for tile '" + symstring descriptor + "' due to '" + SDL.SDL_GetError () + ".")
                     tiles
                 renderer
             | _ -> Log.trace "Cannot render tile with a non-texture asset."; renderer
-        | None -> Log.note ^ "TileLayerDescriptor failed due to unloadable assets for '" + acstring tileSetImage + "'."; renderer
+        | None -> Log.note ^ "TileLayerDescriptor failed due to unloadable assets for '" + symstring tileSetImage + "'."; renderer
 
     static member private renderTextDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (descriptor : TextDescriptor) renderer =
         let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
@@ -347,7 +347,7 @@ type [<ReferenceEquality>] Renderer =
                     SDL.SDL_FreeSurface textSurface
                 renderer
             | _ -> Log.trace "Cannot render text with a non-font asset."; renderer
-        | None -> Log.note ^ "TextDescriptor failed due to unloadable assets for '" + acstring font + "'."; renderer
+        | None -> Log.note ^ "TextDescriptor failed due to unloadable assets for '" + symstring font + "'."; renderer
 
     static member private renderLayerableDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera renderer layerableDescriptor =
         match layerableDescriptor with

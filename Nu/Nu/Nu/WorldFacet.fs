@@ -110,7 +110,7 @@ module WorldFacetModule =
                         let world = facet.Register (entity, world)
                         Right (World.getEntityState entity world, world)
                     | None -> Right (entityState, world)
-                else Left ^ "Facet '" + getTypeName facet + "' is incompatible with entity '" + acstring entityState.Name + "'."
+                else Left ^ "Facet '" + getTypeName facet + "' is incompatible with entity '" + symstring entityState.Name + "'."
             | Left error -> Left error
 
         static member private tryRemoveFacets facetNamesToRemove entityState optEntity world =

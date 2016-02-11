@@ -78,6 +78,7 @@
     <Compile Include="HashSet.fs" />
     <Compile Include="Dictionary.fs" />
     <Compile Include="Lens.fs" />
+    <Compile Include="Symbol.fs" />
     <Compile Include="Rand.fs" />
     <Compile Include="Name.fs" />
     <Compile Include="Address.fs" />
@@ -87,14 +88,12 @@
     <Compile Include="Reflection.fs" />
     <Compile Include="Vmap.fs" />
     <Compile Include="Vsync.fs" />
-    <Compile Include="AlgebraicReader.fs" />
-    <Compile Include="AlgebraicConverter.fs" />
-    <Compile Include="AlgebraicDescriptor.fs" />
-    <Compile Include="AlgebraicString.fs" />
+    <Compile Include="SymbolicConverter.fs" />
+    <Compile Include="SymbolicDescriptor.fs" />
+    <Compile Include="SymbolicString.fs" />
     <Compile Include="Xtension.fs" />
     <Compile Include="RandTests.fs" />
-    <Compile Include="AlgebraicReaderTests.fs" />
-    <Compile Include="AlgebraicConverterTests.fs" />
+    <Compile Include="SymbolTests.fs" />
     <Compile Include="XtensionTests.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />

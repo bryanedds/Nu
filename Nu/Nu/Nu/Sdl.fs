@@ -212,7 +212,7 @@ module Sdl =
             handleExit world
             Constants.Engine.SuccessExitCode
         with exn ->
-            Log.trace ^ acstring exn
+            Log.trace ^ symstring exn
             handleExit world
             Constants.Engine.FailureExitCode
 
