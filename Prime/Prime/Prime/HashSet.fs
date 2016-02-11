@@ -14,6 +14,7 @@ module HashSet =
 [<AutoOpen>]
 module HashSetExtension =
 
+    /// HashSet extension methods.
     type HashSet<'a> with
 
         /// Force the addition of an element, removing the existing one if necessary.
