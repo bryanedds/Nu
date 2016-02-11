@@ -102,14 +102,14 @@ module QuadTree =
         if omnipresence then
             tree.OmnipresentElements.Add element |> ignore
         elif not ^ QuadNode.tryAddElement bounds element tree.Node then
-            note "Element is outside of quad tree's containment area or is being added redundantly."
+            Log.note "Element is outside of quad tree's containment area or is being added redundantly."
             tree.OmnipresentElements.Add element |> ignore
 
     let removeElement omnipresence bounds element tree =
         if omnipresence then
             tree.OmnipresentElements.Remove element |> ignore
         elif not ^ QuadNode.tryRemoveElement bounds element tree.Node then
-            note "Element is outside of quad tree's containment area or is not present for removal."
+            Log.note "Element is outside of quad tree's containment area or is not present for removal."
             tree.OmnipresentElements.Remove element |> ignore
 
     let updateElement

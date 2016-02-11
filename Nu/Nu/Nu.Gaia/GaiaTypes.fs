@@ -84,10 +84,10 @@ and EntityPropertyDescriptor (property, attributes) =
                 let name = value :?> Name
                 let nameStr = Name.getNameStr name
                 if fst ^ Int64.TryParse nameStr then
-                    trace ^ "Invalid entity name '" + nameStr + "' (must not be a number)."
+                    Log.trace ^ "Invalid entity name '" + nameStr + "' (must not be a number)."
                     world
                 elif nameStr.IndexOf '/' <> -1 then
-                    trace ^ "Invalid entity name '" + nameStr + "' (must not contain '/')."
+                    Log.trace ^ "Invalid entity name '" + nameStr + "' (must not contain '/')."
                     world
                 else
                     let entity = entityTds.DescribedEntity
@@ -103,7 +103,7 @@ and EntityPropertyDescriptor (property, attributes) =
                 let world =
                     match World.trySetEntityFacetNames facetNames entity world with
                     | Right world -> world
-                    | Left error -> trace error; world
+                    | Left error -> Log.trace error; world
                 entityTds.RefWorld := world // must be set for property grid
                 entityTds.Form.propertyGrid.Refresh ()
                 world
@@ -116,7 +116,7 @@ and EntityPropertyDescriptor (property, attributes) =
                     | "OptOverlayName" ->
                         match World.trySetEntityOptOverlayName (value :?> string option) entity world with
                         | Right world -> world
-                        | Left error -> trace error; world
+                        | Left error -> Log.trace error; world
                     | _ -> EntityMemberValue.setValue property value entity world
                 let world = World.propagateEntityPhysics entityTds.DescribedEntity world
                 entityTds.RefWorld := world // must be set for property grid

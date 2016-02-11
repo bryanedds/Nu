@@ -408,7 +408,7 @@ module Reflection =
                 if converter.CanConvertFrom typeof<string> then
                     let xField = { FieldValue = converter.ConvertFromString fieldNode.InnerText; FieldType = fieldDefinition.FieldType }
                     Vmap.add fieldDefinition.FieldName xField targetXFields
-                else debug ^ "Cannot convert string '" + fieldNode.InnerText + "' to type '" + fieldDefinition.FieldType.Name + "'."; targetXFields
+                else Log.debug ^ "Cannot convert string '" + fieldNode.InnerText + "' to type '" + fieldDefinition.FieldType.Name + "'."; targetXFields
         else targetXFields
 
     /// Read a target's XFields.
@@ -420,14 +420,14 @@ module Reflection =
     let readXtensionToTarget (targetNode : XmlNode) (target : obj) =
         let targetType = target.GetType ()
         match targetType.GetProperty "Xtension" with
-        | null -> debug "Target does not support xtensions due to missing Xtension field."
+        | null -> Log.debug "Target does not support xtensions due to missing Xtension field."
         | xtensionProperty ->
             match xtensionProperty.GetValue target with
             | :? Xtension as xtension ->
                 let xFields = readXFields xtension.XFields targetNode target
                 let xtension = { xtension with XFields = xFields }
                 xtensionProperty.SetValue (target, xtension)
-            | _ -> debug "Target does not support xtensions due to Xtension field having unexpected type."
+            | _ -> Log.debug "Target does not support xtensions due to Xtension field having unexpected type."
 
     /// Read all of a target's member values from Xml (except OptOverlayName and FacetNames).
     let readMemberValuesToTarget targetNode target =

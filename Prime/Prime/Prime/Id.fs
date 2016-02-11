@@ -22,6 +22,6 @@ module Id =
         let makeId =
             (fun () ->
                 id := !id + 1L
-                if !id = 0L then debug "Id counter overflowed (flipped back to zero). Big trouble likely ahead!"
+                if !id = 0L then Log.debug "Id counter overflowed (flipped back to zero). Big trouble likely ahead!"
                 !id)
         makeId

@@ -185,7 +185,7 @@ module Gaia =
                 (Cascade, world)
             else (Cascade, world)
         | _ ->
-            trace "Unexpected match failure in Nu.Gaia.Program.handleNuEntityRemoving (probably a bug in Gaia or Nu)."
+            Log.trace "Unexpected match failure in Nu.Gaia.Program.handleNuEntityRemoving (probably a bug in Gaia or Nu)."
             (Cascade, world)
 
     let private handleNuMouseRightDown (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
@@ -312,7 +312,7 @@ module Gaia =
         | null -> ()
         | :? EntityTypeDescriptorSource as entityTds ->
             match form.propertyGrid.SelectedGridItem with
-            | null -> trace "Invalid apply property operation (likely a code issue in Gaia)."
+            | null -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
             | selectedGridItem ->
                 match selectedGridItem.GridItemType with
                 | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
@@ -320,9 +320,9 @@ module Gaia =
                     let typeConverter = AlgebraicConverter (selectedGridItem.PropertyDescriptor.PropertyType)
                     try let propertyValue = typeConverter.ConvertFromString form.propertyValueTextBox.Text
                         propertyDescriptor.SetValue (entityTds, propertyValue)
-                    with exn -> trace ^ "Invalid apply property operation due to: " + acstring exn
-                | _ -> trace "Invalid apply property operation (likely a code issue in Gaia)."
-        | _ -> trace "Invalid apply property operation (likely a code issue in Gaia)."
+                    with exn -> Log.trace ^ "Invalid apply property operation due to: " + acstring exn
+                | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
+        | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
 
     let private handleFormPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
@@ -486,7 +486,7 @@ module Gaia =
             match form.propertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds -> World.copyToClipboard entityTds.DescribedEntity world; world
-            | _ -> trace ^ "Invalid copy operation (likely a code issue in Gaia)."; world)
+            | _ -> Log.trace ^ "Invalid copy operation (likely a code issue in Gaia)."; world)
 
     let private handleFormCut (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
@@ -497,7 +497,7 @@ module Gaia =
                 let world = World.cutToClipboard entityTds.DescribedEntity world
                 form.propertyGrid.SelectedObject <- null
                 world
-            | _ -> trace ^ "Invalid cut operation (likely a code issue in Gaia)."; world)
+            | _ -> Log.trace ^ "Invalid cut operation (likely a code issue in Gaia)."; world)
 
     let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
@@ -522,7 +522,7 @@ module Gaia =
                 entityTds.RefWorld := world // must be set for property grid
                 form.propertyGrid.Refresh ()
                 world
-            | _ -> trace ^ "Invalid quick size operation (likely a code issue in Gaia)."; world)
+            | _ -> Log.trace ^ "Invalid quick size operation (likely a code issue in Gaia)."; world)
 
     let private handleFormResetCamera (_ : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->

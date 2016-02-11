@@ -126,10 +126,10 @@ module Effector =
                 match definition.DefinitionBody with
                 | AlgebraicCompressionA resource -> evalResource resource effector
                 | _ ->
-                    note ^ "Expected Resource for definition '" + definitionName + "."
+                    Log.note ^ "Expected Resource for definition '" + definitionName + "."
                     acvalue<AssetTag> Constants.Assets.DefaultImageValue
             | None ->
-                note ^ "Could not find definition with name '" + definitionName + "'."
+                Log.note ^ "Could not find definition with name '" + definitionName + "'."
                 acvalue<AssetTag> Constants.Assets.DefaultImageValue
         | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
 
@@ -154,8 +154,8 @@ module Effector =
             | Some definition ->
                 match definition.DefinitionBody with
                 | AlgebraicCompressionB (AlgebraicCompressionA aspect) -> evalAspect aspect slice effector
-                | _ -> note ^ "Expected Aspect for definition '" + definitionName + "'."; slice
-            | None -> note ^ "Could not find definition with name '" + definitionName + "'."; slice
+                | _ -> Log.note ^ "Expected Aspect for definition '" + definitionName + "'."; slice
+            | None -> Log.note ^ "Could not find definition with name '" + definitionName + "'."; slice
         | Enabled (applicator, playback, keyFrames) ->
             let (_, keyFrame, _) = selectKeyFrames effector.EffectTime playback keyFrames
             let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
@@ -224,9 +224,9 @@ module Effector =
                 | Some localDefinitionEntries ->
                     let effector = { effector with EffectEnv = Map.addMany localDefinitionEntries effector.EffectEnv }
                     evalContent content slice effector
-                | None -> note "Wrong number of arguments provided to ExpandContent."; []
-            | _ -> note ^ "Expected Content for definition '" + definitionName + "'."; []
-        | None -> note ^ "Could not find definition with name '" + definitionName + "'."; []
+                | None -> Log.note "Wrong number of arguments provided to ExpandContent."; []
+            | _ -> Log.note ^ "Expected Content for definition '" + definitionName + "'."; []
+        | None -> Log.note ^ "Could not find definition with name '" + definitionName + "'."; []
 
     and private evalStaticSprite resource aspects content slice effector =
 

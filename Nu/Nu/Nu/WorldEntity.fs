@@ -296,7 +296,7 @@ module WorldEntityModule =
                     // synchronize the entity's facets (and attach their fields)
                     match World.trySynchronizeFacetsToNames Set.empty entityState None world with
                     | Right (entityState, _) -> entityState
-                    | Left error -> debug error; entityState
+                    | Left error -> Log.debug error; entityState
                 | None -> entityState
 
             // attach the entity state's dispatcher fields
@@ -397,7 +397,7 @@ module WorldEntityModule =
                     Overlayer.applyOverlayToFacetNames oldOverlayName overlayName entity overlayer overlayer // hacky copy elided
                     match World.trySynchronizeFacetsToNames entityState.FacetNames entityState (Some entity) world with
                     | Right (entityState, world) -> (entityState, world)
-                    | Left error -> debug error; (entityState, world)
+                    | Left error -> Log.debug error; (entityState, world)
                 let facetNames = World.getEntityFacetNamesReflectively entityState
                 Overlayer.applyOverlay oldOverlayName overlayName facetNames entityState overlayer // hacky copy elided
                 let oldWorld = world
@@ -458,7 +458,7 @@ module WorldEntityModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> (dispatcherName, dispatcher)
                 | None ->
-                    note ^ "Could not locate dispatcher '" + dispatcherName + "'."
+                    Log.note ^ "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<EntityDispatcher>.Name
                     let dispatcher = Map.find dispatcherName dispatchers
                     (dispatcherName, dispatcher)
@@ -489,7 +489,7 @@ module WorldEntityModule =
             let entityState =
                 match World.trySynchronizeFacetsToNames Set.empty entityState None world with
                 | Right (entityState, _) -> entityState
-                | Left error -> debug error; entityState
+                | Left error -> Log.debug error; entityState
 
             // attempt to apply the entity state's overlay
             match entityState.OptOverlayName with

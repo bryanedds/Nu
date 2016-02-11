@@ -117,7 +117,7 @@ type [<ReferenceEquality>] Renderer =
             if optTexture <> IntPtr.Zero then Some (asset.AssetTag.AssetName, TextureAsset optTexture)
             else
                 let errorMsg = SDL.SDL_GetError ()
-                trace ^ "Could not load texture '" + asset.FilePath + "' due to '" + errorMsg + "'."
+                Log.trace ^ "Could not load texture '" + asset.FilePath + "' due to '" + errorMsg + "'."
                 None
         | ".ttf" ->
             let fileFirstName = Path.GetFileNameWithoutExtension asset.FilePath
@@ -128,10 +128,10 @@ type [<ReferenceEquality>] Renderer =
                 | (true, fontSize) ->
                     let optFont = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
                     if optFont <> IntPtr.Zero then Some (asset.AssetTag.AssetName, FontAsset (optFont, fontSize))
-                    else trace ^ "Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."; None
-                | (false, _) -> trace ^ "Could not load font due to file name being too short: '" + asset.FilePath + "'."; None
-            else trace ^ "Could not load font '" + asset.FilePath + "'."; None
-        | extension -> trace ^ "Could not load render asset '" + acstring asset + "' due to unknown extension '" + extension + "'."; None
+                    else Log.trace ^ "Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."; None
+                | (false, _) -> Log.trace ^ "Could not load font due to file name being too short: '" + asset.FilePath + "'."; None
+            else Log.trace ^ "Could not load font '" + asset.FilePath + "'."; None
+        | extension -> Log.trace ^ "Could not load render asset '" + acstring asset + "' due to unknown extension '" + extension + "'."; None
 
     static member private tryLoadRenderPackage packageName renderer =
         match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Xml.RenderAssociation) packageName Constants.Assets.AssetGraphFilePath with
@@ -147,7 +147,7 @@ type [<ReferenceEquality>] Renderer =
                 let renderAssetMap = Map.ofSeq renderAssets
                 { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
         | Left error ->
-            note ^ "Render package load failed due unloadable assets '" + error + "' for package '" + packageName + "'."
+            Log.note ^ "Render package load failed due unloadable assets '" + error + "' for package '" + packageName + "'."
             renderer
 
     static member private tryLoadRenderAsset (assetTag : AssetTag) renderer =
@@ -155,7 +155,7 @@ type [<ReferenceEquality>] Renderer =
             match Map.tryFind assetTag.PackageName renderer.RenderAssetMap with
             | Some _ -> (renderer, Map.tryFind assetTag.PackageName renderer.RenderAssetMap)
             | None ->
-                note ^ "Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
+                Log.note ^ "Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
                 let renderer = Renderer.tryLoadRenderPackage assetTag.PackageName renderer
                 (renderer, Map.tryFind assetTag.PackageName renderer.RenderAssetMap)
         (renderer, Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap)
@@ -234,10 +234,10 @@ type [<ReferenceEquality>] Renderer =
                         rotation,
                         ref rotationCenter,
                         SDL.SDL_RendererFlip.SDL_FLIP_NONE)
-                if renderResult <> 0 then note ^ "Render error - could not render texture for sprite '" + acstring image + "' due to '" + SDL.SDL_GetError () + "."
+                if renderResult <> 0 then Log.note ^ "Render error - could not render texture for sprite '" + acstring image + "' due to '" + SDL.SDL_GetError () + "."
                 renderer
-            | _ -> trace "Cannot render sprite with a non-texture asset."; renderer
-        | None -> note ^ "SpriteDescriptor failed to render due to unloadable assets for '" + acstring image + "'."; renderer
+            | _ -> Log.trace "Cannot render sprite with a non-texture asset."; renderer
+        | None -> Log.note ^ "SpriteDescriptor failed to render due to unloadable assets for '" + acstring image + "'."; renderer
 
     static member private renderSprites viewAbsolute viewRelative camera sprites renderer =
         List.fold
@@ -301,11 +301,11 @@ type [<ReferenceEquality>] Renderer =
                             refTileDestRect := destRect
                             refTileRotationCenter := rotationCenter
                             let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, refTileSourceRect, refTileDestRect, rotation, refTileRotationCenter, SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
-                            if renderResult <> 0 then note ^ "Render error - could not render texture for tile '" + acstring descriptor + "' due to '" + SDL.SDL_GetError () + ".")
+                            if renderResult <> 0 then Log.note ^ "Render error - could not render texture for tile '" + acstring descriptor + "' due to '" + SDL.SDL_GetError () + ".")
                     tiles
                 renderer
-            | _ -> trace "Cannot render tile with a non-texture asset."; renderer
-        | None -> note ^ "TileLayerDescriptor failed due to unloadable assets for '" + acstring tileSetImage + "'."; renderer
+            | _ -> Log.trace "Cannot render tile with a non-texture asset."; renderer
+        | None -> Log.note ^ "TileLayerDescriptor failed due to unloadable assets for '" + acstring tileSetImage + "'."; renderer
 
     static member private renderTextDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (descriptor : TextDescriptor) renderer =
         let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
@@ -346,8 +346,8 @@ type [<ReferenceEquality>] Renderer =
                     SDL.SDL_DestroyTexture textTexture
                     SDL.SDL_FreeSurface textSurface
                 renderer
-            | _ -> trace "Cannot render text with a non-font asset."; renderer
-        | None -> note ^ "TextDescriptor failed due to unloadable assets for '" + acstring font + "'."; renderer
+            | _ -> Log.trace "Cannot render text with a non-font asset."; renderer
+        | None -> Log.note ^ "TextDescriptor failed due to unloadable assets for '" + acstring font + "'."; renderer
 
     static member private renderLayerableDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera renderer layerableDescriptor =
         match layerableDescriptor with
@@ -369,7 +369,7 @@ type [<ReferenceEquality>] Renderer =
             let viewRelative = Matrix3.InvertView ^ Camera.getViewRelativeI camera
             List.fold (Renderer.renderLayerableDescriptor viewAbsolute viewRelative camera) renderer layeredDescriptors
         | _ ->
-            trace ^ "Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + "."
+            Log.trace ^ "Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + "."
             renderer
 
     /// Make a Renderer.

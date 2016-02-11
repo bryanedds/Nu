@@ -34,7 +34,7 @@ module Vsync =
     /// Initialize Vsync to use synchronized or asynchronous processing.
     let init sync =
         match OptSync with
-        | Some _ -> debug "Cannot init Vsync.sync once it's been set. Consider calling init earlier in your program."
+        | Some _ -> Log.debug "Cannot init Vsync.sync once it's been set. Consider calling init earlier in your program."
         | None -> OptSync <- Some sync
 
     /// Query whether Vsync is using synchronized or asynchronous processing.
@@ -42,7 +42,7 @@ module Vsync =
         match OptSync with
         | Some sync -> sync
         | None ->
-            debug "Sync not set manually before first invocation; automatically setting to true."
+            Log.debug "Sync not set manually before first invocation; automatically setting to true."
             let result = true
             OptSync <- Some result
             result
