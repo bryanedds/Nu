@@ -13,17 +13,23 @@ type NameConverter (targetType : Type) =
     
     override this.CanConvertTo (_, destType) =
         destType = typeof<string> ||
+        destType = typeof<Symbol> ||
         destType = targetType
         
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<string> then
             let toStringMethod = targetType.GetMethod "ToString"
             toStringMethod.Invoke (source, null)
+        elif destType = typeof<Symbol> then
+            let toStringMethod = targetType.GetMethod "ToString"
+            let nameStr = toStringMethod.Invoke (source, null) :?> string
+            Atom nameStr :> obj
         elif destType = targetType then source
         else failwith "Invalid NameConverter conversion to source."
         
     override this.CanConvertFrom (_, sourceType) =
         sourceType = typeof<string> ||
+        sourceType = typeof<Symbol> ||
         sourceType = targetType
         
     override this.ConvertFrom (_, _, source) =
@@ -31,6 +37,12 @@ type NameConverter (targetType : Type) =
         | :? string as nameStr ->
             let makeFunction = targetType.GetMethod ("make", BindingFlags.Static ||| BindingFlags.Public)
             makeFunction.Invoke (null, [|nameStr|])
+        | :? Symbol as nameSymbol ->
+            match nameSymbol with
+            | Atom nameStr ->
+                let makeFunction = targetType.GetMethod ("make", BindingFlags.Static ||| BindingFlags.Public)
+                makeFunction.Invoke (null, [|nameStr|])
+            | _ -> failwith "Invalid NameConverter conversion from source."
         | _ ->
             if targetType.IsInstanceOfType source then source
             else failwith "Invalid NameConverter conversion from source."

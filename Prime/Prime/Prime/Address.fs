@@ -15,17 +15,23 @@ type AddressConverter (targetType : Type) =
     
     override this.CanConvertTo (_, destType) =
         destType = typeof<string> ||
+        destType = typeof<Symbol> ||
         destType = targetType
         
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<string> then
             let toStringMethod = targetType.GetMethod "ToString"
             toStringMethod.Invoke (source, null)
+        elif destType = typeof<Symbol> then
+            let toStringMethod = targetType.GetMethod "ToString"
+            let addressStr = toStringMethod.Invoke (source, null) :?> string
+            Atom addressStr :> obj
         elif destType = targetType then source
         else failwith "Invalid AddressConverter conversion to source."
         
     override this.CanConvertFrom (_, sourceType) =
         sourceType = typeof<string> ||
+        sourceType = typeof<Symbol> ||
         sourceType = targetType
         
     override this.ConvertFrom (_, _, source) =
@@ -34,6 +40,13 @@ type AddressConverter (targetType : Type) =
             let fullName = Name.make addressStr
             let ftoaFunction = targetType.GetMethod ("makeFromFullName", BindingFlags.Static ||| BindingFlags.Public)
             ftoaFunction.Invoke (null, [|fullName|])
+        | :? Symbol as addressSymbol ->
+            match addressSymbol with
+            | Atom addressStr ->
+                let fullName = Name.make addressStr
+                let ftoaFunction = targetType.GetMethod ("makeFromFullName", BindingFlags.Static ||| BindingFlags.Public)
+                ftoaFunction.Invoke (null, [|fullName|])
+            | _ -> failwith "Invalid NameConverter conversion from source."
         | _ ->
             if targetType.IsInstanceOfType source then source
             else failwith "Invalid AddressConverter conversion from source."

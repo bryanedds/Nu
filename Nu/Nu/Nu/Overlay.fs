@@ -39,7 +39,7 @@ module Overlayer =
                     match optIncludeNames with
                     | null -> None
                     | includeNames ->
-                        let includeNames = AlgebraicDescriptor.convertFromString includeNames.InnerXml typeof<string list> :?> string list
+                        let includeNames = SymbolicDescriptor.convertFromString includeNames.InnerXml typeof<string list> :?> string list
                         let mutable optNode = None
                         let mutable enr = (includeNames :> _ seq).GetEnumerator ()
                         while enr.MoveNext () && Option.isNone optNode do
@@ -67,7 +67,7 @@ module Overlayer =
                 | (targetProperty, _) -> Some ^ targetProperty.GetValue target
             match optPropertyValue with
             | Some propertyValue ->
-                let converter = AlgebraicConverter propertyType
+                let converter = SymbolicConverter propertyType
                 if converter.CanConvertFrom typeof<string> then
                     let overlayValue = converter.ConvertFromString overlayNode.InnerText
                     if overlayValue = propertyValue then Overlaid else Altered
@@ -97,7 +97,7 @@ module Overlayer =
             isPropertyOverlaid oldOverlayName facetNames property.Name property.PropertyType target oldOverlayer
         if shouldApplyOverlay then
             let valueStr = valueNode.InnerText
-            let converter = AlgebraicConverter property.PropertyType
+            let converter = SymbolicConverter property.PropertyType
             if converter.CanConvertFrom typeof<string> then
                 let value = converter.ConvertFromString valueStr
                 property.SetValue (target, value)
@@ -129,7 +129,7 @@ module Overlayer =
                 let xFields =
                     List.foldBack (fun (ty, node : XmlNode) xFields ->
                         if isPropertyOverlaid oldOverlayName facetNames node.Name ty target oldOverlayer then
-                            let value = AlgebraicDescriptor.convertFromString node.InnerText ty
+                            let value = SymbolicDescriptor.convertFromString node.InnerText ty
                             let xField = { FieldValue = value; FieldType = ty }
                             (node.Name, xField) :: xFields
                         else xFields)

@@ -217,7 +217,7 @@ module GameplayDispatcherModule =
         static let determineDesiredEnemyTurn occupationMap (player : Entity) (enemy : Entity) rand world =
             match enemy.GetControlType world with
             | Player ->
-                Log.debug ^ "Invalid ControlType '" + acstring (enemy.GetControlType world) + "' for enemy"
+                Log.debug ^ "Invalid ControlType '" + symstring (enemy.GetControlType world) + "' for enemy"
                 (NoTurn, rand)
             | Chaos ->
                 let nextPlayerPosition =

@@ -44,4 +44,4 @@ module ReflectionTests =
         stream.Seek (0L, SeekOrigin.Begin) |> ignore
         let xtdRead = { xtd with Xtension = xtd.Xtension } // hacky copy
         readFromStream (fun node target -> Reflection.readMemberValuesToTarget node target) stream { Xtension = Xtension.mixed }
-        Assert.Equal (xtd, xtdRead)
+        Assert.Equal((xtd?TestField : int), (xtdRead?TestField : int))

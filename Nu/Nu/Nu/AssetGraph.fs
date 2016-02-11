@@ -72,7 +72,7 @@ module AssetGraph =
     let private getAssetAssociations (node : XmlNode) =
         match node.Attributes.GetNamedItem Constants.Xml.AssociationsAttributeName with
         | null -> Set.empty
-        | associations -> AlgebraicDescriptor.convertFromString associations.InnerText typeof<string Set> :?> string Set
+        | associations -> SymbolicDescriptor.convertFromString associations.InnerText typeof<string Set> :?> string Set
 
     let private getAssetExtension2 rawAssetExtension refinement =
         match refinement with
@@ -93,7 +93,7 @@ module AssetGraph =
     let private getAssetSearchOption (node : XmlNode) =
         match node.Attributes.GetNamedItem Constants.Xml.RecursiveAttributeName with
         | null -> SearchOption.TopDirectoryOnly
-        | isRecursive -> if isRecursive.InnerText = acstring true then SearchOption.AllDirectories else SearchOption.TopDirectoryOnly
+        | isRecursive -> if isRecursive.InnerText = symstring true then SearchOption.AllDirectories else SearchOption.TopDirectoryOnly
 
     let private getAssetName filePath (node : XmlNode) =
         match node.Attributes.GetNamedItem Constants.Xml.NameAttributeName with
@@ -104,7 +104,7 @@ module AssetGraph =
         match node.Attributes.GetNamedItem Constants.Xml.RefinementsAttributeName with
         | null -> []
         | refinements ->
-            let refinements = AlgebraicDescriptor.convertFromString refinements.InnerText typeof<string list> :?> string list
+            let refinements = SymbolicDescriptor.convertFromString refinements.InnerText typeof<string list> :?> string list
             List.map Refinement.fromString refinements
 
     let private writeMagickImageAsPng filePath (image : MagickImage) =
@@ -112,7 +112,7 @@ module AssetGraph =
         | ".png" ->
             use stream = File.OpenWrite filePath
             image.Write (stream, MagickFormat.Png32)
-        | _ -> failwith ^ "Invalid image file format for refinement '" + acstring OldSchool + "'; must be of *.png format."
+        | _ -> failwith ^ "Invalid image file format for refinement '" + symstring OldSchool + "'; must be of *.png format."
 
     /// Attempt to load an asset from the given Xml node.
     let tryLoadAssetFromAssetNode (node : XmlNode) =
@@ -230,7 +230,7 @@ module AssetGraph =
                 | [] -> Left ^ "Package node '" + packageName + "' is missing from asset graph."
                 | [packageNode] -> Right ^ tryLoadAssetsFromPackageNode usingRawAssets optAssociation packageNode
                 | _ :: _ -> Left ^ "Multiple packages with the same name '" + packageName + "' is an error."
-        with exn -> Left ^ acstring exn
+        with exn -> Left ^ symstring exn
 
     /// Attempt to load all the assets from multiple packages.
     /// TODO: test this function!
@@ -249,7 +249,7 @@ module AssetGraph =
                             Set.contains (node.Attributes.GetNamedItem Constants.Xml.NameAttributeName).InnerText packageNameSet)
                         possiblePackageNodes
                 tryLoadAssetsFromPackageNodes usingRawAssets optAssociation packageNodes
-        with exn -> Left ^ acstring exn
+        with exn -> Left ^ symstring exn
 
     /// Try to load all the assets from an asset graph document.
     let tryLoadAssetsFromDocument usingRawAssets optAssociation (assetGraphFilePath : string) =
@@ -258,7 +258,7 @@ module AssetGraph =
             match document.[Constants.Xml.RootNodeName] with
             | null -> Left "Root node is missing from asset graph."
             | rootNode -> tryLoadAssetsFromRootNode usingRawAssets optAssociation rootNode
-        with exn -> Left ^ acstring exn
+        with exn -> Left ^ symstring exn
 
     /// Apply a single refinement to an asset.
     let refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement =
@@ -325,7 +325,7 @@ module AssetGraph =
                 let outputFilePath = Path.Combine (outputDirectory, intermediateFileSubpath)
                 Directory.CreateDirectory ^ Path.GetDirectoryName outputFilePath |> ignore
                 try File.Copy (intermediateFilePath, outputFilePath, true)
-                with _ -> Log.note ^ "Resource lock on '" + outputFilePath + "' has prevented build for asset '" + acstring asset.AssetTag + "'."
+                with _ -> Log.note ^ "Resource lock on '" + outputFilePath + "' has prevented build for asset '" + symstring asset.AssetTag + "'."
 
     /// Attempt to build all the assets found in the given asset graph.
     let tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory fullBuild assetGraphFilePath =
@@ -341,5 +341,5 @@ module AssetGraph =
         match eitherAssets with
         | Right assets ->
             try Right ^ buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assets
-            with exn -> Left ^ acstring exn
+            with exn -> Left ^ symstring exn
         | Left error -> Left error

@@ -65,10 +65,19 @@ module TypeExtension =
     /// Type extension for Type.
     type Type with
 
+        member this.GetTypeDescriptor () =
+            (TypeDescriptor.GetProvider this).GetTypeDescriptor this
+
         /// Try to get a custom type converter for the given type.
         member this.TryGetCustomTypeConverter () =
-            // TODO: check for custom type converters in the TypeDescriptor attributes as well
-            let typeConverterAttributes = this.GetCustomAttributes<TypeConverterAttribute> ()
+            let globalConverterAttributes =
+                seq {
+                    for attribute in TypeDescriptor.GetAttributes this do
+                        match attribute with
+                        | :? TypeConverterAttribute as tca -> yield tca
+                        | _ -> () }
+            let localConverterAttributes = this.GetCustomAttributes<TypeConverterAttribute> ()
+            let typeConverterAttributes = Seq.append globalConverterAttributes localConverterAttributes
             if not ^ Seq.isEmpty typeConverterAttributes then
                 let typeConverterAttribute = Seq.head typeConverterAttributes
                 let typeConverterTypeName = typeConverterAttribute.ConverterTypeName

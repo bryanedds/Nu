@@ -136,7 +136,9 @@ type SymbolicConverter (targetType : Type) =
             | Some typeConverter ->
                 if typeConverter.CanConvertFrom typeof<Symbol>
                 then typeConverter.ConvertFrom symbol
-                elif destType.Name = typedefof<_ list>.Name then
+                else failwith "Unexpected match failure in Nu.SymbolicConverter.fromSymbol. TODO: better error message!"
+            | None ->
+                if destType.Name = typedefof<_ list>.Name then
                     match symbol with
                     | Molecule symbols ->
                         let gargs = destType.GetGenericArguments ()
@@ -236,7 +238,6 @@ type SymbolicConverter (targetType : Type) =
                     match symbol with
                     | Atom str -> (TypeDescriptor.GetConverter destType).ConvertFromString str
                     | _ -> failwith "Unexpected match failure in Nu.SymbolicConverter.fromSymbol. TODO: better error message!"
-            | None -> failwith "Unexpected match failure in Nu.SymbolicConverter.fromSymbol. TODO: better error message!"
 
     let fromString (destType : Type) (source : string) =
         let symbol = Symbol.fromString source
