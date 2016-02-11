@@ -91,14 +91,14 @@ module Reflection =
         not ^ propertyName.EndsWith ("Id", StringComparison.Ordinal) && // don't write an Id
         not ^ propertyName.EndsWith ("Ids", StringComparison.Ordinal) && // don't write multiple Ids
         not ^ propertyName.EndsWith ("Np", StringComparison.Ordinal) // don't write non-persistent properties
-
+        
     /// Is a property with the given name persistent?
     let isPropertyPersistent target (property : PropertyInfo) =
         isPropertyPersistentByName property.Name &&
         not
             (property.Name = Constants.Engine.NameFieldName &&
-             property.PropertyType = typeof<string> &&
-             fst ^ Guid.TryParse (property.GetValue target :?> string))
+             property.PropertyType = typeof<Name> &&
+             fst ^ Guid.TryParse (property.GetValue target :?> Name |> Name.getNameStr))
 
     /// Query that the dispatcher has behavior congruent to the given type.
     let dispatchesAs (dispatcherTargetType : Type) dispatcher =
