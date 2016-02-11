@@ -128,20 +128,20 @@ and [<NoComparison>] Content =
     | Repeat of Shift * Repetition * Aspect list * Content
     | Emit of Shift * Rate * Aspect list * Aspect list * Content
     | Composite of Shift * Content list
-    | Tag of string * AlgebraicQuote
+    | Tag of string * Symbol
     | Nil
 
 and Argument =
-    AlgebraicCompression<Resource, AlgebraicCompression<Aspect, Content>>
+    SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>>
 
 type [<NoComparison>] Definition =
     { DefinitionParams : string list
-      DefinitionBody : AlgebraicCompression<Resource, AlgebraicCompression<Aspect, Content>> }
+      DefinitionBody : SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>> }
 
 type [<NoComparison>] EffectArtifact =
     | RenderArtifact of RenderDescriptor list
     | SoundArtifact of single * AssetTag
-    | TagArtifact of string * AlgebraicQuote * Slice
+    | TagArtifact of string * Symbol * Slice
 
 type Definitions =
     Map<string, Definition>

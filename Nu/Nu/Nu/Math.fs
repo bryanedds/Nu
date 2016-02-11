@@ -27,25 +27,25 @@ type Vector2Converter () =
     inherit TypeConverter ()
 
     override this.CanConvertTo (_, destType) =
-        destType = typeof<string> ||
+        destType = typeof<Symbol> ||
         destType = typeof<Vector2>
 
-    override this.ConvertTo (_, culture, source, destType) =
-        if destType = typeof<string> then
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
             let v2 = source :?> Vector2
-            String.Format (culture, "[{0} {1}]", v2.X, v2.Y) :> obj
+            Molecule [Atom ^ string v2.X; Atom ^ string v2.Y] :> obj
         elif destType = typeof<Vector2> then source
         else failwith "Invalid Vector2Converter conversion to source."
 
     override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<AlgebraicSource> ||
+        sourceType = typeof<Symbol> ||
         sourceType = typeof<Vector2>
 
     override this.ConvertFrom (_, _, source) =
         match source with
-        | :? AlgebraicSource as algebraic ->
-            match algebraic.AlgebraicValue :?> obj list |> List.map (string >> Single.Parse) with
-            | [x; y] -> Vector2 (x, y) :> obj
+        | :? Symbol as symbol ->
+            match symbol with
+            | Molecule [Atom x; Atom y] -> Vector2 (Single.Parse x, Single.Parse y) :> obj
             | _ -> failwith "Invalid Vector2Converter conversion from source."
         | :? Vector2 -> source
         | _ -> failwith "Invalid Vector2Converter conversion from source."
@@ -55,25 +55,25 @@ type Vector3Converter () =
     inherit TypeConverter ()
 
     override this.CanConvertTo (_, destType) =
-        destType = typeof<string> ||
+        destType = typeof<Symbol> ||
         destType = typeof<Vector3>
 
-    override this.ConvertTo (_, culture, source, destType) =
-        if destType = typeof<string> then
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
             let v3 = source :?> Vector3
-            String.Format (culture, "[{0} {1} {2}]", v3.X, v3.Y, v3.Z) :> obj
+            Molecule [Atom ^ string v3.X; Atom ^ string v3.Y; Atom ^ string v3.Z] :> obj
         elif destType = typeof<Vector3> then source
         else failwith "Invalid Vector3Converter conversion to source."
 
     override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<string> ||
+        sourceType = typeof<Symbol> ||
         sourceType = typeof<Vector3>
 
     override this.ConvertFrom (_, _, source) =
         match source with
-        | :? AlgebraicSource as algebraic ->
-            match algebraic.AlgebraicValue :?> obj list |> List.map (string >> Single.Parse) with
-            | [x; y; z] -> Vector3 (x, y, z) :> obj
+        | :? Symbol as symbol ->
+            match symbol with
+            | Molecule [Atom x; Atom y; Atom z] -> Vector3 (Single.Parse x, Single.Parse y, Single.Parse z) :> obj
             | _ -> failwith "Invalid Vector3Converter conversion from source."
         | :? Vector3 -> source
         | _ -> failwith "Invalid Vector3Converter conversion from source."
@@ -83,25 +83,25 @@ type Vector4Converter () =
     inherit TypeConverter ()
 
     override this.CanConvertTo (_, destType) =
-        destType = typeof<string> ||
+        destType = typeof<Symbol> ||
         destType = typeof<Vector4>
 
-    override this.ConvertTo (_, culture, source, destType) =
-        if destType = typeof<string> then
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
             let v4 = source :?> Vector4
-            String.Format (culture, "[{0} {1} {2} {3}]", v4.X, v4.Y, v4.Z, v4.W) :> obj
+            Molecule [Atom ^ string v4.X; Atom ^ string v4.Y; Atom ^ string v4.Z; Atom ^ string v4.W] :> obj
         elif destType = typeof<Vector4> then source
         else failwith "Invalid Vector4Converter conversion to source."
 
     override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<AlgebraicSource> ||
+        sourceType = typeof<Symbol> ||
         sourceType = typeof<Vector4>
 
     override this.ConvertFrom (_, _, source) =
         match source with
-        | :? AlgebraicSource as algebraic ->
-            match algebraic.AlgebraicValue :?> obj list |> List.map (string >> Single.Parse) with
-            | [x; y; z; w] -> Vector4 (x, y, z, w) :> obj
+        | :? Symbol as symbol ->
+            match symbol with
+            | Molecule [Atom x; Atom y; Atom z; Atom w] -> Vector4 (Single.Parse x, Single.Parse y, Single.Parse z, Single.Parse w) :> obj
             | _ -> failwith "Invalid Vector4Converter conversion from source."
         | :? Vector4 -> source
         | _ -> failwith "Invalid Vector4Converter conversion from source."
@@ -111,25 +111,25 @@ type Vector2iConverter () =
     inherit TypeConverter ()
 
     override this.CanConvertTo (_, destType) =
-        destType = typeof<string> ||
+        destType = typeof<Symbol> ||
         destType = typeof<Vector2i>
 
-    override this.ConvertTo (_, culture, source, destType) =
-        if destType = typeof<string> then
-            let v2 = source :?> Vector2i
-            String.Format (culture, "[{0} {1}]", v2.X, v2.Y) :> obj
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let v2i = source :?> Vector2i
+            Molecule [Atom ^ string v2i.X; Atom ^ string v2i.Y] :> obj
         elif destType = typeof<Vector2i> then source
         else failwith "Invalid Vector2iConverter conversion to source."
 
     override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<AlgebraicSource> ||
+        sourceType = typeof<Symbol> ||
         sourceType = typeof<Vector2i>
 
     override this.ConvertFrom (_, _, source) =
         match source with
-        | :? AlgebraicSource as algebraic ->
-            match algebraic.AlgebraicValue :?> obj list |> List.map (string >> Int32.Parse) with
-            | [x; y] -> Vector2i (x, y) :> obj
+        | :? Symbol as symbol ->
+            match symbol with
+            | Molecule [Atom x; Atom y] -> Vector2i (Int32.Parse x, Int32.Parse y) :> obj
             | _ -> failwith "Invalid Vector2iConverter conversion from source."
         | :? Vector2i -> source
         | _ -> failwith "Invalid Vector2iConverter conversion from source."

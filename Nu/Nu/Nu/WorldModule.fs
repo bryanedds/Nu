@@ -465,7 +465,7 @@ module World =
     let private entityStateSetter entityState entity world =
 #if DEBUG
         if not ^ Vmap.containsKey entity.EntityAddress world.EntityStates then
-            failwith ^ "Cannot set the state of a non-existent entity '" + acstring entity.EntityAddress + "'"
+            failwith ^ "Cannot set the state of a non-existent entity '" + symstring entity.EntityAddress + "'"
 #endif
         let entityStates = Vmap.add entity.EntityAddress entityState world.EntityStates
         { world with EntityStates = entityStates }
@@ -481,9 +481,9 @@ module World =
                         let entityDirectory = Vmap.add entityName entity.EntityAddress entityDirectory
                         let groupDirectory = Vmap.add groupName (groupAddress, entityDirectory) groupDirectory
                         Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
-                    | None -> failwith ^ "Cannot add entity '" + acstring entity.EntityAddress + "' to non-existent group."
-                | None -> failwith ^ "Cannot add entity '" + acstring entity.EntityAddress + "' to non-existent screen."
-            | _ -> failwith ^ "Invalid entity address '" + acstring entity.EntityAddress + "'."
+                    | None -> failwith ^ "Cannot add entity '" + symstring entity.EntityAddress + "' to non-existent group."
+                | None -> failwith ^ "Cannot add entity '" + symstring entity.EntityAddress + "' to non-existent screen."
+            | _ -> failwith ^ "Invalid entity address '" + symstring entity.EntityAddress + "'."
         let entityStates = Vmap.add entity.EntityAddress entityState world.EntityStates
         { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
@@ -498,9 +498,9 @@ module World =
                         let entityDirectory = Vmap.remove entityName entityDirectory
                         let groupDirectory = Vmap.add groupName (groupAddress, entityDirectory) groupDirectory
                         Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
-                    | None -> failwith ^ "Cannot remove entity '" + acstring entity.EntityAddress + "' from non-existent group."
-                | None -> failwith ^ "Cannot remove entity '" + acstring entity.EntityAddress + "' from non-existent screen."
-            | _ -> failwith ^ "Invalid entity address '" + acstring entity.EntityAddress + "'."
+                    | None -> failwith ^ "Cannot remove entity '" + symstring entity.EntityAddress + "' from non-existent group."
+                | None -> failwith ^ "Cannot remove entity '" + symstring entity.EntityAddress + "' from non-existent screen."
+            | _ -> failwith ^ "Invalid entity address '" + symstring entity.EntityAddress + "'."
         let entityStates = Vmap.remove entity.EntityAddress world.EntityStates
         { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
@@ -539,7 +539,7 @@ module World =
     let internal getEntityState (entity : Entity) world =
         match getOptEntityState entity world with
         | Some entityState -> entityState
-        | None -> failwith ^ "Could not find entity with address '" + acstring entity + "'."
+        | None -> failwith ^ "Could not find entity with address '" + symstring entity + "'."
 
     let internal addEntityState entityState entity world =
         entityStateAdder entityState entity world
@@ -574,7 +574,7 @@ module World =
     let private groupStateSetter groupState group world =
 #if DEBUG
         if not ^ Vmap.containsKey group.GroupAddress world.GroupStates then
-            failwith ^ "Cannot set the state of a non-existent group '" + acstring group.GroupAddress + "'"
+            failwith ^ "Cannot set the state of a non-existent group '" + symstring group.GroupAddress + "'"
 #endif
         let groupStates = Vmap.add group.GroupAddress groupState world.GroupStates
         { world with GroupStates = groupStates }
@@ -593,8 +593,8 @@ module World =
                         let entityDirectory = Vmap.makeEmpty ()
                         let groupDirectory = Vmap.add groupName (group.GroupAddress, entityDirectory) groupDirectory
                         Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
-                | None -> failwith ^ "Cannot add group '" + acstring group.GroupAddress + "' to non-existent screen."
-            | _ -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
+                | None -> failwith ^ "Cannot add group '" + symstring group.GroupAddress + "' to non-existent screen."
+            | _ -> failwith ^ "Invalid group address '" + symstring group.GroupAddress + "'."
         let groupStates = Vmap.add group.GroupAddress groupState world.GroupStates
         { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
 
@@ -606,8 +606,8 @@ module World =
                 | Some (screenAddress, groupDirectory) ->
                     let groupDirectory = Vmap.remove groupName groupDirectory
                     Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
-                | None -> failwith ^ "Cannot remove group '" + acstring group.GroupAddress + "' from non-existent screen."
-            | _ -> failwith ^ "Invalid group address '" + acstring group.GroupAddress + "'."
+                | None -> failwith ^ "Cannot remove group '" + symstring group.GroupAddress + "' from non-existent screen."
+            | _ -> failwith ^ "Invalid group address '" + symstring group.GroupAddress + "'."
         let groupStates = Vmap.remove group.GroupAddress world.GroupStates
         { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
 
@@ -617,7 +617,7 @@ module World =
     let internal getGroupState group world =
         match getOptGroupState group world with
         | Some groupState -> groupState
-        | None -> failwith ^ "Could not find group with address '" + acstring group + "'."
+        | None -> failwith ^ "Could not find group with address '" + symstring group + "'."
 
     let internal addGroupState groupState group world =
         groupStateAdder groupState group world
@@ -650,7 +650,7 @@ module World =
     let private screenStateSetter screenState screen world =
 #if DEBUG
         if not ^ Vmap.containsKey screen.ScreenAddress world.ScreenStates then
-            failwith ^ "Cannot set the state of a non-existent screen '" + acstring screen.ScreenAddress + "'"
+            failwith ^ "Cannot set the state of a non-existent screen '" + symstring screen.ScreenAddress + "'"
 #endif
         let screenStates = Vmap.add screen.ScreenAddress screenState world.ScreenStates
         { world with ScreenStates = screenStates }
@@ -666,7 +666,7 @@ module World =
                 | None ->
                     let groupDirectory = Vmap.makeEmpty ()
                     Vmap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
-            | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
+            | _ -> failwith ^ "Invalid screen address '" + symstring screen.ScreenAddress + "'."
         let screenStates = Vmap.add screen.ScreenAddress screenState world.ScreenStates
         { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
 
@@ -674,7 +674,7 @@ module World =
         let screenDirectory =
             match Address.getNames screen.ScreenAddress with
             | [screenName] -> Vmap.remove screenName world.ScreenDirectory
-            | _ -> failwith ^ "Invalid screen address '" + acstring screen.ScreenAddress + "'."
+            | _ -> failwith ^ "Invalid screen address '" + symstring screen.ScreenAddress + "'."
         let screenStates = Vmap.remove screen.ScreenAddress world.ScreenStates
         { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
 
@@ -684,7 +684,7 @@ module World =
     let internal getScreenState (screen : Screen) world =
         match getOptScreenState screen world with
         | Some screenState -> screenState
-        | None -> failwith ^ "Could not find screen with address '" + acstring screen + "'."
+        | None -> failwith ^ "Could not find screen with address '" + symstring screen + "'."
 
     let internal addScreenState screenState screen world =
         screenStateAdder screenState screen world

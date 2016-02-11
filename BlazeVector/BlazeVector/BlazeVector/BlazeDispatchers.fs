@@ -288,7 +288,7 @@ module GameplayScreenModule =
                 (fun world i ->
                     let sectionFilePathIndex = if i = 0 then 0 else random.Next () % sectionFilePaths.Length
                     let sectionFilePath = sectionFilePaths.[sectionFilePathIndex]
-                    let sectionName = Name.make ^ SectionNameStr + acstring i
+                    let sectionName = Name.make ^ SectionNameStr + symstring i
                     let sectionXShift = SectionXShift * single i
                     createSectionFromFile sectionFilePath sectionName sectionXShift world)
                 world
@@ -309,7 +309,7 @@ module GameplayScreenModule =
 
         static let handleStopPlay evt world =
             let screen = evt.Subscriber : Screen
-            let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield Name.make ^ SectionNameStr + acstring i]
+            let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield Name.make ^ SectionNameStr + symstring i]
             let groupNames = Simulants.GameplayScene.GroupName :: sectionNames
             let groups = List.map (fun groupName -> screen => groupName) groupNames
             let world = World.destroyGroups groups world

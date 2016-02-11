@@ -22,5 +22,5 @@ module EffectorTests =
                 [Size Scale Linear Once [[[0 0] 180] [[1 1] 0]]] 
                 [Color Put Linear Bounce [[[1 0 1 1] 180] [[1 1 0 0] 0]]]] 
                [Expand BoxSprite []]]]"
-        let effect = acvalue<Effect> effectStr
+        let effect = symvalue<Effect> effectStr
         Assert.Equal<string> ("TestEffect", effect.EffectName) // TODO: more assertions

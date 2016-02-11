@@ -76,7 +76,7 @@ module MountFacetModule =
 module EffectFacetModule =
 
     type EffectTags =
-        Map<string, AlgebraicQuote * Slice list>
+        Map<string, Symbol * Slice list>
 
     type Entity with
     
