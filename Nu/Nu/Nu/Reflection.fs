@@ -97,8 +97,8 @@ module Reflection =
         isPropertyPersistentByName property.Name &&
         not
             (property.Name = Constants.Engine.NameFieldName &&
-             property.PropertyType = typeof<string> &&
-             fst ^ Guid.TryParse (property.GetValue target :?> string))
+             property.PropertyType = typeof<Name> &&
+             fst ^ Guid.TryParse (property.GetValue target :?> Name |> Name.getNameStr))
 
     /// Query that the dispatcher has behavior congruent to the given type.
     let dispatchesAs (dispatcherTargetType : Type) dispatcher =
@@ -174,7 +174,7 @@ module Reflection =
                 | Some reqdDispatcher ->
                     let reqdDispatcherType = reqdDispatcher.GetType ()
                     match targetType.GetProperty "DispatcherNp" with
-                    | null -> failwith ^ "Target '" + acstring target + "' does not implement dispatching in a compatible way."
+                    | null -> failwith ^ "Target '" + symstring target + "' does not implement dispatching in a compatible way."
                     | dispatcherNpProperty ->
                         let dispatcher = dispatcherNpProperty.GetValue target
                         dispatchesAs reqdDispatcherType dispatcher
@@ -310,7 +310,7 @@ module Reflection =
             List.iter
                 (fun facet ->
                     if not ^ isFacetCompatibleWithDispatcher dispatcherMap facet target
-                    then failwith ^ "Facet of type '" + getTypeName facet + "' is not compatible with target '" + acstring target + "'."
+                    then failwith ^ "Facet of type '" + getTypeName facet + "' is not compatible with target '" + symstring target + "'."
                     else ())
                 facets
             facetsNpProperty.SetValue (target, facets)
@@ -331,12 +331,12 @@ module Reflection =
     /// Read opt overlay name from an xml node.
     let readOptOverlayName (node : XmlNode) =
         let optOverlayNameStr = node.InnerText
-        AlgebraicDescriptor.convertFromString optOverlayNameStr typeof<string option> :?> string option
+        SymbolicDescriptor.convertFromString optOverlayNameStr typeof<string option> :?> string option
 
     /// Read facet names from an xml node.
     let readFacetNames (node : XmlNode) =
         let facetNames = node.InnerText
-        AlgebraicDescriptor.convertFromString facetNames typeof<string Set> :?> string Set
+        SymbolicDescriptor.convertFromString facetNames typeof<string Set> :?> string Set
 
     /// Try to read just the target's OptOverlayName from Xml.
     let tryReadOptOverlayNameToTarget (targetNode : XmlNode) target =
@@ -381,7 +381,7 @@ module Reflection =
         | null -> ()
         | fieldNode ->
             let fieldValueStr = fieldNode.InnerText
-            let converter = AlgebraicConverter property.PropertyType
+            let converter = SymbolicConverter property.PropertyType
             if converter.CanConvertFrom typeof<string> then
                 let fieldValue = converter.ConvertFromString fieldValueStr
                 property.SetValue (target, fieldValue)
@@ -404,7 +404,7 @@ module Reflection =
             match targetNode.SelectSingleNode fieldDefinition.FieldName with
             | null -> targetXFields
             | fieldNode ->
-                let converter = AlgebraicConverter fieldDefinition.FieldType
+                let converter = SymbolicConverter fieldDefinition.FieldType
                 if converter.CanConvertFrom typeof<string> then
                     let xField = { FieldValue = converter.ConvertFromString fieldNode.InnerText; FieldType = fieldDefinition.FieldType }
                     Vmap.add fieldDefinition.FieldName xField targetXFields
@@ -443,7 +443,7 @@ module Reflection =
             let xFieldValue = xField.FieldValue
             if  isPropertyPersistentByName xFieldName &&
                 shouldWriteProperty xFieldName xFieldType xFieldValue then
-                let xFieldValueStr = (AlgebraicConverter xFieldType).ConvertToString xFieldValue
+                let xFieldValueStr = (SymbolicConverter xFieldType).ConvertToString xFieldValue
                 writer.WriteStartElement xFieldName
                 writer.WriteString xFieldValueStr
                 writer.WriteEndElement ()
@@ -461,7 +461,7 @@ module Reflection =
             | _ ->
                 if  isPropertyPersistent target property &&
                     shouldWriteProperty property.Name property.PropertyType propertyValue then
-                    let converter = AlgebraicConverter property.PropertyType
+                    let converter = SymbolicConverter property.PropertyType
                     let valueStr = converter.ConvertToString propertyValue
                     writer.WriteElementString (property.Name, valueStr)
 
@@ -499,7 +499,7 @@ module Reflection =
             match includeNames with
             | _ :: _ ->
                 let includesAttribute = document.CreateAttribute Constants.Xml.IncludesAttributeName
-                includesAttribute.InnerText <- AlgebraicDescriptor.convertToString includeNames
+                includesAttribute.InnerText <- SymbolicDescriptor.convertToString includeNames
                 overlayNode.Attributes.Append includesAttribute |> ignore
             | _ -> ()
 
@@ -508,7 +508,7 @@ module Reflection =
                 let fieldNode = document.CreateElement definition.FieldName
                 match definition.FieldExpr with
                 | Constant constant ->
-                    let converter = AlgebraicConverter definition.FieldType
+                    let converter = SymbolicConverter definition.FieldType
                     fieldNode.InnerText <- converter.ConvertToString constant
                     overlayNode.AppendChild fieldNode |> ignore
                 | Variable _ -> ()
@@ -516,7 +516,7 @@ module Reflection =
             // construct the "FacetNames" node if needed
             if hasFacetNamesField then
                 let facetNamesNode = document.CreateElement "FacetNames"
-                facetNamesNode.InnerText <- AlgebraicDescriptor.convertToString []
+                facetNamesNode.InnerText <- SymbolicDescriptor.convertToString []
                 overlayNode.AppendChild facetNamesNode |> ignore
 
             // append the overlay node

@@ -111,12 +111,12 @@ module Effector =
 
     let evalArgument (argument : Argument) : Definition =
         match argument with
-        | AlgebraicCompressionA resource ->
-            { DefinitionParams = []; DefinitionBody = AlgebraicCompressionA resource }
-        | AlgebraicCompressionB (AlgebraicCompressionA aspect) ->
-            { DefinitionParams = []; DefinitionBody = AlgebraicCompressionB (AlgebraicCompressionA aspect) }
-        | AlgebraicCompressionB (AlgebraicCompressionB content) ->
-            { DefinitionParams = []; DefinitionBody = AlgebraicCompressionB (AlgebraicCompressionB content) }
+        | SymbolicCompressionA resource ->
+            { DefinitionParams = []; DefinitionBody = SymbolicCompressionA resource }
+        | SymbolicCompressionB (SymbolicCompressionA aspect) ->
+            { DefinitionParams = []; DefinitionBody = SymbolicCompressionB (SymbolicCompressionA aspect) }
+        | SymbolicCompressionB (SymbolicCompressionB content) ->
+            { DefinitionParams = []; DefinitionBody = SymbolicCompressionB (SymbolicCompressionB content) }
 
     let rec evalResource resource effector : AssetTag =
         match resource with
@@ -124,13 +124,13 @@ module Effector =
             match Map.tryFind definitionName effector.EffectEnv with
             | Some definition ->
                 match definition.DefinitionBody with
-                | AlgebraicCompressionA resource -> evalResource resource effector
+                | SymbolicCompressionA resource -> evalResource resource effector
                 | _ ->
                     Log.note ^ "Expected Resource for definition '" + definitionName + "."
-                    acvalue<AssetTag> Constants.Assets.DefaultImageValue
+                    symvalue<AssetTag> Constants.Assets.DefaultImageValue
             | None ->
                 Log.note ^ "Could not find definition with name '" + definitionName + "'."
-                acvalue<AssetTag> Constants.Assets.DefaultImageValue
+                symvalue<AssetTag> Constants.Assets.DefaultImageValue
         | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
 
     let rec private iterateArtifacts incrementAspects content slice effector =
@@ -153,7 +153,7 @@ module Effector =
             match Map.tryFind definitionName effector.EffectEnv with
             | Some definition ->
                 match definition.DefinitionBody with
-                | AlgebraicCompressionB (AlgebraicCompressionA aspect) -> evalAspect aspect slice effector
+                | SymbolicCompressionB (SymbolicCompressionA aspect) -> evalAspect aspect slice effector
                 | _ -> Log.note ^ "Expected Aspect for definition '" + definitionName + "'."; slice
             | None -> Log.note ^ "Could not find definition with name '" + definitionName + "'."; slice
         | Enabled (applicator, playback, keyFrames) ->
@@ -218,7 +218,7 @@ module Effector =
         match Map.tryFind definitionName effector.EffectEnv with
         | Some definition ->
             match definition.DefinitionBody with
-            |  AlgebraicCompressionB (AlgebraicCompressionB content) ->
+            |  SymbolicCompressionB (SymbolicCompressionB content) ->
                 let localDefinitions = List.map evalArgument arguments
                 match (try List.zip definition.DefinitionParams localDefinitions |> Some with _ -> None) with
                 | Some localDefinitionEntries ->

@@ -20,10 +20,10 @@ module Symbol =
     let [<Literal>] WhitespaceChars = " \t" + NewlineChars
     let [<Literal>] SeparatorChar = ' '
     let [<Literal>] SeparatorStr = " "
-    let [<Literal>] OpenComplexValueChar = '['
-    let [<Literal>] OpenComplexValueStr = "["
-    let [<Literal>] CloseComplexValueChar = ']'
-    let [<Literal>] CloseComplexValueStr = "]"
+    let [<Literal>] OpenMoleculeChar = '['
+    let [<Literal>] OpenMoleculeStr = "["
+    let [<Literal>] CloseMoleculeChar = ']'
+    let [<Literal>] CloseMoleculeStr = "]"
     let [<Literal>] OpenStringChar = '\"'
     let [<Literal>] OpenStringStr = "\""
     let [<Literal>] CloseStringChar = '\"'
@@ -42,8 +42,8 @@ module Symbol =
     let skipWhitespaces = skipMany skipWhitespace
 
     let charForm character = skipChar character >>. skipWhitespaces
-    let openComplexValueForm = charForm OpenComplexValueChar
-    let closeComplexValueForm = charForm CloseComplexValueChar
+    let openMoleculeForm = charForm OpenMoleculeChar
+    let closeMoleculeForm = charForm CloseMoleculeChar
     let openStringForm = skipChar OpenStringChar
     let closeStringForm = charForm CloseStringChar
     let openQuoteForm = charForm OpenQuoteChar
@@ -83,18 +83,18 @@ module Symbol =
                 do! closeQuoteForm
                 return quoteChars |> String.implode |> Quote }
 
-        let readComplexValue =
+        let readMolecule =
             parse {
-                do! openComplexValueForm
+                do! openMoleculeForm
                 let! values = many readSymbol
-                do! closeComplexValueForm
+                do! closeMoleculeForm
                 return values |> Molecule }
 
         do refReadSymbol :=
             attempt readAtomAsString <|>
             attempt readQuote <|>
             attempt readAtom <|>
-            readComplexValue
+            readMolecule
 
     module private Indexer =
 
@@ -111,9 +111,9 @@ module Symbol =
         let readMoleculeIndex =
             parse {
                 let! openPosition = getPosition
-                do! openComplexValueForm
+                do! openMoleculeForm
                 let! symbolIndices = many readSymbolIndex
-                do! closeComplexValueForm
+                do! closeMoleculeForm
                 return MoleculeIndex (openPosition.Index, symbolIndices) }
 
         do refReadSymbolIndex :=
@@ -151,7 +151,7 @@ module Symbol =
         match symbol with
         | Atom str -> str
         | Quote str -> OpenQuoteStr + str + CloseQuoteStr
-        | Molecule symbols -> OpenQuoteStr + String.Join (" ", List.map toString symbols) + CloseQuoteStr
+        | Molecule symbols -> OpenMoleculeStr + String.Join (" ", List.map toString symbols) + CloseMoleculeStr
 
     /// Attempt to convert a string to a its symbol indices.
     let stringToOptSymbolIndex str =

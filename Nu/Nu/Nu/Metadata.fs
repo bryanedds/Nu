@@ -58,7 +58,7 @@ module Metadata =
                     Log.trace errorMessage
                     InvalidMetadata errorMessage
             with _ as exn ->
-                let errorMessage = "Failed to load Bitmap '" + asset.FilePath + "' due to '" + acstring exn + "'."
+                let errorMessage = "Failed to load Bitmap '" + asset.FilePath + "' due to '" + symstring exn + "'."
                 Log.trace errorMessage
                 InvalidMetadata errorMessage
 
@@ -68,7 +68,7 @@ module Metadata =
             let tileSetImages = List.map getTileSetProperties tileSets
             TileMapMetadata (asset.FilePath, tileSetImages, tmxMap)
         with _ as exn ->
-            let errorMessage = "Failed to load TmxMap '" + asset.FilePath + "' due to '" + acstring exn + "'."
+            let errorMessage = "Failed to load TmxMap '" + asset.FilePath + "' due to '" + symstring exn + "'."
             Log.trace errorMessage
             InvalidMetadata errorMessage
 
@@ -81,7 +81,7 @@ module Metadata =
             | ".tmx" -> generateTileMapMetadata asset
             | ".wav" -> SoundMetadata
             | ".ogg" -> SongMetadata
-            | _ -> InvalidMetadata ^ "Could not load asset metadata '" + acstring asset + "' due to unknown extension '" + extension + "'."
+            | _ -> InvalidMetadata ^ "Could not load asset metadata '" + symstring asset + "' due to unknown extension '" + extension + "'."
         (asset.AssetTag.AssetName, metadata)
 
     let private generateAssetMetadataSubmap (packageNode : XmlNode) =
@@ -119,7 +119,7 @@ module Metadata =
                 let packageNodes = List.filter (fun (node : XmlNode) -> node.Name = Constants.Xml.PackageNodeName) possiblePackageNodes
                 let assetMetadataMap = generateAssetMetadataMap packageNodes
                 Right assetMetadataMap
-        with exn -> Left ^ acstring exn
+        with exn -> Left ^ symstring exn
 
     /// Try to get the metadata of the given asset.
     let tryGetMetadata (assetTag : AssetTag) assetMetadataMap =
