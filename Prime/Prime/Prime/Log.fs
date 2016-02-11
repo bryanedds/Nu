@@ -5,7 +5,7 @@ namespace Prime
 open System
 open System.Diagnostics
 
-[<AutoOpen>]
+[<RequireQualifiedAccess>]
 module Log =
 
     let mutable private initialized =

@@ -369,7 +369,7 @@ type [<ReferenceEquality>] PhysicsEngine =
 
         // attempt to add the body
         if not ^ physicsEngine.Bodies.TryAdd ({ SourceId = sourceId; BodyId = bodyProperties.BodyId }, body) then
-            debug ^ "Could not add body via '" + acstring bodyProperties + "'."
+            Log.debug ^ "Could not add body via '" + acstring bodyProperties + "'."
 
     static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
         List.iter
@@ -386,7 +386,7 @@ type [<ReferenceEquality>] PhysicsEngine =
             physicsEngine.PhysicsContext.RemoveBody body
         | (false, _) ->
             if not physicsEngine.RebuildingHack then
-                debug ^ "Could not destroy non-existent body with PhysicsId = " + acstring physicsId + "'."
+                Log.debug ^ "Could not destroy non-existent body with PhysicsId = " + acstring physicsId + "'."
 
     static member private destroyBody (destroyBodyMessage : DestroyBodyMessage) physicsEngine =
         PhysicsEngine.destroyBody2 destroyBodyMessage.PhysicsId physicsEngine
@@ -397,37 +397,37 @@ type [<ReferenceEquality>] PhysicsEngine =
     static member private setBodyPosition (setBodyPositionMessage : SetBodyPositionMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyPositionMessage.PhysicsId with
         | (true, body) -> body.Position <- PhysicsEngine.toPhysicsV2 setBodyPositionMessage.Position
-        | (false, _) -> debug ^ "Could not set position of non-existent body with PhysicsId = " + acstring setBodyPositionMessage.PhysicsId + "'."
+        | (false, _) -> Log.debug ^ "Could not set position of non-existent body with PhysicsId = " + acstring setBodyPositionMessage.PhysicsId + "'."
 
     static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyRotationMessage.PhysicsId with
         | (true, body) -> body.Rotation <- setBodyRotationMessage.Rotation
-        | (false, _) -> debug ^ "Could not set rotation of non-existent body with PhysicsId = " + acstring setBodyRotationMessage.PhysicsId + "'."
+        | (false, _) -> Log.debug ^ "Could not set rotation of non-existent body with PhysicsId = " + acstring setBodyRotationMessage.PhysicsId + "'."
 
     static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyAngularVelocityMessage.PhysicsId with
         | (true, body) -> body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity
-        | (false, _) -> debug ^ "Could not set angular velocity of non-existent body with PhysicsId = " + acstring setBodyAngularVelocityMessage.PhysicsId + "'."
+        | (false, _) -> Log.debug ^ "Could not set angular velocity of non-existent body with PhysicsId = " + acstring setBodyAngularVelocityMessage.PhysicsId + "'."
 
     static member private applyBodyAngularImpulse (applyBodyAngularImpulseMessage : ApplyBodyAngularImpulseMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyAngularImpulseMessage.PhysicsId with
         | (true, body) -> body.ApplyAngularImpulse (applyBodyAngularImpulseMessage.AngularImpulse)
-        | (false, _) -> debug ^ "Could not apply angular impulse to non-existent body with PhysicsId = " + acstring applyBodyAngularImpulseMessage.PhysicsId + "'."
+        | (false, _) -> Log.debug ^ "Could not apply angular impulse to non-existent body with PhysicsId = " + acstring applyBodyAngularImpulseMessage.PhysicsId + "'."
 
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyLinearVelocityMessage.PhysicsId with
         | (true, body) -> body.LinearVelocity <- PhysicsEngine.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity
-        | (false, _) -> debug ^ "Could not set linear velocity of non-existent body with PhysicsId = " + acstring setBodyLinearVelocityMessage.PhysicsId + "'."
+        | (false, _) -> Log.debug ^ "Could not set linear velocity of non-existent body with PhysicsId = " + acstring setBodyLinearVelocityMessage.PhysicsId + "'."
 
     static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyLinearImpulseMessage.PhysicsId with
         | (true, body) -> body.ApplyLinearImpulse (PhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse)
-        | (false, _) -> debug ^ "Could not apply linear impulse to non-existent body with PhysicsId = " + acstring applyBodyLinearImpulseMessage.PhysicsId + "'."
+        | (false, _) -> Log.debug ^ "Could not apply linear impulse to non-existent body with PhysicsId = " + acstring applyBodyLinearImpulseMessage.PhysicsId + "'."
 
     static member private applyBodyForce applyBodyForceMessage physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyForceMessage.PhysicsId with
         | (true, body) -> body.ApplyForce (PhysicsEngine.toPhysicsV2 applyBodyForceMessage.Force)
-        | (false, _) -> debug ^ "Could not apply force to non-existent body with PhysicsId = " + acstring applyBodyForceMessage.PhysicsId + "'."
+        | (false, _) -> Log.debug ^ "Could not apply force to non-existent body with PhysicsId = " + acstring applyBodyForceMessage.PhysicsId + "'."
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with

@@ -212,7 +212,7 @@ module WorldModule =
             match World.tryTransitionScreen destination world with
             | Some world -> (eventHandling, world)
             | None ->
-                trace ^ "Program Error: Invalid screen transition for destination address '" + acstring destination.ScreenAddress + "'."
+                Log.trace ^ "Program Error: Invalid screen transition for destination address '" + acstring destination.ScreenAddress + "'."
                 (eventHandling, world)
 
         /// A procedure that can be passed to an event handler to specify that an event is to
@@ -232,7 +232,7 @@ module WorldModule =
             if transitionTicks = transition.TransitionLifetime then
                 (true, screen.SetTransitionTicksNp 0L world)
             elif transitionTicks > transition.TransitionLifetime then
-                debug ^ "TransitionLifetime for screen '" + acstring screen.ScreenAddress + "' must be a consistent multiple of TickRate."
+                Log.debug ^ "TransitionLifetime for screen '" + acstring screen.ScreenAddress + "' must be a consistent multiple of TickRate."
                 (true, screen.SetTransitionTicksNp 0L world)
             else (false, screen.SetTransitionTicksNp (transitionTicks + World.getTickRate world) world)
 
@@ -284,10 +284,10 @@ module WorldModule =
                         let world = World.setScreenTransitionState OutgoingState selectedScreen world
                         (Cascade, world)
                     else
-                        trace "Program Error: Could not handle splash screen update due to no selected screen."
+                        Log.trace "Program Error: Could not handle splash screen update due to no selected screen."
                         (Resolve, World.exit world)
                 | None ->
-                    trace "Program Error: Could not handle splash screen update due to no selected screen."
+                    Log.trace "Program Error: Could not handle splash screen update due to no selected screen."
                     (Resolve, World.exit world)
 
         static member private handleSplashScreenIdle idlingTime (splashScreen : Screen) evt world =
@@ -361,7 +361,7 @@ module WorldModule =
                                     Overlayer.applyOverlay6 overlayName overlayName facetNames entityState oldOverlayer overlayer
                                     let world = World.setEntityStateWithoutEvent entityState entity world
                                     World.updateEntityInEntityTree entity oldWorld world
-                                | Left error -> note ^ "There was an issue in applying a reloaded overlay: " + error; world
+                                | Left error -> Log.note ^ "There was an issue in applying a reloaded overlay: " + error; world
                             | None -> world)
                         world
                         entities
@@ -440,7 +440,7 @@ module WorldModule =
                 let world = tasklet.Operation world
                 (taskletsNotRun, world)
             elif tickTime > tasklet.ScheduledTime then
-                debug ^ "Tasklet leak found for time '" + acstring tickTime + "'."
+                Log.debug ^ "Tasklet leak found for time '" + acstring tickTime + "'."
                 (taskletsNotRun, world)
             else (Queue.conj tasklet taskletsNotRun, world)
 

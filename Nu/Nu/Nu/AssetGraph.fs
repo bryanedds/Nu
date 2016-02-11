@@ -147,7 +147,7 @@ module AssetGraph =
                                   Associations = associations })
                             filePaths
                     Some ^ List.ofArray assets
-                with exn -> debug ^ "Invalid directory '" + directory + "'."; None
+                with exn -> Log.debug ^ "Invalid directory '" + directory + "'."; None
             | None -> None
         | None -> None
 
@@ -160,13 +160,13 @@ module AssetGraph =
                 | Constants.Xml.AssetNodeName ->
                     match tryLoadAssetFromAssetNode assetNode with
                     | Some asset -> asset :: assetsRev
-                    | None -> debug ^ "Invalid asset node in '" + node.Name + "' in asset graph."; assetsRev
+                    | None -> Log.debug ^ "Invalid asset node in '" + node.Name + "' in asset graph."; assetsRev
                 | Constants.Xml.AssetsNodeName ->
                     match tryLoadAssetsFromAssetsNode usingRawAssets assetNode with
                     | Some loadedAssets -> List.rev loadedAssets @ assetsRev
-                    | None -> debug ^ "Invalid assets node in '" + node.Name + "' in asset graph."; assetsRev
+                    | None -> Log.debug ^ "Invalid assets node in '" + node.Name + "' in asset graph."; assetsRev
                 | Constants.Xml.CommentNodeName -> assetsRev
-                | invalidNodeType -> debug ^ "Invalid package child node type '" + invalidNodeType + "'."; assetsRev) |>
+                | invalidNodeType -> Log.debug ^ "Invalid package child node type '" + invalidNodeType + "'."; assetsRev) |>
             List.rev
         match optAssociation with
         | Some association -> List.filter (fun asset -> Set.contains association asset.Associations) assets
@@ -325,7 +325,7 @@ module AssetGraph =
                 let outputFilePath = Path.Combine (outputDirectory, intermediateFileSubpath)
                 Directory.CreateDirectory ^ Path.GetDirectoryName outputFilePath |> ignore
                 try File.Copy (intermediateFilePath, outputFilePath, true)
-                with _ -> note ^ "Resource lock on '" + outputFilePath + "' has prevented build for asset '" + acstring asset.AssetTag + "'."
+                with _ -> Log.note ^ "Resource lock on '" + outputFilePath + "' has prevented build for asset '" + acstring asset.AssetTag + "'."
 
     /// Attempt to build all the assets found in the given asset graph.
     let tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory fullBuild assetGraphFilePath =

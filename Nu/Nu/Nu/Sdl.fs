@@ -212,7 +212,7 @@ module Sdl =
             handleExit world
             Constants.Engine.SuccessExitCode
         with exn ->
-            trace ^ acstring exn
+            Log.trace ^ acstring exn
             handleExit world
             Constants.Engine.FailureExitCode
 
@@ -223,5 +223,5 @@ module Sdl =
             use sdlDeps = sdlDeps // bind explicitly to dispose automatically
             match handleAttemptMakeWorld sdlDeps with
             | Right world -> run8 tautology handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps Running world
-            | Left error -> trace error; Constants.Engine.FailureExitCode
-        | Left error -> trace error; Constants.Engine.FailureExitCode
+            | Left error -> Log.trace error; Constants.Engine.FailureExitCode
+        | Left error -> Log.trace error; Constants.Engine.FailureExitCode

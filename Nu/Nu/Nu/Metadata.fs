@@ -45,7 +45,7 @@ module Metadata =
     let private generateTextureMetadata asset =
         if not ^ File.Exists asset.FilePath then
             let errorMessage = "Failed to load Bitmap due to missing file '" + asset.FilePath + "'."
-            trace errorMessage
+            Log.trace errorMessage
             InvalidMetadata errorMessage
         else
             // TODO: find an efficient way to pull metadata from a bitmap file without loading its
@@ -55,11 +55,11 @@ module Metadata =
                 then TextureMetadata ^ Vector2i (bitmap.Width, bitmap.Height)
                 else
                     let errorMessage = "Bitmap with invalid format (expecting 32-bit ARGB)."
-                    trace errorMessage
+                    Log.trace errorMessage
                     InvalidMetadata errorMessage
             with _ as exn ->
                 let errorMessage = "Failed to load Bitmap '" + asset.FilePath + "' due to '" + acstring exn + "'."
-                trace errorMessage
+                Log.trace errorMessage
                 InvalidMetadata errorMessage
 
     let private generateTileMapMetadata asset =
@@ -69,7 +69,7 @@ module Metadata =
             TileMapMetadata (asset.FilePath, tileSetImages, tmxMap)
         with _ as exn ->
             let errorMessage = "Failed to load TmxMap '" + asset.FilePath + "' due to '" + acstring exn + "'."
-            trace errorMessage
+            Log.trace errorMessage
             InvalidMetadata errorMessage
 
     let private generateAssetMetadata asset =
