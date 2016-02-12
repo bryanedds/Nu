@@ -20,7 +20,7 @@ open OpenTK
 open TiledSharp
 open Prime
 open Prime.Observation
-open flPrime.Chain
+open Prime.Chain
 open Nu
 
 // set current directly to local for execution in VS F# interactive
