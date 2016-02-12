@@ -1,13 +1,16 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2012-2016.
 
-namespace Nu
+namespace Prime
 open System
 open System.Diagnostics
 open LanguagePrimitives
 open Prime
 open Prime.Observation
+open Nu
 
+/// Apparently we can have two modules with the same namespace and name so long as they are
+/// compiled into different DLLs... This seems strange and potentially fragile...
 module Observation =
 
     /// Take events from an observation only while World.isTicking evaluates to true.

@@ -24,7 +24,7 @@ module Nu =
     let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
 
     /// Initialize the game engine.
-    let init () =
+    let init sync =
 
         // init only if needed
         if not Initialized then
@@ -55,7 +55,8 @@ module Nu =
                     QuadTree.addElement (entity.GetOmnipresent world || entity.GetViewType world = Absolute) entityMaxBounds entity tree
                 tree
 
-            // TODO: init Vsync with incoming parameter
+            // init Vsync with incoming parameter
+            Vsync.init sync
 
             // mark init flag
             Initialized <- true
@@ -638,7 +639,7 @@ module WorldModule =
         static member makeEmpty userState =
 
             // ensure game engine is initialized
-            Nu.init ()
+            Nu.init false
 
             // make the world's subsystems
             let subsystems =
@@ -699,7 +700,7 @@ module WorldModule =
         static member attemptMake preferPluginGameDispatcher tickRate userState (plugin : NuPlugin) sdlDeps =
 
             // ensure game engine is initialized
-            Nu.init ()
+            Nu.init false
 
             // attempt to generate asset metadata so the rest of the world can be created
             match Metadata.tryGenerateAssetMetadataMap Constants.Assets.AssetGraphFilePath with

@@ -19,12 +19,12 @@ open SDL2
 open OpenTK
 open TiledSharp
 open Prime
+open Prime.Observation
+open flPrime.Chain
 open Nu
-open Nu.Observation
-open Nu.Chain
 
 // set current directly to local for execution in VS F# interactive
 Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
 
 // initialize Nu
-Nu.init ()
+Nu.init false

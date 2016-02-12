@@ -644,7 +644,7 @@ module Gaia =
         | :? unit ->
             if World.getSelectedScreen world = Simulants.EditorScreen then
                 if World.proxyGroups Simulants.EditorScreen world |> Seq.isEmpty |> not then
-                    let world = World.updateUserState (fun _ ->
+                    let world = flip World.updateUserState world (fun _ ->
                         { TargetDir = targetDir
                           RightClickPosition = Vector2.Zero
                           DragEntityState = DragEntityNone
