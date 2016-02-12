@@ -11,6 +11,7 @@ type Either<'l, 'r> =
     | Right of 'r
     | Left of 'l
 
+[<RequireQualifiedAccess>]
 module Either =
 
     /// Monadic return for Either.

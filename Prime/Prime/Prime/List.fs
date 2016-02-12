@@ -17,17 +17,16 @@ let inline flipCons tail head = head :: tail
 let rec notExists pred list =
     Seq.notExists pred list
 
-let rec private subpartitionPlus fnOptU list left right =
-    match list with
-    | [] -> (left, right)
-    | head :: tail ->
-        let optU = fnOptU head
-        match optU with
-        | Some u -> subpartitionPlus fnOptU tail (u :: left) right
-        | None -> subpartitionPlus fnOptU tail left (head :: right)
-
 /// Partition a list.
 let partitionPlus fnOptU list =
+    let rec subpartitionPlus fnOptU list left right =
+        match list with
+        | [] -> (left, right)
+        | head :: tail ->
+            let optU = fnOptU head
+            match optU with
+            | Some u -> subpartitionPlus fnOptU tail (u :: left) right
+            | None -> subpartitionPlus fnOptU tail left (head :: right)
     subpartitionPlus fnOptU list [] []
 
 /// Query that a list has at least n elements.

@@ -140,6 +140,7 @@ module Name =
         for name in names do hashValue <- hashValue ^^^ name.GetHashCode ()
         hashValue
 
+    /// The empty name, consisting of an empty string.
     let empty =
         Name.make String.Empty
 

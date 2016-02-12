@@ -117,6 +117,7 @@ module Symbol =
     /// [AnimationData 4 8]
     /// [Gem `[Some 1]']
     ///
+    /// ...and so on.
     let fromString str =
         match run (skipWhitespaces >>. readSymbol) str with
         | Success (value, _, _) -> value
@@ -143,5 +144,5 @@ module Symbol =
     /// [AnimationData 4 8]
     /// [Gem `[Some 1]']
     ///
-    let rec toString symbol =
-        writeSymbol symbol
+    /// ...and so on.
+    let rec toString symbol = writeSymbol symbol
