@@ -15,8 +15,6 @@ type [<ReferenceEquality>] Observation<'a, 'o, 'w when 'o :> Addressable and 'w 
 
 module Observation =
 
-    (* Primitive Combinators *)
-
     /// Make an observation of an event at the given address.
     let [<DebuggerHidden; DebuggerStepThrough>] observe<'a, 'o, 'w when 'o :> Addressable and 'w :> 'w Eventable>
         (eventAddress : 'a Address) (observer : 'o) : Observation<'a, 'o, 'w> =
@@ -255,7 +253,7 @@ module Observation =
     /// Terminate an observation when the observer is removed from the world.
     let [<DebuggerHidden; DebuggerStepThrough>] lifetime
         (observation : Observation<'a, 'o, 'w>) : Observation<'a, 'o, 'w> =
-        let removingEventAddress = ftoa<unit> !!(typeof<'o>.Name + "/Removing") ->>- observation.Observer.Address
+        let removingEventAddress = ftoa<unit> !!(typeof<'o>.Name + "/Removing") ->>- observation.Observer.ObjAddress
         until removingEventAddress observation
 
     /// Subscribe to an observation until the observer is removed from the world,

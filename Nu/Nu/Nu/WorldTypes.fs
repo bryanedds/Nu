@@ -77,11 +77,6 @@ type SubsystemType =
     | RenderType
     | AudioType
 
-/// Describes whether an event has been resolved or should cascade to down-stream handlers.
-type EventHandling =
-    | Resolve
-    | Cascade
-
 /// The data for a mouse move event.
 type [<StructuralEquality; NoComparison>] MouseMoveData =
     { Position : Vector2 }
@@ -112,44 +107,6 @@ and [<StructuralEquality; NoComparison>] WorldStateChangeData =
 and [<StructuralEquality; NoComparison>] SimulantChangeData<'s when 's :> Simulant> =
     { Simulant : 's
       OldWorld : World }
-
-/// An event used by the game engine's purely-functional event system.
-and [<ReferenceEquality>] Event<'a, 's when 's :> Simulant> =
-    { Data : 'a
-      Address : 'a Address
-      Trace : string list
-      Publisher : Simulant
-      Subscriber : 's }
-
-/// Describes an event subscription.
-and internal Subscription<'a, 's when 's :> Simulant> =
-    Event<'a, 's> -> World -> EventHandling * World
-
-/// Describes an event subscription that can be boxed / unboxed.
-and internal BoxableSubscription =
-    obj -> World -> EventHandling * World
-
-/// An entry in the subscription map.
-and internal SubscriptionEntry =
-    Guid * Simulant * obj
-
-/// A map of event subscriptions.
-and internal SubscriptionEntries =
-    Vmap<obj Address, SubscriptionEntry rQueue>
-
-/// Abstracts over a subscription sorting procedure.
-and internal SubscriptionSorter =
-    SubscriptionEntry rQueue -> World -> SubscriptionEntry rQueue
-
-/// A map of subscription keys to unsubscription data.
-and internal UnsubscriptionEntries =
-    Vmap<Guid, obj Address * Simulant>
-
-/// A tasklet to be completed at the given time, with time being accounted for by the world
-/// state's TickTime value.
-and [<ReferenceEquality>] Tasklet =
-    { ScheduledTime : int64
-      Operation : World -> World }
 
 /// Represents a subsystem by which additional engine-level subsystems such as AI, optimized
 /// special FX, and the like can be added.
@@ -394,12 +351,9 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
 /// A marker interface for the simulation types (Game, Screen, Group, and Entity).
 /// The only methods that belong here are those used internally by Nu's event system.
 and Simulant =
-    interface
-        /// Get the entity's publishing priority.
-        abstract GetPublishingPriority : (Entity -> World -> single) -> World -> single
-        /// Get the simulant's address.
-        abstract SimulantAddress : Simulant Address
-        end
+    inherit Addressable
+    /// Get the entity's publishing priority.
+    abstract GetPublishingPriority : (Entity -> World -> single) -> World -> single
 
 /// Operators for the Simulant type.
 and SimulantOperators =
@@ -407,7 +361,7 @@ and SimulantOperators =
         | SimulantOperators
 
     /// Concatenate two addresses, forcing the type of first address.
-    static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.SimulantAddress)
+    static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.ObjAddress)
 
     /// Concatenate two addresses, takings the type of first address.
     static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
@@ -417,8 +371,8 @@ and [<StructuralEquality; NoComparison>] Game =
     { GameAddress : Game Address }
 
     interface Simulant with
+        member this.ObjAddress = atoa<Game, Addressable> this.GameAddress
         member this.GetPublishingPriority _ _ = Constants.Engine.GamePublishingPriority
-        member this.SimulantAddress = atoa<Game, Simulant> this.GameAddress
         end
 
     /// Get the full name of a game proxy.
@@ -445,8 +399,8 @@ and [<StructuralEquality; NoComparison>] Screen =
     { ScreenAddress : Screen Address }
 
     interface Simulant with
+        member this.ObjAddress = atoa<Screen, Addressable> this.ScreenAddress
         member this.GetPublishingPriority _ _ = Constants.Engine.ScreenPublishingPriority
-        member this.SimulantAddress = atoa<Screen, Simulant> this.ScreenAddress
         end
 
     /// Get the full name of a screen proxy.
@@ -484,8 +438,8 @@ and [<StructuralEquality; NoComparison>] Group =
     { GroupAddress : Group Address }
 
     interface Simulant with
+        member this.ObjAddress = atoa<Group, Addressable> this.GroupAddress
         member this.GetPublishingPriority _ _ = Constants.Engine.GroupPublishingPriority
-        member this.SimulantAddress = atoa<Group, Simulant> this.GroupAddress
         end
 
     /// Get the full name of a group proxy.
@@ -527,8 +481,8 @@ and [<StructuralEquality; NoComparison>] Entity =
       UpdateAddress : unit Address }
 
     interface Simulant with
+        member this.ObjAddress = atoa<Entity, Addressable> this.EntityAddress
         member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
-        member this.SimulantAddress = atoa<Entity, Simulant> this.EntityAddress
         end
 
     /// Get the name of an entity proxy.
@@ -606,14 +560,6 @@ and [<ReferenceEquality>] Components =
           ScreenDispatchers : Map<string, ScreenDispatcher>
           GameDispatchers : Map<string, GameDispatcher> }
 
-/// The world's simple callback facilities.
-and [<ReferenceEquality>] Callbacks =
-    private
-        { Subscriptions : SubscriptionEntries
-          Unsubscriptions : UnsubscriptionEntries
-          Tasklets : Tasklet Queue
-          CallbackStates : Vmap<Guid, obj> }
-
 /// The world's state.
 /// TODO: There were improper places accessing fields directly - report the issue in the F# compiler.
 and [<ReferenceEquality>] WorldState =
@@ -621,7 +567,7 @@ and [<ReferenceEquality>] WorldState =
         { TickRate : int64
           TickTime : int64
           UpdateCount : int64
-          Liveness : Liveness
+          Liveness : Liveness // TODO: consider moving to World
           AssetMetadataMap : AssetMetadataMap
           Overlayer : Overlayer
           OverlayRouter : OverlayRouter
@@ -636,10 +582,25 @@ and [<ReferenceEquality>] World =
     private
         { Subsystems : Subsystems
           Components : Components
-          Callbacks : Callbacks
+          Eventor : World Eventor
           State : WorldState
           GameState : GameState
           ScreenStates : Vmap<Screen Address, ScreenState>
           GroupStates : Vmap<Group Address, GroupState>
           EntityStates : Vmap<Entity Address, EntityState>
           ScreenDirectory : Vmap<Name, Screen Address * Vmap<Name, Group Address * Vmap<Name, Entity Address>>> }
+    
+    interface World Eventable with
+        member this.GetEventor () = this.Eventor
+        member this.GetLiveness () = this.State.Liveness // NOTE: encapsulation violation
+        member this.GetLeastPublishingPriority () = Constants.Engine.EntityPublishingPriority
+        member this.TryGetPublishEvent () =
+            let publishPlus (subscriber : Addressable) publisher eventData eventAddress eventTrace subscription world = 
+                match Address.getNames subscriber.ObjAddress with
+                | [] -> Eventable.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscription world
+                | [_] -> Eventable.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscription world
+                | [_; _] -> Eventable.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscription world
+                | [_; _; _] -> Eventable.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscription world
+                | _ -> failwith "Unexpected match failure in 'Nu.World.publish.'"
+            Some publishPlus
+        member this.UpdateEventor updater = { this with Eventor = updater this.Eventor }

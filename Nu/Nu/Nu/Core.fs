@@ -40,11 +40,6 @@ type ScreenClear =
     | NoClear
     | ColorClear of byte * byte * byte
 
-/// Specifies whether the engine is running or exiting.
-type Liveness =
-    | Running
-    | Exiting
-
 [<AutoOpen>]
 module CoreModule =
 

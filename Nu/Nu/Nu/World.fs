@@ -659,9 +659,9 @@ module WorldModule =
                     (World.makeDefaultScreenDispatchers ())
                     (World.makeDefaultGameDispatchers ())
 
-            // make the world's callbacks
-            let callbacks =
-                Callbacks.make ()
+            // make the world's eventor
+            let eventor =
+                Eventor.make ()
 
             // make the world's state
             let worldState =
@@ -680,7 +680,7 @@ module WorldModule =
             let world =
                 { Subsystems = subsystems
                   Components = components
-                  Callbacks = callbacks
+                  Eventor = eventor
                   State = worldState
                   GameState = gameState
                   ScreenStates = Vmap.makeEmpty ()
@@ -755,10 +755,10 @@ module WorldModule =
                         (Map.addMany pluginGroupDispatchers ^ World.makeDefaultGroupDispatchers ())
                         (Map.addMany pluginScreenDispatchers ^ World.makeDefaultScreenDispatchers ())
                         (Map.addMany [World.pairWithName activeGameDispatcher] ^ World.makeDefaultGameDispatchers ())
-
-                // make the world's callbacks
-                let callbacks =
-                    Callbacks.make ()
+                        
+                // make the world's eventor
+                let eventor =
+                    Eventor.make ()
 
                 // make the world's state
                 let worldState =
@@ -774,7 +774,7 @@ module WorldModule =
                 let world =
                     { Subsystems = subsystems
                       Components = components
-                      Callbacks = callbacks
+                      Eventor = eventor
                       State = worldState
                       GameState = World.makeGameState activeGameDispatcher
                       ScreenStates = Vmap.makeEmpty ()

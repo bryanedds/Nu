@@ -5,8 +5,8 @@ namespace Nu.Tests
 open System
 open Xunit
 open Prime
+open Prime.Observation
 open Nu
-open Nu.Observation
 module ObservationTests =
 
     let Jim = Simulants.DefaultGroup => "Jim"
