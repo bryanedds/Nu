@@ -34,8 +34,8 @@ module Program =
     // this the entry point for the BlazeVector application
     let [<EntryPoint; STAThread>] main _ =
 
-        // initialize Nu
-        Nu.init ()
+        // initialize Nu with synchronous code disabled
+        Nu.init false
 
         // this specifies the manner in which the game is viewed. With this configuration, a new
         // window is created with a title of "BlazeVector".

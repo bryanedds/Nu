@@ -3,8 +3,8 @@ open System
 open System.IO
 open OpenTK
 open Prime
+open Prime.Observation
 open Nu
-open Nu.Observation
 open InfinityRpg
 
 type InfinityDispatcher () =

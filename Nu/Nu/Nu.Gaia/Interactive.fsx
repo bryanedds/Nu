@@ -22,16 +22,16 @@ open SDL2
 open OpenTK
 open TiledSharp
 open Prime
+open Prime.Observation
+open Prime.Chain
 open Nu
-open Nu.Observation
-open Nu.Chain
 open Nu.Gaia
 
 // set current directly to local for execution in VS F# interactive
 Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
 
 // initialize Nu
-Nu.init ()
+Nu.init false
 
 // decide on a target directory and plugin
 let (targetDir, plugin) = Gaia.selectTargetDirAndMakeNuPlugin ()

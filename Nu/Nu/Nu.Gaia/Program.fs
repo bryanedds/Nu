@@ -14,5 +14,5 @@ open Nu
 module Program =
 
     let [<EntryPoint; STAThread>] main _ =
-        Nu.init ()
+        Nu.init false
         Gaia.run ()

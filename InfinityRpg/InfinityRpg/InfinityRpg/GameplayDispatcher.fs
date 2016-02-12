@@ -4,9 +4,9 @@ open System.IO
 open SDL2
 open OpenTK
 open Prime
+open Prime.Chain
+open Prime.Observation
 open Nu
-open Nu.Observation
-open Nu.Chain
 open AStar
 open InfinityRpg
 

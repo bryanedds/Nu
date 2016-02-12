@@ -8,7 +8,7 @@ module Program =
     let [<EntryPoint; STAThread>] main _ =
 
         // initialize Nu
-        Nu.init ()
+        Nu.init false
     
         // this specifies the manner in which the game is viewed. With this configuration, a new
         // window is created with a title of "Infinity Rpg".

@@ -4,9 +4,9 @@ open FSharpx
 open SDL2
 open OpenTK
 open Prime
+open Prime.Observation
+open Prime.Chain
 open Nu
-open Nu.Observation
-open Nu.Chain
 
 // this is a plugin for the Nu game engine by which user-defined dispatchers, facets, and other
 // sorts of values can be obtained by both your application and Gaia. Currently, there are no
@@ -22,7 +22,7 @@ module Program =
     let [<EntryPoint; STAThread>] main _ =
 
         // initialize Nu
-        Nu.init ()
+        Nu.init false
 
         // this specifies the manner in which the game is viewed. With this configuration, a new
         // window is created with a title of "$safeprojectname$".

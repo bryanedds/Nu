@@ -359,10 +359,13 @@ module WorldEntityModule =
                 facets
 
         /// Get an entity's picking priority.
-        static member getEntityPickingPriority entity world =
-            let entityState = World.getEntityState entity world
-            let dispatcher = entityState.DispatcherNp
-            dispatcher.GetPickingPriority (entity, entityState.Depth, world)
+        static member getEntityPickingPriority (addressable : Addressable) world =
+            match addressable with
+            | :? Entity as entity ->
+                let entityState = World.getEntityState entity world
+                let dispatcher = entityState.DispatcherNp
+                dispatcher.GetPickingPriority (entity, entityState.Depth, world)
+            | _ -> 0.0f
 
         /// Sort subscriptions by their editor picking priority.
         static member sortSubscriptionsByPickingPriority subscriptions world =
