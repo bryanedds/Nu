@@ -298,7 +298,7 @@ module Gaia =
                 form.propertyNameLabel.Text <- symstring selectedGridItem.Label
                 form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
                 let str = typeConverter.ConvertToString selectedGridItem.Value
-                let strPretty = Symbol.prettyPrint str
+                let strPretty = SymbolIndex.prettyPrint str
                 form.propertyValueTextBox.Text <- strPretty
                 // NOTE: can probably use form.propertyValueTextBox.Rtf to highlight matching brace
             | _ ->
