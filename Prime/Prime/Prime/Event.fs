@@ -14,7 +14,7 @@ open Prime
 /// TODO: consider moving to Address.fs.
 type Addressable =
     interface
-        abstract member GetAddress : unit -> obj Address
+        abstract member Address : obj Address
         end
 
 /// Specifies whether an application is running or exiting.
@@ -377,7 +377,7 @@ module Eventable =
     /// Keep active a subscription for the lifetime of a participant, and be provided with an unsubscription callback.
     let monitorPlus<'a, 's, 'w when 's :> Addressable and 'w :> 'w Eventable>
         (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
-        let subscriberAddress = subscriber.GetAddress ()
+        let subscriberAddress = subscriber.Address
         if not ^ Address.isEmpty subscriberAddress then
             let monitorKey = Guid.NewGuid ()
             let removalKey = Guid.NewGuid ()
