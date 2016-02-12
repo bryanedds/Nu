@@ -91,8 +91,8 @@ module Reflection =
         not ^ propertyName.EndsWith ("Id", StringComparison.Ordinal) && // don't write an Id
         not ^ propertyName.EndsWith ("Ids", StringComparison.Ordinal) && // don't write multiple Ids
         not ^ propertyName.EndsWith ("Np", StringComparison.Ordinal) // don't write non-persistent properties
-        
-    /// Is a property with the given name persistent?
+
+    /// Is the property of the given target persistent?
     let isPropertyPersistent target (property : PropertyInfo) =
         isPropertyPersistentByName property.Name &&
         not
