@@ -151,7 +151,7 @@ module internal Vnode =
     let empty =
         Nil
 
-/// A highly-optimized persistent hash map.
+/// A very fast persistent hash map.
 /// TODO: document.
 /// TODO: implement filter.
 type [<NoEquality; NoComparison>] Vmap<'k, 'v when 'k : comparison> =
