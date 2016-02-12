@@ -86,7 +86,11 @@ module Program =
     A simulation that would put physics on another thread should likely do so in a different app
     domain with communication via .NET remoting to make 100% sure that no sharing is happening.
     This should keep debugging easy and even possibly give a boost to GC latency what with
-    spreading collection pauses across two separate collectors. *)
+    spreading collection pauses across two separate collectors.
+    
+    NOTE: AppDomains are discontinued in .NET Core -
+    https://blogs.msdn.microsoft.com/dotnet/2016/02/10/porting-to-net-core/
+    It is suggested instead to run in separate processes, which is fine. *)
 
     (* WISDOM: Keep all animation frame numbers even. That way, you can simply halve them if you
     need to move the app from 60fps to 30fps. *)
@@ -95,7 +99,10 @@ module Program =
     
     Unfortunately, it's going to be too difficult to extricate Nu's event system. So this coupling
     is a complexity Nu is going to have to live with until end of days... unless some enterprising
-    engineer undertakes a non-trivial effort to extract it out somehow :) *)
+    engineer undertakes a non-trivial effort to extract it out somehow :)
+    
+    NOTE: As a part of Prime's refactoring out to its own project, I'm now going to attempt this
+    extraction. *)
 
     (* IDEA: Simplified networking...
 
