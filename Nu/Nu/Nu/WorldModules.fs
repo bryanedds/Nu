@@ -162,65 +162,6 @@ module Subsystems =
         { SubsystemMap = subsystems }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Callbacks =
-
-    /// Get all tasklets.
-    let getTasklets callbacks =
-        callbacks.Tasklets
-
-    /// Clear all held tasklets.
-    let clearTasklets callbacks =
-        { callbacks with Tasklets = Queue.empty }
-
-    /// Restore previously-held tasklets.
-    let restoreTasklets (tasklets : Tasklet Queue) callbacks =
-        { callbacks with Tasklets = Queue.ofSeq ^ Seq.append (callbacks.Tasklets :> Tasklet seq) (tasklets :> Tasklet seq) }
-
-    /// Add a tasklet to be executed by the engine at the scheduled time.
-    let addTasklet tasklet callbacks =
-        { callbacks with Tasklets = Queue.conj tasklet callbacks.Tasklets }
-
-    /// Add multiple tasklets to be executed by the engine at the scheduled times.
-    let addTasklets tasklets callbacks =
-        { callbacks with Tasklets = Queue.ofSeq ^ Seq.append (tasklets :> Tasklet seq) (callbacks.Tasklets :> Tasklet seq) }
-
-    /// Add callback state.
-    let addCallbackState key state callbacks =
-        { callbacks with CallbackStates = Vmap.add key (state :> obj) callbacks.CallbackStates }
-
-    /// Remove callback state.
-    let removeCallbackState key callbacks =
-        { callbacks with CallbackStates = Vmap.remove key callbacks.CallbackStates }
-
-    /// Get subscriptions.
-    let getSubscriptions callbacks =
-        callbacks.Subscriptions
-
-    /// Get unsubscriptions.
-    let getUnsubscriptions callbacks =
-        callbacks.Unsubscriptions
-
-    /// Set subscriptions.
-    let internal setSubscriptions subscriptions callbacks =
-        { callbacks with Subscriptions = subscriptions }
-
-    /// Set unsubscriptions.
-    let internal setUnsubscriptions unsubscriptions callbacks =
-        { callbacks with Unsubscriptions = unsubscriptions }
-
-    /// Get callback state.
-    let getCallbackState<'a> key callbacks =
-        let state = Vmap.find key callbacks.CallbackStates
-        state :?> 'a
-
-    /// Make a callbacks value.
-    let make () =
-        { Subscriptions = Vmap.makeEmpty ()
-          Unsubscriptions = Vmap.makeEmpty ()
-          Tasklets = Queue.empty
-          CallbackStates = Vmap.makeEmpty () }
-
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Components =
 
     /// Get the facets.

@@ -10,7 +10,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module Events =
 
-    let Any = ntoa<obj> !!"*"
+    let Any = Prime.Events.Any
     let Update = ntoa<unit> !!"Update"
     let Select = ntoa<unit> !!"Select"
     let Deselect = ntoa<unit> !!"Deselect"

@@ -14,7 +14,7 @@ open Prime
 /// TODO: consider moving to Address.fs.
 type Addressable =
     interface
-        abstract member Address : obj Address
+        abstract member ObjAddress : Addressable Address
         end
 
 /// Specifies whether an application is running or exiting.
@@ -77,8 +77,10 @@ and [<ReferenceEquality>] Eventor<'w when 'w :> 'w Eventable> =
 /// Adds the capability to use purely-functional events with the given type 'w.
 and Eventable<'w when 'w :> 'w Eventable> =
     interface
-        abstract member GetLiveness : unit -> Liveness
         abstract member GetEventor : unit -> 'w Eventor
+        abstract member GetLiveness : unit -> Liveness
+        abstract member GetLeastPublishingPriority : unit -> single
+        abstract member TryGetPublishEvent : unit -> (Addressable -> #Addressable -> 'a -> 'a Address -> string list -> obj -> 'w -> EventHandling * 'w) option
         abstract member UpdateEventor : ('w Eventor -> 'w Eventor) -> 'w
         end
 
@@ -112,7 +114,7 @@ module Eventor =
         { eventor with Tasklets = Queue.ofSeq ^ Seq.append (tasklets :> 'w Tasklet seq) (eventor.Tasklets :> 'w Tasklet seq) }
 
     /// Add callback state.
-    let addCallbackState key state eventor =
+    let addCallbackState key (state : 's) eventor =
         { eventor with CallbackStates = Vmap.add key (state :> obj) eventor.CallbackStates }
 
     /// Remove callback state.
@@ -136,21 +138,22 @@ module Eventor =
         { eventor with Unsubscriptions = unsubscriptions }
 
     /// Get callback state.
-    let getCallbackState<'a, 'w when 'w :> 'w Eventable> key (eventor : 'w Eventor) =
+    let getCallbackState<'s, 'w when 'w :> 'w Eventable> key (eventor : 'w Eventor) =
         let state = Vmap.find key eventor.CallbackStates
-        state :?> 'a
+        state :?> 's
+
+    /// Make an eventor.
+    let make () =
+        { Subscriptions = Vmap.makeEmpty ()
+          Unsubscriptions = Vmap.makeEmpty ()
+          Tasklets = Queue.empty
+          CallbackStates = Vmap.makeEmpty () }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Eventable =
 
     let private AnyEventAddressesCache =
         Dictionary<obj Address, obj Address list> (HashIdentity.FromFunctions Address<obj>.hash Address<obj>.equals)
-
-    let private sortFstDesc (priority : single, _) (priority2 : single, _) =
-        // OPTIMIZATION: priority parameter is annotated as 'single' to decrease GC pressure.
-        if priority > priority2 then -1
-        elif priority < priority2 then 1
-        else 0
 
     let getEventor<'w when 'w :> 'w Eventable> (world : 'w) =
         world.GetEventor ()
@@ -196,7 +199,7 @@ module Eventable =
         world.UpdateEventor (Eventor.setUnsubscriptions unsubscriptions)
 
     /// Add callback state to the world.
-    let addCallbackState<'w when 'w :> 'w Eventable> key state (world : 'w) =
+    let addCallbackState<'s, 'w when 'w :> 'w Eventable> key (state : 's) (world : 'w) =
         world.UpdateEventor (Eventor.addCallbackState key state)
 
     /// Remove callback state from the world.
@@ -204,9 +207,9 @@ module Eventable =
         world.UpdateEventor (Eventor.removeCallbackState key)
 
     /// Get callback state from the world.
-    let getCallbackState<'a, 'w when 'w :> 'w Eventable> key (world : 'w) : 'a =
+    let getCallbackState<'s, 'w when 'w :> 'w Eventable> key (world : 'w) : 's =
         let eventor = getEventor world
-        Eventor.getCallbackState<'a, 'w> key eventor
+        Eventor.getCallbackState<'s, 'w> key eventor
 
     let getAnyEventAddresses eventAddress =
         // OPTIMIZATION: uses memoization.
@@ -269,7 +272,7 @@ module Eventable =
         box boxableSubscription
 
     let publishEvent<'a, 'p, 's, 'w when 'p :> Addressable and 's :> Addressable and 'w :> 'w Eventable>
-        (subscriber : obj) (publisher : 'p) (eventData : 'a) (eventAddress : 'a Address) eventTrace subscription (world : 'w) =
+        (subscriber : Addressable) (publisher : 'p) (eventData : 'a) (eventAddress : 'a Address) eventTrace subscription (world : 'w) =
         let evt =
             { Data = eventData
               Address = eventAddress
@@ -277,19 +280,18 @@ module Eventable =
               Subscriber = subscriber :?> 's
               Publisher = publisher :> Addressable }
         let callableSubscription = unbox<BoxableSubscription<'w>> subscription
-        let result = callableSubscription evt world
-        Some result
+        callableSubscription evt world
 
     /// Sort subscriptions using categorization via the 'by' procedure.
     let sortSubscriptionsBy by (subscriptions : SubscriptionEntry list) (world : 'w) =
         let subscriptions = getSortableSubscriptions by subscriptions world
-        let subscriptions = List.sortWith sortFstDesc subscriptions
+        let subscriptions = List.sortWith Pair.sortFstDescending subscriptions
         List.map snd subscriptions
 
     /// Sort subscriptions by their place in the world's participant hierarchy.
-    let sortSubscriptionsByHierarchy subscriptions world =
+    let sortSubscriptionsByHierarchy subscriptions (world : 'w Eventable) =
         sortSubscriptionsBy
-            (fun _ _ -> 0.125f) // TODO: remove hard coding
+            (fun _ _ -> world.GetLeastPublishingPriority ()) // TODO: remove hard coding
             subscriptions
             world
 
@@ -302,12 +304,17 @@ module Eventable =
         getSubscriptions (publishSorter : SubscriptionSorter<'w>) (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) (world : 'w) =
         let objEventAddress = atooa eventAddress
         let subscriptions = getSubscriptions publishSorter objEventAddress world
+        let publishPlus =
+            match world.TryGetPublishEvent () with
+            | Some publishPlus -> publishPlus
+            | None -> publishEvent<'a, 'p, Addressable, 'w>
         let (_, world) =
             List.foldWhile
                 (fun (eventHandling, world : 'w) (_, subscriber : Addressable, subscription) ->
                     if  (match eventHandling with Cascade -> true | Resolve -> false) &&
                         (match world.GetLiveness () with Running -> true | Exiting -> false) then
-                        publishEvent<'a, 'p, Addressable, 'w> subscriber publisher eventData eventAddress eventTrace subscription world
+                        let publishResult = publishPlus subscriber publisher eventData eventAddress eventTrace subscription world
+                        Some publishResult
                     else None)
                 (Cascade, world)
                 subscriptions
@@ -377,7 +384,7 @@ module Eventable =
     /// Keep active a subscription for the lifetime of a participant, and be provided with an unsubscription callback.
     let monitorPlus<'a, 's, 'w when 's :> Addressable and 'w :> 'w Eventable>
         (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
-        let subscriberAddress = subscriber.Address
+        let subscriberAddress = subscriber.ObjAddress
         if not ^ Address.isEmpty subscriberAddress then
             let monitorKey = Guid.NewGuid ()
             let removalKey = Guid.NewGuid ()
@@ -396,10 +403,3 @@ module Eventable =
     let monitor<'a, 's, 'w when 's :> Addressable and 'w :> 'w Eventable>
         (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
         monitorPlus<'a, 's, 'w> subscription eventAddress subscriber world |> snd
-
-    /// Make an event system.
-    let make () =
-        { Subscriptions = Vmap.makeEmpty ()
-          Unsubscriptions = Vmap.makeEmpty ()
-          Tasklets = Queue.empty
-          CallbackStates = Vmap.makeEmpty () }

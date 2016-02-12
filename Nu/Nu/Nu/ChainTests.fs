@@ -5,9 +5,9 @@ namespace Nu.Tests
 open System
 open Xunit
 open Prime
+open Prime.Observation
+open Prime.Chain
 open Nu
-open Nu.Observation
-open Nu.Chain
 module ChainTests =
 
     let IntEventAddress = ntoa<int> !!"Test"

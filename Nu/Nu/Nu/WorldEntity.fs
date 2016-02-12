@@ -372,7 +372,7 @@ module WorldEntityModule =
         static member pickingSortEntities entities world =
             let entities = List.ofSeq entities
             let prioritiesAndEntities = List.map (fun (entity : Entity) -> (World.getEntityPickingPriority entity world, entity)) entities
-            let prioritiesAndEntities = List.sortWith World.sortFstDesc prioritiesAndEntities
+            let prioritiesAndEntities = List.sortWith Pair.sortFstDescending prioritiesAndEntities
             List.map snd prioritiesAndEntities
 
         /// TODO: document!

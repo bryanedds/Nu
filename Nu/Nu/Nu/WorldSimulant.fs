@@ -15,7 +15,7 @@ module WorldSimulantModule =
         static member isSimulantSelected<'s when 's :> Simulant> (simulant : 's) world =
             let optScreen = World.getOptSelectedScreen world
             let optScreenNames = Option.map (fun (screen : Screen) -> Address.getNames screen.ScreenAddress) optScreen
-            let simulantNames = Address.getNames simulant.SimulantAddress
+            let simulantNames = Address.getNames simulant.ObjAddress
             match (simulantNames, optScreenNames) with
             | ([], _) -> true
             | (_, None) -> false
