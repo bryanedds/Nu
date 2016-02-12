@@ -64,6 +64,7 @@
     <Compile Include="Sectioning.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Id.fs" />
+    <Compile Include="RQueue.fs" />
     <Compile Include="Option.fs" />
     <Compile Include="Pair.fs" />
     <Compile Include="Triple.fs" />
@@ -88,6 +89,8 @@
     <Compile Include="Reflection.fs" />
     <Compile Include="Vmap.fs" />
     <Compile Include="Vsync.fs" />
+    <Compile Include="Event.fs" />
+    <Compile Include="Observation.fs" />
     <Compile Include="SymbolicConverter.fs" />
     <Compile Include="SymbolicDescriptor.fs" />
     <Compile Include="SymbolicString.fs" />

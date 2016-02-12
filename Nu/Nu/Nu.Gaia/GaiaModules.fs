@@ -644,15 +644,14 @@ module Gaia =
         | :? unit ->
             if World.getSelectedScreen world = Simulants.EditorScreen then
                 if World.proxyGroups Simulants.EditorScreen world |> Seq.isEmpty |> not then
-                    let editorState =
+                    let world = World.updateUserState (fun _ ->
                         { TargetDir = targetDir
                           RightClickPosition = Vector2.Zero
                           DragEntityState = DragEntityNone
                           DragCameraState = DragCameraNone
                           PastWorlds = []
                           FutureWorlds = []
-                          SelectedGroup = Simulants.DefaultEditorGroup }
-                    let world = World.setUserState editorState world
+                          SelectedGroup = Simulants.DefaultEditorGroup })
                     let world = World.subscribe (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game world
                     let world = World.subscribe (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game world
                     let world = World.subscribe (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game world

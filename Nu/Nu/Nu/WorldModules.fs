@@ -308,14 +308,10 @@ module WorldState =
     let getCamera state =
         getCameraBy id state
 
-    /// Set the camera used to view the world.
-    let setCamera camera state =
-        { state with Camera = camera }
-
     /// Update the camera used to view the world.
     let updateCamera updater state =
         let camera = updater ^ getCamera state
-        setCamera camera state
+        { state with Camera = camera }
 
     /// Get the opt entity cache.
     let internal getOptEntityCache state =
@@ -345,15 +341,11 @@ module WorldState =
     let getUserState state : 'u =
         state.UserState :?> 'u
 
-    /// Set the user-defined state of the world.
-    let setUserState (userState : 'u) state =
-        { state with UserState = userState }
-
     /// Update the user state of the world.
     let updateUserState (updater : 'u -> 'v) state =
         let userState = getUserState state
         let userState = updater userState
-        setUserState userState state
+        { state with UserState = userState }
 
     /// Make a world state value.
     let make tickRate assetMetadataMap overlayRouter overlayer camera userState =

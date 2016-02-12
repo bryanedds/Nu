@@ -382,10 +382,6 @@ module World =
     let getCamera world =
         WorldState.getCamera world.State
 
-    /// Set the camera used to view the world.
-    let setCamera camera world =
-        setState (WorldState.setCamera camera world.State) world
-
     /// Update the camera used to view the world.
     let updateCamera updater world =
         setState (WorldState.updateCamera updater world.State) world
@@ -421,10 +417,6 @@ module World =
     /// Get the user state of the world, casted to 'u.
     let getUserState world : 'u =
         WorldState.getUserState world.State
-
-    /// Set the user state of the world.
-    let setUserState (userState : 'u) world =
-        setState (WorldState.setUserState userState world.State) world
 
     /// Update the user state of the world.
     let updateUserState (updater : 'u -> 'v) world =
