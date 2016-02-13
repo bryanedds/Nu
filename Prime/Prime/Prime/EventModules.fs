@@ -210,13 +210,6 @@ module Eventable =
         let subscriptions = List.sortWith Pair.sortFstDescending subscriptions
         List.map snd subscriptions
 
-    /// Sort subscriptions by their place in the world's simulant hierarchy.
-    let sortSubscriptionsByHierarchy subscriptions (world : 'w Eventable) =
-        sortSubscriptionsBy
-            (fun _ _ -> world.GetEntityPublishingPriority ())
-            subscriptions
-            world
-
     /// A 'no-op' for subscription sorting - that is, performs no sorting at all.
     let sortSubscriptionsNone (subscriptions : SubscriptionEntry list) (_ : 'w) =
         subscriptions
@@ -243,14 +236,9 @@ module Eventable =
         world
 
     /// Publish an event, using the given publishSorter procedure to arrange the order to which subscriptions are published.
-    let publish5<'a, 'p, 'w when 'p :> Simulant and 'w :> Eventable<'w>>
+    let publish<'a, 'p, 'w when 'p :> Simulant and 'w :> Eventable<'w>>
         (publishSorter : SubscriptionSorter<'w>) (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) (world : 'w) =
         publish6<'a, 'p, 'w> getSubscriptionsSorted3 publishSorter eventData eventAddress eventTrace publisher world
-
-    /// Publish an event.
-    let publish<'a, 'p, 'w when 'p :> Simulant and 'w :> Eventable<'w>>
-        (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) (world : 'w) =
-        publish5<'a, 'p, 'w> sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher world
 
     /// Unsubscribe from an event.
     let unsubscribe<'w when 'w :> Eventable<'w>> subscriptionKey (world : 'w) =

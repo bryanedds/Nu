@@ -116,8 +116,11 @@ module World =
         Eventable.sortSubscriptionsBy by subscriptions world
 
     /// Sort subscriptions by their place in the world's simulant hierarchy.
-    let sortSubscriptionsByHierarchy subscriptions (world : World) =
-        Eventable.sortSubscriptionsByHierarchy subscriptions world
+    let sortSubscriptionsByHierarchy subscriptions world =
+        sortSubscriptionsBy
+            (fun _ _ -> Constants.Engine.EntityPublishingPriority)
+            subscriptions
+            world
 
     /// A 'no-op' for subscription sorting - that is, performs no sorting at all.
     let sortSubscriptionsNone (subscriptions : SubscriptionEntry list) (world : World) =
@@ -129,11 +132,12 @@ module World =
 
     /// Publish an event, using the given publishSorter procedure to arrange the order to which subscriptions are published.
     let publish5<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-        Eventable.publish5<'a, 'p, World> publishSorter eventData eventAddress eventTrace publisher world
+        Eventable.publish<'a, 'p, World> publishSorter eventData eventAddress eventTrace publisher world
 
     /// Publish an event.
-    let publish<'a, 'p when 'p :> Simulant> (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-        Eventable.publish<'a, 'p, World> eventData eventAddress eventTrace publisher world
+    let publish<'a, 'p when 'p :> Simulant>
+        (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
+        Eventable.publish<'a, 'p, World> sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher world
 
     /// Unsubscribe from an event.
     let unsubscribe subscriptionKey world =

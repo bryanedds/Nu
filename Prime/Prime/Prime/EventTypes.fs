@@ -7,21 +7,15 @@ open System.Collections.Generic
 open FSharpx.Collections
 open Prime
 
-/// Specifies whether an event-enabled application is running or exiting.
+/// Specifies whether an event-based application is running or exiting.
 type Liveness =
     | Running
     | Exiting
 
-/// Describes whether an event has been resolved or should cascade to down-stream handlers.
+/// Describes whether an in-flight event has been resolved or should cascade to down-stream handlers.
 type Handling =
     | Resolve
     | Cascade
-
-[<RequireQualifiedAccess>]
-module Events =
-
-    /// Represents any event.
-    let Any = ntoa<obj> !!"*"
 
 /// A participant in the event system.
 /// NOTE: would better have been name 'Participant', but not done so due to legacy constraints.
@@ -42,6 +36,12 @@ type SimulantOperators =
 
     /// Concatenate two addresses, takings the type of first address.
     static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
+
+[<RequireQualifiedAccess>]
+module Events =
+
+    /// Represents any event.
+    let Any = ntoa<obj> !!"*"
 
 /// The data for a world state change event.
 type [<StructuralEquality; NoComparison>] WorldStateChangeData<'w when 'w :> 'w Eventable> =
@@ -110,7 +110,6 @@ and Eventable<'w when 'w :> 'w Eventable> =
         abstract member UpdateEventSystem : ('w EventSystem -> 'w EventSystem) -> 'w
         abstract member GetLiveness : unit -> Liveness
         abstract member GetUpdateCount : unit -> int64
-        abstract member GetEntityPublishingPriority : unit -> single
         abstract member ContainsSimulant : Simulant -> bool
         abstract member TryGetPublishEvent : unit -> PublishEvent<'a, 's, 'w> option
         end
