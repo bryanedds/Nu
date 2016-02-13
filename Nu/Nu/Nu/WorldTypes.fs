@@ -592,7 +592,7 @@ and [<ReferenceEquality>] World =
     private
         { Subsystems : Subsystems
           Components : Components
-          Tasklets : Tasklet Queue
+          Tasklets : Tasklet Queue // TODO: move to WorldState, and update without event
           EventSystem : World EventSystem
           State : WorldState
           GameState : GameState
