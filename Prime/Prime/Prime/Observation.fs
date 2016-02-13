@@ -372,3 +372,51 @@ module Observation =
     
     /// Filter out the events with non-unique data from an observation.
     let [<DebuggerHidden; DebuggerStepThrough>] distinct observation = distinctBy (fun a -> a.Data) observation
+
+    /// Take only one event from an observation per game update.
+    let [<DebuggerHidden; DebuggerStepThrough>] noMoreThanOncePerUpdate observation =
+        observation |> organize (fun _ (world : 'w) -> world.GetUpdateCount ()) |> toFst |> choose
+
+    /// Filter out simulant change events that do not relate to those returned by 'valueGetter'.
+    let [<DebuggerHidden; DebuggerStepThrough>] simulantValue
+        (valueGetter : 'w -> 'b) (observation : Observation<SimulantChangeData<'a, 'w>, 'o, 'w>) =
+        filter (fun a world ->
+            let oldValue = valueGetter a.Data.OldWorld
+            let newValue = valueGetter world
+            oldValue <> newValue)
+            observation
+
+[<AutoOpen>]
+module ObservationModule =
+    open Observation
+
+    /// Pipe-right arrow that provides special precedence for observations.
+    let (-|>) = (|>)
+
+    /// Make an observation of the observer's change events.
+    let [<DebuggerHidden; DebuggerStepThrough>] ( *-- ) (simulant : 'a, valueGetter : 'w -> 'b) (observer : 'o) =
+        let changeEventAddress = ftoa<SimulantChangeData<'a, 'w>> !!(typeof<'a>.Name + "/Change") ->>- simulant.SimulantAddress
+        observe changeEventAddress observer |> simulantValue valueGetter
+
+    /// Make an observation of one of the observer's change events per frame.
+    let [<DebuggerHidden; DebuggerStepThrough>] (/--) (simulant, valueGetter) observer =
+        (simulant, valueGetter) *-- observer |> noMoreThanOncePerUpdate
+
+    /// Propagate the event data of an observation to a value in the observing simulant when the
+    /// observer exists (doing nothing otherwise).
+    let [<DebuggerHidden; DebuggerStepThrough>] (-->) observation valueSetter =
+        subscribe (fun a world ->
+            let world =
+                if world.ContainsSimulant a.Subscriber
+                then valueSetter a.Data world
+                else world
+            (Cascade, world))
+            observation
+
+    // Propagate a value from the given source simulant to a value in the given destination simulant.
+    let [<DebuggerHidden; DebuggerStepThrough>] ( *-> ) (source : 'a, valueGetter : 'w -> 'b) (destination : 'o, valueSetter : 'b -> 'w -> 'w) =
+        (source, valueGetter) *-- destination --> fun _ world -> let sourceValue = valueGetter world in valueSetter sourceValue world
+
+    // Propagate a value from the given source simulant to a value in the given destination simulant, but with frame-based cycle-breaking.
+    let [<DebuggerHidden; DebuggerStepThrough>] (/->) (source : 'a, valueGetter : 'w -> 'b) (destination : 'o, valueSetter : 'b -> 'w -> 'w) =
+        (source, valueGetter) /-- destination --> fun _ world -> let sourceValue = valueGetter world in valueSetter sourceValue world
