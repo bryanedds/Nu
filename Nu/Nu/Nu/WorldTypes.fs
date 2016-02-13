@@ -568,7 +568,6 @@ and [<ReferenceEquality>] World =
         member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
         member this.GetLiveness () = this.State.Liveness // NOTE: encapsulation violation
         member this.GetUpdateCount () = this.State.UpdateCount // NOTE: encapsulation violation
-        member this.GetEntityPublishingPriority () = Constants.Engine.EntityPublishingPriority
         member this.ContainsSimulant simulant =
             let containsSimulant = Eventable.getMiscellanea this
             containsSimulant simulant this
