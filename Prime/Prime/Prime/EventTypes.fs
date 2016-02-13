@@ -93,7 +93,7 @@ and [<ReferenceEquality>] EventSystem<'w when 'w :> 'w Eventable> =
     private
         { Subscriptions : SubscriptionEntries
           Unsubscriptions : UnsubscriptionEntries
-          CallbackStates : Vmap<Guid, obj>
+          EventStates : Vmap<Guid, obj>
           Tasklets : 'w Tasklet Queue }
 
 /// Adds the capability to use purely-functional events with the given type 'w.

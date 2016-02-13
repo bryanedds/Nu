@@ -34,7 +34,7 @@ module Observation =
     /// form', which is defined as a pair of the data of the combined events. Think of it as 'zip'
     /// for event streams.
     /// NOTE: This function is currently broken.
-    /// TODO: fix by implementing this with callback state instead of the rat's nest of subscriptions.
+    /// TODO: fix by implementing this with event state instead of the rat's nest of subscriptions.
     let [<DebuggerHidden; DebuggerStepThrough>] product
         (eventAddress : 'b Address) (observation : Observation<'a, 'o, 'w>) : Observation<'a * 'b, 'o, 'w> =
         let subscribe = fun world ->
@@ -131,19 +131,19 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] track4
         (tracker : 'c -> Event<'a, 'o> -> 'w -> 'c * bool) (transformer : 'c -> 'b) (state : 'c) (observation : Observation<'a, 'o, 'w>) : Observation<'b, 'o, 'w> =
         let subscribe = fun world ->
-            let callbackKey = Guid.NewGuid ()
-            let world = Eventable.addCallbackState callbackKey state world
+            let stateKey = Guid.NewGuid ()
+            let world = Eventable.addEventState stateKey state world
             let subscriptionKey = Guid.NewGuid ()
             let subscriptionAddress = ntoa<'b> ^ Name.make ^ symstring subscriptionKey
             let (eventAddress, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world ->
-                let world = Eventable.removeCallbackState callbackKey world
+                let world = Eventable.removeEventState stateKey world
                 let world = unsubscribe world
                 Eventable.unsubscribe subscriptionKey world
             let subscription = fun evt world ->
-                let state = Eventable.getCallbackState callbackKey world
+                let state = Eventable.getEventState stateKey world
                 let (state, tracked) = tracker state evt world
-                let world = Eventable.addCallbackState callbackKey state world
+                let world = Eventable.addEventState stateKey state world
                 let world =
                     if tracked then
                         let eventTrace = "Observation.track4" :: evt.Trace
@@ -159,20 +159,20 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] track2
         (tracker : 'a -> Event<'a, 'o> -> 'w -> 'a * bool) (observation : Observation<'a, 'o, 'w>) : Observation<'a, 'o, 'w> =
         let subscribe = fun world ->
-            let callbackKey = Guid.NewGuid ()
-            let world = Eventable.addCallbackState callbackKey None world
+            let stateKey = Guid.NewGuid ()
+            let world = Eventable.addEventState stateKey None world
             let subscriptionKey = Guid.NewGuid ()
             let subscriptionAddress = ntoa<'a> ^ Name.make ^ symstring subscriptionKey
             let (eventAddress, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world ->
-                let world = Eventable.removeCallbackState callbackKey world
+                let world = Eventable.removeEventState stateKey world
                 let world = unsubscribe world
                 Eventable.unsubscribe subscriptionKey world
             let subscription = fun evt world ->
-                let optState = Eventable.getCallbackState callbackKey world
+                let optState = Eventable.getEventState stateKey world
                 let state = match optState with Some state -> state | None -> evt.Data
                 let (state, tracked) = tracker state evt world
-                let world = Eventable.addCallbackState callbackKey state world
+                let world = Eventable.addEventState stateKey state world
                 let world =
                     if tracked then
                         let eventTrace = "Observation.track2" :: evt.Trace
@@ -187,19 +187,19 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] track
         (tracker : 'b -> 'w -> 'b * bool) (state : 'b) (observation : Observation<'a, 'o, 'w>) : Observation<'a, 'o, 'w> =
         let subscribe = fun world ->
-            let callbackKey = Guid.NewGuid ()
-            let world = Eventable.addCallbackState callbackKey state world
+            let stateKey = Guid.NewGuid ()
+            let world = Eventable.addEventState stateKey state world
             let subscriptionKey = Guid.NewGuid ()
             let subscriptionAddress = ntoa<'a> ^ Name.make ^ symstring subscriptionKey
             let (eventAddress, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world ->
-                let world = Eventable.removeCallbackState callbackKey world
+                let world = Eventable.removeEventState stateKey world
                 let world = unsubscribe world
                 Eventable.unsubscribe subscriptionKey world
             let subscription = fun evt world ->
-                let state = Eventable.getCallbackState callbackKey world
+                let state = Eventable.getEventState stateKey world
                 let (state, tracked) = tracker state world
-                let world = Eventable.addCallbackState callbackKey state world
+                let world = Eventable.addEventState stateKey state world
                 let world =
                     if tracked then
                         let eventTrace = "Observation.track" :: evt.Trace

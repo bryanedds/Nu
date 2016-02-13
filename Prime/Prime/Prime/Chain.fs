@@ -136,20 +136,20 @@ module Chain =
         run3 m () world |> fst
 
     let private run4 handling (chain : Chain<Event<'a, 'o>, unit, 'w>) (observation : Observation<'a, 'o, 'w>) world =
-        let callbackKey = Guid.NewGuid ()
+        let stateKey = Guid.NewGuid ()
         let subscriptionKey = Guid.NewGuid ()
-        let world = Eventable.addCallbackState callbackKey (fun (_ : Event<'a, 'o>) -> chain) world
+        let world = Eventable.addEventState stateKey (fun (_ : Event<'a, 'o>) -> chain) world
         let (eventAddress, unsubscribe, world) = observation.Subscribe world
         let unsubscribe = fun world ->
-            let world = Eventable.removeCallbackState callbackKey world
+            let world = Eventable.removeEventState stateKey world
             let world = unsubscribe world
             Eventable.unsubscribe subscriptionKey world
         let advance = fun evt world ->
-            let chain = Eventable.getCallbackState callbackKey world : Event<'a, 'o> -> Chain<Event<'a, 'o>, unit, 'w>
+            let chain = Eventable.getEventState stateKey world : Event<'a, 'o> -> Chain<Event<'a, 'o>, unit, 'w>
             let (world, advanceResult) = advance chain evt world
             match advanceResult with
             | Right () -> unsubscribe world
-            | Left chainNext -> Eventable.addCallbackState callbackKey chainNext world
+            | Left chainNext -> Eventable.addEventState stateKey chainNext world
         let subscription = fun evt world ->
             let world = advance evt world
             (handling, world)
