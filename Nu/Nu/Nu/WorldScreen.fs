@@ -13,7 +13,7 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module WorldScreenModule =
+module WorldScreen =
 
     type Screen with
 

@@ -564,13 +564,10 @@ and [<ReferenceEquality>] World =
           ScreenDirectory : Vmap<Name, Screen Address * Vmap<Name, Group Address * Vmap<Name, Entity Address>>> }
     
     interface World Eventable with
-        member this.GetEventSystem () = this.EventSystem
-        member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
         member this.GetLiveness () = this.State.Liveness // NOTE: encapsulation violation
         member this.GetUpdateCount () = this.State.UpdateCount // NOTE: encapsulation violation
-        member this.ContainsSimulant simulant =
-            let containsSimulant = Eventable.getMiscellanea this
-            containsSimulant simulant this
+        member this.GetEventSystem () = this.EventSystem
+        member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
         member this.TryGetPublishEvent () =
             let publishPlus (subscriber : Simulant) publisher eventData eventAddress eventTrace subscription world = 
                 match Address.getNames subscriber.SimulantAddress with
@@ -580,3 +577,10 @@ and [<ReferenceEquality>] World =
                 | [_; _; _] -> Eventable.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscription world
                 | _ -> failwith "Unexpected match failure in 'Nu.World.publish.'"
             Some publishPlus
+        member this.ContainsSimulant simulant =
+            match simulant with
+            | :? Game -> true
+            | :? Screen as screen -> Vmap.containsKey screen.ScreenAddress this.ScreenStates
+            | :? Group as group -> Vmap.containsKey group.GroupAddress this.GroupStates
+            | :? Entity as entity -> Vmap.containsKey entity.EntityAddress this.EntityStates
+            | _ -> failwithumf ()

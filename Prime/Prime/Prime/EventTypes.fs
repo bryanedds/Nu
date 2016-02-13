@@ -94,16 +94,15 @@ and [<ReferenceEquality>] EventSystem<'w when 'w :> 'w Eventable> =
         { Subscriptions : SubscriptionEntries
           Unsubscriptions : UnsubscriptionEntries
           CallbackStates : Vmap<Guid, obj>
-          Tasklets : 'w Tasklet Queue
-          Miscellanea : obj }
+          Tasklets : 'w Tasklet Queue }
 
 /// Adds the capability to use purely-functional events with the given type 'w.
 and Eventable<'w when 'w :> 'w Eventable> =
     interface
-        abstract member GetEventSystem : unit -> 'w EventSystem
-        abstract member UpdateEventSystem : ('w EventSystem -> 'w EventSystem) -> 'w
         abstract member GetLiveness : unit -> Liveness
         abstract member GetUpdateCount : unit -> int64
-        abstract member ContainsSimulant : Simulant -> bool
+        abstract member GetEventSystem : unit -> 'w EventSystem
+        abstract member UpdateEventSystem : ('w EventSystem -> 'w EventSystem) -> 'w
         abstract member TryGetPublishEvent : unit -> PublishEvent<'a, 's, 'w> option
+        abstract member ContainsSimulant : Simulant -> bool
         end

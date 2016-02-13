@@ -65,17 +65,12 @@ module EventSystem =
         let state = Vmap.find key eventSystem.CallbackStates
         state :?> 'a
 
-    /// Get the miscellaneous event system data.
-    let getMiscellanea<'a, 'w when 'w :> 'w Eventable> (eventSystem : 'w EventSystem) =
-        eventSystem.Miscellanea :?> 'a
-
     /// Make an event system.
-    let make (miscellanea : 'a) =
+    let make () =
         { Subscriptions = Vmap.makeEmpty ()
           Unsubscriptions = Vmap.makeEmpty ()
           CallbackStates = Vmap.makeEmpty ()
-          Tasklets = Queue.empty
-          Miscellanea = miscellanea :> obj }
+          Tasklets = Queue.empty }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Eventable =
@@ -138,10 +133,6 @@ module Eventable =
     /// Add multiple tasklets to be executed by the engine at the scheduled times.
     let addTasklets<'w when 'w :> 'w Eventable> tasklets (world : 'w) =
         world.UpdateEventSystem (EventSystem.addTasklets tasklets)
-
-    /// Get the miscellaneous event system data.
-    let getMiscellanea<'a, 'w when 'w :> 'w Eventable> (world : 'w) =
-        getEventSystemBy EventSystem.getMiscellanea<'a, 'w> world
 
     let getAnyEventAddresses eventAddress =
         // OPTIMIZATION: uses memoization.
