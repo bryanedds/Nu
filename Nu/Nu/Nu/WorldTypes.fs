@@ -555,7 +555,7 @@ and [<ReferenceEquality>] World =
     private
         { Subsystems : Subsystems
           Components : Components
-          Eventor : World Eventor
+          EventSystem : World EventSystem
           State : WorldState
           GameState : GameState
           ScreenStates : Vmap<Screen Address, ScreenState>
@@ -564,7 +564,7 @@ and [<ReferenceEquality>] World =
           ScreenDirectory : Vmap<Name, Screen Address * Vmap<Name, Group Address * Vmap<Name, Entity Address>>> }
     
     interface World Eventable with
-        member this.GetEventor () = this.Eventor
+        member this.GetEventSystem () = this.EventSystem
         member this.GetLiveness () = this.State.Liveness // NOTE: encapsulation violation
         member this.GetEntityPublishingPriority () = Constants.Engine.EntityPublishingPriority
         member this.TryGetPublishEvent () =
@@ -576,4 +576,4 @@ and [<ReferenceEquality>] World =
                 | [_; _; _] -> Eventable.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscription world
                 | _ -> failwith "Unexpected match failure in 'Nu.World.publish.'"
             Some publishPlus
-        member this.UpdateEventor updater = { this with Eventor = updater this.Eventor }
+        member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }

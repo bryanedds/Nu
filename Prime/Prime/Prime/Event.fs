@@ -87,7 +87,7 @@ and [<ReferenceEquality>] Tasklet<'w when 'w :> 'w Eventable> =
       Operation : 'w -> 'w }
 
 /// Event enabler.
-and [<ReferenceEquality>] Eventor<'w when 'w :> 'w Eventable> =
+and [<ReferenceEquality>] EventSystem<'w when 'w :> 'w Eventable> =
     private
         { Subscriptions : SubscriptionEntries
           Unsubscriptions : UnsubscriptionEntries
@@ -97,11 +97,11 @@ and [<ReferenceEquality>] Eventor<'w when 'w :> 'w Eventable> =
 /// Adds the capability to use purely-functional events with the given type 'w.
 and Eventable<'w when 'w :> 'w Eventable> =
     interface
-        abstract member GetEventor : unit -> 'w Eventor
+        abstract member GetEventSystem : unit -> 'w EventSystem
         abstract member GetLiveness : unit -> Liveness
         abstract member GetEntityPublishingPriority : unit -> single
         abstract member TryGetPublishEvent : unit -> (Simulant -> #Simulant -> 'a -> 'a Address -> string list -> obj -> 'w -> EventHandling * 'w) option
-        abstract member UpdateEventor : ('w Eventor -> 'w Eventor) -> 'w
+        abstract member UpdateEventSystem : ('w EventSystem -> 'w EventSystem) -> 'w
         end
 
 [<RequireQualifiedAccess>]
@@ -111,58 +111,58 @@ module Events =
     let Any = ntoa<obj> !!"*"
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Eventor =
+module EventSystem =
 
     /// Get all tasklets.
-    let getTasklets eventor =
-        eventor.Tasklets
+    let getTasklets eventSystem =
+        eventSystem.Tasklets
 
     /// Clear all held tasklets.
-    let clearTasklets eventor =
-        { eventor with Tasklets = Queue.empty }
+    let clearTasklets eventSystem =
+        { eventSystem with Tasklets = Queue.empty }
 
     /// Restore previously-held tasklets.
-    let restoreTasklets<'w when 'w :> 'w Eventable> (tasklets : 'w Tasklet Queue) eventor =
-        { eventor with Tasklets = Queue.ofSeq ^ Seq.append (eventor.Tasklets :> 'w Tasklet seq) (tasklets :> 'w Tasklet seq) }
+    let restoreTasklets<'w when 'w :> 'w Eventable> (tasklets : 'w Tasklet Queue) eventSystem =
+        { eventSystem with Tasklets = Queue.ofSeq ^ Seq.append (eventSystem.Tasklets :> 'w Tasklet seq) (tasklets :> 'w Tasklet seq) }
 
     /// Add a tasklet to be executed by the engine at the scheduled time.
-    let addTasklet tasklet eventor =
-        { eventor with Tasklets = Queue.conj tasklet eventor.Tasklets }
+    let addTasklet tasklet eventSystem =
+        { eventSystem with Tasklets = Queue.conj tasklet eventSystem.Tasklets }
 
     /// Add multiple tasklets to be executed by the engine at the scheduled times.
-    let addTasklets tasklets eventor =
-        { eventor with Tasklets = Queue.ofSeq ^ Seq.append (tasklets :> 'w Tasklet seq) (eventor.Tasklets :> 'w Tasklet seq) }
+    let addTasklets tasklets eventSystem =
+        { eventSystem with Tasklets = Queue.ofSeq ^ Seq.append (tasklets :> 'w Tasklet seq) (eventSystem.Tasklets :> 'w Tasklet seq) }
 
     /// Add callback state.
-    let addCallbackState key (state : 's) eventor =
-        { eventor with CallbackStates = Vmap.add key (state :> obj) eventor.CallbackStates }
+    let addCallbackState key (state : 's) eventSystem =
+        { eventSystem with CallbackStates = Vmap.add key (state :> obj) eventSystem.CallbackStates }
 
     /// Remove callback state.
-    let removeCallbackState key eventor =
-        { eventor with CallbackStates = Vmap.remove key eventor.CallbackStates }
+    let removeCallbackState key eventSystem =
+        { eventSystem with CallbackStates = Vmap.remove key eventSystem.CallbackStates }
 
     /// Get subscriptions.
-    let getSubscriptions eventor =
-        eventor.Subscriptions
+    let getSubscriptions eventSystem =
+        eventSystem.Subscriptions
 
     /// Get unsubscriptions.
-    let getUnsubscriptions eventor =
-        eventor.Unsubscriptions
+    let getUnsubscriptions eventSystem =
+        eventSystem.Unsubscriptions
 
     /// Set subscriptions.
-    let internal setSubscriptions subscriptions eventor =
-        { eventor with Subscriptions = subscriptions }
+    let internal setSubscriptions subscriptions eventSystem =
+        { eventSystem with Subscriptions = subscriptions }
 
     /// Set unsubscriptions.
-    let internal setUnsubscriptions unsubscriptions eventor =
-        { eventor with Unsubscriptions = unsubscriptions }
+    let internal setUnsubscriptions unsubscriptions eventSystem =
+        { eventSystem with Unsubscriptions = unsubscriptions }
 
     /// Get callback state.
-    let getCallbackState<'s, 'w when 'w :> 'w Eventable> key (eventor : 'w Eventor) =
-        let state = Vmap.find key eventor.CallbackStates
+    let getCallbackState<'s, 'w when 'w :> 'w Eventable> key (eventSystem : 'w EventSystem) =
+        let state = Vmap.find key eventSystem.CallbackStates
         state :?> 's
 
-    /// Make an eventor.
+    /// Make an event system.
     let make () =
         { Subscriptions = Vmap.makeEmpty ()
           Unsubscriptions = Vmap.makeEmpty ()
@@ -175,61 +175,61 @@ module Eventable =
     let private AnyEventAddressesCache =
         Dictionary<obj Address, obj Address list> (HashIdentity.FromFunctions Address<obj>.hash Address<obj>.equals)
 
-    let getEventor<'w when 'w :> 'w Eventable> (world : 'w) =
-        world.GetEventor ()
+    let getEventSystem<'w when 'w :> 'w Eventable> (world : 'w) =
+        world.GetEventSystem ()
 
-    let getEventorBy<'a, 'w when 'w :> 'w Eventable> (by : Eventor<'w> -> 'a) (world : 'w) : 'a =
-        let eventSystem = world.GetEventor ()
+    let getEventSystemBy<'a, 'w when 'w :> 'w Eventable> (by : EventSystem<'w> -> 'a) (world : 'w) : 'a =
+        let eventSystem = world.GetEventSystem ()
         by eventSystem
 
-    let updateEventor<'w when 'w :> 'w Eventable> updater (world : 'w) =
-        world.UpdateEventor updater
+    let updateEventSystem<'w when 'w :> 'w Eventable> updater (world : 'w) =
+        world.UpdateEventSystem updater
 
     /// Get callback subscriptions.
     let getSubscriptions<'w when 'w :> 'w Eventable> (world : 'w) =
-        getEventorBy Eventor.getSubscriptions world
+        getEventSystemBy EventSystem.getSubscriptions world
 
     /// Get callback unsubscriptions.
     let getUnsubscriptions<'w when 'w :> 'w Eventable> (world : 'w) =
-        getEventorBy Eventor.getUnsubscriptions world
+        getEventSystemBy EventSystem.getUnsubscriptions world
 
     /// Set callback subscriptions.
     let internal setSubscriptions<'w when 'w :> 'w Eventable> subscriptions (world : 'w) =
-        world.UpdateEventor (Eventor.setSubscriptions subscriptions)
+        world.UpdateEventSystem (EventSystem.setSubscriptions subscriptions)
 
     /// Set callback unsubscriptions.
     let internal setUnsubscriptions<'w when 'w :> 'w Eventable> unsubscriptions (world : 'w) =
-        world.UpdateEventor (Eventor.setUnsubscriptions unsubscriptions)
+        world.UpdateEventSystem (EventSystem.setUnsubscriptions unsubscriptions)
 
     /// Add callback state to the world.
     let addCallbackState<'s, 'w when 'w :> 'w Eventable> key (state : 's) (world : 'w) =
-        world.UpdateEventor (Eventor.addCallbackState key state)
+        world.UpdateEventSystem (EventSystem.addCallbackState key state)
 
     /// Remove callback state from the world.
     let removeCallbackState<'w when 'w :> 'w Eventable> key (world : 'w) =
-        world.UpdateEventor (Eventor.removeCallbackState key)
+        world.UpdateEventSystem (EventSystem.removeCallbackState key)
 
     /// Get callback state from the world.
     let getCallbackState<'s, 'w when 'w :> 'w Eventable> key (world : 'w) : 's =
-        let eventor = getEventor world
-        Eventor.getCallbackState<'s, 'w> key eventor
+        let eventSystem = getEventSystem world
+        EventSystem.getCallbackState<'s, 'w> key eventSystem
 
     let getTasklets<'w when 'w :> 'w Eventable> (world : 'w) =
-        getEventorBy Eventor.getTasklets world
+        getEventSystemBy EventSystem.getTasklets world
 
     let clearTasklets<'w when 'w :> 'w Eventable> (world : 'w) =
-        world.UpdateEventor Eventor.clearTasklets
+        world.UpdateEventSystem EventSystem.clearTasklets
 
     let restoreTasklets<'w when 'w :> 'w Eventable> (tasklets : 'w Tasklet Queue) (world : 'w) =
-        world.UpdateEventor (Eventor.restoreTasklets tasklets)
+        world.UpdateEventSystem (EventSystem.restoreTasklets tasklets)
 
     /// Add a tasklet to be executed by the engine at the scheduled time.
     let addTasklet<'w when 'w :> 'w Eventable> tasklet (world : 'w) =
-        world.UpdateEventor (Eventor.addTasklet tasklet)
+        world.UpdateEventSystem (EventSystem.addTasklet tasklet)
 
     /// Add multiple tasklets to be executed by the engine at the scheduled times.
     let addTasklets<'w when 'w :> 'w Eventable> tasklets (world : 'w) =
-        world.UpdateEventor (Eventor.addTasklets tasklets)
+        world.UpdateEventSystem (EventSystem.addTasklets tasklets)
 
     let getAnyEventAddresses eventAddress =
         // OPTIMIZATION: uses memoization.
@@ -263,16 +263,16 @@ module Eventable =
 
     /// TODO: document.
     let getSubscriptionsSorted (publishSorter : SubscriptionSorter<'w>) eventAddress (world : 'w) =
-        let eventor = getEventor world
-        let subscriptions = Eventor.getSubscriptions eventor
+        let eventSystem = getEventSystem world
+        let subscriptions = EventSystem.getSubscriptions eventSystem
         match Vmap.tryFind eventAddress subscriptions with
         | Some subList -> publishSorter subList world
         | None -> []
 
     /// TODO: document.
     let getSubscriptionsSorted3 (publishSorter : SubscriptionSorter<'w>) eventAddress (world : 'w) =
-        let eventor = getEventor world
-        let subscriptions = Eventor.getSubscriptions eventor
+        let eventSystem = getEventSystem world
+        let subscriptions = EventSystem.getSubscriptions eventSystem
         let anyEventAddresses = getAnyEventAddresses eventAddress
         let optSubLists = List.map (fun anyEventAddress -> Vmap.tryFind anyEventAddress subscriptions) anyEventAddresses
         let optSubLists = Vmap.tryFind eventAddress subscriptions :: optSubLists
@@ -413,7 +413,7 @@ module Eventable =
                 let world = unsubscribe removalKey world
                 let world = unsubscribe monitorKey world
                 world
-            let subscription' = fun _ eventor -> (Cascade, unsubscribe eventor)
+            let subscription' = fun _ eventSystem -> (Cascade, unsubscribe eventSystem)
             let removingEventAddress = ftoa<unit> !!(typeof<'s>.Name + "/Removing") ->>- subscriberAddress
             let world = subscribe5<unit, 's, 'w> removalKey subscription' removingEventAddress subscriber world
             (unsubscribe, world)
