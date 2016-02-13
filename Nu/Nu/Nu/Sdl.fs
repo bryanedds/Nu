@@ -37,6 +37,7 @@ type [<ReferenceEquality>] SdlDeps =
           OptWindow : nativeint option
           Config : SdlConfig
           Destroy : unit -> unit }
+
     interface IDisposable with
         member this.Dispose () =
             this.Destroy ()

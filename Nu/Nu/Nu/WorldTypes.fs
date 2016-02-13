@@ -565,8 +565,13 @@ and [<ReferenceEquality>] World =
     
     interface World Eventable with
         member this.GetEventSystem () = this.EventSystem
+        member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
         member this.GetLiveness () = this.State.Liveness // NOTE: encapsulation violation
+        member this.GetUpdateCount () = this.State.UpdateCount // NOTE: encapsulation violation
         member this.GetEntityPublishingPriority () = Constants.Engine.EntityPublishingPriority
+        member this.ContainsSimulant simulant =
+            let containsSimulant = Eventable.getMiscellanea this
+            containsSimulant simulant this
         member this.TryGetPublishEvent () =
             let publishPlus (subscriber : Simulant) publisher eventData eventAddress eventTrace subscription world = 
                 match Address.getNames subscriber.SimulantAddress with
@@ -576,4 +581,3 @@ and [<ReferenceEquality>] World =
                 | [_; _; _] -> Eventable.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscription world
                 | _ -> failwith "Unexpected match failure in 'Nu.World.publish.'"
             Some publishPlus
-        member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }

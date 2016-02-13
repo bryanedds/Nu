@@ -20,6 +20,12 @@ type Handling =
     | Resolve
     | Cascade
 
+[<RequireQualifiedAccess>]
+module Events =
+
+    /// Represents any event.
+    let Any = ntoa<obj> !!"*"
+
 /// A participant in the event system.
 /// NOTE: would better have been name 'Participant', but not done so due to legacy constraints.
 type Simulant =
@@ -29,7 +35,8 @@ type Simulant =
         end
 
 /// Operators for the Simulant type.
-and SimulantOperators =
+/// NOTE: would better have been name 'ParticipantOperators', but not done so due to legacy constraints.
+type SimulantOperators =
     private
         | SimulantOperators
 
@@ -92,23 +99,20 @@ and [<ReferenceEquality>] EventSystem<'w when 'w :> 'w Eventable> =
         { Subscriptions : SubscriptionEntries
           Unsubscriptions : UnsubscriptionEntries
           CallbackStates : Vmap<Guid, obj>
-          Tasklets : 'w Tasklet Queue }
+          Tasklets : 'w Tasklet Queue
+          Miscellanea : obj }
 
 /// Adds the capability to use purely-functional events with the given type 'w.
 and Eventable<'w when 'w :> 'w Eventable> =
     interface
         abstract member GetEventSystem : unit -> 'w EventSystem
-        abstract member GetLiveness : unit -> Liveness
-        abstract member GetEntityPublishingPriority : unit -> single
-        abstract member TryGetPublishEvent : unit -> (Simulant -> #Simulant -> 'a -> 'a Address -> string list -> obj -> 'w -> Handling * 'w) option
         abstract member UpdateEventSystem : ('w EventSystem -> 'w EventSystem) -> 'w
+        abstract member GetLiveness : unit -> Liveness
+        abstract member GetUpdateCount : unit -> int64
+        abstract member GetEntityPublishingPriority : unit -> single
+        abstract member ContainsSimulant : Simulant -> bool
+        abstract member TryGetPublishEvent : unit -> (Simulant -> #Simulant -> 'a -> 'a Address -> string list -> obj -> 'w -> Handling * 'w) option
         end
-
-[<RequireQualifiedAccess>]
-module Events =
-
-    /// Represents any event.
-    let Any = ntoa<obj> !!"*"
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module EventSystem =
@@ -158,16 +162,21 @@ module EventSystem =
         { eventSystem with Unsubscriptions = unsubscriptions }
 
     /// Get callback state.
-    let getCallbackState<'s, 'w when 'w :> 'w Eventable> key (eventSystem : 'w EventSystem) =
+    let getCallbackState<'a, 'w when 'w :> 'w Eventable> key (eventSystem : 'w EventSystem) =
         let state = Vmap.find key eventSystem.CallbackStates
-        state :?> 's
+        state :?> 'a
+
+    /// Get the miscellaneous event system data.
+    let getMiscellanea<'a, 'w when 'w :> 'w Eventable> (eventSystem : 'w EventSystem) =
+        eventSystem.Miscellanea :?> 'a
 
     /// Make an event system.
-    let make () =
+    let make (miscData : 'a) =
         { Subscriptions = Vmap.makeEmpty ()
           Unsubscriptions = Vmap.makeEmpty ()
           CallbackStates = Vmap.makeEmpty ()
-          Tasklets = Queue.empty }
+          Tasklets = Queue.empty
+          Miscellanea = miscData :> obj }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Eventable =
@@ -202,7 +211,7 @@ module Eventable =
         world.UpdateEventSystem (EventSystem.setUnsubscriptions unsubscriptions)
 
     /// Add callback state to the world.
-    let addCallbackState<'s, 'w when 'w :> 'w Eventable> key (state : 's) (world : 'w) =
+    let addCallbackState<'a, 'w when 'w :> 'w Eventable> key (state : 'a) (world : 'w) =
         world.UpdateEventSystem (EventSystem.addCallbackState key state)
 
     /// Remove callback state from the world.
@@ -210,9 +219,9 @@ module Eventable =
         world.UpdateEventSystem (EventSystem.removeCallbackState key)
 
     /// Get callback state from the world.
-    let getCallbackState<'s, 'w when 'w :> 'w Eventable> key (world : 'w) : 's =
+    let getCallbackState<'a, 'w when 'w :> 'w Eventable> key (world : 'w) : 'a =
         let eventSystem = getEventSystem world
-        EventSystem.getCallbackState<'s, 'w> key eventSystem
+        EventSystem.getCallbackState<'a, 'w> key eventSystem
 
     let getTasklets<'w when 'w :> 'w Eventable> (world : 'w) =
         getEventSystemBy EventSystem.getTasklets world
@@ -230,6 +239,10 @@ module Eventable =
     /// Add multiple tasklets to be executed by the engine at the scheduled times.
     let addTasklets<'w when 'w :> 'w Eventable> tasklets (world : 'w) =
         world.UpdateEventSystem (EventSystem.addTasklets tasklets)
+
+    /// Get the miscellaneous event system data.
+    let getMiscellanea<'a, 'w when 'w :> 'w Eventable> (world : 'w) =
+        getEventSystemBy EventSystem.getMiscellanea<'s, 'w> world
 
     let getAnyEventAddresses eventAddress =
         // OPTIMIZATION: uses memoization.

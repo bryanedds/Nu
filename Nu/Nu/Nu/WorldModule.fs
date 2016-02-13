@@ -69,15 +69,15 @@ module World =
 
     /// Add callback state to the world.
     let addCallbackState key state world =
-        Eventable.addCallbackState<'s, World> key state world
+        Eventable.addCallbackState<'a, World> key state world
 
     /// Remove callback state from the world.
     let removeCallbackState key world =
         Eventable.removeCallbackState<World> key world
 
     /// Get callback state from the world.
-    let getCallbackState<'s> key world =
-        Eventable.getCallbackState<'s, World> key world
+    let getCallbackState<'a> key world =
+        Eventable.getCallbackState<'a, World> key world
 
     (* Components *)
 
