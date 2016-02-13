@@ -77,7 +77,6 @@ type SubsystemType =
     | RenderType
     | AudioType
 
-
 /// The data for a mouse move event.
 type [<StructuralEquality; NoComparison>] MouseMoveData =
     { Position : Vector2 }
@@ -105,6 +104,11 @@ and WorldStateChangeData = World EventableStateChangeData
 
 /// The data for a change in a simulant.
 and SimulantChangeData<'s when 's :> Simulant> = ParticipantChangeData<'s, World>
+
+/// A tasklet to be completed at the schedule tick time.
+and [<ReferenceEquality>] Tasklet =
+    { ScheduledTime : int64
+      Operation : World -> World }
 
 /// Represents a subsystem by which additional engine-level subsystems such as AI, optimized
 /// special FX, and the like can be added.
@@ -584,6 +588,7 @@ and [<ReferenceEquality>] World =
     private
         { Subsystems : Subsystems
           Components : Components
+          Tasklets : Tasklet Queue
           EventSystem : World EventSystem
           State : WorldState
           GameState : GameState

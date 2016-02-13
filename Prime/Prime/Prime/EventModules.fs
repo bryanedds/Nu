@@ -16,26 +16,6 @@ module Events =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module EventSystem =
 
-    /// Get all tasklets.
-    let getTasklets eventSystem =
-        eventSystem.Tasklets
-
-    /// Clear all held tasklets.
-    let clearTasklets eventSystem =
-        { eventSystem with Tasklets = Queue.empty }
-
-    /// Restore previously-held tasklets.
-    let restoreTasklets<'w when 'w :> 'w Eventable> (tasklets : 'w Tasklet Queue) eventSystem =
-        { eventSystem with Tasklets = Queue.ofSeq ^ Seq.append (eventSystem.Tasklets :> 'w Tasklet seq) (tasklets :> 'w Tasklet seq) }
-
-    /// Add a tasklet to be executed by the engine at the scheduled time.
-    let addTasklet tasklet eventSystem =
-        { eventSystem with Tasklets = Queue.conj tasklet eventSystem.Tasklets }
-
-    /// Add multiple tasklets to be executed by the engine at the scheduled times.
-    let addTasklets tasklets eventSystem =
-        { eventSystem with Tasklets = Queue.ofSeq ^ Seq.append (tasklets :> 'w Tasklet seq) (eventSystem.Tasklets :> 'w Tasklet seq) }
-
     /// Add event state.
     let addEventState key (state : 'a) eventSystem =
         { eventSystem with EventStates = Vmap.add key (state :> obj) eventSystem.EventStates }
@@ -69,8 +49,7 @@ module EventSystem =
     let make () =
         { Subscriptions = Vmap.makeEmpty ()
           Unsubscriptions = Vmap.makeEmpty ()
-          EventStates = Vmap.makeEmpty ()
-          Tasklets = Queue.empty }
+          EventStates = Vmap.makeEmpty () }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Eventable =
@@ -116,23 +95,6 @@ module Eventable =
     let getEventState<'a, 'w when 'w :> 'w Eventable> key (world : 'w) : 'a =
         let eventSystem = getEventSystem world
         EventSystem.getEventState<'a, 'w> key eventSystem
-
-    let getTasklets<'w when 'w :> 'w Eventable> (world : 'w) =
-        getEventSystemBy EventSystem.getTasklets world
-
-    let clearTasklets<'w when 'w :> 'w Eventable> (world : 'w) =
-        world.UpdateEventSystem EventSystem.clearTasklets
-
-    let restoreTasklets<'w when 'w :> 'w Eventable> (tasklets : 'w Tasklet Queue) (world : 'w) =
-        world.UpdateEventSystem (EventSystem.restoreTasklets tasklets)
-
-    /// Add a tasklet to be executed by the engine at the scheduled time.
-    let addTasklet<'w when 'w :> 'w Eventable> tasklet (world : 'w) =
-        world.UpdateEventSystem (EventSystem.addTasklet tasklet)
-
-    /// Add multiple tasklets to be executed by the engine at the scheduled times.
-    let addTasklets<'w when 'w :> 'w Eventable> tasklets (world : 'w) =
-        world.UpdateEventSystem (EventSystem.addTasklets tasklets)
 
     let getAnyEventAddresses eventAddress =
         // OPTIMIZATION: uses memoization.

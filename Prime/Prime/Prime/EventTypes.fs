@@ -83,18 +83,12 @@ and internal SubscriptionEntries =
 and internal UnsubscriptionEntries =
     Vmap<Guid, obj Address * Participant>
 
-/// A tasklet to be completed at the given time, for some int-based definition of time.
-and [<ReferenceEquality>] Tasklet<'w when 'w :> 'w Eventable> =
-    { ScheduledTime : int64
-      Operation : 'w -> 'w }
-
 /// A publisher-neutral, purely functional event system.
 and [<ReferenceEquality>] EventSystem<'w when 'w :> 'w Eventable> =
     private
         { Subscriptions : SubscriptionEntries
           Unsubscriptions : UnsubscriptionEntries
-          EventStates : Vmap<Guid, obj>
-          Tasklets : 'w Tasklet Queue }
+          EventStates : Vmap<Guid, obj> }
 
 /// Adds the capability to use purely-functional events with the given type 'w.
 and Eventable<'w when 'w :> 'w Eventable> =
