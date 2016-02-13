@@ -7,9 +7,13 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module WorldSimulantModule =
+module WorldSimulant =
 
     type World with
+
+        /// Query that the world contains a simulant.
+        static member containsSimulant<'a when 'a :> Simulant> (simulant : 'a) world =
+            (world :> World Eventable).ContainsSimulant simulant
 
         /// Query that a simulant is the either currently selected screen or contained by it.
         static member isSimulantSelected<'s when 's :> Simulant> (simulant : 's) world =
@@ -21,12 +25,3 @@ module WorldSimulantModule =
             | (_, None) -> false
             | (_, Some []) -> false
             | (addressHead :: _, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
-
-        /// Query that the world contains a simulant.
-        static member containsSimulant<'a when 'a :> Simulant> (simulant : 'a) world =
-            match simulant :> Simulant with
-            | :? Game -> true
-            | :? Screen as screen -> World.containsScreen screen world
-            | :? Group as group -> World.containsGroup group world
-            | :? Entity as entity -> World.containsEntity entity world
-            | _ -> failwithumf ()

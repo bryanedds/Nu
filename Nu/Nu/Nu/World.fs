@@ -662,7 +662,7 @@ module WorldModule =
 
             // make the world's event system
             let eventSystem =
-                EventSystem.make World.containsSimulant
+                EventSystem.make ()
 
             // make the world's state
             let worldState =
@@ -759,7 +759,7 @@ module WorldModule =
                         
                 // make the world's event system
                 let eventSystem =
-                    EventSystem.make World.containsSimulant
+                    EventSystem.make ()
 
                 // make the world's state
                 let worldState =

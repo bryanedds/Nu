@@ -13,7 +13,7 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module WorldGroupModule =
+module WorldGroup =
 
     type Group with
 
