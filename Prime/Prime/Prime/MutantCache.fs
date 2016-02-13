@@ -7,7 +7,6 @@ namespace Prime
 /// If it is not satisfactorily efficient to run a clone operation on the mutant for every get,
 /// just pass in the id function for make's cloneMutant arg, but make sure to NEVER mutate the
 /// returned mutant!
-/// TODO: document this type's functions!
 type [<ReferenceEquality>] 'm MutantCache =
     private
         { CloneMutant : 'm -> 'm

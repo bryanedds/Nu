@@ -407,4 +407,6 @@ module ObservationModule =
 
     // Propagate a value from the given source participant to a value in the given destination participant.
     let [<DebuggerHidden; DebuggerStepThrough>] ( *-> ) (source : 'a, valueGetter : 'w -> 'b) (destination : 'o, valueSetter : 'b -> 'w -> 'w) =
-        (source, valueGetter) *-- destination --> fun _ world -> let sourceValue = valueGetter world in valueSetter sourceValue world
+        (source, valueGetter) *-- destination --> fun _ world ->
+            let sourceValue = valueGetter world
+            valueSetter sourceValue world

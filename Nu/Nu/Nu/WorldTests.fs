@@ -31,7 +31,6 @@ module WorldTests =
         Assert.Equal<Simulant> (Simulants.DefaultEntity :> Simulant, World.getUserState world)
 
     let [<Fact>] gameSerializationWorks () =
-        // TODO: make stronger assertions in here!!!
         let world = World.makeEmpty ()
         let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.DefaultScreen.ScreenName) world |> snd
         let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
