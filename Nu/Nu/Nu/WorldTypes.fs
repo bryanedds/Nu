@@ -77,6 +77,7 @@ type SubsystemType =
     | RenderType
     | AudioType
 
+
 /// The data for a mouse move event.
 type [<StructuralEquality; NoComparison>] MouseMoveData =
     { Position : Vector2 }
@@ -98,6 +99,12 @@ type [<StructuralEquality; NoComparison>] CollisionData =
     { Normal : Vector2
       Speed : single
       Collidee : Entity }
+
+/// The data for a change in the world state.
+and WorldStateChangeData = World EventableStateChangeData
+
+/// The data for a change in a simulant.
+and SimulantChangeData<'s when 's :> Simulant> = ParticipantChangeData<'s, World>
 
 /// Represents a subsystem by which additional engine-level subsystems such as AI, optimized
 /// special FX, and the like can be added.
@@ -339,11 +346,30 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
       Xtension : Xtension }
     interface SimulantState
 
+/// A simulant in the world.
+and Simulant =
+    interface
+        inherit Participant
+        abstract member SimulantAddress : Simulant Address
+        end
+
+/// Operators for the Simulant type.
+and SimulantOperators =
+    private
+        | SimulantOperators
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.SimulantAddress)
+
+    /// Concatenate two addresses, takings the type of first address.
+    static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
+
 /// The game type that hosts the various screens used to navigate through a game.
 and [<StructuralEquality; NoComparison>] Game =
     { GameAddress : Game Address }
 
     interface Simulant with
+        member this.ParticipantAddress = atoa<Game, Participant> this.GameAddress
         member this.SimulantAddress = atoa<Game, Simulant> this.GameAddress
         member this.GetPublishingPriority _ _ = Constants.Engine.GamePublishingPriority
         end
@@ -372,6 +398,7 @@ and [<StructuralEquality; NoComparison>] Screen =
     { ScreenAddress : Screen Address }
 
     interface Simulant with
+        member this.ParticipantAddress = atoa<Screen, Participant> this.ScreenAddress
         member this.SimulantAddress = atoa<Screen, Simulant> this.ScreenAddress
         member this.GetPublishingPriority _ _ = Constants.Engine.ScreenPublishingPriority
         end
@@ -411,6 +438,7 @@ and [<StructuralEquality; NoComparison>] Group =
     { GroupAddress : Group Address }
 
     interface Simulant with
+        member this.ParticipantAddress = atoa<Group, Participant> this.GroupAddress
         member this.SimulantAddress = atoa<Group, Simulant> this.GroupAddress
         member this.GetPublishingPriority _ _ = Constants.Engine.GroupPublishingPriority
         end
@@ -454,6 +482,7 @@ and [<StructuralEquality; NoComparison>] Entity =
       UpdateAddress : unit Address }
 
     interface Simulant with
+        member this.ParticipantAddress = atoa<Entity, Participant> this.EntityAddress
         member this.SimulantAddress = atoa<Entity, Simulant> this.EntityAddress
         member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
         end
@@ -569,16 +598,16 @@ and [<ReferenceEquality>] World =
         member this.GetEventSystem () = this.EventSystem
         member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
         member this.TryGetPublishEvent () =
-            let publishPlus (subscriber : Simulant) publisher eventData eventAddress eventTrace subscription world = 
-                match Address.getNames subscriber.SimulantAddress with
-                | [] -> Eventable.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscription world
-                | [_] -> Eventable.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscription world
-                | [_; _] -> Eventable.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscription world
-                | [_; _; _] -> Eventable.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscription world
+            let publishPlus (participant : Participant) publisher eventData eventAddress eventTrace subscription world = 
+                match Address.getNames participant.ParticipantAddress with
+                | [] -> Eventable.publishEvent<'a, 'p, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                | [_] -> Eventable.publishEvent<'a, 'p, Screen, World> participant publisher eventData eventAddress eventTrace subscription world
+                | [_; _] -> Eventable.publishEvent<'a, 'p, Group, World> participant publisher eventData eventAddress eventTrace subscription world
+                | [_; _; _] -> Eventable.publishEvent<'a, 'p, Entity, World> participant publisher eventData eventAddress eventTrace subscription world
                 | _ -> failwith "Unexpected match failure in 'Nu.World.publish.'"
             Some publishPlus
-        member this.ContainsSimulant simulant =
-            match simulant with
+        member this.ContainsParticipant participant =
+            match participant with
             | :? Game -> true
             | :? Screen as screen -> Vmap.containsKey screen.ScreenAddress this.ScreenStates
             | :? Group as group -> Vmap.containsKey group.GroupAddress this.GroupStates

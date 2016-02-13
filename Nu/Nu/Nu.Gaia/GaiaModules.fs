@@ -169,17 +169,17 @@ module Gaia =
         | None -> None
 
     let private handleNuEntityAdd (form : GaiaForm) evt world =
-        addTreeViewNode form (Entity.proxy ^ atoa evt.Publisher.SimulantAddress) world
+        addTreeViewNode form (Entity.proxy ^ atoa evt.Publisher.ParticipantAddress) world
         (Cascade, world)
 
     let private handleNuEntityRemoving (form : GaiaForm) evt world =
-        match form.treeView.Nodes.Find (symstring evt.Publisher.SimulantAddress, true) with
+        match form.treeView.Nodes.Find (symstring evt.Publisher.ParticipantAddress, true) with
         | [||] -> () // when changing an entity name, entity will be removed twice - once from winforms, once from world
         | treeNodes -> form.treeView.Nodes.Remove treeNodes.[0]
         match form.propertyGrid.SelectedObject with
         | null -> (Cascade, world)
         | :? EntityTypeDescriptorSource as entityTds ->
-            if atoa evt.Publisher.SimulantAddress = entityTds.DescribedEntity.EntityAddress then
+            if atoa evt.Publisher.ParticipantAddress = entityTds.DescribedEntity.EntityAddress then
                 form.propertyGrid.SelectedObject <- null
                 let world = World.updateUserState (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
                 (Cascade, world)

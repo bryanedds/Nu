@@ -18,53 +18,54 @@ type Liveness =
     | Exiting
 
 /// A participant in the event system.
-/// NOTE: would better have been name 'Participant', but not done so due to legacy constraints.
-type Simulant =
+type Participant =
     interface
-        abstract member SimulantAddress : Simulant Address
-        abstract member GetPublishingPriority : (Simulant -> 'w -> single) -> 'w -> single
+        abstract member ParticipantAddress : Participant Address
+        abstract member GetPublishingPriority : (Participant -> 'w -> single) -> 'w -> single
         end
 
-/// Operators for the Simulant type.
+/// Operators for the Participant type.
 /// NOTE: would better have been name 'ParticipantOperators', but not done so due to legacy constraints.
-type SimulantOperators =
+type ParticipantOperators =
     private
-        | SimulantOperators
+        | ParticipantOperators
 
     /// Concatenate two addresses, forcing the type of first address.
-    static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.SimulantAddress)
+    static member acatf<'a> (address : 'a Address) (participant : Participant) = acatf address (atooa participant.ParticipantAddress)
 
     /// Concatenate two addresses, takings the type of first address.
-    static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
+    static member (->-) (address, participant : Participant) = ParticipantOperators.acatf address participant
 
-/// The data for a world state change event.
-type [<StructuralEquality; NoComparison>] WorldStateChangeData<'w when 'w :> 'w Eventable> =
-    { OldWorld : 'w }
+/// The data for a change in an eventable's state.
+/// NOTE: I couldn't give its field the more normal name of 'oldWorld' due to field name conflicts with the more
+/// pervasive ParticipantChangeData type below.
+type [<StructuralEquality; NoComparison>] EventableStateChangeData<'w when 'w :> 'w Eventable> =
+    { WorldWithOldState : 'w }
 
-/// The data for an simulant change event.
-and [<StructuralEquality; NoComparison>] SimulantChangeData<'s, 'w when 's :> Simulant and 'w :> 'w Eventable> =
-    { Simulant : 's
+/// The data for a change in a participant.
+and [<StructuralEquality; NoComparison>] ParticipantChangeData<'p, 'w when 'p :> Participant and 'w :> 'w Eventable> =
+    { Participant : 'p
       OldWorld : 'w }
 
 /// An event used by the event system.
-and [<ReferenceEquality>] Event<'a, 's when 's :> Simulant> =
+and [<ReferenceEquality>] Event<'a, 'p when 'p :> Participant> =
     { Data : 'a
       Address : 'a Address
       Trace : string list
-      Publisher : Simulant
-      Subscriber : 's }
+      Publisher : Participant
+      Subscriber : 'p }
 
 /// Describes a means to publish an event.
-and PublishEvent<'a, 's, 'w when 's :> Simulant and 'w :> 'w Eventable> =
-    Simulant -> 's -> 'a -> 'a Address -> string list -> obj -> 'w -> Handling * 'w
+and PublishEvent<'a, 'p, 'w when 'p :> Participant and 'w :> 'w Eventable> =
+    Participant -> 'p -> 'a -> 'a Address -> string list -> obj -> 'w -> Handling * 'w
 
 /// Describes an event subscription.
-and Subscription<'a, 's, 'w when 's :> Simulant and 'w :> 'w Eventable> =
-    Event<'a, 's> -> 'w -> Handling * 'w
+and Subscription<'a, 'p, 'w when 'p :> Participant and 'w :> 'w Eventable> =
+    Event<'a, 'p> -> 'w -> Handling * 'w
 
 /// An entry in the subscription map.
 and SubscriptionEntry =
-    Guid * Simulant * obj
+    Guid * Participant * obj
 
 /// Abstracts over a subscription sorting procedure.
 and SubscriptionSorter<'w when 'w :> 'w Eventable> =
@@ -80,7 +81,7 @@ and internal SubscriptionEntries =
 
 /// A map of subscription keys to unsubscription data.
 and internal UnsubscriptionEntries =
-    Vmap<Guid, obj Address * Simulant>
+    Vmap<Guid, obj Address * Participant>
 
 /// A tasklet to be completed at the given time, with time being accounted for by the world
 /// state's TickTime value.
@@ -103,6 +104,6 @@ and Eventable<'w when 'w :> 'w Eventable> =
         abstract member GetUpdateCount : unit -> int64
         abstract member GetEventSystem : unit -> 'w EventSystem
         abstract member UpdateEventSystem : ('w EventSystem -> 'w EventSystem) -> 'w
-        abstract member TryGetPublishEvent : unit -> PublishEvent<'a, 's, 'w> option
-        abstract member ContainsSimulant : Simulant -> bool
+        abstract member TryGetPublishEvent : unit -> PublishEvent<'a, 'p, 'w> option
+        abstract member ContainsParticipant : Participant -> bool
         end

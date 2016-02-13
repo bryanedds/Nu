@@ -13,7 +13,7 @@ module WorldSimulant =
 
         /// Query that the world contains a simulant.
         static member containsSimulant<'a when 'a :> Simulant> (simulant : 'a) world =
-            (world :> World Eventable).ContainsSimulant simulant
+            (world :> World Eventable).ContainsParticipant simulant
 
         /// Query that a simulant is the either currently selected screen or contained by it.
         static member isSimulantSelected<'s when 's :> Simulant> (simulant : 's) world =
