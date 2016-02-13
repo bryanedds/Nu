@@ -365,7 +365,7 @@ module GuiDispatcherModule =
         static let handleMouseLeft evt world =
             let gui = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            let eventHandling =
+            let handling =
                 if World.isSimulantSelected gui world && gui.GetVisible world then
                     let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (gui.GetViewType world) data.Position) world
                     if data.Down &&
@@ -374,7 +374,7 @@ module GuiDispatcherModule =
                        Resolve
                     else Cascade
                 else Cascade
-            (eventHandling, world)
+            (handling, world)
         
         static member FieldDefinitions =
             [define? ViewType Absolute

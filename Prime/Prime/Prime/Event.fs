@@ -10,18 +10,18 @@ open System.Threading.Tasks
 open FSharpx.Collections
 open Prime
 
-/// Specifies whether an application is running or exiting.
-/// TODO: maybe move to... somewhere else?
+/// Specifies whether an event-enabled application is running or exiting.
 type Liveness =
     | Running
     | Exiting
 
 /// Describes whether an event has been resolved or should cascade to down-stream handlers.
-type EventHandling =
+type Handling =
     | Resolve
     | Cascade
 
-/// A simulant that can take part in the event system.
+/// A participant in the event system.
+/// NOTE: would better have been name 'Participant', but not done so due to legacy constraints.
 type Simulant =
     interface
         abstract member SimulantAddress : Simulant Address
@@ -58,11 +58,11 @@ and [<ReferenceEquality>] Event<'a, 's when 's :> Simulant> =
 
 /// Describes an event subscription.
 and Subscription<'a, 's, 'w when 's :> Simulant and 'w :> 'w Eventable> =
-    Event<'a, 's> -> 'w -> EventHandling * 'w
+    Event<'a, 's> -> 'w -> Handling * 'w
 
 /// Describes an event subscription that can be boxed / unboxed.
 and BoxableSubscription<'w when 'w :> 'w Eventable> =
-    obj -> 'w -> EventHandling * 'w
+    obj -> 'w -> Handling * 'w
 
 /// An entry in the subscription map.
 and SubscriptionEntry =
@@ -100,7 +100,7 @@ and Eventable<'w when 'w :> 'w Eventable> =
         abstract member GetEventSystem : unit -> 'w EventSystem
         abstract member GetLiveness : unit -> Liveness
         abstract member GetEntityPublishingPriority : unit -> single
-        abstract member TryGetPublishEvent : unit -> (Simulant -> #Simulant -> 'a -> 'a Address -> string list -> obj -> 'w -> EventHandling * 'w) option
+        abstract member TryGetPublishEvent : unit -> (Simulant -> #Simulant -> 'a -> 'a Address -> string list -> obj -> 'w -> Handling * 'w) option
         abstract member UpdateEventSystem : ('w EventSystem -> 'w EventSystem) -> 'w
         end
 
@@ -249,9 +249,7 @@ module Eventable =
         else failwith "Event name cannot be empty."
 
     let getSortableSubscriptions
-        (getEntityPublishingPriority : Simulant -> 'w -> single)
-        (subscriptions : SubscriptionEntry rQueue)
-        (world : 'w) :
+        (getEntityPublishingPriority : Simulant -> 'w -> single) (subscriptions : SubscriptionEntry rQueue) (world : 'w) :
         (single * SubscriptionEntry) list =
         List.foldBack
             (fun (key, simulant : Simulant, subscription) subscriptions ->
@@ -261,7 +259,6 @@ module Eventable =
             subscriptions
             []
 
-    /// TODO: document.
     let getSubscriptionsSorted (publishSorter : SubscriptionSorter<'w>) eventAddress (world : 'w) =
         let eventSystem = getEventSystem world
         let subscriptions = EventSystem.getSubscriptions eventSystem
@@ -269,7 +266,6 @@ module Eventable =
         | Some subList -> publishSorter subList world
         | None -> []
 
-    /// TODO: document.
     let getSubscriptionsSorted3 (publishSorter : SubscriptionSorter<'w>) eventAddress (world : 'w) =
         let eventSystem = getEventSystem world
         let subscriptions = EventSystem.getSubscriptions eventSystem
@@ -330,8 +326,8 @@ module Eventable =
             | None -> publishEvent<'a, 'p, Simulant, 'w>
         let (_, world) =
             List.foldWhile
-                (fun (eventHandling, world : 'w) (_, subscriber : Simulant, subscription) ->
-                    if  (match eventHandling with Cascade -> true | Resolve -> false) &&
+                (fun (handling, world : 'w) (_, subscriber : Simulant, subscription) ->
+                    if  (match handling with Cascade -> true | Resolve -> false) &&
                         (match world.GetLiveness () with Running -> true | Exiting -> false) then
                         let publishResult = publishPlus subscriber publisher eventData eventAddress eventTrace subscription world
                         Some publishResult
