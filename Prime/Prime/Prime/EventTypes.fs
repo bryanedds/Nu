@@ -37,7 +37,7 @@ type ParticipantOperators =
     static member (->-) (address, participant : Participant) = ParticipantOperators.acatf address participant
 
 /// The data for a change in an eventable's state.
-/// NOTE: I couldn't give its field the more normal name of 'oldWorld' due to field name conflicts with the more
+/// NOTE: I couldn't give its field the more normal name of 'OldWorld' due to field name conflicts with the more
 /// pervasive ParticipantChangeData type below.
 type [<StructuralEquality; NoComparison>] EventableStateChangeData<'w when 'w :> 'w Eventable> =
     { WorldWithOldState : 'w }
@@ -83,8 +83,7 @@ and internal SubscriptionEntries =
 and internal UnsubscriptionEntries =
     Vmap<Guid, obj Address * Participant>
 
-/// A tasklet to be completed at the given time, with time being accounted for by the world
-/// state's TickTime value.
+/// A tasklet to be completed at the given time, for some int-based definition of time.
 and [<ReferenceEquality>] Tasklet<'w when 'w :> 'w Eventable> =
     { ScheduledTime : int64
       Operation : 'w -> 'w }
