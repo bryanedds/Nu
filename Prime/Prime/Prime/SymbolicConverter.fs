@@ -119,11 +119,7 @@ type SymbolicConverter (targetType : Type) =
         Symbol.toString symbol
 
     let rec fromSymbol (destType : Type) (symbol : Symbol) =
-        if symbol = Molecule [] then
-            // kind of a weird special-case when .NET type converters throw null at us for no
-            // seeming reason
-            null
-        elif destType.IsPrimitive then
+        if destType.IsPrimitive then
             match symbol with
             | Atom str -> (TypeDescriptor.GetConverter destType).ConvertFromString str
             | Quote _ -> failwith "Expected Symbol.Atom for conversion to string."
