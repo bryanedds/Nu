@@ -7,7 +7,7 @@ open Prime
 open OpenTK
 
 /// An abstract data type for executing Effects.
-type [<NoEquality; NoComparison>] Effector =
+type [<NoEquality; NoComparison>] EffectSystem =
     private
         { ViewType : ViewType
           History : Slice seq
@@ -18,7 +18,7 @@ type [<NoEquality; NoComparison>] Effector =
           Chaos : System.Random }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Effector =
+module EffectSystem =
 
     let rec private selectKeyFrames2 localTime playback (keyFrames : IKeyFrame list) =
         match playback with
@@ -49,7 +49,7 @@ module Effector =
         selectKeyFrames2 localTime playback |>
         fun (fst, snd, thd) -> (fst, snd :?> 'n, thd :?> 'n)
 
-    let inline private tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) progress algorithm effector =
+    let inline private tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) progress algorithm effectSystem =
         match algorithm with
         | Constant ->
             value2
@@ -60,7 +60,7 @@ module Effector =
             let randValue = fst ^ Rand.nextSingle rand
             value + scale (value2 - value, randValue)
         | Chaos ->
-            let chaosValue = single ^ effector.Chaos.NextDouble ()
+            let chaosValue = single ^ effectSystem.Chaos.NextDouble ()
             value + scale (value2 - value, chaosValue)
         | Ease ->
             let progressEase = single ^ Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0)
@@ -99,8 +99,8 @@ module Effector =
         | Ratio -> ratio (value, value2)
         | TweenApplicator.Put -> value2
 
-    let private evalInset (celSize : Vector2i) celRun celCount stutter effector =
-        let cel = int (effector.EffectTime / stutter) % celCount
+    let private evalInset (celSize : Vector2i) celRun celCount stutter effectSystem =
+        let cel = int (effectSystem.EffectTime / stutter) % celCount
         let celI = cel % celRun
         let celJ = cel / celRun
         let celX = celI * celSize.X
@@ -118,13 +118,13 @@ module Effector =
         | SymbolicCompressionB (SymbolicCompressionB content) ->
             { DefinitionParams = []; DefinitionBody = SymbolicCompressionB (SymbolicCompressionB content) }
 
-    let rec evalResource resource effector : AssetTag =
+    let rec evalResource resource effectSystem : AssetTag =
         match resource with
         | Resource.Expand (definitionName, _) ->
-            match Map.tryFind definitionName effector.EffectEnv with
+            match Map.tryFind definitionName effectSystem.EffectEnv with
             | Some definition ->
                 match definition.DefinitionBody with
-                | SymbolicCompressionA resource -> evalResource resource effector
+                | SymbolicCompressionA resource -> evalResource resource effectSystem
                 | _ ->
                     Log.note ^ "Expected Resource for definition '" + definitionName + "."
                     symvalue<AssetTag> Constants.Assets.DefaultImageValue
@@ -133,108 +133,108 @@ module Effector =
                 symvalue<AssetTag> Constants.Assets.DefaultImageValue
         | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
 
-    let rec private iterateArtifacts incrementAspects content slice effector =
-        let effector = { effector with ProgressOffset = 0.0f }
-        let slice = evalAspects incrementAspects slice effector
-        (slice, evalContent content slice effector)
+    let rec private iterateArtifacts incrementAspects content slice effectSystem =
+        let effectSystem = { effectSystem with ProgressOffset = 0.0f }
+        let slice = evalAspects incrementAspects slice effectSystem
+        (slice, evalContent content slice effectSystem)
 
-    and private cycleArtifacts incrementAspects content slice effector =
-        let slice = evalAspects incrementAspects slice effector
-        evalContent content slice effector
+    and private cycleArtifacts incrementAspects content slice effectSystem =
+        let slice = evalAspects incrementAspects slice effectSystem
+        evalContent content slice effectSystem
 
-    and private evalProgress keyFrameTime keyFrameLength effector =
+    and private evalProgress keyFrameTime keyFrameLength effectSystem =
         let progress = if keyFrameLength = 0L then 1.0f else single keyFrameTime / single keyFrameLength
-        let progress = progress + effector.ProgressOffset
+        let progress = progress + effectSystem.ProgressOffset
         if progress > 1.0f then progress - 1.0f else progress
 
-    and private evalAspect aspect slice effector =
+    and private evalAspect aspect slice effectSystem =
         match aspect with
         | Aspect.Expand (definitionName, _) ->
-            match Map.tryFind definitionName effector.EffectEnv with
+            match Map.tryFind definitionName effectSystem.EffectEnv with
             | Some definition ->
                 match definition.DefinitionBody with
-                | SymbolicCompressionB (SymbolicCompressionA aspect) -> evalAspect aspect slice effector
+                | SymbolicCompressionB (SymbolicCompressionA aspect) -> evalAspect aspect slice effectSystem
                 | _ -> Log.note ^ "Expected Aspect for definition '" + definitionName + "'."; slice
             | None -> Log.note ^ "Could not find definition with name '" + definitionName + "'."; slice
         | Enabled (applicator, playback, keyFrames) ->
-            let (_, keyFrame, _) = selectKeyFrames effector.EffectTime playback keyFrames
+            let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
             let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
             { slice with Enabled = applied }
         | Position (applicator, algorithm, playback, keyFrames) ->
-            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effector.EffectTime playback keyFrames
-            let progress = evalProgress keyFrameTime keyFrame.TweenLength effector
-            let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effector
+            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+            let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+            let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
             { slice with Position = applied }
         | Translation (applicator, algorithm, playback, keyFrames) ->
-            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effector.EffectTime playback keyFrames
-            let progress = evalProgress keyFrameTime keyFrame.TweenLength effector
-            let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effector
+            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+            let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+            let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
             let oriented = Vector2.Transform (tweened, Quaternion.FromAxisAngle (Vector3.UnitZ, slice.Rotation))
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position oriented applicator
             { slice with Position = applied }
         | Size (applicator, algorithm, playback, keyFrames) ->
-            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effector.EffectTime playback keyFrames
-            let progress = evalProgress keyFrameTime keyFrame.TweenLength effector
-            let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effector
+            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+            let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+            let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
             { slice with Size = applied }
         | Rotation (applicator, algorithm, playback, keyFrames) ->
-            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effector.EffectTime playback keyFrames
-            let progress = evalProgress keyFrameTime keyFrame.TweenLength effector
-            let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effector
+            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+            let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+            let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
             let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Rotation tweened applicator
             { slice with Rotation = applied }
         | Depth (applicator, algorithm, playback, keyFrames) ->
-            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effector.EffectTime playback keyFrames
-            let progress = evalProgress keyFrameTime keyFrame.TweenLength effector
-            let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effector
+            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+            let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+            let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
             let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Depth tweened applicator
             { slice with Depth = applied }
         | Offset (applicator, algorithm, playback, keyFrames) ->
-            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effector.EffectTime playback keyFrames
-            let progress = evalProgress keyFrameTime keyFrame.TweenLength effector
-            let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effector
+            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+            let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+            let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
             let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
             { slice with Offset = applied }
         | Color (applicator, algorithm, playback, keyFrames) ->
-            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effector.EffectTime playback keyFrames
-            let progress = evalProgress keyFrameTime keyFrame.TweenLength effector
-            let tweened = tween Vector4.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effector
+            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+            let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+            let tweened = tween Vector4.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
             let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
             { slice with Color = applied }
         | Volume (applicator, algorithm, playback, keyFrames) ->
-            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effector.EffectTime playback keyFrames
-            let progress = evalProgress keyFrameTime keyFrame.TweenLength effector
-            let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effector
+            let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+            let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+            let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
             let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Volume tweened applicator
             { slice with Volume = applied }
         | Bone -> slice
 
-    and private evalAspects aspects slice effector =
-        List.fold (fun slice aspect -> evalAspect aspect slice effector) slice aspects
+    and private evalAspects aspects slice effectSystem =
+        List.fold (fun slice aspect -> evalAspect aspect slice effectSystem) slice aspects
 
-    and private evalExpand definitionName arguments slice effector =
-        match Map.tryFind definitionName effector.EffectEnv with
+    and private evalExpand definitionName arguments slice effectSystem =
+        match Map.tryFind definitionName effectSystem.EffectEnv with
         | Some definition ->
             match definition.DefinitionBody with
             |  SymbolicCompressionB (SymbolicCompressionB content) ->
                 let localDefinitions = List.map evalArgument arguments
                 match (try List.zip definition.DefinitionParams localDefinitions |> Some with _ -> None) with
                 | Some localDefinitionEntries ->
-                    let effector = { effector with EffectEnv = Map.addMany localDefinitionEntries effector.EffectEnv }
-                    evalContent content slice effector
+                    let effectSystem = { effectSystem with EffectEnv = Map.addMany localDefinitionEntries effectSystem.EffectEnv }
+                    evalContent content slice effectSystem
                 | None -> Log.note "Wrong number of arguments provided to ExpandContent."; []
             | _ -> Log.note ^ "Expected Content for definition '" + definitionName + "'."; []
         | None -> Log.note ^ "Could not find definition with name '" + definitionName + "'."; []
 
-    and private evalStaticSprite resource aspects content slice effector =
+    and private evalStaticSprite resource aspects content slice effectSystem =
 
         // pull image from resource
-        let image = evalResource resource effector
+        let image = evalResource resource effectSystem
 
         // eval aspects
-        let slice = evalAspects aspects slice effector
+        let slice = evalAspects aspects slice effectSystem
 
         // build sprite artifacts
         let spriteArtifacts =
@@ -250,26 +250,26 @@ module Effector =
                                   Offset = slice.Offset
                                   OptInset = None
                                   Image = image
-                                  ViewType = effector.ViewType
+                                  ViewType = effectSystem.ViewType
                                   Color = slice.Color }}]]
             else []
 
         // build implicitly mounted content
-        let mountedArtifacts = evalContent content slice effector
+        let mountedArtifacts = evalContent content slice effectSystem
 
         // return artifacts
         mountedArtifacts @ spriteArtifacts
 
-    and private evalAnimatedSprite resource celSize celRun celCount stutter aspects content slice effector =
+    and private evalAnimatedSprite resource celSize celRun celCount stutter aspects content slice effectSystem =
 
         // pull image from resource
-        let image = evalResource resource effector
+        let image = evalResource resource effectSystem
 
         // eval aspects
-        let slice = evalAspects aspects slice effector
+        let slice = evalAspects aspects slice effectSystem
 
         // eval inset
-        let inset = evalInset celSize celRun celCount stutter effector
+        let inset = evalInset celSize celRun celCount stutter effectSystem
 
         // build animated sprite artifacts
         let animatedSpriteArtifacts =
@@ -285,23 +285,23 @@ module Effector =
                                   Offset = slice.Offset
                                   OptInset = Some inset
                                   Image = image
-                                  ViewType = effector.ViewType
+                                  ViewType = effectSystem.ViewType
                                   Color = slice.Color }}]]
             else []
 
         // build implicitly mounted content
-        let mountedArtifacts = evalContent content slice effector
+        let mountedArtifacts = evalContent content slice effectSystem
 
         // return artifacts
         mountedArtifacts @ animatedSpriteArtifacts
 
-    and private evalSoundEffect resource aspects content slice effector =
+    and private evalSoundEffect resource aspects content slice effectSystem =
 
         // pull sound from resource
-        let sound = evalResource resource effector
+        let sound = evalResource resource effectSystem
 
         // eval aspects
-        let slice = evalAspects aspects slice effector
+        let slice = evalAspects aspects slice effectSystem
 
         // build sprite artifacts
         let soundArtifacts =
@@ -310,17 +310,17 @@ module Effector =
             else []
 
         // build implicitly mounted content
-        let mountedArtifacts = evalContent content slice effector
+        let mountedArtifacts = evalContent content slice effectSystem
 
         // return artifacts
         mountedArtifacts @ soundArtifacts
 
-    and private evalMount shift aspects content (slice : Slice) effector =
+    and private evalMount shift aspects content (slice : Slice) effectSystem =
         let slice = { slice with Depth = slice.Depth + shift }
-        let slice = evalAspects aspects slice effector
-        evalContent content slice effector
+        let slice = evalAspects aspects slice effectSystem
+        evalContent content slice effectSystem
 
-    and private evalRepeat shift repetition incrementAspects content (slice : Slice) effector =
+    and private evalRepeat shift repetition incrementAspects content (slice : Slice) effectSystem =
         
         // eval repeat either as iterative or cylcing
         let slice = { slice with Depth = slice.Depth + shift }
@@ -330,7 +330,7 @@ module Effector =
         | Iterate count ->
             List.fold
                 (fun (slice, artifacts) _ ->
-                    let (slice, artifacts') = iterateArtifacts incrementAspects content slice effector
+                    let (slice, artifacts') = iterateArtifacts incrementAspects content slice effectSystem
                     (slice, artifacts @ artifacts'))
                 (slice, [])
                 [0 .. count - 1] |>
@@ -340,90 +340,90 @@ module Effector =
         | Cycle count ->
             List.fold
                 (fun artifacts i ->
-                    let effector = { effector with ProgressOffset = 1.0f / single count * single i }
-                    let artifacts' = cycleArtifacts incrementAspects content slice effector
+                    let effectSystem = { effectSystem with ProgressOffset = 1.0f / single count * single i }
+                    let artifacts' = cycleArtifacts incrementAspects content slice effectSystem
                     artifacts @ artifacts')
                 [] [0 .. count - 1]
 
-    and private evalEmit shift rate emitterAspects aspects content effector =
+    and private evalEmit shift rate emitterAspects aspects content effectSystem =
         let artifacts =
             Seq.foldi
                 (fun i artifacts (slice : Slice) ->
-                    let timePassed = int64 i * effector.EffectRate
+                    let timePassed = int64 i * effectSystem.EffectRate
                     let slice = { slice with Depth = slice.Depth + shift }
-                    let slice = evalAspects emitterAspects slice { effector with EffectTime = effector.EffectTime - timePassed }
-                    let emitCountLastFrame = single (effector.EffectTime - timePassed - effector.EffectRate) * rate
-                    let emitCountThisFrame = single (effector.EffectTime - timePassed) * rate
+                    let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - timePassed }
+                    let emitCountLastFrame = single (effectSystem.EffectTime - timePassed - effectSystem.EffectRate) * rate
+                    let emitCountThisFrame = single (effectSystem.EffectTime - timePassed) * rate
                     let emitCount = int emitCountThisFrame - int emitCountLastFrame
-                    let effector =
+                    let effectSystem =
                         let history =
                             // TODO: emits on emits is broken, so fix this!
                             match content with
                             | Emit _ ->
                                 Seq.mapi
                                     (fun j slice ->
-                                        let timePassed = int64 (i + j) * effector.EffectRate
-                                        evalAspects emitterAspects slice { effector with EffectTime = effector.EffectTime - timePassed })
-                                    effector.History
-                            | _ -> effector.History
-                        { effector with History = history; EffectTime = timePassed }
+                                        let timePassed = int64 (i + j) * effectSystem.EffectRate
+                                        evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - timePassed })
+                                    effectSystem.History
+                            | _ -> effectSystem.History
+                        { effectSystem with History = history; EffectTime = timePassed }
                     let artifacts' =
                         List.fold
                             (fun artifacts' _ ->
-                                let slice = evalAspects aspects slice effector
-                                let artifacts'' = if slice.Enabled then evalContent content slice effector else []
+                                let slice = evalAspects aspects slice effectSystem
+                                let artifacts'' = if slice.Enabled then evalContent content slice effectSystem else []
                                 artifacts'' @ artifacts')
                             []
                             [0 .. emitCount - 1]
                     artifacts' @ artifacts)
                 []
-                effector.History
+                effectSystem.History
         artifacts
 
-    and private evalComposite shift contents (slice : Slice) effector =
+    and private evalComposite shift contents (slice : Slice) effectSystem =
         let slice = { slice with Depth = slice.Depth + shift }
-        evalContents contents slice effector
+        evalContents contents slice effectSystem
 
-    and private evalContent (content : Content) slice effector =
+    and private evalContent (content : Content) slice effectSystem =
         match content with
         | Expand (definitionName, arguments) ->
-            evalExpand definitionName arguments slice effector
+            evalExpand definitionName arguments slice effectSystem
         | StaticSprite (resource, aspects, content) ->
-            evalStaticSprite resource aspects content slice effector
+            evalStaticSprite resource aspects content slice effectSystem
         | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects, content) ->
-            evalAnimatedSprite resource celSize celRun celCount stutter aspects content slice effector
+            evalAnimatedSprite resource celSize celRun celCount stutter aspects content slice effectSystem
         | SoundEffect (resource, aspects, content) ->
-            evalSoundEffect resource aspects content slice effector
+            evalSoundEffect resource aspects content slice effectSystem
         | Mount (Shift shift, aspects, content) ->
-            evalMount shift aspects content slice effector
+            evalMount shift aspects content slice effectSystem
         | Repeat (Shift shift, repetition, incrementAspects, content) ->
-            evalRepeat shift repetition incrementAspects content slice effector
+            evalRepeat shift repetition incrementAspects content slice effectSystem
         | Emit (Shift shift, Rate rate, emitterAspects, aspects, content) ->
-            evalEmit shift rate emitterAspects aspects content effector
+            evalEmit shift rate emitterAspects aspects content effectSystem
         | Composite (Shift shift, contents) ->
-            evalComposite shift contents slice effector
+            evalComposite shift contents slice effectSystem
         | Tag (name, metadata) ->
             [TagArtifact (name, metadata, slice)]
         | Nil -> []
 
-    and private evalContents contents slice effector =
+    and private evalContents contents slice effectSystem =
         List.fold
             (fun artifacts content ->
-                let artifacts' = evalContent content slice effector
+                let artifacts' = evalContent content slice effectSystem
                 artifacts' @ artifacts)
             []
             contents
 
-    let eval (effect : Effect) slice (effector : Effector) : EffectArtifact list =
+    let eval (effect : Effect) slice (effectSystem : EffectSystem) : EffectArtifact list =
         let localTime =
             match effect.OptLifetime with
-            | Some lifetime -> effector.EffectTime % lifetime
-            | None -> effector.EffectTime
-        let effector =
-            { effector with
-                EffectEnv = Map.concat effector.EffectEnv effect.Definitions
+            | Some lifetime -> effectSystem.EffectTime % lifetime
+            | None -> effectSystem.EffectTime
+        let effectSystem =
+            { effectSystem with
+                EffectEnv = Map.concat effectSystem.EffectEnv effect.Definitions
                 EffectTime = localTime }
-        evalContent effect.Content slice effector
+        evalContent effect.Content slice effectSystem
 
     let make viewType history tickRate tickTime globalEnv = 
         { ViewType = viewType
