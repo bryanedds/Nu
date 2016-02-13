@@ -242,7 +242,7 @@ module Eventable =
 
     /// Get the miscellaneous event system data.
     let getMiscellanea<'a, 'w when 'w :> 'w Eventable> (world : 'w) =
-        getEventSystemBy EventSystem.getMiscellanea<'s, 'w> world
+        getEventSystemBy EventSystem.getMiscellanea<'a, 'w> world
 
     let getAnyEventAddresses eventAddress =
         // OPTIMIZATION: uses memoization.
