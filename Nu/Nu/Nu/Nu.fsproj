@@ -76,8 +76,8 @@
     <Compile Include="Audio.fs" />
     <Compile Include="Metadata.fs" />
     <Compile Include="Input.fs" />
-    <Compile Include="Effect.fs" />
-    <Compile Include="EffectSystem.fs" />
+    <Compile Include="EffectTypes.fs" />
+    <Compile Include="EffectModules.fs" />
     <Compile Include="Sdl.fs" />
     <Compile Include="WorldTypes.fs" />
     <Compile Include="WorldEvents.fs" />
@@ -99,7 +99,7 @@
     <Compile Include="Observation.fs" />
     <Compile Include="AddressTests.fs" />
     <Compile Include="ReflectionTests.fs" />
-    <Compile Include="EffectSystemTests.fs" />
+    <Compile Include="EffectTests.fs" />
     <Compile Include="WorldTests.fs" />
     <Compile Include="ObservationTests.fs" />
     <Compile Include="ChainTests.fs" />
