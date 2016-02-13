@@ -25,7 +25,6 @@ type Participant =
         end
 
 /// Operators for the Participant type.
-/// NOTE: would better have been name 'ParticipantOperators', but not done so due to legacy constraints.
 type ParticipantOperators =
     private
         | ParticipantOperators
@@ -36,14 +35,8 @@ type ParticipantOperators =
     /// Concatenate two addresses, takings the type of first address.
     static member (->-) (address, participant : Participant) = ParticipantOperators.acatf address participant
 
-/// The data for a change in an eventable's state.
-/// NOTE: I couldn't give its field the more normal name of 'OldWorld' due to field name conflicts with the more
-/// pervasive ParticipantChangeData type below.
-type [<StructuralEquality; NoComparison>] EventableStateChangeData<'w when 'w :> 'w Eventable> =
-    { WorldWithOldState : 'w }
-
 /// The data for a change in a participant.
-and [<StructuralEquality; NoComparison>] ParticipantChangeData<'p, 'w when 'p :> Participant and 'w :> 'w Eventable> =
+type [<StructuralEquality; NoComparison>] ParticipantChangeData<'p, 'w when 'p :> Participant and 'w :> 'w Eventable> =
     { Participant : 'p
       OldWorld : 'w }
 
