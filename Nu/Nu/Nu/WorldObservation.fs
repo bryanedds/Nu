@@ -42,4 +42,6 @@ module ObservationModule =
 
     // Propagate a value from the given source participant to a value in the given destination participant, but with frame-based cycle-breaking.
     let [<DebuggerHidden; DebuggerStepThrough>] (/->) (source : 'a, valueGetter : World -> 'b) (destination : 'o, valueSetter : 'b -> World -> World) =
-        (source, valueGetter) /-- destination --> fun _ world -> let sourceValue = valueGetter world in valueSetter sourceValue world
+        (source, valueGetter) /-- destination --> fun _ world ->
+            let sourceValue = valueGetter world
+            valueSetter sourceValue world

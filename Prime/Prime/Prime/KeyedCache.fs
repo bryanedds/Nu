@@ -4,7 +4,6 @@
 namespace Prime
 
 /// Presents a purely-functional interface to a cached value.
-/// TODO: document this type's functions!
 type [<ReferenceEquality>] KeyedCache<'k, 'v when 'k : equality> =
     private
         { mutable CacheKey : 'k
