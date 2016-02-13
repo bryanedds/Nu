@@ -93,7 +93,8 @@
     <Compile Include="SymbolicDescriptor.fs" />
     <Compile Include="SymbolicString.fs" />
     <Compile Include="Xtension.fs" />
-    <Compile Include="Event.fs" />
+    <Compile Include="EventTypes.fs" />
+    <Compile Include="EventModules.fs" />
     <Compile Include="Observation.fs" />
     <Compile Include="Chain.fs" />
     <Compile Include="RandTests.fs" />
