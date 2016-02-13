@@ -99,7 +99,7 @@ and Eventable<'w when 'w :> 'w Eventable> =
     interface
         abstract member GetEventor : unit -> 'w Eventor
         abstract member GetLiveness : unit -> Liveness
-        abstract member GetLeastPublishingPriority : unit -> single
+        abstract member GetEntityPublishingPriority : unit -> single
         abstract member TryGetPublishEvent : unit -> (Simulant -> #Simulant -> 'a -> 'a Address -> string list -> obj -> 'w -> EventHandling * 'w) option
         abstract member UpdateEventor : ('w Eventor -> 'w Eventor) -> 'w
         end
@@ -249,14 +249,14 @@ module Eventable =
         else failwith "Event name cannot be empty."
 
     let getSortableSubscriptions
-        (getParticipantPublishingPriority : Simulant -> 'w -> single)
+        (getEntityPublishingPriority : Simulant -> 'w -> single)
         (subscriptions : SubscriptionEntry rQueue)
         (world : 'w) :
         (single * SubscriptionEntry) list =
         List.foldBack
-            (fun (key, participant : Simulant, subscription) subscriptions ->
-                let priority = getParticipantPublishingPriority participant world
-                let subscription = (priority, (key, participant, subscription))
+            (fun (key, simulant : Simulant, subscription) subscriptions ->
+                let priority = simulant.GetPublishingPriority getEntityPublishingPriority world
+                let subscription = (priority, (key, simulant, subscription))
                 subscription :: subscriptions)
             subscriptions
             []
@@ -308,10 +308,10 @@ module Eventable =
         let subscriptions = List.sortWith Pair.sortFstDescending subscriptions
         List.map snd subscriptions
 
-    /// Sort subscriptions by their place in the world's participant hierarchy.
+    /// Sort subscriptions by their place in the world's simulant hierarchy.
     let sortSubscriptionsByHierarchy subscriptions (world : 'w Eventable) =
         sortSubscriptionsBy
-            (fun _ _ -> world.GetLeastPublishingPriority ()) // TODO: remove hard coding
+            (fun _ _ -> world.GetEntityPublishingPriority ()) // TODO: remove hard coding
             subscriptions
             world
 
@@ -401,7 +401,7 @@ module Eventable =
         (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) world =
         subscribe5 (Guid.NewGuid ()) subscription eventAddress subscriber world
 
-    /// Keep active a subscription for the lifetime of a participant, and be provided with an unsubscription callback.
+    /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
     let monitorPlus<'a, 's, 'w when 's :> Simulant and 'w :> 'w Eventable>
         (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
         let subscriberAddress = subscriber.SimulantAddress
@@ -419,7 +419,7 @@ module Eventable =
             (unsubscribe, world)
         else failwith "Cannot monitor events with an anonymous subscriber."
 
-    /// Keep active a subscription for the lifetime of a participant.
+    /// Keep active a subscription for the lifetime of a simulant.
     let monitor<'a, 's, 'w when 's :> Simulant and 'w :> 'w Eventable>
         (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
         monitorPlus<'a, 's, 'w> subscription eventAddress subscriber world |> snd

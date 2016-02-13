@@ -365,7 +365,7 @@ module WorldEntityModule =
                 let entityState = World.getEntityState entity world
                 let dispatcher = entityState.DispatcherNp
                 dispatcher.GetPickingPriority (entity, entityState.Depth, world)
-            | _ -> 0.0f
+            | _ -> failwithumf ()
 
         /// Sort subscriptions by their editor picking priority.
         static member sortSubscriptionsByPickingPriority subscriptions world =
