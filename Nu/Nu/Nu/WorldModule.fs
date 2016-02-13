@@ -40,45 +40,6 @@ module World =
     let internal clearSubsystemsMessages world =
         { world with Subsystems = Subsystems.clearSubsystemsMessages world.Subsystems world }
 
-    (* Eventable *)
-
-    let internal getTasklets world =
-        Eventable.getTasklets<World> world
-
-    let internal clearTasklets world =
-        Eventable.clearTasklets<World> world
-
-    let internal restoreTasklets tasklets world =
-        Eventable.restoreTasklets<World> tasklets world
-
-    /// Add a tasklet to be executed by the engine at the scheduled time.
-    let addTasklet tasklet world =
-        Eventable.addTasklet<World> tasklet world
-
-    /// Add multiple tasklets to be executed by the engine at the scheduled times.
-    let addTasklets tasklets world =
-        Eventable.addTasklets<World> tasklets world
-
-    /// Get event subscriptions.
-    let getSubscriptions world =
-        Eventable.getSubscriptions<World> world
-
-    /// Get event unsubscriptions.
-    let getUnsubscriptions world =
-        Eventable.getUnsubscriptions<World> world
-
-    /// Add event state to the world.
-    let addEventState key state world =
-        Eventable.addEventState<'a, World> key state world
-
-    /// Remove event state from the world.
-    let removeEventState key world =
-        Eventable.removeEventState<World> key world
-
-    /// Get event state from the world.
-    let getEventState<'a> key world =
-        Eventable.getEventState<'a, World> key world
-
     (* Components *)
 
     /// Get the facets of the world.
@@ -101,7 +62,46 @@ module World =
     let getGameDispatchers world =
         Components.getGameDispatchers world.Components
 
-    (* Publishing *)
+    (* Tasklets *)
+
+    let internal getTasklets world =
+        world.Tasklets
+
+    let internal clearTasklets world =
+        { world with Tasklets = Queue.empty }
+
+    let internal restoreTasklets tasklets world =
+        { world with Tasklets = Queue.ofSeq ^ Seq.append (world.Tasklets :> Tasklet seq) (tasklets :> Tasklet seq) }
+
+    /// Add a tasklet to be executed by the engine at the scheduled time.
+    let addTasklet tasklet world =
+        { world with Tasklets = Queue.conj tasklet world.Tasklets }
+
+    /// Add multiple tasklets to be executed by the engine at the scheduled times.
+    let addTasklets tasklets world =
+        { world with Tasklets = Queue.ofSeq ^ Seq.append (tasklets :> Tasklet seq) (world.Tasklets :> Tasklet seq) }
+
+    (* Eventable *)
+
+    /// Get event subscriptions.
+    let getSubscriptions world =
+        Eventable.getSubscriptions<World> world
+
+    /// Get event unsubscriptions.
+    let getUnsubscriptions world =
+        Eventable.getUnsubscriptions<World> world
+
+    /// Add event state to the world.
+    let addEventState key state world =
+        Eventable.addEventState<'a, World> key state world
+
+    /// Remove event state from the world.
+    let removeEventState key world =
+        Eventable.removeEventState<World> key world
+
+    /// Get event state from the world.
+    let getEventState<'a> key world =
+        Eventable.getEventState<'a, World> key world
 
     /// TODO: document.
     let getSubscriptionsSorted (publishSorter : SubscriptionSorter<World>) eventAddress world =
