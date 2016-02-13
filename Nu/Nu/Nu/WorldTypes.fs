@@ -605,19 +605,17 @@ and [<ReferenceEquality>] World =
         member this.GetLiveness () = this.State.Liveness // NOTE: encapsulation violation
         member this.GetEventSystem () = this.EventSystem
         member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
-        member this.GetCustomEventPublisher () =
-            let publishPlus (participant : Participant) publisher eventData eventAddress eventTrace subscription world = 
-                match Address.getNames participant.ParticipantAddress with
-                | [] -> Eventable.publishEvent<'a, 'p, Game, World> participant publisher eventData eventAddress eventTrace subscription world
-                | [_] -> Eventable.publishEvent<'a, 'p, Screen, World> participant publisher eventData eventAddress eventTrace subscription world
-                | [_; _] -> Eventable.publishEvent<'a, 'p, Group, World> participant publisher eventData eventAddress eventTrace subscription world
-                | [_; _; _] -> Eventable.publishEvent<'a, 'p, Entity, World> participant publisher eventData eventAddress eventTrace subscription world
-                | _ -> failwith "Unexpected match failure in 'Nu.World.publish.'"
-            Some publishPlus
         member this.ContainsParticipant participant =
             match participant with
             | :? Game -> true
             | :? Screen as screen -> Vmap.containsKey screen.ScreenAddress this.ScreenStates
             | :? Group as group -> Vmap.containsKey group.GroupAddress this.GroupStates
             | :? Entity as entity -> Vmap.containsKey entity.EntityAddress this.EntityStates
+            | _ -> failwithumf ()
+        member this.PublishEvent (participant : Participant) publisher eventData eventAddress eventTrace subscription world = 
+            match Address.getNames participant.ParticipantAddress with
+            | [] -> Eventable.publishEvent<'a, 'p, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+            | [_] -> Eventable.publishEvent<'a, 'p, Screen, World> participant publisher eventData eventAddress eventTrace subscription world
+            | [_; _] -> Eventable.publishEvent<'a, 'p, Group, World> participant publisher eventData eventAddress eventTrace subscription world
+            | [_; _; _] -> Eventable.publishEvent<'a, 'p, Entity, World> participant publisher eventData eventAddress eventTrace subscription world
             | _ -> failwithumf ()

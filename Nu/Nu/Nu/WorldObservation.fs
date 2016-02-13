@@ -26,11 +26,11 @@ module Observation =
 
     /// Take events from an observation only when the currently selected screen is idling (that
     /// is, there is no screen transition in progress).
-    //let [<DebuggerHidden; DebuggerStepThrough>] isSelectedScreenIdling _ world = World.isSelectedScreenIdling world
+    // TODO: re-enable let [<DebuggerHidden; DebuggerStepThrough>] isSelectedScreenIdling _ world = World.isSelectedScreenIdling world
     
     /// Take events from an observation only when the currently selected screen is transitioning
     /// (that is, there is a screen transition in progress).
-    //let [<DebuggerHidden; DebuggerStepThrough>] isSelectedScreenTransitioning _ world = World.isSelectedScreenTransitioning world
+    // TODO: re-enable let [<DebuggerHidden; DebuggerStepThrough>] isSelectedScreenTransitioning _ world = World.isSelectedScreenTransitioning world
 
 [<AutoOpen>]
 module ObservationModule =

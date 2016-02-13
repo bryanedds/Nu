@@ -147,8 +147,10 @@ module Eventable =
             with
             | :? InvalidCastException ->
                 Log.debug ^
-                    "If you've reached this exception, then you've probably inadvertantly mixed " +
-                    "up an event type parameter for some form of Eventable.publish or subscribe."
+                    "If you've reached this exception, then you've probably inadvertantly mixed up an event type " +
+                    "parameter for some form of Eventable.publish or subscribe. " +
+                    "This exception can also crop up when your implementation of Eventable.PublishEvent doesn't " +
+                    "correctly specialize its 's and 'w types for Eventable.publishEvent calls."
                 reraise ()
             | _ -> reraise ()
         box boxableSubscription
@@ -175,20 +177,16 @@ module Eventable =
         subscriptions
 
     /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
-    let publish6<'a, 'p, 'w when 'p :> Participant and 'w :> Eventable<'w>>
+    let publish7<'a, 'p, 'w when 'p :> Participant and 'w :> Eventable<'w>>
         getSubscriptions (publishSorter : SubscriptionSorter<'w>) (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) (world : 'w) =
         let objEventAddress = atooa eventAddress
         let subscriptions = getSubscriptions publishSorter objEventAddress world
-        let eventPublisher =
-            match world.GetCustomEventPublisher () with
-            | Some customEventPublisher -> customEventPublisher
-            | None -> publishEvent<'a, 'p, Participant, 'w>
         let (_, world) =
             List.foldWhile
                 (fun (handling, world : 'w) (_, subscriber : Participant, subscription) ->
                     if  (match handling with Cascade -> true | Resolve -> false) &&
                         (match world.GetLiveness () with Running -> true | Exiting -> false) then
-                        let publishResult = eventPublisher subscriber publisher eventData eventAddress eventTrace subscription world
+                        let publishResult = world.PublishEvent subscriber publisher eventData eventAddress eventTrace subscription world
                         Some publishResult
                     else None)
                 (Cascade, world)
@@ -196,9 +194,14 @@ module Eventable =
         world
 
     /// Publish an event, using the given publishSorter procedure to arrange the order to which subscriptions are published.
-    let publish<'a, 'p, 'w when 'p :> Participant and 'w :> Eventable<'w>>
+    let publish6<'a, 'p, 'w when 'p :> Participant and 'w :> Eventable<'w>>
         (publishSorter : SubscriptionSorter<'w>) (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) (world : 'w) =
-        publish6<'a, 'p, 'w> getSubscriptionsSorted3 publishSorter eventData eventAddress eventTrace publisher world
+        publish7<'a, 'p, 'w> getSubscriptionsSorted3 publishSorter eventData eventAddress eventTrace publisher world
+
+    /// Publish an event with no subscription sorting.
+    let publish<'a, 'p, 'w when 'p :> Participant and 'w :> Eventable<'w>>
+        (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) (world : 'w) =
+        publish6<'a, 'p, 'w> sortSubscriptionsNone eventData eventAddress eventTrace publisher world
 
     /// Unsubscribe from an event.
     let unsubscribe<'w when 'w :> Eventable<'w>> subscriptionKey (world : 'w) =

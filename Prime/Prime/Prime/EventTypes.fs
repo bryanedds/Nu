@@ -48,10 +48,6 @@ and [<ReferenceEquality>] Event<'a, 'p when 'p :> Participant> =
       Publisher : Participant
       Subscriber : 'p }
 
-/// Describes a means to publish an event.
-and PublishEvent<'a, 'p, 'w when 'p :> Participant and 'w :> 'w Eventable> =
-    Participant -> 'p -> 'a -> 'a Address -> string list -> obj -> 'w -> Handling * 'w
-
 /// Describes an event subscription.
 and Subscription<'a, 'p, 'w when 'p :> Participant and 'w :> 'w Eventable> =
     Event<'a, 'p> -> 'w -> Handling * 'w
@@ -89,6 +85,6 @@ and Eventable<'w when 'w :> 'w Eventable> =
         abstract member GetLiveness : unit -> Liveness
         abstract member GetEventSystem : unit -> 'w EventSystem
         abstract member UpdateEventSystem : ('w EventSystem -> 'w EventSystem) -> 'w
-        abstract member GetCustomEventPublisher : unit -> PublishEvent<'a, 'p, 'w> option
         abstract member ContainsParticipant : Participant -> bool
+        abstract member PublishEvent<'a, 'p when 'p :> Participant> : Participant -> 'p -> 'a -> 'a Address -> string list -> obj -> 'w -> Handling * 'w
         end

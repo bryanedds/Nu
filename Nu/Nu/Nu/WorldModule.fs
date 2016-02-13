@@ -127,17 +127,17 @@ module World =
         Eventable.sortSubscriptionsNone subscriptions world
 
     /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
-    let publish6<'a, 'p when 'p :> Simulant> getSubscriptions publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-        Eventable.publish6<'a, 'p, World> getSubscriptions publishSorter eventData eventAddress eventTrace publisher world
+    let publish7<'a, 'p when 'p :> Simulant> getSubscriptions publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
+        Eventable.publish7<'a, 'p, World> getSubscriptions publishSorter eventData eventAddress eventTrace publisher world
 
     /// Publish an event, using the given publishSorter procedure to arrange the order to which subscriptions are published.
-    let publish5<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-        Eventable.publish<'a, 'p, World> publishSorter eventData eventAddress eventTrace publisher world
+    let publish6<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
+        Eventable.publish6<'a, 'p, World> publishSorter eventData eventAddress eventTrace publisher world
 
     /// Publish an event.
     let publish<'a, 'p when 'p :> Simulant>
         (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-        Eventable.publish<'a, 'p, World> sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher world
+        Eventable.publish6<'a, 'p, World> sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher world
 
     /// Unsubscribe from an event.
     let unsubscribe subscriptionKey world =

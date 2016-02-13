@@ -21,41 +21,6 @@ module WorldTests =
         let world = World.makeEmpty ()
         World.run4 (fun world -> World.getTickTime world < 1L) SdlDeps.empty Running world
 
-    let [<Fact>] subscribeWorks () =
-        let world = World.makeEmpty 0
-        let world = World.subscribe incUserStateAndCascade UnitEventAddress Simulants.Game world
-        let world = World.publish () UnitEventAddress ["Test"] Simulants.Game world
-        Assert.Equal (1, World.getUserState world)
-
-    let [<Fact>] subscribeAndPublishTwiceWorks () =
-        let world = World.makeEmpty 0
-        let world = World.subscribe incUserStateAndCascade UnitEventAddress Simulants.Game world
-        let world = World.publish () UnitEventAddress ["Test"] Simulants.Game world
-        let world = World.publish () UnitEventAddress ["Test"] Simulants.Game world
-        Assert.Equal (2, World.getUserState world)
-
-    let [<Fact>] subscribeTwiceAndPublishWorks () =
-        let world = World.makeEmpty 0
-        let world = World.subscribe incUserStateAndCascade UnitEventAddress Simulants.Game world
-        let world = World.subscribe incUserStateAndCascade UnitEventAddress Simulants.Game world
-        let world = World.publish () UnitEventAddress ["Test"] Simulants.Game world
-        Assert.Equal (2, World.getUserState world)
-
-    let [<Fact>] subscribeWithResolutionWorks () =
-        let world = World.makeEmpty 0
-        let world = World.subscribe incUserStateAndCascade UnitEventAddress Simulants.Game world
-        let world = World.subscribe incUserStateAndResolve UnitEventAddress Simulants.Game world
-        let world = World.publish () UnitEventAddress ["Test"] Simulants.Game world
-        Assert.Equal (1, World.getUserState world)
-
-    let [<Fact>] unsubscribeWorks () =
-        let key = makeGuid ()
-        let world = World.makeEmpty 0
-        let world = World.subscribe5 key incUserStateAndResolve UnitEventAddress Simulants.Game world
-        let world = World.unsubscribe key world
-        let world = World.publish () UnitEventAddress ["Test"] Simulants.Game world
-        Assert.Equal (0, World.getUserState world)
-
     let [<Fact>] entitySubscribeWorks () =
         let world = World.makeEmpty ()
         let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.DefaultScreen.ScreenName) world |> snd

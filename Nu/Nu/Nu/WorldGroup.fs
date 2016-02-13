@@ -52,7 +52,7 @@ module WorldGroupModule =
         static member internal updateGroup (group : Group) world =
             let dispatcher = group.GetDispatcherNp world
             let world = dispatcher.Update (group, world)
-            World.publish6 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () (Events.Update ->- group) ["World.updateGroup"] Simulants.Game world
+            World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () (Events.Update ->- group) ["World.updateGroup"] Simulants.Game world
 
         static member internal actualizeGroup (group : Group) world =
             let dispatcher = group.GetDispatcherNp world
