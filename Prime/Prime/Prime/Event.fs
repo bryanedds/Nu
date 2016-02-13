@@ -10,6 +10,17 @@ open System.Threading.Tasks
 open FSharpx.Collections
 open Prime
 
+/// Specifies whether an application is running or exiting.
+/// TODO: maybe move to... somewhere else?
+type Liveness =
+    | Running
+    | Exiting
+
+/// Describes whether an event has been resolved or should cascade to down-stream handlers.
+type EventHandling =
+    | Resolve
+    | Cascade
+
 /// A simulant that can take part in the event system.
 type Simulant =
     interface
@@ -27,17 +38,6 @@ and SimulantOperators =
 
     /// Concatenate two addresses, takings the type of first address.
     static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
-
-/// Specifies whether an application is running or exiting.
-/// TODO: maybe move to... somewhere else?
-type Liveness =
-    | Running
-    | Exiting
-
-/// Describes whether an event has been resolved or should cascade to down-stream handlers.
-type EventHandling =
-    | Resolve
-    | Cascade
 
 /// The data for a world state change event.
 and [<StructuralEquality; NoComparison>] WorldStateChangeData<'w when 'w :> 'w Eventable> =
@@ -91,8 +91,8 @@ and [<ReferenceEquality>] Eventor<'w when 'w :> 'w Eventable> =
     private
         { Subscriptions : SubscriptionEntries
           Unsubscriptions : UnsubscriptionEntries
-          Tasklets : 'w Tasklet Queue
-          CallbackStates : Vmap<Guid, obj> }
+          CallbackStates : Vmap<Guid, obj>
+          Tasklets : 'w Tasklet Queue }
 
 /// Adds the capability to use purely-functional events with the given type 'w.
 and Eventable<'w when 'w :> 'w Eventable> =
@@ -166,8 +166,8 @@ module Eventor =
     let make () =
         { Subscriptions = Vmap.makeEmpty ()
           Unsubscriptions = Vmap.makeEmpty ()
-          Tasklets = Queue.empty
-          CallbackStates = Vmap.makeEmpty () }
+          CallbackStates = Vmap.makeEmpty ()
+          Tasklets = Queue.empty }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Eventable =
@@ -184,23 +184,6 @@ module Eventable =
 
     let updateEventor<'w when 'w :> 'w Eventable> updater (world : 'w) =
         world.UpdateEventor updater
-
-    let getTasklets<'w when 'w :> 'w Eventable> (world : 'w) =
-        getEventorBy Eventor.getTasklets world
-
-    let clearTasklets<'w when 'w :> 'w Eventable> (world : 'w) =
-        world.UpdateEventor Eventor.clearTasklets
-
-    let restoreTasklets<'w when 'w :> 'w Eventable> (tasklets : 'w Tasklet Queue) (world : 'w) =
-        world.UpdateEventor (Eventor.restoreTasklets tasklets)
-
-    /// Add a tasklet to be executed by the engine at the scheduled time.
-    let addTasklet<'w when 'w :> 'w Eventable> tasklet (world : 'w) =
-        world.UpdateEventor (Eventor.addTasklet tasklet)
-
-    /// Add multiple tasklets to be executed by the engine at the scheduled times.
-    let addTasklets<'w when 'w :> 'w Eventable> tasklets (world : 'w) =
-        world.UpdateEventor (Eventor.addTasklets tasklets)
 
     /// Get callback subscriptions.
     let getSubscriptions<'w when 'w :> 'w Eventable> (world : 'w) =
@@ -230,6 +213,23 @@ module Eventable =
     let getCallbackState<'s, 'w when 'w :> 'w Eventable> key (world : 'w) : 's =
         let eventor = getEventor world
         Eventor.getCallbackState<'s, 'w> key eventor
+
+    let getTasklets<'w when 'w :> 'w Eventable> (world : 'w) =
+        getEventorBy Eventor.getTasklets world
+
+    let clearTasklets<'w when 'w :> 'w Eventable> (world : 'w) =
+        world.UpdateEventor Eventor.clearTasklets
+
+    let restoreTasklets<'w when 'w :> 'w Eventable> (tasklets : 'w Tasklet Queue) (world : 'w) =
+        world.UpdateEventor (Eventor.restoreTasklets tasklets)
+
+    /// Add a tasklet to be executed by the engine at the scheduled time.
+    let addTasklet<'w when 'w :> 'w Eventable> tasklet (world : 'w) =
+        world.UpdateEventor (Eventor.addTasklet tasklet)
+
+    /// Add multiple tasklets to be executed by the engine at the scheduled times.
+    let addTasklets<'w when 'w :> 'w Eventable> tasklets (world : 'w) =
+        world.UpdateEventor (Eventor.addTasklets tasklets)
 
     let getAnyEventAddresses eventAddress =
         // OPTIMIZATION: uses memoization.
@@ -311,7 +311,7 @@ module Eventable =
     /// Sort subscriptions by their place in the world's simulant hierarchy.
     let sortSubscriptionsByHierarchy subscriptions (world : 'w Eventable) =
         sortSubscriptionsBy
-            (fun _ _ -> world.GetEntityPublishingPriority ()) // TODO: remove hard coding
+            (fun _ _ -> world.GetEntityPublishingPriority ())
             subscriptions
             world
 
