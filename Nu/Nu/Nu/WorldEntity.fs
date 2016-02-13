@@ -14,7 +14,7 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module WorldEntity =
+module WorldEntityModule =
 
     type Entity with
 

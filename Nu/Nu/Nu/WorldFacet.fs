@@ -10,7 +10,7 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module WorldFacet =
+module WorldFacetModule =
 
     type World with
 
