@@ -46,7 +46,7 @@ and [<StructuralEquality; NoComparison>] SimulantChangeData<'s, 'w when 's :> Si
     { Simulant : 's
       OldWorld : 'w }
 
-/// An event used by the game engine's purely-functional event system.
+/// An event used by the event system.
 and [<ReferenceEquality>] Event<'a, 's when 's :> Simulant> =
     { Data : 'a
       Address : 'a Address
@@ -54,7 +54,7 @@ and [<ReferenceEquality>] Event<'a, 's when 's :> Simulant> =
       Publisher : Simulant
       Subscriber : 's }
 
-/// Describes a mean to publish an event.
+/// Describes a means to publish an event.
 and PublishEvent<'a, 's, 'w when 's :> Simulant and 'w :> 'w Eventable> =
     Simulant -> 's -> 'a -> 'a Address -> string list -> obj -> 'w -> Handling * 'w
 
@@ -62,24 +62,24 @@ and PublishEvent<'a, 's, 'w when 's :> Simulant and 'w :> 'w Eventable> =
 and Subscription<'a, 's, 'w when 's :> Simulant and 'w :> 'w Eventable> =
     Event<'a, 's> -> 'w -> Handling * 'w
 
-/// Describes an event subscription that can be boxed / unboxed.
-and BoxableSubscription<'w when 'w :> 'w Eventable> =
-    obj -> 'w -> Handling * 'w
-
 /// An entry in the subscription map.
 and SubscriptionEntry =
     Guid * Simulant * obj
-
-/// A map of event subscriptions.
-and SubscriptionEntries =
-    Vmap<obj Address, SubscriptionEntry rQueue>
 
 /// Abstracts over a subscription sorting procedure.
 and SubscriptionSorter<'w when 'w :> 'w Eventable> =
     SubscriptionEntry rQueue -> 'w -> SubscriptionEntry rQueue
 
+/// Describes an event subscription that can be boxed / unboxed.
+and internal BoxableSubscription<'w when 'w :> 'w Eventable> =
+    obj -> 'w -> Handling * 'w
+
+/// A map of event subscriptions.
+and internal SubscriptionEntries =
+    Vmap<obj Address, SubscriptionEntry rQueue>
+
 /// A map of subscription keys to unsubscription data.
-and UnsubscriptionEntries =
+and internal UnsubscriptionEntries =
     Vmap<Guid, obj Address * Simulant>
 
 /// A tasklet to be completed at the given time, with time being accounted for by the world
