@@ -132,9 +132,13 @@ module Operators =
     let enumerable<'a> enumeratable =
         System.Linq.Enumerable.Cast<'a> enumeratable
 
-    /// Convert a couple of ints to a Guid value.
+    /// Make a Guid.
+    let makeGuid () =
+        Guid.NewGuid ()
+
+    /// Make a Guid from a couple of ints.
     /// It is the user's responsibility to ensure uniqueness when using the resulting Guids.
-    let intsToGuid m n =
+    let makeGuidFromInts m n =
         let bytes = Array.create<byte> 8 (byte 0)
         Guid (m, int16 (n >>> 16), int16 n, bytes)
 
@@ -147,6 +151,9 @@ module Operators =
         let fileName = frame.GetFileName ()
         failwithf "Unexpected match failure in '%s' on line %i in file %s." meth.Name line fileName
 
+    /// As close as we can get to F# implicits.
+    let inline implicit arg = (^a : (static member op_Implicit : ^b -> ^a) arg)
+
     /// Sequences two functions like Haskell ($).
     let inline (^) f g = f g
 
@@ -155,6 +162,3 @@ module Operators =
 
     /// Test just the value parts of a type for equality. Reflective and slow.
     let inline (===) (x : 'a) (y : 'a) = similar x y
-
-    /// As close as we can get to F# implicits.
-    let inline implicit arg = (^a : (static member op_Implicit : ^b -> ^a) arg)

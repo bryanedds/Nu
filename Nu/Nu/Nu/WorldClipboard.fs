@@ -31,7 +31,7 @@ module WorldClipboardModule =
         static member pasteFromClipboard atMouse rightClickPosition positionSnap rotationSnap group world =
             match !RefClipboard with
             | Some entityState ->
-                let id = Core.makeId ()
+                let id = makeGuid ()
                 let name = Name.make ^ symstring id
                 let entityState = { entityState with Id = id; Name = name }
                 let camera = World.getCamera world

@@ -64,13 +64,13 @@ module Nu =
 [<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module WorldModule =
 
-    let private ScreenTransitionMouseLeftKey = Guid.NewGuid ()
-    let private ScreenTransitionMouseCenterKey = Guid.NewGuid ()
-    let private ScreenTransitionMouseRightKey = Guid.NewGuid ()
-    let private ScreenTransitionMouseX1Key = Guid.NewGuid ()
-    let private ScreenTransitionMouseX2Key = Guid.NewGuid ()
-    let private ScreenTransitionKeyboardKeyKey = Guid.NewGuid ()
-    let private SplashScreenUpdateKey = Guid.NewGuid ()
+    let private ScreenTransitionMouseLeftKey = makeGuid ()
+    let private ScreenTransitionMouseCenterKey = makeGuid ()
+    let private ScreenTransitionMouseRightKey = makeGuid ()
+    let private ScreenTransitionMouseX1Key = makeGuid ()
+    let private ScreenTransitionMouseX2Key = makeGuid ()
+    let private ScreenTransitionKeyboardKeyKey = makeGuid ()
+    let private SplashScreenUpdateKey = makeGuid ()
 
     type World with
 
@@ -170,7 +170,7 @@ module WorldModule =
             match World.getOptSelectedScreen world with
             | Some selectedScreen ->
                 if World.containsScreen selectedScreen world then
-                    let subscriptionKey = Guid.NewGuid ()
+                    let subscriptionKey = makeGuid ()
                     let subscription = fun (_ : Event<unit, Screen>) world ->
                         match World.getOptScreenTransitionDestination world with
                         | Some destination ->

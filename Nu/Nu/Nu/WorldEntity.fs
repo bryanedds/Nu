@@ -257,7 +257,7 @@ module WorldEntityModule =
         static member reassignEntity entity optName group world =
             let entityState = World.getEntityState entity world
             let world = World.removeEntity entity world
-            let id = Core.makeId ()
+            let id = makeGuid ()
             let name = match optName with Some name -> name | None -> Name.make ^ symstring id
             let entityState = { entityState with Id = id; Name = name }
             let transmutedEntity = gtoe group name
