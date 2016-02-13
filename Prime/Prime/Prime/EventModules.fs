@@ -184,8 +184,9 @@ module Eventable =
             try subscription (evt :?> Event<'a, 's>) world
             with
             | :? InvalidCastException ->
-                // NOTE: If you've reached this exception, then you've probably inadvertantly mixed
-                // up an event type parameter for some form of World.publish or subscribe.
+                Log.debug ^
+                    "If you've reached this exception, then you've probably inadvertantly mixed " +
+                    "up an event type parameter for some form of Eventable.publish or subscribe."
                 reraise ()
             | _ -> reraise ()
         box boxableSubscription

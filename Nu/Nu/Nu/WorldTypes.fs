@@ -562,7 +562,7 @@ and [<ReferenceEquality>] World =
           GroupStates : Vmap<Group Address, GroupState>
           EntityStates : Vmap<Entity Address, EntityState>
           ScreenDirectory : Vmap<Name, Screen Address * Vmap<Name, Group Address * Vmap<Name, Entity Address>>> }
-    
+
     interface World Eventable with
         member this.GetLiveness () = this.State.Liveness // NOTE: encapsulation violation
         member this.GetUpdateCount () = this.State.UpdateCount // NOTE: encapsulation violation
