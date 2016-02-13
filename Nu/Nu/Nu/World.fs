@@ -461,9 +461,9 @@ module WorldModule =
                     let mousePosition = Vector2 (single evt.button.x, single evt.button.y)
                     let world =
                         if World.isMouseButtonDown MouseLeft world
-                        then World.publish5 World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseDrag ["World.processInput"] Simulants.Game world
+                        then World.publish6 World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseDrag ["World.processInput"] Simulants.Game world
                         else world
-                    World.publish5 World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseMove ["World.processInput"] Simulants.Game world
+                    World.publish6 World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseMove ["World.processInput"] Simulants.Game world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
@@ -471,8 +471,8 @@ module WorldModule =
                     let mouseButtonDownEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> !!"Down"
                     let mouseButtonChangeEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> !!"Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
-                    let world = World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonDownEventAddress ["World.processInput"] Simulants.Game world
-                    World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress ["World.processInput"] Simulants.Game world
+                    let world = World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonDownEventAddress ["World.processInput"] Simulants.Game world
+                    World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress ["World.processInput"] Simulants.Game world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
@@ -480,20 +480,20 @@ module WorldModule =
                     let mouseButtonUpEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> !!"Up"
                     let mouseButtonChangeEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> !!"Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
-                    let world = World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEventAddress ["World.processInput"] Simulants.Game world
-                    World.publish5 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress ["World.processInput"] Simulants.Game world
+                    let world = World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEventAddress ["World.processInput"] Simulants.Game world
+                    World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress ["World.processInput"] Simulants.Game world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = true }
-                    let world = World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyDown ["World.processInput"] Simulants.Game world
-                    World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange ["World.processInput"] Simulants.Game world
+                    let world = World.publish6 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyDown ["World.processInput"] Simulants.Game world
+                    World.publish6 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange ["World.processInput"] Simulants.Game world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = false }
-                    let world = World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyUp ["World.processInput"] Simulants.Game world
-                    World.publish5 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange ["World.processInput"] Simulants.Game world
+                    let world = World.publish6 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyUp ["World.processInput"] Simulants.Game world
+                    World.publish6 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange ["World.processInput"] Simulants.Game world
                 | _ -> world
             (World.getLiveness world, world)
 

@@ -1,6 +1,7 @@
 ﻿// Prime - A PRIMitivEs code library.
 // Copyright (C) Bryan Edds, 2012-2016.
 
+#I __SOURCE_DIRECTORY__
 #r "../../../Prime/FSharpx.Core/FSharpx.Core.dll"
 #r "../../../Prime/FSharpx.Collections/FSharpx.Collections.dll"
 #r "../../../Prime/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!

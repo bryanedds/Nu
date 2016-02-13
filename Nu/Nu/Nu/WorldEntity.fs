@@ -334,7 +334,7 @@ module WorldEntityModule =
             let world = dispatcher.Update (entity, world)
             let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
             if entity.GetPublishUpdates world
-            then World.publish6 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () entity.UpdateAddress ["World.updateEntity"] Simulants.Game world
+            then World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () entity.UpdateAddress ["World.updateEntity"] Simulants.Game world
             else world
         
         /// Actualize an entity.
