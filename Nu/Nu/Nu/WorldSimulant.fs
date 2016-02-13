@@ -7,7 +7,7 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module WorldSimulant =
+module WorldSimulantModule =
 
     type World with
 

@@ -8,7 +8,7 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module WorldInput =
+module WorldInputModule =
 
     type World with
 
