@@ -566,7 +566,7 @@ and [<ReferenceEquality>] World =
     interface World Eventable with
         member this.GetEventor () = this.Eventor
         member this.GetLiveness () = this.State.Liveness // NOTE: encapsulation violation
-        member this.GetLeastPublishingPriority () = Constants.Engine.EntityPublishingPriority
+        member this.GetEntityPublishingPriority () = Constants.Engine.EntityPublishingPriority
         member this.TryGetPublishEvent () =
             let publishPlus (subscriber : Simulant) publisher eventData eventAddress eventTrace subscription world = 
                 match Address.getNames subscriber.SimulantAddress with
