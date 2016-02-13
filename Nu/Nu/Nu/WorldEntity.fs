@@ -359,8 +359,8 @@ module WorldEntity =
                 facets
 
         /// Get an entity's picking priority.
-        static member getEntityPickingPriority (simulant : Simulant) world =
-            match simulant with
+        static member getEntityPickingPriority (participant : Participant) world =
+            match participant with
             | :? Entity as entity ->
                 let entityState = World.getEntityState entity world
                 let dispatcher = entityState.DispatcherNp

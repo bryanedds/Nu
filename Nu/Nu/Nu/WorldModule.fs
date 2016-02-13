@@ -182,9 +182,9 @@ module World =
         { world with State = state }
 
     let private setState state world =
-        let oldWorld = world
+        let worldWithOldState = world
         let world = setStateWithoutEvent state world
-        publish { WorldStateChangeData.OldWorld = oldWorld } Events.WorldStateChange ["World.setState"] Simulants.Game world
+        publish { WorldWithOldState = worldWithOldState } Events.WorldStateChange ["World.setState"] Simulants.Game world
 
     /// Get the tick rate.
     let getTickRate world =
@@ -378,7 +378,7 @@ module World =
     let internal publishEntityChange entityState (entity : Entity) oldWorld world =
         if entityState.PublishChanges then
             publish
-                { Simulant = entity; OldWorld = oldWorld }
+                { Participant = entity; OldWorld = oldWorld }
                 (Events.EntityChange ->- entity)
                 ["World.publishEntityChange"]
                 entity
@@ -485,7 +485,7 @@ module World =
         let world = groupStateSetter groupState group world
         if groupState.PublishChanges then
             publish
-                { Simulant = group; OldWorld = oldWorld }
+                { Participant = group; OldWorld = oldWorld }
                 (Events.GroupChange ->- group)
                 ["World.setGroupState"]
                 group
@@ -552,7 +552,7 @@ module World =
         let world = screenStateSetter screenState screen world
         if screenState.PublishChanges then
             publish
-                { Simulant = screen; OldWorld = oldWorld }
+                { Participant = screen; OldWorld = oldWorld }
                 (Events.ScreenChange ->- screen)
                 ["World.setScreenState"]
                 screen
@@ -608,7 +608,7 @@ module World =
         let world = { world with GameState = gameState }
         if gameState.PublishChanges then
             publish
-                { Simulant = Simulants.Game; OldWorld = oldWorld }
+                { Participant = Simulants.Game; OldWorld = oldWorld }
                 (Events.GameChange ->- Simulants.Game)
                 ["World.setGameState"]
                 Simulants.Game
