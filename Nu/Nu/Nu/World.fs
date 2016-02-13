@@ -192,9 +192,9 @@ module WorldModule =
             Option.get ^ World.tryTransitionScreen destinationAddress world
             
         // TODO: replace this with more sophisticated use of handleAsScreenTransition4, and so on for its brethren.
-        static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> Simulant> eventHandling destination (_ : Event<'a, 's>) world =
+        static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> Simulant> handling destination (_ : Event<'a, 's>) world =
             let world = World.selectScreen destination world
-            (eventHandling, world)
+            (handling, world)
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the given destination screen.
@@ -205,16 +205,16 @@ module WorldModule =
         /// result in a transition to the given destination screen, as well as with additional
         /// handling provided via the 'by' procedure.
         static member handleAsScreenTransitionFromSplashBy<'a, 's when 's :> Simulant> by destination evt (world : World) =
-            let (eventHandling, world) = by evt world
-            World.handleAsScreenTransitionFromSplash4<'a, 's> eventHandling destination evt world
+            let (handling, world) = by evt world
+            World.handleAsScreenTransitionFromSplash4<'a, 's> handling destination evt world
 
         static member private handleAsScreenTransition4<'a, 's when 's :> Simulant>
-            eventHandling destination (_ : Event<'a, 's>) world =
+            handling destination (_ : Event<'a, 's>) world =
             match World.tryTransitionScreen destination world with
-            | Some world -> (eventHandling, world)
+            | Some world -> (handling, world)
             | None ->
                 Log.trace ^ "Program Error: Invalid screen transition for destination address '" + symstring destination.ScreenAddress + "'."
-                (eventHandling, world)
+                (handling, world)
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the given destination screen.
@@ -225,8 +225,8 @@ module WorldModule =
         /// result in a transition to the given destination screen, as well as with additional
         /// handling provided via the 'by' procedure.
         static member handleAsScreenTransitionBy<'a, 's when 's :> Simulant> by destination evt (world : World) =
-            let (eventHandling, world) = by evt world
-            World.handleAsScreenTransition4<'a, 's> eventHandling destination evt world
+            let (handling, world) = by evt world
+            World.handleAsScreenTransition4<'a, 's> handling destination evt world
 
         static member private updateScreenTransition1 (screen : Screen) transition world =
             let transitionTicks = screen.GetTransitionTicksNp world

@@ -135,7 +135,7 @@ module Chain =
     let rec [<DebuggerHidden; DebuggerStepThrough>] run (m : Chain<unit, 'a, 'w>) (world : 'w) : 'w =
         run3 m () world |> fst
 
-    let private run4 eventHandling (chain : Chain<Event<'a, 'o>, unit, 'w>) (observation : Observation<'a, 'o, 'w>) world =
+    let private run4 handling (chain : Chain<Event<'a, 'o>, unit, 'w>) (observation : Observation<'a, 'o, 'w>) world =
         let callbackKey = Guid.NewGuid ()
         let subscriptionKey = Guid.NewGuid ()
         let world = Eventable.addCallbackState callbackKey (fun (_ : Event<'a, 'o>) -> chain) world
@@ -152,7 +152,7 @@ module Chain =
             | Left chainNext -> Eventable.addCallbackState callbackKey chainNext world
         let subscription = fun evt world ->
             let world = advance evt world
-            (eventHandling, world)
+            (handling, world)
         let world = advance Unchecked.defaultof<Event<'a, 'o>> world
         let world = Eventable.subscribe5<'a, 'o, 'w> subscriptionKey subscription eventAddress observation.Observer world
         (unsubscribe, world)
