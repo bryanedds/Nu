@@ -36,13 +36,13 @@ module EventSystem =
     let addTasklets tasklets eventSystem =
         { eventSystem with Tasklets = Queue.ofSeq ^ Seq.append (tasklets :> 'w Tasklet seq) (eventSystem.Tasklets :> 'w Tasklet seq) }
 
-    /// Add callback state.
-    let addCallbackState key (state : 's) eventSystem =
-        { eventSystem with CallbackStates = Vmap.add key (state :> obj) eventSystem.CallbackStates }
+    /// Add event state.
+    let addEventState key (state : 's) eventSystem =
+        { eventSystem with EventStates = Vmap.add key (state :> obj) eventSystem.EventStates }
 
-    /// Remove callback state.
-    let removeCallbackState key eventSystem =
-        { eventSystem with CallbackStates = Vmap.remove key eventSystem.CallbackStates }
+    /// Remove event state.
+    let removeEventState key eventSystem =
+        { eventSystem with EventStates = Vmap.remove key eventSystem.EventStates }
 
     /// Get subscriptions.
     let getSubscriptions eventSystem =
@@ -60,16 +60,16 @@ module EventSystem =
     let internal setUnsubscriptions unsubscriptions eventSystem =
         { eventSystem with Unsubscriptions = unsubscriptions }
 
-    /// Get callback state.
-    let getCallbackState<'a, 'w when 'w :> 'w Eventable> key (eventSystem : 'w EventSystem) =
-        let state = Vmap.find key eventSystem.CallbackStates
+    /// Get event state.
+    let getEventState<'a, 'w when 'w :> 'w Eventable> key (eventSystem : 'w EventSystem) =
+        let state = Vmap.find key eventSystem.EventStates
         state :?> 'a
 
     /// Make an event system.
     let make () =
         { Subscriptions = Vmap.makeEmpty ()
           Unsubscriptions = Vmap.makeEmpty ()
-          CallbackStates = Vmap.makeEmpty ()
+          EventStates = Vmap.makeEmpty ()
           Tasklets = Queue.empty }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -88,34 +88,34 @@ module Eventable =
     let updateEventSystem<'w when 'w :> 'w Eventable> updater (world : 'w) =
         world.UpdateEventSystem updater
 
-    /// Get callback subscriptions.
+    /// Get event subscriptions.
     let getSubscriptions<'w when 'w :> 'w Eventable> (world : 'w) =
         getEventSystemBy EventSystem.getSubscriptions world
 
-    /// Get callback unsubscriptions.
+    /// Get event unsubscriptions.
     let getUnsubscriptions<'w when 'w :> 'w Eventable> (world : 'w) =
         getEventSystemBy EventSystem.getUnsubscriptions world
 
-    /// Set callback subscriptions.
+    /// Set event subscriptions.
     let internal setSubscriptions<'w when 'w :> 'w Eventable> subscriptions (world : 'w) =
         world.UpdateEventSystem (EventSystem.setSubscriptions subscriptions)
 
-    /// Set callback unsubscriptions.
+    /// Set event unsubscriptions.
     let internal setUnsubscriptions<'w when 'w :> 'w Eventable> unsubscriptions (world : 'w) =
         world.UpdateEventSystem (EventSystem.setUnsubscriptions unsubscriptions)
 
-    /// Add callback state to the world.
-    let addCallbackState<'a, 'w when 'w :> 'w Eventable> key (state : 'a) (world : 'w) =
-        world.UpdateEventSystem (EventSystem.addCallbackState key state)
+    /// Add event state to the world.
+    let addEventState<'a, 'w when 'w :> 'w Eventable> key (state : 'a) (world : 'w) =
+        world.UpdateEventSystem (EventSystem.addEventState key state)
 
-    /// Remove callback state from the world.
-    let removeCallbackState<'w when 'w :> 'w Eventable> key (world : 'w) =
-        world.UpdateEventSystem (EventSystem.removeCallbackState key)
+    /// Remove event state from the world.
+    let removeEventState<'w when 'w :> 'w Eventable> key (world : 'w) =
+        world.UpdateEventSystem (EventSystem.removeEventState key)
 
-    /// Get callback state from the world.
-    let getCallbackState<'a, 'w when 'w :> 'w Eventable> key (world : 'w) : 'a =
+    /// Get event state from the world.
+    let getEventState<'a, 'w when 'w :> 'w Eventable> key (world : 'w) : 'a =
         let eventSystem = getEventSystem world
-        EventSystem.getCallbackState<'a, 'w> key eventSystem
+        EventSystem.getEventState<'a, 'w> key eventSystem
 
     let getTasklets<'w when 'w :> 'w Eventable> (world : 'w) =
         getEventSystemBy EventSystem.getTasklets world

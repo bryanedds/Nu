@@ -40,7 +40,7 @@ module World =
     let internal clearSubsystemsMessages world =
         { world with Subsystems = Subsystems.clearSubsystemsMessages world.Subsystems world }
 
-    (* Callbacks *)
+    (* Eventable *)
 
     let internal getTasklets world =
         Eventable.getTasklets<World> world
@@ -59,25 +59,25 @@ module World =
     let addTasklets tasklets world =
         Eventable.addTasklets<World> tasklets world
 
-    /// Get callback subscriptions.
+    /// Get event subscriptions.
     let getSubscriptions world =
         Eventable.getSubscriptions<World> world
 
-    /// Get callback unsubscriptions.
+    /// Get event unsubscriptions.
     let getUnsubscriptions world =
         Eventable.getUnsubscriptions<World> world
 
-    /// Add callback state to the world.
-    let addCallbackState key state world =
-        Eventable.addCallbackState<'a, World> key state world
+    /// Add event state to the world.
+    let addEventState key state world =
+        Eventable.addEventState<'a, World> key state world
 
-    /// Remove callback state from the world.
-    let removeCallbackState key world =
-        Eventable.removeCallbackState<World> key world
+    /// Remove event state from the world.
+    let removeEventState key world =
+        Eventable.removeEventState<World> key world
 
-    /// Get callback state from the world.
-    let getCallbackState<'a> key world =
-        Eventable.getCallbackState<'a, World> key world
+    /// Get event state from the world.
+    let getEventState<'a> key world =
+        Eventable.getEventState<'a, World> key world
 
     (* Components *)
 
