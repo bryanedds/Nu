@@ -130,9 +130,9 @@ module EffectFacetModule =
                       Volume = 1.0f }
                 let effectHistory = entity.GetEffectHistoryNp world
                 let effectEnv = entity.GetEffectDefinitions world
-                let effector = Effector.make effectViewType effectHistory effectRate effectTime effectEnv
+                let effectSystem = EffectSystem.make effectViewType effectHistory effectRate effectTime effectEnv
                 let world =
-                    let artifacts = Effector.eval effect effectSlice effector
+                    let artifacts = EffectSystem.eval effect effectSlice effectSystem
                     List.fold (fun world artifact ->
                         match artifact with
                         | RenderArtifact renderDescriptors -> World.addRenderMessage (RenderDescriptorsMessage renderDescriptors) world

@@ -9,7 +9,7 @@ open OpenTK
 open Xunit
 open Prime
 open Nu
-module EffectorTests =
+module EffectSystemTests =
 
     let [<Fact>] readEffectWorks () =
         Math.init ()
