@@ -539,7 +539,7 @@ and [<ReferenceEquality>] WorldState =
     private
         { TickRate : int64
           TickTime : int64
-          UpdateCount : int64
+          UpdateCount : int64 // TODO: consider moving to World
           Liveness : Liveness // TODO: consider moving to World
           AssetMetadataMap : AssetMetadataMap
           Overlayer : Overlayer
