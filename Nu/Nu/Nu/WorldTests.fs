@@ -49,7 +49,7 @@ module WorldTests =
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
-        let key = Guid.NewGuid ()
+        let key = makeGuid ()
         let world = World.makeEmpty 0
         let world = World.subscribe5 key incUserStateAndResolve UnitEventAddress Simulants.Game world
         let world = World.unsubscribe key world

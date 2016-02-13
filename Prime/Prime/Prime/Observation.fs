@@ -19,7 +19,7 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] observe<'a, 'o, 'w when 'o :> Participant and 'w :> 'w Eventable>
         (eventAddress : 'a Address) (observer : 'o) : Observation<'a, 'o, 'w> =
         let subscribe = fun world ->
-            let subscriptionKey = Guid.NewGuid ()
+            let subscriptionKey = makeGuid ()
             let subscriptionAddress = ntoa<'a> ^ Name.make ^ symstring subscriptionKey
             let unsubscribe = fun world -> Eventable.unsubscribe subscriptionKey world
             let subscription = fun evt world ->
@@ -38,9 +38,9 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] product
         (eventAddress : 'b Address) (observation : Observation<'a, 'o, 'w>) : Observation<'a * 'b, 'o, 'w> =
         let subscribe = fun world ->
-            let subscriptionKey = Guid.NewGuid ()
-            let subscriptionKey' = Guid.NewGuid ()
-            let subscriptionKey'' = Guid.NewGuid ()
+            let subscriptionKey = makeGuid ()
+            let subscriptionKey' = makeGuid ()
+            let subscriptionKey'' = makeGuid ()
             let (subscriptionAddress, unsubscribe, world) = observation.Subscribe world
             let subscriptionAddress' = eventAddress
             let subscriptionAddress'' = ntoa<'a * 'b> ^ Name.make ^ symstring subscriptionKey''
@@ -67,9 +67,9 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] sum
         (eventAddress : 'b Address) (observation : Observation<'a, 'o, 'w>) : Observation<Either<'a, 'b>, 'o, 'w> =
         let subscribe = fun world ->
-            let subscriptionKey = Guid.NewGuid ()
-            let subscriptionKey' = Guid.NewGuid ()
-            let subscriptionKey'' = Guid.NewGuid ()
+            let subscriptionKey = makeGuid ()
+            let subscriptionKey' = makeGuid ()
+            let subscriptionKey'' = makeGuid ()
             let (subscriptionAddress, unsubscribe, world) = observation.Subscribe world
             let subscriptionAddress' = eventAddress
             let subscriptionAddress'' = ntoa<Either<'a, 'b>> ^ Name.make ^ symstring subscriptionKey''
@@ -96,7 +96,7 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] filter
         (pred : Event<'a, 'o> -> 'w -> bool) (observation : Observation<'a, 'o, 'w>) =
         let subscribe = fun world ->
-            let subscriptionKey = Guid.NewGuid ()
+            let subscriptionKey = makeGuid ()
             let subscriptionAddress = ntoa<'a> ^ Name.make ^ symstring subscriptionKey
             let (eventAddress, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world -> let world = unsubscribe world in Eventable.unsubscribe subscriptionKey world
@@ -115,7 +115,7 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] map
         (mapper : Event<'a, 'o> -> 'w -> 'b) (observation : Observation<'a, 'o, 'w>) : Observation<'b, 'o, 'w> =
         let subscribe = fun world ->
-            let subscriptionKey = Guid.NewGuid ()
+            let subscriptionKey = makeGuid ()
             let subscriptionAddress = ntoa<'b> ^ Name.make ^ symstring subscriptionKey
             let (eventAddress, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world -> let world = unsubscribe world in Eventable.unsubscribe subscriptionKey world
@@ -131,9 +131,9 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] track4
         (tracker : 'c -> Event<'a, 'o> -> 'w -> 'c * bool) (transformer : 'c -> 'b) (state : 'c) (observation : Observation<'a, 'o, 'w>) : Observation<'b, 'o, 'w> =
         let subscribe = fun world ->
-            let stateKey = Guid.NewGuid ()
+            let stateKey = makeGuid ()
             let world = Eventable.addEventState stateKey state world
-            let subscriptionKey = Guid.NewGuid ()
+            let subscriptionKey = makeGuid ()
             let subscriptionAddress = ntoa<'b> ^ Name.make ^ symstring subscriptionKey
             let (eventAddress, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world ->
@@ -159,9 +159,9 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] track2
         (tracker : 'a -> Event<'a, 'o> -> 'w -> 'a * bool) (observation : Observation<'a, 'o, 'w>) : Observation<'a, 'o, 'w> =
         let subscribe = fun world ->
-            let stateKey = Guid.NewGuid ()
+            let stateKey = makeGuid ()
             let world = Eventable.addEventState stateKey None world
-            let subscriptionKey = Guid.NewGuid ()
+            let subscriptionKey = makeGuid ()
             let subscriptionAddress = ntoa<'a> ^ Name.make ^ symstring subscriptionKey
             let (eventAddress, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world ->
@@ -187,9 +187,9 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] track
         (tracker : 'b -> 'w -> 'b * bool) (state : 'b) (observation : Observation<'a, 'o, 'w>) : Observation<'a, 'o, 'w> =
         let subscribe = fun world ->
-            let stateKey = Guid.NewGuid ()
+            let stateKey = makeGuid ()
             let world = Eventable.addEventState stateKey state world
-            let subscriptionKey = Guid.NewGuid ()
+            let subscriptionKey = makeGuid ()
             let subscriptionAddress = ntoa<'a> ^ Name.make ^ symstring subscriptionKey
             let (eventAddress, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world ->
@@ -215,7 +215,7 @@ module Observation =
     /// subscription.
     let [<DebuggerHidden; DebuggerStepThrough>] subscribePlus handleEvent observation world =
         let subscribe = fun world ->
-            let subscriptionKey = Guid.NewGuid ()
+            let subscriptionKey = makeGuid ()
             let subscriptionAddress = ntoa<'a> ^ Name.make ^ symstring subscriptionKey
             let (address, unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world -> let world = unsubscribe world in Eventable.unsubscribe subscriptionKey world
@@ -232,8 +232,8 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] until
         (eventAddress : unit Address) (observation : Observation<'a, 'o, 'w>) : Observation<'a, 'o, 'w> =
         let subscribe = fun world ->
-            let eventKey = Guid.NewGuid ()
-            let subscriptionKey = Guid.NewGuid ()
+            let eventKey = makeGuid ()
+            let subscriptionKey = makeGuid ()
             let subscriptionAddress = ntoa<'a> ^ Name.make ^ symstring subscriptionKey
             let (eventAddress', unsubscribe, world) = observation.Subscribe world
             let unsubscribe = fun world ->

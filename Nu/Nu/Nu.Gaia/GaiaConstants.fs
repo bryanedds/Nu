@@ -12,5 +12,5 @@ module Constants =
     [<RequireQualifiedAccess>]
     module SubscriptionKeys =
 
-        let AddEntity = Guid.NewGuid ()
-        let RemovingEntity = Guid.NewGuid ()
+        let AddEntity = makeGuid ()
+        let RemovingEntity = makeGuid ()

@@ -136,8 +136,8 @@ module Chain =
         run3 m () world |> fst
 
     let private run4 handling (chain : Chain<Event<'a, 'o>, unit, 'w>) (observation : Observation<'a, 'o, 'w>) world =
-        let stateKey = Guid.NewGuid ()
-        let subscriptionKey = Guid.NewGuid ()
+        let stateKey = makeGuid ()
+        let subscriptionKey = makeGuid ()
         let world = Eventable.addEventState stateKey (fun (_ : Event<'a, 'o>) -> chain) world
         let (eventAddress, unsubscribe, world) = observation.Subscribe world
         let unsubscribe = fun world ->

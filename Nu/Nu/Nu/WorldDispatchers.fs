@@ -201,7 +201,7 @@ module RigidBodyFacetModule =
             Physics.evalCollisionExpr (entity.GetSize world) (entity.GetCollisionExpr world)
 
         static member FieldDefinitions =
-            [variable? MinorId ^ fun () -> Core.makeId ()
+            [variable? MinorId ^ fun () -> makeGuid ()
              define? BodyType Dynamic
              define? Awake true
              define? Enabled true
@@ -883,7 +883,7 @@ module TileMapDispatcherModule =
 
         let getTileBodyProperties6 (tm : Entity) tmd tli td ti cexpr world =
             let tileShape = Physics.evalCollisionExpr (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr
-            { BodyId = intsToGuid tli ti
+            { BodyId = makeGuidFromInts tli ti
               Position =
                 Vector2
                     (single ^ td.TilePosition.X + tmd.TileSize.X / 2,
@@ -948,7 +948,7 @@ module TileMapDispatcherModule =
                     match tileData.OptTileSetTile with
                     | Some tileSetTile ->
                         if tileSetTile.Properties.ContainsKey Constants.Physics.CollisionProperty then
-                            let physicsId = { SourceId = tileMap.GetId world; BodyId = intsToGuid tileLayerIndex tileIndex }
+                            let physicsId = { SourceId = tileMap.GetId world; BodyId = makeGuidFromInts tileLayerIndex tileIndex }
                             physicsId :: physicsIds
                         else physicsIds
                     | None -> physicsIds)

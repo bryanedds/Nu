@@ -239,7 +239,7 @@ module Eventable =
     /// Subscribe to an event, and be provided with an unsubscription callback.
     let subscribePlus<'a, 'p, 'w when 'p :> Participant and 'w :> 'w Eventable>
         (subscription : Subscription<'a, 'p, 'w>) (eventAddress : 'a Address) (subscriber : 'p) (world : 'w) =
-        subscribePlus5 (Guid.NewGuid ()) subscription eventAddress subscriber world
+        subscribePlus5 (makeGuid ()) subscription eventAddress subscriber world
 
     /// Subscribe to an event using the given subscriptionKey.
     let subscribe5<'a, 'p, 'w when 'p :> Participant and 'w :> 'w Eventable>
@@ -249,15 +249,15 @@ module Eventable =
     /// Subscribe to an event.
     let subscribe<'a, 'p, 'w when 'p :> Participant and 'w :> 'w Eventable>
         (subscription : Subscription<'a, 'p, 'w>) (eventAddress : 'a Address) (subscriber : 'p) world =
-        subscribe5 (Guid.NewGuid ()) subscription eventAddress subscriber world
+        subscribe5 (makeGuid ()) subscription eventAddress subscriber world
 
     /// Keep active a subscription for the lifetime of a participant, and be provided with an unsubscription callback.
     let monitorPlus<'a, 'p, 'w when 'p :> Participant and 'w :> 'w Eventable>
         (subscription : Subscription<'a, 'p, 'w>) (eventAddress : 'a Address) (subscriber : 'p) (world : 'w) =
         let subscriberAddress = subscriber.ParticipantAddress
         if not ^ Address.isEmpty subscriberAddress then
-            let monitorKey = Guid.NewGuid ()
-            let removalKey = Guid.NewGuid ()
+            let monitorKey = makeGuid ()
+            let removalKey = makeGuid ()
             let world = subscribe5<'a, 'p, 'w> monitorKey subscription eventAddress subscriber world
             let unsubscribe = fun (world : 'w) ->
                 let world = unsubscribe removalKey world

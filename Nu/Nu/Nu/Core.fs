@@ -50,10 +50,6 @@ module CoreModule =
 [<RequireQualifiedAccess>]
 module Core =
 
-    /// Make a Nu Id.
-    let makeId () =
-        Guid.NewGuid ()
-
     /// Get a time stamp at the highest-available resolution.
     let getTimeStamp () =
         CoreInternal.getTimeStampInternal ()
