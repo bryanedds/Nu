@@ -33,7 +33,7 @@ module Observation =
         observation |> organize (fun _ world -> World.getUpdateCount world) |> toFst |> choose
 
     /// Filter out simulant change events that do not relate to those returned by 'valueGetter'.
-    let [<DebuggerHidden; DebuggerStepThrough>] simulantValue (valueGetter : World -> 'b) (observation : Observation<'a SimulantChangeData, 'o, World>) =
+    let [<DebuggerHidden; DebuggerStepThrough>] simulantValue (valueGetter : World -> 'b) (observation : Observation<SimulantChangeData<'a, World>, 'o, World>) =
         filter (fun a world ->
             let oldValue = valueGetter a.Data.OldWorld
             let newValue = valueGetter world
@@ -49,7 +49,7 @@ module ObservationModule =
 
     /// Make an observation of the observer's change events.
     let [<DebuggerHidden; DebuggerStepThrough>] ( *-- ) (simulant : 'a, valueGetter : World -> 'b) (observer : 'o) =
-        let changeEventAddress = ftoa<'a SimulantChangeData> !!(typeof<'a>.Name + "/Change") ->>- simulant.ObjAddress
+        let changeEventAddress = ftoa<SimulantChangeData<'a, World>> !!(typeof<'a>.Name + "/Change") ->>- simulant.SimulantAddress
         observe changeEventAddress observer |> simulantValue valueGetter
 
     /// Make an observation of one of the observer's change events per frame.

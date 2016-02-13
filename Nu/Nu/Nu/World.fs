@@ -186,8 +186,8 @@ module WorldModule =
                 else None
             | None -> None
 
-        /// Transition to the given screen (failing with an exception if another transition is
-        /// in progress).
+        /// Transition to the given screen (failing with an exception if another transition is in
+        /// progress).
         static member transitionScreen destinationAddress world =
             Option.get ^ World.tryTransitionScreen destinationAddress world
             
