@@ -7,6 +7,12 @@ open System.Collections.Generic
 open FSharpx.Collections
 open Prime
 
+[<RequireQualifiedAccess>]
+module Events =
+
+    /// Represents any event.
+    let Any = ntoa<obj> !!"*"
+
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module EventSystem =
 
