@@ -100,9 +100,8 @@ and [<ReferenceEquality>] EventSystem<'w when 'w :> 'w Eventable> =
 and Eventable<'w when 'w :> 'w Eventable> =
     interface
         abstract member GetLiveness : unit -> Liveness
-        abstract member GetUpdateCount : unit -> int64
         abstract member GetEventSystem : unit -> 'w EventSystem
         abstract member UpdateEventSystem : ('w EventSystem -> 'w EventSystem) -> 'w
-        abstract member TryGetPublishEvent : unit -> PublishEvent<'a, 'p, 'w> option
+        abstract member GetCustomEventPublisher : unit -> PublishEvent<'a, 'p, 'w> option
         abstract member ContainsParticipant : Participant -> bool
         end
