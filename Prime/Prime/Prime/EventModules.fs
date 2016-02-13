@@ -217,16 +217,16 @@ module Eventable =
         getSubscriptions (publishSorter : SubscriptionSorter<'w>) (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) (world : 'w) =
         let objEventAddress = atooa eventAddress
         let subscriptions = getSubscriptions publishSorter objEventAddress world
-        let publishPlus =
-            match world.TryGetPublishEvent () with
-            | Some publishPlus -> publishPlus
+        let eventPublisher =
+            match world.GetCustomEventPublisher () with
+            | Some customEventPublisher -> customEventPublisher
             | None -> publishEvent<'a, 'p, Participant, 'w>
         let (_, world) =
             List.foldWhile
                 (fun (handling, world : 'w) (_, subscriber : Participant, subscription) ->
                     if  (match handling with Cascade -> true | Resolve -> false) &&
                         (match world.GetLiveness () with Running -> true | Exiting -> false) then
-                        let publishResult = publishPlus subscriber publisher eventData eventAddress eventTrace subscription world
+                        let publishResult = eventPublisher subscriber publisher eventData eventAddress eventTrace subscription world
                         Some publishResult
                     else None)
                 (Cascade, world)

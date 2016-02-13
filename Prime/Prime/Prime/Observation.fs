@@ -373,10 +373,6 @@ module Observation =
     /// Filter out the events with non-unique data from an observation.
     let [<DebuggerHidden; DebuggerStepThrough>] distinct observation = distinctBy (fun a -> a.Data) observation
 
-    /// Take only one event from an observation per game update.
-    let [<DebuggerHidden; DebuggerStepThrough>] noMoreThanOncePerUpdate observation =
-        observation |> organize (fun _ (world : 'w) -> world.GetUpdateCount ()) |> toFst |> choose
-
     /// Filter out participant change events that do not relate to those returned by 'valueGetter'.
     let [<DebuggerHidden; DebuggerStepThrough>] participantValue
         (valueGetter : 'w -> 'b) (observation : Observation<ParticipantChangeData<'a, 'w>, 'o, 'w>) =
@@ -398,10 +394,6 @@ module ObservationModule =
         let changeEventAddress = ftoa<ParticipantChangeData<'a, 'w>> !!(typeof<'a>.Name + "/Change") ->>- participant.ParticipantAddress
         observe changeEventAddress observer |> participantValue valueGetter
 
-    /// Make an observation of one of the observer's change events per frame.
-    let [<DebuggerHidden; DebuggerStepThrough>] (/--) (participant, valueGetter) observer =
-        (participant, valueGetter) *-- observer |> noMoreThanOncePerUpdate
-
     /// Propagate the event data of an observation to a value in the observing participant when the
     /// observer exists (doing nothing otherwise).
     let [<DebuggerHidden; DebuggerStepThrough>] (-->) observation valueSetter =
@@ -416,7 +408,3 @@ module ObservationModule =
     // Propagate a value from the given source participant to a value in the given destination participant.
     let [<DebuggerHidden; DebuggerStepThrough>] ( *-> ) (source : 'a, valueGetter : 'w -> 'b) (destination : 'o, valueSetter : 'b -> 'w -> 'w) =
         (source, valueGetter) *-- destination --> fun _ world -> let sourceValue = valueGetter world in valueSetter sourceValue world
-
-    // Propagate a value from the given source participant to a value in the given destination participant, but with frame-based cycle-breaking.
-    let [<DebuggerHidden; DebuggerStepThrough>] (/->) (source : 'a, valueGetter : 'w -> 'b) (destination : 'o, valueSetter : 'b -> 'w -> 'w) =
-        (source, valueGetter) /-- destination --> fun _ world -> let sourceValue = valueGetter world in valueSetter sourceValue world

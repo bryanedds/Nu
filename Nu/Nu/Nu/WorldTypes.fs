@@ -568,7 +568,7 @@ and [<ReferenceEquality>] WorldState =
     private
         { TickRate : int64
           TickTime : int64
-          UpdateCount : int64 // TODO: consider moving to World
+          UpdateCount : int64
           Liveness : Liveness // TODO: consider moving to World
           AssetMetadataMap : AssetMetadataMap
           Overlayer : Overlayer
@@ -594,10 +594,9 @@ and [<ReferenceEquality>] World =
 
     interface World Eventable with
         member this.GetLiveness () = this.State.Liveness // NOTE: encapsulation violation
-        member this.GetUpdateCount () = this.State.UpdateCount // NOTE: encapsulation violation
         member this.GetEventSystem () = this.EventSystem
         member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
-        member this.TryGetPublishEvent () =
+        member this.GetCustomEventPublisher () =
             let publishPlus (participant : Participant) publisher eventData eventAddress eventTrace subscription world = 
                 match Address.getNames participant.ParticipantAddress with
                 | [] -> Eventable.publishEvent<'a, 'p, Game, World> participant publisher eventData eventAddress eventTrace subscription world
