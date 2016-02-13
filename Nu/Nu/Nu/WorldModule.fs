@@ -604,7 +604,7 @@ module World =
         let world = { world with GameState = gameState }
         if gameState.PublishChanges then
             publish
-                { OldWorld = oldWorld; Simulant = Simulants.Game }
+                { Simulant = Simulants.Game; OldWorld = oldWorld }
                 (Events.GameChange ->- Simulants.Game)
                 ["World.setGameState"]
                 Simulants.Game

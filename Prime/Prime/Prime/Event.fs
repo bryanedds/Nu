@@ -10,12 +10,23 @@ open System.Threading.Tasks
 open FSharpx.Collections
 open Prime
 
-/// Adds the ability for a type to be address.
-/// TODO: consider moving to Address.fs.
-type Addressable =
+/// A simulant that can take part in the event system.
+type Simulant =
     interface
-        abstract member ObjAddress : Addressable Address
+        abstract member SimulantAddress : Simulant Address
+        abstract member GetPublishingPriority : (Simulant -> 'w -> single) -> 'w -> single
         end
+
+/// Operators for the Simulant type.
+and SimulantOperators =
+    private
+        | SimulantOperators
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.SimulantAddress)
+
+    /// Concatenate two addresses, takings the type of first address.
+    static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
 
 /// Specifies whether an application is running or exiting.
 /// TODO: maybe move to... somewhere else?
@@ -28,16 +39,25 @@ type EventHandling =
     | Resolve
     | Cascade
 
+/// The data for a world state change event.
+and [<StructuralEquality; NoComparison>] WorldStateChangeData<'w when 'w :> 'w Eventable> =
+    { OldWorld : 'w }
+
+/// The data for an simulant change event.
+and [<StructuralEquality; NoComparison>] SimulantChangeData<'s, 'w when 's :> Simulant and 'w :> 'w Eventable> =
+    { Simulant : 's
+      OldWorld : 'w }
+
 /// An event used by the game engine's purely-functional event system.
-and [<ReferenceEquality>] Event<'a, 's when 's :> Addressable> =
+and [<ReferenceEquality>] Event<'a, 's when 's :> Simulant> =
     { Data : 'a
       Address : 'a Address
       Trace : string list
-      Publisher : Addressable
+      Publisher : Simulant
       Subscriber : 's }
 
 /// Describes an event subscription.
-and Subscription<'a, 's, 'w when 's :> Addressable and 'w :> 'w Eventable> =
+and Subscription<'a, 's, 'w when 's :> Simulant and 'w :> 'w Eventable> =
     Event<'a, 's> -> 'w -> EventHandling * 'w
 
 /// Describes an event subscription that can be boxed / unboxed.
@@ -46,7 +66,7 @@ and BoxableSubscription<'w when 'w :> 'w Eventable> =
 
 /// An entry in the subscription map.
 and SubscriptionEntry =
-    Guid * Addressable * obj
+    Guid * Simulant * obj
 
 /// A map of event subscriptions.
 and SubscriptionEntries =
@@ -58,7 +78,7 @@ and SubscriptionSorter<'w when 'w :> 'w Eventable> =
 
 /// A map of subscription keys to unsubscription data.
 and UnsubscriptionEntries =
-    Vmap<Guid, obj Address * Addressable>
+    Vmap<Guid, obj Address * Simulant>
 
 /// A tasklet to be completed at the given time, with time being accounted for by the world
 /// state's TickTime value.
@@ -80,7 +100,7 @@ and Eventable<'w when 'w :> 'w Eventable> =
         abstract member GetEventor : unit -> 'w Eventor
         abstract member GetLiveness : unit -> Liveness
         abstract member GetLeastPublishingPriority : unit -> single
-        abstract member TryGetPublishEvent : unit -> (Addressable -> #Addressable -> 'a -> 'a Address -> string list -> obj -> 'w -> EventHandling * 'w) option
+        abstract member TryGetPublishEvent : unit -> (Simulant -> #Simulant -> 'a -> 'a Address -> string list -> obj -> 'w -> EventHandling * 'w) option
         abstract member UpdateEventor : ('w Eventor -> 'w Eventor) -> 'w
         end
 
@@ -229,12 +249,12 @@ module Eventable =
         else failwith "Event name cannot be empty."
 
     let getSortableSubscriptions
-        (getParticipantPublishingPriority : Addressable -> 'w -> single)
+        (getParticipantPublishingPriority : Simulant -> 'w -> single)
         (subscriptions : SubscriptionEntry rQueue)
         (world : 'w) :
         (single * SubscriptionEntry) list =
         List.foldBack
-            (fun (key, participant : Addressable, subscription) subscriptions ->
+            (fun (key, participant : Simulant, subscription) subscriptions ->
                 let priority = getParticipantPublishingPriority participant world
                 let subscription = (priority, (key, participant, subscription))
                 subscription :: subscriptions)
@@ -260,7 +280,7 @@ module Eventable =
         let subList = List.concat subLists
         publishSorter subList world
 
-    let boxSubscription<'a, 's, 'w when 's :> Addressable and 'w :> 'w Eventable> (subscription : Subscription<'a, 's, 'w>) =
+    let boxSubscription<'a, 's, 'w when 's :> Simulant and 'w :> 'w Eventable> (subscription : Subscription<'a, 's, 'w>) =
         let boxableSubscription = fun (evt : obj) world ->
             try subscription (evt :?> Event<'a, 's>) world
             with
@@ -271,14 +291,14 @@ module Eventable =
             | _ -> reraise ()
         box boxableSubscription
 
-    let publishEvent<'a, 'p, 's, 'w when 'p :> Addressable and 's :> Addressable and 'w :> 'w Eventable>
-        (subscriber : Addressable) (publisher : 'p) (eventData : 'a) (eventAddress : 'a Address) eventTrace subscription (world : 'w) =
+    let publishEvent<'a, 'p, 's, 'w when 'p :> Simulant and 's :> Simulant and 'w :> 'w Eventable>
+        (subscriber : Simulant) (publisher : 'p) (eventData : 'a) (eventAddress : 'a Address) eventTrace subscription (world : 'w) =
         let evt =
             { Data = eventData
               Address = eventAddress
               Trace = eventTrace
               Subscriber = subscriber :?> 's
-              Publisher = publisher :> Addressable }
+              Publisher = publisher :> Simulant }
         let callableSubscription = unbox<BoxableSubscription<'w>> subscription
         callableSubscription evt world
 
@@ -300,17 +320,17 @@ module Eventable =
         subscriptions
 
     /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
-    let publish6<'a, 'p, 'w when 'p :> Addressable and 'w :> Eventable<'w>>
+    let publish6<'a, 'p, 'w when 'p :> Simulant and 'w :> Eventable<'w>>
         getSubscriptions (publishSorter : SubscriptionSorter<'w>) (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) (world : 'w) =
         let objEventAddress = atooa eventAddress
         let subscriptions = getSubscriptions publishSorter objEventAddress world
         let publishPlus =
             match world.TryGetPublishEvent () with
             | Some publishPlus -> publishPlus
-            | None -> publishEvent<'a, 'p, Addressable, 'w>
+            | None -> publishEvent<'a, 'p, Simulant, 'w>
         let (_, world) =
             List.foldWhile
-                (fun (eventHandling, world : 'w) (_, subscriber : Addressable, subscription) ->
+                (fun (eventHandling, world : 'w) (_, subscriber : Simulant, subscription) ->
                     if  (match eventHandling with Cascade -> true | Resolve -> false) &&
                         (match world.GetLiveness () with Running -> true | Exiting -> false) then
                         let publishResult = publishPlus subscriber publisher eventData eventAddress eventTrace subscription world
@@ -321,12 +341,12 @@ module Eventable =
         world
 
     /// Publish an event, using the given publishSorter procedure to arrange the order to which subscriptions are published.
-    let publish5<'a, 'p, 'w when 'p :> Addressable and 'w :> Eventable<'w>>
+    let publish5<'a, 'p, 'w when 'p :> Simulant and 'w :> Eventable<'w>>
         (publishSorter : SubscriptionSorter<'w>) (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) (world : 'w) =
         publish6<'a, 'p, 'w> getSubscriptionsSorted3 publishSorter eventData eventAddress eventTrace publisher world
 
     /// Publish an event.
-    let publish<'a, 'p, 'w when 'p :> Addressable and 'w :> Eventable<'w>>
+    let publish<'a, 'p, 'w when 'p :> Simulant and 'w :> Eventable<'w>>
         (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) (world : 'w) =
         publish5<'a, 'p, 'w> sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher world
 
@@ -351,40 +371,40 @@ module Eventable =
         | None -> world
 
     /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
-    let subscribePlus5<'a, 's, 'w when 's :> Addressable and 'w :> 'w Eventable>
+    let subscribePlus5<'a, 's, 'w when 's :> Simulant and 'w :> 'w Eventable>
         subscriptionKey (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
         if not ^ Address.isEmpty eventAddress then
             let objEventAddress = atooa eventAddress
             let (subscriptions, unsubscriptions) = (getSubscriptions world, getUnsubscriptions world)
             let subscriptions =
-                let subscriptionEntry = (subscriptionKey, subscriber :> Addressable, boxSubscription subscription)
+                let subscriptionEntry = (subscriptionKey, subscriber :> Simulant, boxSubscription subscription)
                 match Vmap.tryFind objEventAddress subscriptions with
                 | Some subscriptionEntries -> Vmap.add objEventAddress (subscriptionEntry :: subscriptionEntries) subscriptions
                 | None -> Vmap.add objEventAddress [subscriptionEntry] subscriptions
-            let unsubscriptions = Vmap.add subscriptionKey (objEventAddress, subscriber :> Addressable) unsubscriptions
+            let unsubscriptions = Vmap.add subscriptionKey (objEventAddress, subscriber :> Simulant) unsubscriptions
             let world = world |> setSubscriptions subscriptions |> setUnsubscriptions unsubscriptions
             (unsubscribe<'w> subscriptionKey, world)
         else failwith "Event name cannot be empty."
 
     /// Subscribe to an event, and be provided with an unsubscription callback.
-    let subscribePlus<'a, 's, 'w when 's :> Addressable and 'w :> 'w Eventable>
+    let subscribePlus<'a, 's, 'w when 's :> Simulant and 'w :> 'w Eventable>
         (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
         subscribePlus5 (Guid.NewGuid ()) subscription eventAddress subscriber world
 
     /// Subscribe to an event using the given subscriptionKey.
-    let subscribe5<'a, 's, 'w when 's :> Addressable and 'w :> 'w Eventable>
+    let subscribe5<'a, 's, 'w when 's :> Simulant and 'w :> 'w Eventable>
         subscriptionKey (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
         subscribePlus5 subscriptionKey (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) world |> snd
 
     /// Subscribe to an event.
-    let subscribe<'a, 's, 'w when 's :> Addressable and 'w :> 'w Eventable>
+    let subscribe<'a, 's, 'w when 's :> Simulant and 'w :> 'w Eventable>
         (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) world =
         subscribe5 (Guid.NewGuid ()) subscription eventAddress subscriber world
 
     /// Keep active a subscription for the lifetime of a participant, and be provided with an unsubscription callback.
-    let monitorPlus<'a, 's, 'w when 's :> Addressable and 'w :> 'w Eventable>
+    let monitorPlus<'a, 's, 'w when 's :> Simulant and 'w :> 'w Eventable>
         (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
-        let subscriberAddress = subscriber.ObjAddress
+        let subscriberAddress = subscriber.SimulantAddress
         if not ^ Address.isEmpty subscriberAddress then
             let monitorKey = Guid.NewGuid ()
             let removalKey = Guid.NewGuid ()
@@ -400,6 +420,6 @@ module Eventable =
         else failwith "Cannot monitor events with an anonymous subscriber."
 
     /// Keep active a subscription for the lifetime of a participant.
-    let monitor<'a, 's, 'w when 's :> Addressable and 'w :> 'w Eventable>
+    let monitor<'a, 's, 'w when 's :> Simulant and 'w :> 'w Eventable>
         (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
         monitorPlus<'a, 's, 'w> subscription eventAddress subscriber world |> snd
