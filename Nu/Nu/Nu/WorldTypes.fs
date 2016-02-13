@@ -100,10 +100,14 @@ type [<StructuralEquality; NoComparison>] CollisionData =
       Collidee : Entity }
 
 /// The data for a change in the world state.
-and WorldStateChangeData = World EventableStateChangeData
+/// NOTE: I couldn't give its field the more normal name of 'OldWorld' due to field name conflicts with the more
+/// pervasive SimulantChangeData type below.
+and [<StructuralEquality; NoComparison>] WorldStateChangeData = 
+    { OldWorldWithOldState : World }
 
 /// The data for a change in a simulant.
-and SimulantChangeData<'s when 's :> Simulant> = ParticipantChangeData<'s, World>
+and SimulantChangeData<'s when 's :> Simulant> =
+    ParticipantChangeData<'s, World>
 
 /// A tasklet to be completed at the schedule tick time.
 and [<ReferenceEquality>] Tasklet =

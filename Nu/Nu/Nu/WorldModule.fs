@@ -182,9 +182,9 @@ module World =
         { world with State = state }
 
     let private setState state world =
-        let worldWithOldState = world
+        let oldWorldWithOldState = world
         let world = setStateWithoutEvent state world
-        publish { WorldWithOldState = worldWithOldState } Events.WorldStateChange ["World.setState"] Simulants.Game world
+        publish { OldWorldWithOldState = oldWorldWithOldState } Events.WorldStateChange ["World.setState"] Simulants.Game world
 
     /// Get the tick rate.
     let getTickRate world =
