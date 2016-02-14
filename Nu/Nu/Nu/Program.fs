@@ -123,5 +123,5 @@ module Program =
     (* TODO: investigate Gaia extensibility mechanism. *)
 
     let [<EntryPoint; STAThread>] main _ =
-        Console.Write "Running Nu.exe"
+        Console.WriteLine "Running Nu.exe"
         Constants.Engine.SuccessExitCode
