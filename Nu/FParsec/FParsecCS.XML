@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>FParsecCS</name>
+    </assembly>
+    <members>
+        <member name="T:FParsec.CharStreamIndexToken">
+            <summary>An opaque representation of a CharStream index.</summary>
+        </member>
+        <member name="P:FParsec.CharStreamIndexToken.Idx">
+            <summary>Returns -1 if the IndexToken was zero-initialized.</summary>
+        </member>
+        <member name="T:FParsec.CharStream">
+            <summary>Provides read‐access to a sequence of UTF‐16 chars.</summary>
+        </member>
+        <member name="F:FParsec.CharStream.Idx">
+            <summary>The current index in the string, or Int32.MinValue if the end of the stream has been reached.</summary>
+        </member>
+        <member name="F:FParsec.CharStream.IndexBegin">
+            <summary>Index of the first char in the string belonging to the stream. Is always non-negative.</summary>
+        </member>
+        <member name="F:FParsec.CharStream.IndexEnd">
+            <summary>1 + index of the last char in the string belonging to the stream. Equals IndexBegin if the stream is empty.</summary>
+        </member>
+        <member name="F:FParsec.CharStream.StateTag">
+            <summary>Any CharStream method or property setter increments this value when it changes the CharStream state.
+            Backtracking to an old state also restores the old value of the StateTag.</summary>
+        </member>
+        <member name="F:FParsec.CharStream.StringToStreamIndexOffset">
+            <summary>IndexOfFirstChar - IndexBegin</summary>
+        </member>
+        <member name="M:FParsec.CharStream.Dispose">
+            <summary>The low trust version of the CharStream class implements the IDisposable
+            interface only for API compatibility. The Dispose method does not need to be called on
+            low trust CharStream instances, because the instances hold no resources that need to be disposed.</summary>
+        </member>
+        <member name="P:FParsec.CharStream.IsBeginOfStream">
+            <summary>Indicates whether the Iterator points to the beginning of the CharStream.
+            If the CharStream is empty, this property is always true.</summary>
+        </member>
+        <member name="P:FParsec.CharStream.IsEndOfStream">
+            <summary>Indicates whether the Iterator points to the end of the CharStream,
+            i.e. whether it points to one char beyond the last char in the CharStream.</summary>
+        </member>
+        <member name="P:FParsec.CharStream.Column">
+            <summary>The UTF‐16 column number of the next char, i.e. Index ‐ LineBegin  + 1.</summary>
+        </member>
+        <member name="T:FParsec.CharStream`1">
+            <summary>Provides read‐access to a sequence of UTF‐16 chars.</summary>
+        </member>
+        <member name="M:FParsec.FastGenericEqualityERComparer`1.Equals(`0,`0)">
+            <summary>For reference types it's faster to call Instance.Equals directly
+            (due to limitations of the inliner of the .NET JIT.)</summary>
+        </member>
+        <member name="T:FParsec.FastGenericEqualityERComparer.ArrayStructuralEqualityERComparer`1">
+            <summary>Forwards all work to F#'s GenericEqualityERComparer.</summary>
+        </member>
+        <member name="M:FParsec.IdentifierValidator.ValidateAndNormalize(System.String,System.Int32@)">
+            <summary>Returns the normalized string, or null in case an invalid identifier
+            character is found. If an invalid character is found, the string index of the
+            invalid character is assigned to the out parameter, otherwise -1.</summary>
+        </member>
+        <member name="F:FParsec.OperatorPrecedenceParser`3.OpsArrayLength">
+            <summary>The length of LhsOps and RhsOps. Must be a power of 2.</summary>
+        </member>
+        <member name="F:FParsec.OperatorPrecedenceParser`3.ErrorOp">
+            <summary>ParsePrefixOp returns this value to signal that it backtracked and we should try to parse a term.</summary>
+        </member>
+        <member name="F:FParsec.OperatorPrecedenceParser`3.ZeroPrecedenceOperatorData">
+            <summary>Can not be readonly because it is passed as as a ref (for performance reasons), but it is never mutated.</summary>
+        </member>
+        <member name="M:FParsec.OperatorPrecedenceParser`3.ParsePrefixOp(FParsec.OperatorPrecedenceParser{`0,`1,`2}.OperatorData@,FParsec.Operator{`0,`1,`2},FParsec.Reply{`0}@,FParsec.CharStream{`2})">
+            <summary>Parses the following prefix operators, plus the expression the operators apply to.</summary>
+        </member>
+        <member name="M:FParsec.OperatorPrecedenceParser`3.ParseExpressionContinue(FParsec.OperatorPrecedenceParser{`0,`1,`2}.OperatorData@,FParsec.Operator{`0,`1,`2},FParsec.Reply{`0}@,FParsec.CharStream{`2})">
+            <summary>Parses (higher-precedence) infix and postfix operators after the first term, together with the argument expressions.</summary>
+        </member>
+        <member name="M:FParsec.Text.DetectPreamble(System.Byte[],System.Int32,System.Text.Encoding@,System.Boolean)">
+            <summary>Detects the presence of an encoding preamble in the first count bytes of the byte buffer.
+            If detectEncoding is false, this function only searches for the preamble of the given default encoding,
+            otherwise also for any of the standard unicode byte order marks (UTF-8, UTF-16 LE/BE, UTF-32 LE/BE).
+            If an encoding different from the given default encoding is detected, the new encoding
+            is assigned to the encoding reference.
+            Returns the number of bytes in the detected preamble, or 0 if no preamble is detected.
+            </summary>
+        </member>
+        <member name="M:FParsec.Text.FoldCase(System.String)">
+            <summary>Returns a case-folded copy of the string argument. All chars are mapped
+            using the (non-Turkic) 1-to-1 case folding mappings (v. 6.0) for Unicode code
+            points in the Basic Multilingual Plane, i.e. code points below 0x10000.
+            If the argument is null, null is returned.</summary>
+        </member>
+        <member name="M:FParsec.Text.NormalizeNewlines(System.String)">
+            <summary>Returns the given string with all occurrences of "\r\n" and "\r" replaced
+            by "\n". If the argument is null, null is returned.</summary>
+        </member>
+        <member name="M:FParsec.Text.CountTextElements(System.String)">
+            <summary>A faster implementation of System.Globalization.StringInfo(str).LengthInTextElements.</summary>
+        </member>
+    </members>
+</doc>
