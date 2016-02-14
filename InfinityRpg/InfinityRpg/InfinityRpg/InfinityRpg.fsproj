@@ -107,12 +107,24 @@
     <Reference Include="FarseerPhysics">
       <HintPath>..\..\..\Nu\Farseer\FarseerPhysics.dll</HintPath>
     </Reference>
+    <Reference Include="FParsec">
+      <HintPath>..\..\..\Nu\FParsec\FParsec.dll</HintPath>
+    </Reference>
+    <Reference Include="FParsecCS">
+      <HintPath>..\..\..\Nu\FParsec\FParsecCS.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpx.Collections">
+      <HintPath>..\..\..\Nu\FSharpx.Collections\FSharpx.Collections.dll</HintPath>
+    </Reference>
     <Reference Include="FSharpx.Core">
-      <HintPath>..\..\..\Prime\FSharpx.Core\FSharpx.Core.dll</HintPath>
+      <HintPath>..\..\..\Nu\FSharpx.Core\FSharpx.Core.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
+    </Reference>
+    <Reference Include="Prime">
+      <HintPath>..\..\..\Nu\Prime\Release\Prime.exe</HintPath>
     </Reference>
     <Reference Include="SDL2#">
       <HintPath>..\..\..\Nu\SDL2#\Release\SDL2#.dll</HintPath>
@@ -120,11 +132,6 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <ProjectReference Include="..\..\..\Prime\Prime\Prime\Prime.fsproj">
-      <Name>Prime</Name>
-      <Project>{fe09ae81-b66b-42e0-8192-eadecefc9893}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\Nu\Nu\Nu\Nu.fsproj">
       <Name>Nu</Name>
       <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
@@ -133,6 +140,9 @@
     <Reference Include="System.Xml" />
     <Reference Include="TiledSharp">
       <HintPath>..\..\..\Nu\TiledSharp\Release\TiledSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit">
+      <HintPath>..\..\..\Nu\xUnit\xunit.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Target Name="AfterClean">

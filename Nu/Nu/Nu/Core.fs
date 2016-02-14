@@ -7,7 +7,6 @@ open System.Diagnostics
 open System.Runtime.InteropServices
 open System.Configuration
 open Prime
-open Nu
 
 [<RequireQualifiedAccess>]
 module internal CoreInternal =
