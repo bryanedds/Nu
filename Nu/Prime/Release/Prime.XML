@@ -552,6 +552,7 @@
  Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way
  to implement dynamic fields.
  TODO: use DebuggerTypeProxyAttribute to make xFields easier to browse in the debugger.
+ TODO: make this an abstract data type.
 </summary>
 </member>
 <member name="T:Prime.rQueue`1">
@@ -1632,6 +1633,11 @@
  Test for string equality.
 </summary>
 </member>
+<member name="M:Prime.Operators.denull``1(``0)">
+<summary>
+ Convert a nullable value into an option.
+</summary>
+</member>
 <member name="M:Prime.Operators.isNotNull``1(``0)">
 <summary>
  Test for non-null.
@@ -1702,11 +1708,6 @@
  No matter what you pass it, it evaluates to true.
 </summary>
 </member>
-<member name="M:Prime.Option.denull``1(``0)">
-<summary>
- Convert a nullable value into an option.
-</summary>
-</member>
 <member name="M:Prime.Option.getOrDefault``1(``0,Microsoft.FSharp.Core.FSharpOption{``0})">
 <summary>
  Get an option&apos;s value, or missing that, return a default value.
@@ -1745,6 +1746,11 @@
 <member name="M:Prime.PairOperators.withFst``3(``0,``1,``2)">
 <summary>
  Replace pair member fst.
+</summary>
+</member>
+<member name="M:Prime.Program.runTimings``1(Microsoft.FSharp.Core.FSharpFunc{System.Tuple{System.String,System.Tuple{System.String,System.String}}[],``0},Microsoft.FSharp.Core.FSharpFunc{System.Tuple{System.String,System.Tuple{System.String,System.String}}[],Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.Unit}},System.String)">
+<summary>
+ Performs some ad-hoc tests to compare performance of maps.
 </summary>
 </member>
 <member name="M:Prime.RandModule.make">
@@ -2020,12 +2026,12 @@
  Query that a value of the source type can be converted to the destination type.
 </summary>
 </member>
-<member name="M:Prime.SymbolicStringModule.symvalue``1(System.String)">
+<member name="M:Prime.SymbolicOperators.symvalue``1(System.String)">
 <summary>
  Uses an algebraic converter to convert a string to a value.
 </summary>
 </member>
-<member name="M:Prime.SymbolicStringModule.symstring(System.Object)">
+<member name="M:Prime.SymbolicOperators.symstring(System.Object)">
 <summary>
  Uses an algebraic converter to convert a value to a string.
 </summary>
