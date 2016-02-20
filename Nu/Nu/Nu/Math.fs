@@ -33,7 +33,7 @@ type Vector2Converter () =
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<Symbol> then
             let v2 = source :?> Vector2
-            Molecule [Atom ^ string v2.X; Atom ^ string v2.Y] :> obj
+            Symbols [Atom ^ string v2.X; Atom ^ string v2.Y] :> obj
         elif destType = typeof<Vector2> then source
         else failwith "Invalid Vector2Converter conversion to source."
 
@@ -45,7 +45,7 @@ type Vector2Converter () =
         match source with
         | :? Symbol as symbol ->
             match symbol with
-            | Molecule [Atom x; Atom y] -> Vector2 (Single.Parse x, Single.Parse y) :> obj
+            | Symbols [Atom x; Atom y] -> Vector2 (Single.Parse x, Single.Parse y) :> obj
             | _ -> failwith "Invalid Vector2Converter conversion from source."
         | :? Vector2 -> source
         | _ -> failwith "Invalid Vector2Converter conversion from source."
@@ -61,7 +61,7 @@ type Vector3Converter () =
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<Symbol> then
             let v3 = source :?> Vector3
-            Molecule [Atom ^ string v3.X; Atom ^ string v3.Y; Atom ^ string v3.Z] :> obj
+            Symbols [Atom ^ string v3.X; Atom ^ string v3.Y; Atom ^ string v3.Z] :> obj
         elif destType = typeof<Vector3> then source
         else failwith "Invalid Vector3Converter conversion to source."
 
@@ -73,7 +73,7 @@ type Vector3Converter () =
         match source with
         | :? Symbol as symbol ->
             match symbol with
-            | Molecule [Atom x; Atom y; Atom z] -> Vector3 (Single.Parse x, Single.Parse y, Single.Parse z) :> obj
+            | Symbols [Atom x; Atom y; Atom z] -> Vector3 (Single.Parse x, Single.Parse y, Single.Parse z) :> obj
             | _ -> failwith "Invalid Vector3Converter conversion from source."
         | :? Vector3 -> source
         | _ -> failwith "Invalid Vector3Converter conversion from source."
@@ -89,7 +89,7 @@ type Vector4Converter () =
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<Symbol> then
             let v4 = source :?> Vector4
-            Molecule [Atom ^ string v4.X; Atom ^ string v4.Y; Atom ^ string v4.Z; Atom ^ string v4.W] :> obj
+            Symbols [Atom ^ string v4.X; Atom ^ string v4.Y; Atom ^ string v4.Z; Atom ^ string v4.W] :> obj
         elif destType = typeof<Vector4> then source
         else failwith "Invalid Vector4Converter conversion to source."
 
@@ -101,7 +101,7 @@ type Vector4Converter () =
         match source with
         | :? Symbol as symbol ->
             match symbol with
-            | Molecule [Atom x; Atom y; Atom z; Atom w] -> Vector4 (Single.Parse x, Single.Parse y, Single.Parse z, Single.Parse w) :> obj
+            | Symbols [Atom x; Atom y; Atom z; Atom w] -> Vector4 (Single.Parse x, Single.Parse y, Single.Parse z, Single.Parse w) :> obj
             | _ -> failwith "Invalid Vector4Converter conversion from source."
         | :? Vector4 -> source
         | _ -> failwith "Invalid Vector4Converter conversion from source."
@@ -117,7 +117,7 @@ type Vector2iConverter () =
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<Symbol> then
             let v2i = source :?> Vector2i
-            Molecule [Atom ^ string v2i.X; Atom ^ string v2i.Y] :> obj
+            Symbols [Atom ^ string v2i.X; Atom ^ string v2i.Y] :> obj
         elif destType = typeof<Vector2i> then source
         else failwith "Invalid Vector2iConverter conversion to source."
 
@@ -129,7 +129,7 @@ type Vector2iConverter () =
         match source with
         | :? Symbol as symbol ->
             match symbol with
-            | Molecule [Atom x; Atom y] -> Vector2i (Int32.Parse x, Int32.Parse y) :> obj
+            | Symbols [Atom x; Atom y] -> Vector2i (Int32.Parse x, Int32.Parse y) :> obj
             | _ -> failwith "Invalid Vector2iConverter conversion from source."
         | :? Vector2i -> source
         | _ -> failwith "Invalid Vector2iConverter conversion from source."

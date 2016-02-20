@@ -331,14 +331,12 @@
  A hash-key-value triple, implemented with a struct for efficiency.
 </summary>
 </member>
-<member name="T:Prime.Id">
-<summary>
- A generalized identification code.
-</summary>
-</member>
 <member name="T:Prime.KeyedCache`2">
 <summary>
  Presents a purely-functional interface to a cached value.
+ Works by associating a cached value with a given cache key such that the cached value remains valid when queried
+ for using the same cache key (as decided by a simple key comparer function), automatically rebuilding the cached
+ value and key (as done with a simple factory function).
 </summary>
 </member>
 <member name="T:Prime.LabelName">
@@ -553,14 +551,6 @@
  to implement dynamic fields.
  TODO: use DebuggerTypeProxyAttribute to make xFields easier to browse in the debugger.
  TODO: make this an abstract data type.
-</summary>
-</member>
-<member name="T:Prime.rQueue`1">
-<summary>
- Type alias to emphasize that messages arrive in a reversed queue since I am
- too lazy to write an immutable queue directly.
-
- TODO: replace all usage with Queue from FSharpx.Collections.
 </summary>
 </member>
 <member name="M:Prime.Address.isEmpty``1(Prime.Address{``0})">
@@ -1093,15 +1083,28 @@
  Force the addition of an element, removing the existing one if necessary.
 </summary>
 </member>
-<member name="M:Prime.IdModule.makeIdMaker">
+<member name="M:Prime.KeyedCacheModule.make``2(``0,``1)">
+ <summary>Make a keyed cache value.</summary>
+ <param name="cacheKey">The current key against which to validate the cache.</param>
+ <param name="cacheValue">The value associated with the cache key.</param>
+</member>
+<member name="M:Prime.KeyedCacheModule.getValue``2(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``0,System.Boolean}},Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,System.Tuple{``0,``1}},``0,Prime.KeyedCache{``0,``1})">
+ <summary>Get the cached value.</summary>
+ <param name="keyEquality">Determines the equality of the key used to consider if the cache is valid.</param>
+ <param name="getFreshKeyAndValue">Generates a fresh key and corresponding value to cache.</param>
+ <param name="cacheKey">The current key against which to validate the cache.</param>
+ <param name="keyedCache">The keyed cache.</param>
+</member>
+<member name="M:Prime.KeyedCacheModule.getGlobalCacheMisses">
 <summary>
- Make a function that gets a unique number.
- TODO: place a mutex lock in this
+ The number of cache misses that have occured when using this type.
+ Useful for performance trouble-shooting in Debug mode.
 </summary>
 </member>
-<member name="P:Prime.IdModule.InvalidId">
+<member name="M:Prime.KeyedCacheModule.getGlobalCacheHits">
 <summary>
- The invalid Id.
+ The number of cache hits that have occured when using this type.
+ Useful for performance trouble-shooting in Debug mode.
 </summary>
 </member>
 <member name="P:Prime.LabelNameModule.Module">
@@ -1252,6 +1255,12 @@
 <member name="M:Prime.MapOperators.op_AtAt``2(Microsoft.FSharp.Collections.FSharpMap{``0,``1},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{``0,``1}})">
 <summary>
  Combine the contents of two maps, taking an item from the second map in case of a key overlap.
+</summary>
+</member>
+<member name="M:Prime.MutantCacheModule.getGlobalMutantRebuilds">
+<summary>
+ The number of mutant rebuilds that have occured when using this type.
+ Useful for performance trouble-shooting in Debug mode.
 </summary>
 </member>
 <member name="P:Prime.NameModule.empty">
@@ -1948,7 +1957,7 @@
  &quot;String with quoted spaces.&quot;
  String_with_underscores_for_spaces.
  
- (* Molecule values *)
+ (* Symbols values *)
 
  []
  [Some 0]
@@ -1974,7 +1983,7 @@
  &quot;String with quoted spaces.&quot;
  String_with_underscores_for_spaces.
  
- (* Molecule values *)
+ (* Symbols values *)
 
  []
  [Some 0]
@@ -2133,7 +2142,7 @@
 </member>
 <member name="M:Prime.Type.GetPropertyByPreference``1(Microsoft.FSharp.Core.FSharpFunc{``0,System.Boolean},System.Collections.Generic.IEnumerable{``0})">
 <summary>
- TODO: document!
+ Get the first property that is signalled to be preferred by the &apos;preference&apos; predicate.
 </summary>
 </member>
 <member name="M:Prime.Type.GetTypeUnqualified(System.String)">
@@ -2146,9 +2155,54 @@
  Try to get an existing type with the given unqualified name. Time-intensive.
 </summary>
 </member>
+<member name="M:Prime.TypeExtension.Type.GetPropertiesPreferWritable(System.Type)">
+<summary>
+ Get all the properties, preferring those that can be written to if there is a name clash.
+</summary>
+</member>
+<member name="M:Prime.TypeExtension.Type.GetPropertiesByPreference(System.Type,Microsoft.FSharp.Core.FSharpFunc{System.Reflection.PropertyInfo,System.Boolean})">
+<summary>
+ Get all the properties that are signalled to be preferred by the &apos;preference&apos; predicate.
+</summary>
+</member>
+<member name="M:Prime.TypeExtension.Type.GetPropertyPreferWritable(System.Type,System.Reflection.BindingFlags)">
+<summary>
+ Get the property with the given name, preferring the variant that can be written to, or null if none found.
+</summary>
+</member>
+<member name="M:Prime.TypeExtension.Type.GetPropertyByPreference(System.Type,Microsoft.FSharp.Core.FSharpFunc{System.Reflection.PropertyInfo,System.Boolean},System.Reflection.BindingFlags)">
+<summary>
+ Get the first property with the given name that is signalled to be preferred by the &apos;preference&apos; predicate.
+</summary>
+</member>
+<member name="M:Prime.TypeExtension.Type.GetPropertiesWritable(System.Type,System.String)">
+<summary>
+ Get all the properties with the give name that can be written to.
+</summary>
+</member>
+<member name="M:Prime.TypeExtension.Type.GetPropertiesWritable(System.Type)">
+<summary>
+ Get all the properties that can be written to.
+</summary>
+</member>
+<member name="M:Prime.TypeExtension.Type.GetProperties(System.Type,System.String)">
+<summary>
+ Get all the properties with the given name.
+</summary>
+</member>
+<member name="M:Prime.TypeExtension.Type.GetPropertyWritable(System.Type,System.String)">
+<summary>
+ Get a property with the given name that can be written to, or null.
+</summary>
+</member>
 <member name="M:Prime.TypeExtension.Type.TryGetCustomTypeConverter(System.Type)">
 <summary>
  Try to get a custom type converter for the given type.
+</summary>
+</member>
+<member name="M:Prime.TypeExtension.Type.GetTypeDescriptor(System.Type)">
+<summary>
+ Get the type descriptor for this type as returned by the global TypeDescriptor.
 </summary>
 </member>
 <member name="M:Prime.VmapModule.ofSeq``2(System.Collections.Generic.IEnumerable{System.Tuple{``0,``1}})">
