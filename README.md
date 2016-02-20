@@ -10,7 +10,6 @@ What is the **Nu Game Engine**?
 This repository hosts several projects, including -
 
 - ![Alt text](Nu/Promotional/Nu Icon.png?raw=true "Nu Game Engine"), the **Nu Game Engine**, a cross-platform F# 2D game engine built in the functional style. Uses SDL2 and Farseer Physics.
-- the small but potentially useful F# code library **Prime** (interesting features, but lacks unit tests).
 - the sample game **BlazeVector**.
 - the work-in-progress game **InfinityRpg**.
 
