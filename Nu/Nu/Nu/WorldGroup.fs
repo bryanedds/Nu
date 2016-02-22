@@ -32,7 +32,7 @@ module WorldGroupModule =
         /// Get an xtension field by name.
         member this.GetXField name world =
             let xtension = this.GetXtension world
-            let xField = Vmap.find name xtension.XFields
+            let xField = Xtension.getField name xtension
             xField.FieldValue
 
         /// Query that a group dispatches in the same manner as the dispatcher with the target type.
@@ -244,7 +244,7 @@ type Group =
     /// with the Watch feature in Visual Studio.
     static member viewXFields group world =
         let state = World.getGroupState group world
-        let fields = Map.ofSeq state.Xtension.XFields
+        let fields = Map.ofSeq ^ Xtension.getFields state.Xtension
         Map.map (fun _ field -> field.FieldValue) fields
 
     /// Provides a full view of all the member values of a group. Useful for debugging such

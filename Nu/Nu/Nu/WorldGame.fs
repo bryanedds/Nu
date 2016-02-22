@@ -30,7 +30,7 @@ module WorldGameModule =
         /// Get an xtension field by name.
         member this.GetXField name world =
             let xtension = this.GetXtension world
-            let xField = Vmap.find name xtension.XFields
+            let xField = Xtension.getField name xtension
             xField.FieldValue
 
         /// Query that a game dispatches in the same manner as the dispatcher with the target type.
@@ -169,7 +169,7 @@ type Game =
     /// with the Watch feature in Visual Studio.
     static member viewXFields world =
         let state = World.getGameState world
-        let fields = Map.ofSeq state.Xtension.XFields
+        let fields = Map.ofSeq ^ Xtension.getFields state.Xtension
         Map.map (fun _ field -> field.FieldValue) fields
 
     /// Provides a full view of all the member values of a game. Useful for debugging such

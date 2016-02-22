@@ -518,7 +518,7 @@
 </member>
 <member name="T:Prime.XFields">
 <summary>
- An indexible collection of XFields.
+ A map of XFields.
 </summary>
 </member>
 <member name="M:Prime.Xtension.tryGetDefaultValue``1(Prime.Xtension,System.String)">
@@ -549,8 +549,7 @@
 <summary>
  Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way
  to implement dynamic fields.
- TODO: use DebuggerTypeProxyAttribute to make xFields easier to browse in the debugger.
- TODO: make this an abstract data type.
+ TODO: use DebuggerTypeProxyAttribute to make XFields easier to browse in the debugger.
 </summary>
 </member>
 <member name="M:Prime.Address.isEmpty``1(Prime.Address{``0})">
@@ -2269,9 +2268,34 @@
  Configures whether to use synchronized processing.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.make(System.Boolean,System.Boolean)">
+<member name="M:Prime.XtensionModule.detachFields(System.Collections.Generic.IEnumerable{System.String},Prime.Xtension)">
 <summary>
- Make an extension with custom safety.
+ Detach multiple fields from an Xtension.
+</summary>
+</member>
+<member name="M:Prime.XtensionModule.detachField(System.String,Prime.Xtension)">
+<summary>
+ Detach a field from an Xtension.
+</summary>
+</member>
+<member name="M:Prime.XtensionModule.attachFields(System.Collections.Generic.IEnumerable{System.Tuple{System.String,Prime.XField}},Prime.Xtension)">
+<summary>
+ Attach multiple fields to an Xtension.
+</summary>
+</member>
+<member name="M:Prime.XtensionModule.attachField(System.String,Prime.XField,Prime.Xtension)">
+<summary>
+ Attach a field to an Xtension.
+</summary>
+</member>
+<member name="M:Prime.XtensionModule.getFields(Prime.Xtension)">
+<summary>
+ Get an Xtension&apos;s fields.
+</summary>
+</member>
+<member name="M:Prime.XtensionModule.getField(System.String,Prime.Xtension)">
+<summary>
+ Get a field from an xtension.
 </summary>
 </member>
 <member name="P:Prime.XtensionModule.mixed">
@@ -2287,6 +2311,11 @@
 <member name="P:Prime.XtensionModule.empty">
 <summary>
  An Xtension that can default and isn&apos;t sealed.
+</summary>
+</member>
+<member name="M:Prime.XtensionModule.make(Prime.Vmap{System.String,Prime.XField},System.Boolean,System.Boolean)">
+<summary>
+ Make an extension with custom safety.
 </summary>
 </member>
 <member name="M:Seq.notExists``1(Microsoft.FSharp.Core.FSharpFunc{``0,System.Boolean},System.Collections.Generic.IEnumerable{``0})">

@@ -259,8 +259,7 @@ module Reflection =
                     match xtensionProperty.GetValue target with
                     | :? Xtension as xtension ->
                         let xField = { FieldValue = fieldValue; FieldType = fieldDefinition.FieldType }
-                        let xFields = Vmap.add fieldDefinition.FieldName xField xtension.XFields
-                        let xtension = { xtension with XFields = xFields }
+                        let xtension = Xtension.attachField fieldDefinition.FieldName xField xtension
                         xtensionProperty.SetValue (target, xtension)
                     | _ -> failwith ^ "Invalid field '" + fieldDefinition.FieldName + "' for target type '" + targetType.Name + "'."
             | property -> property.SetValue (target, fieldValue)
@@ -276,8 +275,7 @@ module Reflection =
                 | xtensionProperty ->
                     match xtensionProperty.GetValue target with
                     | :? Xtension as xtension ->
-                        let xFields = Vmap.remove fieldName xtension.XFields
-                        let xtension = { xtension with XFields = xFields }
+                        let xtension = Xtension.detachField fieldName xtension
                         xtensionProperty.SetValue (target, xtension)
                     | _ -> failwith ^ "Invalid field '" + fieldName + "' for target type '" + targetType.Name + "'."
             | _ -> ()
@@ -424,8 +422,9 @@ module Reflection =
         | xtensionProperty ->
             match xtensionProperty.GetValue target with
             | :? Xtension as xtension ->
-                let xFields = readXFields xtension.XFields targetNode target
-                let xtension = { xtension with XFields = xFields }
+                let xFields = Xtension.getFields xtension
+                let xFields = readXFields xFields targetNode target
+                let xtension = Xtension.attachFields xFields xtension // NOTE: perhaps not terribly efficient...
                 xtensionProperty.SetValue (target, xtension)
             | _ -> Log.debug "Target does not support xtensions due to Xtension field having unexpected type."
 
@@ -438,7 +437,7 @@ module Reflection =
     /// NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
     /// XmlWriter.Create ^ (document.CreateNavigator ()).AppendChild ()
     let writeXtension shouldWriteProperty (writer : XmlWriter) xtension =
-        for (xFieldName, xField) in xtension.XFields do
+        for (xFieldName, xField) in Xtension.getFields xtension do
             let xFieldType = xField.FieldType
             let xFieldValue = xField.FieldValue
             if  isPropertyPersistentByName xFieldName &&
