@@ -55,7 +55,7 @@ module WorldEntityModule =
         /// Get an xtension field by name.
         member this.GetXField name world =
             let xtension = this.GetXtension world
-            let xField = Vmap.find name xtension.XFields
+            let xField = Xtension.getField name xtension
             xField.FieldValue
 
         /// Get an entity's bounds, not taking into account its overflow.
@@ -545,7 +545,7 @@ module WorldEntityModule =
             match property with
             | EntityXFieldDescriptor xfd ->
                 let xtension = entity.GetXtension world
-                (Vmap.find xfd.FieldName xtension.XFields).FieldValue
+                (Xtension.getField xfd.FieldName xtension).FieldValue
             | EntityPropertyInfo propertyInfo ->
                 let entityState = World.getEntityState entity world
                 propertyInfo.GetValue entityState
@@ -556,7 +556,7 @@ module WorldEntityModule =
             | EntityXFieldDescriptor xfd ->
                 entity.UpdateXtension (fun xtension ->
                     let xField = { FieldValue = value; FieldType = xfd.FieldType }
-                    { xtension with XFields = Vmap.add xfd.FieldName xField xtension.XFields })
+                    Xtension.attachField xfd.FieldName xField xtension)
                     world
             | EntityPropertyInfo propertyInfo ->
                 let entityState = World.getEntityState entity world
@@ -589,7 +589,7 @@ module WorldEntityModule =
                                     xFieldDescriptor :: xFieldDescriptors
                                 else xFieldDescriptors)
                             []
-                            xtension.XFields
+                            (Xtension.getFields xtension)
                     Seq.append xFieldDescriptors propertyDescriptors
                 | None -> propertyDescriptors
             List.ofSeq propertyDescriptors
@@ -612,7 +612,7 @@ type Entity =
     /// with the Watch feature in Visual Studio.
     static member viewXFields entity world =
         let state = World.getEntityState entity world
-        let fields = Map.ofSeq state.Xtension.XFields
+        let fields = Map.ofSeq ^ Xtension.getFields state.Xtension
         Map.map (fun _ field -> field.FieldValue) fields
 
     /// Provides a full view of all the member values of an entity. Useful for debugging such

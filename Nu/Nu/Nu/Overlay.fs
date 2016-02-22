@@ -63,7 +63,9 @@ module Overlayer =
             let optPropertyValue =
                 match (optProperty, optXtension) with
                 | (null, None) -> None
-                | (null, Some xtension) -> Some (Vmap.find overlayNode.Name xtension.XFields).FieldValue
+                | (null, Some xtension) ->
+                    let xFields = Xtension.getFields xtension
+                    Some (Vmap.find overlayNode.Name xFields).FieldValue
                 | (targetProperty, _) -> Some ^ targetProperty.GetValue target
             match optPropertyValue with
             | Some propertyValue ->
@@ -124,19 +126,17 @@ module Overlayer =
                         match trySelectNode newOverlayName xFieldName newOverlayer with
                         | Some node -> (xField.FieldType, node) :: optNodes
                         | None -> optNodes)
-                        (List.ofSeq xtension.XFields)
+                        (List.ofSeq ^ Xtension.getFields xtension)
                         []
-                let xFields =
-                    List.foldBack (fun (ty, node : XmlNode) xFields ->
+                let xtension =
+                    List.foldBack (fun (ty, node : XmlNode) xtension ->
                         if isPropertyOverlaid oldOverlayName facetNames node.Name ty target oldOverlayer then
                             let value = SymbolicDescriptor.convertFromString node.InnerText ty
-                            let xField = { FieldValue = value; FieldType = ty }
-                            (node.Name, xField) :: xFields
-                        else xFields)
+                            let field = { FieldValue = value; FieldType = ty }
+                            Xtension.attachField node.Name field xtension
+                        else xtension)
                         nodes
-                        []
-                let xFields = Vmap.addMany xFields xtension.XFields
-                let xtension = { xtension with XFields = xFields }
+                        xtension
                 xtensionProperty.SetValue (target, xtension)
             | _ -> ()
 

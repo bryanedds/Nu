@@ -41,7 +41,7 @@ module WorldScreenModule =
         /// Get an xtension field by name.
         member this.GetXField name world =
             let xtension = this.GetXtension world
-            let xField = Vmap.find name xtension.XFields
+            let xField = Xtension.getField name xtension
             xField.FieldValue
 
         /// Query that a screen is in an idling state (not transitioning in nor out).
@@ -226,7 +226,7 @@ type Screen =
     /// with the Watch feature in Visual Studio.
     static member viewXFields screen world =
         let state = World.getScreenState screen world
-        let fields = Map.ofSeq state.Xtension.XFields
+        let fields = Map.ofSeq ^ Xtension.getFields state.Xtension
         Map.map (fun _ field -> field.FieldValue) fields
 
     /// Provides a full view of all the member values of a screen. Useful for debugging such
