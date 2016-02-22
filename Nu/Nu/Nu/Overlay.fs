@@ -39,7 +39,7 @@ module Overlayer =
                     match optIncludeNames with
                     | null -> None
                     | includeNames ->
-                        let includeNames = SymbolicDescriptor.convertFromString includeNames.InnerXml typeof<string list> :?> string list
+                        let includeNames = symvalue<string list> includeNames.InnerXml
                         let mutable optNode = None
                         let mutable enr = (includeNames :> _ seq).GetEnumerator ()
                         while enr.MoveNext () && Option.isNone optNode do
@@ -131,7 +131,7 @@ module Overlayer =
                 let xtension =
                     List.foldBack (fun (ty, node : XmlNode) xtension ->
                         if isPropertyOverlaid oldOverlayName facetNames node.Name ty target oldOverlayer then
-                            let value = SymbolicDescriptor.convertFromString node.InnerText ty
+                            let value = SymbolicDescriptor.convertFrom node.InnerText ty
                             let field = { FieldValue = value; FieldType = ty }
                             Xtension.attachField node.Name field xtension
                         else xtension)

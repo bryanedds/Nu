@@ -16,7 +16,7 @@ type MouseButton =
     | MouseRight
     | MouseX1
     | MouseX2
-    override this.ToString () = SymbolicDescriptor.convertToString this
+    override this.ToString () = symstring this
     static member toEventName this = Name.make ^ (symstring this).Substring "Mouse".Length
 
 [<RequireQualifiedAccess>]
