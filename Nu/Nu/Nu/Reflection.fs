@@ -329,12 +329,12 @@ module Reflection =
     /// Read opt overlay name from an xml node.
     let readOptOverlayName (node : XmlNode) =
         let optOverlayNameStr = node.InnerText
-        SymbolicDescriptor.convertFromString optOverlayNameStr typeof<string option> :?> string option
+        symvalue<string option> optOverlayNameStr
 
     /// Read facet names from an xml node.
     let readFacetNames (node : XmlNode) =
         let facetNames = node.InnerText
-        SymbolicDescriptor.convertFromString facetNames typeof<string Set> :?> string Set
+        symvalue<string Set> facetNames
 
     /// Try to read just the target's OptOverlayName from Xml.
     let tryReadOptOverlayNameToTarget (targetNode : XmlNode) target =
@@ -498,7 +498,7 @@ module Reflection =
             match includeNames with
             | _ :: _ ->
                 let includesAttribute = document.CreateAttribute Constants.Xml.IncludesAttributeName
-                includesAttribute.InnerText <- SymbolicDescriptor.convertToString includeNames
+                includesAttribute.InnerText <- symstring includeNames
                 overlayNode.Attributes.Append includesAttribute |> ignore
             | _ -> ()
 
@@ -515,7 +515,7 @@ module Reflection =
             // construct the "FacetNames" node if needed
             if hasFacetNamesField then
                 let facetNamesNode = document.CreateElement "FacetNames"
-                facetNamesNode.InnerText <- SymbolicDescriptor.convertToString []
+                facetNamesNode.InnerText <- symstring []
                 overlayNode.AppendChild facetNamesNode |> ignore
 
             // append the overlay node

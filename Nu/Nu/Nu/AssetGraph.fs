@@ -72,7 +72,7 @@ module AssetGraph =
     let private getAssetAssociations (node : XmlNode) =
         match node.Attributes.GetNamedItem Constants.Xml.AssociationsAttributeName with
         | null -> Set.empty
-        | associations -> SymbolicDescriptor.convertFromString associations.InnerText typeof<string Set> :?> string Set
+        | associations -> symvalue<string Set> associations.InnerText
 
     let private getAssetExtension2 rawAssetExtension refinement =
         match refinement with
@@ -104,7 +104,7 @@ module AssetGraph =
         match node.Attributes.GetNamedItem Constants.Xml.RefinementsAttributeName with
         | null -> []
         | refinements ->
-            let refinements = SymbolicDescriptor.convertFromString refinements.InnerText typeof<string list> :?> string list
+            let refinements = symvalue<string list> refinements.InnerText
             List.map Refinement.fromString refinements
 
     let private writeMagickImageAsPng filePath (image : MagickImage) =

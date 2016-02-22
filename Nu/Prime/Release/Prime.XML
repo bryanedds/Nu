@@ -1994,16 +1994,6 @@
  ...and so on.
 </summary>
 </member>
-<member name="M:Prime.SymbolicDescriptor.convertFromString(System.String,System.Type)">
-<summary>
- Convert a value from a string using its assigned type converter.
-</summary>
-</member>
-<member name="M:Prime.SymbolicDescriptor.convertToString``1(``0)">
-<summary>
- Convert a value to a string using its assigned type converter.
-</summary>
-</member>
 <member name="M:Prime.SymbolicDescriptor.convertFrom``1(``0,System.Type)">
 <summary>
  Convert a value from given type using its assigned type converter.
@@ -2014,19 +2004,9 @@
  Convert a value to the given type using its assigned type converter.
 </summary>
 </member>
-<member name="M:Prime.SymbolicDescriptor.canConvertFromString(System.Type)">
-<summary>
- Query that a value of the destination type can be converted from a string.
-</summary>
-</member>
 <member name="M:Prime.SymbolicDescriptor.canConvertFrom(System.Type,System.Type)">
 <summary>
  Query that a value of the destination type can be converted from the source type.
-</summary>
-</member>
-<member name="M:Prime.SymbolicDescriptor.canConvertToString(System.Type)">
-<summary>
- Query that a value of the source type can be converted to a string.
 </summary>
 </member>
 <member name="M:Prime.SymbolicDescriptor.canConvertTo(System.Type,System.Type)">
@@ -2036,12 +2016,22 @@
 </member>
 <member name="M:Prime.SymbolicOperators.symvalue``1(System.String)">
 <summary>
- Uses an algebraic converter to convert a string to a value.
+ Uses a symbolic converter to convert a string to a value.
 </summary>
 </member>
-<member name="M:Prime.SymbolicOperators.symstring(System.Object)">
+<member name="M:Prime.SymbolicOperators.symstring``1(``0)">
 <summary>
- Uses an algebraic converter to convert a value to a string.
+ Uses a symbolic converter to convert a value to a string.
+</summary>
+</member>
+<member name="M:Prime.SymbolicOperators.valuate``1(Prime.Symbol)">
+<summary>
+ Convert a symbol to a value.
+</summary>
+</member>
+<member name="M:Prime.SymbolicOperators.symbolize``1(``0)">
+<summary>
+ Convert a value to a symbol.
 </summary>
 </member>
 <member name="M:Prime.Triple.make``3(``0,``1,``2)">

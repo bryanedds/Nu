@@ -15,8 +15,8 @@
         <Position>[-480 -304]</Position>
         <Depth>-8</Depth>
         <PublishUpdates>False</PublishUpdates>
-        <Parallax>0.1</Parallax>
         <TileMapAsset>[Gameplay BackgroundA]</TileMapAsset>
+        <Parallax>0.1</Parallax>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>[928 112.32]</Position>
@@ -46,8 +46,8 @@
         <Position>[-480 -304]</Position>
         <Depth>-4</Depth>
         <PublishUpdates>False</PublishUpdates>
-        <Parallax>0.1</Parallax>
         <TileMapAsset>[Gameplay BackgroundB]</TileMapAsset>
+        <Parallax>0.1</Parallax>
       </Entity>
     </Entities>
   </Group>
