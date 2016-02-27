@@ -18,15 +18,9 @@
  Compare a list of strings lexicographically.
 </summary>
 </member>
-<member name="M:List.duplicates``1(``0,Microsoft.FSharp.Collections.FSharpList{``0})">
+<member name="M:List.stackLeft``1(Microsoft.FSharp.Collections.FSharpList{``0})">
 <summary>
- Find the duplicates in a list.
- TODO: speed this up with a Set internally?
-</summary>
-</member>
-<member name="M:List.collapseLeft``1(Microsoft.FSharp.Collections.FSharpList{``0})">
-<summary>
- Collapse a list from the left.
+ Stack a list from the left, starting with the empty list.
  Example - [0, 1, 2] becomes [[]; [0]; [0; 1]; [0; 1; 2]]
 </summary>
 </member>
@@ -229,7 +223,7 @@
  Cons with flipped arguments.
 </summary>
 </member>
-<member name="M:List.cons``1">
+<member name="M:List.cons``1(``0,Microsoft.FSharp.Collections.FSharpList{``0})">
 <summary>
  The missing cons function.
 </summary>
@@ -386,7 +380,6 @@
 <member name="T:Prime.Observation`3">
 <summary>
  An observation in the functional reactive style.
- TODO: I bet there&apos;s either a monad or arrow here...
 </summary>
 </member>
 <member name="T:Prime.Participant">
@@ -478,8 +471,7 @@
 <member name="T:Prime.Vmap`2">
 <summary>
  A very fast persistent hash map.
- TODO: document.
- TODO: implement filter.
+ Works in effectively constant-time for look-ups and updates.
 </summary>
 </member>
 <member name="T:Prime.Vnode`2">
@@ -498,7 +490,6 @@
 <summary>
  The &apos;Vsync&apos; (AKA, &apos;Variable Synchrony&apos;) monad.
  NOTE: to reference how all this stuff works in F#, see here - https://msdn.microsoft.com/en-us/library/dd233182.aspx
- TODO: forward documentation from FSharp.Core.
 </summary>
 </member>
 <member name="T:Prime.XDefaultValueAttribute">
@@ -549,7 +540,6 @@
 <summary>
  Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way
  to implement dynamic fields.
- TODO: use DebuggerTypeProxyAttribute to make XFields easier to browse in the debugger.
 </summary>
 </member>
 <member name="M:Prime.Address.isEmpty``1(Prime.Address{``0})">
@@ -689,7 +679,7 @@
 </member>
 <member name="M:Prime.Async.Map``2(Microsoft.FSharp.Core.FSharpFunc{``0,``1},Microsoft.FSharp.Control.FSharpAsync{``0})">
 <summary>
- The missing Async.Map function.
+ Creates an asynchronous operation that runs &apos;f&apos; over computation of &apos;a&apos;.
 </summary>
 </member>
 <member name="T:Prime.Async">
@@ -922,14 +912,19 @@
  The computation expression builder for Either.
 </summary>
 </member>
-<member name="M:Prime.Either.bind``3(Prime.Either{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``1,Prime.Either{``0,``2}})">
+<member name="M:Prime.Either.returnFrom``1(``0)">
 <summary>
- Monadic bind for Either.
+ Monadic &apos;return from&apos; for Either.
 </summary>
 </member>
 <member name="M:Prime.Either.returnM``2(``0)">
 <summary>
  Monadic return for Either.
+</summary>
+</member>
+<member name="M:Prime.Either.bind``3(Prime.Either{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``1,Prime.Either{``0,``2}})">
+<summary>
+ Monadic bind for Either.
 </summary>
 </member>
 <member name="M:Prime.EventSystemModule.make``1">
@@ -1070,6 +1065,56 @@
 <member name="P:Prime.Events.Any">
 <summary>
  Represents any event.
+</summary>
+</member>
+<member name="M:Prime.Generics.div``3(``0,``1)">
+<summary>
+ Generic (and sectioned) division.
+</summary>
+</member>
+<member name="M:Prime.Generics.mul``3(``0,``1)">
+<summary>
+ Generic (and sectioned) multiplication.
+</summary>
+</member>
+<member name="M:Prime.Generics.sub``3(``0,``1)">
+<summary>
+ Generic (and sectioned) subtraction.
+</summary>
+</member>
+<member name="M:Prime.Generics.add``3(``0,``1)">
+<summary>
+ Generic (and sectioned) addition.
+</summary>
+</member>
+<member name="M:Prime.Generics.dec``3(``0)">
+<summary>
+ Generic (and sectioned) decrement.
+</summary>
+</member>
+<member name="M:Prime.Generics.inc``3(``0)">
+<summary>
+ Generic (and sectioned) increment.
+</summary>
+</member>
+<member name="M:Prime.Generics.append``3(``0,``1)">
+<summary>
+ The generic monoidal append operation.
+</summary>
+</member>
+<member name="M:Prime.Generics.empty``1">
+<summary>
+ The generic monoidal empty value.
+</summary>
+</member>
+<member name="M:Prime.Generics.one``1">
+<summary>
+ The generic one value.
+</summary>
+</member>
+<member name="M:Prime.Generics.zero``1">
+<summary>
+ The generic zero value.
 </summary>
 </member>
 <member name="M:Prime.HashSet.singleton``1(``0)">
@@ -1255,6 +1300,25 @@
 <summary>
  Combine the contents of two maps, taking an item from the second map in case of a key overlap.
 </summary>
+</member>
+<member name="M:Prime.MutantCacheModule.make``1(Microsoft.FSharp.Core.FSharpFunc{``0,``0},``0)">
+ <summary>Make a mutant cache.</summary>
+ <param name="cloneMutant">
+ A function to clone the mutant before presenting it to the outside world.
+ Feel free to pass id if you can ensure that the presented mutant will never be mutated externally.
+ </param>
+ <param name="mutant">The mutant (mutable object / record / whatever) to be cached.</param>
+</member>
+<member name="M:Prime.MutantCacheModule.mutateMutant``1(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,``0},Microsoft.FSharp.Core.FSharpFunc{``0,``0},Prime.MutantCache{``0})">
+ <summary>Mutate the underlying mutant (mutable object / record / whatever).</summary>
+ <param name="rebuildMutant">A function that rebuilds the mutant from scratch in case the current underlying mutant is out of date.</param>
+ <param name="mutateMutant">A function that mutates the underlying mutant.</param>
+ <param name="mutantCache">The mutant cache.</param>
+</member>
+<member name="M:Prime.MutantCacheModule.getMutant``1(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,``0},Prime.MutantCache{``0})">
+ <summary>Get the underlying mutant (mutable object / record / whatever).</summary>
+ <param name="rebuildMutant">A function that rebuilds the mutant from scratch in case the current underlying mutant is out of date.</param>
+ <param name="mutantCache">The mutant cache.</param>
 </member>
 <member name="M:Prime.MutantCacheModule.getGlobalMutantRebuilds">
 <summary>
@@ -1497,6 +1561,7 @@
  Combine an observation with the events from the given address. Combination is in &apos;sum
  form&apos;, which is defined as an Either of the data of the combined events, where only data
  from the most recent event is available at a time.
+ TODO: unit test for this!
 </summary>
 </member>
 <member name="M:Prime.Observation.product``4(Prime.Address{``0},Prime.Observation{``1,``2,``3})">
@@ -1504,8 +1569,7 @@
  Combine an observation with the events from the given address. Combination is in &apos;product
  form&apos;, which is defined as a pair of the data of the combined events. Think of it as &apos;zip&apos;
  for event streams.
- NOTE: This function is currently broken.
- TODO: fix by implementing this with event state instead of the rat&apos;s nest of subscriptions.
+ TODO: unit test for this!
 </summary>
 </member>
 <member name="M:Prime.Observation.observe``3(Prime.Address{``0},``1)">
@@ -1856,51 +1920,6 @@
  Resolve a relationship to an address.
 </summary>
 </member>
-<member name="M:Prime.Sectioning.div``3(``0,``1)">
-<summary>
- Sectioned division.
-</summary>
-</member>
-<member name="M:Prime.Sectioning.mul``3(``0,``1)">
-<summary>
- Sectioned multiplication.
-</summary>
-</member>
-<member name="M:Prime.Sectioning.sub``3(``0,``1)">
-<summary>
- Sectioned subtraction.
-</summary>
-</member>
-<member name="M:Prime.Sectioning.add``3(``0,``1)">
-<summary>
- Sectioned addition.
-</summary>
-</member>
-<member name="M:Prime.Sectioning.cons``1(``0,Microsoft.FSharp.Collections.FSharpList{``0})">
-<summary>
- Sectioned list cons.
-</summary>
-</member>
-<member name="M:Prime.Sectioning.dec``3(``0)">
-<summary>
- Generic decrement.
-</summary>
-</member>
-<member name="M:Prime.Sectioning.inc``3(``0)">
-<summary>
- Generic increment.
-</summary>
-</member>
-<member name="M:Prime.Sectioning.one``1">
-<summary>
- The generic one value.
-</summary>
-</member>
-<member name="M:Prime.Sectioning.zero``1">
-<summary>
- The generic zero value.
-</summary>
-</member>
 <member name="M:Prime.String.surround(System.String,System.String)">
 <summary>
  Surround a string with another surrounding string.
@@ -2024,7 +2043,7 @@
  Uses a symbolic converter to convert a value to a string.
 </summary>
 </member>
-<member name="M:Prime.SymbolicOperators.valuate``1(Prime.Symbol)">
+<member name="M:Prime.SymbolicOperators.valueize``1(Prime.Symbol)">
 <summary>
  Convert a symbol to a value.
 </summary>
@@ -2206,6 +2225,11 @@
  Don&apos;t use it unless you need its laziness or if performance won&apos;t be affected significantly.
 </summary>
 </member>
+<member name="M:Prime.VmapModule.filter``2(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,System.Boolean}},Prime.Vmap{``0,``1})">
+<summary>
+ Filter a Vmap.
+</summary>
+</member>
 <member name="M:Prime.VmapModule.map``3(Microsoft.FSharp.Core.FSharpFunc{``0,``1},Prime.Vmap{``2,``0})">
 <summary>
  Map over a Vmap.
@@ -2218,8 +2242,54 @@
 </member>
 <member name="M:Prime.VmapModule.concat``2(Prime.Vmap{``0,``1},System.Collections.Generic.IEnumerable{System.Tuple{``0,``1}})">
 <summary>
- Combine the contents of two maps, taking an item from the second map in the case of a key
- conflict.
+ Combine the contents of two Vmaps, taking an item from the second map in the case of a key conflict.
+</summary>
+</member>
+<member name="M:Prime.VmapModule.containsKey``2(``0,Prime.Vmap{``0,``1})">
+<summary>
+ Query that a Vmap contains a value with the given key.
+</summary>
+</member>
+<member name="M:Prime.VmapModule.find``2(``0,Prime.Vmap{``0,``1})">
+<summary>
+ Find a value with the given key in a Vmap.
+ Constant-time complexity with approx. 1/3 speed of Dictionary.GetValue.
+</summary>
+</member>
+<member name="M:Prime.VmapModule.tryFind``2(``0,Prime.Vmap{``0,``1})">
+<summary>
+ Try to find a value with the given key in a Vmap.
+ Constant-time complexity with approx. 1/3 speed of Dictionary.TryGetValue.
+</summary>
+</member>
+<member name="M:Prime.VmapModule.removeMany``2(System.Collections.Generic.IEnumerable{``0},Prime.Vmap{``0,``1})">
+<summary>
+ Remove all values with the given keys from a Vmap.
+</summary>
+</member>
+<member name="M:Prime.VmapModule.remove``2(``0,Prime.Vmap{``0,``1})">
+<summary>
+ Remove a value with the given key from a Vmap.
+</summary>
+</member>
+<member name="M:Prime.VmapModule.addMany``2(System.Collections.Generic.IEnumerable{System.Tuple{``0,``1}},Prime.Vmap{``0,``1})">
+<summary>
+ Add a list of values with associated keys to a Vmap.
+</summary>
+</member>
+<member name="M:Prime.VmapModule.add``2(``0,``1,Prime.Vmap{``0,``1})">
+<summary>
+ Add a value with the key to a Vmap.
+</summary>
+</member>
+<member name="M:Prime.VmapModule.isEmpty``2(Prime.Vmap{``0,``1})">
+<summary>
+ Query that a Vmap is empty.
+</summary>
+</member>
+<member name="M:Prime.VmapModule.makeEmpty``2">
+<summary>
+ Create an empty Vmap.
 </summary>
 </member>
 <member name="M:Prime.VnodeModule.add``2(Prime.Hkv{``0,``1},Prime.Vnode{``0,``1}[],System.Int32,Prime.Vnode{``0,``1})">
@@ -2241,6 +2311,123 @@
 <summary>
  The VsyncBuilder instance.
  Used like: vsync { return 0 }
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.Map``2(Microsoft.FSharp.Core.FSharpFunc{``0,``1},Prime.Vsync{``0})">
+<summary>
+ Creates a potentially asynchronous operation that runs &apos;f&apos; over computation of &apos;a&apos;.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.Parallel``1(System.Collections.Generic.IEnumerable{Prime.Vsync{``0}})">
+<summary>
+ Creates a potentially asynchronous computation that executes all the given computations
+ Initially queues each as work item using a fork/join pattern when asynchronous.
+ Executes each work item sequentially on the same thread otherwise.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.Catch``1(Prime.Vsync{``0})">
+<summary>
+ Creates a potentially asynchronous computation that executes computation.
+ If this computation completes successfully, then return Choice1Of2 with the returned value.
+ If this computation raises before completion, then return Choice2Of2 with the raised exception.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.AwaitTask(System.Threading.Tasks.Task)">
+<summary>
+ Return a potentially asynchronous computation that will wait for the given task to complete and return its result.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.AwaitTaskT``1(System.Threading.Tasks.Task{``0})">
+<summary>
+ Return a potentially asynchronous computation that will wait for the given task to complete and return its result.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.StartAsTask``1(Prime.Vsync{``0})">
+<summary>
+ Executes a computation in the thread pool when asynchronous, in the same thread otherwise.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.Start(Prime.Vsync{Microsoft.FSharp.Core.Unit})">
+<summary>
+ Starts the potentially asynchronous computation.
+ Computation is run in the thread pool not awaiting its result when asynchronous.
+ Computation is run in the current thread awaiting its result otherwise.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.RunSynchronously``1(Prime.Vsync{``0})">
+<summary>
+ Runs the potentially asynchronous computation and awaits its result.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.Sleep(System.Int32)">
+<summary>
+ Creates a potentially asynchronous computation that will sleep for the given time.
+ The operation will not block operating system threads for the duration of the wait when running asynchronously.
+ The operation will block operating system thread for the duration of the wait otherwise.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.Ignore``1(Prime.Vsync{``0})">
+<summary>
+ Creates a potentially asynchronous computation that runs the given computation and ignores its results.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.TryFinally``1(Prime.Vsync{``0},Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit})">
+<summary>
+ Creates a potentially asynchronous computation that runs computation.
+ The action compensation &apos;h&apos; is executed after the computation completes regardless of the outcome.
+ If the computation raises and exception itself, the original exception is discarded and the new exception becomes the overall result.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.TryWith``1(Prime.Vsync{``0},Microsoft.FSharp.Core.FSharpFunc{System.Exception,Prime.Vsync{``0}})">
+<summary>
+ Creates a potentially asynchronous computation that runs computation and returns its result.
+ If an exception happens, then handler &apos;h&apos; is called and the resulting computation executes instead.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.While(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,System.Boolean},Prime.Vsync{Microsoft.FSharp.Core.Unit})">
+<summary>
+ Creates a potentially asynchronous computation that runs computation until guard &apos;g&apos; becomes false.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.For``1(System.Collections.Generic.IEnumerable{``0},Microsoft.FSharp.Core.FSharpFunc{``0,Prime.Vsync{Microsoft.FSharp.Core.Unit}})">
+<summary>
+ Creates a potentially asynchronous computation that enumerates the sequence &apos;s&apos;, and runs the body &apos;f&apos; for each element.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.Combine``1(Prime.Vsync{Microsoft.FSharp.Core.Unit},Prime.Vsync{``0})">
+<summary>
+ Creates a potentially asynchronous computation that first runs computation &apos;a&apos; and then computation &apos;b&apos;, returning the result of the latter.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.Zero">
+<summary>
+ Creates a potentially asynchronous computation that just returns unit.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.Delay``1(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,Prime.Vsync{``0}})">
+<summary>
+ Creates a potentially asynchronous computation that runs generator &apos;f&apos;.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.Using``2(``0,Microsoft.FSharp.Core.FSharpFunc{``0,Prime.Vsync{``1}})">
+<summary>
+ Creates a potentially asynchronous computation that runs binder &apos;f&apos; over resource &apos;d&apos;.
+ Dispose is executed as this computation yields its result or if the asynchronous computation raises or by cancellation.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.ReturnFrom``1(Prime.Vsync{``0})">
+<summary>
+ Delegates to input computation.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.Return``1(``0)">
+<summary>
+ Creates a potentially asynchronous operation that returns the result &apos;a&apos;.
+</summary>
+</member>
+<member name="M:Prime.VsyncModule.Bind``2(Prime.Vsync{``0},Microsoft.FSharp.Core.FSharpFunc{``0,Prime.Vsync{``1}})">
+<summary>
+ Creates a potentially asynchronous operation that runs computation, and when computation results, runs binder resolution.
 </summary>
 </member>
 <member name="M:Prime.VsyncModule.isSync">
