@@ -125,10 +125,10 @@ module EffectSystem =
                 | SymbolicCompressionA resource -> evalResource resource effectSystem
                 | _ ->
                     Log.note ^ "Expected Resource for definition '" + definitionName + "."
-                    symvalue<AssetTag> Constants.Assets.DefaultImageValue
+                    scvalue<AssetTag> Constants.Assets.DefaultImageValue
             | None ->
                 Log.note ^ "Could not find definition with name '" + definitionName + "'."
-                symvalue<AssetTag> Constants.Assets.DefaultImageValue
+                scvalue<AssetTag> Constants.Assets.DefaultImageValue
         | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
 
     let rec private iterateArtifacts incrementAspects content slice effectSystem =

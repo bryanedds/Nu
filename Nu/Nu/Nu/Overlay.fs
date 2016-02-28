@@ -39,7 +39,7 @@ module Overlayer =
                     match optIncludeNames with
                     | null -> None
                     | includeNames ->
-                        let includeNames = symvalue<string list> includeNames.InnerXml
+                        let includeNames = scvalue<string list> includeNames.InnerXml
                         let mutable optNode = None
                         let mutable enr = (includeNames :> _ seq).GetEnumerator ()
                         while enr.MoveNext () && Option.isNone optNode do

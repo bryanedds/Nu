@@ -2033,12 +2033,12 @@
  Query that a value of the source type can be converted to the destination type.
 </summary>
 </member>
-<member name="M:Prime.SymbolicOperators.symvalue``1(System.String)">
+<member name="M:Prime.SymbolicOperators.scvalue``1(System.String)">
 <summary>
  Uses a symbolic converter to convert a string to a value.
 </summary>
 </member>
-<member name="M:Prime.SymbolicOperators.symstring``1(``0)">
+<member name="M:Prime.SymbolicOperators.scstring``1(``0)">
 <summary>
  Uses a symbolic converter to convert a value to a string.
 </summary>

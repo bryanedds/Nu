@@ -22,5 +22,5 @@ module EffectSystemTests =
                 [Size Scale Linear Once [[[0 0] 180] [[1 1] 0]]] 
                 [Color Put Linear Bounce [[[1 0 1 1] 180] [[1 1 0 0] 0]]]] 
                [Expand BoxSprite []]]]"
-        let effect = symvalue<Effect> effectStr
+        let effect = scvalue<Effect> effectStr
         Assert.Equal<string> ("TestEffect", effect.EffectName) // TODO: more assertions

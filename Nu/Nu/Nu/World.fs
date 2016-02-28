@@ -213,7 +213,7 @@ module WorldModule =
             match World.tryTransitionScreen destination world with
             | Some world -> (handling, world)
             | None ->
-                Log.trace ^ "Program Error: Invalid screen transition for destination address '" + symstring destination.ScreenAddress + "'."
+                Log.trace ^ "Program Error: Invalid screen transition for destination address '" + scstring destination.ScreenAddress + "'."
                 (handling, world)
 
         /// A procedure that can be passed to an event handler to specify that an event is to
@@ -233,7 +233,7 @@ module WorldModule =
             if transitionTicks = transition.TransitionLifetime then
                 (true, screen.SetTransitionTicksNp 0L world)
             elif transitionTicks > transition.TransitionLifetime then
-                Log.debug ^ "TransitionLifetime for screen '" + symstring screen.ScreenAddress + "' must be a consistent multiple of TickRate."
+                Log.debug ^ "TransitionLifetime for screen '" + scstring screen.ScreenAddress + "' must be a consistent multiple of TickRate."
                 (true, screen.SetTransitionTicksNp 0L world)
             else (false, screen.SetTransitionTicksNp (transitionTicks + World.getTickRate world) world)
 
@@ -371,7 +371,7 @@ module WorldModule =
                 Right world
 
             // propagate error
-            with exn -> Left ^ symstring exn
+            with exn -> Left ^ scstring exn
 
         /// Try to release the assets in use by the world. Currently does not support reloading
         /// of song assets, and possibly others that are locked by the engine's subsystems.
@@ -399,7 +399,7 @@ module WorldModule =
                     // propagate errors
                     | Left error -> Left error
                 | Left error -> Left error
-            with exn -> Left ^ symstring exn
+            with exn -> Left ^ scstring exn
 
         /// A hack for the physics subsystem that allows an old world value to displace the current
         /// one and have its physics values propagated to the imperative physics subsystem.
@@ -441,7 +441,7 @@ module WorldModule =
                 let world = tasklet.Operation world
                 (taskletsNotRun, world)
             elif tickTime > tasklet.ScheduledTime then
-                Log.debug ^ "Tasklet leak found for time '" + symstring tickTime + "'."
+                Log.debug ^ "Tasklet leak found for time '" + scstring tickTime + "'."
                 (taskletsNotRun, world)
             else (Queue.conj tasklet taskletsNotRun, world)
 

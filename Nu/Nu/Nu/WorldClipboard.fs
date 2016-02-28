@@ -32,7 +32,7 @@ module WorldClipboardModule =
             match !RefClipboard with
             | Some entityState ->
                 let id = makeGuid ()
-                let name = Name.make ^ symstring id
+                let name = Name.make ^ scstring id
                 let entityState = { entityState with Id = id; Name = name }
                 let camera = World.getCamera world
                 let entityPosition =
