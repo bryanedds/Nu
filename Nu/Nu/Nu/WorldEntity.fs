@@ -168,7 +168,7 @@ module WorldEntityModule =
                 else world
 
             // handle failure
-            else failwith ^ "Adding an entity that the world already contains at address '" + symstring entity.EntityAddress + "'."
+            else failwith ^ "Adding an entity that the world already contains at address '" + scstring entity.EntityAddress + "'."
 
         /// Remove an entity in the world. Can be dangerous if existing in-flight publishing depends on the entity's
         /// existence. Use with caution.
@@ -219,9 +219,9 @@ module WorldEntityModule =
                     match Vmap.tryFind groupName groupDirectory with
                     | Some (_, entityDirectory) ->
                         Vmap.fold (fun state _ entityAddress -> Entity.proxy entityAddress :: state) [] entityDirectory :> _ seq
-                    | None -> failwith ^ "Invalid group address '" + symstring group.GroupAddress + "'."
-                | None -> failwith ^ "Invalid group address '" + symstring group.GroupAddress + "'."
-            | _ -> failwith ^ "Invalid group address '" + symstring group.GroupAddress + "'."
+                    | None -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
+                | None -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
+            | _ -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
 
         /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight publishing depends on
         /// the entity's existence. Use with caution.
@@ -258,7 +258,7 @@ module WorldEntityModule =
             let entityState = World.getEntityState entity world
             let world = World.removeEntity entity world
             let id = makeGuid ()
-            let name = match optName with Some name -> name | None -> Name.make ^ symstring id
+            let name = match optName with Some name -> name | None -> Name.make ^ scstring id
             let entityState = { entityState with Id = id; Name = name }
             let transmutedEntity = gtoe group name
             let world = World.addEntity false entityState transmutedEntity world

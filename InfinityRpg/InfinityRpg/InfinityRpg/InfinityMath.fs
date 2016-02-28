@@ -43,7 +43,7 @@ module Direction =
         | 1 -> Rightward
         | 2 -> Downward
         | 3 -> Leftward
-        | _ -> failwith ^ "Invalid conversion to Direction from int '" + symstring n + "'."
+        | _ -> failwith ^ "Invalid conversion to Direction from int '" + scstring n + "'."
 
     let next rand =
         let randMax = 4

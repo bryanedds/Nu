@@ -8,7 +8,7 @@ module Program =
     let [<EntryPoint; STAThread>] main argv =
         match argv with
         | [|inputDirectory; outputDirectory; refinementDirectory; fullBuildStr|] ->
-            let fullBuild = fullBuildStr = symstring true
+            let fullBuild = fullBuildStr = scstring true
             match AssetGraph.tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory fullBuild Constants.Assets.AssetGraphFilePath with
             | Right () -> Constants.Engine.SuccessExitCode
             | Left error ->

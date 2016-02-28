@@ -76,7 +76,7 @@ module Gaia =
     let private addTreeViewNode (form : GaiaForm) (entity : Entity) world =
         let entityCategoryName = getTypeName ^ entity.GetDispatcherNp world
         let treeCategory = form.treeView.Nodes.[entityCategoryName]
-        let treeCategoryNodeName = symstring entity.EntityAddress
+        let treeCategoryNodeName = scstring entity.EntityAddress
         if not ^ treeCategory.Nodes.ContainsKey treeCategoryNodeName then
             let treeCategoryNode = TreeNode (Name.getNameStr ^ entity.GetName world)
             treeCategoryNode.Name <- treeCategoryNodeName
@@ -114,7 +114,7 @@ module Gaia =
     let private tryScrollTreeViewToPropertyGridSelection (form : GaiaForm) =
         match form.propertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
-            match form.treeView.Nodes.Find (symstring entityTds.DescribedEntity.EntityAddress, true) with
+            match form.treeView.Nodes.Find (scstring entityTds.DescribedEntity.EntityAddress, true) with
             | [||] -> ()
             | nodes ->
                 let node = nodes.[0]
@@ -173,7 +173,7 @@ module Gaia =
         (Cascade, world)
 
     let private handleNuEntityRemoving (form : GaiaForm) evt world =
-        match form.treeView.Nodes.Find (symstring evt.Publisher.ParticipantAddress, true) with
+        match form.treeView.Nodes.Find (scstring evt.Publisher.ParticipantAddress, true) with
         | [||] -> () // when changing an entity name, entity will be removed twice - once from winforms, once from world
         | treeNodes -> form.treeView.Nodes.Remove treeNodes.[0]
         match form.propertyGrid.SelectedObject with
@@ -250,7 +250,7 @@ module Gaia =
     let private trySaveFile filePath world =
         let selectedGroup = (World.getUserState world).SelectedGroup
         try World.writeGroupToFile filePath selectedGroup world
-        with exn -> MessageBox.Show ("Could not save file due to: " + symstring exn, "File save error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+        with exn -> MessageBox.Show ("Could not save file due to: " + scstring exn, "File save error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
 
     let private tryLoadFile (form : GaiaForm) filePath world =
 
@@ -269,7 +269,7 @@ module Gaia =
 
         // handle load failure
         with exn ->
-            MessageBox.Show ("Could not load file due to: " + symstring exn, "File load error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not load file due to: " + scstring exn, "File load error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             world
 
     let private handleFormExit (form : GaiaForm) (_ : EventArgs) =
@@ -277,11 +277,11 @@ module Gaia =
 
     let private handleFormCreateDepthPlusClick (form : GaiaForm) (_ : EventArgs) =
         let depth = snd ^ Single.TryParse form.createDepthTextBox.Text
-        form.createDepthTextBox.Text <- symstring ^ depth + 1.0f
+        form.createDepthTextBox.Text <- scstring ^ depth + 1.0f
 
     let private handleFormCreateDepthMinusClick (form : GaiaForm) (_ : EventArgs) =
         let depth = snd ^ Single.TryParse form.createDepthTextBox.Text
-        form.createDepthTextBox.Text <- symstring ^ depth - 1.0f
+        form.createDepthTextBox.Text <- scstring ^ depth - 1.0f
 
     let private refreshPropertyEditor (form : GaiaForm) =
         match form.propertyGrid.SelectedGridItem with
@@ -295,7 +295,7 @@ module Gaia =
             | GridItemType.Property ->
                 let typeConverter = SymbolicConverter selectedGridItem.PropertyDescriptor.PropertyType
                 form.propertyEditor.Enabled <- true
-                form.propertyNameLabel.Text <- symstring selectedGridItem.Label
+                form.propertyNameLabel.Text <- scstring selectedGridItem.Label
                 form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
                 let str = typeConverter.ConvertToString selectedGridItem.Value
                 let strPretty = SymbolIndex.prettyPrint str
@@ -320,7 +320,7 @@ module Gaia =
                     let typeConverter = SymbolicConverter (selectedGridItem.PropertyDescriptor.PropertyType)
                     try let propertyValue = typeConverter.ConvertFromString form.propertyValueTextBox.Text
                         propertyDescriptor.SetValue (entityTds, propertyValue)
-                    with exn -> Log.trace ^ "Invalid apply property operation due to: " + symstring exn
+                    with exn -> Log.trace ^ "Invalid apply property operation due to: " + scstring exn
                 | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
         | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
 
@@ -372,7 +372,7 @@ module Gaia =
                 let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
                 form.propertyGrid.SelectedObject <- entityTds
                 world
-            with exn -> MessageBox.Show (symstring exn) |> ignore; world)
+            with exn -> MessageBox.Show (scstring exn) |> ignore; world)
 
     let private handleFormDelete (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
@@ -396,7 +396,7 @@ module Gaia =
                     form.groupTabs.SelectTab (form.groupTabs.TabPages.IndexOfKey groupName)
                     world
                 with exn ->
-                    MessageBox.Show (symstring exn, "Group creation error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    MessageBox.Show (scstring exn, "Group creation error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world)
             groupNameEntryForm.Close ())
         groupNameEntryForm.cancelButton.Click.Add (fun _ -> groupNameEntryForm.Close ())
@@ -658,8 +658,8 @@ module Gaia =
                     let world = World.subscribe (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world
                     let world = World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world
                     subscribeToEntityEvents form world
-                else failwith ^ "Cannot attach Gaia to a world with no groups inside the '" + symstring Simulants.EditorScreen + "' screen."
-            else failwith ^ "Cannot attach Gaia to a world with a screen selected other than '" + symstring Simulants.EditorScreen + "'."
+                else failwith ^ "Cannot attach Gaia to a world with no groups inside the '" + scstring Simulants.EditorScreen + "' screen."
+            else failwith ^ "Cannot attach Gaia to a world with a screen selected other than '" + scstring Simulants.EditorScreen + "'."
         | :? EditorState -> world // NOTE: conclude world is already attached
         | _ -> failwith "Cannot attach Gaia to a world that has a user state of a type other than unit or EditorState."
 
@@ -705,9 +705,9 @@ module Gaia =
     let createForm () =
         let form = new GaiaForm ()
         form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-        form.positionSnapTextBox.Text <- symstring DefaultPositionSnap
-        form.rotationSnapTextBox.Text <- symstring DefaultRotationSnap
-        form.createDepthTextBox.Text <- symstring DefaultCreationDepth
+        form.positionSnapTextBox.Text <- scstring DefaultPositionSnap
+        form.rotationSnapTextBox.Text <- scstring DefaultRotationSnap
+        form.createDepthTextBox.Text <- scstring DefaultCreationDepth
         form.exitToolStripMenuItem.Click.Add (handleFormExit form)
         form.createDepthPlusButton.Click.Add (handleFormCreateDepthPlusClick form)
         form.createDepthMinusButton.Click.Add (handleFormCreateDepthMinusClick form)

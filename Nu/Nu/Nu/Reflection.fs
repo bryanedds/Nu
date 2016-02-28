@@ -174,7 +174,7 @@ module Reflection =
                 | Some reqdDispatcher ->
                     let reqdDispatcherType = reqdDispatcher.GetType ()
                     match targetType.GetProperty "DispatcherNp" with
-                    | null -> failwith ^ "Target '" + symstring target + "' does not implement dispatching in a compatible way."
+                    | null -> failwith ^ "Target '" + scstring target + "' does not implement dispatching in a compatible way."
                     | dispatcherNpProperty ->
                         let dispatcher = dispatcherNpProperty.GetValue target
                         dispatchesAs reqdDispatcherType dispatcher
@@ -308,7 +308,7 @@ module Reflection =
             List.iter
                 (fun facet ->
                     if not ^ isFacetCompatibleWithDispatcher dispatcherMap facet target
-                    then failwith ^ "Facet of type '" + getTypeName facet + "' is not compatible with target '" + symstring target + "'."
+                    then failwith ^ "Facet of type '" + getTypeName facet + "' is not compatible with target '" + scstring target + "'."
                     else ())
                 facets
             facetsNpProperty.SetValue (target, facets)
@@ -329,12 +329,12 @@ module Reflection =
     /// Read opt overlay name from an xml node.
     let readOptOverlayName (node : XmlNode) =
         let optOverlayNameStr = node.InnerText
-        symvalue<string option> optOverlayNameStr
+        scvalue<string option> optOverlayNameStr
 
     /// Read facet names from an xml node.
     let readFacetNames (node : XmlNode) =
         let facetNames = node.InnerText
-        symvalue<string Set> facetNames
+        scvalue<string Set> facetNames
 
     /// Try to read just the target's OptOverlayName from Xml.
     let tryReadOptOverlayNameToTarget (targetNode : XmlNode) target =
@@ -498,7 +498,7 @@ module Reflection =
             match includeNames with
             | _ :: _ ->
                 let includesAttribute = document.CreateAttribute Constants.Xml.IncludesAttributeName
-                includesAttribute.InnerText <- symstring includeNames
+                includesAttribute.InnerText <- scstring includeNames
                 overlayNode.Attributes.Append includesAttribute |> ignore
             | _ -> ()
 
@@ -515,7 +515,7 @@ module Reflection =
             // construct the "FacetNames" node if needed
             if hasFacetNamesField then
                 let facetNamesNode = document.CreateElement "FacetNames"
-                facetNamesNode.InnerText <- symstring []
+                facetNamesNode.InnerText <- scstring []
                 overlayNode.AppendChild facetNamesNode |> ignore
 
             // append the overlay node

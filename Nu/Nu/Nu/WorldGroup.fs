@@ -66,7 +66,7 @@ module WorldGroupModule =
                     let world = World.registerGroup group world
                     World.publish () (Events.GroupAdd ->- group) ["World.addGroup"] group world
                 else world
-            else failwith ^ "Adding a group that the world already contains at address '" + symstring group.GroupAddress + "'."
+            else failwith ^ "Adding a group that the world already contains at address '" + scstring group.GroupAddress + "'."
 
         /// Remove a group in the world. Can be dangerous if existing in-flight publishing depends on the group's
         /// existence. Use with caution.
@@ -90,8 +90,8 @@ module WorldGroupModule =
                 match Vmap.tryFind screenName world.ScreenDirectory with
                 | Some (_, groupDirectory) ->
                     Vmap.fold (fun state _ (groupAddress, _) -> Group.proxy groupAddress :: state) [] groupDirectory :> _ seq
-                | None -> failwith ^ "Invalid screen address '" + symstring screen.ScreenAddress + "'."
-            | _ -> failwith ^ "Invalid screen address '" + symstring screen.ScreenAddress + "'."
+                | None -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
+            | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
 
         /// Destroy a group in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// group's existence. Use with caution.

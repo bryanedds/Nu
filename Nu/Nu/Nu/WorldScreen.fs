@@ -79,7 +79,7 @@ module WorldScreenModule =
                     let world = World.registerScreen screen world
                     World.publish () (Events.ScreenAdd ->- screen) ["World.addScreen"] screen world
                 else world
-            else failwith ^ "Adding a screen that the world already contains at address '" + symstring screen.ScreenAddress + "'."
+            else failwith ^ "Adding a screen that the world already contains at address '" + scstring screen.ScreenAddress + "'."
 
         /// Remove a screen from the world. Can be dangerous if existing in-flight publishing depends on the screen's
         /// existence. Use with caution.
