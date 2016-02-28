@@ -1166,21 +1166,6 @@
      let fieldName = Label?MyFieldName
 </summary>
 </member>
-<member name="M:Prime.Lens.fuse``3(FSharpx.Lens{``0,``1},FSharpx.Lens{``0,``2})">
-<summary>
- Combine two lenses into a single subject.
-</summary>
-</member>
-<member name="M:Prime.Lens.updateS``2(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,``0}},FSharpx.Lens{``1,``0},``1)">
-<summary>
- Update lens with subject in tow.
-</summary>
-</member>
-<member name="M:Prime.LensOperators.op_AtMinusGreater``3(FSharpx.Lens{``0,``1},FSharpx.Lens{``0,``2})">
-<summary>
- Combine two lenses into a single subject.
-</summary>
-</member>
 <member name="M:Prime.Log.init(Microsoft.FSharp.Core.FSharpOption{System.String})">
 <summary>
  Initialize logging.
