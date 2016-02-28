@@ -287,7 +287,7 @@ and internal SimulantState =
     interface end
 
 /// Hosts the ongoing state of a game. The end-user of this engine should never touch this
-/// type, and it's public _only_ to make [<CliMutable>] work.
+/// type, and it's public _only_ to make [<CLIMutable>] work.
 and [<CLIMutable; NoEquality; NoComparison>] GameState =
     { Id : Guid
       OptSelectedScreen : Screen option
@@ -299,7 +299,7 @@ and [<CLIMutable; NoEquality; NoComparison>] GameState =
     interface SimulantState
 
 /// Hosts the ongoing state of a screen. The end-user of this engine should never touch this
-/// type, and it's public _only_ to make [<CliMutable>] work.
+/// type, and it's public _only_ to make [<CLIMutable>] work.
 and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
     { Id : Guid
       Name : Name
@@ -317,7 +317,7 @@ and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
     interface SimulantState
 
 /// Hosts the ongoing state of a group. The end-user of this engine should never touch this
-/// type, and it's public _only_ to make [<CliMutable>] work.
+/// type, and it's public _only_ to make [<CLIMutable>] work.
 and [<CLIMutable; NoEquality; NoComparison>] GroupState =
     { Id : Guid
       Name : Name
@@ -330,7 +330,7 @@ and [<CLIMutable; NoEquality; NoComparison>] GroupState =
     interface SimulantState
 
 /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
-/// type, and it's public _only_ to make [<CliMutable>] work.
+/// type, and it's public _only_ to make [<CLIMutable>] work.
 and [<CLIMutable; NoEquality; NoComparison>] EntityState =
     { Id : Guid
       Name : Name
