@@ -14,7 +14,7 @@ open Prime
 open Nu
 
 /// Describes how to render a sprite to the rendering system.
-type [<StructuralEquality; NoComparison>] Sprite =
+type [<StructuralEquality; NoComparison>] SpriteDescriptor =
     { Position : Vector2
       Size : Vector2
       Rotation : single
@@ -48,8 +48,8 @@ type [<StructuralEquality; NoComparison>] TextDescriptor =
 
 /// Describes how to render a layered 'thing' to the rendering system.
 type [<StructuralEquality; NoComparison>] LayeredDescriptor =
-    | SpriteDescriptor of Sprite
-    | SpritesDescriptor of Sprite list
+    | SpriteDescriptor of SpriteDescriptor
+    | SpritesDescriptor of SpriteDescriptor list
     | TileLayerDescriptor of TileLayerDescriptor
     | TextDescriptor of TextDescriptor
 
@@ -189,7 +189,7 @@ type [<ReferenceEquality>] Renderer =
     static member private handleRenderMessages renderMessages renderer =
         Queue.fold Renderer.handleRenderMessage renderer renderMessages
 
-    static member private renderSprite (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (sprite : Sprite) renderer =
+    static member private renderSprite (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (sprite : SpriteDescriptor) renderer =
         let view = match sprite.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
         let position = sprite.Position - Vector2.Multiply (sprite.Offset, sprite.Size)
         let positionView = position * view
