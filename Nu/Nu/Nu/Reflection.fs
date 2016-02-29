@@ -394,25 +394,25 @@ module Reflection =
                 tryReadPropertyToTarget property targetNode target
 
     /// Read one of a target's XFields.
-    let readXField (targetNode : XmlNode) (target : obj) targetXFields fieldDefinition =
+    let readXField (targetNode : XmlNode) (target : obj) xtension fieldDefinition =
         let targetType = target.GetType ()
         if Seq.notExists
             (fun (property : PropertyInfo) -> property.Name = fieldDefinition.FieldName)
             (targetType.GetProperties ()) then
             match targetNode.SelectSingleNode fieldDefinition.FieldName with
-            | null -> targetXFields
+            | null -> xtension
             | fieldNode ->
                 let converter = SymbolicConverter fieldDefinition.FieldType
                 if converter.CanConvertFrom typeof<string> then
                     let xField = { FieldValue = converter.ConvertFromString fieldNode.InnerText; FieldType = fieldDefinition.FieldType }
-                    Vmap.add fieldDefinition.FieldName xField targetXFields
-                else Log.debug ^ "Cannot convert string '" + fieldNode.InnerText + "' to type '" + fieldDefinition.FieldType.Name + "'."; targetXFields
-        else targetXFields
+                    Xtension.attachField fieldDefinition.FieldName xField xtension
+                else Log.debug ^ "Cannot convert string '" + fieldNode.InnerText + "' to type '" + fieldDefinition.FieldType.Name + "'."; xtension
+        else xtension
 
     /// Read a target's XFields.
-    let readXFields targetXFields (targetNode : XmlNode) (target : obj) =
+    let readXFields (targetNode : XmlNode) (target : obj) xtension =
         let fieldDefinitions = getReflectiveFieldDefinitions target
-        List.fold (readXField targetNode target) targetXFields fieldDefinitions
+        List.fold (readXField targetNode target) xtension fieldDefinitions
 
     /// Read a target's Xtension.
     let readXtensionToTarget (targetNode : XmlNode) (target : obj) =
@@ -422,9 +422,7 @@ module Reflection =
         | xtensionProperty ->
             match xtensionProperty.GetValue target with
             | :? Xtension as xtension ->
-                let xFields = Xtension.getFields xtension
-                let xFields = readXFields xFields targetNode target
-                let xtension = Xtension.attachFields xFields xtension // NOTE: perhaps not terribly efficient...
+                let xtension = readXFields targetNode target xtension
                 xtensionProperty.SetValue (target, xtension)
             | _ -> Log.debug "Target does not support xtensions due to Xtension field having unexpected type."
 
@@ -437,7 +435,7 @@ module Reflection =
     /// NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
     /// XmlWriter.Create ^ (document.CreateNavigator ()).AppendChild ()
     let writeXtension shouldWriteProperty (writer : XmlWriter) xtension =
-        for (xFieldName, xField) in Xtension.getFields xtension do
+        for (xFieldName, xField) in Xtension.toSeq xtension do
             let xFieldType = xField.FieldType
             let xFieldValue = xField.FieldValue
             if  isPropertyPersistentByName xFieldName &&

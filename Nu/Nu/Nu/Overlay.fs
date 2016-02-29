@@ -63,9 +63,7 @@ module Overlayer =
             let optPropertyValue =
                 match (optProperty, optXtension) with
                 | (null, None) -> None
-                | (null, Some xtension) ->
-                    let xFields = Xtension.getFields xtension
-                    Some (Vmap.find overlayNode.Name xFields).FieldValue
+                | (null, Some xtension) -> Some (Xtension.getField overlayNode.Name xtension).FieldValue
                 | (targetProperty, _) -> Some ^ targetProperty.GetValue target
             match optPropertyValue with
             | Some propertyValue ->
@@ -122,11 +120,11 @@ module Overlayer =
             match xtensionProperty.GetValue target with
             | :? Xtension as xtension ->
                 let nodes =
-                    List.foldBack (fun (xFieldName, xField) optNodes ->
+                    Seq.foldBack (fun (xFieldName, xField) optNodes ->
                         match trySelectNode newOverlayName xFieldName newOverlayer with
                         | Some node -> (xField.FieldType, node) :: optNodes
                         | None -> optNodes)
-                        (List.ofSeq ^ Xtension.getFields xtension)
+                        (Xtension.toSeq xtension)
                         []
                 let xtension =
                     List.foldBack (fun (ty, node : XmlNode) xtension ->

@@ -28,8 +28,7 @@ module WorldFacetModule =
             if Reflection.isFacetCompatibleWithDispatcher entityDispatcherMap facet entityState then
                 List.notExists
                     (fun definition ->
-                        let fields = Xtension.getFields entityState.Xtension
-                        match Vmap.tryFind definition.FieldName fields with
+                        match Xtension.tryGetField definition.FieldName entityState.Xtension with
                         | Some field -> field.GetType () <> definition.FieldType
                         | None -> false)
                     facetFieldDefinitions
