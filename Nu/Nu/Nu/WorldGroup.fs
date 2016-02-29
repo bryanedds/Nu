@@ -244,7 +244,7 @@ type Group =
     /// with the Watch feature in Visual Studio.
     static member viewXFields group world =
         let state = World.getGroupState group world
-        let fields = Map.ofSeq ^ Xtension.getFields state.Xtension
+        let fields = Map.ofSeq ^ Xtension.toSeq state.Xtension
         Map.map (fun _ field -> field.FieldValue) fields
 
     /// Provides a full view of all the member values of a group. Useful for debugging such

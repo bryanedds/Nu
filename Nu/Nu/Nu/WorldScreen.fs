@@ -226,7 +226,7 @@ type Screen =
     /// with the Watch feature in Visual Studio.
     static member viewXFields screen world =
         let state = World.getScreenState screen world
-        let fields = Map.ofSeq ^ Xtension.getFields state.Xtension
+        let fields = Map.ofSeq ^ Xtension.toSeq state.Xtension
         Map.map (fun _ field -> field.FieldValue) fields
 
     /// Provides a full view of all the member values of a screen. Useful for debugging such

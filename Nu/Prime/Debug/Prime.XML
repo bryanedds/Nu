@@ -2430,6 +2430,16 @@
  Configures whether to use synchronized processing.
 </summary>
 </member>
+<member name="M:Prime.XtensionModule.ofSeq(System.Collections.Generic.IEnumerable{System.Tuple{System.String,Prime.XField}})">
+<summary>
+ Convert an xtension to a sequence of its entries.
+</summary>
+</member>
+<member name="M:Prime.XtensionModule.toSeq(Prime.Xtension)">
+<summary>
+ Convert an xtension to a sequence of its entries.
+</summary>
+</member>
 <member name="M:Prime.XtensionModule.detachFields(System.Collections.Generic.IEnumerable{System.String},Prime.Xtension)">
 <summary>
  Detach multiple fields from an Xtension.
@@ -2450,9 +2460,9 @@
  Attach a field to an Xtension.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.getFields(Prime.Xtension)">
+<member name="M:Prime.XtensionModule.tryGetField(System.String,Prime.Xtension)">
 <summary>
- Get an Xtension&apos;s fields.
+ Try to get a field from an xtension.
 </summary>
 </member>
 <member name="M:Prime.XtensionModule.getField(System.String,Prime.Xtension)">
