@@ -139,7 +139,7 @@
       <HintPath>..\..\..\Nu\TiledSharp\Release\TiledSharp.dll</HintPath>
     </Reference>
     <Reference Include="xunit">
-      <HintPath>..\..\xUnit\xunit.dll</HintPath>
+      <HintPath>..\..\..\Nu\xUnit\xunit.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Target Name="AfterClean">
