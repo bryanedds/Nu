@@ -9,7 +9,7 @@ open Prime.Chain
 open Nu
 
 // this is a plugin for the Nu game engine by which user-defined dispatchers, facets, and other
-// sorts of values can be obtained by both your application and Gaia. Currently, there are no
+// sorts of types can be obtained by both your application and Gaia. Currently, there are no
 // overrides for its factory methods since there are no user-defined dispatchers, facets, et al
 // defined for this project yet.
 type $safeprojectname$Plugin () =
