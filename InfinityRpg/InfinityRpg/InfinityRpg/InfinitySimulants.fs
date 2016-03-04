@@ -2,8 +2,6 @@
 open OpenTK
 open Nu
 open InfinityRpg
-
-[<RequireQualifiedAccess>]
 module Simulants =
 
     // nu splash screen

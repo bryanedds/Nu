@@ -6,8 +6,6 @@ open System
 open Prime
 open Nu
 open Nu.Gaia
-
-[<RequireQualifiedAccess>]
 module Simulants =
 
     let EditorScreen = !> Constants.Engine.DefaultScreenName
