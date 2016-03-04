@@ -115,7 +115,7 @@ module SimulationOperators =
     /// Convert a group's proxy to a screen's by removing the group's name from the end.
     let gtos group = Screen.proxy ^ Address.take<Group, Screen> 1 group.GroupAddress
 
-[<RequireQualifiedAccess>]
+/// Allowed to open manually despite some worry on my part... :)
 module Simulants =
 
     let Game = { GameAddress = Address.empty }
