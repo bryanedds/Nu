@@ -233,52 +233,6 @@
  Converts Address types.
 </summary>
 </member>
-<member name="M:Prime.Address`1.op_MinusLessMinus``1(Prime.Address{System.Object},Prime.Address{``0})">
-<summary>
- Concatenate two addresses, taking the type of the second address.
-</summary>
-</member>
-<member name="M:Prime.Address`1.op_MinusLessLessMinus``2(Prime.Address{``0},Prime.Address{``1})">
-<summary>
- Concatenate two addresses, forcing the type of second address.
-</summary>
-</member>
-<member name="M:Prime.Address`1.op_MinusGreaterMinus``1(Prime.Address{``0},Prime.Address{System.Object})">
-<summary>
- Concatenate two addresses, taking the type of first address.
-</summary>
-</member>
-<member name="M:Prime.Address`1.op_MinusGreaterGreaterMinus``2(Prime.Address{``0},Prime.Address{``1})">
-<summary>
- Concatenate two addresses, forcing the type of first address.
-</summary>
-</member>
-<member name="M:Prime.Address`1.op_MinusBarMinus``1(Prime.Address{``0},Prime.Address{``0})">
-<summary>
- Concatenate two addresses of the same type.
-</summary>
-</member>
-<member name="M:Prime.Address`1.makeFromFullName(Prime.Name)">
-<summary>
- Make an address from a &apos;/&apos; delimited string.
- NOTE: do not move this function as the AddressConverter&apos;s reflection code relies on it being exactly here!
-</summary>
-</member>
-<member name="M:Prime.Address`1.hash(Prime.Address{`0})">
-<summary>
- Hash an Address.
-</summary>
-</member>
-<member name="M:Prime.Address`1.equals``2(Prime.Address{``0},Prime.Address{``1})">
-<summary>
- Equate Addresses.
-</summary>
-</member>
-<member name="M:Prime.Address`1.compare``2(Prime.Address{``0},Prime.Address{``1})">
-<summary>
- Compare Addresses.
-</summary>
-</member>
 <member name="T:Prime.Address`1">
 <summary>
  Specifies the address of an identifiable value.
@@ -352,26 +306,6 @@
  returned mutant!
 </summary>
 </member>
-<member name="M:Prime.Name.make(System.String)">
-<summary>
- Make a name from a non-empty string without whitespace.
-</summary>
-</member>
-<member name="M:Prime.Name.equals(Prime.Name,Prime.Name)">
-<summary>
- Equate Names.
-</summary>
-</member>
-<member name="M:Prime.Name.compare(Prime.Name,Prime.Name)">
-<summary>
- Compare Names.
-</summary>
-</member>
-<member name="T:Prime.Name">
-<summary>
- A name for optimized keying in hashing containers.
-</summary>
-</member>
 <member name="T:Prime.NameConverter">
 <summary>
  Converts Name types.
@@ -392,12 +326,12 @@
  The data for a change in a participant.
 </summary>
 </member>
-<member name="M:Prime.ParticipantOperators.op_MinusGreaterMinus``1(Prime.Address{``0},Prime.Participant)">
+<member name="M:Prime.ParticipantOperators.op_MinusGreaterMinus``1(Prime.Address.Address{``0},Prime.Participant)">
 <summary>
  Concatenate two addresses, takings the type of first address.
 </summary>
 </member>
-<member name="M:Prime.ParticipantOperators.acatf``1(Prime.Address{``0},Prime.Participant)">
+<member name="M:Prime.ParticipantOperators.acatf``1(Prime.Address.Address{``0},Prime.Participant)">
 <summary>
  Concatenate two addresses, forcing the type of first address.
 </summary>
@@ -407,35 +341,9 @@
  Operators for the Participant type.
 </summary>
 </member>
-<member name="T:Prime.Rand">
-<summary>
- An immutable random number generator using the xorshift* algorithm.
-</summary>
-</member>
 <member name="T:Prime.RelationConverter">
 <summary>
  Converts Relation types.
-</summary>
-</member>
-<member name="M:Prime.Relation`1.makeFromFullName(Prime.Name)">
-<summary>
- Make a relation from a &apos;/&apos; delimited string where &apos;.&apos; are empty.
- NOTE: do not move this function as the RelationConverter&apos;s reflection code relies on it being exactly here!
-</summary>
-</member>
-<member name="M:Prime.Relation`1.hash(Prime.Relation{`0})">
-<summary>
- Hash a Relation.
-</summary>
-</member>
-<member name="M:Prime.Relation`1.equals``2(Prime.Relation{``0},Prime.Relation{``1})">
-<summary>
- Equate Relations.
-</summary>
-</member>
-<member name="T:Prime.Relation`1">
-<summary>
- A relation that can be resolved to an address via projection.
 </summary>
 </member>
 <member name="T:Prime.SubscriptionEntries">
@@ -474,13 +382,6 @@
  Works in effectively constant-time for look-ups and updates.
 </summary>
 </member>
-<member name="T:Prime.Vnode`2">
-<summary>
- TODO: there&apos;s an F# issue where UseNullAsTrueValue does not work on unions with 4 or more cases
- https://github.com/Microsoft/visualfsharp/issues/711 . Once resolved, should use it and be able
- to make arrays with Array.zeroCreate alone without also copying over the empty array.
-</summary>
-</member>
 <member name="T:Prime.VsyncBuilder">
 <summary>
  The Vsync computation expression builder.
@@ -512,112 +413,183 @@
  A map of XFields.
 </summary>
 </member>
-<member name="M:Prime.Xtension.tryGetDefaultValue``1(Prime.Xtension,System.String)">
+<member name="M:Prime.Address.Address`1.op_MinusLessMinus``1(Prime.Address.Address{System.Object},Prime.Address.Address{``0})">
 <summary>
- Try to get the default value for a given xtension member, returning None when defaulting is disallowed.
+ Concatenate two addresses, taking the type of the second address.
 </summary>
 </member>
-<member name="M:Prime.Xtension.op_DynamicAssignment``1(Prime.Xtension,System.String,``0)">
+<member name="M:Prime.Address.Address`1.op_MinusLessLessMinus``1(Prime.Address.Address{`0},Prime.Address.Address{``0})">
 <summary>
- The dynamic assignment operator for an Xtension.
- Example:
-     let entity = entity.Position &lt;- Vector2 (4.0, 5.0).
+ Concatenate two addresses, forcing the type of second address.
 </summary>
 </member>
-<member name="M:Prime.Xtension.op_Dynamic``1(Prime.Xtension,System.String)">
+<member name="M:Prime.Address.Address`1.op_MinusGreaterMinus(Prime.Address.Address{`0},Prime.Address.Address{System.Object})">
 <summary>
- The dynamic look-up operator for an Xtension.
- Example:
-     let parallax = entity?Parallax : single
+ Concatenate two addresses, taking the type of first address.
 </summary>
 </member>
-<member name="M:Prime.Xtension.getDefaultValue``1">
+<member name="M:Prime.Address.Address`1.op_MinusGreaterGreaterMinus``1(Prime.Address.Address{`0},Prime.Address.Address{``0})">
 <summary>
- Get the default value of an instance of type &apos;r taking into account XDefaultValue decorations.
+ Concatenate two addresses, forcing the type of first address.
 </summary>
 </member>
-<member name="T:Prime.Xtension">
+<member name="M:Prime.Address.Address`1.op_MinusBarMinus(Prime.Address.Address{`0},Prime.Address.Address{`0})">
 <summary>
- Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way
- to implement dynamic fields.
+ Concatenate two addresses of the same type.
 </summary>
 </member>
-<member name="M:Prime.Address.isEmpty``1(Prime.Address{``0})">
+<member name="M:Prime.Address.Address`1.ntoa``1(Prime.Name.Name)">
+<summary>
+ Convert a single name into an address.
+</summary>
+</member>
+<member name="M:Prime.Address.Address`1.makeFromFullName``1(Prime.Name.Name)">
+<summary>
+ Make an address from a &apos;/&apos; delimited string.
+ NOTE: do not move this function as the AddressConverter&apos;s reflection code relies on it being exactly here!
+</summary>
+</member>
+<member name="M:Prime.Address.Address`1.ltoa``1(Microsoft.FSharp.Collections.FSharpList{Prime.Name.Name})">
+<summary>
+ Convert a names list into an address.
+</summary>
+</member>
+<member name="M:Prime.Address.Address`1.hash(Prime.Address.Address{`0})">
+<summary>
+ Hash an Address.
+</summary>
+</member>
+<member name="M:Prime.Address.Address`1.ftoa``1(Prime.Name.Name)">
+<summary>
+ Convert a full name into an address.
+</summary>
+</member>
+<member name="M:Prime.Address.Address`1.equals``2(Prime.Address.Address{``0},Prime.Address.Address{``1})">
+<summary>
+ Equate Addresses.
+</summary>
+</member>
+<member name="M:Prime.Address.Address`1.compare``2(Prime.Address.Address{``0},Prime.Address.Address{``1})">
+<summary>
+ Compare Addresses.
+</summary>
+</member>
+<member name="M:Prime.Address.Address`1.atooa``1(Prime.Address.Address{`0})">
+<summary>
+ Convert any address to an obj Address.
+</summary>
+</member>
+<member name="M:Prime.Address.Address`1.atoa``2(Prime.Address.Address{`0})">
+<summary>
+ Convert an address of type &apos;a to an address of type &apos;b.
+</summary>
+</member>
+<member name="M:Prime.Address.Address`1.acatsf``2(Prime.Address.Address{`0},Prime.Address.Address{``1})">
+<summary>
+ Concatenate two addresses, forcing the type of second address.
+</summary>
+</member>
+<member name="M:Prime.Address.Address`1.acats``1(Prime.Address.Address{System.Object},Prime.Address.Address{`0})">
+<summary>
+ Concatenate two addresses, taking the type of the second address.
+</summary>
+</member>
+<member name="M:Prime.Address.Address`1.acatff``2(Prime.Address.Address{`0},Prime.Address.Address{``1})">
+<summary>
+ Concatenate two addresses, forcing the type of first address.
+</summary>
+</member>
+<member name="M:Prime.Address.Address`1.acatf``1(Prime.Address.Address{`0},Prime.Address.Address{System.Object})">
+<summary>
+ Concatenate two addresses, taking the type of first address.
+</summary>
+</member>
+<member name="M:Prime.Address.Address`1.acat``1(Prime.Address.Address{`0},Prime.Address.Address{`0})">
+<summary>
+ Concatenate two addresses of the same type.
+</summary>
+</member>
+<member name="T:Prime.Address.Address`1">
+<summary>
+ Specifies the address of an identifiable value.
+</summary>
+</member>
+<member name="M:Prime.Address.isEmpty``1(Prime.Address.Address{``0})">
 <summary>
  Query that an address is devoid of names.
 </summary>
 </member>
-<member name="M:Prime.Address.length``1(Prime.Address{``0})">
+<member name="M:Prime.Address.length``1(Prime.Address.Address{``0})">
 <summary>
  Get the length of an address by its names.
 </summary>
 </member>
-<member name="M:Prime.Address.allButLast``2(Prime.Address{``0})">
+<member name="M:Prime.Address.allButLast``2(Prime.Address.Address{``0})">
 <summary>
  Take an address composed of all but the last name of an address.
 </summary>
 </member>
-<member name="M:Prime.Address.last``1(Prime.Address{``0})">
+<member name="M:Prime.Address.last``1(Prime.Address.Address{``0})">
 <summary>
  Take the last name of an address.
 </summary>
 </member>
-<member name="M:Prime.Address.take``2(System.Int32,Prime.Address{``0})">
+<member name="M:Prime.Address.take``2(System.Int32,Prime.Address.Address{``0})">
 <summary>
  Take an address composed of the given number of names of an address.
 </summary>
 </member>
-<member name="M:Prime.Address.skip``2(System.Int32,Prime.Address{``0})">
+<member name="M:Prime.Address.skip``2(System.Int32,Prime.Address.Address{``0})">
 <summary>
  Take an address composed of the name of an address minus a skipped amount of names.
 </summary>
 </member>
-<member name="M:Prime.Address.item``1(System.Int32,Prime.Address{``0})">
+<member name="M:Prime.Address.item``1(System.Int32,Prime.Address.Address{``0})">
 <summary>
  Take a name of an address.
 </summary>
 </member>
-<member name="M:Prime.Address.tail``1(Prime.Address{System.Object})">
+<member name="M:Prime.Address.tail``1(Prime.Address.Address{System.Object})">
 <summary>
  Take the tail of an address.
 </summary>
 </member>
-<member name="M:Prime.Address.head``1(Prime.Address{``0})">
+<member name="M:Prime.Address.head``1(Prime.Address.Address{``0})">
 <summary>
  Take the head of an address.
 </summary>
 </member>
-<member name="M:Prime.Address.getHashCode``1(Prime.Address{``0})">
+<member name="M:Prime.Address.getHashCode``1(Prime.Address.Address{``0})">
 <summary>
  Get the address&apos;s hash code.
 </summary>
 </member>
-<member name="M:Prime.Address.getName``1(Prime.Address{``0})">
+<member name="M:Prime.Address.getName``1(Prime.Address.Address{``0})">
 <summary>
  Get the name of an address.
 </summary>
 </member>
-<member name="M:Prime.Address.getFullName``1(Prime.Address{``0})">
+<member name="M:Prime.Address.getFullName``1(Prime.Address.Address{``0})">
 <summary>
  Get the full name of an address.
 </summary>
 </member>
-<member name="M:Prime.Address.changeType``2(Prime.Address{``0})">
+<member name="M:Prime.Address.changeType``2(Prime.Address.Address{``0})">
 <summary>
  Change the type of an address.
 </summary>
 </member>
-<member name="M:Prime.Address.getNames``1(Prime.Address{``0})">
+<member name="M:Prime.Address.getNames``1(Prime.Address.Address{``0})">
 <summary>
  Get the names of an address.
 </summary>
 </member>
-<member name="M:Prime.Address.makeFromFullName``1(Prime.Name)">
+<member name="M:Prime.Address.makeFromFullName``1(Prime.Name.Name)">
 <summary>
  Make an address from a &apos;/&apos; delimited string.
 </summary>
 </member>
-<member name="M:Prime.Address.makeFromNames``1(Microsoft.FSharp.Collections.FSharpList{Prime.Name})">
+<member name="M:Prime.Address.makeFromNames``1(Microsoft.FSharp.Collections.FSharpList{Prime.Name.Name})">
 <summary>
  Make an address from names.
 </summary>
@@ -627,52 +599,52 @@
  The empty address.
 </summary>
 </member>
-<member name="M:Prime.AddressOperators.acatsf``2(Prime.Address{``0},Prime.Address{``1})">
+<member name="M:Prime.AddressOperators.acatsf``2(Prime.Address.Address{``0},Prime.Address.Address{``1})">
 <summary>
  Concatenate two addresses, forcing the type of second address.
 </summary>
 </member>
-<member name="M:Prime.AddressOperators.acats``1(Prime.Address{System.Object},Prime.Address{``0})">
+<member name="M:Prime.AddressOperators.acats``1(Prime.Address.Address{System.Object},Prime.Address.Address{``0})">
 <summary>
  Concatenate two addresses, taking the type of the second address.
 </summary>
 </member>
-<member name="M:Prime.AddressOperators.acatff``2(Prime.Address{``0},Prime.Address{``1})">
+<member name="M:Prime.AddressOperators.acatff``2(Prime.Address.Address{``0},Prime.Address.Address{``1})">
 <summary>
  Concatenate two addresses, forcing the type of first address.
 </summary>
 </member>
-<member name="M:Prime.AddressOperators.acatf``1(Prime.Address{``0},Prime.Address{System.Object})">
+<member name="M:Prime.AddressOperators.acatf``1(Prime.Address.Address{``0},Prime.Address.Address{System.Object})">
 <summary>
  Concatenate two addresses, taking the type of first address.
 </summary>
 </member>
-<member name="M:Prime.AddressOperators.acat``1(Prime.Address{``0},Prime.Address{``0})">
+<member name="M:Prime.AddressOperators.acat``1(Prime.Address.Address{``0},Prime.Address.Address{``0})">
 <summary>
  Concatenate two addresses of the same type.
 </summary>
 </member>
-<member name="M:Prime.AddressOperators.atooa``1(Prime.Address{``0})">
+<member name="M:Prime.AddressOperators.atooa``1(Prime.Address.Address{``0})">
 <summary>
  Convert any address to an obj Address.
 </summary>
 </member>
-<member name="M:Prime.AddressOperators.ntoa``1(Prime.Name)">
+<member name="M:Prime.AddressOperators.ntoa``1(Prime.Name.Name)">
 <summary>
  Convert a single name into an address.
 </summary>
 </member>
-<member name="M:Prime.AddressOperators.ftoa``1(Prime.Name)">
+<member name="M:Prime.AddressOperators.ftoa``1(Prime.Name.Name)">
 <summary>
  Convert a full name into an address.
 </summary>
 </member>
-<member name="M:Prime.AddressOperators.ltoa``1(Microsoft.FSharp.Collections.FSharpList{Prime.Name})">
+<member name="M:Prime.AddressOperators.ltoa``1(Microsoft.FSharp.Collections.FSharpList{Prime.Name.Name})">
 <summary>
  Convert a names list into an address.
 </summary>
 </member>
-<member name="M:Prime.AddressOperators.atoa``2(Prime.Address{``0})">
+<member name="M:Prime.AddressOperators.atoa``2(Prime.Address.Address{``0})">
 <summary>
  Convert an address of type &apos;a to an address of type &apos;b.
 </summary>
@@ -937,12 +909,12 @@
  Get event state.
 </summary>
 </member>
-<member name="M:Prime.EventSystemModule.setUnsubscriptions``1(Prime.Vmap{System.Guid,System.Tuple{Prime.Address{System.Object},Prime.Participant}},Prime.EventSystem{``0})">
+<member name="M:Prime.EventSystemModule.setUnsubscriptions``1(Prime.VmapModule.Vmap{System.Guid,System.Tuple{Prime.Address.Address{System.Object},Prime.Participant}},Prime.EventSystem{``0})">
 <summary>
  Set unsubscriptions.
 </summary>
 </member>
-<member name="M:Prime.EventSystemModule.setSubscriptions``1(Prime.Vmap{Prime.Address{System.Object},Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}},Prime.EventSystem{``0})">
+<member name="M:Prime.EventSystemModule.setSubscriptions``1(Prime.VmapModule.Vmap{Prime.Address.Address{System.Object},Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}},Prime.EventSystem{``0})">
 <summary>
  Set subscriptions.
 </summary>
@@ -967,32 +939,32 @@
  Add event state.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.monitor``3(Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address{``0},``1,``2)">
+<member name="M:Prime.EventableModule.monitor``3(Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
 <summary>
  Keep active a subscription for the lifetime of a participant.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.monitorPlus``3(Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address{``0},``1,``2)">
+<member name="M:Prime.EventableModule.monitorPlus``3(Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
 <summary>
  Keep active a subscription for the lifetime of a participant, and be provided with an unsubscription callback.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.subscribe``3(Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address{``0},``1,``2)">
+<member name="M:Prime.EventableModule.subscribe``3(Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
 <summary>
  Subscribe to an event.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.subscribe5``3(System.Guid,Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address{``0},``1,``2)">
+<member name="M:Prime.EventableModule.subscribe5``3(System.Guid,Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
 <summary>
  Subscribe to an event using the given subscriptionKey.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.subscribePlus``3(Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address{``0},``1,``2)">
+<member name="M:Prime.EventableModule.subscribePlus``3(Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
 <summary>
  Subscribe to an event, and be provided with an unsubscription callback.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.subscribePlus5``3(System.Guid,Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address{``0},``1,``2)">
+<member name="M:Prime.EventableModule.subscribePlus5``3(System.Guid,Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
 <summary>
  Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
 </summary>
@@ -1002,17 +974,17 @@
  Unsubscribe from an event.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.publish``3(``0,Prime.Address{``0},Microsoft.FSharp.Collections.FSharpList{System.String},``1,``2)">
+<member name="M:Prime.EventableModule.publish``3(``0,Prime.Address.Address{``0},Microsoft.FSharp.Collections.FSharpList{System.String},``1,``2)">
 <summary>
  Publish an event with no subscription sorting.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.publish6``3(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},``0,Prime.Address{``0},Microsoft.FSharp.Collections.FSharpList{System.String},``1,``2)">
+<member name="M:Prime.EventableModule.publish6``3(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},``0,Prime.Address.Address{``0},Microsoft.FSharp.Collections.FSharpList{System.String},``1,``2)">
 <summary>
  Publish an event, using the given publishSorter procedure to arrange the order to which subscriptions are published.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.publish7``3(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},Microsoft.FSharp.Core.FSharpFunc{Prime.Address{System.Object},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}}},Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},``0,Prime.Address{``0},Microsoft.FSharp.Collections.FSharpList{System.String},``1,``2)">
+<member name="M:Prime.EventableModule.publish7``3(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},Microsoft.FSharp.Core.FSharpFunc{Prime.Address.Address{System.Object},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}}},Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},``0,Prime.Address.Address{``0},Microsoft.FSharp.Collections.FSharpList{System.String},``1,``2)">
 <summary>
  Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
 </summary>
@@ -1042,12 +1014,12 @@
  Add event state to the world.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.setUnsubscriptions``1(Prime.Vmap{System.Guid,System.Tuple{Prime.Address{System.Object},Prime.Participant}},``0)">
+<member name="M:Prime.EventableModule.setUnsubscriptions``1(Prime.VmapModule.Vmap{System.Guid,System.Tuple{Prime.Address.Address{System.Object},Prime.Participant}},``0)">
 <summary>
  Set event unsubscriptions.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.setSubscriptions``1(Prime.Vmap{Prime.Address{System.Object},Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}},``0)">
+<member name="M:Prime.EventableModule.setSubscriptions``1(Prime.VmapModule.Vmap{Prime.Address.Address{System.Object},Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}},``0)">
 <summary>
  Set event subscriptions.
 </summary>
@@ -1127,25 +1099,33 @@
  Force the addition of an element, removing the existing one if necessary.
 </summary>
 </member>
-<member name="M:Prime.KeyedCacheModule.make``2(``0,``1)">
+<member name="T:Prime.KeyedCache.KeyedCache`2">
+<summary>
+ Presents a purely-functional interface to a cached value.
+ Works by associating a cached value with a given cache key such that the cached value remains valid when queried
+ for using the same cache key (as decided by a simple key comparer function), automatically rebuilding the cached
+ value and key (as done with a simple factory function).
+</summary>
+</member>
+<member name="M:Prime.KeyedCache.make``2(``0,``1)">
  <summary>Make a keyed cache value.</summary>
  <param name="cacheKey">The current key against which to validate the cache.</param>
  <param name="cacheValue">The value associated with the cache key.</param>
 </member>
-<member name="M:Prime.KeyedCacheModule.getValue``2(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``0,System.Boolean}},Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,System.Tuple{``0,``1}},``0,Prime.KeyedCache{``0,``1})">
+<member name="M:Prime.KeyedCache.getValue``2(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``0,System.Boolean}},Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,System.Tuple{``0,``1}},``0,Prime.KeyedCache.KeyedCache{``0,``1})">
  <summary>Get the cached value.</summary>
  <param name="keyEquality">Determines the equality of the key used to consider if the cache is valid.</param>
  <param name="getFreshKeyAndValue">Generates a fresh key and corresponding value to cache.</param>
  <param name="cacheKey">The current key against which to validate the cache.</param>
  <param name="keyedCache">The keyed cache.</param>
 </member>
-<member name="M:Prime.KeyedCacheModule.getGlobalCacheMisses">
+<member name="M:Prime.KeyedCache.getGlobalCacheMisses">
 <summary>
  The number of cache misses that have occured when using this type.
  Useful for performance trouble-shooting in Debug mode.
 </summary>
 </member>
-<member name="M:Prime.KeyedCacheModule.getGlobalCacheHits">
+<member name="M:Prime.KeyedCache.getGlobalCacheHits">
 <summary>
  The number of cache hits that have occured when using this type.
  Useful for performance trouble-shooting in Debug mode.
@@ -1286,7 +1266,15 @@
  Combine the contents of two maps, taking an item from the second map in case of a key overlap.
 </summary>
 </member>
-<member name="M:Prime.MutantCacheModule.make``1(Microsoft.FSharp.Core.FSharpFunc{``0,``0},``0)">
+<member name="T:Prime.MutantCache.MutantCache`1">
+<summary>
+ Presents a purely-functional interface to a mutable object / record / whatever.
+ If it is not satisfactorily efficient to run a clone operation on the mutant for every get,
+ just pass in the id function for make&apos;s cloneMutant arg, but make sure to NEVER mutate the
+ returned mutant!
+</summary>
+</member>
+<member name="M:Prime.MutantCache.make``1(Microsoft.FSharp.Core.FSharpFunc{``0,``0},``0)">
  <summary>Make a mutant cache.</summary>
  <param name="cloneMutant">
  A function to clone the mutant before presenting it to the outside world.
@@ -1294,56 +1282,81 @@
  </param>
  <param name="mutant">The mutant (mutable object / record / whatever) to be cached.</param>
 </member>
-<member name="M:Prime.MutantCacheModule.mutateMutant``1(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,``0},Microsoft.FSharp.Core.FSharpFunc{``0,``0},Prime.MutantCache{``0})">
+<member name="M:Prime.MutantCache.mutateMutant``1(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,``0},Microsoft.FSharp.Core.FSharpFunc{``0,``0},Prime.MutantCache.MutantCache{``0})">
  <summary>Mutate the underlying mutant (mutable object / record / whatever).</summary>
  <param name="rebuildMutant">A function that rebuilds the mutant from scratch in case the current underlying mutant is out of date.</param>
  <param name="mutateMutant">A function that mutates the underlying mutant.</param>
  <param name="mutantCache">The mutant cache.</param>
 </member>
-<member name="M:Prime.MutantCacheModule.getMutant``1(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,``0},Prime.MutantCache{``0})">
+<member name="M:Prime.MutantCache.getMutant``1(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,``0},Prime.MutantCache.MutantCache{``0})">
  <summary>Get the underlying mutant (mutable object / record / whatever).</summary>
  <param name="rebuildMutant">A function that rebuilds the mutant from scratch in case the current underlying mutant is out of date.</param>
  <param name="mutantCache">The mutant cache.</param>
 </member>
-<member name="M:Prime.MutantCacheModule.getGlobalMutantRebuilds">
+<member name="M:Prime.MutantCache.getGlobalMutantRebuilds">
 <summary>
  The number of mutant rebuilds that have occured when using this type.
  Useful for performance trouble-shooting in Debug mode.
 </summary>
 </member>
-<member name="P:Prime.NameModule.empty">
+<member name="M:Prime.Name.Name.make(System.String)">
+<summary>
+ Make a name from a non-empty string without whitespace.
+</summary>
+</member>
+<member name="M:Prime.Name.Name.equals(Prime.Name.Name,Prime.Name.Name)">
+<summary>
+ Equate Names.
+</summary>
+</member>
+<member name="M:Prime.Name.Name.compare(Prime.Name.Name,Prime.Name.Name)">
+<summary>
+ Compare Names.
+</summary>
+</member>
+<member name="T:Prime.Name.Name">
+<summary>
+ A name for optimized keying in hashing containers.
+</summary>
+</member>
+<member name="P:Prime.Name.empty">
 <summary>
  The empty name, consisting of an empty string.
 </summary>
 </member>
-<member name="M:Prime.NameModule.hashNames(Microsoft.FSharp.Collections.FSharpList{Prime.Name})">
+<member name="M:Prime.Name.hashNames(Microsoft.FSharp.Collections.FSharpList{Prime.Name.Name})">
 <summary>
  Hash a list of names.
 </summary>
 </member>
-<member name="M:Prime.NameModule.compareNames(Microsoft.FSharp.Collections.FSharpList{Prime.Name},Microsoft.FSharp.Collections.FSharpList{Prime.Name})">
+<member name="M:Prime.Name.compareNames(Microsoft.FSharp.Collections.FSharpList{Prime.Name.Name},Microsoft.FSharp.Collections.FSharpList{Prime.Name.Name})">
 <summary>
  Compare a list of names lexicographically.
 </summary>
 </member>
-<member name="M:Prime.NameModule.equateNames(Microsoft.FSharp.Collections.FSharpList{Prime.Name},Microsoft.FSharp.Collections.FSharpList{Prime.Name})">
+<member name="M:Prime.Name.equateNames(Microsoft.FSharp.Collections.FSharpList{Prime.Name.Name},Microsoft.FSharp.Collections.FSharpList{Prime.Name.Name})">
 <summary>
  Query for equality a list of names lexicographically.
 </summary>
 </member>
-<member name="M:Prime.NameModule.split(System.Char[],Prime.Name)">
+<member name="M:Prime.Name.split(System.Char[],Prime.Name.Name)">
 <summary>
  Split a name on a separator char array.
 </summary>
 </member>
-<member name="M:Prime.NameModule.join(System.String,System.Collections.Generic.IEnumerable{Prime.Name})">
+<member name="M:Prime.Name.join(System.String,System.Collections.Generic.IEnumerable{Prime.Name.Name})">
 <summary>
  Join a list of names by a separator string.
 </summary>
 </member>
-<member name="M:Prime.NameModule.getNameStr(Prime.Name)">
+<member name="M:Prime.Name.getNameStr(Prime.Name.Name)">
 <summary>
  Get the name of a name key.
+</summary>
+</member>
+<member name="T:Prime.NameModule.Name">
+<summary>
+ A name for optimized keying in hashing containers.
 </summary>
 </member>
 <member name="M:Prime.NameOperators.op_BangBang(System.String)">
@@ -1499,7 +1512,7 @@
  Terminate an observation when the observer is removed from the world.
 </summary>
 </member>
-<member name="M:Prime.Observation.until``3(Prime.Address{Microsoft.FSharp.Core.Unit},Prime.Observation{``0,``1,``2})">
+<member name="M:Prime.Observation.until``3(Prime.Address.Address{Microsoft.FSharp.Core.Unit},Prime.Observation{``0,``1,``2})">
 <summary>
  Terminate an observation when an event at the given address is raised.
 </summary>
@@ -1541,7 +1554,7 @@
  Filter an observation by the given &apos;pred&apos; procedure.
 </summary>
 </member>
-<member name="M:Prime.Observation.sum``4(Prime.Address{``0},Prime.Observation{``1,``2,``3})">
+<member name="M:Prime.Observation.sum``4(Prime.Address.Address{``0},Prime.Observation{``1,``2,``3})">
 <summary>
  Combine an observation with the events from the given address. Combination is in &apos;sum
  form&apos;, which is defined as an Either of the data of the combined events, where only data
@@ -1549,7 +1562,7 @@
  TODO: unit test for this!
 </summary>
 </member>
-<member name="M:Prime.Observation.product``4(Prime.Address{``0},Prime.Observation{``1,``2,``3})">
+<member name="M:Prime.Observation.product``4(Prime.Address.Address{``0},Prime.Observation{``1,``2,``3})">
 <summary>
  Combine an observation with the events from the given address. Combination is in &apos;product
  form&apos;, which is defined as a pair of the data of the combined events. Think of it as &apos;zip&apos;
@@ -1557,7 +1570,7 @@
  TODO: unit test for this!
 </summary>
 </member>
-<member name="M:Prime.Observation.observe``3(Prime.Address{``0},``1)">
+<member name="M:Prime.Observation.observe``3(Prime.Address.Address{``0},``1)">
 <summary>
  Make an observation of an event at the given address.
 </summary>
@@ -1810,99 +1823,135 @@
  Performs some ad-hoc tests to compare performance of maps.
 </summary>
 </member>
-<member name="M:Prime.RandModule.make">
+<member name="T:Prime.Rand.Rand">
+<summary>
+ An immutable random number generator using the xorshift* algorithm.
+</summary>
+</member>
+<member name="M:Prime.Rand.make">
 <summary>
  Make a rand value generator from the default seed state.
 </summary>
 </member>
-<member name="M:Prime.RandModule.makeFromInt(System.Int32)">
+<member name="M:Prime.Rand.makeFromInt(System.Int32)">
 <summary>
  Make a rand value generator from the given int seed state.
  May not be zero.
 </summary>
 </member>
-<member name="M:Prime.RandModule.makeFromSeedState(System.UInt64)">
+<member name="M:Prime.Rand.makeFromSeedState(System.UInt64)">
 <summary>
  Make a rand value generator from the given seed state.
  May not be zero.
 </summary>
 </member>
-<member name="M:Prime.RandModule.nextInt64Under(System.UInt64,Prime.Rand)">
+<member name="M:Prime.Rand.nextInt64Under(System.UInt64,Prime.Rand.Rand)">
 <summary>
  Get the next random value below the given maximum as an int64 type.
 </summary>
 </member>
-<member name="M:Prime.RandModule.nextInt64(Prime.Rand)">
+<member name="M:Prime.Rand.nextInt64(Prime.Rand.Rand)">
 <summary>
  Get the next random value as an int64 type.
  NOTE: System.Random.Next will never return Int64.MaxValue, but this will.
 </summary>
 </member>
-<member name="M:Prime.RandModule.nextIntUnder(System.Int32,Prime.Rand)">
+<member name="M:Prime.Rand.nextIntUnder(System.Int32,Prime.Rand.Rand)">
 <summary>
  Get the next random value below the given maximum as an int type.
 </summary>
 </member>
-<member name="M:Prime.RandModule.nextInt(Prime.Rand)">
+<member name="M:Prime.Rand.nextInt(Prime.Rand.Rand)">
 <summary>
  Get the next random value as an int type.
  NOTE: System.Random.Next will never return Int32.MaxValue, but this will.
 </summary>
 </member>
-<member name="M:Prime.RandModule.nextSingleUnder(System.Single,Prime.Rand)">
+<member name="M:Prime.Rand.nextSingleUnder(System.Single,Prime.Rand.Rand)">
 <summary>
  Get the next random value below the given maximum as a single type.
 </summary>
 </member>
-<member name="M:Prime.RandModule.nextSingle(Prime.Rand)">
+<member name="M:Prime.Rand.nextSingle(Prime.Rand.Rand)">
 <summary>
  Get the next random value as a double type.
 </summary>
 </member>
-<member name="M:Prime.RandModule.nextDoubleUnder(System.Double,Prime.Rand)">
+<member name="M:Prime.Rand.nextDoubleUnder(System.Double,Prime.Rand.Rand)">
 <summary>
  Get the next random value below the given maximum as a double type.
 </summary>
 </member>
-<member name="M:Prime.RandModule.nextDouble(Prime.Rand)">
+<member name="M:Prime.Rand.nextDouble(Prime.Rand.Rand)">
 <summary>
  Get the next random value as a double type.
 </summary>
 </member>
-<member name="M:Prime.RandModule.getState(Prime.Rand)">
+<member name="M:Prime.Rand.getState(Prime.Rand.Rand)">
 <summary>
  The internal state of rand, useful for serialization and duplication.
 </summary>
 </member>
-<member name="M:Prime.RandModule.advance(Prime.Rand)">
+<member name="M:Prime.Rand.advance(Prime.Rand.Rand)">
 <summary>
  Advance the state of rand, thus yielding a new outcome.
 </summary>
 </member>
-<member name="P:Prime.RandModule.DefaultSeedState">
+<member name="P:Prime.Rand.DefaultSeedState">
 <summary>
  The default seed state for rand.
  NOTE: number generated via http://www.random.org/bytes/
 </summary>
 </member>
-<member name="M:Prime.RandModule.sample(Prime.Rand)">
+<member name="M:Prime.Rand.sample(Prime.Rand.Rand)">
 <summary>
  Get the sample value used to generate the current random value.
 </summary>
 </member>
-<member name="M:Prime.Relation.makeFromFullName``1(Prime.Name)">
+<member name="T:Prime.RandModule.Rand">
+<summary>
+ An immutable random number generator using the xorshift* algorithm.
+</summary>
+</member>
+<member name="M:Prime.Relation.Relation`1.makeFromFullName(Prime.Name.Name)">
+<summary>
+ Make a relation from a &apos;/&apos; delimited string where &apos;.&apos; are empty.
+ NOTE: do not move this function as the RelationConverter&apos;s reflection code relies on it being exactly here!
+</summary>
+</member>
+<member name="M:Prime.Relation.Relation`1.hash(Prime.Relation.Relation{`0})">
+<summary>
+ Hash a Relation.
+</summary>
+</member>
+<member name="M:Prime.Relation.Relation`1.equals``2(Prime.Relation.Relation{``0},Prime.Relation.Relation{``1})">
+<summary>
+ Equate Relations.
+</summary>
+</member>
+<member name="T:Prime.Relation.Relation`1">
+<summary>
+ A relation that can be resolved to an address via projection.
+</summary>
+</member>
+<member name="M:Prime.Relation.makeFromFullName``1(Prime.Name.Name)">
 <summary>
  Make an address from a &apos;/&apos; delimited string.
 </summary>
 </member>
-<member name="M:Prime.Relation.makeFromOptNamesList``1(System.Collections.Generic.IEnumerable{Microsoft.FSharp.Core.FSharpOption{Prime.Name}})">
+<member name="M:Prime.Relation.makeFromOptNamesList``1(System.Collections.Generic.IEnumerable{Microsoft.FSharp.Core.FSharpOption{Prime.Name.Name}})">
 <summary>
  Make a relation from a list of option names.
 </summary>
 </member>
-<member name="M:Prime.Relation.resolve``1(Prime.Address{``0},Prime.Relation{``0})">
+<member name="M:Prime.Relation.resolve``1(Prime.Address.Address{``0},Prime.Relation.Relation{``0})">
 <summary>
  Resolve a relationship to an address.
+</summary>
+</member>
+<member name="T:Prime.RelationModule.Relation`1">
+<summary>
+ A relation that can be resolved to an address via projection.
 </summary>
 </member>
 <member name="M:Prime.String.surround(System.String,System.String)">
@@ -2198,76 +2247,82 @@
  Get the type descriptor for this type as returned by the global TypeDescriptor.
 </summary>
 </member>
+<member name="T:Prime.VmapModule.Vmap`2">
+<summary>
+ A very fast persistent hash map.
+ Works in effectively constant-time for look-ups and updates.
+</summary>
+</member>
 <member name="M:Prime.VmapModule.ofSeq``2(System.Collections.Generic.IEnumerable{System.Tuple{``0,``1}})">
 <summary>
  Convert a sequence of keys and values to a Vmap.
 </summary>
 </member>
-<member name="M:Prime.VmapModule.toSeq``2(Prime.Vmap{``0,``1})">
+<member name="M:Prime.VmapModule.toSeq``2(Prime.VmapModule.Vmap{``0,``1})">
 <summary>
  Convert a Vmap to a sequence of pairs of keys and values.
  NOTE: This function seems to profile as being very slow. I don&apos;t know if it&apos;s the seq / yields syntax or what.
  Don&apos;t use it unless you need its laziness or if performance won&apos;t be affected significantly.
 </summary>
 </member>
-<member name="M:Prime.VmapModule.filter``2(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,System.Boolean}},Prime.Vmap{``0,``1})">
+<member name="M:Prime.VmapModule.filter``2(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,System.Boolean}},Prime.VmapModule.Vmap{``0,``1})">
 <summary>
  Filter a Vmap.
 </summary>
 </member>
-<member name="M:Prime.VmapModule.map``3(Microsoft.FSharp.Core.FSharpFunc{``0,``1},Prime.Vmap{``2,``0})">
+<member name="M:Prime.VmapModule.map``3(Microsoft.FSharp.Core.FSharpFunc{``0,``1},Prime.VmapModule.Vmap{``2,``0})">
 <summary>
  Map over a Vmap.
 </summary>
 </member>
-<member name="M:Prime.VmapModule.fold``3(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,Microsoft.FSharp.Core.FSharpFunc{``2,``0}}},``0,Prime.Vmap{``1,``2})">
+<member name="M:Prime.VmapModule.fold``3(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,Microsoft.FSharp.Core.FSharpFunc{``2,``0}}},``0,Prime.VmapModule.Vmap{``1,``2})">
 <summary>
  Fold over a Vmap.
 </summary>
 </member>
-<member name="M:Prime.VmapModule.concat``2(Prime.Vmap{``0,``1},System.Collections.Generic.IEnumerable{System.Tuple{``0,``1}})">
+<member name="M:Prime.VmapModule.concat``2(Prime.VmapModule.Vmap{``0,``1},System.Collections.Generic.IEnumerable{System.Tuple{``0,``1}})">
 <summary>
  Combine the contents of two Vmaps, taking an item from the second map in the case of a key conflict.
 </summary>
 </member>
-<member name="M:Prime.VmapModule.containsKey``2(``0,Prime.Vmap{``0,``1})">
+<member name="M:Prime.VmapModule.containsKey``2(``0,Prime.VmapModule.Vmap{``0,``1})">
 <summary>
  Query that a Vmap contains a value with the given key.
 </summary>
 </member>
-<member name="M:Prime.VmapModule.find``2(``0,Prime.Vmap{``0,``1})">
+<member name="M:Prime.VmapModule.find``2(``0,Prime.VmapModule.Vmap{``0,``1})">
 <summary>
  Find a value with the given key in a Vmap.
  Constant-time complexity with approx. 1/3 speed of Dictionary.GetValue.
 </summary>
 </member>
-<member name="M:Prime.VmapModule.tryFind``2(``0,Prime.Vmap{``0,``1})">
+<member name="M:Prime.VmapModule.tryFind``2(``0,Prime.VmapModule.Vmap{``0,``1})">
 <summary>
  Try to find a value with the given key in a Vmap.
  Constant-time complexity with approx. 1/3 speed of Dictionary.TryGetValue.
 </summary>
 </member>
-<member name="M:Prime.VmapModule.removeMany``2(System.Collections.Generic.IEnumerable{``0},Prime.Vmap{``0,``1})">
+<member name="M:Prime.VmapModule.removeMany``2(System.Collections.Generic.IEnumerable{``0},Prime.VmapModule.Vmap{``0,``1})">
 <summary>
  Remove all values with the given keys from a Vmap.
 </summary>
 </member>
-<member name="M:Prime.VmapModule.remove``2(``0,Prime.Vmap{``0,``1})">
+<member name="M:Prime.VmapModule.remove``2(``0,Prime.VmapModule.Vmap{``0,``1})">
 <summary>
  Remove a value with the given key from a Vmap.
 </summary>
 </member>
-<member name="M:Prime.VmapModule.addMany``2(System.Collections.Generic.IEnumerable{System.Tuple{``0,``1}},Prime.Vmap{``0,``1})">
+<member name="M:Prime.VmapModule.addMany``2(System.Collections.Generic.IEnumerable{System.Tuple{``0,``1}},Prime.VmapModule.Vmap{``0,``1})">
 <summary>
  Add a list of values with associated keys to a Vmap.
 </summary>
 </member>
-<member name="M:Prime.VmapModule.add``2(``0,``1,Prime.Vmap{``0,``1})">
+<member name="M:Prime.VmapModule.add``2(``0,``1,Prime.VmapModule.Vmap{``0,``1})">
 <summary>
  Add a value with the key to a Vmap.
 </summary>
 </member>
-<member name="M:Prime.VmapModule.isEmpty``2(Prime.Vmap{``0,``1})">
+<member name="M:Prime.VmapModule.isEmpty``2(Prime.VmapModule.Vmap{``0,``1})">
 <summary>
  Query that a Vmap is empty.
 </summary>
@@ -2277,19 +2332,164 @@
  Create an empty Vmap.
 </summary>
 </member>
-<member name="M:Prime.VnodeModule.add``2(Prime.Hkv{``0,``1},Prime.Vnode{``0,``1}[],System.Int32,Prime.Vnode{``0,``1})">
+<member name="T:Prime.Vnode.Vnode`2">
+<summary>
+ TODO: there&apos;s an F# issue where UseNullAsTrueValue does not work on unions with 4 or more cases
+ https://github.com/Microsoft/visualfsharp/issues/711 . Once resolved, should use it and be able
+ to make arrays with Array.zeroCreate alone without also copying over the empty array.
+</summary>
+</member>
+<member name="M:Prime.Vnode.add``2(Prime.Hkv{``0,``1},Prime.Vnode.Vnode{``0,``1}[],System.Int32,Prime.Vnode.Vnode{``0,``1})">
 <summary>
  OPTIMIZATION: Requires an empty array to use the source of new array clones in order to avoid Array.create.
 </summary>
 </member>
-<member name="M:Prime.VnodeModule.toSeq``2(Prime.Vnode{``0,``1})">
+<member name="M:Prime.Vnode.toSeq``2(Prime.Vnode.Vnode{``0,``1})">
 <summary>
  NOTE: This function seems to profile as being very slow. I don&apos;t know if it&apos;s the seq / yields syntax or what.
 </summary>
 </member>
-<member name="M:Prime.VnodeModule.cloneArray``2(Prime.Vnode{``0,``1}[])">
+<member name="M:Prime.Vnode.cloneArray``2(Prime.Vnode.Vnode{``0,``1}[])">
 <summary>
  OPTIMIZATION: Array.Clone () is not used since it&apos;s been profiled to be slower
+</summary>
+</member>
+<member name="T:Prime.Vsync.Vsync`1">
+<summary>
+ The &apos;Vsync&apos; (AKA, &apos;Variable Synchrony&apos;) monad.
+ NOTE: to reference how all this stuff works in F#, see here - https://msdn.microsoft.com/en-us/library/dd233182.aspx
+</summary>
+</member>
+<member name="M:Prime.Vsync.Map``2(Microsoft.FSharp.Core.FSharpFunc{``0,``1},Prime.Vsync.Vsync{``0})">
+<summary>
+ Creates a potentially asynchronous operation that runs &apos;f&apos; over computation of &apos;a&apos;.
+</summary>
+</member>
+<member name="M:Prime.Vsync.Parallel``1(System.Collections.Generic.IEnumerable{Prime.Vsync.Vsync{``0}})">
+<summary>
+ Creates a potentially asynchronous computation that executes all the given computations
+ Initially queues each as work item using a fork/join pattern when asynchronous.
+ Executes each work item sequentially on the same thread otherwise.
+</summary>
+</member>
+<member name="M:Prime.Vsync.Catch``1(Prime.Vsync.Vsync{``0})">
+<summary>
+ Creates a potentially asynchronous computation that executes computation.
+ If this computation completes successfully, then return Choice1Of2 with the returned value.
+ If this computation raises before completion, then return Choice2Of2 with the raised exception.
+</summary>
+</member>
+<member name="M:Prime.Vsync.AwaitTask(System.Threading.Tasks.Task)">
+<summary>
+ Return a potentially asynchronous computation that will wait for the given task to complete and return its result.
+</summary>
+</member>
+<member name="M:Prime.Vsync.AwaitTaskT``1(System.Threading.Tasks.Task{``0})">
+<summary>
+ Return a potentially asynchronous computation that will wait for the given task to complete and return its result.
+</summary>
+</member>
+<member name="M:Prime.Vsync.StartAsTask``1(Prime.Vsync.Vsync{``0})">
+<summary>
+ Executes a computation in the thread pool when asynchronous, in the same thread otherwise.
+</summary>
+</member>
+<member name="M:Prime.Vsync.Start(Prime.Vsync.Vsync{Microsoft.FSharp.Core.Unit})">
+<summary>
+ Starts the potentially asynchronous computation.
+ Computation is run in the thread pool not awaiting its result when asynchronous.
+ Computation is run in the current thread awaiting its result otherwise.
+</summary>
+</member>
+<member name="M:Prime.Vsync.RunSynchronously``1(Prime.Vsync.Vsync{``0})">
+<summary>
+ Runs the potentially asynchronous computation and awaits its result.
+</summary>
+</member>
+<member name="M:Prime.Vsync.Sleep(System.Int32)">
+<summary>
+ Creates a potentially asynchronous computation that will sleep for the given time.
+ The operation will not block operating system threads for the duration of the wait when running asynchronously.
+ The operation will block operating system thread for the duration of the wait otherwise.
+</summary>
+</member>
+<member name="M:Prime.Vsync.Ignore``1(Prime.Vsync.Vsync{``0})">
+<summary>
+ Creates a potentially asynchronous computation that runs the given computation and ignores its results.
+</summary>
+</member>
+<member name="M:Prime.Vsync.TryFinally``1(Prime.Vsync.Vsync{``0},Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit})">
+<summary>
+ Creates a potentially asynchronous computation that runs computation.
+ The action compensation &apos;h&apos; is executed after the computation completes regardless of the outcome.
+ If the computation raises and exception itself, the original exception is discarded and the new exception becomes the overall result.
+</summary>
+</member>
+<member name="M:Prime.Vsync.TryWith``1(Prime.Vsync.Vsync{``0},Microsoft.FSharp.Core.FSharpFunc{System.Exception,Prime.Vsync.Vsync{``0}})">
+<summary>
+ Creates a potentially asynchronous computation that runs computation and returns its result.
+ If an exception happens, then handler &apos;h&apos; is called and the resulting computation executes instead.
+</summary>
+</member>
+<member name="M:Prime.Vsync.While(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,System.Boolean},Prime.Vsync.Vsync{Microsoft.FSharp.Core.Unit})">
+<summary>
+ Creates a potentially asynchronous computation that runs computation until guard &apos;g&apos; becomes false.
+</summary>
+</member>
+<member name="M:Prime.Vsync.For``1(System.Collections.Generic.IEnumerable{``0},Microsoft.FSharp.Core.FSharpFunc{``0,Prime.Vsync.Vsync{Microsoft.FSharp.Core.Unit}})">
+<summary>
+ Creates a potentially asynchronous computation that enumerates the sequence &apos;s&apos;, and runs the body &apos;f&apos; for each element.
+</summary>
+</member>
+<member name="M:Prime.Vsync.Combine``1(Prime.Vsync.Vsync{Microsoft.FSharp.Core.Unit},Prime.Vsync.Vsync{``0})">
+<summary>
+ Creates a potentially asynchronous computation that first runs computation &apos;a&apos; and then computation &apos;b&apos;, returning the result of the latter.
+</summary>
+</member>
+<member name="M:Prime.Vsync.Zero">
+<summary>
+ Creates a potentially asynchronous computation that just returns unit.
+</summary>
+</member>
+<member name="M:Prime.Vsync.Delay``1(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,Prime.Vsync.Vsync{``0}})">
+<summary>
+ Creates a potentially asynchronous computation that runs generator &apos;f&apos;.
+</summary>
+</member>
+<member name="M:Prime.Vsync.Using``2(``0,Microsoft.FSharp.Core.FSharpFunc{``0,Prime.Vsync.Vsync{``1}})">
+<summary>
+ Creates a potentially asynchronous computation that runs binder &apos;f&apos; over resource &apos;d&apos;.
+ Dispose is executed as this computation yields its result or if the asynchronous computation raises or by cancellation.
+</summary>
+</member>
+<member name="M:Prime.Vsync.ReturnFrom``1(Prime.Vsync.Vsync{``0})">
+<summary>
+ Delegates to input computation.
+</summary>
+</member>
+<member name="M:Prime.Vsync.Return``1(``0)">
+<summary>
+ Creates a potentially asynchronous operation that returns the result &apos;a&apos;.
+</summary>
+</member>
+<member name="M:Prime.Vsync.Bind``2(Prime.Vsync.Vsync{``0},Microsoft.FSharp.Core.FSharpFunc{``0,Prime.Vsync.Vsync{``1}})">
+<summary>
+ Creates a potentially asynchronous operation that runs computation, and when computation results, runs binder resolution.
+</summary>
+</member>
+<member name="M:Prime.Vsync.isSync">
+<summary>
+ Query whether Vsync is using synchronized or asynchronous processing.
+</summary>
+</member>
+<member name="M:Prime.Vsync.init(System.Boolean)">
+<summary>
+ Initialize Vsync to use synchronized or asynchronous processing.
+</summary>
+</member>
+<member name="P:Prime.Vsync.OptSync">
+<summary>
+ Configures whether to use synchronized processing.
 </summary>
 </member>
 <member name="P:Prime.VsyncBuilderModule.vsync">
@@ -2298,196 +2498,100 @@
  Used like: vsync { return 0 }
 </summary>
 </member>
-<member name="M:Prime.VsyncModule.Map``2(Microsoft.FSharp.Core.FSharpFunc{``0,``1},Prime.Vsync{``0})">
+<member name="M:Prime.Xtension.Xtension.tryGetDefaultValue``1(Prime.Xtension.Xtension,System.String)">
 <summary>
- Creates a potentially asynchronous operation that runs &apos;f&apos; over computation of &apos;a&apos;.
+ Try to get the default value for a given xtension member, returning None when defaulting is disallowed.
 </summary>
 </member>
-<member name="M:Prime.VsyncModule.Parallel``1(System.Collections.Generic.IEnumerable{Prime.Vsync{``0}})">
+<member name="M:Prime.Xtension.Xtension.op_DynamicAssignment``1(Prime.Xtension.Xtension,System.String,``0)">
 <summary>
- Creates a potentially asynchronous computation that executes all the given computations
- Initially queues each as work item using a fork/join pattern when asynchronous.
- Executes each work item sequentially on the same thread otherwise.
+ The dynamic assignment operator for an Xtension.
+ Example:
+     let entity = entity.Position &lt;- Vector2 (4.0, 5.0).
 </summary>
 </member>
-<member name="M:Prime.VsyncModule.Catch``1(Prime.Vsync{``0})">
+<member name="M:Prime.Xtension.Xtension.op_Dynamic``1(Prime.Xtension.Xtension,System.String)">
 <summary>
- Creates a potentially asynchronous computation that executes computation.
- If this computation completes successfully, then return Choice1Of2 with the returned value.
- If this computation raises before completion, then return Choice2Of2 with the raised exception.
+ The dynamic look-up operator for an Xtension.
+ Example:
+     let parallax = entity?Parallax : single
 </summary>
 </member>
-<member name="M:Prime.VsyncModule.AwaitTask(System.Threading.Tasks.Task)">
+<member name="M:Prime.Xtension.Xtension.getDefaultValue``1">
 <summary>
- Return a potentially asynchronous computation that will wait for the given task to complete and return its result.
+ Get the default value of an instance of type &apos;r taking into account XDefaultValue decorations.
 </summary>
 </member>
-<member name="M:Prime.VsyncModule.AwaitTaskT``1(System.Threading.Tasks.Task{``0})">
+<member name="T:Prime.Xtension.Xtension">
 <summary>
- Return a potentially asynchronous computation that will wait for the given task to complete and return its result.
+ Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way
+ to implement dynamic fields.
 </summary>
 </member>
-<member name="M:Prime.VsyncModule.StartAsTask``1(Prime.Vsync{``0})">
-<summary>
- Executes a computation in the thread pool when asynchronous, in the same thread otherwise.
-</summary>
-</member>
-<member name="M:Prime.VsyncModule.Start(Prime.Vsync{Microsoft.FSharp.Core.Unit})">
-<summary>
- Starts the potentially asynchronous computation.
- Computation is run in the thread pool not awaiting its result when asynchronous.
- Computation is run in the current thread awaiting its result otherwise.
-</summary>
-</member>
-<member name="M:Prime.VsyncModule.RunSynchronously``1(Prime.Vsync{``0})">
-<summary>
- Runs the potentially asynchronous computation and awaits its result.
-</summary>
-</member>
-<member name="M:Prime.VsyncModule.Sleep(System.Int32)">
-<summary>
- Creates a potentially asynchronous computation that will sleep for the given time.
- The operation will not block operating system threads for the duration of the wait when running asynchronously.
- The operation will block operating system thread for the duration of the wait otherwise.
-</summary>
-</member>
-<member name="M:Prime.VsyncModule.Ignore``1(Prime.Vsync{``0})">
-<summary>
- Creates a potentially asynchronous computation that runs the given computation and ignores its results.
-</summary>
-</member>
-<member name="M:Prime.VsyncModule.TryFinally``1(Prime.Vsync{``0},Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit})">
-<summary>
- Creates a potentially asynchronous computation that runs computation.
- The action compensation &apos;h&apos; is executed after the computation completes regardless of the outcome.
- If the computation raises and exception itself, the original exception is discarded and the new exception becomes the overall result.
-</summary>
-</member>
-<member name="M:Prime.VsyncModule.TryWith``1(Prime.Vsync{``0},Microsoft.FSharp.Core.FSharpFunc{System.Exception,Prime.Vsync{``0}})">
-<summary>
- Creates a potentially asynchronous computation that runs computation and returns its result.
- If an exception happens, then handler &apos;h&apos; is called and the resulting computation executes instead.
-</summary>
-</member>
-<member name="M:Prime.VsyncModule.While(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,System.Boolean},Prime.Vsync{Microsoft.FSharp.Core.Unit})">
-<summary>
- Creates a potentially asynchronous computation that runs computation until guard &apos;g&apos; becomes false.
-</summary>
-</member>
-<member name="M:Prime.VsyncModule.For``1(System.Collections.Generic.IEnumerable{``0},Microsoft.FSharp.Core.FSharpFunc{``0,Prime.Vsync{Microsoft.FSharp.Core.Unit}})">
-<summary>
- Creates a potentially asynchronous computation that enumerates the sequence &apos;s&apos;, and runs the body &apos;f&apos; for each element.
-</summary>
-</member>
-<member name="M:Prime.VsyncModule.Combine``1(Prime.Vsync{Microsoft.FSharp.Core.Unit},Prime.Vsync{``0})">
-<summary>
- Creates a potentially asynchronous computation that first runs computation &apos;a&apos; and then computation &apos;b&apos;, returning the result of the latter.
-</summary>
-</member>
-<member name="M:Prime.VsyncModule.Zero">
-<summary>
- Creates a potentially asynchronous computation that just returns unit.
-</summary>
-</member>
-<member name="M:Prime.VsyncModule.Delay``1(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,Prime.Vsync{``0}})">
-<summary>
- Creates a potentially asynchronous computation that runs generator &apos;f&apos;.
-</summary>
-</member>
-<member name="M:Prime.VsyncModule.Using``2(``0,Microsoft.FSharp.Core.FSharpFunc{``0,Prime.Vsync{``1}})">
-<summary>
- Creates a potentially asynchronous computation that runs binder &apos;f&apos; over resource &apos;d&apos;.
- Dispose is executed as this computation yields its result or if the asynchronous computation raises or by cancellation.
-</summary>
-</member>
-<member name="M:Prime.VsyncModule.ReturnFrom``1(Prime.Vsync{``0})">
-<summary>
- Delegates to input computation.
-</summary>
-</member>
-<member name="M:Prime.VsyncModule.Return``1(``0)">
-<summary>
- Creates a potentially asynchronous operation that returns the result &apos;a&apos;.
-</summary>
-</member>
-<member name="M:Prime.VsyncModule.Bind``2(Prime.Vsync{``0},Microsoft.FSharp.Core.FSharpFunc{``0,Prime.Vsync{``1}})">
-<summary>
- Creates a potentially asynchronous operation that runs computation, and when computation results, runs binder resolution.
-</summary>
-</member>
-<member name="M:Prime.VsyncModule.isSync">
-<summary>
- Query whether Vsync is using synchronized or asynchronous processing.
-</summary>
-</member>
-<member name="M:Prime.VsyncModule.init(System.Boolean)">
-<summary>
- Initialize Vsync to use synchronized or asynchronous processing.
-</summary>
-</member>
-<member name="P:Prime.VsyncModule.OptSync">
-<summary>
- Configures whether to use synchronized processing.
-</summary>
-</member>
-<member name="M:Prime.XtensionModule.ofSeq(System.Collections.Generic.IEnumerable{System.Tuple{System.String,Prime.XField}})">
+<member name="M:Prime.Xtension.ofSeq(System.Collections.Generic.IEnumerable{System.Tuple{System.String,Prime.XField}})">
 <summary>
  Convert an xtension to a sequence of its entries.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.toSeq(Prime.Xtension)">
+<member name="M:Prime.Xtension.toSeq(Prime.Xtension.Xtension)">
 <summary>
  Convert an xtension to a sequence of its entries.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.detachFields(System.Collections.Generic.IEnumerable{System.String},Prime.Xtension)">
+<member name="M:Prime.Xtension.detachFields(System.Collections.Generic.IEnumerable{System.String},Prime.Xtension.Xtension)">
 <summary>
  Detach multiple fields from an Xtension.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.detachField(System.String,Prime.Xtension)">
+<member name="M:Prime.Xtension.detachField(System.String,Prime.Xtension.Xtension)">
 <summary>
  Detach a field from an Xtension.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.attachFields(System.Collections.Generic.IEnumerable{System.Tuple{System.String,Prime.XField}},Prime.Xtension)">
+<member name="M:Prime.Xtension.attachFields(System.Collections.Generic.IEnumerable{System.Tuple{System.String,Prime.XField}},Prime.Xtension.Xtension)">
 <summary>
  Attach multiple fields to an Xtension.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.attachField(System.String,Prime.XField,Prime.Xtension)">
+<member name="M:Prime.Xtension.attachField(System.String,Prime.XField,Prime.Xtension.Xtension)">
 <summary>
  Attach a field to an Xtension.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.tryGetField(System.String,Prime.Xtension)">
+<member name="M:Prime.Xtension.tryGetField(System.String,Prime.Xtension.Xtension)">
 <summary>
  Try to get a field from an xtension.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.getField(System.String,Prime.Xtension)">
+<member name="M:Prime.Xtension.getField(System.String,Prime.Xtension.Xtension)">
 <summary>
  Get a field from an xtension.
 </summary>
 </member>
-<member name="P:Prime.XtensionModule.mixed">
+<member name="P:Prime.Xtension.mixed">
 <summary>
  An Xtension that cannot default and isn&apos;t sealed.
 </summary>
 </member>
-<member name="P:Prime.XtensionModule.safe">
+<member name="P:Prime.Xtension.safe">
 <summary>
  An Xtension that cannot default and is sealed.
 </summary>
 </member>
-<member name="P:Prime.XtensionModule.empty">
+<member name="P:Prime.Xtension.empty">
 <summary>
  An Xtension that can default and isn&apos;t sealed.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.make(Prime.Vmap{System.String,Prime.XField},System.Boolean,System.Boolean)">
+<member name="M:Prime.Xtension.make(Prime.VmapModule.Vmap{System.String,Prime.XField},System.Boolean,System.Boolean)">
 <summary>
  Make an extension with custom safety.
+</summary>
+</member>
+<member name="T:Prime.XtensionModule.Xtension">
+<summary>
+ Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way
+ to implement dynamic fields.
 </summary>
 </member>
 <member name="M:Seq.notExists``1(Microsoft.FSharp.Core.FSharpFunc{``0,System.Boolean},System.Collections.Generic.IEnumerable{``0})">
