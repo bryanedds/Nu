@@ -66,7 +66,8 @@
     <Compile Include="Constants.fs" />
     <Compile Include="Math.fs" />
     <Compile Include="QuadTree.fs" />
-    <Compile Include="Overlay.fs" />
+    <Compile Include="Overlayer.fs" />
+    <Compile Include="OverlayRouter.fs" />
     <Compile Include="Reflection.fs" />
     <Compile Include="Camera.fs" />
     <Compile Include="AssetGraph.fs" />
@@ -75,8 +76,8 @@
     <Compile Include="Audio.fs" />
     <Compile Include="Metadata.fs" />
     <Compile Include="Input.fs" />
-    <Compile Include="EffectTypes.fs" />
-    <Compile Include="EffectModules.fs" />
+    <Compile Include="Effect.fs" />
+    <Compile Include="EffectSystem.fs" />
     <Compile Include="Sdl.fs" />
     <Compile Include="WorldTypes.fs" />
     <Compile Include="WorldEvents.fs" />

@@ -7,15 +7,15 @@ open System.Collections.Generic
 open OpenTK
 open Prime
 
-type [<NoEquality; NoComparison>] private QuadNode<'e when 'e : equality> =
-    private
-        { Depth : int
-          Bounds : Vector4
-          Children : 'e QuadNode array
-          OptElements : 'e HashSet option }
-
 [<RequireQualifiedAccess>]
 module private QuadNode =
+
+    type [<NoEquality; NoComparison>] internal QuadNode<'e when 'e : equality> =
+        private
+            { Depth : int
+              Bounds : Vector4
+              Children : 'e QuadNode array
+              OptElements : 'e HashSet option }
 
     let private makeChildPosition i position (childSize : Vector2) =
         match i with
@@ -90,13 +90,13 @@ module private QuadNode =
           Children = (children : 'e QuadNode array)
           OptElements = match depth with 1 -> Some ^ HashSet HashIdentity.Structural | _ -> None }
 
-type [<NoEquality; NoComparison>] QuadTree<'e when 'e : equality> =
-    private
-        { Node : 'e QuadNode
-          OmnipresentElements : 'e HashSet }
-
 [<RequireQualifiedAccess>]
 module QuadTree =
+
+    type [<NoEquality; NoComparison>] QuadTree<'e when 'e : equality> =
+        private
+            { Node : 'e QuadNode.QuadNode
+              OmnipresentElements : 'e HashSet }
 
     let addElement omnipresence bounds element tree =
         if omnipresence then
@@ -137,3 +137,5 @@ module QuadTree =
     let make<'e when 'e : equality> depth bounds =
         { Node = QuadNode.make<'e> depth bounds
           OmnipresentElements = HashSet HashIdentity.Structural }
+
+type QuadTree<'e when 'e : equality> = QuadTree.QuadTree<'e>

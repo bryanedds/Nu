@@ -645,9 +645,9 @@ module WorldModule =
             let subsystems =
                 let subsystemMap =
                     Vmap.addMany
-                        [(Constants.Engine.PhysicsEngineSubsystemName, PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockPhysicsEngine = () } :> Subsystem)
-                         (Constants.Engine.RendererSubsystemName, RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockRenderer = () } :> Subsystem)
-                         (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder { MockAudioPlayer = () } :> Subsystem)]
+                        [(Constants.Engine.PhysicsEngineSubsystemName, PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockPhysicsEngine.make ()) :> Subsystem)
+                         (Constants.Engine.RendererSubsystemName, RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockRenderer.make ()) :> Subsystem)
+                         (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockAudioPlayer.make ()) :> Subsystem)]
                         (Vmap.makeEmpty ())
                 Subsystems.make subsystemMap
 
@@ -713,7 +713,7 @@ module WorldModule =
                     let physicsEngine = PhysicsEngine.make Constants.Physics.Gravity
                     let physicsEngineSubsystem = PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder physicsEngine :> Subsystem
                     let renderer =
-                        match sdlDeps.OptRenderContext with
+                        match SdlDeps.getOptRenderContext sdlDeps with
                         | Some renderContext -> Renderer.make renderContext :> IRenderer
                         | None -> MockRenderer.make () :> IRenderer
                     let renderer = renderer.EnqueueMessage ^ HintRenderPackageUseMessage { PackageName = Constants.Assets.DefaultPackageName }
@@ -768,7 +768,8 @@ module WorldModule =
                     let pluginOverlayRoutes = plugin.MakeOverlayRoutes ()
                     let overlayRouter = OverlayRouter.make components.EntityDispatchers pluginOverlayRoutes
                     let overlayer = Overlayer.make Constants.Assets.OverlayFilePath intrinsicOverlays
-                    let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH)
+                    let sdlConfig = SdlDeps.getConfig sdlDeps
+                    let eyeSize = Vector2 (single sdlConfig.ViewW, single sdlConfig.ViewH)
                     let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                     WorldState.make tickRate assetMetadataMap overlayRouter overlayer camera userState
 

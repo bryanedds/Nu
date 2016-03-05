@@ -22,26 +22,6 @@ type SdlViewConfig =
     | ExistingWindow of nativeint
     //| FullScreen TODO: implement
 
-/// Describes the general configuration of SDL.
-type SdlConfig =
-    { ViewConfig : SdlViewConfig
-      ViewW : int
-      ViewH : int
-      RendererFlags : SDL.SDL_RendererFlags
-      AudioChunkSize : int }
-
-/// The dependencies needed to initialize SDL.
-type [<ReferenceEquality>] SdlDeps =
-    private
-        { OptRenderContext : nativeint option
-          OptWindow : nativeint option
-          Config : SdlConfig
-          Destroy : unit -> unit }
-
-    interface IDisposable with
-        member this.Dispose () =
-            this.Destroy ()
-
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module SdlViewConfig =
 
@@ -53,6 +33,14 @@ module SdlViewConfig =
               WindowY = SDL.SDL_WINDOWPOS_UNDEFINED
               WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
 
+/// Describes the general configuration of SDL.
+type SdlConfig =
+    { ViewConfig : SdlViewConfig
+      ViewW : int
+      ViewH : int
+      RendererFlags : SDL.SDL_RendererFlags
+      AudioChunkSize : int }
+
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module SdlConfig =
 
@@ -63,9 +51,21 @@ module SdlConfig =
           ViewH = Constants.Render.ResolutionY
           RendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
           AudioChunkSize = Constants.Audio.AudioBufferSizeDefault }
-
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+          
+[<RequireQualifiedAccess>]
 module SdlDeps =
+
+    /// The dependencies needed to initialize SDL.
+    type [<ReferenceEquality>] SdlDeps =
+        private
+            { OptRenderContext : nativeint option
+              OptWindow : nativeint option
+              Config : SdlConfig
+              Destroy : unit -> unit }
+    
+        interface IDisposable with
+            member this.Dispose () =
+                this.Destroy ()
 
     /// An empty SdlDeps.
     let empty =
@@ -152,6 +152,12 @@ module SdlDeps =
                                 let sdlDeps = { OptRenderContext = Some renderContext; OptWindow = Some window; Config = sdlConfig; Destroy = destroy }
                                 Right sdlDeps
 
+[<AutoOpen>]
+module SdlDepsModule =
+
+    /// The dependencies needed to initialize SDL.
+    type SdlDeps = SdlDeps.SdlDeps
+
 [<RequireQualifiedAccess>]
 module Sdl =
 
@@ -174,7 +180,7 @@ module Sdl =
 
     /// Render the game engine's current frame.
     let render handleRender sdlDeps world =
-        match sdlDeps.OptRenderContext with
+        match SdlDeps.getOptRenderContext sdlDeps with
         | Some renderContext ->
             match Constants.Render.ScreenClearing with
             | NoClear -> ()

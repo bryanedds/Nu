@@ -571,7 +571,6 @@ and [<ReferenceEquality>] Components =
           GameDispatchers : Map<string, GameDispatcher> }
 
 /// The world's state.
-/// TODO: There were improper places accessing fields directly - report the issue in the F# compiler.
 and [<ReferenceEquality>] WorldState =
     private
         { TickRate : int64
