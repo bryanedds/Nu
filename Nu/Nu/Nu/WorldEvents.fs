@@ -7,6 +7,34 @@ open OpenTK
 open Prime
 open Nu
 
+/// The data for a mouse move event.
+type [<StructuralEquality; NoComparison>] MouseMoveData =
+    { Position : Vector2 }
+
+/// The data for a mouse button event.
+type [<StructuralEquality; NoComparison>] MouseButtonData =
+    { Position : Vector2
+      Button : MouseButton
+      Down : bool }
+
+/// The data for a keyboard key event.
+type [<StructuralEquality; NoComparison>] KeyboardKeyData =
+    { ScanCode : int
+      Repeated : bool
+      Down : bool }
+
+/// The data for a collision event.
+type [<StructuralEquality; NoComparison>] CollisionData =
+    { Normal : Vector2
+      Speed : single
+      Collidee : Entity }
+
+/// The data for a change in the world's ambient state.
+/// NOTE: I couldn't give its field the more normal name of 'OldWorld' due to field name conflicts with the more
+/// pervasive SimulantChangeData type below.
+type [<StructuralEquality; NoComparison>] AmbientStateChangeData = 
+    { OldWorldWithOldState : World }
+
 [<RequireQualifiedAccess>]
 module Events =
 
@@ -55,19 +83,19 @@ module Events =
     let Outgoing = ntoa<unit> !!"Outgoing"
     let OutgoingStart = Outgoing -|- ntoa !!"Start"
     let OutgoingFinish = Outgoing -|- ntoa !!"Finish"
-    let WorldState = ntoa<obj> !!"WorldState"
-    let WorldStateChange = WorldState -<- ntoa<WorldStateChangeData> !!"Change"
+    let AmbientState = ntoa<obj> !!"AmbientState"
+    let AmbientStateChange = AmbientState -<- ntoa<AmbientStateChangeData> !!"Change"
     let Game = ntoa<obj> !!"Game"
-    let GameChange = Game -<- ntoa<Game SimulantChangeData> !!"Change"
+    let GameChange = Game -<- ntoa<SimulantChangeData<Game, World>> !!"Change"
     let Screen = ntoa<obj> !!"Screen"
     let ScreenAdd = Screen -<- ntoa<unit> !!"Add"
     let ScreenRemoving = Screen -<- ntoa<unit> !!"Removing"
-    let ScreenChange = Screen -<- ntoa<Screen SimulantChangeData> !!"Change"
+    let ScreenChange = Screen -<- ntoa<SimulantChangeData<Screen, World>> !!"Change"
     let Group = ntoa<obj> !!"Group"
     let GroupAdd = Group -<- ntoa<unit> !!"Add"
     let GroupRemoving = Group -<- ntoa<unit> !!"Removing"
-    let GroupChange = Group -<- ntoa<Group SimulantChangeData> !!"Change"
+    let GroupChange = Group -<- ntoa<SimulantChangeData<Group, World>> !!"Change"
     let Entity = ntoa<obj> !!"Entity"
     let EntityAdd = Entity -<- ntoa<unit> !!"Add"
     let EntityRemoving = Entity -<- ntoa<unit> !!"Removing"
-    let EntityChange = Entity -<- ntoa<Entity SimulantChangeData> !!"Change"
+    let EntityChange = Entity -<- ntoa<SimulantChangeData<Entity, World>> !!"Change"

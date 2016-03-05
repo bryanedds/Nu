@@ -61,6 +61,41 @@ module Nu =
             // mark init flag
             Initialized <- true
 
+/// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
+/// specific values.
+type NuPlugin () =
+
+    /// Make user-defined subsystems such that Nu can utilitze them at run-time.
+    abstract MakeSubsystems : unit -> (string * World Subsystem) list
+    default this.MakeSubsystems () = []
+    
+    /// Make user-defined assets such that Nu can utililize them at run-time.
+    abstract MakeFacets : unit -> Facet list
+    default this.MakeFacets () = []
+    
+    /// Optionally make a user-defined game dispatchers such that Nu can utililize it at run-time.
+    abstract MakeOptGameDispatcher : unit -> GameDispatcher option
+    default this.MakeOptGameDispatcher () = None
+    
+    /// Make user-defined screen dispatchers such that Nu can utililize them at run-time.
+    abstract MakeScreenDispatchers : unit -> ScreenDispatcher list
+    default this.MakeScreenDispatchers () = []
+    
+    /// Make user-defined group dispatchers such that Nu can utililize them at run-time.
+    abstract MakeGroupDispatchers : unit -> GroupDispatcher list
+    default this.MakeGroupDispatchers () = []
+    
+    /// Make user-defined entity dispatchers such that Nu can utililize them at run-time.
+    abstract MakeEntityDispatchers : unit -> EntityDispatcher list
+    default this.MakeEntityDispatchers () = []
+    
+    /// Make the overlay routes that will allow Nu to use different overlays for the specified
+    /// types. For example, a returned router of (typeof<ButtonDispatcher>.Name, Some "CustomButtonOverlay")
+    /// will cause all buttons to use the overlay with the name "CustomButtonOverlay" rather
+    /// than the default "ButtonDispatcher" overlay.
+    abstract MakeOverlayRoutes : unit -> (string * string option) list
+    default this.MakeOverlayRoutes () = []
+
 [<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module WorldModule =
 
@@ -645,53 +680,57 @@ module WorldModule =
             let subsystems =
                 let subsystemMap =
                     Vmap.addMany
-                        [(Constants.Engine.PhysicsEngineSubsystemName, PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockPhysicsEngine.make ()) :> Subsystem)
-                         (Constants.Engine.RendererSubsystemName, RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockRenderer.make ()) :> Subsystem)
-                         (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockAudioPlayer.make ()) :> Subsystem)]
+                        [(Constants.Engine.PhysicsEngineSubsystemName, PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockPhysicsEngine.make ()) :> World Subsystem)
+                         (Constants.Engine.RendererSubsystemName, RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockRenderer.make ()) :> World Subsystem)
+                         (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockAudioPlayer.make ()) :> World Subsystem)]
                         (Vmap.makeEmpty ())
                 Subsystems.make subsystemMap
-
-            // make the world's components
-            let components =
-                Components.make
-                    (World.makeDefaultFacets ())
-                    (World.makeDefaultEntityDispatchers ())
-                    (World.makeDefaultGroupDispatchers ())
-                    (World.makeDefaultScreenDispatchers ())
-                    (World.makeDefaultGameDispatchers ())
 
             // make the world's event system
             let eventSystem =
                 EventSystem.make ()
 
-            // make the world's state
-            let worldState =
-                let overlayRouter = OverlayRouter.make components.EntityDispatchers []
-                let overlayer = Overlayer.makeEmpty ()
-                let eyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault)
-                let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
-                WorldState.make 1L Map.empty overlayRouter overlayer camera userState
+            // make the world's components
+            let components =
+                { Facets = World.makeDefaultFacets ()
+                  EntityDispatchers = World.makeDefaultEntityDispatchers ()
+                  GroupDispatchers = World.makeDefaultGroupDispatchers ()
+                  ScreenDispatchers = World.makeDefaultScreenDispatchers ()
+                  GameDispatchers = World.makeDefaultGameDispatchers () }
 
             // make the game state
             let gameState =
                 let gameDispatcher = components.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
                 World.makeGameState gameDispatcher
 
-            // make the world itself
-            let world =
-                { Subsystems = subsystems
-                  Components = components
-                  Tasklets = Queue.empty
-                  EventSystem = eventSystem
-                  State = worldState
-                  GameState = gameState
+            // make the simulant states
+            let simulantStates = 
+                { GameState = gameState
                   ScreenStates = Vmap.makeEmpty ()
                   GroupStates = Vmap.makeEmpty ()
                   EntityStates = Vmap.makeEmpty ()
                   ScreenDirectory = Vmap.makeEmpty () }
 
+            // make the world's state
+            let ambientState =
+                let overlayRouter = OverlayRouter.make components.EntityDispatchers []
+                let overlayer = Overlayer.makeEmpty ()
+                let eyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault)
+                let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
+                AmbientState.make 1L Map.empty overlayRouter overlayer camera userState
+
+            // make the world itself
+            let world =
+                { Subsystems = subsystems
+                  EventSystem = eventSystem
+                  Tasklets = Queue.empty
+                  OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
+                  Components = components
+                  SimulantStates = simulantStates
+                  AmbientState = ambientState }
+
             // initialize OptEntityCache after the fact due to back reference
-            let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}
+            let world = { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
 
             // finally, register the game
             World.registerGame world
@@ -711,18 +750,18 @@ module WorldModule =
                 let subsystems =
                     let userSubsystems = plugin.MakeSubsystems ()
                     let physicsEngine = PhysicsEngine.make Constants.Physics.Gravity
-                    let physicsEngineSubsystem = PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder physicsEngine :> Subsystem
+                    let physicsEngineSubsystem = PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder physicsEngine :> World Subsystem
                     let renderer =
                         match SdlDeps.getOptRenderContext sdlDeps with
                         | Some renderContext -> Renderer.make renderContext :> IRenderer
                         | None -> MockRenderer.make () :> IRenderer
                     let renderer = renderer.EnqueueMessage ^ HintRenderPackageUseMessage { PackageName = Constants.Assets.DefaultPackageName }
-                    let rendererSubsystem = RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder renderer :> Subsystem
+                    let rendererSubsystem = RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder renderer :> World Subsystem
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
                         then AudioPlayer.make () :> IAudioPlayer
                         else MockAudioPlayer.make () :> IAudioPlayer
-                    let audioPlayerSubsystem = AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder audioPlayer :> Subsystem
+                    let audioPlayerSubsystem = AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder audioPlayer :> World Subsystem
                     let defaultSubsystemMap = Vmap.makeEmpty ()
                     let defaultSubsystemMap =
                         Vmap.addMany
@@ -749,21 +788,28 @@ module WorldModule =
                         | None -> defaultGameDispatcher
                     else defaultGameDispatcher
 
-                // make the world's components
-                let components =
-                    Components.make
-                        (Map.addMany pluginFacets ^ World.makeDefaultFacets ())
-                        (Map.addMany pluginEntityDispatchers ^ World.makeDefaultEntityDispatchers ())
-                        (Map.addMany pluginGroupDispatchers ^ World.makeDefaultGroupDispatchers ())
-                        (Map.addMany pluginScreenDispatchers ^ World.makeDefaultScreenDispatchers ())
-                        (Map.addMany [World.pairWithName activeGameDispatcher] ^ World.makeDefaultGameDispatchers ())
-                        
                 // make the world's event system
                 let eventSystem =
                     EventSystem.make ()
 
+                // make the world's components
+                let components =
+                    { Facets = Map.addMany pluginFacets ^ World.makeDefaultFacets ()
+                      EntityDispatchers = Map.addMany pluginEntityDispatchers ^ World.makeDefaultEntityDispatchers ()
+                      GroupDispatchers = Map.addMany pluginGroupDispatchers ^ World.makeDefaultGroupDispatchers ()
+                      ScreenDispatchers = Map.addMany pluginScreenDispatchers ^ World.makeDefaultScreenDispatchers ()
+                      GameDispatchers = Map.addMany [World.pairWithName activeGameDispatcher] ^ World.makeDefaultGameDispatchers () }
+
+                // make the simulant states
+                let simulantStates = 
+                    { GameState = World.makeGameState activeGameDispatcher
+                      ScreenStates = Vmap.makeEmpty ()
+                      GroupStates = Vmap.makeEmpty ()
+                      EntityStates = Vmap.makeEmpty ()
+                      ScreenDirectory = Vmap.makeEmpty () }
+
                 // make the world's state
-                let worldState =
+                let ambientState =
                     let intrinsicOverlays = World.createIntrinsicOverlays components.Facets components.EntityDispatchers
                     let pluginOverlayRoutes = plugin.MakeOverlayRoutes ()
                     let overlayRouter = OverlayRouter.make components.EntityDispatchers pluginOverlayRoutes
@@ -771,23 +817,20 @@ module WorldModule =
                     let sdlConfig = SdlDeps.getConfig sdlDeps
                     let eyeSize = Vector2 (single sdlConfig.ViewW, single sdlConfig.ViewH)
                     let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
-                    WorldState.make tickRate assetMetadataMap overlayRouter overlayer camera userState
+                    AmbientState.make tickRate assetMetadataMap overlayRouter overlayer camera userState
 
                 // make the world itself
                 let world =
                     { Subsystems = subsystems
-                      Components = components
-                      Tasklets = Queue.empty
                       EventSystem = eventSystem
-                      State = worldState
-                      GameState = World.makeGameState activeGameDispatcher
-                      ScreenStates = Vmap.makeEmpty ()
-                      GroupStates = Vmap.makeEmpty ()
-                      EntityStates = Vmap.makeEmpty ()
-                      ScreenDirectory = Vmap.makeEmpty () }
+                      Tasklets = Queue.empty
+                      OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
+                      Components = components
+                      SimulantStates = simulantStates
+                      AmbientState = ambientState }
 
                 // initialize OptEntityCache after the fact due to back reference
-                let world = { world with State = { world.State with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }}
+                let world = { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
 
                 // finally, register the game
                 let world = World.registerGame world

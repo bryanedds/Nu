@@ -9,6 +9,42 @@ open OpenTK
 open Prime
 open Nu
 
+[<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module SimulantOperators =
+
+    /// Convert a name string to a screen's proxy.
+    let (!>) screenNameStr = Screen.proxy ^ ntoa ^ Name.make screenNameStr
+
+    /// Convert a name to a screen's proxy.
+    let ntos screenName = Screen.proxy ^ ntoa screenName
+
+    /// Convert a group's proxy to an entity's by appending the entity's name at the end.
+    let gtoe (group : Group) entityName = Entity.proxy ^ atoa<Group, Entity> group.GroupAddress ->- ntoa entityName
+
+    /// Convert a screen's proxy to a group's by appending the group's name at the end.
+    let stog (screen : Screen) groupName = Group.proxy ^ atoa<Screen, Group> screen.ScreenAddress ->- ntoa groupName
+
+    /// Convert an entity's proxy to a group's by removing the entity's name from the end.
+    let etog (entity : Entity) = !< entity
+
+    /// Convert a group's proxy to a screen's by removing the group's name from the end.
+    let gtos group = Screen.proxy ^ Address.take<Group, Screen> 1 group.GroupAddress
+
+/// Allowed to open manually despite some worry on my part... :)
+module Simulants =
+
+    /// The game. Always exists.
+    let Game = { GameAddress = Address.empty }
+
+    /// The default screen - may or may not exist.
+    let DefaultScreen = !> Constants.Engine.DefaultScreenName
+    
+    /// The default group - may or may not exist.
+    let DefaultGroup = DefaultScreen => Constants.Engine.DefaultGroupName
+    
+    /// The default entity - may or may not exist.
+    let DefaultEntity = DefaultGroup => Constants.Engine.DefaultEntityName
+
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module World =
 
@@ -22,66 +58,25 @@ module World =
     let internal getSubsystemMap world =
         Subsystems.getSubsystemMap world.Subsystems
 
-    let internal getSubsystem<'s when 's :> Subsystem> name world =
-        Subsystems.getSubsystem<'s> name world.Subsystems
+    let internal getSubsystem<'s when 's :> World Subsystem> name world : 's =
+        Subsystems.getSubsystem name world.Subsystems
 
-    let internal getSubsystemBy<'s, 't when 's :> Subsystem> by name world : 't =
-        Subsystems.getSubsystemBy<'s, 't> by name world.Subsystems
+    let internal getSubsystemBy<'s, 't when 's :> World Subsystem> (by : 's -> 't) name world : 't =
+        Subsystems.getSubsystemBy by name world.Subsystems
 
-    let internal setSubsystem<'s when 's :> Subsystem> (subsystem : 's) name world =
-        { world with Subsystems = Subsystems.setSubsystem<'s> subsystem name world.Subsystems }
+    let internal setSubsystem<'s when 's :> World Subsystem> (subsystem : 's) name world =
+        { world with Subsystems = Subsystems.setSubsystem subsystem name world.Subsystems }
 
-    let internal updateSubsystem<'s when 's :> Subsystem> (updater : 's -> World -> 's) name world =
-        { world with Subsystems = Subsystems.updateSubsystem<'s, World> updater name world.Subsystems world }
+    let internal updateSubsystem<'s when 's :> World Subsystem> (updater : 's -> World -> 's) name world =
+        { world with Subsystems = Subsystems.updateSubsystem updater name world.Subsystems world }
 
-    let internal updateSubsystems (updater : Subsystem -> World -> Subsystem) world =
+    let internal updateSubsystems (updater : World Subsystem -> World -> World Subsystem) world =
         { world with Subsystems = Subsystems.updateSubsystems updater world.Subsystems world }
 
     let internal clearSubsystemsMessages world =
         { world with Subsystems = Subsystems.clearSubsystemsMessages world.Subsystems world }
 
-    (* Components *)
-
-    /// Get the facets of the world.
-    let getFacets world =
-        Components.getFacets world.Components
-
-    /// Get the entity dispatchers of the world.
-    let getEntityDispatchers world =
-        Components.getEntityDispatchers world.Components
-
-    /// Get the group dispatchers of the world.
-    let getGroupDispatchers world =
-        Components.getGroupDispatchers world.Components
-
-    /// Get the screen dispatchers of the world.
-    let getScreenDispatchers world =
-        Components.getScreenDispatchers world.Components
-
-    /// Get the game dispatchers of the world.
-    let getGameDispatchers world =
-        Components.getGameDispatchers world.Components
-
-    (* Tasklets *)
-
-    let internal getTasklets world =
-        world.Tasklets
-
-    let internal clearTasklets world =
-        { world with Tasklets = Queue.empty }
-
-    let internal restoreTasklets tasklets world =
-        { world with Tasklets = Queue.ofSeq ^ Seq.append (world.Tasklets :> Tasklet seq) (tasklets :> Tasklet seq) }
-
-    /// Add a tasklet to be executed by the engine at the scheduled time.
-    let addTasklet tasklet world =
-        { world with Tasklets = Queue.conj tasklet world.Tasklets }
-
-    /// Add multiple tasklets to be executed by the engine at the scheduled times.
-    let addTasklets tasklets world =
-        { world with Tasklets = Queue.ofSeq ^ Seq.append (tasklets :> Tasklet seq) (world.Tasklets :> Tasklet seq) }
-
-    (* Eventable *)
+    (* EventSystem *)
 
     /// Get event subscriptions.
     let getSubscriptions world =
@@ -173,32 +168,73 @@ module World =
         (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
         Eventable.monitor<'a, 's, World> subscription eventAddress subscriber world
 
-    (* WorldState *)
+    (* Tasklets *)
 
-    let private getState world =
-        world.State
+    let internal getTasklets world =
+        world.Tasklets
 
-    let private setStateWithoutEvent state world =
-        { world with State = state }
+    let internal clearTasklets world =
+        { world with Tasklets = Queue.empty }
 
-    let private setState state world =
+    let internal restoreTasklets tasklets world =
+        { world with Tasklets = Queue.ofSeq ^ Seq.append (world.Tasklets :> _ seq) (tasklets :> _ seq) }
+
+    /// Add a tasklet to be executed by the engine at the scheduled time.
+    let addTasklet tasklet world =
+        { world with Tasklets = Queue.conj tasklet world.Tasklets }
+
+    /// Add multiple tasklets to be executed by the engine at the scheduled times.
+    let addTasklets tasklets world =
+        { world with Tasklets = Queue.ofSeq ^ Seq.append (tasklets :> _ seq) (world.Tasklets :> _ seq) }
+
+    (* Components *)
+
+    /// Get the facets of the world.
+    let getFacets world =
+        world.Components.Facets
+
+    /// Get the entity dispatchers of the world.
+    let getEntityDispatchers world =
+        world.Components.EntityDispatchers
+
+    /// Get the group dispatchers of the world.
+    let getGroupDispatchers world =
+        world.Components.GroupDispatchers
+
+    /// Get the screen dispatchers of the world.
+    let getScreenDispatchers world =
+        world.Components.ScreenDispatchers
+
+    /// Get the game dispatchers of the world.
+    let getGameDispatchers world =
+        world.Components.GameDispatchers
+
+    (* AmbientState *)
+
+    let private getAmbientState world =
+        world.AmbientState
+
+    let private setAmbientStateWithoutEvent state world =
+        { world with AmbientState = state }
+
+    let private setAmbientState state world =
         let oldWorldWithOldState = world
-        let world = setStateWithoutEvent state world
-        publish { OldWorldWithOldState = oldWorldWithOldState } Events.WorldStateChange ["World.setState"] Simulants.Game world
+        let world = setAmbientStateWithoutEvent state world
+        publish { OldWorldWithOldState = oldWorldWithOldState } Events.AmbientStateChange ["World.setAmbientState"] Simulants.Game world
 
     /// Get the tick rate.
     let getTickRate world =
-        WorldState.getTickRate world.State
+        AmbientState.getTickRate world.AmbientState
 
     /// Get the tick rate as a floating-point value.
     let getTickRateF world =
-        WorldState.getTickRateF world.State
+        AmbientState.getTickRateF world.AmbientState
 
     /// Set the tick rate without waiting for the end of the current update. Only use
     /// this if you need it and understand the engine internals well enough to know the
     /// consequences.
     let setTickRateImmediately tickRate world =
-        setState (WorldState.setTickRateImmediately tickRate world.State) world
+        setAmbientState (AmbientState.setTickRateImmediately tickRate world.AmbientState) world
 
     /// Set the tick rate.
     let rec setTickRate tickRate world =
@@ -206,81 +242,80 @@ module World =
 
     /// Reset the tick time to 0.
     and resetTickTime world =
-        addTasklet { ScheduledTime = getTickTime world; Operation = fun world -> setState (WorldState.resetTickTime world.State) world } world
+        addTasklet { ScheduledTime = getTickTime world; Operation = fun world -> setAmbientState (AmbientState.resetTickTime world.AmbientState) world } world
 
     /// Get the world's tick time.
     and getTickTime world =
-        WorldState.getTickTime world.State
+        AmbientState.getTickTime world.AmbientState
 
     /// Query that the world is ticking.
     let isTicking world =
-        WorldState.isTicking world.State
+        AmbientState.isTicking world.AmbientState
 
     let internal updateTickTime world =
-        setStateWithoutEvent (WorldState.updateTickTime world.State) world
+        setAmbientStateWithoutEvent (AmbientState.updateTickTime world.AmbientState) world
 
     /// Get the world's update count.
     let getUpdateCount world =
-        WorldState.getUpdateCount world.State
+        AmbientState.getUpdateCount world.AmbientState
 
     let internal incrementUpdateCount world =
-        setStateWithoutEvent (WorldState.incrementUpdateCount world.State) world
+        setAmbientStateWithoutEvent (AmbientState.incrementUpdateCount world.AmbientState) world
 
     /// Get the the liveness state of the engine.
     let getLiveness world =
-        WorldState.getLiveness world.State
+        AmbientState.getLiveness world.AmbientState
 
     /// Place the engine into a state such that the app will exit at the end of the current update.
     let exit world =
-        setState (WorldState.exit world.State) world
+        setAmbientState (AmbientState.exit world.AmbientState) world
 
     /// Get a value from the camera used to view the world.
     let getCameraBy by world =
-        WorldState.getCameraBy by world.State
+        AmbientState.getCameraBy by world.AmbientState
 
     /// Get the camera used to view the world.
     let getCamera world =
-        WorldState.getCamera world.State
+        AmbientState.getCamera world.AmbientState
 
     /// Update the camera used to view the world.
     let updateCamera updater world =
-        setState (WorldState.updateCamera updater world.State) world
+        setAmbientState (AmbientState.updateCamera updater world.AmbientState) world
 
     /// Get the current destination screen if a screen transition is currently underway.
     let getOptScreenTransitionDestination world =
-        world.GameState.OptScreenTransitionDestination
+        world.SimulantStates.GameState.OptScreenTransitionDestination
 
     let internal setOptScreenTransitionDestination destination world =
-        let gameState = { world.GameState with OptScreenTransitionDestination = destination }
-        { world with GameState = gameState }
+        { world with
+            SimulantStates =
+                { world.SimulantStates with
+                    GameState =
+                        { world.SimulantStates.GameState with OptScreenTransitionDestination = destination }}}
 
     /// Get the asset metadata map.
     let getAssetMetadataMap world =
-        WorldState.getAssetMetadataMap world.State
-
-    /// Get the opt entity cache.
-    let internal getOptEntityCache world =
-        WorldState.getOptEntityCache world.State
+        AmbientState.getAssetMetadataMap world.AmbientState
 
     let internal setAssetMetadataMap assetMetadataMap world =
-        setState (WorldState.setAssetMetadataMap assetMetadataMap world.State) world
+        setAmbientState (AmbientState.setAssetMetadataMap assetMetadataMap world.AmbientState) world
 
     let internal getOverlayer world =
-        WorldState.getOverlayer world.State
+        AmbientState.getOverlayer world.AmbientState
 
     let internal setOverlayer overlayer world =
-        setState (WorldState.setOverlayer overlayer world.State) world
+        setAmbientState (AmbientState.setOverlayer overlayer world.AmbientState) world
 
     let internal getOverlayRouter world =
-        WorldState.getOverlayRouter world.State
+        AmbientState.getOverlayRouter world.AmbientState
 
     /// Get the user state of the world, casted to 'u.
     let getUserState world : 'u =
-        WorldState.getUserState world.State
+        AmbientState.getUserState world.AmbientState
 
     /// Update the user state of the world.
     let updateUserState (updater : 'u -> 'v) world =
-        setState (WorldState.updateUserState updater world.State) world
+        setAmbientState (AmbientState.updateUserState updater world.AmbientState) world
 
     (* Built-in Event Handlers *)
 
@@ -296,6 +331,12 @@ module World =
     let handleAsExit<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
         (Resolve, exit world)
 
+    (* OptEntityCache *)
+
+    /// Get the opt entity cache.
+    let internal getOptEntityCache world =
+        world.OptEntityCache
+
     (* EntityState *)
 
     let private optEntityStateKeyEquality 
@@ -304,7 +345,7 @@ module World =
         refEq entityAddress entityAddress2 && refEq world world2
 
     let private optEntityGetFreshKeyAndValue entity world =
-        let optEntityState = Vmap.tryFind entity.EntityAddress world.EntityStates
+        let optEntityState = Vmap.tryFind entity.EntityAddress world.SimulantStates.EntityStates
         ((entity.EntityAddress, world), optEntityState)
 
     let private optEntityStateFinder entity world =
@@ -316,45 +357,45 @@ module World =
 
     let private entityStateSetter entityState entity world =
 #if DEBUG
-        if not ^ Vmap.containsKey entity.EntityAddress world.EntityStates then
+        if not ^ Vmap.containsKey entity.EntityAddress world.SimulantStates.EntityStates then
             failwith ^ "Cannot set the state of a non-existent entity '" + scstring entity.EntityAddress + "'"
 #endif
-        let entityStates = Vmap.add entity.EntityAddress entityState world.EntityStates
-        { world with EntityStates = entityStates }
+        let entityStates = Vmap.add entity.EntityAddress entityState world.SimulantStates.EntityStates
+        { world with SimulantStates = { world.SimulantStates with EntityStates = entityStates }}
 
     let private entityStateAdder entityState entity world =
         let screenDirectory =
             match Address.getNames entity.EntityAddress with
             | [screenName; groupName; entityName] ->
-                match Vmap.tryFind screenName world.ScreenDirectory with
+                match Vmap.tryFind screenName world.SimulantStates.ScreenDirectory with
                 | Some (screenAddress, groupDirectory) ->
                     match Vmap.tryFind groupName groupDirectory with
                     | Some (groupAddress, entityDirectory) ->
                         let entityDirectory = Vmap.add entityName entity.EntityAddress entityDirectory
                         let groupDirectory = Vmap.add groupName (groupAddress, entityDirectory) groupDirectory
-                        Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
+                        Vmap.add screenName (screenAddress, groupDirectory) world.SimulantStates.ScreenDirectory
                     | None -> failwith ^ "Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent group."
                 | None -> failwith ^ "Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent screen."
             | _ -> failwith ^ "Invalid entity address '" + scstring entity.EntityAddress + "'."
-        let entityStates = Vmap.add entity.EntityAddress entityState world.EntityStates
-        { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
+        let entityStates = Vmap.add entity.EntityAddress entityState world.SimulantStates.EntityStates
+        { world with SimulantStates = { world.SimulantStates with ScreenDirectory = screenDirectory; EntityStates = entityStates }}
 
     let private entityStateRemover entity world =
         let screenDirectory =
             match Address.getNames entity.EntityAddress with
             | [screenName; groupName; entityName] ->
-                match Vmap.tryFind screenName world.ScreenDirectory with
+                match Vmap.tryFind screenName world.SimulantStates.ScreenDirectory with
                 | Some (screenAddress, groupDirectory) ->
                     match Vmap.tryFind groupName groupDirectory with
                     | Some (groupAddress, entityDirectory) ->
                         let entityDirectory = Vmap.remove entityName entityDirectory
                         let groupDirectory = Vmap.add groupName (groupAddress, entityDirectory) groupDirectory
-                        Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
+                        Vmap.add screenName (screenAddress, groupDirectory) world.SimulantStates.ScreenDirectory
                     | None -> failwith ^ "Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent group."
                 | None -> failwith ^ "Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent screen."
             | _ -> failwith ^ "Invalid entity address '" + scstring entity.EntityAddress + "'."
-        let entityStates = Vmap.remove entity.EntityAddress world.EntityStates
-        { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
+        let entityStates = Vmap.remove entity.EntityAddress world.SimulantStates.EntityStates
+        { world with SimulantStates = { world.SimulantStates with ScreenDirectory = screenDirectory; EntityStates = entityStates }}
 
     let internal getEntityStateBoundsMax entityState =
         // TODO: get up off yer arse and write an algorithm for tight-fitting bounds...
@@ -425,46 +466,46 @@ module World =
 
     let private groupStateSetter groupState group world =
 #if DEBUG
-        if not ^ Vmap.containsKey group.GroupAddress world.GroupStates then
+        if not ^ Vmap.containsKey group.GroupAddress world.SimulantStates.GroupStates then
             failwith ^ "Cannot set the state of a non-existent group '" + scstring group.GroupAddress + "'"
 #endif
-        let groupStates = Vmap.add group.GroupAddress groupState world.GroupStates
-        { world with GroupStates = groupStates }
+        let groupStates = Vmap.add group.GroupAddress groupState world.SimulantStates.GroupStates
+        { world with SimulantStates = { world.SimulantStates with GroupStates = groupStates }}
 
     let private groupStateAdder groupState group world =
         let screenDirectory =
             match Address.getNames group.GroupAddress with
             | [screenName; groupName] ->
-                match Vmap.tryFind screenName world.ScreenDirectory with
+                match Vmap.tryFind screenName world.SimulantStates.ScreenDirectory with
                 | Some (screenAddress, groupDirectory) ->
                     match Vmap.tryFind groupName groupDirectory with
                     | Some (groupAddress, entityDirectory) ->
                         let groupDirectory = Vmap.add groupName (groupAddress, entityDirectory) groupDirectory
-                        Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
+                        Vmap.add screenName (screenAddress, groupDirectory) world.SimulantStates.ScreenDirectory
                     | None ->
                         let entityDirectory = Vmap.makeEmpty ()
                         let groupDirectory = Vmap.add groupName (group.GroupAddress, entityDirectory) groupDirectory
-                        Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
+                        Vmap.add screenName (screenAddress, groupDirectory) world.SimulantStates.ScreenDirectory
                 | None -> failwith ^ "Cannot add group '" + scstring group.GroupAddress + "' to non-existent screen."
             | _ -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
-        let groupStates = Vmap.add group.GroupAddress groupState world.GroupStates
-        { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
+        let groupStates = Vmap.add group.GroupAddress groupState world.SimulantStates.GroupStates
+        { world with SimulantStates = { world.SimulantStates with ScreenDirectory = screenDirectory; GroupStates = groupStates }}
 
     let private groupStateRemover group world =
         let screenDirectory =
             match Address.getNames group.GroupAddress with
             | [screenName; groupName] ->
-                match Vmap.tryFind screenName world.ScreenDirectory with
+                match Vmap.tryFind screenName world.SimulantStates.ScreenDirectory with
                 | Some (screenAddress, groupDirectory) ->
                     let groupDirectory = Vmap.remove groupName groupDirectory
-                    Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
+                    Vmap.add screenName (screenAddress, groupDirectory) world.SimulantStates.ScreenDirectory
                 | None -> failwith ^ "Cannot remove group '" + scstring group.GroupAddress + "' from non-existent screen."
             | _ -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
-        let groupStates = Vmap.remove group.GroupAddress world.GroupStates
-        { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
+        let groupStates = Vmap.remove group.GroupAddress world.SimulantStates.GroupStates
+        { world with SimulantStates = { world.SimulantStates with ScreenDirectory = screenDirectory; GroupStates = groupStates }}
 
     let inline internal getOptGroupState group world =
-        Vmap.tryFind group.GroupAddress world.GroupStates
+        Vmap.tryFind group.GroupAddress world.SimulantStates.GroupStates
 
     let internal getGroupState group world =
         match getOptGroupState group world with
@@ -501,37 +542,37 @@ module World =
 
     let private screenStateSetter screenState screen world =
 #if DEBUG
-        if not ^ Vmap.containsKey screen.ScreenAddress world.ScreenStates then
+        if not ^ Vmap.containsKey screen.ScreenAddress world.SimulantStates.ScreenStates then
             failwith ^ "Cannot set the state of a non-existent screen '" + scstring screen.ScreenAddress + "'"
 #endif
-        let screenStates = Vmap.add screen.ScreenAddress screenState world.ScreenStates
-        { world with ScreenStates = screenStates }
+        let screenStates = Vmap.add screen.ScreenAddress screenState world.SimulantStates.ScreenStates
+        { world with SimulantStates = { world.SimulantStates with ScreenStates = screenStates }}
 
     let private screenStateAdder screenState screen world =
         let screenDirectory =
             match Address.getNames screen.ScreenAddress with
             | [screenName] ->
-                match Vmap.tryFind screenName world.ScreenDirectory with
+                match Vmap.tryFind screenName world.SimulantStates.ScreenDirectory with
                 | Some (_, groupDirectory) ->
                     // NOTE: this is logically a redundant operation...
-                    Vmap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
+                    Vmap.add screenName (screen.ScreenAddress, groupDirectory) world.SimulantStates.ScreenDirectory
                 | None ->
                     let groupDirectory = Vmap.makeEmpty ()
-                    Vmap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
+                    Vmap.add screenName (screen.ScreenAddress, groupDirectory) world.SimulantStates.ScreenDirectory
             | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
-        let screenStates = Vmap.add screen.ScreenAddress screenState world.ScreenStates
-        { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
+        let screenStates = Vmap.add screen.ScreenAddress screenState world.SimulantStates.ScreenStates
+        { world with SimulantStates = { world.SimulantStates with ScreenDirectory = screenDirectory; ScreenStates = screenStates }}
 
     let private screenStateRemover screen world =
         let screenDirectory =
             match Address.getNames screen.ScreenAddress with
-            | [screenName] -> Vmap.remove screenName world.ScreenDirectory
+            | [screenName] -> Vmap.remove screenName world.SimulantStates.ScreenDirectory
             | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
-        let screenStates = Vmap.remove screen.ScreenAddress world.ScreenStates
-        { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
+        let screenStates = Vmap.remove screen.ScreenAddress world.SimulantStates.ScreenStates
+        { world with SimulantStates = { world.SimulantStates with ScreenDirectory = screenDirectory; ScreenStates = screenStates }}
 
     let inline internal getOptScreenState screen world =
-        Vmap.tryFind screen.ScreenAddress world.ScreenStates
+        Vmap.tryFind screen.ScreenAddress world.SimulantStates.ScreenStates
 
     let internal getScreenState (screen : Screen) world =
         match getOptScreenState screen world with
@@ -569,7 +610,7 @@ module World =
         // OPTIMIZATION: attempt to avoid constructing a screen address on each call to decrease address hashing
         // OPTIMIZATION: assumes a valid entity address with List.head on its names
         let screen =
-            match world.GameState.OptSelectedScreen with
+            match world.SimulantStates.GameState.OptSelectedScreen with
             | Some screen when screen.ScreenName = List.head ^ Address.getNames entity.EntityAddress -> screen
             | Some _ | None -> entity |> etog |> gtos
 
@@ -601,11 +642,11 @@ module World =
     (* GameState *)
 
     let internal getGameState world =
-        world.GameState
+        world.SimulantStates.GameState
 
     let internal setGameState gameState world =
         let oldWorld = world
-        let world = { world with GameState = gameState }
+        let world = { world with SimulantStates = { world.SimulantStates with GameState = gameState }}
         if gameState.PublishChanges then
             publish
                 { Participant = Simulants.Game; OldWorld = oldWorld }

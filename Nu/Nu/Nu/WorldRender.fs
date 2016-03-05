@@ -16,15 +16,15 @@ module WorldRenderModule =
             { SubsystemOrder : single
               Renderer : IRenderer }
     
-        interface Subsystem with
+        interface World Subsystem with
             member this.SubsystemType = RenderType
             member this.SubsystemOrder = this.SubsystemOrder
-            member this.ClearMessages () = { this with Renderer = this.Renderer.ClearMessages () } :> Subsystem
-            member this.EnqueueMessage message = { this with Renderer = this.Renderer.EnqueueMessage (message :?> RenderMessage) } :> Subsystem
-            member this.ProcessMessages world = (() :> obj, { this with Renderer = this.Renderer.Render ^ World.getCamera world } :> Subsystem, world)
+            member this.ClearMessages () = { this with Renderer = this.Renderer.ClearMessages () } :> World Subsystem
+            member this.EnqueueMessage message = { this with Renderer = this.Renderer.EnqueueMessage (message :?> RenderMessage) } :> World Subsystem
+            member this.ProcessMessages world = (() :> obj, { this with Renderer = this.Renderer.Render ^ World.getCamera world } :> World Subsystem, world)
             member this.ApplyResult (_, world) = world
-            member this.CleanUp world = (this :> Subsystem, world)
-    
+            member this.CleanUp world = (this :> World Subsystem, world)
+
         static member make subsystemOrder renderer =
             { SubsystemOrder = subsystemOrder
               Renderer = renderer }
