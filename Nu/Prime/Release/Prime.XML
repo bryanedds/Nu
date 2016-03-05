@@ -899,137 +899,142 @@
  Monadic bind for Either.
 </summary>
 </member>
-<member name="M:Prime.EventSystemModule.make``1">
+<member name="T:Prime.EventSystem.EventSystem`1">
+<summary>
+ A publisher-neutral, purely functional event system.
+</summary>
+</member>
+<member name="M:Prime.EventSystem.make``1">
 <summary>
  Make an event system.
 </summary>
 </member>
-<member name="M:Prime.EventSystemModule.getEventState``2(System.Guid,Prime.EventSystem{``1})">
+<member name="M:Prime.EventSystem.getEventState``2(System.Guid,Prime.EventSystem.EventSystem{``1})">
 <summary>
  Get event state.
 </summary>
 </member>
-<member name="M:Prime.EventSystemModule.setUnsubscriptions``1(Prime.VmapModule.Vmap{System.Guid,System.Tuple{Prime.Address.Address{System.Object},Prime.Participant}},Prime.EventSystem{``0})">
+<member name="M:Prime.EventSystem.setUnsubscriptions``1(Prime.VmapModule.Vmap{System.Guid,System.Tuple{Prime.Address.Address{System.Object},Prime.Participant}},Prime.EventSystem.EventSystem{``0})">
 <summary>
  Set unsubscriptions.
 </summary>
 </member>
-<member name="M:Prime.EventSystemModule.setSubscriptions``1(Prime.VmapModule.Vmap{Prime.Address.Address{System.Object},Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}},Prime.EventSystem{``0})">
+<member name="M:Prime.EventSystem.setSubscriptions``1(Prime.VmapModule.Vmap{Prime.Address.Address{System.Object},Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}},Prime.EventSystem.EventSystem{``0})">
 <summary>
  Set subscriptions.
 </summary>
 </member>
-<member name="M:Prime.EventSystemModule.getUnsubscriptions``1(Prime.EventSystem{``0})">
+<member name="M:Prime.EventSystem.getUnsubscriptions``1(Prime.EventSystem.EventSystem{``0})">
 <summary>
  Get unsubscriptions.
 </summary>
 </member>
-<member name="M:Prime.EventSystemModule.getSubscriptions``1(Prime.EventSystem{``0})">
+<member name="M:Prime.EventSystem.getSubscriptions``1(Prime.EventSystem.EventSystem{``0})">
 <summary>
  Get subscriptions.
 </summary>
 </member>
-<member name="M:Prime.EventSystemModule.removeEventState``1(System.Guid,Prime.EventSystem{``0})">
+<member name="M:Prime.EventSystem.removeEventState``1(System.Guid,Prime.EventSystem.EventSystem{``0})">
 <summary>
  Remove event state.
 </summary>
 </member>
-<member name="M:Prime.EventSystemModule.addEventState``2(System.Guid,``0,Prime.EventSystem{``1})">
+<member name="M:Prime.EventSystem.addEventState``2(System.Guid,``0,Prime.EventSystem.EventSystem{``1})">
 <summary>
  Add event state.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.monitor``3(Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
+<member name="M:Prime.Eventable.monitor``3(Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
 <summary>
  Keep active a subscription for the lifetime of a participant.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.monitorPlus``3(Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
+<member name="M:Prime.Eventable.monitorPlus``3(Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
 <summary>
  Keep active a subscription for the lifetime of a participant, and be provided with an unsubscription callback.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.subscribe``3(Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
+<member name="M:Prime.Eventable.subscribe``3(Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
 <summary>
  Subscribe to an event.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.subscribe5``3(System.Guid,Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
+<member name="M:Prime.Eventable.subscribe5``3(System.Guid,Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
 <summary>
  Subscribe to an event using the given subscriptionKey.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.subscribePlus``3(Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
+<member name="M:Prime.Eventable.subscribePlus``3(Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
 <summary>
  Subscribe to an event, and be provided with an unsubscription callback.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.subscribePlus5``3(System.Guid,Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
+<member name="M:Prime.Eventable.subscribePlus5``3(System.Guid,Microsoft.FSharp.Core.FSharpFunc{Prime.Event{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,System.Tuple{Prime.Handling,``2}}},Prime.Address.Address{``0},``1,``2)">
 <summary>
  Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.unsubscribe``1(System.Guid,``0)">
+<member name="M:Prime.Eventable.unsubscribe``1(System.Guid,``0)">
 <summary>
  Unsubscribe from an event.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.publish``3(``0,Prime.Address.Address{``0},Microsoft.FSharp.Collections.FSharpList{System.String},``1,``2)">
+<member name="M:Prime.Eventable.publish``3(``0,Prime.Address.Address{``0},Microsoft.FSharp.Collections.FSharpList{System.String},``1,``2)">
 <summary>
  Publish an event with no subscription sorting.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.publish6``3(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},``0,Prime.Address.Address{``0},Microsoft.FSharp.Collections.FSharpList{System.String},``1,``2)">
+<member name="M:Prime.Eventable.publish6``3(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},``0,Prime.Address.Address{``0},Microsoft.FSharp.Collections.FSharpList{System.String},``1,``2)">
 <summary>
  Publish an event, using the given publishSorter procedure to arrange the order to which subscriptions are published.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.publish7``3(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},Microsoft.FSharp.Core.FSharpFunc{Prime.Address.Address{System.Object},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}}},Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},``0,Prime.Address.Address{``0},Microsoft.FSharp.Collections.FSharpList{System.String},``1,``2)">
+<member name="M:Prime.Eventable.publish7``3(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},Microsoft.FSharp.Core.FSharpFunc{Prime.Address.Address{System.Object},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}}},Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},``0,Prime.Address.Address{``0},Microsoft.FSharp.Collections.FSharpList{System.String},``1,``2)">
 <summary>
  Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.sortSubscriptionsNone``1(Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},``0)">
+<member name="M:Prime.Eventable.sortSubscriptionsNone``1(Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},``0)">
 <summary>
  A &apos;no-op&apos; for subscription sorting - that is, performs no sorting at all.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.sortSubscriptionsBy``1(Microsoft.FSharp.Core.FSharpFunc{Prime.Participant,Microsoft.FSharp.Core.FSharpFunc{``0,System.Single}},Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},``0)">
+<member name="M:Prime.Eventable.sortSubscriptionsBy``1(Microsoft.FSharp.Core.FSharpFunc{Prime.Participant,Microsoft.FSharp.Core.FSharpFunc{``0,System.Single}},Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},``0)">
 <summary>
  Sort subscriptions using categorization via the &apos;by&apos; procedure.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.getEventState``2(System.Guid,``1)">
+<member name="M:Prime.Eventable.getEventState``2(System.Guid,``1)">
 <summary>
  Get event state from the world.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.removeEventState``1(System.Guid,``0)">
+<member name="M:Prime.Eventable.removeEventState``1(System.Guid,``0)">
 <summary>
  Remove event state from the world.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.addEventState``2(System.Guid,``0,``1)">
+<member name="M:Prime.Eventable.addEventState``2(System.Guid,``0,``1)">
 <summary>
  Add event state to the world.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.setUnsubscriptions``1(Prime.VmapModule.Vmap{System.Guid,System.Tuple{Prime.Address.Address{System.Object},Prime.Participant}},``0)">
+<member name="M:Prime.Eventable.setUnsubscriptions``1(Prime.VmapModule.Vmap{System.Guid,System.Tuple{Prime.Address.Address{System.Object},Prime.Participant}},``0)">
 <summary>
  Set event unsubscriptions.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.setSubscriptions``1(Prime.VmapModule.Vmap{Prime.Address.Address{System.Object},Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}},``0)">
+<member name="M:Prime.Eventable.setSubscriptions``1(Prime.VmapModule.Vmap{Prime.Address.Address{System.Object},Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}},``0)">
 <summary>
  Set event subscriptions.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.getUnsubscriptions``1(``0)">
+<member name="M:Prime.Eventable.getUnsubscriptions``1(``0)">
 <summary>
  Get event unsubscriptions.
 </summary>
 </member>
-<member name="M:Prime.EventableModule.getSubscriptions``1(``0)">
+<member name="M:Prime.Eventable.getSubscriptions``1(``0)">
 <summary>
  Get event subscriptions.
 </summary>
