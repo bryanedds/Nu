@@ -89,10 +89,6 @@ type SimulantOperators =
     /// Concatenate two addresses, takings the type of first address.
     static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
 
-/// The data for a change in a simulant.
-type SimulantChangeData<'s, 'w when 's :> Simulant and 'w :> 'w Eventable> =
-    ParticipantChangeData<'s, 'w>
-
 /// A tasklet to be completed at the schedule tick time.
 type [<ReferenceEquality>] Tasklet =
     { ScheduledTime : int64

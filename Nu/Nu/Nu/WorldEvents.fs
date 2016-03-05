@@ -23,6 +23,10 @@ type [<StructuralEquality; NoComparison>] KeyboardKeyData =
       Repeated : bool
       Down : bool }
 
+/// The data for a change in a simulant.
+type SimulantChangeData<'s, 'w when 's :> Simulant and 'w :> 'w Eventable> =
+    ParticipantChangeData<'s, 'w>
+
 /// The data for a collision event.
 type [<StructuralEquality; NoComparison>] CollisionData =
     { Normal : Vector2
