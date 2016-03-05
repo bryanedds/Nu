@@ -16,13 +16,13 @@ type internal OverlayState =
     | Altered
     | Overlaid
 
-/// Defines the manner in which overlays are applied to targets.
-type [<ReferenceEquality>] Overlayer =
-    private
-        { Overlays : XmlDocument }
-
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
 module Overlayer =
+
+    /// Defines the manner in which overlays are applied to targets.
+    type [<ReferenceEquality>] Overlayer =
+        private
+            { Overlays : XmlDocument }
 
     let rec private trySelectNode overlayName propertyName overlayer =
         match overlayer.Overlays.DocumentElement with
@@ -197,29 +197,8 @@ module Overlayer =
         // make overlay
         { Overlays = overlays }
 
-/// Maps from dispatcher names to optional overlay names.
-type OverlayRouter =
-    private
-        { Routes : Map<string, string option> }
+[<AutoOpen>]
+module OverlayerModule =
 
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module OverlayRouter =
-
-    /// Find an optional overlay name for a given dispatcher name.
-    let findOptOverlayName overlayName overlayRouter =
-        Map.find overlayName overlayRouter.Routes
-
-    /// Try to find an optional overlay name for a given dispatcher name.
-    let tryFindOptOverlayName overlayName overlayRouter =
-        Map.tryFind overlayName overlayRouter.Routes
-
-    /// Make an OverlayRouter.
-    let make dispatchers userRoutes =
-        let router = 
-            Map.fold
-                (fun overlayRouter _ dispatcher ->
-                    let dispatcherName = (dispatcher.GetType ()).Name
-                    Map.add dispatcherName (Some dispatcherName) overlayRouter)
-                Map.empty
-                dispatchers
-        { Routes = Map.addMany userRoutes router }
+    /// Defines the manner in which overlays are applied to targets.
+    type Overlayer = Overlayer.Overlayer

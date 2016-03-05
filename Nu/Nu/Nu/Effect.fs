@@ -152,13 +152,11 @@ type [<NoEquality; NoComparison>] Effect =
       Definitions : Definitions
       Content : Content }
 
-/// An abstract data type for executing Effects.
-type [<NoEquality; NoComparison>] EffectSystem =
-    private
-        { ViewType : ViewType
-          History : Slice seq
-          ProgressOffset : single
-          EffectRate : int64
-          EffectTime : int64
-          EffectEnv : Definitions
-          Chaos : System.Random }
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Effect =
+
+    let empty =
+        { EffectName = "Empty"
+          OptLifetime = None
+          Definitions = Map.empty
+          Content = Composite (Shift 0.0f, []) }

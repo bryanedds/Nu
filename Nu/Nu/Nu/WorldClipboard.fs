@@ -10,7 +10,7 @@ open Nu
 module WorldClipboardModule =
 
     // Mutable clipboard that allows its state to persist beyond undo / redo.
-    let private RefClipboard : EntityState option ref = ref None
+    let private RefClipboard = ref<EntityState option> None
 
     type World with
         
