@@ -71,6 +71,11 @@ type [<StructuralEquality; NoComparison>] TileData =
       OptTileSetTile : TmxTilesetTile option
       TilePosition : Vector2i }
 
+/// A tasklet to be completed at the schedule tick time.
+type [<ReferenceEquality>] 'w Tasklet =
+    { ScheduledTime : int64
+      Operation : 'w -> 'w }
+
 /// A simulant in the world.
 type Simulant =
     interface
@@ -89,13 +94,8 @@ type SimulantOperators =
     /// Concatenate two addresses, takings the type of first address.
     static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
 
-/// A tasklet to be completed at the schedule tick time.
-type [<ReferenceEquality>] Tasklet =
-    { ScheduledTime : int64
-      Operation : World -> World }
-
 /// The default dispatcher for games.
-and GameDispatcher () =
+type GameDispatcher () =
 
     static member FieldDefinitions =
         [define? PublishChanges true]
@@ -564,7 +564,7 @@ and [<ReferenceEquality>] World =
     private
         { Subsystems : World Subsystems
           EventSystem : World EventSystem
-          Tasklets : Tasklet Queue
+          Tasklets : World Tasklet Queue
           OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
           Components : Components
           SimulantStates : SimulantStates
