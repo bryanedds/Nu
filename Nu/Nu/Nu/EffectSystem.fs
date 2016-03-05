@@ -6,17 +6,19 @@ open System
 open Prime
 open OpenTK
 
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Effect =
-
-    let empty =
-        { EffectName = "Empty"
-          OptLifetime = None
-          Definitions = Map.empty
-          Content = Composite (Shift 0.0f, []) }
-
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
 module EffectSystem =
+
+    /// An abstract data type for executing Effects.
+    type [<NoEquality; NoComparison>] EffectSystem =
+        private
+            { ViewType : ViewType
+              History : Slice seq
+              ProgressOffset : single
+              EffectRate : int64
+              EffectTime : int64
+              EffectEnv : Definitions
+              Chaos : System.Random }
 
     let rec private selectKeyFrames2 localTime playback (keyFrames : IKeyFrame list) =
         match playback with
@@ -431,3 +433,9 @@ module EffectSystem =
           EffectTime = tickTime
           EffectEnv = globalEnv
           Chaos = System.Random () }
+
+[<AutoOpen>]
+module EffectSystemModule =
+
+    /// An abstract data type for executing Effects.
+    type EffectSystem = EffectSystem.EffectSystem
