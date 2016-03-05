@@ -31,6 +31,12 @@ type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
       TransitionLifetime : int64
       OptDissolveImage : AssetTag option }
 
+    /// Make a screen transition.
+    static member make transitionType =
+        { TransitionType = transitionType
+          TransitionLifetime = 0L
+          OptDissolveImage = None }
+
 /// Describes the behavior of the screen dissolving algorithm.
 type [<StructuralEquality; NoComparison>] DissolveData =
     { IncomingTime : int64
@@ -65,74 +71,32 @@ type [<StructuralEquality; NoComparison>] TileData =
       OptTileSetTile : TmxTilesetTile option
       TilePosition : Vector2i }
 
-/// Represents an untyped message to a subsystem.
-type SubsystemMessage = obj
+/// A simulant in the world.
+type Simulant =
+    interface
+        inherit Participant
+        abstract member SimulantAddress : Simulant Address
+        end
 
-/// Represents an untyped result of a subsystem.
-type SubsystemResult = obj
+/// Operators for the Simulant type.
+type SimulantOperators =
+    private
+        | SimulantOperators
 
-/// The type of subsystem. Dictates where subsystem's processing happens in the game loop.
-type SubsystemType =
-    | UpdateType
-    | RenderType
-    | AudioType
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.SimulantAddress)
 
-/// The data for a mouse move event.
-type [<StructuralEquality; NoComparison>] MouseMoveData =
-    { Position : Vector2 }
-
-/// The data for a mouse button event.
-type [<StructuralEquality; NoComparison>] MouseButtonData =
-    { Position : Vector2
-      Button : MouseButton
-      Down : bool }
-
-/// The data for a keyboard key event.
-type [<StructuralEquality; NoComparison>] KeyboardKeyData =
-    { ScanCode : int
-      Repeated : bool
-      Down : bool }
-
-/// The data for a collision event.
-type [<StructuralEquality; NoComparison>] CollisionData =
-    { Normal : Vector2
-      Speed : single
-      Collidee : Entity }
-
-/// The data for a change in the world state.
-/// NOTE: I couldn't give its field the more normal name of 'OldWorld' due to field name conflicts with the more
-/// pervasive SimulantChangeData type below.
-and [<StructuralEquality; NoComparison>] WorldStateChangeData = 
-    { OldWorldWithOldState : World }
+    /// Concatenate two addresses, takings the type of first address.
+    static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
 
 /// The data for a change in a simulant.
-and SimulantChangeData<'s when 's :> Simulant> =
-    ParticipantChangeData<'s, World>
+type SimulantChangeData<'s, 'w when 's :> Simulant and 'w :> 'w Eventable> =
+    ParticipantChangeData<'s, 'w>
 
 /// A tasklet to be completed at the schedule tick time.
-and [<ReferenceEquality>] Tasklet =
+type [<ReferenceEquality>] Tasklet =
     { ScheduledTime : int64
       Operation : World -> World }
-
-/// Represents a subsystem by which additional engine-level subsystems such as AI, optimized
-/// special FX, and the like can be added.
-and Subsystem =
-    interface
-        /// The type of subsystem. Dictates where its processing happens in the game loop.
-        abstract SubsystemType : SubsystemType
-        /// The ordering by which the subsystem will be processed relative to other subsystems of the same type.
-        abstract SubsystemOrder : single
-        /// Clear the messages queued by subsystem.
-        abstract ClearMessages : unit -> Subsystem
-        /// Enqueue a message for the subsystem.
-        abstract EnqueueMessage : SubsystemMessage -> Subsystem
-        /// Processed the queued messages with the subsystem.
-        abstract ProcessMessages : World -> SubsystemResult * Subsystem * World
-        /// Apply the result of the message processing to the world.
-        abstract ApplyResult : SubsystemResult * World -> World
-        /// Clean up any resources used by the subsystem.
-        abstract CleanUp : World -> Subsystem * World
-        end
 
 /// The default dispatcher for games.
 and GameDispatcher () =
@@ -296,6 +260,18 @@ and [<CLIMutable; NoEquality; NoComparison>] GameState =
       CreationTimeStampNp : int64
       DispatcherNp : GameDispatcher
       Xtension : Xtension }
+
+    /// Make a game state value.
+    static member make dispatcher =
+        { Id = makeGuid ()
+          OptSelectedScreen = None
+          OptScreenTransitionDestination = None
+          PublishChanges = true
+          CreationTimeStampNp = Core.getTimeStamp ()
+          DispatcherNp = dispatcher
+          Xtension = Xtension.safe }
+
+    /// Type tag.
     interface SimulantState
 
 /// Hosts the ongoing state of a screen. The end-user of this engine should never touch this
@@ -314,6 +290,28 @@ and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
       DispatcherNp : ScreenDispatcher
       EntityTreeNp : Entity QuadTree MutantCache
       Xtension : Xtension }
+
+    /// Make a screen state value.
+    static member make optSpecialization optName dispatcher =
+        let id = makeGuid ()
+        let screenState =
+            { Id = id
+              Name = match optName with Some name -> name | None -> Name.make ^ scstring id
+              OptSpecialization = optSpecialization 
+              TransitionStateNp = IdlingState
+              TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
+              Incoming = Transition.make Incoming
+              Outgoing = Transition.make Outgoing
+              PublishChanges = true
+              Persistent = true
+              CreationTimeStampNp = Core.getTimeStamp ()
+              DispatcherNp = dispatcher
+              EntityTreeNp = Unchecked.defaultof<Entity QuadTree MutantCache>
+              Xtension = Xtension.safe }
+        let quadTree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
+        { screenState with EntityTreeNp = MutantCache.make Operators.id quadTree }
+    
+    /// Type tag.
     interface SimulantState
 
 /// Hosts the ongoing state of a group. The end-user of this engine should never touch this
@@ -327,6 +325,20 @@ and [<CLIMutable; NoEquality; NoComparison>] GroupState =
       CreationTimeStampNp : int64
       DispatcherNp : GroupDispatcher
       Xtension : Xtension }
+
+    /// Make a group state value.
+    static member make optSpecialization optName dispatcher =
+        let id = makeGuid ()
+        { GroupState.Id = id
+          Name = match optName with Some name -> name | None -> Name.make ^ scstring id
+          OptSpecialization = optSpecialization
+          PublishChanges = true
+          Persistent = true
+          CreationTimeStampNp = Core.getTimeStamp ()
+          DispatcherNp = dispatcher
+          Xtension = Xtension.safe }
+
+    /// Type tag.
     interface SimulantState
 
 /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
@@ -352,25 +364,33 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
       FacetsNp : Facet list
       OptOverlayName : string option
       Xtension : Xtension }
+
+    /// Make an entity state value.
+    static member make optSpecialization optName optOverlayName dispatcher =
+        let id = makeGuid ()
+        { Id = id
+          Name = match optName with Some name -> name | None -> Name.make ^ scstring id
+          OptSpecialization = optSpecialization
+          Position = Vector2.Zero
+          Size = Constants.Engine.DefaultEntitySize
+          Rotation = 0.0f
+          Depth = 0.0f
+          Overflow = Vector2.Zero
+          Visible = true
+          ViewType = Relative
+          Omnipresent = false
+          PublishUpdates = true
+          PublishChanges = false
+          Persistent = true
+          CreationTimeStampNp = Core.getTimeStamp ()
+          DispatcherNp = dispatcher
+          FacetNames = Set.empty
+          FacetsNp = []
+          OptOverlayName = optOverlayName
+          Xtension = Xtension.safe }
+
+    /// Type tag.
     interface SimulantState
-
-/// A simulant in the world.
-and Simulant =
-    interface
-        inherit Participant
-        abstract member SimulantAddress : Simulant Address
-        end
-
-/// Operators for the Simulant type.
-and SimulantOperators =
-    private
-        | SimulantOperators
-
-    /// Concatenate two addresses, forcing the type of first address.
-    static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.SimulantAddress)
-
-    /// Concatenate two addresses, takings the type of first address.
-    static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
 
 /// The game type that hosts the various screens used to navigate through a game.
 and [<StructuralEquality; NoComparison>] Game =
@@ -521,95 +541,49 @@ and [<StructuralEquality; NoComparison>] Entity =
     /// Concatenate two addresses, forcing the type of first address.
     static member (->>-) (address, entity) = acatff address entity
 
-/// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
-/// specific values.
-and NuPlugin () =
-
-    /// Make user-defined subsystems such that Nu can utilitze them at run-time.
-    abstract MakeSubsystems : unit -> (string * Subsystem) list
-    default this.MakeSubsystems () = []
-    
-    /// Make user-defined assets such that Nu can utililize them at run-time.
-    abstract MakeFacets : unit -> Facet list
-    default this.MakeFacets () = []
-    
-    /// Optionally make a user-defined game dispatchers such that Nu can utililize it at run-time.
-    abstract MakeOptGameDispatcher : unit -> GameDispatcher option
-    default this.MakeOptGameDispatcher () = None
-    
-    /// Make user-defined screen dispatchers such that Nu can utililize them at run-time.
-    abstract MakeScreenDispatchers : unit -> ScreenDispatcher list
-    default this.MakeScreenDispatchers () = []
-    
-    /// Make user-defined group dispatchers such that Nu can utililize them at run-time.
-    abstract MakeGroupDispatchers : unit -> GroupDispatcher list
-    default this.MakeGroupDispatchers () = []
-    
-    /// Make user-defined entity dispatchers such that Nu can utililize them at run-time.
-    abstract MakeEntityDispatchers : unit -> EntityDispatcher list
-    default this.MakeEntityDispatchers () = []
-    
-    /// Make the overlay routes that will allow Nu to use different overlays for the specified
-    /// types. For example, a returned router of (typeof<ButtonDispatcher>.Name, Some "CustomButtonOverlay")
-    /// will cause all buttons to use the overlay with the name "CustomButtonOverlay" rather
-    /// than the default "ButtonDispatcher" overlay.
-    abstract MakeOverlayRoutes : unit -> (string * string option) list
-    default this.MakeOverlayRoutes () = []
-
-/// The world's subsystems.
-and [<ReferenceEquality>] Subsystems =
-    private
-        { SubsystemMap : Vmap<string, Subsystem> }
-
 /// The world's components.
-and [<ReferenceEquality>] Components =
-    private
-        { Facets : Map<string, Facet>
-          EntityDispatchers : Map<string, EntityDispatcher>
-          GroupDispatchers : Map<string, GroupDispatcher>
-          ScreenDispatchers : Map<string, ScreenDispatcher>
-          GameDispatchers : Map<string, GameDispatcher> }
+/// I would prefer this type to be inlined in World, but it has been extracted to its own white-box
+/// type for efficiency reasons.
+and [<ReferenceEquality>] internal Components =
+    { Facets : Map<string, Facet>
+      EntityDispatchers : Map<string, EntityDispatcher>
+      GroupDispatchers : Map<string, GroupDispatcher>
+      ScreenDispatchers : Map<string, ScreenDispatcher>
+      GameDispatchers : Map<string, GameDispatcher> }
 
-/// The world's state.
-and [<ReferenceEquality>] WorldState =
-    private
-        { TickRate : int64
-          TickTime : int64
-          UpdateCount : int64
-          Liveness : Liveness // TODO: consider moving to World
-          AssetMetadataMap : AssetMetadataMap
-          Overlayer : Overlayer
-          OverlayRouter : OverlayRouter
-          Camera : Camera
-          OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
-          UserState : obj }
+/// The world's simulant states, as well as the screen directory for fast simulant queries.
+/// I would prefer this type to be inlined in World, but it has been extracted to its own white-box
+/// type for efficiency reasons.
+and [<ReferenceEquality>] internal SimulantStates =
+    { GameState : GameState
+      ScreenStates : Vmap<Screen Address, ScreenState>
+      GroupStates : Vmap<Group Address, GroupState>
+      EntityStates : Vmap<Entity Address, EntityState>
+      ScreenDirectory : Vmap<Name, Screen Address * Vmap<Name, Group Address * Vmap<Name, Entity Address>>> }
 
 /// The world, in a functional programming sense. Hosts the game object, the dependencies
 /// needed to implement a game, messages to by consumed by the various engine sub-systems,
 /// and general configuration data.
 and [<ReferenceEquality>] World =
     private
-        { Subsystems : Subsystems
-          Components : Components
-          Tasklets : Tasklet Queue // TODO: move to WorldState, and update without event
+        { Subsystems : World Subsystems
           EventSystem : World EventSystem
-          State : WorldState
-          GameState : GameState
-          ScreenStates : Vmap<Screen Address, ScreenState>
-          GroupStates : Vmap<Group Address, GroupState>
-          EntityStates : Vmap<Entity Address, EntityState>
-          ScreenDirectory : Vmap<Name, Screen Address * Vmap<Name, Group Address * Vmap<Name, Entity Address>>> }
+          Tasklets : Tasklet Queue
+          OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
+          Components : Components
+          SimulantStates : SimulantStates
+          AmbientState : AmbientState }
 
     interface World Eventable with
-        member this.GetLiveness () = this.State.Liveness // NOTE: encapsulation violation
+        member this.GetLiveness () = AmbientState.getLiveness this.AmbientState
         member this.GetEventSystem () = this.EventSystem
         member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
         member this.ContainsParticipant participant =
             match participant with
             | :? Game -> true
-            | :? Screen as screen -> Vmap.containsKey screen.ScreenAddress this.ScreenStates
-            | :? Group as group -> Vmap.containsKey group.GroupAddress this.GroupStates
-            | :? Entity as entity -> Vmap.containsKey entity.EntityAddress this.EntityStates
+            | :? Screen as screen -> Vmap.containsKey screen.ScreenAddress this.SimulantStates.ScreenStates
+            | :? Group as group -> Vmap.containsKey group.GroupAddress this.SimulantStates.GroupStates
+            | :? Entity as entity -> Vmap.containsKey entity.EntityAddress this.SimulantStates.EntityStates
             | _ -> failwithumf ()
         member this.PublishEvent (participant : Participant) publisher eventData eventAddress eventTrace subscription world = 
             match Address.getNames participant.ParticipantAddress with

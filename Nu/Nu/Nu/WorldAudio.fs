@@ -15,15 +15,15 @@ module WorldAudioModule =
             { SubsystemOrder : single
               AudioPlayer : IAudioPlayer }
     
-        interface Subsystem with
+        interface World Subsystem with
             member this.SubsystemType = AudioType
             member this.SubsystemOrder = this.SubsystemOrder
-            member this.ClearMessages () = { this with AudioPlayer = this.AudioPlayer.ClearMessages () } :> Subsystem
-            member this.EnqueueMessage message = { this with AudioPlayer = this.AudioPlayer.EnqueueMessage (message :?> AudioMessage) } :> Subsystem
-            member this.ProcessMessages world = (() :> obj, { this with AudioPlayer = this.AudioPlayer.Play () } :> Subsystem, world)
+            member this.ClearMessages () = { this with AudioPlayer = this.AudioPlayer.ClearMessages () } :> World Subsystem
+            member this.EnqueueMessage message = { this with AudioPlayer = this.AudioPlayer.EnqueueMessage (message :?> AudioMessage) } :> World Subsystem
+            member this.ProcessMessages world = (() :> obj, { this with AudioPlayer = this.AudioPlayer.Play () } :> World Subsystem, world)
             member this.ApplyResult (_, world) = world
-            member this.CleanUp world = (this :> Subsystem, world)
-    
+            member this.CleanUp world = (this :> World Subsystem, world)
+
         static member make subsystemOrder audioPlayer =
             { SubsystemOrder = subsystemOrder
               AudioPlayer = audioPlayer }

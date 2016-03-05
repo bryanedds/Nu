@@ -57,22 +57,22 @@ module WorldPhysicsModule =
         member this.GetBodyOptGroundContactTangent physicsId = this.PhysicsEngine.GetBodyOptGroundContactTangent physicsId
         member this.BodyOnGround physicsId = this.PhysicsEngine.BodyOnGround physicsId
     
-        interface Subsystem with
+        interface World Subsystem with
             member this.SubsystemType = UpdateType
             member this.SubsystemOrder = this.SubsystemOrder
-            member this.ClearMessages () = { this with PhysicsEngine = this.PhysicsEngine.ClearMessages () } :> Subsystem
-            member this.EnqueueMessage message = { this with PhysicsEngine = this.PhysicsEngine.EnqueueMessage (message :?> PhysicsMessage) } :> Subsystem
+            member this.ClearMessages () = { this with PhysicsEngine = this.PhysicsEngine.ClearMessages () } :> World Subsystem
+            member this.EnqueueMessage message = { this with PhysicsEngine = this.PhysicsEngine.EnqueueMessage (message :?> PhysicsMessage) } :> World Subsystem
                 
             member this.ProcessMessages world =
                 let tickRate = World.getTickRate world
                 let (integrationMessages, physicsEngine) = this.PhysicsEngine.Integrate tickRate
-                (integrationMessages :> obj, { this with PhysicsEngine = physicsEngine } :> Subsystem, world)
+                (integrationMessages :> obj, { this with PhysicsEngine = physicsEngine } :> World Subsystem, world)
     
             member this.ApplyResult (integrationMessages, world) =
                 let integrationMessages = integrationMessages :?> IntegrationMessage list
                 List.fold PhysicsEngineSubsystem.handleIntegrationMessage world integrationMessages
     
-            member this.CleanUp world = (this :> Subsystem, world)
+            member this.CleanUp world = (this :> World Subsystem, world)
     
         static member make subsystemOrder physicsEngine =
             { SubsystemOrder = subsystemOrder
