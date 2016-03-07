@@ -35,49 +35,49 @@ type 'w Subsystem =
         abstract CleanUp : 'w -> 'w Subsystem * 'w
         end
 
-[<RequireQualifiedAccess>]
-module Subsystems =
+[<AutoOpen>]
+module SubsystemsModule =
 
     /// The subsystems of a world.
     type [<ReferenceEquality>] 'w Subsystems =
         private
             { SubsystemMap : Vmap<string, 'w Subsystem> }
 
-    let getSubsystemMap subsystems =
-        subsystems.SubsystemMap
-
-    let getSubsystem<'s, 'w when 's :> 'w Subsystem> (name : string) (subsystems : 'w Subsystems) : 's =
-        Vmap.find name subsystems.SubsystemMap :?> 's
-
-    let getSubsystemBy<'s, 't, 'w when 's :> 'w Subsystem> by name (subsystems : 'w Subsystems) : 't =
-        let subsystem = getSubsystem<'s, 'w> name subsystems
-        by subsystem
-
-    let setSubsystem<'s, 'w when 's :> 'w Subsystem> (subsystem : 's) name (subsystems : 'w Subsystems) =
-#if DEBUG
-        if not ^ Vmap.containsKey name subsystems.SubsystemMap then
-            failwith ^ "Cannot set the state of a non-existent subsystem '" + name + "'"
-#endif
-        { SubsystemMap = Vmap.add name (subsystem :> 'w Subsystem) subsystems.SubsystemMap }
-
-    let updateSubsystem<'s, 'w when 's :> 'w Subsystem> (updater : 's -> 'w -> 's) name subsystems world =
-        let subsystem = getSubsystem<'s, 'w> name subsystems
-        let subsystem = updater subsystem world
-        setSubsystem subsystem name subsystems
-
-    let updateSubsystems<'s, 'w when 's :> 'w Subsystem> (updater : 'w Subsystem -> 'w -> 'w Subsystem) subsystems world =
-        Vmap.fold
-            (fun subsystems name subsystem ->
-                let subsystem = updater subsystem world
-                setSubsystem subsystem name subsystems)
-            subsystems
+    [<RequireQualifiedAccess>]
+    module Subsystems =
+    
+        let getSubsystemMap subsystems =
             subsystems.SubsystemMap
-
-    let clearSubsystemsMessages<'s, 'w when 's :> 'w Subsystem> subsystems (world : 'w) =
-        updateSubsystems (fun is _ -> is.ClearMessages ()) subsystems world
-
-    let make subsystems =
-        { SubsystemMap = subsystems }
-
-/// The subsystems type.
-type 'w Subsystems = 'w Subsystems.Subsystems
+    
+        let getSubsystem<'s, 'w when 's :> 'w Subsystem> (name : string) (subsystems : 'w Subsystems) : 's =
+            Vmap.find name subsystems.SubsystemMap :?> 's
+    
+        let getSubsystemBy<'s, 't, 'w when 's :> 'w Subsystem> by name (subsystems : 'w Subsystems) : 't =
+            let subsystem = getSubsystem<'s, 'w> name subsystems
+            by subsystem
+    
+        let setSubsystem<'s, 'w when 's :> 'w Subsystem> (subsystem : 's) name (subsystems : 'w Subsystems) =
+#if DEBUG
+            if not ^ Vmap.containsKey name subsystems.SubsystemMap then
+                failwith ^ "Cannot set the state of a non-existent subsystem '" + name + "'"
+#endif
+            { SubsystemMap = Vmap.add name (subsystem :> 'w Subsystem) subsystems.SubsystemMap }
+    
+        let updateSubsystem<'s, 'w when 's :> 'w Subsystem> (updater : 's -> 'w -> 's) name subsystems world =
+            let subsystem = getSubsystem<'s, 'w> name subsystems
+            let subsystem = updater subsystem world
+            setSubsystem subsystem name subsystems
+    
+        let updateSubsystems<'s, 'w when 's :> 'w Subsystem> (updater : 'w Subsystem -> 'w -> 'w Subsystem) subsystems world =
+            Vmap.fold
+                (fun subsystems name subsystem ->
+                    let subsystem = updater subsystem world
+                    setSubsystem subsystem name subsystems)
+                subsystems
+                subsystems.SubsystemMap
+    
+        let clearSubsystemsMessages<'s, 'w when 's :> 'w Subsystem> subsystems (world : 'w) =
+            updateSubsystems (fun is _ -> is.ClearMessages ()) subsystems world
+    
+        let make subsystems =
+            { SubsystemMap = subsystems }
