@@ -241,11 +241,6 @@ and Facet () =
     abstract GetQuickSize : Entity * World -> Vector2
     default facet.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
 
-/// A marker interface for the simulation state types (GameState, ScreenState, GroupState,
-/// and EntityState).
-and internal SimulantState =
-    interface end
-
 /// Hosts the ongoing state of a game. The end-user of this engine should never touch this
 /// type, and it's public _only_ to make [<CLIMutable>] work.
 and [<CLIMutable; NoEquality; NoComparison>] GameState =
@@ -266,9 +261,6 @@ and [<CLIMutable; NoEquality; NoComparison>] GameState =
           CreationTimeStampNp = Core.getTimeStamp ()
           DispatcherNp = dispatcher
           Xtension = Xtension.safe }
-
-    /// Type tag.
-    interface SimulantState
 
 /// Hosts the ongoing state of a screen. The end-user of this engine should never touch this
 /// type, and it's public _only_ to make [<CLIMutable>] work.
@@ -306,9 +298,6 @@ and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
               Xtension = Xtension.safe }
         let quadTree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
         { screenState with EntityTreeNp = MutantCache.make Operators.id quadTree }
-    
-    /// Type tag.
-    interface SimulantState
 
 /// Hosts the ongoing state of a group. The end-user of this engine should never touch this
 /// type, and it's public _only_ to make [<CLIMutable>] work.
@@ -333,9 +322,6 @@ and [<CLIMutable; NoEquality; NoComparison>] GroupState =
           CreationTimeStampNp = Core.getTimeStamp ()
           DispatcherNp = dispatcher
           Xtension = Xtension.safe }
-
-    /// Type tag.
-    interface SimulantState
 
 /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
 /// type, and it's public _only_ to make [<CLIMutable>] work.
@@ -384,9 +370,6 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
           FacetsNp = []
           OptOverlayName = optOverlayName
           Xtension = Xtension.safe }
-
-    /// Type tag.
-    interface SimulantState
 
 /// The game type that hosts the various screens used to navigate through a game.
 and [<StructuralEquality; NoComparison>] Game =
