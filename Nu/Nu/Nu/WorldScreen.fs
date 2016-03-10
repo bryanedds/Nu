@@ -65,7 +65,8 @@ module WorldScreenModule =
         static member internal updateScreen (screen : Screen) world =
             let dispatcher = screen.GetDispatcherNp world
             let world = dispatcher.Update (screen, world)
-            World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () (Events.Update ->- screen) ["World.updateScreen"] Simulants.Game world
+            let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
+            World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () (Events.Update ->- screen) eventTrace Simulants.Game world
 
         static member internal actualizeScreen (screen : Screen) world =
             let dispatcher = screen.GetDispatcherNp world
@@ -77,14 +78,16 @@ module WorldScreenModule =
                 let world = World.addScreenState screenState screen world
                 if isNew then
                     let world = World.registerScreen screen world
-                    World.publish () (Events.ScreenAdd ->- screen) ["World.addScreen"] screen world
+                    let eventTrace = EventTrace.record "World" "addScreen" EventTrace.empty
+                    World.publish () (Events.ScreenAdd ->- screen) eventTrace screen world
                 else world
             else failwith ^ "Adding a screen that the world already contains at address '" + scstring screen.ScreenAddress + "'."
 
         /// Remove a screen from the world. Can be dangerous if existing in-flight publishing depends on the screen's
         /// existence. Use with caution.
         static member removeScreen screen world =
-            let world = World.publish () (Events.ScreenRemoving ->- screen) ["World.removeScreen"] screen world
+            let eventTrace = EventTrace.record "World" "removeScreen" EventTrace.empty
+            let world = World.publish () (Events.ScreenRemoving ->- screen) eventTrace screen world
             if World.containsScreen screen world then
                 let world = World.unregisterScreen screen world
                 let groups = World.proxyGroups screen world
@@ -177,7 +180,7 @@ module WorldScreenModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.note ^ "Could not locate dispatcher '" + dispatcherName + "'."
+                    Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<ScreenDispatcher>.Name
                     Map.find dispatcherName dispatchers
             let screenState = ScreenState.make None None dispatcher

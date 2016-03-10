@@ -238,15 +238,38 @@
  Describes an event subscription that can be boxed / unboxed.
 </summary>
 </member>
+<member name="M:Prime.ChainBuilder.Return``3(``0)">
+<summary>
+ Monadic return for the chain monad.
+</summary>
+</member>
+<member name="M:Prime.ChainBuilder.Bind``4(Prime.Chain{``0,``1,``2},Microsoft.FSharp.Core.FSharpFunc{``1,Prime.Chain{``0,``3,``2}})">
+<summary>
+ Monadic bind for the chain monad.
+</summary>
+</member>
+<member name="T:Prime.ChainBuilder">
+<summary>
+ Implements the chain monad.
+</summary>
+</member>
 <member name="T:Prime.Chain`3">
 <summary>
  The Chain monad. Allows the user to define a chain of operations over the world that
  optionally spans across a bounded number of events.
+
+ The following is a potentially tail-recursible representation as speculated by @tpetracek -
+ &apos;w -&gt; (&apos;w * Either&lt;&apos;e -&gt; Chain&lt;&apos;e, &apos;a, &apos;w&gt;, &apos;a&gt; -&gt; &apos;a) -&gt; &apos;a
 </summary>
 </member>
 <member name="T:Prime.Either`2">
 <summary>
  Haskell-style Either type.
+</summary>
+</member>
+<member name="T:Prime.EventFilterConverter">
+<summary>
+ Converts EventFilter types.
 </summary>
 </member>
 <member name="T:Prime.Event`2">
@@ -256,7 +279,7 @@
 </member>
 <member name="T:Prime.Eventable`1">
 <summary>
- Adds the capability to use purely-functional events with the given type &apos;w.
+ Adds the capability to use purely-functional events with the given program type &apos;w.
 </summary>
 </member>
 <member name="T:Prime.Handling">
@@ -715,34 +738,19 @@
  Get the world.
 </summary>
 </member>
-<member name="M:Prime.Chain.bind``4">
+<member name="M:Prime.Chain.bind``4(Prime.Chain{``0,``1,``2},Microsoft.FSharp.Core.FSharpFunc{``1,Prime.Chain{``0,``3,``2}})">
 <summary>
  Monadic bind for the chain monad.
 </summary>
 </member>
-<member name="M:Prime.Chain.returnM``3">
+<member name="M:Prime.Chain.returnM``3(``0)">
 <summary>
  Monadic return for the chain monad.
 </summary>
 </member>
-<member name="T:Prime.ChainBuilder.ChainBuilder">
-<summary>
- Implements the chain monad.
-</summary>
-</member>
-<member name="P:Prime.ChainBuilder.chain">
+<member name="P:Prime.ChainBuilderModule.chain">
 <summary>
  Builds the chain monad.
-</summary>
-</member>
-<member name="M:Prime.ChainBuilder.bind``4(Prime.Chain{``0,``1,``2},Microsoft.FSharp.Core.FSharpFunc{``1,Prime.Chain{``0,``3,``2}})">
-<summary>
- Monadic bind for the chain monad.
-</summary>
-</member>
-<member name="M:Prime.ChainBuilder.returnM``3(``0)">
-<summary>
- Monadic return for the chain monad.
 </summary>
 </member>
 <member name="M:Prime.Dictionary.dictC``2(System.Collections.Generic.IEnumerable{System.Tuple{``0,``1}})">
@@ -866,9 +874,14 @@
  A publisher-neutral, purely functional event system.
 </summary>
 </member>
-<member name="M:Prime.EventSystemModule.EventSystem.make``1">
+<member name="M:Prime.EventSystemModule.EventSystem.make``1(Microsoft.FSharp.Core.FSharpFunc{System.String,Microsoft.FSharp.Core.Unit},System.Boolean,Microsoft.FSharp.Collections.FSharpList{Prime.EventFilter})">
 <summary>
  Make an event system.
+</summary>
+</member>
+<member name="M:Prime.EventSystemModule.EventSystem.logEvent``2(Prime.AddressModule.Address{``0},Microsoft.FSharp.Collections.FSharpList{Prime.EventInfo},Prime.EventSystemModule.EventSystem{``1})">
+<summary>
+ Log an event.
 </summary>
 </member>
 <member name="M:Prime.EventSystemModule.EventSystem.getEventState``2(System.Guid,Prime.EventSystemModule.EventSystem{``1})">
@@ -941,17 +954,17 @@
  Unsubscribe from an event.
 </summary>
 </member>
-<member name="M:Prime.Eventable.publish``3(``0,Prime.AddressModule.Address{``0},Microsoft.FSharp.Collections.FSharpList{System.String},``1,``2)">
+<member name="M:Prime.Eventable.publish``3(``0,Prime.AddressModule.Address{``0},Microsoft.FSharp.Collections.FSharpList{Prime.EventInfo},``1,``2)">
 <summary>
  Publish an event with no subscription sorting.
 </summary>
 </member>
-<member name="M:Prime.Eventable.publish6``3(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},``0,Prime.AddressModule.Address{``0},Microsoft.FSharp.Collections.FSharpList{System.String},``1,``2)">
+<member name="M:Prime.Eventable.publish6``3(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},``0,Prime.AddressModule.Address{``0},Microsoft.FSharp.Collections.FSharpList{Prime.EventInfo},``1,``2)">
 <summary>
  Publish an event, using the given publishSorter procedure to arrange the order to which subscriptions are published.
 </summary>
 </member>
-<member name="M:Prime.Eventable.publish7``3(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},Microsoft.FSharp.Core.FSharpFunc{Prime.AddressModule.Address{System.Object},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}}},Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},``0,Prime.AddressModule.Address{``0},Microsoft.FSharp.Collections.FSharpList{System.String},``1,``2)">
+<member name="M:Prime.Eventable.publish7``3(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},Microsoft.FSharp.Core.FSharpFunc{Prime.AddressModule.Address{System.Object},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}}},Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}}}},``0,Prime.AddressModule.Address{``0},Microsoft.FSharp.Collections.FSharpList{Prime.EventInfo},``1,``2)">
 <summary>
  Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
 </summary>
@@ -999,6 +1012,21 @@
 <member name="M:Prime.Eventable.getSubscriptions``1(``0)">
 <summary>
  Get event subscriptions.
+</summary>
+</member>
+<member name="M:Prime.Eventable.updateEventSystem``1(Microsoft.FSharp.Core.FSharpFunc{Prime.EventSystemModule.EventSystem{``0},Prime.EventSystemModule.EventSystem{``0}},``0)">
+<summary>
+ Update the event system in the world.
+</summary>
+</member>
+<member name="M:Prime.Eventable.getEventSystemBy``2(Microsoft.FSharp.Core.FSharpFunc{Prime.EventSystemModule.EventSystem{``1},``0},``1)">
+<summary>
+ Get the event system as tranformed via &apos;by&apos;.
+</summary>
+</member>
+<member name="M:Prime.Eventable.getEventSystem``1(``0)">
+<summary>
+ Get the event system.
 </summary>
 </member>
 <member name="P:Prime.Events.Any">
@@ -1120,27 +1148,27 @@
 </member>
 <member name="M:Prime.Log.traceIf(System.Boolean,System.String)">
 <summary>
- Conditional trace call where condition is eagerly evaluted.
+ Conditional trace message call where condition is eagerly evaluted.
 </summary>
 </member>
 <member name="M:Prime.Log.trace(System.String)">
 <summary>
- Log a message with a Trace.Fail and call to note.
+ Log a trace message with a Trace.Fail and call to info.
 </summary>
 </member>
 <member name="M:Prime.Log.debugIf``2(``0,``1)">
 <summary>
- Conditional debug call where condition is lazily evaluated.
+ Conditional debug message call where condition is lazily evaluated.
 </summary>
 </member>
 <member name="M:Prime.Log.debug``1(``0)">
 <summary>
- Log a message with Debug.Fail and call to note.
+ Log a debug message with Debug.Fail and call to info.
 </summary>
 </member>
-<member name="M:Prime.Log.note(System.String)">
+<member name="M:Prime.Log.info(System.String)">
 <summary>
- Log a message with a Trace.WriteLine.
+ Log a purely informational message with a Trace.WriteLine.
 </summary>
 </member>
 <member name="M:Prime.Map.concat``2(Microsoft.FSharp.Collections.FSharpMap{``0,``1},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{``0,``1}})">
@@ -1537,18 +1565,18 @@
  Make an observation of an event at the given address.
 </summary>
 </member>
-<member name="M:Prime.ObservationModule.op_MinusMinusGreater``3(Prime.Observation{``0,``1,``2},Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``2,``2}})">
+<member name="M:Prime.ObservationOperators.op_MinusMinusGreater``3(Prime.Observation{``0,``1,``2},Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``2,``2}})">
 <summary>
  Propagate the event data of an observation to a value in the observing participant when the
  observer exists (doing nothing otherwise).
 </summary>
 </member>
-<member name="M:Prime.ObservationModule.op_MultiplyMinusMinus``4(``0,Microsoft.FSharp.Core.FSharpFunc{``1,``2},``3)">
+<member name="M:Prime.ObservationOperators.op_MultiplyMinusMinus``4(``0,Microsoft.FSharp.Core.FSharpFunc{``1,``2},``3)">
 <summary>
  Make an observation of the observer&apos;s change events.
 </summary>
 </member>
-<member name="M:Prime.ObservationModule.op_MinusBarGreater``2">
+<member name="M:Prime.ObservationOperators.op_MinusBarGreater``2">
 <summary>
  Pipe-right arrow that provides special precedence for observations.
 </summary>

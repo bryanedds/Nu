@@ -46,7 +46,8 @@ module WorldGameModule =
         static member internal updateGame world =
             let dispatcher = Simulants.Game.GetDispatcherNp world
             let world = dispatcher.Update (Simulants.Game, world)
-            World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () Events.Update ["World.updateGame"] Simulants.Game world
+            let eventTrace = EventTrace.record "World" "updateGame" EventTrace.empty
+            World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () Events.Update eventTrace Simulants.Game world
         
         static member internal actualizeGame world =
             let dispatcher = Simulants.Game.GetDispatcherNp world
@@ -121,7 +122,7 @@ module WorldGameModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.note ^ "Could not locate dispatcher '" + dispatcherName + "'."
+                    Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<GameDispatcher>.Name
                     Map.find dispatcherName dispatchers
             let gameState = World.makeGameState dispatcher

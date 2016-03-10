@@ -27,7 +27,7 @@ module WorldTests =
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Simulants.DefaultEntity.EntityName) Simulants.DefaultGroup world |> snd
         let handleEvent = fun evt world -> (Cascade, World.updateUserState (fun _ -> evt.Subscriber) world)
         let world = World.subscribe handleEvent StringEvent Simulants.DefaultEntity world
-        let world = World.publish String.Empty StringEvent ["Test"] Simulants.Game world
+        let world = World.publish String.Empty StringEvent EventTrace.empty Simulants.Game world
         Assert.Equal<Simulant> (Simulants.DefaultEntity :> Simulant, World.getUserState world)
 
     let [<Fact>] gameSerializationWorks () =

@@ -413,7 +413,8 @@ module ButtonDispatcherModule =
                     Math.isPointInBounds mousePositionWorld (button.GetBounds world) then
                     if button.GetEnabled world then
                         let world = button.SetDown true world
-                        let world = World.publish () (Events.Down ->- button) ["ButtonDispatcher.handleMouseLeftDown"] button world
+                        let eventTrace = EventTrace.record "ButtonDispatcher" "handleMouseLeftDown" EventTrace.empty
+                        let world = World.publish () (Events.Down ->- button) eventTrace button world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -429,8 +430,10 @@ module ButtonDispatcherModule =
                 if  button.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (button.GetBounds world) then
                     if button.GetEnabled world && wasDown then
-                        let world = World.publish () (Events.Up ->- button) ["ButtonDispatcher.handleMouseLeftUp"] button world
-                        let world = World.publish () (Events.Click ->- button) ["ButtonDispatcher.handleMouseLeftUp"] button world
+                        let eventTrace = EventTrace.record4 "ButtonDispatcher" "handleMouseLeftUp" "Up" EventTrace.empty
+                        let world = World.publish () (Events.Up ->- button) eventTrace button world
+                        let eventTrace = EventTrace.record4 "ButtonDispatcher" "handleMouseLeftUp" "Click" EventTrace.empty
+                        let world = World.publish () (Events.Click ->- button) eventTrace button world
                         let world =
                             match button.GetOptClickSound world with
                             | Some clickSound -> World.playSound 1.0f clickSound world
@@ -615,7 +618,8 @@ module ToggleDispatcherModule =
                     if toggle.GetEnabled world && wasPressed then
                         let world = toggle.SetOn (not ^ toggle.GetOn world) world
                         let eventAddress = if toggle.GetOn world then Events.On else Events.Off
-                        let world = World.publish () (eventAddress ->- toggle) ["ToggleDispatcher.handleMouseLeftDown"] toggle world
+                        let eventTrace = EventTrace.record "ToggleDispatcher" "handleMouseLeftDown" EventTrace.empty
+                        let world = World.publish () (eventAddress ->- toggle) eventTrace toggle world
                         let world =
                             match toggle.GetOptToggleSound world with
                             | Some toggleSound -> World.playSound 1.0f toggleSound world
@@ -680,7 +684,8 @@ module FeelerDispatcherModule =
                     Math.isPointInBounds mousePositionWorld (feeler.GetBounds world) then
                     if feeler.GetEnabled world then
                         let world = feeler.SetTouched true world
-                        let world = World.publish data.Position (Events.Touch ->- feeler) ["FeelerDispatcher.handleMouseLeftDown"] feeler world
+                        let eventTrace = EventTrace.record "FeelerDispatcher" "handleMouseLeftDown" EventTrace.empty
+                        let world = World.publish data.Position (Events.Touch ->- feeler) eventTrace feeler world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -692,7 +697,8 @@ module FeelerDispatcherModule =
             if World.isSimulantSelected feeler world && feeler.GetVisible world then
                 if feeler.GetEnabled world then
                     let world = feeler.SetTouched false world
-                    let world = World.publish data.Position (Events.Untouch ->- feeler) ["FeelerDispatcher.handleMouseLeftUp"] feeler world
+                    let eventTrace = EventTrace.record "FeelerDispatcher" "handleMouseLeftDown" EventTrace.empty
+                    let world = World.publish data.Position (Events.Untouch ->- feeler) eventTrace feeler world
                     (Resolve, world)
                 else (Resolve, world)
             else (Cascade, world)

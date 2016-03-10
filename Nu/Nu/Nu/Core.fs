@@ -56,10 +56,21 @@ module Core =
 
     /// Get a resolution along either an X or Y dimension.
     let getResolutionOrDefault isX defaultResolution =
-        let appSetting = ConfigurationManager.AppSettings.["Resolution" + if isX then "X" else "Y"]
-        match Int32.TryParse appSetting with
-        | (true, resolution) -> resolution
-        | (false, _) -> defaultResolution
+        match ConfigurationManager.AppSettings.["Resolution" + if isX then "X" else "Y"] with
+        | null -> defaultResolution
+        | resolution -> scvalue<int> resolution
+
+    /// Query that events should be logged as specified in the App.config file.
+    let getEventLogging () =
+        match ConfigurationManager.AppSettings.["EventLogging"] with
+        | null -> false
+        | eventLogging -> scvalue<bool> eventLogging
+
+    /// Get the event filters as specified in the App.config file.
+    let getEventFilters () =
+        match ConfigurationManager.AppSettings.["EventFilters"] with
+        | null -> [] : EventFilters
+        | eventFilters -> scvalue<EventFilters> eventFilters
 
 [<AutoOpen>]
 module CoreOperators =
