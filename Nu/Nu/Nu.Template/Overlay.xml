@@ -6,7 +6,6 @@
   <SampleFacetOverlay>
     <BodyType>Dynamic</BodyType>
     <Friction>0.5</Friction>
-    <CollisionExpr>Circle</CollisionExpr>
   </SampleFacetOverlay>
 
   <!-- Add user-defined dispatcher overlays here... -->
