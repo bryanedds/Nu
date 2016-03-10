@@ -105,17 +105,17 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\..\Nu\Prime\Release\Prime.exe</HintPath>
+      <HintPath>..\..\..\Nu\Prime\$(Configuration)\Prime.exe</HintPath>
     </Reference>
     <Reference Include="SDL2#">
-      <HintPath>..\..\..\Nu\SDL2#\Release\SDL2#.dll</HintPath>
+      <HintPath>..\..\..\Nu\SDL2#\$(Configuration)\SDL2#.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Xml" />
     <Reference Include="TiledSharp">
-      <HintPath>..\..\..\Nu\TiledSharp\Release\TiledSharp.dll</HintPath>
+      <HintPath>..\..\..\Nu\TiledSharp\$(Configuration)\TiledSharp.dll</HintPath>
     </Reference>
     <ProjectReference Include="..\..\..\Nu\Nu\Nu\Nu.fsproj">
       <Name>Nu</Name>
