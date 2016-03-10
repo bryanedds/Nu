@@ -267,9 +267,9 @@
  Haskell-style Either type.
 </summary>
 </member>
-<member name="T:Prime.EventFilterConverter">
+<member name="T:Prime.EventPatternConverter">
 <summary>
- Converts EventFilter types.
+ Converts EventPattern types.
 </summary>
 </member>
 <member name="T:Prime.Event`2">
@@ -869,17 +869,22 @@
  Monadic bind for Either.
 </summary>
 </member>
+<member name="M:Prime.EventFilter.filter``2(``0,System.Collections.Generic.IEnumerable{``1},Prime.EventFilter.EventFilter)">
+<summary>
+ Filter events.
+</summary>
+</member>
 <member name="T:Prime.EventSystemModule.EventSystem`1">
 <summary>
  A publisher-neutral, purely functional event system.
 </summary>
 </member>
-<member name="M:Prime.EventSystemModule.EventSystem.make``1(Microsoft.FSharp.Core.FSharpFunc{System.String,Microsoft.FSharp.Core.Unit},System.Boolean,Microsoft.FSharp.Collections.FSharpList{Prime.EventFilter})">
+<member name="M:Prime.EventSystemModule.EventSystem.make``1(Microsoft.FSharp.Core.FSharpFunc{System.String,Microsoft.FSharp.Core.Unit},System.Boolean,Prime.EventFilter.EventFilter)">
 <summary>
  Make an event system.
 </summary>
 </member>
-<member name="M:Prime.EventSystemModule.EventSystem.logEvent``2(Prime.AddressModule.Address{``0},Microsoft.FSharp.Collections.FSharpList{Prime.EventInfo},Prime.EventSystemModule.EventSystem{``1})">
+<member name="M:Prime.EventSystemModule.EventSystem.logEvent``3(``0,System.Collections.Generic.IEnumerable{``1},Prime.EventSystemModule.EventSystem{``2})">
 <summary>
  Log an event.
 </summary>

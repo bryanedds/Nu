@@ -174,9 +174,13 @@ module WorldEntityModule =
         /// Remove an entity in the world. Can be dangerous if existing in-flight publishing depends on the entity's
         /// existence. Use with caution.
         static member internal removeEntity entity world =
-            let eventTrace = EventTrace.record "World" "removeEntity" EventTrace.empty
-            let world = World.publish () (Events.EntityRemoving ->- entity) eventTrace entity world
+            
+            // ensure entity exists in the world
             if World.containsEntity entity world then
+                
+                // publish event and unregister entity
+                let eventTrace = EventTrace.record "World" "removeEntity" EventTrace.empty
+                let world = World.publish () (Events.EntityRemoving ->- entity) eventTrace entity world
                 let world = World.unregisterEntity entity world
 
                 // get old world for entity tree rebuild

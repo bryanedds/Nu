@@ -709,8 +709,8 @@ module WorldModule =
             let eventSystem =
                 let eventLogger = Log.remark "Event"
                 let eventLogging = Core.getEventLogging ()
-                let eventFilters = Core.getEventFilters ()
-                EventSystem.make eventLogger eventLogging eventFilters
+                let eventFilter = Core.getEventFilter ()
+                EventSystem.make eventLogger eventLogging eventFilter
 
             // make the world's components
             let components =
@@ -814,8 +814,8 @@ module WorldModule =
                 let eventSystem =
                     let eventLogger = Log.remark "Event"
                     let eventLogging = Core.getEventLogging ()
-                    let eventFilters = Core.getEventFilters ()
-                    EventSystem.make eventLogger eventLogging eventFilters
+                    let eventFilter = Core.getEventFilter ()
+                    EventSystem.make eventLogger eventLogging eventFilter
 
                 // make the world's components
                 let components =
