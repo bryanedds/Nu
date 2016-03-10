@@ -576,16 +576,12 @@ module Physics =
         | _ -> Convert.ToInt32 (categoryExpr, 2)
 
     /// Evaluate a collision expression.
-    let evalCollisionExpr (extent : Vector2) (expr : string) =
-        let defaultShape = BodyBox { Extent = extent * 0.5f; Center = Vector2.Zero }
-        match expr.Trim () with
-        | "" -> defaultShape
-        | _ ->
-            let bodyShape = scvalue<BodyShape> expr
-            match bodyShape with
-            | BodyBox bodyBox -> BodyBox { Extent = Vector2.Multiply (extent, bodyBox.Extent); Center = Vector2.Multiply (extent, bodyBox.Center) }
-            | BodyCircle bodyCircle -> BodyCircle { Radius = extent.X * bodyCircle.Radius; Center = extent.X * bodyCircle.Center }
-            | BodyCapsule bodyCapsule -> BodyCapsule { Height = extent.Y * bodyCapsule.Height; Radius = extent.Y * bodyCapsule.Radius; Center = extent.Y * bodyCapsule.Center }
-            | BodyPolygon bodyPolygon ->
-                let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) bodyPolygon.Vertices
-                BodyPolygon { Vertices = vertices; Center = Vector2.Multiply (extent, bodyPolygon.Center) }
+    /// TODO: rename this to something more appropriate.
+    let evalCollisionExpr (extent : Vector2) (bodyShape : BodyShape) =
+        match bodyShape with
+        | BodyBox bodyBox -> BodyBox { Extent = Vector2.Multiply (extent, bodyBox.Extent); Center = Vector2.Multiply (extent, bodyBox.Center) }
+        | BodyCircle bodyCircle -> BodyCircle { Radius = extent.X * bodyCircle.Radius; Center = extent.X * bodyCircle.Center }
+        | BodyCapsule bodyCapsule -> BodyCapsule { Height = extent.Y * bodyCapsule.Height; Radius = extent.Y * bodyCapsule.Radius; Center = extent.Y * bodyCapsule.Center }
+        | BodyPolygon bodyPolygon ->
+            let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) bodyPolygon.Vertices
+            BodyPolygon { Vertices = vertices; Center = Vector2.Multiply (extent, bodyPolygon.Center) }

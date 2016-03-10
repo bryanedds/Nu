@@ -186,8 +186,8 @@ module RigidBodyFacetModule =
         member this.SetCollisionCategories (value : string) world = this.UpdateXtension (fun xtension -> xtension?CollisionCategories <- value) world
         member this.GetCollisionMask world : string = (this.GetXtension world)?CollisionMask
         member this.SetCollisionMask (value : string) world = this.UpdateXtension (fun xtension -> xtension?CollisionMask <- value) world
-        member this.GetCollisionExpr world : string = (this.GetXtension world)?CollisionExpr
-        member this.SetCollisionExpr (value : string) world = this.UpdateXtension (fun xtension -> xtension?CollisionExpr <- value) world
+        member this.GetCollisionExpr world : BodyShape = (this.GetXtension world)?CollisionExpr
+        member this.SetCollisionExpr (value : BodyShape) world = this.UpdateXtension (fun xtension -> xtension?CollisionExpr <- value) world
         member this.GetIsBullet world : bool = (this.GetXtension world)?IsBullet
         member this.SetIsBullet (value : bool) world = this.UpdateXtension (fun xtension -> xtension?IsBullet <- value) world
         member this.GetIsSensor world : bool = (this.GetXtension world)?IsSensor
@@ -216,7 +216,7 @@ module RigidBodyFacetModule =
              define? GravityScale 1.0f
              define? CollisionCategories "1"
              define? CollisionMask "*"
-             define? CollisionExpr "[BodyBox [[0.5 0.5] [0.0 0.0]]]"
+             define? CollisionExpr ^ BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero }
              define? IsBullet false
              define? IsSensor false]
 
@@ -820,7 +820,7 @@ module TopViewCharacterDispatcherModule =
             [define? FixedRotation true
              define? LinearDamping 10.0f
              define? GravityScale 0.0f
-             define? CollisionExpr "[BodyCircle [0.5 [0.0 0.0]]]"
+             define? CollisionExpr ^ BodyCircle { Radius = 0.5f; Center = Vector2.Zero }
              define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image7" }]
         
         static member IntrinsicFacetNames =
@@ -836,7 +836,7 @@ module SideViewCharacterDispatcherModule =
         static member FieldDefinitions =
             [define? FixedRotation true
              define? LinearDamping 3.0f
-             define? CollisionExpr "[BodyCapsule [0.5 0.25 [0.0 0.0]]]"
+             define? CollisionExpr ^ BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero }
              define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image6" }]
 
         static member IntrinsicFacetNames =
@@ -919,7 +919,11 @@ module TileMapDispatcherModule =
             | Some tileSetTile ->
                 match tileSetTile.Properties.TryGetValue Constants.Physics.CollisionProperty with
                 | (true, cexpr) ->
-                    let tileBodyProperties = getTileBodyProperties6 tm tmd tli td ti cexpr world
+                    let tileBody =
+                        match cexpr with
+                        | "" -> BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero }
+                        | _ -> scvalue<BodyShape> cexpr
+                    let tileBodyProperties = getTileBodyProperties6 tm tmd tli td ti tileBody world
                     Some tileBodyProperties
                 | (false, _) -> None
             | None -> None

@@ -1153,7 +1153,7 @@
 </member>
 <member name="M:Prime.Log.trace(System.String)">
 <summary>
- Log a trace message with a Trace.Fail and call to info.
+ Log a trace message using Trace.Fail and call to info.
 </summary>
 </member>
 <member name="M:Prime.Log.debugIf(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,System.Boolean},System.String)">
@@ -1168,7 +1168,12 @@
 </member>
 <member name="M:Prime.Log.info(System.String)">
 <summary>
- Log a purely informational message with a Trace.WriteLine.
+ Log a purely informational message using Trace.WriteLine.
+</summary>
+</member>
+<member name="M:Prime.Log.remark(System.String,System.String)">
+<summary>
+ Log a remark with a custom header using Trace.WriteLine.
 </summary>
 </member>
 <member name="M:Prime.Map.concat``2(Microsoft.FSharp.Collections.FSharpMap{``0,``1},System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{``0,``1}})">
@@ -1615,6 +1620,11 @@
 <member name="M:Prime.Operators.makeGuid">
 <summary>
  Make a Guid.
+</summary>
+</member>
+<member name="M:Prime.Operators.enumerator``1(System.Collections.Generic.IEnumerable{``0})">
+<summary>
+ Get the enumerator for a sequence.
 </summary>
 </member>
 <member name="M:Prime.Operators.enumerable``1(System.Collections.IEnumerable)">
