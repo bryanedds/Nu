@@ -92,10 +92,10 @@
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="Prime">
-      <HintPath>..\..\Prime\Release\Prime.exe</HintPath>
+      <HintPath>..\..\Prime\$(Configuration)\Prime.exe</HintPath>
     </Reference>
     <Reference Include="SDL2#">
-      <HintPath>..\..\SDL2#\Release\SDL2#.dll</HintPath>
+      <HintPath>..\..\SDL2#\$(Configuration)\SDL2#.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -105,7 +105,7 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Serialization" />
     <Reference Include="TiledSharp">
-      <HintPath>..\..\TiledSharp\Release\TiledSharp.dll</HintPath>
+      <HintPath>..\..\TiledSharp\$(Configuration)\TiledSharp.dll</HintPath>
     </Reference>
     <ProjectReference Include="..\..\..\SDL2Addendum\SDL2Addendum\SDL2Addendum\SDL2Addendum.csproj">
       <Name>SDL2Addendum</Name>
