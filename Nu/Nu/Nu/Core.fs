@@ -66,11 +66,11 @@ module Core =
         | null -> false
         | eventLogging -> scvalue<bool> eventLogging
 
-    /// Get the event filters as specified in the App.config file.
-    let getEventFilters () =
-        match ConfigurationManager.AppSettings.["EventFilters"] with
-        | null -> [] : EventFilters
-        | eventFilters -> scvalue<EventFilters> eventFilters
+    /// Get the event refinery as specified in the App.config file.
+    let getEventFilter () =
+        match ConfigurationManager.AppSettings.["EventFilter"] with
+        | null -> EventFilter.Empty
+        | eventFilter -> scvalue<EventFilter> eventFilter
 
 [<AutoOpen>]
 module CoreOperators =
