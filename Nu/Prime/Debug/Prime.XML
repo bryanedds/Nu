@@ -884,7 +884,7 @@
  Make an event system.
 </summary>
 </member>
-<member name="M:Prime.EventSystemModule.EventSystem.logEvent``3(``0,System.Collections.Generic.IEnumerable{``1},Prime.EventSystemModule.EventSystem{``2})">
+<member name="M:Prime.EventSystemModule.EventSystem.logEvent``3(``0,Microsoft.FSharp.Collections.FSharpList{``1},Prime.EventSystemModule.EventSystem{``2})">
 <summary>
  Log an event.
 </summary>
