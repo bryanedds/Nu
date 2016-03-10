@@ -894,7 +894,7 @@
  Make an event system.
 </summary>
 </member>
-<member name="M:Prime.EventSystemModule.EventSystem.logEvent``2(Prime.AddressModule.Address{``0},Microsoft.FSharp.Collections.FSharpList{Prime.EventInfo},Prime.EventSystemModule.EventSystem{``1})">
+<member name="M:Prime.EventSystemModule.EventSystem.logEvent``1(Prime.AddressModule.Address{System.Object},Microsoft.FSharp.Collections.FSharpList{Prime.EventInfo},Prime.EventSystemModule.EventSystem{``0})">
 <summary>
  Log an event.
 </summary>
