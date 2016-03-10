@@ -52,7 +52,8 @@ module WorldGroupModule =
         static member internal updateGroup (group : Group) world =
             let dispatcher = group.GetDispatcherNp world
             let world = dispatcher.Update (group, world)
-            World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () (Events.Update ->- group) ["World.updateGroup"] Simulants.Game world
+            let eventTrace = EventTrace.record "World" "updateGroup" EventTrace.empty
+            World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () (Events.Update ->- group) eventTrace Simulants.Game world
 
         static member internal actualizeGroup (group : Group) world =
             let dispatcher = group.GetDispatcherNp world
@@ -64,14 +65,16 @@ module WorldGroupModule =
                 let world = World.addGroupState groupState group world
                 if isNew then
                     let world = World.registerGroup group world
-                    World.publish () (Events.GroupAdd ->- group) ["World.addGroup"] group world
+                    let eventTrace = EventTrace.record "World" "addGroup" EventTrace.empty
+                    World.publish () (Events.GroupAdd ->- group) eventTrace group world
                 else world
             else failwith ^ "Adding a group that the world already contains at address '" + scstring group.GroupAddress + "'."
 
         /// Remove a group in the world. Can be dangerous if existing in-flight publishing depends on the group's
         /// existence. Use with caution.
         static member internal removeGroup group world =
-            let world = World.publish () (Events.GroupRemoving ->- group) ["World.removeGroup"] group world
+            let eventTrace = EventTrace.record "World" "removeGroup" EventTrace.empty
+            let world = World.publish () (Events.GroupRemoving ->- group) eventTrace group world
             if World.containsGroup group world then
                 let world = World.unregisterGroup group world
                 let entities = World.proxyEntities group world
@@ -180,7 +183,7 @@ module WorldGroupModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.note ^ "Could not locate dispatcher '" + dispatcherName + "'."
+                    Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<GroupDispatcher>.Name
                     Map.find dispatcherName dispatchers
             

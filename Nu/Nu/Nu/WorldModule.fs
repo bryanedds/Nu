@@ -220,7 +220,8 @@ module World =
     let private setAmbientState state world =
         let oldWorldWithOldState = world
         let world = setAmbientStateWithoutEvent state world
-        publish { OldWorldWithOldState = oldWorldWithOldState } Events.AmbientStateChange ["World.setAmbientState"] Simulants.Game world
+        let eventTrace = EventTrace.record "World" "setAmbientState" EventTrace.empty
+        publish { OldWorldWithOldState = oldWorldWithOldState } Events.AmbientStateChange eventTrace Simulants.Game world
 
     /// Get the tick rate.
     let getTickRate world =
@@ -421,7 +422,7 @@ module World =
             publish
                 { Participant = entity; OldWorld = oldWorld }
                 (Events.EntityChange ->- entity)
-                ["World.publishEntityChange"]
+                (EventTrace.record "World" "publishEntityChange" EventTrace.empty)
                 entity
                 world
         else world
@@ -528,7 +529,7 @@ module World =
             publish
                 { Participant = group; OldWorld = oldWorld }
                 (Events.GroupChange ->- group)
-                ["World.setGroupState"]
+                (EventTrace.record "World" "setGroupState" EventTrace.empty)
                 group
                 world
         else world
@@ -595,7 +596,7 @@ module World =
             publish
                 { Participant = screen; OldWorld = oldWorld }
                 (Events.ScreenChange ->- screen)
-                ["World.setScreenState"]
+                (EventTrace.record "World" "setScreenState" EventTrace.empty)
                 screen
                 world
         else world
@@ -651,7 +652,7 @@ module World =
             publish
                 { Participant = Simulants.Game; OldWorld = oldWorld }
                 (Events.GameChange ->- Simulants.Game)
-                ["World.setGameState"]
+                (EventTrace.record "World" "setGameState" EventTrace.empty)
                 Simulants.Game
                 world
         else world

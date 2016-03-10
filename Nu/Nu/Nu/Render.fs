@@ -150,7 +150,7 @@ module RendererModule =
                     let renderAssetMap = Map.ofSeq renderAssets
                     { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
             | Left error ->
-                Log.note ^ "Render package load failed due unloadable assets '" + error + "' for package '" + packageName + "'."
+                Log.info ^ "Render package load failed due unloadable assets '" + error + "' for package '" + packageName + "'."
                 renderer
     
         static member private tryLoadRenderAsset (assetTag : AssetTag) renderer =
@@ -158,7 +158,7 @@ module RendererModule =
                 match Map.tryFind assetTag.PackageName renderer.RenderAssetMap with
                 | Some _ -> (renderer, Map.tryFind assetTag.PackageName renderer.RenderAssetMap)
                 | None ->
-                    Log.note ^ "Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
+                    Log.info ^ "Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
                     let renderer = Renderer.tryLoadRenderPackage assetTag.PackageName renderer
                     (renderer, Map.tryFind assetTag.PackageName renderer.RenderAssetMap)
             (renderer, Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap)
@@ -237,10 +237,10 @@ module RendererModule =
                             rotation,
                             ref rotationCenter,
                             SDL.SDL_RendererFlip.SDL_FLIP_NONE)
-                    if renderResult <> 0 then Log.note ^ "Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + "."
+                    if renderResult <> 0 then Log.info ^ "Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + "."
                     renderer
                 | _ -> Log.trace "Cannot render sprite with a non-texture asset."; renderer
-            | None -> Log.note ^ "SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'."; renderer
+            | None -> Log.info ^ "SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'."; renderer
     
         static member private renderSprites viewAbsolute viewRelative camera sprites renderer =
             List.fold
@@ -304,11 +304,11 @@ module RendererModule =
                                 refTileDestRect := destRect
                                 refTileRotationCenter := rotationCenter
                                 let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, refTileSourceRect, refTileDestRect, rotation, refTileRotationCenter, SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
-                                if renderResult <> 0 then Log.note ^ "Render error - could not render texture for tile '" + scstring descriptor + "' due to '" + SDL.SDL_GetError () + ".")
+                                if renderResult <> 0 then Log.info ^ "Render error - could not render texture for tile '" + scstring descriptor + "' due to '" + SDL.SDL_GetError () + ".")
                         tiles
                     renderer
                 | _ -> Log.trace "Cannot render tile with a non-texture asset."; renderer
-            | None -> Log.note ^ "TileLayerDescriptor failed due to unloadable assets for '" + scstring tileSetImage + "'."; renderer
+            | None -> Log.info ^ "TileLayerDescriptor failed due to unloadable assets for '" + scstring tileSetImage + "'."; renderer
     
         static member private renderTextDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (descriptor : TextDescriptor) renderer =
             let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
@@ -350,7 +350,7 @@ module RendererModule =
                         SDL.SDL_FreeSurface textSurface
                     renderer
                 | _ -> Log.trace "Cannot render text with a non-font asset."; renderer
-            | None -> Log.note ^ "TextDescriptor failed due to unloadable assets for '" + scstring font + "'."; renderer
+            | None -> Log.info ^ "TextDescriptor failed due to unloadable assets for '" + scstring font + "'."; renderer
     
         static member private renderLayerableDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera renderer layerableDescriptor =
             match layerableDescriptor with

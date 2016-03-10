@@ -45,7 +45,8 @@ module WorldPhysicsModule =
                             { Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed
                               Collidee = Entity.proxy ^ atoa bodyCollisionMessage.CollideeAddress }
-                        World.publish collisionData collisionAddress ["World.handleIntegrationMessage"] Simulants.Game world
+                        let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
+                        World.publish collisionData collisionAddress eventTrace Simulants.Game world
                     | None -> world
             | Exiting -> world
     

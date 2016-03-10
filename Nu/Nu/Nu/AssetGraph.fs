@@ -325,7 +325,7 @@ module AssetGraph =
                 let outputFilePath = Path.Combine (outputDirectory, intermediateFileSubpath)
                 Directory.CreateDirectory ^ Path.GetDirectoryName outputFilePath |> ignore
                 try File.Copy (intermediateFilePath, outputFilePath, true)
-                with _ -> Log.note ^ "Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'."
+                with _ -> Log.info ^ "Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'."
 
     /// Attempt to build all the assets found in the given asset graph.
     let tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory fullBuild assetGraphFilePath =

@@ -113,7 +113,7 @@ module AudioPlayerModule =
                 match Map.tryFind assetTag.PackageName audioPlayer.AudioAssetMap with
                 | Some _ -> (audioPlayer, Map.tryFind assetTag.PackageName audioPlayer.AudioAssetMap)
                 | None ->
-                    Log.note ^ "Loading audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
+                    Log.info ^ "Loading audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
                     let audioPlayer = AudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
                     (audioPlayer, Map.tryFind assetTag.PackageName audioPlayer.AudioAssetMap)
             (audioPlayer, Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap)
@@ -122,11 +122,11 @@ module AudioPlayerModule =
             let song = playSongMessage.Song
             let (audioPlayer, optAudioAsset) = AudioPlayer.tryLoadAudioAsset song audioPlayer
             match optAudioAsset with
-            | Some (WavAsset _) -> Log.note ^ "Cannot play wav file as song '" + scstring song + "'."
+            | Some (WavAsset _) -> Log.info ^ "Cannot play wav file as song '" + scstring song + "'."
             | Some (OggAsset oggAsset) ->
                 SDL_mixer.Mix_VolumeMusic (int ^ playSongMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME) |> ignore
                 SDL_mixer.Mix_FadeInMusic (oggAsset, -1, 256) |> ignore // Mix_PlayMusic seems to somtimes cause audio 'popping' when starting a song, so a fade is used instead... |> ignore
-            | None -> Log.note ^ "PlaySongMessage failed due to unloadable assets for '" + scstring song + "'."
+            | None -> Log.info ^ "PlaySongMessage failed due to unloadable assets for '" + scstring song + "'."
             { audioPlayer with OptCurrentSong = Some playSongMessage }
     
         static member private handleHintAudioPackageUse (hintPackageUse : HintAudioPackageUseMessage) audioPlayer =
@@ -153,8 +153,8 @@ module AudioPlayerModule =
             | Some (WavAsset wavAsset) ->
                 SDL_mixer.Mix_VolumeChunk (wavAsset, int ^ playSoundMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME) |> ignore
                 SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0) |> ignore
-            | Some (OggAsset _) -> Log.note ^ "Cannot play ogg file as sound '" + scstring sound + "'."
-            | None -> Log.note ^ "PlaySoundMessage failed due to unloadable assets for '" + scstring sound + "'."
+            | Some (OggAsset _) -> Log.info ^ "Cannot play ogg file as sound '" + scstring sound + "'."
+            | None -> Log.info ^ "PlaySoundMessage failed due to unloadable assets for '" + scstring sound + "'."
             audioPlayer
     
         static member private handlePlaySong playSongMessage audioPlayer =

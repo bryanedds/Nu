@@ -164,7 +164,8 @@ module WorldEntityModule =
                 // register entity if needed
                 if isNew then
                     let world = World.registerEntity entity world
-                    World.publish () (Events.EntityAdd ->- entity) ["World.addEntity"] entity world
+                    let eventTrace = EventTrace.record "World" "addEntity" EventTrace.empty
+                    World.publish () (Events.EntityAdd ->- entity) eventTrace entity world
                 else world
 
             // handle failure
@@ -173,7 +174,8 @@ module WorldEntityModule =
         /// Remove an entity in the world. Can be dangerous if existing in-flight publishing depends on the entity's
         /// existence. Use with caution.
         static member internal removeEntity entity world =
-            let world = World.publish () (Events.EntityRemoving ->- entity) ["World.removeEntity"] entity world
+            let eventTrace = EventTrace.record "World" "removeEntity" EventTrace.empty
+            let world = World.publish () (Events.EntityRemoving ->- entity) eventTrace entity world
             if World.containsEntity entity world then
                 let world = World.unregisterEntity entity world
 
@@ -333,8 +335,9 @@ module WorldEntityModule =
             let facets = entity.GetFacetsNp world
             let world = dispatcher.Update (entity, world)
             let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
-            if entity.GetPublishUpdates world
-            then World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () entity.UpdateAddress ["World.updateEntity"] Simulants.Game world
+            if entity.GetPublishUpdates world then
+                let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
+                World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () entity.UpdateAddress eventTrace Simulants.Game world
             else world
         
         /// Actualize an entity.
@@ -461,7 +464,7 @@ module WorldEntityModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> (dispatcherName, dispatcher)
                 | None ->
-                    Log.note ^ "Could not locate dispatcher '" + dispatcherName + "'."
+                    Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<EntityDispatcher>.Name
                     let dispatcher = Map.find dispatcherName dispatchers
                     (dispatcherName, dispatcher)

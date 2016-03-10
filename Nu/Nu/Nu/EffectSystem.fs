@@ -129,10 +129,10 @@ module EffectSystemModule =
                     match definition.DefinitionBody with
                     | SymbolicCompressionA resource -> evalResource resource effectSystem
                     | _ ->
-                        Log.note ^ "Expected Resource for definition '" + definitionName + "."
+                        Log.info ^ "Expected Resource for definition '" + definitionName + "."
                         scvalue<AssetTag> Constants.Assets.DefaultImageValue
                 | None ->
-                    Log.note ^ "Could not find definition with name '" + definitionName + "'."
+                    Log.info ^ "Could not find definition with name '" + definitionName + "'."
                     scvalue<AssetTag> Constants.Assets.DefaultImageValue
             | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
     
@@ -157,8 +157,8 @@ module EffectSystemModule =
                 | Some definition ->
                     match definition.DefinitionBody with
                     | SymbolicCompressionB (SymbolicCompressionA aspect) -> evalAspect aspect slice effectSystem
-                    | _ -> Log.note ^ "Expected Aspect for definition '" + definitionName + "'."; slice
-                | None -> Log.note ^ "Could not find definition with name '" + definitionName + "'."; slice
+                    | _ -> Log.info ^ "Expected Aspect for definition '" + definitionName + "'."; slice
+                | None -> Log.info ^ "Could not find definition with name '" + definitionName + "'."; slice
             | Enabled (applicator, playback, keyFrames) ->
                 let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
@@ -227,9 +227,9 @@ module EffectSystemModule =
                     | Some localDefinitionEntries ->
                         let effectSystem = { effectSystem with EffectEnv = Map.addMany localDefinitionEntries effectSystem.EffectEnv }
                         evalContent content slice effectSystem
-                    | None -> Log.note "Wrong number of arguments provided to ExpandContent."; []
-                | _ -> Log.note ^ "Expected Content for definition '" + definitionName + "'."; []
-            | None -> Log.note ^ "Could not find definition with name '" + definitionName + "'."; []
+                    | None -> Log.info "Wrong number of arguments provided to ExpandContent."; []
+                | _ -> Log.info ^ "Expected Content for definition '" + definitionName + "'."; []
+            | None -> Log.info ^ "Could not find definition with name '" + definitionName + "'."; []
     
         and private evalStaticSprite resource aspects content slice effectSystem =
     

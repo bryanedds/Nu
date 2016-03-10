@@ -194,11 +194,14 @@ module WorldModule =
         static member selectScreen screen world =
             let world =
                 match World.getOptSelectedScreen world with
-                | Some selectedScreen ->  World.publish () (Events.Deselect ->- selectedScreen) ["World.selectScreen"] selectedScreen world
+                | Some selectedScreen ->
+                    let eventTrace = EventTrace.record4 "World" "selectScreen" "Deselect" EventTrace.empty
+                    World.publish () (Events.Deselect ->- selectedScreen) eventTrace selectedScreen world
                 | None -> world
             let world = World.setScreenTransitionState IncomingState screen world
             let world = World.setSelectedScreen screen world
-            World.publish () (Events.Select ->- screen) ["World.selectScreen"] screen world
+            let eventTrace = EventTrace.record4 "World" "selectScreen" "Select" EventTrace.empty
+            World.publish () (Events.Select ->- screen) eventTrace screen world
 
         /// Try to transition to the given screen if no other transition is in progress.
         static member tryTransitionScreen destination world =
@@ -279,29 +282,35 @@ module WorldModule =
                 match World.getLiveness world with
                 | Running ->
                     let world =
-                        if selectedScreen.GetTransitionTicksNp world = 0L
-                        then World.publish () (Events.IncomingStart ->- selectedScreen) ["World.updateScreenTransition"] selectedScreen world
+                        if selectedScreen.GetTransitionTicksNp world = 0L then
+                            let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingStart" EventTrace.empty
+                            World.publish () (Events.IncomingStart ->- selectedScreen) eventTrace selectedScreen world
                         else world
                     match World.getLiveness world with
                     | Running ->
                         let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetIncoming world) world
                         if finished then
+                            let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingFinish" EventTrace.empty
                             let world = World.setScreenTransitionState IdlingState selectedScreen world
-                            World.publish () (Events.IncomingFinish ->- selectedScreen) ["World.updateScreenTransition"] selectedScreen world
+                            World.publish () (Events.IncomingFinish ->- selectedScreen) eventTrace selectedScreen world
                         else world
                     | Exiting -> world
                 | Exiting -> world
             | OutgoingState ->
                 let world =
-                    if selectedScreen.GetTransitionTicksNp world <> 0L then world
-                    else World.publish () (Events.OutgoingStart ->- selectedScreen) ["World.updateScreenTransition"] selectedScreen world
+                    if selectedScreen.GetTransitionTicksNp world = 0L then
+                        let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
+                        World.publish () (Events.OutgoingStart ->- selectedScreen) eventTrace selectedScreen world
+                    else world
                 match World.getLiveness world with
                 | Running ->
                     let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetOutgoing world) world
                     if finished then
                         let world = World.setScreenTransitionState IdlingState selectedScreen world
                         match World.getLiveness world with
-                        | Running -> World.publish () (Events.OutgoingFinish ->- selectedScreen) ["World.updateScreenTransition"] selectedScreen world
+                        | Running ->
+                            let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingFinish" EventTrace.empty
+                            World.publish () (Events.OutgoingFinish ->- selectedScreen) eventTrace selectedScreen world
                         | Exiting -> world
                     else world
                 | Exiting -> world
@@ -397,7 +406,7 @@ module WorldModule =
                                     Overlayer.applyOverlay6 overlayName overlayName facetNames entityState oldOverlayer overlayer
                                     let world = World.setEntityStateWithoutEvent entityState entity world
                                     World.updateEntityInEntityTree entity oldWorld world
-                                | Left error -> Log.note ^ "There was an issue in applying a reloaded overlay: " + error; world
+                                | Left error -> Log.info ^ "There was an issue in applying a reloaded overlay: " + error; world
                             | None -> world)
                         world
                         entities
@@ -495,10 +504,12 @@ module WorldModule =
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                     let mousePosition = Vector2 (single evt.button.x, single evt.button.y)
                     let world =
-                        if World.isMouseButtonDown MouseLeft world
-                        then World.publish6 World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseDrag ["World.processInput"] Simulants.Game world
+                        if World.isMouseButtonDown MouseLeft world then
+                            let eventTrace = EventTrace.record4 "World" "processInput" "MouseDrag" EventTrace.empty
+                            World.publish6 World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseDrag eventTrace Simulants.Game world
                         else world
-                    World.publish6 World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseMove ["World.processInput"] Simulants.Game world
+                    let eventTrace = EventTrace.record4 "World" "processInput" "MouseMove" EventTrace.empty
+                    World.publish6 World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
@@ -506,8 +517,10 @@ module WorldModule =
                     let mouseButtonDownEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> !!"Down"
                     let mouseButtonChangeEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> !!"Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
-                    let world = World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonDownEventAddress ["World.processInput"] Simulants.Game world
-                    World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress ["World.processInput"] Simulants.Game world
+                    let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonDown" EventTrace.empty
+                    let world = World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonDownEventAddress eventTrace Simulants.Game world
+                    let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonChange" EventTrace.empty
+                    World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress eventTrace Simulants.Game world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
@@ -515,20 +528,26 @@ module WorldModule =
                     let mouseButtonUpEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> !!"Up"
                     let mouseButtonChangeEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> !!"Change"
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
-                    let world = World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEventAddress ["World.processInput"] Simulants.Game world
-                    World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress ["World.processInput"] Simulants.Game world
+                    let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonUp" EventTrace.empty
+                    let world = World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEventAddress eventTrace Simulants.Game world
+                    let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonChange" EventTrace.empty
+                    World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress eventTrace Simulants.Game world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = true }
-                    let world = World.publish6 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyDown ["World.processInput"] Simulants.Game world
-                    World.publish6 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange ["World.processInput"] Simulants.Game world
+                    let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyDown" EventTrace.empty
+                    let world = World.publish6 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyDown eventTrace Simulants.Game world
+                    let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyChange" EventTrace.empty
+                    World.publish6 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange eventTrace Simulants.Game world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = false }
-                    let world = World.publish6 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyUp ["World.processInput"] Simulants.Game world
-                    World.publish6 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange ["World.processInput"] Simulants.Game world
+                    let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyUp" EventTrace.empty
+                    let world = World.publish6 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyUp eventTrace Simulants.Game world
+                    let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyChange" EventTrace.empty
+                    World.publish6 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange eventTrace Simulants.Game world
                 | _ -> world
             (World.getLiveness world, world)
 
@@ -688,7 +707,10 @@ module WorldModule =
 
             // make the world's event system
             let eventSystem =
-                EventSystem.make ()
+                let eventLogger = Log.info
+                let eventLogging = Core.getEventLogging ()
+                let eventFilters = Core.getEventFilters ()
+                EventSystem.make eventLogger eventLogging eventFilters
 
             // make the world's components
             let components =
@@ -790,7 +812,10 @@ module WorldModule =
 
                 // make the world's event system
                 let eventSystem =
-                    EventSystem.make ()
+                    let eventLogger = Log.info
+                    let eventLogging = Core.getEventLogging ()
+                    let eventFilters = Core.getEventFilters ()
+                    EventSystem.make eventLogger eventLogging eventFilters
 
                 // make the world's components
                 let components =
