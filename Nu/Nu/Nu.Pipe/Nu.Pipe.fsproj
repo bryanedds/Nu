@@ -86,7 +86,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\Prime\$(Configuration)\Prime.exe</HintPath>
+      <HintPath>..\..\Prime\Release\Prime.exe</HintPath>
     </Reference>
     <Reference Include="SDL2#">
       <HintPath>..\..\SDL2#\$(Configuration)\SDL2#.dll</HintPath>
