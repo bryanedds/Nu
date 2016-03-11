@@ -60,13 +60,13 @@ module Core =
         | null -> defaultResolution
         | resolution -> scvalue<int> resolution
 
-    /// Query that events should be logged as specified in the App.config file.
-    let getEventLogging () =
-        match ConfigurationManager.AppSettings.["EventLogging"] with
+    /// Query that events should be trace as specified in the App.config file.
+    let getEventTracing () =
+        match ConfigurationManager.AppSettings.["EventTracing"] with
         | null -> false
-        | eventLogging -> scvalue<bool> eventLogging
+        | eventTracing -> scvalue<bool> eventTracing
 
-    /// Get the event refinery as specified in the App.config file.
+    /// Get the event filter as specified in the App.config file.
     let getEventFilter () =
         match ConfigurationManager.AppSettings.["EventFilter"] with
         | null -> EventFilter.Empty
