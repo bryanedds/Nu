@@ -267,11 +267,6 @@
  Haskell-style Either type.
 </summary>
 </member>
-<member name="T:Prime.EventPatternConverter">
-<summary>
- Converts EventPattern types.
-</summary>
-</member>
 <member name="T:Prime.Event`2">
 <summary>
  An event used by the event system.
@@ -341,6 +336,17 @@
 <member name="T:Prime.RelationConverter">
 <summary>
  Converts Relation types.
+</summary>
+</member>
+<member name="T:Prime.Rexpr">
+<summary>
+ Effectively new-types the Regex type to implement custom type-conversation without needing
+ explicit initialization by the client program.
+</summary>
+</member>
+<member name="T:Prime.RexprConverter">
+<summary>
+ Converts Rexpr types.
 </summary>
 </member>
 <member name="T:Prime.SubscriptionEntries">
