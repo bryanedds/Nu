@@ -121,32 +121,44 @@ module Program =
 
     type [<ReferenceEquality>] EntityDescriptor =
         { DispatcherName : string
-          Fields : Map<string, string> }
+          Fields : Map<string, Symbol> }
 
     type [<ReferenceEquality>] GroupDescriptor =
         { DispatcherName : string
-          Fields : Map<string, string>
+          Fields : Map<string, Symbol>
           Entities : EntityDescriptor list }
 
-    let Entity<'d> (fields : (string * string) list) =
+    let entity<'d> (fields : (string * Type * obj) list) =
         { EntityDescriptor.DispatcherName = typeof<'d>.Name
-          Fields = Map.ofSeq fields }
+          Fields =
+            fields |>
+            Seq.map (fun (name, ty, value) ->
+                let converter = SymbolicConverter ty
+                let symbol = converter.ConvertTo (value, typeof<Symbol>) :?> Symbol
+                (name, symbol)) |>
+            Map.ofSeq }
 
-    let Group<'d> (fields : (string * string) list) (entities : EntityDescriptor list) =
+    let group<'d> (fields : (string * Type * obj) list) (entities : EntityDescriptor list) =
         { GroupDescriptor.DispatcherName = typeof<'d>.Name
-          Fields = Map.ofSeq fields
+          Fields =
+            fields |>
+            Seq.map (fun (name, ty, value) ->
+                let converter = SymbolicConverter ty
+                let symbol = converter.ConvertTo (value, typeof<Symbol>) :?> Symbol
+                (name, symbol)) |>
+            Map.ofSeq
           Entities = entities }
 
     let [<EntryPoint; STAThread>] main _ =
         Console.WriteLine "Running Nu.exe"
         Nu.init false
         let group =
-            Group<GroupDispatcher>
+            group<GroupDispatcher>
                 [field? Name !!"Group"]
-                [Entity<EntityDispatcher>
+                [entity<EntityDispatcher>
                     [field? Name !!"Jim"
                      field? Size Vector2.Zero]
-                 Entity<EntityDispatcher>
+                 entity<EntityDispatcher>
                     [field? Name !!"Bob"
                      field? Size Vector2.Zero]]
         Console.WriteLine (SymbolIndex.prettyPrint ^ scstring group)
