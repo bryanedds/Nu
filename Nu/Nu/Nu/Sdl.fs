@@ -158,8 +158,6 @@ module SdlDepsModule =
 [<RequireQualifiedAccess>]
 module Sdl =
 
-    let private resourceNop (_ : nativeint) = ()
-
     /// Update the game engine's state.
     let update handleEvent handleUpdate world =
         if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then

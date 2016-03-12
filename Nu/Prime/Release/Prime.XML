@@ -1965,6 +1965,16 @@
  Resolve a relationship to an address.
 </summary>
 </member>
+<member name="M:Prime.String.escape(System.String)">
+<summary>
+ Expand escaped characters in a string.
+</summary>
+</member>
+<member name="M:Prime.String.unescape(System.String)">
+<summary>
+ Contract escaped characters in a string.
+</summary>
+</member>
 <member name="M:Prime.String.surround(System.String,System.String)">
 <summary>
  Surround a string with another surrounding string.
