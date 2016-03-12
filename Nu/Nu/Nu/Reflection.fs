@@ -78,7 +78,7 @@ type FieldDescriptor =
     /// Some magic syntax for composing constant fields.
     static member (?) (_, fieldName : string) =
         fun (value : 'v) ->
-            (fieldName, value :> obj)
+            (fieldName, scstring value)
 
 [<AutoOpen>]
 module ReflectionModule =

@@ -121,18 +121,18 @@ module Program =
 
     type [<ReferenceEquality>] EntityDescriptor =
         { DispatcherName : string
-          Fields : Map<string, obj> }
+          Fields : Map<string, string> }
 
     type [<ReferenceEquality>] GroupDescriptor =
         { DispatcherName : string
-          Fields : Map<string, obj>
+          Fields : Map<string, string>
           Entities : EntityDescriptor list }
 
-    let Entity<'d> (fields : (string * obj) list) =
+    let Entity<'d> (fields : (string * string) list) =
         { EntityDescriptor.DispatcherName = typeof<'d>.Name
           Fields = Map.ofSeq fields }
 
-    let Group<'d> (fields : (string * obj) list) (entities : EntityDescriptor list) =
+    let Group<'d> (fields : (string * string) list) (entities : EntityDescriptor list) =
         { GroupDescriptor.DispatcherName = typeof<'d>.Name
           Fields = Map.ofSeq fields
           Entities = entities }
