@@ -189,25 +189,25 @@ module World =
 
     (* Components *)
 
-    /// Get the facets of the world.
-    let getFacets world =
-        world.Components.Facets
-
-    /// Get the entity dispatchers of the world.
-    let getEntityDispatchers world =
-        world.Components.EntityDispatchers
-
-    /// Get the group dispatchers of the world.
-    let getGroupDispatchers world =
-        world.Components.GroupDispatchers
+    /// Get the game dispatchers of the world.
+    let getGameDispatchers world =
+        world.Components.GameDispatchers
 
     /// Get the screen dispatchers of the world.
     let getScreenDispatchers world =
         world.Components.ScreenDispatchers
 
-    /// Get the game dispatchers of the world.
-    let getGameDispatchers world =
-        world.Components.GameDispatchers
+    /// Get the group dispatchers of the world.
+    let getGroupDispatchers world =
+        world.Components.GroupDispatchers
+
+    /// Get the entity dispatchers of the world.
+    let getEntityDispatchers world =
+        world.Components.EntityDispatchers
+
+    /// Get the facets of the world.
+    let getFacets world =
+        world.Components.Facets
 
     (* AmbientState *)
 

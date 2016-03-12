@@ -524,11 +524,11 @@ and [<StructuralEquality; NoComparison>] Entity =
 /// I would prefer this type to be inlined in World, but it has been extracted to its own white-box
 /// type for efficiency reasons.
 and [<ReferenceEquality>] internal Components =
-    { Facets : Map<string, Facet>
-      EntityDispatchers : Map<string, EntityDispatcher>
-      GroupDispatchers : Map<string, GroupDispatcher>
+    { GameDispatchers : Map<string, GameDispatcher>
       ScreenDispatchers : Map<string, ScreenDispatcher>
-      GameDispatchers : Map<string, GameDispatcher> }
+      GroupDispatchers : Map<string, GroupDispatcher>
+      EntityDispatchers : Map<string, EntityDispatcher>
+      Facets : Map<string, Facet> }
 
 /// The world, in a functional programming sense. Hosts the game object, the dependencies needed
 /// to implement a game, messages to by consumed by the various engine sub-systems, and general
