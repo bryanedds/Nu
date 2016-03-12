@@ -54,8 +54,8 @@ module FieldDefinition =
         result
 
 /// In tandem with the define literal, grants a nice syntax to define constant fields.
-type DefineConstant =
-    { DefineConstant : unit }
+type ConstantDefinition =
+    { ConstantDefinition : unit }
     
     /// Some magic syntax for composing constant fields.
     static member (?) (_, fieldName) =
@@ -63,22 +63,34 @@ type DefineConstant =
             FieldDefinition.makeValidated fieldName typeof<'c> ^ Constant constant
 
 /// In tandem with the variable literal, grants a nice syntax to define variable fields.
-type DefineVariable =
-    { DefineVariable : unit }
+type VariableDefinition =
+    { VariableDefinition : unit }
 
     /// Some magic syntax for composing variable fields.
     static member (?) (_, fieldName) =
         fun (variable : unit -> 'v) ->
             FieldDefinition.makeValidated fieldName typeof<'v> ^ Variable (fun () -> variable () :> obj)
 
+/// In tandem with the define literal, grants a nice syntax to define field descriptors.
+type FieldDescriptor =
+    { FieldDescriptor : unit }
+    
+    /// Some magic syntax for composing constant fields.
+    static member (?) (_, fieldName : string) =
+        fun (value : 'v) ->
+            (fieldName, value :> obj)
+
 [<AutoOpen>]
 module ReflectionModule =
 
-    /// In tandem with the DefineConstant type, grants a nice syntax to define constant fields.
-    let define = { DefineConstant = () }
+    /// In tandem with the ConstantDefinition type, grants a nice syntax to define constant fields.
+    let define = { ConstantDefinition = () }
     
-    /// In tandem with the DefineVariable type, grants a nice syntax to define variable fields.
-    let variable = { DefineVariable = () }
+    /// In tandem with the VariableDefinition type, grants a nice syntax to define variable fields.
+    let variable = { VariableDefinition = () }
+    
+    /// In tandem with the FieldDescriptor type, grants a nice syntax to define field descriptors.
+    let field = { FieldDescriptor = () }
 
 [<RequireQualifiedAccess>]
 module Reflection =
