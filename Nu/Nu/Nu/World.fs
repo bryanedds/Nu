@@ -112,13 +112,14 @@ module WorldModule =
         static member private pairWithName source =
             (getTypeName source, source)
 
-        static member private makeDefaultFacets () =
-            Map.ofList
-                [(typeof<MountFacet>.Name, MountFacet () :> Facet)
-                 (typeof<EffectFacet>.Name, EffectFacet () :> Facet)
-                 (typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet)
-                 (typeof<StaticSpriteFacet>.Name, StaticSpriteFacet () :> Facet)
-                 (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
+        static member private makeDefaultGameDispatchers () =
+            Map.ofList [World.pairWithName ^ GameDispatcher ()]
+            
+        static member private makeDefaultScreenDispatchers () =
+            Map.ofList [World.pairWithName ^ ScreenDispatcher ()]
+
+        static member private makeDefaultGroupDispatchers () =
+            Map.ofList [World.pairWithName ^ GroupDispatcher ()]
 
         static member private makeDefaultEntityDispatchers () =
             // TODO: see if we can reflectively generate these
@@ -137,14 +138,13 @@ module WorldModule =
                  SideViewCharacterDispatcher () :> EntityDispatcher
                  TileMapDispatcher () :> EntityDispatcher]
 
-        static member private makeDefaultGroupDispatchers () =
-            Map.ofList [World.pairWithName ^ GroupDispatcher ()]
-            
-        static member private makeDefaultScreenDispatchers () =
-            Map.ofList [World.pairWithName ^ ScreenDispatcher ()]
-
-        static member private makeDefaultGameDispatchers () =
-            Map.ofList [World.pairWithName ^ GameDispatcher ()]
+        static member private makeDefaultFacets () =
+            Map.ofList
+                [(typeof<MountFacet>.Name, MountFacet () :> Facet)
+                 (typeof<EffectFacet>.Name, EffectFacet () :> Facet)
+                 (typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet)
+                 (typeof<StaticSpriteFacet>.Name, StaticSpriteFacet () :> Facet)
+                 (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
 
         /// Try to query that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
@@ -714,11 +714,11 @@ module WorldModule =
 
             // make the world's components
             let components =
-                { Facets = World.makeDefaultFacets ()
-                  EntityDispatchers = World.makeDefaultEntityDispatchers ()
-                  GroupDispatchers = World.makeDefaultGroupDispatchers ()
+                { GameDispatchers = World.makeDefaultGameDispatchers ()
                   ScreenDispatchers = World.makeDefaultScreenDispatchers ()
-                  GameDispatchers = World.makeDefaultGameDispatchers () }
+                  GroupDispatchers = World.makeDefaultGroupDispatchers ()
+                  EntityDispatchers = World.makeDefaultEntityDispatchers ()
+                  Facets = World.makeDefaultFacets () }
 
             // make the game state
             let gameState =
@@ -815,11 +815,11 @@ module WorldModule =
 
                 // make the world's components
                 let components =
-                    { Facets = Map.addMany pluginFacets ^ World.makeDefaultFacets ()
-                      EntityDispatchers = Map.addMany pluginEntityDispatchers ^ World.makeDefaultEntityDispatchers ()
-                      GroupDispatchers = Map.addMany pluginGroupDispatchers ^ World.makeDefaultGroupDispatchers ()
+                    { GameDispatchers = Map.addMany [World.pairWithName activeGameDispatcher] ^ World.makeDefaultGameDispatchers ()
                       ScreenDispatchers = Map.addMany pluginScreenDispatchers ^ World.makeDefaultScreenDispatchers ()
-                      GameDispatchers = Map.addMany [World.pairWithName activeGameDispatcher] ^ World.makeDefaultGameDispatchers () }
+                      GroupDispatchers = Map.addMany pluginGroupDispatchers ^ World.makeDefaultGroupDispatchers ()
+                      EntityDispatchers = Map.addMany pluginEntityDispatchers ^ World.makeDefaultEntityDispatchers ()
+                      Facets = Map.addMany pluginFacets ^ World.makeDefaultFacets () }
 
                 // make the world's state
                 let ambientState =
