@@ -76,6 +76,28 @@ module World =
     let internal clearSubsystemsMessages world =
         { world with Subsystems = Subsystems.clearSubsystemsMessages world.Subsystems world }
 
+    (* Dispatchers *)
+
+    /// Get the game dispatchers of the world.
+    let getGameDispatchers world =
+        world.Dispatchers.GameDispatchers
+
+    /// Get the screen dispatchers of the world.
+    let getScreenDispatchers world =
+        world.Dispatchers.ScreenDispatchers
+
+    /// Get the group dispatchers of the world.
+    let getGroupDispatchers world =
+        world.Dispatchers.GroupDispatchers
+
+    /// Get the entity dispatchers of the world.
+    let getEntityDispatchers world =
+        world.Dispatchers.EntityDispatchers
+
+    /// Get the facets of the world.
+    let getFacets world =
+        world.Dispatchers.Facets
+
     (* EventSystem *)
 
     /// Get event subscriptions.
@@ -186,28 +208,6 @@ module World =
     /// Add multiple tasklets to be executed by the engine at the scheduled times.
     let addTasklets tasklets world =
         { world with Tasklets = Queue.ofSeq ^ Seq.append (tasklets :> _ seq) (world.Tasklets :> _ seq) }
-
-    (* Dispatchers *)
-
-    /// Get the game dispatchers of the world.
-    let getGameDispatchers world =
-        world.Dispatchers.GameDispatchers
-
-    /// Get the screen dispatchers of the world.
-    let getScreenDispatchers world =
-        world.Dispatchers.ScreenDispatchers
-
-    /// Get the group dispatchers of the world.
-    let getGroupDispatchers world =
-        world.Dispatchers.GroupDispatchers
-
-    /// Get the entity dispatchers of the world.
-    let getEntityDispatchers world =
-        world.Dispatchers.EntityDispatchers
-
-    /// Get the facets of the world.
-    let getFacets world =
-        world.Dispatchers.Facets
 
     (* AmbientState *)
 

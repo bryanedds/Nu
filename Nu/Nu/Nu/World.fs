@@ -69,13 +69,6 @@ type NuPlugin () =
     abstract MakeSubsystems : unit -> (string * World Subsystem) list
     default this.MakeSubsystems () = []
     
-    /// Make the overlay routes that will allow Nu to use different overlays for the specified
-    /// types. For example, a returned router of (typeof<ButtonDispatcher>.Name, Some "CustomButtonOverlay")
-    /// will cause all buttons to use the overlay with the name "CustomButtonOverlay" rather
-    /// than the default "ButtonDispatcher" overlay.
-    abstract MakeOverlayRoutes : unit -> (string * string option) list
-    default this.MakeOverlayRoutes () = []
-    
     /// Optionally make a user-defined game dispatchers such that Nu can utililize it at run-time.
     abstract MakeOptGameDispatcher : unit -> GameDispatcher option
     default this.MakeOptGameDispatcher () = None
@@ -95,6 +88,13 @@ type NuPlugin () =
     /// Make user-defined assets such that Nu can utililize them at run-time.
     abstract MakeFacets : unit -> Facet list
     default this.MakeFacets () = []
+    
+    /// Make the overlay routes that will allow Nu to use different overlays for the specified
+    /// types. For example, a returned router of (typeof<ButtonDispatcher>.Name, Some "CustomButtonOverlay")
+    /// will cause all buttons to use the overlay with the name "CustomButtonOverlay" rather
+    /// than the default "ButtonDispatcher" overlay.
+    abstract MakeOverlayRoutes : unit -> (string * string option) list
+    default this.MakeOverlayRoutes () = []
 
 [<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module WorldModule =
@@ -705,13 +705,6 @@ module WorldModule =
                         (Vmap.makeEmpty ())
                 Subsystems.make subsystemMap
 
-            // make the world's event system
-            let eventSystem =
-                let eventTracer = Log.remark "Event"
-                let eventTracing = Core.getEventTracing ()
-                let eventFilter = Core.getEventFilter ()
-                EventSystem.make eventTracer eventTracing eventFilter
-
             // make the world's dispatchers
             let dispatchers =
                 { GameDispatchers = World.makeDefaultGameDispatchers ()
@@ -719,6 +712,13 @@ module WorldModule =
                   GroupDispatchers = World.makeDefaultGroupDispatchers ()
                   EntityDispatchers = World.makeDefaultEntityDispatchers ()
                   Facets = World.makeDefaultFacets () }
+
+            // make the world's event system
+            let eventSystem =
+                let eventTracer = Log.remark "Event"
+                let eventTracing = Core.getEventTracing ()
+                let eventFilter = Core.getEventFilter ()
+                EventSystem.make eventTracer eventTracing eventFilter
 
             // make the game state
             let gameState =
@@ -736,9 +736,9 @@ module WorldModule =
             // make the world itself
             let world =
                 { Subsystems = subsystems
+                  Dispatchers = dispatchers
                   EventSystem = eventSystem
                   Tasklets = Queue.empty
-                  Dispatchers = dispatchers
                   OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                   AmbientState = ambientState
                   GameState = gameState
@@ -806,13 +806,6 @@ module WorldModule =
                         | None -> defaultGameDispatcher
                     else defaultGameDispatcher
 
-                // make the world's event system
-                let eventSystem =
-                    let eventTracer = Log.remark "Event"
-                    let eventTracing = Core.getEventTracing ()
-                    let eventFilter = Core.getEventFilter ()
-                    EventSystem.make eventTracer eventTracing eventFilter
-
                 // make the world's dispatchers
                 let dispatchers =
                     { GameDispatchers = Map.addMany [World.pairWithName activeGameDispatcher] ^ World.makeDefaultGameDispatchers ()
@@ -820,6 +813,13 @@ module WorldModule =
                       GroupDispatchers = Map.addMany pluginGroupDispatchers ^ World.makeDefaultGroupDispatchers ()
                       EntityDispatchers = Map.addMany pluginEntityDispatchers ^ World.makeDefaultEntityDispatchers ()
                       Facets = Map.addMany pluginFacets ^ World.makeDefaultFacets () }
+
+                // make the world's event system
+                let eventSystem =
+                    let eventTracer = Log.remark "Event"
+                    let eventTracing = Core.getEventTracing ()
+                    let eventFilter = Core.getEventFilter ()
+                    EventSystem.make eventTracer eventTracing eventFilter
 
                 // make the world's state
                 let ambientState =
@@ -835,9 +835,9 @@ module WorldModule =
                 // make the world itself
                 let world =
                     { Subsystems = subsystems
+                      Dispatchers = dispatchers
                       EventSystem = eventSystem
                       Tasklets = Queue.empty
-                      Dispatchers = dispatchers
                       OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                       AmbientState = ambientState
                       GameState = World.makeGameState activeGameDispatcher
