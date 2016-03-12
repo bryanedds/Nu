@@ -725,14 +725,6 @@ module WorldModule =
                 let gameDispatcher = components.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
                 World.makeGameState gameDispatcher
 
-            // make the simulant states
-            let simulantStates = 
-                { GameState = gameState
-                  ScreenStates = Vmap.makeEmpty ()
-                  GroupStates = Vmap.makeEmpty ()
-                  EntityStates = Vmap.makeEmpty ()
-                  ScreenDirectory = Vmap.makeEmpty () }
-
             // make the world's state
             let ambientState =
                 let overlayRouter = OverlayRouter.make components.EntityDispatchers []
@@ -748,8 +740,12 @@ module WorldModule =
                   Tasklets = Queue.empty
                   OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                   Components = components
-                  SimulantStates = simulantStates
-                  AmbientState = ambientState }
+                  AmbientState = ambientState
+                  GameState = gameState
+                  ScreenStates = Vmap.makeEmpty ()
+                  GroupStates = Vmap.makeEmpty ()
+                  EntityStates = Vmap.makeEmpty ()
+                  ScreenDirectory = Vmap.makeEmpty () }
 
             // initialize OptEntityCache after the fact due to back reference
             let world = { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
@@ -825,14 +821,6 @@ module WorldModule =
                       ScreenDispatchers = Map.addMany pluginScreenDispatchers ^ World.makeDefaultScreenDispatchers ()
                       GameDispatchers = Map.addMany [World.pairWithName activeGameDispatcher] ^ World.makeDefaultGameDispatchers () }
 
-                // make the simulant states
-                let simulantStates = 
-                    { GameState = World.makeGameState activeGameDispatcher
-                      ScreenStates = Vmap.makeEmpty ()
-                      GroupStates = Vmap.makeEmpty ()
-                      EntityStates = Vmap.makeEmpty ()
-                      ScreenDirectory = Vmap.makeEmpty () }
-
                 // make the world's state
                 let ambientState =
                     let intrinsicOverlays = World.createIntrinsicOverlays components.Facets components.EntityDispatchers
@@ -851,8 +839,12 @@ module WorldModule =
                       Tasklets = Queue.empty
                       OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                       Components = components
-                      SimulantStates = simulantStates
-                      AmbientState = ambientState }
+                      AmbientState = ambientState
+                      GameState = World.makeGameState activeGameDispatcher
+                      ScreenStates = Vmap.makeEmpty ()
+                      GroupStates = Vmap.makeEmpty ()
+                      EntityStates = Vmap.makeEmpty ()
+                      ScreenDirectory = Vmap.makeEmpty () }
 
                 // initialize OptEntityCache after the fact due to back reference
                 let world = { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
