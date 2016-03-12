@@ -712,8 +712,8 @@ module WorldModule =
                 let eventFilter = Core.getEventFilter ()
                 EventSystem.make eventTracer eventTracing eventFilter
 
-            // make the world's components
-            let components =
+            // make the world's dispatchers
+            let dispatchers =
                 { GameDispatchers = World.makeDefaultGameDispatchers ()
                   ScreenDispatchers = World.makeDefaultScreenDispatchers ()
                   GroupDispatchers = World.makeDefaultGroupDispatchers ()
@@ -722,12 +722,12 @@ module WorldModule =
 
             // make the game state
             let gameState =
-                let gameDispatcher = components.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
+                let gameDispatcher = dispatchers.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
                 World.makeGameState gameDispatcher
 
             // make the world's state
             let ambientState =
-                let overlayRouter = OverlayRouter.make components.EntityDispatchers []
+                let overlayRouter = OverlayRouter.make dispatchers.EntityDispatchers []
                 let overlayer = Overlayer.makeEmpty ()
                 let eyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault)
                 let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
@@ -738,7 +738,7 @@ module WorldModule =
                 { Subsystems = subsystems
                   EventSystem = eventSystem
                   Tasklets = Queue.empty
-                  Components = components
+                  Dispatchers = dispatchers
                   OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                   AmbientState = ambientState
                   GameState = gameState
@@ -790,7 +790,7 @@ module WorldModule =
                     let subsystemMap = Vmap.addMany userSubsystems defaultSubsystemMap
                     Subsystems.make subsystemMap
 
-                // make plug-in components
+                // make plug-in dispatchers
                 let pluginFacets = plugin.MakeFacets () |> List.map World.pairWithName
                 let pluginEntityDispatchers = plugin.MakeEntityDispatchers () |> List.map World.pairWithName
                 let pluginGroupDispatchers = plugin.MakeGroupDispatchers () |> List.map World.pairWithName
@@ -813,8 +813,8 @@ module WorldModule =
                     let eventFilter = Core.getEventFilter ()
                     EventSystem.make eventTracer eventTracing eventFilter
 
-                // make the world's components
-                let components =
+                // make the world's dispatchers
+                let dispatchers =
                     { GameDispatchers = Map.addMany [World.pairWithName activeGameDispatcher] ^ World.makeDefaultGameDispatchers ()
                       ScreenDispatchers = Map.addMany pluginScreenDispatchers ^ World.makeDefaultScreenDispatchers ()
                       GroupDispatchers = Map.addMany pluginGroupDispatchers ^ World.makeDefaultGroupDispatchers ()
@@ -823,9 +823,9 @@ module WorldModule =
 
                 // make the world's state
                 let ambientState =
-                    let intrinsicOverlays = World.createIntrinsicOverlays components.Facets components.EntityDispatchers
+                    let intrinsicOverlays = World.createIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
                     let pluginOverlayRoutes = plugin.MakeOverlayRoutes ()
-                    let overlayRouter = OverlayRouter.make components.EntityDispatchers pluginOverlayRoutes
+                    let overlayRouter = OverlayRouter.make dispatchers.EntityDispatchers pluginOverlayRoutes
                     let overlayer = Overlayer.make Constants.Assets.OverlayFilePath intrinsicOverlays
                     let sdlConfig = SdlDeps.getConfig sdlDeps
                     let eyeSize = Vector2 (single sdlConfig.ViewW, single sdlConfig.ViewH)
@@ -837,7 +837,7 @@ module WorldModule =
                     { Subsystems = subsystems
                       EventSystem = eventSystem
                       Tasklets = Queue.empty
-                      Components = components
+                      Dispatchers = dispatchers
                       OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                       AmbientState = ambientState
                       GameState = World.makeGameState activeGameDispatcher
