@@ -187,27 +187,27 @@ module World =
     let addTasklets tasklets world =
         { world with Tasklets = Queue.ofSeq ^ Seq.append (tasklets :> _ seq) (world.Tasklets :> _ seq) }
 
-    (* Components *)
+    (* Dispatchers *)
 
     /// Get the game dispatchers of the world.
     let getGameDispatchers world =
-        world.Components.GameDispatchers
+        world.Dispatchers.GameDispatchers
 
     /// Get the screen dispatchers of the world.
     let getScreenDispatchers world =
-        world.Components.ScreenDispatchers
+        world.Dispatchers.ScreenDispatchers
 
     /// Get the group dispatchers of the world.
     let getGroupDispatchers world =
-        world.Components.GroupDispatchers
+        world.Dispatchers.GroupDispatchers
 
     /// Get the entity dispatchers of the world.
     let getEntityDispatchers world =
-        world.Components.EntityDispatchers
+        world.Dispatchers.EntityDispatchers
 
     /// Get the facets of the world.
     let getFacets world =
-        world.Components.Facets
+        world.Dispatchers.Facets
 
     (* AmbientState *)
 

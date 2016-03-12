@@ -146,7 +146,7 @@ module WorldFacetModule =
             | Left _ as left -> left
 
         static member internal attachIntrinsicFacetsViaNames (entityState : EntityState) world =
-            let components = world.Components
+            let dispatchers = world.Dispatchers
             let entityState = { entityState with Id = entityState.Id } // hacky copy
-            Reflection.attachIntrinsicFacets components.EntityDispatchers components.Facets entityState.DispatcherNp entityState
+            Reflection.attachIntrinsicFacets dispatchers.EntityDispatchers dispatchers.Facets entityState.DispatcherNp entityState
             entityState

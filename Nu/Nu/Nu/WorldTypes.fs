@@ -520,10 +520,11 @@ and [<StructuralEquality; NoComparison>] Entity =
     /// Concatenate two addresses, forcing the type of first address.
     static member (->>-) (address, entity) = acatff address entity
 
-/// The world's components.
+/// The world's dispatchers (including facets).
+/// 
 /// I would prefer this type to be inlined in World, but it has been extracted to its own white-box
 /// type for efficiency reasons.
-and [<ReferenceEquality>] internal Components =
+and [<ReferenceEquality>] internal Dispatchers =
     { GameDispatchers : Map<string, GameDispatcher>
       ScreenDispatchers : Map<string, ScreenDispatcher>
       GroupDispatchers : Map<string, GroupDispatcher>
@@ -534,14 +535,14 @@ and [<ReferenceEquality>] internal Components =
 /// to implement a game, messages to by consumed by the various engine sub-systems, and general
 /// configuration data.
 ///
-/// For efficiency, this type should be kept under 64 bytes on 32-bit machines as to not exceed the
-/// size of a typical cache line.
+/// For efficiency, this type is kept under 64 bytes on 32-bit machines as to not exceed the size
+/// of a typical cache line.
 and [<ReferenceEquality>] World =
     private
         { Subsystems : World Subsystems
           EventSystem : World EventSystem
           Tasklets : World Tasklet Queue
-          Components : Components
+          Dispatchers : Dispatchers
           OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
           AmbientState : AmbientState
           GameState : GameState
