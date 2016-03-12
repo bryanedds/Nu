@@ -90,7 +90,7 @@ module WorldGroupModule =
         static member proxyGroups screen world =
             match Address.getNames screen.ScreenAddress with
             | [screenName] ->
-                match Vmap.tryFind screenName world.SimulantStates.ScreenDirectory with
+                match Vmap.tryFind screenName world.ScreenDirectory with
                 | Some (_, groupDirectory) ->
                     Vmap.fold (fun state _ (groupAddress, _) -> Group.proxy groupAddress :: state) [] groupDirectory :> _ seq
                 | None -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."

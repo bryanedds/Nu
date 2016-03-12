@@ -530,16 +530,6 @@ and [<ReferenceEquality>] internal Components =
       ScreenDispatchers : Map<string, ScreenDispatcher>
       GameDispatchers : Map<string, GameDispatcher> }
 
-/// The world's simulant states, as well as the screen directory for fast simulant queries.
-/// I would prefer this type to be inlined in World, but it has been extracted to its own white-box
-/// type for efficiency reasons.
-and [<ReferenceEquality>] internal SimulantStates =
-    { GameState : GameState
-      ScreenStates : Vmap<Screen Address, ScreenState>
-      GroupStates : Vmap<Group Address, GroupState>
-      EntityStates : Vmap<Entity Address, EntityState>
-      ScreenDirectory : Vmap<Name, Screen Address * Vmap<Name, Group Address * Vmap<Name, Entity Address>>> }
-
 /// The world, in a functional programming sense. Hosts the game object, the dependencies
 /// needed to implement a game, messages to by consumed by the various engine sub-systems,
 /// and general configuration data.
@@ -550,8 +540,12 @@ and [<ReferenceEquality>] World =
           Tasklets : World Tasklet Queue
           OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
           Components : Components
-          SimulantStates : SimulantStates
-          AmbientState : AmbientState }
+          AmbientState : AmbientState
+          GameState : GameState
+          ScreenStates : Vmap<Screen Address, ScreenState>
+          GroupStates : Vmap<Group Address, GroupState>
+          EntityStates : Vmap<Entity Address, EntityState>
+          ScreenDirectory : Vmap<Name, Screen Address * Vmap<Name, Group Address * Vmap<Name, Entity Address>>> }
 
     interface World Eventable with
         member this.GetLiveness () = AmbientState.getLiveness this.AmbientState
@@ -560,9 +554,9 @@ and [<ReferenceEquality>] World =
         member this.ContainsParticipant participant =
             match participant with
             | :? Game -> true
-            | :? Screen as screen -> Vmap.containsKey screen.ScreenAddress this.SimulantStates.ScreenStates
-            | :? Group as group -> Vmap.containsKey group.GroupAddress this.SimulantStates.GroupStates
-            | :? Entity as entity -> Vmap.containsKey entity.EntityAddress this.SimulantStates.EntityStates
+            | :? Screen as screen -> Vmap.containsKey screen.ScreenAddress this.ScreenStates
+            | :? Group as group -> Vmap.containsKey group.GroupAddress this.GroupStates
+            | :? Entity as entity -> Vmap.containsKey entity.EntityAddress this.EntityStates
             | _ -> failwithumf ()
         member this.PublishEvent (participant : Participant) publisher eventData eventAddress eventTrace subscription world = 
             match Address.getNames participant.ParticipantAddress with

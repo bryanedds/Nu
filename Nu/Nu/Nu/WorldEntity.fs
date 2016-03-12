@@ -220,7 +220,7 @@ module WorldEntityModule =
         static member proxyEntities group world =
             match Address.getNames group.GroupAddress with
             | [screenName; groupName] ->
-                match Vmap.tryFind screenName world.SimulantStates.ScreenDirectory with
+                match Vmap.tryFind screenName world.ScreenDirectory with
                 | Some (_, groupDirectory) ->
                     match Vmap.tryFind groupName groupDirectory with
                     | Some (_, entityDirectory) ->

@@ -104,7 +104,7 @@ module WorldScreenModule =
             Vmap.fold
                 (fun state _ (screenAddress, _) -> Screen.proxy screenAddress :: state)
                 []
-                world.SimulantStates.ScreenDirectory :>
+                world.ScreenDirectory :>
                 _ seq
 
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight publishing depends on the
