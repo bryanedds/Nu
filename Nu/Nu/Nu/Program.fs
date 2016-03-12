@@ -161,5 +161,8 @@ module Program =
                  entity<EntityDispatcher>
                     [field? Name !!"Bob"
                      field? Size Vector2.Zero]]
-        Console.WriteLine (SymbolIndex.prettyPrint ^ scstring group)
+        let groupStr = scstring group
+        Console.WriteLine (SymbolIndex.prettyPrint groupStr)
+        let group' = scvalue<GroupDescriptor> groupStr
+        ignore group'
         Constants.Engine.SuccessExitCode
