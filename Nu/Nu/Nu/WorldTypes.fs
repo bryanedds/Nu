@@ -171,8 +171,8 @@ and EntityDispatcher () =
          define? Rotation 0.0f
          define? Depth 0.0f
          define? Overflow Vector2.Zero
-         define? Visible true
          define? ViewType Relative
+         define? Visible true
          define? Omnipresent false
          define? PublishUpdates true
          define? PublishChanges false
@@ -334,8 +334,8 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
       Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
       Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
       Overflow : Vector2
-      Visible : bool
       ViewType : ViewType
+      Visible : bool
       Omnipresent : bool
       PublishUpdates : bool
       PublishChanges : bool
@@ -358,8 +358,8 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
           Rotation = 0.0f
           Depth = 0.0f
           Overflow = Vector2.Zero
-          Visible = true
           ViewType = Relative
+          Visible = true
           Omnipresent = false
           PublishUpdates = true
           PublishChanges = false
@@ -534,8 +534,8 @@ and [<ReferenceEquality>] internal Components =
 /// to implement a game, messages to by consumed by the various engine sub-systems, and general
 /// configuration data.
 ///
-/// For efficiency, this type should be kept under 64 bytes as to not exceed the size of a typical
-/// cache line.
+/// For efficiency, this type should be kept under 64 bytes on 32-bit machines as to not exceed the
+/// size of a typical cache line.
 and [<ReferenceEquality>] World =
     private
         { Subsystems : World Subsystems

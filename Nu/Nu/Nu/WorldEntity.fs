@@ -35,10 +35,10 @@ module WorldEntityModule =
         member this.SetDepth value world = World.updateEntityState (fun entityState -> { entityState with Depth = value }) this world
         member this.GetOverflow world = (World.getEntityState this world).Overflow
         member this.SetOverflow value world = World.updateEntityState (fun entityState -> { entityState with Overflow = value }) this world
-        member this.GetVisible world = (World.getEntityState this world).Visible
-        member this.SetVisible value world = World.updateEntityState (fun entityState -> { entityState with Visible = value }) this world
         member this.GetViewType world = (World.getEntityState this world).ViewType
         member this.SetViewType value world = World.updateEntityState (fun entityState -> { entityState with ViewType = value }) this world
+        member this.GetVisible world = (World.getEntityState this world).Visible
+        member this.SetVisible value world = World.updateEntityState (fun entityState -> { entityState with Visible = value }) this world
         member this.GetOmnipresent world = (World.getEntityState this world).Omnipresent
         member this.SetOmnipresent value world = World.updateEntityStatePlus (fun entityState -> { entityState with Omnipresent = value }) this world
         member this.GetPublishUpdates world = (World.getEntityState this world).PublishUpdates
