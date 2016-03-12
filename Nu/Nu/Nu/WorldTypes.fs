@@ -530,16 +530,19 @@ and [<ReferenceEquality>] internal Components =
       ScreenDispatchers : Map<string, ScreenDispatcher>
       GameDispatchers : Map<string, GameDispatcher> }
 
-/// The world, in a functional programming sense. Hosts the game object, the dependencies
-/// needed to implement a game, messages to by consumed by the various engine sub-systems,
-/// and general configuration data.
+/// The world, in a functional programming sense. Hosts the game object, the dependencies needed
+/// to implement a game, messages to by consumed by the various engine sub-systems, and general
+/// configuration data.
+///
+/// For efficiency, this type should be kept under 64 bytes as to not exceed the size of a typical
+/// cache line.
 and [<ReferenceEquality>] World =
     private
         { Subsystems : World Subsystems
           EventSystem : World EventSystem
           Tasklets : World Tasklet Queue
-          OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
           Components : Components
+          OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
           AmbientState : AmbientState
           GameState : GameState
           ScreenStates : Vmap<Screen Address, ScreenState>
