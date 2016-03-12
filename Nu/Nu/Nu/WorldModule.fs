@@ -321,17 +321,6 @@ module World =
     let handleAsExit<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
         (Resolve, exit world)
 
-    (* ScreenTransitionState - TODO: move into WorldGame.fs? *)
-
-    /// Get the current destination screen if a screen transition is currently underway.
-    let getOptScreenTransitionDestination world =
-        world.GameState.OptScreenTransitionDestination
-
-    let internal setOptScreenTransitionDestination destination world =
-        { world with
-            GameState =
-                { world.GameState with OptScreenTransitionDestination = destination }}
-
     (* OptEntityCache *)
 
     /// Get the opt entity cache.
@@ -661,3 +650,13 @@ module World =
         let gameState = getGameState world
         let gameState = updater gameState
         setGameState gameState world
+
+    /// Get the current destination screen if a screen transition is currently underway.
+    let getOptScreenTransitionDestination world =
+        (getGameState world).OptScreenTransitionDestination
+
+    /// Set the current destination screen on the precondition that no screen transition is currently underway.
+    let internal setOptScreenTransitionDestination destination world =
+        updateGameState
+            (fun gameState -> { gameState with OptScreenTransitionDestination = destination })
+            world

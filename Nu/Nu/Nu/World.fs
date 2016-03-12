@@ -69,9 +69,12 @@ type NuPlugin () =
     abstract MakeSubsystems : unit -> (string * World Subsystem) list
     default this.MakeSubsystems () = []
     
-    /// Make user-defined assets such that Nu can utililize them at run-time.
-    abstract MakeFacets : unit -> Facet list
-    default this.MakeFacets () = []
+    /// Make the overlay routes that will allow Nu to use different overlays for the specified
+    /// types. For example, a returned router of (typeof<ButtonDispatcher>.Name, Some "CustomButtonOverlay")
+    /// will cause all buttons to use the overlay with the name "CustomButtonOverlay" rather
+    /// than the default "ButtonDispatcher" overlay.
+    abstract MakeOverlayRoutes : unit -> (string * string option) list
+    default this.MakeOverlayRoutes () = []
     
     /// Optionally make a user-defined game dispatchers such that Nu can utililize it at run-time.
     abstract MakeOptGameDispatcher : unit -> GameDispatcher option
@@ -89,12 +92,9 @@ type NuPlugin () =
     abstract MakeEntityDispatchers : unit -> EntityDispatcher list
     default this.MakeEntityDispatchers () = []
     
-    /// Make the overlay routes that will allow Nu to use different overlays for the specified
-    /// types. For example, a returned router of (typeof<ButtonDispatcher>.Name, Some "CustomButtonOverlay")
-    /// will cause all buttons to use the overlay with the name "CustomButtonOverlay" rather
-    /// than the default "ButtonDispatcher" overlay.
-    abstract MakeOverlayRoutes : unit -> (string * string option) list
-    default this.MakeOverlayRoutes () = []
+    /// Make user-defined assets such that Nu can utililize them at run-time.
+    abstract MakeFacets : unit -> Facet list
+    default this.MakeFacets () = []
 
 [<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module WorldModule =
@@ -738,8 +738,8 @@ module WorldModule =
                 { Subsystems = subsystems
                   EventSystem = eventSystem
                   Tasklets = Queue.empty
-                  OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                   Components = components
+                  OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                   AmbientState = ambientState
                   GameState = gameState
                   ScreenStates = Vmap.makeEmpty ()
@@ -837,8 +837,8 @@ module WorldModule =
                     { Subsystems = subsystems
                       EventSystem = eventSystem
                       Tasklets = Queue.empty
-                      OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                       Components = components
+                      OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                       AmbientState = ambientState
                       GameState = World.makeGameState activeGameDispatcher
                       ScreenStates = Vmap.makeEmpty ()

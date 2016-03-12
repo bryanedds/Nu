@@ -7,16 +7,14 @@ open InfinityRpg
 type InfinityRpgPlugin () =
     inherit NuPlugin ()
 
+    override this.MakeOverlayRoutes () =
+        [typeof<ButtonDispatcher>.Name, Some "InfinityButtonDispatcher"]
+
     override this.MakeOptGameDispatcher () =
         Some (InfinityDispatcher () :> GameDispatcher)
 
     override this.MakeScreenDispatchers () =
         [GameplayDispatcher () :> ScreenDispatcher]
-
-    override this.MakeFacets () =
-        [CharacterStateFacet () :> Facet
-         CharacterAnimationFacet () :> Facet
-         CharacterCameraFacet () :> Facet]
 
     override this.MakeEntityDispatchers () =
         [FieldDispatcher () :> EntityDispatcher
@@ -24,5 +22,7 @@ type InfinityRpgPlugin () =
          CharacterDispatcher () :> EntityDispatcher
          PlayerDispatcher () :> EntityDispatcher]
 
-    override this.MakeOverlayRoutes () =
-        [typeof<ButtonDispatcher>.Name, Some "InfinityButtonDispatcher"]
+    override this.MakeFacets () =
+        [CharacterStateFacet () :> Facet
+         CharacterAnimationFacet () :> Facet
+         CharacterCameraFacet () :> Facet]
