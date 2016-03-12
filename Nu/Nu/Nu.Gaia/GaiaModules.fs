@@ -297,8 +297,9 @@ module Gaia =
                 form.propertyEditor.Enabled <- true
                 form.propertyNameLabel.Text <- scstring selectedGridItem.Label
                 form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
-                let str = typeConverter.ConvertToString selectedGridItem.Value
-                let strPretty = SymbolIndex.prettyPrint str
+                let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
+                let strEscaped = String.escape strUnescaped
+                let strPretty = SymbolIndex.prettyPrint strEscaped
                 form.propertyValueTextBox.Text <- strPretty
                 // NOTE: can probably use form.propertyValueTextBox.Rtf to highlight matching brace
             | _ ->
@@ -318,7 +319,9 @@ module Gaia =
                 | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
                     let propertyDescriptor = selectedGridItem.PropertyDescriptor :?> EntityPropertyDescriptor
                     let typeConverter = SymbolicConverter (selectedGridItem.PropertyDescriptor.PropertyType)
-                    try let propertyValue = typeConverter.ConvertFromString form.propertyValueTextBox.Text
+                    try let strEscaped = form.propertyValueTextBox.Text
+                        let strUnescaped = String.unescape strEscaped
+                        let propertyValue = typeConverter.ConvertFromString strUnescaped
                         propertyDescriptor.SetValue (entityTds, propertyValue)
                     with exn -> Log.trace ^ "Invalid apply property operation due to: " + scstring exn
                 | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."

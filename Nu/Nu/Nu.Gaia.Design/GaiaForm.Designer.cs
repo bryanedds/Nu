@@ -60,6 +60,7 @@
             this.pasteContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer4 = new System.Windows.Forms.SplitContainer();
+            this.displayPanel = new Nu.Gaia.Design.SelectablePanel();
             this.rolloutTabControl = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.propertyEditor = new System.Windows.Forms.SplitContainer();
@@ -69,6 +70,11 @@
             this.propertyRefreshLabel = new System.Windows.Forms.Button();
             this.propertyDescriptionTextBox = new System.Windows.Forms.TextBox();
             this.propertyValueTextBox = new System.Windows.Forms.RichTextBox();
+            this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.splitContainer6 = new System.Windows.Forms.SplitContainer();
+            this.traceEventsCheckBox = new System.Windows.Forms.CheckBox();
+            this.filterEventsButton = new System.Windows.Forms.Button();
+            this.eventFilterTextBox = new System.Windows.Forms.RichTextBox();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
             this.propertyGrid = new System.Windows.Forms.PropertyGrid();
             this.treeView = new System.Windows.Forms.TreeView();
@@ -107,12 +113,6 @@
             this.groupTabs = new System.Windows.Forms.TabControl();
             this.tabPage = new System.Windows.Forms.TabPage();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
-            this.tabPage2 = new System.Windows.Forms.TabPage();
-            this.splitContainer6 = new System.Windows.Forms.SplitContainer();
-            this.filterEventsButton = new System.Windows.Forms.Button();
-            this.eventFilterTextBox = new System.Windows.Forms.RichTextBox();
-            this.traceEventsCheckBox = new System.Windows.Forms.CheckBox();
-            this.displayPanel = new Nu.Gaia.Design.SelectablePanel();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -133,6 +133,11 @@
             this.splitContainer5.Panel1.SuspendLayout();
             this.splitContainer5.Panel2.SuspendLayout();
             this.splitContainer5.SuspendLayout();
+            this.tabPage2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).BeginInit();
+            this.splitContainer6.Panel1.SuspendLayout();
+            this.splitContainer6.Panel2.SuspendLayout();
+            this.splitContainer6.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).BeginInit();
             this.splitContainer3.Panel1.SuspendLayout();
             this.splitContainer3.Panel2.SuspendLayout();
@@ -143,11 +148,6 @@
             this.splitContainer2.Panel1.SuspendLayout();
             this.splitContainer2.Panel2.SuspendLayout();
             this.splitContainer2.SuspendLayout();
-            this.tabPage2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).BeginInit();
-            this.splitContainer6.Panel1.SuspendLayout();
-            this.splitContainer6.Panel2.SuspendLayout();
-            this.splitContainer6.SuspendLayout();
             this.SuspendLayout();
             // 
             // menuStrip
@@ -372,7 +372,7 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer3);
             this.splitContainer1.Size = new System.Drawing.Size(1334, 801);
-            this.splitContainer1.SplitterDistance = 967;
+            this.splitContainer1.SplitterDistance = 968;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
             // 
@@ -390,9 +390,20 @@
             // splitContainer4.Panel2
             // 
             this.splitContainer4.Panel2.Controls.Add(this.rolloutTabControl);
-            this.splitContainer4.Size = new System.Drawing.Size(967, 801);
+            this.splitContainer4.Size = new System.Drawing.Size(968, 801);
             this.splitContainer4.SplitterDistance = 545;
             this.splitContainer4.TabIndex = 1;
+            // 
+            // displayPanel
+            // 
+            this.displayPanel.ContextMenuStrip = this.contextMenuStrip;
+            this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.displayPanel.Location = new System.Drawing.Point(0, 0);
+            this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
+            this.displayPanel.Name = "displayPanel";
+            this.displayPanel.Size = new System.Drawing.Size(968, 545);
+            this.displayPanel.TabIndex = 0;
+            this.displayPanel.TabStop = true;
             // 
             // rolloutTabControl
             // 
@@ -402,7 +413,7 @@
             this.rolloutTabControl.Location = new System.Drawing.Point(0, 0);
             this.rolloutTabControl.Name = "rolloutTabControl";
             this.rolloutTabControl.SelectedIndex = 0;
-            this.rolloutTabControl.Size = new System.Drawing.Size(967, 252);
+            this.rolloutTabControl.Size = new System.Drawing.Size(968, 252);
             this.rolloutTabControl.TabIndex = 0;
             // 
             // tabPage1
@@ -411,7 +422,7 @@
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(959, 226);
+            this.tabPage1.Size = new System.Drawing.Size(960, 226);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Property Editor";
             this.tabPage1.UseVisualStyleBackColor = true;
@@ -432,7 +443,7 @@
             // propertyEditor.Panel2
             // 
             this.propertyEditor.Panel2.Controls.Add(this.propertyValueTextBox);
-            this.propertyEditor.Size = new System.Drawing.Size(953, 220);
+            this.propertyEditor.Size = new System.Drawing.Size(954, 220);
             this.propertyEditor.SplitterDistance = 176;
             this.propertyEditor.TabIndex = 0;
             // 
@@ -496,14 +507,77 @@
             // 
             // propertyValueTextBox
             // 
+            this.propertyValueTextBox.DetectUrls = false;
             this.propertyValueTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.propertyValueTextBox.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.propertyValueTextBox.Location = new System.Drawing.Point(0, 0);
             this.propertyValueTextBox.Name = "propertyValueTextBox";
-            this.propertyValueTextBox.Size = new System.Drawing.Size(773, 220);
+            this.propertyValueTextBox.Size = new System.Drawing.Size(774, 220);
             this.propertyValueTextBox.TabIndex = 0;
             this.propertyValueTextBox.Text = "";
             this.propertyValueTextBox.WordWrap = false;
+            // 
+            // tabPage2
+            // 
+            this.tabPage2.Controls.Add(this.splitContainer6);
+            this.tabPage2.Location = new System.Drawing.Point(4, 22);
+            this.tabPage2.Name = "tabPage2";
+            this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage2.Size = new System.Drawing.Size(960, 226);
+            this.tabPage2.TabIndex = 1;
+            this.tabPage2.Text = "Event Tracing";
+            this.tabPage2.UseVisualStyleBackColor = true;
+            // 
+            // splitContainer6
+            // 
+            this.splitContainer6.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer6.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
+            this.splitContainer6.IsSplitterFixed = true;
+            this.splitContainer6.Location = new System.Drawing.Point(3, 3);
+            this.splitContainer6.Name = "splitContainer6";
+            // 
+            // splitContainer6.Panel1
+            // 
+            this.splitContainer6.Panel1.Controls.Add(this.traceEventsCheckBox);
+            this.splitContainer6.Panel1.Controls.Add(this.filterEventsButton);
+            // 
+            // splitContainer6.Panel2
+            // 
+            this.splitContainer6.Panel2.Controls.Add(this.eventFilterTextBox);
+            this.splitContainer6.Size = new System.Drawing.Size(954, 220);
+            this.splitContainer6.SplitterDistance = 176;
+            this.splitContainer6.TabIndex = 0;
+            // 
+            // traceEventsCheckBox
+            // 
+            this.traceEventsCheckBox.AutoSize = true;
+            this.traceEventsCheckBox.Location = new System.Drawing.Point(16, 12);
+            this.traceEventsCheckBox.Name = "traceEventsCheckBox";
+            this.traceEventsCheckBox.Size = new System.Drawing.Size(90, 17);
+            this.traceEventsCheckBox.TabIndex = 3;
+            this.traceEventsCheckBox.Text = "Trace Events";
+            this.traceEventsCheckBox.UseVisualStyleBackColor = true;
+            // 
+            // filterEventsButton
+            // 
+            this.filterEventsButton.Location = new System.Drawing.Point(16, 35);
+            this.filterEventsButton.Name = "filterEventsButton";
+            this.filterEventsButton.Size = new System.Drawing.Size(147, 23);
+            this.filterEventsButton.TabIndex = 2;
+            this.filterEventsButton.Text = "Filter Events";
+            this.filterEventsButton.UseVisualStyleBackColor = true;
+            // 
+            // eventFilterTextBox
+            // 
+            this.eventFilterTextBox.DetectUrls = false;
+            this.eventFilterTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.eventFilterTextBox.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.eventFilterTextBox.Location = new System.Drawing.Point(0, 0);
+            this.eventFilterTextBox.Name = "eventFilterTextBox";
+            this.eventFilterTextBox.Size = new System.Drawing.Size(774, 220);
+            this.eventFilterTextBox.TabIndex = 1;
+            this.eventFilterTextBox.Text = "";
+            this.eventFilterTextBox.WordWrap = false;
             // 
             // splitContainer3
             // 
@@ -519,7 +593,7 @@
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.treeView);
-            this.splitContainer3.Size = new System.Drawing.Size(364, 801);
+            this.splitContainer3.Size = new System.Drawing.Size(363, 801);
             this.splitContainer3.SplitterDistance = 527;
             this.splitContainer3.TabIndex = 2;
             // 
@@ -530,7 +604,7 @@
             this.propertyGrid.Location = new System.Drawing.Point(0, 0);
             this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(364, 527);
+            this.propertyGrid.Size = new System.Drawing.Size(363, 527);
             this.propertyGrid.TabIndex = 0;
             this.propertyGrid.ToolbarVisible = false;
             // 
@@ -539,7 +613,7 @@
             this.treeView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeView.Location = new System.Drawing.Point(0, 0);
             this.treeView.Name = "treeView";
-            this.treeView.Size = new System.Drawing.Size(364, 270);
+            this.treeView.Size = new System.Drawing.Size(363, 270);
             this.treeView.TabIndex = 1;
             // 
             // openFileDialog
@@ -841,78 +915,6 @@
             this.splitContainer2.SplitterDistance = 30;
             this.splitContainer2.TabIndex = 5;
             // 
-            // tabPage2
-            // 
-            this.tabPage2.Controls.Add(this.splitContainer6);
-            this.tabPage2.Location = new System.Drawing.Point(4, 22);
-            this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(959, 226);
-            this.tabPage2.TabIndex = 1;
-            this.tabPage2.Text = "Event Tracing";
-            this.tabPage2.UseVisualStyleBackColor = true;
-            // 
-            // splitContainer6
-            // 
-            this.splitContainer6.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer6.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
-            this.splitContainer6.IsSplitterFixed = true;
-            this.splitContainer6.Location = new System.Drawing.Point(3, 3);
-            this.splitContainer6.Name = "splitContainer6";
-            // 
-            // splitContainer6.Panel1
-            // 
-            this.splitContainer6.Panel1.Controls.Add(this.traceEventsCheckBox);
-            this.splitContainer6.Panel1.Controls.Add(this.filterEventsButton);
-            // 
-            // splitContainer6.Panel2
-            // 
-            this.splitContainer6.Panel2.Controls.Add(this.eventFilterTextBox);
-            this.splitContainer6.Size = new System.Drawing.Size(953, 220);
-            this.splitContainer6.SplitterDistance = 176;
-            this.splitContainer6.TabIndex = 0;
-            // 
-            // filterEventsButton
-            // 
-            this.filterEventsButton.Location = new System.Drawing.Point(16, 35);
-            this.filterEventsButton.Name = "filterEventsButton";
-            this.filterEventsButton.Size = new System.Drawing.Size(147, 23);
-            this.filterEventsButton.TabIndex = 2;
-            this.filterEventsButton.Text = "Filter Events";
-            this.filterEventsButton.UseVisualStyleBackColor = true;
-            // 
-            // eventFilterTextBox
-            // 
-            this.eventFilterTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.eventFilterTextBox.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.eventFilterTextBox.Location = new System.Drawing.Point(0, 0);
-            this.eventFilterTextBox.Name = "eventFilterTextBox";
-            this.eventFilterTextBox.Size = new System.Drawing.Size(773, 220);
-            this.eventFilterTextBox.TabIndex = 1;
-            this.eventFilterTextBox.Text = "";
-            this.eventFilterTextBox.WordWrap = false;
-            // 
-            // traceEventsCheckBox
-            // 
-            this.traceEventsCheckBox.AutoSize = true;
-            this.traceEventsCheckBox.Location = new System.Drawing.Point(16, 12);
-            this.traceEventsCheckBox.Name = "traceEventsCheckBox";
-            this.traceEventsCheckBox.Size = new System.Drawing.Size(90, 17);
-            this.traceEventsCheckBox.TabIndex = 3;
-            this.traceEventsCheckBox.Text = "Trace Events";
-            this.traceEventsCheckBox.UseVisualStyleBackColor = true;
-            // 
-            // displayPanel
-            // 
-            this.displayPanel.ContextMenuStrip = this.contextMenuStrip;
-            this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.displayPanel.Location = new System.Drawing.Point(0, 0);
-            this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
-            this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(967, 545);
-            this.displayPanel.TabIndex = 0;
-            this.displayPanel.TabStop = true;
-            // 
             // GaiaForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -948,6 +950,12 @@
             this.splitContainer5.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer5)).EndInit();
             this.splitContainer5.ResumeLayout(false);
+            this.tabPage2.ResumeLayout(false);
+            this.splitContainer6.Panel1.ResumeLayout(false);
+            this.splitContainer6.Panel1.PerformLayout();
+            this.splitContainer6.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).EndInit();
+            this.splitContainer6.ResumeLayout(false);
             this.splitContainer3.Panel1.ResumeLayout(false);
             this.splitContainer3.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).EndInit();
@@ -959,12 +967,6 @@
             this.splitContainer2.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
             this.splitContainer2.ResumeLayout(false);
-            this.tabPage2.ResumeLayout(false);
-            this.splitContainer6.Panel1.ResumeLayout(false);
-            this.splitContainer6.Panel1.PerformLayout();
-            this.splitContainer6.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).EndInit();
-            this.splitContainer6.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 

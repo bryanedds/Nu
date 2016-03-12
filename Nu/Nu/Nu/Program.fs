@@ -3,6 +3,8 @@
 
 namespace Nu
 open System
+open OpenTK
+open Prime
 open global.Nu // TODO: see if this req'd explicit qualification is due to a compiler bug
 open Nu.Tests
 module Program =
@@ -113,15 +115,39 @@ module Program =
     Perhaps not realistic, but just an idea. *)
 
     (* IDEA: it was suggested that time-travel debugging a la Elm or http://vimeo.com/36579366
-    would be appropriate to this engine given its pure functional nature. However, due to the
-    imperative nature of the physics system, it could be problematic. However again, that doesn't
-    mean the idea isn't worth pursuing for while it might not work perfectly in all usage
-    scenarios, it may well be of sufficient value. Additionally, on the possible occasion that the
-    current physics engine be replaceable with pure functional one, improvements to the feature may
-    be implementable in time. *)
+    would be appropriate to this engine given its pure functional nature. *)
 
     (* TODO: investigate Gaia extensibility mechanism. *)
 
+    type [<ReferenceEquality>] EntityDescriptor =
+        { DispatcherName : string
+          Fields : Map<string, string> }
+
+    type [<ReferenceEquality>] GroupDescriptor =
+        { DispatcherName : string
+          Fields : Map<string, string>
+          Entities : EntityDescriptor list }
+
+    let Entity<'d> (fields : (string * string) list) =
+        { EntityDescriptor.DispatcherName = typeof<'d>.Name
+          Fields = Map.ofSeq fields }
+
+    let Group<'d> (fields : (string * string) list) (entities : EntityDescriptor list) =
+        { GroupDescriptor.DispatcherName = typeof<'d>.Name
+          Fields = Map.ofSeq fields
+          Entities = entities }
+
     let [<EntryPoint; STAThread>] main _ =
         Console.WriteLine "Running Nu.exe"
+        Nu.init false
+        let group =
+            Group<GroupDispatcher>
+                [field? Name !!"Group"]
+                [Entity<EntityDispatcher>
+                    [field? Name !!"Jim"
+                     field? Size Vector2.Zero]
+                 Entity<EntityDispatcher>
+                    [field? Name !!"Bob"
+                     field? Size Vector2.Zero]]
+        Console.WriteLine (SymbolIndex.prettyPrint ^ scstring group)
         Constants.Engine.SuccessExitCode
