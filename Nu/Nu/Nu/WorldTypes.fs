@@ -540,9 +540,9 @@ and [<ReferenceEquality>] internal Dispatchers =
 and [<ReferenceEquality>] World =
     private
         { Subsystems : World Subsystems
+          Dispatchers : Dispatchers
           EventSystem : World EventSystem
           Tasklets : World Tasklet Queue
-          Dispatchers : Dispatchers
           OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
           AmbientState : AmbientState
           GameState : GameState
