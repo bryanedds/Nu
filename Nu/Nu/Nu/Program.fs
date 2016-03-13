@@ -121,11 +121,11 @@ module Program =
 
     type [<ReferenceEquality>] EntityDescriptor =
         { DispatcherName : string
-          Fields : Map<string, Symbol> }
+          Fields : Vmap<string, Symbol> }
 
     type [<ReferenceEquality>] GroupDescriptor =
         { DispatcherName : string
-          Fields : Map<string, Symbol>
+          Fields : Vmap<string, Symbol>
           Entities : EntityDescriptor list }
 
     let entity<'d> (fields : (string * Type * obj) list) =
@@ -136,7 +136,7 @@ module Program =
                 let converter = SymbolicConverter ty
                 let symbol = converter.ConvertTo (value, typeof<Symbol>) :?> Symbol
                 (name, symbol)) |>
-            Map.ofSeq }
+            Vmap.ofSeq }
 
     let group<'d> (fields : (string * Type * obj) list) (entities : EntityDescriptor list) =
         { GroupDescriptor.DispatcherName = typeof<'d>.Name
@@ -146,7 +146,7 @@ module Program =
                 let converter = SymbolicConverter ty
                 let symbol = converter.ConvertTo (value, typeof<Symbol>) :?> Symbol
                 (name, symbol)) |>
-            Map.ofSeq
+            Vmap.ofSeq
           Entities = entities }
 
     let [<EntryPoint; STAThread>] main _ =
