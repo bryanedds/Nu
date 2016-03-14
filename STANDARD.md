@@ -6,7 +6,7 @@ Correctness, Consistency, Simplicity
 
 **First, a quick blurb on the difficulties people have with understanding code standards -**
 
-What people often don't understand is that good code standards aren't designed to be used as blunt instruments to foist upon others one's own stylistic preferences. Instead, they're about finding the fewest, simplest, and least  inhibiting rules that enable people to be consistent with each another (and even themselves!) when writing code. In that way, code standards are more about following an informed reasoning process to its logical conclusion than about executing a war of attrition to pursue a stylistic cultural imperialism.
+What people often don't understand is that good code standards aren't designed to be used as blunt instruments to foist upon others one's own stylistic preferences. Instead, they're about finding the fewest, simplest, and least  inhibiting rules that enable people to be consistent with each another (and even themselves!) when writing code. In that way, code standards are more about following an informed reasoning process to its logical conclusion than about executing a war of attrition to pursue a stylistic cultural imperium.
 
 *Without reason driving a decision-making process, all disagreements devolve into wars of passion... to be ended satisfactorily only by attrition... and to be relived anew by each succeeding generation.*
 
