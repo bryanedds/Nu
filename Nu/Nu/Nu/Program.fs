@@ -119,50 +119,40 @@ module Program =
 
     (* TODO: investigate Gaia extensibility mechanism. *)
 
-    type [<ReferenceEquality>] EntityDescriptor =
-        { DispatcherName : string
-          Fields : Vmap<string, Symbol> }
+    let Entity<'d> fields =
+        Symbols
+            [Atom typeof<'d>.Name
+             Symbols fields]
 
-    type [<ReferenceEquality>] GroupDescriptor =
-        { DispatcherName : string
-          Fields : Vmap<string, Symbol>
-          Entities : EntityDescriptor list }
+    let Group<'d> fields entities =
+        Symbols
+            [Atom typeof<'d>.Name
+             Symbols fields
+             Symbols entities]
 
-    let entity<'d> (fields : (string * Type * obj) list) =
-        { EntityDescriptor.DispatcherName = typeof<'d>.Name
-          Fields =
-            fields |>
-            Seq.map (fun (name, ty, value) ->
-                let converter = SymbolicConverter ty
-                let symbol = converter.ConvertTo (value, typeof<Symbol>) :?> Symbol
-                (name, symbol)) |>
-            Vmap.ofSeq }
+    let Screen<'d> fields groups =
+        Symbols
+            [Atom typeof<'d>.Name
+             Symbols fields
+             Symbols groups]
 
-    let group<'d> (fields : (string * Type * obj) list) (entities : EntityDescriptor list) =
-        { GroupDescriptor.DispatcherName = typeof<'d>.Name
-          Fields =
-            fields |>
-            Seq.map (fun (name, ty, value) ->
-                let converter = SymbolicConverter ty
-                let symbol = converter.ConvertTo (value, typeof<Symbol>) :?> Symbol
-                (name, symbol)) |>
-            Vmap.ofSeq
-          Entities = entities }
+    let Game<'d> fields screens =
+        Symbols
+            [Atom typeof<'d>.Name
+             Symbols fields
+             Symbols screens]
 
     let [<EntryPoint; STAThread>] main _ =
         Console.WriteLine "Running Nu.exe"
         Nu.init false
         let group =
-            group<GroupDispatcher>
-                [field? Name !!"Group"]
-                [entity<EntityDispatcher>
-                    [field? Name !!"Jim"
-                     field? Size Vector2.Zero]
-                 entity<EntityDispatcher>
-                    [field? Name !!"Bob"
-                     field? Size Vector2.Zero]]
-        let groupStr = scstring group
-        Console.WriteLine (SymbolIndex.prettyPrint groupStr)
-        let group' = scvalue<GroupDescriptor> groupStr
-        ignore group'
+            Group<GroupDispatcher>
+                [Field? Name "Group"]
+                [Entity<EntityDispatcher>
+                    [Field? Name "Jim"
+                     Field? Size Vector2.Zero]
+                 Entity<EntityDispatcher>
+                    [Field? Name "Bob"
+                     Field? Size Vector2.Zero]]
+        Console.WriteLine (SymbolIndex.prettyPrint ^ scstring group)
         Constants.Engine.SuccessExitCode

@@ -13,7 +13,7 @@ open Nu
 
 /// An evaluatable expression for defining a field.
 type [<NoEquality; NoComparison>] FieldExpr =
-    | Constant of obj
+    | Value of obj
     | Variable of (unit -> obj)
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -22,7 +22,7 @@ module FieldExpr =
     /// Evaluate a field expression.
     let eval expr =
         match expr with
-        | Constant value -> value
+        | Value value -> value
         | Variable fn -> fn ()
 
 /// The definition of a data-driven field.
@@ -53,14 +53,14 @@ module FieldDefinition =
         validate result
         result
 
-/// In tandem with the define literal, grants a nice syntax to define constant fields.
-type ConstantDefinition =
-    { ConstantDefinition : unit }
+/// In tandem with the define literal, grants a nice syntax to define value fields.
+type ValueDefinition =
+    { ValueDefinition : unit }
     
-    /// Some magic syntax for composing constant fields.
+    /// Some magic syntax for composing value fields.
     static member (?) (_, fieldName) =
-        fun (constant : 'c) ->
-            FieldDefinition.makeValidated fieldName typeof<'c> ^ Constant constant
+        fun (value : 'v) ->
+            FieldDefinition.makeValidated fieldName typeof<'v> ^ Value value
 
 /// In tandem with the variable literal, grants a nice syntax to define variable fields.
 type VariableDefinition =
@@ -78,17 +78,17 @@ type FieldDescriptor =
     /// Some magic syntax for composing constant fields.
     static member (?) (_, fieldName : string) =
         fun (value : 'v) ->
-            (fieldName, typeof<'v>, value :> obj)
+            Symbols [Atom fieldName; symbolize value]
 
 [<AutoOpen>]
 module ReflectionModule =
 
-    /// In tandem with the ConstantDefinition type, grants a nice syntax to define constant fields.
-    let define = { ConstantDefinition = () }
-    
+    /// In tandem with the ValueDefinition type, grants a nice syntax to define value fields.
+    let define = { ValueDefinition = () }
+
     /// In tandem with the VariableDefinition type, grants a nice syntax to define variable fields.
     let variable = { VariableDefinition = () }
-    
+
     /// In tandem with the FieldDescriptor type, grants a nice syntax to define field descriptors.
     let field = { FieldDescriptor = () }
 
@@ -516,7 +516,7 @@ module Reflection =
             for definition in definitions do
                 let fieldNode = document.CreateElement definition.FieldName
                 match definition.FieldExpr with
-                | Constant constant ->
+                | Value constant ->
                     let converter = SymbolicConverter definition.FieldType
                     fieldNode.InnerText <- converter.ConvertToString constant
                     overlayNode.AppendChild fieldNode |> ignore
