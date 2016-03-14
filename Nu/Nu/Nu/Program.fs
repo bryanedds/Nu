@@ -147,12 +147,12 @@ module Program =
         Nu.init false
         let group =
             Group<GroupDispatcher>
-                [Field? Name "Group"]
+                [field? Name "Group"]
                 [Entity<EntityDispatcher>
-                    [Field? Name "Jim"
-                     Field? Size Vector2.Zero]
+                    [field? Name "Jim"
+                     field? Size Vector2.Zero]
                  Entity<EntityDispatcher>
-                    [Field? Name "Bob"
-                     Field? Size Vector2.Zero]]
+                    [field? Name "Bob"
+                     field? Size Vector2.Zero]]
         Console.WriteLine (SymbolIndex.prettyPrint ^ scstring group)
         Constants.Engine.SuccessExitCode
