@@ -36,15 +36,15 @@ module BulletModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? Size ^ Vector2 (24.0f, 24.0f)
-             define? Density 0.25f
-             define? Restitution 0.5f
-             define? LinearDamping 0.0f
-             define? GravityScale 0.0f
-             define? IsBullet true
-             define? CollisionExpr ^ BodyCircle { Radius = 0.5f; Center = Vector2.Zero }
-             define? StaticImage Constants.Assets.PlayerBulletImage
-             define? Age 0L]
+            [Define? Size ^ Vector2 (24.0f, 24.0f)
+             Define? Density 0.25f
+             Define? Restitution 0.5f
+             Define? LinearDamping 0.0f
+             Define? GravityScale 0.0f
+             Define? IsBullet true
+             Define? CollisionExpr ^ BodyCircle { Radius = 0.5f; Center = Vector2.Zero }
+             Define? StaticImage Constants.Assets.PlayerBulletImage
+             Define? Age 0L]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -98,17 +98,17 @@ module EnemyModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? Size ^ Vector2 (48.0f, 96.0f)
-             define? FixedRotation true
-             define? LinearDamping 3.0f
-             define? GravityScale 0.0f
-             define? CollisionExpr ^ BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero }
-             define? TileCount 6
-             define? TileRun 4
-             define? TileSize ^ Vector2 (48.0f, 96.0f)
-             define? AnimationStutter 8L
-             define? AnimationSheet Constants.Assets.EnemyImage
-             define? Health 6]
+            [Define? Size ^ Vector2 (48.0f, 96.0f)
+             Define? FixedRotation true
+             Define? LinearDamping 3.0f
+             Define? GravityScale 0.0f
+             Define? CollisionExpr ^ BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero }
+             Define? TileCount 6
+             Define? TileRun 4
+             Define? TileSize ^ Vector2 (48.0f, 96.0f)
+             Define? AnimationStutter 8L
+             Define? AnimationSheet Constants.Assets.EnemyImage
+             Define? Health 6]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -205,18 +205,18 @@ module PlayerModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? Size ^ Vector2 (48.0f, 96.0f)
-             define? FixedRotation true
-             define? LinearDamping 3.0f
-             define? GravityScale 0.0f
-             define? CollisionExpr ^ BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero }
-             define? TileCount 16
-             define? TileRun 4
-             define? TileSize ^ Vector2 (48.0f, 96.0f)
-             define? AnimationStutter 3L
-             define? AnimationSheet Constants.Assets.PlayerImage
-             define? LastTimeOnGroundNp Int64.MinValue
-             define? LastTimeJumpNp Int64.MinValue]
+            [Define? Size ^ Vector2 (48.0f, 96.0f)
+             Define? FixedRotation true
+             Define? LinearDamping 3.0f
+             Define? GravityScale 0.0f
+             Define? CollisionExpr ^ BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero }
+             Define? TileCount 16
+             Define? TileRun 4
+             Define? TileSize ^ Vector2 (48.0f, 96.0f)
+             Define? AnimationStutter 3L
+             Define? AnimationSheet Constants.Assets.PlayerImage
+             Define? LastTimeOnGroundNp Int64.MinValue
+             Define? LastTimeJumpNp Int64.MinValue]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name

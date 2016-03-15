@@ -43,19 +43,19 @@ module CharacterStateFacetModule =
         inherit Facet ()
 
         static member FieldDefinitions =
-            [define? CharacterType Player
-             define? ActivityState NoActivity
-             define? HitPoints 10 // note this is an arbitrary number as hp max is calculated
-             define? SpecialPoints 1 // sp max is calculated
-             define? PowerBuff 1.0f // rate at which power is buffed / debuffed
-             define? ShieldBuff 1.0f // rate at which shield is buffed / debuffed
-             define? MindBuff 1.0f // rate at which mind is buffed / debuffed
-             define? CounterBuff 1.0f // rate at which counter is buffed / debuffed
-             define? Statuses Set.empty<StatusType>
-             define? EquippedWeapon Option<WeaponType>.None
-             define? EquippedArmor Option<ArmorType>.None
-             define? EquippedRelics list<RelicType>.Empty
-             define? ControlType Uncontrolled] // level is calculated from base experience + added experience
+            [Define? CharacterType Player
+             Define? ActivityState NoActivity
+             Define? HitPoints 10 // note this is an arbitrary number as hp max is calculated
+             Define? SpecialPoints 1 // sp max is calculated
+             Define? PowerBuff 1.0f // rate at which power is buffed / debuffed
+             Define? ShieldBuff 1.0f // rate at which shield is buffed / debuffed
+             Define? MindBuff 1.0f // rate at which mind is buffed / debuffed
+             Define? CounterBuff 1.0f // rate at which counter is buffed / debuffed
+             Define? Statuses Set.empty<StatusType>
+             Define? EquippedWeapon Option<WeaponType>.None
+             Define? EquippedArmor Option<ArmorType>.None
+             Define? EquippedRelics list<RelicType>.Empty
+             Define? ControlType Uncontrolled] // level is calculated from base experience + added experience
 
 [<AutoOpen>]
 module CharacterAnimationFacetModule =
@@ -130,12 +130,12 @@ module CharacterAnimationFacetModule =
             Some spriteInset
 
         static member FieldDefinitions =
-            [define?
+            [Define?
                 CharacterAnimationState
                     { AnimationType = CharacterAnimationFacing
                       Direction = Upward
                       StartTime = 0L }
-             define? CharacterAnimationSheet Constants.Assets.PlayerImage]
+             Define? CharacterAnimationSheet Constants.Assets.PlayerImage]
 
         override facet.Actualize (entity, world) =
             if entity.InView world then

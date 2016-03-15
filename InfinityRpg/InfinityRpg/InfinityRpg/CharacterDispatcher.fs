@@ -16,4 +16,4 @@ module CharacterDispatcherModule =
              typeof<CharacterAnimationFacet>.Name]
 
         static member FieldDefinitions =
-            [define? Omnipresent true]
+            [Define? Omnipresent true]

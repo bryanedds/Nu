@@ -12,8 +12,8 @@ module PlayerDispatcherModule =
         inherit CharacterDispatcher ()
 
         static member FieldDefinitions =
-            [define? HitPoints 30 // note this is an arbitrary number as hp max is calculated
-             define? ControlType Player]
+            [Define? HitPoints 30 // note this is an arbitrary number as hp max is calculated
+             Define? ControlType Player]
 
         static member IntrinsicFacetNames =
             [typeof<CharacterCameraFacet>.Name]

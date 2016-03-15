@@ -564,9 +564,9 @@ module GameplayDispatcherModule =
             (Cascade, world)
 
         static member FieldDefinitions =
-            [define? ContentRandState Rand.DefaultSeedState
-             define? OngoingRandState Rand.DefaultSeedState
-             define? ShallLoadGame false]
+            [Define? ContentRandState Rand.DefaultSeedState
+             Define? OngoingRandState Rand.DefaultSeedState
+             Define? ShallLoadGame false]
 
         override dispatcher.Register (gameplay, world) =
             world |>

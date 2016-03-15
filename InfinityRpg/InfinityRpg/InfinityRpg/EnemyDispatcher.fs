@@ -17,6 +17,6 @@ module EnemyDispatcherModule =
         inherit CharacterDispatcher ()
 
         static member FieldDefinitions =
-            [define? HitPoints 10 // note this is an arbitrary number as hp max is calculated
-             define? ControlType Chaos
-             define? DesiredTurn NoTurn]
+            [Define? HitPoints 10 // note this is an arbitrary number as hp max is calculated
+             Define? ControlType Chaos
+             Define? DesiredTurn NoTurn]

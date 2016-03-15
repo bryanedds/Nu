@@ -55,12 +55,12 @@ module MountFacetModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? PublishChanges true
-             define? OptMountRelation (None : Entity Relation option)
-             define? PositionLocal Vector2.Zero
-             define? DepthLocal 0.0f
-             define? MountUpdateCountNp Int64.MinValue
-             define? MountUnsubscribeNp (id : World -> World)]
+            [Define? PublishChanges true
+             Define? OptMountRelation (None : Entity Relation option)
+             Define? PositionLocal Vector2.Zero
+             Define? DepthLocal 0.0f
+             Define? MountUpdateCountNp Int64.MinValue
+             Define? MountUnsubscribeNp (id : World -> World)]
 
         override facet.Register (entity, world) =
             let world = World.monitor handleEntityChange (Events.EntityChange ->- entity) entity world
@@ -101,14 +101,14 @@ module EffectFacetModule =
         inherit Facet ()
 
         static member FieldDefinitions =
-            [define? EffectDefinitions (Map.empty : Definitions)
-             define? Effect Effect.empty
-             define? EffectOffset Vector2.Zero
-             define? EffectTimeOffset 0L // TODO: also implement similar time offset for AnimatedSpriteFacet
-             define? EffectHistoryMax 180 // 3 seconds. TODO: make a constant
-             define? EffectHistoryNp Seq.empty<Slice>
-             define? EffectPhysicsShapesNp ()
-             define? EffectTagsNp (Map.empty : EffectTags)]
+            [Define? EffectDefinitions (Map.empty : Definitions)
+             Define? Effect Effect.empty
+             Define? EffectOffset Vector2.Zero
+             Define? EffectTimeOffset 0L // TODO: also implement similar time offset for AnimatedSpriteFacet
+             Define? EffectHistoryMax 180 // 3 seconds. TODO: make a constant
+             Define? EffectHistoryNp Seq.empty<Slice>
+             Define? EffectPhysicsShapesNp ()
+             Define? EffectTagsNp (Map.empty : EffectTags)]
 
         override facet.Actualize (entity, world) =
             if entity.InView world then
@@ -201,24 +201,24 @@ module RigidBodyFacetModule =
             Physics.evalCollisionExpr (entity.GetSize world) (entity.GetCollisionExpr world)
 
         static member FieldDefinitions =
-            [variable? MinorId ^ fun () -> makeGuid ()
-             define? BodyType Dynamic
-             define? Awake true
-             define? Enabled true
-             define? Density Constants.Physics.NormalDensity
-             define? Friction 0.0f
-             define? Restitution 0.0f
-             define? FixedRotation false
-             define? AngularVelocity 0.0f
-             define? AngularDamping 1.0f
-             define? LinearVelocity Vector2.Zero
-             define? LinearDamping 1.0f
-             define? GravityScale 1.0f
-             define? CollisionCategories "1"
-             define? CollisionMask "*"
-             define? CollisionExpr ^ BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero }
-             define? IsBullet false
-             define? IsSensor false]
+            [Variable? MinorId ^ fun () -> makeGuid ()
+             Define? BodyType Dynamic
+             Define? Awake true
+             Define? Enabled true
+             Define? Density Constants.Physics.NormalDensity
+             Define? Friction 0.0f
+             Define? Restitution 0.0f
+             Define? FixedRotation false
+             Define? AngularVelocity 0.0f
+             Define? AngularDamping 1.0f
+             Define? LinearVelocity Vector2.Zero
+             Define? LinearDamping 1.0f
+             Define? GravityScale 1.0f
+             Define? CollisionCategories "1"
+             Define? CollisionMask "*"
+             Define? CollisionExpr ^ BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero }
+             Define? IsBullet false
+             Define? IsSensor false]
 
         override facet.RegisterPhysics (entity, world) =
             let bodyProperties = 
@@ -263,7 +263,7 @@ module StaticSpriteFacetModule =
         inherit Facet ()
 
         static member FieldDefinitions =
-            [define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
+            [Define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
 
         override facet.Actualize (entity, world) =
             if entity.InView world then
@@ -321,11 +321,11 @@ module AnimatedSpriteFacetModule =
             Some inset
 
         static member FieldDefinitions =
-            [define? TileCount 16 
-             define? TileSize ^ Vector2 (16.0f, 16.0f)
-             define? TileRun 4
-             define? AnimationStutter 4L
-             define? AnimationSheet { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image7" }]
+            [Define? TileCount 16 
+             Define? TileSize ^ Vector2 (16.0f, 16.0f)
+             Define? TileRun 4
+             Define? AnimationStutter 4L
+             Define? AnimationSheet { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image7" }]
 
         override facet.Actualize (entity, world) =
             if entity.InView world then
@@ -377,10 +377,10 @@ module GuiDispatcherModule =
             (handling, world)
         
         static member FieldDefinitions =
-            [define? ViewType Absolute
-             define? Enabled true
-             define? DisabledColor ^ Vector4 0.75f
-             define? SwallowMouseLeft true]
+            [Define? ViewType Absolute
+             Define? Enabled true
+             Define? DisabledColor ^ Vector4 0.75f
+             Define? SwallowMouseLeft true]
 
         override dispatcher.Register (gui, world) =
             world |>
@@ -444,11 +444,11 @@ module ButtonDispatcherModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? SwallowMouseLeft false
-             define? Down false
-             define? UpImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image" }
-             define? DownImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image2" }
-             define? OptClickSound ^ Some { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Sound" }]
+            [Define? SwallowMouseLeft false
+             Define? Down false
+             Define? UpImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image" }
+             Define? DownImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image2" }
+             Define? OptClickSound ^ Some { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Sound" }]
 
         override dispatcher.Register (button, world) =
             world |>
@@ -489,8 +489,8 @@ module LabelDispatcherModule =
         inherit GuiDispatcher ()
 
         static member FieldDefinitions =
-            [define? SwallowMouseLeft true
-             define? LabelImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image4" }]
+            [Define? SwallowMouseLeft true
+             Define? LabelImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image4" }]
 
         override dispatcher.Actualize (label, world) =
             World.addRenderMessage
@@ -534,12 +534,12 @@ module TextDispatcherModule =
         inherit GuiDispatcher ()
 
         static member FieldDefinitions =
-            [define? SwallowMouseLeft true
-             define? Text String.Empty
-             define? TextFont { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Font" }
-             define? TextOffset Vector2.Zero
-             define? TextColor Vector4.One
-             define? BackgroundImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image4" }]
+            [Define? SwallowMouseLeft true
+             Define? Text String.Empty
+             Define? TextFont { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Font" }
+             Define? TextOffset Vector2.Zero
+             Define? TextColor Vector4.One
+             Define? BackgroundImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image4" }]
 
         override dispatcher.Actualize (text, world) =
             World.addRenderMessage
@@ -630,12 +630,12 @@ module ToggleDispatcherModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? SwallowMouseLeft false
-             define? On false
-             define? Pressed false
-             define? OffImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image" }
-             define? OnImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image2" }
-             define? OptToggleSound ^ Some { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Sound" }]
+            [Define? SwallowMouseLeft false
+             Define? On false
+             Define? Pressed false
+             Define? OffImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image" }
+             Define? OnImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image2" }
+             Define? OptToggleSound ^ Some { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Sound" }]
 
         override dispatcher.Register (toggle, world) =
             world |>
@@ -704,8 +704,8 @@ module FeelerDispatcherModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? SwallowMouseLeft false
-             define? Touched false]
+            [Define? SwallowMouseLeft false
+             Define? Touched false]
 
         override dispatcher.Register (feeler, world) =
             world |>
@@ -741,11 +741,11 @@ module FillBarDispatcherModule =
             (spritePosition, Vector2 (spriteWidth, spriteHeight))
 
         static member FieldDefinitions =
-            [define? SwallowMouseLeft true
-             define? Fill 0.0f
-             define? FillInset 0.0f
-             define? FillImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image9" }
-             define? BorderImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image10" }]
+            [Define? SwallowMouseLeft true
+             Define? Fill 0.0f
+             Define? FillInset 0.0f
+             Define? FillImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image9" }
+             Define? BorderImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image10" }]
 
         override dispatcher.Actualize (fillBar, world) =
             let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar world
@@ -790,8 +790,8 @@ module BlockDispatcherModule =
         inherit EntityDispatcher ()
 
         static member FieldDefinitions =
-            [define? BodyType Static
-             define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
+            [Define? BodyType Static
+             Define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -804,7 +804,7 @@ module BoxDispatcherModule =
         inherit EntityDispatcher ()
 
         static member FieldDefinitions =
-            [define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
+            [Define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -817,11 +817,11 @@ module TopViewCharacterDispatcherModule =
         inherit EntityDispatcher ()
 
         static member FieldDefinitions =
-            [define? FixedRotation true
-             define? LinearDamping 10.0f
-             define? GravityScale 0.0f
-             define? CollisionExpr ^ BodyCircle { Radius = 0.5f; Center = Vector2.Zero }
-             define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image7" }]
+            [Define? FixedRotation true
+             Define? LinearDamping 10.0f
+             Define? GravityScale 0.0f
+             Define? CollisionExpr ^ BodyCircle { Radius = 0.5f; Center = Vector2.Zero }
+             Define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image7" }]
         
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -834,10 +834,10 @@ module SideViewCharacterDispatcherModule =
         inherit EntityDispatcher ()
 
         static member FieldDefinitions =
-            [define? FixedRotation true
-             define? LinearDamping 3.0f
-             define? CollisionExpr ^ BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero }
-             define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image6" }]
+            [Define? FixedRotation true
+             Define? LinearDamping 3.0f
+             Define? CollisionExpr ^ BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero }
+             Define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image6" }]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -978,13 +978,13 @@ module TileMapDispatcherModule =
                 tileMapData.Map.Layers
 
         static member FieldDefinitions =
-            [define? Omnipresent true
-             define? Friction 0.0f
-             define? Restitution 0.0f
-             define? CollisionCategories "1"
-             define? CollisionMask "*"
-             define? TileMapAsset { PackageName = Constants.Assets.DefaultPackageName; AssetName = "TileMap" }
-             define? Parallax 0.0f]
+            [Define? Omnipresent true
+             Define? Friction 0.0f
+             Define? Restitution 0.0f
+             Define? CollisionCategories "1"
+             Define? CollisionMask "*"
+             Define? TileMapAsset { PackageName = Constants.Assets.DefaultPackageName; AssetName = "TileMap" }
+             Define? Parallax 0.0f]
 
         override dispatcher.Register (tileMap, world) =
             registerTileMapPhysics tileMap world
