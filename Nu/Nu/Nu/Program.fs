@@ -6,7 +6,7 @@ open System
 open OpenTK
 open Prime
 open global.Nu // TODO: see if this req'd explicit qualification is due to a compiler bug
-open Nu.Tests
+open Nu.SimulantDescriptors
 module Program =
 
     (* DISCUSSION - On Nu's authoring story...
@@ -119,40 +119,17 @@ module Program =
 
     (* TODO: investigate Gaia extensibility mechanism. *)
 
-    let Entity<'d> fields =
-        Symbols
-            [Atom typeof<'d>.Name
-             Symbols fields]
-
-    let Group<'d> fields entities =
-        Symbols
-            [Atom typeof<'d>.Name
-             Symbols fields
-             Symbols entities]
-
-    let Screen<'d> fields groups =
-        Symbols
-            [Atom typeof<'d>.Name
-             Symbols fields
-             Symbols groups]
-
-    let Game<'d> fields screens =
-        Symbols
-            [Atom typeof<'d>.Name
-             Symbols fields
-             Symbols screens]
-
     let [<EntryPoint; STAThread>] main _ =
         Console.WriteLine "Running Nu.exe"
         Nu.init false
         let group =
             Group<GroupDispatcher>
-                [field? Name "Group"]
+                [Field? Name "Group"]
                 [Entity<EntityDispatcher>
-                    [field? Name "Jim"
-                     field? Size Vector2.Zero]
+                    [Field? Name "Jim"
+                     Field? Size Vector2.Zero]
                  Entity<EntityDispatcher>
-                    [field? Name "Bob"
-                     field? Size Vector2.Zero]]
+                    [Field? Name "Bob"
+                     Field? Size Vector2.Zero]]
         Console.WriteLine (SymbolIndex.prettyPrint ^ scstring group)
         Constants.Engine.SuccessExitCode

@@ -98,7 +98,7 @@ type SimulantOperators =
 type GameDispatcher () =
 
     static member FieldDefinitions =
-        [define? PublishChanges true]
+        [Define? PublishChanges true]
 
     /// Register a game when adding it to the world. Note that there is no corresponding
     /// Unregister method due to the inability to remove a game from the world.
@@ -117,9 +117,9 @@ type GameDispatcher () =
 and ScreenDispatcher () =
 
     static member FieldDefinitions =
-        [define? OptSpecialization (None : string option)
-         define? PublishChanges true
-         define? Persistent true]
+        [Define? OptSpecialization (None : string option)
+         Define? PublishChanges true
+         Define? Persistent true]
 
     /// Register a screen when adding it to the world.
     abstract Register : Screen * World -> World
@@ -141,9 +141,9 @@ and ScreenDispatcher () =
 and GroupDispatcher () =
 
     static member FieldDefinitions =
-        [define? OptSpecialization (None : string option)
-         define? PublishChanges true
-         define? Persistent true]
+        [Define? OptSpecialization (None : string option)
+         Define? PublishChanges true
+         Define? Persistent true]
 
     /// Register a group when adding it to a screen.
     abstract Register : Group * World -> World
@@ -165,18 +165,18 @@ and GroupDispatcher () =
 and EntityDispatcher () =
 
     static member FieldDefinitions =
-        [define? OptSpecialization (None : string option)
-         define? Position Vector2.Zero
-         define? Size Constants.Engine.DefaultEntitySize
-         define? Rotation 0.0f
-         define? Depth 0.0f
-         define? Overflow Vector2.Zero
-         define? ViewType Relative
-         define? Visible true
-         define? Omnipresent false
-         define? PublishUpdates true
-         define? PublishChanges false
-         define? Persistent true]
+        [Define? OptSpecialization (None : string option)
+         Define? Position Vector2.Zero
+         Define? Size Constants.Engine.DefaultEntitySize
+         Define? Rotation 0.0f
+         Define? Depth 0.0f
+         Define? Overflow Vector2.Zero
+         Define? ViewType Relative
+         Define? Visible true
+         Define? Omnipresent false
+         Define? PublishUpdates true
+         Define? PublishChanges false
+         Define? Persistent true]
 
     /// Register an entity when adding it to a group.
     abstract Register : Entity * World -> World

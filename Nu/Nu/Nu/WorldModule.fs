@@ -30,7 +30,6 @@ module SimulantOperators =
     /// Convert a group's proxy to a screen's by removing the group's name from the end.
     let gtos group = Screen.proxy ^ Address.take<Group, Screen> 1 group.GroupAddress
 
-/// Allowed to open manually despite some worry on my part... :)
 module Simulants =
 
     /// The game. Always exists.
@@ -44,6 +43,35 @@ module Simulants =
     
     /// The default entity - may or may not exist.
     let DefaultEntity = DefaultGroup => Constants.Engine.DefaultEntityName
+
+module SimulantDescriptors =
+
+    /// Describe a game with the given fields values and contained screens.
+    let Game<'d when 'd :> GameDispatcher> fields screens =
+        Symbols
+            [Atom typeof<'d>.Name
+             Symbols fields
+             Symbols screens]
+
+    /// Describe a screen with the given fields values and contained groups.
+    let Screen<'d when 'd :> ScreenDispatcher> fields groups =
+        Symbols
+            [Atom typeof<'d>.Name
+             Symbols fields
+             Symbols groups]
+
+    /// Describe a group with the given fields values and contained entities.
+    let Group<'d when 'd :> GroupDispatcher> fields entities =
+        Symbols
+            [Atom typeof<'d>.Name
+             Symbols fields
+             Symbols entities]
+
+    /// Describe an entity with the given fields values.
+    let Entity<'d when 'd :> EntityDispatcher> fields =
+        Symbols
+            [Atom typeof<'d>.Name
+             Symbols fields]
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module World =

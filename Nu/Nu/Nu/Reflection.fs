@@ -13,8 +13,8 @@ open Nu
 
 /// An evaluatable expression for defining a field.
 type [<NoEquality; NoComparison>] FieldExpr =
-    | Value of obj
-    | Variable of (unit -> obj)
+    | DefineExpr of obj
+    | VariableExpr of (unit -> obj)
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module FieldExpr =
@@ -22,8 +22,8 @@ module FieldExpr =
     /// Evaluate a field expression.
     let eval expr =
         match expr with
-        | Value value -> value
-        | Variable fn -> fn ()
+        | DefineExpr value -> value
+        | VariableExpr fn -> fn ()
 
 /// The definition of a data-driven field.
 type [<NoEquality; NoComparison>] FieldDefinition =
@@ -60,7 +60,7 @@ type ValueDefinition =
     /// Some magic syntax for composing value fields.
     static member (?) (_, fieldName) =
         fun (value : 'v) ->
-            FieldDefinition.makeValidated fieldName typeof<'v> ^ Value value
+            FieldDefinition.makeValidated fieldName typeof<'v> ^ DefineExpr value
 
 /// In tandem with the variable literal, grants a nice syntax to define variable fields.
 type VariableDefinition =
@@ -69,13 +69,13 @@ type VariableDefinition =
     /// Some magic syntax for composing variable fields.
     static member (?) (_, fieldName) =
         fun (variable : unit -> 'v) ->
-            FieldDefinition.makeValidated fieldName typeof<'v> ^ Variable (fun () -> variable () :> obj)
+            FieldDefinition.makeValidated fieldName typeof<'v> ^ VariableExpr (fun () -> variable () :> obj)
 
 /// In tandem with the define literal, grants a nice syntax to define field descriptors.
 type FieldDescriptor =
     { FieldDescriptor : unit }
     
-    /// Some magic syntax for composing constant fields.
+    /// Some magic syntax for composing value fields.
     static member (?) (_, fieldName : string) =
         fun (value : 'v) ->
             Symbols [Atom fieldName; symbolize value]
@@ -84,13 +84,21 @@ type FieldDescriptor =
 module ReflectionModule =
 
     /// In tandem with the ValueDefinition type, grants a nice syntax to define value fields.
+    [<Obsolete ("Change in code standard implicates that all constructor functions for DSLs be capitalized. Use capitalized version instead.")>]
     let define = { ValueDefinition = () }
+    
+    /// In tandem with the ValueDefinition type, grants a nice syntax to define value fields.
+    let Define = { ValueDefinition = () }
 
     /// In tandem with the VariableDefinition type, grants a nice syntax to define variable fields.
+    [<Obsolete ("Change in code standard implicates that all constructor functions for DSLs be capitalized. Use capitalized version instead.")>]
     let variable = { VariableDefinition = () }
 
+    /// In tandem with the VariableDefinition type, grants a nice syntax to define variable fields.
+    let Variable = { VariableDefinition = () }
+    
     /// In tandem with the FieldDescriptor type, grants a nice syntax to define field descriptors.
-    let field = { FieldDescriptor = () }
+    let Field = { FieldDescriptor = () }
 
 [<RequireQualifiedAccess>]
 module Reflection =
@@ -516,11 +524,11 @@ module Reflection =
             for definition in definitions do
                 let fieldNode = document.CreateElement definition.FieldName
                 match definition.FieldExpr with
-                | Value constant ->
+                | DefineExpr value ->
                     let converter = SymbolicConverter definition.FieldType
-                    fieldNode.InnerText <- converter.ConvertToString constant
+                    fieldNode.InnerText <- converter.ConvertToString value
                     overlayNode.AppendChild fieldNode |> ignore
-                | Variable _ -> ()
+                | VariableExpr _ -> ()
 
             // construct the "FacetNames" node if needed
             if hasFacetNamesField then
