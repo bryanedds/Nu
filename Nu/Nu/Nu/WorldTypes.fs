@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open FSharpx.Collections
 open OpenTK
 open TiledSharp
 open Prime
@@ -70,11 +69,6 @@ type [<StructuralEquality; NoComparison>] TileData =
       Gid2 : Vector2i
       OptTileSetTile : TmxTilesetTile option
       TilePosition : Vector2i }
-
-/// A tasklet to be completed at the schedule tick time.
-type [<ReferenceEquality>] 'w Tasklet =
-    { ScheduledTime : int64
-      Operation : 'w -> 'w }
 
 /// A simulant in the world.
 type Simulant =
@@ -542,9 +536,8 @@ and [<ReferenceEquality>] World =
         { Subsystems : World Subsystems
           Dispatchers : Dispatchers
           EventSystem : World EventSystem
-          Tasklets : World Tasklet Queue
           OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
-          AmbientState : AmbientState
+          AmbientState : World AmbientState
           GameState : GameState
           ScreenStates : Vmap<Screen Address, ScreenState>
           GroupStates : Vmap<Group Address, GroupState>

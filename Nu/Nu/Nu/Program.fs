@@ -23,7 +23,9 @@ module Program =
     event filtering | s-exprs       | Gaia
     effect system   | s-exprs       | Aether (TBA)
     mind (TBA)      | s-exprs       | Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
-    simulant behav'r| F#            | Visual Studio
+    interactions    | F# (chains)   | Visual Studio
+    subsystems      | F#            | Visual Studio
+    dispatchers     | F#            | Visual Studio
 
     The advantages and limitations that fall out of this is as such -
 

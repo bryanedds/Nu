@@ -218,29 +218,13 @@ module World =
         (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
         Eventable.monitor<'a, 's, World> subscription eventAddress subscriber world
 
-    (* Tasklets *)
-
-    let internal getTasklets world =
-        world.Tasklets
-
-    let internal clearTasklets world =
-        { world with Tasklets = Queue.empty }
-
-    let internal restoreTasklets tasklets world =
-        { world with Tasklets = Queue.ofSeq ^ Seq.append (world.Tasklets :> _ seq) (tasklets :> _ seq) }
-
-    /// Add a tasklet to be executed by the engine at the scheduled time.
-    let addTasklet tasklet world =
-        { world with Tasklets = Queue.conj tasklet world.Tasklets }
-
-    /// Add multiple tasklets to be executed by the engine at the scheduled times.
-    let addTasklets tasklets world =
-        { world with Tasklets = Queue.ofSeq ^ Seq.append (tasklets :> _ seq) (world.Tasklets :> _ seq) }
-
     (* AmbientState *)
 
     let private getAmbientState world =
         world.AmbientState
+
+    let private getAmbientStateBy by world =
+        by world.AmbientState
 
     let private setAmbientStateWithoutEvent state world =
         { world with AmbientState = state }
@@ -251,89 +235,116 @@ module World =
         let eventTrace = EventTrace.record "World" "setAmbientState" EventTrace.empty
         publish { OldWorldWithOldState = oldWorldWithOldState } Events.AmbientStateChange eventTrace Simulants.Game world
 
+    let private updateAmbientState updater world =
+        setAmbientState (updater world.AmbientState) world
+
+    let private updateAmbientStateWithoutEvent updater world =
+        setAmbientStateWithoutEvent (updater world.AmbientState) world
+
     /// Get the tick rate.
     let getTickRate world =
-        AmbientState.getTickRate world.AmbientState
+        getAmbientStateBy AmbientState.getTickRate world
 
     /// Get the tick rate as a floating-point value.
     let getTickRateF world =
-        AmbientState.getTickRateF world.AmbientState
+        getAmbientStateBy AmbientState.getTickRateF world
 
     /// Set the tick rate without waiting for the end of the current update. Only use
     /// this if you need it and understand the engine internals well enough to know the
     /// consequences.
     let setTickRateImmediately tickRate world =
-        setAmbientState (AmbientState.setTickRateImmediately tickRate world.AmbientState) world
+        updateAmbientState (AmbientState.setTickRateImmediately tickRate) world
 
     /// Set the tick rate.
     let rec setTickRate tickRate world =
-        addTasklet { ScheduledTime = getTickTime world; Operation = fun world -> setTickRateImmediately tickRate world } world
+        updateAmbientState
+            (AmbientState.addTasklet
+                { ScheduledTime = getTickTime world; Operation = fun world -> setTickRateImmediately tickRate world }) world
 
     /// Reset the tick time to 0.
     and resetTickTime world =
-        addTasklet { ScheduledTime = getTickTime world; Operation = fun world -> setAmbientState (AmbientState.resetTickTime world.AmbientState) world } world
+        updateAmbientState
+            (AmbientState.addTasklet
+                { ScheduledTime = getTickTime world; Operation = fun world -> setAmbientState (AmbientState.resetTickTime world.AmbientState) world }) world
 
     /// Get the world's tick time.
     and getTickTime world =
-        AmbientState.getTickTime world.AmbientState
+        getAmbientStateBy AmbientState.getTickTime world
 
     /// Query that the world is ticking.
     let isTicking world =
-        AmbientState.isTicking world.AmbientState
+        getAmbientStateBy AmbientState.isTicking world
 
     let internal updateTickTime world =
-        setAmbientStateWithoutEvent (AmbientState.updateTickTime world.AmbientState) world
+        updateAmbientStateWithoutEvent AmbientState.updateTickTime world
 
     /// Get the world's update count.
     let getUpdateCount world =
-        AmbientState.getUpdateCount world.AmbientState
+        getAmbientStateBy AmbientState.getUpdateCount world
 
     let internal incrementUpdateCount world =
-        setAmbientStateWithoutEvent (AmbientState.incrementUpdateCount world.AmbientState) world
+        updateAmbientStateWithoutEvent AmbientState.incrementUpdateCount world
 
     /// Get the the liveness state of the engine.
     let getLiveness world =
-        AmbientState.getLiveness world.AmbientState
+        getAmbientStateBy AmbientState.getLiveness world
 
     /// Place the engine into a state such that the app will exit at the end of the current update.
     let exit world =
-        setAmbientState (AmbientState.exit world.AmbientState) world
+        updateAmbientState AmbientState.exit world
+
+    let internal getTasklets world =
+        getAmbientStateBy AmbientState.getTasklets world
+
+    let internal clearTasklets world =
+        updateAmbientStateWithoutEvent AmbientState.clearTasklets world
+
+    let internal restoreTasklets tasklets world =
+        updateAmbientStateWithoutEvent (AmbientState.restoreTasklets tasklets) world
+
+    /// Add a tasklet to be executed by the engine at the scheduled time.
+    let addTasklet tasklet world =
+        updateAmbientStateWithoutEvent (AmbientState.addTasklet tasklet) world
+
+    /// Add multiple tasklets to be executed by the engine at the scheduled times.
+    let addTasklets tasklets world =
+        updateAmbientStateWithoutEvent (AmbientState.addTasklets tasklets) world
 
     /// Get a value from the camera used to view the world.
     let getCameraBy by world =
-        AmbientState.getCameraBy by world.AmbientState
+        getAmbientStateBy (AmbientState.getCameraBy by) world
 
     /// Get the camera used to view the world.
     let getCamera world =
-        AmbientState.getCamera world.AmbientState
+        getAmbientStateBy AmbientState.getCamera world
 
     /// Update the camera used to view the world.
     let updateCamera updater world =
-        setAmbientState (AmbientState.updateCamera updater world.AmbientState) world
+        updateAmbientState (AmbientState.updateCamera updater) world
 
     /// Get the asset metadata map.
     let getAssetMetadataMap world =
         AmbientState.getAssetMetadataMap world.AmbientState
 
     let internal setAssetMetadataMap assetMetadataMap world =
-        setAmbientState (AmbientState.setAssetMetadataMap assetMetadataMap world.AmbientState) world
+        updateAmbientState (AmbientState.setAssetMetadataMap assetMetadataMap) world
 
     let internal getOverlayer world =
-        AmbientState.getOverlayer world.AmbientState
+        getAmbientStateBy AmbientState.getOverlayer world
 
     let internal setOverlayer overlayer world =
-        setAmbientState (AmbientState.setOverlayer overlayer world.AmbientState) world
+        updateAmbientState (AmbientState.setOverlayer overlayer) world
 
     let internal getOverlayRouter world =
-        AmbientState.getOverlayRouter world.AmbientState
+        getAmbientStateBy AmbientState.getOverlayRouter world
 
     /// Get the user state of the world, casted to 'u.
     let getUserState world : 'u =
-        AmbientState.getUserState world.AmbientState
+        getAmbientStateBy AmbientState.getUserState world
 
     /// Update the user state of the world.
     let updateUserState (updater : 'u -> 'v) world =
-        setAmbientState (AmbientState.updateUserState updater world.AmbientState) world
+        updateAmbientState (AmbientState.updateUserState updater) world
 
     (* Built-in Event Handlers *)
 
