@@ -6,24 +6,24 @@ open System
 open OpenTK
 open Prime
 open global.Nu // TODO: see if this req'd explicit qualification is due to a compiler bug
-open Nu.SimulantDescriptors
 module Program =
 
     (* DISCUSSION - On Nu's authoring story...
 
     Instead of using a general purpose scripting language for authoring tasks in Nu, we use a small
     set of domain-specific languages. For example, the simulant system uses XML, as does the
-    overlay and asset graph systems. The effect system uses algebraic expressions, and simulation
+    overlay and asset graph systems. The effect system uses symbolic expressions, and simulation
     interactions are defined with chains.
 
     system          | language      | editor
     -----------------------------------------------
-    asset graph     | xml           | Visual Studio
     overlay         | xml           | Visual Studio
-    simulant        | xml           | Gaia
-    effect system   | a-exprs       | Aether (TBA)
-    mind (TBA)      | a-exprs       | Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
-    interaction     | chains (F#)   | Visual Studio
+    asset graph     | xml           | Visual Studio
+    simulant data   | xml           | Gaia
+    event filtering | s-exprs       | Gaia
+    effect system   | s-exprs       | Aether (TBA)
+    mind (TBA)      | s-exprs       | Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
+    simulant behav'r| F#            | Visual Studio
 
     The advantages and limitations that fall out of this is as such -
 
@@ -42,17 +42,7 @@ module Program =
     
     That being said, I really, really, really, really want Edit and Continue for interaction
     authoring to get the best of both worlds -
-    https://www.reddit.com/r/fsharp/comments/3mdklt/can_someone_with_the_requisite_insight_summarize/
-    
-    Another question that arises in this discussion is why the simulant system uses xml whereas it
-    could just as well use a-exprs. My current understanding is that the simulant system, due to
-    how it is WYSIWYG edited, conforms better to a document model. That is, it makes sense as a
-    document model since it is meant to be imported, its live representation edited directly, and
-    the exported back out. In contrast, the effect and mind systems are unlike WYSIWIG documents,
-    and more like interpreted languages.
-    
-    Finally, the asset graph and overlay systems could go either way, but since they're so simple,
-    perhaps they're more easily implemented with a basic document model. Maybe :) *)
+    https://www.reddit.com/r/fsharp/comments/3mdklt/can_someone_with_the_requisite_insight_summarize/ *)
 
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
     scaled to a back-buffer of a varying size, render each component unscaled to an off-screen
@@ -97,15 +87,6 @@ module Program =
     (* WISDOM: Keep all animation frame numbers even. That way, you can simply halve them if you
     need to move the app from 60fps to 30fps. *)
 
-    (* WISDOM: Nu's event system should have been implemented in Prime...
-    
-    Unfortunately, it's going to be too difficult to extricate Nu's event system. So this coupling
-    is a complexity Nu is going to have to live with until end of days... unless some enterprising
-    engineer undertakes a non-trivial effort to extract it out somehow :)
-    
-    NOTE: As a part of Prime's refactoring out to its own project, I'm now going to attempt this
-    extraction. *)
-
     (* IDEA: Simplified networking...
 
     For networking, perhaps instead of having a useful Game value that synchronizes across players,
@@ -121,15 +102,4 @@ module Program =
 
     let [<EntryPoint; STAThread>] main _ =
         Console.WriteLine "Running Nu.exe"
-        Nu.init false
-        let group =
-            Group<GroupDispatcher>
-                [Field? Name "Group"]
-                [Entity<EntityDispatcher>
-                    [Field? Name "Jim"
-                     Field? Size Vector2.Zero]
-                 Entity<EntityDispatcher>
-                    [Field? Name "Bob"
-                     Field? Size Vector2.Zero]]
-        Console.WriteLine (SymbolIndex.prettyPrint ^ scstring group)
         Constants.Engine.SuccessExitCode
