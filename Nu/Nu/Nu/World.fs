@@ -725,20 +725,19 @@ module WorldModule =
                 let gameDispatcher = dispatchers.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
                 World.makeGameState gameDispatcher
 
-            // make the world's state
+            // make the world's ambient state
             let ambientState =
                 let overlayRouter = OverlayRouter.make dispatchers.EntityDispatchers []
                 let overlayer = Overlayer.makeEmpty ()
                 let eyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault)
                 let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
-                AmbientState.make 1L Map.empty overlayRouter overlayer camera userState
+                AmbientState.make 1L camera Map.empty overlayRouter overlayer userState
 
             // make the world itself
             let world =
                 { Subsystems = subsystems
                   Dispatchers = dispatchers
                   EventSystem = eventSystem
-                  Tasklets = Queue.empty
                   OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                   AmbientState = ambientState
                   GameState = gameState
@@ -821,7 +820,7 @@ module WorldModule =
                     let eventFilter = Core.getEventFilter ()
                     EventSystem.make eventTracer eventTracing eventFilter
 
-                // make the world's state
+                // make the world's ambient state
                 let ambientState =
                     let intrinsicOverlays = World.createIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
                     let pluginOverlayRoutes = plugin.MakeOverlayRoutes ()
@@ -830,14 +829,13 @@ module WorldModule =
                     let sdlConfig = SdlDeps.getConfig sdlDeps
                     let eyeSize = Vector2 (single sdlConfig.ViewW, single sdlConfig.ViewH)
                     let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
-                    AmbientState.make tickRate assetMetadataMap overlayRouter overlayer camera userState
+                    AmbientState.make tickRate camera assetMetadataMap overlayRouter overlayer userState
 
                 // make the world itself
                 let world =
                     { Subsystems = subsystems
                       Dispatchers = dispatchers
                       EventSystem = eventSystem
-                      Tasklets = Queue.empty
                       OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                       AmbientState = ambientState
                       GameState = World.makeGameState activeGameDispatcher
