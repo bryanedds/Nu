@@ -23,10 +23,6 @@ type [<StructuralEquality; NoComparison>] KeyboardKeyData =
       Repeated : bool
       Down : bool }
 
-/// The data for a change in a simulant.
-type SimulantChangeData<'s, 'w when 's :> Simulant and 'w :> 'w Eventable> =
-    ParticipantChangeData<'s, 'w>
-
 /// The data for a collision event.
 type [<StructuralEquality; NoComparison>] CollisionData =
     { Normal : Vector2
@@ -35,7 +31,7 @@ type [<StructuralEquality; NoComparison>] CollisionData =
 
 /// The data for a change in the world's ambient state.
 /// NOTE: I couldn't give its field the more normal name of 'OldWorld' due to field name conflicts with the more
-/// pervasive SimulantChangeData type below.
+/// pervasive ParticipantChangeData type.
 type [<StructuralEquality; NoComparison>] AmbientStateChangeData = 
     { OldWorldWithOldState : World }
 
@@ -90,16 +86,16 @@ module Events =
     let AmbientState = ntoa<obj> !!"AmbientState"
     let AmbientStateChange = AmbientState -<- ntoa<AmbientStateChangeData> !!"Change"
     let Game = ntoa<obj> !!"Game"
-    let GameChange = Game -<- ntoa<SimulantChangeData<Game, World>> !!"Change"
+    let GameChange = Game -<- ntoa<ParticipantChangeData<Game, World>> !!"Change"
     let Screen = ntoa<obj> !!"Screen"
     let ScreenAdd = Screen -<- ntoa<unit> !!"Add"
     let ScreenRemoving = Screen -<- ntoa<unit> !!"Removing"
-    let ScreenChange = Screen -<- ntoa<SimulantChangeData<Screen, World>> !!"Change"
+    let ScreenChange = Screen -<- ntoa<ParticipantChangeData<Screen, World>> !!"Change"
     let Group = ntoa<obj> !!"Group"
     let GroupAdd = Group -<- ntoa<unit> !!"Add"
     let GroupRemoving = Group -<- ntoa<unit> !!"Removing"
-    let GroupChange = Group -<- ntoa<SimulantChangeData<Group, World>> !!"Change"
+    let GroupChange = Group -<- ntoa<ParticipantChangeData<Group, World>> !!"Change"
     let Entity = ntoa<obj> !!"Entity"
     let EntityAdd = Entity -<- ntoa<unit> !!"Add"
     let EntityRemoving = Entity -<- ntoa<unit> !!"Removing"
-    let EntityChange = Entity -<- ntoa<SimulantChangeData<Entity, World>> !!"Change"
+    let EntityChange = Entity -<- ntoa<ParticipantChangeData<Entity, World>> !!"Change"

@@ -88,6 +88,34 @@ module WorldGameModule =
         static member setSelectedScreen screen world =
             World.setOptSelectedScreen (Some screen) world
 
+        /// Determine if an entity is selected by being in a group of the currently selected screeen.
+        static member isEntitySelected entity world =
+            let screenName = Address.head entity.EntityAddress
+            match World.getOptSelectedScreen world with
+            | Some selectedScreen -> screenName = selectedScreen.ScreenName
+            | None -> false
+
+        /// Determine if a group is selected by being in the currently selected screeen.
+        static member isGroupSelected group world =
+            let screenName = Address.head group.GroupAddress
+            match World.getOptSelectedScreen world with
+            | Some selectedScreen -> screenName = selectedScreen.ScreenName
+            | None -> false
+
+        /// Determine if a screen is the currently selected screeen.
+        static member isScreenSelected screen world =
+            World.getOptSelectedScreen world = Some screen
+
+        /// Determine if a simulant is contained by, or is the same as, the currently selected screen.
+        /// Game is always considered 'selected' as well.
+        static member isSimulantSelected (simulant : Simulant) world =
+            match Address.getNames simulant.SimulantAddress with
+            | [] -> true
+            | screenName :: _ ->
+                match World.getOptSelectedScreen world with
+                | Some screen -> screen.ScreenName = screenName
+                | None -> false
+
         /// Write a game to an xml writer.
         static member writeGame (writer : XmlWriter) world =
             let gameState = World.getGameState world

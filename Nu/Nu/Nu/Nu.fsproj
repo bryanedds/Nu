@@ -89,7 +89,6 @@
     <Compile Include="WorldGroup.fs" />
     <Compile Include="WorldScreen.fs" />
     <Compile Include="WorldGame.fs" />
-    <Compile Include="WorldSimulant.fs" />
     <Compile Include="WorldInput.fs" />
     <Compile Include="WorldClipboard.fs" />
     <Compile Include="WorldPhysics.fs" />
