@@ -366,7 +366,7 @@ module GuiDispatcherModule =
             let gui = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             let handling =
-                if World.isSimulantSelected gui world && gui.GetVisible world then
+                if World.isEntitySelected gui world && gui.GetVisible world then
                     let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (gui.GetViewType world) data.Position) world
                     if data.Down &&
                        gui.GetSwallowMouseLeft world &&
@@ -407,7 +407,7 @@ module ButtonDispatcherModule =
         let handleMouseLeftDown evt world =
             let button = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if World.isSimulantSelected button world then
+            if World.isEntitySelected button world then
                 let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (button.GetViewType world) data.Position) world
                 if  button.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (button.GetBounds world) then
@@ -423,7 +423,7 @@ module ButtonDispatcherModule =
         let handleMouseLeftUp evt world =
             let button = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if World.isSimulantSelected button world then
+            if World.isEntitySelected button world then
                 let wasDown = button.GetDown world
                 let world = button.SetDown false world
                 let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (button.GetViewType world) data.Position) world
@@ -595,7 +595,7 @@ module ToggleDispatcherModule =
         let handleMouseLeftDown evt world =
             let toggle = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if World.isSimulantSelected toggle world then
+            if World.isEntitySelected toggle world then
                 let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (toggle.GetViewType world) data.Position) world
                 if  toggle.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (toggle.GetBounds world) then
@@ -609,7 +609,7 @@ module ToggleDispatcherModule =
         let handleMouseLeftUp evt world =
             let toggle = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if World.isSimulantSelected toggle world then
+            if World.isEntitySelected toggle world then
                 let wasPressed = toggle.GetPressed world
                 let world = toggle.SetPressed false world
                 let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (toggle.GetViewType world) data.Position) world
@@ -678,7 +678,7 @@ module FeelerDispatcherModule =
         let handleMouseLeftDown evt world =
             let feeler = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if World.isSimulantSelected feeler world then
+            if World.isEntitySelected feeler world then
                 let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (feeler.GetViewType world) data.Position) world
                 if  feeler.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (feeler.GetBounds world) then
@@ -694,7 +694,7 @@ module FeelerDispatcherModule =
         let handleMouseLeftUp evt world =
             let feeler = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if World.isSimulantSelected feeler world && feeler.GetVisible world then
+            if World.isEntitySelected feeler world && feeler.GetVisible world then
                 if feeler.GetEnabled world then
                     let world = feeler.SetTouched false world
                     let eventTrace = EventTrace.record "FeelerDispatcher" "handleMouseLeftDown" EventTrace.empty

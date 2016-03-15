@@ -18,11 +18,13 @@ module Observation =
         observation |> organize (fun _ world -> World.getUpdateCount world) |> toFst |> choose
 
     /// Take events from an observation only while World.isTicking evaluates to true.
-    let [<DebuggerHidden; DebuggerStepThrough>] isTicking _ world = World.isTicking world
+    let [<DebuggerHidden; DebuggerStepThrough>] isTicking _ world =
+        World.isTicking world
 
-    /// Take events from an observation only when the observer is selected in the world (see
-    /// documentation for World.isAddressSelected for what this means (it's very useful!)).
-    let [<DebuggerHidden; DebuggerStepThrough>] isObserverSelected evt world = World.isSimulantSelected evt.Subscriber world
+    /// Take events from an observation only when the observer is contained by, or is the same as,
+    /// the currently selected screen. Game is always considered 'selected' as well.
+    let [<DebuggerHidden; DebuggerStepThrough>] isObserverSelected evt world =
+        World.isSimulantSelected evt.Subscriber world
 
     /// Take events from an observation only when the currently selected screen is idling (that
     /// is, there is no screen transition in progress).
