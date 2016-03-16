@@ -6,6 +6,7 @@ open System
 open OpenTK
 open Prime
 open global.Nu // TODO: see if this req'd explicit qualification is due to a compiler bug
+open Nu.SimulantDescriptors
 module Program =
 
     (* DISCUSSION - On Nu's authoring story...
@@ -104,4 +105,17 @@ module Program =
 
     let [<EntryPoint; STAThread>] main _ =
         Console.WriteLine "Running Nu.exe"
+        Nu.init false
+        let group =
+            Group<GroupDispatcher>
+                [Field? Name !!"Group"
+                 Field? PublishChanges true]
+                [Entity<EntityDispatcher>
+                    [Field? Position Vector2.Zero
+                     Field? Name !!"Jim"
+                     Field? Size Vector2.Zero]
+                 Entity<EntityDispatcher>
+                    [Field? Name !!"Bob"
+                     Field? Position Vector2.One]]
+        Console.WriteLine (SymbolIndex.prettyPrint ^ scstring group)
         Constants.Engine.SuccessExitCode
