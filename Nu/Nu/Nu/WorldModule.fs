@@ -48,30 +48,26 @@ module SimulantDescriptors =
 
     /// Describe a game with the given fields values and contained screens.
     let Game<'d when 'd :> GameDispatcher> fields screens =
-        Symbols
-            [Atom typeof<'d>.Name
-             Symbols fields
-             Symbols screens]
+        { GameDispatcher = typeof<'d>.Name
+          GameFields = Map.ofSeq fields
+          Screens = List.ofSeq screens }
 
     /// Describe a screen with the given fields values and contained groups.
     let Screen<'d when 'd :> ScreenDispatcher> fields groups =
-        Symbols
-            [Atom typeof<'d>.Name
-             Symbols fields
-             Symbols groups]
+        { ScreenDispatcher = typeof<'d>.Name
+          ScreenFields = Map.ofSeq fields
+          Groups = List.ofSeq groups }
 
     /// Describe a group with the given fields values and contained entities.
     let Group<'d when 'd :> GroupDispatcher> fields entities =
-        Symbols
-            [Atom typeof<'d>.Name
-             Symbols fields
-             Symbols entities]
+        { GroupDispatcher = typeof<'d>.Name
+          GroupFields = Map.ofSeq fields
+          Entities = List.ofSeq entities }
 
     /// Describe an entity with the given fields values.
     let Entity<'d when 'd :> EntityDispatcher> fields =
-        Symbols
-            [Atom typeof<'d>.Name
-             Symbols fields]
+        { EntityDispatcher = typeof<'d>.Name
+          EntityFields = Vmap.ofSeq fields }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module World =

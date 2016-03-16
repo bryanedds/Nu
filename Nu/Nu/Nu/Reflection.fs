@@ -78,7 +78,7 @@ type FieldDescriptor =
     /// Some magic syntax for composing value fields.
     static member (?) (_, fieldName : string) =
         fun (value : 'v) ->
-            Symbols [Atom fieldName; symbolize value]
+            (fieldName, symbolize value)
 
 [<AutoOpen>]
 module ReflectionModule =
@@ -105,6 +105,20 @@ module Reflection =
 
     let private FieldDefinitionsCache =
         Dictionary<Type, FieldDefinition list> () // wonder if HashIdentity.Reference would work?
+
+    /// Derive a simulant name from an optional name.
+    /// TODO: see if we can improve the name of this function.
+    let deriveName optName id =
+        match optName with
+        | Some name -> name
+        | None -> Name.make ^ scstring id
+
+    /// Derive a simulant id and name from an optional name.
+    /// TODO: see if we can improve the name of this function.
+    let deriveIdAndName optName =
+        let id = makeGuid ()
+        let name = deriveName optName id
+        (id, name)
 
     /// Is a property with the given name persistent?
     let isPropertyPersistentByName (propertyName : string) =

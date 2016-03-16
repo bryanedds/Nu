@@ -235,6 +235,29 @@ and Facet () =
     abstract GetQuickSize : Entity * World -> Vector2
     default facet.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
 
+/// Describes a game value.
+and [<NoComparison>] GameDescriptor =
+    { GameDispatcher : string
+      GameFields : Map<string, Symbol>
+      Screens : ScreenDescriptor list }
+
+/// Describes a screen value.
+and [<NoComparison>] ScreenDescriptor =
+    { ScreenDispatcher : string
+      ScreenFields : Map<string, Symbol>
+      Groups : GroupDescriptor list }
+
+/// Describes a group value.
+and [<NoComparison>] GroupDescriptor =
+    { GroupDispatcher : string
+      GroupFields : Map<string, Symbol>
+      Entities : EntityDescriptor list }
+
+/// Describes an entity value.
+and [<NoComparison>] EntityDescriptor =
+    { EntityDispatcher : string
+      EntityFields : Vmap<string, Symbol> }
+
 /// Hosts the ongoing state of a game. The end-user of this engine should never touch this
 /// type, and it's public _only_ to make [<CLIMutable>] work.
 and [<CLIMutable; NoEquality; NoComparison>] GameState =
@@ -275,10 +298,10 @@ and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
 
     /// Make a screen state value.
     static member make optSpecialization optName dispatcher =
-        let id = makeGuid ()
+        let (id, name) = Reflection.deriveIdAndName optName
         let screenState =
             { Id = id
-              Name = match optName with Some name -> name | None -> Name.make ^ scstring id
+              Name = name
               OptSpecialization = optSpecialization 
               TransitionStateNp = IdlingState
               TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
@@ -307,9 +330,9 @@ and [<CLIMutable; NoEquality; NoComparison>] GroupState =
 
     /// Make a group state value.
     static member make optSpecialization optName dispatcher =
-        let id = makeGuid ()
+        let (id, name) = Reflection.deriveIdAndName optName
         { GroupState.Id = id
-          Name = match optName with Some name -> name | None -> Name.make ^ scstring id
+          Name = name
           OptSpecialization = optSpecialization
           PublishChanges = true
           Persistent = true
@@ -343,9 +366,9 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
 
     /// Make an entity state value.
     static member make optSpecialization optName optOverlayName dispatcher =
-        let id = makeGuid ()
+        let (id, name) = Reflection.deriveIdAndName optName
         { Id = id
-          Name = match optName with Some name -> name | None -> Name.make ^ scstring id
+          Name = name
           OptSpecialization = optSpecialization
           Position = Vector2.Zero
           Size = Constants.Engine.DefaultEntitySize
