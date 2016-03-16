@@ -44,7 +44,7 @@ module Simulants =
     /// The default entity - may or may not exist.
     let DefaultEntity = DefaultGroup => Constants.Engine.DefaultEntityName
 
-module SimulantDescriptors =
+module Descriptors =
 
     /// Describe a game with the given fields values and contained screens.
     let Game<'d when 'd :> GameDispatcher> fields screens =
@@ -67,7 +67,7 @@ module SimulantDescriptors =
     /// Describe an entity with the given fields values.
     let Entity<'d when 'd :> EntityDispatcher> fields =
         { EntityDispatcher = typeof<'d>.Name
-          EntityFields = Vmap.ofSeq fields }
+          EntityFields = Map.ofSeq fields }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module World =

@@ -256,7 +256,7 @@ and [<NoComparison>] GroupDescriptor =
 /// Describes an entity value.
 and [<NoComparison>] EntityDescriptor =
     { EntityDispatcher : string
-      EntityFields : Vmap<string, Symbol> }
+      EntityFields : Map<string, Symbol> }
 
 /// Hosts the ongoing state of a game. The end-user of this engine should never touch this
 /// type, and it's public _only_ to make [<CLIMutable>] work.
