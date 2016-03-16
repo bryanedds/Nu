@@ -6,7 +6,7 @@ open System
 open OpenTK
 open Prime
 open global.Nu // TODO: see if this req'd explicit qualification is due to a compiler bug
-open Nu.SimulantDescriptors
+open global.Nu.Descriptors
 module Program =
 
     (* DISCUSSION - On Nu's authoring story...
@@ -108,14 +108,12 @@ module Program =
         Nu.init false
         let group =
             Group<GroupDispatcher>
-                [Field? Name !!"Group"
-                 Field? PublishChanges true]
+                [Field? Name !!"Group"]
                 [Entity<EntityDispatcher>
-                    [Field? Position Vector2.Zero
-                     Field? Name !!"Jim"
-                     Field? Size Vector2.Zero]
+                    [Field? Name !!"Jim"
+                     Field? Size Vector2.One]
                  Entity<EntityDispatcher>
                     [Field? Name !!"Bob"
-                     Field? Position Vector2.One]]
+                     Field? Position Vector2.Zero]]
         Console.WriteLine (SymbolIndex.prettyPrint ^ scstring group)
         Constants.Engine.SuccessExitCode
