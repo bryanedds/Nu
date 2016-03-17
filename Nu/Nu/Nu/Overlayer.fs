@@ -10,17 +10,17 @@ open System.Collections.Generic
 open Prime
 open Nu
 
-/// Describes the overlay state of a field.
-type OverlayState =
-    | Bare
-    | Altered
-    | Overlaid
-
 /// An overlay.
 type Overlay =
     { OverlayName : string
       OverlayIncludeNames : string list
       OverlayProperties : Map<string, Symbol> }
+
+/// Describes the overlay state of a field.
+type internal OverlayState =
+    | Bare
+    | Altered
+    | Overlaid
 
 [<AutoOpen>]
 module OverlayerModule =
