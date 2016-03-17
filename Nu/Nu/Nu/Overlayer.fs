@@ -22,16 +22,13 @@ type Overlay =
       OverlayIncludeNames : string list
       OverlayProperties : Map<string, Symbol> }
 
-/// A map of overlays.
-type Overlays = Map<string, Overlay>
-
 [<AutoOpen>]
 module OverlayerModule =
 
     /// Defines the manner in which overlays are applied to targets.
     type [<ReferenceEquality>] Overlayer =
         private
-            { Overlays : Overlays }
+            { Overlays : Map<string, Overlay> }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module Overlayer =
@@ -169,7 +166,7 @@ module OverlayerModule =
 
         /// Make an Overlayer by loading overlays from a file and then combining it with the given
         /// intrinsic overlays.
-        let make (filePath : string) (intrinsicOverlays : Overlays) =
+        let make (filePath : string) intrinsicOverlays =
             let loadedOverlaysStr = File.ReadAllText filePath
             let loadedOverlaysList = scvalue<Overlay list> loadedOverlaysStr
             let loadedOverlays = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) loadedOverlaysList
