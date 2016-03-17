@@ -497,7 +497,7 @@ module Reflection =
                     writer.WriteElementString (property.Name, valueStr)
 
     /// Create intrinsic overlays.
-    let createIntrinsicOverlays hasFacetNamesField sourceTypes =
+    let createIntrinsicOverlays requiresFacetNames sourceTypes =
 
         // get the unique, decomposed source types
         let sourceTypeHashSet = HashSet () // wonder if HashIdentity.Reference would work?
@@ -512,47 +512,33 @@ module Reflection =
                 (fun (sourceType : Type) ->
                     let includeNames = if sourceType.BaseType <> typeof<obj> then [sourceType.BaseType.Name] else []
                     let fieldDefinitions = getFieldDefinitionsNoInherit sourceType
-                    let hasFacetNamesField = hasFacetNamesField sourceType
-                    (sourceType.Name, includeNames, fieldDefinitions, hasFacetNamesField))
+                    let requiresFacetNames = requiresFacetNames sourceType
+                    (sourceType.Name, includeNames, fieldDefinitions, requiresFacetNames))
                 sourceTypes
 
-        // create a document to house the overlay nodes
-        let document = XmlDocument ()
-        let root = document.CreateElement Constants.Xml.RootNodeName
-
-        // construct the overlay nodes
-        for (overlayName, includeNames, definitions, hasFacetNamesField) in overlayDescriptors do
-
-            // make an empty overlay node
-            let overlayNode = document.CreateElement overlayName
-
-            // construct the "includes" attribute
-            match includeNames with
-            | _ :: _ ->
-                let includesAttribute = document.CreateAttribute Constants.Xml.IncludesAttributeName
-                includesAttribute.InnerText <- scstring includeNames
-                overlayNode.Attributes.Append includesAttribute |> ignore
-            | _ -> ()
-
-            // construct the field nodes
-            for definition in definitions do
-                let fieldNode = document.CreateElement definition.FieldName
-                match definition.FieldExpr with
-                | DefineExpr value ->
-                    let converter = SymbolicConverter definition.FieldType
-                    fieldNode.InnerText <- converter.ConvertToString value
-                    overlayNode.AppendChild fieldNode |> ignore
-                | VariableExpr _ -> ()
-
-            // construct the "FacetNames" node if needed
-            if hasFacetNamesField then
-                let facetNamesNode = document.CreateElement "FacetNames"
-                facetNamesNode.InnerText <- scstring []
-                overlayNode.AppendChild facetNamesNode |> ignore
-
-            // append the overlay node
-            root.AppendChild overlayNode |> ignore
-
-        // append the root node
-        document.AppendChild root |> ignore
-        document
+        // create the intrinsic overlays with the above descriptors
+        let overlays =
+            List.foldBack
+                (fun (overlayName, includeNames, fieldDefinitions, requiresFacetNames) overlays ->
+                    let overlayProperties =
+                        List.foldBack
+                            (fun fieldDefinition overlayProperties ->
+                                match fieldDefinition.FieldExpr with
+                                | DefineExpr value ->
+                                    let converter = SymbolicConverter fieldDefinition.FieldType
+                                    let overlayProperty = converter.ConvertTo (value, typeof<Symbol>) :?> Symbol
+                                    Map.add fieldDefinition.FieldName overlayProperty overlayProperties
+                                | VariableExpr _ -> overlayProperties)
+                            fieldDefinitions
+                            Map.empty
+                    let overlayProperties =
+                        if requiresFacetNames
+                        then Map.add "FacetNames" (Symbols []) overlayProperties
+                        else overlayProperties
+                    let overlay = { OverlayIncludeNames = includeNames; OverlayProperties = overlayProperties }
+                    Map.add overlayName overlay overlays)
+                overlayDescriptors
+                Map.empty
+        
+        // fin
+        overlays

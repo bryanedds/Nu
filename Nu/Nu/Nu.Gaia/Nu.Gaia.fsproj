@@ -70,7 +70,7 @@
     <Content Include="AssetGraph.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Overlay.xml">
+    <Content Include="Overlay.nuol">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

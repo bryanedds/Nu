@@ -365,12 +365,12 @@ module WorldModule =
             (splashScreen, world)
 
         static member private createIntrinsicOverlays facets entityDispatchers =
-            let hasFacetNamesField = fun sourceType -> sourceType = typeof<EntityDispatcher>
+            let requiresFacetNames = fun sourceType -> sourceType = typeof<EntityDispatcher>
             let facets = Map.toValueListBy (fun facet -> facet :> obj) facets
             let entityDispatchers = Map.toValueListBy objectify entityDispatchers
             let sources = facets @ entityDispatchers
             let sourceTypes = List.map (fun source -> source.GetType ()) sources
-            Reflection.createIntrinsicOverlays hasFacetNamesField sourceTypes
+            Reflection.createIntrinsicOverlays requiresFacetNames sourceTypes
 
         /// Try to reload the overlays currently in use by the world.
         static member tryReloadOverlays inputDirectory outputDirectory world =

@@ -3,7 +3,7 @@
 
 namespace Nu
 open System
-open System.Xml
+open System.IO
 open System.Reflection
 open System.ComponentModel
 open System.Collections.Generic
@@ -11,10 +11,18 @@ open Prime
 open Nu
 
 /// Describes the overlay state of a field.
-type internal OverlayState =
+type OverlayState =
     | Bare
     | Altered
     | Overlaid
+
+/// An overlay.
+type Overlay =
+    { OverlayIncludeNames : string list
+      OverlayProperties : Map<string, Symbol> }
+
+/// A map of overlays.
+type Overlays = Map<string, Overlay>
 
 [<AutoOpen>]
 module OverlayerModule =
@@ -22,40 +30,24 @@ module OverlayerModule =
     /// Defines the manner in which overlays are applied to targets.
     type [<ReferenceEquality>] Overlayer =
         private
-            { Overlays : XmlDocument }
+            { Overlays : Overlays }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module Overlayer =
 
-        let rec private trySelectNode overlayName propertyName overlayer =
-            match overlayer.Overlays.DocumentElement with
-            | null -> None
-            | documentElement ->
-                let optBranch = documentElement.SelectSingleNode overlayName
-                match optBranch with
-                | null -> None
-                | branch ->
-                    let optLeaf = branch.SelectSingleNode propertyName
-                    match optLeaf with
-                    | null ->
-                        let optIncludeNames = branch.Attributes.[Constants.Xml.IncludesAttributeName]
-                        match optIncludeNames with
-                        | null -> None
-                        | includeNames ->
-                            let includeNames = scvalue<string list> includeNames.InnerXml
-                            let mutable optNode = None
-                            let mutable enr = (includeNames :> _ seq).GetEnumerator ()
-                            while enr.MoveNext () && Option.isNone optNode do
-                                let includeName = enr.Current.Trim ()
-                                optNode <- trySelectNode includeName propertyName overlayer
-                            optNode
-                    | leaf -> Some leaf
+        let rec private tryFindPropertySymbol overlayName propertyName overlayer =
+            match Map.tryFind overlayName overlayer.Overlays with
+            | Some overlay ->
+                match Map.tryFind propertyName overlay.OverlayProperties with
+                | Some _ as someSymbol -> someSymbol
+                | None -> List.tryFindPlus (flip3 tryFindPropertySymbol propertyName overlayer) overlay.OverlayIncludeNames
+            | None -> None
 
         let private getPropertyState overlayName propertyName propertyType target overlayer =
-            match trySelectNode overlayName propertyName overlayer with
-            | Some overlayNode -> 
+            match tryFindPropertySymbol overlayName propertyName overlayer with
+            | Some propertySymbol -> 
                 let targetType = target.GetType ()
-                let optProperty = targetType.GetProperty overlayNode.Name
+                let optProperty = targetType.GetProperty propertyName
                 let optXtension =
                     match targetType.GetProperty "Xtension" with
                     | null -> None
@@ -66,13 +58,13 @@ module OverlayerModule =
                 let optPropertyValue =
                     match (optProperty, optXtension) with
                     | (null, None) -> None
-                    | (null, Some xtension) -> Some (Xtension.getField overlayNode.Name xtension).FieldValue
+                    | (null, Some xtension) -> Some (Xtension.getField propertyName xtension).FieldValue
                     | (targetProperty, _) -> Some ^ targetProperty.GetValue target
                 match optPropertyValue with
                 | Some propertyValue ->
                     let converter = SymbolicConverter propertyType
-                    if converter.CanConvertFrom typeof<string> then
-                        let overlayValue = converter.ConvertFromString overlayNode.InnerText
+                    if converter.CanConvertFrom typeof<Symbol> then
+                        let overlayValue = converter.ConvertFrom propertySymbol
                         if overlayValue = propertyValue then Overlaid else Altered
                     else Bare
                 | None -> Bare
@@ -94,24 +86,23 @@ module OverlayerModule =
                     | None -> false
                 | _ -> false
 
-        let private tryApplyOverlayToRecordField facetNames (property : PropertyInfo) (valueNode : XmlNode) oldOverlayName target oldOverlayer =
+        let private tryApplyOverlayToRecordField facetNames (property : PropertyInfo) (propertySymbol : Symbol) oldOverlayName target oldOverlayer =
             let shouldApplyOverlay =
                 property.PropertyType <> typeof<Xtension> &&
                 isPropertyOverlaid oldOverlayName facetNames property.Name property.PropertyType target oldOverlayer
             if shouldApplyOverlay then
-                let valueStr = valueNode.InnerText
                 let converter = SymbolicConverter property.PropertyType
-                if converter.CanConvertFrom typeof<string> then
-                    let value = converter.ConvertFromString valueStr
-                    property.SetValue (target, value)
+                if converter.CanConvertFrom typeof<Symbol> then
+                    let propertyValue = converter.ConvertFrom propertySymbol
+                    property.SetValue (target, propertyValue)
 
         let private applyOverlayToProperties oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
             let targetType = target.GetType ()
             let targetProperties = targetType.GetProperties ()
             for property in targetProperties do
                 if property.Name <> "FacetNames" && property.PropertyType <> typeof<string Set> then
-                    match trySelectNode newOverlayName property.Name newOverlayer with
-                    | Some fieldNode -> tryApplyOverlayToRecordField facetNames property fieldNode oldOverlayName target oldOverlayer
+                    match tryFindPropertySymbol newOverlayName property.Name newOverlayer with
+                    | Some propertySymbol -> tryApplyOverlayToRecordField facetNames property propertySymbol oldOverlayName target oldOverlayer
                     | None -> ()
 
         // TODO: see if this can be decomposed
@@ -124,17 +115,17 @@ module OverlayerModule =
                 | :? Xtension as xtension ->
                     let nodes =
                         Seq.foldBack (fun (xFieldName, xField) optNodes ->
-                            match trySelectNode newOverlayName xFieldName newOverlayer with
-                            | Some node -> (xField.FieldType, node) :: optNodes
+                            match tryFindPropertySymbol newOverlayName xFieldName newOverlayer with
+                            | Some xFieldSymbol -> (xFieldName, xField.FieldType, xFieldSymbol) :: optNodes
                             | None -> optNodes)
                             (Xtension.toSeq xtension)
                             []
                     let xtension =
-                        List.foldBack (fun (ty, node : XmlNode) xtension ->
-                            if isPropertyOverlaid oldOverlayName facetNames node.Name ty target oldOverlayer then
-                                let value = SymbolicDescriptor.convertFrom node.InnerText ty
-                                let field = { FieldValue = value; FieldType = ty }
-                                Xtension.attachField node.Name field xtension
+                        List.foldBack (fun (xFieldName, xFieldType, xFieldSymbol : Symbol) xtension ->
+                            if isPropertyOverlaid oldOverlayName facetNames xFieldName xFieldType target oldOverlayer then
+                                let xFieldValue = SymbolicDescriptor.convertFrom xFieldSymbol xFieldType
+                                let xField = { FieldValue = xFieldValue; FieldType = xFieldType }
+                                Xtension.attachField xFieldName xField xtension
                             else xtension)
                             nodes
                             xtension
@@ -147,8 +138,8 @@ module OverlayerModule =
             match targetType.GetProperty "FacetNames" with
             | null -> ()
             | facetNamesProperty ->
-                match trySelectNode newOverlayName facetNamesProperty.Name newOverlayer with
-                | Some fieldNode -> tryApplyOverlayToRecordField [] facetNamesProperty fieldNode oldOverlayName target oldOverlayer
+                match tryFindPropertySymbol newOverlayName facetNamesProperty.Name newOverlayer with
+                | Some propertySymbol -> tryApplyOverlayToRecordField [] facetNamesProperty propertySymbol oldOverlayName target oldOverlayer
                 | None -> ()
 
         /// Apply an overlay to the given target (except for any FacetNames field).
@@ -173,29 +164,12 @@ module OverlayerModule =
 
         /// Make an empty overlay.
         let makeEmpty () =
-            { Overlays = XmlDocument () }
+            { Overlays = Map.empty }
 
         /// Make an Overlayer by loading overlays from a file and then combining it with the given
         /// intrinsic overlays.
-        let make (filePath : string) (intrinsicOverlays : XmlDocument) =
-
-            // create new overlay document into which all nodes will be inserted
-            let overlays = XmlDocument ()
-            let overlaysRoot = overlays.CreateElement Constants.Xml.RootNodeName
-            overlays.AppendChild overlaysRoot |> ignore
-
-            // load the user-defined overlay document from file
-            let loadedOverlays = XmlDocument ()
-            loadedOverlays.Load filePath
-
-            // add both intrinsic and loaded overlay nodes to document
-            let childNodes =
-                Seq.append
-                    (enumerable intrinsicOverlays.DocumentElement.ChildNodes)
-                    (enumerable loadedOverlays.DocumentElement.ChildNodes)
-            for node in childNodes do
-                let imported = overlays.ImportNode (node, true)
-                overlays.DocumentElement.AppendChild imported |> ignore
-
-            // make overlay
+        let make (filePath : string) (intrinsicOverlays : Overlays) =
+            let loadedOverlaysStr = File.ReadAllText filePath
+            let loadedOverlays = scvalue<Overlays> loadedOverlaysStr
+            let overlays = intrinsicOverlays @@ loadedOverlays
             { Overlays = overlays }
