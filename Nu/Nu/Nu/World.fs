@@ -459,8 +459,7 @@ module WorldModule =
 
         static member private processSubsystems subsystemType world =
             World.getSubsystemMap world |>
-            Vmap.toSeq |>
-            List.ofSeq |>
+            Map.toList |>
             List.filter (fun (_, subsystem) -> subsystem.SubsystemType = subsystemType) |>
             List.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
             List.fold (fun world (subsystemName, subsystem) ->
@@ -471,8 +470,7 @@ module WorldModule =
 
         static member private cleanUpSubsystems world =
             World.getSubsystemMap world |>
-            Vmap.toSeq |>
-            List.ofSeq |>
+            Map.toList |>
             List.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
             List.fold (fun world (subsystemName, subsystem) ->
                 let (subsystem, world) = subsystem.CleanUp world
@@ -698,11 +696,10 @@ module WorldModule =
             // make the world's subsystems
             let subsystems =
                 let subsystemMap =
-                    Vmap.addMany
+                    Map.ofList
                         [(Constants.Engine.PhysicsEngineSubsystemName, PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockPhysicsEngine.make ()) :> World Subsystem)
                          (Constants.Engine.RendererSubsystemName, RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockRenderer.make ()) :> World Subsystem)
                          (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockAudioPlayer.make ()) :> World Subsystem)]
-                        (Vmap.makeEmpty ())
                 Subsystems.make subsystemMap
 
             // make the world's dispatchers
@@ -779,14 +776,12 @@ module WorldModule =
                         then AudioPlayer.make () :> IAudioPlayer
                         else MockAudioPlayer.make () :> IAudioPlayer
                     let audioPlayerSubsystem = AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder audioPlayer :> World Subsystem
-                    let defaultSubsystemMap = Vmap.makeEmpty ()
                     let defaultSubsystemMap =
-                        Vmap.addMany
+                        Map.ofList
                             [(Constants.Engine.PhysicsEngineSubsystemName, physicsEngineSubsystem)
                              (Constants.Engine.RendererSubsystemName, rendererSubsystem)
                              (Constants.Engine.AudioPlayerSubsystemName, audioPlayerSubsystem)]
-                            defaultSubsystemMap
-                    let subsystemMap = Vmap.addMany userSubsystems defaultSubsystemMap
+                    let subsystemMap = Map.addMany userSubsystems defaultSubsystemMap
                     Subsystems.make subsystemMap
 
                 // make plug-in dispatchers
