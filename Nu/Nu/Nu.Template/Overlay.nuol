@@ -1,8 +1,6 @@
-﻿[[SampleFacetOverlay
-    [[]
-     [[BodyType Dynamic]
-      [Friction 0.5]]]]
- [SampleDispatcherOverlay
-    [[EntityDispatcher]
-     [[Size [100 100]]
-      [FacetNames [SpriteFacet]]]]]]
+﻿[[SampleFacetOverlay []
+    [[BodyType Dynamic]
+     [Friction 0.5]]]
+ [SampleDispatcherOverlay [EntityDispatcher]
+    [[Size [100 100]]
+     [FacetNames [SpriteFacet]]]]]

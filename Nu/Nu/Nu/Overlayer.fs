@@ -18,7 +18,8 @@ type OverlayState =
 
 /// An overlay.
 type Overlay =
-    { OverlayIncludeNames : string list
+    { OverlayName : string
+      OverlayIncludeNames : string list
       OverlayProperties : Map<string, Symbol> }
 
 /// A map of overlays.
@@ -170,6 +171,7 @@ module OverlayerModule =
         /// intrinsic overlays.
         let make (filePath : string) (intrinsicOverlays : Overlays) =
             let loadedOverlaysStr = File.ReadAllText filePath
-            let loadedOverlays = scvalue<Overlays> loadedOverlaysStr
+            let loadedOverlaysList = scvalue<Overlay list> loadedOverlaysStr
+            let loadedOverlays = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) loadedOverlaysList
             let overlays = intrinsicOverlays @@ loadedOverlays
             { Overlays = overlays }
