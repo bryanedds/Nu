@@ -178,7 +178,7 @@
  Try to find a value at index n.
 </summary>
 </member>
-<member name="M:List.tryFindPlus``2(Microsoft.FSharp.Core.FSharpFunc{``0,System.Tuple{System.Boolean,``1}},Microsoft.FSharp.Collections.FSharpList{``0})">
+<member name="M:List.tryFindPlus``2(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpOption{``1}},Microsoft.FSharp.Collections.FSharpList{``0})">
 <summary>
  Try to find a value.
 </summary>

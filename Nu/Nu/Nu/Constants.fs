@@ -39,7 +39,6 @@ module Constants =
 
         let [<Literal>] RootNodeName = "Root"
         let [<Literal>] DispatcherNameAttributeName = "dispatcherName"
-        let [<Literal>] IncludesAttributeName = "includes"
         let [<Literal>] PackageNodeName = "Package"
         let [<Literal>] CommentNodeName = "#comment"
         let [<Literal>] NameAttributeName = "name"
@@ -65,7 +64,7 @@ module Constants =
     module Assets =
 
         let [<Literal>] AssetGraphFilePath = "AssetGraph.xml"
-        let [<Literal>] OverlayFilePath = "Overlay.xml"
+        let [<Literal>] OverlayFilePath = "Overlay.nuol"
         let [<Literal>] DefaultPackageName = "Default"
         let [<Literal>] DefaultImageValue = "[Default Image]"
         let [<Literal>] DefaultTileMapAssetValue = "[Default TileMap]"

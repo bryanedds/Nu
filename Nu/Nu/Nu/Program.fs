@@ -18,7 +18,7 @@ module Program =
 
     system          | language      | editor
     -----------------------------------------------
-    overlay         | xml           | Visual Studio
+    overlay         | s-exprs       | Visual Studio
     asset graph     | xml           | Visual Studio
     simulant data   | xml           | Gaia
     event filtering | s-exprs       | Gaia
