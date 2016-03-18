@@ -92,7 +92,7 @@ module AudioPlayerModule =
             | extension -> Log.trace ^ "Could not load audio asset '" + scstring asset + "' due to unknown extension '" + extension + "'."; None
     
         static member private loadAudioPackage packageName audioPlayer =
-            let assetGraph = AssetGraph.make Constants.Assets.AssetGraphFilePath
+            let assetGraph = AssetGraph.makeFromFile Constants.Assets.AssetGraphFilePath
             let assets = AssetGraph.loadAssetsFromPackage true (Some Constants.Xml.AudioAssociation) packageName assetGraph
             let optAudioAssets = List.map AudioPlayer.tryLoadAudioAsset2 assets
             let audioAssets = List.definitize optAudioAssets

@@ -536,11 +536,7 @@ module Gaia =
             let editorState = World.getUserState world
             let targetDir = editorState.TargetDir
             let assetSourceDir = Path.Combine (targetDir, "..\\..")
-            match World.tryReloadAssets assetSourceDir targetDir RefinementDir world with
-            | Right world -> world
-            | Left error ->
-                MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                world)
+            World.reloadAssets assetSourceDir targetDir RefinementDir world
 
     let private handleFormReloadOverlays (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->

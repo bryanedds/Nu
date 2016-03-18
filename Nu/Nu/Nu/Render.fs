@@ -137,7 +137,7 @@ module RendererModule =
             | extension -> Log.trace ^ "Could not load render asset '" + scstring asset + "' due to unknown extension '" + extension + "'."; None
 
         static member private loadRenderPackage packageName renderer =
-            let assetGraph = AssetGraph.make Constants.Assets.AssetGraphFilePath
+            let assetGraph = AssetGraph.makeFromFile Constants.Assets.AssetGraphFilePath
             let assets = AssetGraph.loadAssetsFromPackage true (Some Constants.Xml.RenderAssociation) packageName assetGraph
             let optRenderAssets = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
             let renderAssets = List.definitize optRenderAssets
