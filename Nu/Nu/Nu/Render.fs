@@ -106,12 +106,12 @@ module RendererModule =
               RenderAssetMap : RenderAsset AssetMap
               RenderMessages : RenderMessage Queue
               RenderDescriptors : RenderDescriptor list }
-    
+
         static member private freeRenderAsset renderAsset =
             match renderAsset with
             | TextureAsset texture -> SDL.SDL_DestroyTexture texture
             | FontAsset (font, _) -> SDL_ttf.TTF_CloseFont font
-    
+
         static member private tryLoadRenderAsset2 renderContext (asset : Asset) =
             match Path.GetExtension asset.FilePath with
             | ".bmp"
@@ -135,37 +135,34 @@ module RendererModule =
                     | (false, _) -> Log.trace ^ "Could not load font due to file name being too short: '" + asset.FilePath + "'."; None
                 else Log.trace ^ "Could not load font '" + asset.FilePath + "'."; None
             | extension -> Log.trace ^ "Could not load render asset '" + scstring asset + "' due to unknown extension '" + extension + "'."; None
-    
-        static member private tryLoadRenderPackage packageName renderer =
-            match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Xml.RenderAssociation) packageName Constants.Assets.AssetGraphFilePath with
-            | Right assets ->
-                let optRenderAssets = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
-                let renderAssets = List.definitize optRenderAssets
-                let optRenderAssetMap = Map.tryFind packageName renderer.RenderAssetMap
-                match optRenderAssetMap with
-                | Some renderAssetMap ->
-                    let renderAssetMap = Map.addMany renderAssets renderAssetMap
-                    { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
-                | None ->
-                    let renderAssetMap = Map.ofSeq renderAssets
-                    { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
-            | Left error ->
-                Log.info ^ "Render package load failed due unloadable assets '" + error + "' for package '" + packageName + "'."
-                renderer
-    
+
+        static member private loadRenderPackage packageName renderer =
+            let assetGraph = AssetGraph.make Constants.Assets.AssetGraphFilePath
+            let assets = AssetGraph.loadAssetsFromPackage true (Some Constants.Xml.RenderAssociation) packageName assetGraph
+            let optRenderAssets = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
+            let renderAssets = List.definitize optRenderAssets
+            let optRenderAssetMap = Map.tryFind packageName renderer.RenderAssetMap
+            match optRenderAssetMap with
+            | Some renderAssetMap ->
+                let renderAssetMap = Map.addMany renderAssets renderAssetMap
+                { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
+            | None ->
+                let renderAssetMap = Map.ofSeq renderAssets
+                { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
+
         static member private tryLoadRenderAsset (assetTag : AssetTag) renderer =
             let (renderer, optAssetMap) =
                 match Map.tryFind assetTag.PackageName renderer.RenderAssetMap with
                 | Some _ -> (renderer, Map.tryFind assetTag.PackageName renderer.RenderAssetMap)
                 | None ->
                     Log.info ^ "Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
-                    let renderer = Renderer.tryLoadRenderPackage assetTag.PackageName renderer
+                    let renderer = Renderer.loadRenderPackage assetTag.PackageName renderer
                     (renderer, Map.tryFind assetTag.PackageName renderer.RenderAssetMap)
             (renderer, Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap)
-    
+
         static member private handleHintRenderPackageUse (hintPackageUse : HintRenderPackageUseMessage) renderer =
-            Renderer.tryLoadRenderPackage hintPackageUse.PackageName renderer
-    
+            Renderer.loadRenderPackage hintPackageUse.PackageName renderer
+
         static member private handleHintRenderPackageDisuse (hintPackageDisuse : HintRenderPackageDisuseMessage) renderer =
             let packageName = hintPackageDisuse.PackageName
             match Map.tryFind packageName renderer.RenderAssetMap with
@@ -173,25 +170,25 @@ module RendererModule =
                 for asset in assets do Renderer.freeRenderAsset asset.Value
                 { renderer with RenderAssetMap = Map.remove packageName renderer.RenderAssetMap }
             | None -> renderer
-    
+
         static member private handleReloadRenderAssets renderer =
             let oldAssetMap = renderer.RenderAssetMap
             let renderer = { renderer with RenderAssetMap = Map.empty }
             List.fold
-                (fun renderer packageName -> Renderer.tryLoadRenderPackage packageName renderer)
+                (fun renderer packageName -> Renderer.loadRenderPackage packageName renderer)
                 renderer
                 (Map.toKeyList oldAssetMap)
-    
+
         static member private handleRenderMessage renderer renderMessage =
             match renderMessage with
             | RenderDescriptorsMessage renderDescriptors -> { renderer with RenderDescriptors = renderDescriptors @ renderer.RenderDescriptors }
             | HintRenderPackageUseMessage hintPackageUse -> Renderer.handleHintRenderPackageUse hintPackageUse renderer
             | HintRenderPackageDisuseMessage hintPackageDisuse -> Renderer.handleHintRenderPackageDisuse hintPackageDisuse renderer
             | ReloadRenderAssetsMessage -> Renderer.handleReloadRenderAssets renderer
-    
+
         static member private handleRenderMessages renderMessages renderer =
             Queue.fold Renderer.handleRenderMessage renderer renderMessages
-    
+
         static member private renderSprite (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (sprite : SpriteDescriptor) renderer =
             let view = match sprite.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
             let position = sprite.Position - Vector2.Multiply (sprite.Offset, sprite.Size)
@@ -241,13 +238,13 @@ module RendererModule =
                     renderer
                 | _ -> Log.trace "Cannot render sprite with a non-texture asset."; renderer
             | None -> Log.info ^ "SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'."; renderer
-    
+
         static member private renderSprites viewAbsolute viewRelative camera sprites renderer =
             List.fold
                 (fun renderer sprite -> Renderer.renderSprite viewAbsolute viewRelative camera sprite renderer)
                 renderer
                 sprites
-    
+
         static member private renderTileLayerDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (descriptor : TileLayerDescriptor) renderer =
             let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
             let positionView = descriptor.Position * view
@@ -309,7 +306,7 @@ module RendererModule =
                     renderer
                 | _ -> Log.trace "Cannot render tile with a non-texture asset."; renderer
             | None -> Log.info ^ "TileLayerDescriptor failed due to unloadable assets for '" + scstring tileSetImage + "'."; renderer
-    
+
         static member private renderTextDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (descriptor : TextDescriptor) renderer =
             let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
             let positionView = descriptor.Position * view
@@ -351,14 +348,14 @@ module RendererModule =
                     renderer
                 | _ -> Log.trace "Cannot render text with a non-font asset."; renderer
             | None -> Log.info ^ "TextDescriptor failed due to unloadable assets for '" + scstring font + "'."; renderer
-    
+
         static member private renderLayerableDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera renderer layerableDescriptor =
             match layerableDescriptor with
             | SpriteDescriptor sprite -> Renderer.renderSprite viewAbsolute viewRelative camera sprite renderer
             | SpritesDescriptor sprites -> Renderer.renderSprites viewAbsolute viewRelative camera sprites renderer
             | TileLayerDescriptor descriptor -> Renderer.renderTileLayerDescriptor viewAbsolute viewRelative camera descriptor renderer
             | TextDescriptor descriptor -> Renderer.renderTextDescriptor viewAbsolute viewRelative camera descriptor renderer
-    
+
         static member private renderDescriptors camera renderDescriptors renderer =
             let renderContext = renderer.RenderContext
             let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
@@ -374,7 +371,7 @@ module RendererModule =
             | _ ->
                 Log.trace ^ "Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + "."
                 renderer
-    
+
         /// Make a Renderer.
         static member make renderContext =
             let renderer =
@@ -383,18 +380,18 @@ module RendererModule =
                   RenderMessages = Queue.empty
                   RenderDescriptors = [] }
             renderer
-    
+
         interface IRenderer with
-    
+
             member renderer.ClearMessages () =
                 let renderer = { renderer with RenderMessages = Queue.empty }
                 renderer :> IRenderer
-    
+
             member renderer.EnqueueMessage renderMessage =
                 let renderMessages = Queue.conj renderMessage renderer.RenderMessages
                 let renderer = { renderer with RenderMessages = renderMessages }
                 renderer :> IRenderer
-    
+
             member renderer.Render camera =
                 let renderMessages = renderer.RenderMessages
                 let renderer = { renderer with RenderMessages = Queue.empty }
@@ -403,24 +400,24 @@ module RendererModule =
                 let renderer = { renderer with RenderDescriptors = [] }
                 let renderer = Renderer.renderDescriptors camera renderDescriptors renderer
                 renderer :> IRenderer
-    
+
             member renderer.CleanUp () =
                 let renderAssetMaps = Map.toValueSeq renderer.RenderAssetMap
                 let renderAssets = Seq.collect Map.toValueSeq renderAssetMaps
                 for renderAsset in renderAssets do Renderer.freeRenderAsset renderAsset
                 let renderer = { renderer with RenderAssetMap = Map.empty }
                 renderer :> IRenderer
-    
+
     /// The mock implementation of IRenderer.
     type [<ReferenceEquality>] MockRenderer =
         private
             { MockRenderer : unit }
-    
+
         interface IRenderer with
             member renderer.ClearMessages () = renderer :> IRenderer
             member renderer.EnqueueMessage _ = renderer :> IRenderer
             member renderer.Render _ = renderer :> IRenderer
             member renderer.CleanUp () = renderer :> IRenderer
-    
+
         static member make () =
             { MockRenderer = () }

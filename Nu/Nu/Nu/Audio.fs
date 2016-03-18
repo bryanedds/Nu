@@ -91,30 +91,27 @@ module AudioPlayerModule =
                     None
             | extension -> Log.trace ^ "Could not load audio asset '" + scstring asset + "' due to unknown extension '" + extension + "'."; None
     
-        static member private tryLoadAudioPackage packageName audioPlayer =
-            match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Xml.AudioAssociation) packageName Constants.Assets.AssetGraphFilePath with
-            | Right assets ->
-                let optAudioAssets = List.map AudioPlayer.tryLoadAudioAsset2 assets
-                let audioAssets = List.definitize optAudioAssets
-                let optAudioAssetMap = Map.tryFind packageName audioPlayer.AudioAssetMap
-                match optAudioAssetMap with
-                | Some audioAssetMap ->
-                    let audioAssetMap = Map.addMany audioAssets audioAssetMap
-                    { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap audioPlayer.AudioAssetMap }
-                | None ->
-                    let audioAssetMap = Map.ofSeq audioAssets
-                    { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap audioPlayer.AudioAssetMap }
-            | Left error ->
-                Log.trace ^ "HintAudioPackageUseMessage failed due unloadable assets '" + error + "' for '" + scstring (packageName, Constants.Assets.AssetGraphFilePath) + "'."
-                audioPlayer
-            
+        static member private loadAudioPackage packageName audioPlayer =
+            let assetGraph = AssetGraph.make Constants.Assets.AssetGraphFilePath
+            let assets = AssetGraph.loadAssetsFromPackage true (Some Constants.Xml.AudioAssociation) packageName assetGraph
+            let optAudioAssets = List.map AudioPlayer.tryLoadAudioAsset2 assets
+            let audioAssets = List.definitize optAudioAssets
+            let optAudioAssetMap = Map.tryFind packageName audioPlayer.AudioAssetMap
+            match optAudioAssetMap with
+            | Some audioAssetMap ->
+                let audioAssetMap = Map.addMany audioAssets audioAssetMap
+                { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap audioPlayer.AudioAssetMap }
+            | None ->
+                let audioAssetMap = Map.ofSeq audioAssets
+                { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap audioPlayer.AudioAssetMap }
+    
         static member private tryLoadAudioAsset (assetTag : AssetTag) audioPlayer =
             let (audioPlayer, optAssetMap) =
                 match Map.tryFind assetTag.PackageName audioPlayer.AudioAssetMap with
                 | Some _ -> (audioPlayer, Map.tryFind assetTag.PackageName audioPlayer.AudioAssetMap)
                 | None ->
                     Log.info ^ "Loading audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
-                    let audioPlayer = AudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
+                    let audioPlayer = AudioPlayer.loadAudioPackage assetTag.PackageName audioPlayer
                     (audioPlayer, Map.tryFind assetTag.PackageName audioPlayer.AudioAssetMap)
             (audioPlayer, Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap)
     
@@ -130,7 +127,7 @@ module AudioPlayerModule =
             { audioPlayer with OptCurrentSong = Some playSongMessage }
     
         static member private handleHintAudioPackageUse (hintPackageUse : HintAudioPackageUseMessage) audioPlayer =
-            AudioPlayer.tryLoadAudioPackage hintPackageUse.PackageName audioPlayer
+            AudioPlayer.loadAudioPackage hintPackageUse.PackageName audioPlayer
     
         static member private handleHintAudioPackageDisuse (hintPackageDisuse : HintAudioPackageDisuseMessage) audioPlayer =
             let packageName = hintPackageDisuse.PackageName
@@ -186,7 +183,7 @@ module AudioPlayerModule =
             let oldAssetMap = audioPlayer.AudioAssetMap
             let audioPlayer = { audioPlayer with AudioAssetMap = Map.empty }
             List.fold
-                (fun audioPlayer packageName -> AudioPlayer.tryLoadAudioPackage packageName audioPlayer)
+                (fun audioPlayer packageName -> AudioPlayer.loadAudioPackage packageName audioPlayer)
                 audioPlayer
                 (Map.toKeyList oldAssetMap)
     

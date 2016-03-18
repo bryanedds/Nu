@@ -84,7 +84,7 @@ module Metadata =
             | _ -> InvalidMetadata ^ "Could not load asset metadata '" + scstring asset + "' due to unknown extension '" + extension + "'."
         (asset.AssetTag.AssetName, metadata)
 
-    let private generateAssetMetadataSubmap (packageNode : XmlNode) =
+    let private generateAssetMetadataSubmap packageName =
         let packageName = (packageNode.Attributes.GetNamedItem Constants.Xml.NameAttributeName).InnerText
         let assets =
             Seq.fold (fun assetsRev (node : XmlNode) ->
