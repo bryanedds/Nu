@@ -385,56 +385,54 @@ module WorldModule =
                 let entityDispatchers = World.getEntityDispatchers world
                 let facets = World.getFacets world
                 let intrinsicOverlays = World.createIntrinsicOverlays entityDispatchers facets
-                let overlayer = Overlayer.makeFromFile outputOverlayFilePath intrinsicOverlays
-                let world = World.setOverlayer overlayer world
+                match Overlayer.tryMakeFromFile outputOverlayFilePath intrinsicOverlays with
+                | Right overlayer ->
+                
+                    // update overlayer and apply overlays to all entities
+                    let world = World.setOverlayer overlayer world
+                    let entities = World.proxyEntities1 world
+                    let world =
+                        Seq.fold
+                            (fun world (entity : Entity) ->
+                                let entityState = World.getEntityState entity world
+                                match entityState.OptOverlayName with
+                                | Some overlayName ->
+                                    let oldFacetNames = entityState.FacetNames
+                                    let entityState = { entityState with Id = entityState.Id } // hacky copy
+                                    Overlayer.applyOverlayToFacetNames overlayName overlayName entityState oldOverlayer overlayer
+                                    match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
+                                    | Right (entityState, world) ->
+                                        let oldWorld = world
+                                        let facetNames = World.getEntityFacetNamesReflectively entityState // hacky copy elided
+                                        Overlayer.applyOverlay6 overlayName overlayName facetNames entityState oldOverlayer overlayer
+                                        let world = World.setEntityStateWithoutEvent entityState entity world
+                                        World.updateEntityInEntityTree entity oldWorld world
+                                    | Left error -> Log.info ^ "There was an issue in applying a reloaded overlay: " + error; world
+                                | None -> world)
+                            world
+                            entities
+                    Right world
 
-                // apply overlays to all entities
-                let entities = World.proxyEntities1 world
-                let world =
-                    Seq.fold
-                        (fun world (entity : Entity) ->
-                            let entityState = World.getEntityState entity world
-                            match entityState.OptOverlayName with
-                            | Some overlayName ->
-                                let oldFacetNames = entityState.FacetNames
-                                let entityState = { entityState with Id = entityState.Id } // hacky copy
-                                Overlayer.applyOverlayToFacetNames overlayName overlayName entityState oldOverlayer overlayer
-                                match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
-                                | Right (entityState, world) ->
-                                    let oldWorld = world
-                                    let facetNames = World.getEntityFacetNamesReflectively entityState // hacky copy elided
-                                    Overlayer.applyOverlay6 overlayName overlayName facetNames entityState oldOverlayer overlayer
-                                    let world = World.setEntityStateWithoutEvent entityState entity world
-                                    World.updateEntityInEntityTree entity oldWorld world
-                                | Left error -> Log.info ^ "There was an issue in applying a reloaded overlay: " + error; world
-                            | None -> world)
-                        world
-                        entities
-
-                // right!
-                Right world
-
-            // propagate error
+                // propagate errors
+                | Left error -> Left error
             with exn -> Left ^ scstring exn
 
-        /// Reload the assets in use by the world. Currently does not support reloading of song
-        /// assets, and possibly others that are locked by the engine's subsystems.
-        static member reloadAssets inputDirectory outputDirectory refinementDirectory world =
+        /// Attempt to reload the assets in use by the world. Currently does not support reloading
+        /// of song assets, and possibly others that are locked by the engine's subsystems.
+        static member tryReloadAssets inputDirectory outputDirectory refinementDirectory world =
             
             // try to reload asset graph file
             try File.Copy
                     (Path.Combine (inputDirectory, Constants.Assets.AssetGraphFilePath),
                      Path.Combine (outputDirectory, Constants.Assets.AssetGraphFilePath), true)
 
-                // load asset graph and build assets
-                let assetGraph = AssetGraph.makeFromFile Constants.Assets.AssetGraphFilePath
-                AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
+                // attempt to load asset graph
+                match AssetGraph.tryMakeFromFile Constants.Assets.AssetGraphFilePath with
+                | Right assetGraph ->
 
-                // reload asset metadata
-                match Metadata.tryGenerateAssetMetadataMap Constants.Assets.AssetGraphFilePath with
-                | Right assetMetadataMap ->
-                
-                    // reload assets
+                    // build assets reload asset metadata
+                    AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
+                    let assetMetadataMap = Metadata.generateAssetMetadataMap assetGraph
                     let world = World.setAssetMetadataMap assetMetadataMap world
                     let world = World.reloadRenderAssets world
                     let world = World.reloadAudioAssets world
@@ -754,9 +752,9 @@ module WorldModule =
             // ensure game engine is initialized
             Nu.init false
 
-            // attempt to generate asset metadata so the rest of the world can be created
-            match Metadata.tryGenerateAssetMetadataMap Constants.Assets.AssetGraphFilePath with
-            | Right assetMetadataMap ->
+            // attempt to create asset graph
+            match AssetGraph.tryMakeFromFile Constants.Assets.AssetGraphFilePath with
+            | Right assetGraph ->
 
                 // make world's subsystems
                 let subsystems =
@@ -813,36 +811,41 @@ module WorldModule =
                     let eventFilter = Core.getEventFilter ()
                     EventSystem.make eventTracer eventTracing eventFilter
 
-                // make the world's ambient state
-                let ambientState =
-                    let intrinsicOverlays = World.createIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
-                    let pluginOverlayRoutes = plugin.MakeOverlayRoutes ()
-                    let overlayRouter = OverlayRouter.make dispatchers.EntityDispatchers pluginOverlayRoutes
-                    let overlayer = Overlayer.makeFromFile Constants.Assets.OverlayFilePath intrinsicOverlays
-                    let sdlConfig = SdlDeps.getConfig sdlDeps
-                    let eyeSize = Vector2 (single sdlConfig.ViewW, single sdlConfig.ViewH)
-                    let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
-                    AmbientState.make tickRate camera assetMetadataMap overlayRouter overlayer userState
+                // attempt to make the overlayer
+                let intrinsicOverlays = World.createIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
+                match Overlayer.tryMakeFromFile Constants.Assets.OverlayFilePath intrinsicOverlays with
+                | Right overlayer ->
+            
+                    // make the world's ambient state
+                    let ambientState =
+                        let sdlConfig = SdlDeps.getConfig sdlDeps
+                        let eyeSize = Vector2 (single sdlConfig.ViewW, single sdlConfig.ViewH)
+                        let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
+                        let assetMetadataMap = Metadata.generateAssetMetadataMap assetGraph
+                        let pluginOverlayRoutes = plugin.MakeOverlayRoutes ()
+                        let overlayRouter = OverlayRouter.make dispatchers.EntityDispatchers pluginOverlayRoutes
+                        AmbientState.make tickRate camera assetMetadataMap overlayRouter overlayer userState
 
-                // make the world itself
-                let world =
-                    { Subsystems = subsystems
-                      Dispatchers = dispatchers
-                      EventSystem = eventSystem
-                      OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
-                      AmbientState = ambientState
-                      GameState = World.makeGameState activeGameDispatcher
-                      ScreenStates = Vmap.makeEmpty ()
-                      GroupStates = Vmap.makeEmpty ()
-                      EntityStates = Vmap.makeEmpty ()
-                      ScreenDirectory = Vmap.makeEmpty () }
+                    // make the world itself
+                    let world =
+                        { Subsystems = subsystems
+                          Dispatchers = dispatchers
+                          EventSystem = eventSystem
+                          OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
+                          AmbientState = ambientState
+                          GameState = World.makeGameState activeGameDispatcher
+                          ScreenStates = Vmap.makeEmpty ()
+                          GroupStates = Vmap.makeEmpty ()
+                          EntityStates = Vmap.makeEmpty ()
+                          ScreenDirectory = Vmap.makeEmpty () }
 
-                // initialize OptEntityCache after the fact due to back reference
-                let world = { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
+                    // initialize OptEntityCache after the fact due to back reference
+                    let world = { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
 
-                // finally, register the game
-                let world = World.registerGame world
-                Right world
+                    // finally, register the game
+                    let world = World.registerGame world
+                    Right world
 
-            // forward error message
+                // forward error messages
+                | Left error -> Left error
             | Left error -> Left error

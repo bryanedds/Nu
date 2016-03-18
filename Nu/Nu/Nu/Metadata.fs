@@ -8,7 +8,6 @@ open System.Collections.Generic
 open System.Drawing
 open System.IO
 open System.Linq
-open System.Xml
 open OpenTK
 open TiledSharp
 open Prime
@@ -84,42 +83,28 @@ module Metadata =
             | _ -> InvalidMetadata ^ "Could not load asset metadata '" + scstring asset + "' due to unknown extension '" + extension + "'."
         (asset.AssetTag.AssetName, metadata)
 
-    let private generateAssetMetadataSubmap packageName =
-        let packageName = (packageNode.Attributes.GetNamedItem Constants.Xml.NameAttributeName).InnerText
-        let assets =
-            Seq.fold (fun assetsRev (node : XmlNode) ->
-                match node.Name with
-                | Constants.Xml.AssetNodeName -> match AssetGraph.tryLoadAssetFromAssetNode node with Some asset -> asset :: assetsRev | None -> assetsRev
-                | Constants.Xml.AssetsNodeName -> match AssetGraph.tryLoadAssetsFromAssetsNode true node with Some assets' -> List.rev assets' @ assetsRev | None -> assetsRev
-                | Constants.Xml.CommentNodeName -> assetsRev
-                | _ -> [])
-                []
-                (packageNode.OfType<XmlNode> ()) |>
-            List.rev
-        let submap = Map.ofSeqBy (fun asset -> generateAssetMetadata asset) assets
-        (packageName, submap)
+    let private tryGenerateAssetMetadataSubmap packageName assetGraph =
+        match AssetGraph.tryLoadAssetsFromPackage true None packageName assetGraph with
+        | Right assets ->
+            let submap = Map.ofSeqBy (fun asset -> generateAssetMetadata asset) assets
+            (packageName, submap)
+        | Left error ->
+            Log.info ^ "Could not load asset metadata for package '" + packageName + "' due to: " + error
+            (packageName, Map.empty)
 
-    let private generateAssetMetadataMap packageNodes =
+    let private generateAssetMetadataMap2 packageNames assetGraph =
         List.fold
-            (fun assetMetadataMap (packageNode : XmlNode) ->
-                let (packageName, submap) = generateAssetMetadataSubmap packageNode
+            (fun assetMetadataMap packageName ->
+                let (packageName, submap) = tryGenerateAssetMetadataSubmap packageName assetGraph
                 Map.add packageName submap assetMetadataMap)
             Map.empty
-            packageNodes
+            packageNames
 
-    /// Attempt to generate an asset metadata map from the given asset graph.
-    let tryGenerateAssetMetadataMap assetGraphFilePath =
-        try let document = XmlDocument ()
-            document.Load (assetGraphFilePath : string) 
-            let optRootNode = document.[Constants.Xml.RootNodeName]
-            match optRootNode with
-            | null -> Left ^ "Root node is missing from asset graph file '" + assetGraphFilePath + "'."
-            | rootNode ->
-                let possiblePackageNodes = List.ofSeq ^ rootNode.OfType<XmlNode> ()
-                let packageNodes = List.filter (fun (node : XmlNode) -> node.Name = Constants.Xml.PackageNodeName) possiblePackageNodes
-                let assetMetadataMap = generateAssetMetadataMap packageNodes
-                Right assetMetadataMap
-        with exn -> Left ^ scstring exn
+    /// Generate an asset metadata map from the given asset graph.
+    let generateAssetMetadataMap assetGraph =
+        let packageNames = AssetGraph.getPackageNames assetGraph
+        let assetMetadataMap = generateAssetMetadataMap2 packageNames assetGraph
+        assetMetadataMap
 
     /// Try to get the metadata of the given asset.
     let tryGetMetadata (assetTag : AssetTag) assetMetadataMap =

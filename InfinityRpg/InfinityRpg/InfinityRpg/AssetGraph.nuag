@@ -1,0 +1,18 @@
+﻿[[Default
+    [[Asset Font Assets/Default/FreeMonoBold.032.ttf [Render] []]
+     [Assets Assets/Default png [Render] []]
+     [Assets Assets/Default wav [Audio] []]
+     [Assets Assets/Default ogg [Audio] []]
+     [Assets Assets/Default tmx [] []]]]
+ [Gui
+    [[Assets Assets/Gui psd [Render] [PsdToPng OldSchool]]
+     [Assets Assets/Gui png [Render] [OldSchool]]
+     [Assets Assets/Gui wav [Audio] []]
+     [Assets Assets/Gui ogg [Audio] []]
+     [Assets Assets/Gui nugroup [] []]]]
+ [Gameplay
+    [[Assets Assets/Gameplay psd [Render] [PsdToPng OldSchool]]
+     [Assets Assets/Gameplay png [Render] [OldSchool]]
+     [Assets Assets/Gameplay wav [Audio] []]
+     [Assets Assets/Gameplay ogg [Audio] []]
+     [Assets Assets/Gameplay nugroup [] []]]]]

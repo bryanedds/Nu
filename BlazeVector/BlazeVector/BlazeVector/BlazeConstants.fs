@@ -21,11 +21,11 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Assets =
 
-        // these constants specify the packages as named in the project's 'AssetGraph.xml' file
+        // these constants specify the packages as named in the project's 'AssetGraph.nuag' file
         let GuiPackageName = "Gui"
         let GameplayPackageName = "Gameplay"
 
-        // these constants locate various assets described by the project's 'AssetGraph.xml' file
+        // these constants locate various assets described by the project's 'AssetGraph.nuag' file
         let NuSplashSound = { PackageName = GuiPackageName; AssetName = "Nu" }
         let MachinerySong = { PackageName = GuiPackageName; AssetName = "Machinery" }
         let DeadBlazeSong = { PackageName = GameplayPackageName; AssetName = "DeadBlaze" }

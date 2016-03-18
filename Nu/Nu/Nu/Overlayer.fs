@@ -168,12 +168,14 @@ module OverlayerModule =
         let make overlays =
             { Overlays = overlays }
 
-        /// Make an overlayer by loading overlays from a file and then combining it with the given
-        /// intrinsic overlays.
-        let makeFromFile (filePath : string) intrinsicOverlays =
-            File.ReadAllText filePath |>
-            String.unescape |>
-            scvalue<Overlay list> |>
-            Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) |>
-            Map.concat intrinsicOverlays |>
-            make
+        /// Attempt to make an overlayer by loading overlays from a file and then combining it with
+        /// the given intrinsic overlays.
+        let tryMakeFromFile (filePath : string) intrinsicOverlays =
+            try File.ReadAllText filePath |>
+                String.unescape |>
+                scvalue<Overlay list> |>
+                Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) |>
+                Map.concat intrinsicOverlays |>
+                make |>
+                Right
+            with exn -> Left ^ "Could not make overlayer from file '" + filePath + "' due to: " + scstring exn
