@@ -84,10 +84,10 @@ module AssetGraph =
         | ".png" ->
             use stream = File.OpenWrite filePath
             image.Write (stream, MagickFormat.Png32)
-        | _ -> failwith ^ "Invalid image file format for refinement '" + scstring OldSchool + "'; must be of *.png format."
+        | _ -> Log.info ^ "Invalid image file format for refinement '" + scstring OldSchool + "'; must be of *.png format."
 
     /// Apply a single refinement to an asset.
-    let refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement =
+    let private refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement =
 
         // build the intermediate file path
         let intermediateFileExtension = Path.GetExtension intermediateFileSubpath
@@ -113,7 +113,7 @@ module AssetGraph =
         (refinementFileSubpath, refinementDirectory)
 
     /// Apply all refinements to an asset.
-    let refineAsset inputFileSubpath inputDirectory refinementDirectory refinements =
+    let private refineAsset inputFileSubpath inputDirectory refinementDirectory refinements =
         List.fold
             (fun (intermediateFileSubpath, intermediateDirectory) refinement ->
                 refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement)
@@ -121,7 +121,7 @@ module AssetGraph =
             refinements
 
     /// Build all the assets.
-    let buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assets =
+    let private buildAssets5 inputDirectory outputDirectory refinementDirectory fullBuild assets =
 
         // build assets
         for asset in assets do
@@ -153,8 +153,8 @@ module AssetGraph =
                 try File.Copy (intermediateFilePath, outputFilePath, true)
                 with _ -> Log.info ^ "Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'."
 
-    /// Attempt to load all the assets from a package descriptor.
-    let tryLoadAssetsFromPackageDescriptor usingRawAssets optAssociation packageName packageDescriptor =
+    /// Load all the assets from a package descriptor.
+    let private loadAssetsFromPackageDescriptor4 usingRawAssets optAssociation packageName packageDescriptor =
         let assets =
             List.fold (fun assetsRev assetDescriptor ->
                 match assetDescriptor with
@@ -178,39 +178,40 @@ module AssetGraph =
                                 filePaths |>
                             List.ofArray
                         assets @ assetsRev
-                    with exn -> Log.debug ^ "Invalid directory '" + directory + "'."; [])
+                    with exn -> Log.info ^ "Invalid directory '" + directory + "'."; [])
                 [] packageDescriptor |>
             List.rev
         match optAssociation with
         | Some association -> List.filter (fun asset -> Set.contains association asset.Associations) assets
         | None -> assets
 
-    /// Try to load all the assets from an asset graph document.
-    let tryLoadAssets usingRawAssets optAssociation (assetGraph : AssetGraph) =
-        let assetLists =
-            Map.fold (fun assetListsRev packageName packageDescriptor ->
-                let assets = tryLoadAssetsFromPackageDescriptor usingRawAssets optAssociation packageName packageDescriptor
-                assets :: assetListsRev)
-                [] assetGraph |>
-            List.rev
-        let assets = List.concat assetLists
-        Right assets
+    /// Load all the available assets from a package.
+    let loadAssetsFromPackage usingRawAssets optAssociation packageName (assetGraph : AssetGraph) =
+        match Map.tryFind packageName assetGraph with
+        | Some packageDescriptor -> loadAssetsFromPackageDescriptor4 usingRawAssets optAssociation packageName packageDescriptor
+        | None -> Log.info ^ "Could not find package '" + packageName + "' in asset graph."; []
 
-    /// Attempt to build all the assets found in the given asset graph.
-    let tryBuildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph =
+    /// Load all the available assets from an asset graph document.
+    let loadAssets usingRawAssets optAssociation (assetGraph : AssetGraph) =
+        assetGraph |>
+        Map.fold (fun assetListsRev packageName packageDescriptor ->
+            let assets = loadAssetsFromPackageDescriptor4 usingRawAssets optAssociation packageName packageDescriptor
+            assets :: assetListsRev)
+            [] |>
+        List.rev |>
+        List.concat
 
-        // attempt to load assets
+    /// Build all the available assets found in the given asset graph.
+    let buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph =
+
+        // load assets
         let currentDirectory = Directory.GetCurrentDirectory ()
-        let eitherAssets =
-            try let () = Directory.SetCurrentDirectory inputDirectory in tryLoadAssets false None assetGraph
+        let assets =
+            try let () = Directory.SetCurrentDirectory inputDirectory in loadAssets false None assetGraph
             finally Directory.SetCurrentDirectory currentDirectory
 
-        // attempt to build assets
-        match eitherAssets with
-        | Right assets ->
-            try Right ^ buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assets
-            with exn -> Left ^ scstring exn
-        | Left error -> Left error
+        // build assets
+        buildAssets5 inputDirectory outputDirectory refinementDirectory fullBuild assets
 
     /// Make an asset graph.
     let make assetGraphFilePath =
