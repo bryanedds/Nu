@@ -385,7 +385,7 @@ module WorldModule =
                 let entityDispatchers = World.getEntityDispatchers world
                 let facets = World.getFacets world
                 let intrinsicOverlays = World.createIntrinsicOverlays entityDispatchers facets
-                let overlayer = Overlayer.make outputOverlayFilePath intrinsicOverlays
+                let overlayer = Overlayer.makeFromFile outputOverlayFilePath intrinsicOverlays
                 let world = World.setOverlayer overlayer world
 
                 // apply overlays to all entities
@@ -725,10 +725,9 @@ module WorldModule =
             // make the world's ambient state
             let ambientState =
                 let overlayRouter = OverlayRouter.make dispatchers.EntityDispatchers []
-                let overlayer = Overlayer.makeEmpty ()
                 let eyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault)
                 let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
-                AmbientState.make 1L camera Map.empty overlayRouter overlayer userState
+                AmbientState.make 1L camera Map.empty overlayRouter Overlayer.empty userState
 
             // make the world itself
             let world =
@@ -820,7 +819,7 @@ module WorldModule =
                     let intrinsicOverlays = World.createIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
                     let pluginOverlayRoutes = plugin.MakeOverlayRoutes ()
                     let overlayRouter = OverlayRouter.make dispatchers.EntityDispatchers pluginOverlayRoutes
-                    let overlayer = Overlayer.make Constants.Assets.OverlayFilePath intrinsicOverlays
+                    let overlayer = Overlayer.makeFromFile Constants.Assets.OverlayFilePath intrinsicOverlays
                     let sdlConfig = SdlDeps.getConfig sdlDeps
                     let eyeSize = Vector2 (single sdlConfig.ViewW, single sdlConfig.ViewH)
                     let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }

@@ -160,13 +160,17 @@ module OverlayerModule =
         let shouldPropertySerialize5 facetNames propertyName propertyType target overlayer =
             not ^ isPropertyOverlaid5 facetNames propertyName propertyType target overlayer
 
-        /// Make an empty overlay.
-        let makeEmpty () =
+        /// The empty overlayer.
+        let empty =
             { Overlays = Map.empty }
 
-        /// Make an Overlayer by loading overlays from a file and then combining it with the given
+        /// Make an overlayer.
+        let make overlays =
+            { Overlays = overlays }
+
+        /// Make an overlayer by loading overlays from a file and then combining it with the given
         /// intrinsic overlays.
-        let make (filePath : string) intrinsicOverlays =
+        let makeFromFile (filePath : string) intrinsicOverlays =
             let loadedOverlays =
                 File.ReadAllText filePath |>
                 String.unescape |>
