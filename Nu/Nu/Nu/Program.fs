@@ -19,8 +19,8 @@ module Program =
     system          | language      | editor
     -----------------------------------------------
     overlay         | s-exprs       | Visual Studio
-    asset graph     | xml           | Visual Studio
-    simulant data   | xml           | Gaia
+    asset graph     | s-exprs       | Visual Studio
+    simulants defs  | xml           | Gaia
     event filtering | s-exprs       | Gaia
     effect system   | s-exprs       | Aether (TBA)
     mind (TBA)      | s-exprs       | Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
