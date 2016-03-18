@@ -190,20 +190,25 @@ module AssetGraphModule =
             match optAssociation with
             | Some association -> List.filter (fun asset -> Set.contains association asset.Associations) assets
             | None -> assets
+
+        /// Get package names.
+        let getPackageNames assetGraph =
+            Map.toKeyList assetGraph.PackageDescriptors
     
-        /// Load all the available assets from a package.
-        let loadAssetsFromPackage usingRawAssets optAssociation packageName assetGraph =
+        /// Attempt to load all the available assets from a package.
+        let tryLoadAssetsFromPackage usingRawAssets optAssociation packageName assetGraph =
             match Map.tryFind packageName assetGraph.PackageDescriptors with
-            | Some packageDescriptor -> loadAssetsFromPackageDescriptor4 usingRawAssets optAssociation packageName packageDescriptor
-            | None -> Log.info ^ "Could not find package '" + packageName + "' in asset graph."; []
-    
+            | Some packageDescriptor ->
+                let assets = loadAssetsFromPackageDescriptor4 usingRawAssets optAssociation packageName packageDescriptor
+                Right assets
+            | None -> Left ^ "Could not find package '" + packageName + "' in asset graph."
+
         /// Load all the available assets from an asset graph document.
         let loadAssets usingRawAssets optAssociation assetGraph =
-            assetGraph.PackageDescriptors |>
             Map.fold (fun assetListsRev packageName packageDescriptor ->
                 let assets = loadAssetsFromPackageDescriptor4 usingRawAssets optAssociation packageName packageDescriptor
                 assets :: assetListsRev)
-                [] |>
+                [] assetGraph.PackageDescriptors |>
             List.rev |>
             List.concat
     
@@ -227,9 +232,11 @@ module AssetGraphModule =
         let make packageDescriptors =
             { PackageDescriptors = packageDescriptors }
 
-        /// Make an asset graph.
-        let makeFromFile assetGraphFilePath =
-            File.ReadAllText assetGraphFilePath |>
-            String.unescape |>
-            scvalue<Map<string, PackageDescriptor>> |>
-            make
+        /// Attempt to make an asset graph.
+        let tryMakeFromFile filePath =
+            try File.ReadAllText filePath |>
+                String.unescape |>
+                scvalue<Map<string, PackageDescriptor>> |>
+                make |>
+                Right
+            with exn -> Left ^ "Could not make asset graph from file '" + filePath + "' due to: " + scstring exn

@@ -57,7 +57,7 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Assets =
 
-        let [<Literal>] AssetGraphFilePath = "AssetGraph.xml"
+        let [<Literal>] AssetGraphFilePath = "AssetGraph.nuag"
         let [<Literal>] OverlayFilePath = "Overlay.nuol"
         let [<Literal>] DefaultPackageName = "Default"
         let [<Literal>] DefaultImageValue = "[Default Image]"

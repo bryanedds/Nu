@@ -136,19 +136,27 @@ module RendererModule =
                 else Log.trace ^ "Could not load font '" + asset.FilePath + "'."; None
             | extension -> Log.trace ^ "Could not load render asset '" + scstring asset + "' due to unknown extension '" + extension + "'."; None
 
-        static member private loadRenderPackage packageName renderer =
-            let assetGraph = AssetGraph.makeFromFile Constants.Assets.AssetGraphFilePath
-            let assets = AssetGraph.loadAssetsFromPackage true (Some Constants.Xml.RenderAssociation) packageName assetGraph
-            let optRenderAssets = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
-            let renderAssets = List.definitize optRenderAssets
-            let optRenderAssetMap = Map.tryFind packageName renderer.RenderAssetMap
-            match optRenderAssetMap with
-            | Some renderAssetMap ->
-                let renderAssetMap = Map.addMany renderAssets renderAssetMap
-                { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
-            | None ->
-                let renderAssetMap = Map.ofSeq renderAssets
-                { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
+        static member private tryLoadRenderPackage packageName renderer =
+            match AssetGraph.tryMakeFromFile Constants.Assets.AssetGraphFilePath with
+            | Right assetGraph ->
+                match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Xml.RenderAssociation) packageName assetGraph with
+                | Right assets ->
+                    let optRenderAssets = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
+                    let renderAssets = List.definitize optRenderAssets
+                    let optRenderAssetMap = Map.tryFind packageName renderer.RenderAssetMap
+                    match optRenderAssetMap with
+                    | Some renderAssetMap ->
+                        let renderAssetMap = Map.addMany renderAssets renderAssetMap
+                        { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
+                    | None ->
+                        let renderAssetMap = Map.ofSeq renderAssets
+                        { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
+                | Left failedAssetNames ->
+                    Log.info ^ "Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'."
+                    renderer
+            | Left error ->
+                Log.info ^ "Render package load failed due to unloadable asset graph due to: '" + error
+                renderer
 
         static member private tryLoadRenderAsset (assetTag : AssetTag) renderer =
             let (renderer, optAssetMap) =
@@ -156,12 +164,12 @@ module RendererModule =
                 | Some _ -> (renderer, Map.tryFind assetTag.PackageName renderer.RenderAssetMap)
                 | None ->
                     Log.info ^ "Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
-                    let renderer = Renderer.loadRenderPackage assetTag.PackageName renderer
+                    let renderer = Renderer.tryLoadRenderPackage assetTag.PackageName renderer
                     (renderer, Map.tryFind assetTag.PackageName renderer.RenderAssetMap)
             (renderer, Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap)
 
         static member private handleHintRenderPackageUse (hintPackageUse : HintRenderPackageUseMessage) renderer =
-            Renderer.loadRenderPackage hintPackageUse.PackageName renderer
+            Renderer.tryLoadRenderPackage hintPackageUse.PackageName renderer
 
         static member private handleHintRenderPackageDisuse (hintPackageDisuse : HintRenderPackageDisuseMessage) renderer =
             let packageName = hintPackageDisuse.PackageName
@@ -175,7 +183,7 @@ module RendererModule =
             let oldAssetMap = renderer.RenderAssetMap
             let renderer = { renderer with RenderAssetMap = Map.empty }
             List.fold
-                (fun renderer packageName -> Renderer.loadRenderPackage packageName renderer)
+                (fun renderer packageName -> Renderer.tryLoadRenderPackage packageName renderer)
                 renderer
                 (Map.toKeyList oldAssetMap)
 
