@@ -221,12 +221,15 @@ module AssetGraphModule =
 
         /// The empty asset graph.
         let empy =
-            { PackageDescriptors = Map.empty }    
+            { PackageDescriptors = Map.empty }
 
         /// Make an asset graph.
-        let make assetGraphFilePath =
-            let packageDescriptors =
-                File.ReadAllText assetGraphFilePath |>
-                String.unescape |>
-                scvalue<Map<string, PackageDescriptor>>
+        let make packageDescriptors =
             { PackageDescriptors = packageDescriptors }
+
+        /// Make an asset graph.
+        let makeFromFile assetGraphFilePath =
+            File.ReadAllText assetGraphFilePath |>
+            String.unescape |>
+            scvalue<Map<string, PackageDescriptor>> |>
+            make

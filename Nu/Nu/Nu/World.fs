@@ -417,31 +417,30 @@ module WorldModule =
             // propagate error
             with exn -> Left ^ scstring exn
 
-        /// Try to release the assets in use by the world. Currently does not support reloading
-        /// of song assets, and possibly others that are locked by the engine's subsystems.
-        static member tryReloadAssets inputDirectory outputDirectory refinementDirectory world =
+        /// Reload the assets in use by the world. Currently does not support reloading of song
+        /// assets, and possibly others that are locked by the engine's subsystems.
+        static member reloadAssets inputDirectory outputDirectory refinementDirectory world =
             
             // try to reload asset graph file
             try File.Copy
                     (Path.Combine (inputDirectory, Constants.Assets.AssetGraphFilePath),
                      Path.Combine (outputDirectory, Constants.Assets.AssetGraphFilePath), true)
 
-                // reload asset graph
-                match AssetGraph.tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory false Constants.Assets.AssetGraphFilePath with
-                | Right () ->
+                // load asset graph and build assets
+                let assetGraph = AssetGraph.makeFromFile Constants.Assets.AssetGraphFilePath
+                AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
 
-                    // reload asset metadata
-                    match Metadata.tryGenerateAssetMetadataMap Constants.Assets.AssetGraphFilePath with
-                    | Right assetMetadataMap ->
-                    
-                        // reload assets
-                        let world = World.setAssetMetadataMap assetMetadataMap world
-                        let world = World.reloadRenderAssets world
-                        let world = World.reloadAudioAssets world
-                        Right world
-            
-                    // propagate errors
-                    | Left error -> Left error
+                // reload asset metadata
+                match Metadata.tryGenerateAssetMetadataMap Constants.Assets.AssetGraphFilePath with
+                | Right assetMetadataMap ->
+                
+                    // reload assets
+                    let world = World.setAssetMetadataMap assetMetadataMap world
+                    let world = World.reloadRenderAssets world
+                    let world = World.reloadAudioAssets world
+                    Right world
+        
+                // propagate errors
                 | Left error -> Left error
             with exn -> Left ^ scstring exn
 

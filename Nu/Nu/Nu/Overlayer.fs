@@ -171,10 +171,9 @@ module OverlayerModule =
         /// Make an overlayer by loading overlays from a file and then combining it with the given
         /// intrinsic overlays.
         let makeFromFile (filePath : string) intrinsicOverlays =
-            let loadedOverlays =
-                File.ReadAllText filePath |>
-                String.unescape |>
-                scvalue<Overlay list> |>
-                Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay))
-            let overlays = intrinsicOverlays @@ loadedOverlays
-            { Overlays = overlays }
+            File.ReadAllText filePath |>
+            String.unescape |>
+            scvalue<Overlay list> |>
+            Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) |>
+            Map.concat intrinsicOverlays |>
+            make
