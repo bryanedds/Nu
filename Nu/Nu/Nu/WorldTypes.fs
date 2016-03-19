@@ -235,29 +235,6 @@ and Facet () =
     abstract GetQuickSize : Entity * World -> Vector2
     default facet.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
 
-/// Describes a game value.
-and [<NoComparison>] GameDescriptor =
-    { GameDispatcher : string
-      GameFields : Map<string, Symbol>
-      Screens : ScreenDescriptor list }
-
-/// Describes a screen value.
-and [<NoComparison>] ScreenDescriptor =
-    { ScreenDispatcher : string
-      ScreenFields : Map<string, Symbol>
-      Groups : GroupDescriptor list }
-
-/// Describes a group value.
-and [<NoComparison>] GroupDescriptor =
-    { GroupDispatcher : string
-      GroupFields : Map<string, Symbol>
-      Entities : EntityDescriptor list }
-
-/// Describes an entity value.
-and [<NoComparison>] EntityDescriptor =
-    { EntityDispatcher : string
-      EntityFields : Map<string, Symbol> }
-
 /// Hosts the ongoing state of a game. The end-user of this engine should never touch this
 /// type, and it's public _only_ to make [<CLIMutable>] work.
 and [<CLIMutable; NoEquality; NoComparison>] GameState =
@@ -536,6 +513,37 @@ and [<StructuralEquality; NoComparison>] Entity =
 
     /// Concatenate two addresses, forcing the type of first address.
     static member (->>-) (address, entity) = acatff address entity
+
+/// Describes a game value.
+and [<NoComparison>] GameDescriptor =
+    { GameDispatcher : string
+      GameFields : Map<string, Symbol>
+      Screens : ScreenDescriptor list }
+    interface CompositeDescriptor with
+        member this.GetFields () = this.GameFields
+
+/// Describes a screen value.
+and [<NoComparison>] ScreenDescriptor =
+    { ScreenDispatcher : string
+      ScreenFields : Map<string, Symbol>
+      Groups : GroupDescriptor list }
+    interface CompositeDescriptor with
+        member this.GetFields () = this.ScreenFields
+
+/// Describes a group value.
+and [<NoComparison>] GroupDescriptor =
+    { GroupDispatcher : string
+      GroupFields : Map<string, Symbol>
+      Entities : EntityDescriptor list }
+    interface CompositeDescriptor with
+        member this.GetFields () = this.GroupFields
+
+/// Describes an entity value.
+and [<NoComparison>] EntityDescriptor =
+    { EntityDispatcher : string
+      EntityFields : Map<string, Symbol> }
+    interface CompositeDescriptor with
+        member this.GetFields () = this.EntityFields
 
 /// The world's dispatchers (including facets).
 /// 
