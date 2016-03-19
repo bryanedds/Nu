@@ -7,7 +7,6 @@ open System.ComponentModel
 open System.Collections
 open System.Collections.Generic
 open System.Reflection
-open System.Xml
 open Prime
 open Nu
 
@@ -41,7 +40,7 @@ module FieldDefinition =
         if Array.exists (fun gta -> gta = typeof<obj>) fieldDefinition.FieldType.GenericTypeArguments then
             failwith ^
                 "Generic field definition lacking type information for field '" + fieldDefinition.FieldName + "'. " +
-                "Use explicit typing on all values that carry incomplete type information such as empty lists, empty sets, and none options,."
+                "Use explicit typing on all values that carry incomplete type information such as empty lists, empty sets, and none options."
 
     /// Make a field definition.
     let make fieldName fieldType fieldExpr =
@@ -80,19 +79,29 @@ type FieldDescriptor =
         fun (value : 'v) ->
             (fieldName, symbolize value)
 
+/// Describes a generalized value with fields.
+type CompositeDescriptor =
+    interface
+        abstract GetFields : unit -> Map<string, Symbol>
+        end
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module CompositeDescriptor =
+
+    /// Get the fields of the descriptor.
+    let getFields (compositeDescriptor : CompositeDescriptor) =
+        compositeDescriptor.GetFields ()
+
+    /// Try to get a field of the descriptor.
+    let tryGetField fieldName compositeDescriptor =
+        let fields = getFields compositeDescriptor
+        Map.tryFind fieldName fields
+
 [<AutoOpen>]
 module ReflectionModule =
 
     /// In tandem with the ValueDefinition type, grants a nice syntax to define value fields.
-    [<Obsolete ("Change in code standard implicates that all constructor functions for DSLs be capitalized. Use capitalized version instead.")>]
-    let define = { ValueDefinition = () }
-    
-    /// In tandem with the ValueDefinition type, grants a nice syntax to define value fields.
     let Define = { ValueDefinition = () }
-
-    /// In tandem with the VariableDefinition type, grants a nice syntax to define variable fields.
-    [<Obsolete ("Change in code standard implicates that all constructor functions for DSLs be capitalized. Use capitalized version instead.")>]
-    let variable = { VariableDefinition = () }
 
     /// In tandem with the VariableDefinition type, grants a nice syntax to define variable fields.
     let Variable = { VariableDefinition = () }
@@ -354,24 +363,8 @@ module Reflection =
         let instrinsicFacetNames = getIntrinsicFacetNames sourceType
         attachIntrinsicFacetsViaNames dispatcherMap facetMap instrinsicFacetNames target
 
-    /// Read dispatcherName from an xml node.
-    let readDispatcherName defaultDispatcherName (node : XmlNode) =
-        match node.Attributes.[Constants.Xml.DispatcherNameAttributeName] with
-        | null -> defaultDispatcherName
-        | dispatcherNameAttribute -> dispatcherNameAttribute.InnerText
-
-    /// Read opt overlay name from an xml node.
-    let readOptOverlayName (node : XmlNode) =
-        let optOverlayNameStr = node.InnerText
-        scvalue<string option> optOverlayNameStr
-
-    /// Read facet names from an xml node.
-    let readFacetNames (node : XmlNode) =
-        let facetNames = node.InnerText
-        scvalue<string Set> facetNames
-
-    /// Try to read just the target's OptOverlayName from Xml.
-    let tryReadOptOverlayNameToTarget (targetNode : XmlNode) target =
+    /// Try to read just the target's OptOverlayName from the given symbol.
+    let tryReadOptOverlayNameToTarget targetDescriptor target =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         let optOptOverlayNameProperty =
@@ -383,15 +376,15 @@ module Reflection =
                 targetProperties
         match optOptOverlayNameProperty with
         | Some optOverlayNameProperty ->
-            match targetNode.[optOverlayNameProperty.Name] with
-            | null -> ()
-            | optOverlayNameNode ->
-                let optOverlayName = readOptOverlayName optOverlayNameNode
+            match CompositeDescriptor.tryGetField optOverlayNameProperty.Name targetDescriptor with
+            | Some optOverlayNameSymbol ->
+                let optOverlayName = valueize<string option> optOverlayNameSymbol
                 optOverlayNameProperty.SetValue (target, optOverlayName)
+            | None -> ()
         | None -> ()
 
-    /// Read just the target's FacetNames from Xml.
-    let readFacetNamesToTarget (targetNode : XmlNode) target =
+    /// Read just the target's FacetNames from the given symbol.
+    let readFacetNamesToTarget targetDescriptor target =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         let facetNamesProperty =
@@ -401,62 +394,63 @@ module Reflection =
                     property.PropertyType = typeof<string Set> &&
                     property.CanWrite)
                 targetProperties
-        match targetNode.[facetNamesProperty.Name] with
-        | null -> ()
-        | facetNamesNode ->
-            let facetNames = readFacetNames facetNamesNode
+        match CompositeDescriptor.tryGetField facetNamesProperty.Name targetDescriptor with
+        | Some facetNamesSymbol ->
+            let facetNames = valueize<string list> facetNamesSymbol
             facetNamesProperty.SetValue (target, facetNames)
+        | None -> ()
 
     /// Attempt to read a target's .NET property from Xml.
-    let tryReadPropertyToTarget (property : PropertyInfo) (targetNode : XmlNode) (target : 'a) =
-        match targetNode.SelectSingleNode property.Name with
-        | null -> ()
-        | fieldNode ->
-            let fieldValueStr = fieldNode.InnerText
+    let tryReadPropertyToTarget (property : PropertyInfo) targetDescriptor (target : 'a) =
+        match CompositeDescriptor.tryGetField property.Name targetDescriptor with
+        | Some fieldSymbol ->
             let converter = SymbolicConverter property.PropertyType
-            if converter.CanConvertFrom typeof<string> then
-                let fieldValue = converter.ConvertFromString fieldValueStr
+            if converter.CanConvertFrom typeof<Symbol> then
+                let fieldValue = converter.ConvertFrom fieldSymbol
                 property.SetValue (target, fieldValue)
+        | None -> ()
 
     /// Read all of a target's .NET properties from Xml (except OptOverlayName and FacetNames).
-    let readPropertiesToTarget (targetNode : XmlNode) target =
+    let readPropertiesToTarget targetDescriptor target =
         let properties = (target.GetType ()).GetPropertiesWritable ()
         for property in properties do
             if  property.Name <> "FacetNames" &&
                 property.Name <> "OptOverlayName" &&
                 isPropertyPersistentByName property.Name then
-                tryReadPropertyToTarget property targetNode target
+                tryReadPropertyToTarget property targetDescriptor target
 
     /// Read one of a target's XFields.
-    let readXField (targetNode : XmlNode) (target : obj) xtension fieldDefinition =
+    let readXField targetDescriptor (target : obj) xtension fieldDefinition =
         let targetType = target.GetType ()
         if Seq.notExists
             (fun (property : PropertyInfo) -> property.Name = fieldDefinition.FieldName)
             (targetType.GetProperties ()) then
-            match targetNode.SelectSingleNode fieldDefinition.FieldName with
-            | null -> xtension
-            | fieldNode ->
+            match CompositeDescriptor.tryGetField fieldDefinition.FieldName targetDescriptor with
+            | Some fieldSymbol ->
                 let converter = SymbolicConverter fieldDefinition.FieldType
-                if converter.CanConvertFrom typeof<string> then
-                    let xField = { FieldValue = converter.ConvertFromString fieldNode.InnerText; FieldType = fieldDefinition.FieldType }
+                if converter.CanConvertFrom typeof<Symbol> then
+                    let xField = { FieldValue = converter.ConvertFrom fieldSymbol; FieldType = fieldDefinition.FieldType }
                     Xtension.attachField fieldDefinition.FieldName xField xtension
-                else Log.debug ^ "Cannot convert string '" + fieldNode.InnerText + "' to type '" + fieldDefinition.FieldType.Name + "'."; xtension
+                else
+                    Log.debug ^ "Cannot convert field '" + scstring fieldSymbol + "' to type '" + fieldDefinition.FieldType.Name + "'."
+                    xtension
+            | None -> xtension
         else xtension
 
     /// Read a target's XFields.
-    let readXFields (targetNode : XmlNode) (target : obj) xtension =
+    let readXFields targetDescriptor (target : obj) xtension =
         let fieldDefinitions = getReflectiveFieldDefinitions target
-        List.fold (readXField targetNode target) xtension fieldDefinitions
+        List.fold (readXField targetDescriptor target) xtension fieldDefinitions
 
     /// Read a target's Xtension.
-    let readXtensionToTarget (targetNode : XmlNode) (target : obj) =
+    let readXtensionToTarget targetDescriptor (target : obj) =
         let targetType = target.GetType ()
         match targetType.GetProperty "Xtension" with
         | null -> Log.debug "Target does not support xtensions due to missing Xtension field."
         | xtensionProperty ->
             match xtensionProperty.GetValue target with
             | :? Xtension as xtension ->
-                let xtension = readXFields targetNode target xtension
+                let xtension = readXFields targetDescriptor target xtension
                 xtensionProperty.SetValue (target, xtension)
             | _ -> Log.debug "Target does not support xtensions due to Xtension field having unexpected type."
 
