@@ -395,7 +395,8 @@ module Gaia =
             ignore ^ WorldChangers.Add (fun world ->
                 let world = pushPastWorld world world
                 let groupName = groupNameEntryForm.nameTextBox.Text
-                try let world = World.createGroup typeof<GroupDispatcher>.Name None (Some ^ Name.make groupName) Simulants.EditorScreen world |> snd
+                try if groupName.Length = 0 then failwith "Group name cannot be empty in Gaia due to WinForms limitations."
+                    let world = World.createGroup typeof<GroupDispatcher>.Name None (Some ^ Name.make groupName) Simulants.EditorScreen world |> snd
                     refreshGroupTabs form world
                     form.groupTabs.SelectTab (form.groupTabs.TabPages.IndexOfKey groupName)
                     world
