@@ -12,15 +12,15 @@ module Program =
     (* DISCUSSION - On Nu's authoring story...
 
     Instead of using a general purpose scripting language for authoring tasks in Nu, we use a small
-    set of domain-specific languages. For example, the simulant system uses XML, as does the
-    overlay and asset graph systems. The effect system uses symbolic expressions, and simulation
-    interactions are defined with chains.
+    set of domain-specific languages. For example, the simulant system uses s-exprs, as does the
+    overlay, asset graph, and effect system. The simulation interactions are defined with chains in
+    F#.
 
     system          | language      | editor
     -----------------------------------------------
     overlay         | s-exprs       | Visual Studio
     asset graph     | s-exprs       | Visual Studio
-    simulants defs  | xml           | Gaia
+    simulants defs  | s-exprs       | Gaia
     event filtering | s-exprs       | Gaia
     effect system   | s-exprs       | Aether (TBA)
     mind (TBA)      | s-exprs       | Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf

@@ -135,13 +135,15 @@ module WorldGroupModule =
             let world = World.addGroup false groupState group world
             (group, world)
 
-        /// Write an group to an group descriptor.
+        /// Write a group to a group descriptor.
         static member writeGroup (group : Group) groupDescriptor world =
             let groupState = World.getGroupState group world
-            let dispatcherTypeName = getTypeName groupState.DispatcherNp
-            let groupDescriptor = { groupDescriptor with GroupDispatcher = dispatcherTypeName }
+            let groupDispatcherName = getTypeName groupState.DispatcherNp
+            let groupDescriptor = { groupDescriptor with GroupDispatcher = groupDispatcherName }
             let groupFields = Reflection.writeMemberValuesFromTarget tautology3 groupDescriptor.GroupFields groupState
-            { groupDescriptor with GroupFields = groupFields }
+            let groupDescriptor = { groupDescriptor with GroupFields = groupFields }
+            let entities = World.proxyEntities group world
+            World.writeEntities entities groupDescriptor world
 
         /// Write multiple groups to a screen descriptor.
         static member writeGroups groups screenDescriptor world =
@@ -161,10 +163,10 @@ module WorldGroupModule =
             File.Delete filePath
             File.Move (filePathTmp, filePath)
 
-        /// Read a group from group descriptor.
+        /// Read a group from a group descriptor.
         static member readGroup groupDescriptor optName screen world =
 
-            // read in the dispatcher name and create the dispatcher
+            // create the dispatcher
             let dispatcherName = groupDescriptor.GroupDispatcher
             let dispatchers = World.getGroupDispatchers world
             let dispatcher =
@@ -198,13 +200,13 @@ module WorldGroupModule =
             let world = World.readEntities groupDescriptor group world |> snd
             (group, world)
 
-        /// Read a group from an xml file.
+        /// Read a group from a file.
         static member readGroupFromFile (filePath : string) optName screen world =
             let groupDescriptorStr = File.ReadAllText filePath
             let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
             World.readGroup groupDescriptor optName screen world
 
-        /// Read multiple groups from an xml node.
+        /// Read multiple groups from a screen descriptor.
         static member readGroups screenDescriptor screen world =
             screenDescriptor.Groups |>
             List.fold (fun (groups, world) groupDescriptor ->

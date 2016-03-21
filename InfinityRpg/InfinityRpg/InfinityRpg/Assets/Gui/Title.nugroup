@@ -1,44 +1,33 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Root>
-  <Group dispatcherName="GroupDispatcher">
-    <Name>Gui</Name>
-    <Persistent>True</Persistent>
-    <Entities>
-      <Entity dispatcherName="ButtonDispatcher">
-        <Name>Credits</Name>
-        <Position>[-416 -200]</Position>
-        <Size>[384 64]</Size>
-        <DownImage>[Gui CreditsDown]</DownImage>
-        <UpImage>[Gui CreditsUp]</UpImage>
-      </Entity>
-      <Entity dispatcherName="ButtonDispatcher">
-        <Name>Exit</Name>
-        <Position>[32 -200]</Position>
-        <Size>[384 64]</Size>
-        <DownImage>[Gui ExitDown]</DownImage>
-        <UpImage>[Gui ExitUp]</UpImage>
-      </Entity>
-      <Entity dispatcherName="ButtonDispatcher">
-        <Name>LoadGame</Name>
-        <Position>[32 -80]</Position>
-        <Size>[384 64]</Size>
-        <DownImage>[Gui LoadGameDown]</DownImage>
-        <UpImage>[Gui LoadGameUp]</UpImage>
-      </Entity>
-      <Entity dispatcherName="ButtonDispatcher">
-        <Name>NewGame</Name>
-        <Position>[-416 -80]</Position>
-        <Size>[384 64]</Size>
-        <DownImage>[Gui NewGameDown]</DownImage>
-        <UpImage>[Gui NewGameUp]</UpImage>
-      </Entity>
-      <Entity dispatcherName="LabelDispatcher">
-        <Name>Title</Name>
-        <Position>[-504 0]</Position>
-        <Depth>-1</Depth>
-        <Size>[1024 256]</Size>
-        <LabelImage>[Gui TitleLabel]</LabelImage>
-      </Entity>
-    </Entities>
-  </Group>
-</Root>
+[[[GroupDispatcher
+    [[Name Gui]
+     [Persistent True]]
+    [[ButtonDispatcher
+        [[Name Credits]
+         [Position [-416 -200]]
+         [Size [384 64]]
+         [DownImage [Gui CreditsDown]]
+         [UpImage [Gui CreditsUp]]]
+     [ButtonDispatcher
+        [[Name Exit]
+         [Position [32 -200]]
+         [Size [384 64]]
+         [DownImage [Gui ExitDown]]
+         [UpImage [Gui ExitUp]]]
+     [ButtonDispatcher
+        [[Name LoadGame]
+         [Position [32 -80]]
+         [Size [384 64]]
+         [DownImage [Gui LoadGameDown]]
+         [UpImage [Gui LoadGameUp]]]
+     [ButtonDispatcher
+        [[Name NewGame]
+         [Position [-416 -80]]
+         [Size [384 64]]
+         [DownImage [Gui NewGameDown]]
+         [UpImage [Gui NewGameUp]]]
+     [LabelDispatcher
+        [[Name Title]
+         [Position [-504 0]]
+         [Depth -1]
+         [Size [1024 256]]
+         [LabelImage [Gui TitleLabel]]]]]]]

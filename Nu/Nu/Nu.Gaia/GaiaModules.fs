@@ -297,7 +297,7 @@ module Gaia =
                 form.propertyEditor.Enabled <- true
                 form.propertyNameLabel.Text <- scstring selectedGridItem.Label
                 form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
-                let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
+                let strUnescaped = typeConverter.ConvertTo (selectedGridItem.Value, typeof<string>) :?> string
                 let strEscaped = String.escape strUnescaped
                 let strPretty = SymbolIndex.prettyPrint strEscaped
                 form.propertyValueTextBox.Text <- strPretty
