@@ -514,48 +514,6 @@ and [<StructuralEquality; NoComparison>] Entity =
     /// Concatenate two addresses, forcing the type of first address.
     static member (->>-) (address, entity) = acatff address entity
 
-/// Describes a game value.
-and [<NoComparison>] GameDescriptor =
-    { GameDispatcher : string
-      GameFields : Map<string, Symbol>
-      Screens : ScreenDescriptor list }
-
-    static member empty =
-        { GameDispatcher = typeof<GameDescriptor>.Name
-          GameFields = Map.empty
-          Screens = [] }
-
-/// Describes a screen value.
-and [<NoComparison>] ScreenDescriptor =
-    { ScreenDispatcher : string
-      ScreenFields : Map<string, Symbol>
-      Groups : GroupDescriptor list }
-
-    static member empty =
-        { ScreenDispatcher = typeof<ScreenDescriptor>.Name
-          ScreenFields = Map.empty
-          Groups = [] }
-
-/// Describes a group value.
-and [<NoComparison>] GroupDescriptor =
-    { GroupDispatcher : string
-      GroupFields : Map<string, Symbol>
-      Entities : EntityDescriptor list }
-
-    static member empty =
-        { GroupDispatcher = typeof<GroupDescriptor>.Name
-          GroupFields = Map.empty
-          Entities = [] }
-
-/// Describes an entity value.
-and [<NoComparison>] EntityDescriptor =
-    { EntityDispatcher : string
-      EntityFields : Map<string, Symbol> }
-
-    static member empty =
-        { EntityDispatcher = typeof<EntityDescriptor>.Name
-          EntityFields = Map.empty }
-
 /// The world's dispatchers (including facets).
 /// 
 /// I would prefer this type to be inlined in World, but it has been extracted to its own white-box
