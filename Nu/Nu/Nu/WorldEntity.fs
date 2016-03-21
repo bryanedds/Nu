@@ -431,12 +431,12 @@ module WorldEntityModule =
         /// Write an entity to an entity descriptor.
         static member writeEntity (entity : Entity) entityDescriptor world =
             let entityState = World.getEntityState entity world
-            let dispatcherTypeName = getTypeName entityState.DispatcherNp
-            let entityDescriptor = { entityDescriptor with EntityDispatcher = dispatcherTypeName }
+            let entityDispatcherName = getTypeName entityState.DispatcherNp
+            let entityDescriptor = { entityDescriptor with EntityDispatcher = entityDispatcherName }
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
                 if propertyName = "OptOverlayName" && propertyType = typeof<string option> then
                     let overlayRouter = World.getOverlayRouter world
-                    let defaultOptOverlayName = OverlayRouter.findOptOverlayName dispatcherTypeName overlayRouter
+                    let defaultOptOverlayName = OverlayRouter.findOptOverlayName entityDispatcherName overlayRouter
                     defaultOptOverlayName <> (propertyValue :?> string option)
                 else
                     let overlayer = World.getOverlayer world
@@ -460,7 +460,7 @@ module WorldEntityModule =
             let overlayer = World.getOverlayer world
             let overlayRouter = World.getOverlayRouter world
 
-            // read in the dispatcher name and create the dispatcher
+            // create the dispatcher
             let dispatcherName = entityDescriptor.EntityDispatcher
             let dispatchers = World.getEntityDispatchers world
             let (dispatcherName, dispatcher) =

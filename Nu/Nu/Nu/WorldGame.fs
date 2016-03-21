@@ -116,36 +116,32 @@ module WorldGameModule =
                 | Some screen -> screen.ScreenName = screenName
                 | None -> false
 
-        /// Write a game to an xml writer.
-        static member writeGame (writer : XmlWriter) world =
+        /// Write a game to a game descriptor.
+        static member writeGame gameDescriptor world =
             let gameState = World.getGameState world
+            let gameDispatcherName = getTypeName gameState.DispatcherNp
+            let gameDescriptor = { gameDescriptor with GameDispatcher = gameDispatcherName }
+            let gameFields = Reflection.writeMemberValuesFromTarget tautology3 gameDescriptor.GameFields gameState
+            let gameDescriptor = { gameDescriptor with GameFields = gameFields }
             let screens = World.proxyScreens world
-            writer.WriteAttributeString (Constants.Xml.DispatcherNameAttributeName, getTypeName gameState.DispatcherNp)
-            Reflection.writeMemberValuesFromTarget tautology3 writer gameState
-            writer.WriteStartElement Constants.Xml.ScreensNodeName
-            World.writeScreens writer screens world
-            writer.WriteEndElement ()
+            World.writeScreens screens gameDescriptor world
 
-        /// Write a game to an xml file.
+        /// Write a game to a file.
         static member writeGameToFile (filePath : string) world =
             let filePathTmp = filePath + ".tmp"
-            let writerSettings = XmlWriterSettings ()
-            writerSettings.Indent <- true
-            use writer = XmlWriter.Create (filePathTmp, writerSettings)
-            writer.WriteStartElement Constants.Xml.RootNodeName
-            writer.WriteStartElement Constants.Xml.GameNodeName
-            World.writeGame writer world
-            writer.WriteEndElement ()
-            writer.WriteEndElement ()
-            writer.Dispose ()
+            let gameDescriptor = World.writeGame GameDescriptor.empty world
+            let gameDescriptorStr = scstring gameDescriptor
+            let gameDescriptorPretty = SymbolIndex.prettyPrint gameDescriptorStr
+            File.WriteAllText (filePathTmp, gameDescriptorPretty)
             File.Delete filePath
             File.Move (filePathTmp, filePath)
 
-        /// Read a game from an xml node.
-        static member readGame
-            gameNode defaultDispatcherName defaultScreenDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
+        /// Read a game from a game descriptor.
+        static member readGame gameDescriptor world =
+
+            // create the dispatcher
+            let dispatcherName = gameDescriptor.GameDispatcher
             let dispatchers = World.getGameDispatchers world
-            let dispatcherName = Reflection.readDispatcherName defaultDispatcherName gameNode
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
@@ -153,32 +149,24 @@ module WorldGameModule =
                     Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<GameDispatcher>.Name
                     Map.find dispatcherName dispatchers
+            
+            // make the bare game state
             let gameState = World.makeGameState dispatcher
-            Reflection.readMemberValuesToTarget gameNode gameState
-            let world = World.setGameState gameState world
-            let world =
-                World.readScreens
-                    gameNode
-                    defaultScreenDispatcherName
-                    defaultGroupDispatcherName
-                    defaultEntityDispatcherName
-                    world |>
-                    snd
-            world
 
-        /// Read a game from an xml file.
+            // read the game state's value
+            Reflection.readMemberValuesToTarget gameDescriptor.GameFields gameState
+
+            // set the game's state in the world
+            let world = World.setGameState gameState world
+            
+            // read the game's screens
+            World.readScreens gameDescriptor world |> snd
+
+        /// Read a game from a file.
         static member readGameFromFile (filePath : string) world =
-            use reader = XmlReader.Create filePath
-            let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
-            let rootNode = document.[Constants.Xml.RootNodeName]
-            let gameNode = rootNode.[Constants.Xml.GameNodeName]
-            World.readGame
-                gameNode
-                typeof<GameDispatcher>.Name
-                typeof<ScreenDispatcher>.Name
-                typeof<GroupDispatcher>.Name
-                typeof<EntityDispatcher>.Name
-                world
+            let gameDescriptorStr = File.ReadAllText filePath
+            let gameDescriptor = scvalue<GameDescriptor> gameDescriptorStr
+            World.readGame gameDescriptor world
 
 namespace Debug
 open Prime

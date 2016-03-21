@@ -138,44 +138,40 @@ module WorldScreenModule =
             let world = screen.SetOutgoing { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; OptDissolveImage = optDissolveImage } world
             (screen, world)
 
-        /// Write a screen to an xml writer.
-        static member writeScreen (writer : XmlWriter) screen world =
+        /// Write a screen to a screen descriptor.
+        static member writeScreen (screen : Screen) screenDescriptor world =
             let screenState = World.getScreenState screen world
+            let screenDispatcherName = getTypeName screenState.DispatcherNp
+            let screenDescriptor = { screenDescriptor with ScreenDispatcher = screenDispatcherName }
+            let screenFields = Reflection.writeMemberValuesFromTarget tautology3 screenDescriptor.ScreenFields screenState
+            let screenDescriptor = { screenDescriptor with ScreenFields = screenFields }
             let groups = World.proxyGroups screen world
-            writer.WriteAttributeString (Constants.Xml.DispatcherNameAttributeName, getTypeName screenState.DispatcherNp)
-            Reflection.writeMemberValuesFromTarget tautology3 writer screenState
-            writer.WriteStartElement Constants.Xml.GroupsNodeName
-            World.writeGroups writer groups world
-            writer.WriteEndElement ()
+            World.writeGroups groups screenDescriptor world
 
-        /// Write a screen to an xml file.
+        /// Write multiple screens to a game descriptor.
+        static member writeScreens screens gameDescriptor world =
+            screens |>
+            Seq.sortBy (fun (screen : Screen) -> screen.GetCreationTimeStampNp world) |>
+            Seq.filter (fun (screen : Screen) -> screen.GetPersistent world) |>
+            Seq.fold (fun screenDescriptors screen -> World.writeScreen screen ScreenDescriptor.empty world :: screenDescriptors) gameDescriptor.Screens |>
+            fun screenDescriptors -> { gameDescriptor with Screens = screenDescriptors }
+
+        /// Write a screen to a file.
         static member writeScreenToFile (filePath : string) screen world =
             let filePathTmp = filePath + ".tmp"
-            let writerSettings = XmlWriterSettings ()
-            writerSettings.Indent <- true
-            use writer = XmlWriter.Create (filePathTmp, writerSettings)
-            writer.WriteStartElement Constants.Xml.RootNodeName
-            writer.WriteStartElement Constants.Xml.ScreenNodeName
-            World.writeScreen writer screen world
-            writer.WriteEndElement ()
-            writer.WriteEndElement ()
-            writer.Dispose ()
+            let screenDescriptor = World.writeScreen screen ScreenDescriptor.empty world
+            let screenDescriptorStr = scstring screenDescriptor
+            let screenDescriptorPretty = SymbolIndex.prettyPrint screenDescriptorStr
+            File.WriteAllText (filePathTmp, screenDescriptorPretty)
             File.Delete filePath
             File.Move (filePathTmp, filePath)
 
-        /// Write multiple screens to an xml writer.
-        static member writeScreens (writer : XmlWriter) screens world =
-            let screensSorted = Seq.sortBy (fun (screen : Screen) -> screen.GetCreationTimeStampNp world) screens
-            let screensPersistent = Seq.filter (fun (screen : Screen) -> screen.GetPersistent world) screensSorted
-            for screen in screensPersistent do
-                writer.WriteStartElement Constants.Xml.ScreenNodeName
-                World.writeScreen writer screen world
-                writer.WriteEndElement ()
-
-        /// Read a screen from an xml node.
-        static member readScreen (screenNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName optName world =
+        /// Read a screen from a screen descriptor.
+        static member readScreen screenDescriptor optName world =
+            
+            // create the dispatcher
+            let dispatcherName = screenDescriptor.ScreenDispatcher
             let dispatchers = World.getScreenDispatchers world
-            let dispatcherName = Reflection.readDispatcherName defaultDispatcherName screenNode
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
@@ -183,37 +179,49 @@ module WorldScreenModule =
                     Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<ScreenDispatcher>.Name
                     Map.find dispatcherName dispatchers
+            
+            // make the bare screen state with name as id
             let screenState = ScreenState.make None None dispatcher
+
+            // attach the screen state's instrinsic fields from its dispatcher if any
             Reflection.attachFields screenState.DispatcherNp screenState
-            Reflection.readMemberValuesToTarget screenNode screenState
-            let screenState = match optName with Some name -> { screenState with Name = name } | None -> screenState
+
+            // read the screen state's value
+            Reflection.readMemberValuesToTarget screenDescriptor.ScreenFields screenState
+
+            // apply the name if one is provided
+            let screenState =
+                match optName with
+                | Some name -> { screenState with Name = name }
+                | None -> screenState
+            
+            // add the screen's state to the world
             let screen = ntos screenState.Name
-            let screenState = if World.containsScreen screen world then { screenState with EntityTreeNp = screen.GetEntityTree world } else screenState
+            let screenState =
+                if World.containsScreen screen world
+                then { screenState with EntityTreeNp = screen.GetEntityTree world }
+                else screenState
             let world = World.addScreen true screenState screen world
-            let world = World.readGroups screenNode defaultGroupDispatcherName defaultEntityDispatcherName screen world |> snd
+            
+            // read the screen's groups
+            let world = World.readGroups screenDescriptor screen world |> snd
             (screen, world)
 
-        /// Read a screen from an xml file.
+        /// Read a screen from a file.
         static member readScreenFromFile (filePath : string) optName world =
-            use reader = XmlReader.Create filePath
-            let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
-            let rootNode = document.[Constants.Xml.RootNodeName]
-            let screenNode = rootNode.[Constants.Xml.ScreenNodeName]
-            World.readScreen screenNode typeof<ScreenDispatcher>.Name typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name optName world
+            let screenDescriptorStr = File.ReadAllText filePath
+            let screenDescriptor = scvalue<ScreenDescriptor> screenDescriptorStr
+            World.readScreen screenDescriptor optName world
 
-        /// Read multiple screens from an xml node.
-        static member readScreens (gameNode : XmlNode) defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName world =
-            match gameNode.SelectSingleNode Constants.Xml.ScreensNodeName with
-            | null -> ([], world)
-            | screensNode ->
-                let (screensRev, world) =
-                    Seq.fold
-                        (fun (screens, world) screenNode ->
-                            let (screen, world) = World.readScreen screenNode defaultDispatcherName defaultGroupDispatcherName defaultEntityDispatcherName None world
-                            (screen :: screens, world))
-                        ([], world)
-                        (enumerable ^ screensNode.SelectNodes Constants.Xml.ScreenNodeName)
-                (List.rev screensRev, world)
+        /// Read multiple screens from a game descriptor.
+        static member readScreens gameDescriptor world =
+            gameDescriptor.Screens |>
+            Seq.fold
+                (fun (screens, world) screenDescriptor ->
+                    let (screen, world) = World.readScreen screenDescriptor None world
+                    (screen :: screens, world))
+                ([], world) |>
+            mapFst List.rev
 
 namespace Debug
 open Prime
