@@ -1,24 +1,16 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Root>
-  <Group dispatcherName="GroupDispatcher">
-    <Name>Gui</Name>
-    <PublishChanges>True</PublishChanges>
-    <Persistent>True</Persistent>
-    <Entities>
-      <Entity dispatcherName="ButtonDispatcher">
-        <Name>Back</Name>
-        <Position>[216 -264]</Position>
-        <Depth>10</Depth>
-        <Size>[256 64]</Size>
-        <DownImage>[Gui BackButtonDown]</DownImage>
-        <UpImage>[Gui BackButtonUp]</UpImage>
-      </Entity>
-      <Entity dispatcherName="LabelDispatcher">
-        <Position>[-480 -272]</Position>
-        <Depth>-100</Depth>
-        <Size>[960 544]</Size>
-        <LabelImage>[Default Image8]</LabelImage>
-      </Entity>
-    </Entities>
-  </Group>
-</Root>
+﻿[GroupDispatcher
+  [[Name Gui]
+   [PublishChanges True]
+   [Persistent True]]
+  [[ButtonDispatcher
+      [[Name Back]
+       [Position [216 -264]]
+       [Depth 10]
+       [Size [256 64]]
+       [DownImage [Gui BackButtonDown]]
+       [UpImage [Gui BackButtonUp]]]]
+   [LabelDispatcher
+      [[Position [-480 -272]]
+       [Depth -100]
+       [Size [960 544]]
+       [LabelImage [Default Image8]]]]]]

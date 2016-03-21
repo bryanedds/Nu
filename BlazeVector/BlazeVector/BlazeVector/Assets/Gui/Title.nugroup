@@ -1,42 +1,31 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Root>
-  <Group dispatcherName="GroupDispatcher">
-    <Name>Gui</Name>
-    <PublishChanges>True</PublishChanges>
-    <Persistent>True</Persistent>
-    <Entities>
-      <Entity dispatcherName="ButtonDispatcher">
-        <Name>Credits</Name>
-        <Position>[-128 -160]</Position>
-        <Size>[256 64]</Size>
-        <DownImage>[Gui CreditsButtonDown]</DownImage>
-        <UpImage>[Gui CreditsButtonUp]</UpImage>
-      </Entity>
-      <Entity dispatcherName="ButtonDispatcher">
-        <Name>Exit</Name>
-        <Position>[-128 -224]</Position>
-        <Size>[256 64]</Size>
-        <DownImage>[Gui ExitButtonDown]</DownImage>
-        <UpImage>[Gui ExitButtonUp]</UpImage>
-      </Entity>
-      <Entity dispatcherName="ButtonDispatcher">
-        <Name>Play</Name>
-        <Position>[-128 -96]</Position>
-        <Size>[256 64]</Size>
-        <DownImage>[Gui PlayButtonDown]</DownImage>
-        <UpImage>[Gui PlayButtonUp]</UpImage>
-      </Entity>
-      <Entity dispatcherName="TextDispatcher">
-        <Position>[-320 96]</Position>
-        <Size>[640 128]</Size>
-        <Text>BlazeVector</Text>
-      </Entity>
-      <Entity dispatcherName="LabelDispatcher">
-        <Position>[-480 -272]</Position>
-        <Depth>-1</Depth>
-        <Size>[960 544]</Size>
-        <LabelImage>[Default Image8]</LabelImage>
-      </Entity>
-    </Entities>
-  </Group>
-</Root>
+﻿[GroupDispatcher
+  [[Name Gui]
+   [PublishChanges True]
+   [Persistent True]]
+  [[ButtonDispatcher
+      [[Name Credits]
+       [Position [-128 -160]]
+       [Size [256 64]]
+       [DownImage [Gui CreditsButtonDown]]
+       [UpImage [Gui CreditsButtonUp]]]]
+   [ButtonDispatcher
+      [[Name Exit]
+       [Position [-128 -224]]
+       [Size [256 64]]
+       [DownImage [Gui ExitButtonDown]]
+       [UpImage [Gui ExitButtonUp]]]]
+    [ButtonDispatcher
+      [[Name Play]
+       [Position [-128 -96]]
+       [Size [256 64]]
+       [DownImage [Gui PlayButtonDown]]
+       [UpImage [Gui PlayButtonUp]]]]
+    [TextDispatcher
+      [[Position [-320 96]]
+       [Size [640 128]]
+       [Text BlazeVector]]]
+    [LabelDispatcher
+      [[Position [-480 -272]]
+       [Depth -1]
+       [Size [960 544]]
+       [LabelImage [Default Image8]]]]]]
