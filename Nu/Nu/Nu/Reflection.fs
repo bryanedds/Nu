@@ -126,7 +126,7 @@ module Reflection =
              fst ^ Guid.TryParse (property.GetValue target :?> Name |> Name.getNameStr))
 
     /// Query that the dispatcher has behavior congruent to the given type.
-    let dispatchesAs (dispatcherTargetType : Type) dispatcher =
+    let dispatchesAs (dispatcherTargetType : Type) (dispatcher : obj) =
         let dispatcherType = dispatcher.GetType ()
         let result =
             dispatcherTargetType = dispatcherType ||
@@ -207,7 +207,7 @@ module Reflection =
             | _ -> failwith ^ "Static member 'RequiredDispatcherName' for facet '" + facetType.Name + "' is not of type string."
 
     /// Check for facet compatibility with the target's dispatcher.
-    let isFacetCompatibleWithDispatcher dispatcherMap facet (target : obj) =
+    let isFacetCompatibleWithDispatcher dispatcherMap (facet : obj) (target : obj) =
         let facetType = facet.GetType ()
         let facetTypes = facetType :: getBaseTypesExceptObject facetType
         List.forall
@@ -340,7 +340,7 @@ module Reflection =
             List.iter (fun facet -> attachFields facet target) facets
 
     /// Attach source's intrinsic facets to a target.
-    let attachIntrinsicFacets dispatcherMap facetMap source (target : obj) =
+    let attachIntrinsicFacets dispatcherMap facetMap (source : obj) (target : obj) =
         let sourceType = source.GetType ()
         let instrinsicFacetNames = getIntrinsicFacetNames sourceType
         attachIntrinsicFacetsViaNames dispatcherMap facetMap instrinsicFacetNames target
