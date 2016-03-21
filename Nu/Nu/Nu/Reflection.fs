@@ -175,7 +175,7 @@ module Reflection =
     /// Get a map of the counts of the field definitions names.
     let getFieldDefinitionNameCounts fieldDefinitions =
         Map.fold
-            (fun map _ definitions ->
+            (fun map (_ : string) definitions ->
                 List.fold
                     (fun map definition ->
                         let definitionName = definition.FieldName
@@ -306,13 +306,13 @@ module Reflection =
             | _ -> ()
 
     /// Attach source's fields to a target.
-    let attachFields source (target : obj) =
+    let attachFields (source : obj) (target : obj) =
         let sourceType = source.GetType ()
         let fieldDefinitions = getFieldDefinitions sourceType
         attachFieldsViaDefinitions fieldDefinitions target
 
     /// Detach source's fields to a target.
-    let detachFields source (target : obj) =
+    let detachFields (source : obj) (target : obj) =
         let sourceType = source.GetType ()
         let fieldNames = getFieldDefinitionNames sourceType
         detachFieldsViaNames fieldNames target
@@ -383,9 +383,9 @@ module Reflection =
         | None -> ()
 
     /// Attempt to read a target's .NET property from field descriptors.
-    let tryReadPropertyToTarget (property : PropertyInfo) fieldDescriptors (target : obj) =
+    let tryReadPropertyToTarget fieldDescriptors (property : PropertyInfo) (target : obj) =
         match Map.tryFind property.Name fieldDescriptors with
-        | Some fieldSymbol ->
+        | Some (fieldSymbol : Symbol) ->
             let converter = SymbolicConverter property.PropertyType
             if converter.CanConvertFrom typeof<Symbol> then
                 let fieldValue = converter.ConvertFrom fieldSymbol
@@ -399,7 +399,7 @@ module Reflection =
             if  property.Name <> "FacetNames" &&
                 property.Name <> "OptOverlayName" &&
                 isPropertyPersistentByName property.Name then
-                tryReadPropertyToTarget property fieldDescriptors target
+                tryReadPropertyToTarget fieldDescriptors property target
 
     /// Read one of a target's XFields from field descriptors.
     let readXField xtension fieldDescriptors (target : obj) fieldDefinition =
@@ -408,7 +408,7 @@ module Reflection =
             (fun (property : PropertyInfo) -> property.Name = fieldDefinition.FieldName)
             (targetType.GetProperties ()) then
             match Map.tryFind fieldDefinition.FieldName fieldDescriptors with
-            | Some fieldSymbol ->
+            | Some (fieldSymbol : Symbol) ->
                 let converter = SymbolicConverter fieldDefinition.FieldType
                 if converter.CanConvertFrom typeof<Symbol> then
                     let xField = { FieldValue = converter.ConvertFrom fieldSymbol; FieldType = fieldDefinition.FieldType }
