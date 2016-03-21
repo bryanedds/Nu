@@ -1,27 +1,27 @@
 ﻿[GroupDispatcher
-  [[Name Gui]
-   [PublishChanges True]
-   [Persistent True]]
-  [[LabelDispatcher
-      [[Position [-480 -272]]
-       [Depth -1]
-       [Size [960 544]]
-       [LabelImage [Default Image8]]]]
-   [ButtonDispatcher
-      [[Name Back]
-       [Position [-128 -224]]
-       [Size [256 64]]
-       [DownImage [Gui BackButtonDown]]
-       [UpImage [Gui BackButtonUp]]]]
-   [TextDispatcher
-      [[Position [-320 96]]
-       [Size [640 128]]
-       [Text Credits]]]
-   [TextDispatcher
-      [[Position [-320 0]]
-       [Size [640 64]]
-       [Text "Code + Music + SFX: Bryan Edds"]]]
-   [TextDispatcher
-      [[Position [-320 -96]]
-       [Size [640 64]]
-       [Text "Art: MindChamber"]]]]]
+ [[Name Gui]
+  [PublishChanges True]
+  [Persistent True]]
+ [[LabelDispatcher
+   [[Position [-480 -272]]
+    [Depth -1]
+    [Size [960 544]]
+    [LabelImage [Default Image8]]]]
+  [ButtonDispatcher
+   [[Name Back]
+    [Position [-128 -224]]
+    [Size [256 64]]
+    [DownImage [Gui BackButtonDown]]
+    [UpImage [Gui BackButtonUp]]]]
+  [TextDispatcher
+   [[Position [-320 96]]
+    [Size [640 128]]
+    [Text Credits]]]
+  [TextDispatcher
+   [[Position [-320 0]]
+    [Size [640 64]]
+    [Text "Code + Music + SFX: Bryan Edds"]]]
+  [TextDispatcher
+   [[Position [-320 -96]]
+    [Size [640 64]]
+    [Text "Art: MindChamber"]]]]]

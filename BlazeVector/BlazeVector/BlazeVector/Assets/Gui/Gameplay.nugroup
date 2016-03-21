@@ -1,16 +1,16 @@
 ﻿[GroupDispatcher
-  [[Name Gui]
-   [PublishChanges True]
-   [Persistent True]]
-  [[ButtonDispatcher
-      [[Name Back]
-       [Position [216 -264]]
-       [Depth 10]
-       [Size [256 64]]
-       [DownImage [Gui BackButtonDown]]
-       [UpImage [Gui BackButtonUp]]]]
-   [LabelDispatcher
-      [[Position [-480 -272]]
-       [Depth -100]
-       [Size [960 544]]
-       [LabelImage [Default Image8]]]]]]
+ [[Name Gui]
+  [PublishChanges True]
+  [Persistent True]]
+ [[ButtonDispatcher
+   [[Name Back]
+    [Position [216 -264]]
+    [Depth 10]
+    [Size [256 64]]
+    [DownImage [Gui BackButtonDown]]
+    [UpImage [Gui BackButtonUp]]]]
+  [LabelDispatcher
+   [[Position [-480 -272]]
+    [Depth -100]
+    [Size [960 544]]
+    [LabelImage [Default Image8]]]]]]
