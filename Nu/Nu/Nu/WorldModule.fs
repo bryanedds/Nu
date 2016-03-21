@@ -454,10 +454,10 @@ module World =
     let inline internal getOptEntityState entity world =
         optEntityStateFinder entity world
 
-    let internal getEntityState (entity : Entity) world =
+    let internal getEntityState entity world =
         match getOptEntityState entity world with
         | Some entityState -> entityState
-        | None -> failwith ^ "Could not find entity with address '" + scstring entity + "'."
+        | None -> failwith ^ "Could not find entity with address '" + scstring entity.EntityAddress + "'."
 
     let internal addEntityState entityState entity world =
         entityStateAdder entityState entity world
@@ -535,7 +535,7 @@ module World =
     let internal getGroupState group world =
         match getOptGroupState group world with
         | Some groupState -> groupState
-        | None -> failwith ^ "Could not find group with address '" + scstring group + "'."
+        | None -> failwith ^ "Could not find group with address '" + scstring group.GroupAddress + "'."
 
     let internal addGroupState groupState group world =
         groupStateAdder groupState group world
@@ -599,10 +599,10 @@ module World =
     let inline internal getOptScreenState screen world =
         Vmap.tryFind screen.ScreenAddress world.ScreenStates
 
-    let internal getScreenState (screen : Screen) world =
+    let internal getScreenState screen world =
         match getOptScreenState screen world with
         | Some screenState -> screenState
-        | None -> failwith ^ "Could not find screen with address '" + scstring screen + "'."
+        | None -> failwith ^ "Could not find screen with address '" + scstring screen.ScreenAddress + "'."
 
     let internal addScreenState screenState screen world =
         screenStateAdder screenState screen world
