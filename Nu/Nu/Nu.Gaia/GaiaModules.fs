@@ -297,11 +297,12 @@ module Gaia =
                 form.propertyEditor.Enabled <- true
                 form.propertyNameLabel.Text <- scstring selectedGridItem.Label
                 form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
-                let strUnescaped = typeConverter.ConvertTo (selectedGridItem.Value, typeof<string>) :?> string
-                let strEscaped = String.escape strUnescaped
-                let strPretty = SymbolIndex.prettyPrint strEscaped
-                form.propertyValueTextBox.Text <- strPretty
-                // NOTE: can probably use form.propertyValueTextBox.Rtf to highlight matching brace
+                if isNotNull selectedGridItem.Value || isNullTrueValue selectedGridItem.PropertyDescriptor.PropertyType then
+                    let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
+                    let strEscaped = String.escape strUnescaped
+                    let strPretty = SymbolIndex.prettyPrint strEscaped
+                    form.propertyValueTextBox.Text <- strPretty
+                    // NOTE: can probably use form.propertyValueTextBox.Rtf to highlight matching brace
             | _ ->
                 form.propertyEditor.Enabled <- false
                 form.propertyNameLabel.Text <- String.Empty

@@ -1729,6 +1729,11 @@
  Convert a nullable value into an option.
 </summary>
 </member>
+<member name="M:Prime.Operators.isNullTrueValue(System.Type)">
+<summary>
+ Test that the given type has null as an actual value.
+</summary>
+</member>
 <member name="M:Prime.Operators.isNotNull``1(``0)">
 <summary>
  Test for non-null.
