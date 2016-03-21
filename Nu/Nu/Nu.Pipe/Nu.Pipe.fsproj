@@ -64,7 +64,7 @@
   <ItemGroup>
     <Compile Include="Program.fs" />
     <None Include="App.config" />
-    <Content Include="AssetGraph.xml">
+    <Content Include="AssetGraph.nuag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
