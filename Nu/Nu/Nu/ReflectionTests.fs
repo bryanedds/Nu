@@ -20,28 +20,10 @@ module ReflectionTests =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
-    let writeToStream write source =
-        let memoryStream = new MemoryStream ()
-        let xmlWriterSettings = XmlWriterSettings ()
-        let xmlWriter = XmlWriter.Create (memoryStream, xmlWriterSettings)
-        xmlWriter.WriteStartDocument ()
-        xmlWriter.WriteStartElement Constants.Xml.RootNodeName
-        write xmlWriter source
-        xmlWriter.WriteEndElement ()
-        xmlWriter.WriteEndDocument ()
-        xmlWriter.Flush ()
-        memoryStream :> Stream
-
-    let readFromStream read (stream : Stream) target : unit =
-        let xmlReader = XmlReader.Create stream
-        let xmlDocument = let emptyDoc = XmlDocument () in (emptyDoc.Load xmlReader; emptyDoc)
-        read (xmlDocument.SelectSingleNode Constants.Xml.RootNodeName) target
-
     let [<Fact>] xtensionSerializationViaContainingTypeWorks () =
         let xtd = { Xtension = Xtension.mixed }
         let xtd = xtd?TestField <- 5
-        use stream = writeToStream (Reflection.writeMemberValuesFromTarget tautology3) xtd
-        stream.Seek (0L, SeekOrigin.Begin) |> ignore
+        let fields = Reflection.writeMemberValuesFromTarget tautology3 Map.empty xtd
         let xtdRead = { xtd with Xtension = xtd.Xtension } // hacky copy
-        readFromStream (fun node target -> Reflection.readMemberValuesToTarget node target) stream { Xtension = Xtension.mixed }
+        Reflection.readMemberValuesToTarget fields xtdRead
         Assert.Equal((xtd?TestField : int), (xtdRead?TestField : int))

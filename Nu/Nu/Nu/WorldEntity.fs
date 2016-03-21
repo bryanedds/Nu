@@ -8,7 +8,6 @@ open System.Collections.Generic
 open System.IO
 open System.Reflection
 open System.Runtime.CompilerServices
-open System.Xml
 open OpenTK
 open Prime
 open Nu
@@ -429,11 +428,11 @@ module WorldEntityModule =
                 Right world
             | Left error -> Left error
 
-        /// Write an entity to an xml writer.
-        static member writeEntity (writer : XmlWriter) (entity : Entity) world =
+        /// Write an entity to an entity descriptor.
+        static member writeEntity (entity : Entity) entityDescriptor world =
             let entityState = World.getEntityState entity world
             let dispatcherTypeName = getTypeName entityState.DispatcherNp
-            writer.WriteAttributeString (Constants.Xml.DispatcherNameAttributeName, dispatcherTypeName)
+            let entityDescriptor = { entityDescriptor with EntityDispatcher = dispatcherTypeName }
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
                 if propertyName = "OptOverlayName" && propertyType = typeof<string option> then
                     let overlayRouter = World.getOverlayRouter world
@@ -443,27 +442,27 @@ module WorldEntityModule =
                     let overlayer = World.getOverlayer world
                     let facetNames = World.getEntityFacetNamesReflectively entityState
                     Overlayer.shouldPropertySerialize5 facetNames propertyName propertyType entityState overlayer
-            Reflection.writeMemberValuesFromTarget shouldWriteProperty writer entityState
+            let entityFields = Reflection.writeMemberValuesFromTarget shouldWriteProperty entityDescriptor.EntityFields entityState
+            { entityDescriptor with EntityFields = entityFields }
 
-        /// Write multiple entities to an xml writer.
-        static member writeEntities (writer : XmlWriter) entities world =
-            let entitiesSorted = Seq.sortBy (fun (entity : Entity) -> entity.GetCreationTimeStampNp world) entities
-            let entitiesPersistent = Seq.filter (fun (entity : Entity) -> entity.GetPersistent world) entitiesSorted
-            for entity in entitiesPersistent do
-                writer.WriteStartElement typeof<Entity>.Name
-                World.writeEntity writer entity world
-                writer.WriteEndElement ()
+        /// Write multiple entities to a group descriptor.
+        static member writeEntities entities groupDescriptor world =
+            entities |>
+            Seq.sortBy (fun (entity : Entity) -> entity.GetCreationTimeStampNp world) |>
+            Seq.filter (fun (entity : Entity) -> entity.GetPersistent world) |>
+            Seq.fold (fun entityDescriptors entity -> World.writeEntity entity EntityDescriptor.empty world :: entityDescriptors) groupDescriptor.Entities |>
+            fun entityDescriptors -> { groupDescriptor with Entities = entityDescriptors }
 
-        /// Read an entity from an xml node.
-        static member readEntity entityNode defaultDispatcherName optName group world =
+        /// Read an entity from an entity descriptor.
+        static member readEntity entityDescriptor optName group world =
 
             // grab overlay dependencies
             let overlayer = World.getOverlayer world
             let overlayRouter = World.getOverlayRouter world
 
             // read in the dispatcher name and create the dispatcher
+            let dispatcherName = entityDescriptor.EntityDispatcher
             let dispatchers = World.getEntityDispatchers world
-            let dispatcherName = Reflection.readDispatcherName defaultDispatcherName entityNode
             let (dispatcherName, dispatcher) =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> (dispatcherName, dispatcher)
@@ -484,13 +483,13 @@ module WorldEntityModule =
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
 
             // read the entity state's overlay and apply it to its facet names if applicable
-            Reflection.tryReadOptOverlayNameToTarget entityNode entityState
+            Reflection.tryReadOptOverlayNameToTarget entityDescriptor.EntityFields entityState
             match (defaultOptOverlayName, entityState.OptOverlayName) with
             | (Some defaultOverlayName, Some overlayName) -> Overlayer.applyOverlayToFacetNames defaultOverlayName overlayName entityState overlayer overlayer
             | (_, _) -> ()
 
             // read the entity state's facet names
-            Reflection.readFacetNamesToTarget entityNode entityState
+            Reflection.readFacetNamesToTarget entityDescriptor.EntityFields entityState
 
             // attach the entity state's dispatcher fields
             Reflection.attachFields dispatcher entityState
@@ -513,29 +512,27 @@ module WorldEntityModule =
             | None -> ()
 
             // read the entity state's values
-            Reflection.readMemberValuesToTarget entityNode entityState
+            Reflection.readMemberValuesToTarget entityDescriptor.EntityFields entityState
 
             // apply the name if one is provided
-            let entityState = match optName with Some name -> { entityState with Name = name } | None -> entityState
+            let entityState =
+                match optName with
+                | Some name -> { entityState with Name = name }
+                | None -> entityState
 
             // add entity state to the world
             let entity = gtoe group entityState.Name
             let world = World.addEntity true entityState entity world
             (entity, world)
 
-        /// Read multiple entities from an xml node.
-        static member readEntities (groupNode : XmlNode) defaultDispatcherName group world =
-            match groupNode.SelectSingleNode Constants.Xml.EntitiesNodeName with
-            | null -> ([], world)
-            | entitiesNode ->
-                let (entitiesRev, world) =
-                    Seq.fold
-                        (fun (entitiesRev, world) entityNode ->
-                            let (entity, world) = World.readEntity entityNode defaultDispatcherName None group world
-                            (entity :: entitiesRev, world))
-                        ([], world)
-                        (enumerable ^ entitiesNode.SelectNodes Constants.Xml.EntityNodeName)
-                (List.rev entitiesRev, world)
+        /// Read multiple entities from a group descriptor.
+        static member readEntities groupDescriptor group world =
+            groupDescriptor.Entities |>
+            List.fold (fun (entities, world) entityDescriptor ->
+                let (entity, world) = World.readEntity entityDescriptor None group world
+                (entity :: entities, world))
+                ([], world) |>
+            mapFst List.rev
 
     /// Represents the member value of an entity as accessible via reflection.
     type [<ReferenceEquality>] EntityMemberValue =
