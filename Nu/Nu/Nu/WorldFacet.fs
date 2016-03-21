@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.Reflection
-open System.Xml
 open OpenTK
 open Prime
 open Nu

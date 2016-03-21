@@ -345,8 +345,8 @@ module Reflection =
         let instrinsicFacetNames = getIntrinsicFacetNames sourceType
         attachIntrinsicFacetsViaNames dispatcherMap facetMap instrinsicFacetNames target
 
-    /// Try to read just the target's OptOverlayName from the given symbol.
-    let tryReadOptOverlayNameToTarget fieldDescriptor (target : obj) =
+    /// Try to read just the target's OptOverlayName from field descriptors.
+    let tryReadOptOverlayNameToTarget fieldDescriptors (target : obj) =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         let optOptOverlayNameProperty =
@@ -358,15 +358,15 @@ module Reflection =
                 targetProperties
         match optOptOverlayNameProperty with
         | Some optOverlayNameProperty ->
-            match Map.tryFind optOverlayNameProperty.Name fieldDescriptor with
+            match Map.tryFind optOverlayNameProperty.Name fieldDescriptors with
             | Some optOverlayNameSymbol ->
                 let optOverlayName = valueize<string option> optOverlayNameSymbol
                 optOverlayNameProperty.SetValue (target, optOverlayName)
             | None -> ()
         | None -> ()
 
-    /// Read just the target's FacetNames from the given symbol.
-    let readFacetNamesToTarget fieldDescriptor (target : obj) =
+    /// Read just the target's FacetNames from field descriptors.
+    let readFacetNamesToTarget fieldDescriptors (target : obj) =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         let facetNamesProperty =
@@ -376,15 +376,15 @@ module Reflection =
                     property.PropertyType = typeof<string Set> &&
                     property.CanWrite)
                 targetProperties
-        match Map.tryFind facetNamesProperty.Name fieldDescriptor with
+        match Map.tryFind facetNamesProperty.Name fieldDescriptors with
         | Some facetNamesSymbol ->
             let facetNames = valueize<string list> facetNamesSymbol
             facetNamesProperty.SetValue (target, facetNames)
         | None -> ()
 
-    /// Attempt to read a target's .NET property from Xml.
-    let tryReadPropertyToTarget (property : PropertyInfo) fieldDescriptor (target : obj) =
-        match Map.tryFind property.Name fieldDescriptor with
+    /// Attempt to read a target's .NET property from field descriptors.
+    let tryReadPropertyToTarget (property : PropertyInfo) fieldDescriptors (target : obj) =
+        match Map.tryFind property.Name fieldDescriptors with
         | Some fieldSymbol ->
             let converter = SymbolicConverter property.PropertyType
             if converter.CanConvertFrom typeof<Symbol> then
@@ -392,22 +392,22 @@ module Reflection =
                 property.SetValue (target, fieldValue)
         | None -> ()
 
-    /// Read all of a target's .NET properties from Xml (except OptOverlayName and FacetNames).
-    let readPropertiesToTarget fieldDescriptor (target : obj) =
+    /// Read all of a target's .NET properties from field descriptors (except OptOverlayName and FacetNames).
+    let readPropertiesToTarget fieldDescriptors (target : obj) =
         let properties = (target.GetType ()).GetPropertiesWritable ()
         for property in properties do
             if  property.Name <> "FacetNames" &&
                 property.Name <> "OptOverlayName" &&
                 isPropertyPersistentByName property.Name then
-                tryReadPropertyToTarget property fieldDescriptor target
+                tryReadPropertyToTarget property fieldDescriptors target
 
-    /// Read one of a target's XFields.
-    let readXField xtension fieldDescriptor (target : obj) fieldDefinition =
+    /// Read one of a target's XFields from field descriptors.
+    let readXField xtension fieldDescriptors (target : obj) fieldDefinition =
         let targetType = target.GetType ()
         if Seq.notExists
             (fun (property : PropertyInfo) -> property.Name = fieldDefinition.FieldName)
             (targetType.GetProperties ()) then
-            match Map.tryFind fieldDefinition.FieldName fieldDescriptor with
+            match Map.tryFind fieldDefinition.FieldName fieldDescriptors with
             | Some fieldSymbol ->
                 let converter = SymbolicConverter fieldDefinition.FieldType
                 if converter.CanConvertFrom typeof<Symbol> then
@@ -419,56 +419,56 @@ module Reflection =
             | None -> xtension
         else xtension
 
-    /// Read a target's XFields.
-    let readXFields xtension fieldDescriptor (target : obj) =
+    /// Read a target's XFields from field descriptors.
+    let readXFields xtension fieldDescriptors (target : obj) =
         let fieldDefinitions = getReflectiveFieldDefinitions target
-        List.fold (fun xtension -> readXField xtension fieldDescriptor target) xtension fieldDefinitions
+        List.fold (fun xtension -> readXField xtension fieldDescriptors target) xtension fieldDefinitions
 
-    /// Read a target's Xtension.
-    let readXtensionToTarget fieldDescriptor (target : obj) =
+    /// Read a target's Xtension from field descriptors.
+    let readXtensionToTarget fieldDescriptors (target : obj) =
         let targetType = target.GetType ()
         match targetType.GetProperty "Xtension" with
         | null -> Log.debug "Target does not support xtensions due to missing Xtension field."
         | xtensionProperty ->
             match xtensionProperty.GetValue target with
             | :? Xtension as xtension ->
-                let xtension = readXFields xtension fieldDescriptor target
+                let xtension = readXFields xtension fieldDescriptors target
                 xtensionProperty.SetValue (target, xtension)
             | _ -> Log.debug "Target does not support xtensions due to Xtension field having unexpected type."
 
-    /// Read all of a target's member values from a fields descriptor (except OptOverlayName and FacetNames).
-    let readMemberValuesToTarget fieldDescriptor (target : obj) =
-        readPropertiesToTarget fieldDescriptor target
-        readXtensionToTarget fieldDescriptor target
+    /// Read all of a target's member values from field descriptors (except OptOverlayName and FacetNames).
+    let readMemberValuesToTarget fieldDescriptors (target : obj) =
+        readPropertiesToTarget fieldDescriptors target
+        readXtensionToTarget fieldDescriptors target
 
-    /// Write an Xtension to a fields descriptor.
-    let writeXtension shouldWriteProperty fieldDescriptor xtension =
-        Seq.fold (fun fieldDescriptor (xFieldName, (xField : XField)) ->
+    /// Write an Xtension to fields descriptors.
+    let writeXtension shouldWriteProperty fieldDescriptors xtension =
+        Seq.fold (fun fieldDescriptors (xFieldName, (xField : XField)) ->
             let xFieldType = xField.FieldType
             let xFieldValue = xField.FieldValue
             if  isPropertyPersistentByName xFieldName &&
                 shouldWriteProperty xFieldName xFieldType xFieldValue then
                 let xFieldSymbol = (SymbolicConverter xFieldType).ConvertTo (xFieldValue, typeof<Symbol>) :?> Symbol
-                Map.add xFieldName xFieldSymbol fieldDescriptor
-            else fieldDescriptor)
-            fieldDescriptor
+                Map.add xFieldName xFieldSymbol fieldDescriptors
+            else fieldDescriptors)
+            fieldDescriptors
             (Xtension.toSeq xtension)
 
-    /// Write all of a target's member values to a fields descriptor.
-    let writeMemberValuesFromTarget shouldWriteProperty fieldDescriptor (target : obj) =
+    /// Write all of a target's member values to field descriptors.
+    let writeMemberValuesFromTarget shouldWriteProperty fieldDescriptors (target : obj) =
         let targetType = target.GetType ()
         let properties = targetType.GetProperties ()
-        Seq.fold (fun fieldDescriptor (property : PropertyInfo) ->
+        Seq.fold (fun fieldDescriptors (property : PropertyInfo) ->
             match property.GetValue target with
             | :? Xtension as xtension ->
-                writeXtension shouldWriteProperty fieldDescriptor xtension
+                writeXtension shouldWriteProperty fieldDescriptors xtension
             | propertyValue ->
                 if  isPropertyPersistent property target &&
                     shouldWriteProperty property.Name property.PropertyType propertyValue then
                     let valueSymbol = (SymbolicConverter property.PropertyType).ConvertTo (propertyValue, typeof<Symbol>) :?> Symbol
-                    Map.add property.Name valueSymbol fieldDescriptor
-                else fieldDescriptor)
-            fieldDescriptor
+                    Map.add property.Name valueSymbol fieldDescriptors
+                else fieldDescriptors)
+            fieldDescriptors
             properties
 
     /// Create intrinsic overlays.

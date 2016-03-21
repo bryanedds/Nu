@@ -139,7 +139,7 @@ module RendererModule =
         static member private tryLoadRenderPackage packageName renderer =
             match AssetGraph.tryMakeFromFile Constants.Assets.AssetGraphFilePath with
             | Right assetGraph ->
-                match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Sexprs.RenderAssociation) packageName assetGraph with
+                match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Render) packageName assetGraph with
                 | Right assets ->
                     let optRenderAssets = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
                     let renderAssets = List.definitize optRenderAssets

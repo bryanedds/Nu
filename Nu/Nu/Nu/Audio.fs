@@ -94,7 +94,7 @@ module AudioPlayerModule =
         static member private tryLoadAudioPackage packageName audioPlayer =
             match AssetGraph.tryMakeFromFile Constants.Assets.AssetGraphFilePath with
             | Right assetGraph ->
-                match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Sexprs.AudioAssociation) packageName assetGraph with
+                match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Audio) packageName assetGraph with
                 | Right assets ->
                     let optAudioAssets = List.map AudioPlayer.tryLoadAudioAsset2 assets
                     let audioAssets = List.definitize optAudioAssets

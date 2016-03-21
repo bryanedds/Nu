@@ -134,7 +134,6 @@
       <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <Reference Include="System.Xml" />
     <Reference Include="TiledSharp">
       <HintPath>..\..\..\Nu\TiledSharp\$(Configuration)\TiledSharp.dll</HintPath>
     </Reference>

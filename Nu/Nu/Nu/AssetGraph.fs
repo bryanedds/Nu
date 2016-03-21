@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Xml
 open System.IO
 open ImageMagick
 open Prime

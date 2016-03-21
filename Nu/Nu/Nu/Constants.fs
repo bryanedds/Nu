@@ -35,24 +35,10 @@ module Constants =
         let InvalidId = Guid.Empty
 
     [<RequireQualifiedAccess>]
-    module Sexprs =
+    module Associations =
     
-        let [<Literal>] RenderAssociation = "Render"
-        let [<Literal>] AudioAssociation = "Audio"
-
-    [<RequireQualifiedAccess>]
-    module Xml =
-
-        let [<Literal>] RootNodeName = "Root"
-        let [<Literal>] DispatcherNameAttributeName = "dispatcherName"
-        let [<Literal>] NameAttributeName = "name"
-        let [<Literal>] GameNodeName = Engine.GameName
-        let [<Literal>] ScreenNodeName = Engine.DefaultScreenName
-        let [<Literal>] ScreensNodeName = Engine.DefaultScreenName + "s"
-        let [<Literal>] GroupNodeName = Engine.DefaultGroupName
-        let [<Literal>] GroupsNodeName = Engine.DefaultGroupName + "s"
-        let [<Literal>] EntityNodeName = Engine.DefaultEntityName
-        let [<Literal>] EntitiesNodeName = "Entities"
+        let [<Literal>] Render = "Render"
+        let [<Literal>] Audio = "Audio"
 
     [<RequireQualifiedAccess>]
     module Assets =

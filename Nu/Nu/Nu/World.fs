@@ -7,8 +7,6 @@ open System.IO
 open System.Collections.Generic
 open System.ComponentModel
 open System.Reflection
-open System.Xml
-open System.Xml.Serialization
 open FSharpx
 open FSharpx.Collections
 open SDL2

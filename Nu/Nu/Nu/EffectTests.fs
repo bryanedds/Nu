@@ -4,7 +4,6 @@
 namespace Nu.Tests
 open System
 open System.IO
-open System.Xml
 open OpenTK
 open Xunit
 open Prime

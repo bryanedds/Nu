@@ -4,14 +4,13 @@
 namespace Nu.Tests
 open System
 open System.IO
-open System.Xml
 open SDL2
 open Xunit
 open Prime
 open Nu
 module WorldTests =
 
-    let TestFilePath = "TestFile.xml"
+    let TestFilePath = "TestFile.nugame"
     let StringEvent = ntoa<string> !!"String"
     let Jim = Simulants.DefaultGroup => "Jim"
     let Bob = Simulants.DefaultGroup => "Bob"

@@ -14,8 +14,6 @@ open System.Reflection
 open System.Runtime.CompilerServices
 open System.Windows.Forms
 open System.ComponentModel
-open System.Xml
-open System.Xml.Serialization
 open Microsoft.FSharp.Reflection
 open Prime
 open Nu
