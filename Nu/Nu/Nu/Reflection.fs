@@ -79,24 +79,6 @@ type FieldDescriptor =
         fun (value : 'v) ->
             (fieldName, symbolize value)
 
-/// Describes a generalized value with fields.
-type CompositeDescriptor =
-    interface
-        abstract GetFields : unit -> Map<string, Symbol>
-        end
-
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module CompositeDescriptor =
-
-    /// Get the fields of the descriptor.
-    let getFields (compositeDescriptor : CompositeDescriptor) =
-        compositeDescriptor.GetFields ()
-
-    /// Try to get a field of the descriptor.
-    let tryGetField fieldName compositeDescriptor =
-        let fields = getFields compositeDescriptor
-        Map.tryFind fieldName fields
-
 [<AutoOpen>]
 module ReflectionModule =
 
@@ -136,7 +118,7 @@ module Reflection =
         not ^ propertyName.EndsWith ("Np", StringComparison.Ordinal) // don't write non-persistent properties
 
     /// Is the property of the given target persistent?
-    let isPropertyPersistent target (property : PropertyInfo) =
+    let isPropertyPersistent (property : PropertyInfo) (target : obj) =
         isPropertyPersistentByName property.Name &&
         not
             (property.Name = Constants.Engine.NameFieldName &&
@@ -152,8 +134,8 @@ module Reflection =
         result
 
     /// Get the concrete base types of a type excepting the object type.
-    let rec getBaseTypesExceptObject (ty : Type) =
-        match ty.BaseType with
+    let rec getBaseTypesExceptObject (targetType : Type) =
+        match targetType.BaseType with
         | null -> []
         | baseType ->
             if baseType <> typeof<obj>
@@ -186,7 +168,7 @@ module Reflection =
         List.concat fieldDefinitionLists
 
     /// Get the names of the field definitions of a target type.
-    let getFieldDefinitionNames targetType =
+    let getFieldDefinitionNames (targetType : Type) =
         let fieldDefinitions = getFieldDefinitions targetType
         List.map (fun fieldDefinition -> fieldDefinition.FieldName) fieldDefinitions
 
@@ -225,7 +207,7 @@ module Reflection =
             | _ -> failwith ^ "Static member 'RequiredDispatcherName' for facet '" + facetType.Name + "' is not of type string."
 
     /// Check for facet compatibility with the target's dispatcher.
-    let isFacetCompatibleWithDispatcher dispatcherMap (facet : obj) (target : obj) =
+    let isFacetCompatibleWithDispatcher dispatcherMap facet (target : obj) =
         let facetType = facet.GetType ()
         let facetTypes = facetType :: getBaseTypesExceptObject facetType
         List.forall
@@ -233,7 +215,7 @@ module Reflection =
             facetTypes
 
     /// Get all the reflective field containers of a target, including dispatcher and / or facets.
-    let getReflectiveFieldContainers target =
+    let getReflectiveFieldContainers (target : obj) =
         let targetType = target.GetType ()
         let optDispatcher =
             match targetType.GetProperty "DispatcherNp" with
@@ -252,19 +234,19 @@ module Reflection =
         | (None, None) -> []
 
     /// Get all the reflective container types of a target, including dispatcher and / or facet types.
-    let getReflectiveFieldContainerTypes target =
+    let getReflectiveFieldContainerTypes (target : obj) =
         let fieldContainers = getReflectiveFieldContainers target
         List.map getType fieldContainers
 
     /// Get all the reflective field definitions of a type, including those of its dispatcher and /
     /// or facets, organized in a map from the containing type's name to the field definition.
-    let getReflectiveFieldDefinitionMap target =
+    let getReflectiveFieldDefinitionMap (target : obj) =
         let containerTypes = getReflectiveFieldContainerTypes target
         Map.ofListBy (fun (ty : Type) -> (ty.Name, getFieldDefinitions ty)) containerTypes
 
     /// Get all the unique reflective field definitions of a type, including those of its
     /// dispatcher and / or facets.
-    let getReflectiveFieldDefinitions target =
+    let getReflectiveFieldDefinitions (target : obj) =
         let types = getReflectiveFieldContainerTypes target
         let fieldDefinitionLists = List.map getFieldDefinitions types
         let fieldDefinitions = List.concat fieldDefinitionLists
@@ -290,7 +272,7 @@ module Reflection =
         List.concat intrinsicFacetNamesLists
 
     /// Attach fields from the given definitions to a target.
-    let attachFieldsViaDefinitions fieldDefinitions target =
+    let attachFieldsViaDefinitions fieldDefinitions (target : obj) =
         let targetType = target.GetType ()
         for fieldDefinition in fieldDefinitions do
             let fieldValue = FieldExpr.eval fieldDefinition.FieldExpr
@@ -308,7 +290,7 @@ module Reflection =
             | property -> property.SetValue (target, fieldValue)
 
     /// Detach fields from a target.
-    let detachFieldsViaNames fieldNames target =
+    let detachFieldsViaNames fieldNames (target : obj) =
         let targetType = target.GetType ()
         for fieldName in fieldNames do
             match targetType.GetPropertyWritable fieldName with
@@ -324,13 +306,13 @@ module Reflection =
             | _ -> ()
 
     /// Attach source's fields to a target.
-    let attachFields source target =
+    let attachFields source (target : obj) =
         let sourceType = source.GetType ()
         let fieldDefinitions = getFieldDefinitions sourceType
         attachFieldsViaDefinitions fieldDefinitions target
 
     /// Detach source's fields to a target.
-    let detachFields source target =
+    let detachFields source (target : obj) =
         let sourceType = source.GetType ()
         let fieldNames = getFieldDefinitionNames sourceType
         detachFieldsViaNames fieldNames target
@@ -358,13 +340,13 @@ module Reflection =
             List.iter (fun facet -> attachFields facet target) facets
 
     /// Attach source's intrinsic facets to a target.
-    let attachIntrinsicFacets dispatcherMap facetMap source target =
+    let attachIntrinsicFacets dispatcherMap facetMap source (target : obj) =
         let sourceType = source.GetType ()
         let instrinsicFacetNames = getIntrinsicFacetNames sourceType
         attachIntrinsicFacetsViaNames dispatcherMap facetMap instrinsicFacetNames target
 
     /// Try to read just the target's OptOverlayName from the given symbol.
-    let tryReadOptOverlayNameToTarget targetDescriptor target =
+    let tryReadOptOverlayNameToTarget fieldDescriptor (target : obj) =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         let optOptOverlayNameProperty =
@@ -376,7 +358,7 @@ module Reflection =
                 targetProperties
         match optOptOverlayNameProperty with
         | Some optOverlayNameProperty ->
-            match CompositeDescriptor.tryGetField optOverlayNameProperty.Name targetDescriptor with
+            match Map.tryFind optOverlayNameProperty.Name fieldDescriptor with
             | Some optOverlayNameSymbol ->
                 let optOverlayName = valueize<string option> optOverlayNameSymbol
                 optOverlayNameProperty.SetValue (target, optOverlayName)
@@ -384,7 +366,7 @@ module Reflection =
         | None -> ()
 
     /// Read just the target's FacetNames from the given symbol.
-    let readFacetNamesToTarget targetDescriptor target =
+    let readFacetNamesToTarget fieldDescriptor (target : obj) =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         let facetNamesProperty =
@@ -394,15 +376,15 @@ module Reflection =
                     property.PropertyType = typeof<string Set> &&
                     property.CanWrite)
                 targetProperties
-        match CompositeDescriptor.tryGetField facetNamesProperty.Name targetDescriptor with
+        match Map.tryFind facetNamesProperty.Name fieldDescriptor with
         | Some facetNamesSymbol ->
             let facetNames = valueize<string list> facetNamesSymbol
             facetNamesProperty.SetValue (target, facetNames)
         | None -> ()
 
     /// Attempt to read a target's .NET property from Xml.
-    let tryReadPropertyToTarget (property : PropertyInfo) targetDescriptor (target : 'a) =
-        match CompositeDescriptor.tryGetField property.Name targetDescriptor with
+    let tryReadPropertyToTarget (property : PropertyInfo) fieldDescriptor (target : obj) =
+        match Map.tryFind property.Name fieldDescriptor with
         | Some fieldSymbol ->
             let converter = SymbolicConverter property.PropertyType
             if converter.CanConvertFrom typeof<Symbol> then
@@ -411,21 +393,21 @@ module Reflection =
         | None -> ()
 
     /// Read all of a target's .NET properties from Xml (except OptOverlayName and FacetNames).
-    let readPropertiesToTarget targetDescriptor target =
+    let readPropertiesToTarget fieldDescriptor (target : obj) =
         let properties = (target.GetType ()).GetPropertiesWritable ()
         for property in properties do
             if  property.Name <> "FacetNames" &&
                 property.Name <> "OptOverlayName" &&
                 isPropertyPersistentByName property.Name then
-                tryReadPropertyToTarget property targetDescriptor target
+                tryReadPropertyToTarget property fieldDescriptor target
 
     /// Read one of a target's XFields.
-    let readXField targetDescriptor (target : obj) xtension fieldDefinition =
+    let readXField xtension fieldDescriptor (target : obj) fieldDefinition =
         let targetType = target.GetType ()
         if Seq.notExists
             (fun (property : PropertyInfo) -> property.Name = fieldDefinition.FieldName)
             (targetType.GetProperties ()) then
-            match CompositeDescriptor.tryGetField fieldDefinition.FieldName targetDescriptor with
+            match Map.tryFind fieldDefinition.FieldName fieldDescriptor with
             | Some fieldSymbol ->
                 let converter = SymbolicConverter fieldDefinition.FieldType
                 if converter.CanConvertFrom typeof<Symbol> then
@@ -438,57 +420,56 @@ module Reflection =
         else xtension
 
     /// Read a target's XFields.
-    let readXFields targetDescriptor (target : obj) xtension =
+    let readXFields xtension fieldDescriptor (target : obj) =
         let fieldDefinitions = getReflectiveFieldDefinitions target
-        List.fold (readXField targetDescriptor target) xtension fieldDefinitions
+        List.fold (fun xtension -> readXField xtension fieldDescriptor target) xtension fieldDefinitions
 
     /// Read a target's Xtension.
-    let readXtensionToTarget targetDescriptor (target : obj) =
+    let readXtensionToTarget fieldDescriptor (target : obj) =
         let targetType = target.GetType ()
         match targetType.GetProperty "Xtension" with
         | null -> Log.debug "Target does not support xtensions due to missing Xtension field."
         | xtensionProperty ->
             match xtensionProperty.GetValue target with
             | :? Xtension as xtension ->
-                let xtension = readXFields targetDescriptor target xtension
+                let xtension = readXFields xtension fieldDescriptor target
                 xtensionProperty.SetValue (target, xtension)
             | _ -> Log.debug "Target does not support xtensions due to Xtension field having unexpected type."
 
-    /// Read all of a target's member values from Xml (except OptOverlayName and FacetNames).
-    let readMemberValuesToTarget targetNode target =
-        readPropertiesToTarget targetNode target
-        readXtensionToTarget targetNode target
+    /// Read all of a target's member values from a fields descriptor (except OptOverlayName and FacetNames).
+    let readMemberValuesToTarget fieldDescriptor (target : obj) =
+        readPropertiesToTarget fieldDescriptor target
+        readXtensionToTarget fieldDescriptor target
 
-    /// Write an Xtension to Xml.
-    /// NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
-    /// XmlWriter.Create ^ (document.CreateNavigator ()).AppendChild ()
-    let writeXtension shouldWriteProperty (writer : XmlWriter) xtension =
-        for (xFieldName, xField) in Xtension.toSeq xtension do
+    /// Write an Xtension to a fields descriptor.
+    let writeXtension shouldWriteProperty fieldDescriptor xtension =
+        Seq.fold (fun fieldDescriptor (xFieldName, (xField : XField)) ->
             let xFieldType = xField.FieldType
             let xFieldValue = xField.FieldValue
             if  isPropertyPersistentByName xFieldName &&
                 shouldWriteProperty xFieldName xFieldType xFieldValue then
-                let xFieldValueStr = (SymbolicConverter xFieldType).ConvertToString xFieldValue
-                writer.WriteStartElement xFieldName
-                writer.WriteString xFieldValueStr
-                writer.WriteEndElement ()
+                let xFieldSymbol = (SymbolicConverter xFieldType).ConvertTo (xFieldValue, typeof<Symbol>) :?> Symbol
+                Map.add xFieldName xFieldSymbol fieldDescriptor
+            else fieldDescriptor)
+            fieldDescriptor
+            (Xtension.toSeq xtension)
 
-    /// Write all of a target's member values to Xml.
-    /// NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
-    /// XmlWriter.Create ^ (document.CreateNavigator ()).AppendChild ()
-    let writeMemberValuesFromTarget shouldWriteProperty (writer : XmlWriter) (target : 'a) =
+    /// Write all of a target's member values to a fields descriptor.
+    let writeMemberValuesFromTarget shouldWriteProperty fieldDescriptor (target : obj) =
         let targetType = target.GetType ()
         let properties = targetType.GetProperties ()
-        for property in properties do
-            let propertyValue = property.GetValue target
-            match propertyValue with
-            | :? Xtension as xtension -> writeXtension shouldWriteProperty writer xtension
-            | _ ->
-                if  isPropertyPersistent target property &&
+        Seq.fold (fun fieldDescriptor (property : PropertyInfo) ->
+            match property.GetValue target with
+            | :? Xtension as xtension ->
+                writeXtension shouldWriteProperty fieldDescriptor xtension
+            | propertyValue ->
+                if  isPropertyPersistent property target &&
                     shouldWriteProperty property.Name property.PropertyType propertyValue then
-                    let converter = SymbolicConverter property.PropertyType
-                    let valueStr = converter.ConvertToString propertyValue
-                    writer.WriteElementString (property.Name, valueStr)
+                    let valueSymbol = (SymbolicConverter property.PropertyType).ConvertTo (propertyValue, typeof<Symbol>) :?> Symbol
+                    Map.add property.Name valueSymbol fieldDescriptor
+                else fieldDescriptor)
+            fieldDescriptor
+            properties
 
     /// Create intrinsic overlays.
     let createIntrinsicOverlays requiresFacetNames sourceTypes =

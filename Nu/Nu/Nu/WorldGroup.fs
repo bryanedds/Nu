@@ -135,50 +135,38 @@ module WorldGroupModule =
             let world = World.addGroup false groupState group world
             (group, world)
 
-        /// Write a group to an xml writer.
-        static member writeGroup (writer : XmlWriter) group world =
+        /// Write an group to an group descriptor.
+        static member writeGroup (group : Group) groupDescriptor world =
             let groupState = World.getGroupState group world
-            let entities = World.proxyEntities group world
-            writer.WriteAttributeString (Constants.Xml.DispatcherNameAttributeName, getTypeName groupState.DispatcherNp)
-            Reflection.writeMemberValuesFromTarget tautology3 writer groupState
-            writer.WriteStartElement Constants.Xml.EntitiesNodeName
-            World.writeEntities writer entities world
-            writer.WriteEndElement ()
+            let dispatcherTypeName = getTypeName groupState.DispatcherNp
+            let groupDescriptor = { groupDescriptor with GroupDispatcher = dispatcherTypeName }
+            let groupFields = Reflection.writeMemberValuesFromTarget tautology3 groupDescriptor.GroupFields groupState
+            { groupDescriptor with GroupFields = groupFields }
 
-        /// Write a group to an xml file.
+        /// Write multiple groups to a screen descriptor.
+        static member writeGroups groups screenDescriptor world =
+            groups |>
+            Seq.sortBy (fun (group : Group) -> group.GetCreationTimeStampNp world) |>
+            Seq.filter (fun (group : Group) -> group.GetPersistent world) |>
+            Seq.fold (fun groupDescriptors group -> World.writeGroup group GroupDescriptor.empty world :: groupDescriptors) screenDescriptor.Groups |>
+            fun groupDescriptors -> { screenDescriptor with Groups = groupDescriptors }
+
+        /// Write a group to a file.
         static member writeGroupToFile (filePath : string) group world =
             let filePathTmp = filePath + ".tmp"
-            let writerSettings = XmlWriterSettings ()
-            writerSettings.Indent <- true
-            // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
-            // XmlWriter.Create ^ (document.CreateNavigator ()).AppendChild ()
-            use writer = XmlWriter.Create (filePathTmp, writerSettings)
-            writer.WriteStartDocument ()
-            writer.WriteStartElement Constants.Xml.RootNodeName
-            writer.WriteStartElement Constants.Xml.GroupNodeName
-            World.writeGroup writer group world
-            writer.WriteEndElement ()
-            writer.WriteEndElement ()
-            writer.WriteEndDocument ()
-            writer.Dispose ()
+            let groupDescriptor = World.writeGroup group GroupDescriptor.empty world
+            let groupDescriptorStr = scstring groupDescriptor
+            let groupDescriptorPretty = SymbolIndex.prettyPrint groupDescriptorStr
+            File.WriteAllText (filePathTmp, groupDescriptorPretty)
             File.Delete filePath
             File.Move (filePathTmp, filePath)
 
-        /// Write multiple groups to an xml writer.
-        static member writeGroups (writer : XmlWriter) groups world =
-            let groupsSorted = Seq.sortBy (fun (group : Group) -> group.GetCreationTimeStampNp world) groups
-            let groupsPersistent = Seq.filter (fun (group : Group) -> group.GetPersistent world) groupsSorted
-            for group in groupsPersistent do
-                writer.WriteStartElement Constants.Xml.GroupNodeName
-                World.writeGroup writer group world
-                writer.WriteEndElement ()
-
-        /// Read a group from an xml node.
-        static member readGroup groupNode defaultDispatcherName defaultEntityDispatcherName optName screen world =
+        /// Read a group from group descriptor.
+        static member readGroup groupDescriptor optName screen world =
 
             // read in the dispatcher name and create the dispatcher
+            let dispatcherName = groupDescriptor.GroupDispatcher
             let dispatchers = World.getGroupDispatchers world
-            let dispatcherName = Reflection.readDispatcherName defaultDispatcherName groupNode
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
@@ -194,40 +182,36 @@ module WorldGroupModule =
             Reflection.attachFields groupState.DispatcherNp groupState
 
             // read the group state's value
-            Reflection.readMemberValuesToTarget groupNode groupState
+            Reflection.readMemberValuesToTarget groupDescriptor.GroupFields groupState
 
             // apply the name if one is provided
-            let groupState = match optName with Some name -> { groupState with Name = name } | None -> groupState
+            let groupState =
+                match optName with
+                | Some name -> { groupState with Name = name }
+                | None -> groupState
 
             // add the group's state to the world
             let group = stog screen groupState.Name
             let world = World.addGroup true groupState group world
 
             // read the group's entities
-            let world = World.readEntities groupNode defaultEntityDispatcherName group world |> snd
+            let world = World.readEntities groupDescriptor group world |> snd
             (group, world)
 
         /// Read a group from an xml file.
         static member readGroupFromFile (filePath : string) optName screen world =
-            use reader = XmlReader.Create filePath
-            let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
-            let rootNode = document.[Constants.Xml.RootNodeName]
-            let groupNode = rootNode.[Constants.Xml.GroupNodeName]
-            World.readGroup groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name optName screen world
+            let groupDescriptorStr = File.ReadAllText filePath
+            let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
+            World.readGroup groupDescriptor optName screen world
 
         /// Read multiple groups from an xml node.
-        static member readGroups (screenNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName screen world =
-            match screenNode.SelectSingleNode Constants.Xml.GroupsNodeName with
-            | null -> ([], world)
-            | groupsNode ->
-                let (groupsRev, world) =
-                    Seq.fold
-                        (fun (groupsRev, world) groupNode ->
-                            let (group, world) = World.readGroup groupNode defaultDispatcherName defaultEntityDispatcherName None screen world
-                            (group :: groupsRev, world))
-                        ([], world)
-                        (enumerable ^ groupsNode.SelectNodes Constants.Xml.GroupNodeName)
-                (List.rev groupsRev, world)
+        static member readGroups screenDescriptor screen world =
+            screenDescriptor.Groups |>
+            List.fold (fun (groups, world) groupDescriptor ->
+                let (group, world) = World.readGroup groupDescriptor None screen world
+                (group :: groups, world))
+                ([], world) |>
+            mapFst List.rev
 
 namespace Debug
 open Prime

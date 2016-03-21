@@ -519,31 +519,42 @@ and [<NoComparison>] GameDescriptor =
     { GameDispatcher : string
       GameFields : Map<string, Symbol>
       Screens : ScreenDescriptor list }
-    interface CompositeDescriptor with
-        member this.GetFields () = this.GameFields
+
+    static member empty =
+        { GameDispatcher = typeof<GameDescriptor>.Name
+          GameFields = Map.empty
+          Screens = [] }
 
 /// Describes a screen value.
 and [<NoComparison>] ScreenDescriptor =
     { ScreenDispatcher : string
       ScreenFields : Map<string, Symbol>
       Groups : GroupDescriptor list }
-    interface CompositeDescriptor with
-        member this.GetFields () = this.ScreenFields
+
+    static member empty =
+        { ScreenDispatcher = typeof<ScreenDescriptor>.Name
+          ScreenFields = Map.empty
+          Groups = [] }
 
 /// Describes a group value.
 and [<NoComparison>] GroupDescriptor =
     { GroupDispatcher : string
       GroupFields : Map<string, Symbol>
       Entities : EntityDescriptor list }
-    interface CompositeDescriptor with
-        member this.GetFields () = this.GroupFields
+
+    static member empty =
+        { GroupDispatcher = typeof<GroupDescriptor>.Name
+          GroupFields = Map.empty
+          Entities = [] }
 
 /// Describes an entity value.
 and [<NoComparison>] EntityDescriptor =
     { EntityDispatcher : string
       EntityFields : Map<string, Symbol> }
-    interface CompositeDescriptor with
-        member this.GetFields () = this.EntityFields
+
+    static member empty =
+        { EntityDispatcher = typeof<EntityDescriptor>.Name
+          EntityFields = Map.empty }
 
 /// The world's dispatchers (including facets).
 /// 
