@@ -1,15 +1,8 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Root>
-  <Group dispatcherName="PlayerGroupDispatcher">
-    <Name>Group</Name>
-    <PublishChanges>True</PublishChanges>
-    <Persistent>True</Persistent>
-    <Entities>
-      <Entity dispatcherName="PlayerDispatcher">
-        <Name>Player</Name>
-        <Position>[-300 -175.6805]</Position>
-        <Depth>1</Depth>
-      </Entity>
-    </Entities>
-  </Group>
-</Root>
+[PlayerGroupDispatcher
+ [[Name Group]
+  [PublishChanges True]
+  [Persistent True]]
+ [[PlayerDispatcher
+  [[Name Player]
+   [Position [-300 -175.6805]]
+   [Depth 1]]]]]
