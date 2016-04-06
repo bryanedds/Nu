@@ -144,6 +144,22 @@ module World =
     let getEventState<'a> key world =
         Eventable.getEventState<'a, World> key world
 
+    /// Get whether events are being traced.
+    let getEventTracing world =
+        Eventable.getEventTracing world
+
+    /// Set whether events are being traced.
+    let setEventTracing tracing world =
+        Eventable.setEventTracing tracing world
+
+    /// Get the state of the event filter.
+    let getEventFilter world =
+        Eventable.getEventFilter world
+
+    /// Set the state of the event filter.
+    let setEventFilter filter world =
+        Eventable.setEventFilter filter world
+
     /// TODO: document.
     let getSubscriptionsSorted (publishSorter : SubscriptionSorter<World>) eventAddress world =
         Eventable.getSubscriptionsSorted publishSorter eventAddress world
