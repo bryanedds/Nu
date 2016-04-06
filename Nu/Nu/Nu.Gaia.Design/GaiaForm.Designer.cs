@@ -73,7 +73,7 @@
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.splitContainer6 = new System.Windows.Forms.SplitContainer();
             this.traceEventsCheckBox = new System.Windows.Forms.CheckBox();
-            this.filterEventsButton = new System.Windows.Forms.Button();
+            this.applyEventFilterButton = new System.Windows.Forms.Button();
             this.eventFilterTextBox = new System.Windows.Forms.RichTextBox();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
             this.propertyGrid = new System.Windows.Forms.PropertyGrid();
@@ -113,6 +113,7 @@
             this.groupTabs = new System.Windows.Forms.TabControl();
             this.tabPage = new System.Windows.Forms.TabPage();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
+            this.resetEventFilterButton = new System.Windows.Forms.Button();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -372,7 +373,7 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer3);
             this.splitContainer1.Size = new System.Drawing.Size(1334, 801);
-            this.splitContainer1.SplitterDistance = 968;
+            this.splitContainer1.SplitterDistance = 969;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
             // 
@@ -390,7 +391,7 @@
             // splitContainer4.Panel2
             // 
             this.splitContainer4.Panel2.Controls.Add(this.rolloutTabControl);
-            this.splitContainer4.Size = new System.Drawing.Size(968, 801);
+            this.splitContainer4.Size = new System.Drawing.Size(969, 801);
             this.splitContainer4.SplitterDistance = 545;
             this.splitContainer4.TabIndex = 1;
             // 
@@ -401,7 +402,7 @@
             this.displayPanel.Location = new System.Drawing.Point(0, 0);
             this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
             this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(968, 545);
+            this.displayPanel.Size = new System.Drawing.Size(969, 545);
             this.displayPanel.TabIndex = 0;
             this.displayPanel.TabStop = true;
             // 
@@ -413,7 +414,7 @@
             this.rolloutTabControl.Location = new System.Drawing.Point(0, 0);
             this.rolloutTabControl.Name = "rolloutTabControl";
             this.rolloutTabControl.SelectedIndex = 0;
-            this.rolloutTabControl.Size = new System.Drawing.Size(968, 252);
+            this.rolloutTabControl.Size = new System.Drawing.Size(969, 252);
             this.rolloutTabControl.TabIndex = 0;
             // 
             // tabPage1
@@ -422,7 +423,7 @@
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(960, 226);
+            this.tabPage1.Size = new System.Drawing.Size(961, 226);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Property Editor";
             this.tabPage1.UseVisualStyleBackColor = true;
@@ -443,7 +444,7 @@
             // propertyEditor.Panel2
             // 
             this.propertyEditor.Panel2.Controls.Add(this.propertyValueTextBox);
-            this.propertyEditor.Size = new System.Drawing.Size(954, 220);
+            this.propertyEditor.Size = new System.Drawing.Size(955, 220);
             this.propertyEditor.SplitterDistance = 176;
             this.propertyEditor.TabIndex = 0;
             // 
@@ -512,7 +513,7 @@
             this.propertyValueTextBox.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.propertyValueTextBox.Location = new System.Drawing.Point(0, 0);
             this.propertyValueTextBox.Name = "propertyValueTextBox";
-            this.propertyValueTextBox.Size = new System.Drawing.Size(774, 220);
+            this.propertyValueTextBox.Size = new System.Drawing.Size(775, 220);
             this.propertyValueTextBox.TabIndex = 0;
             this.propertyValueTextBox.Text = "";
             this.propertyValueTextBox.WordWrap = false;
@@ -523,7 +524,7 @@
             this.tabPage2.Location = new System.Drawing.Point(4, 22);
             this.tabPage2.Name = "tabPage2";
             this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(960, 226);
+            this.tabPage2.Size = new System.Drawing.Size(961, 226);
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "Event Tracing";
             this.tabPage2.UseVisualStyleBackColor = true;
@@ -538,13 +539,14 @@
             // 
             // splitContainer6.Panel1
             // 
+            this.splitContainer6.Panel1.Controls.Add(this.resetEventFilterButton);
             this.splitContainer6.Panel1.Controls.Add(this.traceEventsCheckBox);
-            this.splitContainer6.Panel1.Controls.Add(this.filterEventsButton);
+            this.splitContainer6.Panel1.Controls.Add(this.applyEventFilterButton);
             // 
             // splitContainer6.Panel2
             // 
             this.splitContainer6.Panel2.Controls.Add(this.eventFilterTextBox);
-            this.splitContainer6.Size = new System.Drawing.Size(954, 220);
+            this.splitContainer6.Size = new System.Drawing.Size(955, 220);
             this.splitContainer6.SplitterDistance = 176;
             this.splitContainer6.TabIndex = 0;
             // 
@@ -558,14 +560,14 @@
             this.traceEventsCheckBox.Text = "Trace Events";
             this.traceEventsCheckBox.UseVisualStyleBackColor = true;
             // 
-            // filterEventsButton
+            // applyEventFilterButton
             // 
-            this.filterEventsButton.Location = new System.Drawing.Point(16, 35);
-            this.filterEventsButton.Name = "filterEventsButton";
-            this.filterEventsButton.Size = new System.Drawing.Size(147, 23);
-            this.filterEventsButton.TabIndex = 2;
-            this.filterEventsButton.Text = "Filter Events";
-            this.filterEventsButton.UseVisualStyleBackColor = true;
+            this.applyEventFilterButton.Location = new System.Drawing.Point(16, 35);
+            this.applyEventFilterButton.Name = "applyEventFilterButton";
+            this.applyEventFilterButton.Size = new System.Drawing.Size(147, 23);
+            this.applyEventFilterButton.TabIndex = 2;
+            this.applyEventFilterButton.Text = "Apply Filter";
+            this.applyEventFilterButton.UseVisualStyleBackColor = true;
             // 
             // eventFilterTextBox
             // 
@@ -574,7 +576,7 @@
             this.eventFilterTextBox.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.eventFilterTextBox.Location = new System.Drawing.Point(0, 0);
             this.eventFilterTextBox.Name = "eventFilterTextBox";
-            this.eventFilterTextBox.Size = new System.Drawing.Size(774, 220);
+            this.eventFilterTextBox.Size = new System.Drawing.Size(775, 220);
             this.eventFilterTextBox.TabIndex = 1;
             this.eventFilterTextBox.Text = "";
             this.eventFilterTextBox.WordWrap = false;
@@ -593,7 +595,7 @@
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.treeView);
-            this.splitContainer3.Size = new System.Drawing.Size(363, 801);
+            this.splitContainer3.Size = new System.Drawing.Size(362, 801);
             this.splitContainer3.SplitterDistance = 527;
             this.splitContainer3.TabIndex = 2;
             // 
@@ -604,7 +606,7 @@
             this.propertyGrid.Location = new System.Drawing.Point(0, 0);
             this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(363, 527);
+            this.propertyGrid.Size = new System.Drawing.Size(362, 527);
             this.propertyGrid.TabIndex = 0;
             this.propertyGrid.ToolbarVisible = false;
             // 
@@ -613,7 +615,7 @@
             this.treeView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeView.Location = new System.Drawing.Point(0, 0);
             this.treeView.Name = "treeView";
-            this.treeView.Size = new System.Drawing.Size(363, 270);
+            this.treeView.Size = new System.Drawing.Size(362, 270);
             this.treeView.TabIndex = 1;
             // 
             // openFileDialog
@@ -915,6 +917,15 @@
             this.splitContainer2.SplitterDistance = 30;
             this.splitContainer2.TabIndex = 5;
             // 
+            // resetEventFilterButton
+            // 
+            this.resetEventFilterButton.Location = new System.Drawing.Point(16, 64);
+            this.resetEventFilterButton.Name = "resetEventFilterButton";
+            this.resetEventFilterButton.Size = new System.Drawing.Size(147, 23);
+            this.resetEventFilterButton.TabIndex = 4;
+            this.resetEventFilterButton.Text = "Reset Filter";
+            this.resetEventFilterButton.UseVisualStyleBackColor = true;
+            // 
             // GaiaForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1054,9 +1065,10 @@
         public System.Windows.Forms.ToolStripButton resetTickTime;
         private System.Windows.Forms.TabPage tabPage2;
         private System.Windows.Forms.SplitContainer splitContainer6;
-        public System.Windows.Forms.Button filterEventsButton;
+        public System.Windows.Forms.Button applyEventFilterButton;
         public System.Windows.Forms.RichTextBox eventFilterTextBox;
         public System.Windows.Forms.CheckBox traceEventsCheckBox;
+        public System.Windows.Forms.Button resetEventFilterButton;
     }
 }
 

@@ -905,6 +905,26 @@
  Log an event.
 </summary>
 </member>
+<member name="M:Prime.EventSystemModule.EventSystem.setEventFilter``1(Prime.EventFilter.EventFilter,Prime.EventSystemModule.EventSystem{``0})">
+<summary>
+ Set the state of the event filter.
+</summary>
+</member>
+<member name="M:Prime.EventSystemModule.EventSystem.getEventFilter``1(Prime.EventSystemModule.EventSystem{``0})">
+<summary>
+ Get the state of the event filter.
+</summary>
+</member>
+<member name="M:Prime.EventSystemModule.EventSystem.setEventTracing``1(System.Boolean,Prime.EventSystemModule.EventSystem{``0})">
+<summary>
+ Set whether events are being traced.
+</summary>
+</member>
+<member name="M:Prime.EventSystemModule.EventSystem.getEventTracing``1(Prime.EventSystemModule.EventSystem{``0})">
+<summary>
+ Get whether events are being traced.
+</summary>
+</member>
 <member name="M:Prime.EventSystemModule.EventSystem.getEventState``2(System.Guid,Prime.EventSystemModule.EventSystem{``1})">
 <summary>
  Get event state.
@@ -998,6 +1018,26 @@
 <member name="M:Prime.Eventable.sortSubscriptionsBy``1(Microsoft.FSharp.Core.FSharpFunc{Prime.Participant,Microsoft.FSharp.Core.FSharpFunc{``0,System.Single}},Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.Guid,Prime.Participant,System.Object}},``0)">
 <summary>
  Sort subscriptions using categorization via the &apos;by&apos; procedure.
+</summary>
+</member>
+<member name="M:Prime.Eventable.setEventFilter``1(Prime.EventFilter.EventFilter,``0)">
+<summary>
+ Set the state of the event filter.
+</summary>
+</member>
+<member name="M:Prime.Eventable.getEventFilter``1(``0)">
+<summary>
+ Get the state of the event filter.
+</summary>
+</member>
+<member name="M:Prime.Eventable.setEventTracing``1(System.Boolean,``0)">
+<summary>
+ Set whether events are being traced.
+</summary>
+</member>
+<member name="M:Prime.Eventable.getEventTracing``1(``0)">
+<summary>
+ Get whether events are being traced.
 </summary>
 </member>
 <member name="M:Prime.Eventable.getEventState``2(System.Guid,``1)">

@@ -248,7 +248,7 @@ module Gaia =
     let private trySaveFile filePath world =
         let selectedGroup = (World.getUserState world).SelectedGroup
         try World.writeGroupToFile filePath selectedGroup world
-        with exn -> MessageBox.Show ("Could not save file due to: " + scstring exn, "File save error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+        with exn -> MessageBox.Show ("Could not save file due to: " + scstring exn, "File save error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
 
     let private tryLoadFile (form : GaiaForm) filePath world =
 
@@ -267,7 +267,7 @@ module Gaia =
 
         // handle load failure
         with exn ->
-            MessageBox.Show ("Could not load file due to: " + scstring exn, "File load error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not load file due to: " + scstring exn, "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             world
 
     let private handleFormExit (form : GaiaForm) (_ : EventArgs) =
@@ -338,6 +338,28 @@ module Gaia =
     let private handleFormPropertyApplyClick (form : GaiaForm) (_ : EventArgs) =
         applyPropertyEditor form
 
+    let private handleTraceEventsCheckBoxChange (form : GaiaForm) (_ : EventArgs) =
+        ignore ^ WorldChangers.Add (fun world ->
+            World.setEventTracing form.traceEventsCheckBox.Checked world)
+
+    let private handleApplyEventFilterClick (form : GaiaForm) (_ : EventArgs) =
+        ignore ^ WorldChangers.Add (fun world ->
+            try let eventFilter = scvalue<EventFilter> form.eventFilterTextBox.Text
+                let world = World.setEventFilter eventFilter world
+                form.eventFilterTextBox.Text <- SymbolIndex.prettyPrint ^ scstring eventFilter
+                world
+            with exn ->
+                ignore ^ MessageBox.Show ("Invalid event filter due to: " + scstring exn, "Invalid event filter", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                world)
+
+    let private handleResetEventFilterClick (form : GaiaForm) (_ : EventArgs) =
+        ignore ^ WorldChangers.Add (fun world ->
+            let eventFilter = World.getEventFilter world
+            let eventFilterStr = scstring eventFilter
+            let eventFilterPretty = SymbolIndex.prettyPrint eventFilterStr
+            form.eventFilterTextBox.Text <- eventFilterPretty
+            world)
+
     let private handleFormTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             if isNotNull form.treeView.SelectedNode then
@@ -399,7 +421,7 @@ module Gaia =
                     form.groupTabs.SelectTab (form.groupTabs.TabPages.IndexOfKey groupName)
                     world
                 with exn ->
-                    MessageBox.Show (scstring exn, "Group creation error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    MessageBox.Show (scstring exn, "Group creation error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world)
             groupNameEntryForm.Close ())
         groupNameEntryForm.cancelButton.Click.Add (fun _ -> groupNameEntryForm.Close ())
@@ -431,7 +453,7 @@ module Gaia =
         ignore ^ WorldChangers.Add (fun world ->
             match form.groupTabs.TabPages.Count with
             | 1 ->
-                MessageBox.Show ("Cannot destroy only remaining group.", "Group destruction error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                MessageBox.Show ("Cannot destroy only remaining group.", "Group destruction error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
             | _ ->
                 let world = pushPastWorld world world
@@ -539,7 +561,7 @@ module Gaia =
             match World.tryReloadAssets assetSourceDir targetDir RefinementDir world with
             | Right world -> world
             | Left error ->
-                MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world)
 
     let private handleFormReloadOverlays (form : GaiaForm) (_ : EventArgs) =
@@ -552,7 +574,7 @@ module Gaia =
                 refreshPropertyGrid form world
                 world
             | Left error ->
-                MessageBox.Show ("Overlay reload error due to: " + error + "'.", "Overlay reload error.", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                MessageBox.Show ("Overlay reload error due to: " + error + "'.", "Overlay reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world)
 
     let private handleFormGroupTabSelected (form : GaiaForm) (_ : EventArgs) =
@@ -571,7 +593,7 @@ module Gaia =
             world)
 
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
-        match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia", MessageBoxButtons.YesNo) with
+        match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.YesNo) with
         | DialogResult.No -> args.Cancel <- true
         | _ -> ()
 
@@ -718,6 +740,9 @@ module Gaia =
         form.propertyGrid.SelectedObjectsChanged.Add (handleFormPropertyGridSelectedObjectsChanged form)
         form.propertyRefreshLabel.Click.Add (handleFormPropertyRefreshClick form)
         form.propertyApplyLabel.Click.Add (handleFormPropertyApplyClick form)
+        form.traceEventsCheckBox.CheckStateChanged.Add (handleTraceEventsCheckBoxChange form)
+        form.applyEventFilterButton.Click.Add (handleApplyEventFilterClick form)
+        form.resetEventFilterButton.Click.Add (handleResetEventFilterClick form)
         form.treeView.AfterSelect.Add (handleFormTreeViewNodeSelect form)
         form.createEntityButton.Click.Add (handleFormCreate false form)
         form.createToolStripMenuItem.Click.Add (handleFormCreate false form)
