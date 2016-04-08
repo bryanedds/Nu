@@ -338,7 +338,7 @@ module Gaia =
     let private handleFormPropertyApplyClick (form : GaiaForm) (_ : EventArgs) =
         applyPropertyEditor form
 
-    let private handleTraceEventsCheckBoxChange (form : GaiaForm) (_ : EventArgs) =
+    let private handleTraceEventsCheckBoxChanged (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             World.setEventTracing form.traceEventsCheckBox.Checked world)
 
@@ -592,6 +592,10 @@ module Gaia =
             refreshTreeView form world
             world)
 
+    let private handleRolloutTabSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
+        if form.rolloutTabControl.SelectedTab = form.eventTracingTabPage then
+            form.resetEventFilterButton.PerformClick ()
+
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
         match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.YesNo) with
         | DialogResult.No -> args.Cancel <- true
@@ -736,11 +740,12 @@ module Gaia =
         form.exitToolStripMenuItem.Click.Add (handleFormExit form)
         form.createDepthPlusButton.Click.Add (handleFormCreateDepthPlusClick form)
         form.createDepthMinusButton.Click.Add (handleFormCreateDepthMinusClick form)
+        form.rolloutTabControl.SelectedIndexChanged.Add (handleRolloutTabSelectedIndexChanged form)
         form.propertyGrid.SelectedGridItemChanged.Add (handleFormPropertyGridSelectedGridItemChanged form)
         form.propertyGrid.SelectedObjectsChanged.Add (handleFormPropertyGridSelectedObjectsChanged form)
         form.propertyRefreshLabel.Click.Add (handleFormPropertyRefreshClick form)
         form.propertyApplyLabel.Click.Add (handleFormPropertyApplyClick form)
-        form.traceEventsCheckBox.CheckStateChanged.Add (handleTraceEventsCheckBoxChange form)
+        form.traceEventsCheckBox.CheckStateChanged.Add (handleTraceEventsCheckBoxChanged form)
         form.applyEventFilterButton.Click.Add (handleApplyEventFilterClick form)
         form.resetEventFilterButton.Click.Add (handleResetEventFilterClick form)
         form.treeView.AfterSelect.Add (handleFormTreeViewNodeSelect form)
