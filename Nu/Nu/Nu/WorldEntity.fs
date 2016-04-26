@@ -609,17 +609,18 @@ type Entity =
     /// the Watch feature in Visual Studio.
     static member viewProperties entity world =
         let state = World.getEntityState entity world
-        let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
-        Map.ofSeq properties
+        Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
         
     /// Provides a view of all the xtension properties of an entity. Useful for debugging such as
     /// with the Watch feature in Visual Studio.
     static member viewXProperties entity world =
         let state = World.getEntityState entity world
-        let properties = Map.ofSeq ^ Xtension.toSeq state.Xtension
-        Map.map (fun _ property -> property.PropertyValue) properties
+        Xtension.toSeq state.Xtension |>
+        Array.ofSeq |>
+        Array.sortBy fst |>
+        Array.map (fun (name, property) -> (name, property.PropertyValue))
 
     /// Provides a full view of all the member values of an entity. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
     static member view entity world =
-        Entity.viewProperties entity world @@ Entity.viewXProperties entity world
+        Array.append (Entity.viewProperties entity world) (Entity.viewXProperties entity world)

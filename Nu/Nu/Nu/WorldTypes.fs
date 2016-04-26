@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Diagnostics
 open OpenTK
 open TiledSharp
 open Prime
@@ -374,11 +375,9 @@ and [<StructuralEquality; NoComparison>] Game =
     /// Get the full name of a game proxy.
     member this.GameFullName = Address.getFullName this.GameAddress
 
-    /// Get the current value of a game's properties.
-    member this.Properties = Debug.World.viewGameProperties Debug.World.Latest
-
-    /// Get the current value of a game's xtension properties.
-    member this.XProperties = Debug.World.viewGameXProperties Debug.World.Latest
+    /// Get the latest value of a game's properties.
+    [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
+    member private this.View = Debug.World.viewGame Debug.World.Latest
 
     /// Create a Game proxy from an address.
     static member proxy address = { GameAddress = address }
@@ -412,11 +411,9 @@ and [<StructuralEquality; NoComparison>] Screen =
     /// Get the name of a screen proxy.
     member this.ScreenName = Address.getName this.ScreenAddress
 
-    /// Get the current value of a screen's properties.
-    member this.Properties = Debug.World.viewScreenProperties (this :> obj) Debug.World.Latest
-
-    /// Get the current value of a screen's xtension properties.
-    member this.XProperties = Debug.World.viewScreenXProperties (this :> obj) Debug.World.Latest
+    /// Get the latest value of a screen's properties.
+    [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
+    member private this.View = Debug.World.viewScreen (this :> obj) Debug.World.Latest
 
     /// Create a Screen proxy from an address.
     static member proxy address = { ScreenAddress = address }
@@ -458,11 +455,9 @@ and [<StructuralEquality; NoComparison>] Group =
     /// Get the name of a group proxy.
     member this.GroupName = Address.getName this.GroupAddress
 
-    /// Get the current value of a group's properties.
-    member this.Properties = Debug.World.viewGroupProperties (this :> obj) Debug.World.Latest
-
-    /// Get the current value of a group's xtension properties.
-    member this.XProperties = Debug.World.viewGroupXProperties (this :> obj) Debug.World.Latest
+    /// Get the latest value of a group's properties.
+    [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
+    member private this.View = Debug.World.viewGroup (this :> obj) Debug.World.Latest
 
     /// Create a Group proxy from an address.
     static member proxy address = { GroupAddress = address }
@@ -508,11 +503,9 @@ and [<StructuralEquality; NoComparison>] Entity =
     /// Get the name of an entity proxy.
     member this.EntityName = Address.getName this.EntityAddress
 
-    /// Get the current value of an entity's properties.
-    member this.Properties = Debug.World.viewEntityProperties (this :> obj) Debug.World.Latest
-
-    /// Get the current value of an entity's xtension properties.
-    member this.XProperties = Debug.World.viewEntityXProperties (this :> obj) Debug.World.Latest
+    /// Get the latest value of an entity's properties.
+    [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
+    member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Latest
 
     /// Create an Entity proxy from an address.
     static member proxy address =

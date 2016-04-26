@@ -84,7 +84,7 @@
     <Compile Include="WorldDebug.fs" />
     <Compile Include="WorldTypes.fs" />
     <Compile Include="WorldEvents.fs" />
-    <Compile Include="WorldModule.fs" />
+    <Compile Include="WorldModules.fs" />
     <Compile Include="WorldFacet.fs" />
     <Compile Include="WorldEntity.fs" />
     <Compile Include="WorldGroup.fs" />
