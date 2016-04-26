@@ -178,7 +178,10 @@ type Game =
     /// the Watch feature in Visual Studio.
     static member viewProperties world =
         let state = World.getGameState world
-        Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
+        state |>
+        getType |>
+        getProperties |>
+        Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state))
         
     /// Provides a view of all the xtension properties of a game. Useful for debugging such as
     /// with the Watch feature in Visual Studio.

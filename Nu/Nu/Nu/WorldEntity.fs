@@ -342,7 +342,7 @@ module WorldEntityModule =
                 let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
                 World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () entity.UpdateAddress eventTrace Simulants.Game world
             else world
-        
+
         /// Actualize an entity.
         static member actualizeEntity (entity : Entity) world =
             let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
@@ -609,7 +609,10 @@ type Entity =
     /// the Watch feature in Visual Studio.
     static member viewProperties entity world =
         let state = World.getEntityState entity world
-        Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
+        state |>
+        getType |>
+        getProperties |>
+        Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state))
         
     /// Provides a view of all the xtension properties of an entity. Useful for debugging such as
     /// with the Watch feature in Visual Studio.
