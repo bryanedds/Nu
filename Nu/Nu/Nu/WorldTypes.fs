@@ -1,20 +1,6 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2012-2016.
 
-namespace Debug
-module internal World =
-
-    /// The latest value of the world for debugging in an IDE. Not to be used for anything else.
-    let mutable internal Latest = obj ()
-    let mutable internal viewGameProperties = fun (_ : obj) -> Map.empty<string, obj>
-    let mutable internal viewGameXProperties = fun (_ : obj) -> Map.empty<string, obj>
-    let mutable internal viewScreenProperties = fun (_ : obj) (_ : obj) -> Map.empty<string, obj>
-    let mutable internal viewScreenXProperties = fun (_ : obj) (_ : obj) -> Map.empty<string, obj>
-    let mutable internal viewGroupProperties = fun (_ : obj) (_ : obj) -> Map.empty<string, obj>
-    let mutable internal viewGroupXProperties = fun (_ : obj) (_ : obj) -> Map.empty<string, obj>
-    let mutable internal viewEntityProperties = fun (_ : obj) (_ : obj) -> Map.empty<string, obj>
-    let mutable internal viewEntityXProperties = fun (_ : obj) (_ : obj) -> Map.empty<string, obj>
-
 namespace Nu
 open System
 open OpenTK
@@ -596,3 +582,49 @@ and [<ReferenceEquality>] World =
             | [_; _] -> Eventable.publishEvent<'a, 'p, Group, World> participant publisher eventData eventAddress eventTrace subscription world
             | [_; _; _] -> Eventable.publishEvent<'a, 'p, Entity, World> participant publisher eventData eventAddress eventTrace subscription world
             | _ -> failwithumf ()
+
+/// Describes an entity value independent of the engine.
+type [<NoComparison>] EntityDescriptor =
+    { EntityDispatcher : string
+      EntityProperties : Map<string, Symbol> }
+
+    /// The empty entity descriptor.
+    static member empty =
+        { EntityDispatcher = String.Empty
+          EntityProperties = Map.empty }
+
+/// Describes a group value independent of the engine.
+type [<NoComparison>] GroupDescriptor =
+    { GroupDispatcher : string
+      GroupProperties : Map<string, Symbol>
+      Entities : EntityDescriptor list }
+
+    /// The empty group descriptor.
+    static member empty =
+        { GroupDispatcher = String.Empty
+          GroupProperties = Map.empty
+          Entities = [] }
+
+/// Describes a screen value independent of the engine.
+type [<NoComparison>] ScreenDescriptor =
+    { ScreenDispatcher : string
+      ScreenProperties : Map<string, Symbol>
+      Groups : GroupDescriptor list }
+
+    /// The empty screen descriptor.
+    static member empty =
+        { ScreenDispatcher = String.Empty
+          ScreenProperties = Map.empty
+          Groups = [] }
+
+/// Describes a game value independent of the engine.
+type [<NoComparison>] GameDescriptor =
+    { GameDispatcher : string
+      GameProperties : Map<string, Symbol>
+      Screens : ScreenDescriptor list }
+
+    /// The empty game descriptor.
+    static member empty =
+        { GameDispatcher = String.Empty
+          GameProperties = Map.empty
+          Screens = [] }
