@@ -563,7 +563,7 @@ module GameplayDispatcherModule =
             let world = World.destroyGroup Simulants.Scene world
             (Cascade, world)
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? ContentRandState Rand.DefaultSeedState
              Define? OngoingRandState Rand.DefaultSeedState
              Define? ShallLoadGame false]

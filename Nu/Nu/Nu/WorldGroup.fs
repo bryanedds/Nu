@@ -28,11 +28,11 @@ module WorldGroupModule =
         member this.GetXtension world = (World.getGroupState this world).Xtension
         member this.UpdateXtension updater world = World.updateGroupState (fun groupState -> { groupState with Xtension = updater groupState.Xtension}) this world
 
-        /// Get an xtension field by name.
-        member this.GetXField name world =
+        /// Get an xtension property by name.
+        member this.GetXProperty name world =
             let xtension = this.GetXtension world
-            let xField = Xtension.getField name xtension
-            xField.FieldValue
+            let xProperty = Xtension.getProperty name xtension
+            xProperty.PropertyValue
 
         /// Query that a group dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world =
@@ -129,7 +129,7 @@ module WorldGroupModule =
             let dispatchers = World.getGroupDispatchers world
             let dispatcher = Map.find dispatcherName dispatchers
             let groupState = GroupState.make optSpecialization optName dispatcher
-            Reflection.attachFields dispatcher groupState
+            Reflection.attachProperties dispatcher groupState
             let group = stog screen groupState.Name
             let world = World.addGroup false groupState group world
             (group, world)
@@ -139,8 +139,8 @@ module WorldGroupModule =
             let groupState = World.getGroupState group world
             let groupDispatcherName = getTypeName groupState.DispatcherNp
             let groupDescriptor = { groupDescriptor with GroupDispatcher = groupDispatcherName }
-            let groupFields = Reflection.writeMemberValuesFromTarget tautology3 groupDescriptor.GroupFields groupState
-            let groupDescriptor = { groupDescriptor with GroupFields = groupFields }
+            let groupProperties = Reflection.writeMemberValuesFromTarget tautology3 groupDescriptor.GroupProperties groupState
+            let groupDescriptor = { groupDescriptor with GroupProperties = groupProperties }
             let entities = World.proxyEntities group world
             World.writeEntities entities groupDescriptor world
 
@@ -179,11 +179,11 @@ module WorldGroupModule =
             // make the bare group state with name as id
             let groupState = GroupState.make None None dispatcher
 
-            // attach the group state's instrinsic fields from its dispatcher if any
-            Reflection.attachFields groupState.DispatcherNp groupState
+            // attach the group state's instrinsic properties from its dispatcher if any
+            Reflection.attachProperties groupState.DispatcherNp groupState
 
             // read the group state's value
-            Reflection.readMemberValuesToTarget groupDescriptor.GroupFields groupState
+            Reflection.readMemberValuesToTarget groupDescriptor.GroupProperties groupState
 
             // apply the name if one is provided
             let groupState =
@@ -228,14 +228,14 @@ type Group =
         let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
         Map.ofSeq properties
         
-    /// Provides a view of all the xtension fields of a group. Useful for debugging such as
+    /// Provides a view of all the xtension properties of a group. Useful for debugging such as
     /// with the Watch feature in Visual Studio.
-    static member viewXFields group world =
+    static member viewXProperties group world =
         let state = World.getGroupState group world
-        let fields = Map.ofSeq ^ Xtension.toSeq state.Xtension
-        Map.map (fun _ field -> field.FieldValue) fields
+        let properties = Map.ofSeq ^ Xtension.toSeq state.Xtension
+        Map.map (fun _ property -> property.PropertyValue) properties
 
     /// Provides a full view of all the member values of a group. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
     static member view group world =
-        Group.viewProperties group world @@ Group.viewXFields group world
+        Group.viewProperties group world @@ Group.viewXProperties group world

@@ -35,7 +35,7 @@ module BulletModule =
                 (Cascade, world)
             else (Cascade, world)
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? Size ^ Vector2 (24.0f, 24.0f)
              Define? Density 0.25f
              Define? Restitution 0.5f
@@ -97,7 +97,7 @@ module EnemyModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? Size ^ Vector2 (48.0f, 96.0f)
              Define? FixedRotation true
              Define? LinearDamping 3.0f
@@ -204,7 +204,7 @@ module PlayerModule =
                 | _ -> (Cascade, world)
             else (Cascade, world)
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? Size ^ Vector2 (48.0f, 96.0f)
              Define? FixedRotation true
              Define? LinearDamping 3.0f

@@ -54,7 +54,7 @@ module MountFacetModule =
                 (Cascade, world)
             else (Cascade, world)
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? PublishChanges true
              Define? OptMountRelation (None : Entity Relation option)
              Define? PositionLocal Vector2.Zero
@@ -100,7 +100,7 @@ module EffectFacetModule =
     type EffectFacet () =
         inherit Facet ()
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? EffectDefinitions (Map.empty : Definitions)
              Define? Effect Effect.empty
              Define? EffectOffset Vector2.Zero
@@ -200,7 +200,7 @@ module RigidBodyFacetModule =
         static let getBodyShape (entity : Entity) world =
             Physics.evalCollisionExpr (entity.GetSize world) (entity.GetCollisionExpr world)
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Variable? MinorId ^ fun () -> makeGuid ()
              Define? BodyType Dynamic
              Define? Awake true
@@ -262,7 +262,7 @@ module StaticSpriteFacetModule =
     type StaticSpriteFacet () =
         inherit Facet ()
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
 
         override facet.Actualize (entity, world) =
@@ -320,7 +320,7 @@ module AnimatedSpriteFacetModule =
             let inset = Vector4 (tileX, tileY, tileX + tileSize.X, tileY + tileSize.Y)
             Some inset
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? TileCount 16 
              Define? TileSize ^ Vector2 (16.0f, 16.0f)
              Define? TileRun 4
@@ -376,7 +376,7 @@ module GuiDispatcherModule =
                 else Cascade
             (handling, world)
         
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? ViewType Absolute
              Define? Enabled true
              Define? DisabledColor ^ Vector4 0.75f
@@ -443,7 +443,7 @@ module ButtonDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? SwallowMouseLeft false
              Define? Down false
              Define? UpImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image" }
@@ -488,7 +488,7 @@ module LabelDispatcherModule =
     type LabelDispatcher () =
         inherit GuiDispatcher ()
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? SwallowMouseLeft true
              Define? LabelImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image4" }]
 
@@ -533,7 +533,7 @@ module TextDispatcherModule =
     type TextDispatcher () =
         inherit GuiDispatcher ()
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? SwallowMouseLeft true
              Define? Text String.Empty
              Define? TextFont { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Font" }
@@ -629,7 +629,7 @@ module ToggleDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? SwallowMouseLeft false
              Define? On false
              Define? Pressed false
@@ -703,7 +703,7 @@ module FeelerDispatcherModule =
                 else (Resolve, world)
             else (Cascade, world)
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? SwallowMouseLeft false
              Define? Touched false]
 
@@ -740,7 +740,7 @@ module FillBarDispatcherModule =
             let spriteHeight = spriteSize.Y - spriteInset.Y * 2.0f
             (spritePosition, Vector2 (spriteWidth, spriteHeight))
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? SwallowMouseLeft true
              Define? Fill 0.0f
              Define? FillInset 0.0f
@@ -789,7 +789,7 @@ module BlockDispatcherModule =
     type BlockDispatcher () =
         inherit EntityDispatcher ()
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? BodyType Static
              Define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
 
@@ -803,7 +803,7 @@ module BoxDispatcherModule =
     type BoxDispatcher () =
         inherit EntityDispatcher ()
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
 
         static member IntrinsicFacetNames =
@@ -816,7 +816,7 @@ module TopViewCharacterDispatcherModule =
     type TopViewCharacterDispatcher () =
         inherit EntityDispatcher ()
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? FixedRotation true
              Define? LinearDamping 10.0f
              Define? GravityScale 0.0f
@@ -833,7 +833,7 @@ module SideViewCharacterDispatcherModule =
     type SideViewCharacterDispatcher () =
         inherit EntityDispatcher ()
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? FixedRotation true
              Define? LinearDamping 3.0f
              Define? CollisionExpr ^ BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero }
@@ -977,7 +977,7 @@ module TileMapDispatcherModule =
                 world
                 tileMapData.Map.Layers
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? Omnipresent true
              Define? Friction 0.0f
              Define? Restitution 0.0f

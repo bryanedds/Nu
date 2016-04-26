@@ -11,7 +11,7 @@ module PlayerDispatcherModule =
     type PlayerDispatcher () =
         inherit CharacterDispatcher ()
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? HitPoints 30 // note this is an arbitrary number as hp max is calculated
              Define? ControlType Player]
 

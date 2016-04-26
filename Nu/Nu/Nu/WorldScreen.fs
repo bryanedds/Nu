@@ -37,11 +37,11 @@ module WorldScreenModule =
         member this.UpdateXtension updater world = World.updateScreenState (fun screenState -> { screenState with Xtension = updater screenState.Xtension}) this world
         member this.GetEntityTree world = (World.getScreenState this world).EntityTreeNp
 
-        /// Get an xtension field by name.
-        member this.GetXField name world =
+        /// Get an xtension property by name.
+        member this.GetXProperty name world =
             let xtension = this.GetXtension world
-            let xField = Xtension.getField name xtension
-            xField.FieldValue
+            let xProperty = Xtension.getProperty name xtension
+            xProperty.PropertyValue
 
         /// Query that a screen is in an idling state (not transitioning in nor out).
         member this.IsIdling world =
@@ -124,7 +124,7 @@ module WorldScreenModule =
             let dispatchers = World.getScreenDispatchers world
             let dispatcher = Map.find dispatcherName dispatchers
             let screenState = ScreenState.make optSpecialization optName dispatcher
-            Reflection.attachFields dispatcher screenState
+            Reflection.attachProperties dispatcher screenState
             let screen = ntos screenState.Name
             let world = World.addScreen false screenState screen world
             (screen, world)
@@ -142,8 +142,8 @@ module WorldScreenModule =
             let screenState = World.getScreenState screen world
             let screenDispatcherName = getTypeName screenState.DispatcherNp
             let screenDescriptor = { screenDescriptor with ScreenDispatcher = screenDispatcherName }
-            let screenFields = Reflection.writeMemberValuesFromTarget tautology3 screenDescriptor.ScreenFields screenState
-            let screenDescriptor = { screenDescriptor with ScreenFields = screenFields }
+            let screenProperties = Reflection.writeMemberValuesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
+            let screenDescriptor = { screenDescriptor with ScreenProperties = screenProperties }
             let groups = World.proxyGroups screen world
             World.writeGroups groups screenDescriptor world
 
@@ -182,11 +182,11 @@ module WorldScreenModule =
             // make the bare screen state with name as id
             let screenState = ScreenState.make None None dispatcher
 
-            // attach the screen state's instrinsic fields from its dispatcher if any
-            Reflection.attachFields screenState.DispatcherNp screenState
+            // attach the screen state's instrinsic properties from its dispatcher if any
+            Reflection.attachProperties screenState.DispatcherNp screenState
 
             // read the screen state's value
-            Reflection.readMemberValuesToTarget screenDescriptor.ScreenFields screenState
+            Reflection.readMemberValuesToTarget screenDescriptor.ScreenProperties screenState
 
             // apply the name if one is provided
             let screenState =
@@ -236,14 +236,14 @@ type Screen =
         let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
         Map.ofSeq properties
         
-    /// Provides a view of all the xtension fields of a screen. Useful for debugging such as
+    /// Provides a view of all the xtension properties of a screen. Useful for debugging such as
     /// with the Watch feature in Visual Studio.
-    static member viewXFields screen world =
+    static member viewXProperties screen world =
         let state = World.getScreenState screen world
-        let fields = Map.ofSeq ^ Xtension.toSeq state.Xtension
-        Map.map (fun _ field -> field.FieldValue) fields
+        let properties = Map.ofSeq ^ Xtension.toSeq state.Xtension
+        Map.map (fun _ property -> property.PropertyValue) properties
 
     /// Provides a full view of all the member values of a screen. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
     static member view screen world =
-        Screen.viewProperties screen world @@ Screen.viewXFields screen world
+        Screen.viewProperties screen world @@ Screen.viewXProperties screen world

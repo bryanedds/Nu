@@ -9,45 +9,45 @@ open Nu
 /// Describes an entity value independent of the engine.
 type [<NoComparison>] EntityDescriptor =
     { EntityDispatcher : string
-      EntityFields : Map<string, Symbol> }
+      EntityProperties : Map<string, Symbol> }
 
     /// The empty entity descriptor.
     static member empty =
         { EntityDispatcher = String.Empty
-          EntityFields = Map.empty }
+          EntityProperties = Map.empty }
 
 /// Describes a group value independent of the engine.
 type [<NoComparison>] GroupDescriptor =
     { GroupDispatcher : string
-      GroupFields : Map<string, Symbol>
+      GroupProperties : Map<string, Symbol>
       Entities : EntityDescriptor list }
 
     /// The empty group descriptor.
     static member empty =
         { GroupDispatcher = String.Empty
-          GroupFields = Map.empty
+          GroupProperties = Map.empty
           Entities = [] }
 
 /// Describes a screen value independent of the engine.
 type [<NoComparison>] ScreenDescriptor =
     { ScreenDispatcher : string
-      ScreenFields : Map<string, Symbol>
+      ScreenProperties : Map<string, Symbol>
       Groups : GroupDescriptor list }
 
     /// The empty screen descriptor.
     static member empty =
         { ScreenDispatcher = String.Empty
-          ScreenFields = Map.empty
+          ScreenProperties = Map.empty
           Groups = [] }
 
 /// Describes a game value independent of the engine.
 type [<NoComparison>] GameDescriptor =
     { GameDispatcher : string
-      GameFields : Map<string, Symbol>
+      GameProperties : Map<string, Symbol>
       Screens : ScreenDescriptor list }
 
     /// The empty game descriptor.
     static member empty =
         { GameDispatcher = String.Empty
-          GameFields = Map.empty
+          GameProperties = Map.empty
           Screens = [] }
