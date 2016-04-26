@@ -120,8 +120,8 @@ module WorldGameModule =
             let gameState = World.getGameState world
             let gameDispatcherName = getTypeName gameState.DispatcherNp
             let gameDescriptor = { gameDescriptor with GameDispatcher = gameDispatcherName }
-            let gameProperties = Reflection.writeMemberValuesFromTarget tautology3 gameDescriptor.GameProperties gameState
-            let gameDescriptor = { gameDescriptor with GameProperties = gameProperties }
+            let viewGameProperties = Reflection.writeMemberValuesFromTarget tautology3 gameDescriptor.GameProperties gameState
+            let gameDescriptor = { gameDescriptor with GameProperties = viewGameProperties }
             let screens = World.proxyScreens world
             World.writeScreens screens gameDescriptor world
 

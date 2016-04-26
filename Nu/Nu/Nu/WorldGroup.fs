@@ -139,8 +139,8 @@ module WorldGroupModule =
             let groupState = World.getGroupState group world
             let groupDispatcherName = getTypeName groupState.DispatcherNp
             let groupDescriptor = { groupDescriptor with GroupDispatcher = groupDispatcherName }
-            let groupProperties = Reflection.writeMemberValuesFromTarget tautology3 groupDescriptor.GroupProperties groupState
-            let groupDescriptor = { groupDescriptor with GroupProperties = groupProperties }
+            let getGroupProperties = Reflection.writeMemberValuesFromTarget tautology3 groupDescriptor.GroupProperties groupState
+            let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
             let entities = World.proxyEntities group world
             World.writeEntities entities groupDescriptor world
 

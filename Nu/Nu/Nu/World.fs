@@ -45,14 +45,14 @@ module Nu =
 
             // init F# reach-arounds
 #if DEBUG
-            Debug.World.gameProperties <- fun world -> Debug.Game.viewProperties (world :?> World)
-            Debug.World.gameXProperties <- fun world -> Debug.Game.viewXProperties (world :?> World)
-            Debug.World.screenProperties <- fun screen world -> Debug.Screen.viewProperties (screen :?> Screen) (world :?> World)
-            Debug.World.screenXProperties <- fun screen world -> Debug.Screen.viewXProperties (screen :?> Screen) (world :?> World)
-            Debug.World.groupProperties <- fun group world -> Debug.Group.viewProperties (group :?> Group) (world :?> World)
-            Debug.World.groupXProperties <- fun group world -> Debug.Group.viewXProperties (group :?> Group) (world :?> World)
-            Debug.World.entityProperties <- fun entity world -> Debug.Entity.viewProperties (entity :?> Entity) (world :?> World)
-            Debug.World.entityXProperties <- fun entity world -> Debug.Entity.viewXProperties (entity :?> Entity) (world :?> World)
+            Debug.World.viewGameProperties <- fun world -> Debug.Game.viewProperties (world :?> World)
+            Debug.World.viewGameXProperties <- fun world -> Debug.Game.viewXProperties (world :?> World)
+            Debug.World.viewScreenProperties <- fun screen world -> Debug.Screen.viewProperties (screen :?> Screen) (world :?> World)
+            Debug.World.viewScreenXProperties <- fun screen world -> Debug.Screen.viewXProperties (screen :?> Screen) (world :?> World)
+            Debug.World.viewGroupProperties <- fun group world -> Debug.Group.viewProperties (group :?> Group) (world :?> World)
+            Debug.World.viewGroupXProperties <- fun group world -> Debug.Group.viewXProperties (group :?> Group) (world :?> World)
+            Debug.World.viewEntityProperties <- fun entity world -> Debug.Entity.viewProperties (entity :?> Entity) (world :?> World)
+            Debug.World.viewEntityXProperties <- fun entity world -> Debug.Entity.viewXProperties (entity :?> Entity) (world :?> World)
 #endif
             // TODO: define this somewhere else...
             World.rebuildEntityTree <- fun screen world ->
