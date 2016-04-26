@@ -233,7 +233,10 @@ type Screen =
     /// the Watch feature in Visual Studio.
     static member viewProperties screen world =
         let state = World.getScreenState screen world
-        Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
+        state |>
+        getType |>
+        getProperties |>
+        Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state))
         
     /// Provides a view of all the xtension properties of a screen. Useful for debugging such as
     /// with the Watch feature in Visual Studio.
