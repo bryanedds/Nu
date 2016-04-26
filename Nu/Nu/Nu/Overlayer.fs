@@ -16,7 +16,7 @@ type Overlay =
       OverlayIncludeNames : string list
       OverlayProperties : Map<string, Symbol> }
 
-/// Describes the overlay state of a field.
+/// Describes the overlay state of a property.
 type internal OverlayState =
     | Bare
     | Altered
@@ -56,7 +56,7 @@ module OverlayerModule =
                 let optPropertyValue =
                     match (optProperty, optXtension) with
                     | (null, None) -> None
-                    | (null, Some xtension) -> Some (Xtension.getField propertyName xtension).FieldValue
+                    | (null, Some xtension) -> Some (Xtension.getProperty propertyName xtension).PropertyValue
                     | (targetProperty, _) -> Some ^ targetProperty.GetValue target
                 match optPropertyValue with
                 | Some propertyValue ->
@@ -84,7 +84,7 @@ module OverlayerModule =
                     | None -> false
                 | _ -> false
 
-        let private tryApplyOverlayToRecordField facetNames (property : PropertyInfo) (propertySymbol : Symbol) oldOverlayName target oldOverlayer =
+        let private tryApplyOverlayToRecordProperty facetNames (property : PropertyInfo) (propertySymbol : Symbol) oldOverlayName target oldOverlayer =
             let shouldApplyOverlay =
                 property.PropertyType <> typeof<Xtension> &&
                 isPropertyOverlaid oldOverlayName facetNames property.Name property.PropertyType target oldOverlayer
@@ -100,7 +100,7 @@ module OverlayerModule =
             for property in targetProperties do
                 if property.Name <> "FacetNames" && property.PropertyType <> typeof<string Set> then
                     match tryFindPropertySymbol newOverlayName property.Name newOverlayer with
-                    | Some propertySymbol -> tryApplyOverlayToRecordField facetNames property propertySymbol oldOverlayName target oldOverlayer
+                    | Some propertySymbol -> tryApplyOverlayToRecordProperty facetNames property propertySymbol oldOverlayName target oldOverlayer
                     | None -> ()
 
         // TODO: see if this can be decomposed
@@ -112,43 +112,43 @@ module OverlayerModule =
                 match xtensionProperty.GetValue target with
                 | :? Xtension as xtension ->
                     let nodes =
-                        Seq.foldBack (fun (xFieldName, xField) optNodes ->
-                            match tryFindPropertySymbol newOverlayName xFieldName newOverlayer with
-                            | Some xFieldSymbol -> (xFieldName, xField.FieldType, xFieldSymbol) :: optNodes
+                        Seq.foldBack (fun (xPropertyName, xProperty) optNodes ->
+                            match tryFindPropertySymbol newOverlayName xPropertyName newOverlayer with
+                            | Some xPropertySymbol -> (xPropertyName, xProperty.PropertyType, xPropertySymbol) :: optNodes
                             | None -> optNodes)
                             (Xtension.toSeq xtension)
                             []
                     let xtension =
-                        List.foldBack (fun (xFieldName, xFieldType, xFieldSymbol : Symbol) xtension ->
-                            if isPropertyOverlaid oldOverlayName facetNames xFieldName xFieldType target oldOverlayer then
-                                let xFieldValue = SymbolicDescriptor.convertFrom xFieldSymbol xFieldType
-                                let xField = { FieldValue = xFieldValue; FieldType = xFieldType }
-                                Xtension.attachField xFieldName xField xtension
+                        List.foldBack (fun (xPropertyName, xPropertyType, xPropertySymbol : Symbol) xtension ->
+                            if isPropertyOverlaid oldOverlayName facetNames xPropertyName xPropertyType target oldOverlayer then
+                                let xPropertyValue = SymbolicDescriptor.convertFrom xPropertySymbol xPropertyType
+                                let xProperty = { PropertyValue = xPropertyValue; PropertyType = xPropertyType }
+                                Xtension.attachProperty xPropertyName xProperty xtension
                             else xtension)
                             nodes
                             xtension
                     xtensionProperty.SetValue (target, xtension)
                 | _ -> ()
 
-        /// Apply an overlay to the FacetNames field of the given target.
+        /// Apply an overlay to the FacetNames property of the given target.
         let applyOverlayToFacetNames oldOverlayName newOverlayName target oldOverlayer newOverlayer =
             let targetType = target.GetType ()
             match targetType.GetProperty "FacetNames" with
             | null -> ()
             | facetNamesProperty ->
                 match tryFindPropertySymbol newOverlayName facetNamesProperty.Name newOverlayer with
-                | Some propertySymbol -> tryApplyOverlayToRecordField [] facetNamesProperty propertySymbol oldOverlayName target oldOverlayer
+                | Some propertySymbol -> tryApplyOverlayToRecordProperty [] facetNamesProperty propertySymbol oldOverlayName target oldOverlayer
                 | None -> ()
 
-        /// Apply an overlay to the given target (except for any FacetNames field).
-        /// Only the properties / fields that are overlaid by the old overlay as specified by the old
+        /// Apply an overlay to the given target (except for any FacetNames property).
+        /// Only the properties that are overlaid by the old overlay as specified by the old
         /// overlayer will be changed.
         let applyOverlay6 oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
             applyOverlayToProperties oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer
             applyOverlayToXtension oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer
 
         /// Apply an overlay to the given target.
-        /// Only the properties / fields that are overlaid by the old overlay will be changed.
+        /// Only the properties that are overlaid by the old overlay will be changed.
         let applyOverlay oldOverlayName newOverlayName facetNames target overlayer =
             applyOverlay6 oldOverlayName newOverlayName facetNames target overlayer overlayer
 

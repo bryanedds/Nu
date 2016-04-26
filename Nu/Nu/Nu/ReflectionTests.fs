@@ -21,8 +21,8 @@ module ReflectionTests =
 
     let [<Fact>] xtensionSerializationViaContainingTypeWorks () =
         let xtd = { Xtension = Xtension.mixed }
-        let xtd = xtd?TestField <- 5
-        let fields = Reflection.writeMemberValuesFromTarget tautology3 Map.empty xtd
+        let xtd = xtd?TestProperty <- 5
+        let properties = Reflection.writeMemberValuesFromTarget tautology3 Map.empty xtd
         let xtdRead = { xtd with Xtension = xtd.Xtension } // hacky copy
-        Reflection.readMemberValuesToTarget fields xtdRead
-        Assert.Equal((xtd?TestField : int), (xtdRead?TestField : int))
+        Reflection.readMemberValuesToTarget properties xtdRead
+        Assert.Equal((xtd?TestProperty : int), (xtdRead?TestProperty : int))

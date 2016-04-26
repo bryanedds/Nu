@@ -20,17 +20,17 @@ module WorldFacetModule =
             | None -> Left ^ "Invalid facet name '" + facetName + "'."
 
         static member private isFacetCompatibleWithEntity entityDispatcherMap facet (entityState : EntityState) =
-            // Note a facet is incompatible with any other facet if it contains any fields that has
+            // Note a facet is incompatible with any other facet if it contains any properties that has
             // the same name but a different type.
             let facetType = facet.GetType ()
-            let facetFieldDefinitions = Reflection.getFieldDefinitions facetType
+            let facetPropertyDefinitions = Reflection.getPropertyDefinitions facetType
             if Reflection.isFacetCompatibleWithDispatcher entityDispatcherMap facet entityState then
                 List.notExists
                     (fun definition ->
-                        match Xtension.tryGetField definition.FieldName entityState.Xtension with
-                        | Some field -> field.GetType () <> definition.FieldType
+                        match Xtension.tryGetProperty definition.PropertyName entityState.Xtension with
+                        | Some property -> property.GetType () <> definition.PropertyType
                         | None -> false)
-                    facetFieldDefinitions
+                    facetPropertyDefinitions
             else false
 
         static member private getFacetNamesToAdd oldFacetNames newFacetNames =
@@ -39,34 +39,34 @@ module WorldFacetModule =
         static member private getFacetNamesToRemove oldFacetNames newFacetNames =
             Set.difference oldFacetNames newFacetNames
 
-        static member private getEntityFieldDefinitionNamesToDetach entityState facetToRemove =
+        static member private getEntityPropertyDefinitionNamesToDetach entityState facetToRemove =
 
-            // get the field definition name counts of the current, complete entity
-            let fieldDefinitions = Reflection.getReflectiveFieldDefinitionMap entityState
-            let fieldDefinitionNameCounts = Reflection.getFieldDefinitionNameCounts fieldDefinitions
+            // get the property definition name counts of the current, complete entity
+            let PropertyDefinitions = Reflection.getReflectivePropertyDefinitionMap entityState
+            let propertyDefinitionNameCounts = Reflection.getPropertyDefinitionNameCounts PropertyDefinitions
 
-            // get the field definition name counts of the facet to remove
+            // get the property definition name counts of the facet to remove
             let facetType = facetToRemove.GetType ()
-            let facetFieldDefinitions = Map.singleton facetType.Name ^ Reflection.getFieldDefinitions facetType
-            let facetFieldDefinitionNameCounts = Reflection.getFieldDefinitionNameCounts facetFieldDefinitions
+            let facetPropertyDefinitions = Map.singleton facetType.Name ^ Reflection.getPropertyDefinitions facetType
+            let facetPropertyDefinitionNameCounts = Reflection.getPropertyDefinitionNameCounts facetPropertyDefinitions
 
             // compute the difference of the counts
-            let finalFieldDefinitionNameCounts =
+            let finalPropertyDefinitionNameCounts =
                 Map.map
-                    (fun fieldName fieldCount ->
-                        match Map.tryFind fieldName facetFieldDefinitionNameCounts with
-                        | Some facetFieldCount -> fieldCount - facetFieldCount
-                        | None -> fieldCount)
-                    fieldDefinitionNameCounts
+                    (fun propertyName propertyCount ->
+                        match Map.tryFind propertyName facetPropertyDefinitionNameCounts with
+                        | Some facetPropertyCount -> propertyCount - facetPropertyCount
+                        | None -> propertyCount)
+                    propertyDefinitionNameCounts
 
-            // build a set of all field names where the final counts are negative
+            // build a set of all property names where the final counts are negative
             Map.fold
-                (fun fieldNamesToDetach fieldName fieldCount ->
-                    if fieldCount = 0
-                    then Set.add fieldName fieldNamesToDetach
-                    else fieldNamesToDetach)
+                (fun propertyNamesToDetach propertyName propertyCount ->
+                    if propertyCount = 0
+                    then Set.add propertyName propertyNamesToDetach
+                    else propertyNamesToDetach)
                 Set.empty
-                finalFieldDefinitionNameCounts
+                finalPropertyDefinitionNameCounts
 
         static member private tryRemoveFacet facetName entityState optEntity world =
             match List.tryFind (fun facet -> getTypeName facet = facetName) entityState.FacetsNp with
@@ -80,8 +80,8 @@ module WorldFacetModule =
                     | None -> (entityState, world)
                 let entityState = { entityState with FacetNames = Set.remove facetName entityState.FacetNames }
                 let entityState = { entityState with FacetsNp = List.remove ((=) facet) entityState.FacetsNp }
-                let fieldNames = World.getEntityFieldDefinitionNamesToDetach entityState facet
-                Reflection.detachFieldsViaNames fieldNames entityState // hacky copy elided
+                let propertyNames = World.getEntityPropertyDefinitionNamesToDetach entityState facet
+                Reflection.detachPropertiesViaNames propertyNames entityState // hacky copy elided
                 match optEntity with
                 | Some entity ->
                     let oldWorld = world
@@ -99,7 +99,7 @@ module WorldFacetModule =
                 if World.isFacetCompatibleWithEntity entityDispatchers facet entityState then
                     let entityState = { entityState with FacetNames = Set.add facetName entityState.FacetNames }
                     let entityState = { entityState with FacetsNp = facet :: entityState.FacetsNp }
-                    Reflection.attachFields facet entityState // hacky copy elided
+                    Reflection.attachProperties facet entityState // hacky copy elided
                     match optEntity with
                     | Some entity ->
                         let oldWorld = world

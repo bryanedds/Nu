@@ -42,7 +42,7 @@ module CharacterStateFacetModule =
     type CharacterStateFacet () =
         inherit Facet ()
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? CharacterType Player
              Define? ActivityState NoActivity
              Define? HitPoints 10 // note this is an arbitrary number as hp max is calculated
@@ -129,7 +129,7 @@ module CharacterAnimationFacetModule =
                      spriteOffset.Y + Constants.Layout.TileSize.Y)
             Some spriteInset
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define?
                 CharacterAnimationState
                     { AnimationType = CharacterAnimationFacing

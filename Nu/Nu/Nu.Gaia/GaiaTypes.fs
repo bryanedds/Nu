@@ -41,13 +41,13 @@ type [<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>] EntityTy
       RefWorld : World ref }
 
 and EntityPropertyDescriptor (property, attributes) =
-    inherit PropertyDescriptor (
-        (match property with EntityXFieldDescriptor xfd -> xfd.FieldName | EntityPropertyInfo pi -> pi.Name),
+    inherit System.ComponentModel.PropertyDescriptor (
+        (match property with EntityXPropertyDescriptor xfd -> xfd.PropertyName | EntityPropertyInfo pi -> pi.Name),
         attributes)
 
-    let propertyName = match property with EntityXFieldDescriptor xfd -> xfd.FieldName | EntityPropertyInfo pi -> pi.Name
-    let propertyType = match property with EntityXFieldDescriptor xfd -> xfd.FieldType | EntityPropertyInfo pi -> pi.PropertyType
-    let propertyCanWrite = match property with EntityXFieldDescriptor _ -> true | EntityPropertyInfo xfd -> xfd.CanWrite
+    let propertyName = match property with EntityXPropertyDescriptor xfd -> xfd.PropertyName | EntityPropertyInfo pi -> pi.Name
+    let propertyType = match property with EntityXPropertyDescriptor xfd -> xfd.PropertyType | EntityPropertyInfo pi -> pi.PropertyType
+    let propertyCanWrite = match property with EntityXPropertyDescriptor _ -> true | EntityPropertyInfo xfd -> xfd.CanWrite
 
     let pushPastWorld pastWorld world =
         World.updateUserState
@@ -136,7 +136,7 @@ and EntityTypeDescriptor (optSource : obj) =
             | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity.GetXtension !source.RefWorld)
             | _ -> None
         ignore optXtension
-        let makePropertyDescriptor = fun (emv, tcas) -> (EntityPropertyDescriptor (emv, Array.map (fun attr -> attr :> Attribute) tcas)) :> PropertyDescriptor
+        let makePropertyDescriptor = fun (emv, tcas) -> (EntityPropertyDescriptor (emv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
         let propertyDescriptors = EntityMemberValue.getPropertyDescriptors makePropertyDescriptor optXtension
         PropertyDescriptorCollection (Array.ofList propertyDescriptors)
 

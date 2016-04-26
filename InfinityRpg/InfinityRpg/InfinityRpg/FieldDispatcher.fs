@@ -31,7 +31,7 @@ module FieldDispatcherModule =
                      tileOffset.Y + Constants.Layout.TileSize.Y)
             Some tileInset
 
-        static member FieldDefinitions =
+        static member PropertyDefinitions =
             [Define? Omnipresent true
              Define? FieldMapNp DefaultFieldMap]
 

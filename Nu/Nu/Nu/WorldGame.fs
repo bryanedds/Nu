@@ -26,11 +26,11 @@ module WorldGameModule =
         member this.GetXtension world = (World.getGameState world).Xtension
         member this.UpdateXtension updater world = World.updateGameState (fun gameState -> { gameState with Xtension = updater gameState.Xtension}) world
 
-        /// Get an xtension field by name.
-        member this.GetXField name world =
+        /// Get an xtension property by name.
+        member this.GetXProperty name world =
             let xtension = this.GetXtension world
-            let xField = Xtension.getField name xtension
-            xField.FieldValue
+            let xProperty = Xtension.getProperty name xtension
+            xProperty.PropertyValue
 
         /// Query that a game dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world =
@@ -54,7 +54,7 @@ module WorldGameModule =
 
         static member internal makeGameState dispatcher =
             let gameState = GameState.make dispatcher
-            Reflection.attachFields dispatcher gameState
+            Reflection.attachProperties dispatcher gameState
             gameState
 
         // Get all the entities in the world.
@@ -120,8 +120,8 @@ module WorldGameModule =
             let gameState = World.getGameState world
             let gameDispatcherName = getTypeName gameState.DispatcherNp
             let gameDescriptor = { gameDescriptor with GameDispatcher = gameDispatcherName }
-            let gameFields = Reflection.writeMemberValuesFromTarget tautology3 gameDescriptor.GameFields gameState
-            let gameDescriptor = { gameDescriptor with GameFields = gameFields }
+            let gameProperties = Reflection.writeMemberValuesFromTarget tautology3 gameDescriptor.GameProperties gameState
+            let gameDescriptor = { gameDescriptor with GameProperties = gameProperties }
             let screens = World.proxyScreens world
             World.writeScreens screens gameDescriptor world
 
@@ -153,7 +153,7 @@ module WorldGameModule =
             let gameState = World.makeGameState dispatcher
 
             // read the game state's value
-            Reflection.readMemberValuesToTarget gameDescriptor.GameFields gameState
+            Reflection.readMemberValuesToTarget gameDescriptor.GameProperties gameState
 
             // set the game's state in the world
             let world = World.setGameState gameState world
@@ -181,14 +181,14 @@ type Game =
         let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
         Map.ofSeq properties
         
-    /// Provides a view of all the xtension fields of a game. Useful for debugging such as
+    /// Provides a view of all the xtension properties of a game. Useful for debugging such as
     /// with the Watch feature in Visual Studio.
-    static member viewXFields world =
+    static member viewXProperties world =
         let state = World.getGameState world
-        let fields = Map.ofSeq ^ Xtension.toSeq state.Xtension
-        Map.map (fun _ field -> field.FieldValue) fields
+        let properties = Map.ofSeq ^ Xtension.toSeq state.Xtension
+        Map.map (fun _ property -> property.PropertyValue) properties
 
     /// Provides a full view of all the member values of a game. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
     static member view world =
-        Game.viewProperties world @@ Game.viewXFields world
+        Game.viewProperties world @@ Game.viewXProperties world

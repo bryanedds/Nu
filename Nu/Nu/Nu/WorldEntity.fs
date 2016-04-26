@@ -51,11 +51,11 @@ module WorldEntityModule =
         member this.GetXtension world = (World.getEntityState this world).Xtension
         member this.UpdateXtension updater world = World.updateEntityState (fun entityState -> { entityState with Xtension = updater entityState.Xtension}) this world
 
-        /// Get an xtension field by name.
-        member this.GetXField name world =
+        /// Get an xtension property by name.
+        member this.GetXProperty name world =
             let xtension = this.GetXtension world
-            let xField = Xtension.getField name xtension
-            xField.FieldValue
+            let xProperty = Xtension.getProperty name xtension
+            xProperty.PropertyValue
 
         /// Get an entity's bounds, not taking into account its overflow.
         member this.GetBounds world =
@@ -287,7 +287,7 @@ module WorldEntityModule =
             // make the bare entity state (with name as id if none is provided)
             let entityState = EntityState.make optSpecialization optName defaultOptOverlayName dispatcher
 
-            // attach the entity state's intrinsic facets and their fields
+            // attach the entity state's intrinsic facets and their properties
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
 
             // apply the entity state's overlay to its facet names
@@ -298,14 +298,14 @@ module WorldEntityModule =
                     // apply overlay to facets
                     Overlayer.applyOverlayToFacetNames intrinsicOverlayName defaultOverlayName entityState overlayer overlayer
 
-                    // synchronize the entity's facets (and attach their fields)
+                    // synchronize the entity's facets (and attach their properties)
                     match World.trySynchronizeFacetsToNames Set.empty entityState None world with
                     | Right (entityState, _) -> entityState
                     | Left error -> Log.debug error; entityState
                 | None -> entityState
 
-            // attach the entity state's dispatcher fields
-            Reflection.attachFields dispatcher entityState
+            // attach the entity state's dispatcher properties
+            Reflection.attachProperties dispatcher entityState
 
             // apply the entity state's overlay
             let entityState =
@@ -442,8 +442,8 @@ module WorldEntityModule =
                     let overlayer = World.getOverlayer world
                     let facetNames = World.getEntityFacetNamesReflectively entityState
                     Overlayer.shouldPropertySerialize5 facetNames propertyName propertyType entityState overlayer
-            let entityFields = Reflection.writeMemberValuesFromTarget shouldWriteProperty entityDescriptor.EntityFields entityState
-            { entityDescriptor with EntityFields = entityFields }
+            let entityProperties = Reflection.writeMemberValuesFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
+            { entityDescriptor with EntityProperties = entityProperties }
 
         /// Write multiple entities to a group descriptor.
         static member writeEntities entities groupDescriptor world =
@@ -479,22 +479,22 @@ module WorldEntityModule =
             // make the bare entity state with name as id
             let entityState = EntityState.make None None defaultOptOverlayName dispatcher
 
-            // attach the entity state's intrinsic facets and their fields
+            // attach the entity state's intrinsic facets and their properties
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
 
             // read the entity state's overlay and apply it to its facet names if applicable
-            Reflection.tryReadOptOverlayNameToTarget entityDescriptor.EntityFields entityState
+            Reflection.tryReadOptOverlayNameToTarget entityDescriptor.EntityProperties entityState
             match (defaultOptOverlayName, entityState.OptOverlayName) with
             | (Some defaultOverlayName, Some overlayName) -> Overlayer.applyOverlayToFacetNames defaultOverlayName overlayName entityState overlayer overlayer
             | (_, _) -> ()
 
             // read the entity state's facet names
-            Reflection.readFacetNamesToTarget entityDescriptor.EntityFields entityState
+            Reflection.readFacetNamesToTarget entityDescriptor.EntityProperties entityState
 
-            // attach the entity state's dispatcher fields
-            Reflection.attachFields dispatcher entityState
+            // attach the entity state's dispatcher properties
+            Reflection.attachProperties dispatcher entityState
             
-            // synchronize the entity state's facets (and attach their fields)
+            // synchronize the entity state's facets (and attach their properties)
             let entityState =
                 match World.trySynchronizeFacetsToNames Set.empty entityState None world with
                 | Right (entityState, _) -> entityState
@@ -512,7 +512,7 @@ module WorldEntityModule =
             | None -> ()
 
             // read the entity state's values
-            Reflection.readMemberValuesToTarget entityDescriptor.EntityFields entityState
+            Reflection.readMemberValuesToTarget entityDescriptor.EntityProperties entityState
 
             // apply the name if one is provided
             let entityState =
@@ -536,7 +536,7 @@ module WorldEntityModule =
 
     /// Represents the member value of an entity as accessible via reflection.
     type [<ReferenceEquality>] EntityMemberValue =
-        | EntityXFieldDescriptor of XFieldDescriptor
+        | EntityXPropertyDescriptor of XPropertyDescriptor
         | EntityPropertyInfo of PropertyInfo
 
         /// Query that an entity contains the given property.
@@ -547,9 +547,9 @@ module WorldEntityModule =
         /// Get the entity member's value.
         static member getValue property (entity : Entity) world =
             match property with
-            | EntityXFieldDescriptor xfd ->
+            | EntityXPropertyDescriptor xfd ->
                 let xtension = entity.GetXtension world
-                (Xtension.getField xfd.FieldName xtension).FieldValue
+                (Xtension.getProperty xfd.PropertyName xtension).PropertyValue
             | EntityPropertyInfo propertyInfo ->
                 let entityState = World.getEntityState entity world
                 propertyInfo.GetValue entityState
@@ -557,10 +557,10 @@ module WorldEntityModule =
         /// Set the entity member's value.
         static member setValue property value (entity : Entity) world =
             match property with
-            | EntityXFieldDescriptor xfd ->
+            | EntityXPropertyDescriptor xfd ->
                 entity.UpdateXtension (fun xtension ->
-                    let xField = { FieldValue = value; FieldType = xfd.FieldType }
-                    Xtension.attachField xfd.FieldName xField xtension)
+                    let xProperty = { PropertyValue = value; PropertyType = xfd.PropertyType }
+                    Xtension.attachProperty xfd.PropertyName xProperty xtension)
                     world
             | EntityPropertyInfo propertyInfo ->
                 let entityState = World.getEntityState entity world
@@ -583,18 +583,18 @@ module WorldEntityModule =
             let propertyDescriptors =
                 match optXtension with
                 | Some xtension ->
-                    let xFieldDescriptors =
+                    let xPropertyDescriptors =
                         Seq.fold
-                            (fun xFieldDescriptors (xFieldName, xField : XField) ->
-                                let xFieldType = xField.FieldType
-                                if Reflection.isPropertyPersistentByName xFieldName then
-                                    let xFieldDescriptor = EntityXFieldDescriptor { FieldName = xFieldName; FieldType = xFieldType }
-                                    let xFieldDescriptor : PropertyDescriptor = makePropertyDescriptor (xFieldDescriptor, [|typeConverterAttribute|])
-                                    xFieldDescriptor :: xFieldDescriptors
-                                else xFieldDescriptors)
+                            (fun xPropertyDescriptors (xPropertyName, xProperty : XProperty) ->
+                                let xPropertyType = xProperty.PropertyType
+                                if Reflection.isPropertyPersistentByName xPropertyName then
+                                    let xPropertyDescriptor = EntityXPropertyDescriptor { PropertyName = xPropertyName; PropertyType = xPropertyType }
+                                    let xPropertyDescriptor : System.ComponentModel.PropertyDescriptor = makePropertyDescriptor (xPropertyDescriptor, [|typeConverterAttribute|])
+                                    xPropertyDescriptor :: xPropertyDescriptors
+                                else xPropertyDescriptors)
                             []
                             (Xtension.toSeq xtension)
-                    Seq.append xFieldDescriptors propertyDescriptors
+                    Seq.append xPropertyDescriptors propertyDescriptors
                 | None -> propertyDescriptors
             List.ofSeq propertyDescriptors
 
@@ -612,14 +612,14 @@ type Entity =
         let properties = Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) ((state.GetType ()).GetProperties ())
         Map.ofSeq properties
         
-    /// Provides a view of all the xtension fields of an entity. Useful for debugging such as
+    /// Provides a view of all the xtension properties of an entity. Useful for debugging such as
     /// with the Watch feature in Visual Studio.
-    static member viewXFields entity world =
+    static member viewXProperties entity world =
         let state = World.getEntityState entity world
-        let fields = Map.ofSeq ^ Xtension.toSeq state.Xtension
-        Map.map (fun _ field -> field.FieldValue) fields
+        let properties = Map.ofSeq ^ Xtension.toSeq state.Xtension
+        Map.map (fun _ property -> property.PropertyValue) properties
 
     /// Provides a full view of all the member values of an entity. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
     static member view entity world =
-        Entity.viewProperties entity world @@ Entity.viewXFields entity world
+        Entity.viewProperties entity world @@ Entity.viewXProperties entity world

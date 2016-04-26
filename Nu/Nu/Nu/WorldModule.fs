@@ -46,28 +46,28 @@ module Simulants =
 
 module Descriptors =
 
-    /// Describe a game with the given fields values and contained screens.
-    let Game<'d when 'd :> GameDispatcher> fields screens =
+    /// Describe a game with the given properties values and contained screens.
+    let Game<'d when 'd :> GameDispatcher> properties screens =
         { GameDispatcher = typeof<'d>.Name
-          GameFields = Map.ofSeq fields
+          GameProperties = Map.ofSeq properties
           Screens = List.ofSeq screens }
 
-    /// Describe a screen with the given fields values and contained groups.
-    let Screen<'d when 'd :> ScreenDispatcher> fields groups =
+    /// Describe a screen with the given properties values and contained groups.
+    let Screen<'d when 'd :> ScreenDispatcher> properties groups =
         { ScreenDispatcher = typeof<'d>.Name
-          ScreenFields = Map.ofSeq fields
+          ScreenProperties = Map.ofSeq properties
           Groups = List.ofSeq groups }
 
-    /// Describe a group with the given fields values and contained entities.
-    let Group<'d when 'd :> GroupDispatcher> fields entities =
+    /// Describe a group with the given properties values and contained entities.
+    let Group<'d when 'd :> GroupDispatcher> properties entities =
         { GroupDispatcher = typeof<'d>.Name
-          GroupFields = Map.ofSeq fields
+          GroupProperties = Map.ofSeq properties
           Entities = List.ofSeq entities }
 
-    /// Describe an entity with the given fields values.
-    let Entity<'d when 'd :> EntityDispatcher> fields =
+    /// Describe an entity with the given properties values.
+    let Entity<'d when 'd :> EntityDispatcher> properties =
         { EntityDispatcher = typeof<'d>.Name
-          EntityFields = Map.ofSeq fields }
+          EntityProperties = Map.ofSeq properties }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module World =

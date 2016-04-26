@@ -386,22 +386,22 @@
 </member>
 <member name="T:Prime.XDefaultValueAttribute">
 <summary>
- An attribute to specify the default value of an XField.
+ An attribute to specify the default value of an XProperty.
 </summary>
 </member>
-<member name="T:Prime.XField">
+<member name="T:Prime.XProperties">
 <summary>
- An Xtension field.
+ A map of XProperties.
 </summary>
 </member>
-<member name="T:Prime.XFieldDescriptor">
+<member name="T:Prime.XProperty">
 <summary>
- Describes an XField.
+ An Xtension property.
 </summary>
 </member>
-<member name="T:Prime.XFields">
+<member name="T:Prime.XPropertyDescriptor">
 <summary>
- A map of XFields.
+ Describes an XProperty.
 </summary>
 </member>
 <member name="M:Prime.AddressModule.Address`1.op_MinusLessMinus``1(Prime.AddressModule.Address{System.Object},Prime.AddressModule.Address{``0})">
@@ -2069,7 +2069,6 @@
  
  0
  None
- [2 2]
  Hello_World
  CharacterAnimationFacing
  &quot;String with quoted spaces.&quot;
@@ -2095,7 +2094,6 @@
  
  0
  None
- [2 2]
  Hello_World
  CharacterAnimationFacing
  &quot;String with quoted spaces.&quot;
@@ -2429,6 +2427,7 @@
 <member name="T:Prime.VsyncModule.Vsync`1">
 <summary>
  The &apos;Vsync&apos; (AKA, &apos;Variable Synchrony&apos;) monad.
+ Allows code to run in either an async or synchronous fashion to aid in debugging.
  NOTE: to reference how all this stuff works in F#, see here - https://msdn.microsoft.com/en-us/library/dd233182.aspx
 </summary>
 </member>
@@ -2591,10 +2590,10 @@
 <member name="T:Prime.XtensionModule.Xtension">
 <summary>
  Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way
- to implement dynamic fields.
+ to implement dynamic properties.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.XtensionModule.ofSeq(System.Collections.Generic.IEnumerable{System.Tuple{System.String,Prime.XField}})">
+<member name="M:Prime.XtensionModule.XtensionModule.ofSeq(System.Collections.Generic.IEnumerable{System.Tuple{System.String,Prime.XProperty}})">
 <summary>
  Convert an xtension to a sequence of its entries.
 </summary>
@@ -2604,34 +2603,34 @@
  Convert an xtension to a sequence of its entries.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.XtensionModule.detachFields(System.Collections.Generic.IEnumerable{System.String},Prime.XtensionModule.Xtension)">
+<member name="M:Prime.XtensionModule.XtensionModule.detachProperties(System.Collections.Generic.IEnumerable{System.String},Prime.XtensionModule.Xtension)">
 <summary>
- Detach multiple fields from an Xtension.
+ Detach multiple properties from an Xtension.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.XtensionModule.detachField(System.String,Prime.XtensionModule.Xtension)">
+<member name="M:Prime.XtensionModule.XtensionModule.detachProperty(System.String,Prime.XtensionModule.Xtension)">
 <summary>
- Detach a field from an Xtension.
+ Detach a property from an Xtension.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.XtensionModule.attachFields(System.Collections.Generic.IEnumerable{System.Tuple{System.String,Prime.XField}},Prime.XtensionModule.Xtension)">
+<member name="M:Prime.XtensionModule.XtensionModule.attachProperties(System.Collections.Generic.IEnumerable{System.Tuple{System.String,Prime.XProperty}},Prime.XtensionModule.Xtension)">
 <summary>
- Attach multiple fields to an Xtension.
+ Attach multiple properties to an Xtension.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.XtensionModule.attachField(System.String,Prime.XField,Prime.XtensionModule.Xtension)">
+<member name="M:Prime.XtensionModule.XtensionModule.attachProperty(System.String,Prime.XProperty,Prime.XtensionModule.Xtension)">
 <summary>
- Attach a field to an Xtension.
+ Attach a property to an Xtension.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.XtensionModule.tryGetField(System.String,Prime.XtensionModule.Xtension)">
+<member name="M:Prime.XtensionModule.XtensionModule.tryGetProperty(System.String,Prime.XtensionModule.Xtension)">
 <summary>
- Try to get a field from an xtension.
+ Try to get a property from an xtension.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.XtensionModule.getField(System.String,Prime.XtensionModule.Xtension)">
+<member name="M:Prime.XtensionModule.XtensionModule.getProperty(System.String,Prime.XtensionModule.Xtension)">
 <summary>
- Get a field from an xtension.
+ Get a property from an xtension.
 </summary>
 </member>
 <member name="P:Prime.XtensionModule.XtensionModule.mixed">
@@ -2649,7 +2648,7 @@
  An Xtension that can default and isn&apos;t sealed.
 </summary>
 </member>
-<member name="M:Prime.XtensionModule.XtensionModule.make(Prime.VmapModule.Vmap{System.String,Prime.XField},System.Boolean,System.Boolean)">
+<member name="M:Prime.XtensionModule.XtensionModule.make(Prime.VmapModule.Vmap{System.String,Prime.XProperty},System.Boolean,System.Boolean)">
 <summary>
  Make an extension with custom safety.
 </summary>

@@ -5,13 +5,13 @@ module World =
 
     let internal world = ref (obj ())
     let internal gameProperties = ref (fun (_ : obj) -> Map.empty<string, obj>)
-    let internal gameXFields = ref (fun (_ : obj) -> Map.empty<string, obj>)
+    let internal gameXProperties = ref (fun (_ : obj) -> Map.empty<string, obj>)
     let internal screenProperties = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
-    let internal screenXFields = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
+    let internal screenXProperties = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
     let internal groupProperties = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
-    let internal groupXFields = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
+    let internal groupXProperties = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
     let internal entityProperties = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
-    let internal entityXFields = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
+    let internal entityXProperties = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
 
 namespace Nu
 open System
@@ -99,7 +99,7 @@ type SimulantOperators =
 /// The default dispatcher for games.
 type GameDispatcher () =
 
-    static member FieldDefinitions =
+    static member PropertyDefinitions =
         [Define? PublishChanges true]
 
     /// Register a game when adding it to the world. Note that there is no corresponding
@@ -118,7 +118,7 @@ type GameDispatcher () =
 /// The default dispatcher for screens.
 and ScreenDispatcher () =
 
-    static member FieldDefinitions =
+    static member PropertyDefinitions =
         [Define? OptSpecialization (None : string option)
          Define? PublishChanges true
          Define? Persistent true]
@@ -142,7 +142,7 @@ and ScreenDispatcher () =
 /// The default dispatcher for groups.
 and GroupDispatcher () =
 
-    static member FieldDefinitions =
+    static member PropertyDefinitions =
         [Define? OptSpecialization (None : string option)
          Define? PublishChanges true
          Define? Persistent true]
@@ -166,7 +166,7 @@ and GroupDispatcher () =
 /// The default dispatcher for entities.
 and EntityDispatcher () =
 
-    static member FieldDefinitions =
+    static member PropertyDefinitions =
         [Define? OptSpecialization (None : string option)
          Define? Position Vector2.Zero
          Define? Size Constants.Engine.DefaultEntitySize
@@ -389,8 +389,8 @@ and [<StructuralEquality; NoComparison>] Game =
     /// Get the current value of a game's properties.
     member this.Properties = Debug.World.gameProperties.Value Debug.World.world.Value
 
-    /// Get the current value of a game's xtension fields.
-    member this.XFields = Debug.World.gameXFields.Value Debug.World.world.Value
+    /// Get the current value of a game's xtension properties.
+    member this.XProperties = Debug.World.gameXProperties.Value Debug.World.world.Value
 
     /// Create a Game proxy from an address.
     static member proxy address = { GameAddress = address }
@@ -427,8 +427,8 @@ and [<StructuralEquality; NoComparison>] Screen =
     /// Get the current value of a screen's properties.
     member this.Properties = Debug.World.screenProperties.Value (this :> obj) Debug.World.world.Value
 
-    /// Get the current value of a screen's xtension fields.
-    member this.XFields = Debug.World.screenXFields.Value (this :> obj) Debug.World.world.Value
+    /// Get the current value of a screen's xtension properties.
+    member this.XProperties = Debug.World.screenXProperties.Value (this :> obj) Debug.World.world.Value
 
     /// Create a Screen proxy from an address.
     static member proxy address = { ScreenAddress = address }
@@ -473,8 +473,8 @@ and [<StructuralEquality; NoComparison>] Group =
     /// Get the current value of a group's properties.
     member this.Properties = Debug.World.groupProperties.Value (this :> obj) Debug.World.world.Value
 
-    /// Get the current value of a group's xtension fields.
-    member this.XFields = Debug.World.groupXFields.Value (this :> obj) Debug.World.world.Value
+    /// Get the current value of a group's xtension properties.
+    member this.XProperties = Debug.World.groupXProperties.Value (this :> obj) Debug.World.world.Value
 
     /// Create a Group proxy from an address.
     static member proxy address = { GroupAddress = address }
@@ -523,8 +523,8 @@ and [<StructuralEquality; NoComparison>] Entity =
     /// Get the current value of an entity's properties.
     member this.Properties = Debug.World.entityProperties.Value (this :> obj) Debug.World.world.Value
 
-    /// Get the current value of an entity's xtension fields.
-    member this.XFields = Debug.World.entityXFields.Value (this :> obj) Debug.World.world.Value
+    /// Get the current value of an entity's xtension properties.
+    member this.XProperties = Debug.World.entityXProperties.Value (this :> obj) Debug.World.world.Value
 
     /// Create an Entity proxy from an address.
     static member proxy address =
