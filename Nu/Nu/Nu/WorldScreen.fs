@@ -142,8 +142,8 @@ module WorldScreenModule =
             let screenState = World.getScreenState screen world
             let screenDispatcherName = getTypeName screenState.DispatcherNp
             let screenDescriptor = { screenDescriptor with ScreenDispatcher = screenDispatcherName }
-            let screenProperties = Reflection.writeMemberValuesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
-            let screenDescriptor = { screenDescriptor with ScreenProperties = screenProperties }
+            let getScreenProperties = Reflection.writeMemberValuesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
+            let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
             let groups = World.proxyGroups screen world
             World.writeGroups groups screenDescriptor world
 

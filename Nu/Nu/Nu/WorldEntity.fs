@@ -442,8 +442,8 @@ module WorldEntityModule =
                     let overlayer = World.getOverlayer world
                     let facetNames = World.getEntityFacetNamesReflectively entityState
                     Overlayer.shouldPropertySerialize5 facetNames propertyName propertyType entityState overlayer
-            let entityProperties = Reflection.writeMemberValuesFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
-            { entityDescriptor with EntityProperties = entityProperties }
+            let getEntityProperties = Reflection.writeMemberValuesFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
+            { entityDescriptor with EntityProperties = getEntityProperties }
 
         /// Write multiple entities to a group descriptor.
         static member writeEntities entities groupDescriptor world =
