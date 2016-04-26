@@ -1,17 +1,18 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2012-2016.
+
 namespace Debug
 module World =
 
-    let internal world = ref (obj ())
-    let internal gameProperties = ref (fun (_ : obj) -> Map.empty<string, obj>)
-    let internal gameXProperties = ref (fun (_ : obj) -> Map.empty<string, obj>)
-    let internal screenProperties = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
-    let internal screenXProperties = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
-    let internal groupProperties = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
-    let internal groupXProperties = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
-    let internal entityProperties = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
-    let internal entityXProperties = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
+    let mutable world = obj ()
+    let mutable gameProperties = fun (_ : obj) -> Map.empty<string, obj>
+    let mutable gameXProperties = fun (_ : obj) -> Map.empty<string, obj>
+    let mutable screenProperties = fun (_ : obj) (_ : obj) -> Map.empty<string, obj>
+    let mutable screenXProperties = fun (_ : obj) (_ : obj) -> Map.empty<string, obj>
+    let mutable groupProperties = fun (_ : obj) (_ : obj) -> Map.empty<string, obj>
+    let mutable groupXProperties = fun (_ : obj) (_ : obj) -> Map.empty<string, obj>
+    let mutable entityProperties = fun (_ : obj) (_ : obj) -> Map.empty<string, obj>
+    let mutable entityXProperties = fun (_ : obj) (_ : obj) -> Map.empty<string, obj>
 
 namespace Nu
 open System
@@ -387,10 +388,10 @@ and [<StructuralEquality; NoComparison>] Game =
     member this.GameFullName = Address.getFullName this.GameAddress
 
     /// Get the current value of a game's properties.
-    member this.Properties = Debug.World.gameProperties.Value Debug.World.world.Value
+    member this.Properties = Debug.World.gameProperties Debug.World.world
 
     /// Get the current value of a game's xtension properties.
-    member this.XProperties = Debug.World.gameXProperties.Value Debug.World.world.Value
+    member this.XProperties = Debug.World.gameXProperties Debug.World.world
 
     /// Create a Game proxy from an address.
     static member proxy address = { GameAddress = address }
@@ -425,10 +426,10 @@ and [<StructuralEquality; NoComparison>] Screen =
     member this.ScreenName = Address.getName this.ScreenAddress
 
     /// Get the current value of a screen's properties.
-    member this.Properties = Debug.World.screenProperties.Value (this :> obj) Debug.World.world.Value
+    member this.Properties = Debug.World.screenProperties (this :> obj) Debug.World.world
 
     /// Get the current value of a screen's xtension properties.
-    member this.XProperties = Debug.World.screenXProperties.Value (this :> obj) Debug.World.world.Value
+    member this.XProperties = Debug.World.screenXProperties (this :> obj) Debug.World.world
 
     /// Create a Screen proxy from an address.
     static member proxy address = { ScreenAddress = address }
@@ -471,10 +472,10 @@ and [<StructuralEquality; NoComparison>] Group =
     member this.GroupName = Address.getName this.GroupAddress
 
     /// Get the current value of a group's properties.
-    member this.Properties = Debug.World.groupProperties.Value (this :> obj) Debug.World.world.Value
+    member this.Properties = Debug.World.groupProperties (this :> obj) Debug.World.world
 
     /// Get the current value of a group's xtension properties.
-    member this.XProperties = Debug.World.groupXProperties.Value (this :> obj) Debug.World.world.Value
+    member this.XProperties = Debug.World.groupXProperties (this :> obj) Debug.World.world
 
     /// Create a Group proxy from an address.
     static member proxy address = { GroupAddress = address }
@@ -521,10 +522,10 @@ and [<StructuralEquality; NoComparison>] Entity =
     member this.EntityName = Address.getName this.EntityAddress
 
     /// Get the current value of an entity's properties.
-    member this.Properties = Debug.World.entityProperties.Value (this :> obj) Debug.World.world.Value
+    member this.Properties = Debug.World.entityProperties (this :> obj) Debug.World.world
 
     /// Get the current value of an entity's xtension properties.
-    member this.XProperties = Debug.World.entityXProperties.Value (this :> obj) Debug.World.world.Value
+    member this.XProperties = Debug.World.entityXProperties (this :> obj) Debug.World.world
 
     /// Create an Entity proxy from an address.
     static member proxy address =

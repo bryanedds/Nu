@@ -76,15 +76,15 @@ module World =
 
     let internal update (world : World) =
 #if DEBUG
-        Debug.World.world := world :> obj
+        Debug.World.world <- world :> obj
 #endif
         world
-
 
     (* F# reach-arounds... *)
 
     let mutable rebuildEntityTree =
         Unchecked.defaultof<Screen -> World -> Entity QuadTree>
+
     (* Subsystems *)
 
     let internal getSubsystemMap world =
