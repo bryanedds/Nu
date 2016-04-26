@@ -1,5 +1,17 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2012-2016.
+namespace Debug
+module World =
+
+    let internal world = ref (obj ())
+    let internal gameProperties = ref (fun (_ : obj) -> Map.empty<string, obj>)
+    let internal gameXFields = ref (fun (_ : obj) -> Map.empty<string, obj>)
+    let internal screenProperties = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
+    let internal screenXFields = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
+    let internal groupProperties = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
+    let internal groupXFields = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
+    let internal entityProperties = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
+    let internal entityXFields = ref (fun (_ : obj) (_ : obj) -> Map.empty<string, obj>)
 
 namespace Nu
 open System
@@ -7,10 +19,6 @@ open OpenTK
 open TiledSharp
 open Prime
 open Nu
-
-/// Allows for easier watching of simulant fields in a debugging context.
-type Watchable (Properties, XFields) =
-    member this.F () = ignore (Properties, XFields)
 
 /// The type of a screen transition. Incoming means a new screen is being shown, and Outgoing
 /// means an existing screen being hidden.
@@ -378,6 +386,12 @@ and [<StructuralEquality; NoComparison>] Game =
     /// Get the full name of a game proxy.
     member this.GameFullName = Address.getFullName this.GameAddress
 
+    /// Get the current value of a game's properties.
+    member this.Properties = Debug.World.gameProperties.Value Debug.World.world.Value
+
+    /// Get the current value of a game's xtension fields.
+    member this.XFields = Debug.World.gameXFields.Value Debug.World.world.Value
+
     /// Create a Game proxy from an address.
     static member proxy address = { GameAddress = address }
 
@@ -409,6 +423,12 @@ and [<StructuralEquality; NoComparison>] Screen =
 
     /// Get the name of a screen proxy.
     member this.ScreenName = Address.getName this.ScreenAddress
+
+    /// Get the current value of a screen's properties.
+    member this.Properties = Debug.World.screenProperties.Value (this :> obj) Debug.World.world.Value
+
+    /// Get the current value of a screen's xtension fields.
+    member this.XFields = Debug.World.screenXFields.Value (this :> obj) Debug.World.world.Value
 
     /// Create a Screen proxy from an address.
     static member proxy address = { ScreenAddress = address }
@@ -449,6 +469,12 @@ and [<StructuralEquality; NoComparison>] Group =
 
     /// Get the name of a group proxy.
     member this.GroupName = Address.getName this.GroupAddress
+
+    /// Get the current value of a group's properties.
+    member this.Properties = Debug.World.groupProperties.Value (this :> obj) Debug.World.world.Value
+
+    /// Get the current value of a group's xtension fields.
+    member this.XFields = Debug.World.groupXFields.Value (this :> obj) Debug.World.world.Value
 
     /// Create a Group proxy from an address.
     static member proxy address = { GroupAddress = address }
@@ -493,6 +519,12 @@ and [<StructuralEquality; NoComparison>] Entity =
 
     /// Get the name of an entity proxy.
     member this.EntityName = Address.getName this.EntityAddress
+
+    /// Get the current value of an entity's properties.
+    member this.Properties = Debug.World.entityProperties.Value (this :> obj) Debug.World.world.Value
+
+    /// Get the current value of an entity's xtension fields.
+    member this.XFields = Debug.World.entityXFields.Value (this :> obj) Debug.World.world.Value
 
     /// Create an Entity proxy from an address.
     static member proxy address =

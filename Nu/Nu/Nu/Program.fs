@@ -32,7 +32,7 @@ module Program =
 
     Most of these systems are interpreted, and unlike code in F#, allow for hot-reloading for
     optimal authoring experiences. For these systems, however, no static checking is in place,
-    allowing for trivial syntactic errors.
+    allowing for trivial errors.
 
     For the system that isn't interpreted, a strong type system is in place to make sure complex
     data-flow dependencies are made explicit and checked with good error messages. For this system,
@@ -40,11 +40,11 @@ module Program =
 
     The trade-offs for each given domain does seem to be appropriate. While the simulant system
     MUST be run-time in order to be WYSIWYG editable, the interaction system isn't too badly
-    affected by the need for program restarts, and benefits proportinately from having an
-    expressive type system.
+    affected by the need for program restarts, and benefits proportionately from having an
+    expressive static type system.
     
     That being said, I really, really, really, really want Edit and Continue for interaction
-    authoring to get the best of both worlds -
+    authoring to get the best of both worlds for interaction authoring -
     https://www.reddit.com/r/fsharp/comments/3mdklt/can_someone_with_the_requisite_insight_summarize/ *)
 
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
@@ -104,16 +104,6 @@ module Program =
     (* TODO: investigate Gaia extensibility mechanism. *)
 
     let [<EntryPoint; STAThread>] main _ =
-        Console.WriteLine "Running Nu.exe"
         Nu.init false
-        let group =
-            Group<GroupDispatcher>
-                [Field? Name !!"Group"]
-                [Entity<EntityDispatcher>
-                    [Field? Name !!"Jim"
-                     Field? Size Vector2.One]
-                 Entity<EntityDispatcher>
-                    [Field? Name !!"Bob"
-                     Field? Position Vector2.Zero]]
-        Console.WriteLine (SymbolIndex.prettyPrint ^ scstring group)
+        Console.WriteLine "Running Nu.exe"
         Constants.Engine.SuccessExitCode

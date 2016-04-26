@@ -605,7 +605,7 @@ open System.Reflection
 open System.Collections.Generic
 type Entity =
 
-    /// Provides a view of all the properties of an entity. Useful for debugging such as with
+    /// Provides a view of all the built-in properties of an entity. Useful for debugging such as with
     /// the Watch feature in Visual Studio.
     static member viewProperties entity world =
         let state = World.getEntityState entity world
@@ -621,8 +621,5 @@ type Entity =
 
     /// Provides a full view of all the member values of an entity. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
-    static member view entity world = Entity.viewProperties entity world @@ Entity.viewXFields entity world
-
-    /// Provides a partitioned view of all the member values of an entity. Useful for debugging
-    /// such as with the Watch feature in Visual Studio.
-    static member peek entity world = Watchable (Entity.viewProperties entity world, Entity.viewXFields entity world)
+    static member view entity world =
+        Entity.viewProperties entity world @@ Entity.viewXFields entity world

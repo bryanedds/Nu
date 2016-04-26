@@ -44,6 +44,16 @@ module Nu =
             Math.init ()
 
             // init F# reach-arounds
+#if DEBUG
+            Debug.World.gameProperties := fun world -> Debug.Game.viewProperties (world :?> World)
+            Debug.World.gameXFields := fun world -> Debug.Game.viewXFields (world :?> World)
+            Debug.World.screenProperties := fun screen world -> Debug.Screen.viewProperties (screen :?> Screen) (world :?> World)
+            Debug.World.screenXFields := fun screen world -> Debug.Screen.viewXFields (screen :?> Screen) (world :?> World)
+            Debug.World.groupProperties := fun group world -> Debug.Group.viewProperties (group :?> Group) (world :?> World)
+            Debug.World.groupXFields := fun group world -> Debug.Group.viewXFields (group :?> Group) (world :?> World)
+            Debug.World.entityProperties := fun entity world -> Debug.Entity.viewProperties (entity :?> Entity) (world :?> World)
+            Debug.World.entityXFields := fun entity world -> Debug.Entity.viewXFields (entity :?> Entity) (world :?> World)
+#endif
             // TODO: define this somewhere else...
             World.rebuildEntityTree <- fun screen world ->
                 let tree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
@@ -738,7 +748,7 @@ module WorldModule =
                   ScreenDirectory = Vmap.makeEmpty () }
 
             // initialize OptEntityCache after the fact due to back reference
-            let world = { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
+            let world = World.update { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
 
             // finally, register the game
             World.registerGame world
@@ -838,7 +848,7 @@ module WorldModule =
                           ScreenDirectory = Vmap.makeEmpty () }
 
                     // initialize OptEntityCache after the fact due to back reference
-                    let world = { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
+                    let world = World.update { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
 
                     // finally, register the game
                     let world = World.registerGame world

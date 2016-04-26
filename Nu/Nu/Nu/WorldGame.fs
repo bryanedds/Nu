@@ -174,7 +174,7 @@ open System.Reflection
 open System.Collections.Generic
 type Game =
 
-    /// Provides a view of all the properties of a game. Useful for debugging such as with
+    /// Provides a view of all the built-in properties of a game. Useful for debugging such as with
     /// the Watch feature in Visual Studio.
     static member viewProperties world =
         let state = World.getGameState world
@@ -190,8 +190,5 @@ type Game =
 
     /// Provides a full view of all the member values of a game. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
-    static member view world = Game.viewProperties world @@ Game.viewXFields world
-
-    /// Provides a partitioned view of all the member values of a game. Useful for debugging
-    /// such as with the Watch feature in Visual Studio.
-    static member peek world = Watchable (Game.viewProperties world, Game.viewXFields world)
+    static member view world =
+        Game.viewProperties world @@ Game.viewXFields world
