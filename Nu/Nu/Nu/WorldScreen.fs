@@ -229,7 +229,7 @@ open System.Reflection
 open System.Collections.Generic
 type Screen =
 
-    /// Provides a view of all the properties of a screen. Useful for debugging such as with
+    /// Provides a view of all the built-in properties of a screen. Useful for debugging such as with
     /// the Watch feature in Visual Studio.
     static member viewProperties screen world =
         let state = World.getScreenState screen world
@@ -245,8 +245,5 @@ type Screen =
 
     /// Provides a full view of all the member values of a screen. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
-    static member view screen world = Screen.viewProperties screen world @@ Screen.viewXFields screen world
-
-    /// Provides a partitioned view of all the member values of a screen. Useful for debugging
-    /// such as with the Watch feature in Visual Studio.
-    static member peek screen world = Watchable (Screen.viewProperties screen world, Screen.viewXFields screen world)
+    static member view screen world =
+        Screen.viewProperties screen world @@ Screen.viewXFields screen world

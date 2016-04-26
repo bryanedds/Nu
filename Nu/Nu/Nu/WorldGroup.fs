@@ -221,7 +221,7 @@ open System.Reflection
 open System.Collections.Generic
 type Group =
 
-    /// Provides a view of all the properties of a group. Useful for debugging such as with
+    /// Provides a view of all the built-in properties of a group. Useful for debugging such as with
     /// the Watch feature in Visual Studio.
     static member viewProperties group world =
         let state = World.getGroupState group world
@@ -237,8 +237,5 @@ type Group =
 
     /// Provides a full view of all the member values of a group. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
-    static member view group world = Group.viewProperties group world @@ Group.viewXFields group world
-
-    /// Provides a partitioned view of all the member values of a group. Useful for debugging
-    /// such as with the Watch feature in Visual Studio.
-    static member peek group world = Watchable (Group.viewProperties group world, Group.viewXFields group world)
+    static member view group world =
+        Group.viewProperties group world @@ Group.viewXFields group world
