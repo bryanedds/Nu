@@ -76,7 +76,7 @@ module World =
 
     let internal update (world : World) =
 #if DEBUG
-        Debug.World.world <- world :> obj
+        Debug.World.Latest <- world :> obj
 #endif
         world
 
