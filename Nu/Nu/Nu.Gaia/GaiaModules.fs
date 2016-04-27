@@ -249,8 +249,8 @@ module Gaia =
         let selectedGroup = (World.getUserState world).SelectedGroup
         try World.writeGroupToFile filePath selectedGroup world
         with exn ->
-            let _ = World.choose world
-            MessageBox.Show ("Could not save file due to: " + scstring exn, "File save error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            ignore ^ World.choose world
+            ignore ^ MessageBox.Show ("Could not save file due to: " + scstring exn, "File save error", MessageBoxButtons.OK, MessageBoxIcon.Error)
 
     let private tryLoadFile (form : GaiaForm) filePath world =
 
@@ -270,7 +270,7 @@ module Gaia =
         // handle load failure
         with exn ->
             let world = World.choose world
-            MessageBox.Show ("Could not load file due to: " + scstring exn, "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            ignore ^ MessageBox.Show ("Could not load file due to: " + scstring exn, "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error)
             world
 
     let private handleFormExit (form : GaiaForm) (_ : EventArgs) =
@@ -402,7 +402,7 @@ module Gaia =
                 world
             with exn ->
                 let world = World.choose world
-                MessageBox.Show (scstring exn) |> ignore
+                ignore ^ MessageBox.Show (scstring exn)
                 world)
 
     let private handleFormDelete (form : GaiaForm) (_ : EventArgs) =
@@ -429,7 +429,7 @@ module Gaia =
                     world
                 with exn ->
                     let world = World.choose world
-                    MessageBox.Show (scstring exn, "Group creation error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    ignore ^ MessageBox.Show (scstring exn, "Group creation error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                     world)
             groupNameEntryForm.Close ())
         groupNameEntryForm.cancelButton.Click.Add (fun _ -> groupNameEntryForm.Close ())
@@ -461,7 +461,7 @@ module Gaia =
         ignore ^ WorldChangers.Add (fun world ->
             match form.groupTabs.TabPages.Count with
             | 1 ->
-                MessageBox.Show ("Cannot destroy only remaining group.", "Group destruction error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                ignore ^ MessageBox.Show ("Cannot destroy only remaining group.", "Group destruction error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 world
             | _ ->
                 let world = pushPastWorld world world
@@ -569,7 +569,7 @@ module Gaia =
             match World.tryReloadAssets assetSourceDir targetDir RefinementDir world with
             | Right world -> world
             | Left error ->
-                MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                ignore ^ MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 world)
 
     let private handleFormReloadOverlays (form : GaiaForm) (_ : EventArgs) =
@@ -582,7 +582,7 @@ module Gaia =
                 refreshPropertyGrid form world
                 world
             | Left error ->
-                MessageBox.Show ("Overlay reload error due to: " + error + "'.", "Overlay reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                ignore ^ MessageBox.Show ("Overlay reload error due to: " + error + "'.", "Overlay reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 world)
 
     let private handleFormGroupTabSelected (form : GaiaForm) (_ : EventArgs) =

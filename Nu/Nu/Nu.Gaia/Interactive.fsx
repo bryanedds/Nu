@@ -45,7 +45,7 @@ let (targetDir, plugin) = Gaia.selectTargetDirAndMakeNuPlugin ()
 let form = Gaia.createForm ()
 form.Closing.Add (fun args ->
     if not args.Cancel then
-        MessageBox.Show ("Cannot close Gaia when running from F# Interactive.", "Cannot close Gaia") |> ignore
+        ignore ^ MessageBox.Show ("Cannot close Gaia when running from F# Interactive.", "Cannot close Gaia")
         args.Cancel <- true)
 
 // initialize sdl dependencies using the form as its rendering surface
