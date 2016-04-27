@@ -414,7 +414,7 @@ module WorldEntityModule =
                 let world = World.updateEntityInEntityTree entity oldWorld world
                 let world = World.publishEntityChange entityState entity oldWorld world
                 Right world
-            | (_, _) -> Left "Could not set the entity's overlay name."
+            | (_, _) -> let _ = World.choose world in Left "Could not set the entity's overlay name."
 
         /// Try to set the entity's facet names.
         static member trySetEntityFacetNames facetNames entity world =

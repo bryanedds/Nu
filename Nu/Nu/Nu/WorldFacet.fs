@@ -90,7 +90,7 @@ module WorldFacetModule =
                     let world = World.publishEntityChange entityState entity oldWorld world
                     Right (World.getEntityState entity world, world)
                 | None -> Right (entityState, world)
-            | None -> Left ^ "Failure to remove facet '" + facetName + "' from entity."
+            | None -> let _ = World.choose world in Left ^ "Failure to remove facet '" + facetName + "' from entity."
 
         static member private tryAddFacet facetName (entityState : EntityState) optEntity world =
             match World.tryGetFacet facetName world with
@@ -109,7 +109,7 @@ module WorldFacetModule =
                         let world = facet.Register (entity, world)
                         Right (World.getEntityState entity world, world)
                     | None -> Right (entityState, world)
-                else Left ^ "Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Name + "'."
+                else let _ = World.choose world in Left ^ "Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Name + "'."
             | Left error -> Left error
 
         static member private tryRemoveFacets facetNamesToRemove entityState optEntity world =

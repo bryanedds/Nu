@@ -225,7 +225,7 @@ module WorldModule =
                     let world = World.setScreenTransitionState OutgoingState selectedScreen world
                     let world = World.subscribe5<unit, Screen> subscriptionKey subscription (Events.OutgoingFinish ->- selectedScreen) selectedScreen world
                     Some world
-                else None
+                else let _ = World.choose world in None
             | None -> None
 
         /// Transition to the given screen (failing with an exception if another transition is in
@@ -418,7 +418,7 @@ module WorldModule =
                     Right world
 
                 // propagate errors
-                | Left error -> let _ = World.choose world in Left error
+                | Left error -> Left error
             with exn -> let _ = World.choose world in Left ^ scstring exn
 
         /// Attempt to reload the assets in use by the world. Currently does not support reloading
@@ -443,7 +443,7 @@ module WorldModule =
                     Right world
         
                 // propagate errors
-                | Left error -> let _ = World.choose world in Left error
+                | Left error -> Left error
             with exn -> let _ = World.choose world in Left ^ scstring exn
 
         /// A hack for the physics subsystem that allows an old world value to displace the current
