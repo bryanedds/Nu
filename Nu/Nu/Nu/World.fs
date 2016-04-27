@@ -379,7 +379,7 @@ module WorldModule =
         /// Try to reload the overlays currently in use by the world.
         static member tryReloadOverlays inputDirectory outputDirectory world =
             
-            // try to reload overlay file
+            // attempt to reload overlay file
             let inputOverlayFilePath = Path.Combine (inputDirectory, Constants.Assets.OverlayFilePath)
             let outputOverlayFilePath = Path.Combine (outputDirectory, Constants.Assets.OverlayFilePath)
             try File.Copy (inputOverlayFilePath, outputOverlayFilePath, true)
@@ -418,14 +418,14 @@ module WorldModule =
                     Right world
 
                 // propagate errors
-                | Left error -> Left error
-            with exn -> Left ^ scstring exn
+                | Left error -> let _ = World.choose world in Left error
+            with exn -> let _ = World.choose world in Left ^ scstring exn
 
         /// Attempt to reload the assets in use by the world. Currently does not support reloading
         /// of song assets, and possibly others that are locked by the engine's subsystems.
         static member tryReloadAssets inputDirectory outputDirectory refinementDirectory world =
             
-            // try to reload asset graph file
+            // attempt to reload asset graph file
             try File.Copy
                     (Path.Combine (inputDirectory, Constants.Assets.AssetGraphFilePath),
                      Path.Combine (outputDirectory, Constants.Assets.AssetGraphFilePath), true)
@@ -443,8 +443,8 @@ module WorldModule =
                     Right world
         
                 // propagate errors
-                | Left error -> Left error
-            with exn -> Left ^ scstring exn
+                | Left error -> let _ = World.choose world in Left error
+            with exn -> let _ = World.choose world in Left ^ scstring exn
 
         /// A hack for the physics subsystem that allows an old world value to displace the current
         /// one and have its physics values propagated to the imperative physics subsystem.
@@ -662,12 +662,13 @@ module WorldModule =
 
         /// TODO: document!
         static member run6 runWhile handleUpdate handleRender sdlDeps liveness world =
-            Sdl.run8
+            Sdl.run9
                 runWhile
                 World.processInput
                 (World.processUpdate handleUpdate)
                 (World.processRender handleRender)
                 World.processPlay
+                World.choose
                 World.cleanUp
                 sdlDeps
                 liveness
@@ -685,6 +686,7 @@ module WorldModule =
                 (World.processUpdate handleUpdate)
                 (World.processRender handleRender)
                 World.processPlay
+                World.choose
                 World.cleanUp
                 sdlConfig
 
