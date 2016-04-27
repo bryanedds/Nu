@@ -248,7 +248,9 @@ module Gaia =
     let private trySaveFile filePath world =
         let selectedGroup = (World.getUserState world).SelectedGroup
         try World.writeGroupToFile filePath selectedGroup world
-        with exn -> MessageBox.Show ("Could not save file due to: " + scstring exn, "File save error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+        with exn ->
+            let _ = World.choose world
+            MessageBox.Show ("Could not save file due to: " + scstring exn, "File save error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
 
     let private tryLoadFile (form : GaiaForm) filePath world =
 
@@ -267,6 +269,7 @@ module Gaia =
 
         // handle load failure
         with exn ->
+            let world = World.choose world
             MessageBox.Show ("Could not load file due to: " + scstring exn, "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             world
 
@@ -349,6 +352,7 @@ module Gaia =
                 form.eventFilterTextBox.Text <- SymbolIndex.prettyPrint ^ scstring eventFilter
                 world
             with exn ->
+                let world = World.choose world
                 ignore ^ MessageBox.Show ("Invalid event filter due to: " + scstring exn, "Invalid event filter", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 world)
 
@@ -396,7 +400,10 @@ module Gaia =
                 let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
                 form.propertyGrid.SelectedObject <- entityTds
                 world
-            with exn -> MessageBox.Show (scstring exn) |> ignore; world)
+            with exn ->
+                let world = World.choose world
+                MessageBox.Show (scstring exn) |> ignore
+                world)
 
     let private handleFormDelete (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
@@ -421,6 +428,7 @@ module Gaia =
                     form.groupTabs.SelectTab (form.groupTabs.TabPages.IndexOfKey groupName)
                     world
                 with exn ->
+                    let world = World.choose world
                     MessageBox.Show (scstring exn, "Group creation error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world)
             groupNameEntryForm.Close ())
