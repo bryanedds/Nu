@@ -693,7 +693,7 @@ module Gaia =
         | _ -> failwith "Cannot attach Gaia to a world that has a user state of a type other than unit or EditorState."
 
     let private run3 runWhile targetDir sdlDeps (form : GaiaForm) =
-        let world = !RefWorld
+        let world = World.choose !RefWorld
         let world = attachToWorld targetDir form world
         populateCreateComboBox form world
         populateTreeViewGroups form world

@@ -744,7 +744,7 @@ module WorldModule =
                   ScreenDirectory = Vmap.makeEmpty () }
 
             // initialize OptEntityCache after the fact due to back reference
-            let world = World.update { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
+            let world = World.choose { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
 
             // finally, register the game
             World.registerGame world
@@ -844,7 +844,7 @@ module WorldModule =
                           ScreenDirectory = Vmap.makeEmpty () }
 
                     // initialize OptEntityCache after the fact due to back reference
-                    let world = World.update { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
+                    let world = World.choose { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
 
                     // finally, register the game
                     let world = World.registerGame world
