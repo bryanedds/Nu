@@ -74,9 +74,11 @@ module World =
 
     (* Debug *)
 
-    let internal update (world : World) =
+    /// Choose a world to be used for debugging. Call this whenever the latest world construction
+    /// is to be discarded to make debugging simulants more accurate.
+    let choose (world : World) =
 #if DEBUG
-        Debug.World.Latest <- world :> obj
+        Debug.World.Chosen <- world :> obj
 #endif
         world
 
@@ -97,16 +99,16 @@ module World =
         Subsystems.getSubsystemBy by name world.Subsystems
 
     let internal setSubsystem<'s when 's :> World Subsystem> (subsystem : 's) name world =
-        update { world with Subsystems = Subsystems.setSubsystem subsystem name world.Subsystems }
+        choose { world with Subsystems = Subsystems.setSubsystem subsystem name world.Subsystems }
 
     let internal updateSubsystem<'s when 's :> World Subsystem> (updater : 's -> World -> 's) name world =
-        update { world with Subsystems = Subsystems.updateSubsystem updater name world.Subsystems world }
+        choose { world with Subsystems = Subsystems.updateSubsystem updater name world.Subsystems world }
 
     let internal updateSubsystems (updater : World Subsystem -> World -> World Subsystem) world =
-        update { world with Subsystems = Subsystems.updateSubsystems updater world.Subsystems world }
+        choose { world with Subsystems = Subsystems.updateSubsystems updater world.Subsystems world }
 
     let internal clearSubsystemsMessages world =
-        update { world with Subsystems = Subsystems.clearSubsystemsMessages world.Subsystems world }
+        choose { world with Subsystems = Subsystems.clearSubsystemsMessages world.Subsystems world }
 
     (* Dispatchers *)
 
@@ -247,7 +249,7 @@ module World =
         by world.AmbientState
 
     let private setAmbientStateWithoutEvent state world =
-        update { world with AmbientState = state }
+        choose { world with AmbientState = state }
 
     let private setAmbientState state world =
         let oldWorldWithOldState = world
@@ -410,7 +412,7 @@ module World =
             failwith ^ "Cannot set the state of a non-existent entity '" + scstring entity.EntityAddress + "'"
 #endif
         let entityStates = Vmap.add entity.EntityAddress entityState world.EntityStates
-        update { world with EntityStates = entityStates }
+        choose { world with EntityStates = entityStates }
 
     let private entityStateAdder entityState entity world =
         let screenDirectory =
@@ -427,7 +429,7 @@ module World =
                 | None -> failwith ^ "Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent screen."
             | _ -> failwith ^ "Invalid entity address '" + scstring entity.EntityAddress + "'."
         let entityStates = Vmap.add entity.EntityAddress entityState world.EntityStates
-        update { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
+        choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
     let private entityStateRemover entity world =
         let screenDirectory =
@@ -444,7 +446,7 @@ module World =
                 | None -> failwith ^ "Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent screen."
             | _ -> failwith ^ "Invalid entity address '" + scstring entity.EntityAddress + "'."
         let entityStates = Vmap.remove entity.EntityAddress world.EntityStates
-        update { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
+        choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
     let internal getEntityStateBoundsMax entityState =
         // TODO: get up off yer arse and write an algorithm for tight-fitting bounds...
@@ -519,7 +521,7 @@ module World =
             failwith ^ "Cannot set the state of a non-existent group '" + scstring group.GroupAddress + "'"
 #endif
         let groupStates = Vmap.add group.GroupAddress groupState world.GroupStates
-        update { world with GroupStates = groupStates }
+        choose { world with GroupStates = groupStates }
 
     let private groupStateAdder groupState group world =
         let screenDirectory =
@@ -538,7 +540,7 @@ module World =
                 | None -> failwith ^ "Cannot add group '" + scstring group.GroupAddress + "' to non-existent screen."
             | _ -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
         let groupStates = Vmap.add group.GroupAddress groupState world.GroupStates
-        update { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
+        choose { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
 
     let private groupStateRemover group world =
         let screenDirectory =
@@ -551,7 +553,7 @@ module World =
                 | None -> failwith ^ "Cannot remove group '" + scstring group.GroupAddress + "' from non-existent screen."
             | _ -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
         let groupStates = Vmap.remove group.GroupAddress world.GroupStates
-        update { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
+        choose { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
 
     let inline internal getOptGroupState group world =
         Vmap.tryFind group.GroupAddress world.GroupStates
@@ -595,7 +597,7 @@ module World =
             failwith ^ "Cannot set the state of a non-existent screen '" + scstring screen.ScreenAddress + "'"
 #endif
         let screenStates = Vmap.add screen.ScreenAddress screenState world.ScreenStates
-        update { world with ScreenStates = screenStates }
+        choose { world with ScreenStates = screenStates }
 
     let private screenStateAdder screenState screen world =
         let screenDirectory =
@@ -610,7 +612,7 @@ module World =
                     Vmap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
             | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
         let screenStates = Vmap.add screen.ScreenAddress screenState world.ScreenStates
-        update { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
+        choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
 
     let private screenStateRemover screen world =
         let screenDirectory =
@@ -618,7 +620,7 @@ module World =
             | [screenName] -> Vmap.remove screenName world.ScreenDirectory
             | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
         let screenStates = Vmap.remove screen.ScreenAddress world.ScreenStates
-        update { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
+        choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
 
     let inline internal getOptScreenState screen world =
         Vmap.tryFind screen.ScreenAddress world.ScreenStates
@@ -695,7 +697,7 @@ module World =
 
     let internal setGameState gameState world =
         let oldWorld = world
-        let world = update { world with GameState = gameState }
+        let world = choose { world with GameState = gameState }
         if gameState.PublishChanges then
             publish
                 { Participant = Simulants.Game; OldWorld = oldWorld }

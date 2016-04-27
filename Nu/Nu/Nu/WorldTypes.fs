@@ -377,7 +377,7 @@ and [<StructuralEquality; NoComparison>] Game =
 
     /// Get the latest value of a game's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-    member private this.View = Debug.World.viewGame Debug.World.Latest
+    member private this.View = Debug.World.viewGame Debug.World.Chosen
 
     /// Create a Game proxy from an address.
     static member proxy address = { GameAddress = address }
@@ -413,7 +413,7 @@ and [<StructuralEquality; NoComparison>] Screen =
 
     /// Get the latest value of a screen's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-    member private this.View = Debug.World.viewScreen (this :> obj) Debug.World.Latest
+    member private this.View = Debug.World.viewScreen (this :> obj) Debug.World.Chosen
 
     /// Create a Screen proxy from an address.
     static member proxy address = { ScreenAddress = address }
@@ -457,7 +457,7 @@ and [<StructuralEquality; NoComparison>] Group =
 
     /// Get the latest value of a group's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-    member private this.View = Debug.World.viewGroup (this :> obj) Debug.World.Latest
+    member private this.View = Debug.World.viewGroup (this :> obj) Debug.World.Chosen
 
     /// Create a Group proxy from an address.
     static member proxy address = { GroupAddress = address }
@@ -505,7 +505,7 @@ and [<StructuralEquality; NoComparison>] Entity =
 
     /// Get the latest value of an entity's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-    member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Latest
+    member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Chosen
 
     /// Create an Entity proxy from an address.
     static member proxy address =
