@@ -11,12 +11,12 @@ open Prime
 [<RequireQualifiedAccess>]
 module internal CoreInternal =
 
+// NOTE: the drawbacks of using PLATFORM_AGNOSTIC_TIMESTAMPING are two-fold -
+//  1) Stopwatch.GetTimestamp is too low resolution on Windows .NET.
+//  2) Even on Mono, Stopwatch.GetTimestamp, which is ultimately implemented in terms of
+//     mono_100ns_ticks as defined here - https://github.com/mono/mono/blob/master/mono/utils/mono-time.c
+//     does not necessarily lead to a high-resolution, linear-time path on all platforms.
 #if PLATFORM_AGNOSTIC_TIMESTAMPING
-    // NOTE: the drawbacks of using PLATFORM_AGNOSTIC_TIMESTAMPING are two-fold -
-    //  1) Stopwatch.GetTimestamp is too low resolution on Windows .NET.
-    //  2) Even on Mono, Stopwatch.GetTimestamp, which is ultimately implemented in terms of
-    //     mono_100ns_ticks as defined here - https://github.com/mono/mono/blob/master/mono/utils/mono-time.c
-    //     does not necessarily lead to a high-resolution, linear-time path on all platforms.
     
     /// Get a time stamp at the highest-available resolution on linux.
     let internal getTimeStampInternal () =
