@@ -50,7 +50,7 @@ module SdlConfig =
           ViewW = Constants.Render.ResolutionX
           ViewH = Constants.Render.ResolutionY
           RendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-          AudioChunkSize = Constants.Audio.AudioBufferSizeDefault }
+          AudioChunkSize = Constants.Audio.DefaultBufferSize }
 
 [<AutoOpen>]
 module SdlDepsModule =
@@ -148,7 +148,7 @@ module SdlDepsModule =
                             | Left error -> Left error
                             | Right ((), destroy) ->
                                 match attemptMakeSdlGlobalResource
-                                    (fun () -> SDL_mixer.Mix_OpenAudio (Constants.Audio.AudioFrequency, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
+                                    (fun () -> SDL_mixer.Mix_OpenAudio (Constants.Audio.Frequency, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
                                     (fun () -> SDL_mixer.Mix_CloseAudio (); destroy ()) with
                                 | Left error -> Left error
                                 | Right ((), destroy) ->

@@ -64,8 +64,8 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Audio =
 
-        let [<Literal>] AudioFrequency = 44100
-        let [<Literal>] AudioBufferSizeDefault = 1024
+        let [<Literal>] Frequency = 44100
+        let [<Literal>] DefaultBufferSize = 1024
         let [<Literal>] DefaultTimeToFadeOutSongMs = 500
 
     [<RequireQualifiedAccess>]

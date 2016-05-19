@@ -33,7 +33,7 @@ module Program =
               ViewW = Constants.Render.ResolutionX
               ViewH = Constants.Render.ResolutionY
               RendererFlags = sdlRendererFlags
-              AudioChunkSize = Constants.Audio.AudioBufferSizeDefault }
+              AudioChunkSize = Constants.Audio.DefaultBufferSize }
 
         // after some configuration it is time to run the game. We're off and running!
         World.run
