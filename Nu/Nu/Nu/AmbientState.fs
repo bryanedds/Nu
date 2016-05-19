@@ -4,7 +4,7 @@ open FSharpx.Collections
 open Prime
 open Nu
 
-/// A tasklet to be completed at the schedule tick time.
+/// A tasklet to be completed at the scheduled tick time.
 type [<ReferenceEquality>] 'w Tasklet =
     { ScheduledTime : int64
       Operation : 'w -> 'w }

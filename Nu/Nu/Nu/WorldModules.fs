@@ -74,8 +74,8 @@ module World =
 
     (* Debug *)
 
-    /// Choose a world to be used for debugging. Call this whenever the latest world construction
-    /// is to be discarded to make debugging simulants more accurate.
+    /// Choose a world to be used for debugging. Call this whenever the most recently constructed
+    /// world value is to be discarded in favor of the given world value.
     let choose (world : World) =
 #if DEBUG
         Debug.World.Chosen <- world :> obj
