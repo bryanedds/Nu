@@ -810,7 +810,7 @@ module Gaia =
               ViewW = form.displayPanel.MaximumSize.Width
               ViewH = form.displayPanel.MaximumSize.Height
               RendererFlags = sdlRendererFlags
-              AudioChunkSize = Constants.Audio.AudioBufferSizeDefault }
+              AudioChunkSize = Constants.Audio.DefaultBufferSize }
         SdlDeps.attemptMake sdlConfig
 
     /// Run Gaia from the F# repl.

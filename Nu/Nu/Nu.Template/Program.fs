@@ -47,7 +47,7 @@ module Program =
               ViewW = Constants.Render.ResolutionX
               ViewH = Constants.Render.ResolutionY
               RendererFlags = sdlRendererFlags
-              AudioChunkSize = Constants.Audio.AudioBufferSizeDefault }
+              AudioChunkSize = Constants.Audio.DefaultBufferSize }
 
         // this is a callback that attempts to make 'the world' in a functional programming
         // sense. In a Nu game, the world is represented as an abstract data type named World.
