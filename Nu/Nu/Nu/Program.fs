@@ -32,9 +32,9 @@ module Program =
 
     The advantages and limitations that fall out of this is as such -
 
-    Most of these systems are interpreted, and unlike code in F#, allow for hot-reloading for
-    optimal authoring experiences. For these systems, however, no static checking is in place,
-    allowing for trivial errors.
+    The s-expression systems, being external DSLs, are interpreted at run-time, and unlike code
+    in F#, allow for hot-reloading for optimal authoring experiences. For these systems, however,
+    no static checking is in place, allowing for trivial errors.
 
     For the system that isn't interpreted, a strong type system is in place to make sure complex
     data-flow dependencies are made explicit and checked with good error messages. For this system,
