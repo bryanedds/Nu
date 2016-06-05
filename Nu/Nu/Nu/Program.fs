@@ -20,19 +20,19 @@ module Program =
 
     system          | language      | editor
     -----------------------------------------------
-    overlay         | s-exprs       | Visual Studio
-    asset graph     | s-exprs       | Visual Studio
-    simulants defs  | s-exprs       | Gaia
-    event filtering | s-exprs       | Gaia
-    effect system   | s-exprs       | Aether (TBA)
-    mind (TBA)      | s-exprs       | Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
+    overlay         | s-expr DSL    | Visual Studio
+    asset graph     | s-expr DSL    | Visual Studio
+    simulants defs  | s-expr DSL    | Gaia
+    event filtering | s-expr DSL    | Gaia
+    effect system   | s-expr DSL    | Aether (TBA)
+    mind (TBA)      | s-expr DSL    | Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
     interactions    | F# (chains)   | Visual Studio
     subsystems      | F#            | Visual Studio
     dispatchers     | F#            | Visual Studio
 
     The advantages and limitations that fall out of this is as such -
 
-    The s-expression systems, being external DSLs, are interpreted at run-time, and unlike code
+    The systems that provide an s-expr DSL have their DSLs interpreted at run-time and, unlike code
     in F#, allow for hot-reloading for optimal authoring experiences. For these systems, however,
     no static checking is in place, allowing for trivial errors.
 
