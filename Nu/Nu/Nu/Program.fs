@@ -12,9 +12,11 @@ module Program =
     (* DISCUSSION - On Nu's authoring story...
 
     Instead of using a general purpose scripting language for authoring tasks in Nu, we use a small
-    set of domain-specific languages. For example, the simulant system uses s-exprs, as does the
-    overlay, asset graph, and effect system. The simulation interactions are defined with chains in
-    F#.
+    set of domain-specific languages. For example, the simulant system uses s-expression-based DSLs,
+    as does the overlay, asset graph, and effect system. The simulation interactions are defined with
+    chains directly in F#.
+    
+    What follows is a matrix of engine systems and the authoring language they provide to the user -
 
     system          | language      | editor
     -----------------------------------------------
