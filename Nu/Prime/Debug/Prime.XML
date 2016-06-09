@@ -110,6 +110,11 @@
  Pad a list with count instances of its last item.
 </summary>
 </member>
+<member name="M:List.pad``1(System.Int32,``0,Microsoft.FSharp.Collections.FSharpList{``0})">
+<summary>
+ Pad a list with count instances of its last item, removing items from back if count is negative.
+</summary>
+</member>
 <member name="M:List.allOrEmptyBy``2(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpOption{``1}},Microsoft.FSharp.Collections.FSharpList{``0})">
 <summary>
  Make a transformed list of options an all or nothing proposition.
@@ -2069,7 +2074,6 @@
  
  0
  None
- [2 2]
  Hello_World
  CharacterAnimationFacing
  &quot;String with quoted spaces.&quot;
@@ -2095,7 +2099,6 @@
  
  0
  None
- [2 2]
  Hello_World
  CharacterAnimationFacing
  &quot;String with quoted spaces.&quot;
@@ -2313,6 +2316,12 @@
  Get the type descriptor for this type as returned by the global TypeDescriptor.
 </summary>
 </member>
+<member name="M:Prime.TypeExtension.Type.GetDefaultValue(System.Type)">
+<summary>
+ Get the default value for a type.
+ Never returns null.
+</summary>
+</member>
 <member name="T:Prime.VmapModule.Vmap`2">
 <summary>
  A very fast persistent hash map.
@@ -2429,6 +2438,7 @@
 <member name="T:Prime.VsyncModule.Vsync`1">
 <summary>
  The &apos;Vsync&apos; (AKA, &apos;Variable Synchrony&apos;) monad.
+ Allows code to run in either an async or synchronous fashion to aid in debugging.
  NOTE: to reference how all this stuff works in F#, see here - https://msdn.microsoft.com/en-us/library/dd233182.aspx
 </summary>
 </member>
