@@ -12,27 +12,29 @@ module Program =
     (* DISCUSSION - On Nu's authoring story...
 
     Instead of using a general purpose scripting language for authoring tasks in Nu, we use a small
-    set of domain-specific languages. For example, the simulant system uses s-exprs, as does the
-    overlay, asset graph, and effect system. The simulation interactions are defined with chains in
-    F#.
+    set of domain-specific languages. For example, the simulant system uses s-expression-based DSLs,
+    as does the overlay, asset graph, and effect system. The simulation interactions are defined with
+    chains directly in F#.
+    
+    What follows is a matrix of engine systems and the authoring language they provide to the user -
 
     system          | language      | editor
     -----------------------------------------------
-    overlay         | s-exprs       | Visual Studio
-    asset graph     | s-exprs       | Visual Studio
-    simulants defs  | s-exprs       | Gaia
-    event filtering | s-exprs       | Gaia
-    effect system   | s-exprs       | Aether (TBA)
-    mind (TBA)      | s-exprs       | Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
+    overlay         | s-expr DSL    | Visual Studio
+    asset graph     | s-expr DSL    | Visual Studio
+    simulants defs  | s-expr DSL    | Gaia
+    event filtering | s-expr DSL    | Gaia
+    effect system   | s-expr DSL    | Aether (TBA)
+    mind (TBA)      | s-expr DSL    | Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
     interactions    | F# (chains)   | Visual Studio
     subsystems      | F#            | Visual Studio
     dispatchers     | F#            | Visual Studio
 
     The advantages and limitations that fall out of this is as such -
 
-    Most of these systems are interpreted, and unlike code in F#, allow for hot-reloading for
-    optimal authoring experiences. For these systems, however, no static checking is in place,
-    allowing for trivial errors.
+    The systems that provide an s-expr DSL have their DSLs interpreted at run-time and, unlike code
+    in F#, allow for hot-reloading for optimal authoring experiences. For these systems, however,
+    no static checking is in place, allowing for trivial errors.
 
     For the system that isn't interpreted, a strong type system is in place to make sure complex
     data-flow dependencies are made explicit and checked with good error messages. For this system,
