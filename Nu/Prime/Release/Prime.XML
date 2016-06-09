@@ -110,6 +110,11 @@
  Pad a list with count instances of its last item.
 </summary>
 </member>
+<member name="M:List.pad``1(System.Int32,``0,Microsoft.FSharp.Collections.FSharpList{``0})">
+<summary>
+ Pad a list with count instances of its last item, removing items from back if count is negative.
+</summary>
+</member>
 <member name="M:List.allOrEmptyBy``2(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpOption{``1}},Microsoft.FSharp.Collections.FSharpList{``0})">
 <summary>
  Make a transformed list of options an all or nothing proposition.
@@ -2309,6 +2314,12 @@
 <member name="M:Prime.TypeExtension.Type.GetTypeDescriptor(System.Type)">
 <summary>
  Get the type descriptor for this type as returned by the global TypeDescriptor.
+</summary>
+</member>
+<member name="M:Prime.TypeExtension.Type.GetDefaultValue(System.Type)">
+<summary>
+ Get the default value for a type.
+ Never returns null.
 </summary>
 </member>
 <member name="T:Prime.VmapModule.Vmap`2">
