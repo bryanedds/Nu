@@ -143,6 +143,7 @@ module EffectFacetModule =
                                 match Map.tryFind name effectTags with
                                 | Some (metadata, slices) -> Map.add name (metadata, slice :: slices) effectTags
                                 | None -> Map.add name (metadata, [slice]) effectTags
+                            // TODO: also raise event for all new effect tags so they can be handled in scripts?
                             entity.SetEffectTagsNp effectTags world)
                         world
                         artifacts
