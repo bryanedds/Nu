@@ -527,12 +527,12 @@ module WorldEntityModule =
 
         /// Read multiple entities from a group descriptor.
         static member readEntities groupDescriptor group world =
-            groupDescriptor.Entities |>
-            List.fold (fun (entities, world) entityDescriptor ->
-                let (entity, world) = World.readEntity entityDescriptor None group world
-                (entity :: entities, world))
-                ([], world) |>
-            mapFst List.rev
+            List.foldBack
+                (fun entityDescriptor (entities, world) ->
+                    let (entity, world) = World.readEntity entityDescriptor None group world
+                    (entity :: entities, world))
+                    groupDescriptor.Entities
+                    ([], world)
 
     /// Represents the member value of an entity as accessible via reflection.
     type [<ReferenceEquality>] EntityMemberValue =

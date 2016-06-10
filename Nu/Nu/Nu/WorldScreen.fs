@@ -214,13 +214,12 @@ module WorldScreenModule =
 
         /// Read multiple screens from a game descriptor.
         static member readScreens gameDescriptor world =
-            gameDescriptor.Screens |>
-            Seq.fold
-                (fun (screens, world) screenDescriptor ->
+            Seq.foldBack
+                (fun screenDescriptor (screens, world) ->
                     let (screen, world) = World.readScreen screenDescriptor None world
                     (screen :: screens, world))
-                ([], world) |>
-            mapFst List.rev
+                gameDescriptor.Screens
+                ([], world)
 
 namespace Debug
 open Prime
