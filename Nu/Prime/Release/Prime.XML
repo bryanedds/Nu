@@ -2071,16 +2071,20 @@
  Convert a symbol to a string, with the following unparses:
  
  (* Atom values *)
- 
- 0
  None
- Hello_World
  CharacterAnimationFacing
+ 
+ (* Number values *)
+ 0
+ -5
+
+ (* String value *)
  &quot;String with quoted spaces.&quot;
- String_with_underscores_for_spaces.
+
+ (* Quoted value *)
+ `[Some 1]&apos;
  
  (* Symbols values *)
-
  []
  [Some 0]
  [Left 0]
@@ -2096,16 +2100,20 @@
  Convert a string to a symbol, with the following parses:
  
  (* Atom values *)
- 
- 0
  None
- Hello_World
  CharacterAnimationFacing
+ 
+ (* Number values *)
+ 0
+ -5
+
+ (* String value *)
  &quot;String with quoted spaces.&quot;
- String_with_underscores_for_spaces.
+
+ (* Quoted value *)
+ `[Some 1]&apos;
  
  (* Symbols values *)
-
  []
  [Some 0]
  [Left 0]

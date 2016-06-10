@@ -11,8 +11,6 @@ open Prime
 /// A Visually-Scripted Reactive Language - A scripting language for Nu that is essentially a cross between Elm and
 /// Unreal Blueprints.
 ///
-/// TODO: Implement defaults for missing parameters for symbols.
-/// TODO: Transform read of "+" "-" "*" etc to "Add" "Subtract" "Multiply" etc and vice versa for write in Prime.
 /// TODO: also raise event for all effect tags so they can be handled in scripts?
 /// TODO: It would be nice if the visual editor also worked with Effects and other s-expr systems.
 module Scripting =
@@ -28,17 +26,17 @@ module Scripting =
           BreakpointCondition : Expr }
 
     and [<NoComparison>] Lambda =
-        | Not of Expr
-        | And of Expr * Expr | Or of Expr * Expr
-        | Equal of Expr * Expr | NotEqual of Expr * Expr | Less of Expr * Expr | Greater of Expr * Expr | LessOrEqual of Expr * Expr | GreaterOrEqual of Expr * Expr
-        | Add of Expr * Expr | Subtract of Expr * Expr | Multiply of Expr * Expr | Divide of Expr * Expr | Rem of Expr * Expr | Mod of Expr * Expr | Pow of Expr * Expr | Root of Expr * Expr
+        | Not_ of Expr
+        | And_ of Expr * Expr | Or_ of Expr * Expr
+        | Eq_ of Expr * Expr | Not_Eq_ of Expr * Expr | Lt_ of Expr * Expr | Gt_ of Expr * Expr | Lt_Eq_ of Expr * Expr | Gt_Eq_ of Expr * Expr
+        | Add_ of Expr * Expr | Sub_ of Expr * Expr | Mul_ of Expr * Expr | Div_ of Expr * Expr | Mod_ of Expr * Expr | Rem of Expr * Expr | Pow of Expr * Expr | Root of Expr * Expr
         | Floor of Expr | Ceiling of Expr | Truncate of Expr | Round of Expr
         | Exp of Expr | Log of Expr | Square of Expr | Sqrt of Expr
         | Sin of Expr | Cos of Expr | Tan of Expr | Asin of Expr | Acos of Expr | Atan of Expr
         | Cross of Expr * Expr | Dot of Expr * Expr | Length of Expr | Normal of Expr
         | Head of Expr | Tail of Expr | Empty of Expr | Cons of Expr * Expr
         | Map of Expr * Expr | Filter of Expr * Expr | Fold of Expr * Expr * Expr | Any of Expr | All of Expr | None of Expr
-        | Property of string * Referent
+        | Get_ of Referent * string
         | If of Expr * Expr * Expr
         | Try of Expr * Expr
         | Fun of string list * Expr * int
