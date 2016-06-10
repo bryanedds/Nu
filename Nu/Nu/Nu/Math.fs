@@ -101,7 +101,7 @@ type Vector4Converter () =
         match source with
         | :? Symbol as symbol ->
             match symbol with
-            | Symbols ([Number (x, _); Number (y, _); Number (z, _); Number (w, _)], None) -> Vector4 (Single.Parse x, Single.Parse y, Single.Parse z, Single.Parse w) :> obj
+            | Symbols ([Number (x, _); Number (y, _); Number (z, _); Number (w, _)], _) -> Vector4 (Single.Parse x, Single.Parse y, Single.Parse z, Single.Parse w) :> obj
             | _ -> failwith "Invalid Vector4Converter conversion from source."
         | :? Vector4 -> source
         | _ -> failwith "Invalid Vector4Converter conversion from source."
