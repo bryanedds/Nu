@@ -2066,6 +2066,11 @@
  Attempt to a symbol index from a string.
 </summary>
 </member>
+<member name="M:Prime.SymbolModule.tryGetOrigin(Prime.Symbol)">
+<summary>
+ Try to get the Origin of the symbol if it has one.
+</summary>
+</member>
 <member name="M:Prime.SymbolModule.toString(Prime.Symbol)">
 <summary>
  Convert a symbol to a string, with the following unparses:
