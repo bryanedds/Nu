@@ -207,12 +207,12 @@ module WorldGroupModule =
 
         /// Read multiple groups from a screen descriptor.
         static member readGroups screenDescriptor screen world =
-            screenDescriptor.Groups |>
-            List.fold (fun (groups, world) groupDescriptor ->
-                let (group, world) = World.readGroup groupDescriptor None screen world
-                (group :: groups, world))
-                ([], world) |>
-            mapFst List.rev
+            List.foldBack
+                (fun groupDescriptor (groups, world) ->
+                    let (group, world) = World.readGroup groupDescriptor None screen world
+                    (group :: groups, world))
+                screenDescriptor.Groups
+                ([], world)
 
 namespace Debug
 open Prime

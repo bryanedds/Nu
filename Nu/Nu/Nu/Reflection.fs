@@ -508,7 +508,7 @@ module Reflection =
                             Map.empty
                     let overlayProperties =
                         if requiresFacetNames
-                        then Map.add "FacetNames" (Symbols []) overlayProperties
+                        then Map.add "FacetNames" (Symbols ([], None)) overlayProperties
                         else overlayProperties
                     let overlay =
                         { OverlayName = overlayName
@@ -517,6 +517,6 @@ module Reflection =
                     Map.add overlayName overlay overlays)
                 overlayDescriptors
                 Map.empty
-        
+
         // fin
         overlays
