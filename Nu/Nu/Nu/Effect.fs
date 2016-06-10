@@ -7,7 +7,7 @@ open Prime
 open OpenTK
 
 type Algorithm =
-    | Constant
+    | Const
     | Linear
     | Random
     | Chaos
@@ -23,14 +23,14 @@ type LogicApplicator =
     | Xor
     | And
     | Nand
-    | Put
+    | Eq
 
 type TweenApplicator =
-    | Sum
-    | Diff
-    | Scale
-    | Ratio
-    | Put
+    | Add
+    | Sub
+    | Mul
+    | Div
+    | Eq
 
 type [<StructuralEquality; NoComparison>] Slice =
     { Position : Vector2

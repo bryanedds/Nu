@@ -54,7 +54,7 @@ module EffectSystemModule =
     
         let inline private tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) progress algorithm effectSystem =
             match algorithm with
-            | Constant ->
+            | Const ->
                 value2
             | Linear ->
                 value + scale (value2 - value, progress)
@@ -92,15 +92,15 @@ module EffectSystemModule =
             | Xor -> value <> value2
             | And -> value && value2
             | Nand -> not (value && value2)
-            | LogicApplicator.Put -> value2
+            | LogicApplicator.Eq -> value2
     
-        let inline private applyTween scale ratio (value : ^a) (value2 : ^a) applicator =
+        let inline private applyTween mul div (value : ^a) (value2 : ^a) applicator =
             match applicator with
-            | Sum -> value + value2
-            | Diff -> value - value2
-            | Scale -> scale (value, value2)
-            | Ratio -> ratio (value, value2)
-            | TweenApplicator.Put -> value2
+            | Add -> value + value2
+            | Sub -> value - value2
+            | Mul -> mul (value, value2)
+            | Div -> div (value, value2)
+            | TweenApplicator.Eq -> value2
     
         let private evalInset (celSize : Vector2i) celRun celCount stutter effectSystem =
             let cel = int (effectSystem.EffectTime / stutter) % celCount

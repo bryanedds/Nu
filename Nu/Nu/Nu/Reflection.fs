@@ -378,7 +378,7 @@ module Reflection =
                 targetProperties
         match Map.tryFind facetNamesProperty.Name propertyDescriptors with
         | Some facetNamesSymbol ->
-            let facetNames = valueize<string list> facetNamesSymbol
+            let facetNames = valueize<string Set> facetNamesSymbol
             facetNamesProperty.SetValue (target, facetNames)
         | None -> ()
 
