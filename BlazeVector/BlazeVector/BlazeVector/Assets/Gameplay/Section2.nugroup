@@ -1,36 +1,47 @@
-﻿[GroupDispatcher
- [[Name Group]
-  [OptSpecialization None]
-  [PublishChanges True]
-  [Persistent True]]
- [[EnemyDispatcher
-   [[Position [672 -16.96]]
-    [Depth 4]]]
-  [TileMapDispatcher
-   [[Position [-480 -304]]
-    [PublishUpdates False]
-    [TileMapAsset [Gameplay Section2TileMap]]]]
-  [EnemyDispatcher
-   [[Position [-160 -15.68001]]
-    [Depth 1]]]
-  [TileMapDispatcher
-   [[Position [-480 -304]]
-    [Depth -8]
-    [PublishUpdates False]
-    [Parallax 0.1]
-    [TileMapAsset [Gameplay BackgroundA]]]]
-  [TileMapDispatcher
-   [[Position [-480 -304]]
-    [Depth -4]
-    [PublishUpdates False]
-    [Parallax 0.1]
-    [TileMapAsset [Gameplay BackgroundB]]]]
-  [EnemyDispatcher
-   [[Position [-424 -175.68]]
-    [Depth 1]]]
-  [EnemyDispatcher
-   [[Position [160 48.31998]]
-    [Depth 1]]]
-  [EnemyDispatcher
-   [[Position [1256 112.32]]
-    [Depth 1]]]]]
+[GroupDispatcher 
+ [[Name Group] 
+  [OptSpecialization None] 
+  [Persistent True] 
+  [PublishChanges True]] 
+ [[EnemyDispatcher 
+   [[Depth 1] 
+    [Position 
+     [1256 112.32]]]] 
+  [EnemyDispatcher 
+   [[Depth 1] 
+    [Position 
+     [160 48.31998]]]] 
+  [EnemyDispatcher 
+   [[Depth 1] 
+    [Position 
+     [-424 -175.68]]]] 
+  [TileMapDispatcher 
+   [[Depth -4] 
+    [Parallax 0.1] 
+    [Position 
+     [-480 -304]] 
+    [PublishUpdates False] 
+    [TileMapAsset 
+     [Gameplay BackgroundB]]]] 
+  [TileMapDispatcher 
+   [[Depth -8] 
+    [Parallax 0.1] 
+    [Position 
+     [-480 -304]] 
+    [PublishUpdates False] 
+    [TileMapAsset 
+     [Gameplay BackgroundA]]]] 
+  [EnemyDispatcher 
+   [[Depth 1] 
+    [Position 
+     [-160 -15.68001]]]] 
+  [TileMapDispatcher 
+   [[Position 
+     [-480 -304]] 
+    [PublishUpdates False] 
+    [TileMapAsset 
+     [Gameplay Section2TileMap]]]] 
+  [EnemyDispatcher 
+   [[Depth 4] 
+    [Position 
+     [672 -16.96]]]]]]

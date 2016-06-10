@@ -216,7 +216,7 @@ module RigidBodyFacetModule =
              Define? LinearDamping 1.0f
              Define? GravityScale 1.0f
              Define? CollisionCategories "1"
-             Define? CollisionMask "*"
+             Define? CollisionMask "@"
              Define? CollisionExpr ^ BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero }
              Define? IsBullet false
              Define? IsSensor false]
@@ -983,7 +983,7 @@ module TileMapDispatcherModule =
              Define? Friction 0.0f
              Define? Restitution 0.0f
              Define? CollisionCategories "1"
-             Define? CollisionMask "*"
+             Define? CollisionMask "@"
              Define? TileMapAsset { PackageName = Constants.Assets.DefaultPackageName; AssetName = "TileMap" }
              Define? Parallax 0.0f]
 

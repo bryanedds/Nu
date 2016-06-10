@@ -565,14 +565,14 @@ module Physics =
 
     /// Convert a category expression to a value that represents collision categories.
     /// Examples -
-    ///     * = -1
+    ///     @ = -1
     ///     0 = 0
     ///     1 = 1
     ///     10 = 2
-    ///     2 = ERROR - input must be either * or a binary number!
+    ///     2 = ERROR - input must be either @ or a binary number!
     let toCollisionCategories categoryExpr =
         match categoryExpr with
-        | "*" -> -1
+        | "@" -> -1
         | _ -> Convert.ToInt32 (categoryExpr, 2)
 
     /// Evaluate a collision expression.
