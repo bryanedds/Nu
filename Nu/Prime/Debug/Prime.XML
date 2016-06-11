@@ -2058,7 +2058,12 @@
 </member>
 <member name="M:Prime.SymbolIndexModule.prettyPrint(System.String)">
 <summary>
- Pretty-print a string in the form an symbolic-expression.
+ Pretty-print a symbol string in the form an symbolic-expression.
+</summary>
+</member>
+<member name="M:Prime.SymbolIndexModule.cascade(System.String)">
+<summary>
+ Cascade a symbol string into multiple lines with proper tabbing.
 </summary>
 </member>
 <member name="M:Prime.SymbolIndexModule.fromString(System.String)">
