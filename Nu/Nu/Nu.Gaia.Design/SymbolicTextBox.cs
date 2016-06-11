@@ -1,5 +1,4 @@
 ﻿using System.Drawing;
-using System.Linq;
 using ScintillaNET;
 
 namespace Nu.Gaia.Design

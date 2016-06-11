@@ -291,6 +291,7 @@ module Gaia =
             form.propertyNameLabel.Text <- String.Empty
             form.propertyDescriptionTextBox.Text <- String.Empty
             form.propertyValueTextBox.Text <- String.Empty
+            form.propertyValueTextBox.EmptyUndoBuffer ()
         | selectedGridItem ->
             match selectedGridItem.GridItemType with
             | GridItemType.Property ->
@@ -303,12 +304,13 @@ module Gaia =
                     let strEscaped = String.escape strUnescaped
                     let strPretty = SymbolIndex.prettyPrint strEscaped
                     form.propertyValueTextBox.Text <- strPretty
-                    // NOTE: can probably use form.propertyValueTextBox.Rtf to highlight matching brace
+                    form.propertyValueTextBox.EmptyUndoBuffer ()
             | _ ->
                 form.propertyEditor.Enabled <- false
                 form.propertyNameLabel.Text <- String.Empty
                 form.propertyDescriptionTextBox.Text <- String.Empty
                 form.propertyValueTextBox.Text <- String.Empty
+                form.propertyValueTextBox.EmptyUndoBuffer ()
 
     let private applyPropertyEditor (form : GaiaForm) =
         match form.propertyGrid.SelectedObject with
@@ -321,7 +323,8 @@ module Gaia =
                 | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
                     let propertyDescriptor = selectedGridItem.PropertyDescriptor :?> EntityPropertyDescriptor
                     let typeConverter = SymbolicConverter (selectedGridItem.PropertyDescriptor.PropertyType)
-                    try let strEscaped = form.propertyValueTextBox.Text
+                    try form.propertyValueTextBox.EndUndoAction ()
+                        let strEscaped = form.propertyValueTextBox.Text
                         let strUnescaped = String.unescape strEscaped
                         let propertyValue = typeConverter.ConvertFromString strUnescaped
                         propertyDescriptor.SetValue (entityTds, propertyValue)
@@ -361,6 +364,7 @@ module Gaia =
             try let eventFilter = scvalue<EventFilter> form.eventFilterTextBox.Text
                 let world = World.setEventFilter eventFilter world
                 form.eventFilterTextBox.Text <- SymbolIndex.prettyPrint ^ scstring eventFilter
+                form.eventFilterTextBox.EmptyUndoBuffer ()
                 world
             with exn ->
                 let world = World.choose world
@@ -373,6 +377,7 @@ module Gaia =
             let eventFilterStr = scstring eventFilter
             let eventFilterPretty = SymbolIndex.prettyPrint eventFilterStr
             form.eventFilterTextBox.Text <- eventFilterPretty
+            form.eventFilterTextBox.EmptyUndoBuffer ()
             world)
 
     let private handleFormTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =

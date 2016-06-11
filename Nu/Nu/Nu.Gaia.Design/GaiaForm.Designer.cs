@@ -73,7 +73,6 @@
             this.resetEventFilterButton = new System.Windows.Forms.Button();
             this.traceEventsCheckBox = new System.Windows.Forms.CheckBox();
             this.applyEventFilterButton = new System.Windows.Forms.Button();
-            this.eventFilterTextBox = new System.Windows.Forms.RichTextBox();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
             this.propertyGrid = new System.Windows.Forms.PropertyGrid();
             this.treeView = new System.Windows.Forms.TreeView();
@@ -114,6 +113,7 @@
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.displayPanel = new Nu.Gaia.Design.SelectablePanel();
             this.propertyValueTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.eventFilterTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -555,18 +555,6 @@
             this.applyEventFilterButton.Text = "Apply Filter";
             this.applyEventFilterButton.UseVisualStyleBackColor = true;
             // 
-            // eventFilterTextBox
-            // 
-            this.eventFilterTextBox.DetectUrls = false;
-            this.eventFilterTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.eventFilterTextBox.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.eventFilterTextBox.Location = new System.Drawing.Point(0, 0);
-            this.eventFilterTextBox.Name = "eventFilterTextBox";
-            this.eventFilterTextBox.Size = new System.Drawing.Size(778, 220);
-            this.eventFilterTextBox.TabIndex = 1;
-            this.eventFilterTextBox.Text = "";
-            this.eventFilterTextBox.WordWrap = false;
-            // 
             // splitContainer3
             // 
             this.splitContainer3.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -917,11 +905,23 @@
             // propertyValueTextBox
             // 
             this.propertyValueTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.propertyValueTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.propertyValueTextBox.Location = new System.Drawing.Point(0, 0);
             this.propertyValueTextBox.Name = "propertyValueTextBox";
             this.propertyValueTextBox.Size = new System.Drawing.Size(778, 220);
             this.propertyValueTextBox.TabIndex = 0;
-            this.propertyValueTextBox.Text = "lllllWWWW";
+            this.propertyValueTextBox.UseTabs = false;
+            // 
+            // eventFilterTextBox
+            // 
+            this.eventFilterTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.eventFilterTextBox.ExtraDescent = 1;
+            this.eventFilterTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.eventFilterTextBox.Location = new System.Drawing.Point(0, 0);
+            this.eventFilterTextBox.Name = "eventFilterTextBox";
+            this.eventFilterTextBox.Size = new System.Drawing.Size(778, 220);
+            this.eventFilterTextBox.TabIndex = 0;
+            this.eventFilterTextBox.UseTabs = false;
             // 
             // GaiaForm
             // 
@@ -1059,13 +1059,13 @@
         public System.Windows.Forms.ToolStripButton resetTickTime;
         private System.Windows.Forms.SplitContainer splitContainer6;
         public System.Windows.Forms.Button applyEventFilterButton;
-        public System.Windows.Forms.RichTextBox eventFilterTextBox;
         public System.Windows.Forms.CheckBox traceEventsCheckBox;
         public System.Windows.Forms.Button resetEventFilterButton;
         public System.Windows.Forms.TabPage propertyTabPage;
         public System.Windows.Forms.TabPage eventTracingTabPage;
         public System.Windows.Forms.TabControl rolloutTabControl;
         public SymbolicTextBox propertyValueTextBox;
+        public SymbolicTextBox eventFilterTextBox;
     }
 }
 
