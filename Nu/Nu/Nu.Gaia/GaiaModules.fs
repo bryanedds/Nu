@@ -332,7 +332,7 @@ module Gaia =
                             match Symbol.tryGetOrigin symbol with
                             | Some origin ->
                                 form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
-                                form.propertyValueTextBox.SelectionLength <- int ^ origin.Stop.Index - origin.Start.Index
+                                form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
                             | None -> ()
                         | None -> ()
                         Log.trace ^ "Invalid apply property operation due to: " + scstring exn
