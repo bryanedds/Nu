@@ -58,7 +58,7 @@ namespace Nu.Gaia.Design
                 else
                 {
                     // Select the brace anywhere to the left
-                    for (var i = caretPos - 1; i >= 0; ++i)
+                    for (var i = caretPos - 1; i >= 0; --i)
                     {
                         if (IsBrace(GetCharAt(i)))
                         {
