@@ -94,6 +94,9 @@
     <Reference Include="Prime">
       <HintPath>..\..\Prime\Release\Prime.exe</HintPath>
     </Reference>
+    <Reference Include="ScintillaNET">
+      <HintPath>..\..\ScintillaNET\ScintillaNET.dll</HintPath>
+    </Reference>
     <Reference Include="SDL2#">
       <HintPath>..\..\SDL2#\$(Configuration)\SDL2#.dll</HintPath>
     </Reference>

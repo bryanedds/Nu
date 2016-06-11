@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Drawing;
 using System.Windows.Forms;
 
 namespace Nu.Gaia.Design
@@ -8,13 +7,13 @@ namespace Nu.Gaia.Design
     {
         public SelectablePanel()
         {
-            this.SetStyle(ControlStyles.Selectable, true);
-            this.TabStop = true;
+            SetStyle(ControlStyles.Selectable, true);
+            TabStop = true;
         }
         
         protected override void OnMouseDown(MouseEventArgs e)
         {
-            this.Focus();
+            Focus();
             base.OnMouseDown(e);
         }
         
@@ -27,20 +26,20 @@ namespace Nu.Gaia.Design
         
         protected override void OnEnter(EventArgs e)
         {
-            this.Invalidate();
+            Invalidate();
             base.OnEnter(e);
         }
         
         protected override void OnLeave(EventArgs e)
         {
-            this.Invalidate();
+            Invalidate();
             base.OnLeave(e);
         }
         
         protected override void OnPaint(PaintEventArgs pe)
         {
             base.OnPaint(pe);
-            if (this.Focused)
+            if (Focused)
             {
                 var rc = this.ClientRectangle;
                 rc.Inflate(-2, -2);
