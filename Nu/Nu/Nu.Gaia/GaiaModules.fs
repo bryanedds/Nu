@@ -333,7 +333,6 @@ module Gaia =
                             | Some origin ->
                                 form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
                                 form.propertyValueTextBox.SelectionLength <- int ^ origin.Stop.Index - origin.Start.Index
-                                form.propertyValueTextBox.Focus () |> ignore
                             | None -> ()
                         | None -> ()
                         Log.trace ^ "Invalid apply property operation due to: " + scstring exn

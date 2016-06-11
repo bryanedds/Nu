@@ -59,6 +59,23 @@
             this.copyContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pasteContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.splitContainer4 = new System.Windows.Forms.SplitContainer();
+            this.displayPanel = new Nu.Gaia.Design.SelectablePanel();
+            this.rolloutTabControl = new System.Windows.Forms.TabControl();
+            this.propertyTabPage = new System.Windows.Forms.TabPage();
+            this.propertyEditor = new System.Windows.Forms.SplitContainer();
+            this.splitContainer5 = new System.Windows.Forms.SplitContainer();
+            this.propertyApplyLabel = new System.Windows.Forms.Button();
+            this.propertyNameLabel = new System.Windows.Forms.Label();
+            this.propertyRefreshLabel = new System.Windows.Forms.Button();
+            this.propertyDescriptionTextBox = new System.Windows.Forms.TextBox();
+            this.propertyValueTextBox = new System.Windows.Forms.RichTextBox();
+            this.eventTracingTabPage = new System.Windows.Forms.TabPage();
+            this.splitContainer6 = new System.Windows.Forms.SplitContainer();
+            this.resetEventFilterButton = new System.Windows.Forms.Button();
+            this.traceEventsCheckBox = new System.Windows.Forms.CheckBox();
+            this.applyEventFilterButton = new System.Windows.Forms.Button();
+            this.eventFilterTextBox = new System.Windows.Forms.RichTextBox();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
             this.propertyGrid = new System.Windows.Forms.PropertyGrid();
             this.treeView = new System.Windows.Forms.TreeView();
@@ -97,39 +114,12 @@
             this.groupTabs = new System.Windows.Forms.TabControl();
             this.tabPage = new System.Windows.Forms.TabPage();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
-            this.splitContainer4 = new System.Windows.Forms.SplitContainer();
-            this.displayPanel = new Nu.Gaia.Design.SelectablePanel();
-            this.rolloutTabControl = new System.Windows.Forms.TabControl();
-            this.propertyTabPage = new System.Windows.Forms.TabPage();
-            this.propertyEditor = new System.Windows.Forms.SplitContainer();
-            this.splitContainer5 = new System.Windows.Forms.SplitContainer();
-            this.propertyApplyLabel = new System.Windows.Forms.Button();
-            this.propertyNameLabel = new System.Windows.Forms.Label();
-            this.propertyRefreshLabel = new System.Windows.Forms.Button();
-            this.propertyDescriptionTextBox = new System.Windows.Forms.TextBox();
-            this.propertyValueTextBox = new System.Windows.Forms.RichTextBox();
-            this.eventTracingTabPage = new System.Windows.Forms.TabPage();
-            this.splitContainer6 = new System.Windows.Forms.SplitContainer();
-            this.resetEventFilterButton = new System.Windows.Forms.Button();
-            this.traceEventsCheckBox = new System.Windows.Forms.CheckBox();
-            this.applyEventFilterButton = new System.Windows.Forms.Button();
-            this.eventFilterTextBox = new System.Windows.Forms.RichTextBox();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).BeginInit();
-            this.splitContainer3.Panel1.SuspendLayout();
-            this.splitContainer3.Panel2.SuspendLayout();
-            this.splitContainer3.SuspendLayout();
-            this.toolStrip.SuspendLayout();
-            this.groupTabs.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
-            this.splitContainer2.Panel1.SuspendLayout();
-            this.splitContainer2.Panel2.SuspendLayout();
-            this.splitContainer2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).BeginInit();
             this.splitContainer4.Panel1.SuspendLayout();
             this.splitContainer4.Panel2.SuspendLayout();
@@ -149,6 +139,16 @@
             this.splitContainer6.Panel1.SuspendLayout();
             this.splitContainer6.Panel2.SuspendLayout();
             this.splitContainer6.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).BeginInit();
+            this.splitContainer3.Panel1.SuspendLayout();
+            this.splitContainer3.Panel2.SuspendLayout();
+            this.splitContainer3.SuspendLayout();
+            this.toolStrip.SuspendLayout();
+            this.groupTabs.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
+            this.splitContainer2.Panel1.SuspendLayout();
+            this.splitContainer2.Panel2.SuspendLayout();
+            this.splitContainer2.SuspendLayout();
             this.SuspendLayout();
             // 
             // menuStrip
@@ -373,9 +373,223 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer3);
             this.splitContainer1.Size = new System.Drawing.Size(1334, 801);
-            this.splitContainer1.SplitterDistance = 970;
+            this.splitContainer1.SplitterDistance = 971;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
+            // 
+            // splitContainer4
+            // 
+            this.splitContainer4.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer4.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer4.Name = "splitContainer4";
+            this.splitContainer4.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
+            // splitContainer4.Panel1
+            // 
+            this.splitContainer4.Panel1.Controls.Add(this.displayPanel);
+            // 
+            // splitContainer4.Panel2
+            // 
+            this.splitContainer4.Panel2.Controls.Add(this.rolloutTabControl);
+            this.splitContainer4.Size = new System.Drawing.Size(971, 801);
+            this.splitContainer4.SplitterDistance = 545;
+            this.splitContainer4.TabIndex = 1;
+            // 
+            // displayPanel
+            // 
+            this.displayPanel.ContextMenuStrip = this.contextMenuStrip;
+            this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.displayPanel.Location = new System.Drawing.Point(0, 0);
+            this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
+            this.displayPanel.Name = "displayPanel";
+            this.displayPanel.Size = new System.Drawing.Size(971, 545);
+            this.displayPanel.TabIndex = 0;
+            this.displayPanel.TabStop = true;
+            // 
+            // rolloutTabControl
+            // 
+            this.rolloutTabControl.Controls.Add(this.propertyTabPage);
+            this.rolloutTabControl.Controls.Add(this.eventTracingTabPage);
+            this.rolloutTabControl.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.rolloutTabControl.Location = new System.Drawing.Point(0, 0);
+            this.rolloutTabControl.Name = "rolloutTabControl";
+            this.rolloutTabControl.SelectedIndex = 0;
+            this.rolloutTabControl.Size = new System.Drawing.Size(971, 252);
+            this.rolloutTabControl.TabIndex = 0;
+            // 
+            // propertyTabPage
+            // 
+            this.propertyTabPage.Controls.Add(this.propertyEditor);
+            this.propertyTabPage.Location = new System.Drawing.Point(4, 22);
+            this.propertyTabPage.Name = "propertyTabPage";
+            this.propertyTabPage.Padding = new System.Windows.Forms.Padding(3);
+            this.propertyTabPage.Size = new System.Drawing.Size(963, 226);
+            this.propertyTabPage.TabIndex = 0;
+            this.propertyTabPage.Text = "Property Editor";
+            this.propertyTabPage.UseVisualStyleBackColor = true;
+            // 
+            // propertyEditor
+            // 
+            this.propertyEditor.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.propertyEditor.Enabled = false;
+            this.propertyEditor.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
+            this.propertyEditor.IsSplitterFixed = true;
+            this.propertyEditor.Location = new System.Drawing.Point(3, 3);
+            this.propertyEditor.Name = "propertyEditor";
+            // 
+            // propertyEditor.Panel1
+            // 
+            this.propertyEditor.Panel1.Controls.Add(this.splitContainer5);
+            // 
+            // propertyEditor.Panel2
+            // 
+            this.propertyEditor.Panel2.Controls.Add(this.propertyValueTextBox);
+            this.propertyEditor.Size = new System.Drawing.Size(957, 220);
+            this.propertyEditor.SplitterDistance = 176;
+            this.propertyEditor.TabIndex = 0;
+            // 
+            // splitContainer5
+            // 
+            this.splitContainer5.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer5.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
+            this.splitContainer5.IsSplitterFixed = true;
+            this.splitContainer5.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer5.Name = "splitContainer5";
+            this.splitContainer5.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
+            // splitContainer5.Panel1
+            // 
+            this.splitContainer5.Panel1.Controls.Add(this.propertyApplyLabel);
+            this.splitContainer5.Panel1.Controls.Add(this.propertyNameLabel);
+            this.splitContainer5.Panel1.Controls.Add(this.propertyRefreshLabel);
+            // 
+            // splitContainer5.Panel2
+            // 
+            this.splitContainer5.Panel2.Controls.Add(this.propertyDescriptionTextBox);
+            this.splitContainer5.Size = new System.Drawing.Size(176, 220);
+            this.splitContainer5.SplitterDistance = 98;
+            this.splitContainer5.TabIndex = 1;
+            // 
+            // propertyApplyLabel
+            // 
+            this.propertyApplyLabel.Location = new System.Drawing.Point(16, 64);
+            this.propertyApplyLabel.Name = "propertyApplyLabel";
+            this.propertyApplyLabel.Size = new System.Drawing.Size(147, 23);
+            this.propertyApplyLabel.TabIndex = 1;
+            this.propertyApplyLabel.Text = "Apply";
+            this.propertyApplyLabel.UseVisualStyleBackColor = true;
+            // 
+            // propertyNameLabel
+            // 
+            this.propertyNameLabel.AutoSize = true;
+            this.propertyNameLabel.Location = new System.Drawing.Point(14, 10);
+            this.propertyNameLabel.Name = "propertyNameLabel";
+            this.propertyNameLabel.Size = new System.Drawing.Size(0, 13);
+            this.propertyNameLabel.TabIndex = 3;
+            // 
+            // propertyRefreshLabel
+            // 
+            this.propertyRefreshLabel.Location = new System.Drawing.Point(16, 35);
+            this.propertyRefreshLabel.Name = "propertyRefreshLabel";
+            this.propertyRefreshLabel.Size = new System.Drawing.Size(147, 23);
+            this.propertyRefreshLabel.TabIndex = 0;
+            this.propertyRefreshLabel.Text = "Refresh";
+            this.propertyRefreshLabel.UseVisualStyleBackColor = true;
+            // 
+            // propertyDescriptionTextBox
+            // 
+            this.propertyDescriptionTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.propertyDescriptionTextBox.Location = new System.Drawing.Point(0, 0);
+            this.propertyDescriptionTextBox.Multiline = true;
+            this.propertyDescriptionTextBox.Name = "propertyDescriptionTextBox";
+            this.propertyDescriptionTextBox.ReadOnly = true;
+            this.propertyDescriptionTextBox.Size = new System.Drawing.Size(176, 118);
+            this.propertyDescriptionTextBox.TabIndex = 0;
+            // 
+            // propertyValueTextBox
+            // 
+            this.propertyValueTextBox.DetectUrls = false;
+            this.propertyValueTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.propertyValueTextBox.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.propertyValueTextBox.HideSelection = false;
+            this.propertyValueTextBox.Location = new System.Drawing.Point(0, 0);
+            this.propertyValueTextBox.Name = "propertyValueTextBox";
+            this.propertyValueTextBox.Size = new System.Drawing.Size(777, 220);
+            this.propertyValueTextBox.TabIndex = 0;
+            this.propertyValueTextBox.Text = "";
+            this.propertyValueTextBox.WordWrap = false;
+            // 
+            // eventTracingTabPage
+            // 
+            this.eventTracingTabPage.Controls.Add(this.splitContainer6);
+            this.eventTracingTabPage.Location = new System.Drawing.Point(4, 22);
+            this.eventTracingTabPage.Name = "eventTracingTabPage";
+            this.eventTracingTabPage.Padding = new System.Windows.Forms.Padding(3);
+            this.eventTracingTabPage.Size = new System.Drawing.Size(963, 226);
+            this.eventTracingTabPage.TabIndex = 1;
+            this.eventTracingTabPage.Text = "Event Tracing";
+            this.eventTracingTabPage.UseVisualStyleBackColor = true;
+            // 
+            // splitContainer6
+            // 
+            this.splitContainer6.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer6.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
+            this.splitContainer6.IsSplitterFixed = true;
+            this.splitContainer6.Location = new System.Drawing.Point(3, 3);
+            this.splitContainer6.Name = "splitContainer6";
+            // 
+            // splitContainer6.Panel1
+            // 
+            this.splitContainer6.Panel1.Controls.Add(this.resetEventFilterButton);
+            this.splitContainer6.Panel1.Controls.Add(this.traceEventsCheckBox);
+            this.splitContainer6.Panel1.Controls.Add(this.applyEventFilterButton);
+            // 
+            // splitContainer6.Panel2
+            // 
+            this.splitContainer6.Panel2.Controls.Add(this.eventFilterTextBox);
+            this.splitContainer6.Size = new System.Drawing.Size(957, 220);
+            this.splitContainer6.SplitterDistance = 176;
+            this.splitContainer6.TabIndex = 0;
+            // 
+            // resetEventFilterButton
+            // 
+            this.resetEventFilterButton.Location = new System.Drawing.Point(16, 64);
+            this.resetEventFilterButton.Name = "resetEventFilterButton";
+            this.resetEventFilterButton.Size = new System.Drawing.Size(147, 23);
+            this.resetEventFilterButton.TabIndex = 4;
+            this.resetEventFilterButton.Text = "Reset Filter";
+            this.resetEventFilterButton.UseVisualStyleBackColor = true;
+            // 
+            // traceEventsCheckBox
+            // 
+            this.traceEventsCheckBox.AutoSize = true;
+            this.traceEventsCheckBox.Location = new System.Drawing.Point(16, 12);
+            this.traceEventsCheckBox.Name = "traceEventsCheckBox";
+            this.traceEventsCheckBox.Size = new System.Drawing.Size(90, 17);
+            this.traceEventsCheckBox.TabIndex = 3;
+            this.traceEventsCheckBox.Text = "Trace Events";
+            this.traceEventsCheckBox.UseVisualStyleBackColor = true;
+            // 
+            // applyEventFilterButton
+            // 
+            this.applyEventFilterButton.Location = new System.Drawing.Point(16, 35);
+            this.applyEventFilterButton.Name = "applyEventFilterButton";
+            this.applyEventFilterButton.Size = new System.Drawing.Size(147, 23);
+            this.applyEventFilterButton.TabIndex = 2;
+            this.applyEventFilterButton.Text = "Apply Filter";
+            this.applyEventFilterButton.UseVisualStyleBackColor = true;
+            // 
+            // eventFilterTextBox
+            // 
+            this.eventFilterTextBox.DetectUrls = false;
+            this.eventFilterTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.eventFilterTextBox.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.eventFilterTextBox.Location = new System.Drawing.Point(0, 0);
+            this.eventFilterTextBox.Name = "eventFilterTextBox";
+            this.eventFilterTextBox.Size = new System.Drawing.Size(777, 220);
+            this.eventFilterTextBox.TabIndex = 1;
+            this.eventFilterTextBox.Text = "";
+            this.eventFilterTextBox.WordWrap = false;
             // 
             // splitContainer3
             // 
@@ -391,7 +605,7 @@
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.treeView);
-            this.splitContainer3.Size = new System.Drawing.Size(361, 801);
+            this.splitContainer3.Size = new System.Drawing.Size(360, 801);
             this.splitContainer3.SplitterDistance = 527;
             this.splitContainer3.TabIndex = 2;
             // 
@@ -402,7 +616,7 @@
             this.propertyGrid.Location = new System.Drawing.Point(0, 0);
             this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(361, 527);
+            this.propertyGrid.Size = new System.Drawing.Size(360, 527);
             this.propertyGrid.TabIndex = 0;
             this.propertyGrid.ToolbarVisible = false;
             // 
@@ -411,7 +625,7 @@
             this.treeView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeView.Location = new System.Drawing.Point(0, 0);
             this.treeView.Name = "treeView";
-            this.treeView.Size = new System.Drawing.Size(361, 270);
+            this.treeView.Size = new System.Drawing.Size(360, 270);
             this.treeView.TabIndex = 1;
             // 
             // openFileDialog
@@ -713,219 +927,6 @@
             this.splitContainer2.SplitterDistance = 30;
             this.splitContainer2.TabIndex = 5;
             // 
-            // splitContainer4
-            // 
-            this.splitContainer4.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer4.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer4.Name = "splitContainer4";
-            this.splitContainer4.Orientation = System.Windows.Forms.Orientation.Horizontal;
-            // 
-            // splitContainer4.Panel1
-            // 
-            this.splitContainer4.Panel1.Controls.Add(this.displayPanel);
-            // 
-            // splitContainer4.Panel2
-            // 
-            this.splitContainer4.Panel2.Controls.Add(this.rolloutTabControl);
-            this.splitContainer4.Size = new System.Drawing.Size(970, 801);
-            this.splitContainer4.SplitterDistance = 545;
-            this.splitContainer4.TabIndex = 1;
-            // 
-            // displayPanel
-            // 
-            this.displayPanel.ContextMenuStrip = this.contextMenuStrip;
-            this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.displayPanel.Location = new System.Drawing.Point(0, 0);
-            this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
-            this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(970, 545);
-            this.displayPanel.TabIndex = 0;
-            this.displayPanel.TabStop = true;
-            // 
-            // rolloutTabControl
-            // 
-            this.rolloutTabControl.Controls.Add(this.propertyTabPage);
-            this.rolloutTabControl.Controls.Add(this.eventTracingTabPage);
-            this.rolloutTabControl.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.rolloutTabControl.Location = new System.Drawing.Point(0, 0);
-            this.rolloutTabControl.Name = "rolloutTabControl";
-            this.rolloutTabControl.SelectedIndex = 0;
-            this.rolloutTabControl.Size = new System.Drawing.Size(970, 252);
-            this.rolloutTabControl.TabIndex = 0;
-            // 
-            // propertyTabPage
-            // 
-            this.propertyTabPage.Controls.Add(this.propertyEditor);
-            this.propertyTabPage.Location = new System.Drawing.Point(4, 22);
-            this.propertyTabPage.Name = "propertyTabPage";
-            this.propertyTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.propertyTabPage.Size = new System.Drawing.Size(962, 226);
-            this.propertyTabPage.TabIndex = 0;
-            this.propertyTabPage.Text = "Property Editor";
-            this.propertyTabPage.UseVisualStyleBackColor = true;
-            // 
-            // propertyEditor
-            // 
-            this.propertyEditor.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.propertyEditor.Enabled = false;
-            this.propertyEditor.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
-            this.propertyEditor.IsSplitterFixed = true;
-            this.propertyEditor.Location = new System.Drawing.Point(3, 3);
-            this.propertyEditor.Name = "propertyEditor";
-            // 
-            // propertyEditor.Panel1
-            // 
-            this.propertyEditor.Panel1.Controls.Add(this.splitContainer5);
-            // 
-            // propertyEditor.Panel2
-            // 
-            this.propertyEditor.Panel2.Controls.Add(this.propertyValueTextBox);
-            this.propertyEditor.Size = new System.Drawing.Size(956, 220);
-            this.propertyEditor.SplitterDistance = 176;
-            this.propertyEditor.TabIndex = 0;
-            // 
-            // splitContainer5
-            // 
-            this.splitContainer5.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer5.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
-            this.splitContainer5.IsSplitterFixed = true;
-            this.splitContainer5.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer5.Name = "splitContainer5";
-            this.splitContainer5.Orientation = System.Windows.Forms.Orientation.Horizontal;
-            // 
-            // splitContainer5.Panel1
-            // 
-            this.splitContainer5.Panel1.Controls.Add(this.propertyApplyLabel);
-            this.splitContainer5.Panel1.Controls.Add(this.propertyNameLabel);
-            this.splitContainer5.Panel1.Controls.Add(this.propertyRefreshLabel);
-            // 
-            // splitContainer5.Panel2
-            // 
-            this.splitContainer5.Panel2.Controls.Add(this.propertyDescriptionTextBox);
-            this.splitContainer5.Size = new System.Drawing.Size(176, 220);
-            this.splitContainer5.SplitterDistance = 98;
-            this.splitContainer5.TabIndex = 1;
-            // 
-            // propertyApplyLabel
-            // 
-            this.propertyApplyLabel.Location = new System.Drawing.Point(16, 64);
-            this.propertyApplyLabel.Name = "propertyApplyLabel";
-            this.propertyApplyLabel.Size = new System.Drawing.Size(147, 23);
-            this.propertyApplyLabel.TabIndex = 1;
-            this.propertyApplyLabel.Text = "Apply";
-            this.propertyApplyLabel.UseVisualStyleBackColor = true;
-            // 
-            // propertyNameLabel
-            // 
-            this.propertyNameLabel.AutoSize = true;
-            this.propertyNameLabel.Location = new System.Drawing.Point(14, 10);
-            this.propertyNameLabel.Name = "propertyNameLabel";
-            this.propertyNameLabel.Size = new System.Drawing.Size(0, 13);
-            this.propertyNameLabel.TabIndex = 3;
-            // 
-            // propertyRefreshLabel
-            // 
-            this.propertyRefreshLabel.Location = new System.Drawing.Point(16, 35);
-            this.propertyRefreshLabel.Name = "propertyRefreshLabel";
-            this.propertyRefreshLabel.Size = new System.Drawing.Size(147, 23);
-            this.propertyRefreshLabel.TabIndex = 0;
-            this.propertyRefreshLabel.Text = "Refresh";
-            this.propertyRefreshLabel.UseVisualStyleBackColor = true;
-            // 
-            // propertyDescriptionTextBox
-            // 
-            this.propertyDescriptionTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.propertyDescriptionTextBox.Location = new System.Drawing.Point(0, 0);
-            this.propertyDescriptionTextBox.Multiline = true;
-            this.propertyDescriptionTextBox.Name = "propertyDescriptionTextBox";
-            this.propertyDescriptionTextBox.ReadOnly = true;
-            this.propertyDescriptionTextBox.Size = new System.Drawing.Size(176, 118);
-            this.propertyDescriptionTextBox.TabIndex = 0;
-            // 
-            // propertyValueTextBox
-            // 
-            this.propertyValueTextBox.DetectUrls = false;
-            this.propertyValueTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.propertyValueTextBox.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.propertyValueTextBox.Location = new System.Drawing.Point(0, 0);
-            this.propertyValueTextBox.Name = "propertyValueTextBox";
-            this.propertyValueTextBox.Size = new System.Drawing.Size(776, 220);
-            this.propertyValueTextBox.TabIndex = 0;
-            this.propertyValueTextBox.Text = "";
-            this.propertyValueTextBox.WordWrap = false;
-            // 
-            // eventTracingTabPage
-            // 
-            this.eventTracingTabPage.Controls.Add(this.splitContainer6);
-            this.eventTracingTabPage.Location = new System.Drawing.Point(4, 22);
-            this.eventTracingTabPage.Name = "eventTracingTabPage";
-            this.eventTracingTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.eventTracingTabPage.Size = new System.Drawing.Size(962, 226);
-            this.eventTracingTabPage.TabIndex = 1;
-            this.eventTracingTabPage.Text = "Event Tracing";
-            this.eventTracingTabPage.UseVisualStyleBackColor = true;
-            // 
-            // splitContainer6
-            // 
-            this.splitContainer6.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer6.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
-            this.splitContainer6.IsSplitterFixed = true;
-            this.splitContainer6.Location = new System.Drawing.Point(3, 3);
-            this.splitContainer6.Name = "splitContainer6";
-            // 
-            // splitContainer6.Panel1
-            // 
-            this.splitContainer6.Panel1.Controls.Add(this.resetEventFilterButton);
-            this.splitContainer6.Panel1.Controls.Add(this.traceEventsCheckBox);
-            this.splitContainer6.Panel1.Controls.Add(this.applyEventFilterButton);
-            // 
-            // splitContainer6.Panel2
-            // 
-            this.splitContainer6.Panel2.Controls.Add(this.eventFilterTextBox);
-            this.splitContainer6.Size = new System.Drawing.Size(956, 220);
-            this.splitContainer6.SplitterDistance = 176;
-            this.splitContainer6.TabIndex = 0;
-            // 
-            // resetEventFilterButton
-            // 
-            this.resetEventFilterButton.Location = new System.Drawing.Point(16, 64);
-            this.resetEventFilterButton.Name = "resetEventFilterButton";
-            this.resetEventFilterButton.Size = new System.Drawing.Size(147, 23);
-            this.resetEventFilterButton.TabIndex = 4;
-            this.resetEventFilterButton.Text = "Reset Filter";
-            this.resetEventFilterButton.UseVisualStyleBackColor = true;
-            // 
-            // traceEventsCheckBox
-            // 
-            this.traceEventsCheckBox.AutoSize = true;
-            this.traceEventsCheckBox.Location = new System.Drawing.Point(16, 12);
-            this.traceEventsCheckBox.Name = "traceEventsCheckBox";
-            this.traceEventsCheckBox.Size = new System.Drawing.Size(90, 17);
-            this.traceEventsCheckBox.TabIndex = 3;
-            this.traceEventsCheckBox.Text = "Trace Events";
-            this.traceEventsCheckBox.UseVisualStyleBackColor = true;
-            // 
-            // applyEventFilterButton
-            // 
-            this.applyEventFilterButton.Location = new System.Drawing.Point(16, 35);
-            this.applyEventFilterButton.Name = "applyEventFilterButton";
-            this.applyEventFilterButton.Size = new System.Drawing.Size(147, 23);
-            this.applyEventFilterButton.TabIndex = 2;
-            this.applyEventFilterButton.Text = "Apply Filter";
-            this.applyEventFilterButton.UseVisualStyleBackColor = true;
-            // 
-            // eventFilterTextBox
-            // 
-            this.eventFilterTextBox.DetectUrls = false;
-            this.eventFilterTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.eventFilterTextBox.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.eventFilterTextBox.Location = new System.Drawing.Point(0, 0);
-            this.eventFilterTextBox.Name = "eventFilterTextBox";
-            this.eventFilterTextBox.Size = new System.Drawing.Size(776, 220);
-            this.eventFilterTextBox.TabIndex = 1;
-            this.eventFilterTextBox.Text = "";
-            this.eventFilterTextBox.WordWrap = false;
-            // 
             // GaiaForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -945,17 +946,6 @@
             this.splitContainer1.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
             this.splitContainer1.ResumeLayout(false);
-            this.splitContainer3.Panel1.ResumeLayout(false);
-            this.splitContainer3.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).EndInit();
-            this.splitContainer3.ResumeLayout(false);
-            this.toolStrip.ResumeLayout(false);
-            this.toolStrip.PerformLayout();
-            this.groupTabs.ResumeLayout(false);
-            this.splitContainer2.Panel1.ResumeLayout(false);
-            this.splitContainer2.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
-            this.splitContainer2.ResumeLayout(false);
             this.splitContainer4.Panel1.ResumeLayout(false);
             this.splitContainer4.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).EndInit();
@@ -978,6 +968,17 @@
             this.splitContainer6.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).EndInit();
             this.splitContainer6.ResumeLayout(false);
+            this.splitContainer3.Panel1.ResumeLayout(false);
+            this.splitContainer3.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).EndInit();
+            this.splitContainer3.ResumeLayout(false);
+            this.toolStrip.ResumeLayout(false);
+            this.toolStrip.PerformLayout();
+            this.groupTabs.ResumeLayout(false);
+            this.splitContainer2.Panel1.ResumeLayout(false);
+            this.splitContainer2.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
+            this.splitContainer2.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
