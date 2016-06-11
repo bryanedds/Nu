@@ -325,7 +325,19 @@ module Gaia =
                         let strUnescaped = String.unescape strEscaped
                         let propertyValue = typeConverter.ConvertFromString strUnescaped
                         propertyDescriptor.SetValue (entityTds, propertyValue)
-                    with exn -> Log.trace ^ "Invalid apply property operation due to: " + scstring exn
+                    with
+                    | :? ConversionException as exn ->
+                        match exn.OptSymbol with
+                        | Some symbol ->
+                            match Symbol.tryGetOrigin symbol with
+                            | Some origin ->
+                                form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
+                                form.propertyValueTextBox.SelectionLength <- int ^ origin.Stop.Index - origin.Start.Index
+                                form.propertyValueTextBox.Focus () |> ignore
+                            | None -> ()
+                        | None -> ()
+                        Log.trace ^ "Invalid apply property operation due to: " + scstring exn
+                    | exn -> Log.trace ^ "Invalid apply property operation due to: " + scstring exn
                 | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
         | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
 
