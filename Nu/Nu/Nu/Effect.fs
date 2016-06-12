@@ -147,16 +147,10 @@ type Definitions =
     Map<string, Definition>
 
 type [<NoEquality; NoComparison>] Effect =
-    { EffectName : string
-      OptLifetime : int64 option
-      Definitions : Definitions
-      Content : Content }
+    Effect of string * int64 option * Definitions * Content
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Effect =
 
     let empty =
-        { EffectName = "Empty"
-          OptLifetime = None
-          Definitions = Map.empty
-          Content = Composite (Shift 0.0f, []) }
+        Effect ("Empty", None, Map.empty, Composite (Shift 0.0f, []))

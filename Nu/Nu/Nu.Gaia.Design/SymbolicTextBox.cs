@@ -17,10 +17,9 @@ namespace Nu.Gaia.Design
             Lexer = Lexer.Lisp;
 
             // Add keyword styles
-            Styles[Style.Lisp.Keyword].ForeColor = Styles[Style.Lisp.KeywordKw].ForeColor = Color.DarkBlue;
-
-            // Add number style
-            Styles[Style.Lisp.Number].ForeColor = Color.DarkBlue;
+            Styles[Style.Lisp.Keyword].ForeColor = Color.DarkBlue;
+            Styles[Style.Lisp.KeywordKw].ForeColor = Color.FromArgb(0xFF, 0x60, 0x00, 0x70);
+            SetKeywords(1, "True False Some None Left Right");
 
             // Add special character styles
             Styles[Style.Lisp.Operator].ForeColor = Color.RoyalBlue; // brackets, actually
@@ -36,10 +35,10 @@ namespace Nu.Gaia.Design
             UseTabs = false;
 
             // Implement brace matching
-            UpdateUI += this_UpdateUI;
+            UpdateUI += SymbolicTextBox_UpdateUI;
         }
 
-        private void this_UpdateUI(object sender, UpdateUIEventArgs e)
+        private void SymbolicTextBox_UpdateUI(object sender, UpdateUIEventArgs e)
         {
             // Has the caret changed position?
             var caretPos = CurrentPosition;
