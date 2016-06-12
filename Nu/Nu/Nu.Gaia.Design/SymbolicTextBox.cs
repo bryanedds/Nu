@@ -16,7 +16,7 @@ namespace Nu.Gaia.Design
             // Lisp lexer
             Lexer = Lexer.Lisp;
 
-            // Add keyword styles
+            // Add keyword styles (keywords 0 are reserved for DSL-specific use)
             Styles[Style.Lisp.Keyword].ForeColor = Color.DarkBlue;
             Styles[Style.Lisp.KeywordKw].ForeColor = Color.FromArgb(0xFF, 0x60, 0x00, 0x70);
             SetKeywords(1, "True False Some None Left Right");
