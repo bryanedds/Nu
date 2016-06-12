@@ -121,7 +121,7 @@ module EventTests =
         let world = Eventable.publish 1 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (2, world.TestState)
 
-    let [<Fact>] sumWorks () =
+    let [<Fact>] productWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
         let world =
             observe TestEvent TestParticipant |>
