@@ -122,14 +122,23 @@ module Gaia =
                 else form.treeView.SelectedNode <- null
         | _ -> ()
 
+    let private selectEntity (form : GaiaForm) entity world =
+        RefWorld := world // must be set for property grid
+        form.propertyGrid.SelectedObject <- { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
+        tryScrollTreeViewToPropertyGridSelection form
+
+    let private deselectEntity (form : GaiaForm) world =
+        RefWorld := world // must be set for property grid
+        form.propertyGrid.SelectedObject <- null
+
     let private refreshPropertyGrid (form : GaiaForm) world =
         match form.propertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             entityTds.RefWorld := world // must be set for property grid
             if World.containsEntity entityTds.DescribedEntity world
             then form.propertyGrid.Refresh ()
-            else form.propertyGrid.SelectedObject <- null
-        | _ -> form.propertyGrid.SelectedObject <- null
+            else deselectEntity form world
+        | _ -> deselectEntity form world
 
     let private refreshTreeView (form : GaiaForm) world =
         let treeState = getExpansionState form.treeView
@@ -147,11 +156,6 @@ module Gaia =
         refreshPropertyGrid form world
         refreshTreeView form world
         refreshGroupTabs form world
-
-    let private selectEntity (form : GaiaForm) entity world =
-        RefWorld := world // must be set for property grid
-        form.propertyGrid.SelectedObject <- { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
-        tryScrollTreeViewToPropertyGridSelection form
 
     let private canEditWithMouse (form : GaiaForm) world =
         World.isTicking world &&
@@ -178,8 +182,8 @@ module Gaia =
         | null -> (Cascade, world)
         | :? EntityTypeDescriptorSource as entityTds ->
             if atoa evt.Publisher.ParticipantAddress = entityTds.DescribedEntity.EntityAddress then
-                form.propertyGrid.SelectedObject <- null
                 let world = World.updateUserState (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
+                deselectEntity form world
                 (Cascade, world)
             else (Cascade, world)
         | _ ->
@@ -285,14 +289,14 @@ module Gaia =
         form.createDepthTextBox.Text <- scstring ^ depth - 1.0f
 
     let private refreshPropertyEditor (form : GaiaForm) =
-        match form.propertyGrid.SelectedGridItem with
-        | null ->
+        match (form.propertyGrid.SelectedObject, form.propertyGrid.SelectedGridItem) with
+        | (null, _) ->
             form.propertyEditor.Enabled <- false
             form.propertyNameLabel.Text <- String.Empty
             form.propertyDescriptionTextBox.Text <- String.Empty
             form.propertyValueTextBox.Text <- String.Empty
             form.propertyValueTextBox.EmptyUndoBuffer ()
-        | selectedGridItem ->
+        | (_, selectedGridItem) ->
             match selectedGridItem.GridItemType with
             | GridItemType.Property ->
                 let ty = selectedGridItem.PropertyDescriptor.PropertyType
@@ -306,22 +310,7 @@ module Gaia =
                     let strPretty = SymbolIndex.prettyPrint strEscaped
                     form.propertyValueTextBox.Text <- strPretty
                     form.propertyValueTextBox.EmptyUndoBuffer ()
-                    let keywords =
-                        if ty = typeof<Effect> then
-                            "Const Linear Random Chaos Ease EaseIn EaseOut Sin Cos " +
-                            "Or Nor Xor And Nand Eq " +
-                            "Add Sub Mul Div Eq " +
-                            "Position Size Rotation Depth Offset Color Volume Enabled " +
-                            "Once Loop Bounce " +
-                            "Cycle Iterate " +
-                            "Rate " +
-                            "Shift " +
-                            "Expand Resource " +
-                            "Expand Enabled Position Translation Offset Size Rotation Depth Color Volume Bone " +
-                            "Expand StaticSprite AnimatedSprite SoundEffect Mount Repeat Emit Composite Tag Nil " +
-                            "RenderArtifact SoundArtifact TagArtifact " +
-                            "Effect"
-                        else ""
+                    let keywords = match ty.GetCustomAttribute<SyntaxAttribute>(true) with null -> "" | syntax -> syntax.Keywords
                     form.propertyValueTextBox.SetKeywords(0, keywords)
             | _ ->
                 form.propertyEditor.Enabled <- false
@@ -445,7 +434,7 @@ module Gaia =
             match form.propertyGrid.SelectedObject with
             | :? EntityTypeDescriptorSource as entityTds ->
                 let world = World.destroyEntity entityTds.DescribedEntity world
-                form.propertyGrid.SelectedObject <- null
+                deselectEntity form world
                 world
             | _ -> world)
 
@@ -487,7 +476,7 @@ module Gaia =
             | DialogResult.OK ->
                 let world = pushPastWorld world world
                 let world = tryLoadFile form form.openFileDialog.FileName world
-                form.propertyGrid.SelectedObject <- null
+                deselectEntity form world
                 world
             | _ -> world)
 
@@ -501,7 +490,7 @@ module Gaia =
                 let world = pushPastWorld world world
                 let group = (World.getUserState world).SelectedGroup
                 let world = World.destroyGroupImmediate group world
-                form.propertyGrid.SelectedObject <- null
+                deselectEntity form world
                 form.groupTabs.TabPages.RemoveByKey ^ Name.getNameStr group.GroupName
                 world)
 
@@ -562,7 +551,7 @@ module Gaia =
             | :? EntityTypeDescriptorSource as entityTds ->
                 let world = pushPastWorld world world
                 let world = World.cutToClipboard entityTds.DescribedEntity world
-                form.propertyGrid.SelectedObject <- null
+                deselectEntity form world
                 world
             | _ -> Log.trace ^ "Invalid cut operation (likely a code issue in Gaia)."; world)
 
@@ -629,7 +618,7 @@ module Gaia =
                     { editorState with SelectedGroup = stog Simulants.EditorScreen ^ Name.make groupTab.Text })
                     world
             let world = subscribeToEntityEvents form world
-            form.propertyGrid.SelectedObject <- null
+            deselectEntity form world
             refreshPropertyGrid form world
             refreshTreeView form world
             world)
