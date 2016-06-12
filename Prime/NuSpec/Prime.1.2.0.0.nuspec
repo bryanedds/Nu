@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>Prime</id>
+        <version>1.2.0.0</version>
+        <title>Prime - An F# primitives library.</title>
+        <authors>Bryan Edds</authors>
+        <owners>Bryan Edds</owners>
+        <licenseUrl>https://github.com/bryanedds/Prime/blob/master/LICENSE.md</licenseUrl>
+        <projectUrl>https://github.com/bryanedds/Prime</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>An F# code library for hardcore pure functional programming, and much more!</description>
+        <summary />
+        <releaseNotes>First release on NuGet.</releaseNotes>
+        <copyright>Copyright (c) 2016 Bryan Edds</copyright>
+        <language>en-US</language>
+        <tags>F# Functional Programming</tags>
+        <dependencies>
+            <dependency id="xunit" version="1.9.2" />
+            <dependency id="FParsec" version="1.0.1" />
+        </dependencies>
+        <frameworkAssemblies>
+            <frameworkAssembly assemblyName="System.Xml" targetFramework=".NETFramework4.0.0.0" />
+        </frameworkAssemblies>
+    </metadata>
+    <files>
+        <file src="..\Prime\Prime\bin\Release\Prime.exe" target="lib\net40\Prime.exe" />
+        <file src="..\Prime\Prime\bin\Release\Prime.exe.config" target="lib\net40\Prime.exe.config" />
+        <file src="..\Prime\Prime\bin\Release\Prime.pdb" target="lib\net40\Prime.pdb" />
+        <file src="..\Prime\Prime\bin\Release\Prime.XML" target="lib\net40\Prime.XML" />
+    </files>
+</package>
