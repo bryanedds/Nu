@@ -21,11 +21,13 @@ namespace Nu.Gaia.Design
             // Add keyword styles (keywords 0 are reserved for DSL-specific use)
             Styles[Style.Lisp.Keyword].ForeColor = Color.DarkBlue;
             Styles[Style.Lisp.KeywordKw].ForeColor = Color.FromArgb(0xFF, 0x60, 0x00, 0x70);
-            Keywords0 = string.Empty;
             Keywords1 = "True False Some None Right Left Nor Not Nand Mod Xor And Mul Add Sub Eq Or Lt Gt Get Div Not_Eq Gt_Eq Lt_Eq";
 
-            // Add special character styles
-            Styles[Style.Lisp.Operator].ForeColor = Color.RoyalBlue; // brackets, actually
+            // Add operator styles (braces, actually)
+            Styles[Style.Lisp.Operator].ForeColor = Color.RoyalBlue;
+
+            // Add symbol styles (operators, actually)
+            Styles[Style.Lisp.Special].ForeColor = Color.DarkBlue;
 
             // Add string style
             Styles[Style.Lisp.String].ForeColor = Color.Teal;
