@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -70,10 +70,10 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FParsec">
-      <HintPath>..\..\FParsec\FParsec.dll</HintPath>
+      <HintPath>..\..\..\Prime\FParsec\FParsec.dll</HintPath>
     </Reference>
     <Reference Include="FParsecCS">
-      <HintPath>..\..\FParsec\FParsecCS.dll</HintPath>
+      <HintPath>..\..\..\Prime\FParsec\FParsecCS.dll</HintPath>
     </Reference>
     <Reference Include="FSharpx.Collections">
       <HintPath>..\..\FSharpx.Collections\FSharpx.Collections.dll</HintPath>
@@ -86,7 +86,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="SDL2#">
-      <HintPath>..\..\SDL2#\$(Configuration)\SDL2#.dll</HintPath>
+      <HintPath>..\..\SDL2#\Release\SDL2#.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

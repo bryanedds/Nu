@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -94,10 +94,10 @@
       <HintPath>..\..\..\Nu\Farseer\FarseerPhysics.dll</HintPath>
     </Reference>
     <Reference Include="FParsec">
-      <HintPath>..\..\..\Nu\FParsec\FParsec.dll</HintPath>
+      <HintPath>..\..\..\Prime\FParsec\FParsec.dll</HintPath>
     </Reference>
     <Reference Include="FParsecCS">
-      <HintPath>..\..\..\Nu\FParsec\FParsecCS.dll</HintPath>
+      <HintPath>..\..\..\Prime\FParsec\FParsecCS.dll</HintPath>
     </Reference>
     <Reference Include="FSharpx.Collections">
       <HintPath>..\..\..\Nu\FSharpx.Collections\FSharpx.Collections.dll</HintPath>
@@ -110,13 +110,13 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="SDL2#">
-      <HintPath>..\..\..\Nu\SDL2#\$(Configuration)\SDL2#.dll</HintPath>
+      <HintPath>..\..\..\Nu\SDL2#\Release\SDL2#.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
     <Reference Include="TiledSharp">
-      <HintPath>..\..\..\Nu\TiledSharp\$(Configuration)\TiledSharp.dll</HintPath>
+      <HintPath>..\..\..\Nu\TiledSharp\Release\TiledSharp.dll</HintPath>
     </Reference>
     <ProjectReference Include="..\..\..\Nu\Nu\Nu\Nu.fsproj">
       <Name>Nu</Name>
@@ -124,7 +124,7 @@
       <Private>True</Private>
     </ProjectReference>
     <Reference Include="xunit">
-      <HintPath>..\..\..\Nu\xUnit\xunit.dll</HintPath>
+      <HintPath>..\..\..\Prime\xUnit\xunit.dll</HintPath>
     </Reference>
   </ItemGroup>
   <PropertyGroup>
