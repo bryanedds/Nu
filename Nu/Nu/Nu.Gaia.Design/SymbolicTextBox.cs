@@ -1,4 +1,6 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
+using System.Linq;
 using ScintillaNET;
 
 namespace Nu.Gaia.Design
@@ -19,7 +21,8 @@ namespace Nu.Gaia.Design
             // Add keyword styles (keywords 0 are reserved for DSL-specific use)
             Styles[Style.Lisp.Keyword].ForeColor = Color.DarkBlue;
             Styles[Style.Lisp.KeywordKw].ForeColor = Color.FromArgb(0xFF, 0x60, 0x00, 0x70);
-            SetKeywords(1, "True False Some None Left Right");
+            Keywords0 = string.Empty;
+            Keywords1 = "True False Some None Left Right Nor Not Nand Mod Xor And Mul Add Sub Eq Or Lt Gt Get Div Not_Eq Gt_Eq Lt_Eq";
 
             // Add special character styles
             Styles[Style.Lisp.Operator].ForeColor = Color.RoyalBlue; // brackets, actually
@@ -36,6 +39,52 @@ namespace Nu.Gaia.Design
 
             // Implement brace matching
             UpdateUI += SymbolicTextBox_UpdateUI;
+
+            // Implement auto-complete
+            CharAdded += SymbolicTextBox_CharAdded;
+        }
+
+        public string Keywords0
+        {
+            get { return keywords0; }
+            set
+            {
+                keywords0 = value;
+                SetKeywords(0, keywords0);
+            }
+        }
+
+        public string Keywords1
+        {
+            get { return keywords1; }
+            set
+            {
+                keywords1 = value;
+                SetKeywords(1, keywords1);
+            }
+        }
+
+        public string AutoCWords
+        {
+            get
+            {
+                var keywords = keywords0 + " " + keywords1;
+                var keywordsSplit = keywords.Split(' ').Distinct().ToArray();
+                Array.Sort(keywordsSplit);
+                var keywordsSorted = string.Join(AutoCSeparator.ToString(), keywordsSplit);
+                return keywordsSorted;
+            }
+        }
+
+        private void SymbolicTextBox_CharAdded(object sender, CharAddedEventArgs e)
+        {
+            // Find the word start
+            var currentPos = CurrentPosition;
+            var wordStartPos = WordStartPosition(currentPos, true);
+
+            // Display the autocompletion list
+            var lenEntered = currentPos - wordStartPos;
+            if (lenEntered > 0) AutoCShow(lenEntered, AutoCWords);
         }
 
         private void SymbolicTextBox_UpdateUI(object sender, UpdateUIEventArgs e)
@@ -104,6 +153,8 @@ namespace Nu.Gaia.Design
             return false;
         }
 
+        private string keywords0 = string.Empty;
+        private string keywords1 = string.Empty;
         private int lastCaretPos = 0;
     }
 }
