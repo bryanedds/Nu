@@ -311,7 +311,7 @@ module Gaia =
                     form.propertyValueTextBox.Text <- strPretty
                     form.propertyValueTextBox.EmptyUndoBuffer ()
                     let keywords = match ty.GetCustomAttribute<SyntaxAttribute>(true) with null -> "" | syntax -> syntax.Keywords
-                    form.propertyValueTextBox.SetKeywords(0, keywords)
+                    form.propertyValueTextBox.Keywords0 <- keywords
             | _ ->
                 form.propertyEditor.Enabled <- false
                 form.propertyNameLabel.Text <- String.Empty
