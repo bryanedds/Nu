@@ -91,9 +91,6 @@
       <HintPath>..\..\FSharpx.Core\FSharpx.Core.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
-    <Reference Include="Prime">
-      <HintPath>..\..\Prime\Release\Prime.exe</HintPath>
-    </Reference>
     <Reference Include="ScintillaNET">
       <HintPath>..\..\ScintillaNET\ScintillaNET.dll</HintPath>
     </Reference>
@@ -108,6 +105,11 @@
     <Reference Include="TiledSharp">
       <HintPath>..\..\TiledSharp\$(Configuration)\TiledSharp.dll</HintPath>
     </Reference>
+    <ProjectReference Include="..\..\..\Prime\Prime\Prime\Prime.fsproj">
+      <Name>Prime</Name>
+      <Project>{fe09ae81-b66b-42e0-8192-eadecefc9893}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\SDL2Addendum\SDL2Addendum\SDL2Addendum\SDL2Addendum.csproj">
       <Name>SDL2Addendum</Name>
       <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>

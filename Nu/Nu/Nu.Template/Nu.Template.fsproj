@@ -91,6 +91,11 @@
     <Resource Include="Assets/Default/TileSet.png" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Prime\Prime\Prime\Prime.fsproj">
+      <Name>Prime</Name>
+      <Project>{fe09ae81-b66b-42e0-8192-eadecefc9893}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\SDL2Addendum\SDL2Addendum\SDL2Addendum\SDL2Addendum.csproj">
       <Name>SDL2Addendum</Name>
       <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>
@@ -120,11 +125,8 @@
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
-    <Reference Include="Prime">
-      <HintPath>..\..\..\Nu\Prime\Release\Prime.exe</HintPath>
-    </Reference>
     <Reference Include="SDL2#">
-      <HintPath>..\..\..\Nu\SDL2#\$(Configuration)\SDL2#.dll</HintPath>
+      <HintPath>..\..\..\Nu\SDL2#\Release\SDL2#.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -135,7 +137,7 @@
       <Private>True</Private>
     </ProjectReference>
     <Reference Include="TiledSharp">
-      <HintPath>..\..\..\Nu\TiledSharp\$(Configuration)\TiledSharp.dll</HintPath>
+      <HintPath>..\..\..\Nu\TiledSharp\Release\TiledSharp.dll</HintPath>
     </Reference>
     <Reference Include="xunit">
       <HintPath>..\..\..\Nu\xUnit\xunit.dll</HintPath>

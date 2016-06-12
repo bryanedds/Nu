@@ -85,15 +85,17 @@
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
-    <Reference Include="Prime">
-      <HintPath>..\..\Prime\Release\Prime.exe</HintPath>
-    </Reference>
     <Reference Include="SDL2#">
       <HintPath>..\..\SDL2#\$(Configuration)\SDL2#.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
+    <ProjectReference Include="..\..\..\Prime\Prime\Prime\Prime.fsproj">
+      <Name>Prime</Name>
+      <Project>{fe09ae81-b66b-42e0-8192-eadecefc9893}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\Nu\Nu.fsproj">
       <Name>Nu</Name>
       <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
