@@ -290,7 +290,7 @@ module Gaia =
 
     let private refreshPropertyEditor (form : GaiaForm) =
         match (form.propertyGrid.SelectedObject, form.propertyGrid.SelectedGridItem) with
-        | (null, _) ->
+        | (null, _) | (_, null) ->
             form.propertyEditor.Enabled <- false
             form.propertyNameLabel.Text <- String.Empty
             form.propertyDescriptionTextBox.Text <- String.Empty
@@ -310,7 +310,7 @@ module Gaia =
                     let strPretty = SymbolIndex.prettyPrint strEscaped
                     form.propertyValueTextBox.Text <- strPretty
                     form.propertyValueTextBox.EmptyUndoBuffer ()
-                    let keywords = match ty.GetCustomAttribute<SyntaxAttribute>(true) with null -> "" | syntax -> syntax.Keywords
+                    let keywords = match ty.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords
                     form.propertyValueTextBox.Keywords0 <- keywords
             | _ ->
                 form.propertyEditor.Enabled <- false
