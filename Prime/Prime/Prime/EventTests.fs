@@ -121,6 +121,16 @@ module EventTests =
         let world = Eventable.publish 1 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (2, world.TestState)
 
+    let [<Fact>] sumWorks () =
+        let world = TestWorld.make ignore false EventFilter.Empty
+        let world =
+            observe TestEvent TestParticipant |>
+            product TestEvent |>
+            subscribe (fun evt world -> (Cascade, { world with TestState = fst evt.Data + snd evt.Data })) <|
+            world
+        let world = Eventable.publish 1 TestEvent EventTrace.empty TestParticipant world
+        Assert.Equal (2, world.TestState)
+
     let [<Fact>] scanWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
         let world =

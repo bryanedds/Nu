@@ -43,6 +43,3 @@ module Program =
         (fun entries -> Array.iter (fun (k, v) -> if not ^ dic.ContainsKey k then dic.Add (k, v)) entries)
         (fun entries () -> Array.iter (fun (k, _) -> ignore ^ dic.[k]) entries)
         "Dictionary"
-
-    // apparently a side-effect is needed to avoid the empty program warning
-    Console.WriteLine "Running Prime.exe"
