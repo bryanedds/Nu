@@ -387,7 +387,7 @@ module EffectSystemModule =
             let slice = { slice with Depth = slice.Depth + shift }
             evalContents contents slice effectSystem
     
-        and private evalContent (content : Content) slice effectSystem =
+        and private evalContent content slice effectSystem =
             match content with
             | Expand (definitionName, arguments) ->
                 evalExpand definitionName arguments slice effectSystem
@@ -417,16 +417,16 @@ module EffectSystemModule =
                 []
                 contents
     
-        let eval (effect : Effect) slice (effectSystem : EffectSystem) : EffectArtifact list =
+        let eval (Effect (_, optLifetime, definitions, content)) slice effectSystem =
             let localTime =
-                match effect.OptLifetime with
+                match optLifetime with
                 | Some lifetime -> effectSystem.EffectTime % lifetime
                 | None -> effectSystem.EffectTime
             let effectSystem =
                 { effectSystem with
-                    EffectEnv = Map.concat effectSystem.EffectEnv effect.Definitions
+                    EffectEnv = Map.concat effectSystem.EffectEnv definitions
                     EffectTime = localTime }
-            evalContent effect.Content slice effectSystem
+            evalContent content slice effectSystem
     
         let make viewType history tickRate tickTime globalEnv = 
             { ViewType = viewType

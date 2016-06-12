@@ -13,7 +13,7 @@ module EffectSystemTests =
     let [<Fact>] readEffectWorks () =
         Math.init ()
         let effectStr =
-            "[TestEffect None 
+            "[Effect TestEffect None 
               [[BoxSprite [[] [StaticSprite [Resource Default Image] [] Nil]]]] 
               [Emit [Shift 0.1] [Rate 0.1] 
                [[Rotation Eq Ease Bounce [[-1 180] [1 0]]]] 
@@ -22,4 +22,4 @@ module EffectSystemTests =
                 [Color Eq Linear Bounce [[[1 0 1 1] 180] [[1 1 0 0] 0]]]] 
                [Expand BoxSprite []]]]"
         let effect = scvalue<Effect> effectStr
-        Assert.Equal<string> ("TestEffect", effect.EffectName) // TODO: more assertions
+        Assert.Equal<string> ("TestEffect", match effect with Effect (name, _, _, _) -> name) // TODO: more assertions

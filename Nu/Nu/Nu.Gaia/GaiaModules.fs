@@ -295,16 +295,34 @@ module Gaia =
         | selectedGridItem ->
             match selectedGridItem.GridItemType with
             | GridItemType.Property ->
-                let typeConverter = SymbolicConverter selectedGridItem.PropertyDescriptor.PropertyType
+                let ty = selectedGridItem.PropertyDescriptor.PropertyType
+                let typeConverter = SymbolicConverter ty
                 form.propertyEditor.Enabled <- true
                 form.propertyNameLabel.Text <- scstring selectedGridItem.Label
                 form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
-                if isNotNull selectedGridItem.Value || isNullTrueValue selectedGridItem.PropertyDescriptor.PropertyType then
+                if isNotNull selectedGridItem.Value || isNullTrueValue ty then
                     let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
                     let strEscaped = String.escape strUnescaped
                     let strPretty = SymbolIndex.prettyPrint strEscaped
                     form.propertyValueTextBox.Text <- strPretty
                     form.propertyValueTextBox.EmptyUndoBuffer ()
+                    let keywords =
+                        if ty = typeof<Effect> then
+                            "Const Linear Random Chaos Ease EaseIn EaseOut Sin Cos " +
+                            "Or Nor Xor And Nand Eq " +
+                            "Add Sub Mul Div Eq " +
+                            "Position Size Rotation Depth Offset Color Volume Enabled " +
+                            "Once Loop Bounce " +
+                            "Cycle Iterate " +
+                            "Rate " +
+                            "Shift " +
+                            "Expand Resource " +
+                            "Expand Enabled Position Translation Offset Size Rotation Depth Color Volume Bone " +
+                            "Expand StaticSprite AnimatedSprite SoundEffect Mount Repeat Emit Composite Tag Nil " +
+                            "RenderArtifact SoundArtifact TagArtifact " +
+                            "Effect"
+                        else ""
+                    form.propertyValueTextBox.SetKeywords(0, keywords)
             | _ ->
                 form.propertyEditor.Enabled <- false
                 form.propertyNameLabel.Text <- String.Empty
@@ -757,6 +775,7 @@ module Gaia =
     /// Create a Gaia form.
     let createForm () =
         let form = new GaiaForm ()
+        form.eventFilterTextBox.SetKeywords(0, "Any All None Pattern Empty");
         form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
         form.positionSnapTextBox.Text <- scstring DefaultPositionSnap
         form.rotationSnapTextBox.Text <- scstring DefaultRotationSnap
