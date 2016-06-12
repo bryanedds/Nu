@@ -3,11 +3,11 @@
 
 #I __SOURCE_DIRECTORY__
 #r "System.Configuration"
+#r "../../../Prime/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
+#r "../../../Prime/FParsec/FParsec.dll"
+#r "../../../Prime/xUnit/xunit.dll"
 #r "../../../Nu/FSharpx.Core/FSharpx.Core.dll"
 #r "../../../Nu/FSharpx.Collections/FSharpx.Collections.dll"
-#r "../../../Nu/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
-#r "../../../Nu/FParsec/FParsec.dll"
-#r "../../../Nu/xUnit/xunit.dll"
 #r "../../../Nu/Prime/Release/Prime.exe"
 #r "../../../Nu/Farseer/FarseerPhysics.dll"
 #r "../../../Nu/Magick.NET/Magick.NET-AnyCPU.dll"
