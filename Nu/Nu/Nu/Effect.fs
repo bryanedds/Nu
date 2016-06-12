@@ -146,11 +146,23 @@ type [<NoComparison>] EffectArtifact =
 type Definitions =
     Map<string, Definition>
 
+[<Syntax(   "Const Linear Random Chaos Ease EaseIn EaseOut Sin Cos " +
+            "Or Nor Xor And Nand Eq " +
+            "Add Sub Mul Div Eq " +
+            "Position Size Rotation Depth Offset Color Volume Enabled " +
+            "Once Loop Bounce " +
+            "Cycle Iterate " +
+            "Rate " +
+            "Shift " +
+            "Expand Resource " +
+            "Expand Enabled Position Translation Offset Size Rotation Depth Color Volume Bone " +
+            "Expand StaticSprite AnimatedSprite SoundEffect Mount Repeat Emit Composite Tag Nil " +
+            "RenderArtifact SoundArtifact TagArtifact " +
+            "Effect")>]
 type [<NoEquality; NoComparison>] Effect =
     Effect of string * int64 option * Definitions * Content
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Effect =
-
     let empty =
         Effect ("Empty", None, Map.empty, Composite (Shift 0.0f, []))
