@@ -25,16 +25,14 @@ namespace Nu.Gaia.Design
 
             // Add operator styles (braces, actually)
             Styles[Style.Lisp.Operator].ForeColor = Color.RoyalBlue;
+            Styles[Style.BraceLight].BackColor = Color.LightBlue;
+            Styles[Style.BraceBad].BackColor = Color.Red;
 
             // Add symbol styles (operators, actually)
             Styles[Style.Lisp.Special].ForeColor = Color.DarkBlue;
 
             // Add string style
             Styles[Style.Lisp.String].ForeColor = Color.Teal;
-
-            // Add brace matching styles
-            Styles[Style.BraceLight].BackColor = Color.LightGray;
-            Styles[Style.BraceBad].BackColor = Color.Red;
 
             // No tabs
             UseTabs = false;
@@ -90,23 +88,23 @@ namespace Nu.Gaia.Design
 
         private void SymbolicTextBox_UpdateUI(object sender, UpdateUIEventArgs e)
         {
-            // Has the caret changed position?
-            var caretPos = CurrentPosition;
-            if (lastCaretPos != caretPos)
+            // Has the selection changed position?
+            var selectionPos = SelectionStart;
+            if (lastSelectionPos != selectionPos)
             {
-                lastCaretPos = caretPos;
+                lastSelectionPos = selectionPos;
                 var bracePos1 = -1;
                 var bracePos2 = -1;
 
-                if (IsBrace(GetCharAt(caretPos)))
+                if (IsBrace(GetCharAt(selectionPos)))
                 {
                     // Select the brace to the immediate right
-                    bracePos1 = caretPos;
+                    bracePos1 = selectionPos;
                 }
                 else
                 {
                     // Select the brace anywhere to the left
-                    for (var i = caretPos - 1; i >= 0; --i)
+                    for (var i = selectionPos - 1; i >= 0; --i)
                     {
                         if (IsBrace(GetCharAt(i)))
                         {
@@ -156,6 +154,6 @@ namespace Nu.Gaia.Design
 
         private string keywords0 = string.Empty;
         private string keywords1 = string.Empty;
-        private int lastCaretPos = 0;
+        private int lastSelectionPos = 0;
     }
 }

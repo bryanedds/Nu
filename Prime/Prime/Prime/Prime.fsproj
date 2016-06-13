@@ -76,7 +76,6 @@
     <Compile Include="HashSet.fs" />
     <Compile Include="Dictionary.fs" />
     <Compile Include="Symbol.fs" />
-    <Compile Include="SymbolIndex.fs" />
     <Compile Include="Rand.fs" />
     <Compile Include="Name.fs" />
     <Compile Include="Address.fs" />

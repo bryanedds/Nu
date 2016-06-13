@@ -305,12 +305,12 @@ module Gaia =
                 form.propertyNameLabel.Text <- scstring selectedGridItem.Label
                 form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
                 if isNotNull selectedGridItem.Value || isNullTrueValue ty then
+                    let keywords = match ty.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords
                     let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
                     let strEscaped = String.escape strUnescaped
-                    let strPretty = SymbolIndex.prettyPrint strEscaped
+                    let strPretty = Symbol.prettyPrint keywords strEscaped
                     form.propertyValueTextBox.Text <- strPretty
                     form.propertyValueTextBox.EmptyUndoBuffer ()
-                    let keywords = match ty.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords
                     form.propertyValueTextBox.Keywords0 <- keywords
             | _ ->
                 form.propertyEditor.Enabled <- false
@@ -369,8 +369,9 @@ module Gaia =
     let private handleApplyEventFilterClick (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             try let eventFilter = scvalue<EventFilter> form.eventFilterTextBox.Text
+                let eventFilterKeywords = match typeof<EventFilter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords
                 let world = World.setEventFilter eventFilter world
-                form.eventFilterTextBox.Text <- SymbolIndex.prettyPrint ^ scstring eventFilter
+                form.eventFilterTextBox.Text <- Symbol.prettyPrint eventFilterKeywords ^ scstring eventFilter
                 world
             with exn ->
                 let world = World.choose world
@@ -381,7 +382,8 @@ module Gaia =
         ignore ^ WorldChangers.Add (fun world ->
             let eventFilter = World.getEventFilter world
             let eventFilterStr = scstring eventFilter
-            let eventFilterPretty = SymbolIndex.prettyPrint eventFilterStr
+            let eventFilterKeywords = match typeof<EventFilter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords
+            let eventFilterPretty = Symbol.prettyPrint eventFilterKeywords eventFilterStr
             form.eventFilterTextBox.Text <- eventFilterPretty
             form.eventFilterTextBox.EmptyUndoBuffer ()
             world)
@@ -763,7 +765,7 @@ module Gaia =
     /// Create a Gaia form.
     let createForm () =
         let form = new GaiaForm ()
-        form.eventFilterTextBox.SetKeywords(0, "Any All None Pattern Empty");
+        form.eventFilterTextBox.Keywords0 <- match typeof<EventFilter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords
         form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
         form.positionSnapTextBox.Text <- scstring DefaultPositionSnap
         form.rotationSnapTextBox.Text <- scstring DefaultRotationSnap

@@ -146,7 +146,7 @@ type [<NoComparison>] EffectArtifact =
 type Definitions =
     Map<string, Definition>
 
-[<Syntax(   "Const Linear Random Chaos Ease EaseIn EaseOut Sin Cos " +
+[<Syntax   ("Const Linear Random Chaos Ease EaseIn EaseOut Sin Cos " +
             "Or Nor Xor And Nand Eq " +
             "Add Sub Mul Div Eq " +
             "Position Size Rotation Depth Offset Color Volume Enabled " +

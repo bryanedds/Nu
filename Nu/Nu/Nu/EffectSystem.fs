@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Reflection
 open Prime
 open OpenTK
 
@@ -455,7 +456,8 @@ module EffectSystemModule =
                     EffectTime = localTime }
             try evalContent content slice effectSystem
             with exn ->
-                let effectStr = SymbolIndex.prettyPrint ^ scstring effect
+                let effectKeywords = match typeof<Effect>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords
+                let effectStr = Symbol.prettyPrint effectKeywords ^ scstring effect
                 Log.debug ^ "Error in effect:\r\n" + effectStr + "' due to:\r\n" + scstring exn
                 []
     
@@ -466,4 +468,4 @@ module EffectSystemModule =
               EffectRate = tickRate
               EffectTime = tickTime
               EffectEnv = globalEnv
-              Chaos = System.Random () }
+              Chaos = Random () }
