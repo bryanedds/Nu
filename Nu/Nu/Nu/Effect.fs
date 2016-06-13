@@ -103,11 +103,10 @@ type Shift =
     Shift of single
 
 type [<NoComparison>] Resource =
-    | Expand of string * Argument list
     | Resource of string * string
+    | Expand of string * Argument list
 
 and [<NoComparison>] Aspect =
-    | Expand of string * Argument list
     | Enabled of LogicApplicator * Playback * LogicKeyFrame list
     | Position of TweenApplicator * Algorithm * Playback * Tween2KeyFrame list
     | Translation of TweenApplicator * Algorithm * Playback * Tween2KeyFrame list
@@ -118,9 +117,11 @@ and [<NoComparison>] Aspect =
     | Color of TweenApplicator * Algorithm * Playback * Tween4KeyFrame list
     | Volume of TweenApplicator * Algorithm * Playback * TweenKeyFrame list
     | Bone // TODO: implement bone aspect
+    | Expand of string * Argument list
 
 and [<NoComparison>] Content =
-    | Expand of string * Argument list
+    | Nil // first to make default value when missing
+    | Tag of string * Symbol
     | StaticSprite of Resource * Aspect list * Content
     | AnimatedSprite of Resource * Vector2i * int * int * int64 * Aspect list * Content
     | SoundEffect of Resource * Aspect list * Content
@@ -128,8 +129,7 @@ and [<NoComparison>] Content =
     | Repeat of Shift * Repetition * Aspect list * Content
     | Emit of Shift * Rate * Aspect list * Aspect list * Content
     | Composite of Shift * Content list
-    | Tag of string * Symbol
-    | Nil
+    | Expand of string * Argument list
 
 and Argument =
     SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>>
