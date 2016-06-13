@@ -40,7 +40,7 @@ module EffectSystemModule =
                 let moduloTime = localTime % totalTime
                 selectKeyFrames2 moduloTime Once keyFrames
             | Bounce ->
-                let totalTime = List.fold (fun totalTime (keyFrame : IKeyFrame) -> totalTime + keyFrame.KeyFrameLength) 0L keyFrames 
+                let totalTime = List.fold (fun totalTime (keyFrame : IKeyFrame) -> totalTime + keyFrame.KeyFrameLength) 0L keyFrames
                 let moduloTime = localTime % totalTime
                 let bouncing = localTime / totalTime % 2L = 1L
                 let bounceTime = if bouncing then totalTime - moduloTime else moduloTime
