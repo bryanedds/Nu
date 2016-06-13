@@ -444,7 +444,7 @@ module EffectSystemModule =
                 []
                 contents
     
-        let eval (Effect (_, optLifetime, definitions, content)) slice effectSystem =
+        let eval (Effect (_, optLifetime, definitions, content) as effect) slice effectSystem =
             let localTime =
                 match optLifetime with
                 | Some lifetime -> if lifetime <> 0L then effectSystem.EffectTime % lifetime else 0L
@@ -453,7 +453,11 @@ module EffectSystemModule =
                 { effectSystem with
                     EffectEnv = Map.concat effectSystem.EffectEnv definitions
                     EffectTime = localTime }
-            evalContent content slice effectSystem
+            try evalContent content slice effectSystem
+            with exn ->
+                let effectStr = SymbolIndex.prettyPrint ^ scstring effect
+                Log.debug ^ "Error in effect:\r\n" + effectStr + "' due to:\r\n" + scstring exn
+                []
     
         let make viewType history tickRate tickTime globalEnv = 
             { ViewType = viewType
