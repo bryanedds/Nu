@@ -157,7 +157,7 @@ module WorldGroupModule =
             let filePathTmp = filePath + ".tmp"
             let groupDescriptor = World.writeGroup group GroupDescriptor.empty world
             let groupDescriptorStr = scstring groupDescriptor
-            let groupDescriptorPretty = SymbolIndex.prettyPrint groupDescriptorStr
+            let groupDescriptorPretty = Symbol.prettyPrint String.Empty groupDescriptorStr
             File.WriteAllText (filePathTmp, groupDescriptorPretty)
             File.Delete filePath
             File.Move (filePathTmp, filePath)

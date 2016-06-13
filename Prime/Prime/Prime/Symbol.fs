@@ -78,6 +78,15 @@ module Symbol =
             unexpanded
         else expanded
 
+    /// Try to get the Origin of the symbol if it has one.
+    let tryGetOrigin symbol =
+        match symbol with
+        | Atom (_, optOrigin)
+        | Number (_, optOrigin)
+        | String (_, optOrigin)
+        | Quote (_, optOrigin)
+        | Symbols (_, optOrigin) -> optOrigin
+
     let isExplicit (str : string) =
         str.StartsWith OpenStringStr && str.EndsWith CloseStringStr
     
@@ -239,14 +248,48 @@ module Symbol =
     /// ...and so on.
     let rec toString symbol = writeSymbol symbol
 
-    /// Try to get the Origin of the symbol if it has one.
-    let tryGetOrigin symbol =
-        match symbol with
-        | Atom (_, optOrigin)
-        | Number (_, optOrigin)
-        | String (_, optOrigin)
-        | Quote (_, optOrigin)
-        | Symbols (_, optOrigin) -> optOrigin
+    /// Cascade a symbol string into multiple lines with proper tabbing.
+    let private cascade keywords str =
+    
+        let rec getCascadeDepth symbol depth =
+            match symbol with
+            | Atom (str, _) when List.isEmpty keywords || List.contains str keywords -> depth
+            | Symbols (_ :: _ as symbols', _) -> getCascadeDepth (List.head symbols') (depth + 1)
+            | _ -> 0
+
+        let symbol = fromString str
+        let symbolStr = toString symbol
+        let builder = Text.StringBuilder symbolStr
+        let mutable builderIndex = 0
+        let rec advance tabDepth cascadeDepth symbol =
+            match tryGetOrigin symbol with
+            | Some origin ->
+                let cascadeDepth' = getCascadeDepth symbol 0
+                if origin.Start.Index <> 0L && cascadeDepth < 1 && cascadeDepth' > 0 then
+                    let whitespace = "\r\n" + String.replicate tabDepth " "
+                    ignore ^ builder.Insert (int origin.Start.Index + builderIndex, whitespace)
+                    builderIndex <- builderIndex + whitespace.Length
+                match symbol with
+                | Symbols (symbols, _) ->
+                    let tabDepth' = tabDepth + 1
+                    let cascadeDepth'' = if cascadeDepth' > 0 then cascadeDepth' - 1 else cascadeDepth - 1
+                    List.iteri (fun i symbol -> advance tabDepth' (if i = 0 then cascadeDepth'' else 0) symbol) symbols
+                | _ -> ()
+            | None -> failwithumf ()
+
+        advance 0 -1 symbol
+        string builder
+
+    /// Pretty-print a symbol string in the form an symbolic-expression.
+    let prettyPrint (keywords : string) symbol =
+        let keywordsSplit = keywords.Split [|' '|] |> List.ofArray
+        let strCascaded = cascade keywordsSplit symbol
+        let lines = strCascaded.Split ([|"\r\n"|], StringSplitOptions.None)
+        let linesTrimmed = Array.map (fun (str : string) -> str.TrimEnd ()) lines
+        let strPretty = String.Join ("\r\n", linesTrimmed)
+        // HACK: adding this newline is a workaround for https://github.com/jacobslusser/ScintillaNET/issues/249
+        let strPrettyScintilla = strPretty + "\r\n"
+        strPrettyScintilla
 
 type ConversionException (message : string, optSymbol : Symbol option) =
     inherit Exception (message)

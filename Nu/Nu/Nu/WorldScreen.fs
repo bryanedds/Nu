@@ -160,7 +160,7 @@ module WorldScreenModule =
             let filePathTmp = filePath + ".tmp"
             let screenDescriptor = World.writeScreen screen ScreenDescriptor.empty world
             let screenDescriptorStr = scstring screenDescriptor
-            let screenDescriptorPretty = SymbolIndex.prettyPrint screenDescriptorStr
+            let screenDescriptorPretty = Symbol.prettyPrint String.Empty screenDescriptorStr
             File.WriteAllText (filePathTmp, screenDescriptorPretty)
             File.Delete filePath
             File.Move (filePathTmp, filePath)
