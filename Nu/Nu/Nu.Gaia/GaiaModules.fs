@@ -371,7 +371,6 @@ module Gaia =
             try let eventFilter = scvalue<EventFilter> form.eventFilterTextBox.Text
                 let world = World.setEventFilter eventFilter world
                 form.eventFilterTextBox.Text <- SymbolIndex.prettyPrint ^ scstring eventFilter
-                form.eventFilterTextBox.EmptyUndoBuffer ()
                 world
             with exn ->
                 let world = World.choose world

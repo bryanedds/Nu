@@ -39,29 +39,27 @@ type SymbolicConverter (pointType : Type) =
         let iEnumerable = source :?> IEnumerable
         Set.ofSeq ^ enumerable<IComparable> iEnumerable
 
-    let defaultify (fieldType : obj) (optValue : obj) =
-        match optValue with
-        | null -> optValue
-        | _ -> let fieldType = fieldType :?> PropertyInfo in fieldType.PropertyType.GetDefaultValue ()
-        
-    let padWithDefaults (fieldTypes : PropertyInfo array) (values : obj list) =
-        let valuesLength = List.length values
-        if valuesLength >= fieldTypes.Length then Array.ofList values
-        else
-            let values = List.pad (fieldTypes.Length - valuesLength) null values
-            (fieldTypes |> Seq.map objectify |> List.ofSeq, values) ||> Seq.map2 defaultify |> Array.ofSeq
+    let padWithDefaults (fieldTypes : PropertyInfo array) (values : obj array) =
+        if values.Length < fieldTypes.Length then
+            let valuesPadded =
+                fieldTypes |>
+                Seq.skip values.Length |>
+                Seq.map (fun info -> info.PropertyType.GetDefaultValue ()) |>
+                Array.ofSeq |>
+                Array.append values
+            valuesPadded
+        else values
 
-    let defaultify' (fieldType : obj) (optValue : obj) =
-        match optValue with
-        | null -> optValue
-        | _ -> let fieldType = fieldType :?> Type in fieldType.GetDefaultValue ()
-
-    let padWithDefaults' (fieldTypes : Type array) (values : obj list) =
-        let valuesLength = List.length values
-        if valuesLength >= fieldTypes.Length then Array.ofList values
-        else
-            let values = List.pad (fieldTypes.Length - valuesLength) null values
-            (fieldTypes |> Seq.map objectify |> List.ofSeq, values) ||> Seq.map2 defaultify' |> Array.ofSeq
+    let padWithDefaults' (fieldTypes : Type array) (values : obj array) =
+        if values.Length < fieldTypes.Length then
+            let valuesPadded =
+                fieldTypes |>
+                Seq.skip values.Length |>
+                Seq.map (fun info -> info.GetDefaultValue ()) |>
+                Array.ofSeq |>
+                Array.append values
+            valuesPadded
+        else values
 
     let rec toSymbol (sourceType : Type) (source : obj) =
         match sourceType.TryGetCustomTypeConverter () with
@@ -315,7 +313,7 @@ type SymbolicConverter (pointType : Type) =
                     match symbol with
                     | Symbols (symbols, _) ->
                         let elementTypes = FSharpType.GetTupleElements destType
-                        let elements = List.mapi (fun i elementSymbol -> fromSymbol elementTypes.[i] elementSymbol) symbols
+                        let elements = symbols |> Array.ofList |> Array.mapi (fun i elementSymbol -> fromSymbol elementTypes.[i] elementSymbol)
                         let elements = padWithDefaults' elementTypes elements
                         FSharpValue.MakeTuple (elements, destType)
                     | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
@@ -326,7 +324,7 @@ type SymbolicConverter (pointType : Type) =
                     match symbol with
                     | Symbols (symbols, _) ->
                         let fieldTypes = FSharpType.GetRecordFields destType
-                        let fields = List.mapi (fun i fieldSymbol -> fromSymbol fieldTypes.[i].PropertyType fieldSymbol) symbols
+                        let fields = symbols |> Array.ofList |> Array.mapi (fun i fieldSymbol -> fromSymbol fieldTypes.[i].PropertyType fieldSymbol)
                         let fields = padWithDefaults fieldTypes fields
                         FSharpValue.MakeRecord (destType, fields)
                     | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
@@ -349,7 +347,7 @@ type SymbolicConverter (pointType : Type) =
                             match Array.tryFind (fun (unionCase : UnionCaseInfo) -> unionCase.Name = unionName) unionCases with
                             | Some unionCase ->
                                 let unionFieldTypes = unionCase.GetFields ()
-                                let unionValues = List.mapi (fun i unionSymbol -> fromSymbol unionFieldTypes.[i].PropertyType unionSymbol) symbolTail
+                                let unionValues = symbolTail |> Array.ofList |> Array.mapi (fun i unionSymbol -> fromSymbol unionFieldTypes.[i].PropertyType unionSymbol)
                                 let unionValues = padWithDefaults unionFieldTypes unionValues
                                 FSharpValue.MakeUnion (unionCase, unionValues)
                             | None ->
