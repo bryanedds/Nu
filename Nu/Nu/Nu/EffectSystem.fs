@@ -37,15 +37,19 @@ module EffectSystemModule =
                     else (localTime, head, next)
             | Loop ->
                 let totalTime = List.fold (fun totalTime (keyFrame : IKeyFrame) -> totalTime + keyFrame.KeyFrameLength) 0L keyFrames 
-                let moduloTime = localTime % totalTime
-                selectKeyFrames2 moduloTime Once keyFrames
+                if totalTime <> 0L then
+                    let moduloTime = localTime % totalTime
+                    selectKeyFrames2 moduloTime Once keyFrames
+                else (0L, List.head keyFrames, List.head keyFrames)
             | Bounce ->
                 let totalTime = List.fold (fun totalTime (keyFrame : IKeyFrame) -> totalTime + keyFrame.KeyFrameLength) 0L keyFrames
-                let moduloTime = localTime % totalTime
-                let bouncing = localTime / totalTime % 2L = 1L
-                let bounceTime = if bouncing then totalTime - moduloTime else moduloTime
-                selectKeyFrames2 bounceTime Once keyFrames
-    
+                if totalTime <> 0L then
+                    let moduloTime = localTime % totalTime
+                    let bouncing = localTime / totalTime % 2L = 1L
+                    let bounceTime = if bouncing then totalTime - moduloTime else moduloTime
+                    selectKeyFrames2 bounceTime Once keyFrames
+                else (0L, List.head keyFrames, List.head keyFrames)
+
         let private selectKeyFrames<'n when 'n :> IKeyFrame> localTime playback (keyFrames : 'n list) =
             keyFrames |>
             List.map (fun keyFrame -> keyFrame :> IKeyFrame) |>
@@ -102,16 +106,18 @@ module EffectSystemModule =
             | Div -> div (value, value2)
             | TweenApplicator.Eq -> value2
     
-        let private evalInset (celSize : Vector2i) celRun celCount stutter effectSystem =
-            let cel = int (effectSystem.EffectTime / stutter) % celCount
-            let celI = cel % celRun
-            let celJ = cel / celRun
-            let celX = celI * celSize.X
-            let celY = celJ * celSize.Y
-            let celPosition = Vector2 (single celX, single celY)
-            let celSize = Vector2 (single celSize.X, single celSize.Y)
-            Math.makeBounds celPosition celSize
-    
+        let private evalOptInset (celSize : Vector2i) celRun celCount stutter effectSystem =
+            if stutter <> 0L && celRun <> 0 then
+                let cel = int (effectSystem.EffectTime / stutter) % celCount
+                let celI = cel % celRun
+                let celJ = cel / celRun
+                let celX = celI * celSize.X
+                let celY = celJ * celSize.Y
+                let celPosition = Vector2 (single celX, single celY)
+                let celSize = Vector2 (single celSize.X, single celSize.Y)
+                Some ^ Math.makeBounds celPosition celSize
+            else None
+
         let evalArgument (argument : Argument) : Definition =
             match argument with
             | SymbolicCompressionA resource ->
@@ -284,16 +290,16 @@ module EffectSystemModule =
             mountedArtifacts @ spriteArtifacts
     
         and private evalAnimatedSprite resource celSize celRun celCount stutter aspects content slice effectSystem =
-    
+
             // pull image from resource
             let image = evalResource resource effectSystem
-    
+
             // eval aspects
             let slice = evalAspects aspects slice effectSystem
-    
+
             // eval inset
-            let inset = evalInset celSize celRun celCount stutter effectSystem
-    
+            let optInset = evalOptInset celSize celRun celCount stutter effectSystem
+
             // build animated sprite artifacts
             let animatedSpriteArtifacts =
                 if slice.Enabled then
@@ -306,18 +312,18 @@ module EffectSystemModule =
                                       Size = slice.Size
                                       Rotation = slice.Rotation
                                       Offset = slice.Offset
-                                      OptInset = Some inset
+                                      OptInset = optInset
                                       Image = image
                                       ViewType = effectSystem.ViewType
                                       Color = slice.Color }}]]
                 else []
-    
+
             // build implicitly mounted content
             let mountedArtifacts = evalContent content slice effectSystem
-    
+
             // return artifacts
             mountedArtifacts @ animatedSpriteArtifacts
-    
+
         and private evalSoundEffect resource aspects content slice effectSystem =
     
             // pull sound from resource
@@ -441,7 +447,7 @@ module EffectSystemModule =
         let eval (Effect (_, optLifetime, definitions, content)) slice effectSystem =
             let localTime =
                 match optLifetime with
-                | Some lifetime -> effectSystem.EffectTime % lifetime
+                | Some lifetime -> if lifetime <> 0L then effectSystem.EffectTime % lifetime else 0L
                 | None -> effectSystem.EffectTime
             let effectSystem =
                 { effectSystem with

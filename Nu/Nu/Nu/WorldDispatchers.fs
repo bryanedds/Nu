@@ -311,15 +311,18 @@ module AnimatedSpriteFacetModule =
         inherit Facet ()
 
         static let getOptSpriteInset (entity : Entity) world =
-            let tile = int (World.getTickTime world / entity.GetAnimationStutter world) % entity.GetTileCount world
-            let tileSize = entity.GetTileSize world
+            let tileCount = entity.GetTileCount world
             let tileRun = entity.GetTileRun world
-            let tileI = tile % tileRun
-            let tileJ = tile / tileRun
-            let tileX = single tileI * tileSize.X
-            let tileY = single tileJ * tileSize.Y
-            let inset = Vector4 (tileX, tileY, tileX + tileSize.X, tileY + tileSize.Y)
-            Some inset
+            if tileCount <> 0 && tileRun <> 0 then
+                let tile = int (World.getTickTime world / entity.GetAnimationStutter world) % tileCount
+                let tileSize = entity.GetTileSize world
+                let tileI = tile % tileRun
+                let tileJ = tile / tileRun
+                let tileX = single tileI * tileSize.X
+                let tileY = single tileJ * tileSize.Y
+                let inset = Vector4 (tileX, tileY, tileX + tileSize.X, tileY + tileSize.Y)
+                Some inset
+            else None
 
         static member PropertyDefinitions =
             [Define? TileCount 16 
