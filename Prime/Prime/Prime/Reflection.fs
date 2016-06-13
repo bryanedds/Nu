@@ -4,6 +4,8 @@
 namespace Prime
 open System
 open System.ComponentModel
+open System.Collections
+open System.Collections.Generic
 open System.Reflection
 open System.IO
 open Microsoft.FSharp.Reflection
@@ -27,6 +29,60 @@ module LabelName =
     /// Label for module names.
     /// Needed since we can't utter something like typeof<MyModule>.
     let Module = Label
+
+module Reflection =
+
+    // NOTE: had to do some reflection hacking get this assembly as it was the only way I could
+    // access ListModule.OfSeq dynamically.
+    let FSharpCoreAssembly =
+        Array.find
+            (fun (assembly : Assembly) -> assembly.FullName.StartsWith ("FSharp.Core,", StringComparison.Ordinal))
+            (AppDomain.CurrentDomain.GetAssemblies ())
+
+    let objToObjList (source : obj) =
+        let iEnumerable = source :?> IEnumerable
+        List.ofSeq ^ enumerable<obj> iEnumerable
+
+    let objToKeyValuePair (source : obj) =
+        let kvpType = source.GetType ()
+        let key = (kvpType.GetProperty "Key").GetValue (source, null)
+        let value = (kvpType.GetProperty "Value").GetValue (source, null)
+        KeyValuePair (key, value)
+
+    let objToComparableSet (source : obj) =
+        let iEnumerable = source :?> IEnumerable
+        Set.ofSeq ^ enumerable<IComparable> iEnumerable
+
+    let objsToCollection collectionTypeName (arrayType : Type) (objs : _ seq) =
+        let gargs = arrayType.GetGenericArguments ()
+        let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod gargs
+        let ofSeq = ((FSharpCoreAssembly.GetType collectionTypeName).GetMethod ("OfSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod gargs
+        ofSeq.Invoke (null, [|cast.Invoke (null, [|objs|])|])
+        
+    let pairsToMapping collectionTypeName (mappingType : Type) (pairs : _ seq) =
+        let gargs = mappingType.GetGenericArguments ()
+        match gargs with
+        | [|fstType; sndType|] ->
+            let pairType = typedefof<Tuple<_, _>>.MakeGenericType [|fstType; sndType|]
+            let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|pairType|]
+            let ofSeq = ((FSharpCoreAssembly.GetType collectionTypeName).GetMethod ("OfSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|fstType; sndType|]
+            ofSeq.Invoke (null, [|cast.Invoke (null, [|pairs|])|])
+        | _ -> failwithumf ()
+
+    let objsToArray arrayType objs =
+        objsToCollection "Microsoft.FSharp.Collections.ArrayModule" arrayType objs
+
+    let objsToList listType objs =
+        objsToCollection "Microsoft.FSharp.Collections.ListModule" listType objs
+
+    let objsToSet setType objs =
+        objsToCollection "Microsoft.FSharp.Collections.SetModule" setType objs
+
+    let pairsToMap mapType objs =
+        pairsToMapping "Microsoft.FSharp.Collections.MapModule" mapType objs
+
+    let pairsToVmap vmapType objs =
+        pairsToMapping "Microsoft.FSharp.Collections.VmapModule" vmapType objs
 
 module Type =
 
@@ -71,11 +127,11 @@ module TypeExtension =
         member this.GetDefaultValue () =
             if this.IsPrimitive then Activator.CreateInstance this
             elif this = typeof<string> then "" :> obj
-            elif this.Name = typedefof<_ array>.Name then Array.empty :> obj
-            elif this.Name = typedefof<_ list>.Name then List.empty :> obj
-            elif this.Name = typedefof<_ Set>.Name then Set.empty :> obj
-            elif this.Name = typedefof<Map<_, _>>.Name then Map.empty :> obj
-            elif this.Name = typedefof<Vmap<_, _>>.Name then Vmap.makeEmpty () :> obj
+            elif this.Name = typedefof<_ array>.Name then Reflection.objsToArray this Array.empty
+            elif this.Name = typedefof<_ list>.Name then Reflection.objsToList this List.empty
+            elif this.Name = typedefof<_ Set>.Name then Reflection.objsToSet this Set.empty
+            elif this.Name = typedefof<Map<_, _>>.Name then Reflection.pairsToMap this Map.empty
+            elif this.Name = typedefof<Vmap<_, _>>.Name then Reflection.pairsToVmap this (Vmap.makeEmpty ())
             elif FSharpType.IsUnion this then
                 let unionCases = FSharpType.GetUnionCases this
                 if (unionCases.[0].GetFields ()).Length = 0

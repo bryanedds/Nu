@@ -123,6 +123,7 @@ module EffectSystemModule =
     
         let rec evalResource resource effectSystem : AssetTag =
             match resource with
+            | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
             | Resource.Expand (definitionName, _) ->
                 match Map.tryFind definitionName effectSystem.EffectEnv with
                 | Some definition ->
@@ -134,7 +135,6 @@ module EffectSystemModule =
                 | None ->
                     Log.info ^ "Could not find definition with name '" + definitionName + "'."
                     scvalue<AssetTag> Constants.Assets.DefaultImageValue
-            | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
     
         let rec private iterateArtifacts incrementAspects content slice effectSystem =
             let effectSystem = { effectSystem with ProgressOffset = 0.0f }
@@ -152,6 +152,80 @@ module EffectSystemModule =
     
         and private evalAspect aspect slice effectSystem =
             match aspect with
+            | Enabled (applicator, playback, keyFrames) ->
+                if List.hasAtLeast 1 keyFrames then
+                    let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                    let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
+                    { slice with Enabled = applied }
+                else slice
+            | Position (applicator, algorithm, playback, keyFrames) ->
+                if List.hasAtLeast 1 keyFrames then
+                    let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                    let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                    let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                    let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
+                    { slice with Position = applied }
+                else slice
+            | Translation (applicator, algorithm, playback, keyFrames) ->
+                if List.hasAtLeast 1 keyFrames then
+                    let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                    let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                    let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                    let oriented = Vector2.Transform (tweened, Quaternion.FromAxisAngle (Vector3.UnitZ, slice.Rotation))
+                    let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position oriented applicator
+                    { slice with Position = applied }
+                else slice
+            | Size (applicator, algorithm, playback, keyFrames) ->
+                if List.hasAtLeast 1 keyFrames then
+                    let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                    let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                    let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                    let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
+                    { slice with Size = applied }
+                else slice
+            | Rotation (applicator, algorithm, playback, keyFrames) ->
+                if List.hasAtLeast 1 keyFrames then
+                    let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                    let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                    let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                    let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Rotation tweened applicator
+                    { slice with Rotation = applied }
+                else slice
+            | Depth (applicator, algorithm, playback, keyFrames) ->
+                if List.hasAtLeast 1 keyFrames then
+                    let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                    let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                    let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                    let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Depth tweened applicator
+                    { slice with Depth = applied }
+                else slice
+            | Offset (applicator, algorithm, playback, keyFrames) ->
+                if List.hasAtLeast 1 keyFrames then
+                    let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                    let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                    let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                    let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
+                    { slice with Offset = applied }
+                else slice
+            | Color (applicator, algorithm, playback, keyFrames) ->
+                if List.hasAtLeast 1 keyFrames then
+                    let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                    let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                    let tweened = tween Vector4.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                    let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
+                    { slice with Color = applied }
+                else slice
+            | Volume (applicator, algorithm, playback, keyFrames) ->
+                if List.hasAtLeast 1 keyFrames then
+                    let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                    let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                    let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                    let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Volume tweened applicator
+                    { slice with Volume = applied }
+                else slice
+            | Bone ->
+                // TODO: implement bone
+                slice
             | Aspect.Expand (definitionName, _) ->
                 match Map.tryFind definitionName effectSystem.EffectEnv with
                 | Some definition ->
@@ -159,61 +233,7 @@ module EffectSystemModule =
                     | SymbolicCompressionB (SymbolicCompressionA aspect) -> evalAspect aspect slice effectSystem
                     | _ -> Log.info ^ "Expected Aspect for definition '" + definitionName + "'."; slice
                 | None -> Log.info ^ "Could not find definition with name '" + definitionName + "'."; slice
-            | Enabled (applicator, playback, keyFrames) ->
-                let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
-                { slice with Enabled = applied }
-            | Position (applicator, algorithm, playback, keyFrames) ->
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
-                let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
-                { slice with Position = applied }
-            | Translation (applicator, algorithm, playback, keyFrames) ->
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
-                let oriented = Vector2.Transform (tweened, Quaternion.FromAxisAngle (Vector3.UnitZ, slice.Rotation))
-                let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position oriented applicator
-                { slice with Position = applied }
-            | Size (applicator, algorithm, playback, keyFrames) ->
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
-                let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
-                { slice with Size = applied }
-            | Rotation (applicator, algorithm, playback, keyFrames) ->
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Rotation tweened applicator
-                { slice with Rotation = applied }
-            | Depth (applicator, algorithm, playback, keyFrames) ->
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Depth tweened applicator
-                { slice with Depth = applied }
-            | Offset (applicator, algorithm, playback, keyFrames) ->
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
-                let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
-                { slice with Offset = applied }
-            | Color (applicator, algorithm, playback, keyFrames) ->
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector4.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
-                let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
-                { slice with Color = applied }
-            | Volume (applicator, algorithm, playback, keyFrames) ->
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Volume tweened applicator
-                { slice with Volume = applied }
-            | Bone -> slice
-    
+            
         and private evalAspects aspects slice effectSystem =
             List.fold (fun slice aspect -> evalAspect aspect slice effectSystem) slice aspects
     
@@ -389,8 +409,10 @@ module EffectSystemModule =
     
         and private evalContent content slice effectSystem =
             match content with
-            | Expand (definitionName, arguments) ->
-                evalExpand definitionName arguments slice effectSystem
+            | Nil ->
+                []
+            | Tag (name, metadata) ->
+                [TagArtifact (name, metadata, slice)]
             | StaticSprite (resource, aspects, content) ->
                 evalStaticSprite resource aspects content slice effectSystem
             | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects, content) ->
@@ -405,9 +427,8 @@ module EffectSystemModule =
                 evalEmit shift rate emitterAspects aspects content effectSystem
             | Composite (Shift shift, contents) ->
                 evalComposite shift contents slice effectSystem
-            | Tag (name, metadata) ->
-                [TagArtifact (name, metadata, slice)]
-            | Nil -> []
+            | Expand (definitionName, arguments) ->
+                evalExpand definitionName arguments slice effectSystem
     
         and private evalContents contents slice effectSystem =
             List.fold
