@@ -352,7 +352,7 @@ module EffectSystemModule =
     
         and private evalRepeat shift repetition incrementAspects content (slice : Slice) effectSystem =
             
-            // eval repeat either as iterative or cylcing
+            // eval repeat either as iterative or cycling
             let slice = { slice with Depth = slice.Depth + shift }
             match repetition with
             
