@@ -387,7 +387,7 @@ module EffectSystemModule =
                         let emitCount = int emitCountThisFrame - int emitCountLastFrame
                         let effectSystem =
                             let history =
-                                // TODO: emits on emits is broken, so fix this!
+                                // TODO: emits on emits may still be broken, so fix this if needed!
                                 match content with
                                 | Emit _ ->
                                     Seq.mapi

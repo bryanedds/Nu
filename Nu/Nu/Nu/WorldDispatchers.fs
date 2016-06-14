@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.ComponentModel
+open FSharpx.Collections
 open OpenTK
 open Prime
 open TiledSharp
@@ -90,8 +91,8 @@ module EffectFacetModule =
         member this.SetEffectTimeOffset (value : int64) world = this.UpdateXtension (fun xtension -> xtension?EffectHistoryMax <- value) world
         member this.GetEffectHistoryMax world : int = (this.GetXtension world)?EffectHistoryMax
         member this.SetEffectHistoryMax (value : int) world = this.UpdateXtension (fun xtension -> xtension?EffectHistoryMax <- value) world
-        member this.GetEffectHistoryNp world : Slice seq = (this.GetXtension world)?EffectHistoryNp
-        member private this.SetEffectHistoryNp (value : Slice seq) world = this.UpdateXtension (fun xtension -> xtension?EffectHistoryNp <- value) world
+        member this.GetEffectHistoryNp world : Slice Deque = (this.GetXtension world)?EffectHistoryNp
+        member private this.SetEffectHistoryNp (value : Slice Deque) world = this.UpdateXtension (fun xtension -> xtension?EffectHistoryNp <- value) world
         member this.GetEffectPhysicsShapesNp world : unit = (this.GetXtension world)?EffectPhysicsShapesNp // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
         member private this.SetEffectPhysicsShapesNp (value : unit) world = this.UpdateXtension (fun xtension -> xtension?EffectPhysicsShapesNp <- value) world
         member this.GetEffectTagsNp world : EffectTags = (this.GetXtension world)?EffectTagsNp
@@ -106,7 +107,7 @@ module EffectFacetModule =
              Define? EffectOffset Vector2.Zero
              Define? EffectTimeOffset 0L // TODO: also implement similar time offset for AnimatedSpriteFacet
              Define? EffectHistoryMax Constants.Effects.DefaultEffectHistoryMax
-             Define? EffectHistoryNp Seq.empty<Slice>
+             Define? EffectHistoryNp Deque.empty<Slice>
              Define? EffectPhysicsShapesNp ()
              Define? EffectTagsNp (Map.empty : EffectTags)]
 
@@ -148,7 +149,8 @@ module EffectFacetModule =
                         world
                         artifacts
                 let effectHistoryMax = entity.GetEffectHistoryMax world
-                let effectHistory = effectSlice :: List.ofSeq effectHistory |> Seq.tryTake effectHistoryMax
+                let effectHistory = effectHistory |> Deque.cons effectSlice 
+                let effectHistory = if Deque.length effectHistory > effectHistoryMax then fst ^ Deque.unconj effectHistory else effectHistory
                 entity.SetEffectHistoryNp effectHistory world
             else world
 
