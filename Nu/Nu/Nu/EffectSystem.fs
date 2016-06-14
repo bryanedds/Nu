@@ -445,19 +445,19 @@ module EffectSystemModule =
                 []
                 contents
     
-        let eval (Effect (_, optLifetime, definitions, content) as effect) slice effectSystem =
+        let eval effect slice effectSystem =
             let localTime =
-                match optLifetime with
+                match effect.OptLifetime with
                 | Some lifetime -> if lifetime <> 0L then effectSystem.EffectTime % lifetime + lifetime else 0L
                 | None -> effectSystem.EffectTime
             let effectSystem =
                 { effectSystem with
-                    EffectEnv = Map.concat effectSystem.EffectEnv definitions
+                    EffectEnv = Map.concat effectSystem.EffectEnv effect.Definitions
                     EffectTime = localTime }
-            try evalContent content slice effectSystem
+            try evalContent effect.Content slice effectSystem
             with exn ->
-                let effectKeywords = match typeof<Effect>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords
-                let effectStr = Symbol.prettyPrint effectKeywords ^ scstring effect
+                let effectKeywords0 = match typeof<Effect>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
+                let effectStr = Symbol.prettyPrint effectKeywords0 ^ scstring effect
                 Log.debug ^ "Error in effect:\r\n" + effectStr + "' due to:\r\n" + scstring exn
                 []
     
