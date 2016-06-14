@@ -83,12 +83,12 @@ namespace Nu.Gaia.Design
 
         private void SymbolicTextBox_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Control && e.KeyCode == Keys.F)
+            if (e.Control && !e.Shift && e.KeyCode == Keys.F)
             {
                 MyFindReplace.ShowIncrementalSearch();
                 e.SuppressKeyPress = true;
             }
-            else if (e.Control && e.KeyCode == Keys.H)
+            else if (e.Control && !e.Shift && e.KeyCode == Keys.H)
             {
                 MyFindReplace.ShowReplace();
                 e.SuppressKeyPress = true;
@@ -146,18 +146,6 @@ namespace Nu.Gaia.Design
                 {
                     // Select the brace to the immediate right
                     bracePos1 = selectionPos;
-                }
-                else
-                {
-                    // Select the brace anywhere to the left
-                    for (var i = selectionPos - 1; i >= 0; --i)
-                    {
-                        if (IsBrace(GetCharAt(i)))
-                        {
-                            bracePos1 = i;
-                            break;
-                        }
-                    }
                 }
 
                 if (bracePos1 >= 0)

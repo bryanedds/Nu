@@ -39,13 +39,6 @@
             Allows the FindAllResults list to be double clicked and results indicated in the original Scintilla.
             </summary>
         </member>
-        <member name="M:ScintillaNET_FindReplaceDialog.FindAllResults.FindAllResultsPanel.UpdateFindAllResults(ScintillaNET_FindReplaceDialog.FindReplace,System.Collections.Generic.List{ScintillaNET_FindReplaceDialog.CharacterRange})">
-            <summary>
-            Updates the find all results panel
-            </summary>
-            <param name="FindReplace">The FindReplace instance used to generate the find results.</param>
-            <param name="FindAllResults"></param>
-        </member>
         <member name="F:ScintillaNET_FindReplaceDialog.FindAllResults.FindAllResultsPanel.components">
             <summary> 
             Required designer variable.
@@ -91,17 +84,6 @@
         <member name="F:ScintillaNET_FindReplaceDialog.FindOption.Posix">
             <summary>
                 Not used in ScintillaNET
-            </summary>
-        </member>
-        <member name="M:ScintillaNET_FindReplaceDialog.FindReplace.#ctor(ScintillaNET.Scintilla)">
-            <summary>
-            Creates an instance of the FindReplace class.
-            </summary>
-            <param name="scintilla">The Scintilla class to which the FindReplace class is attached.</param>
-        </member>
-        <member name="M:ScintillaNET_FindReplaceDialog.FindReplace.#ctor">
-            <summary>
-            Creates an instance of the FindReplace class.
             </summary>
         </member>
         <member name="M:ScintillaNET_FindReplaceDialog.FindReplace.ClearAllHighlights">
