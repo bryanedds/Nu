@@ -111,7 +111,8 @@ namespace Nu.Gaia.Design
             }
             else if (e.Control && e.KeyCode == Keys.F3)
             {
-                // TODO: figure out how to call this from here
+                // TODO: figure out how to call this from here...
+                // https://github.com/Stumpii/ScintillaNET-FindReplaceDialog/issues
                 // MyFindReplace.FindNext();
                 // e.SuppressKeyPress = true;
             }
