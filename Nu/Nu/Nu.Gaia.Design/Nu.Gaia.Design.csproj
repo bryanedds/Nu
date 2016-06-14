@@ -40,6 +40,9 @@
     <Reference Include="ScintillaNET">
       <HintPath>..\..\ScintillaNET\ScintillaNET.dll</HintPath>
     </Reference>
+    <Reference Include="ScintillaNET FindReplaceDialog">
+      <HintPath>..\..\ScintillaNET-FindReplace\Release\ScintillaNET FindReplaceDialog.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
