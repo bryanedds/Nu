@@ -142,7 +142,6 @@ namespace Nu.Gaia.Design
                 lastSelectionPos = selectionPos;
                 var bracePos1 = -1;
                 var bracePos2 = -1;
-
                 if (IsBrace(GetCharAt(selectionPos)))
                 {
                     // Select the brace to the immediate right
