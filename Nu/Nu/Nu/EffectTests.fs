@@ -22,4 +22,4 @@ module EffectSystemTests =
                 [Color Eq Linear Bounce [[[1 0 1 1] 180] [[1 1 0 0] 0]]]] 
                [Expand BoxSprite []]]]"
         let effect = scvalue<Effect> effectStr
-        Assert.Equal<string> ("TestEffect", match effect with Effect (name, _, _, _) -> name) // TODO: more assertions
+        Assert.Equal<string> ("TestEffect", effect.EffectName) // TODO: more assertions

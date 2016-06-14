@@ -9,6 +9,5 @@ namespace Nu.Gaia.Design
         {
             InitializeComponent();
         }
-
     }
 }

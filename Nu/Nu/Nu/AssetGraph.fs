@@ -68,6 +68,7 @@ type PackageDescriptor =
 module AssetGraphModule =
 
     /// A graph of all the assets used in a game.
+    [<Syntax ("Asset Assets", "PsdToPng OldSchool Render Audio")>]
     type AssetGraph =
         private
             { PackageDescriptors : Map<string, PackageDescriptor> }
@@ -190,10 +191,14 @@ module AssetGraphModule =
             | Some association -> List.filter (fun asset -> Set.contains association asset.Associations) assets
             | None -> assets
 
+        /// Get package descriptors.
+        let getPackageDescriptors assetGraph =
+            assetGraph.PackageDescriptors
+
         /// Get package names.
         let getPackageNames assetGraph =
             Map.toKeyList assetGraph.PackageDescriptors
-    
+
         /// Attempt to load all the available assets from a package.
         let tryLoadAssetsFromPackage usingRawAssets optAssociation packageName assetGraph =
             match Map.tryFind packageName assetGraph.PackageDescriptors with

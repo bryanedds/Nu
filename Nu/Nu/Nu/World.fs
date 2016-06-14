@@ -415,7 +415,7 @@ module WorldModule =
                                 | None -> world)
                             world
                             entities
-                    Right world
+                    Right (overlayer, world)
 
                 // propagate errors
                 | Left error -> Left error
@@ -440,7 +440,7 @@ module WorldModule =
                     let world = World.setAssetMetadataMap assetMetadataMap world
                     let world = World.reloadRenderAssets world
                     let world = World.reloadAudioAssets world
-                    Right world
+                    Right (assetGraph, world)
         
                 // propagate errors
                 | Left error -> Left error

@@ -158,11 +158,18 @@ type Definitions =
             "Expand Enabled Position Translation Offset Size Rotation Depth Color Volume Bone " +
             "Expand StaticSprite AnimatedSprite SoundEffect Mount Repeat Emit Composite Tag Nil " +
             "RenderArtifact SoundArtifact TagArtifact " +
-            "Effect")>]
+            "Effect",
+            "")>]
 type [<NoEquality; NoComparison>] Effect =
-    Effect of string * int64 option * Definitions * Content
+    { EffectName : string
+      OptLifetime : int64 option
+      Definitions : Definitions
+      Content : Content }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Effect =
     let empty =
-        Effect ("Empty", None, Map.empty, Composite (Shift 0.0f, []))
+        { EffectName = "Empty"
+          OptLifetime = None
+          Definitions = Map.empty
+          Content = Composite (Shift 0.0f, []) }

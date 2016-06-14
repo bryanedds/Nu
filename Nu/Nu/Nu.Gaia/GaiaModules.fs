@@ -305,13 +305,14 @@ module Gaia =
                 form.propertyNameLabel.Text <- scstring selectedGridItem.Label
                 form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
                 if isNotNull selectedGridItem.Value || isNullTrueValue ty then
-                    let keywords = match ty.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords
+                    let (keywords0, keywords1) = match ty.GetCustomAttribute<SyntaxAttribute> true with null -> ("", "") | syntax -> (syntax.Keywords0, syntax.Keywords1)
                     let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
                     let strEscaped = String.escape strUnescaped
-                    let strPretty = Symbol.prettyPrint keywords strEscaped
+                    let strPretty = Symbol.prettyPrint keywords0 strEscaped
                     form.propertyValueTextBox.Text <- strPretty
                     form.propertyValueTextBox.EmptyUndoBuffer ()
-                    form.propertyValueTextBox.Keywords0 <- keywords
+                    form.propertyValueTextBox.Keywords0 <- keywords0
+                    form.propertyValueTextBox.Keywords1 <- keywords1
             | _ ->
                 form.propertyEditor.Enabled <- false
                 form.propertyNameLabel.Text <- String.Empty
@@ -350,6 +351,32 @@ module Gaia =
                 | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
         | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
 
+    let private tryReloadAssets (_ : GaiaForm) world =
+        let editorState = World.getUserState world
+        let targetDir = editorState.TargetDir
+        let assetSourceDir = Path.Combine (targetDir, "..\\..")
+        World.tryReloadAssets assetSourceDir targetDir RefinementDir world
+
+    let private loadAssetGraph (form : GaiaForm) world =
+        match tryReloadAssets form world with
+        | Right (assetGraph, world) ->
+            let assetGraphKeywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
+            form.assetGraphTextBox.Text <- Symbol.prettyPrint assetGraphKeywords0 ^ scstring ^ AssetGraph.getPackageDescriptors assetGraph
+            world
+        | Left error ->
+            ignore ^ MessageBox.Show ("Could not load asset graph due to: " + error + "'.", "Failed to load asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            world
+
+    let private saveAssetGraph (form : GaiaForm) world =
+        let editorState = World.getUserState world
+        let assetSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
+        let assetGraphFilePath = Path.Combine (assetSourceDir, Constants.Assets.AssetGraphFilePath)
+        try let assetGraph = scvalue form.assetGraphTextBox.Text
+            let assetGraphKeywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
+            File.WriteAllText (assetGraphFilePath, Symbol.prettyPrint assetGraphKeywords0 ^ scstring assetGraph)
+        with exn ->
+            ignore ^ MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to save asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error)
+
     let private handleFormPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
 
@@ -361,32 +388,6 @@ module Gaia =
 
     let private handleFormPropertyApplyClick (form : GaiaForm) (_ : EventArgs) =
         applyPropertyEditor form
-
-    let private handleTraceEventsCheckBoxChanged (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
-            World.setEventTracing form.traceEventsCheckBox.Checked world)
-
-    let private handleApplyEventFilterClick (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
-            try let eventFilter = scvalue<EventFilter> form.eventFilterTextBox.Text
-                let eventFilterKeywords = match typeof<EventFilter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords
-                let world = World.setEventFilter eventFilter world
-                form.eventFilterTextBox.Text <- Symbol.prettyPrint eventFilterKeywords ^ scstring eventFilter
-                world
-            with exn ->
-                let world = World.choose world
-                ignore ^ MessageBox.Show ("Invalid event filter due to: " + scstring exn, "Invalid event filter", MessageBoxButtons.OK, MessageBoxIcon.Error)
-                world)
-
-    let private handleResetEventFilterClick (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
-            let eventFilter = World.getEventFilter world
-            let eventFilterStr = scstring eventFilter
-            let eventFilterKeywords = match typeof<EventFilter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords
-            let eventFilterPretty = Symbol.prettyPrint eventFilterKeywords eventFilterStr
-            form.eventFilterTextBox.Text <- eventFilterPretty
-            form.eventFilterTextBox.EmptyUndoBuffer ()
-            world)
 
     let private handleFormTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
@@ -426,7 +427,7 @@ module Gaia =
                 world
             with exn ->
                 let world = World.choose world
-                ignore ^ MessageBox.Show (scstring exn)
+                ignore ^ MessageBox.Show (scstring exn, "Could not create Gaia form", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 world)
 
     let private handleFormDelete (form : GaiaForm) (_ : EventArgs) =
@@ -585,13 +586,13 @@ module Gaia =
         ignore ^ WorldChangers.Add (fun world ->
             World.updateCamera (fun camera -> { camera with EyeCenter = Vector2.Zero }) world)
 
-    let private handleFormReloadAssets (_ : GaiaForm) (_ : EventArgs) =
+    let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
-            let editorState = World.getUserState world
-            let targetDir = editorState.TargetDir
-            let assetSourceDir = Path.Combine (targetDir, "..\\..")
-            match World.tryReloadAssets assetSourceDir targetDir RefinementDir world with
-            | Right world -> world
+            match tryReloadAssets form world with
+            | Right (assetGraph, world) ->
+                let assetGraphKeywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
+                form.assetGraphTextBox.Text <- Symbol.prettyPrint assetGraphKeywords0 ^ scstring assetGraph
+                world
             | Left error ->
                 ignore ^ MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 world)
@@ -602,7 +603,7 @@ module Gaia =
             let targetDir = (World.getUserState world).TargetDir
             let overlayDir = Path.Combine (targetDir, "..\\..")
             match World.tryReloadOverlays overlayDir targetDir world with
-            | Right world ->
+            | Right (_, world) ->
                 refreshPropertyGrid form world
                 world
             | Left error ->
@@ -624,9 +625,48 @@ module Gaia =
             refreshTreeView form world
             world)
 
-    let private handleRolloutTabSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
+    let private handleTraceEventsCheckBoxChanged (form : GaiaForm) (_ : EventArgs) =
+        ignore ^ WorldChangers.Add (fun world ->
+            World.setEventTracing form.traceEventsCheckBox.Checked world)
+
+    let private handleApplyEventFilterClick (form : GaiaForm) (_ : EventArgs) =
+        ignore ^ WorldChangers.Add (fun world ->
+            try let eventFilter = scvalue<EventFilter> form.eventFilterTextBox.Text
+                let eventFilterKeywords0 = match typeof<EventFilter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
+                let world = World.setEventFilter eventFilter world
+                form.eventFilterTextBox.Text <- Symbol.prettyPrint eventFilterKeywords0 ^ scstring eventFilter
+                world
+            with exn ->
+                let world = World.choose world
+                ignore ^ MessageBox.Show ("Invalid event filter due to: " + scstring exn, "Invalid event filter", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                world)
+
+    let private handleResetEventFilterClick (form : GaiaForm) (_ : EventArgs) =
+        ignore ^ WorldChangers.Add (fun world ->
+            let eventFilter = World.getEventFilter world
+            let eventFilterStr = scstring eventFilter
+            let eventFilterKeywords0 = match typeof<EventFilter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
+            let eventFilterPretty = Symbol.prettyPrint eventFilterKeywords0 eventFilterStr
+            form.eventFilterTextBox.Text <- eventFilterPretty
+            form.eventFilterTextBox.EmptyUndoBuffer ()
+            world)
+
+    let private handleSaveAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
+        ignore ^ WorldChangers.Add (fun world ->
+            saveAssetGraph form world
+            world)
+
+    let private handleLoadAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
+        ignore ^ WorldChangers.Add (fun world ->
+            loadAssetGraph form world)
+
+    let private handleRolloutTabSelectedIndexChanged (form : GaiaForm) (args : EventArgs) =
         if form.rolloutTabControl.SelectedTab = form.eventTracingTabPage then
-            form.resetEventFilterButton.PerformClick ()
+            handleResetEventFilterClick form args
+        elif form.rolloutTabControl.SelectedTab = form.assetGraphTabPage then
+            handleLoadAssetGraphClick form args
+        //elif form.rolloutTabControl.SelectedTab = form.assetGraphTabPage then
+        //    handleLoadOverlayButtonClick form args
 
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
         match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.YesNo) with
@@ -764,8 +804,11 @@ module Gaia =
 
     /// Create a Gaia form.
     let createForm () =
+
+        // create form
         let form = new GaiaForm ()
-        form.eventFilterTextBox.Keywords0 <- match typeof<EventFilter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords
+
+        // configure form and set up events
         form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
         form.positionSnapTextBox.Text <- scstring DefaultPositionSnap
         form.rotationSnapTextBox.Text <- scstring DefaultRotationSnap
@@ -781,6 +824,10 @@ module Gaia =
         form.traceEventsCheckBox.CheckStateChanged.Add (handleTraceEventsCheckBoxChanged form)
         form.applyEventFilterButton.Click.Add (handleApplyEventFilterClick form)
         form.resetEventFilterButton.Click.Add (handleResetEventFilterClick form)
+        form.saveAssetGraphButton.Click.Add (handleSaveAssetGraphClick form)
+        form.loadAssetGraphButton.Click.Add (handleLoadAssetGraphClick form)
+        form.saveOverlayButton.Click.Add (handleApplyEventFilterClick form)
+        form.loadOverlayButton.Click.Add (handleResetEventFilterClick form)
         form.treeView.AfterSelect.Add (handleFormTreeViewNodeSelect form)
         form.createEntityButton.Click.Add (handleFormCreate false form)
         form.createToolStripMenuItem.Click.Add (handleFormCreate false form)
@@ -810,6 +857,22 @@ module Gaia =
         form.reloadOverlaysButton.Click.Add (handleFormReloadOverlays form)
         form.groupTabs.Selected.Add (handleFormGroupTabSelected form)
         form.Closing.Add (handleFormClosing form)
+        
+        // populate event filter keywords
+        match typeof<EventFilter>.GetCustomAttribute<SyntaxAttribute> true with
+        | null -> ()
+        | syntax ->
+            form.eventFilterTextBox.Keywords0 <- syntax.Keywords0
+            form.eventFilterTextBox.Keywords1 <- syntax.Keywords1
+
+        // populate asset graph keywords
+        match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with
+        | null -> ()
+        | syntax ->
+            form.assetGraphTextBox.Keywords0 <- syntax.Keywords0
+            form.assetGraphTextBox.Keywords1 <- syntax.Keywords1
+
+        // finally, show form
         form.Show ()
         form
 

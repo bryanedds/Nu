@@ -160,6 +160,10 @@ module OverlayerModule =
         let shouldPropertySerialize5 facetNames propertyName propertyType target overlayer =
             not ^ isPropertyOverlaid5 facetNames propertyName propertyType target overlayer
 
+        /// Get overlays.
+        let getOverlays overlayer =
+            overlayer.Overlays
+
         /// The empty overlayer.
         let empty =
             { Overlays = Map.empty }

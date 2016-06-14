@@ -23,7 +23,7 @@ namespace Nu.Gaia.Design
             // Add keyword styles (keywords 0 are reserved for DSL-specific use)
             Styles[Style.Lisp.Keyword].ForeColor = Color.DarkBlue;
             Styles[Style.Lisp.KeywordKw].ForeColor = Color.FromArgb(0xFF, 0x60, 0x00, 0x70);
-            Keywords1 = "True False Some None Right Left Nor Not Nand Mod Xor And Mul Add Sub Eq Or Lt Gt Get Div Not_Eq Gt_Eq Lt_Eq";
+            SetKeywords(1, keywordsImplicit);
 
             // Add operator styles (braces, actually)
             Styles[Style.Lisp.Operator].ForeColor = Color.RoyalBlue;
@@ -66,15 +66,30 @@ namespace Nu.Gaia.Design
             set
             {
                 keywords1 = value;
-                SetKeywords(1, keywords1);
+                SetKeywords(1, keywords1 + " " + keywordsImplicit);
             }
+        }
+
+        public string KeywordsImplicit
+        {
+            get { return keywordsImplicit; }
+            set
+            {
+                keywordsImplicit = value;
+                SetKeywords(1, keywords1 + " " + keywordsImplicit);
+            }
+        }
+
+        public string Keywords
+        {
+            get { return keywords0 + " " + keywords1 + " " + keywordsImplicit; }
         }
 
         public string AutoCWords
         {
             get
             {
-                var keywordsSplit = keywords0.Split(' ').Distinct().ToArray();
+                var keywordsSplit = Keywords.Split(' ').Distinct().ToArray();
                 Array.Sort(keywordsSplit);
                 var keywordsSorted = string.Join(AutoCSeparator.ToString(), keywordsSplit);
                 return keywordsSorted;
@@ -189,6 +204,7 @@ namespace Nu.Gaia.Design
 
         private string keywords0 = string.Empty;
         private string keywords1 = string.Empty;
+        private string keywordsImplicit = "True False Some None Right Left";
         private int lastSelectionPos = 0;
         private FindReplace MyFindReplace;
     }
