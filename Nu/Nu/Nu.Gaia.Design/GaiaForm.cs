@@ -1,4 +1,5 @@
-﻿using System.Windows.Forms;
+﻿using ScintillaNET_FindReplaceDialog;
+using System.Windows.Forms;
 
 namespace Nu.Gaia.Design
 {
@@ -8,5 +9,6 @@ namespace Nu.Gaia.Design
         {
             InitializeComponent();
         }
+
     }
 }
