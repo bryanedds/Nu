@@ -79,6 +79,11 @@ module Constants =
         let [<Literal>] CollisionProperty = "C"
 
     [<RequireQualifiedAccess>]
+    module Effects =
+
+        let [<Literal>] DefaultEffectHistoryMax = 300 // 5 seconds
+
+    [<RequireQualifiedAccess>]
     module Math =
 
         let [<Literal>] RadiansToDegrees = 57.2957795
