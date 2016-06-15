@@ -686,7 +686,6 @@ module Gaia =
 
     let private handleSaveOverlayerClick (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
-            let world = pushPastWorld world world
             if trySaveOverlayer form world then
                 match tryReloadOverlays form world with
                 | Right (_, world) -> world
@@ -697,11 +696,9 @@ module Gaia =
 
     let private handleLoadOverlayerClick (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
-            let pastWorld = world
-            let world = pushPastWorld pastWorld world
             match tryLoadOverlayer form world with
             | Some world -> world
-            | None -> World.choose pastWorld)
+            | None -> World.choose world)
 
     let private handleRolloutTabSelectedIndexChanged (form : GaiaForm) (args : EventArgs) =
         if form.rolloutTabControl.SelectedTab = form.eventTracingTabPage then
