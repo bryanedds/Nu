@@ -357,63 +357,54 @@ module Gaia =
         let assetSourceDir = Path.Combine (targetDir, "..\\..")
         World.tryReloadAssets assetSourceDir targetDir RefinementDir world
 
-    let private loadAssetGraph (form : GaiaForm) world =
+    let private tryLoadAssetGraph (form : GaiaForm) world =
         match tryReloadAssets form world with
         | Right (assetGraph, world) ->
             let assetGraphKeywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             form.assetGraphTextBox.Text <- Symbol.prettyPrint assetGraphKeywords0 ^ scstring ^ AssetGraph.getPackageDescriptors assetGraph
-            world
+            Some world
         | Left error ->
             ignore ^ MessageBox.Show ("Could not load asset graph due to: " + error + "'.", "Failed to load asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error)
-            world
+            None
 
-    let private saveAssetGraph (form : GaiaForm) world =
+    let private trySaveAssetGraph (form : GaiaForm) world =
         let editorState = World.getUserState world
         let assetSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
         let assetGraphFilePath = Path.Combine (assetSourceDir, Constants.Assets.AssetGraphFilePath)
-        try let assetGraph = scvalue<AssetGraph> form.assetGraphTextBox.Text
+        try let packageDescriptors = scvalue<Map<string, PackageDescriptor>> form.assetGraphTextBox.Text
             let assetGraphKeywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
-            File.WriteAllText (assetGraphFilePath, Symbol.prettyPrint assetGraphKeywords0 ^ scstring assetGraph)
+            File.WriteAllText (assetGraphFilePath, Symbol.prettyPrint assetGraphKeywords0 ^ scstring packageDescriptors)
+            true
         with exn ->
             ignore ^ MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to save asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            false
 
     let private tryReloadOverlays (_ : GaiaForm) world =
         let targetDir = (World.getUserState world).TargetDir
         let overlayDir = Path.Combine (targetDir, "..\\..")
         World.tryReloadOverlays overlayDir targetDir world
 
-    let private loadOverlay (form : GaiaForm) world =
+    let private tryLoadOverlay (form : GaiaForm) world =
         match tryReloadOverlays form world with
         | Right (overlayer, world) ->
             let overlayerKeywords0 = match typeof<Overlayer>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             form.overlayTextBox.Text <- Symbol.prettyPrint overlayerKeywords0 ^ scstring ^ Overlayer.getOverlays overlayer
-            world
+            Some world
         | Left error ->
             ignore ^ MessageBox.Show ("Could not load overlays due to: " + error + "'.", "Failed to load overlays", MessageBoxButtons.OK, MessageBoxIcon.Error)
-            world
+            None
 
-    let private saveOverlay (form : GaiaForm) world =
+    let private trySaveOverlay (form : GaiaForm) world =
         let editorState = World.getUserState world
         let overlayerSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
         let overlayerFilePath = Path.Combine (overlayerSourceDir, Constants.Assets.OverlayerFilePath)
         try let overlays = scvalue<Map<string, Overlay>> form.assetGraphTextBox.Text
             let overlayerKeywords0 = match typeof<Overlayer>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             File.WriteAllText (overlayerFilePath, Symbol.prettyPrint overlayerKeywords0 ^ scstring overlays)
+            true
         with exn ->
             ignore ^ MessageBox.Show ("Could not save overlayer due to: " + scstring exn, "Failed to save overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error)
-
-    //let private handleFormReloadOverlays (form : GaiaForm) (_ : EventArgs) =
-    //    ignore ^ WorldChangers.Add (fun world ->
-    //        let world = pushPastWorld world world
-    //        let targetDir = (World.getUserState world).TargetDir
-    //        let overlayDir = Path.Combine (targetDir, "..\\..")
-    //        match World.tryReloadOverlays overlayDir targetDir world with
-    //        | Right (_, world) ->
-    //            refreshPropertyGrid form world
-    //            world
-    //        | Left error ->
-    //            ignore ^ MessageBox.Show ("Overlay reload error due to: " + error + "'.", "Overlay reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
-    //            world)
+            false
 
 
     let private handleFormPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
@@ -679,29 +670,46 @@ module Gaia =
 
     let private handleSaveAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
-            saveAssetGraph form world
-            world)
+            if trySaveAssetGraph form world then
+                match tryReloadAssets form world with
+                | Right (_, world) -> world
+                | Left error ->
+                    ignore ^ MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    world
+            else World.choose world)
 
     let private handleLoadAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
-            loadAssetGraph form world)
+            match tryLoadAssetGraph form world with
+            | Some world -> world
+            | None -> World.choose world)
 
     let private handleSaveOverlayClick (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
-            saveOverlay form world
-            world)
+            let world = pushPastWorld world world
+            if trySaveOverlay form world then
+                match tryReloadOverlays form world with
+                | Right (_, world) -> world
+                | Left error ->
+                    ignore ^ MessageBox.Show ("Overlay reload error due to: " + error + "'.", "Overlay reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    world
+            else World.choose world)
 
     let private handleLoadOverlayClick (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
-            loadOverlay form world)
+            let pastWorld = world
+            let world = pushPastWorld pastWorld world
+            match tryLoadOverlay form world with
+            | Some world -> world
+            | None -> World.choose pastWorld)
 
     let private handleRolloutTabSelectedIndexChanged (form : GaiaForm) (args : EventArgs) =
         if form.rolloutTabControl.SelectedTab = form.eventTracingTabPage then
             handleResetEventFilterClick form args
         elif form.rolloutTabControl.SelectedTab = form.assetGraphTabPage then
             handleLoadAssetGraphClick form args
-        //elif form.rolloutTabControl.SelectedTab = form.assetGraphTabPage then
-        //    handleLoadOverlayButtonClick form args
+        elif form.rolloutTabControl.SelectedTab = form.assetGraphTabPage then
+            handleLoadOverlayClick form args
 
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
         match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.YesNo) with

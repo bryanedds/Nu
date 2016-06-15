@@ -376,7 +376,7 @@ module WorldModule =
             let sourceTypes = List.map (fun source -> source.GetType ()) sources
             Reflection.createIntrinsicOverlays requiresFacetNames sourceTypes
 
-        /// Try to reload the overlays currently in use by the world.
+        /// Try to reload the overlayer currently in use by the world.
         static member tryReloadOverlays inputDirectory outputDirectory world =
             
             // attempt to reload overlay file
