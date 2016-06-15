@@ -47,23 +47,6 @@ type [<ReferenceEquality>] Event<'a, 's when 's :> Participant> =
 type Subscription<'a, 's, 'w when 's :> Participant> =
     Event<'a, 's> -> 'w -> Handling * 'w
 
-// this is just me playing with an idea for a parallelizable pure functional event system - ignore
-module private Parallel =
-
-    type Op<'w, 'a> = obj -> 'w -> 'a
-    
-    type Ops<'w, 'a> = Op<'w, 'a> list
-
-    let run<'w, 'a> (combine : 'a -> 'a -> 'a) (ops : Ops<'w, 'a>) (o : obj) (w : 'w) =
-        let results = System.Collections.Generic.List<'a> ()
-        System.Threading.Tasks.Parallel.ForEach (ops, fun op -> results.Add (op o w)) |> ignore
-        let results = List.ofSeq results
-        List.reduce combine results
-
-    // NOTE: it might be better to model this with denotational semantics rather than informally as here
-    type Subscription<'s, 'w, 'a when 's :> Participant> =
-        Event<obj, 's> -> 'w -> Handling * 'a
-
 /// An entry in the subscription map.
 type SubscriptionEntry =
     Guid * Participant * obj

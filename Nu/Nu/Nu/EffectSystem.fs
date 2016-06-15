@@ -10,7 +10,7 @@ open OpenTK
 [<AutoOpen>]
 module EffectSystemModule =
 
-    /// An abstract data type for executing Effects.
+    /// An abstract data type for executing effects.
     type [<NoEquality; NoComparison>] EffectSystem =
         private
             { ViewType : ViewType
