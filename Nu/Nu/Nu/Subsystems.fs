@@ -1,4 +1,5 @@
-﻿namespace Nu
+﻿
+namespace Nu
 open System
 open Prime
 open Nu

@@ -44,7 +44,7 @@ module Constants =
     module Assets =
 
         let [<Literal>] AssetGraphFilePath = "AssetGraph.nuag"
-        let [<Literal>] OverlayFilePath = "Overlay.nuol"
+        let [<Literal>] OverlayerFilePath = "Overlayer.nuol"
         let [<Literal>] DefaultPackageName = "Default"
         let [<Literal>] DefaultImageValue = "[Default Image]"
         let [<Literal>] DefaultTileMapAssetValue = "[Default TileMap]"
