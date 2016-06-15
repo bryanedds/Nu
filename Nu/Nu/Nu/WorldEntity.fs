@@ -72,11 +72,13 @@ module WorldEntityModule =
 
         /// Query than an entity is in the camera's view.
         member this.InView world =
-            let camera = World.getCamera world
-            Camera.inView
-                (this.GetViewType world)
-                (this.GetBoundsOverflow world)
-                camera
+            if not ^ this.GetOmnipresent world then
+                let camera = World.getCamera world
+                Camera.inView
+                    (this.GetViewType world)
+                    (this.GetBoundsOverflow world)
+                    camera
+             else true
 
         /// Get an entity's transform.
         member this.GetTransform world =
