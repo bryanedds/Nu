@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -78,10 +78,11 @@
     <Compile Include="Input.fs" />
     <Compile Include="Effect.fs" />
     <Compile Include="EffectSystem.fs" />
+    <Compile Include="Scripting.fs" />
+    <Compile Include="ScriptingSystem.fs" />
     <Compile Include="Sdl.fs" />
     <Compile Include="Subsystems.fs" />
     <Compile Include="AmbientState.fs" />
-    <Compile Include="Scripting.fs" />
     <Compile Include="WorldDebug.fs" />
     <Compile Include="WorldTypes.fs" />
     <Compile Include="WorldEvents.fs" />

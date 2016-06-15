@@ -14,15 +14,20 @@ open Nu.Scripting
 module ScriptingEnvModule =
 
     /// An environemt in which scripting declarations can be found.
-    /// Internally a Dictionary for fast look-ups, but without add functions for immutability.
+    /// Internally a Dictionary for fast look-ups, but without add functions for immutability. Append, however, stays
+    /// functional without greater big-O compexity!
     type [<NoEquality; NoComparison>] ScriptingEnv =
         private
             ScriptingEnv of Dictionary<string, Declaration>
 
     let tryFind key (ScriptingEnv env) =
-        match env.TryGetValue key with
-        | (true, declaration) -> Some declaration
-        | (false, _) -> None
+        Dictionary.tryFind key env
+
+    let make declarations =
+        ScriptingEnv ^ dictC declarations
+
+    let append (ScriptingEnv env) (ScriptingEnv env2) =
+        make (Seq.append env env2)
 
 [<AutoOpen>]
 module ScriptingSystemModule =
