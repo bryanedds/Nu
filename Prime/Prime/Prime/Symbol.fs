@@ -254,7 +254,7 @@ module Symbol =
     
         let rec getCascadeDepth symbol depth =
             match symbol with
-            | Atom (str, _) when List.isEmpty keywords || List.contains str keywords -> depth
+            | Atom (str, _) when not (List.isEmpty keywords) || List.contains str keywords -> depth
             | Symbols (_ :: _ as symbols', _) -> getCascadeDepth (List.head symbols') (depth + 1)
             | _ -> 0
 
