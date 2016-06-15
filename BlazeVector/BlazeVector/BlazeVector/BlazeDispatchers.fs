@@ -42,7 +42,7 @@ module BulletModule =
              Define? LinearDamping 0.0f
              Define? GravityScale 0.0f
              Define? IsBullet true
-             Define? CollisionExpr ^ BodyCircle { Radius = 0.5f; Center = Vector2.Zero }
+             Define? CollisionBody ^ BodyCircle { Radius = 0.5f; Center = Vector2.Zero }
              Define? StaticImage Constants.Assets.PlayerBulletImage
              Define? Age 0L]
 
@@ -102,10 +102,10 @@ module EnemyModule =
              Define? FixedRotation true
              Define? LinearDamping 3.0f
              Define? GravityScale 0.0f
-             Define? CollisionExpr ^ BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero }
-             Define? TileCount 6
-             Define? TileRun 4
-             Define? TileSize ^ Vector2 (48.0f, 96.0f)
+             Define? CollisionBody ^ BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero }
+             Define? CelCount 6
+             Define? CelRun 4
+             Define? CelSize ^ Vector2 (48.0f, 96.0f)
              Define? AnimationStutter 8L
              Define? AnimationSheet Constants.Assets.EnemyImage
              Define? Health 6]
@@ -209,10 +209,10 @@ module PlayerModule =
              Define? FixedRotation true
              Define? LinearDamping 3.0f
              Define? GravityScale 0.0f
-             Define? CollisionExpr ^ BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero }
-             Define? TileCount 16
-             Define? TileRun 4
-             Define? TileSize ^ Vector2 (48.0f, 96.0f)
+             Define? CollisionBody ^ BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero }
+             Define? CelCount 16
+             Define? CelRun 4
+             Define? CelSize ^ Vector2 (48.0f, 96.0f)
              Define? AnimationStutter 3L
              Define? AnimationSheet Constants.Assets.PlayerImage
              Define? LastTimeOnGroundNp Int64.MinValue

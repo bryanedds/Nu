@@ -24,6 +24,7 @@ module Program =
     asset graph     | s-expr DSL    | Visual Studio
     simulants defs  | s-expr DSL    | Gaia
     event filtering | s-expr DSL    | Gaia
+    collision bodies| s-expr DSL    | Gaia
     effect system   | s-expr DSL    | Aether (TBA)
     mind (TBA)      | s-expr DSL    | Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
     interactions    | F# (chains)   | Visual Studio

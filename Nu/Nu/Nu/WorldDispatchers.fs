@@ -189,8 +189,8 @@ module RigidBodyFacetModule =
         member this.SetCollisionCategories (value : string) world = this.UpdateXtension (fun xtension -> xtension?CollisionCategories <- value) world
         member this.GetCollisionMask world : string = (this.GetXtension world)?CollisionMask
         member this.SetCollisionMask (value : string) world = this.UpdateXtension (fun xtension -> xtension?CollisionMask <- value) world
-        member this.GetCollisionExpr world : BodyShape = (this.GetXtension world)?CollisionExpr
-        member this.SetCollisionExpr (value : BodyShape) world = this.UpdateXtension (fun xtension -> xtension?CollisionExpr <- value) world
+        member this.GetCollisionBody world : BodyShape = (this.GetXtension world)?CollisionBody
+        member this.SetCollisionBody (value : BodyShape) world = this.UpdateXtension (fun xtension -> xtension?CollisionBody <- value) world
         member this.GetIsBullet world : bool = (this.GetXtension world)?IsBullet
         member this.SetIsBullet (value : bool) world = this.UpdateXtension (fun xtension -> xtension?IsBullet <- value) world
         member this.GetIsSensor world : bool = (this.GetXtension world)?IsSensor
@@ -201,7 +201,7 @@ module RigidBodyFacetModule =
         inherit Facet ()
 
         static let getBodyShape (entity : Entity) world =
-            Physics.evalCollisionExpr (entity.GetSize world) (entity.GetCollisionExpr world)
+            Physics.localizeCollisionBody (entity.GetSize world) (entity.GetCollisionBody world)
 
         static member PropertyDefinitions =
             [Variable? MinorId ^ fun () -> makeGuid ()
@@ -219,7 +219,7 @@ module RigidBodyFacetModule =
              Define? GravityScale 1.0f
              Define? CollisionCategories "1"
              Define? CollisionMask "@"
-             Define? CollisionExpr ^ BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero }
+             Define? CollisionBody ^ BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero }
              Define? IsBullet false
              Define? IsSensor false]
 
@@ -241,8 +241,8 @@ module RigidBodyFacetModule =
                   LinearVelocity = entity.GetLinearVelocity world
                   LinearDamping = entity.GetLinearDamping world
                   GravityScale = entity.GetGravityScale world
-                  CollisionCategories = Physics.toCollisionCategories ^ entity.GetCollisionCategories world
-                  CollisionMask = Physics.toCollisionCategories ^ entity.GetCollisionMask world
+                  CollisionCategories = Physics.categorizeCollisionMask ^ entity.GetCollisionCategories world
+                  CollisionMask = Physics.categorizeCollisionMask ^ entity.GetCollisionMask world
                   IsBullet = entity.GetIsBullet world
                   IsSensor = entity.GetIsSensor world }
             World.createBody entity.EntityAddress (entity.GetId world) bodyProperties world
@@ -297,13 +297,12 @@ module AnimatedSpriteFacetModule =
 
     type Entity with
     
-        // TODO: see if we can rename the 'tile' concept here to 'cel'
-        member this.GetTileSize world : Vector2 = (this.GetXtension world)?TileSize
-        member this.SetTileSize (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?TileSize <- value) world
-        member this.GetTileRun world : int = (this.GetXtension world)?TileRun
-        member this.SetTileRun (value : int) world = this.UpdateXtension (fun xtension -> xtension?TileRun <- value) world
-        member this.GetTileCount world : int = (this.GetXtension world)?TileCount
-        member this.SetTileCount (value : int) world = this.UpdateXtension (fun xtension -> xtension?TileCount <- value) world
+        member this.GetCelSize world : Vector2 = (this.GetXtension world)?CelSize
+        member this.SetCelSize (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?CelSize <- value) world
+        member this.GetCelRun world : int = (this.GetXtension world)?CelRun
+        member this.SetCelRun (value : int) world = this.UpdateXtension (fun xtension -> xtension?CelRun <- value) world
+        member this.GetCelCount world : int = (this.GetXtension world)?CelCount
+        member this.SetCelCount (value : int) world = this.UpdateXtension (fun xtension -> xtension?CelCount <- value) world
         member this.GetAnimationStutter world : int64 = (this.GetXtension world)?AnimationStutter
         member this.SetAnimationStutter (value : int64) world = this.UpdateXtension (fun xtension -> xtension?AnimationStutter <- value) world
         member this.GetAnimationSheet world : AssetTag = (this.GetXtension world)?AnimationSheet
@@ -313,23 +312,23 @@ module AnimatedSpriteFacetModule =
         inherit Facet ()
 
         static let getOptSpriteInset (entity : Entity) world =
-            let tileCount = entity.GetTileCount world
-            let tileRun = entity.GetTileRun world
-            if tileCount <> 0 && tileRun <> 0 then
-                let tile = int (World.getTickTime world / entity.GetAnimationStutter world) % tileCount
-                let tileSize = entity.GetTileSize world
-                let tileI = tile % tileRun
-                let tileJ = tile / tileRun
-                let tileX = single tileI * tileSize.X
-                let tileY = single tileJ * tileSize.Y
-                let inset = Vector4 (tileX, tileY, tileX + tileSize.X, tileY + tileSize.Y)
+            let celCount = entity.GetCelCount world
+            let celRun = entity.GetCelRun world
+            if celCount <> 0 && celRun <> 0 then
+                let cel = int (World.getTickTime world / entity.GetAnimationStutter world) % celCount
+                let celSize = entity.GetCelSize world
+                let celI = cel % celRun
+                let celJ = cel / celRun
+                let celX = single celI * celSize.X
+                let celY = single celJ * celSize.Y
+                let inset = Vector4 (celX, celY, celX + celSize.X, celY + celSize.Y)
                 Some inset
             else None
 
         static member PropertyDefinitions =
-            [Define? TileCount 16 
-             Define? TileSize ^ Vector2 (16.0f, 16.0f)
-             Define? TileRun 4
+            [Define? CelCount 16 
+             Define? CelSize ^ Vector2 (16.0f, 16.0f)
+             Define? CelRun 4
              Define? AnimationStutter 4L
              Define? AnimationSheet { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image7" }]
 
@@ -353,7 +352,7 @@ module AnimatedSpriteFacetModule =
             else world
 
         override facet.GetQuickSize (entity, world) =
-            entity.GetTileSize world
+            entity.GetCelSize world
 
 [<AutoOpen>]
 module GuiDispatcherModule =
@@ -826,7 +825,7 @@ module TopViewCharacterDispatcherModule =
             [Define? FixedRotation true
              Define? LinearDamping 10.0f
              Define? GravityScale 0.0f
-             Define? CollisionExpr ^ BodyCircle { Radius = 0.5f; Center = Vector2.Zero }
+             Define? CollisionBody ^ BodyCircle { Radius = 0.5f; Center = Vector2.Zero }
              Define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image7" }]
         
         static member IntrinsicFacetNames =
@@ -842,7 +841,7 @@ module SideViewCharacterDispatcherModule =
         static member PropertyDefinitions =
             [Define? FixedRotation true
              Define? LinearDamping 3.0f
-             Define? CollisionExpr ^ BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero }
+             Define? CollisionBody ^ BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero }
              Define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image6" }]
 
         static member IntrinsicFacetNames =
@@ -894,7 +893,7 @@ module TileMapDispatcherModule =
         inherit EntityDispatcher ()
 
         let getTileBodyProperties6 (tm : Entity) tmd tli td ti cexpr world =
-            let tileShape = Physics.evalCollisionExpr (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr
+            let tileShape = Physics.localizeCollisionBody (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr
             { BodyId = makeGuidFromInts tli ti
               Position =
                 Vector2
@@ -914,8 +913,8 @@ module TileMapDispatcherModule =
               LinearVelocity = Vector2.Zero
               LinearDamping = 0.0f
               GravityScale = 0.0f
-              CollisionCategories = Physics.toCollisionCategories ^ tm.GetCollisionCategories world
-              CollisionMask = Physics.toCollisionCategories ^ tm.GetCollisionMask world
+              CollisionCategories = Physics.categorizeCollisionMask ^ tm.GetCollisionCategories world
+              CollisionMask = Physics.categorizeCollisionMask ^ tm.GetCollisionMask world
               IsBullet = false
               IsSensor = false }
 
