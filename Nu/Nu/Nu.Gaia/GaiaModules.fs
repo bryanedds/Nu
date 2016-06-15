@@ -249,14 +249,14 @@ module Gaia =
             World.unsubscribe Constants.SubscriptionKeys.AddEntity |>
             World.unsubscribe Constants.SubscriptionKeys.RemovingEntity
 
-    let private trySaveFile filePath world =
+    let private trySaveSelectedGroup filePath world =
         let selectedGroup = (World.getUserState world).SelectedGroup
         try World.writeGroupToFile filePath selectedGroup world
         with exn ->
             ignore ^ World.choose world
             ignore ^ MessageBox.Show ("Could not save file due to: " + scstring exn, "File save error", MessageBoxButtons.OK, MessageBoxIcon.Error)
 
-    let private tryLoadFile (form : GaiaForm) filePath world =
+    let private tryLoadSelectedGroup (form : GaiaForm) filePath world =
 
         try // destroy current group
             let selectedGroup = (World.getUserState world).SelectedGroup
@@ -467,7 +467,7 @@ module Gaia =
             form.saveFileDialog.FileName <- String.Empty
             let saveFileResult = form.saveFileDialog.ShowDialog form
             match saveFileResult with
-            | DialogResult.OK -> trySaveFile form.saveFileDialog.FileName world; world
+            | DialogResult.OK -> trySaveSelectedGroup form.saveFileDialog.FileName world; world
             | _ -> world)
 
     let private handleFormOpen (form : GaiaForm) (_ : EventArgs) =
@@ -477,7 +477,7 @@ module Gaia =
             match openFileResult with
             | DialogResult.OK ->
                 let world = pushPastWorld world world
-                let world = tryLoadFile form form.openFileDialog.FileName world
+                let world = tryLoadSelectedGroup form form.openFileDialog.FileName world
                 deselectEntity form world
                 world
             | _ -> world)
