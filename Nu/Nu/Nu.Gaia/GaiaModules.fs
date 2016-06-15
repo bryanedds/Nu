@@ -110,23 +110,22 @@ module Gaia =
             let groupNameStr = Name.getNameStr group.GroupName
             groupTabPages.Add (groupNameStr, groupNameStr)
 
-    let private tryScrollTreeViewToPropertyGridSelection (form : GaiaForm) =
+    let private setTreeViewSelectionToPropertyGridSelection (form : GaiaForm) =
         match form.propertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             match form.treeView.Nodes.Find (scstring entityTds.DescribedEntity.EntityAddress, true) with
-            | [||] -> ()
+            | [||] -> form.treeView.SelectedNode <- null
             | nodes ->
                 let node = nodes.[0]
-                if node.Parent.IsExpanded then
-                    form.treeView.SelectedNode <- node
-                    node.EnsureVisible ()
+                if node.Parent.IsExpanded
+                then form.treeView.SelectedNode <- node; node.EnsureVisible ()
                 else form.treeView.SelectedNode <- null
-        | _ -> ()
+        | _ -> form.treeView.SelectedNode <- null
 
     let private selectEntity (form : GaiaForm) entity world =
+        let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
         RefWorld := world // must be set for property grid
-        form.propertyGrid.SelectedObject <- { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
-        tryScrollTreeViewToPropertyGridSelection form
+        form.propertyGrid.SelectedObject <- entityTds
 
     let private deselectEntity (form : GaiaForm) world =
         RefWorld := world // must be set for property grid
@@ -147,7 +146,7 @@ module Gaia =
         populateTreeViewGroups form world
         populateTreeViewNodes form world
         restoreExpansionState form.treeView treeState
-        tryScrollTreeViewToPropertyGridSelection form
+        setTreeViewSelectionToPropertyGridSelection form
 
     let private refreshGroupTabs (form : GaiaForm) world =
         populateGroupTabs form world
@@ -172,7 +171,9 @@ module Gaia =
         | None -> None
 
     let private handleNuEntityAdd (form : GaiaForm) evt world =
-        addTreeViewNode form (Entity.proxy ^ atoa evt.Publisher.ParticipantAddress) world
+        let entity = Entity.proxy ^ atoa evt.Publisher.ParticipantAddress
+        addTreeViewNode form entity world
+        selectEntity form entity world
         (Cascade, world)
 
     let private handleNuEntityRemoving (form : GaiaForm) evt world =
@@ -407,10 +408,11 @@ module Gaia =
             ignore ^ MessageBox.Show ("Could not save overlayer due to: " + scstring exn, "Failed to save overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error)
             false
 
-    let private handleFormPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
     let private handleFormPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
+        refreshPropertyEditor form
+        setTreeViewSelectionToPropertyGridSelection form
+
+    let private handleFormPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
 
     let private handleFormPropertyRefreshClick (form : GaiaForm) (_ : EventArgs) =
@@ -870,8 +872,8 @@ module Gaia =
         form.createDepthPlusButton.Click.Add (handleFormCreateDepthPlusClick form)
         form.createDepthMinusButton.Click.Add (handleFormCreateDepthMinusClick form)
         form.rolloutTabControl.SelectedIndexChanged.Add (handleRolloutTabSelectedIndexChanged form)
-        form.propertyGrid.SelectedGridItemChanged.Add (handleFormPropertyGridSelectedGridItemChanged form)
         form.propertyGrid.SelectedObjectsChanged.Add (handleFormPropertyGridSelectedObjectsChanged form)
+        form.propertyGrid.SelectedGridItemChanged.Add (handleFormPropertyGridSelectedGridItemChanged form)
         form.propertyRefreshLabel.Click.Add (handleFormPropertyRefreshClick form)
         form.propertyApplyLabel.Click.Add (handleFormPropertyApplyClick form)
         form.traceEventsCheckBox.CheckStateChanged.Add (handleTraceEventsCheckBoxChanged form)
