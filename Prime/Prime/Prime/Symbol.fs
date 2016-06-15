@@ -254,7 +254,7 @@ module Symbol =
     
         let rec getCascadeDepth symbol depth =
             match symbol with
-            | Atom (str, _) when not (List.isEmpty keywords) || List.contains str keywords -> depth
+            | Atom (str, _) -> if List.contains str keywords then depth elif List.isEmpty keywords then depth else 0
             | Symbols (_ :: _ as symbols', _) -> getCascadeDepth (List.head symbols') (depth + 1)
             | _ -> 0
 
@@ -283,7 +283,7 @@ module Symbol =
 
     /// Pretty-print a symbol string in the form an symbolic-expression.
     let prettyPrint (keywords : string) symbol =
-        let keywordsSplit = keywords.Split [|' '|] |> List.ofArray
+        let keywordsSplit = keywords.Split ([|' '|], StringSplitOptions.RemoveEmptyEntries) |> List.ofArray
         let strCascaded = cascade keywordsSplit symbol
         let lines = strCascaded.Split ([|"\r\n"|], StringSplitOptions.None)
         let linesTrimmed = Array.map (fun (str : string) -> str.TrimEnd ()) lines
