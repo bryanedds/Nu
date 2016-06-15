@@ -92,8 +92,9 @@ and EntityPropertyDescriptor (property, attributes) =
                 else
                     let entity = entityTds.DescribedEntity
                     let (entity, world) = World.reassignEntity entity (Some name) (etog entity) world
+                    let entityTds = { entityTds with DescribedEntity = entity }
                     entityTds.RefWorld := world // must be set for property grid
-                    entityTds.Form.propertyGrid.SelectedObject <- { entityTds with DescribedEntity = entity }
+                    entityTds.Form.propertyGrid.SelectedObject <- entityTds
                     world
 
             // TODO: comment
