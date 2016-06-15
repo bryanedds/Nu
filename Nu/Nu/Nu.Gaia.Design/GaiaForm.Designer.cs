@@ -72,10 +72,10 @@
             this.splitContainer8 = new System.Windows.Forms.SplitContainer();
             this.loadAssetGraphButton = new System.Windows.Forms.Button();
             this.saveAssetGraphButton = new System.Windows.Forms.Button();
-            this.overlayTabPage = new System.Windows.Forms.TabPage();
+            this.overlayerTabPage = new System.Windows.Forms.TabPage();
             this.splitContainer7 = new System.Windows.Forms.SplitContainer();
-            this.loadOverlayButton = new System.Windows.Forms.Button();
-            this.saveOverlayButton = new System.Windows.Forms.Button();
+            this.loadOverlayerButton = new System.Windows.Forms.Button();
+            this.saveOverlayerButton = new System.Windows.Forms.Button();
             this.eventTracingTabPage = new System.Windows.Forms.TabPage();
             this.splitContainer6 = new System.Windows.Forms.SplitContainer();
             this.resetEventFilterButton = new System.Windows.Forms.Button();
@@ -120,7 +120,7 @@
             this.displayPanel = new Nu.Gaia.Design.SelectablePanel();
             this.propertyValueTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.assetGraphTextBox = new Nu.Gaia.Design.SymbolicTextBox();
-            this.overlayTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.overlayerTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.eventFilterTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
@@ -147,7 +147,7 @@
             this.splitContainer8.Panel1.SuspendLayout();
             this.splitContainer8.Panel2.SuspendLayout();
             this.splitContainer8.SuspendLayout();
-            this.overlayTabPage.SuspendLayout();
+            this.overlayerTabPage.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer7)).BeginInit();
             this.splitContainer7.Panel1.SuspendLayout();
             this.splitContainer7.Panel2.SuspendLayout();
@@ -391,7 +391,7 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer3);
             this.splitContainer1.Size = new System.Drawing.Size(1334, 801);
-            this.splitContainer1.SplitterDistance = 975;
+            this.splitContainer1.SplitterDistance = 976;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
             // 
@@ -409,7 +409,7 @@
             // splitContainer4.Panel2
             // 
             this.splitContainer4.Panel2.Controls.Add(this.rolloutTabControl);
-            this.splitContainer4.Size = new System.Drawing.Size(975, 801);
+            this.splitContainer4.Size = new System.Drawing.Size(976, 801);
             this.splitContainer4.SplitterDistance = 545;
             this.splitContainer4.TabIndex = 1;
             // 
@@ -417,13 +417,13 @@
             // 
             this.rolloutTabControl.Controls.Add(this.propertyTabPage);
             this.rolloutTabControl.Controls.Add(this.assetGraphTabPage);
-            this.rolloutTabControl.Controls.Add(this.overlayTabPage);
+            this.rolloutTabControl.Controls.Add(this.overlayerTabPage);
             this.rolloutTabControl.Controls.Add(this.eventTracingTabPage);
             this.rolloutTabControl.Dock = System.Windows.Forms.DockStyle.Fill;
             this.rolloutTabControl.Location = new System.Drawing.Point(0, 0);
             this.rolloutTabControl.Name = "rolloutTabControl";
             this.rolloutTabControl.SelectedIndex = 0;
-            this.rolloutTabControl.Size = new System.Drawing.Size(975, 252);
+            this.rolloutTabControl.Size = new System.Drawing.Size(976, 252);
             this.rolloutTabControl.TabIndex = 0;
             // 
             // propertyTabPage
@@ -432,7 +432,7 @@
             this.propertyTabPage.Location = new System.Drawing.Point(4, 22);
             this.propertyTabPage.Name = "propertyTabPage";
             this.propertyTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.propertyTabPage.Size = new System.Drawing.Size(967, 226);
+            this.propertyTabPage.Size = new System.Drawing.Size(968, 226);
             this.propertyTabPage.TabIndex = 0;
             this.propertyTabPage.Text = "Property Editor";
             this.propertyTabPage.UseVisualStyleBackColor = true;
@@ -453,7 +453,7 @@
             // propertyEditor.Panel2
             // 
             this.propertyEditor.Panel2.Controls.Add(this.propertyValueTextBox);
-            this.propertyEditor.Size = new System.Drawing.Size(961, 220);
+            this.propertyEditor.Size = new System.Drawing.Size(962, 220);
             this.propertyEditor.SplitterDistance = 176;
             this.propertyEditor.TabIndex = 0;
             // 
@@ -521,7 +521,7 @@
             this.assetGraphTabPage.Location = new System.Drawing.Point(4, 22);
             this.assetGraphTabPage.Name = "assetGraphTabPage";
             this.assetGraphTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.assetGraphTabPage.Size = new System.Drawing.Size(967, 226);
+            this.assetGraphTabPage.Size = new System.Drawing.Size(968, 226);
             this.assetGraphTabPage.TabIndex = 3;
             this.assetGraphTabPage.Text = "Asset Graph";
             this.assetGraphTabPage.UseVisualStyleBackColor = true;
@@ -542,7 +542,7 @@
             // splitContainer8.Panel2
             // 
             this.splitContainer8.Panel2.Controls.Add(this.assetGraphTextBox);
-            this.splitContainer8.Size = new System.Drawing.Size(961, 220);
+            this.splitContainer8.Size = new System.Drawing.Size(962, 220);
             this.splitContainer8.SplitterDistance = 176;
             this.splitContainer8.TabIndex = 2;
             // 
@@ -564,16 +564,16 @@
             this.saveAssetGraphButton.Text = "Save and Apply";
             this.saveAssetGraphButton.UseVisualStyleBackColor = true;
             // 
-            // overlayTabPage
+            // overlayerTabPage
             // 
-            this.overlayTabPage.Controls.Add(this.splitContainer7);
-            this.overlayTabPage.Location = new System.Drawing.Point(4, 22);
-            this.overlayTabPage.Name = "overlayTabPage";
-            this.overlayTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.overlayTabPage.Size = new System.Drawing.Size(967, 226);
-            this.overlayTabPage.TabIndex = 2;
-            this.overlayTabPage.Text = "Overlay";
-            this.overlayTabPage.UseVisualStyleBackColor = true;
+            this.overlayerTabPage.Controls.Add(this.splitContainer7);
+            this.overlayerTabPage.Location = new System.Drawing.Point(4, 22);
+            this.overlayerTabPage.Name = "overlayerTabPage";
+            this.overlayerTabPage.Padding = new System.Windows.Forms.Padding(3);
+            this.overlayerTabPage.Size = new System.Drawing.Size(968, 226);
+            this.overlayerTabPage.TabIndex = 2;
+            this.overlayerTabPage.Text = "Overlayer";
+            this.overlayerTabPage.UseVisualStyleBackColor = true;
             // 
             // splitContainer7
             // 
@@ -585,33 +585,33 @@
             // 
             // splitContainer7.Panel1
             // 
-            this.splitContainer7.Panel1.Controls.Add(this.loadOverlayButton);
-            this.splitContainer7.Panel1.Controls.Add(this.saveOverlayButton);
+            this.splitContainer7.Panel1.Controls.Add(this.loadOverlayerButton);
+            this.splitContainer7.Panel1.Controls.Add(this.saveOverlayerButton);
             // 
             // splitContainer7.Panel2
             // 
-            this.splitContainer7.Panel2.Controls.Add(this.overlayTextBox);
-            this.splitContainer7.Size = new System.Drawing.Size(961, 220);
+            this.splitContainer7.Panel2.Controls.Add(this.overlayerTextBox);
+            this.splitContainer7.Size = new System.Drawing.Size(962, 220);
             this.splitContainer7.SplitterDistance = 176;
             this.splitContainer7.TabIndex = 1;
             // 
-            // loadOverlayButton
+            // loadOverlayerButton
             // 
-            this.loadOverlayButton.Location = new System.Drawing.Point(16, 64);
-            this.loadOverlayButton.Name = "loadOverlayButton";
-            this.loadOverlayButton.Size = new System.Drawing.Size(147, 23);
-            this.loadOverlayButton.TabIndex = 4;
-            this.loadOverlayButton.Text = "Load and Reset";
-            this.loadOverlayButton.UseVisualStyleBackColor = true;
+            this.loadOverlayerButton.Location = new System.Drawing.Point(16, 64);
+            this.loadOverlayerButton.Name = "loadOverlayerButton";
+            this.loadOverlayerButton.Size = new System.Drawing.Size(147, 23);
+            this.loadOverlayerButton.TabIndex = 4;
+            this.loadOverlayerButton.Text = "Load and Reset";
+            this.loadOverlayerButton.UseVisualStyleBackColor = true;
             // 
-            // saveOverlayButton
+            // saveOverlayerButton
             // 
-            this.saveOverlayButton.Location = new System.Drawing.Point(16, 35);
-            this.saveOverlayButton.Name = "saveOverlayButton";
-            this.saveOverlayButton.Size = new System.Drawing.Size(147, 23);
-            this.saveOverlayButton.TabIndex = 2;
-            this.saveOverlayButton.Text = "Save and Apply";
-            this.saveOverlayButton.UseVisualStyleBackColor = true;
+            this.saveOverlayerButton.Location = new System.Drawing.Point(16, 35);
+            this.saveOverlayerButton.Name = "saveOverlayerButton";
+            this.saveOverlayerButton.Size = new System.Drawing.Size(147, 23);
+            this.saveOverlayerButton.TabIndex = 2;
+            this.saveOverlayerButton.Text = "Save and Apply";
+            this.saveOverlayerButton.UseVisualStyleBackColor = true;
             // 
             // eventTracingTabPage
             // 
@@ -619,7 +619,7 @@
             this.eventTracingTabPage.Location = new System.Drawing.Point(4, 22);
             this.eventTracingTabPage.Name = "eventTracingTabPage";
             this.eventTracingTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.eventTracingTabPage.Size = new System.Drawing.Size(967, 226);
+            this.eventTracingTabPage.Size = new System.Drawing.Size(968, 226);
             this.eventTracingTabPage.TabIndex = 1;
             this.eventTracingTabPage.Text = "Event Tracing";
             this.eventTracingTabPage.UseVisualStyleBackColor = true;
@@ -641,7 +641,7 @@
             // splitContainer6.Panel2
             // 
             this.splitContainer6.Panel2.Controls.Add(this.eventFilterTextBox);
-            this.splitContainer6.Size = new System.Drawing.Size(961, 220);
+            this.splitContainer6.Size = new System.Drawing.Size(962, 220);
             this.splitContainer6.SplitterDistance = 176;
             this.splitContainer6.TabIndex = 0;
             // 
@@ -687,7 +687,7 @@
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.treeView);
-            this.splitContainer3.Size = new System.Drawing.Size(356, 801);
+            this.splitContainer3.Size = new System.Drawing.Size(355, 801);
             this.splitContainer3.SplitterDistance = 527;
             this.splitContainer3.TabIndex = 2;
             // 
@@ -698,7 +698,7 @@
             this.propertyGrid.Location = new System.Drawing.Point(0, 0);
             this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(356, 527);
+            this.propertyGrid.Size = new System.Drawing.Size(355, 527);
             this.propertyGrid.TabIndex = 0;
             this.propertyGrid.ToolbarVisible = false;
             // 
@@ -707,7 +707,7 @@
             this.treeView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeView.Location = new System.Drawing.Point(0, 0);
             this.treeView.Name = "treeView";
-            this.treeView.Size = new System.Drawing.Size(356, 270);
+            this.treeView.Size = new System.Drawing.Size(355, 270);
             this.treeView.TabIndex = 1;
             // 
             // openFileDialog
@@ -753,7 +753,7 @@
             this.editWhileInteractiveCheckBox});
             this.toolStrip.Location = new System.Drawing.Point(92, 2);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1169, 25);
+            this.toolStrip.Size = new System.Drawing.Size(1138, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -1000,7 +1000,7 @@
             this.displayPanel.Location = new System.Drawing.Point(0, 0);
             this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
             this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(975, 545);
+            this.displayPanel.Size = new System.Drawing.Size(976, 545);
             this.displayPanel.TabIndex = 0;
             this.displayPanel.TabStop = true;
             // 
@@ -1014,7 +1014,7 @@
             this.propertyValueTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.propertyValueTextBox.Location = new System.Drawing.Point(0, 0);
             this.propertyValueTextBox.Name = "propertyValueTextBox";
-            this.propertyValueTextBox.Size = new System.Drawing.Size(781, 220);
+            this.propertyValueTextBox.Size = new System.Drawing.Size(782, 220);
             this.propertyValueTextBox.TabIndex = 0;
             this.propertyValueTextBox.UseTabs = false;
             // 
@@ -1028,23 +1028,23 @@
             this.assetGraphTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.assetGraphTextBox.Location = new System.Drawing.Point(0, 0);
             this.assetGraphTextBox.Name = "assetGraphTextBox";
-            this.assetGraphTextBox.Size = new System.Drawing.Size(781, 220);
+            this.assetGraphTextBox.Size = new System.Drawing.Size(782, 220);
             this.assetGraphTextBox.TabIndex = 0;
             this.assetGraphTextBox.UseTabs = false;
             // 
-            // overlayTextBox
+            // overlayerTextBox
             // 
-            this.overlayTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.overlayTextBox.ExtraDescent = 1;
-            this.overlayTextBox.Keywords0 = "";
-            this.overlayTextBox.Keywords1 = "";
-            this.overlayTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.overlayTextBox.Lexer = ScintillaNET.Lexer.Lisp;
-            this.overlayTextBox.Location = new System.Drawing.Point(0, 0);
-            this.overlayTextBox.Name = "overlayTextBox";
-            this.overlayTextBox.Size = new System.Drawing.Size(781, 220);
-            this.overlayTextBox.TabIndex = 0;
-            this.overlayTextBox.UseTabs = false;
+            this.overlayerTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.overlayerTextBox.ExtraDescent = 1;
+            this.overlayerTextBox.Keywords0 = "";
+            this.overlayerTextBox.Keywords1 = "";
+            this.overlayerTextBox.KeywordsImplicit = "True False Some None Right Left";
+            this.overlayerTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.overlayerTextBox.Location = new System.Drawing.Point(0, 0);
+            this.overlayerTextBox.Name = "overlayerTextBox";
+            this.overlayerTextBox.Size = new System.Drawing.Size(782, 220);
+            this.overlayerTextBox.TabIndex = 0;
+            this.overlayerTextBox.UseTabs = false;
             // 
             // eventFilterTextBox
             // 
@@ -1056,7 +1056,7 @@
             this.eventFilterTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.eventFilterTextBox.Location = new System.Drawing.Point(0, 0);
             this.eventFilterTextBox.Name = "eventFilterTextBox";
-            this.eventFilterTextBox.Size = new System.Drawing.Size(781, 220);
+            this.eventFilterTextBox.Size = new System.Drawing.Size(782, 220);
             this.eventFilterTextBox.TabIndex = 0;
             this.eventFilterTextBox.UseTabs = false;
             // 
@@ -1100,7 +1100,7 @@
             this.splitContainer8.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer8)).EndInit();
             this.splitContainer8.ResumeLayout(false);
-            this.overlayTabPage.ResumeLayout(false);
+            this.overlayerTabPage.ResumeLayout(false);
             this.splitContainer7.Panel1.ResumeLayout(false);
             this.splitContainer7.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer7)).EndInit();
@@ -1211,15 +1211,15 @@
         public System.Windows.Forms.TabControl rolloutTabControl;
         public SymbolicTextBox propertyValueTextBox;
         public SymbolicTextBox eventFilterTextBox;
-        public System.Windows.Forms.TabPage overlayTabPage;
+        public System.Windows.Forms.TabPage overlayerTabPage;
         private System.Windows.Forms.SplitContainer splitContainer8;
         public System.Windows.Forms.Button loadAssetGraphButton;
         public System.Windows.Forms.Button saveAssetGraphButton;
         public SymbolicTextBox assetGraphTextBox;
         private System.Windows.Forms.SplitContainer splitContainer7;
-        public System.Windows.Forms.Button loadOverlayButton;
-        public System.Windows.Forms.Button saveOverlayButton;
-        public SymbolicTextBox overlayTextBox;
+        public System.Windows.Forms.Button loadOverlayerButton;
+        public System.Windows.Forms.Button saveOverlayerButton;
+        public SymbolicTextBox overlayerTextBox;
         public System.Windows.Forms.TabPage assetGraphTabPage;
     }
 }

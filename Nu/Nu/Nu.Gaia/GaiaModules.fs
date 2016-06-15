@@ -384,21 +384,21 @@ module Gaia =
         let overlayDir = Path.Combine (targetDir, "..\\..")
         World.tryReloadOverlays overlayDir targetDir world
 
-    let private tryLoadOverlay (form : GaiaForm) world =
+    let private tryLoadOverlayer (form : GaiaForm) world =
         match tryReloadOverlays form world with
         | Right (overlayer, world) ->
             let overlayerKeywords0 = match typeof<Overlayer>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
-            form.overlayTextBox.Text <- Symbol.prettyPrint overlayerKeywords0 ^ scstring ^ Overlayer.getOverlays overlayer
+            form.overlayerTextBox.Text <- Symbol.prettyPrint overlayerKeywords0 ^ scstring ^ Overlayer.getOverlays overlayer
             Some world
         | Left error ->
-            ignore ^ MessageBox.Show ("Could not load overlays due to: " + error + "'.", "Failed to load overlays", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            ignore ^ MessageBox.Show ("Could not reload overlayer due to: " + error + "'.", "Failed to reload overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error)
             None
 
-    let private trySaveOverlay (form : GaiaForm) world =
+    let private trySaveOverlayer (form : GaiaForm) world =
         let editorState = World.getUserState world
         let overlayerSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
         let overlayerFilePath = Path.Combine (overlayerSourceDir, Constants.Assets.OverlayerFilePath)
-        try let overlays = scvalue<Map<string, Overlay>> form.assetGraphTextBox.Text
+        try let overlays = scvalue<Map<string, Overlay>> form.overlayerTextBox.Text
             let overlayerKeywords0 = match typeof<Overlayer>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             File.WriteAllText (overlayerFilePath, Symbol.prettyPrint overlayerKeywords0 ^ scstring overlays)
             true
@@ -684,22 +684,22 @@ module Gaia =
             | Some world -> world
             | None -> World.choose world)
 
-    let private handleSaveOverlayClick (form : GaiaForm) (_ : EventArgs) =
+    let private handleSaveOverlayerClick (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             let world = pushPastWorld world world
-            if trySaveOverlay form world then
+            if trySaveOverlayer form world then
                 match tryReloadOverlays form world with
                 | Right (_, world) -> world
                 | Left error ->
-                    ignore ^ MessageBox.Show ("Overlay reload error due to: " + error + "'.", "Overlay reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    ignore ^ MessageBox.Show ("Overlayer reload error due to: " + error + "'.", "Overlayer reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                     world
             else World.choose world)
 
-    let private handleLoadOverlayClick (form : GaiaForm) (_ : EventArgs) =
+    let private handleLoadOverlayerClick (form : GaiaForm) (_ : EventArgs) =
         ignore ^ WorldChangers.Add (fun world ->
             let pastWorld = world
             let world = pushPastWorld pastWorld world
-            match tryLoadOverlay form world with
+            match tryLoadOverlayer form world with
             | Some world -> world
             | None -> World.choose pastWorld)
 
@@ -708,8 +708,8 @@ module Gaia =
             handleResetEventFilterClick form args
         elif form.rolloutTabControl.SelectedTab = form.assetGraphTabPage then
             handleLoadAssetGraphClick form args
-        elif form.rolloutTabControl.SelectedTab = form.assetGraphTabPage then
-            handleLoadOverlayClick form args
+        elif form.rolloutTabControl.SelectedTab = form.overlayerTabPage then
+            handleLoadOverlayerClick form args
 
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
         match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.YesNo) with
@@ -869,8 +869,8 @@ module Gaia =
         form.resetEventFilterButton.Click.Add (handleResetEventFilterClick form)
         form.saveAssetGraphButton.Click.Add (handleSaveAssetGraphClick form)
         form.loadAssetGraphButton.Click.Add (handleLoadAssetGraphClick form)
-        form.saveOverlayButton.Click.Add (handleSaveOverlayClick form)
-        form.loadOverlayButton.Click.Add (handleLoadOverlayClick form)
+        form.saveOverlayerButton.Click.Add (handleSaveOverlayerClick form)
+        form.loadOverlayerButton.Click.Add (handleLoadOverlayerClick form)
         form.treeView.AfterSelect.Add (handleFormTreeViewNodeSelect form)
         form.createEntityButton.Click.Add (handleFormCreate false form)
         form.createToolStripMenuItem.Click.Add (handleFormCreate false form)
