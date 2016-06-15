@@ -380,16 +380,16 @@ module WorldModule =
         static member tryReloadOverlays inputDirectory outputDirectory world =
             
             // attempt to reload overlay file
-            let inputOverlayFilePath = Path.Combine (inputDirectory, Constants.Assets.OverlayFilePath)
-            let outputOverlayFilePath = Path.Combine (outputDirectory, Constants.Assets.OverlayFilePath)
-            try File.Copy (inputOverlayFilePath, outputOverlayFilePath, true)
+            let inputOverlayerFilePath = Path.Combine (inputDirectory, Constants.Assets.OverlayerFilePath)
+            let outputOverlayerFilePath = Path.Combine (outputDirectory, Constants.Assets.OverlayerFilePath)
+            try File.Copy (inputOverlayerFilePath, outputOverlayerFilePath, true)
 
                 // cache old overlayer and make new one
                 let oldOverlayer = World.getOverlayer world
                 let entityDispatchers = World.getEntityDispatchers world
                 let facets = World.getFacets world
                 let intrinsicOverlays = World.createIntrinsicOverlays entityDispatchers facets
-                match Overlayer.tryMakeFromFile outputOverlayFilePath intrinsicOverlays with
+                match Overlayer.tryMakeFromFile outputOverlayerFilePath intrinsicOverlays with
                 | Right overlayer ->
                 
                     // update overlayer and apply overlays to all entities
@@ -819,7 +819,7 @@ module WorldModule =
 
                 // attempt to make the overlayer
                 let intrinsicOverlays = World.createIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
-                match Overlayer.tryMakeFromFile Constants.Assets.OverlayFilePath intrinsicOverlays with
+                match Overlayer.tryMakeFromFile Constants.Assets.OverlayerFilePath intrinsicOverlays with
                 | Right overlayer ->
             
                     // make the world's ambient state
