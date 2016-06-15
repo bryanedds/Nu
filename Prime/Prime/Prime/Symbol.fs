@@ -97,6 +97,10 @@ module Symbol =
     let skipWhitespace = skipAnyOf WhitespaceChars
     let skipWhitespaces = skipMany skipWhitespace
 
+    let isWhitespaceChar chr = isAnyOf WhitespaceChars chr
+    let isStructureChar chr = isAnyOf StructureChars chr
+    let followedByWhitespaceOrStructureChar = nextCharSatisfies (fun chr -> isWhitespaceChar chr || isStructureChar chr)
+
     let openSymbols = skipChar OpenSymbolsChar
     let closeSymbols = skipChar CloseSymbolsChar
     let openString = skipChar OpenStringChar
@@ -130,6 +134,7 @@ module Symbol =
         parse {
             let! start = getPosition
             let! number = numberLiteral NumberFormat "number"
+            do! followedByWhitespaceOrStructureChar
             let! stop = getPosition
             do! skipWhitespaces
             let origin = Some { Start = start; Stop = stop }

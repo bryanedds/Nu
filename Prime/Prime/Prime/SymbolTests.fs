@@ -105,6 +105,6 @@ module SymbolTests =
         ignore value // TODO: assert for values
 
     let [<Fact>] canPrettyPrintGuid () =
-        let symbolStr = "[5ec8734f-6a3d-4472-b86a-78125d238dc2]"
+        let symbolStr = "[5ec8734f-6a3d-4472-b86a-78125d238dc2]\r\n"
         let symbolPretty = Symbol.prettyPrint "" symbolStr
         Assert.Equal<string> (symbolStr, symbolPretty)
