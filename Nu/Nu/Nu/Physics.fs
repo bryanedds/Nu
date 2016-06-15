@@ -74,6 +74,7 @@ type [<StructuralEquality; NoComparison>] BodyPolygon =
       Center : Vector2 } // NOTE: I guess this is like a center offset for the shape?
 
 /// The shape of a physics body.
+[<Syntax ("BodyBox BodyCircle BodyCapsule BodyPolygon", "")>]
 type [<StructuralEquality; NoComparison>] BodyShape =
     | BodyBox of BodyBox
     | BodyCircle of BodyCircle
@@ -563,21 +564,20 @@ module PhysicsEngineModule =
 [<RequireQualifiedAccess>]
 module Physics =
 
-    /// Convert a category expression to a value that represents collision categories.
+    /// Convert a category mask to a value that represents collision categories.
     /// Examples -
     ///     @ = -1
     ///     0 = 0
     ///     1 = 1
     ///     10 = 2
     ///     2 = ERROR - input must be either @ or a binary number!
-    let toCollisionCategories categoryExpr =
-        match categoryExpr with
+    let categorizeCollisionMask categoryMask =
+        match categoryMask with
         | "@" -> -1
-        | _ -> Convert.ToInt32 (categoryExpr, 2)
+        | _ -> Convert.ToInt32 (categoryMask, 2)
 
-    /// Evaluate a collision expression.
-    /// TODO: rename this to something more appropriate.
-    let evalCollisionExpr (extent : Vector2) (bodyShape : BodyShape) =
+    /// Localize a collision body to a specif physics object.
+    let localizeCollisionBody (extent : Vector2) (bodyShape : BodyShape) =
         match bodyShape with
         | BodyBox bodyBox -> BodyBox { Extent = Vector2.Multiply (extent, bodyBox.Extent); Center = Vector2.Multiply (extent, bodyBox.Center) }
         | BodyCircle bodyCircle -> BodyCircle { Radius = extent.X * bodyCircle.Radius; Center = extent.X * bodyCircle.Center }

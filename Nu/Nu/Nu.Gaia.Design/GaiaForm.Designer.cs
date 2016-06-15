@@ -754,9 +754,9 @@
             // rolloutTabControl
             // 
             this.rolloutTabControl.Controls.Add(this.propertyTabPage);
-            this.rolloutTabControl.Controls.Add(this.eventTracingTabPage);
             this.rolloutTabControl.Controls.Add(this.assetGraphTabPage);
             this.rolloutTabControl.Controls.Add(this.overlayTabPage);
+            this.rolloutTabControl.Controls.Add(this.eventTracingTabPage);
             this.rolloutTabControl.Dock = System.Windows.Forms.DockStyle.Fill;
             this.rolloutTabControl.Location = new System.Drawing.Point(0, 0);
             this.rolloutTabControl.Name = "rolloutTabControl";
@@ -1026,9 +1026,6 @@
             // 
             this.propertyValueTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.propertyValueTextBox.ExtraDescent = 1;
-            this.propertyValueTextBox.Keywords0 = "";
-            this.propertyValueTextBox.Keywords1 = "True False Some None Right Left Nor Not Nand Mod Xor And Mul Add Sub Eq Or Lt Gt " +
-    "Get Div Not_Eq Gt_Eq Lt_Eq";
             this.propertyValueTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.propertyValueTextBox.Location = new System.Drawing.Point(0, 0);
             this.propertyValueTextBox.Name = "propertyValueTextBox";
@@ -1040,9 +1037,6 @@
             // 
             this.eventFilterTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.eventFilterTextBox.ExtraDescent = 1;
-            this.eventFilterTextBox.Keywords0 = "";
-            this.eventFilterTextBox.Keywords1 = "True False Some None Right Left Nor Not Nand Mod Xor And Mul Add Sub Eq Or Lt Gt " +
-    "Get Div Not_Eq Gt_Eq Lt_Eq";
             this.eventFilterTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.eventFilterTextBox.Location = new System.Drawing.Point(0, 0);
             this.eventFilterTextBox.Name = "eventFilterTextBox";
@@ -1054,9 +1048,6 @@
             // 
             this.assetGraphTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.assetGraphTextBox.ExtraDescent = 1;
-            this.assetGraphTextBox.Keywords0 = "";
-            this.assetGraphTextBox.Keywords1 = "True False Some None Right Left Nor Not Nand Mod Xor And Mul Add Sub Eq Or Lt Gt " +
-    "Get Div Not_Eq Gt_Eq Lt_Eq";
             this.assetGraphTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.assetGraphTextBox.Location = new System.Drawing.Point(0, 0);
             this.assetGraphTextBox.Name = "assetGraphTextBox";
@@ -1068,9 +1059,6 @@
             // 
             this.overlayTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.overlayTextBox.ExtraDescent = 1;
-            this.overlayTextBox.Keywords0 = "";
-            this.overlayTextBox.Keywords1 = "True False Some None Right Left Nor Not Nand Mod Xor And Mul Add Sub Eq Or Lt Gt " +
-    "Get Div Not_Eq Gt_Eq Lt_Eq";
             this.overlayTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.overlayTextBox.Location = new System.Drawing.Point(0, 0);
             this.overlayTextBox.Name = "overlayTextBox";
