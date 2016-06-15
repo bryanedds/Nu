@@ -493,8 +493,8 @@ module Reflection =
 
         // create the intrinsic overlays with the above descriptors
         let overlays =
-            List.foldBack
-                (fun (overlayName, includeNames, propertyDefinitions, requiresFacetNames) overlays ->
+            List.map
+                (fun (overlayName, includeNames, propertyDefinitions, requiresFacetNames) ->
                     let overlayProperties =
                         List.foldBack
                             (fun propertyDefinition overlayProperties ->
@@ -510,13 +510,10 @@ module Reflection =
                         if requiresFacetNames
                         then Map.add "FacetNames" (Symbols ([], None)) overlayProperties
                         else overlayProperties
-                    let overlay =
-                        { OverlayName = overlayName
-                          OverlayIncludeNames = includeNames
-                          OverlayProperties = overlayProperties }
-                    Map.add overlayName overlay overlays)
+                    { OverlayName = overlayName
+                      OverlayIncludeNames = includeNames
+                      OverlayProperties = overlayProperties })
                 overlayDescriptors
-                Map.empty
 
         // fin
         overlays

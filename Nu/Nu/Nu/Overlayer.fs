@@ -28,13 +28,15 @@ module OverlayerModule =
     /// Defines the manner in which overlays are applied to targets.
     type [<ReferenceEquality>] Overlayer =
         private
-            { Overlays : Map<string, Overlay> }
+            { MappedOverlays : Map<string, Overlay>
+              IntrinsicOverlays : Overlay list
+              ExtrinsicOverlays : Overlay list }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module Overlayer =
 
         let rec private tryFindPropertySymbol overlayName propertyName overlayer =
-            match Map.tryFind overlayName overlayer.Overlays with
+            match Map.tryFind overlayName overlayer.MappedOverlays with
             | Some overlay ->
                 match Map.tryFind propertyName overlay.OverlayProperties with
                 | Some _ as someSymbol -> someSymbol
@@ -160,26 +162,30 @@ module OverlayerModule =
         let shouldPropertySerialize5 facetNames propertyName propertyType target overlayer =
             not ^ isPropertyOverlaid5 facetNames propertyName propertyType target overlayer
 
-        /// Get overlays.
-        let getOverlays overlayer =
-            overlayer.Overlays
+        /// Get extrinsic overlays.
+        let getExtrinsicOverlays overlayer =
+            overlayer.ExtrinsicOverlays
 
         /// The empty overlayer.
         let empty =
-            { Overlays = Map.empty }
+            { MappedOverlays = Map.empty
+              IntrinsicOverlays = List.empty
+              ExtrinsicOverlays = List.empty }
 
         /// Make an overlayer.
-        let make overlays =
-            { Overlays = overlays }
+        let make intrinsicOverlays extrinsicOverlays =
+            let intrinsicOverlaysMap = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) extrinsicOverlays
+            let extrinsicOverlaysMap = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) extrinsicOverlays
+            { MappedOverlays = Map.concat intrinsicOverlaysMap extrinsicOverlaysMap
+              IntrinsicOverlays = intrinsicOverlays
+              ExtrinsicOverlays = extrinsicOverlays }
 
         /// Attempt to make an overlayer by loading overlays from a file and then combining it with
         /// the given intrinsic overlays.
-        let tryMakeFromFile (filePath : string) intrinsicOverlays =
-            try File.ReadAllText filePath |>
-                String.unescape |>
-                scvalue<Overlay list> |>
-                Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) |>
-                Map.concat intrinsicOverlays |>
-                make |>
-                Right
+        let tryMakeFromFile intrinsicOverlays (filePath : string) =
+            try let extrinsicOverlays =
+                    File.ReadAllText filePath |>
+                    String.unescape |>
+                    scvalue<Overlay list>
+                make intrinsicOverlays extrinsicOverlays |> Right
             with exn -> Left ^ "Could not make overlayer from file '" + filePath + "' due to: " + scstring exn

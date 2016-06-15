@@ -389,7 +389,7 @@ module WorldModule =
                 let entityDispatchers = World.getEntityDispatchers world
                 let facets = World.getFacets world
                 let intrinsicOverlays = World.createIntrinsicOverlays entityDispatchers facets
-                match Overlayer.tryMakeFromFile outputOverlayerFilePath intrinsicOverlays with
+                match Overlayer.tryMakeFromFile intrinsicOverlays outputOverlayerFilePath with
                 | Right overlayer ->
                 
                     // update overlayer and apply overlays to all entities
@@ -819,7 +819,7 @@ module WorldModule =
 
                 // attempt to make the overlayer
                 let intrinsicOverlays = World.createIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
-                match Overlayer.tryMakeFromFile Constants.Assets.OverlayerFilePath intrinsicOverlays with
+                match Overlayer.tryMakeFromFile intrinsicOverlays Constants.Assets.OverlayerFilePath with
                 | Right overlayer ->
             
                     // make the world's ambient state
