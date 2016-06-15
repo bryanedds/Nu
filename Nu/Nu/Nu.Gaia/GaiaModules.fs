@@ -388,7 +388,7 @@ module Gaia =
         match tryReloadOverlays form world with
         | Right (overlayer, world) ->
             let overlayerKeywords0 = match typeof<Overlayer>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
-            form.overlayerTextBox.Text <- Symbol.prettyPrint overlayerKeywords0 ^ scstring ^ Overlayer.getOverlays overlayer
+            form.overlayerTextBox.Text <- Symbol.prettyPrint overlayerKeywords0 ^ scstring ^ Overlayer.getExtrinsicOverlays overlayer
             Some world
         | Left error ->
             ignore ^ MessageBox.Show ("Could not reload overlayer due to: " + error + "'.", "Failed to reload overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -398,7 +398,7 @@ module Gaia =
         let editorState = World.getUserState world
         let overlayerSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
         let overlayerFilePath = Path.Combine (overlayerSourceDir, Constants.Assets.OverlayerFilePath)
-        try let overlays = scvalue<Map<string, Overlay>> form.overlayerTextBox.Text
+        try let overlays = scvalue<Overlay list> form.overlayerTextBox.Text
             let overlayerKeywords0 = match typeof<Overlayer>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             File.WriteAllText (overlayerFilePath, Symbol.prettyPrint overlayerKeywords0 ^ scstring overlays)
             true
