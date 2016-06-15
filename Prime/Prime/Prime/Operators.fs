@@ -145,6 +145,10 @@ module Operators =
     let inline enumerator (enumeratable : _ seq) =
         enumeratable.GetEnumerator ()
 
+    /// Determine if a string is a guid.
+    let inline isGuid str =
+        fst (Guid.TryParse str)
+
     /// Make a Guid.
     let inline makeGuid () =
         Guid.NewGuid ()

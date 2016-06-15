@@ -9,6 +9,7 @@ open TiledSharp
 open Prime
 open System
 open System.IO
+open System.Collections
 open System.Collections.Generic
 open System.Reflection
 open System.Runtime.CompilerServices
@@ -405,7 +406,6 @@ module Gaia =
         with exn ->
             ignore ^ MessageBox.Show ("Could not save overlayer due to: " + scstring exn, "Failed to save overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error)
             false
-
 
     let private handleFormPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
@@ -848,11 +848,24 @@ module Gaia =
         // create form
         let form = new GaiaForm ()
 
-        // configure form and set up events
+        // configure controls
         form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
         form.positionSnapTextBox.Text <- scstring DefaultPositionSnap
         form.rotationSnapTextBox.Text <- scstring DefaultRotationSnap
         form.createDepthTextBox.Text <- scstring DefaultCreationDepth
+
+        // sort tree view nodes with a bias against guids
+        form.treeView.Sorted <- true
+        form.treeView.TreeViewNodeSorter <-
+            { new IComparer with
+                member this.Compare (left, right) =
+                    let leftName = ((left :?> TreeNode).Name.Split [|'/'|]) |> Array.last
+                    let rightName = ((right :?> TreeNode).Name.Split [|'/'|]) |> Array.last
+                    let leftNameBiased = if isGuid leftName then "~" + leftName else leftName
+                    let rightNameBiased = if isGuid rightName then "~" + rightName else rightName
+                    String.CompareOrdinal (leftNameBiased, rightNameBiased) }
+
+        // set up events handlers
         form.exitToolStripMenuItem.Click.Add (handleFormExit form)
         form.createDepthPlusButton.Click.Add (handleFormCreateDepthPlusClick form)
         form.createDepthMinusButton.Click.Add (handleFormCreateDepthMinusClick form)
