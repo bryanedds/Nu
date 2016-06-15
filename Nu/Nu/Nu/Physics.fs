@@ -82,6 +82,7 @@ type [<StructuralEquality; NoComparison>] BodyShape =
     | BodyPolygon of BodyPolygon
 
 /// The type of a physics body; Static, Kinematic, or Dynamic.
+[<Syntax ("Static Kinematic Dynamic", "")>]
 type BodyType =
     | Static
     | Kinematic
