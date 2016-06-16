@@ -64,6 +64,30 @@ module Symbol =
         NumberLiteralOptions.AllowFraction |||
         NumberLiteralOptions.AllowHexadecimal
 
+    let readNumberStr = numberLiteral NumberFormat "number"
+    
+    let isNumber str = match run readNumberStr str with Success _ -> true | Failure _ -> false
+    let isExplicit (str : string) = str.StartsWith OpenStringStr && str.EndsWith CloseStringStr
+    let isWhitespaceChar chr = isAnyOf WhitespaceChars chr
+    let isStructureChar chr = isAnyOf StructureChars chr
+    
+    let skipWhitespace = skipAnyOf WhitespaceChars
+    let skipWhitespaces = skipMany skipWhitespace
+    let followedByWhitespaceOrStructureChar = nextCharSatisfies (fun chr -> isWhitespaceChar chr || isStructureChar chr)
+    
+    let openSymbols = skipChar OpenSymbolsChar
+    let closeSymbols = skipChar CloseSymbolsChar
+    let openString = skipChar OpenStringChar
+    let closeString = skipChar CloseStringChar
+    let openQuote = skipChar OpenQuoteChar
+    let closeQuote = skipChar CloseQuoteChar
+    
+    /// Should the string be quoted explicitly when written?
+    let shouldBeExplicit (str : string) =
+        Seq.exists (fun chr -> Char.IsWhiteSpace chr || Seq.contains chr StructureCharsNoStr) str ||
+        isNumber str
+
+    /// Expand the operator chars in a string.
     let expand (unexpanded : string) =
         if unexpanded.IndexOfAny OpsUnexpanded = 0 then
             let partsExpanded = Seq.map (fun (part : char) -> match Array.IndexOf (OpsUnexpanded, part) with -1 -> string part | i -> OpsExpanded.[i]) unexpanded
@@ -71,6 +95,7 @@ module Symbol =
             expanded
         else unexpanded
 
+    /// Unexpand the operator words in a string.
     let unexpand (expanded : string) =
         let parts = expanded.Split OpsSeparator
         if Array.contains parts.[0] OpsExpanded then
@@ -78,35 +103,6 @@ module Symbol =
             let unexpanded = String.Concat partsUnexpanded
             unexpanded
         else expanded
-
-    /// Try to get the Origin of the symbol if it has one.
-    let tryGetOrigin symbol =
-        match symbol with
-        | Atom (_, optOrigin)
-        | Number (_, optOrigin)
-        | String (_, optOrigin)
-        | Quote (_, optOrigin)
-        | Symbols (_, optOrigin) -> optOrigin
-
-    let isExplicit (str : string) =
-        str.StartsWith OpenStringStr && str.EndsWith CloseStringStr
-    
-    let shouldBeExplicit (str : string) =
-        Seq.exists (fun chr -> Char.IsWhiteSpace chr || Seq.contains chr StructureCharsNoStr) str
-
-    let skipWhitespace = skipAnyOf WhitespaceChars
-    let skipWhitespaces = skipMany skipWhitespace
-
-    let isWhitespaceChar chr = isAnyOf WhitespaceChars chr
-    let isStructureChar chr = isAnyOf StructureChars chr
-    let followedByWhitespaceOrStructureChar = nextCharSatisfies (fun chr -> isWhitespaceChar chr || isStructureChar chr)
-
-    let openSymbols = skipChar OpenSymbolsChar
-    let closeSymbols = skipChar CloseSymbolsChar
-    let openString = skipChar OpenStringChar
-    let closeString = skipChar CloseStringChar
-    let openQuote = skipChar OpenQuoteChar
-    let closeQuote = skipChar CloseQuoteChar
 
     let readAtomChars = many1 (noneOf (StructureChars + WhitespaceChars))
     let readStringChars = many (noneOf [CloseStringChar])
@@ -133,7 +129,7 @@ module Symbol =
     let readNumber =
         parse {
             let! start = getPosition
-            let! number = numberLiteral NumberFormat "number"
+            let! number = readNumberStr
             do! followedByWhitespaceOrStructureChar
             let! stop = getPosition
             do! skipWhitespaces
@@ -253,6 +249,15 @@ module Symbol =
     ///
     /// ...and so on.
     let rec toString symbol = writeSymbol symbol
+
+    /// Try to get the Origin of the symbol if it has one.
+    let tryGetOrigin symbol =
+        match symbol with
+        | Atom (_, optOrigin)
+        | Number (_, optOrigin)
+        | String (_, optOrigin)
+        | Quote (_, optOrigin)
+        | Symbols (_, optOrigin) -> optOrigin
 
     /// Cascade a symbol string into multiple lines with proper tabbing.
     let private cascade keywords str =

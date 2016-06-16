@@ -381,14 +381,14 @@ module World =
         updateSymbolStore (SymbolStore.unloadSymbolStorePackage packageName) world
 
     /// Try to find a symbol with the given asset tag.
-    let tryFindSymbolStoreAsset assetTag world =
+    let tryFindSymbol assetTag world =
         let symbolStore = getSymbolStore world
         let (symbol, symbolStore) = SymbolStore.tryFindSymbol assetTag symbolStore
         let world = setSymbolStore symbolStore world
         (symbol, world)
     
-    /// Reload all the assets in the symbol store.
-    let reloadSymbolStoreAssets world =
+    /// Reload all the symbols in the symbol store.
+    let reloadSymbols world =
         updateSymbolStore SymbolStore.reloadSymbols world
 
     /// Get the user state of the world, casted to 'u.
