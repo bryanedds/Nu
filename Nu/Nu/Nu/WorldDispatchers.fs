@@ -151,7 +151,6 @@ module EffectFacetModule =
                 let timeOffset = entity.GetEffectTimeOffset world
                 let effect = entity.GetEffect world
                 let effectTime = time - timeOffset
-                let effectRate = World.getTickRate world
                 let effectViewType = entity.GetViewType world
                 let effectSlice =
                     { Position = entity.GetPosition world + Vector2.Multiply (entity.GetSize world, entity.GetEffectOffset world)
@@ -164,7 +163,7 @@ module EffectFacetModule =
                       Volume = 1.0f }
                 let effectHistory = entity.GetEffectHistoryNp world
                 let effectEnv = entity.GetEffectDefinitions world
-                let effectSystem = EffectSystem.make effectViewType effectHistory effectRate effectTime effectEnv
+                let effectSystem = EffectSystem.make effectViewType effectHistory effectTime effectEnv
                 let world =
                     let artifacts = EffectSystem.eval effect effectSlice effectSystem
                     List.fold (fun world artifact ->
@@ -189,10 +188,11 @@ module EffectFacetModule =
 
         override facet.Update (entity, world) =
             let optEffects = entity.GetOptEffects world
-            if entity.GetOptEffectsLc world <> optEffects then
-                let world = setEffect optEffects entity world
-                entity.SetOptEffectsLc optEffects world
-            else world
+            let world =
+                if entity.GetOptEffectsLc world <> optEffects
+                then let world = setEffect optEffects entity world in entity.SetOptEffectsLc optEffects world
+                else world
+            world
 
         override facet.Register (entity, world) =
             World.monitor handleAssetsReload Events.AssetsReload entity world
