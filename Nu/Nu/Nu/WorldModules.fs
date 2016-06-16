@@ -360,36 +360,36 @@ module World =
     let internal getOverlayRouter world =
         getAmbientStateBy AmbientState.getOverlayRouter world
 
-    let internal getLibraryBy by world =
-        getAmbientStateBy (AmbientState.getLibraryBy by) world
+    let internal getSymbolStoreBy by world =
+        getAmbientStateBy (AmbientState.getSymbolStoreBy by) world
 
-    let internal getLibrary world =
-        getAmbientStateBy AmbientState.getLibrary world
+    let internal getSymbolStore world =
+        getAmbientStateBy AmbientState.getSymbolStore world
 
-    let internal setLibrary library world =
-        updateAmbientState (AmbientState.setLibrary library) world
+    let internal setSymbolStore symbolStore world =
+        updateAmbientState (AmbientState.setSymbolStore symbolStore) world
 
-    let internal updateLibrary updater world =
-        updateAmbientState (AmbientState.updateLibrary updater) world
+    let internal updateSymbolStore updater world =
+        updateAmbientState (AmbientState.updateSymbolStore updater) world
 
-    /// Try to load a library package with the given name.
-    let tryLoadLibraryPackage packageName world =
-        updateLibrary (Library.tryLoadLibraryPackage packageName) world
+    /// Try to load a symbol store package with the given name.
+    let tryLoadSymbolStorePackage packageName world =
+        updateSymbolStore (SymbolStore.tryLoadSymbolStorePackage packageName) world
 
-    /// Unload a library package with the given name.
-    let unloadLibraryPackage packageName world =
-        updateLibrary (Library.unloadLibraryPackage packageName) world
+    /// Unload a symbol store package with the given name.
+    let unloadSymbolStorePackage packageName world =
+        updateSymbolStore (SymbolStore.unloadSymbolStorePackage packageName) world
 
     /// Try to find a symbol with the given asset tag.
-    let tryFindLibraryAsset assetTag world =
-        let library = getLibrary world
-        let (symbol, library) = Library.tryFindSymbol assetTag library
-        let world = setLibrary library world
+    let tryFindSymbolStoreAsset assetTag world =
+        let symbolStore = getSymbolStore world
+        let (symbol, symbolStore) = SymbolStore.tryFindSymbol assetTag symbolStore
+        let world = setSymbolStore symbolStore world
         (symbol, world)
     
-    /// Reload all the assets in the library.
-    let reloadLibraryAssets world =
-        updateLibrary Library.reloadSymbols world
+    /// Reload all the assets in the symbol store.
+    let reloadSymbolStoreAssets world =
+        updateSymbolStore SymbolStore.reloadSymbols world
 
     /// Get the user state of the world, casted to 'u.
     let getUserState world : 'u =

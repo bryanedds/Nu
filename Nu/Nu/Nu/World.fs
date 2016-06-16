@@ -729,7 +729,7 @@ module WorldModule =
                 let overlayRouter = OverlayRouter.make dispatchers.EntityDispatchers []
                 let eyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault)
                 let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
-                AmbientState.make 1L camera Map.empty overlayRouter Overlayer.empty Library.empty userState
+                AmbientState.make 1L camera Map.empty overlayRouter Overlayer.empty SymbolStore.empty userState
 
             // make the world itself
             let world =
@@ -829,7 +829,7 @@ module WorldModule =
                         let assetMetadataMap = Metadata.generateAssetMetadataMap assetGraph
                         let pluginOverlayRoutes = plugin.MakeOverlayRoutes ()
                         let overlayRouter = OverlayRouter.make dispatchers.EntityDispatchers pluginOverlayRoutes
-                        AmbientState.make tickRate camera assetMetadataMap overlayRouter overlayer Library.empty userState
+                        AmbientState.make tickRate camera assetMetadataMap overlayRouter overlayer SymbolStore.empty userState
 
                     // make the world itself
                     let world =

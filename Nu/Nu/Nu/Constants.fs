@@ -37,7 +37,7 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Associations =
     
-        let [<Literal>] Library = "Library"
+        let [<Literal>] Symbol = "Symbol"
         let [<Literal>] Render = "Render"
         let [<Literal>] Audio = "Audio"
 

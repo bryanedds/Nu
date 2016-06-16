@@ -24,7 +24,7 @@ module AmbientStateModule =
               AssetMetadataMap : AssetMetadataMap
               Overlayer : Overlayer
               OverlayRouter : OverlayRouter
-              Library : Library
+              SymbolStore : SymbolStore
               UserState : obj }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -129,22 +129,22 @@ module AmbientStateModule =
         let getOverlayRouter state =
             state.OverlayRouter
 
-        /// Get a value from the library.
-        let getLibraryBy by state =
-            by state.Library
+        /// Get a value from the symbol store.
+        let getSymbolStoreBy by state =
+            by state.SymbolStore
 
-        /// Get the library.
-        let getLibrary state =
-            getLibraryBy id state
+        /// Get the symbol store.
+        let getSymbolStore state =
+            getSymbolStoreBy id state
     
-        /// Set the library.
-        let setLibrary library state =
-            { state with Library = library }
+        /// Set the symbol store.
+        let setSymbolStore symbolStore state =
+            { state with SymbolStore = symbolStore }
 
-        /// Update the library.
-        let updateLibrary updater state =
-            let camera = updater ^ getLibrary state
-            { state with Library = camera }
+        /// Update the symbol store.
+        let updateSymbolStore updater state =
+            let camera = updater ^ getSymbolStore state
+            { state with SymbolStore = camera }
     
         /// Get the user-defined state, casted to 'u.
         let getUserState state : 'u =
@@ -157,7 +157,7 @@ module AmbientStateModule =
             { state with UserState = userState }
     
         /// Make an ambient state value.
-        let make tickRate camera assetMetadataMap overlayRouter overlayer library userState =
+        let make tickRate camera assetMetadataMap overlayRouter overlayer symbolStore userState =
             { TickRate = tickRate
               TickTime = 0L
               UpdateCount = 0L
@@ -167,5 +167,5 @@ module AmbientStateModule =
               AssetMetadataMap = assetMetadataMap
               OverlayRouter = overlayRouter
               Overlayer = overlayer
-              Library = library
+              SymbolStore = symbolStore
               UserState = userState }
