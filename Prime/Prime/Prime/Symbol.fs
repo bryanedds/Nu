@@ -81,11 +81,7 @@ module Symbol =
     
     let isNumberParser = numberLiteral NumberFormat "number"
     let isNumber str = match run isNumberParser str with Success (_, _, position) -> position.Index = int64 str.Length | Failure _ -> false
-    
-    /// Should the string be quoted explicitly when written?
-    let shouldBeExplicit (str : string) =
-        Seq.exists (fun chr -> Char.IsWhiteSpace chr || Seq.contains chr StructureCharsNoStr) str ||
-        isNumber str
+    let shouldBeExplicit str = Seq.exists (fun chr -> Char.IsWhiteSpace chr || Seq.contains chr StructureCharsNoStr) str
 
     /// Expand the operator chars in a string.
     let expand (unexpanded : string) =

@@ -61,7 +61,8 @@ type SymbolicConverter (pointType : Type) =
             // symbolize string
             elif sourceType = typeof<string> then
                 let sourceStr = string source
-                if Symbol.shouldBeExplicit sourceStr then String (sourceStr, None)
+                if Symbol.isNumber sourceStr then Number (sourceStr, None)
+                elif Symbol.shouldBeExplicit sourceStr then String (sourceStr, None)
                 else Atom (sourceStr, None)
 
             // symbolize Symbol (no transformation)
