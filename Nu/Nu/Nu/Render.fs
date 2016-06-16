@@ -159,14 +159,14 @@ module RendererModule =
                 renderer
 
         static member private tryLoadRenderAsset (assetTag : AssetTag) renderer =
-            let (renderer, optAssetMap) =
+            let (optAssetMap, renderer) =
                 match Map.tryFind assetTag.PackageName renderer.RenderAssetMap with
-                | Some _ -> (renderer, Map.tryFind assetTag.PackageName renderer.RenderAssetMap)
+                | Some _ -> (Map.tryFind assetTag.PackageName renderer.RenderAssetMap, renderer)
                 | None ->
                     Log.info ^ "Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
                     let renderer = Renderer.tryLoadRenderPackage assetTag.PackageName renderer
-                    (renderer, Map.tryFind assetTag.PackageName renderer.RenderAssetMap)
-            (renderer, Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap)
+                    (Map.tryFind assetTag.PackageName renderer.RenderAssetMap, renderer)
+            (Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap, renderer)
 
         static member private handleHintRenderPackageUse (hintPackageUse : HintRenderPackageUseMessage) renderer =
             Renderer.tryLoadRenderPackage hintPackageUse.PackageName renderer
@@ -204,7 +204,7 @@ module RendererModule =
             let sizeView = sprite.Size * view.ExtractScaleMatrix ()
             let color = sprite.Color
             let image = sprite.Image
-            let (renderer, optRenderAsset) = Renderer.tryLoadRenderAsset image renderer
+            let (optRenderAsset, renderer) = Renderer.tryLoadRenderAsset image renderer
             match optRenderAsset with
             | Some renderAsset ->
                 match renderAsset with
@@ -265,7 +265,7 @@ module RendererModule =
             let tileSet = descriptor.TileSet
             let tileSetImage = descriptor.TileSetImage
             let tileSetWidth = let optTileSetWidth = tileSet.Image.Width in optTileSetWidth.Value
-            let (renderer, optRenderAsset) = Renderer.tryLoadRenderAsset tileSetImage renderer
+            let (optRenderAsset, renderer) = Renderer.tryLoadRenderAsset tileSetImage renderer
             match optRenderAsset with
             | Some renderAsset ->
                 match renderAsset with
@@ -322,7 +322,7 @@ module RendererModule =
             let text = String.textualize descriptor.Text
             let color = descriptor.Color
             let font = descriptor.Font
-            let (renderer, optRenderAsset) = Renderer.tryLoadRenderAsset font renderer
+            let (optRenderAsset, renderer) = Renderer.tryLoadRenderAsset font renderer
             match optRenderAsset with
             | Some renderAsset ->
                 match renderAsset with
