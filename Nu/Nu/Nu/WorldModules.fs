@@ -360,6 +360,37 @@ module World =
     let internal getOverlayRouter world =
         getAmbientStateBy AmbientState.getOverlayRouter world
 
+    let internal getLibraryBy by world =
+        getAmbientStateBy (AmbientState.getLibraryBy by) world
+
+    let internal getLibrary world =
+        getAmbientStateBy AmbientState.getLibrary world
+
+    let internal setLibrary library world =
+        updateAmbientState (AmbientState.setLibrary library) world
+
+    let internal updateLibrary updater world =
+        updateAmbientState (AmbientState.updateLibrary updater) world
+
+    /// Try to load a library package with the given name.
+    let tryLoadLibraryPackage packageName world =
+        updateLibrary (Library.tryLoadLibraryPackage packageName) world
+
+    /// Unload a library package with the given name.
+    let unloadLibraryPackage packageName world =
+        updateLibrary (Library.unloadLibraryPackage packageName) world
+
+    /// Try to find a symbol with the given asset tag.
+    let tryFindLibraryAsset assetTag world =
+        let library = getLibrary world
+        let (symbol, library) = Library.tryFindLibraryAsset assetTag library
+        let world = setLibrary library world
+        (symbol, world)
+    
+    /// Reload all the assets in the library.
+    let reloadLibraryAssets world =
+        updateLibrary Library.reloadLibraryAssets world
+
     /// Get the user state of the world, casted to 'u.
     let getUserState world : 'u =
         getAmbientStateBy AmbientState.getUserState world

@@ -46,7 +46,7 @@ type [<ReferenceEquality>] AudioAsset =
     | WavAsset of nativeint
     | OggAsset of nativeint
 
-/// The audio player. Represents the audio system of Nu generally.
+/// The audio player. Represents the audio subsystem of Nu generally.
 type IAudioPlayer =
     /// Clear all of the audio messages that have been enqueued.
     abstract ClearMessages : unit -> IAudioPlayer
@@ -107,25 +107,25 @@ module AudioPlayerModule =
                         let audioAssetMap = Map.ofSeq audioAssets
                         { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap audioPlayer.AudioAssetMap }
                 | Left error ->
-                    Log.info ^ "Audio package load failed due unloadable assets '" + error + "' for package '" + packageName + "'."
+                    Log.info ^ "Audio package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'."
                     audioPlayer
             | Left error ->
                 Log.info ^ "Audio package load failed due to unloadable asset graph due to: '" + error
                 audioPlayer
     
         static member private tryLoadAudioAsset (assetTag : AssetTag) audioPlayer =
-            let (audioPlayer, optAssetMap) =
+            let (optAssetMap, audioPlayer) =
                 match Map.tryFind assetTag.PackageName audioPlayer.AudioAssetMap with
-                | Some _ -> (audioPlayer, Map.tryFind assetTag.PackageName audioPlayer.AudioAssetMap)
+                | Some _ -> (Map.tryFind assetTag.PackageName audioPlayer.AudioAssetMap, audioPlayer)
                 | None ->
                     Log.info ^ "Loading audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
                     let audioPlayer = AudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
-                    (audioPlayer, Map.tryFind assetTag.PackageName audioPlayer.AudioAssetMap)
-            (audioPlayer, Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap)
+                    (Map.tryFind assetTag.PackageName audioPlayer.AudioAssetMap, audioPlayer)
+            (Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap, audioPlayer)
     
         static member private playSong playSongMessage audioPlayer =
             let song = playSongMessage.Song
-            let (audioPlayer, optAudioAsset) = AudioPlayer.tryLoadAudioAsset song audioPlayer
+            let (optAudioAsset, audioPlayer) = AudioPlayer.tryLoadAudioAsset song audioPlayer
             match optAudioAsset with
             | Some (WavAsset _) -> Log.info ^ "Cannot play wav file as song '" + scstring song + "'."
             | Some (OggAsset oggAsset) ->
@@ -153,7 +153,7 @@ module AudioPlayerModule =
     
         static member private handlePlaySound playSoundMessage audioPlayer =
             let sound = playSoundMessage.Sound
-            let (audioPlayer, optAudioAsset) = AudioPlayer.tryLoadAudioAsset sound audioPlayer
+            let (optAudioAsset, audioPlayer) = AudioPlayer.tryLoadAudioAsset sound audioPlayer
             match optAudioAsset with
             | Some (WavAsset wavAsset) ->
                 SDL_mixer.Mix_VolumeChunk (wavAsset, int ^ playSoundMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME) |> ignore

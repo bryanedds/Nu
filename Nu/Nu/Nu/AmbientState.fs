@@ -24,6 +24,7 @@ module AmbientStateModule =
               AssetMetadataMap : AssetMetadataMap
               Overlayer : Overlayer
               OverlayRouter : OverlayRouter
+              Library : Library
               UserState : obj }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -127,6 +128,23 @@ module AmbientStateModule =
         /// Get the overlay router.
         let getOverlayRouter state =
             state.OverlayRouter
+
+        /// Get a value from the library.
+        let getLibraryBy by state =
+            by state.Library
+
+        /// Get the library.
+        let getLibrary state =
+            getLibraryBy id state
+    
+        /// Set the library.
+        let setLibrary library state =
+            { state with Library = library }
+
+        /// Update the library.
+        let updateLibrary updater state =
+            let camera = updater ^ getLibrary state
+            { state with Library = camera }
     
         /// Get the user-defined state, casted to 'u.
         let getUserState state : 'u =
@@ -139,7 +157,7 @@ module AmbientStateModule =
             { state with UserState = userState }
     
         /// Make an ambient state value.
-        let make tickRate camera assetMetadataMap overlayRouter overlayer userState =
+        let make tickRate camera assetMetadataMap overlayRouter overlayer library userState =
             { TickRate = tickRate
               TickTime = 0L
               UpdateCount = 0L
@@ -149,4 +167,5 @@ module AmbientStateModule =
               AssetMetadataMap = assetMetadataMap
               OverlayRouter = overlayRouter
               Overlayer = overlayer
+              Library = library
               UserState = userState }
