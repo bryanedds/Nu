@@ -5,7 +5,7 @@ What is the **Nu Game Engine**?
 
 *"The Nu Game Engine is a game development platform that aims to drastically reduce the cost of game development by providing a superior programming model for games via Iterative Functional Reactive Programming (IFRP). After finally reaching v1.3.0.4, the implementation has matured enough to prove both the efficacy and viability of pure functional programming in games in terms of performance, programmability, and reliability."*
 
-![Screenshot](BlazeVector/Promotional/BlastingAwayInBlazeVector.png?raw=true "Nu Game Engine demo game BlazeVector")
+![Screenshot](InfinityRpg/Promotional/InfinityRpg.png?raw=true)
 
 This repository hosts several projects, including -
 
@@ -15,17 +15,14 @@ This repository hosts several projects, including -
 
 Here is some media on the Nu Game Engine -
 
-![Screenshot](BlazeVector/Promotional/PlayingABitOfBlazeVector.png?raw=true)
-Blasting away in BlazeVector!
+![Screenshot](BlazeVector/Promotional/BlastingAwayInBlazeVector.png?raw=true)
+Nu's tutorial game, BlazeVector!
 
 ![Screenshot](BlazeVector/Promotional/EditingASectionOfABlazeVectorStage.png?raw=true)
 Editing a section of a BlazeVector stage.
 
 ![Screenshot](Nu/Promotional/Nu Special Effects.png?raw=true)
 Editing a special effect in Nu.
-
-![Screenshot](InfinityRpg/Promotional/InfinityRpg.png?raw=true)
-Screenshot of Nu's new game in progress, InfinityRpg.
 
 Getting Started
 ===============
