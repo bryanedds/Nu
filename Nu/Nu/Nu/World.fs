@@ -438,6 +438,7 @@ module WorldModule =
                     AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
                     let assetMetadataMap = Metadata.generateAssetMetadataMap assetGraph
                     let world = World.setAssetMetadataMap assetMetadataMap world
+                    let world = World.reloadSymbols world
                     let world = World.reloadRenderAssets world
                     let world = World.reloadAudioAssets world
                     Right (assetGraph, world)

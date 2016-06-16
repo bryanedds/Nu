@@ -74,6 +74,8 @@
     <Content Include="Overlayer.nuol">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Resource Include="Assets/Default/Effect.nueffect" />
+    <Resource Include="Assets/Default/Effect2.nueffect" />
     <Resource Include="Assets/Default/Image.png" />
     <Resource Include="Assets/Default/Image2.png" />
     <Resource Include="Assets/Default/Image3.png" />
