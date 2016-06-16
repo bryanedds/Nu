@@ -118,6 +118,20 @@ module EffectFacetModule =
                     optSymbols
             (optEffects, world)
 
+        static let setEffect optEffects (entity : Entity) world =
+            match optEffects with
+            | Some effectAssetTags ->
+                let (effects, world) = assetTagsToOptEffects effectAssetTags world |> mapFst List.definitize
+                let effectCombined = EffectSystem.combineEffects effects
+                entity.SetEffect effectCombined world
+            | None -> entity.SetEffect Effect.empty world
+
+        static let handleAssetsReload evt world =
+            let entity = evt.Subscriber : Entity
+            let optEffects = entity.GetOptEffects world
+            let world = setEffect optEffects entity world
+            (Cascade, world)
+
         static member PropertyDefinitions =
             [Define? OptEffects (None : AssetTag list option)
              Define? OptEffectsLc (None : AssetTag list option)
@@ -174,18 +188,14 @@ module EffectFacetModule =
             else world
 
         override facet.Update (entity, world) =
-            let optEffectsLc = entity.GetOptEffectsLc world
             let optEffects = entity.GetOptEffects world
-            if optEffectsLc <> optEffects then
-                let world =
-                    match optEffects with
-                    | Some effectAssetTags ->
-                        let (effects, world) = assetTagsToOptEffects effectAssetTags world |> mapFst List.definitize
-                        let effectCombined = EffectSystem.combineEffects effects
-                        entity.SetEffect effectCombined world
-                    | None -> entity.SetEffect Effect.empty world
+            if entity.GetOptEffectsLc world <> optEffects then
+                let world = setEffect optEffects entity world
                 entity.SetOptEffectsLc optEffects world
             else world
+
+        override facet.Register (entity, world) =
+            World.monitor handleAssetsReload Events.AssetsReload entity world
 
 [<AutoOpen>]
 module RigidBodyFacetModule =
