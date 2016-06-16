@@ -71,7 +71,7 @@
     <Compile Include="Reflection.fs" />
     <Compile Include="Camera.fs" />
     <Compile Include="AssetGraph.fs" />
-    <Compile Include="Library.fs" />
+    <Compile Include="Symbol.fs" />
     <Compile Include="Physics.fs" />
     <Compile Include="Render.fs" />
     <Compile Include="Audio.fs" />
