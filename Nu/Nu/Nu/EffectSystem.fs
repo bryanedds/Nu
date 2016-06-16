@@ -16,7 +16,6 @@ module EffectSystemModule =
             { ViewType : ViewType
               History : Slice seq
               ProgressOffset : single
-              EffectRate : int64
               EffectTime : int64
               EffectEnv : Definitions
               Chaos : System.Random }
@@ -379,10 +378,10 @@ module EffectSystemModule =
             let artifacts =
                 Seq.foldi
                     (fun i artifacts (slice : Slice) ->
-                        let timePassed = int64 i * effectSystem.EffectRate
+                        let timePassed = int64 i
                         let slice = { slice with Depth = slice.Depth + shift }
                         let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - timePassed }
-                        let emitCountLastFrame = single (effectSystem.EffectTime - timePassed - effectSystem.EffectRate) * rate
+                        let emitCountLastFrame = single (effectSystem.EffectTime - timePassed - 1L) * rate
                         let emitCountThisFrame = single (effectSystem.EffectTime - timePassed) * rate
                         let emitCount = int emitCountThisFrame - int emitCountLastFrame
                         let effectSystem =
@@ -392,7 +391,7 @@ module EffectSystemModule =
                                 | Emit _ ->
                                     Seq.mapi
                                         (fun j slice ->
-                                            let timePassed = int64 (i + j) * effectSystem.EffectRate
+                                            let timePassed = int64 (i + j)
                                             evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - timePassed })
                                         effectSystem.History
                                 | _ -> effectSystem.History
@@ -469,11 +468,10 @@ module EffectSystemModule =
                   Content = Composite (Shift 0.0f, List.map (fun effect -> effect.Content) effects) }
             effectCombined
     
-        let make viewType history tickRate tickTime globalEnv = 
+        let make viewType history tickTime globalEnv = 
             { ViewType = viewType
               History = history
               ProgressOffset = 0.0f
-              EffectRate = tickRate
               EffectTime = tickTime
               EffectEnv = globalEnv
               Chaos = Random () }
