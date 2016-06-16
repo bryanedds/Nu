@@ -105,6 +105,19 @@ module EffectFacetModule =
     type EffectFacet () =
         inherit Facet ()
 
+        static let assetTagsToOptEffects assetTags world =
+            let (optSymbols, world) = World.tryFindSymbols assetTags world
+            let optEffects =
+                List.map
+                    (fun optSymbol ->
+                        match optSymbol with
+                        | Some symbol ->
+                            try let effect = valueize<Effect> symbol in Some effect
+                            with exn -> Log.info ^ "Failed to convert symbol '" + scstring symbol + "' to Effect due to: " + scstring exn; None
+                        | None -> None)
+                    optSymbols
+            (optEffects, world)
+
         static member PropertyDefinitions =
             [Define? OptEffects (None : AssetTag list option)
              Define? OptEffectsLc (None : AssetTag list option)
@@ -167,25 +180,9 @@ module EffectFacetModule =
                 let world =
                     match optEffects with
                     | Some effectAssetTags ->
-                        let (effects, world) =
-                            List.foldBack
-                                (fun effectAssetTag (effects, world) ->
-                                    let (optEffectSymbol, world) = World.tryFindSymbol effectAssetTag world
-                                    match optEffectSymbol with
-                                    | Some effectSymbol ->
-                                        try let effect = valueize<Effect> effectSymbol
-                                            (effect :: effects, world)
-                                        with exn ->
-                                            Log.info ^ "Failed to convert symbol asset '" + scstring effectAssetTag + "' to symbol due to: " + scstring exn
-                                            (effects, world)
-                                    | None -> (effects, world))
-                                effectAssetTags
-                                ([], world)
-                        let effectCombined =
-                            { EffectName = String.Join ("@", List.map (fun effect -> effect.EffectName) effects)
-                              OptLifetime = None
-                              Definitions = List.fold (fun definitions effect -> Map.concat definitions effect.Definitions) Map.empty effects
-                              Content = Composite (Shift 0.0f, List.map (fun effect -> effect.Content) effects) }
+                        let (optEffects, world) = assetTagsToOptEffects effectAssetTags world
+                        let effects = List.definitize optEffects
+                        let effectCombined = EffectSystem.combineEffects effects
                         entity.SetEffect effectCombined world
                     | None -> entity.SetEffect Effect.empty world
                 entity.SetOptEffectsLc optEffects world

@@ -72,6 +72,17 @@ module SymbolStoreModule =
         /// Try to find a symbol with the given asset tag.
         let tryFindSymbol assetTag symbolStore =
             tryLoadSymbol assetTag symbolStore
+            
+        /// Try to find the symbols with the given asset tags.
+        let tryFindSymbols assetTags world =
+            List.foldBack
+                (fun assetTag (optSymbols, world) ->
+                    let (optSymbol, world) = tryFindSymbol assetTag world
+                    match optSymbol with
+                    | Some symbol -> (Some symbol :: optSymbols, world)
+                    | None -> (None :: optSymbols, world))
+                assetTags
+                ([], world)
     
         /// Reload all the assets in the symbolStore.
         let reloadSymbols symbolStore =
