@@ -80,11 +80,11 @@ module EffectFacetModule =
         Map<string, Symbol * Slice list>
 
     type Entity with
-
-//        member this.GetOptEffects world : AssetTag list option = (this.GetXtension world)?OptEffects
-//        member this.SetOptEffects (value : AssetTag list option) world = this.UpdateXtension (fun xtension -> xtension?OptEffects <- value) world
-//        member this.GetOptEffectsLc world : AssetTag list option = (this.GetXtension world)?OptEffectsLc
-//        member private this.SetOptEffectsLc (value : AssetTag list option) world = this.UpdateXtension (fun xtension -> xtension?OptEffectsLc <- value) world
+    
+        member this.GetOptEffects world : AssetTag list option = (this.GetXtension world)?OptEffects
+        member this.SetOptEffects (value : AssetTag list option) world = this.UpdateXtension (fun xtension -> xtension?OptEffects <- value) world
+        member this.GetOptEffectsLc world : AssetTag list option = (this.GetXtension world)?OptEffectsLc
+        member private this.SetOptEffectsLc (value : AssetTag list option) world = this.UpdateXtension (fun xtension -> xtension?OptEffectsLc <- value) world
         member this.GetEffectDefinitions world : Definitions = (this.GetXtension world)?EffectDefinitions
         member this.SetEffectDefinitions (value : Definitions) world = this.UpdateXtension (fun xtension -> xtension?EffectDefinitions <- value) world
         member this.GetEffect world : Effect = (this.GetXtension world)?Effect
@@ -105,22 +105,22 @@ module EffectFacetModule =
     type EffectFacet () =
         inherit Facet ()
 
-        //static let assetTagsToOptEffects assetTags world =
-        //    let (optSymbols, world) = World.tryFindSymbols assetTags world
-        //    let optEffects =
-        //        List.map
-        //            (fun optSymbol ->
-        //                match optSymbol with
-        //                | Some symbol ->
-        //                    try let effect = valueize<Effect> symbol in Some effect
-        //                    with exn -> Log.info ^ "Failed to convert symbol '" + scstring symbol + "' to Effect due to: " + scstring exn; None
-        //                | None -> None)
-        //            optSymbols
-        //    (optEffects, world)
+        static let assetTagsToOptEffects assetTags world =
+            let (optSymbols, world) = World.tryFindSymbols assetTags world
+            let optEffects =
+                List.map
+                    (fun optSymbol ->
+                        match optSymbol with
+                        | Some symbol ->
+                            try let effect = valueize<Effect> symbol in Some effect
+                            with exn -> Log.info ^ "Failed to convert symbol '" + scstring symbol + "' to Effect due to: " + scstring exn; None
+                        | None -> None)
+                    optSymbols
+            (optEffects, world)
 
         static member PropertyDefinitions =
-            [//Define? OptEffects (None : AssetTag list option)
-             //Define? OptEffectsLc (None : AssetTag list option)
+            [Define? OptEffects (None : AssetTag list option)
+             Define? OptEffectsLc (None : AssetTag list option)
              Define? EffectDefinitions (Map.empty : Definitions)
              Define? Effect Effect.empty
              Define? EffectOffset Vector2.Zero
@@ -173,20 +173,20 @@ module EffectFacetModule =
                 entity.SetEffectHistoryNp effectHistory world
             else world
 
-        //override facet.Update (entity, world) =
-        //    let optEffectsLc = entity.GetOptEffectsLc world
-        //    let optEffects = entity.GetOptEffects world
-        //    if optEffectsLc <> optEffects then
-        //        let world =
-        //            match optEffects with
-        //            | Some effectAssetTags ->
-        //                let (optEffects, world) = assetTagsToOptEffects effectAssetTags world
-        //                let effects = List.definitize optEffects
-        //                let effectCombined = EffectSystem.combineEffects effects
-        //                entity.SetEffect effectCombined world
-        //            | None -> entity.SetEffect Effect.empty world
-        //        entity.SetOptEffectsLc optEffects world
-        //    else world
+        override facet.Update (entity, world) =
+            let optEffectsLc = entity.GetOptEffectsLc world
+            let optEffects = entity.GetOptEffects world
+            if optEffectsLc <> optEffects then
+                let world =
+                    match optEffects with
+                    | Some effectAssetTags ->
+                        let (optEffects, world) = assetTagsToOptEffects effectAssetTags world
+                        let effects = List.definitize optEffects
+                        let effectCombined = EffectSystem.combineEffects effects
+                        entity.SetEffect effectCombined world
+                    | None -> entity.SetEffect Effect.empty world
+                entity.SetOptEffectsLc optEffects world
+            else world
 
 [<AutoOpen>]
 module RigidBodyFacetModule =
