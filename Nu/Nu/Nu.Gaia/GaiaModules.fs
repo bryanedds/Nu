@@ -323,6 +323,7 @@ module Gaia =
                             match ty.GetCustomAttribute<SyntaxAttribute> true with
                             | null -> ("", "")
                             | syntax -> (syntax.Keywords0, syntax.Keywords1)
+                    let selectionStart = form.propertyValueTextBox.SelectionStart
                     let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
                     let strEscaped = String.escape strUnescaped
                     let strPretty = Symbol.prettyPrint keywords0 strEscaped
@@ -330,6 +331,8 @@ module Gaia =
                     form.propertyValueTextBox.EmptyUndoBuffer ()
                     form.propertyValueTextBox.Keywords0 <- keywords0
                     form.propertyValueTextBox.Keywords1 <- keywords1
+                    form.propertyValueTextBox.SelectionStart <- selectionStart
+                    form.propertyValueTextBox.ScrollCaret ()
             | _ ->
                 form.propertyEditor.Enabled <- false
                 form.propertyNameLabel.Text <- String.Empty
@@ -377,8 +380,11 @@ module Gaia =
     let private tryLoadAssetGraph (form : GaiaForm) world =
         match tryReloadAssets form world with
         | Right (assetGraph, world) ->
-            let assetGraphKeywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
-            form.assetGraphTextBox.Text <- Symbol.prettyPrint assetGraphKeywords0 ^ scstring ^ AssetGraph.getPackageDescriptors assetGraph
+            let keywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
+            let selectionStart = form.propertyValueTextBox.SelectionStart
+            form.assetGraphTextBox.Text <- Symbol.prettyPrint keywords0 ^ scstring ^ AssetGraph.getPackageDescriptors assetGraph
+            form.assetGraphTextBox.SelectionStart <- selectionStart
+            form.assetGraphTextBox.ScrollCaret ()
             Some world
         | Left error ->
             ignore ^ MessageBox.Show ("Could not load asset graph due to: " + error + "'.", "Failed to load asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -404,8 +410,11 @@ module Gaia =
     let private tryLoadOverlayer (form : GaiaForm) world =
         match tryReloadOverlays form world with
         | Right (overlayer, world) ->
-            let overlayerKeywords0 = match typeof<Overlayer>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
-            form.overlayerTextBox.Text <- Symbol.prettyPrint overlayerKeywords0 ^ scstring ^ Overlayer.getExtrinsicOverlays overlayer
+            let keywords0 = match typeof<Overlayer>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
+            let selectionStart = form.propertyValueTextBox.SelectionStart
+            form.overlayerTextBox.Text <- Symbol.prettyPrint keywords0 ^ scstring ^ Overlayer.getExtrinsicOverlays overlayer
+            form.overlayerTextBox.SelectionStart <- selectionStart
+            form.overlayerTextBox.ScrollCaret ()
             Some world
         | Left error ->
             ignore ^ MessageBox.Show ("Could not reload overlayer due to: " + error + "'.", "Failed to reload overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error)
