@@ -1,4 +1,4 @@
-[TestEffect [Some 180] []
+[Effect2 [Some 180] []
  [Emit
   [Shift 0.1]
   [Rate 1]
