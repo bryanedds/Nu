@@ -383,13 +383,13 @@ module World =
     /// Try to find a symbol with the given asset tag.
     let tryFindLibraryAsset assetTag world =
         let library = getLibrary world
-        let (symbol, library) = Library.tryFindLibraryAsset assetTag library
+        let (symbol, library) = Library.tryFindSymbol assetTag library
         let world = setLibrary library world
         (symbol, world)
     
     /// Reload all the assets in the library.
     let reloadLibraryAssets world =
-        updateLibrary Library.reloadLibraryAssets world
+        updateLibrary Library.reloadSymbols world
 
     /// Get the user state of the world, casted to 'u.
     let getUserState world : 'u =

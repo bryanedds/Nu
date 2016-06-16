@@ -18,7 +18,7 @@ module LibraryModule =
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module Library =
 
-        let private tryLoadLibraryAsset2 packageName (asset : Asset) =
+        let private tryLoadSymbol2 packageName (asset : Asset) =
             try let text = File.ReadAllText asset.FilePath
                 try let symbol = Symbol.fromString text
                     Some (asset.AssetTag.AssetName, symbol)
@@ -35,17 +35,17 @@ module LibraryModule =
             | Right assetGraph ->
                 match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Library) packageName assetGraph with
                 | Right assets ->
-                    let optLibraryAssets = List.map (tryLoadLibraryAsset2 packageName) assets
-                    let libraryAssets = List.definitize optLibraryAssets
-                    let optLibraryAssetMap = Map.tryFind packageName library.LibraryPackageMap
-                    match optLibraryAssetMap with
-                    | Some libraryAssetMap ->
-                        let libraryAssetMap = Map.addMany libraryAssets libraryAssetMap
-                        let library = { library with LibraryPackageMap = Map.add packageName libraryAssetMap library.LibraryPackageMap }
+                    let optSymbols = List.map (tryLoadSymbol2 packageName) assets
+                    let symbols = List.definitize optSymbols
+                    let optSymbolMap = Map.tryFind packageName library.LibraryPackageMap
+                    match optSymbolMap with
+                    | Some symbolMap ->
+                        let symbolMap = Map.addMany symbols symbolMap
+                        let library = { library with LibraryPackageMap = Map.add packageName symbolMap library.LibraryPackageMap }
                         library
                     | None ->
-                        let libraryAssetMap = Map.ofSeq libraryAssets
-                        let library = { library with LibraryPackageMap = Map.add packageName libraryAssetMap library.LibraryPackageMap }
+                        let symbolMap = Map.ofSeq symbols
+                        let library = { library with LibraryPackageMap = Map.add packageName symbolMap library.LibraryPackageMap }
                         library
                 | Left error ->
                     Log.info ^ "Library package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'."
@@ -54,15 +54,15 @@ module LibraryModule =
                 Log.info ^ "Library package load failed due to unloadable asset graph due to: '" + error
                 library
     
-        let private tryLoadLibraryAsset (assetTag : AssetTag) library =
+        let private tryLoadSymbol (assetTag : AssetTag) library =
             let (optAssetMap, library) =
                 match Map.tryFind assetTag.PackageName library.LibraryPackageMap with
                 | Some _ -> (Map.tryFind assetTag.PackageName library.LibraryPackageMap, library)
                 | None ->
                     Log.info ^ "Loading library package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
                     let library = tryLoadLibraryPackage assetTag.PackageName library
-                    let libraryAssetMap = Map.tryFind assetTag.PackageName library.LibraryPackageMap
-                    (libraryAssetMap, library)
+                    let symbolMap = Map.tryFind assetTag.PackageName library.LibraryPackageMap
+                    (symbolMap, library)
             (Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap, library)
     
         /// Unload a library package with the given name.
@@ -70,11 +70,11 @@ module LibraryModule =
             { library with LibraryPackageMap = Map.remove packageName library.LibraryPackageMap }
     
         /// Try to find a symbol with the given asset tag.
-        let tryFindLibraryAsset assetTag library =
-            tryLoadLibraryAsset assetTag library
+        let tryFindSymbol assetTag library =
+            tryLoadSymbol assetTag library
     
         /// Reload all the assets in the library.
-        let reloadLibraryAssets library =
+        let reloadSymbols library =
             let oldPackageMap = library.LibraryPackageMap
             let library = { library with LibraryPackageMap = Map.empty }
             List.fold
