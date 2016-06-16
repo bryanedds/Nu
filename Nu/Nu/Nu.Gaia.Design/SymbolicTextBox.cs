@@ -80,16 +80,11 @@ namespace Nu.Gaia.Design
             }
         }
 
-        public string Keywords
-        {
-            get { return keywords0 + " " + keywords1 + " " + keywordsImplicit; }
-        }
-
         public string AutoCWords
         {
             get
             {
-                var keywordsSplit = keywords1.Split(' ').Distinct().ToArray();
+                var keywordsSplit = keywords0.Split(' ').Distinct().ToArray();
                 Array.Sort(keywordsSplit);
                 var keywordsSorted = string.Join(AutoCSeparator.ToString(), keywordsSplit);
                 return keywordsSorted;
