@@ -313,7 +313,7 @@ module Gaia =
                     let (keywords0, keywords1) =
                         match selectedGridItem.Label with
                         | "OptOverlayName" ->
-                            let overlays = World.getExtrinsicOverlays !RefWorld @ World.getExtrinsicOverlays !RefWorld
+                            let overlays = World.getIntrinsicOverlays !RefWorld @ World.getExtrinsicOverlays !RefWorld
                             let overlayNames = List.map (fun overlay -> overlay.OverlayName) overlays
                             (String.Join (" ", overlayNames), "")
                         | "FacetNames" ->
