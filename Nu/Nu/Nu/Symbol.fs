@@ -23,10 +23,10 @@ module SymbolStoreModule =
                 try let symbol = Symbol.fromString text
                     Some (asset.AssetTag.AssetName, symbol)
                 with exn ->
-                    Log.info ^ "Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to:\r\n" + scstring exn
+                    Log.info ^ "Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn
                     None
             with _ ->
-                Log.info ^ "Failed to load symbol file '" + asset.FilePath + "' for package '" + packageName + "' due to:\r\n" + scstring exn
+                Log.info ^ "Failed to load symbol file '" + asset.FilePath + "' for package '" + packageName + "' due to: " + scstring exn
                 None
 
         /// Try to load a symbol store package with the given name.

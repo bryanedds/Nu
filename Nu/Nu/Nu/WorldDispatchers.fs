@@ -164,7 +164,30 @@ module EffectFacetModule =
             let optEffectsLc = entity.GetOptEffectsLc world
             let optEffects = entity.GetOptEffects world
             if optEffectsLc <> optEffects then
-                // TODO: handle change
+                let world =
+                    match optEffects with
+                    | Some effectAssetTags ->
+                        let (effects, world) =
+                            List.foldBack
+                                (fun effectAssetTag (effects, world) ->
+                                    let (optEffectSymbol, world) = World.tryFindSymbol effectAssetTag world
+                                    match optEffectSymbol with
+                                    | Some effectSymbol ->
+                                        try let effect = valueize<Effect> effectSymbol
+                                            (effect :: effects, world)
+                                        with exn ->
+                                            Log.info ^ "Failed to convert symbol asset '" + scstring effectAssetTag + "' to symbol due to: " + scstring exn
+                                            (effects, world)
+                                    | None -> (effects, world))
+                                effectAssetTags
+                                ([], world)
+                        let effectCombined =
+                            { EffectName = String.Join ("@", List.map (fun effect -> effect.EffectName) effects)
+                              OptLifetime = None
+                              Definitions = List.fold (fun definitions effect -> Map.concat definitions effect.Definitions) Map.empty effects
+                              Content = Composite (Shift 0.0f, List.map (fun effect -> effect.Content) effects) }
+                        entity.SetEffect effectCombined world
+                    | None -> entity.SetEffect Effect.empty world
                 entity.SetOptEffectsLc optEffects world
             else world
 

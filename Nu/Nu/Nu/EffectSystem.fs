@@ -458,7 +458,7 @@ module EffectSystemModule =
             with exn ->
                 let effectKeywords0 = match typeof<Effect>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
                 let effectStr = Symbol.prettyPrint effectKeywords0 ^ scstring effect
-                Log.debug ^ "Error in effect:\r\n" + effectStr + "' due to:\r\n" + scstring exn
+                Log.debug ^ "Error in effect:\r\n" + effectStr + "' due to: " + scstring exn
                 []
     
         let make viewType history tickRate tickTime globalEnv = 
