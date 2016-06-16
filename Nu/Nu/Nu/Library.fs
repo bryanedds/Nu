@@ -13,7 +13,7 @@ module LibraryModule =
     /// Provides references to Symbols that are loaded from files.
     type [<ReferenceEquality>] Library =
         private
-            { LibraryAssetMap : Symbol AssetMap }
+            { LibraryPackageMap : Symbol PackageMap }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module Library =
@@ -37,15 +37,15 @@ module LibraryModule =
                 | Right assets ->
                     let optLibraryAssets = List.map (tryLoadLibraryAsset2 packageName) assets
                     let libraryAssets = List.definitize optLibraryAssets
-                    let optLibraryAssetMap = Map.tryFind packageName library.LibraryAssetMap
+                    let optLibraryAssetMap = Map.tryFind packageName library.LibraryPackageMap
                     match optLibraryAssetMap with
                     | Some libraryAssetMap ->
                         let libraryAssetMap = Map.addMany libraryAssets libraryAssetMap
-                        let library = { library with LibraryAssetMap = Map.add packageName libraryAssetMap library.LibraryAssetMap }
+                        let library = { library with LibraryPackageMap = Map.add packageName libraryAssetMap library.LibraryPackageMap }
                         library
                     | None ->
                         let libraryAssetMap = Map.ofSeq libraryAssets
-                        let library = { library with LibraryAssetMap = Map.add packageName libraryAssetMap library.LibraryAssetMap }
+                        let library = { library with LibraryPackageMap = Map.add packageName libraryAssetMap library.LibraryPackageMap }
                         library
                 | Left error ->
                     Log.info ^ "Library package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'."
@@ -56,18 +56,18 @@ module LibraryModule =
     
         let private tryLoadLibraryAsset (assetTag : AssetTag) library =
             let (optAssetMap, library) =
-                match Map.tryFind assetTag.PackageName library.LibraryAssetMap with
-                | Some _ -> (Map.tryFind assetTag.PackageName library.LibraryAssetMap, library)
+                match Map.tryFind assetTag.PackageName library.LibraryPackageMap with
+                | Some _ -> (Map.tryFind assetTag.PackageName library.LibraryPackageMap, library)
                 | None ->
                     Log.info ^ "Loading library package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
                     let library = tryLoadLibraryPackage assetTag.PackageName library
-                    let libraryAssetMap = Map.tryFind assetTag.PackageName library.LibraryAssetMap
+                    let libraryAssetMap = Map.tryFind assetTag.PackageName library.LibraryPackageMap
                     (libraryAssetMap, library)
             (Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap, library)
     
         /// Unload a library package with the given name.
         let unloadLibraryPackage packageName library =
-            { library with LibraryAssetMap = Map.remove packageName library.LibraryAssetMap }
+            { library with LibraryPackageMap = Map.remove packageName library.LibraryPackageMap }
     
         /// Try to find a symbol with the given asset tag.
         let tryFindLibraryAsset assetTag library =
@@ -75,13 +75,13 @@ module LibraryModule =
     
         /// Reload all the assets in the library.
         let reloadLibraryAssets library =
-            let oldAssetMap = library.LibraryAssetMap
-            let library = { library with LibraryAssetMap = Map.empty }
+            let oldPackageMap = library.LibraryPackageMap
+            let library = { library with LibraryPackageMap = Map.empty }
             List.fold
                 (fun library packageName -> tryLoadLibraryPackage packageName library)
                 library
-                (Map.toKeyList oldAssetMap)
+                (Map.toKeyList oldPackageMap)
     
         /// The empty library.
         let empty =
-            { LibraryAssetMap = Map.empty }
+            { LibraryPackageMap = Map.empty }

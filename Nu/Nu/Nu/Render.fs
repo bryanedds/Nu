@@ -103,7 +103,7 @@ module RendererModule =
     type [<ReferenceEquality>] Renderer =
         private
             { RenderContext : nativeint
-              RenderAssetMap : RenderAsset AssetMap
+              RenderPackageMap : RenderAsset PackageMap
               RenderMessages : RenderMessage Queue
               RenderDescriptors : RenderDescriptor list }
 
@@ -143,14 +143,14 @@ module RendererModule =
                 | Right assets ->
                     let optRenderAssets = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
                     let renderAssets = List.definitize optRenderAssets
-                    let optRenderAssetMap = Map.tryFind packageName renderer.RenderAssetMap
+                    let optRenderAssetMap = Map.tryFind packageName renderer.RenderPackageMap
                     match optRenderAssetMap with
                     | Some renderAssetMap ->
                         let renderAssetMap = Map.addMany renderAssets renderAssetMap
-                        { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
+                        { renderer with RenderPackageMap = Map.add packageName renderAssetMap renderer.RenderPackageMap }
                     | None ->
                         let renderAssetMap = Map.ofSeq renderAssets
-                        { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
+                        { renderer with RenderPackageMap = Map.add packageName renderAssetMap renderer.RenderPackageMap }
                 | Left failedAssetNames ->
                     Log.info ^ "Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'."
                     renderer
@@ -160,12 +160,12 @@ module RendererModule =
 
         static member private tryLoadRenderAsset (assetTag : AssetTag) renderer =
             let (optAssetMap, renderer) =
-                match Map.tryFind assetTag.PackageName renderer.RenderAssetMap with
-                | Some _ -> (Map.tryFind assetTag.PackageName renderer.RenderAssetMap, renderer)
+                match Map.tryFind assetTag.PackageName renderer.RenderPackageMap with
+                | Some _ -> (Map.tryFind assetTag.PackageName renderer.RenderPackageMap, renderer)
                 | None ->
                     Log.info ^ "Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
                     let renderer = Renderer.tryLoadRenderPackage assetTag.PackageName renderer
-                    (Map.tryFind assetTag.PackageName renderer.RenderAssetMap, renderer)
+                    (Map.tryFind assetTag.PackageName renderer.RenderPackageMap, renderer)
             (Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap, renderer)
 
         static member private handleHintRenderPackageUse (hintPackageUse : HintRenderPackageUseMessage) renderer =
@@ -173,19 +173,19 @@ module RendererModule =
 
         static member private handleHintRenderPackageDisuse (hintPackageDisuse : HintRenderPackageDisuseMessage) renderer =
             let packageName = hintPackageDisuse.PackageName
-            match Map.tryFind packageName renderer.RenderAssetMap with
+            match Map.tryFind packageName renderer.RenderPackageMap with
             | Some assets ->
                 for asset in assets do Renderer.freeRenderAsset asset.Value
-                { renderer with RenderAssetMap = Map.remove packageName renderer.RenderAssetMap }
+                { renderer with RenderPackageMap = Map.remove packageName renderer.RenderPackageMap }
             | None -> renderer
 
         static member private handleReloadRenderAssets renderer =
-            let oldAssetMap = renderer.RenderAssetMap
-            let renderer = { renderer with RenderAssetMap = Map.empty }
+            let oldPackageMap = renderer.RenderPackageMap
+            let renderer = { renderer with RenderPackageMap = Map.empty }
             List.fold
                 (fun renderer packageName -> Renderer.tryLoadRenderPackage packageName renderer)
                 renderer
-                (Map.toKeyList oldAssetMap)
+                (Map.toKeyList oldPackageMap)
 
         static member private handleRenderMessage renderer renderMessage =
             match renderMessage with
@@ -384,7 +384,7 @@ module RendererModule =
         static member make renderContext =
             let renderer =
                 { RenderContext = renderContext
-                  RenderAssetMap = Map.empty
+                  RenderPackageMap = Map.empty
                   RenderMessages = Queue.empty
                   RenderDescriptors = [] }
             renderer
@@ -410,10 +410,10 @@ module RendererModule =
                 renderer :> IRenderer
 
             member renderer.CleanUp () =
-                let renderAssetMaps = Map.toValueSeq renderer.RenderAssetMap
+                let renderAssetMaps = Map.toValueSeq renderer.RenderPackageMap
                 let renderAssets = Seq.collect Map.toValueSeq renderAssetMaps
                 for renderAsset in renderAssets do Renderer.freeRenderAsset renderAsset
-                let renderer = { renderer with RenderAssetMap = Map.empty }
+                let renderer = { renderer with RenderPackageMap = Map.empty }
                 renderer :> IRenderer
 
     /// The mock implementation of IRenderer.
