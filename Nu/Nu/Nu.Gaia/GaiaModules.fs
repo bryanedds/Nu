@@ -307,7 +307,19 @@ module Gaia =
                 form.propertyNameLabel.Text <- scstring selectedGridItem.Label
                 form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
                 if isNotNull selectedGridItem.Value || isNullTrueValue ty then
-                    let (keywords0, keywords1) = match ty.GetCustomAttribute<SyntaxAttribute> true with null -> ("", "") | syntax -> (syntax.Keywords0, syntax.Keywords1)
+                    let (keywords0, keywords1) =
+                        match selectedGridItem.Label with
+                        | "OptOverlayName" ->
+                            let overlays = World.getExtrinsicOverlays !RefWorld @ World.getExtrinsicOverlays !RefWorld
+                            let overlayNames = List.map (fun overlay -> overlay.OverlayName) overlays
+                            (String.Join (" ", overlayNames), "")
+                        | "FacetNames" ->
+                            let facetNames = !RefWorld |> World.getFacets |> Map.toKeyList
+                            (String.Join (" ", facetNames), "")
+                        | _ ->
+                            match ty.GetCustomAttribute<SyntaxAttribute> true with
+                            | null -> ("", "")
+                            | syntax -> (syntax.Keywords0, syntax.Keywords1)
                     let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
                     let strEscaped = String.escape strUnescaped
                     let strPretty = Symbol.prettyPrint keywords0 strEscaped

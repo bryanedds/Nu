@@ -131,17 +131,16 @@ namespace Nu.Gaia.Design
                 MyFindReplace.ClearAllHighlights();
                 e.SuppressKeyPress = true;
             }
+            else if (e.Control && e.KeyCode == Keys.Space)
+            {
+                AutoCShow(false);
+                e.SuppressKeyPress = true;
+            }
         }
 
         private void SymbolicTextBox_CharAdded(object sender, CharAddedEventArgs e)
         {
-            // Find the word start
-            var currentPos = CurrentPosition;
-            var wordStartPos = WordStartPosition(currentPos, true);
-
-            // Display the autocompletion list
-            var lenEntered = currentPos - wordStartPos;
-            if (lenEntered > 0) AutoCShow(lenEntered, AutoCWords);
+            AutoCShow(true);
         }
 
         private void SymbolicTextBox_UpdateUI(object sender, UpdateUIEventArgs e)
@@ -181,6 +180,17 @@ namespace Nu.Gaia.Design
                     HighlightGuide = 0;
                 }
             }
+        }
+
+        private void AutoCShow(bool requireTextInCurrentWord)
+        {
+            // Find the word start
+            var currentPos = CurrentPosition;
+            var wordStartPos = WordStartPosition(currentPos, true);
+
+            // Display the autocompletion list
+            var lenEntered = currentPos - wordStartPos;
+            if (!requireTextInCurrentWord || lenEntered > 0) AutoCShow(lenEntered, AutoCWords);
         }
 
         private bool IsBrace(int c)
