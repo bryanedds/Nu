@@ -162,23 +162,27 @@ module OverlayerModule =
         let shouldPropertySerialize5 facetNames propertyName propertyType target overlayer =
             not ^ isPropertyOverlaid5 facetNames propertyName propertyType target overlayer
 
+        /// Get intrinsic overlays.
+        let getIntrinsicOverlays overlayer =
+            overlayer.IntrinsicOverlays
+
         /// Get extrinsic overlays.
         let getExtrinsicOverlays overlayer =
             overlayer.ExtrinsicOverlays
 
         /// The empty overlayer.
         let empty =
-            { MappedOverlays = Map.empty
-              IntrinsicOverlays = List.empty
-              ExtrinsicOverlays = List.empty }
+            { IntrinsicOverlays = List.empty
+              ExtrinsicOverlays = List.empty
+              MappedOverlays = Map.empty }
 
         /// Make an overlayer.
         let make intrinsicOverlays extrinsicOverlays =
             let intrinsicOverlaysMap = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) intrinsicOverlays
             let extrinsicOverlaysMap = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) extrinsicOverlays
-            { MappedOverlays = Map.concat intrinsicOverlaysMap extrinsicOverlaysMap
-              IntrinsicOverlays = intrinsicOverlays
-              ExtrinsicOverlays = extrinsicOverlays }
+            { IntrinsicOverlays = intrinsicOverlays
+              ExtrinsicOverlays = extrinsicOverlays
+              MappedOverlays = Map.concat intrinsicOverlaysMap extrinsicOverlaysMap }
 
         /// Attempt to make an overlayer by loading overlays from a file and then combining it with
         /// the given intrinsic overlays.

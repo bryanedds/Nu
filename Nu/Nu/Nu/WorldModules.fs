@@ -351,11 +351,23 @@ module World =
     let internal setAssetMetadataMap assetMetadataMap world =
         updateAmbientState (AmbientState.setAssetMetadataMap assetMetadataMap) world
 
+    let internal getOverlayerBy by world =
+        let overlayer = getAmbientStateBy AmbientState.getOverlayer world
+        by overlayer
+
     let internal getOverlayer world =
-        getAmbientStateBy AmbientState.getOverlayer world
+        getOverlayerBy id world
 
     let internal setOverlayer overlayer world =
         updateAmbientState (AmbientState.setOverlayer overlayer) world
+
+    /// Get intrinsic overlays.
+    let getIntrinsicOverlays world =
+        getOverlayerBy Overlayer.getIntrinsicOverlays world
+
+    /// Get extrinsic overlays.
+    let getExtrinsicOverlays world =
+        getOverlayerBy Overlayer.getExtrinsicOverlays world
 
     let internal getOverlayRouter world =
         getAmbientStateBy AmbientState.getOverlayRouter world
