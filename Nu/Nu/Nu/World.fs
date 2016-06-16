@@ -438,9 +438,10 @@ module WorldModule =
                     AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
                     let assetMetadataMap = Metadata.generateAssetMetadataMap assetGraph
                     let world = World.setAssetMetadataMap assetMetadataMap world
-                    let world = World.reloadSymbols world
                     let world = World.reloadRenderAssets world
                     let world = World.reloadAudioAssets world
+                    let world = World.reloadSymbols world
+                    let world = World.publish () Events.AssetsReload (EventTrace.record "World" "publishEntityChange" EventTrace.empty) Simulants.Game world
                     Right (assetGraph, world)
         
                 // propagate errors

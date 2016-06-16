@@ -42,6 +42,7 @@ module Events =
     let Update = ntoa<unit> !!"Update"
     let Select = ntoa<unit> !!"Select"
     let Deselect = ntoa<unit> !!"Deselect"
+    let AssetsReload = ntoa<unit> !!"AssetsReload"
     let Down = ntoa<unit> !!"Down"
     let Up = ntoa<unit> !!"Up"
     let Click = ntoa<unit> !!"Click"
