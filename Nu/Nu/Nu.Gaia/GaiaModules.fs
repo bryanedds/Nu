@@ -33,6 +33,9 @@ module Gaia =
     let private WorldChangers = WorldChangers ()
     let private RefWorld = ref Unchecked.defaultof<World>
 
+    let addWorldChanger worldChanger =
+        ignore ^ WorldChangers.Add worldChanger
+
     let pushPastWorld pastWorld world =
         World.updateUserState
             (fun editorState -> { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = [] })
@@ -434,7 +437,7 @@ module Gaia =
         applyPropertyEditor form
 
     let private handleFormTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             if isNotNull form.treeView.SelectedNode then
                 let entity = Entity.proxy ^ ftoa ^ Name.make form.treeView.SelectedNode.Name
                 match Address.getNames entity.EntityAddress with
@@ -444,10 +447,10 @@ module Gaia =
                     form.propertyGrid.SelectedObject <- entityTds
                     world
                 | _ -> world // don't have an entity address
-            else world)
+            else world
 
     let private handleFormCreate atMouse (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             try let world = pushPastWorld world world
                 let selectedGroup = (World.getUserState world).SelectedGroup
                 let (entity, world) = World.createEntity form.createEntityComboBox.Text None None selectedGroup world
@@ -472,23 +475,23 @@ module Gaia =
             with exn ->
                 let world = World.choose world
                 ignore ^ MessageBox.Show (scstring exn, "Could not create Gaia form", MessageBoxButtons.OK, MessageBoxIcon.Error)
-                world)
+                world
 
     let private handleFormDelete (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             let world = pushPastWorld world world
             match form.propertyGrid.SelectedObject with
             | :? EntityTypeDescriptorSource as entityTds ->
                 let world = World.destroyEntity entityTds.DescribedEntity world
                 deselectEntity form world
                 world
-            | _ -> world)
+            | _ -> world
 
     let private handleFormNew (form : GaiaForm) (_ : EventArgs) =
         use groupNameEntryForm = new NameEntryForm ()
         groupNameEntryForm.StartPosition <- FormStartPosition.CenterParent
-        groupNameEntryForm.okButton.Click.Add (fun _ ->
-            ignore ^ WorldChangers.Add (fun world ->
+        groupNameEntryForm.okButton.Click.Add ^ fun _ ->
+            addWorldChanger ^ fun world ->
                 let world = pushPastWorld world world
                 let groupName = groupNameEntryForm.nameTextBox.Text
                 try if groupName.Length = 0 then failwith "Group name cannot be empty in Gaia due to WinForms limitations."
@@ -499,23 +502,23 @@ module Gaia =
                 with exn ->
                     let world = World.choose world
                     ignore ^ MessageBox.Show (scstring exn, "Group creation error", MessageBoxButtons.OK, MessageBoxIcon.Error)
-                    world)
-            groupNameEntryForm.Close ())
+                    world
+            groupNameEntryForm.Close ()
         groupNameEntryForm.cancelButton.Click.Add (fun _ -> groupNameEntryForm.Close ())
         groupNameEntryForm.ShowDialog form |> ignore
 
     let private handleFormSave (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             let groupNameStr = Name.getNameStr (World.getUserState world).SelectedGroup.GroupName
             form.saveFileDialog.Title <- "Save '" + groupNameStr + "' As"
             form.saveFileDialog.FileName <- String.Empty
             let saveFileResult = form.saveFileDialog.ShowDialog form
             match saveFileResult with
             | DialogResult.OK -> trySaveSelectedGroup form.saveFileDialog.FileName world; world
-            | _ -> world)
+            | _ -> world
 
     let private handleFormOpen (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             form.openFileDialog.FileName <- String.Empty
             let openFileResult = form.openFileDialog.ShowDialog form
             match openFileResult with
@@ -524,10 +527,10 @@ module Gaia =
                 let world = tryLoadSelectedGroup form form.openFileDialog.FileName world
                 deselectEntity form world
                 world
-            | _ -> world)
+            | _ -> world
 
     let private handleFormClose (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             match form.groupTabs.TabPages.Count with
             | 1 ->
                 ignore ^ MessageBox.Show ("Cannot destroy only remaining group.", "Group destruction error", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -538,10 +541,10 @@ module Gaia =
                 let world = World.destroyGroupImmediate group world
                 deselectEntity form world
                 form.groupTabs.TabPages.RemoveByKey ^ Name.getNameStr group.GroupName
-                world)
+                world
 
     let private handleFormUndo (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             match (World.getUserState world).PastWorlds with
             | [] -> world
             | pastWorld :: pastWorlds ->
@@ -554,10 +557,10 @@ module Gaia =
                         world
                 let world = World.setTickRate 0L world
                 refreshFormOnUndoRedo form world
-                world)
+                world
 
     let private handleFormRedo (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             match (World.getUserState world).FutureWorlds with
             | [] -> world
             | futureWorld :: futureWorlds ->
@@ -570,28 +573,28 @@ module Gaia =
                         world
                 let world = World.setTickRate 0L world
                 refreshFormOnUndoRedo form world
-                world)
+                world
 
     let private handleFormTickingChanged (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             let tickRate = if form.tickingButton.Checked then 1L else 0L
             let (pastWorld, world) = (world, World.setTickRate tickRate world)
-            if tickRate = 1L then pushPastWorld pastWorld world else world)
+            if tickRate = 1L then pushPastWorld pastWorld world else world
 
     let private handleFormResetTickTime (_ : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             let (pastWorld, world) = (world, World.resetTickTime world)
-            pushPastWorld pastWorld world)
+            pushPastWorld pastWorld world
 
     let private handleFormCopy (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             match form.propertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds -> World.copyToClipboard entityTds.DescribedEntity world; world
-            | _ -> Log.trace ^ "Invalid copy operation (likely a code issue in Gaia)."; world)
+            | _ -> Log.trace ^ "Invalid copy operation (likely a code issue in Gaia)."; world
 
     let private handleFormCut (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             match form.propertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
@@ -599,10 +602,10 @@ module Gaia =
                 let world = World.cutToClipboard entityTds.DescribedEntity world
                 deselectEntity form world
                 world
-            | _ -> Log.trace ^ "Invalid cut operation (likely a code issue in Gaia)."; world)
+            | _ -> Log.trace ^ "Invalid cut operation (likely a code issue in Gaia)."; world
 
     let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             let world = pushPastWorld world world
             let selectedGroup = (World.getUserState world).SelectedGroup
             let (positionSnap, rotationSnap) = getSnaps form
@@ -610,10 +613,10 @@ module Gaia =
             let (optEntity, world) = World.pasteFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap selectedGroup world
             match optEntity with
             | Some entity -> selectEntity form entity world; world
-            | None -> world)
+            | None -> world
 
     let private handleFormQuickSize (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             match form.propertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
@@ -624,14 +627,14 @@ module Gaia =
                 entityTds.RefWorld := world // must be set for property grid
                 form.propertyGrid.Refresh ()
                 world
-            | _ -> Log.trace ^ "Invalid quick size operation (likely a code issue in Gaia)."; world)
+            | _ -> Log.trace ^ "Invalid quick size operation (likely a code issue in Gaia)."; world
 
     let private handleFormResetCamera (_ : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
-            World.updateCamera (fun camera -> { camera with EyeCenter = Vector2.Zero }) world)
+        addWorldChanger ^ fun world ->
+            World.updateCamera (fun camera -> { camera with EyeCenter = Vector2.Zero }) world
 
     let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             match tryReloadAssets form world with
             | Right (assetGraph, world) ->
                 let assetGraphKeywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
@@ -639,10 +642,10 @@ module Gaia =
                 world
             | Left error ->
                 ignore ^ MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
-                world)
+                world
 
     let private handleFormGroupTabSelected (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             let world = unsubscribeFromEntityEvents world
             let world =
                 World.updateUserState (fun editorState ->
@@ -654,14 +657,14 @@ module Gaia =
             deselectEntity form world
             refreshPropertyGrid form world
             refreshTreeView form world
-            world)
+            world
 
     let private handleTraceEventsCheckBoxChanged (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
-            World.setEventTracing form.traceEventsCheckBox.Checked world)
+        addWorldChanger ^ fun world ->
+            World.setEventTracing form.traceEventsCheckBox.Checked world
 
     let private handleApplyEventFilterClick (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             try let eventFilter = scvalue<EventFilter> form.eventFilterTextBox.Text
                 let eventFilterKeywords0 = match typeof<EventFilter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
                 let world = World.setEventFilter eventFilter world
@@ -670,49 +673,49 @@ module Gaia =
             with exn ->
                 let world = World.choose world
                 ignore ^ MessageBox.Show ("Invalid event filter due to: " + scstring exn, "Invalid event filter", MessageBoxButtons.OK, MessageBoxIcon.Error)
-                world)
+                world
 
     let private handleResetEventFilterClick (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             let eventFilter = World.getEventFilter world
             let eventFilterStr = scstring eventFilter
             let eventFilterKeywords0 = match typeof<EventFilter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             let eventFilterPretty = Symbol.prettyPrint eventFilterKeywords0 eventFilterStr
             form.eventFilterTextBox.Text <- eventFilterPretty
             form.eventFilterTextBox.EmptyUndoBuffer ()
-            world)
+            world
 
     let private handleSaveAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             if trySaveAssetGraph form world then
                 match tryReloadAssets form world with
                 | Right (_, world) -> world
                 | Left error ->
                     ignore ^ MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                     world
-            else World.choose world)
+            else World.choose world
 
     let private handleLoadAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             match tryLoadAssetGraph form world with
             | Some world -> world
-            | None -> World.choose world)
+            | None -> World.choose world
 
     let private handleSaveOverlayerClick (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             if trySaveOverlayer form world then
                 match tryReloadOverlays form world with
                 | Right (_, world) -> world
                 | Left error ->
                     ignore ^ MessageBox.Show ("Overlayer reload error due to: " + error + "'.", "Overlayer reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                     world
-            else World.choose world)
+            else World.choose world
 
     let private handleLoadOverlayerClick (form : GaiaForm) (_ : EventArgs) =
-        ignore ^ WorldChangers.Add (fun world ->
+        addWorldChanger ^ fun world ->
             match tryLoadOverlayer form world with
             | Some world -> world
-            | None -> World.choose world)
+            | None -> World.choose world
 
     let private handleRolloutTabSelectedIndexChanged (form : GaiaForm) (args : EventArgs) =
         if form.rolloutTabControl.SelectedTab = form.eventTracingTabPage then
