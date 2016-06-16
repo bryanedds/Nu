@@ -63,10 +63,7 @@ module Symbol =
         NumberLiteralOptions.AllowExponent |||
         NumberLiteralOptions.AllowFraction |||
         NumberLiteralOptions.AllowHexadecimal
-
-    let readNumberStr = numberLiteral NumberFormat "number"
     
-    let isNumber str = match run readNumberStr str with Success _ -> true | Failure _ -> false
     let isExplicit (str : string) = str.StartsWith OpenStringStr && str.EndsWith CloseStringStr
     let isWhitespaceChar chr = isAnyOf WhitespaceChars chr
     let isStructureChar chr = isAnyOf StructureChars chr
@@ -81,6 +78,9 @@ module Symbol =
     let closeString = skipChar CloseStringChar
     let openQuote = skipChar OpenQuoteChar
     let closeQuote = skipChar CloseQuoteChar
+    
+    let isNumberParser = numberLiteral NumberFormat "number"
+    let isNumber str = match run isNumberParser str with Success (_, _, position) -> position.Index = int64 str.Length | Failure _ -> false
     
     /// Should the string be quoted explicitly when written?
     let shouldBeExplicit (str : string) =
@@ -129,7 +129,7 @@ module Symbol =
     let readNumber =
         parse {
             let! start = getPosition
-            let! number = readNumberStr
+            let! number = numberLiteral NumberFormat "number"
             do! followedByWhitespaceOrStructureChar
             let! stop = getPosition
             do! skipWhitespaces

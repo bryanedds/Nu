@@ -168,7 +168,7 @@ module EffectFacetModule =
                         world
                         artifacts
                 let effectHistoryMax = entity.GetEffectHistoryMax world
-                let effectHistory = effectHistory |> Deque.cons effectSlice 
+                let effectHistory = Deque.cons effectSlice effectHistory
                 let effectHistory = if Deque.length effectHistory > effectHistoryMax then fst ^ Deque.unconj effectHistory else effectHistory
                 entity.SetEffectHistoryNp effectHistory world
             else world
@@ -180,8 +180,7 @@ module EffectFacetModule =
                 let world =
                     match optEffects with
                     | Some effectAssetTags ->
-                        let (optEffects, world) = assetTagsToOptEffects effectAssetTags world
-                        let effects = List.definitize optEffects
+                        let (effects, world) = assetTagsToOptEffects effectAssetTags world |> mapFst List.definitize
                         let effectCombined = EffectSystem.combineEffects effects
                         entity.SetEffect effectCombined world
                     | None -> entity.SetEffect Effect.empty world
