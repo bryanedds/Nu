@@ -31,8 +31,8 @@ type RexprConverter () =
         | :? string as str -> scvalue<Rexpr> str :> obj
         | :? Symbol as symbol ->
             match symbol with
-            | Atom (pattern, _) | Number (pattern, _) | String (pattern, _) -> Rexpr pattern :> obj
-            | Quote (_, _) | Symbols (_, _) -> failconv "Expected Symbol, Number, or String for conversion to Rexpr." ^ Some symbol
+            | Atom (pattern, _) | String (pattern, _) -> Rexpr pattern :> obj
+            | Number (_, _) | Quote (_, _) | Symbols (_, _) -> failconv "Expected Symbol or String for conversion to Rexpr." ^ Some symbol
         | :? Rexpr -> source
         | _ -> failconv "Invalid RexprConverter conversion from source." None
 

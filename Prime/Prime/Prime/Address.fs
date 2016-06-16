@@ -44,12 +44,12 @@ type AddressConverter (targetType : Type) =
             ftoaFunctionGeneric.Invoke (null, [|fullName|])
         | :? Symbol as addressSymbol ->
             match addressSymbol with
-            | Atom (addressStr, _) | Number (addressStr, _) | String (addressStr, _) ->
+            | Atom (addressStr, _) | String (addressStr, _) ->
                 let fullName = Name.make addressStr
                 let ftoaFunction = targetType.GetMethod ("makeFromFullName", BindingFlags.Static ||| BindingFlags.Public)
                 ftoaFunction.Invoke (null, [|fullName|])
-            | Quote (_, _) | Symbols (_, _) ->
-                failconv "Expected Symbol, Number, or String for conversion to Address." ^ Some addressSymbol
+            | Number (_, _) | Quote (_, _) | Symbols (_, _) ->
+                failconv "Expected Symbol or String for conversion to Address." ^ Some addressSymbol
         | _ ->
             if targetType.IsInstanceOfType source then source
             else failconv "Invalid AddressConverter conversion from source." None

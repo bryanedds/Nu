@@ -43,12 +43,12 @@ type RelationConverter (targetType : Type) =
             ftoaFunction.Invoke (null, [|fullName|])
         | :? Symbol as relationSymbol ->
             match relationSymbol with
-            | Atom (relationStr, _) | Number (relationStr, _) | String (relationStr, _) -> 
+            | Atom (relationStr, _) | String (relationStr, _) -> 
                 let fullName = !!relationStr
                 let ftoaFunction = targetType.GetMethod ("makeFromFullName", BindingFlags.Static ||| BindingFlags.Public)
                 ftoaFunction.Invoke (null, [|fullName|])
-            | Quote (_, _) | Symbols (_, _) ->
-                failconv "Expected Symbol, Number, or String for conversion to Relation." ^ Some relationSymbol
+            | Number (_, _) | Quote (_, _) | Symbols (_, _) ->
+                failconv "Expected Symbol or String for conversion to Relation." ^ Some relationSymbol
         | _ ->
             if targetType.IsInstanceOfType source then source
             else failconv "Invalid RelationConverter conversion from source." None

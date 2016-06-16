@@ -352,7 +352,7 @@ module Gaia =
                     let propertyDescriptor = selectedGridItem.PropertyDescriptor :?> EntityPropertyDescriptor
                     let typeConverter = SymbolicConverter (selectedGridItem.PropertyDescriptor.PropertyType)
                     try form.propertyValueTextBox.EndUndoAction ()
-                        let strEscaped = form.propertyValueTextBox.Text
+                        let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
                         let strUnescaped = String.unescape strEscaped
                         let propertyValue = typeConverter.ConvertFromString strUnescaped
                         propertyDescriptor.SetValue (entityTds, propertyValue)
@@ -382,7 +382,8 @@ module Gaia =
         | Right (assetGraph, world) ->
             let keywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             let selectionStart = form.propertyValueTextBox.SelectionStart
-            form.assetGraphTextBox.Text <- Symbol.prettyPrint keywords0 ^ scstring ^ AssetGraph.getPackageDescriptors assetGraph
+            let packageDescriptorsStr = Symbol.prettyPrint keywords0 ^ scstring ^ AssetGraph.getPackageDescriptors assetGraph
+            form.assetGraphTextBox.Text <- packageDescriptorsStr + "\r\n" // HACK: adding this newline is a workaround for https://github.com/jacobslusser/ScintillaNET/issues/249
             form.assetGraphTextBox.SelectionStart <- selectionStart
             form.assetGraphTextBox.ScrollCaret ()
             Some world
@@ -394,7 +395,7 @@ module Gaia =
         let editorState = World.getUserState world
         let assetSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
         let assetGraphFilePath = Path.Combine (assetSourceDir, Constants.Assets.AssetGraphFilePath)
-        try let packageDescriptors = scvalue<Map<string, PackageDescriptor>> form.assetGraphTextBox.Text
+        try let packageDescriptors = scvalue<Map<string, PackageDescriptor>> ^ form.assetGraphTextBox.Text.TrimEnd ()
             let assetGraphKeywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             File.WriteAllText (assetGraphFilePath, Symbol.prettyPrint assetGraphKeywords0 ^ scstring packageDescriptors)
             true
@@ -412,7 +413,8 @@ module Gaia =
         | Right (overlayer, world) ->
             let keywords0 = match typeof<Overlayer>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             let selectionStart = form.propertyValueTextBox.SelectionStart
-            form.overlayerTextBox.Text <- Symbol.prettyPrint keywords0 ^ scstring ^ Overlayer.getExtrinsicOverlays overlayer
+            let extrinsicOverlaysStr = Symbol.prettyPrint keywords0 ^ scstring ^ Overlayer.getExtrinsicOverlays overlayer 
+            form.overlayerTextBox.Text <- extrinsicOverlaysStr + "\r\n" // HACK: adding this newline is a workaround for https://github.com/jacobslusser/ScintillaNET/issues/249
             form.overlayerTextBox.SelectionStart <- selectionStart
             form.overlayerTextBox.ScrollCaret ()
             Some world
@@ -424,7 +426,7 @@ module Gaia =
         let editorState = World.getUserState world
         let overlayerSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
         let overlayerFilePath = Path.Combine (overlayerSourceDir, Constants.Assets.OverlayerFilePath)
-        try let overlays = scvalue<Overlay list> form.overlayerTextBox.Text
+        try let overlays = scvalue<Overlay list> ^ form.overlayerTextBox.Text.TrimEnd ()
             let overlayerKeywords0 = match typeof<Overlayer>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             File.WriteAllText (overlayerFilePath, Symbol.prettyPrint overlayerKeywords0 ^ scstring overlays)
             true
@@ -647,7 +649,8 @@ module Gaia =
             match tryReloadAssets form world with
             | Right (assetGraph, world) ->
                 let assetGraphKeywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
-                form.assetGraphTextBox.Text <- Symbol.prettyPrint assetGraphKeywords0 ^ scstring assetGraph
+                let assetGraphStr = Symbol.prettyPrint assetGraphKeywords0 ^ scstring assetGraph
+                form.assetGraphTextBox.Text <- assetGraphStr // HACK: adding this newline is a workaround for https://github.com/jacobslusser/ScintillaNET/issues/249
                 world
             | Left error ->
                 ignore ^ MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
