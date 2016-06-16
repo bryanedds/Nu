@@ -386,7 +386,14 @@ module World =
         let (symbol, symbolStore) = SymbolStore.tryFindSymbol assetTag symbolStore
         let world = setSymbolStore symbolStore world
         (symbol, world)
-    
+
+    /// Try to find symbols with the given asset tags.
+    let tryFindSymbols assetTags world =
+        let symbolStore = getSymbolStore world
+        let (symbol, symbolStore) = SymbolStore.tryFindSymbols assetTags symbolStore
+        let world = setSymbolStore symbolStore world
+        (symbol, world)
+
     /// Reload all the symbols in the symbol store.
     let reloadSymbols world =
         updateSymbolStore SymbolStore.reloadSymbols world

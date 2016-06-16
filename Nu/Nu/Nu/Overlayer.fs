@@ -174,7 +174,7 @@ module OverlayerModule =
 
         /// Make an overlayer.
         let make intrinsicOverlays extrinsicOverlays =
-            let intrinsicOverlaysMap = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) extrinsicOverlays
+            let intrinsicOverlaysMap = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) intrinsicOverlays
             let extrinsicOverlaysMap = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) extrinsicOverlays
             { MappedOverlays = Map.concat intrinsicOverlaysMap extrinsicOverlaysMap
               IntrinsicOverlays = intrinsicOverlays
