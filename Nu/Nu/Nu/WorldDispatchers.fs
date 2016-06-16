@@ -81,6 +81,10 @@ module EffectFacetModule =
 
     type Entity with
     
+        member this.GetOptEffects world : AssetTag list option = (this.GetXtension world)?OptEffects
+        member this.SetOptEffects (value : AssetTag list option) world = this.UpdateXtension (fun xtension -> xtension?OptEffects <- value) world
+        member this.GetOptEffectsLc world : AssetTag list option = (this.GetXtension world)?OptEffectsLc
+        member private this.SetOptEffectsLc (value : AssetTag list option) world = this.UpdateXtension (fun xtension -> xtension?OptEffectsLc <- value) world
         member this.GetEffectDefinitions world : Definitions = (this.GetXtension world)?EffectDefinitions
         member this.SetEffectDefinitions (value : Definitions) world = this.UpdateXtension (fun xtension -> xtension?EffectDefinitions <- value) world
         member this.GetEffect world : Effect = (this.GetXtension world)?Effect
@@ -102,7 +106,9 @@ module EffectFacetModule =
         inherit Facet ()
 
         static member PropertyDefinitions =
-            [Define? EffectDefinitions (Map.empty : Definitions)
+            [Define? OptEffects (None : AssetTag list option)
+             Define? OptEffectsLc (None : AssetTag list option)
+             Define? EffectDefinitions (Map.empty : Definitions)
              Define? Effect Effect.empty
              Define? EffectOffset Vector2.Zero
              Define? EffectTimeOffset 0L // TODO: also implement similar time offset for AnimatedSpriteFacet
@@ -152,6 +158,14 @@ module EffectFacetModule =
                 let effectHistory = effectHistory |> Deque.cons effectSlice 
                 let effectHistory = if Deque.length effectHistory > effectHistoryMax then fst ^ Deque.unconj effectHistory else effectHistory
                 entity.SetEffectHistoryNp effectHistory world
+            else world
+
+        override facet.Update (entity, world) =
+            let optEffectsLc = entity.GetOptEffectsLc world
+            let optEffects = entity.GetOptEffects world
+            if optEffectsLc <> optEffects then
+                // TODO: handle change
+                entity.SetOptEffectsLc optEffects world
             else world
 
 [<AutoOpen>]

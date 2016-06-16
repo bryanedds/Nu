@@ -611,8 +611,7 @@ module WorldModule =
                 List.fold (fun world (entity : Entity) -> World.actualizeEntity entity world) world entities
             | None -> world
 
-        /// Update the game engine once per frame, updating its subsystems and publishing the
-        /// Update event.
+        /// Update the game engine once per frame, updating its subsystems and publishing the Update event.
         static member processUpdate handleUpdate world =
             let world = handleUpdate world
             match World.getLiveness world with
