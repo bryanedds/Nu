@@ -52,8 +52,8 @@ type [<StructuralEquality; NoComparison>] Package =
     { Name : string
       AssetNames : string list }
 
-/// Maps asset (packages + names) to asset values.
-type 'a AssetMap = Map<string, Map<string, 'a>>
+/// A map of asset packages.
+type 'a PackageMap = Map<string, Map<string, 'a>>
 
 /// Describes assets and how to process and use them.
 type AssetDescriptor =
