@@ -294,9 +294,7 @@ module Symbol =
         let lines = strCascaded.Split ([|"\r\n"|], StringSplitOptions.None)
         let linesTrimmed = Array.map (fun (str : string) -> str.TrimEnd ()) lines
         let strPretty = String.Join ("\r\n", linesTrimmed)
-        // HACK: adding this newline is a workaround for https://github.com/jacobslusser/ScintillaNET/issues/249
-        let strPrettyScintilla = strPretty + "\r\n"
-        strPrettyScintilla
+        strPretty
 
 type ConversionException (message : string, optSymbol : Symbol option) =
     inherit Exception (message)

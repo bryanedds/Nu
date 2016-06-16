@@ -26,8 +26,8 @@ module String =
 
     /// Textualize a string for usage as text.
     let textualize (str : string) =
-        if str.StartsWith "\"" && str.EndsWith "\""
-        then str.Substring (1, str.Length - 2)
+        if str.IndexOf '_' <> -1
+        then str.Replace ('_', '\"')
         else str
 
     /// Get the string with the given ending.

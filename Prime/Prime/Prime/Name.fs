@@ -40,11 +40,11 @@ type NameConverter (targetType : Type) =
             makeFunction.Invoke (null, [|nameStr|])
         | :? Symbol as nameSymbol ->
             match nameSymbol with
-            | Atom (nameStr, _) | Number (nameStr, _) | String (nameStr, _) ->
+            | Atom (nameStr, _) | String (nameStr, _) ->
                 let makeFunction = targetType.GetMethod ("make", BindingFlags.Static ||| BindingFlags.Public)
                 makeFunction.Invoke (null, [|nameStr|])
-            | Quote (_, _) | Symbols (_, _) ->
-                failconv "Expected Symbol, Number, or String for conversion to Name." ^ Some nameSymbol
+            | Number (_, _) | Quote (_, _) | Symbols (_, _) ->
+                failconv "Expected Symbol or String for conversion to Name." ^ Some nameSymbol
         | _ ->
             if targetType.IsInstanceOfType source then source
             else failconv "Invalid NameConverter conversion from source." None
@@ -60,9 +60,9 @@ module NameModule =
     
         /// Make a name from a non-empty string without whitespace.
         static member make (nameStr : string) =
-            match nameStr with
-            | _ when nameStr.IndexOfAny [|'\n'; '\r'; '\t'; ' '|] <> -1 -> failwith "Invalid name; must have no whitespace characters."
-            | _ -> { NameStr = nameStr; HashCode = nameStr.GetHashCode () }
+            if nameStr.IndexOfAny [|'\n'; '\r'; '\t'; ' '|] <> -1 then failwith "Invalid name; must have no whitespace characters."
+            elif Symbol.isNumber nameStr then failwith "Invalid name; name cannot be a number."
+            else { NameStr = nameStr; HashCode = nameStr.GetHashCode () }
     
         /// Equate Names.
         static member equals name name2 =
