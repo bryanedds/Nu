@@ -36,7 +36,7 @@ type Symbol =
 module Symbol =
 
     let [<Literal>] NewlineChars = "\n\r"
-    let [<Literal>] WhitespaceChars = " \t" + NewlineChars
+    let [<Literal>] WhitespaceChars = "\t " + NewlineChars
     let [<Literal>] SeparatorChar = ' '
     let [<Literal>] SeparatorStr = " "
     let [<Literal>] OpenSymbolsChar = '['
