@@ -447,7 +447,7 @@ module EffectSystemModule =
         let eval effect slice effectSystem =
             let localTime =
                 match effect.OptLifetime with
-                | Some lifetime -> if lifetime <> 0L then effectSystem.EffectTime % lifetime + lifetime else 0L
+                | Some lifetime -> if lifetime <> 0L then effectSystem.EffectTime % lifetime else 0L
                 | None -> effectSystem.EffectTime
             let effectSystem =
                 { effectSystem with
