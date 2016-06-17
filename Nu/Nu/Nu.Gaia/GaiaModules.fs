@@ -327,7 +327,7 @@ module Gaia =
                     let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
                     let strEscaped = String.escape strUnescaped
                     let strPretty = Symbol.prettyPrint keywords0 strEscaped
-                    form.propertyValueTextBox.Text <- strPretty
+                    form.propertyValueTextBox.Text <- strPretty + "\r\n"
                     form.propertyValueTextBox.EmptyUndoBuffer ()
                     form.propertyValueTextBox.Keywords0 <- keywords0
                     form.propertyValueTextBox.Keywords1 <- keywords1
@@ -382,8 +382,7 @@ module Gaia =
         | Right (assetGraph, world) ->
             let keywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             let selectionStart = form.propertyValueTextBox.SelectionStart
-            let packageDescriptorsStr = Symbol.prettyPrint keywords0 ^ scstring ^ AssetGraph.getPackageDescriptors assetGraph
-            form.assetGraphTextBox.Text <- packageDescriptorsStr + "\r\n" // HACK: adding this newline is a workaround for https://github.com/jacobslusser/ScintillaNET/issues/249
+            form.assetGraphTextBox.Text <- (Symbol.prettyPrint keywords0 ^ scstring ^ AssetGraph.getPackageDescriptors assetGraph) + "\r\n"
             form.assetGraphTextBox.SelectionStart <- selectionStart
             form.assetGraphTextBox.ScrollCaret ()
             Some world
@@ -413,8 +412,7 @@ module Gaia =
         | Right (overlayer, world) ->
             let keywords0 = match typeof<Overlayer>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             let selectionStart = form.propertyValueTextBox.SelectionStart
-            let extrinsicOverlaysStr = Symbol.prettyPrint keywords0 ^ scstring ^ Overlayer.getExtrinsicOverlays overlayer 
-            form.overlayerTextBox.Text <- extrinsicOverlaysStr + "\r\n" // HACK: adding this newline is a workaround for https://github.com/jacobslusser/ScintillaNET/issues/249
+            form.overlayerTextBox.Text <- (Symbol.prettyPrint keywords0 ^ scstring ^ Overlayer.getExtrinsicOverlays overlayer) + "\r\n"
             form.overlayerTextBox.SelectionStart <- selectionStart
             form.overlayerTextBox.ScrollCaret ()
             Some world
@@ -649,8 +647,7 @@ module Gaia =
             match tryReloadAssets form world with
             | Right (assetGraph, world) ->
                 let assetGraphKeywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
-                let assetGraphStr = Symbol.prettyPrint assetGraphKeywords0 ^ scstring assetGraph
-                form.assetGraphTextBox.Text <- assetGraphStr // HACK: adding this newline is a workaround for https://github.com/jacobslusser/ScintillaNET/issues/249
+                form.assetGraphTextBox.Text <- Symbol.prettyPrint assetGraphKeywords0 ^ scstring assetGraph + "\r\n"
                 world
             | Left error ->
                 ignore ^ MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -680,7 +677,7 @@ module Gaia =
             try let eventFilter = scvalue<EventFilter> form.eventFilterTextBox.Text
                 let eventFilterKeywords0 = match typeof<EventFilter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
                 let world = World.setEventFilter eventFilter world
-                form.eventFilterTextBox.Text <- Symbol.prettyPrint eventFilterKeywords0 ^ scstring eventFilter
+                form.eventFilterTextBox.Text <- (Symbol.prettyPrint eventFilterKeywords0 ^ scstring eventFilter) + "\r\n"
                 world
             with exn ->
                 let world = World.choose world
@@ -693,7 +690,7 @@ module Gaia =
             let eventFilterStr = scstring eventFilter
             let eventFilterKeywords0 = match typeof<EventFilter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             let eventFilterPretty = Symbol.prettyPrint eventFilterKeywords0 eventFilterStr
-            form.eventFilterTextBox.Text <- eventFilterPretty
+            form.eventFilterTextBox.Text <- eventFilterPretty + "\r\n"
             form.eventFilterTextBox.EmptyUndoBuffer ()
             world
 

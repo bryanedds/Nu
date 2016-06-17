@@ -180,13 +180,14 @@ module Symbol =
     let rec writeSymbol symbol =
         match symbol with
         | Atom (str, _) ->
+            let str = String.clean str
             if Seq.isEmpty str then OpenStringStr + CloseStringStr
             elif not (isExplicit str) && shouldBeExplicit str then OpenStringStr + str + CloseStringStr
             elif isExplicit str && not (shouldBeExplicit str) then str.Substring (1, str.Length - 2)
             else unexpand str
-        | Number (str, _) -> str
-        | String (str, _) -> OpenStringStr + str + CloseStringStr
-        | Quote (str, _) -> OpenQuoteStr + str + CloseQuoteStr
+        | Number (str, _) -> String.clean str
+        | String (str, _) -> OpenStringStr + String.clean str + CloseStringStr
+        | Quote (str, _) -> OpenQuoteStr + String.clean str + CloseQuoteStr
         | Symbols (symbols, _) -> OpenSymbolsStr + String.Join (" ", List.map writeSymbol symbols) + CloseSymbolsStr
 
     /// Convert a string to a symbol, with the following parses:
