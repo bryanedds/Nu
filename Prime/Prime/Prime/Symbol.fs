@@ -70,7 +70,7 @@ module Symbol =
     
     let skipWhitespace = skipAnyOf WhitespaceChars
     let skipWhitespaces = skipMany skipWhitespace
-    let followedByWhitespaceOrStructureChar = nextCharSatisfies (fun chr -> isWhitespaceChar chr || isStructureChar chr)
+    let followedByWhitespaceOrStructureCharOrAtEof = nextCharSatisfies (fun chr -> isWhitespaceChar chr || isStructureChar chr) <|> eof
     
     let openSymbols = skipChar OpenSymbolsChar
     let closeSymbols = skipChar CloseSymbolsChar
@@ -79,7 +79,7 @@ module Symbol =
     let openQuote = skipChar OpenQuoteChar
     let closeQuote = skipChar CloseQuoteChar
     
-    let isNumberParser = numberLiteral NumberFormat "number"
+    let isNumberParser = numberLiteral NumberFormat "number" >>. eof
     let isNumber str = match run isNumberParser str with Success (_, _, position) -> position.Index = int64 str.Length | Failure _ -> false
     let shouldBeExplicit str = Seq.exists (fun chr -> Char.IsWhiteSpace chr || Seq.contains chr StructureCharsNoStr) str
 
@@ -126,7 +126,7 @@ module Symbol =
         parse {
             let! start = getPosition
             let! number = numberLiteral NumberFormat "number"
-            do! followedByWhitespaceOrStructureChar
+            do! followedByWhitespaceOrStructureCharOrAtEof
             let! stop = getPosition
             do! skipWhitespaces
             let origin = Some { Start = start; Stop = stop }
