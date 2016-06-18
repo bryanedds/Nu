@@ -518,10 +518,10 @@ module World =
             Vector4 (newPosition.X, newPosition.Y, newPosition.X + newSize.X, newPosition.Y + newSize.Y)
 
     let internal publishEntityChange entityState (entity : Entity) oldWorld world =
-        if entityState.PublishChanges then
+        if entityState.PublishChangesNp then
             publish
                 { Participant = entity; OldWorld = oldWorld }
-                (Events.EntityChange ->- entity)
+                entity.ChangeAddress
                 (EventTrace.record "World" "publishEntityChange" EventTrace.empty)
                 entity
                 world

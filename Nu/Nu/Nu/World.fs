@@ -50,7 +50,6 @@ module Nu =
             Debug.World.viewGroup <- fun group world -> Debug.Group.view (group :?> Group) (world :?> World)
             Debug.World.viewEntity <- fun entity world -> Debug.Entity.view (entity :?> Entity) (world :?> World)
 #endif
-            // TODO: define this somewhere else...
             World.rebuildEntityTree <- fun screen world ->
                 let tree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
                 let entities = screen |> flip World.proxyGroups world |> Seq.map (flip World.proxyEntities world) |> Seq.concat
@@ -367,6 +366,12 @@ module WorldModule =
                 World.monitor (World.handleSplashScreenIdle splashData.IdlingTime splashScreen) (Events.IncomingFinish ->- splashScreen) splashScreen world |>
                 World.monitor (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish ->- splashScreen) splashScreen
             (splashScreen, world)
+
+        static member private handleSubscribeAndUnsubscribe event world =
+            // here we need to update the publish flags for entities based on whether there are subscriptions to
+            // their respective events. These publish flags exist solely for efficiency reasons.
+            let world = World.updateEntityPublishingFlags event.Data world
+            (Cascade, world)
 
         static member private createIntrinsicOverlays facets entityDispatchers =
             let requiresFacetNames = fun sourceType -> sourceType = typeof<EntityDispatcher>
@@ -749,6 +754,10 @@ module WorldModule =
             // initialize OptEntityCache after the fact due to back reference
             let world = World.choose { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
 
+            // subscribe to subscribe and unsubscribe events
+            let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
+            let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Simulants.Game world
+
             // finally, register the game
             World.registerGame world
 
@@ -848,6 +857,10 @@ module WorldModule =
 
                     // initialize OptEntityCache after the fact due to back reference
                     let world = World.choose { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
+
+                    // subscribe to subscribe and unsubscribe events
+                    let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
+                    let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Simulants.Game world
 
                     // finally, register the game
                     let world = World.registerGame world

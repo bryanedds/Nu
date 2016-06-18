@@ -522,7 +522,6 @@ module GameplayDispatcherModule =
 
             // make player
             let (player, world) = World.createEntity typeof<PlayerDispatcher>.Name None (Some ^ Simulants.Player.EntityName) scene world
-            let world = player.SetPublishChanges true world
             let world = player.SetDepth Constants.Layout.CharacterDepth world
 
             // make enemies

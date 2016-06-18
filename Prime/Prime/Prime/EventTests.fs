@@ -23,6 +23,7 @@ module EventTests =
         interface TestWorld Eventable with
             member this.GetLiveness () = Running
             member this.GetEventSystem () = this.TestEventSystem
+            member this.GetEmptyParticipant () = { TestAddress = Address.empty } :> Participant
             member this.UpdateEventSystem updater = { this with TestEventSystem = updater this.TestEventSystem }
             member this.ContainsParticipant _ = true
             member this.PublishEvent
