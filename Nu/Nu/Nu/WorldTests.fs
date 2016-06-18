@@ -47,7 +47,6 @@ module WorldTests =
         let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Jim.EntityName) Simulants.DefaultGroup world |> snd
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Bob.EntityName) Simulants.DefaultGroup world |> snd
-        let world = world |> Jim.SetPublishChanges true |> Bob.SetPublishChanges true
         let world = world |> (Bob, Bob.GetVisible) *-> (Jim, Jim.SetVisible)
         let world = Bob.SetVisible false world
         Assert.False ^ Bob.GetVisible world
@@ -59,7 +58,6 @@ module WorldTests =
         let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Jim.EntityName) Simulants.DefaultGroup world |> snd
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Bob.EntityName) Simulants.DefaultGroup world |> snd
-        let world = world |> Jim.SetPublishChanges true |> Bob.SetPublishChanges true
         let world =
             world |>
                 (Bob, Bob.GetVisible) *-> (Jim, Jim.SetVisible) |>

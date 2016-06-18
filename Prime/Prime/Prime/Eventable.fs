@@ -11,6 +11,7 @@ type Eventable<'w when 'w :> 'w Eventable> =
     interface
         abstract member GetLiveness : unit -> Liveness
         abstract member GetEventSystem : unit -> 'w EventSystem
+        abstract member GetEmptyParticipant : unit -> Participant
         abstract member UpdateEventSystem : ('w EventSystem -> 'w EventSystem) -> 'w
         abstract member ContainsParticipant : Participant -> bool
         abstract member PublishEvent<'a, 'p when 'p :> Participant> : Participant -> 'p -> 'a -> 'a Address -> EventTrace -> obj -> 'w -> Handling * 'w
@@ -206,7 +207,14 @@ module Eventable =
                     | [] -> Vmap.remove eventAddress subscriptions
                     | _ -> Vmap.add eventAddress subscriptionList subscriptions
                 let unsubscriptions = Vmap.remove subscriptionKey unsubscriptions
-                world |> setSubscriptions subscriptions |> setUnsubscriptions unsubscriptions
+                let world = setSubscriptions subscriptions world
+                let world = setUnsubscriptions unsubscriptions world
+                publish
+                    eventAddress
+                    (ntoa<obj Address> !!"Unsubscribe")
+                    (EventTrace.record "Eventable" "unsubscribe" EventTrace.empty)
+                    (world.GetEmptyParticipant ())
+                    world
             | None -> world // TODO: consider an assert fail here?
         | None -> world
 
@@ -222,7 +230,15 @@ module Eventable =
                 | Some subscriptionEntries -> Vmap.add objEventAddress (subscriptionEntry :: subscriptionEntries) subscriptions
                 | None -> Vmap.add objEventAddress [subscriptionEntry] subscriptions
             let unsubscriptions = Vmap.add subscriptionKey (objEventAddress, subscriber :> Participant) unsubscriptions
-            let world = world |> setSubscriptions subscriptions |> setUnsubscriptions unsubscriptions
+            let world = setSubscriptions subscriptions world
+            let world = setUnsubscriptions unsubscriptions world
+            let world =
+                publish
+                    objEventAddress
+                    (ntoa<obj Address> !!"Subscribe")
+                    (EventTrace.record "Eventable" "subscribePlus5" EventTrace.empty)
+                    (world.GetEmptyParticipant ())
+                    world
             (unsubscribe<'w> subscriptionKey, world)
         else failwith "Event name cannot be empty."
 

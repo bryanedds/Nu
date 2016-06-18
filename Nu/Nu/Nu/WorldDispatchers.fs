@@ -50,21 +50,20 @@ module MountFacetModule =
             let entity = evt.Subscriber : Entity
             if entity.GetOptMountRelation evt.Data.OldWorld <> entity.GetOptMountRelation world then
                 let world = (entity.GetMountUnsubscribeNp world) world
-                let (unsubscribe, world) = World.monitorPlus handleRelationChange (Events.EntityChange ->- entity) entity world
+                let (unsubscribe, world) = World.monitorPlus handleRelationChange entity.ChangeAddress entity world
                 let world = entity.SetMountUnsubscribeNp unsubscribe world
                 (Cascade, world)
             else (Cascade, world)
 
         static member PropertyDefinitions =
-            [Define? PublishChanges true
-             Define? OptMountRelation (None : Entity Relation option)
+            [Define? OptMountRelation (None : Entity Relation option)
              Define? PositionLocal Vector2.Zero
              Define? DepthLocal 0.0f
              Define? MountUpdateCountNp Int64.MinValue
              Define? MountUnsubscribeNp (id : World -> World)]
 
         override facet.Register (entity, world) =
-            let world = World.monitor handleEntityChange (Events.EntityChange ->- entity) entity world
+            let world = World.monitor handleEntityChange entity.ChangeAddress entity world
             let (unsubscribe, world) =
                 match entity.GetOptMountRelation world with
                 | Some target ->

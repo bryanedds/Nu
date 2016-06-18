@@ -40,10 +40,10 @@ module WorldEntityModule =
         member this.SetVisible value world = World.updateEntityState (fun entityState -> { entityState with Visible = value }) this world
         member this.GetOmnipresent world = (World.getEntityState this world).Omnipresent
         member this.SetOmnipresent value world = World.updateEntityStatePlus (fun entityState -> { entityState with Omnipresent = value }) this world
-        member this.GetPublishUpdates world = (World.getEntityState this world).PublishUpdates
-        member this.SetPublishUpdates value world = World.updateEntityState (fun entityState -> { entityState with PublishUpdates = value }) this world
-        member this.GetPublishChanges world = (World.getEntityState this world).PublishChanges
-        member this.SetPublishChanges value world = World.updateEntityState (fun entityState -> { entityState with PublishChanges = value }) this world
+        member this.GetPublishUpdatesNp world = (World.getEntityState this world).PublishUpdatesNp
+        member this.SetPublishUpdatesNp value world = World.updateEntityState (fun entityState -> { entityState with PublishUpdatesNp = value }) this world
+        member this.GetPublishChangesNp world = (World.getEntityState this world).PublishChangesNp
+        member this.SetPublishChangesNp value world = World.updateEntityState (fun entityState -> { entityState with PublishChangesNp = value }) this world
         member this.GetPersistent world = (World.getEntityState this world).Persistent
         member this.SetPersistent value world = World.updateEntityState (fun entityState -> { entityState with Persistent = value }) this world
         member this.GetOptOverlayName world = (World.getEntityState this world).OptOverlayName
@@ -121,11 +121,60 @@ module WorldEntityModule =
 
     type World with
 
+        static member internal updateEntityPublishingFlags eventAddress world =
+            let eventNames = Address.getNames eventAddress
+            match eventNames with
+            | head :: neck :: tail when Name.getNameStr head = "Entity" && Name.getNameStr neck = "Change" ->
+                let publishChanges =
+                    match Vmap.tryFind eventAddress (Eventable.getSubscriptions world) with
+                    | Some [] -> failwithumf () // NOTE: implementation of event system should clean up all empty subscription entries, AFAIK
+                    | Some (_ :: _) -> true
+                    | None -> false
+                let entity = Entity.proxy ^ ltoa<Entity> tail
+                let world = if World.containsEntity entity world then entity.SetPublishChangesNp publishChanges world else world
+                world
+            | head :: tail when Name.getNameStr head = "Update" ->
+                let publishUpdates =
+                    match Vmap.tryFind eventAddress (Eventable.getSubscriptions world) with
+                    | Some [] -> failwithumf () // NOTE: implementation of event system should clean up all empty subscription entries, AFAIK
+                    | Some (_ :: _) -> true
+                    | None -> false
+                let entity = Entity.proxy ^ ltoa<Entity> tail
+                let world = if World.containsEntity entity world then entity.SetPublishUpdatesNp publishUpdates world else world
+                world
+            | _ -> world
+
+        static member private updateEntityPublishChanges entity world =
+            let entityChangeEventAddress = entity.ChangeAddress |> atooa
+            let publishChanges =
+                let subscriptions = Vmap.tryFind entityChangeEventAddress (World.getSubscriptions world)
+                match subscriptions with
+                | Some [] -> failwithumf () // NOTE: implementation of event system should clean up all empty subscription entries, AFAIK
+                | Some (_ :: _) -> true
+                | None -> false
+            if World.containsEntity entity world
+            then entity.SetPublishChangesNp publishChanges world
+            else world
+
+        static member private updateEntityPublishUpdates entity world =
+            let entityUpdateEventAddress = entity.UpdateAddress |> atooa
+            let publishUpdates =
+                let subscriptions = Vmap.tryFind entityUpdateEventAddress (World.getSubscriptions world)
+                match subscriptions with
+                | Some [] -> failwithumf () // NOTE: implementation of event system should clean up all empty subscription entries, AFAIK
+                | Some (_ :: _) -> true
+                | None -> false
+            if World.containsEntity entity world
+            then entity.SetPublishUpdatesNp publishUpdates world
+            else world
+
         static member private registerEntity (entity : Entity) world =
             let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
             let facets = entity.GetFacetsNp world
             let world = dispatcher.Register (entity, world)
-            List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
+            let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
+            let world = World.updateEntityPublishChanges entity world
+            World.updateEntityPublishUpdates entity world
 
         static member private unregisterEntity (entity : Entity) world =
             let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
@@ -340,7 +389,7 @@ module WorldEntityModule =
             let facets = entity.GetFacetsNp world
             let world = dispatcher.Update (entity, world)
             let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
-            if entity.GetPublishUpdates world then
+            if entity.GetPublishUpdatesNp world then
                 let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
                 World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () entity.UpdateAddress eventTrace Simulants.Game world
             else world

@@ -39,6 +39,8 @@ type [<StructuralEquality; NoComparison>] AmbientStateChangeData =
 module Events =
 
     let Any = Prime.Events.Any
+    let Subscribe = ntoa<obj Address> !!"Subscribe"
+    let Unsubscribe = ntoa<obj Address> !!"Unsubscribe"
     let Update = ntoa<unit> !!"Update"
     let Select = ntoa<unit> !!"Select"
     let Deselect = ntoa<unit> !!"Deselect"

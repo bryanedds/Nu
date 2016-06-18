@@ -160,8 +160,8 @@ and EntityDispatcher () =
          Define? ViewType Relative
          Define? Visible true
          Define? Omnipresent false
-         Define? PublishUpdates true
-         Define? PublishChanges false
+         Define? PublishUpdatesNp false
+         Define? PublishChangesNp false
          Define? Persistent true]
 
     /// Register an entity when adding it to a group.
@@ -317,8 +317,8 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
       ViewType : ViewType
       Visible : bool
       Omnipresent : bool
-      PublishUpdates : bool
-      PublishChanges : bool
+      PublishUpdatesNp : bool
+      PublishChangesNp : bool
       Persistent : bool
       CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
       DispatcherNp : EntityDispatcher
@@ -341,8 +341,8 @@ and [<CLIMutable; NoEquality; NoComparison>] EntityState =
           ViewType = Relative
           Visible = true
           Omnipresent = false
-          PublishUpdates = true
-          PublishChanges = false
+          PublishUpdatesNp = false
+          PublishChangesNp = false
           Persistent = true
           CreationTimeStampNp = Core.getTimeStamp ()
           DispatcherNp = dispatcher
@@ -360,6 +360,9 @@ and [<StructuralEquality; NoComparison>] Game =
         member this.SimulantAddress = atoa<Game, Simulant> this.GameAddress
         member this.GetPublishingPriority _ _ = Constants.Engine.GamePublishingPriority
         end
+
+    /// View as address string.
+    override this.ToString () = scstring this.GameAddress
 
     /// Get the full name of a game proxy.
     member this.GameFullName = Address.getFullName this.GameAddress
@@ -393,6 +396,9 @@ and [<StructuralEquality; NoComparison>] Screen =
         member this.SimulantAddress = atoa<Screen, Simulant> this.ScreenAddress
         member this.GetPublishingPriority _ _ = Constants.Engine.ScreenPublishingPriority
         end
+
+    /// View as address string.
+    override this.ToString () = scstring this.ScreenAddress
 
     /// Get the full name of a screen proxy.
     member this.ScreenFullName = Address.getFullName this.ScreenAddress
@@ -438,6 +444,9 @@ and [<StructuralEquality; NoComparison>] Group =
         member this.GetPublishingPriority _ _ = Constants.Engine.GroupPublishingPriority
         end
 
+    /// View as address string.
+    override this.ToString () = scstring this.GroupAddress
+
     /// Get the full name of a group proxy.
     member this.GroupFullName = Address.getFullName this.GroupAddress
 
@@ -474,10 +483,11 @@ and [<StructuralEquality; NoComparison>] Group =
 
 /// The type around which the whole game engine is based! Used in combination with dispatchers
 /// to implement things like buttons, characters, blocks, and things of that sort.
-/// OPTIMIZATION: Includes pre-constructed entity update event address to avoid reconstructing one
-/// for each entity every frame.
+/// OPTIMIZATION: Includes pre-constructed entity change and update event address to avoid
+/// reconstructing new ones for each entity every frame.
 and [<StructuralEquality; NoComparison>] Entity =
     { EntityAddress : Entity Address
+      ChangeAddress : ParticipantChangeData<Entity, World> Address
       UpdateAddress : unit Address }
 
     interface Simulant with
@@ -485,6 +495,9 @@ and [<StructuralEquality; NoComparison>] Entity =
         member this.SimulantAddress = atoa<Entity, Simulant> this.EntityAddress
         member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
         end
+
+    /// View as address string.
+    override this.ToString () = scstring this.EntityAddress
 
     /// Get the name of an entity proxy.
     member this.EntityFullName = Address.getFullName this.EntityAddress
@@ -499,6 +512,7 @@ and [<StructuralEquality; NoComparison>] Entity =
     /// Create an Entity proxy from an address.
     static member proxy address =
         { EntityAddress = address
+          ChangeAddress = ltoa [!!"Entity"; !!"Change"] ->>- address
           UpdateAddress = ntoa !!"Update" ->>- address }
 
     /// Concatenate two addresses, taking the type of first address.
@@ -549,6 +563,7 @@ and [<ReferenceEquality>] World =
     interface World Eventable with
         member this.GetLiveness () = AmbientState.getLiveness this.AmbientState
         member this.GetEventSystem () = this.EventSystem
+        member this.GetEmptyParticipant () = Game.proxy Address.empty :> Participant
         member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
         member this.ContainsParticipant participant =
             match participant with
