@@ -625,14 +625,12 @@ module World =
     let internal setGroupState groupState group world =
         let oldWorld = world
         let world = groupStateSetter groupState group world
-        if groupState.PublishChanges then
-            publish
-                { Participant = group; OldWorld = oldWorld }
-                (Events.GroupChange ->- group)
-                (EventTrace.record "World" "setGroupState" EventTrace.empty)
-                group
-                world
-        else world
+        publish
+            { Participant = group; OldWorld = oldWorld }
+            (Events.GroupChange ->- group)
+            (EventTrace.record "World" "setGroupState" EventTrace.empty)
+            group
+            world
 
     let internal updateGroupState updater group world =
         let groupState = getGroupState group world
@@ -692,14 +690,12 @@ module World =
     let internal setScreenState screenState screen world =
         let oldWorld = world
         let world = screenStateSetter screenState screen world
-        if screenState.PublishChanges then
-            publish
-                { Participant = screen; OldWorld = oldWorld }
-                (Events.ScreenChange ->- screen)
-                (EventTrace.record "World" "setScreenState" EventTrace.empty)
-                screen
-                world
-        else world
+        publish
+            { Participant = screen; OldWorld = oldWorld }
+            (Events.ScreenChange ->- screen)
+            (EventTrace.record "World" "setScreenState" EventTrace.empty)
+            screen
+            world
 
     let internal updateScreenState updater screen world =
         let screenState = getScreenState screen world
@@ -748,14 +744,12 @@ module World =
     let internal setGameState gameState world =
         let oldWorld = world
         let world = choose { world with GameState = gameState }
-        if gameState.PublishChanges then
-            publish
-                { Participant = Simulants.Game; OldWorld = oldWorld }
-                (Events.GameChange ->- Simulants.Game)
-                (EventTrace.record "World" "setGameState" EventTrace.empty)
-                Simulants.Game
-                world
-        else world
+        publish
+            { Participant = Simulants.Game; OldWorld = oldWorld }
+            (Events.GameChange ->- Simulants.Game)
+            (EventTrace.record "World" "setGameState" EventTrace.empty)
+            Simulants.Game
+            world
 
     let internal updateGameState updater world =
         let gameState = getGameState world

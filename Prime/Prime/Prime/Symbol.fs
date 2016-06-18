@@ -37,6 +37,7 @@ module Symbol =
 
     let [<Literal>] NewlineChars = "\n\r"
     let [<Literal>] WhitespaceChars = "\t " + NewlineChars
+    let (*Literal*) WhitespaceCharsArray = Array.ofSeq WhitespaceChars
     let [<Literal>] SeparatorChar = ' '
     let [<Literal>] SeparatorStr = " "
     let [<Literal>] OpenSymbolsChar = '['

@@ -21,8 +21,6 @@ module WorldGameModule =
         member this.GetDispatcherNp world = (World.getGameState world).DispatcherNp
         member this.GetOptSelectedScreen world = (World.getGameState world).OptSelectedScreen
         member this.SetOptSelectedScreen value world = World.updateGameState (fun (gameState : GameState) -> { gameState with OptSelectedScreen = value }) world
-        member this.GetPublishChanges world = (World.getGameState world).PublishChanges
-        member this.SetPublishChanges value world = World.updateGameState (fun gameState -> { gameState with PublishChanges = value }) world
         member this.GetXtension world = (World.getGameState world).Xtension
         member this.UpdateXtension updater world = World.updateGameState (fun gameState -> { gameState with Xtension = updater gameState.Xtension}) world
 

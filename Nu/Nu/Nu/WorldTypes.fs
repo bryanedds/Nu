@@ -88,9 +88,6 @@ type SimulantOperators =
 /// The default dispatcher for games.
 type GameDispatcher () =
 
-    static member PropertyDefinitions =
-        [Define? PublishChanges true]
-
     /// Register a game when adding it to the world. Note that there is no corresponding
     /// Unregister method due to the inability to remove a game from the world.
     abstract Register : Game * World -> World
@@ -109,7 +106,6 @@ and ScreenDispatcher () =
 
     static member PropertyDefinitions =
         [Define? OptSpecialization (None : string option)
-         Define? PublishChanges true
          Define? Persistent true]
 
     /// Register a screen when adding it to the world.
@@ -133,7 +129,6 @@ and GroupDispatcher () =
 
     static member PropertyDefinitions =
         [Define? OptSpecialization (None : string option)
-         Define? PublishChanges true
          Define? Persistent true]
 
     /// Register a group when adding it to a screen.
@@ -238,7 +233,6 @@ and [<CLIMutable; NoEquality; NoComparison>] GameState =
     { Id : Guid
       OptSelectedScreen : Screen option
       OptScreenTransitionDestination : Screen option
-      PublishChanges : bool
       CreationTimeStampNp : int64
       DispatcherNp : GameDispatcher
       Xtension : Xtension }
@@ -248,7 +242,6 @@ and [<CLIMutable; NoEquality; NoComparison>] GameState =
         { Id = makeGuid ()
           OptSelectedScreen = None
           OptScreenTransitionDestination = None
-          PublishChanges = true
           CreationTimeStampNp = Core.getTimeStamp ()
           DispatcherNp = dispatcher
           Xtension = Xtension.safe }
@@ -263,7 +256,6 @@ and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
       TransitionTicksNp : int64
       Incoming : Transition
       Outgoing : Transition
-      PublishChanges : bool
       Persistent : bool
       CreationTimeStampNp : int64
       DispatcherNp : ScreenDispatcher
@@ -281,7 +273,6 @@ and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
               TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
-              PublishChanges = true
               Persistent = true
               CreationTimeStampNp = Core.getTimeStamp ()
               DispatcherNp = dispatcher
@@ -296,7 +287,6 @@ and [<CLIMutable; NoEquality; NoComparison>] GroupState =
     { Id : Guid
       Name : Name
       OptSpecialization : string option
-      PublishChanges : bool
       Persistent : bool
       CreationTimeStampNp : int64
       DispatcherNp : GroupDispatcher
@@ -308,7 +298,6 @@ and [<CLIMutable; NoEquality; NoComparison>] GroupState =
         { GroupState.Id = id
           Name = name
           OptSpecialization = optSpecialization
-          PublishChanges = true
           Persistent = true
           CreationTimeStampNp = Core.getTimeStamp ()
           DispatcherNp = dispatcher

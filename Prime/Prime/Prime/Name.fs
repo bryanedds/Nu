@@ -62,12 +62,11 @@ module NameModule =
         static member make (nameStr : string) =
 #if DEBUG   
             // NOTE: we cannot do this checking at run-time because running an FParsec parser this often is too slow
-            if nameStr.IndexOfAny Symbol.WhitespaceChars <> -1 then failwith "Invalid name; must have no whitespace characters."
+            if nameStr.IndexOfAny Symbol.WhitespaceCharsArray <> -1 then failwith "Invalid name; must have no whitespace characters."
             elif Symbol.isNumber nameStr then failwith "Invalid name; name cannot be a number."
             else
-#else
-                { NameStr = nameStr; HashCode = nameStr.GetHashCode () }
 #endif
+                { NameStr = nameStr; HashCode = nameStr.GetHashCode () }
     
         /// Equate Names.
         static member equals name name2 =
