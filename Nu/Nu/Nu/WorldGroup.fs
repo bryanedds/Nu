@@ -21,8 +21,6 @@ module WorldGroupModule =
         member this.GetOptSpecialization world = (World.getGroupState this world).OptSpecialization
         member this.GetCreationTimeStampNp world = (World.getGroupState this world).CreationTimeStampNp
         member this.GetDispatcherNp world = (World.getGroupState this world).DispatcherNp
-        member this.GetPublishChanges world = (World.getGroupState this world).PublishChanges
-        member this.SetPublishChanges value world = World.updateGroupState (fun (groupState : GroupState) -> { groupState with PublishChanges = value }) this world
         member this.GetPersistent world = (World.getGroupState this world).Persistent
         member this.SetPersistent value world = World.updateGroupState (fun groupState -> { groupState with Persistent = value }) this world
         member this.GetXtension world = (World.getGroupState this world).Xtension

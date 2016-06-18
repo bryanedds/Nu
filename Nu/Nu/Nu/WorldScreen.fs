@@ -29,8 +29,6 @@ module WorldScreenModule =
         member this.SetIncoming value world = World.updateScreenState (fun screenState -> { screenState with Incoming = value }) this world
         member this.GetOutgoing world = (World.getScreenState this world).Outgoing
         member this.SetOutgoing value world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) this world
-        member this.GetPublishChanges world = (World.getScreenState this world).PublishChanges
-        member this.SetPublishChanges value world = World.updateScreenState (fun (screenState : ScreenState) -> { screenState with PublishChanges = value }) this world
         member this.GetPersistent world = (World.getScreenState this world).Persistent
         member this.SetPersistent value world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) this world
         member this.GetXtension world = (World.getScreenState this world).Xtension
