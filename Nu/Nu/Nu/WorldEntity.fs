@@ -89,11 +89,14 @@ module WorldEntityModule =
 
         /// Set an entity's transform.
         member this.SetTransform (transform : Transform) world =
-            world |>
-            this.SetPosition transform.Position |>
-            this.SetSize transform.Size |>
-            this.SetRotation transform.Rotation |>
-            this.SetDepth transform.Depth
+            World.updateEntityStatePlus (fun entityState -> 
+                { entityState with
+                    Position = transform.Position
+                    Size = transform.Size
+                    Rotation = transform.Rotation
+                    Depth = transform.Depth })
+                this
+                world
 
         /// Get the center position of an entity.
         member this.GetCenter world =

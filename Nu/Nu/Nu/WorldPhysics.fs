@@ -17,14 +17,14 @@ module WorldPhysicsModule =
               PhysicsEngine : IPhysicsEngine }
             
         static member private handleBodyTransformMessage (message : BodyTransformMessage) (entity : Entity) world =
-            // OPTIMIZATION: entity is not changed (avoiding a change entity event) if position and rotation haven't changed.
-            if entity.GetPosition world <> message.Position || entity.GetRotation world <> message.Rotation then
-                world |>
-                    // TODO: ASAP: could shave off a lot of perf penalty by implementing an Entity.SetTransform that only updates
-                    // the EntityTree once.
+            let transform = entity.GetTransform world
+            let transform2 =
+                { transform with
                     // TODO: see if the following center-offsetting can be encapsulated within the Physics module!
-                    entity.SetPosition (message.Position - entity.GetSize world * 0.5f) |>
-                    entity.SetRotation message.Rotation
+                    Position = message.Position - transform.Size * 0.5f
+                    Rotation = message.Rotation }
+            if transform <> transform2
+            then entity.SetTransform transform2 world
             else world
     
         static member private handleIntegrationMessage world integrationMessage =
@@ -33,8 +33,8 @@ module WorldPhysicsModule =
                 match integrationMessage with
                 | BodyTransformMessage bodyTransformMessage ->
                     let entity = Entity.proxy ^ atoa bodyTransformMessage.SourceAddress
-                    if World.containsEntity entity world then
-                        PhysicsEngineSubsystem.handleBodyTransformMessage bodyTransformMessage entity world
+                    if World.containsEntity entity world
+                    then PhysicsEngineSubsystem.handleBodyTransformMessage bodyTransformMessage entity world
                     else world
                 | BodyCollisionMessage bodyCollisionMessage ->
                     let source = Entity.proxy ^ atoa bodyCollisionMessage.SourceAddress
