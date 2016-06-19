@@ -255,7 +255,7 @@ module World =
         let oldWorldWithOldState = world
         let world = setAmbientStateWithoutEvent state world
         let eventTrace = EventTrace.record "World" "setAmbientState" EventTrace.empty
-        publish { OldWorldWithOldState = oldWorldWithOldState } Events.AmbientStateChange eventTrace Simulants.Game world
+        publish { OldWorldWithOldState = oldWorldWithOldState } Events.AmbientChange eventTrace Simulants.Game world
 
     let private updateAmbientState updater world =
         setAmbientState (updater world.AmbientState) world
