@@ -287,7 +287,7 @@ module RigidBodyFacetModule =
                   CollisionMask = Physics.categorizeCollisionMask ^ entity.GetCollisionMask world
                   IsBullet = entity.GetIsBullet world
                   IsSensor = entity.GetIsSensor world }
-            World.createBody entity.EntityAddress (entity.GetId world) bodyProperties world
+            World.createBody entity (entity.GetId world) bodyProperties world
 
         override facet.UnregisterPhysics (entity, world) =
             World.destroyBody (entity.GetPhysicsId world) world
@@ -988,7 +988,7 @@ module TileMapDispatcherModule =
 
         let registerTileLayerPhysics (tileMap : Entity) tileMapData tileLayerIndex world tileLayer =
             let bodyPropertyList = getTileLayerBodyPropertyList tileMap tileMapData tileLayerIndex tileLayer world
-            World.createBodies tileMap.EntityAddress (tileMap.GetId world) bodyPropertyList world
+            World.createBodies tileMap (tileMap.GetId world) bodyPropertyList world
 
         let registerTileMapPhysics (tileMap : Entity) world =
             let tileMapAsset = tileMap.GetTileMapAsset world

@@ -113,13 +113,13 @@ type [<StructuralEquality; NoComparison>] BodyProperties =
 
 /// A message to the physics system to create a body.
 type [<StructuralEquality; NoComparison>] CreateBodyMessage =
-    { SourceAddress : obj Address
+    { SourceParticipant : Participant
       SourceId : Guid
       BodyProperties : BodyProperties }
 
 /// A message to the physics system to create multiple bodies.
 type [<StructuralEquality; NoComparison>] CreateBodiesMessage =
-    { SourceAddress : obj Address
+    { SourceParticipant : Participant
       SourceId : Guid
       BodyPropertyList : BodyProperties list }
 
@@ -168,14 +168,14 @@ type [<StructuralEquality; NoComparison>] ApplyBodyForceMessage =
 
 /// A message from the physics system describing a body collision that took place.
 type [<StructuralEquality; NoComparison>] BodyCollisionMessage =
-    { SourceAddress : obj Address
-      CollideeAddress : obj Address
+    { SourceParticipant : Participant
+      SourceParticipant2 : Participant
       Normal : Vector2
       Speed : single }
 
 /// A message from the physics system describing the updated transform of a body.
 type [<StructuralEquality; NoComparison>] BodyTransformMessage =
-    { SourceAddress : obj Address
+    { SourceParticipant : Participant
       Position : Vector2
       Rotation : single }
 
@@ -268,8 +268,8 @@ module PhysicsEngineModule =
             physicsEngine (fixture : Dynamics.Fixture) (fixture2 : Dynamics.Fixture) (contact : Dynamics.Contacts.Contact) =
             let normal = fst ^ contact.GetWorldManifold ()
             let bodyCollisionMessage =
-                { SourceAddress = fixture.Body.UserData :?> obj Address
-                  CollideeAddress = fixture2.Body.UserData :?> obj Address
+                { SourceParticipant = fixture.Body.UserData :?> Participant
+                  SourceParticipant2 = fixture2.Body.UserData :?> Participant
                   Normal = Vector2 (normal.X, normal.Y)
                   Speed = contact.TangentSpeed * Constants.Physics.PhysicsToPixelRatio }
             let integrationMessage = BodyCollisionMessage bodyCollisionMessage
@@ -378,11 +378,11 @@ module PhysicsEngineModule =
     
         static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
             List.iter
-                (fun bodyProperties -> PhysicsEngine.createBody4 createBodiesMessage.SourceId createBodiesMessage.SourceAddress bodyProperties physicsEngine)
+                (fun bodyProperties -> PhysicsEngine.createBody4 createBodiesMessage.SourceId createBodiesMessage.SourceParticipant bodyProperties physicsEngine)
                 createBodiesMessage.BodyPropertyList
     
         static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
-            PhysicsEngine.createBody4 createBodyMessage.SourceId createBodyMessage.SourceAddress createBodyMessage.BodyProperties physicsEngine
+            PhysicsEngine.createBody4 createBodyMessage.SourceId createBodyMessage.SourceParticipant createBodyMessage.BodyProperties physicsEngine
     
         static member private destroyBody2 physicsId physicsEngine =
             match physicsEngine.Bodies.TryGetValue physicsId with
@@ -469,7 +469,7 @@ module PhysicsEngineModule =
                 if body.Awake && not body.IsStatic then
                     let bodyTransformMessage =
                         BodyTransformMessage
-                            { SourceAddress = body.UserData :?> obj Address
+                            { SourceParticipant = body.UserData :?> Participant
                               Position = PhysicsEngine.toPixelV2 body.Position
                               Rotation = body.Rotation }
                     physicsEngine.IntegrationMessages.Add bodyTransformMessage
