@@ -32,7 +32,7 @@ type [<StructuralEquality; NoComparison>] CollisionData =
 /// The data for a change in the world's ambient state.
 /// NOTE: I couldn't give its field the more normal name of 'OldWorld' due to field name conflicts with the more
 /// pervasive ParticipantChangeData type.
-type [<StructuralEquality; NoComparison>] AmbientStateChangeData = 
+type [<StructuralEquality; NoComparison>] AmbientChangeData = 
     { OldWorldWithOldState : World }
 
 [<RequireQualifiedAccess>]
@@ -44,7 +44,6 @@ module Events =
     let Update = ntoa<unit> !!"Update"
     let Select = ntoa<unit> !!"Select"
     let Deselect = ntoa<unit> !!"Deselect"
-    let AssetsReload = ntoa<unit> !!"AssetsReload"
     let Down = ntoa<unit> !!"Down"
     let Up = ntoa<unit> !!"Up"
     let Click = ntoa<unit> !!"Click"
@@ -86,8 +85,10 @@ module Events =
     let Outgoing = ntoa<unit> !!"Outgoing"
     let OutgoingStart = Outgoing -|- ntoa !!"Start"
     let OutgoingFinish = Outgoing -|- ntoa !!"Finish"
-    let AmbientState = ntoa<obj> !!"AmbientState"
-    let AmbientStateChange = AmbientState -<- ntoa<AmbientStateChangeData> !!"Change"
+    let Assets = ntoa<obj> !!"Assets"
+    let AssetsReload = Assets -<- ntoa<unit> !!"Reload"
+    let Ambient = ntoa<obj> !!"Ambient"
+    let AmbientChange = Ambient -<- ntoa<AmbientChangeData> !!"Change"
     let Game = ntoa<obj> !!"Game"
     let GameChange = Game -<- ntoa<ParticipantChangeData<Game, World>> !!"Change"
     let Screen = ntoa<obj> !!"Screen"
