@@ -32,19 +32,19 @@ module WorldPhysicsModule =
             | Running ->
                 match integrationMessage with
                 | BodyTransformMessage bodyTransformMessage ->
-                    let entity = Entity.proxy ^ atoa bodyTransformMessage.SourceAddress
+                    let entity = bodyTransformMessage.SourceParticipant :?> Entity
                     if World.containsEntity entity world
                     then PhysicsEngineSubsystem.handleBodyTransformMessage bodyTransformMessage entity world
                     else world
                 | BodyCollisionMessage bodyCollisionMessage ->
-                    let source = Entity.proxy ^ atoa bodyCollisionMessage.SourceAddress
+                    let source = bodyCollisionMessage.SourceParticipant :?> Entity
                     match World.getOptEntityState source world with
                     | Some _ ->
-                        let collisionAddress = Events.Collision ->- bodyCollisionMessage.SourceAddress
+                        let collisionAddress = Events.Collision ->>- source.EntityAddress
                         let collisionData =
                             { Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed
-                              Collidee = Entity.proxy ^ atoa bodyCollisionMessage.CollideeAddress }
+                              Collidee = bodyCollisionMessage.SourceParticipant2 :?> Entity }
                         let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
                         World.publish collisionData collisionAddress eventTrace Simulants.Game world
                     | None -> world
@@ -114,13 +114,13 @@ module WorldPhysicsModule =
             World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.BodyOnGround physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Send a message to the physics system to create a physics body.
-        static member createBody (entityAddress : Entity Address) entityId bodyProperties world =
-            let createBodyMessage = CreateBodyMessage { SourceAddress = atooa entityAddress; SourceId = entityId; BodyProperties = bodyProperties }
+        static member createBody (entity : Entity) entityId bodyProperties world =
+            let createBodyMessage = CreateBodyMessage { SourceParticipant = entity; SourceId = entityId; BodyProperties = bodyProperties }
             World.addPhysicsMessage createBodyMessage world
 
         /// Send a message to the physics system to create several physics bodies.
-        static member createBodies (entityAddress : Entity Address) entityId bodyPropertyList world =
-            let createBodiesMessage = CreateBodiesMessage { SourceAddress = atooa entityAddress; SourceId = entityId; BodyPropertyList = bodyPropertyList }
+        static member createBodies (entity : Entity) entityId bodyPropertyList world =
+            let createBodiesMessage = CreateBodiesMessage { SourceParticipant = entity; SourceId = entityId; BodyPropertyList = bodyPropertyList }
             World.addPhysicsMessage createBodiesMessage world
 
         /// Send a message to the physics system to destroy a physics body.
