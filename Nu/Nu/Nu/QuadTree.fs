@@ -36,7 +36,7 @@ module internal QuadNodeModule =
                     // OPTIMIZATION: imperative to avoid creating a lambda each call
                     let mutable result = false
                     for child in node.Children do
-                        result <- result || tryAddElement bounds element child
+                        result <- tryAddElement bounds element child || result
                     result
             else false
 
@@ -48,7 +48,7 @@ module internal QuadNodeModule =
                     // OPTIMIZATION: imperative to avoid creating a lambda each call
                     let mutable result = false
                     for child in node.Children do
-                        result <- result || tryRemoveElement bounds element child
+                        result <- tryRemoveElement bounds element child || result
                     result
             else false
 
