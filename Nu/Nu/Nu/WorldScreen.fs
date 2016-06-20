@@ -34,11 +34,11 @@ module WorldScreenModule =
         member this.GetPersistent world = ScreenState.getPersistent (World.getScreenState this world)
         member this.SetPersistent value world = World.updateScreenState (ScreenState.setPersistent value) this world
 
-        /// The dynamic look-up operator.
+        /// Get a dynamic property.
         member this.Get propertyName world : 'r =
             ScreenState.(?) (World.getScreenState this world, propertyName)
 
-        /// The dynamic assignment operator.
+        /// Set a dynamic property.
         member this.Set propertyName (value : 'a) world = 
             World.setScreenState (ScreenState.(?<-) (World.getScreenState this world, propertyName, value)) this world
 

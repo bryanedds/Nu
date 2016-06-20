@@ -25,11 +25,11 @@ module WorldGroupModule =
         member this.GetPersistent world = GroupState.getPersistent (World.getGroupState this world)
         member this.SetPersistent value world = World.updateGroupState (GroupState.setPersistent value) this world
 
-        /// The dynamic look-up operator.
+        /// Get a dynamic property.
         member this.Get propertyName world : 'r =
             GroupState.(?) (World.getGroupState this world, propertyName)
 
-        /// The dynamic assignment operator.
+        /// Set a dynamic property.
         member this.Set propertyName (value : 'a) world = 
             World.setGroupState (GroupState.(?<-) (World.getGroupState this world, propertyName, value)) this world
 

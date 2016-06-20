@@ -23,11 +23,11 @@ module WorldGameModule =
         member this.GetOptSelectedScreen world = GameState.getOptSelectedScreen (World.getGameState world)
         member this.SetOptSelectedScreen value world = World.updateGameState (GameState.setOptSelectedScreen value) world
 
-        /// The dynamic look-up operator.
+        /// Get a dynamic property.
         member this.Get propertyName world : 'r =
             GameState.(?) (World.getGameState world, propertyName)
 
-        /// The dynamic assignment operator.
+        /// Set a dynamic property.
         member this.Set propertyName (value : 'a) world = 
             World.setGameState (GameState.(?<-) (World.getGameState world, propertyName, value)) world
 

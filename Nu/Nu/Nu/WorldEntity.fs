@@ -52,17 +52,21 @@ module WorldEntityModule =
         member this.GetFacetNames world = EntityState.getFacetNames (World.getEntityState this world)
         member this.GetFacetsNp world = EntityState.getFacetsNp (World.getEntityState this world)
 
-        /// The dynamic look-up operator.
+        /// Get a dynamic property.
         member this.Get propertyName world : 'r =
             EntityState.(?) (World.getEntityState this world, propertyName)
 
-        /// The dynamic assignment operator.
+        /// Set a dynamic property.
         member this.Set propertyName (value : 'a) world = 
             World.setEntityState (EntityState.(?<-) (World.getEntityState this world, propertyName, value)) this world
 
         /// Attach a dynamic property.
         member this.AttachProperty name value world =
             World.setEntityState (EntityState.attachProperty name value ^ World.getEntityState this world) this world
+
+        /// Detach a dynamic property.
+        member this.DetachProperty name world =
+            World.setEntityState (EntityState.detachProperty name ^ World.getEntityState this world) this world
 
         /// Get an entity's bounds, not taking into account its overflow.
         member this.GetBounds world =
