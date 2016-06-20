@@ -439,6 +439,10 @@ module WorldTypes =
         /// Attach a dynamic property.
         static member attachProperty name value entityState =
             { entityState with EntityState.Xtension = Xtension.attachProperty name value entityState.Xtension }
+
+        /// Detach a dynamic property.
+        static member detachProperty name entityState =
+            { entityState with EntityState.Xtension = Xtension.detachProperty name entityState.Xtension }
     
         static member getId this = this.Id
         static member getXtension this = this.Xtension
