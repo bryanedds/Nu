@@ -52,11 +52,17 @@ module WorldEntityModule =
         member this.GetFacetNames world = EntityState.getFacetNames (World.getEntityState this world)
         member this.GetFacetsNp world = EntityState.getFacetsNp (World.getEntityState this world)
 
-        /// Get an xtension property by name.
-        member this.GetXProperty name world =
-            let xtension = this.GetXtension world
-            let xProperty = Xtension.getProperty name xtension
-            xProperty.PropertyValue
+        /// The dynamic look-up operator.
+        member this.Get propertyName world : 'r =
+            EntityState.(?) (World.getEntityState this world, propertyName)
+
+        /// The dynamic assignment operator.
+        member this.Set propertyName (value : 'a) world = 
+            World.setEntityState (EntityState.(?<-) (World.getEntityState this world, propertyName, value)) this world
+
+        /// Attach a dynamic property.
+        member this.AttachProperty name value world =
+            World.setEntityState (EntityState.attachProperty name value ^ World.getEntityState this world) this world
 
         /// Get an entity's bounds, not taking into account its overflow.
         member this.GetBounds world =
@@ -581,7 +587,7 @@ module WorldEntityModule =
             let properties = typeof<EntityState>.GetProperties property.Name
             Seq.exists (fun item -> item = property) properties
 
-        /// Get the entity member's value.
+        /// Get the entity's property value.
         static member getValue property (entity : Entity) world =
             match property with
             | EntityXPropertyDescriptor xfd ->
@@ -591,14 +597,12 @@ module WorldEntityModule =
                 let entityState = World.getEntityState entity world
                 propertyInfo.GetValue entityState
 
-        /// Set the entity member's value.
+        /// Set the entity's property value.
         static member setValue property value (entity : Entity) world =
             match property with
             | EntityXPropertyDescriptor xfd ->
-                entity.UpdateXtension (fun xtension ->
-                    let xProperty = { PropertyValue = value; PropertyType = xfd.PropertyType }
-                    Xtension.attachProperty xfd.PropertyName xProperty xtension)
-                    world
+                let xProperty = { PropertyValue = value; PropertyType = xfd.PropertyType }
+                entity.AttachProperty xfd.PropertyName xProperty world
             | EntityPropertyInfo propertyInfo ->
                 let entityState = World.getEntityState entity world
                 let entityState = EntityState.copy entityState

@@ -257,6 +257,18 @@ module WorldTypes =
               CreationTimeStampNp : int64
               OptSelectedScreen : Screen option
               OptScreenTransitionDestination : Screen option }
+
+        /// The dynamic look-up operator.
+        static member (?) (gameState, propertyName) : 'r =
+            Xtension.(?) (gameState.Xtension, propertyName)
+
+        /// The dynamic assignment operator.
+        static member (?<-) (gameState, propertyName, value : 'a) =
+            { gameState with GameState.Xtension = Xtension.(?<-) (gameState.Xtension, propertyName, value) }
+
+        /// Attach a dynamic property.
+        static member attachProperty name value gameState =
+            { gameState with GameState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } gameState.Xtension }
     
         static member getId this = this.Id
         static member getXtension this = this.Xtension
@@ -292,6 +304,18 @@ module WorldTypes =
               Outgoing : Transition
               Persistent : bool
               Name : Name }
+
+        /// The dynamic look-up operator.
+        static member (?) (screenState, propertyName) : 'r =
+            Xtension.(?) (screenState.Xtension, propertyName)
+
+        /// The dynamic assignment operator.
+        static member (?<-) (screenState, propertyName, value : 'a) =
+            { screenState with ScreenState.Xtension = Xtension.(?<-) (screenState.Xtension, propertyName, value) }
+
+        /// Attach a dynamic property.
+        static member attachProperty name value screenState =
+            { screenState with ScreenState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } screenState.Xtension }
     
         static member getId this = this.Id
         static member getXtension this = this.Xtension
@@ -344,6 +368,18 @@ module WorldTypes =
               OptSpecialization : string option
               Persistent : bool
               Name : Name }
+
+        /// The dynamic look-up operator.
+        static member (?) (groupState, propertyName) : 'r =
+            Xtension.(?) (groupState.Xtension, propertyName)
+
+        /// The dynamic assignment operator.
+        static member (?<-) (groupState, propertyName, value : 'a) =
+            { groupState with GroupState.Xtension = Xtension.(?<-) (groupState.Xtension, propertyName, value) }
+
+        /// Attach a dynamic property.
+        static member attachProperty name value groupState =
+            { groupState with GroupState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } groupState.Xtension }
     
         static member getId this = this.Id
         static member getXtension this = this.Xtension
@@ -391,6 +427,18 @@ module WorldTypes =
               FacetNames : string Set
               FacetsNp : Facet list
               Name : Name }
+
+        /// The dynamic look-up operator.
+        static member (?) (entityState, propertyName) : 'r =
+            Xtension.(?) (entityState.Xtension, propertyName)
+
+        /// The dynamic assignment operator.
+        static member (?<-) (entityState, propertyName, value : 'a) =
+            { entityState with EntityState.Xtension = Xtension.(?<-) (entityState.Xtension, propertyName, value) }
+
+        /// Attach a dynamic property.
+        static member attachProperty name value entityState =
+            { entityState with EntityState.Xtension = Xtension.attachProperty name value entityState.Xtension }
     
         static member getId this = this.Id
         static member getXtension this = this.Xtension

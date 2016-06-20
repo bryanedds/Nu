@@ -56,32 +56,32 @@ module XtensionModule =
             | None -> Unchecked.defaultof<'r>
 
         /// Try to get the default value for a given xtension member, returning None when defaulting is disallowed.
-        static member private tryGetDefaultValue (this : Xtension) memberName : 'r =
+        static member private tryGetDefaultValue (this : Xtension) propertyName : 'r =
             if this.CanDefault then Xtension.getDefaultValue ()
-            else failwith ^ "Xtension property '" + memberName + "' does not exist and no default is permitted because CanDefault is false."
+            else failwith ^ "Xtension property '" + propertyName + "' does not exist and no default is permitted because CanDefault is false."
 
         /// The dynamic look-up operator for an Xtension.
         /// Example:
-        ///     let parallax = entity?Parallax : single
-        static member (?) (xtension, memberName) : 'r =
+        ///     let parallax = xtn?Parallax : single
+        static member (?) (xtension, propertyName) : 'r =
 
             // check if dynamic member is an existing property
-            match Vmap.tryFind memberName xtension.Properties with
+            match Vmap.tryFind propertyName xtension.Properties with
             | Some property ->
                 
                 // return property directly if the return type matches, otherwise the default value for that type
                 match property.PropertyValue with
                 | :? 'r as propertyValue -> propertyValue
-                | _ -> failwith ^ "Xtension property '" + memberName + "' of type '" + property.PropertyType.Name + "' is not of the expected type '" + typeof<'r>.Name + "'."
+                | _ -> failwith ^ "Xtension property '" + propertyName + "' of type '" + property.PropertyType.Name + "' is not of the expected type '" + typeof<'r>.Name + "'."
 
             | None ->
 
                 // presume we're looking for a property that doesn't exist, so try to get the default value
-                Xtension.tryGetDefaultValue xtension memberName
+                Xtension.tryGetDefaultValue xtension propertyName
 
         /// The dynamic assignment operator for an Xtension.
         /// Example:
-        ///     let entity = entity.Position <- Vector2 (4.0, 5.0).
+        ///     let xtn = xtn.Position <- Vector2 (4.0, 5.0).
         static member (?<-) (xtension, propertyName, value : 'a) =
             // TODO: consider writing a 'Map.addDidContainKey' function to efficently add and return a
             // result that the key was already contained.

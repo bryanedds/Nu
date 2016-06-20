@@ -12,11 +12,11 @@ module ReflectionTests =
     type [<CLIMutable; NoEquality; NoComparison>] TestXtended =
         { Xtension : Xtension }
 
-        static member (?) (this : TestXtended, memberName) =
-            Xtension.(?) (this.Xtension, memberName)
+        static member (?) (this : TestXtended, propertyName) =
+            Xtension.(?) (this.Xtension, propertyName)
 
-        static member (?<-) (this : TestXtended, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
+        static member (?<-) (this : TestXtended, propertyName, value) =
+            let xtension = Xtension.(?<-) (this.Xtension, propertyName, value)
             { this with Xtension = xtension }
 
     let [<Fact>] xtensionSerializationViaContainingTypeWorks () =
