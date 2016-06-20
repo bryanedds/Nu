@@ -16,15 +16,14 @@ module WorldGroupModule =
 
     type Group with
 
-        member this.GetId world = (World.getGroupState this world).Id
-        member this.GetName world = (World.getGroupState this world).Name
-        member this.GetOptSpecialization world = (World.getGroupState this world).OptSpecialization
-        member this.GetCreationTimeStampNp world = (World.getGroupState this world).CreationTimeStampNp
-        member this.GetDispatcherNp world = (World.getGroupState this world).DispatcherNp
-        member this.GetPersistent world = (World.getGroupState this world).Persistent
-        member this.SetPersistent value world = World.updateGroupState (fun groupState -> { groupState with Persistent = value }) this world
-        member this.GetXtension world = (World.getGroupState this world).Xtension
-        member this.UpdateXtension updater world = World.updateGroupState (fun groupState -> { groupState with Xtension = updater groupState.Xtension}) this world
+        member this.GetId world = GroupState.getId (World.getGroupState this world)
+        member this.GetName world = GroupState.getName (World.getGroupState this world)
+        member this.GetXtension world = GroupState.getXtension (World.getGroupState this world)
+        member this.GetDispatcherNp world = GroupState.getDispatcherNp (World.getGroupState this world)
+        member this.GetCreationTimeStampNp world = GroupState.getCreationTimeStampNp (World.getGroupState this world)
+        member this.GetOptSpecialization world = GroupState.getOptSpecialization (World.getGroupState this world)
+        member this.GetPersistent world = GroupState.getPersistent (World.getGroupState this world)
+        member this.SetPersistent value world = World.updateGroupState (GroupState.setPersistent value) this world
 
         /// Get an xtension property by name.
         member this.GetXProperty name world =
@@ -87,7 +86,7 @@ module WorldGroupModule =
         static member proxyGroups screen world =
             match Address.getNames screen.ScreenAddress with
             | [screenName] ->
-                match Vmap.tryFind screenName world.ScreenDirectory with
+                match Vmap.tryFind screenName ^ World.getScreenDirectory world with
                 | Some (_, groupDirectory) ->
                     Vmap.fold (fun state _ (groupAddress, _) -> Group.proxy groupAddress :: state) [] groupDirectory :> _ seq
                 | None -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
@@ -128,14 +127,14 @@ module WorldGroupModule =
             let dispatcher = Map.find dispatcherName dispatchers
             let groupState = GroupState.make optSpecialization optName dispatcher
             Reflection.attachProperties dispatcher groupState
-            let group = stog screen groupState.Name
+            let group = stog screen ^ GroupState.getName groupState
             let world = World.addGroup false groupState group world
             (group, world)
 
         /// Write a group to a group descriptor.
         static member writeGroup (group : Group) groupDescriptor world =
             let groupState = World.getGroupState group world
-            let groupDispatcherName = getTypeName groupState.DispatcherNp
+            let groupDispatcherName = getTypeName ^ GroupState.getDispatcherNp groupState
             let groupDescriptor = { groupDescriptor with GroupDispatcher = groupDispatcherName }
             let getGroupProperties = Reflection.writeMemberValuesFromTarget tautology3 groupDescriptor.GroupProperties groupState
             let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
@@ -178,7 +177,7 @@ module WorldGroupModule =
             let groupState = GroupState.make None None dispatcher
 
             // attach the group state's instrinsic properties from its dispatcher if any
-            Reflection.attachProperties groupState.DispatcherNp groupState
+            Reflection.attachProperties (GroupState.getDispatcherNp groupState) groupState
 
             // read the group state's value
             Reflection.readMemberValuesToTarget groupDescriptor.GroupProperties groupState
@@ -186,11 +185,11 @@ module WorldGroupModule =
             // apply the name if one is provided
             let groupState =
                 match optName with
-                | Some name -> { groupState with Name = name }
+                | Some name -> GroupState.setName name groupState
                 | None -> groupState
 
             // add the group's state to the world
-            let group = stog screen groupState.Name
+            let group = stog screen ^ GroupState.getName groupState
             let world = World.addGroup true groupState group world
 
             // read the group's entities
@@ -232,7 +231,7 @@ type Group =
     /// with the Watch feature in Visual Studio.
     static member viewXProperties group world =
         let state = World.getGroupState group world
-        Xtension.toSeq state.Xtension |>
+        Xtension.toSeq ^ GroupState.getXtension state |>
         Array.ofSeq |>
         Array.sortBy fst |>
         Array.map (fun (name, property) -> (name, property.PropertyValue))

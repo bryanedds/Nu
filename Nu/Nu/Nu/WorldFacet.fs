@@ -27,7 +27,7 @@ module WorldFacetModule =
             if Reflection.isFacetCompatibleWithDispatcher entityDispatcherMap facet entityState then
                 List.notExists
                     (fun definition ->
-                        match Xtension.tryGetProperty definition.PropertyName entityState.Xtension with
+                        match Xtension.tryGetProperty definition.PropertyName (EntityState.getXtension entityState) with
                         | Some property -> property.GetType () <> definition.PropertyType
                         | None -> false)
                     facetPropertyDefinitions
@@ -69,7 +69,7 @@ module WorldFacetModule =
                 finalPropertyDefinitionNameCounts
 
         static member private tryRemoveFacet facetName entityState optEntity world =
-            match List.tryFind (fun facet -> getTypeName facet = facetName) entityState.FacetsNp with
+            match List.tryFind (fun facet -> getTypeName facet = facetName) (EntityState.getFacetsNp entityState) with
             | Some facet ->
                 let (entityState, world) =
                     match optEntity with
@@ -78,8 +78,10 @@ module WorldFacetModule =
                         let entityState = World.getEntityState entity world
                         (entityState, world)
                     | None -> (entityState, world)
-                let entityState = { entityState with FacetNames = Set.remove facetName entityState.FacetNames }
-                let entityState = { entityState with FacetsNp = List.remove ((=) facet) entityState.FacetsNp }
+                let facetNames = Set.remove facetName ^ EntityState.getFacetNames entityState
+                let facetsNp = List.remove ((=) facet) ^ EntityState.getFacetsNp entityState
+                let entityState = EntityState.setFacetNames facetNames entityState
+                let entityState = EntityState.setFacetsNp facetsNp entityState
                 let propertyNames = World.getEntityPropertyDefinitionNamesToDetach entityState facet
                 Reflection.detachPropertiesViaNames propertyNames entityState // hacky copy elided
                 match optEntity with
@@ -97,8 +99,10 @@ module WorldFacetModule =
             | Right facet ->
                 let entityDispatchers = World.getEntityDispatchers world
                 if World.isFacetCompatibleWithEntity entityDispatchers facet entityState then
-                    let entityState = { entityState with FacetNames = Set.add facetName entityState.FacetNames }
-                    let entityState = { entityState with FacetsNp = facet :: entityState.FacetsNp }
+                    let facetNames = Set.add facetName ^ EntityState.getFacetNames entityState
+                    let facetsNp = facet :: EntityState.getFacetsNp entityState
+                    let entityState = EntityState.setFacetNames facetNames entityState
+                    let entityState = EntityState.setFacetsNp facetsNp entityState
                     Reflection.attachProperties facet entityState // hacky copy elided
                     match optEntity with
                     | Some entity ->
@@ -109,7 +113,7 @@ module WorldFacetModule =
                         let world = facet.Register (entity, world)
                         Right (World.getEntityState entity world, world)
                     | None -> Right (entityState, world)
-                else let _ = World.choose world in Left ^ "Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Name + "'."
+                else let _ = World.choose world in Left ^ "Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring (EntityState.getName entityState) + "'."
             | Left error -> Left error
 
         static member private tryRemoveFacets facetNamesToRemove entityState optEntity world =
@@ -131,21 +135,22 @@ module WorldFacetModule =
                 facetNamesToAdd
 
         static member internal trySetFacetNames facetNames entityState optEntity world =
-            let facetNamesToRemove = World.getFacetNamesToRemove entityState.FacetNames facetNames
-            let facetNamesToAdd = World.getFacetNamesToAdd entityState.FacetNames facetNames
+            let facetNamesToRemove = World.getFacetNamesToRemove (EntityState.getFacetNames entityState) facetNames
+            let facetNamesToAdd = World.getFacetNamesToAdd (EntityState.getFacetNames entityState) facetNames
             match World.tryRemoveFacets facetNamesToRemove entityState optEntity world with
             | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
             | Left _ as left -> left
 
         static member internal trySynchronizeFacetsToNames oldFacetNames entityState optEntity world =
-            let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames entityState.FacetNames
-            let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames entityState.FacetNames
+            let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames (EntityState.getFacetNames entityState)
+            let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames (EntityState.getFacetNames entityState)
             match World.tryRemoveFacets facetNamesToRemove entityState optEntity world with
             | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
             | Left _ as left -> left
 
         static member internal attachIntrinsicFacetsViaNames (entityState : EntityState) world =
-            let dispatchers = world.Dispatchers
-            let entityState = { entityState with Id = entityState.Id } // hacky copy
-            Reflection.attachIntrinsicFacets dispatchers.EntityDispatchers dispatchers.Facets entityState.DispatcherNp entityState
+            let entityDispatchers = World.getEntityDispatchers world
+            let facets = World.getFacets world
+            let entityState = EntityState.copy entityState
+            Reflection.attachIntrinsicFacets entityDispatchers facets (EntityState.getDispatcherNp entityState) entityState
             entityState

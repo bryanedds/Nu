@@ -136,6 +136,16 @@ namespace Nu.Gaia.Design
                 AutoCShow(false);
                 e.SuppressKeyPress = true;
             }
+            else if (e.Alt && e.KeyCode == Keys.Up)
+            {
+                // TODO: SelectParentSymbols();
+                e.SuppressKeyPress = true;
+            }
+            else if (e.Alt && e.KeyCode == Keys.Down)
+            {
+                // TODO: SelectChildSymbols();
+                e.SuppressKeyPress = true;
+            }
         }
 
         private void SymbolicTextBox_CharAdded(object sender, CharAddedEventArgs e)

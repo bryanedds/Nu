@@ -14,7 +14,7 @@ module Program =
         printfn "%s timings..." name
         let rand = Random 1
         let entries = [|for _ in 0 .. 65535 do yield (let n = rand.Next () in (string n, (string n, string n)))|]
-        for _ in 0 .. 16 do
+        for _ in 0 .. 5 do
             GC.Collect ()
             let watch = Stopwatch.StartNew ()
             let made = make entries

@@ -29,12 +29,6 @@ type [<StructuralEquality; NoComparison>] CollisionData =
       Speed : single
       Collidee : Entity }
 
-/// The data for a change in the world's ambient state.
-/// NOTE: I couldn't give its field the more normal name of 'OldWorld' due to field name conflicts with the more
-/// pervasive ParticipantChangeData type.
-type [<StructuralEquality; NoComparison>] AmbientChangeData = 
-    { OldWorldWithOldState : World }
-
 [<RequireQualifiedAccess>]
 module Events =
 
@@ -89,6 +83,7 @@ module Events =
     let AssetsReload = Assets -<- ntoa<unit> !!"Reload"
     let Ambient = ntoa<obj> !!"Ambient"
     let AmbientChange = Ambient -<- ntoa<AmbientChangeData> !!"Change"
+    let AmbientChangeProperty = fun propertyName -> Ambient -<- ltoa<AmbientChangeData> [!!"Change"; !!propertyName]
     let Game = ntoa<obj> !!"Game"
     let GameChange = Game -<- ntoa<ParticipantChangeData<Game, World>> !!"Change"
     let Screen = ntoa<obj> !!"Screen"
@@ -103,3 +98,4 @@ module Events =
     let EntityAdd = Entity -<- ntoa<unit> !!"Add"
     let EntityRemoving = Entity -<- ntoa<unit> !!"Removing"
     let EntityChange = Entity -<- ntoa<ParticipantChangeData<Entity, World>> !!"Change"
+    let EntityChangeProperty = fun propertyName -> Entity -<- ltoa<ParticipantChangeData<Entity, World>> [!!"Change"; !!propertyName]
