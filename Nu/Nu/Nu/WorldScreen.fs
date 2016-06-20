@@ -16,24 +16,23 @@ module WorldScreenModule =
 
     type Screen with
 
-        member this.GetId world = (World.getScreenState this world).Id
-        member this.GetName world = (World.getScreenState this world).Name
-        member this.GetOptSpecialization world = (World.getScreenState this world).OptSpecialization
-        member this.GetCreationTimeStampNp world = (World.getScreenState this world).CreationTimeStampNp
-        member this.GetDispatcherNp world = (World.getScreenState this world).DispatcherNp
-        member this.GetTransitionStateNp world = (World.getScreenState this world).TransitionStateNp
-        member this.SetTransitionStateNp value world = World.updateScreenState (fun screenState -> { screenState with TransitionStateNp = value }) this world
-        member this.GetTransitionTicksNp world = (World.getScreenState this world).TransitionTicksNp
-        member this.SetTransitionTicksNp value world = World.updateScreenState (fun screenState -> { screenState with TransitionTicksNp = value }) this world
-        member this.GetIncoming world = (World.getScreenState this world).Incoming
-        member this.SetIncoming value world = World.updateScreenState (fun screenState -> { screenState with Incoming = value }) this world
-        member this.GetOutgoing world = (World.getScreenState this world).Outgoing
-        member this.SetOutgoing value world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) this world
-        member this.GetPersistent world = (World.getScreenState this world).Persistent
-        member this.SetPersistent value world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) this world
-        member this.GetXtension world = (World.getScreenState this world).Xtension
-        member this.UpdateXtension updater world = World.updateScreenState (fun screenState -> { screenState with Xtension = updater screenState.Xtension}) this world
-        member this.GetEntityTree world = (World.getScreenState this world).EntityTreeNp
+        member this.GetId world = ScreenState.getId (World.getScreenState this world)
+        member this.GetName world = ScreenState.getName (World.getScreenState this world)
+        member this.GetXtension world = ScreenState.getXtension (World.getScreenState this world)
+        member this.GetDispatcherNp world = ScreenState.getDispatcherNp (World.getScreenState this world)
+        member this.GetCreationTimeStampNp world = ScreenState.getCreationTimeStampNp (World.getScreenState this world)
+        member this.GetEntityTree world = ScreenState.getEntityTreeNp (World.getScreenState this world)
+        member this.GetOptSpecialization world = ScreenState.getOptSpecialization (World.getScreenState this world)
+        member this.GetTransitionStateNp world = ScreenState.getTransitionStateNp (World.getScreenState this world)
+        member this.SetTransitionStateNp value world = World.updateScreenState (ScreenState.setTransitionStateNp value) this world
+        member this.GetTransitionTicksNp world = ScreenState.getTransitionTicksNp (World.getScreenState this world)
+        member this.SetTransitionTicksNp value world = World.updateScreenState (ScreenState.setTransitionTicksNp value) this world
+        member this.GetIncoming world = ScreenState.getIncoming (World.getScreenState this world)
+        member this.SetIncoming value world = World.updateScreenState (ScreenState.setIncoming value) this world
+        member this.GetOutgoing world = ScreenState.getOutgoing (World.getScreenState this world)
+        member this.SetOutgoing value world = World.updateScreenState (ScreenState.setOutgoing value) this world
+        member this.GetPersistent world = ScreenState.getPersistent (World.getScreenState this world)
+        member this.SetPersistent value world = World.updateScreenState (ScreenState.setPersistent value) this world
 
         /// Get an xtension property by name.
         member this.GetXProperty name world =
@@ -101,7 +100,7 @@ module WorldScreenModule =
             Vmap.fold
                 (fun state _ (screenAddress, _) -> Screen.proxy screenAddress :: state)
                 []
-                world.ScreenDirectory :>
+                (World.getScreenDirectory world) :>
                 _ seq
 
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight publishing depends on the
@@ -123,7 +122,7 @@ module WorldScreenModule =
             let dispatcher = Map.find dispatcherName dispatchers
             let screenState = ScreenState.make optSpecialization optName dispatcher
             Reflection.attachProperties dispatcher screenState
-            let screen = ntos screenState.Name
+            let screen = ntos ^ ScreenState.getName screenState
             let world = World.addScreen false screenState screen world
             (screen, world)
         
@@ -138,7 +137,7 @@ module WorldScreenModule =
         /// Write a screen to a screen descriptor.
         static member writeScreen (screen : Screen) screenDescriptor world =
             let screenState = World.getScreenState screen world
-            let screenDispatcherName = getTypeName screenState.DispatcherNp
+            let screenDispatcherName = getTypeName ^ ScreenState.getDispatcherNp screenState
             let screenDescriptor = { screenDescriptor with ScreenDispatcher = screenDispatcherName }
             let getScreenProperties = Reflection.writeMemberValuesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
             let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
@@ -181,7 +180,7 @@ module WorldScreenModule =
             let screenState = ScreenState.make None None dispatcher
 
             // attach the screen state's instrinsic properties from its dispatcher if any
-            Reflection.attachProperties screenState.DispatcherNp screenState
+            Reflection.attachProperties (ScreenState.getDispatcherNp screenState) screenState
 
             // read the screen state's value
             Reflection.readMemberValuesToTarget screenDescriptor.ScreenProperties screenState
@@ -189,14 +188,14 @@ module WorldScreenModule =
             // apply the name if one is provided
             let screenState =
                 match optName with
-                | Some name -> { screenState with Name = name }
+                | Some name -> ScreenState.setName name screenState
                 | None -> screenState
             
             // add the screen's state to the world
-            let screen = ntos screenState.Name
+            let screen = ntos ^ ScreenState.getName screenState
             let screenState =
                 if World.containsScreen screen world
-                then { screenState with EntityTreeNp = screen.GetEntityTree world }
+                then ScreenState.setEntityTreeNp (screen.GetEntityTree world) screenState
                 else screenState
             let world = World.addScreen true screenState screen world
             
@@ -239,7 +238,7 @@ type Screen =
     /// with the Watch feature in Visual Studio.
     static member viewXProperties screen world =
         let state = World.getScreenState screen world
-        Xtension.toSeq state.Xtension |>
+        Xtension.toSeq (ScreenState.getXtension state) |>
         Array.ofSeq |>
         Array.sortBy fst |>
         Array.map (fun (name, property) -> (name, property.PropertyValue))

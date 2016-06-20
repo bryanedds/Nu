@@ -50,13 +50,6 @@ module Nu =
             Debug.World.viewGroup <- fun group world -> Debug.Group.view (group :?> Group) (world :?> World)
             Debug.World.viewEntity <- fun entity world -> Debug.Entity.view (entity :?> Entity) (world :?> World)
 #endif
-            World.rebuildEntityTree <- fun screen world ->
-                let tree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
-                let entities = screen |> flip World.proxyGroups world |> Seq.map (flip World.proxyEntities world) |> Seq.concat
-                for entity in entities do
-                    let entityMaxBounds = World.getEntityBoundsMax entity world
-                    QuadTree.addElement (entity.GetOmnipresent world || entity.GetViewType world = Absolute) entityMaxBounds entity tree
-                tree
 
             // init Vsync with incoming parameter
             Vsync.init sync
@@ -148,6 +141,14 @@ module WorldModule =
                  (typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet)
                  (typeof<StaticSpriteFacet>.Name, StaticSpriteFacet () :> Facet)
                  (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
+
+        static member rebuildEntityTreeImpl screen world =
+            let tree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
+            let entities = screen |> flip World.proxyGroups world |> Seq.map (flip World.proxyEntities world) |> Seq.concat
+            for entity in entities do
+                let entityMaxBounds = World.getEntityBoundsMax entity world
+                QuadTree.addElement (entity.GetOmnipresent world || entity.GetViewType world = Absolute) entityMaxBounds entity tree
+            tree
 
         /// Try to query that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
@@ -415,10 +416,10 @@ module WorldModule =
                         Seq.fold
                             (fun world (entity : Entity) ->
                                 let entityState = World.getEntityState entity world
-                                match entityState.OptOverlayName with
+                                match EntityState.getOptOverlayName entityState with
                                 | Some overlayName ->
-                                    let oldFacetNames = entityState.FacetNames
-                                    let entityState = { entityState with Id = entityState.Id } // hacky copy
+                                    let oldFacetNames = EntityState.getFacetNames entityState
+                                    let entityState = EntityState.copy entityState
                                     Overlayer.applyOverlayToFacetNames overlayName overlayName entityState oldOverlayer overlayer
                                     match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
                                     | Right (entityState, world) ->
@@ -579,7 +580,7 @@ module WorldModule =
                 let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
                 let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTree world)
                 let screenState = World.getScreenState selectedScreen world
-                let screenState = { screenState with EntityTreeNp = entityTree }
+                let screenState = ScreenState.setEntityTreeNp entityTree screenState
                 let world = World.setScreenState screenState selectedScreen world
                 let entities = QuadTree.getElementsNearBounds viewBounds quadTree
                 List.fold (fun world (entity : Entity) -> World.updateEntity entity world) world entities
@@ -623,7 +624,7 @@ module WorldModule =
                 let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
                 let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTree world)
                 let screenState = World.getScreenState selectedScreen world
-                let screenState = { screenState with EntityTreeNp = entityTree }
+                let screenState = ScreenState.setEntityTreeNp entityTree screenState
                 let world = World.setScreenState screenState selectedScreen world
                 let entities = QuadTree.getElementsNearBounds viewBounds quadTree
                 List.fold (fun world (entity : Entity) -> World.actualizeEntity entity world) world entities
@@ -728,7 +729,8 @@ module WorldModule =
                   ScreenDispatchers = World.makeDefaultScreenDispatchers ()
                   GroupDispatchers = World.makeDefaultGroupDispatchers ()
                   EntityDispatchers = World.makeDefaultEntityDispatchers ()
-                  Facets = World.makeDefaultFacets () }
+                  Facets = World.makeDefaultFacets ()
+                  RebuildEntityTree = World.rebuildEntityTreeImpl }
 
             // make the world's event system
             let eventSystem =
@@ -749,21 +751,11 @@ module WorldModule =
                 let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                 AmbientState.make 1L camera Map.empty overlayRouter Overlayer.empty SymbolStore.empty userState
 
-            // make the world itself
-            let world =
-                { Subsystems = subsystems
-                  Dispatchers = dispatchers
-                  EventSystem = eventSystem
-                  OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
-                  AmbientState = ambientState
-                  GameState = gameState
-                  ScreenStates = Vmap.makeEmpty ()
-                  GroupStates = Vmap.makeEmpty ()
-                  EntityStates = Vmap.makeEmpty ()
-                  ScreenDirectory = Vmap.makeEmpty () }
+            // make and choose the world
+            let world = World.make subsystems dispatchers eventSystem ambientState gameState
 
             // initialize OptEntityCache after the fact due to back reference
-            let world = World.choose { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
+            let world = World.setOptEntityCache (KeyedCache.make (Address.empty<Entity>, world) None) world
 
             // subscribe to subscribe and unsubscribe events
             let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
@@ -829,7 +821,8 @@ module WorldModule =
                       ScreenDispatchers = Map.addMany pluginScreenDispatchers ^ World.makeDefaultScreenDispatchers ()
                       GroupDispatchers = Map.addMany pluginGroupDispatchers ^ World.makeDefaultGroupDispatchers ()
                       EntityDispatchers = Map.addMany pluginEntityDispatchers ^ World.makeDefaultEntityDispatchers ()
-                      Facets = Map.addMany pluginFacets ^ World.makeDefaultFacets () }
+                      Facets = Map.addMany pluginFacets ^ World.makeDefaultFacets ()
+                      RebuildEntityTree = World.rebuildEntityTreeImpl }
 
                 // make the world's event system
                 let eventSystem =
@@ -853,21 +846,11 @@ module WorldModule =
                         let overlayRouter = OverlayRouter.make dispatchers.EntityDispatchers pluginOverlayRoutes
                         AmbientState.make tickRate camera assetMetadataMap overlayRouter overlayer SymbolStore.empty userState
 
-                    // make the world itself
-                    let world =
-                        { Subsystems = subsystems
-                          Dispatchers = dispatchers
-                          EventSystem = eventSystem
-                          OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
-                          AmbientState = ambientState
-                          GameState = World.makeGameState activeGameDispatcher
-                          ScreenStates = Vmap.makeEmpty ()
-                          GroupStates = Vmap.makeEmpty ()
-                          EntityStates = Vmap.makeEmpty ()
-                          ScreenDirectory = Vmap.makeEmpty () }
+                    // make and choose the world
+                    let world = World.make subsystems dispatchers eventSystem ambientState (World.makeGameState activeGameDispatcher)
 
                     // initialize OptEntityCache after the fact due to back reference
-                    let world = World.choose { world with OptEntityCache = KeyedCache.make (Address.empty<Entity>, world) None }
+                    let world = World.setOptEntityCache (KeyedCache.make (Address.empty<Entity>, world) None) world
 
                     // subscribe to subscribe and unsubscribe events
                     let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
