@@ -23,11 +23,13 @@ module WorldGameModule =
         member this.GetOptSelectedScreen world = GameState.getOptSelectedScreen (World.getGameState world)
         member this.SetOptSelectedScreen value world = World.updateGameState (GameState.setOptSelectedScreen value) world
 
-        /// Get an xtension property by name.
-        member this.GetXProperty name world =
-            let xtension = this.GetXtension world
-            let xProperty = Xtension.getProperty name xtension
-            xProperty.PropertyValue
+        /// The dynamic look-up operator.
+        member this.Get propertyName world : 'r =
+            GameState.(?) (World.getGameState world, propertyName)
+
+        /// The dynamic assignment operator.
+        member this.Set propertyName (value : 'a) world = 
+            World.setGameState (GameState.(?<-) (World.getGameState world, propertyName, value)) world
 
         /// Query that a game dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world =

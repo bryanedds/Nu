@@ -12,32 +12,32 @@ module CharacterStateFacetModule =
 
     type Entity with
 
-        member this.GetCharacterType world : CharacterType = (this.GetXtension world)?CharacterType
-        member this.SetCharacterType (value : CharacterType) world = this.UpdateXtension (fun xtension -> xtension?ActivityState <- value) world
-        member this.GetActivityState world : ActivityState = (this.GetXtension world)?ActivityState
-        member this.SetActivityState (value : ActivityState) world = this.UpdateXtension (fun xtension -> xtension?ActivityState <- value) world
-        member this.GetHitPoints world : int = (this.GetXtension world)?HitPoints
-        member this.SetHitPoints (value : int) world = this.UpdateXtension (fun xtension -> xtension?HitPoints <- value) world
-        member this.GetSpecialPoints world : int = (this.GetXtension world)?SpecialPoints
-        member this.SetSpecialPoints (value : int) world = this.UpdateXtension (fun xtension -> xtension?SpecialPoints <- value) world
-        member this.GetPowerBuff world : single = (this.GetXtension world)?PowerBuff
-        member this.SetPowerBuff (value : single) world = this.UpdateXtension (fun xtension -> xtension?PowerBuff <- value) world
-        member this.GetShieldBuff world : single = (this.GetXtension world)?ShieldBuff
-        member this.SetShieldBuff (value : single) world = this.UpdateXtension (fun xtension -> xtension?ShieldBuff <- value) world
-        member this.GetMindBuff world : single = (this.GetXtension world)?MindBuff
-        member this.SetMindBuff (value : single) world = this.UpdateXtension (fun xtension -> xtension?MindBuff <- value) world
-        member this.GetCounterBuff world : single = (this.GetXtension world)?CounterBuff
-        member this.SetCounterBuff (value : single) world = this.UpdateXtension (fun xtension -> xtension?CounterBuff <- value) world
-        member this.GetStatuses world : StatusType Set = (this.GetXtension world)?Statuses
-        member this.SetStatuses (value : StatusType Set) world = this.UpdateXtension (fun xtension -> xtension?Statuses <- value) world
-        member this.GetEquippedWeapon world : WeaponType option = (this.GetXtension world)?EquippedWeapon
-        member this.SetEquippedWeapon (value : WeaponType option) world = this.UpdateXtension (fun xtension -> xtension?EquippedWeapon <- value) world
-        member this.GetEquippedArmor world : ArmorType option = (this.GetXtension world)?EquippedArmor
-        member this.SetEquippedArmor (value : ArmorType option) world = this.UpdateXtension (fun xtension -> xtension?EquippedArmor <- value) world
-        member this.GetEquippedRelics world : RelicType list = (this.GetXtension world)?EquippedRelics
-        member this.SetEquippedRelics (value : RelicType list) world = this.UpdateXtension (fun xtension -> xtension?EquippedRelics <- value) world
-        member this.GetControlType world : ControlType = (this.GetXtension world)?ControlType
-        member this.SetControlType (value : ControlType) world = this.UpdateXtension (fun xtension -> xtension?ControlType <- value) world
+        member this.GetCharacterType world : CharacterType = this.Get "CharacterType" world
+        member this.SetCharacterType (value : CharacterType) world = this.Set "ActivityState" value world
+        member this.GetActivityState world : ActivityState = this.Get "ActivityState" world
+        member this.SetActivityState (value : ActivityState) world = this.Set "ActivityState" value world
+        member this.GetHitPoints world : int = this.Get "HitPoints" world
+        member this.SetHitPoints (value : int) world = this.Set "HitPoints" value world
+        member this.GetSpecialPoints world : int = this.Get "SpecialPoints" world
+        member this.SetSpecialPoints (value : int) world = this.Set "SpecialPoints" value world
+        member this.GetPowerBuff world : single = this.Get "PowerBuff" world
+        member this.SetPowerBuff (value : single) world = this.Set "PowerBuff" value world
+        member this.GetShieldBuff world : single = this.Get "ShieldBuff" world
+        member this.SetShieldBuff (value : single) world = this.Set "ShieldBuff" value world
+        member this.GetMindBuff world : single = this.Get "MindBuff" world
+        member this.SetMindBuff (value : single) world = this.Set "MindBuff" value world
+        member this.GetCounterBuff world : single = this.Get "CounterBuff" world
+        member this.SetCounterBuff (value : single) world = this.Set "CounterBuff" value world
+        member this.GetStatuses world : StatusType Set = this.Get "Statuses" world
+        member this.SetStatuses (value : StatusType Set) world = this.Set "Statuses" value world
+        member this.GetEquippedWeapon world : WeaponType option = this.Get "EquippedWeapon" world
+        member this.SetEquippedWeapon (value : WeaponType option) world = this.Set "EquippedWeapon" value world
+        member this.GetEquippedArmor world : ArmorType option = this.Get "EquippedArmor" world
+        member this.SetEquippedArmor (value : ArmorType option) world = this.Set "EquippedArmor" value world
+        member this.GetEquippedRelics world : RelicType list = this.Get "EquippedRelics" world
+        member this.SetEquippedRelics (value : RelicType list) world = this.Set "EquippedRelics" value world
+        member this.GetControlType world : ControlType = this.Get "ControlType" world
+        member this.SetControlType (value : ControlType) world = this.Set "ControlType" value world
 
     type CharacterStateFacet () =
         inherit Facet ()
@@ -74,10 +74,10 @@ module CharacterAnimationFacetModule =
 
     type Entity with
     
-        member this.GetCharacterAnimationState world : CharacterAnimationState = (this.GetXtension world)?CharacterAnimationState
-        member this.SetCharacterAnimationState (value : CharacterAnimationState) world = this.UpdateXtension (fun xtension -> xtension?CharacterAnimationState <- value) world
-        member this.GetCharacterAnimationSheet world : AssetTag = (this.GetXtension world)?CharacterAnimationSheet
-        member this.SetCharacterAnimationSheet (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?CharacterAnimationSheet <- value) world
+        member this.GetCharacterAnimationState world : CharacterAnimationState = this.Get "CharacterAnimationState" world
+        member this.SetCharacterAnimationState (value : CharacterAnimationState) world = this.Set "CharacterAnimationState" value world
+        member this.GetCharacterAnimationSheet world : AssetTag = this.Get "CharacterAnimationSheet" world
+        member this.SetCharacterAnimationSheet (value : AssetTag) world = this.Set "CharacterAnimationSheet" value world
 
     type CharacterAnimationFacet () =
         inherit Facet ()

@@ -34,11 +34,13 @@ module WorldScreenModule =
         member this.GetPersistent world = ScreenState.getPersistent (World.getScreenState this world)
         member this.SetPersistent value world = World.updateScreenState (ScreenState.setPersistent value) this world
 
-        /// Get an xtension property by name.
-        member this.GetXProperty name world =
-            let xtension = this.GetXtension world
-            let xProperty = Xtension.getProperty name xtension
-            xProperty.PropertyValue
+        /// The dynamic look-up operator.
+        member this.Get propertyName world : 'r =
+            ScreenState.(?) (World.getScreenState this world, propertyName)
+
+        /// The dynamic assignment operator.
+        member this.Set propertyName (value : 'a) world = 
+            World.setScreenState (ScreenState.(?<-) (World.getScreenState this world, propertyName, value)) this world
 
         /// Query that a screen is in an idling state (not transitioning in nor out).
         member this.IsIdling world =

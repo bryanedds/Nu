@@ -16,16 +16,16 @@ module MountFacetModule =
 
     type Entity with
     
-        member this.GetOptMountRelation world : Entity Relation option = (this.GetXtension world)?OptMountRelation
-        member this.SetOptMountRelation (value : Entity Relation option) world = this.UpdateXtension (fun xtension -> xtension?OptMountRelation <- value) world
-        member this.GetPositionLocal world : Vector2 = (this.GetXtension world)?PositionLocal
-        member this.SetPositionLocal (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?PositionLocal <- value) world
-        member this.GetDepthLocal world : single = (this.GetXtension world)?DepthLocal
-        member this.SetDepthLocal (value : single) world = this.UpdateXtension (fun xtension -> xtension?DepthLocal <- value) world
-        member private this.GetMountUpdateCountNp world : int64 = (this.GetXtension world)?MountUpdateCountNp
-        member private this.SetMountUpdateCountNp (value : int64) world = this.UpdateXtension (fun xtension -> xtension?MountUpdateCountNp <- value) world
-        member private this.GetMountUnsubscribeNp world : World -> World = (this.GetXtension world)?MountUnsubscribeNp
-        member private this.SetMountUnsubscribeNp (value : World -> World) world = this.UpdateXtension (fun xtension -> xtension?MountUnsubscribeNp <- value) world
+        member this.GetOptMountRelation world : Entity Relation option = this.Get "OptMountRelation" world
+        member this.SetOptMountRelation (value : Entity Relation option) world = this.Set "OptMountRelation" value world
+        member this.GetPositionLocal world : Vector2 = this.Get "PositionLocal" world
+        member this.SetPositionLocal (value : Vector2) world = this.Set "PositionLocal" value world
+        member this.GetDepthLocal world : single = this.Get "DepthLocal" world
+        member this.SetDepthLocal (value : single) world = this.Set "DepthLocal" value world
+        member private this.GetMountUpdateCountNp world : int64 = this.Get "MountUpdateCountNp" world
+        member private this.SetMountUpdateCountNp (value : int64) world = this.Set "MountUpdateCountNp" value world
+        member private this.GetMountUnsubscribeNp world : World -> World = this.Get "MountUnsubscribeNp" world
+        member private this.SetMountUnsubscribeNp (value : World -> World) world = this.Set "MountUnsubscribeNp" value world
 
     type MountFacet () =
         inherit Facet ()
@@ -80,26 +80,26 @@ module EffectFacetModule =
 
     type Entity with
     
-        member this.GetOptEffects world : AssetTag list option = (this.GetXtension world)?OptEffects
-        member this.SetOptEffects (value : AssetTag list option) world = this.UpdateXtension (fun xtension -> xtension?OptEffects <- value) world
-        member this.GetOptEffectsLc world : AssetTag list option = (this.GetXtension world)?OptEffectsLc
-        member private this.SetOptEffectsLc (value : AssetTag list option) world = this.UpdateXtension (fun xtension -> xtension?OptEffectsLc <- value) world
-        member this.GetEffectDefinitions world : Definitions = (this.GetXtension world)?EffectDefinitions
-        member this.SetEffectDefinitions (value : Definitions) world = this.UpdateXtension (fun xtension -> xtension?EffectDefinitions <- value) world
-        member this.GetEffect world : Effect = (this.GetXtension world)?Effect
-        member this.SetEffect (value : Effect) world = this.UpdateXtension (fun xtension -> xtension?Effect <- value) world
-        member this.GetEffectOffset world : Vector2 = (this.GetXtension world)?EffectOffset
-        member this.SetEffectOffset (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?EffectOffset <- value) world
-        member this.GetEffectTimeOffset world : int64 = (this.GetXtension world)?EffectTimeOffset
-        member this.SetEffectTimeOffset (value : int64) world = this.UpdateXtension (fun xtension -> xtension?EffectTimeOffset <- value) world
-        member this.GetEffectHistoryMax world : int = (this.GetXtension world)?EffectHistoryMax
-        member this.SetEffectHistoryMax (value : int) world = this.UpdateXtension (fun xtension -> xtension?EffectHistoryMax <- value) world
-        member this.GetEffectHistoryNp world : Slice Deque = (this.GetXtension world)?EffectHistoryNp
-        member private this.SetEffectHistoryNp (value : Slice Deque) world = this.UpdateXtension (fun xtension -> xtension?EffectHistoryNp <- value) world
-        member this.GetEffectPhysicsShapesNp world : unit = (this.GetXtension world)?EffectPhysicsShapesNp // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
-        member private this.SetEffectPhysicsShapesNp (value : unit) world = this.UpdateXtension (fun xtension -> xtension?EffectPhysicsShapesNp <- value) world
-        member this.GetEffectTagsNp world : EffectTags = (this.GetXtension world)?EffectTagsNp
-        member private this.SetEffectTagsNp (value : EffectTags) world = this.UpdateXtension (fun xtension -> xtension?EffectTagsNp <- value) world
+        member this.GetOptEffects world : AssetTag list option = this.Get "OptEffects" world
+        member this.SetOptEffects (value : AssetTag list option) world = this.Set "OptEffects" value world
+        member this.GetOptEffectsLc world : AssetTag list option = this.Get "OptEffectsLc" world
+        member private this.SetOptEffectsLc (value : AssetTag list option) world = this.Set "OptEffectsLc" value world
+        member this.GetEffectDefinitions world : Definitions = this.Get "EffectDefinitions" world
+        member this.SetEffectDefinitions (value : Definitions) world = this.Set "EffectDefinitions" value world
+        member this.GetEffect world : Effect = this.Get "Effect" world
+        member this.SetEffect (value : Effect) world = this.Set "Effect" value world
+        member this.GetEffectOffset world : Vector2 = this.Get "EffectOffset" world
+        member this.SetEffectOffset (value : Vector2) world = this.Set "EffectOffset" value world
+        member this.GetEffectTimeOffset world : int64 = this.Get "EffectTimeOffset" world
+        member this.SetEffectTimeOffset (value : int64) world = this.Set "EffectTimeOffset" value world
+        member this.GetEffectHistoryMax world : int = this.Get "EffectHistoryMax" world
+        member this.SetEffectHistoryMax (value : int) world = this.Set "EffectHistoryMax" value world
+        member this.GetEffectHistoryNp world : Slice Deque = this.Get "EffectHistoryNp" world
+        member private this.SetEffectHistoryNp (value : Slice Deque) world = this.Set "EffectHistoryNp" value world
+        member this.GetEffectPhysicsShapesNp world : unit = this.Get "EffectPhysicsShapesNp" world // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
+        member private this.SetEffectPhysicsShapesNp (value : unit) world = this.Set "EffectPhysicsShapesNp" value world
+        member this.GetEffectTagsNp world : EffectTags = this.Get "EffectTagsNp" world
+        member private this.SetEffectTagsNp (value : EffectTags) world = this.Set "EffectTagsNp" value world
 
     type EffectFacet () =
         inherit Facet ()
@@ -201,42 +201,42 @@ module RigidBodyFacetModule =
 
     type Entity with
 
-        member this.GetMinorId world : Guid = (this.GetXtension world)?MinorId
-        member this.SetMinorId (value : Guid) world = this.UpdateXtension (fun xtension -> xtension?MinorId <- value) world
-        member this.GetBodyType world : BodyType = (this.GetXtension world)?BodyType
-        member this.SetBodyType (value : BodyType) world = this.UpdateXtension (fun xtension -> xtension?BodyType <- value) world
-        member this.GetAwake world : bool = (this.GetXtension world)?Awake
-        member this.SetAwake (value : bool) world = this.UpdateXtension (fun xtension -> xtension?Awake <- value) world
-        member this.GetEnabled world : bool = (this.GetXtension world)?Enabled
-        member this.SetEnabled (value : bool) world = this.UpdateXtension (fun xtension -> xtension?Enabled <- value) world
-        member this.GetDensity world : single = (this.GetXtension world)?Density
-        member this.SetDensity (value : single) world = this.UpdateXtension (fun xtension -> xtension?Density <- value) world
-        member this.GetFriction world : single = (this.GetXtension world)?Friction
-        member this.SetFriction (value : single) world = this.UpdateXtension (fun xtension -> xtension?Friction <- value) world
-        member this.GetRestitution world : single = (this.GetXtension world)?Restitution
-        member this.SetRestitution (value : single) world = this.UpdateXtension (fun xtension -> xtension?Restitution <- value) world
-        member this.GetFixedRotation world : bool = (this.GetXtension world)?FixedRotation
-        member this.SetFixedRotation (value : bool) world = this.UpdateXtension (fun xtension -> xtension?FixedRotation <- value) world
-        member this.GetAngularVelocity world : single = (this.GetXtension world)?AngularVelocity
-        member this.SetAngularVelocity (value : single) world = this.UpdateXtension (fun xtension -> xtension?AngularVelocity <- value) world
-        member this.GetAngularDamping world : single = (this.GetXtension world)?AngularDamping
-        member this.SetAngularDamping (value : single) world = this.UpdateXtension (fun xtension -> xtension?AngularDamping <- value) world
-        member this.GetLinearVelocity world : Vector2 = (this.GetXtension world)?LinearVelocity
-        member this.SetLinearVelocity (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?LinearVelocity <- value) world
-        member this.GetLinearDamping world : single = (this.GetXtension world)?LinearDamping
-        member this.SetLinearDamping (value : single) world = this.UpdateXtension (fun xtension -> xtension?LinearDamping <- value) world
-        member this.GetGravityScale world : single = (this.GetXtension world)?GravityScale
-        member this.SetGravityScale (value : single) world = this.UpdateXtension (fun xtension -> xtension?GravityScale <- value) world
-        member this.GetCollisionCategories world : string = (this.GetXtension world)?CollisionCategories
-        member this.SetCollisionCategories (value : string) world = this.UpdateXtension (fun xtension -> xtension?CollisionCategories <- value) world
-        member this.GetCollisionMask world : string = (this.GetXtension world)?CollisionMask
-        member this.SetCollisionMask (value : string) world = this.UpdateXtension (fun xtension -> xtension?CollisionMask <- value) world
-        member this.GetCollisionBody world : BodyShape = (this.GetXtension world)?CollisionBody
-        member this.SetCollisionBody (value : BodyShape) world = this.UpdateXtension (fun xtension -> xtension?CollisionBody <- value) world
-        member this.GetIsBullet world : bool = (this.GetXtension world)?IsBullet
-        member this.SetIsBullet (value : bool) world = this.UpdateXtension (fun xtension -> xtension?IsBullet <- value) world
-        member this.GetIsSensor world : bool = (this.GetXtension world)?IsSensor
-        member this.SetIsSensor (value : bool) world = this.UpdateXtension (fun xtension -> xtension?IsSensor <- value) world
+        member this.GetMinorId world : Guid = this.Get "MinorId" world
+        member this.SetMinorId (value : Guid) world = this.Set "MinorId" value world
+        member this.GetBodyType world : BodyType = this.Get "BodyType" world
+        member this.SetBodyType (value : BodyType) world = this.Set "BodyType" value world
+        member this.GetAwake world : bool = this.Get "Awake" world
+        member this.SetAwake (value : bool) world = this.Set "Awake" value world
+        member this.GetEnabled world : bool = this.Get "Enabled" world
+        member this.SetEnabled (value : bool) world = this.Set "Enabled" value world
+        member this.GetDensity world : single = this.Get "Density" world
+        member this.SetDensity (value : single) world = this.Set "Density" value world
+        member this.GetFriction world : single = this.Get "Friction" world
+        member this.SetFriction (value : single) world = this.Set "Friction" value world
+        member this.GetRestitution world : single = this.Get "Restitution" world
+        member this.SetRestitution (value : single) world = this.Set "Restitution" value world
+        member this.GetFixedRotation world : bool = this.Get "FixedRotation" world
+        member this.SetFixedRotation (value : bool) world = this.Set "FixedRotation" value world
+        member this.GetAngularVelocity world : single = this.Get "AngularVelocity" world
+        member this.SetAngularVelocity (value : single) world = this.Set "AngularVelocity" value world
+        member this.GetAngularDamping world : single = this.Get "AngularDamping" world
+        member this.SetAngularDamping (value : single) world = this.Set "AngularDamping" value world
+        member this.GetLinearVelocity world : Vector2 = this.Get "LinearVelocity" world
+        member this.SetLinearVelocity (value : Vector2) world = this.Set "LinearVelocity" value world
+        member this.GetLinearDamping world : single = this.Get "LinearDamping" world
+        member this.SetLinearDamping (value : single) world = this.Set "LinearDamping" value world
+        member this.GetGravityScale world : single = this.Get "GravityScale" world
+        member this.SetGravityScale (value : single) world = this.Set "GravityScale" value world
+        member this.GetCollisionCategories world : string = this.Get "CollisionCategories" world
+        member this.SetCollisionCategories (value : string) world = this.Set "CollisionCategories" value world
+        member this.GetCollisionMask world : string = this.Get "CollisionMask" world
+        member this.SetCollisionMask (value : string) world = this.Set "CollisionMask" value world
+        member this.GetCollisionBody world : BodyShape = this.Get "CollisionBody" world
+        member this.SetCollisionBody (value : BodyShape) world = this.Set "CollisionBody" value world
+        member this.GetIsBullet world : bool = this.Get "IsBullet" world
+        member this.SetIsBullet (value : bool) world = this.Set "IsBullet" value world
+        member this.GetIsSensor world : bool = this.Get "IsSensor" world
+        member this.SetIsSensor (value : bool) world = this.Set "IsSensor" value world
         member this.GetPhysicsId world = { SourceId = this.GetId world; BodyId = this.GetMinorId world }
 
     type RigidBodyFacet () =
@@ -301,8 +301,8 @@ module StaticSpriteFacetModule =
 
     type Entity with
 
-        member this.GetStaticImage world : AssetTag = (this.GetXtension world)?StaticImage
-        member this.SetStaticImage (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?StaticImage <- value) world
+        member this.GetStaticImage world : AssetTag = this.Get "StaticImage" world
+        member this.SetStaticImage (value : AssetTag) world = this.Set "StaticImage" value world
 
     type StaticSpriteFacet () =
         inherit Facet ()
@@ -339,16 +339,16 @@ module AnimatedSpriteFacetModule =
 
     type Entity with
     
-        member this.GetCelSize world : Vector2 = (this.GetXtension world)?CelSize
-        member this.SetCelSize (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?CelSize <- value) world
-        member this.GetCelRun world : int = (this.GetXtension world)?CelRun
-        member this.SetCelRun (value : int) world = this.UpdateXtension (fun xtension -> xtension?CelRun <- value) world
-        member this.GetCelCount world : int = (this.GetXtension world)?CelCount
-        member this.SetCelCount (value : int) world = this.UpdateXtension (fun xtension -> xtension?CelCount <- value) world
-        member this.GetAnimationStutter world : int64 = (this.GetXtension world)?AnimationStutter
-        member this.SetAnimationStutter (value : int64) world = this.UpdateXtension (fun xtension -> xtension?AnimationStutter <- value) world
-        member this.GetAnimationSheet world : AssetTag = (this.GetXtension world)?AnimationSheet
-        member this.SetAnimationSheet (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?AnimationSheet <- value) world
+        member this.GetCelSize world : Vector2 = this.Get "CelSize" world
+        member this.SetCelSize (value : Vector2) world = this.Set "CelSize" value world
+        member this.GetCelRun world : int = this.Get "CelRun" world
+        member this.SetCelRun (value : int) world = this.Set "CelRun" value world
+        member this.GetCelCount world : int = this.Get "CelCount" world
+        member this.SetCelCount (value : int) world = this.Set "CelCount" value world
+        member this.GetAnimationStutter world : int64 = this.Get "AnimationStutter" world
+        member this.SetAnimationStutter (value : int64) world = this.Set "AnimationStutter" value world
+        member this.GetAnimationSheet world : AssetTag = this.Get "AnimationSheet" world
+        member this.SetAnimationSheet (value : AssetTag) world = this.Set "AnimationSheet" value world
 
     type AnimatedSpriteFacet () =
         inherit Facet ()
@@ -401,10 +401,10 @@ module GuiDispatcherModule =
 
     type Entity with
     
-        member this.GetDisabledColor world : Vector4 = (this.GetXtension world)?DisabledColor
-        member this.SetDisabledColor (value : Vector4) world = this.UpdateXtension (fun xtension -> xtension?DisabledColor <- value) world
-        member this.GetSwallowMouseLeft world : bool = (this.GetXtension world)?SwallowMouseLeft
-        member this.SetSwallowMouseLeft (value : bool) world = this.UpdateXtension (fun xtension -> xtension?SwallowMouseLeft <- value) world
+        member this.GetDisabledColor world : Vector4 = this.Get "DisabledColor" world
+        member this.SetDisabledColor (value : Vector4) world = this.Set "DisabledColor" value world
+        member this.GetSwallowMouseLeft world : bool = this.Get "SwallowMouseLeft" world
+        member this.SetSwallowMouseLeft (value : bool) world = this.Set "SwallowMouseLeft" value world
 
     type GuiDispatcher () =
         inherit EntityDispatcher ()
@@ -439,14 +439,14 @@ module ButtonDispatcherModule =
 
     type Entity with
     
-        member this.GetDown world : bool = (this.GetXtension world)?Down
-        member this.SetDown (value : bool) world = this.UpdateXtension (fun xtension -> xtension?Down <- value) world
-        member this.GetUpImage world : AssetTag = (this.GetXtension world)?UpImage
-        member this.SetUpImage (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?UpImage <- value) world
-        member this.GetDownImage world : AssetTag = (this.GetXtension world)?DownImage
-        member this.SetDownImage (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?DownImage <- value) world
-        member this.GetOptClickSound world : AssetTag option = (this.GetXtension world)?OptClickSound
-        member this.SetOptClickSound (value : AssetTag option) world = this.UpdateXtension (fun xtension -> xtension?OptClickSound <- value) world
+        member this.GetDown world : bool = this.Get "Down" world
+        member this.SetDown (value : bool) world = this.Set "Down" value world
+        member this.GetUpImage world : AssetTag = this.Get "UpImage" world
+        member this.SetUpImage (value : AssetTag) world = this.Set "UpImage" value world
+        member this.GetDownImage world : AssetTag = this.Get "DownImage" world
+        member this.SetDownImage (value : AssetTag) world = this.Set "DownImage" value world
+        member this.GetOptClickSound world : AssetTag option = this.Get "OptClickSound" world
+        member this.SetOptClickSound (value : AssetTag option) world = this.Set "OptClickSound" value world
 
     type ButtonDispatcher () =
         inherit GuiDispatcher ()
@@ -529,8 +529,8 @@ module LabelDispatcherModule =
 
     type Entity with
     
-        member this.GetLabelImage world : AssetTag = (this.GetXtension world)?LabelImage
-        member this.SetLabelImage (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?LabelImage <- value) world
+        member this.GetLabelImage world : AssetTag = this.Get "LabelImage" world
+        member this.SetLabelImage (value : AssetTag) world = this.Set "LabelImage" value world
 
     type LabelDispatcher () =
         inherit GuiDispatcher ()
@@ -566,16 +566,16 @@ module TextDispatcherModule =
 
     type Entity with
     
-        member this.GetText world : string = (this.GetXtension world)?Text
-        member this.SetText (value : string) world = this.UpdateXtension (fun xtension -> xtension?Text <- value) world
-        member this.GetTextFont world : AssetTag = (this.GetXtension world)?TextFont
-        member this.SetTextFont (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?TextFont <- value) world
-        member this.GetTextOffset world : Vector2 = (this.GetXtension world)?TextOffset
-        member this.SetTextOffset (value : Vector2) world = this.UpdateXtension (fun xtension -> xtension?TextOffset <- value) world
-        member this.GetTextColor world : Vector4 = (this.GetXtension world)?TextColor
-        member this.SetTextColor (value : Vector4) world = this.UpdateXtension (fun xtension -> xtension?TextColor <- value) world
-        member this.GetBackgroundImage world : AssetTag = (this.GetXtension world)?BackgroundImage
-        member this.SetBackgroundImage (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?BackgroundImage <- value) world
+        member this.GetText world : string = this.Get "Text" world
+        member this.SetText (value : string) world = this.Set "Text" value world
+        member this.GetTextFont world : AssetTag = this.Get "TextFont" world
+        member this.SetTextFont (value : AssetTag) world = this.Set "TextFont" value world
+        member this.GetTextOffset world : Vector2 = this.Get "TextOffset" world
+        member this.SetTextOffset (value : Vector2) world = this.Set "TextOffset" value world
+        member this.GetTextColor world : Vector4 = this.Get "TextColor" world
+        member this.SetTextColor (value : Vector4) world = this.Set "TextColor" value world
+        member this.GetBackgroundImage world : AssetTag = this.Get "BackgroundImage" world
+        member this.SetBackgroundImage (value : AssetTag) world = this.Set "BackgroundImage" value world
 
     type TextDispatcher () =
         inherit GuiDispatcher ()
@@ -625,16 +625,16 @@ module ToggleDispatcherModule =
 
     type Entity with
     
-        member this.GetOn world : bool = (this.GetXtension world)?On
-        member this.SetOn (value : bool) world = this.UpdateXtension (fun xtension -> xtension?On <- value) world
-        member this.GetPressed world : bool = (this.GetXtension world)?Pressed
-        member this.SetPressed (value : bool) world = this.UpdateXtension (fun xtension -> xtension?Pressed <- value) world
-        member this.GetOffImage world : AssetTag = (this.GetXtension world)?OffImage
-        member this.SetOffImage (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?OffImage <- value) world
-        member this.GetOnImage world : AssetTag = (this.GetXtension world)?OnImage
-        member this.SetOnImage (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?OnImage <- value) world
-        member this.GetOptToggleSound world : AssetTag option = (this.GetXtension world)?OptToggleSound
-        member this.SetOptToggleSound (value : AssetTag option) world = this.UpdateXtension (fun xtension -> xtension?OptToggleSound <- value) world
+        member this.GetOn world : bool = this.Get "On" world
+        member this.SetOn (value : bool) world = this.Set "On" value world
+        member this.GetPressed world : bool = this.Get "Pressed" world
+        member this.SetPressed (value : bool) world = this.Set "Pressed" value world
+        member this.GetOffImage world : AssetTag = this.Get "OffImage" world
+        member this.SetOffImage (value : AssetTag) world = this.Set "OffImage" value world
+        member this.GetOnImage world : AssetTag = this.Get "OnImage" world
+        member this.SetOnImage (value : AssetTag) world = this.Set "OnImage" value world
+        member this.GetOptToggleSound world : AssetTag option = this.Get "OptToggleSound" world
+        member this.SetOptToggleSound (value : AssetTag option) world = this.Set "OptToggleSound" value world
 
     type ToggleDispatcher () =
         inherit GuiDispatcher ()
@@ -716,8 +716,8 @@ module FeelerDispatcherModule =
 
     type Entity with
     
-        member this.GetTouched world : bool = (this.GetXtension world)?Touched
-        member this.SetTouched (value : bool) world = this.UpdateXtension (fun xtension -> xtension?Touched <- value) world
+        member this.GetTouched world : bool = this.Get "Touched" world
+        member this.SetTouched (value : bool) world = this.Set "Touched" value world
 
     type FeelerDispatcher () =
         inherit GuiDispatcher ()
@@ -767,14 +767,14 @@ module FillBarDispatcherModule =
 
     type Entity with
     
-        member this.GetFill world : single = (this.GetXtension world)?Fill
-        member this.SetFill (value : single) world = this.UpdateXtension (fun xtension -> xtension?Fill <- value) world
-        member this.GetFillInset world : single = (this.GetXtension world)?FillInset
-        member this.SetFillInset (value : single) world = this.UpdateXtension (fun xtension -> xtension?FillInset <- value) world
-        member this.GetFillImage world : AssetTag = (this.GetXtension world)?FillImage
-        member this.SetFillImage (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?FillImage <- value) world
-        member this.GetBorderImage world : AssetTag = (this.GetXtension world)?BorderImage
-        member this.SetBorderImage (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?BorderImage <- value) world
+        member this.GetFill world : single = this.Get "Fill" world
+        member this.SetFill (value : single) world = this.Set "Fill" value world
+        member this.GetFillInset world : single = this.Get "FillInset" world
+        member this.SetFillInset (value : single) world = this.Set "FillInset" value world
+        member this.GetFillImage world : AssetTag = this.Get "FillImage" world
+        member this.SetFillImage (value : AssetTag) world = this.Set "FillImage" value world
+        member this.GetBorderImage world : AssetTag = this.Get "BorderImage" world
+        member this.SetBorderImage (value : AssetTag) world = this.Set "BorderImage" value world
 
     type FillBarDispatcher () =
         inherit GuiDispatcher ()
@@ -895,10 +895,10 @@ module TileMapDispatcherModule =
 
     type Entity with
     
-        member this.GetTileMapAsset world : AssetTag = (this.GetXtension world)?TileMapAsset
-        member this.SetTileMapAsset (value : AssetTag) world = this.UpdateXtension (fun xtension -> xtension?TileMapAsset <- value) world
-        member this.GetParallax world : single = (this.GetXtension world)?Parallax
-        member this.SetParallax (value : single) world = this.UpdateXtension (fun xtension -> xtension?Parallax <- value) world
+        member this.GetTileMapAsset world : AssetTag = this.Get "TileMapAsset" world
+        member this.SetTileMapAsset (value : AssetTag) world = this.Set "TileMapAsset" value world
+        member this.GetParallax world : single = this.Get "Parallax" world
+        member this.SetParallax (value : single) world = this.Set "Parallax" value world
 
         static member makeTileMapData (tileMapAsset : AssetTag) world =
             let metadataMap = World.getAssetMetadataMap world

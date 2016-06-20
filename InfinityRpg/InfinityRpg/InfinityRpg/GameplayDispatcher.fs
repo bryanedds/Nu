@@ -20,12 +20,12 @@ module GameplayDispatcherModule =
 
     type Screen with
 
-        member this.GetContentRandState world : uint64 = (this.GetXtension world)?ContentRandState
-        member this.SetContentRandState (value : uint64) world = this.UpdateXtension (fun xtension -> xtension?ContentRandState <- value) world
-        member this.GetOngoingRandState world : uint64 = (this.GetXtension world)?OngoingRandState
-        member this.SetOngoingRandState (value : uint64) world = this.UpdateXtension (fun xtension -> xtension?OngoingRandState <- value) world
-        member this.GetShallLoadGame world : bool = (this.GetXtension world)?ShallLoadGame
-        member this.SetShallLoadGame (value : bool) world = this.UpdateXtension (fun xtension -> xtension?ShallLoadGame <- value) world
+        member this.GetContentRandState world : uint64 = this.Get "ContentRandState" world
+        member this.SetContentRandState (value : uint64) world = this.Set "ContentRandState" value world
+        member this.GetOngoingRandState world : uint64 = this.Get "OngoingRandState" world
+        member this.SetOngoingRandState (value : uint64) world = this.Set "OngoingRandState" value world
+        member this.GetShallLoadGame world : bool = this.Get "ShallLoadGame" world
+        member this.SetShallLoadGame (value : bool) world = this.Set "ShallLoadGame" value world
 
     type GameplayDispatcher () =
         inherit ScreenDispatcher ()

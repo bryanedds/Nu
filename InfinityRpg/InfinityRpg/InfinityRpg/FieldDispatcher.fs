@@ -10,8 +10,8 @@ module FieldDispatcherModule =
 
     type Entity with
     
-        member this.GetFieldMapNp world : FieldMap = (this.GetXtension world)?FieldMapNp
-        member this.SetFieldMapNp (value : FieldMap) world = this.UpdateXtension (fun xtension -> xtension?FieldMapNp <- value) world
+        member this.GetFieldMapNp world : FieldMap = this.Get "FieldMapNp" world
+        member this.SetFieldMapNp (value : FieldMap) world = this.Set "FieldMapNp" value world
 
     type FieldDispatcher () =
         inherit EntityDispatcher ()
