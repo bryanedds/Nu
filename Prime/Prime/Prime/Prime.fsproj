@@ -82,6 +82,7 @@
     <Compile Include="Relation.fs" />
     <Compile Include="KeyedCache.fs" />
     <Compile Include="MutantCache.fs" />
+    <Compile Include="Tmap.fs" />
     <Compile Include="Vmap.fs" />
     <Compile Include="Vsync.fs" />
     <Compile Include="Reflection.fs" />

@@ -13,8 +13,8 @@ module Program =
     let runTimings make lookup name =
         printfn "%s timings..." name
         let rand = Random 1
-        let entries = [|for _ in 0 .. 65535 do yield (let n = rand.Next () in (string n, (string n, string n)))|]
-        for _ in 0 .. 5 do
+        let entries = [|for _ in 0 .. 524280 do yield (let n = rand.Next () in (string n, (string n, string n)))|]
+        for _ in 0 .. 2 do
             GC.Collect ()
             let watch = Stopwatch.StartNew ()
             let made = make entries
@@ -25,17 +25,23 @@ module Program =
             watch2.Stop ()
             printfn "Make time: %A\tLookup time: %A" watch.Elapsed watch2.Elapsed
 
+    // run map timings
+    runTimings
+        (fun entries -> Array.fold (fun map (k, v) -> Map.add k v map) Map.empty entries)
+        (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Map.find k map) entries)
+        "Map"
+
     // run vmap timings
     runTimings
         (fun entries -> Array.fold (fun map (k, v) -> Vmap.add k v map) (Vmap.makeEmpty ()) entries)
         (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Vmap.find k map) entries)
         "Vmap"
 
-    // run map timings
+    // run vmap timings
     runTimings
-        (fun entries -> Array.fold (fun map (k, v) -> Map.add k v map) Map.empty entries)
-        (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Map.find k map) entries)
-        "Map"
+        (fun entries -> Array.fold (fun map (k, v) -> Tmap.add k v map) (Tmap.makeEmpty 4) entries)
+        (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Tmap.find k map) entries)
+        "Tmap"
 
     // run dictionary timings
     let dic = Dictionary<string, string * string> ()
