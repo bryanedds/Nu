@@ -37,37 +37,24 @@ module Program =
         (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Vmap.find k map) entries)
         "Vmap"
 
-    // run tmap timings without computation expressions
-    runTimings
-        (fun entries -> Array.fold (fun map (k, v) -> Tmap.add k v map) (Tmap.makeEmpty 4) entries)
-        (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Tmap.find k map) entries)
-        "Tmap w/ CE"
-
     // run tmap timings with computation expressions
     runTimings
-        (fun entries -> Array.fold (fun map (k, v) -> Tmap.add k v map) (Tmap.makeEmpty 4) entries)
+        (fun entries -> Array.fold (fun map (k, v) -> Tmap.add k v map) (Tmap.makeEmpty None) entries)
         (fun entries map ->
             entries |>
             Array.iter (fun (k, _) ->
-                map .>.
+                map .>>.
                 tmap {
                     let! _ = Tmap.find k
                     return 0 } |>
                 ignore))
-        "Tmap w/o CE"
+        "Tmap w/ CE"
 
-    // run tmap timings
+    // run tmap timings without computation expressions
     runTimings
-        (fun entries -> Array.fold (fun map (k, v) -> Tmap.add k v map) (Tmap.makeEmpty 4) entries)
-        (fun entries map ->
-            entries |>
-            Array.iter (fun (k, _) ->
-                map .>.
-                tmap {
-                    let! _ = Tmap.find k
-                    return 0 } |>
-                ignore))
-        "Tmap"
+        (fun entries -> Array.fold (fun map (k, v) -> Tmap.add k v map) (Tmap.makeEmpty None) entries)
+        (fun entries map -> let refMap = ref map in Array.iter (fun (k, _) -> ignore ^ Tmap.find' k refMap) entries)
+        "Tmap w/o CE"
 
     // run dictionary timings
     let dic = Dictionary<string, string * string> ()
