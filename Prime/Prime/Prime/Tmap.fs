@@ -14,11 +14,11 @@ module TmapModule =
 
     type [<NoEquality; NoComparison>] Tmap<'k, 'v when 'k : comparison> =
         private
-            { Dict : Dictionary<'k, 'v>
+            { mutable Tmap : Tmap<'k, 'v>
+              Dict : Dictionary<'k, 'v>
               DictOrigin : Dictionary<'k, 'v>
-              mutable Logs : Log<'k, 'v> list
-              mutable LogsLength : int
-              mutable Tmap : Tmap<'k, 'v>
+              Logs : Log<'k, 'v> list
+              LogsLength : int
               CommitMultiplier : int }
 
         static member (>>.) (map : Tmap<'k2, 'v2>, builder : Texpr<unit, Tmap<'k2, 'v2>>) =
@@ -58,12 +58,12 @@ module TmapModule =
     
         let makeEmpty<'k, 'a when 'k : comparison> optCommitMultiplier =
             let map =
-                { Dict = Dictionary<'k, 'a> HashIdentity.Structural
+                { CommitMultiplier = match optCommitMultiplier with Some cm -> cm | None -> 2
+                  Dict = Dictionary<'k, 'a> HashIdentity.Structural
                   DictOrigin = Dictionary<'k, 'a> HashIdentity.Structural
                   Logs = []
                   LogsLength = 0
-                  Tmap = Unchecked.defaultof<Tmap<'k, 'a>>
-                  CommitMultiplier = match optCommitMultiplier with Some cm -> cm | None -> 2 }
+                  Tmap = Unchecked.defaultof<Tmap<'k, 'a>> }
             map.Tmap <- map
             map
 
