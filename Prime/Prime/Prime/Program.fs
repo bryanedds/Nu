@@ -37,10 +37,36 @@ module Program =
         (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Vmap.find k map) entries)
         "Vmap"
 
-    // run vmap timings
+    // run tmap timings without computation expressions
     runTimings
         (fun entries -> Array.fold (fun map (k, v) -> Tmap.add k v map) (Tmap.makeEmpty 4) entries)
         (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Tmap.find k map) entries)
+        "Tmap w/ CE"
+
+    // run tmap timings with computation expressions
+    runTimings
+        (fun entries -> Array.fold (fun map (k, v) -> Tmap.add k v map) (Tmap.makeEmpty 4) entries)
+        (fun entries map ->
+            entries |>
+            Array.iter (fun (k, _) ->
+                map .>.
+                tmap {
+                    let! _ = Tmap.find k
+                    return 0 } |>
+                ignore))
+        "Tmap w/o CE"
+
+    // run tmap timings
+    runTimings
+        (fun entries -> Array.fold (fun map (k, v) -> Tmap.add k v map) (Tmap.makeEmpty 4) entries)
+        (fun entries map ->
+            entries |>
+            Array.iter (fun (k, _) ->
+                map .>.
+                tmap {
+                    let! _ = Tmap.find k
+                    return 0 } |>
+                ignore))
         "Tmap"
 
     // run dictionary timings
