@@ -15,6 +15,7 @@ module TmapModule =
     type [<NoEquality; NoComparison>] Tmap<'k, 'v when 'k : comparison> =
         private
             { Dict : Dictionary<'k, 'v>
+              DictOrigin : Dictionary<'k, 'v>
               mutable Logs : Log<'k, 'v> list
               mutable LogsLength : int
               mutable Tmap : Tmap<'k, 'v>
@@ -35,13 +36,14 @@ module TmapModule =
     module Tmap =
 
         let private commit map =
-            let dict = Dictionary<'k, 'a> (map.Dict, HashIdentity.Structural)
+            let dictOrigin = Dictionary<'k, 'a> (map.DictOrigin, HashIdentity.Structural)
             List.foldBack (fun log () ->
                 match log with
-                | Add (key, value) -> dict.[key] <- value
-                | Remove key -> ignore ^ dict.Remove(key))
+                | Add (key, value) -> dictOrigin.[key] <- value
+                | Remove key -> ignore ^ dictOrigin.Remove(key))
                 map.Logs ()
-            let map = { map with Dict = dict; Logs = []; LogsLength = 0 }
+            let dict = Dictionary<'k, 'a> (dictOrigin, HashIdentity.Structural)
+            let map = { map with Dict = dict; DictOrigin = dictOrigin; Logs = []; LogsLength = 0 }
             map.Tmap <- map
             map
 
@@ -57,10 +59,11 @@ module TmapModule =
         let makeEmpty<'k, 'a when 'k : comparison> optCommitMultiplier =
             let map =
                 { Dict = Dictionary<'k, 'a> HashIdentity.Structural
+                  DictOrigin = Dictionary<'k, 'a> HashIdentity.Structural
                   Logs = []
                   LogsLength = 0
                   Tmap = Unchecked.defaultof<Tmap<'k, 'a>>
-                  CommitMultiplier = match optCommitMultiplier with Some cm -> cm | None -> 4 }
+                  CommitMultiplier = match optCommitMultiplier with Some cm -> cm | None -> 2 }
             map.Tmap <- map
             map
 
