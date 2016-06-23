@@ -14,7 +14,7 @@ module Program =
         printfn "%s timings..." name
         let rand = Random 1
         let entries = [|for _ in 0 .. 524280 do yield (let n = rand.Next () in (string n, (string n, string n)))|]
-        for _ in 0 .. 2 do
+        for _ in 0 .. 4 do
             GC.Collect ()
             let watch = Stopwatch.StartNew ()
             let made = make entries
@@ -29,7 +29,7 @@ module Program =
     runTimings
         (fun entries -> Array.fold (fun map (k, v) -> Map.add k v map) Map.empty entries)
         (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Map.find k map) entries)
-        "Map"
+        "F# Map"
 
     // run vmap timings
     runTimings
@@ -48,17 +48,17 @@ module Program =
                     let! _ = Tmap.find k
                     return 0 } |>
                 ignore))
-        "Tmap w/ CE"
+        "Tmap w/ Computation Expressions"
 
     // run tmap timings without computation expressions
     runTimings
         (fun entries -> Array.fold (fun map (k, v) -> Tmap.add k v map) (Tmap.makeEmpty None) entries)
         (fun entries map -> let refMap = ref map in Array.iter (fun (k, _) -> ignore ^ Tmap.find' k refMap) entries)
-        "Tmap w/o CE"
+        "Tmap w/o Computation Expressions"
 
     // run dictionary timings
     let dic = Dictionary<string, string * string> ()
     runTimings
         (fun entries -> Array.iter (fun (k, v) -> if not ^ dic.ContainsKey k then dic.Add (k, v)) entries)
         (fun entries () -> Array.iter (fun (k, _) -> ignore ^ dic.[k]) entries)
-        "Dictionary"
+        ".NET Dictionary"
