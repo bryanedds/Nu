@@ -247,8 +247,8 @@ module VmapModule =
             map :> IEnumerable<'k * 'v>
     
         /// Convert a sequence of keys and values to a Vmap.
-        let ofSeq kvps =
+        let ofSeq pairs =
             Seq.fold
                 (fun map (k, v) -> add k v map)
                 (makeEmpty ())
-                kvps
+                pairs
