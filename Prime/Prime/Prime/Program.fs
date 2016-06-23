@@ -40,21 +40,14 @@ module Program =
     // run tmap timings with computation expressions
     runTimings
         (fun entries -> Array.fold (fun map (k, v) -> Tmap.add k v map) (Tmap.makeEmpty None) entries)
-        (fun entries map ->
-            entries |>
-            Array.iter (fun (k, _) ->
-                map .>>.
-                tmap {
-                    let! _ = Tmap.find k
-                    return 0 } |>
-                ignore))
-        "Tmap w/ Computation Expressions"
+        (fun entries map -> entries |> Array.iter (fun (k, _) -> ignore ^ Tmap.find k map))
+        "Tmap"
 
     // run tmap timings without computation expressions
     runTimings
-        (fun entries -> Array.fold (fun map (k, v) -> Tmap.add k v map) (Tmap.makeEmpty None) entries)
-        (fun entries map -> let refMap = ref map in Array.iter (fun (k, _) -> ignore ^ Tmap.find' k refMap) entries)
-        "Tmap w/o Computation Expressions"
+        (fun entries -> Array.fold (fun map (k, v) -> Umap.add k v map) (Umap.makeEmpty None) entries)
+        (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Umap.find k map) entries)
+        "Umap"
 
     // run dictionary timings
     let dic = Dictionary<string, string * string> ()
