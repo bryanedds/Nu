@@ -7,7 +7,7 @@ open System.Collections.Generic
 [<RequireQualifiedAccess>]
 module HashSet =
 
-    /// Make a hash set with a single element.
+    /// Make a hash set with a single item.
     let singleton item =
         List.toHashSet [item]
 
@@ -17,13 +17,13 @@ module HashSetExtension =
     /// HashSet extension methods.
     type HashSet<'a> with
 
-        /// Force the addition of an element, replacing the existing one if necessary.
+        /// Force the addition of an item, replacing the existing one if necessary.
         member this.ForceAdd item =
             let forced = this.Remove item
             this.Add item |> ignore
             forced
 
-        /// Try to add an element, returning false upon failure.
+        /// Try to add an item, returning false upon failure.
         member this.TryAdd item =
             if not ^ this.Contains item
             then this.Add item
