@@ -98,7 +98,7 @@ module VsyncModule =
             | Sync b' -> Sync ^ fun () -> b' ()
             | Async b' -> Async ^ async.Combine (Extract a, b')
     
-        /// Creates a potentially asynchronous computation that enumerates the sequence 's', and runs the body 'f' for each element.
+        /// Creates a potentially asynchronous computation that enumerates the sequence 's', and runs the body 'f' for each item.
         let [<DebuggerHidden; DebuggerStepThrough>] For s f =
             if isSync ()
             then Sync ^ fun () -> Seq.iter (f >> ignore) s

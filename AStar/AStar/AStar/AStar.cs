@@ -30,7 +30,7 @@ namespace AStar
         }
         public V Dequeue()
         {
-            // will throw if there isn’t any first element!
+            // will throw if there isn’t any first item!
             var pair = list.First();
             var v = pair.Value.Dequeue();
             if (pair.Value.Count == 0) // nothing left of the top priority.
