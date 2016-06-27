@@ -29,25 +29,25 @@ let partitionPlus fnOptU list =
             | None -> subpartitionPlus fnOptU tail left (head :: right)
     subpartitionPlus fnOptU list [] []
 
-/// Query that a list has at least n elements.
+/// Query that a list has at least n items.
 let rec hasAtLeast n (list : 'a list) =
     if n = 0 then true
     elif list.IsEmpty then false
     else hasAtLeast (n - 1) list.Tail
 
-/// Query that a list has at most n elements.
+/// Query that a list has at most n items.
 let rec hasAtMost n (list : 'a list) =
     if list.IsEmpty then true
     elif n = 0 then false
     else hasAtMost (n - 1) list.Tail
 
-/// Query that a list has exactly n elements.
+/// Query that a list has exactly n items.
 let rec hasExactly n (list : 'a list) =
     if n = 0 then list.IsEmpty
     elif list.IsEmpty then false
     else hasExactly (n - 1) list.Tail
 
-/// Query that a list has at least n elements.
+/// Query that a list has at least n items.
 let rec hasBetween n m (list : 'a list) =
     if n = 0 then hasAtMost m list
     elif list.IsEmpty then false
@@ -187,7 +187,7 @@ let joinList sep list =
     if List.isEmpty list then []
     else List.reduce (fun acc item -> acc @ sep @ item) list
 
-/// Take elements until an element satisfies a predicate, taking also that element.
+/// Take items until an item satisfies a predicate, taking also that element.
 let takeTillInclusive pred list =
     let optIndex = List.tryFindIndex pred list
     match optIndex with
@@ -245,7 +245,7 @@ let toHashSet list =
 let foldWhile folder (state : 's) (list : 't list) =
     Seq.foldWhile folder state ^ List.toSeq list
 
-/// Remove all elements from a list that satisfy a predicate.
+/// Remove all items from a list that satisfy a predicate.
 let rec remove pred list =
     List.foldBack
         (fun item listAcc -> if pred item then listAcc else item :: listAcc)
@@ -268,6 +268,14 @@ let rec inline compareStrings (list : string list) (list2 : string list) =
         let result = strCmp head head2
         if result = 0 then compare tail tail2
         else result
+
+/// Check that a list contains duplicate entries.
+/// O(n^2) complexity, but does not allocate.
+let rec containsDuplicates list =
+    match list with
+    | [] -> false
+    | [_] -> false
+    | head :: tail -> List.contains head tail || containsDuplicates tail
 
 /// Hash a list.
 /// NOTE: May be a pessimization.

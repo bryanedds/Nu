@@ -139,9 +139,19 @@ module Eventable =
         let subList = List.concat subLists
         publishSorter subList world
 
-    let logEvent<'w when 'w :> 'w Eventable> eventAddress eventTrace (world : 'w) =
+    let private logEvent<'w when 'w :> 'w Eventable> eventAddress eventTrace (world : 'w) =
         EventSystem.logEvent<'w> eventAddress eventTrace (getEventSystem world)
 
+    let private pushEventAddress<'w when 'w :> 'w Eventable> eventAddress (world : 'w) =
+        updateEventSystem (EventSystem.pushEventAddress eventAddress) world
+
+    let private popEventAddress<'w when 'w :> 'w Eventable> (world : 'w) =
+        updateEventSystem EventSystem.popEventAddress world
+
+    let private getEventAddresses<'w when 'w :> 'w Eventable> (world : 'w) =
+        getEventSystemBy EventSystem.getEventAddresses world
+
+    /// Publish an event directly.
     let publishEvent<'a, 'p, 's, 'w when 'p :> Participant and 's :> Participant and 'w :> 'w Eventable>
         (subscriber : Participant) (publisher : 'p) (eventData : 'a) (eventAddress : 'a Address) eventTrace subscription (world : 'w) =
         let evt =
@@ -166,16 +176,29 @@ module Eventable =
     /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
     let publish7<'a, 'p, 'w when 'p :> Participant and 'w :> 'w Eventable>
         getSubscriptions (publishSorter : SubscriptionSorter<'w>) (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) (world : 'w) =
-        let objEventAddress = atooa eventAddress
-        logEvent<'w> objEventAddress eventTrace world
+        let objEventAddress = atooa eventAddress in logEvent<'w> objEventAddress eventTrace world
         let subscriptions = getSubscriptions publishSorter objEventAddress world
         let (_, world) =
             List.foldWhile
                 (fun (handling, world : 'w) (_, subscriber : Participant, subscription) ->
-                    if  (match handling with Cascade -> true | Resolve -> false) &&
-                        (match world.GetLiveness () with Running -> true | Exiting -> false) then
-                        let publishResult = world.PublishEvent subscriber publisher eventData eventAddress eventTrace subscription world
-                        Some publishResult
+#if DEBUG
+                    let eventAddresses = getEventAddresses world
+                    let cycleDetected = List.containsDuplicates eventAddresses
+                    if cycleDetected then Log.info ^ "Event cycle detected in '" + scstring eventAddresses + "'."
+#else
+                    let cycleDetected = false
+#endif
+                    if not cycleDetected &&
+                       (match handling with Cascade -> true | Resolve -> false) &&
+                       (match world.GetLiveness () with Running -> true | Exiting -> false) then
+#if DEBUG
+                        let world = pushEventAddress objEventAddress world
+#endif
+                        let (handling, world) = world.PublishEvent subscriber publisher eventData eventAddress eventTrace subscription world
+#if DEBUG
+                        let world = popEventAddress world
+#endif
+                        Some (handling, world)
                     else None)
                 (Cascade, world)
                 subscriptions
