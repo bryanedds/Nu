@@ -89,7 +89,8 @@ module EventSystemModule =
               EventStates : Vmap<Guid, obj>
               EventTracer : string -> unit
               EventTracing : bool
-              EventFilter : EventFilter }
+              EventFilter : EventFilter
+              EventAddresses : obj Address list }
 
     [<RequireQualifiedAccess>]
     module EventSystem =
@@ -147,6 +148,18 @@ module EventSystemModule =
                 if EventFilter.filter addressStr traceRev eventSystem.EventFilter then
                     eventSystem.EventTracer ^ addressStr + "|" + scstring traceRev
 
+        /// Push an event address to the list for cycle-detection.
+        let pushEventAddress<'w> eventAddress (eventSystem : 'w EventSystem) =
+            { eventSystem with EventAddresses = eventAddress :: eventSystem.EventAddresses }
+            
+        /// Pop an event address to the list for cycle-detection.
+        let popEventAddress<'w> (eventSystem : 'w EventSystem) =
+            { eventSystem with EventAddresses = List.tail eventSystem.EventAddresses }
+            
+        /// Get the current event address list for cycle-detection.
+        let getEventAddresses<'w> (eventSystem : 'w EventSystem) =
+            eventSystem.EventAddresses
+
         /// Make an event system.
         let make eventTracer eventTracing eventFilter =
             { Subscriptions = Vmap.makeEmpty ()
@@ -154,4 +167,5 @@ module EventSystemModule =
               EventStates = Vmap.makeEmpty ()
               EventTracer = eventTracer
               EventTracing = eventTracing
-              EventFilter = eventFilter }
+              EventFilter = eventFilter
+              EventAddresses = [] }

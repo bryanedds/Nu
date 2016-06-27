@@ -58,12 +58,12 @@ module TmapModule =
     
         let makeEmpty<'k, 'a when 'k : comparison> optCommitMultiplier =
             let map =
-                { CommitMultiplier = match optCommitMultiplier with Some cm -> cm | None -> 2
+                { Tmap = Unchecked.defaultof<Tmap<'k, 'a>>
                   Dict = Dictionary<'k, 'a> HashIdentity.Structural
                   DictOrigin = Dictionary<'k, 'a> HashIdentity.Structural
                   Logs = []
                   LogsLength = 0
-                  Tmap = Unchecked.defaultof<Tmap<'k, 'a>> }
+                  CommitMultiplier = match optCommitMultiplier with Some cm -> cm | None -> 2 }
             map.Tmap <- map
             map
 

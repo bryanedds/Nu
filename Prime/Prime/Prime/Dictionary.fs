@@ -7,7 +7,7 @@ open System.Collections.Generic
 [<RequireQualifiedAccess>]
 module Dictionary =
 
-    /// Make a dictionary with a single element.
+    /// Make a dictionary with a single entry.
     let singleton key value =
         List.toDict [(key, value)]
 
@@ -29,11 +29,11 @@ module DictionaryExtension =
     /// Dictionary extension methods.
     type Dictionary<'k, 'v> with
 
-        /// Force the addition of an element, replacing the existing one if necessary.
+        /// Force the addition of an entry, replacing the existing one if necessary.
         member this.ForceAdd (key, value) =
             this.[key] <- value
 
-        /// Try to add an element, returning false upon failure.
+        /// Try to add an entry, returning false upon failure.
         member this.TryAdd (key, value) =
             if not ^ this.ContainsKey key then
                 this.Add (key, value)
