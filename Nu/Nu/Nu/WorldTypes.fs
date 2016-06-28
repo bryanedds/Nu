@@ -81,11 +81,6 @@ module WorldTypes =
           Gid2 : Vector2i
           OptTileSetTile : TmxTilesetTile option
           TilePosition : Vector2i }
-
-    /// A tasklet to be completed at the scheduled tick time.
-    type [<ReferenceEquality>] 'w Tasklet =
-        { ScheduledTime : int64
-          Operation : 'w -> 'w }
     
     /// A simulant in the world.
     type Simulant =
@@ -650,161 +645,6 @@ module WorldTypes =
           EntityDispatchers : Map<string, EntityDispatcher>
           Facets : Map<string, Facet>
           RebuildEntityTree : Screen -> World -> Entity QuadTree }
-
-    /// The ambient state of the world.
-    and [<ReferenceEquality>] AmbientState =
-        private
-            { TickRate : int64
-              TickTime : int64
-              UpdateCount : int64
-              Liveness : Liveness
-              Tasklets : World Tasklet Queue
-              Camera : Camera
-              AssetMetadataMap : AssetMetadataMap
-              Overlayer : Overlayer
-              OverlayRouter : OverlayRouter
-              SymbolStore : SymbolStore
-              UserState : obj }
-
-        /// Get the tick rate.
-        static member getTickRate state =
-            state.TickRate
-
-        /// Get the tick rate as a floating-point value.
-        static member getTickRateF state =
-            single ^ AmbientState.getTickRate state
-
-        /// Set the tick rate without waiting for the end of the current update. Only use
-        /// this if you need it and understand the engine internals well enough to know the
-        /// consequences.
-        static member setTickRateImmediately tickRate state =
-            { state with TickRate = tickRate }
-
-        /// Reset the tick time to 0.
-        static member resetTickTime state =
-            { state with TickTime = 0L }
-
-        /// Get the tick time.
-        static member getTickTime state =
-            state.TickTime
-
-        /// Query that ticking is enabled.
-        static member isTicking state =
-            AmbientState.getTickRate state <> 0L
-
-        /// Update the tick time by the tick rate.
-        static member updateTickTime state =
-            { state with TickTime = AmbientState.getTickTime state + AmbientState.getTickRate state }
-
-        /// Get the world's update count.
-        static member getUpdateCount state =
-            state.UpdateCount
-
-        /// Increment the update count.
-        static member incrementUpdateCount state =
-            { state with UpdateCount = inc ^ AmbientState.getUpdateCount state }
-
-        /// Get the the liveness state of the engine.
-        static member getLiveness state =
-            state.Liveness
-
-        /// Place the engine into a state such that the app will exit at the end of the current update.
-        static member exit state =
-            { state with Liveness = Exiting }
-
-        /// Get a value from the camera.
-        static member getCameraBy by state =
-            by state.Camera
-
-        /// Get the camera used to view the scene.
-        static member getCamera state =
-            AmbientState.getCameraBy id state
-
-        /// Update the camera used to view the scene.
-        static member updateCamera updater state =
-            let camera = updater ^ AmbientState.getCamera state
-            { state with Camera = camera }
-
-        /// Get the tasklets scheduled for future processing.
-        static member getTasklets state =
-            state.Tasklets
-
-        /// Clear the tasklets from future processing.
-        static member clearTasklets state =
-            { state with Tasklets = Queue.empty }
-
-        /// Restore the given tasklets from future processing.
-        static member restoreTasklets tasklets state =
-            { state with Tasklets = Queue.ofSeq ^ Seq.append (state.Tasklets :> _ seq) (tasklets :> _ seq) }
-
-        /// Add a tasklet to be executed at the scheduled time.
-        static member addTasklet tasklet state =
-            { state with Tasklets = Queue.conj tasklet state.Tasklets }
-
-        /// Add multiple tasklets to be executed at the scheduled times.
-        static member addTasklets tasklets state =
-            { state with Tasklets = Queue.ofSeq ^ Seq.append (tasklets :> _ seq) (state.Tasklets :> _ seq) }
-
-        /// Get the asset metadata map.
-        static member getAssetMetadataMap state =
-            state.AssetMetadataMap
-    
-        /// Set the asset metadata map.
-        static member setAssetMetadataMap assetMetadataMap state =
-            { state with AssetMetadataMap = assetMetadataMap }
-    
-        /// Get the overlayer.
-        static member getOverlayer state =
-            state.Overlayer
-    
-        /// Set the overlayer.
-        static member setOverlayer overlayer state =
-            { state with Overlayer = overlayer }
-    
-        /// Get the overlay router.
-        static member getOverlayRouter state =
-            state.OverlayRouter
-
-        /// Get a value from the symbol store.
-        static member getSymbolStoreBy by state =
-            by state.SymbolStore
-
-        /// Get the symbol store.
-        static member getSymbolStore state =
-            AmbientState.getSymbolStoreBy id state
-    
-        /// Set the symbol store.
-        static member setSymbolStore symbolStore state =
-            { state with SymbolStore = symbolStore }
-
-        /// Update the symbol store.
-        static member updateSymbolStore updater state =
-            let camera = updater ^ AmbientState.getSymbolStore state
-            { state with SymbolStore = camera }
-    
-        /// Get the user-defined state, casted to 'u.
-        static member getUserState state : 'u =
-            state.UserState :?> 'u
-    
-        /// Update the user state of the world.
-        static member updateUserState (updater : 'u -> 'v) state =
-            let userState = AmbientState.getUserState state
-            let userState = updater userState
-            { state with UserState = userState }
-    
-        /// Make an ambient state value.
-        static member make tickRate camera assetMetadataMap overlayRouter overlayer symbolStore userState =
-            { TickRate = tickRate
-              TickTime = 0L
-              UpdateCount = 0L
-              Liveness = Running
-              Tasklets = Queue.empty
-              Camera = camera
-              AssetMetadataMap = assetMetadataMap
-              OverlayRouter = overlayRouter
-              Overlayer = overlayer
-              SymbolStore = symbolStore
-              UserState = userState }
     
     /// The world, in a functional programming sense. Hosts the game object, the dependencies needed
     /// to implement a game, messages to by consumed by the various engine sub-systems, and general
@@ -814,12 +654,12 @@ module WorldTypes =
     /// of a typical cache line.
     and [<ReferenceEquality>] World =
         private
-            { Subsystems : World Subsystems
+            { EventSystem : World EventSystem
               Dispatchers : Dispatchers
-              EventSystem : World EventSystem
+              Subsystems : World Subsystems
               OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
               ScreenDirectory : Vmap<Name, Screen Address * Vmap<Name, Group Address * Vmap<Name, Entity Address>>>
-              AmbientState : AmbientState
+              AmbientState : World AmbientState
               GameState : GameState
               ScreenStates : Vmap<Screen Address, ScreenState>
               GroupStates : Vmap<Group Address, GroupState>
@@ -854,78 +694,6 @@ module WorldTypes =
             Debug.World.Chosen <- world :> obj
 #endif
             world
-
-        (* Subsystems *)
-
-        static member internal getSubsystemMap world =
-            Subsystems.getSubsystemMap world.Subsystems
-
-        static member internal getSubsystem<'s when 's :> World Subsystem> name world : 's =
-            Subsystems.getSubsystem name world.Subsystems
-
-        static member internal getSubsystemBy<'s, 't when 's :> World Subsystem> (by : 's -> 't) name world : 't =
-            Subsystems.getSubsystemBy by name world.Subsystems
-
-        static member internal setSubsystem<'s when 's :> World Subsystem> (subsystem : 's) name world =
-            World.choose { world with Subsystems = Subsystems.setSubsystem subsystem name world.Subsystems }
-
-        static member internal updateSubsystem<'s when 's :> World Subsystem> (updater : 's -> World -> 's) name world =
-            World.choose { world with Subsystems = Subsystems.updateSubsystem updater name world.Subsystems world }
-
-        static member internal updateSubsystems (updater : World Subsystem -> World -> World Subsystem) world =
-            World.choose { world with Subsystems = Subsystems.updateSubsystems updater world.Subsystems world }
-
-        static member internal clearSubsystemsMessages world =
-            World.choose { world with Subsystems = Subsystems.clearSubsystemsMessages world.Subsystems world }
-
-        (* Dispatchers *)
-
-        /// Get the game dispatchers of the world.
-        static member getGameDispatchers world =
-            world.Dispatchers.GameDispatchers
-
-        /// Get the screen dispatchers of the world.
-        static member getScreenDispatchers world =
-            world.Dispatchers.ScreenDispatchers
-
-        /// Get the group dispatchers of the world.
-        static member getGroupDispatchers world =
-            world.Dispatchers.GroupDispatchers
-
-        /// Get the entity dispatchers of the world.
-        static member getEntityDispatchers world =
-            world.Dispatchers.EntityDispatchers
-
-        /// Get the facets of the world.
-        static member getFacets world =
-            world.Dispatchers.Facets
-
-        /// Rebuild the entity tree if needed.
-        static member rebuildEntityTree screen world =
-            world.Dispatchers.RebuildEntityTree screen world
-
-        (* AmbientState *)
-
-        static member internal getAmbientState world =
-            world.AmbientState
-
-        static member internal getAmbientStateBy by world =
-            by world.AmbientState
-
-        static member internal setAmbientStateWithoutEvent state world =
-            World.choose { world with AmbientState = state }
-
-        static member internal setAmbientState state world =
-            let _ = world
-            let world = World.setAmbientStateWithoutEvent state world
-            let _ = EventTrace.record "World" "setAmbientState" EventTrace.empty
-            world
-
-        static member internal updateAmbientState updater world =
-            World.setAmbientState (updater world.AmbientState) world
-
-        static member internal updateAmbientStateWithoutEvent updater world =
-            World.setAmbientStateWithoutEvent (updater world.AmbientState) world
 
         (* EventSystem *)
 
@@ -1035,6 +803,73 @@ module WorldTypes =
             (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
             Eventable.monitor<'a, 's, World> subscription eventAddress subscriber world
 
+        (* Dispatchers *)
+
+        /// Get the game dispatchers of the world.
+        static member getGameDispatchers world =
+            world.Dispatchers.GameDispatchers
+
+        /// Get the screen dispatchers of the world.
+        static member getScreenDispatchers world =
+            world.Dispatchers.ScreenDispatchers
+
+        /// Get the group dispatchers of the world.
+        static member getGroupDispatchers world =
+            world.Dispatchers.GroupDispatchers
+
+        /// Get the entity dispatchers of the world.
+        static member getEntityDispatchers world =
+            world.Dispatchers.EntityDispatchers
+
+        /// Get the facets of the world.
+        static member getFacets world =
+            world.Dispatchers.Facets
+
+        /// Rebuild the entity tree if needed.
+        static member rebuildEntityTree screen world =
+            world.Dispatchers.RebuildEntityTree screen world
+
+        (* Subsystems *)
+
+        static member internal getSubsystemMap world =
+            Subsystems.getSubsystemMap world.Subsystems
+
+        static member internal getSubsystem<'s when 's :> World Subsystem> name world : 's =
+            Subsystems.getSubsystem name world.Subsystems
+
+        static member internal getSubsystemBy<'s, 't when 's :> World Subsystem> (by : 's -> 't) name world : 't =
+            Subsystems.getSubsystemBy by name world.Subsystems
+
+        // NOTE: it'd be nice to get rid of this function to improve encapsulation, but I can't seem to do so in practice...
+        static member internal setSubsystem<'s when 's :> World Subsystem> (subsystem : 's) name world =
+            World.choose { world with Subsystems = Subsystems.setSubsystem subsystem name world.Subsystems }
+
+        static member internal updateSubsystem<'s when 's :> World Subsystem> (updater : 's -> World -> 's) name world =
+            World.choose { world with Subsystems = Subsystems.updateSubsystem updater name world.Subsystems world }
+
+        static member internal updateSubsystems (updater : World Subsystem -> World -> World Subsystem) world =
+            World.choose { world with Subsystems = Subsystems.updateSubsystems updater world.Subsystems world }
+
+        static member internal clearSubsystemsMessages world =
+            World.choose { world with Subsystems = Subsystems.clearSubsystemsMessages world.Subsystems world }
+
+        (* AmbientState *)
+
+        static member internal getAmbientState world =
+            world.AmbientState
+
+        static member internal getAmbientStateBy by world =
+            by world.AmbientState
+
+        static member internal updateAmbientState updater world =
+            World.choose { world with AmbientState = updater world.AmbientState }
+
+        static member internal updateAmbientStateWithoutEvent updater world =
+            let _ = world
+            let world = World.choose { world with AmbientState = updater world.AmbientState }
+            let _ = EventTrace.record "World" "updateAmbientState" EventTrace.empty
+            world
+
         (* OptEntityCache *)
 
         /// Get the opt entity cache.
@@ -1053,23 +888,23 @@ module WorldTypes =
 
         (* EntityState *)
 
-        static member internal optEntityStateKeyEquality 
+        static member private optEntityStateKeyEquality 
             (entityAddress : Entity Address, world : World)
             (entityAddress2 : Entity Address, world2 : World) =
             refEq entityAddress entityAddress2 && refEq world world2
 
-        static member internal optEntityGetFreshKeyAndValue entity world =
+        static member private optEntityGetFreshKeyAndValue entity world =
             let optEntityState = Vmap.tryFind entity.EntityAddress ^ world.EntityStates
             ((entity.EntityAddress, world), optEntityState)
 
-        static member internal optEntityStateFinder entity world =
+        static member private optEntityStateFinder entity world =
             KeyedCache.getValue
                 World.optEntityStateKeyEquality
                 (fun () -> World.optEntityGetFreshKeyAndValue entity world)
                 (entity.EntityAddress, world)
                 (World.getOptEntityCache world)
 
-        static member internal entityStateSetter entityState entity world =
+        static member private entityStateSetter entityState entity world =
 #if DEBUG
             if not ^ Vmap.containsKey entity.EntityAddress world.EntityStates then
                 failwith ^ "Cannot set the state of a non-existent entity '" + scstring entity.EntityAddress + "'"
@@ -1077,7 +912,7 @@ module WorldTypes =
             let entityStates = Vmap.add entity.EntityAddress entityState world.EntityStates
             World.choose { world with EntityStates = entityStates }
 
-        static member internal entityStateAdder entityState entity world =
+        static member private entityStateAdder entityState entity world =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
                 | [screenName; groupName; entityName] ->
@@ -1094,7 +929,7 @@ module WorldTypes =
             let entityStates = Vmap.add entity.EntityAddress entityState world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
-        static member internal entityStateRemover entity world =
+        static member private entityStateRemover entity world =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
                 | [screenName; groupName; entityName] ->
@@ -1174,7 +1009,7 @@ module WorldTypes =
 
         (* GroupState *)
 
-        static member internal groupStateSetter groupState group world =
+        static member private groupStateSetter groupState group world =
 #if DEBUG
             if not ^ Vmap.containsKey group.GroupAddress world.GroupStates then
                 failwith ^ "Cannot set the state of a non-existent group '" + scstring group.GroupAddress + "'"
@@ -1182,7 +1017,7 @@ module WorldTypes =
             let groupStates = Vmap.add group.GroupAddress groupState world.GroupStates
             World.choose { world with GroupStates = groupStates }
 
-        static member internal groupStateAdder groupState group world =
+        static member private groupStateAdder groupState group world =
             let screenDirectory =
                 match Address.getNames group.GroupAddress with
                 | [screenName; groupName] ->
@@ -1201,7 +1036,7 @@ module WorldTypes =
             let groupStates = Vmap.add group.GroupAddress groupState world.GroupStates
             World.choose { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
 
-        static member internal groupStateRemover group world =
+        static member private groupStateRemover group world =
             let screenDirectory =
                 match Address.getNames group.GroupAddress with
                 | [screenName; groupName] ->
@@ -1244,7 +1079,7 @@ module WorldTypes =
 
         (* ScreenState *)
 
-        static member internal screenStateSetter screenState screen world =
+        static member private screenStateSetter screenState screen world =
 #if DEBUG
             if not ^ Vmap.containsKey screen.ScreenAddress world.ScreenStates then
                 failwith ^ "Cannot set the state of a non-existent screen '" + scstring screen.ScreenAddress + "'"
@@ -1252,7 +1087,7 @@ module WorldTypes =
             let screenStates = Vmap.add screen.ScreenAddress screenState world.ScreenStates
             World.choose { world with ScreenStates = screenStates }
 
-        static member internal screenStateAdder screenState screen world =
+        static member private screenStateAdder screenState screen world =
             let screenDirectory =
                 match Address.getNames screen.ScreenAddress with
                 | [screenName] ->
@@ -1267,7 +1102,7 @@ module WorldTypes =
             let screenStates = Vmap.add screen.ScreenAddress screenState world.ScreenStates
             World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
 
-        static member internal screenStateRemover screen world =
+        static member private screenStateRemover screen world =
             let screenDirectory =
                 match Address.getNames screen.ScreenAddress with
                 | [screenName] -> Vmap.remove screenName world.ScreenDirectory
@@ -1364,11 +1199,11 @@ module WorldTypes =
                 world
                 
         // Make the world.
-        static member internal make subsystems dispatchers eventSystem ambientState gameState =
+        static member internal make eventSystem dispatchers subsystems ambientState gameState =
             let world =
-                { Subsystems = subsystems
+                { EventSystem = eventSystem
                   Dispatchers = dispatchers
-                  EventSystem = eventSystem
+                  Subsystems = subsystems
                   OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                   ScreenDirectory = Vmap.makeEmpty ()
                   AmbientState = ambientState

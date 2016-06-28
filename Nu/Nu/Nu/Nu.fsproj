@@ -83,9 +83,8 @@
     <Compile Include="ScriptingSystem.fs" />
     <Compile Include="Sdl.fs" />
     <Compile Include="Subsystems.fs" />
+    <Compile Include="AmbientState.fs" />
     <Compile Include="WorldTypes.fs" />
-    <Compile Include="WorldHelpers.fs" />
-    <Compile Include="WorldEvents.fs" />
     <Compile Include="WorldModules.fs" />
     <Compile Include="WorldFacet.fs" />
     <Compile Include="WorldEntity.fs" />
