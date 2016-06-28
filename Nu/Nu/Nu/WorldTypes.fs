@@ -907,7 +907,7 @@ module WorldTypes =
             let _ = world
             let world = World.setAmbientStateWithoutEvent state world
             let _ = EventTrace.record "World" "setAmbientState" EventTrace.empty
-            world // TODO: World.publish { OldWorldWithOldState = oldWorldWithOldState } Events.AmbientChange eventTrace Simulants.Game world
+            world
 
         static member internal updateAmbientState updater world =
             World.setAmbientState (updater world.AmbientState) world
@@ -1223,7 +1223,7 @@ module WorldTypes =
             let _ = world
             let world = World.groupStateSetter groupState group world
             let _ = EventTrace.record "World" "setGroupState" EventTrace.empty
-            world // TODO: World.publish { Participant = group; OldWorld = oldWorld } (Events.GroupChange ->- group) eventTrace group world
+            world
 
         static member internal updateGroupState updater group world =
             let groupState = World.getGroupState group world
@@ -1284,7 +1284,7 @@ module WorldTypes =
             let _ = world
             let world = World.screenStateSetter screenState screen world
             let _ = EventTrace.record "World" "setScreenState" EventTrace.empty
-            world // TODO: World.publish { Participant = screen; OldWorld = oldWorld } (Events.ScreenChange ->- screen) eventTrace screen world
+            world
 
         static member internal updateScreenState updater screen world =
             let screenState = World.getScreenState screen world
@@ -1334,7 +1334,7 @@ module WorldTypes =
             let _ = world
             let world = World.choose { world with GameState = gameState }
             let _ = EventTrace.record "World" "setGameState" EventTrace.empty
-            world // TODO: World.publish { Participant = Simulants.Game; OldWorld = oldWorld } (Events.GameChange ->- Simulants.Game) eventTrace Simulants.Game world
+            world
 
         static member internal updateGameState updater world =
             let gameState = World.getGameState world

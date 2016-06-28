@@ -349,7 +349,7 @@ module WorldEntityModule =
                 | Some defaultOverlayName ->
 
                     // apply overlay to facets
-                    Overlayer.applyOverlayToFacetNames intrinsicOverlayName defaultOverlayName entityState overlayer overlayer
+                    let entityState = Overlayer.applyOverlayToFacetNames EntityState.copy intrinsicOverlayName defaultOverlayName entityState overlayer overlayer
 
                     // synchronize the entity's facets (and attach their properties)
                     match World.trySynchronizeFacetsToNames Set.empty entityState None world with
@@ -364,12 +364,10 @@ module WorldEntityModule =
             let entityState =
                 match entityState.OptOverlayName with
                 | Some overlayName ->
-
                     // OPTIMIZATION: apply overlay only when it will change something (EG - when it's not the intrinsic overlay)
                     if intrinsicOverlayName <> overlayName then
                         let facetNames = World.getEntityFacetNamesReflectively entityState
-                        Overlayer.applyOverlay intrinsicOverlayName overlayName facetNames entityState overlayer
-                        entityState
+                        Overlayer.applyOverlay EntityState.copy intrinsicOverlayName overlayName facetNames entityState overlayer
                     else entityState
                 | None -> entityState
 
@@ -456,12 +454,12 @@ module WorldEntityModule =
             | (Some oldOverlayName, Some overlayName) ->
                 let overlayer = World.getOverlayer world
                 let (entityState, world) =
-                    Overlayer.applyOverlayToFacetNames oldOverlayName overlayName entity overlayer overlayer // copy elided
+                    let entityState = Overlayer.applyOverlayToFacetNames EntityState.copy oldOverlayName overlayName entityState overlayer overlayer
                     match World.trySynchronizeFacetsToNames entityState.FacetNames entityState (Some entity) world with
                     | Right (entityState, world) -> (entityState, world)
                     | Left error -> Log.debug error; (entityState, world)
                 let facetNames = World.getEntityFacetNamesReflectively entityState
-                Overlayer.applyOverlay oldOverlayName overlayName facetNames entityState overlayer // copy elided
+                let entityState = Overlayer.applyOverlay EntityState.copy oldOverlayName overlayName facetNames entityState overlayer
                 let oldWorld = world
                 let world = World.setEntityStateWithoutEvent entityState entity world
                 let world = World.updateEntityInEntityTree entity oldWorld world
@@ -537,9 +535,10 @@ module WorldEntityModule =
 
             // read the entity state's overlay and apply it to its facet names if applicable
             Reflection.tryReadOptOverlayNameToTarget entityDescriptor.EntityProperties entityState
-            match (defaultOptOverlayName, entityState.OptOverlayName) with
-            | (Some defaultOverlayName, Some overlayName) -> Overlayer.applyOverlayToFacetNames defaultOverlayName overlayName entityState overlayer overlayer
-            | (_, _) -> ()
+            let entityState =
+                match (defaultOptOverlayName, entityState.OptOverlayName) with
+                | (Some defaultOverlayName, Some overlayName) -> Overlayer.applyOverlayToFacetNames EntityState.copy defaultOverlayName overlayName entityState overlayer overlayer
+                | (_, _) -> entityState
 
             // read the entity state's facet names
             Reflection.readFacetNamesToTarget entityDescriptor.EntityProperties entityState
@@ -554,15 +553,15 @@ module WorldEntityModule =
                 | Left error -> Log.debug error; entityState
 
             // attempt to apply the entity state's overlay
-            match entityState.OptOverlayName with
-            | Some overlayName ->
-
-                // OPTIMIZATION: applying overlay only when it will change something (EG - when it's not the default overlay)
-                if intrinsicOverlayName <> overlayName then
-                    let facetNames = World.getEntityFacetNamesReflectively entityState
-                    Overlayer.applyOverlay intrinsicOverlayName overlayName facetNames entityState overlayer
-                else ()
-            | None -> ()
+            let entityState =
+                match entityState.OptOverlayName with
+                | Some overlayName ->
+                    // OPTIMIZATION: applying overlay only when it will change something (EG - when it's not the default overlay)
+                    if intrinsicOverlayName <> overlayName then
+                        let facetNames = World.getEntityFacetNamesReflectively entityState
+                        Overlayer.applyOverlay EntityState.copy intrinsicOverlayName overlayName facetNames entityState overlayer
+                    else entityState
+                | None -> entityState
 
             // read the entity state's values
             Reflection.readMemberValuesToTarget entityDescriptor.EntityProperties entityState
