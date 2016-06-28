@@ -17,40 +17,46 @@ module WorldEntityModule =
 
     type Entity with
 
-        member this.GetId world = EntityState.getId (World.getEntityState this world)
-        member this.GetName world = EntityState.getName (World.getEntityState this world)
-        member this.GetXtension world = EntityState.getXtension (World.getEntityState this world)
-        member this.GetDispatcherNp world = EntityState.getDispatcherNp (World.getEntityState this world)
-        member this.GetCreationTimeStampNp world = EntityState.getCreationTimeStampNp (World.getEntityState this world)
-        member this.GetOptSpecialization world = EntityState.getOptSpecialization (World.getEntityState this world)
-        member this.GetOptOverlayName world = EntityState.getOptOverlayName (World.getEntityState this world)
-        member this.SetOptOverlayName value world = World.updateEntityState (EntityState.setOptOverlayName value) this world
-        member this.GetPosition world = EntityState.getPosition (World.getEntityState this world)
-        member this.SetPosition value world = World.updateEntityStatePlus (EntityState.setPosition value) this world
-        member this.GetSize world = EntityState.getSize (World.getEntityState this world)
-        member this.SetSize value world = World.updateEntityStatePlus (EntityState.setSize value) this world
-        member this.GetRotation world = EntityState.getRotation (World.getEntityState this world)
-        member this.SetRotation value world = World.updateEntityStatePlus (EntityState.setRotation value) this world
-        member this.GetDepth world = EntityState.getDepth (World.getEntityState this world)
-        member this.SetDepth value world = World.updateEntityState (EntityState.setDepth value) this world
-        member this.GetOverflow world = EntityState.getOverflow (World.getEntityState this world)
-        member this.SetOverflow value world = World.updateEntityState (EntityState.setOverflow value) this world
-        member this.GetViewType world = EntityState.getViewType (World.getEntityState this world)
-        member this.SetViewType value world = World.updateEntityState (EntityState.setViewType value) this world
-        member this.GetVisible world = EntityState.getVisible (World.getEntityState this world)
-        member this.SetVisible value world = World.updateEntityState (EntityState.setVisible value) this world
-        member this.GetOmnipresent world = EntityState.getOmnipresent (World.getEntityState this world)
-        member this.SetOmnipresent value world = World.updateEntityStatePlus (EntityState.setOmnipresent value) this world
-        member this.GetPublishUpdatesNp world = EntityState.getPublishUpdatesNp (World.getEntityState this world)
-        member this.SetPublishUpdatesNp value world = World.updateEntityState (EntityState.setPublishUpdatesNp value) this world
-        member this.GetPublishChangesNp world = EntityState.getPublishChangesNp (World.getEntityState this world)
-        member this.SetPublishChangesNp value world = World.updateEntityState (EntityState.setPublishChangesNp value) this world
-        member this.GetPersistent world = EntityState.getPersistent (World.getEntityState this world)
-        member this.SetPersistent value world = World.updateEntityState (EntityState.setPersistent value) this world
-        member this.GetTransform world = EntityState.getTransform (World.getEntityState this world)
-        member this.SetTransform value world = World.updateEntityState (EntityState.setTransform value) this world
-        member this.GetFacetNames world = EntityState.getFacetNames (World.getEntityState this world)
-        member this.GetFacetsNp world = EntityState.getFacetsNp (World.getEntityState this world)
+        member this.GetId world = (World.getEntityState this world).Id
+        member this.GetXtension world = (World.getEntityState this world).Xtension
+        member this.GetDispatcherNp world = (World.getEntityState this world).DispatcherNp
+        member this.GetCreationTimeStampNp world = (World.getEntityState this world).CreationTimeStampNp
+        member this.GetOptSpecialization world = (World.getEntityState this world).OptSpecialization
+        member this.GetOptOverlayName world = (World.getEntityState this world).OptOverlayName
+        member this.SetOptOverlayName value world = World.updateEntityState (fun entityState -> { entityState with OptOverlayName = value }) this world
+        member this.GetPosition world = (World.getEntityState this world).Position
+        member this.SetPosition value world = World.updateEntityStatePlus (fun entityState -> { entityState with Position = value }) this world
+        member this.GetSize world = (World.getEntityState this world).Size
+        member this.SetSize value world = World.updateEntityStatePlus (fun entityState -> { entityState with Size = value }) this world
+        member this.GetRotation world = (World.getEntityState this world).Rotation
+        member this.SetRotation value world = World.updateEntityStatePlus (fun entityState -> { entityState with Rotation = value }) this world
+        member this.GetDepth world = (World.getEntityState this world).Depth
+        member this.SetDepth value world = World.updateEntityState (fun entityState -> { entityState with Depth = value }) this world
+        member this.GetOverflow world = (World.getEntityState this world).Overflow
+        member this.SetOverflow value world = World.updateEntityStatePlus (fun entityState -> { entityState with Overflow = value }) this world
+        member this.GetViewType world = (World.getEntityState this world).ViewType
+        member this.SetViewType value world = World.updateEntityStatePlus (fun entityState -> { entityState with ViewType = value }) this world
+        member this.GetVisible world = (World.getEntityState this world).Visible
+        member this.SetVisible value world = World.updateEntityState (fun entityState -> { entityState with Visible = value }) this world
+        member this.GetOmnipresent world = (World.getEntityState this world).Omnipresent
+        member this.SetOmnipresent value world = World.updateEntityStatePlus (fun entityState -> { entityState with Omnipresent = value }) this world
+        member this.GetPublishUpdatesNp world = (World.getEntityState this world).PublishUpdatesNp
+        member this.SetPublishUpdatesNp value world = World.updateEntityState (fun entityState -> { entityState with PublishUpdatesNp = value }) this world
+        member this.GetPublishChangesNp world = (World.getEntityState this world).PublishChangesNp
+        member this.SetPublishChangesNp value world = World.updateEntityState (fun entityState -> { entityState with PublishChangesNp = value }) this world
+        member this.GetPersistent world = (World.getEntityState this world).Persistent
+        member this.SetPersistent value world = World.updateEntityState (fun entityState -> { entityState with Persistent = value }) this world
+        member this.GetFacetNames world = (World.getEntityState this world).FacetNames
+        member this.GetFacetsNp world = (World.getEntityState this world).FacetsNp
+        member this.GetName world = (World.getEntityState this world).Name
+        
+        /// Get the transform.
+        member this.GetTransform world =
+            EntityState.getTransform (World.getEntityState this world)
+
+        /// Set the transform.
+        member this.SetTransform value world =
+            World.updateEntityState (EntityState.setTransform value) this world
 
         /// Get a dynamic property.
         member this.Get propertyName world : 'r =
@@ -201,10 +207,10 @@ module WorldEntityModule =
                         (fun entityTree ->
                             let entityState = World.getEntityState entity world
                             let entityMaxBounds = World.getEntityStateBoundsMax entityState
-                            QuadTree.addElement (EntityState.getOmnipresent entityState || EntityState.getViewType entityState = Absolute) entityMaxBounds entity entityTree
+                            QuadTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
                             entityTree)
-                        (ScreenState.getEntityTreeNp screenState)
-                let screenState = ScreenState.setEntityTreeNp entityTree screenState
+                        screenState.EntityTreeNp
+                let screenState = { screenState with EntityTreeNp = entityTree }
                 let world = World.setScreenState screenState screen world
 
                 // register entity if needed
@@ -243,10 +249,10 @@ module WorldEntityModule =
                         (fun entityTree ->
                             let entityState = World.getEntityState entity oldWorld
                             let entityMaxBounds = World.getEntityStateBoundsMax entityState
-                            QuadTree.removeElement (EntityState.getOmnipresent entityState || EntityState.getViewType entityState = Absolute) entityMaxBounds entity entityTree
+                            QuadTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
                             entityTree)
-                        (ScreenState.getEntityTreeNp screenState)
-                let screenState = ScreenState.setEntityTreeNp entityTree screenState
+                        screenState.EntityTreeNp
+                let screenState = { screenState with EntityTreeNp = entityTree }
                 let world = World.setScreenState screenState screen world
 
                 // remove the entity from the world
@@ -256,7 +262,7 @@ module WorldEntityModule =
             else world
 
         static member internal getEntityFacetNamesReflectively entityState =
-            List.map getTypeName ^ EntityState.getFacetsNp entityState
+            List.map getTypeName entityState.FacetsNp
 
         /// Query that the world contains an entity.
         static member containsEntity entity world =
@@ -311,7 +317,7 @@ module WorldEntityModule =
             let world = World.removeEntity entity world
             let id = makeGuid ()
             let name = match optName with Some name -> name | None -> Name.make ^ scstring id
-            let entityState = EntityState.setName name ^ EntityState.duplicate id entityState
+            let entityState = { entityState with Name = name; Id = id }
             let transmutedEntity = gtoe group name
             let world = World.addEntity false entityState transmutedEntity world
             (transmutedEntity, world)
@@ -356,7 +362,7 @@ module WorldEntityModule =
 
             // apply the entity state's overlay
             let entityState =
-                match EntityState.getOptOverlayName entityState with
+                match entityState.OptOverlayName with
                 | Some overlayName ->
 
                     // OPTIMIZATION: apply overlay only when it will change something (EG - when it's not the intrinsic overlay)
@@ -368,7 +374,7 @@ module WorldEntityModule =
                 | None -> entityState
 
             // add entity's state to world
-            let entity = gtoe group ^ EntityState.getName entityState
+            let entity = gtoe group entityState.Name
             let world = World.addEntity false entityState entity world
             (entity, world)
 
@@ -416,8 +422,8 @@ module WorldEntityModule =
             match participant with
             | :? Entity as entity ->
                 let entityState = World.getEntityState entity world
-                let dispatcher = EntityState.getDispatcherNp entityState
-                dispatcher.GetPickingPriority (entity, EntityState.getDepth entityState, world)
+                let dispatcher = entityState.DispatcherNp
+                dispatcher.GetPickingPriority (entity, entityState.Depth, world)
             | _ -> failwithumf ()
 
         /// Sort subscriptions by their editor picking priority.
@@ -444,14 +450,14 @@ module WorldEntityModule =
         /// Try to set an entity's overlay name.
         static member trySetEntityOptOverlayName optOverlayName entity world =
             let oldEntityState = World.getEntityState entity world
-            let oldOptOverlayName = EntityState.getOptOverlayName oldEntityState
-            let entityState = EntityState.setOptOverlayName optOverlayName oldEntityState
+            let oldOptOverlayName = oldEntityState.OptOverlayName
+            let entityState = { oldEntityState with OptOverlayName = optOverlayName }
             match (oldOptOverlayName, optOverlayName) with
             | (Some oldOverlayName, Some overlayName) ->
                 let overlayer = World.getOverlayer world
                 let (entityState, world) =
                     Overlayer.applyOverlayToFacetNames oldOverlayName overlayName entity overlayer overlayer // copy elided
-                    match World.trySynchronizeFacetsToNames (EntityState.getFacetNames entityState) entityState (Some entity) world with
+                    match World.trySynchronizeFacetsToNames entityState.FacetNames entityState (Some entity) world with
                     | Right (entityState, world) -> (entityState, world)
                     | Left error -> Log.debug error; (entityState, world)
                 let facetNames = World.getEntityFacetNamesReflectively entityState
@@ -478,7 +484,7 @@ module WorldEntityModule =
         /// Write an entity to an entity descriptor.
         static member writeEntity (entity : Entity) entityDescriptor world =
             let entityState = World.getEntityState entity world
-            let entityDispatcherName = getTypeName ^ EntityState.getDispatcherNp entityState
+            let entityDispatcherName = getTypeName entityState.DispatcherNp
             let entityDescriptor = { entityDescriptor with EntityDispatcher = entityDispatcherName }
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
                 if propertyName = "OptOverlayName" && propertyType = typeof<string option> then
@@ -531,7 +537,7 @@ module WorldEntityModule =
 
             // read the entity state's overlay and apply it to its facet names if applicable
             Reflection.tryReadOptOverlayNameToTarget entityDescriptor.EntityProperties entityState
-            match (defaultOptOverlayName, EntityState.getOptOverlayName entityState) with
+            match (defaultOptOverlayName, entityState.OptOverlayName) with
             | (Some defaultOverlayName, Some overlayName) -> Overlayer.applyOverlayToFacetNames defaultOverlayName overlayName entityState overlayer overlayer
             | (_, _) -> ()
 
@@ -548,7 +554,7 @@ module WorldEntityModule =
                 | Left error -> Log.debug error; entityState
 
             // attempt to apply the entity state's overlay
-            match EntityState.getOptOverlayName entityState with
+            match entityState.OptOverlayName with
             | Some overlayName ->
 
                 // OPTIMIZATION: applying overlay only when it will change something (EG - when it's not the default overlay)
@@ -564,11 +570,11 @@ module WorldEntityModule =
             // apply the name if one is provided
             let entityState =
                 match optName with
-                | Some name -> EntityState.setName name entityState
+                | Some name -> { entityState with Name = name }
                 | None -> entityState
 
             // add entity state to the world
-            let entity = gtoe group ^ EntityState.getName entityState
+            let entity = gtoe group entityState.Name
             let world = World.addEntity true entityState entity world
             (entity, world)
 
@@ -663,7 +669,7 @@ type Entity =
     /// with the Watch feature in Visual Studio.
     static member viewXProperties entity world =
         let state = World.getEntityState entity world
-        Xtension.toSeq ^ EntityState.getXtension state |>
+        Xtension.toSeq state.Xtension |>
         Array.ofSeq |>
         Array.sortBy fst |>
         Array.map (fun (name, property) -> (name, property.PropertyValue))

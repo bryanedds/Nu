@@ -250,13 +250,12 @@ module WorldTypes =
     /// Hosts the ongoing state of a game. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     and [<CLIMutable; NoEquality; NoComparison>] GameState =
-        private
-            { Id : Guid
-              Xtension : Xtension
-              DispatcherNp : GameDispatcher
-              CreationTimeStampNp : int64
-              OptSelectedScreen : Screen option
-              OptScreenTransitionDestination : Screen option }
+        { Id : Guid
+          Xtension : Xtension
+          DispatcherNp : GameDispatcher
+          CreationTimeStampNp : int64
+          OptSelectedScreen : Screen option
+          OptScreenTransitionDestination : Screen option }
 
         /// The dynamic look-up operator.
         static member (?) (gameState, propertyName) : 'r =
@@ -270,15 +269,6 @@ module WorldTypes =
         static member attachProperty name value gameState =
             { gameState with GameState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } gameState.Xtension }
     
-        static member getId this = this.Id
-        static member getXtension this = this.Xtension
-        static member getDispatcherNp this = this.DispatcherNp
-        static member getCreationTimeStampNp this = this.CreationTimeStampNp
-        static member getOptSelectedScreen this = this.OptSelectedScreen
-        static member setOptSelectedScreen value this = { this with OptSelectedScreen = value }
-        static member getOptScreenTransitionDestination this = this.OptScreenTransitionDestination
-        static member setOptScreenTransitionDestination value this = { this with OptScreenTransitionDestination = value }
-    
         /// Make a game state value.
         static member make dispatcher =
             { Id = makeGuid ()
@@ -291,19 +281,18 @@ module WorldTypes =
     /// Hosts the ongoing state of a screen. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
-        private
-            { Id : Guid
-              Xtension : Xtension
-              DispatcherNp : ScreenDispatcher
-              CreationTimeStampNp : int64
-              EntityTreeNp : Entity QuadTree MutantCache
-              OptSpecialization : string option
-              TransitionStateNp : TransitionState
-              TransitionTicksNp : int64
-              Incoming : Transition
-              Outgoing : Transition
-              Persistent : bool
-              Name : Name }
+        { Id : Guid
+          Xtension : Xtension
+          DispatcherNp : ScreenDispatcher
+          CreationTimeStampNp : int64
+          EntityTreeNp : Entity QuadTree MutantCache
+          OptSpecialization : string option
+          TransitionStateNp : TransitionState
+          TransitionTicksNp : int64
+          Incoming : Transition
+          Outgoing : Transition
+          Persistent : bool
+          Name : Name }
 
         /// The dynamic look-up operator.
         static member (?) (screenState, propertyName) : 'r =
@@ -316,27 +305,6 @@ module WorldTypes =
         /// Attach a dynamic property.
         static member attachProperty name value screenState =
             { screenState with ScreenState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } screenState.Xtension }
-    
-        static member getId this = this.Id
-        static member getXtension this = this.Xtension
-        static member getDispatcherNp this = this.DispatcherNp
-        static member getCreationTimeStampNp this = this.CreationTimeStampNp
-        static member getEntityTreeNp this = this.EntityTreeNp
-        static member setEntityTreeNp value this = { this with EntityTreeNp = value }
-        static member getOptSpecialization this = this.OptSpecialization
-        static member setOptSpecialization value this = { this with ScreenState.OptSpecialization = value }
-        static member getTransitionStateNp this = this.TransitionStateNp
-        static member setTransitionStateNp value this = { this with TransitionStateNp = value }
-        static member getTransitionTicksNp this = this.TransitionTicksNp
-        static member setTransitionTicksNp value this = { this with TransitionTicksNp = value }
-        static member getIncoming this = this.Incoming
-        static member setIncoming value this = { this with Incoming = value }
-        static member getOutgoing this = this.Outgoing
-        static member setOutgoing value this = { this with Outgoing = value }
-        static member getPersistent this = this.Persistent
-        static member setPersistent value this = { this with ScreenState.Persistent = value }
-        static member getName this = this.Name
-        static member setName value this = { this with ScreenState.Name = value }
     
         /// Make a screen state value.
         static member make optSpecialization optName dispatcher =
@@ -360,14 +328,13 @@ module WorldTypes =
     /// Hosts the ongoing state of a group. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     and [<CLIMutable; NoEquality; NoComparison>] GroupState =
-        private
-            { Id : Guid
-              Xtension : Xtension
-              DispatcherNp : GroupDispatcher
-              CreationTimeStampNp : int64
-              OptSpecialization : string option
-              Persistent : bool
-              Name : Name }
+        { Id : Guid
+          Xtension : Xtension
+          DispatcherNp : GroupDispatcher
+          CreationTimeStampNp : int64
+          OptSpecialization : string option
+          Persistent : bool
+          Name : Name }
 
         /// The dynamic look-up operator.
         static member (?) (groupState, propertyName) : 'r =
@@ -380,17 +347,6 @@ module WorldTypes =
         /// Attach a dynamic property.
         static member attachProperty name value groupState =
             { groupState with GroupState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } groupState.Xtension }
-    
-        static member getId this = this.Id
-        static member getXtension this = this.Xtension
-        static member getDispatcherNp this = this.DispatcherNp
-        static member getCreationTimeStampNp this = this.CreationTimeStampNp
-        static member getOptSpecialization this = this.OptSpecialization
-        static member setOptSpecialization value this = { this with GroupState.OptSpecialization = value }
-        static member getPersistent this = this.Persistent
-        static member setPersistent value this = { this with GroupState.Persistent = value }
-        static member getName this = this.Name
-        static member setName value this = { this with GroupState.Name = value }
     
         /// Make a group state value.
         static member make optSpecialization optName dispatcher =
@@ -406,27 +362,26 @@ module WorldTypes =
     /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     and [<CLIMutable; NoEquality; NoComparison>] EntityState =
-        private
-            { Id : Guid
-              Xtension : Xtension
-              DispatcherNp : EntityDispatcher
-              CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
-              OptSpecialization : string option
-              OptOverlayName : string option
-              Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-              Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-              Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
-              Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
-              Overflow : Vector2
-              ViewType : ViewType
-              Visible : bool
-              Omnipresent : bool
-              PublishUpdatesNp : bool
-              PublishChangesNp : bool
-              Persistent : bool
-              FacetNames : string Set
-              FacetsNp : Facet list
-              Name : Name }
+        { Id : Guid
+          Xtension : Xtension
+          DispatcherNp : EntityDispatcher
+          CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
+          OptSpecialization : string option
+          OptOverlayName : string option
+          Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
+          Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
+          Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
+          Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
+          Overflow : Vector2
+          ViewType : ViewType
+          Visible : bool
+          Omnipresent : bool
+          PublishUpdatesNp : bool
+          PublishChangesNp : bool
+          Persistent : bool
+          FacetNames : string Set
+          FacetsNp : Facet list
+          Name : Name }
 
         /// The dynamic look-up operator.
         static member (?) (entityState, propertyName) : 'r =
@@ -444,43 +399,6 @@ module WorldTypes =
         static member detachProperty name entityState =
             { entityState with EntityState.Xtension = Xtension.detachProperty name entityState.Xtension }
     
-        static member getId this = this.Id
-        static member getXtension this = this.Xtension
-        static member getDispatcherNp this = this.DispatcherNp
-        static member getCreationTimeStampNp this = this.CreationTimeStampNp
-        static member getOptSpecialization this = this.OptSpecialization
-        static member setOptSpecialization value this = { this with EntityState.OptSpecialization = value }
-        static member getOptOverlayName this = this.OptOverlayName
-        static member setOptOverlayName value this = { this with EntityState.OptOverlayName = value }
-        static member getPosition this = this.Position
-        static member setPosition value this = { this with EntityState.Position = value }
-        static member getSize this = this.Size
-        static member setSize value this = { this with EntityState.Size = value }
-        static member getRotation this = this.Rotation
-        static member setRotation value this = { this with EntityState.Rotation = value }
-        static member getDepth this = this.Depth
-        static member setDepth value this = { this with EntityState.Depth = value }
-        static member getOverflow this = this.Overflow
-        static member setOverflow value this = { this with Overflow = value }
-        static member getViewType this = this.ViewType
-        static member setViewType value this = { this with EntityState.ViewType = value }
-        static member getVisible this = this.Visible
-        static member setVisible value this = { this with Visible = value }
-        static member getOmnipresent this = this.Omnipresent
-        static member setOmnipresent value this = { this with Omnipresent = value }
-        static member getPublishUpdatesNp this = this.PublishUpdatesNp
-        static member setPublishUpdatesNp value this = { this with PublishUpdatesNp = value }
-        static member getPublishChangesNp this = this.PublishChangesNp
-        static member setPublishChangesNp value this = { this with PublishChangesNp = value }
-        static member getPersistent this = this.Persistent
-        static member setPersistent value this = { this with EntityState.Persistent = value }
-        static member getFacetNames this = this.FacetNames
-        static member setFacetNames value this = { this with FacetNames = value }
-        static member getFacetsNp this = this.FacetsNp
-        static member setFacetsNp value this = { this with FacetsNp = value }
-        static member getName this = this.Name
-        static member setName value this = { this with EntityState.Name = value }
-
         /// Get an entity state's transform.
         static member getTransform this =
             { Transform.Position = this.Position
@@ -499,10 +417,6 @@ module WorldTypes =
         /// Copy an entity such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
             { this with EntityState.Id = this.Id }
-
-        /// Duplicate an entity such as when, say, you need to copy-paste it in the editor.
-        static member duplicate id this =
-            { this with EntityState.Id = id }
 
         /// Make an entity state value.
         static member make optSpecialization optName optOverlayName dispatcher =
@@ -813,6 +727,7 @@ module WorldTypes =
         static member getFacets world =
             world.Dispatchers.Facets
 
+        /// Rebuild the entity tree if needed.
         static member rebuildEntityTree screen world =
             world.Dispatchers.RebuildEntityTree screen world
 
@@ -1025,15 +940,12 @@ module WorldTypes =
 
         static member internal getEntityStateBoundsMax entityState =
             // TODO: get up off yer arse and write an algorithm for tight-fitting bounds...
-            let position = EntityState.getPosition entityState
-            let size = EntityState.getSize entityState
-            let overflow = EntityState.getOverflow entityState
-            match EntityState.getRotation entityState with
+            match entityState.Rotation with
             | 0.0f ->
-                let boundsOverflow = Math.makeBoundsOverflow position size overflow
+                let boundsOverflow = Math.makeBoundsOverflow entityState.Position entityState.Size entityState.Overflow
                 boundsOverflow // no need to transform is unrotated
             | _ ->
-                let boundsOverflow = Math.makeBoundsOverflow position size overflow
+                let boundsOverflow = Math.makeBoundsOverflow entityState.Position entityState.Size entityState.Overflow
                 let position = boundsOverflow.Xy
                 let size = Vector2 (boundsOverflow.Z, boundsOverflow.W) - position
                 let center = position + size * 0.5f
@@ -1046,7 +958,7 @@ module WorldTypes =
                 Vector4 (newPosition.X, newPosition.Y, newPosition.X + newSize.X, newPosition.Y + newSize.Y)
 
         static member internal publishEntityChange entityState (entity : Entity) oldWorld world =
-            if EntityState.getPublishChangesNp entityState then
+            if entityState.PublishChangesNp then
                 let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
                 World.publish { Participant = entity; OldWorld = oldWorld } entity.ChangeAddress eventTrace entity world
             else world
@@ -1223,7 +1135,7 @@ module WorldTypes =
             // OPTIMIZATION: attempt to avoid constructing a screen address on each call to decrease address hashing
             // OPTIMIZATION: assumes a valid entity address with List.head on its names
             let screen =
-                match GameState.getOptSelectedScreen ^ World.getGameState world with
+                match (World.getGameState world).OptSelectedScreen with
                 | Some screen when screen.ScreenName = List.head ^ Address.getNames entity.EntityAddress -> screen
                 | Some _ | None -> entity.EntityAddress |> Address.getNames |> List.head |> ntoa<Screen> |> Screen.proxy
 
@@ -1238,12 +1150,12 @@ module WorldTypes =
                         let entityState = World.getEntityState entity world
                         let entityBoundsMax = World.getEntityStateBoundsMax entityState
                         QuadTree.updateElement
-                            (EntityState.getOmnipresent oldEntityState || EntityState.getViewType oldEntityState = Absolute) oldEntityBoundsMax
-                            (EntityState.getOmnipresent entityState || EntityState.getViewType entityState = Absolute) entityBoundsMax
+                            (oldEntityState.Omnipresent || oldEntityState.ViewType = Absolute) oldEntityBoundsMax
+                            (entityState.Omnipresent || entityState.ViewType = Absolute) entityBoundsMax
                             entity entityTree
                         entityTree)
-                    (ScreenState.getEntityTreeNp screenState)
-            let screenState = ScreenState.setEntityTreeNp entityTree screenState
+                    screenState.EntityTreeNp
+            let screenState = { screenState with EntityTreeNp = entityTree }
             World.setScreenStateWithoutEvent screenState screen world
 
         static member internal updateEntityStatePlus updater entity world =
@@ -1270,12 +1182,12 @@ module WorldTypes =
 
         /// Get the current destination screen if a screen transition is currently underway.
         static member getOptScreenTransitionDestination world =
-            GameState.getOptScreenTransitionDestination ^ World.getGameState world
+            (World.getGameState world).OptScreenTransitionDestination
 
         /// Set the current destination screen on the precondition that no screen transition is currently underway.
         static member internal setOptScreenTransitionDestination destination world =
             World.updateGameState
-                (fun gameState -> GameState.setOptScreenTransitionDestination destination gameState)
+                (fun gameState -> { gameState with OptScreenTransitionDestination = destination })
                 world
                 
         // Make the world.
