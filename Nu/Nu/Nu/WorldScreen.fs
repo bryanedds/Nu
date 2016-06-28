@@ -123,7 +123,7 @@ module WorldScreenModule =
             let dispatchers = World.getScreenDispatchers world
             let dispatcher = Map.find dispatcherName dispatchers
             let screenState = ScreenState.make optSpecialization optName dispatcher
-            Reflection.attachProperties dispatcher screenState
+            let screenState = Reflection.attachProperties ScreenState.copy dispatcher screenState
             let screen = ntos screenState.Name
             let world = World.addScreen false screenState screen world
             (screen, world)
@@ -141,7 +141,7 @@ module WorldScreenModule =
             let screenState = World.getScreenState screen world
             let screenDispatcherName = getTypeName screenState.DispatcherNp
             let screenDescriptor = { screenDescriptor with ScreenDispatcher = screenDispatcherName }
-            let getScreenProperties = Reflection.writeMemberValuesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
+            let getScreenProperties = Reflection.writeMembersFromTarget tautology3 screenDescriptor.ScreenProperties screenState
             let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
             let groups = World.proxyGroups screen world
             World.writeGroups groups screenDescriptor world
@@ -182,10 +182,10 @@ module WorldScreenModule =
             let screenState = ScreenState.make None None dispatcher
 
             // attach the screen state's instrinsic properties from its dispatcher if any
-            Reflection.attachProperties screenState.DispatcherNp screenState
+            let screenState = Reflection.attachProperties ScreenState.copy screenState.DispatcherNp screenState
 
             // read the screen state's value
-            Reflection.readMemberValuesToTarget screenDescriptor.ScreenProperties screenState
+            let screenState = Reflection.readMembersToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
 
             // apply the name if one is provided
             let screenState =

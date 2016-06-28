@@ -358,7 +358,7 @@ module WorldEntityModule =
                 | None -> entityState
 
             // attach the entity state's dispatcher properties
-            Reflection.attachProperties dispatcher entityState
+            let entityState = Reflection.attachProperties EntityState.copy dispatcher entityState
 
             // apply the entity state's overlay
             let entityState =
@@ -493,7 +493,7 @@ module WorldEntityModule =
                     let overlayer = World.getOverlayer world
                     let facetNames = World.getEntityFacetNamesReflectively entityState
                     Overlayer.shouldPropertySerialize5 facetNames propertyName propertyType entityState overlayer
-            let getEntityProperties = Reflection.writeMemberValuesFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
+            let getEntityProperties = Reflection.writeMembersFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
             { entityDescriptor with EntityProperties = getEntityProperties }
 
         /// Write multiple entities to a group descriptor.
@@ -534,17 +534,17 @@ module WorldEntityModule =
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
 
             // read the entity state's overlay and apply it to its facet names if applicable
-            Reflection.tryReadOptOverlayNameToTarget entityDescriptor.EntityProperties entityState
+            let entityState = Reflection.tryReadOptOverlayNameToTarget EntityState.copy entityDescriptor.EntityProperties entityState
             let entityState =
                 match (defaultOptOverlayName, entityState.OptOverlayName) with
                 | (Some defaultOverlayName, Some overlayName) -> Overlayer.applyOverlayToFacetNames EntityState.copy defaultOverlayName overlayName entityState overlayer overlayer
                 | (_, _) -> entityState
 
             // read the entity state's facet names
-            Reflection.readFacetNamesToTarget entityDescriptor.EntityProperties entityState
+            let entityState = Reflection.readFacetNamesToTarget EntityState.copy entityDescriptor.EntityProperties entityState
 
             // attach the entity state's dispatcher properties
-            Reflection.attachProperties dispatcher entityState
+            let entityState = Reflection.attachProperties EntityState.copy dispatcher entityState
             
             // synchronize the entity state's facets (and attach their properties)
             let entityState =
@@ -564,7 +564,7 @@ module WorldEntityModule =
                 | None -> entityState
 
             // read the entity state's values
-            Reflection.readMemberValuesToTarget entityDescriptor.EntityProperties entityState
+            let entityState = Reflection.readMembersToTarget EntityState.copy entityDescriptor.EntityProperties entityState
 
             // apply the name if one is provided
             let entityState =

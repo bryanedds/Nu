@@ -83,7 +83,7 @@ module WorldFacetModule =
                 let entityState = { entityState with FacetNames = facetNames }
                 let entityState = { entityState with FacetsNp = facetsNp }
                 let propertyNames = World.getEntityPropertyDefinitionNamesToDetach entityState facet
-                Reflection.detachPropertiesViaNames propertyNames entityState // copy elided
+                let entityState = Reflection.detachPropertiesViaNames EntityState.copy propertyNames entityState
                 match optEntity with
                 | Some entity ->
                     let oldWorld = world
@@ -103,7 +103,7 @@ module WorldFacetModule =
                     let facetsNp = facet :: entityState.FacetsNp
                     let entityState = { entityState with FacetNames = facetNames }
                     let entityState = { entityState with FacetsNp = facetsNp }
-                    Reflection.attachProperties facet entityState // copy elided
+                    let entityState = Reflection.attachProperties EntityState.copy facet entityState
                     match optEntity with
                     | Some entity ->
                         let oldWorld = world
@@ -148,9 +148,7 @@ module WorldFacetModule =
             | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
             | Left _ as left -> left
 
-        static member internal attachIntrinsicFacetsViaNames (entityState : EntityState) world =
+        static member internal attachIntrinsicFacetsViaNames entityState world =
             let entityDispatchers = World.getEntityDispatchers world
             let facets = World.getFacets world
-            let entityState = EntityState.copy entityState
-            Reflection.attachIntrinsicFacets entityDispatchers facets entityState.DispatcherNp entityState
-            entityState
+            Reflection.attachIntrinsicFacets EntityState.copy entityDispatchers facets entityState.DispatcherNp entityState
