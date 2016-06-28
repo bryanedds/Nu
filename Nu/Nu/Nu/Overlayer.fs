@@ -133,26 +133,29 @@ module OverlayerModule =
                 | _ -> ()
 
         /// Apply an overlay to the FacetNames property of the given target.
-        let applyOverlayToFacetNames oldOverlayName newOverlayName target oldOverlayer newOverlayer =
+        let applyOverlayToFacetNames (copyTarget : 'a -> 'a) oldOverlayName newOverlayName target oldOverlayer newOverlayer =
+            let target = copyTarget target
             let targetType = target.GetType ()
             match targetType.GetProperty "FacetNames" with
-            | null -> ()
+            | null -> target
             | facetNamesProperty ->
                 match tryFindPropertySymbol newOverlayName facetNamesProperty.Name newOverlayer with
-                | Some propertySymbol -> tryApplyOverlayToRecordProperty [] facetNamesProperty propertySymbol oldOverlayName target oldOverlayer
-                | None -> ()
+                | Some propertySymbol -> tryApplyOverlayToRecordProperty [] facetNamesProperty propertySymbol oldOverlayName target oldOverlayer; target
+                | None -> target
 
         /// Apply an overlay to the given target (except for any FacetNames property).
         /// Only the properties that are overlaid by the old overlay as specified by the old
         /// overlayer will be changed.
-        let applyOverlay6 oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
+        let applyOverlay6 (copyTarget : 'a -> 'a) oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
+            let target = copyTarget target
             applyOverlayToProperties oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer
             applyOverlayToXtension oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer
+            target
 
         /// Apply an overlay to the given target.
         /// Only the properties that are overlaid by the old overlay will be changed.
-        let applyOverlay oldOverlayName newOverlayName facetNames target overlayer =
-            applyOverlay6 oldOverlayName newOverlayName facetNames target overlayer overlayer
+        let applyOverlay copyTarget oldOverlayName newOverlayName facetNames target overlayer =
+            applyOverlay6 copyTarget oldOverlayName newOverlayName facetNames target overlayer overlayer
 
         /// Query that a property should be serialized.
         let shouldPropertySerialize overlayName facetNames propertyName propertyType target overlayer =
