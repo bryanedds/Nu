@@ -709,14 +709,12 @@ module WorldModule =
             // ensure game engine is initialized
             Nu.init false
 
-            // make the world's subsystems
-            let subsystems =
-                let subsystemMap =
-                    Map.ofList
-                        [(Constants.Engine.PhysicsEngineSubsystemName, PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockPhysicsEngine.make ()) :> World Subsystem)
-                         (Constants.Engine.RendererSubsystemName, RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockRenderer.make ()) :> World Subsystem)
-                         (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockAudioPlayer.make ()) :> World Subsystem)]
-                Subsystems.make subsystemMap
+            // make the world's event system
+            let eventSystem =
+                let eventTracer = Log.remark "Event"
+                let eventTracing = Core.getEventTracing ()
+                let eventFilter = Core.getEventFilter ()
+                EventSystem.make eventTracer eventTracing eventFilter
 
             // make the world's dispatchers
             let dispatchers =
@@ -727,12 +725,14 @@ module WorldModule =
                   Facets = World.makeDefaultFacets ()
                   RebuildEntityTree = World.rebuildEntityTreeImpl }
 
-            // make the world's event system
-            let eventSystem =
-                let eventTracer = Log.remark "Event"
-                let eventTracing = Core.getEventTracing ()
-                let eventFilter = Core.getEventFilter ()
-                EventSystem.make eventTracer eventTracing eventFilter
+            // make the world's subsystems
+            let subsystems =
+                let subsystemMap =
+                    Map.ofList
+                        [(Constants.Engine.PhysicsEngineSubsystemName, PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockPhysicsEngine.make ()) :> World Subsystem)
+                         (Constants.Engine.RendererSubsystemName, RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockRenderer.make ()) :> World Subsystem)
+                         (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockAudioPlayer.make ()) :> World Subsystem)]
+                Subsystems.make subsystemMap
 
             // make the game state
             let gameState =
@@ -747,7 +747,7 @@ module WorldModule =
                 AmbientState.make 1L camera Map.empty overlayRouter Overlayer.empty SymbolStore.empty userState
 
             // make and choose the world
-            let world = World.make subsystems dispatchers eventSystem ambientState gameState
+            let world = World.make eventSystem dispatchers subsystems ambientState gameState
 
             // initialize OptEntityCache after the fact due to back reference
             let world = World.setOptEntityCache (KeyedCache.make (Address.empty<Entity>, world) None) world
@@ -770,29 +770,12 @@ module WorldModule =
             match AssetGraph.tryMakeFromFile Constants.Assets.AssetGraphFilePath with
             | Right assetGraph ->
 
-                // make world's subsystems
-                let subsystems =
-                    let userSubsystems = plugin.MakeSubsystems ()
-                    let physicsEngine = PhysicsEngine.make Constants.Physics.Gravity
-                    let physicsEngineSubsystem = PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder physicsEngine :> World Subsystem
-                    let renderer =
-                        match SdlDeps.getOptRenderContext sdlDeps with
-                        | Some renderContext -> Renderer.make renderContext :> IRenderer
-                        | None -> MockRenderer.make () :> IRenderer
-                    let renderer = renderer.EnqueueMessage ^ HintRenderPackageUseMessage { PackageName = Constants.Assets.DefaultPackageName }
-                    let rendererSubsystem = RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder renderer :> World Subsystem
-                    let audioPlayer =
-                        if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
-                        then AudioPlayer.make () :> IAudioPlayer
-                        else MockAudioPlayer.make () :> IAudioPlayer
-                    let audioPlayerSubsystem = AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder audioPlayer :> World Subsystem
-                    let defaultSubsystemMap =
-                        Map.ofList
-                            [(Constants.Engine.PhysicsEngineSubsystemName, physicsEngineSubsystem)
-                             (Constants.Engine.RendererSubsystemName, rendererSubsystem)
-                             (Constants.Engine.AudioPlayerSubsystemName, audioPlayerSubsystem)]
-                    let subsystemMap = Map.addMany userSubsystems defaultSubsystemMap
-                    Subsystems.make subsystemMap
+                // make the world's event system
+                let eventSystem =
+                    let eventTracer = Log.remark "Event"
+                    let eventTracing = Core.getEventTracing ()
+                    let eventFilter = Core.getEventFilter ()
+                    EventSystem.make eventTracer eventTracing eventFilter
 
                 // make plug-in dispatchers
                 let pluginFacets = plugin.MakeFacets () |> List.map World.pairWithName
@@ -819,12 +802,29 @@ module WorldModule =
                       Facets = Map.addMany pluginFacets ^ World.makeDefaultFacets ()
                       RebuildEntityTree = World.rebuildEntityTreeImpl }
 
-                // make the world's event system
-                let eventSystem =
-                    let eventTracer = Log.remark "Event"
-                    let eventTracing = Core.getEventTracing ()
-                    let eventFilter = Core.getEventFilter ()
-                    EventSystem.make eventTracer eventTracing eventFilter
+                // make world's subsystems
+                let subsystems =
+                    let userSubsystems = plugin.MakeSubsystems ()
+                    let physicsEngine = PhysicsEngine.make Constants.Physics.Gravity
+                    let physicsEngineSubsystem = PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder physicsEngine :> World Subsystem
+                    let renderer =
+                        match SdlDeps.getOptRenderContext sdlDeps with
+                        | Some renderContext -> Renderer.make renderContext :> IRenderer
+                        | None -> MockRenderer.make () :> IRenderer
+                    let renderer = renderer.EnqueueMessage ^ HintRenderPackageUseMessage { PackageName = Constants.Assets.DefaultPackageName }
+                    let rendererSubsystem = RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder renderer :> World Subsystem
+                    let audioPlayer =
+                        if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
+                        then AudioPlayer.make () :> IAudioPlayer
+                        else MockAudioPlayer.make () :> IAudioPlayer
+                    let audioPlayerSubsystem = AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder audioPlayer :> World Subsystem
+                    let defaultSubsystemMap =
+                        Map.ofList
+                            [(Constants.Engine.PhysicsEngineSubsystemName, physicsEngineSubsystem)
+                             (Constants.Engine.RendererSubsystemName, rendererSubsystem)
+                             (Constants.Engine.AudioPlayerSubsystemName, audioPlayerSubsystem)]
+                    let subsystemMap = Map.addMany userSubsystems defaultSubsystemMap
+                    Subsystems.make subsystemMap
 
                 // attempt to make the overlayer
                 let intrinsicOverlays = World.createIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
@@ -842,7 +842,7 @@ module WorldModule =
                         AmbientState.make tickRate camera assetMetadataMap overlayRouter overlayer SymbolStore.empty userState
 
                     // make and choose the world
-                    let world = World.make subsystems dispatchers eventSystem ambientState (World.makeGameState activeGameDispatcher)
+                    let world = World.make eventSystem dispatchers subsystems ambientState (World.makeGameState activeGameDispatcher)
 
                     // initialize OptEntityCache after the fact due to back reference
                     let world = World.setOptEntityCache (KeyedCache.make (Address.empty<Entity>, world) None) world
