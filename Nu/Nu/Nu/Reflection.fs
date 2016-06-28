@@ -70,14 +70,13 @@ type VariableDefinition =
         fun (variable : unit -> 'v) ->
             PropertyDefinition.makeValidated propertyName typeof<'v> ^ VariableExpr (fun () -> variable () :> obj)
 
-/// In tandem with the define literal, grants a nice syntax to define property descriptors.
+/// In tandem with the property literal, grants a nice syntax to denote properties.
 type PropertyDescriptor =
     { PropertyDescriptor : unit }
     
     /// Some magic syntax for composing value properties.
-    static member (?) (_, propertyName : string) =
-        fun (value : 'v) ->
-            (propertyName, symbolize value)
+    static member inline (?) (_, propertyName : string) =
+        propertyName
 
 [<AutoOpen>]
 module ReflectionModule =
@@ -88,7 +87,7 @@ module ReflectionModule =
     /// In tandem with the VariableDefinition type, grants a nice syntax to define variable properties.
     let Variable = { VariableDefinition = () }
     
-    /// In tandem with the PropertyDescriptor type, grants a nice syntax to define property descriptors.
+    /// In tandem with the PropertyDescriptor type, grants a nice syntax to denote properties.
     let Property = { PropertyDescriptor = () }
 
 [<RequireQualifiedAccess>]

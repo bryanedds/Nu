@@ -18,6 +18,7 @@ module WorldEntityModule =
     type Entity with
 
         member this.GetId world = (World.getEntityState this world).Id
+        member this.GetName world = (World.getEntityState this world).Name
         member this.GetXtension world = (World.getEntityState this world).Xtension
         member this.GetDispatcherNp world = (World.getEntityState this world).DispatcherNp
         member this.GetCreationTimeStampNp world = (World.getEntityState this world).CreationTimeStampNp
@@ -48,7 +49,6 @@ module WorldEntityModule =
         member this.SetPersistent value world = World.updateEntityState (fun entityState -> { entityState with Persistent = value }) this world
         member this.GetFacetNames world = (World.getEntityState this world).FacetNames
         member this.GetFacetsNp world = (World.getEntityState this world).FacetsNp
-        member this.GetName world = (World.getEntityState this world).Name
         
         /// Get the transform.
         member this.GetTransform world =
@@ -60,11 +60,11 @@ module WorldEntityModule =
 
         /// Get a dynamic property.
         member this.Get propertyName world : 'r =
-            EntityState.(?) (World.getEntityState this world, propertyName)
+            EntityState.get (World.getEntityState this world) propertyName
 
         /// Set a dynamic property.
         member this.Set propertyName (value : 'a) world = 
-            World.setEntityState (EntityState.(?<-) (World.getEntityState this world, propertyName, value)) this world
+            World.setEntityState (EntityState.set (World.getEntityState this world) propertyName value) this world
 
         /// Attach a dynamic property.
         member this.AttachProperty name value world =
@@ -317,7 +317,7 @@ module WorldEntityModule =
             let world = World.removeEntity entity world
             let id = makeGuid ()
             let name = match optName with Some name -> name | None -> Name.make ^ scstring id
-            let entityState = { entityState with Name = name; Id = id }
+            let entityState = { entityState with Id = id; Name = name }
             let transmutedEntity = gtoe group name
             let world = World.addEntity false entityState transmutedEntity world
             (transmutedEntity, world)

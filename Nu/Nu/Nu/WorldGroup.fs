@@ -27,11 +27,11 @@ module WorldGroupModule =
 
         /// Get a dynamic property.
         member this.Get propertyName world : 'r =
-            GroupState.(?) (World.getGroupState this world, propertyName)
+            GroupState.get (World.getGroupState this world) propertyName
 
         /// Set a dynamic property.
         member this.Set propertyName (value : 'a) world = 
-            World.setGroupState (GroupState.(?<-) (World.getGroupState this world, propertyName, value)) this world
+            World.setGroupState (GroupState.set (World.getGroupState this world) propertyName value) this world
 
         /// Query that a group dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world =

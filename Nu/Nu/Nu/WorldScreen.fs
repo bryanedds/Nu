@@ -36,11 +36,11 @@ module WorldScreenModule =
 
         /// Get a dynamic property.
         member this.Get propertyName world : 'r =
-            ScreenState.(?) (World.getScreenState this world, propertyName)
+            ScreenState.get (World.getScreenState this world) propertyName
 
         /// Set a dynamic property.
         member this.Set propertyName (value : 'a) world = 
-            World.setScreenState (ScreenState.(?<-) (World.getScreenState this world, propertyName, value)) this world
+            World.setScreenState (ScreenState.set (World.getScreenState this world) propertyName value) this world
 
         /// Query that a screen is in an idling state (not transitioning in nor out).
         member this.IsIdling world =

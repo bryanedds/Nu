@@ -25,11 +25,11 @@ module WorldGameModule =
 
         /// Get a dynamic property.
         member this.Get propertyName world : 'r =
-            GameState.(?) (World.getGameState world, propertyName)
+            GameState.get (World.getGameState world) propertyName
 
         /// Set a dynamic property.
         member this.Set propertyName (value : 'a) world = 
-            World.setGameState (GameState.(?<-) (World.getGameState world, propertyName, value)) world
+            World.setGameState (GameState.set (World.getGameState world) propertyName value) world
 
         /// Query that a game dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world =

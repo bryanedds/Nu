@@ -264,11 +264,11 @@ module WorldTypes =
           OptScreenTransitionDestination : Screen option }
 
         /// The dynamic look-up operator.
-        static member (?) (gameState, propertyName) : 'r =
+        static member get gameState propertyName : 'r =
             Xtension.(?) (gameState.Xtension, propertyName)
 
         /// The dynamic assignment operator.
-        static member (?<-) (gameState, propertyName, value : 'a) =
+        static member set gameState propertyName (value : 'a) =
             { gameState with GameState.Xtension = Xtension.(?<-) (gameState.Xtension, propertyName, value) }
 
         /// Attach a dynamic property.
@@ -292,6 +292,7 @@ module WorldTypes =
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
         { Id : Guid
+          Name : Name
           Xtension : Xtension
           DispatcherNp : ScreenDispatcher
           CreationTimeStampNp : int64
@@ -301,15 +302,14 @@ module WorldTypes =
           TransitionTicksNp : int64
           Incoming : Transition
           Outgoing : Transition
-          Persistent : bool
-          Name : Name }
+          Persistent : bool }
 
         /// The dynamic look-up operator.
-        static member (?) (screenState, propertyName) : 'r =
+        static member get screenState propertyName : 'r =
             Xtension.(?) (screenState.Xtension, propertyName)
 
         /// The dynamic assignment operator.
-        static member (?<-) (screenState, propertyName, value : 'a) =
+        static member set screenState propertyName (value : 'a) =
             { screenState with ScreenState.Xtension = Xtension.(?<-) (screenState.Xtension, propertyName, value) }
 
         /// Attach a dynamic property.
@@ -321,6 +321,7 @@ module WorldTypes =
             let (id, name) = Reflection.deriveIdAndName optName
             let screenState =
                 { Id = id
+                  Name = name
                   Xtension = Xtension.safe
                   DispatcherNp = dispatcher
                   CreationTimeStampNp = Core.getTimeStamp ()
@@ -330,8 +331,7 @@ module WorldTypes =
                   TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
                   Incoming = Transition.make Incoming
                   Outgoing = Transition.make Outgoing
-                  Persistent = true
-                  Name = name }
+                  Persistent = true }
             let quadTree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
             { screenState with EntityTreeNp = MutantCache.make Operators.id quadTree }
 
@@ -343,19 +343,19 @@ module WorldTypes =
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     and [<CLIMutable; NoEquality; NoComparison>] GroupState =
         { Id : Guid
+          Name : Name
           Xtension : Xtension
           DispatcherNp : GroupDispatcher
           CreationTimeStampNp : int64
           OptSpecialization : string option
-          Persistent : bool
-          Name : Name }
+          Persistent : bool }
 
         /// The dynamic look-up operator.
-        static member (?) (groupState, propertyName) : 'r =
+        static member get groupState propertyName : 'r =
             Xtension.(?) (groupState.Xtension, propertyName)
 
         /// The dynamic assignment operator.
-        static member (?<-) (groupState, propertyName, value : 'a) =
+        static member set groupState propertyName (value : 'a) =
             { groupState with GroupState.Xtension = Xtension.(?<-) (groupState.Xtension, propertyName, value) }
 
         /// Attach a dynamic property.
@@ -366,12 +366,12 @@ module WorldTypes =
         static member make optSpecialization optName dispatcher =
             let (id, name) = Reflection.deriveIdAndName optName
             { GroupState.Id = id
+              Name = name
               Xtension = Xtension.safe
               DispatcherNp = dispatcher
               CreationTimeStampNp = Core.getTimeStamp ()
               OptSpecialization = optSpecialization
-              Persistent = true
-              Name = name }
+              Persistent = true }
 
         /// Copy a group such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
@@ -381,6 +381,7 @@ module WorldTypes =
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     and [<CLIMutable; NoEquality; NoComparison>] EntityState =
         { Id : Guid
+          Name : Name
           Xtension : Xtension
           DispatcherNp : EntityDispatcher
           CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
@@ -398,15 +399,14 @@ module WorldTypes =
           PublishChangesNp : bool
           Persistent : bool
           FacetNames : string Set
-          FacetsNp : Facet list
-          Name : Name }
+          FacetsNp : Facet list }
 
         /// The dynamic look-up operator.
-        static member (?) (entityState, propertyName) : 'r =
+        static member get entityState propertyName : 'r =
             Xtension.(?) (entityState.Xtension, propertyName)
 
         /// The dynamic assignment operator.
-        static member (?<-) (entityState, propertyName, value : 'a) =
+        static member set entityState propertyName (value : 'a) =
             { entityState with EntityState.Xtension = Xtension.(?<-) (entityState.Xtension, propertyName, value) }
 
         /// Attach a dynamic property.
@@ -436,6 +436,7 @@ module WorldTypes =
         static member make optSpecialization optName optOverlayName dispatcher =
             let (id, name) = Reflection.deriveIdAndName optName
             { Id = id
+              Name = name
               Xtension = Xtension.safe
               DispatcherNp = dispatcher
               CreationTimeStampNp = Core.getTimeStamp ()
@@ -453,8 +454,7 @@ module WorldTypes =
               PublishChangesNp = false
               Persistent = true
               FacetNames = Set.empty
-              FacetsNp = []
-              Name = name }
+              FacetsNp = [] }
 
         /// Copy an entity such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
