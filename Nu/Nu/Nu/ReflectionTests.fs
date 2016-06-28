@@ -19,10 +19,13 @@ module ReflectionTests =
             let xtension = Xtension.(?<-) (this.Xtension, propertyName, value)
             { this with Xtension = xtension }
 
+        static member copy (this : TestXtended) =
+            { this with Xtension = this.Xtension }
+
     let [<Fact>] xtensionSerializationViaContainingTypeWorks () =
         let xtd = { Xtension = Xtension.mixed }
         let xtd = xtd?TestProperty <- 5
-        let properties = Reflection.writeMemberValuesFromTarget tautology3 Map.empty xtd
+        let properties = Reflection.writeMembersFromTarget tautology3 Map.empty xtd
         let xtdRead = { xtd with Xtension = xtd.Xtension } // hacky copy
-        Reflection.readMemberValuesToTarget properties xtdRead
+        let xtd = Reflection.readMembersToTarget TestXtended.copy properties xtdRead
         Assert.Equal((xtd?TestProperty : int), (xtdRead?TestProperty : int))

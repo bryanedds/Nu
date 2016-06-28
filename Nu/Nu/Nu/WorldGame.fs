@@ -53,8 +53,7 @@ module WorldGameModule =
 
         static member internal makeGameState dispatcher =
             let gameState = GameState.make dispatcher
-            Reflection.attachProperties dispatcher gameState
-            gameState
+            Reflection.attachProperties GameState.copy dispatcher gameState
 
         // Get all the entities in the world.
         static member proxyEntities1 world =
@@ -119,7 +118,7 @@ module WorldGameModule =
             let gameState = World.getGameState world
             let gameDispatcherName = getTypeName gameState.DispatcherNp
             let gameDescriptor = { gameDescriptor with GameDispatcher = gameDispatcherName }
-            let viewGameProperties = Reflection.writeMemberValuesFromTarget tautology3 gameDescriptor.GameProperties gameState
+            let viewGameProperties = Reflection.writeMembersFromTarget tautology3 gameDescriptor.GameProperties gameState
             let gameDescriptor = { gameDescriptor with GameProperties = viewGameProperties }
             let screens = World.proxyScreens world
             World.writeScreens screens gameDescriptor world
@@ -152,7 +151,7 @@ module WorldGameModule =
             let gameState = World.makeGameState dispatcher
 
             // read the game state's value
-            Reflection.readMemberValuesToTarget gameDescriptor.GameProperties gameState
+            let gameState = Reflection.readMembersToTarget GameState.copy gameDescriptor.GameProperties gameState
 
             // set the game's state in the world
             let world = World.setGameState gameState world

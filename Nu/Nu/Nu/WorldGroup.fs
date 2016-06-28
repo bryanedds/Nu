@@ -128,7 +128,7 @@ module WorldGroupModule =
             let dispatchers = World.getGroupDispatchers world
             let dispatcher = Map.find dispatcherName dispatchers
             let groupState = GroupState.make optSpecialization optName dispatcher
-            Reflection.attachProperties dispatcher groupState
+            let groupState = Reflection.attachProperties GroupState.copy dispatcher groupState
             let group = stog screen groupState.Name
             let world = World.addGroup false groupState group world
             (group, world)
@@ -138,7 +138,7 @@ module WorldGroupModule =
             let groupState = World.getGroupState group world
             let groupDispatcherName = getTypeName groupState.DispatcherNp
             let groupDescriptor = { groupDescriptor with GroupDispatcher = groupDispatcherName }
-            let getGroupProperties = Reflection.writeMemberValuesFromTarget tautology3 groupDescriptor.GroupProperties groupState
+            let getGroupProperties = Reflection.writeMembersFromTarget tautology3 groupDescriptor.GroupProperties groupState
             let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
             let entities = World.proxyEntities group world
             World.writeEntities entities groupDescriptor world
@@ -179,10 +179,10 @@ module WorldGroupModule =
             let groupState = GroupState.make None None dispatcher
 
             // attach the group state's instrinsic properties from its dispatcher if any
-            Reflection.attachProperties groupState.DispatcherNp groupState
+            let groupState = Reflection.attachProperties GroupState.copy groupState.DispatcherNp groupState
 
             // read the group state's value
-            Reflection.readMemberValuesToTarget groupDescriptor.GroupProperties groupState
+            let groupState = Reflection.readMembersToTarget GroupState.copy groupDescriptor.GroupProperties groupState
 
             // apply the name if one is provided
             let groupState =

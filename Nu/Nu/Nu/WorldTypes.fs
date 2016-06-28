@@ -283,6 +283,10 @@ module WorldTypes =
               CreationTimeStampNp = Core.getTimeStamp ()
               OptSelectedScreen = None
               OptScreenTransitionDestination = None }
+
+        /// Copy a game such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
+        static member copy this =
+            { this with GameState.Id = this.Id }
     
     /// Hosts the ongoing state of a screen. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
@@ -330,6 +334,10 @@ module WorldTypes =
                   Name = name }
             let quadTree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
             { screenState with EntityTreeNp = MutantCache.make Operators.id quadTree }
+
+        /// Copy a screen such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
+        static member copy this =
+            { this with ScreenState.Id = this.Id }
     
     /// Hosts the ongoing state of a group. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
@@ -364,6 +372,10 @@ module WorldTypes =
               OptSpecialization = optSpecialization
               Persistent = true
               Name = name }
+
+        /// Copy a group such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
+        static member copy this =
+            { this with GroupState.Id = this.Id }
     
     /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
@@ -420,10 +432,6 @@ module WorldTypes =
                 Rotation = value.Rotation
                 Depth = value.Depth }
 
-        /// Copy an entity such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
-        static member copy this =
-            { this with EntityState.Id = this.Id }
-
         /// Make an entity state value.
         static member make optSpecialization optName optOverlayName dispatcher =
             let (id, name) = Reflection.deriveIdAndName optName
@@ -447,6 +455,10 @@ module WorldTypes =
               FacetNames = Set.empty
               FacetsNp = []
               Name = name }
+
+        /// Copy an entity such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
+        static member copy this =
+            { this with EntityState.Id = this.Id }
     
     /// The game type that hosts the various screens used to navigate through a game.
     and [<StructuralEquality; NoComparison>] Game =
