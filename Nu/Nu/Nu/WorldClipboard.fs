@@ -33,12 +33,12 @@ module WorldClipboardModule =
             | Some entityState ->
                 let id = makeGuid ()
                 let name = Name.make ^ scstring id
-                let entityState = EntityState.setName name ^ EntityState.duplicate id entityState
+                let entityState = { entityState with Name = name; Id = id }
                 let camera = World.getCamera world
                 let position =
-                    let viewType = EntityState.getViewType entityState
-                    if atMouse then Camera.mouseToWorld viewType rightClickPosition camera
-                    else Camera.mouseToWorld viewType (camera.EyeSize * 0.5f) camera
+                    if atMouse
+                    then Camera.mouseToWorld entityState.ViewType rightClickPosition camera
+                    else Camera.mouseToWorld entityState.ViewType (camera.EyeSize * 0.5f) camera
                 let transform = { EntityState.getTransform entityState with Position = position }
                 let transform = Math.snapTransform positionSnap rotationSnap transform
                 let entityState = EntityState.setTransform transform entityState

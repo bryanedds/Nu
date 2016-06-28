@@ -27,7 +27,7 @@ module WorldFacetModule =
             if Reflection.isFacetCompatibleWithDispatcher entityDispatcherMap facet entityState then
                 List.notExists
                     (fun definition ->
-                        match Xtension.tryGetProperty definition.PropertyName (EntityState.getXtension entityState) with
+                        match Xtension.tryGetProperty definition.PropertyName entityState.Xtension with
                         | Some property -> property.GetType () <> definition.PropertyType
                         | None -> false)
                     facetPropertyDefinitions
@@ -69,7 +69,7 @@ module WorldFacetModule =
                 finalPropertyDefinitionNameCounts
 
         static member private tryRemoveFacet facetName entityState optEntity world =
-            match List.tryFind (fun facet -> getTypeName facet = facetName) (EntityState.getFacetsNp entityState) with
+            match List.tryFind (fun facet -> getTypeName facet = facetName) entityState.FacetsNp with
             | Some facet ->
                 let (entityState, world) =
                     match optEntity with
@@ -78,12 +78,12 @@ module WorldFacetModule =
                         let entityState = World.getEntityState entity world
                         (entityState, world)
                     | None -> (entityState, world)
-                let facetNames = Set.remove facetName ^ EntityState.getFacetNames entityState
-                let facetsNp = List.remove ((=) facet) ^ EntityState.getFacetsNp entityState
-                let entityState = EntityState.setFacetNames facetNames entityState
-                let entityState = EntityState.setFacetsNp facetsNp entityState
+                let facetNames = Set.remove facetName entityState.FacetNames
+                let facetsNp = List.remove ((=) facet) entityState.FacetsNp
+                let entityState = { entityState with FacetNames = facetNames }
+                let entityState = { entityState with FacetsNp = facetsNp }
                 let propertyNames = World.getEntityPropertyDefinitionNamesToDetach entityState facet
-                Reflection.detachPropertiesViaNames propertyNames entityState // hacky copy elided
+                Reflection.detachPropertiesViaNames propertyNames entityState // copy elided
                 match optEntity with
                 | Some entity ->
                     let oldWorld = world
@@ -99,11 +99,11 @@ module WorldFacetModule =
             | Right facet ->
                 let entityDispatchers = World.getEntityDispatchers world
                 if World.isFacetCompatibleWithEntity entityDispatchers facet entityState then
-                    let facetNames = Set.add facetName ^ EntityState.getFacetNames entityState
-                    let facetsNp = facet :: EntityState.getFacetsNp entityState
-                    let entityState = EntityState.setFacetNames facetNames entityState
-                    let entityState = EntityState.setFacetsNp facetsNp entityState
-                    Reflection.attachProperties facet entityState // hacky copy elided
+                    let facetNames = Set.add facetName entityState.FacetNames
+                    let facetsNp = facet :: entityState.FacetsNp
+                    let entityState = { entityState with FacetNames = facetNames }
+                    let entityState = { entityState with FacetsNp = facetsNp }
+                    Reflection.attachProperties facet entityState // copy elided
                     match optEntity with
                     | Some entity ->
                         let oldWorld = world
@@ -113,7 +113,7 @@ module WorldFacetModule =
                         let world = facet.Register (entity, world)
                         Right (World.getEntityState entity world, world)
                     | None -> Right (entityState, world)
-                else let _ = World.choose world in Left ^ "Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring (EntityState.getName entityState) + "'."
+                else let _ = World.choose world in Left ^ "Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Name + "'."
             | Left error -> Left error
 
         static member private tryRemoveFacets facetNamesToRemove entityState optEntity world =
@@ -135,15 +135,15 @@ module WorldFacetModule =
                 facetNamesToAdd
 
         static member internal trySetFacetNames facetNames entityState optEntity world =
-            let facetNamesToRemove = World.getFacetNamesToRemove (EntityState.getFacetNames entityState) facetNames
-            let facetNamesToAdd = World.getFacetNamesToAdd (EntityState.getFacetNames entityState) facetNames
+            let facetNamesToRemove = World.getFacetNamesToRemove entityState.FacetNames facetNames
+            let facetNamesToAdd = World.getFacetNamesToAdd entityState.FacetNames facetNames
             match World.tryRemoveFacets facetNamesToRemove entityState optEntity world with
             | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
             | Left _ as left -> left
 
         static member internal trySynchronizeFacetsToNames oldFacetNames entityState optEntity world =
-            let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames (EntityState.getFacetNames entityState)
-            let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames (EntityState.getFacetNames entityState)
+            let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames entityState.FacetNames
+            let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames entityState.FacetNames
             match World.tryRemoveFacets facetNamesToRemove entityState optEntity world with
             | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
             | Left _ as left -> left
@@ -152,5 +152,5 @@ module WorldFacetModule =
             let entityDispatchers = World.getEntityDispatchers world
             let facets = World.getFacets world
             let entityState = EntityState.copy entityState
-            Reflection.attachIntrinsicFacets entityDispatchers facets (EntityState.getDispatcherNp entityState) entityState
+            Reflection.attachIntrinsicFacets entityDispatchers facets entityState.DispatcherNp entityState
             entityState

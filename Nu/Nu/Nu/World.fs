@@ -416,9 +416,9 @@ module WorldModule =
                         Seq.fold
                             (fun world (entity : Entity) ->
                                 let entityState = World.getEntityState entity world
-                                match EntityState.getOptOverlayName entityState with
+                                match entityState.OptOverlayName with
                                 | Some overlayName ->
-                                    let oldFacetNames = EntityState.getFacetNames entityState
+                                    let oldFacetNames = entityState.FacetNames
                                     let entityState = EntityState.copy entityState
                                     Overlayer.applyOverlayToFacetNames overlayName overlayName entityState oldOverlayer overlayer
                                     match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
@@ -579,9 +579,7 @@ module WorldModule =
                 let world = Seq.fold (fun world group -> World.updateGroup group world) world groups
                 let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
                 let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTree world)
-                let screenState = World.getScreenState selectedScreen world
-                let screenState = ScreenState.setEntityTreeNp entityTree screenState
-                let world = World.setScreenState screenState selectedScreen world
+                let world = World.updateScreenState (fun screenState -> { screenState with EntityTreeNp = entityTree }) selectedScreen world
                 let entities = QuadTree.getElementsNearBounds viewBounds quadTree
                 List.fold (fun world (entity : Entity) -> World.updateEntity entity world) world entities
             | None -> world
@@ -623,9 +621,7 @@ module WorldModule =
                 let world = Seq.fold (fun world group -> World.actualizeGroup group world) world groups
                 let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
                 let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTree world)
-                let screenState = World.getScreenState selectedScreen world
-                let screenState = ScreenState.setEntityTreeNp entityTree screenState
-                let world = World.setScreenState screenState selectedScreen world
+                let world = World.updateScreenState (fun screenState -> { screenState with EntityTreeNp = entityTree }) selectedScreen world
                 let entities = QuadTree.getElementsNearBounds viewBounds quadTree
                 List.fold (fun world (entity : Entity) -> World.actualizeEntity entity world) world entities
             | None -> world

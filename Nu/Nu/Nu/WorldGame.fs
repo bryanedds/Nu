@@ -16,12 +16,12 @@ module WorldGameModule =
 
     type Game with
 
-        member this.GetId world = GameState.getId (World.getGameState world)
-        member this.GetXtension world = GameState.getXtension (World.getGameState world)
-        member this.GetDispatcherNp world = GameState.getDispatcherNp (World.getGameState world)
-        member this.GetCreationTimeStampNp world = GameState.getCreationTimeStampNp (World.getGameState world)
-        member this.GetOptSelectedScreen world = GameState.getOptSelectedScreen (World.getGameState world)
-        member this.SetOptSelectedScreen value world = World.updateGameState (GameState.setOptSelectedScreen value) world
+        member this.GetId world = (World.getGameState world).Id
+        member this.GetXtension world = (World.getGameState world).Xtension
+        member this.GetDispatcherNp world = (World.getGameState world).DispatcherNp
+        member this.GetCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
+        member this.GetOptSelectedScreen world = (World.getGameState world).OptSelectedScreen
+        member this.SetOptSelectedScreen value world = World.updateGameState (fun gameState -> { gameState with OptSelectedScreen = value }) world
 
         /// Get a dynamic property.
         member this.Get propertyName world : 'r =
@@ -117,7 +117,7 @@ module WorldGameModule =
         /// Write a game to a game descriptor.
         static member writeGame gameDescriptor world =
             let gameState = World.getGameState world
-            let gameDispatcherName = getTypeName ^ GameState.getDispatcherNp gameState
+            let gameDispatcherName = getTypeName gameState.DispatcherNp
             let gameDescriptor = { gameDescriptor with GameDispatcher = gameDispatcherName }
             let viewGameProperties = Reflection.writeMemberValuesFromTarget tautology3 gameDescriptor.GameProperties gameState
             let gameDescriptor = { gameDescriptor with GameProperties = viewGameProperties }
@@ -186,7 +186,7 @@ type Game =
     /// with the Watch feature in Visual Studio.
     static member viewXProperties world =
         let state = World.getGameState world
-        Xtension.toSeq ^ GameState.getXtension state |>
+        Xtension.toSeq state.Xtension |>
         Array.ofSeq |>
         Array.sortBy fst |>
         Array.map (fun (name, property) -> (name, property.PropertyValue))
