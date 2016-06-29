@@ -11,7 +11,7 @@ open Prime
 ///
 /// The following is a potentially tail-recursible representation as speculated by @tpetracek -
 /// 'w -> ('w * Either<'e -> Chain<'e, 'a, 'w>, 'a> -> 'a) -> 'a
-type [<NoComparison; NoEquality>] Chain<'e, 'a, 'w when 'w :> 'w Eventable> =
+type [<NoComparison; NoEquality>] Chain<'e, 'a, 'w when 'w :> 'w EventWorld> =
     Chain of ('w -> 'w * Either<'e -> Chain<'e, 'a, 'w>, 'a>)
 
 /// Implements the chain monad.
@@ -139,23 +139,23 @@ module Chain =
     let private run4 handling (chain : Chain<Event<'a, 'o>, unit, 'w>) (observation : Observation<'a, 'o, 'w>) world =
         let stateKey = makeGuid ()
         let subscriptionKey = makeGuid ()
-        let world = Eventable.addEventState stateKey (fun (_ : Event<'a, 'o>) -> chain) world
+        let world = EventWorld.addEventState stateKey (fun (_ : Event<'a, 'o>) -> chain) world
         let (eventAddress, unsubscribe, world) = observation.Subscribe world
         let unsubscribe = fun world ->
-            let world = Eventable.removeEventState stateKey world
+            let world = EventWorld.removeEventState stateKey world
             let world = unsubscribe world
-            Eventable.unsubscribe subscriptionKey world
+            EventWorld.unsubscribe subscriptionKey world
         let advance = fun evt world ->
-            let chain = Eventable.getEventState stateKey world : Event<'a, 'o> -> Chain<Event<'a, 'o>, unit, 'w>
+            let chain = EventWorld.getEventState stateKey world : Event<'a, 'o> -> Chain<Event<'a, 'o>, unit, 'w>
             let (world, advanceResult) = advance chain evt world
             match advanceResult with
             | Right () -> unsubscribe world
-            | Left chainNext -> Eventable.addEventState stateKey chainNext world
+            | Left chainNext -> EventWorld.addEventState stateKey chainNext world
         let subscription = fun evt world ->
             let world = advance evt world
             (handling, world)
         let world = advance Unchecked.defaultof<Event<'a, 'o>> world
-        let world = Eventable.subscribe5<'a, 'o, 'w> subscriptionKey subscription eventAddress observation.Observer world
+        let world = EventWorld.subscribe5<'a, 'o, 'w> subscriptionKey subscription eventAddress observation.Observer world
         (unsubscribe, world)
 
     /// Run a chain over Nu's event system.
