@@ -123,29 +123,6 @@ module WorldEntityModule =
 
     type World with
 
-        static member internal updateEntityPublishingFlags eventAddress world =
-            let eventNames = Address.getNames eventAddress
-            match eventNames with
-            | head :: neck :: tail when Name.getNameStr head = "Entity" && Name.getNameStr neck = "Change" ->
-                let publishChanges =
-                    match Vmap.tryFind eventAddress (Eventable.getSubscriptions world) with
-                    | Some [] -> failwithumf () // NOTE: implementation of event system should clean up all empty subscription entries, AFAIK
-                    | Some (_ :: _) -> true
-                    | None -> false
-                let entity = Entity.proxy ^ ltoa<Entity> tail
-                let world = if World.containsEntity entity world then entity.SetPublishChangesNp publishChanges world else world
-                world
-            | head :: tail when Name.getNameStr head = "Update" ->
-                let publishUpdates =
-                    match Vmap.tryFind eventAddress (Eventable.getSubscriptions world) with
-                    | Some [] -> failwithumf () // NOTE: implementation of event system should clean up all empty subscription entries, AFAIK
-                    | Some (_ :: _) -> true
-                    | None -> false
-                let entity = Entity.proxy ^ ltoa<Entity> tail
-                let world = if World.containsEntity entity world then entity.SetPublishUpdatesNp publishUpdates world else world
-                world
-            | _ -> world
-
         static member private updateEntityPublishChanges entity world =
             let entityChangeEventAddress = entity.ChangeAddress |> atooa
             let publishChanges =
@@ -260,6 +237,29 @@ module WorldEntityModule =
 
             // pass
             else world
+
+        static member internal updateEntityPublishingFlags eventAddress world =
+            let eventNames = Address.getNames eventAddress
+            match eventNames with
+            | head :: neck :: tail when Name.getNameStr head = "Entity" && Name.getNameStr neck = "Change" ->
+                let publishChanges =
+                    match Vmap.tryFind eventAddress (Eventable.getSubscriptions world) with
+                    | Some [] -> failwithumf () // NOTE: implementation of event system should clean up all empty subscription entries, AFAIK
+                    | Some (_ :: _) -> true
+                    | None -> false
+                let entity = Entity.proxy ^ ltoa<Entity> tail
+                let world = if World.containsEntity entity world then entity.SetPublishChangesNp publishChanges world else world
+                world
+            | head :: tail when Name.getNameStr head = "Update" ->
+                let publishUpdates =
+                    match Vmap.tryFind eventAddress (Eventable.getSubscriptions world) with
+                    | Some [] -> failwithumf () // NOTE: implementation of event system should clean up all empty subscription entries, AFAIK
+                    | Some (_ :: _) -> true
+                    | None -> false
+                let entity = Entity.proxy ^ ltoa<Entity> tail
+                let world = if World.containsEntity entity world then entity.SetPublishUpdatesNp publishUpdates world else world
+                world
+            | _ -> world
 
         static member internal getEntityFacetNamesReflectively entityState =
             List.map getTypeName entityState.FacetsNp
