@@ -445,21 +445,19 @@ module EffectSystemModule =
                 contents
     
         let eval effect slice effectSystem =
-            let localTime =
+            let alive =
                 match effect.OptLifetime with
-                | Some lifetime when lifetime > 0L -> effectSystem.EffectTime % lifetime
-                | Some _ -> effectSystem.EffectTime
-                | None -> effectSystem.EffectTime
-            let effectSystem =
-                { effectSystem with
-                    EffectEnv = Map.concat effectSystem.EffectEnv effect.Definitions
-                    EffectTime = localTime }
-            try evalContent effect.Content slice effectSystem
-            with exn ->
-                let effectKeywords0 = match typeof<Effect>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
-                let effectStr = Symbol.prettyPrint effectKeywords0 ^ scstring effect
-                Log.debug ^ "Error in effect:\r\n" + effectStr + "\r\ndue to '" + scstring exn + "'."
-                []
+                | Some lifetime -> lifetime <= 0L || effectSystem.EffectTime <= lifetime
+                | None -> true
+            if alive then
+                let effectSystem = { effectSystem with EffectEnv = Map.concat effectSystem.EffectEnv effect.Definitions }
+                try evalContent effect.Content slice effectSystem
+                with exn ->
+                    let effectKeywords0 = match typeof<Effect>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
+                    let effectStr = Symbol.prettyPrint effectKeywords0 ^ scstring effect
+                    Log.debug ^ "Error in effect:\r\n" + effectStr + "\r\ndue to '" + scstring exn + "'."
+                    []
+            else []
 
         let combineEffects effects =
             let effectCombined =
@@ -469,10 +467,10 @@ module EffectSystemModule =
                   Content = Composite (Shift 0.0f, List.map (fun effect -> effect.Content) effects) }
             effectCombined
     
-        let make viewType history tickTime globalEnv = 
+        let make viewType history effectTime globalEnv = 
             { ViewType = viewType
               History = history
               ProgressOffset = 0.0f
-              EffectTime = tickTime
+              EffectTime = effectTime
               EffectEnv = globalEnv
               Chaos = Random () }

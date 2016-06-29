@@ -11,8 +11,8 @@ module BulletModule =
 
     type Entity with
     
-        member this.GetAge world : int64 = this.Get Property?Age world
-        member this.SetAge (value : int64) world = this.Set Property?Age value world
+        member this.GetAge world : int64 = this.Get Property? Age world
+        member this.SetAge (value : int64) world = this.Set Property? Age value world
 
     type BulletDispatcher () =
         inherit EntityDispatcher ()
@@ -60,8 +60,8 @@ module EnemyModule =
 
     type Entity with
     
-        member this.GetHealth world : int = this.Get Property?Health world
-        member this.SetHealth (value : int) world = this.Set Property?Health value world
+        member this.GetHealth world : int = this.Get Property? Health world
+        member this.SetHealth (value : int) world = this.Set Property? Health value world
         
         member this.IsOnScreen world =
             let cameraBounds = World.getCameraBy Camera.getViewBoundsRelative world
@@ -124,10 +124,10 @@ module PlayerModule =
 
     type Entity with
     
-        member this.GetLastTimeOnGroundNp world : int64 = this.Get Property?LastTimeOnGroundNp world
-        member this.SetLastTimeOnGroundNp (value : int64) world = this.Set Property?LastTimeOnGroundNp value world
-        member this.GetLastTimeJumpNp world : int64 = this.Get Property?LastTimeJumpNp world
-        member this.SetLastTimeJumpNp (value : int64) world = this.Set Property?LastTimeJumpNp value world
+        member this.GetLastTimeOnGroundNp world : int64 = this.Get Property? LastTimeOnGroundNp world
+        member this.SetLastTimeOnGroundNp (value : int64) world = this.Set Property? LastTimeOnGroundNp value world
+        member this.GetLastTimeJumpNp world : int64 = this.Get Property? LastTimeJumpNp world
+        member this.SetLastTimeJumpNp (value : int64) world = this.Set Property? LastTimeJumpNp value world
         member this.HasFallen world = (this.GetPosition world).Y < -600.0f
 
     type PlayerDispatcher () =
