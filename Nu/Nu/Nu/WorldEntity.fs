@@ -243,7 +243,7 @@ module WorldEntityModule =
             match eventNames with
             | head :: neck :: tail when Name.getNameStr head = "Entity" && Name.getNameStr neck = "Change" ->
                 let publishChanges =
-                    match Vmap.tryFind eventAddress (Eventable.getSubscriptions world) with
+                    match Vmap.tryFind eventAddress (EventWorld.getSubscriptions world) with
                     | Some [] -> failwithumf () // NOTE: implementation of event system should clean up all empty subscription entries, AFAIK
                     | Some (_ :: _) -> true
                     | None -> false
@@ -252,7 +252,7 @@ module WorldEntityModule =
                 world
             | head :: tail when Name.getNameStr head = "Update" ->
                 let publishUpdates =
-                    match Vmap.tryFind eventAddress (Eventable.getSubscriptions world) with
+                    match Vmap.tryFind eventAddress (EventWorld.getSubscriptions world) with
                     | Some [] -> failwithumf () // NOTE: implementation of event system should clean up all empty subscription entries, AFAIK
                     | Some (_ :: _) -> true
                     | None -> false

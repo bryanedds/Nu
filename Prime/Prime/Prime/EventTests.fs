@@ -20,7 +20,7 @@ module EventTests =
     type [<ReferenceEquality>] TestWorld =
         { TestState : int
           TestEventSystem : TestWorld EventSystem }
-        interface TestWorld Eventable with
+        interface TestWorld EventWorld with
             member this.GetLiveness () = Running
             member this.GetEventSystem () = this.TestEventSystem
             member this.GetEmptyParticipant () = { TestAddress = Address.empty } :> Participant
@@ -28,7 +28,7 @@ module EventTests =
             member this.ContainsParticipant _ = true
             member this.PublishEvent
                 (participant : Participant) publisher eventData eventAddress eventTrace subscription world = 
-                Eventable.publishEvent<'a, 'p, TestParticipant, TestWorld> participant publisher eventData eventAddress eventTrace subscription world
+                EventWorld.publishEvent<'a, 'p, TestParticipant, TestWorld> participant publisher eventData eventAddress eventTrace subscription world
         static member incTestState this =
             { this with TestState = inc this.TestState }
         static member make eventTracer eventTracing eventFilter =
@@ -45,43 +45,43 @@ module EventTests =
 
     let [<Fact>] subscribeWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
-        let world = Eventable.subscribe incTestStateAndCascade TestEvent TestParticipant world
-        let world = Eventable.publish 0 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.subscribe incTestStateAndCascade TestEvent TestParticipant world
+        let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (1, world.TestState)
 
     let [<Fact>] subscribeAndPublishTwiceWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
-        let world = Eventable.subscribe incTestStateAndCascade TestEvent TestParticipant world
-        let world = Eventable.publish 0 TestEvent EventTrace.empty TestParticipant world
-        let world = Eventable.publish 0 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.subscribe incTestStateAndCascade TestEvent TestParticipant world
+        let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (2, world.TestState)
 
     let [<Fact>] subscribeTwiceAndPublishWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
-        let world = Eventable.subscribe incTestStateAndCascade TestEvent TestParticipant world
-        let world = Eventable.subscribe incTestStateAndCascade TestEvent TestParticipant world
-        let world = Eventable.publish 0 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.subscribe incTestStateAndCascade TestEvent TestParticipant world
+        let world = EventWorld.subscribe incTestStateAndCascade TestEvent TestParticipant world
+        let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (2, world.TestState)
 
     let [<Fact>] subscribeWithResolutionWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
-        let world = Eventable.subscribe incTestStateAndCascade TestEvent TestParticipant world
-        let world = Eventable.subscribe incTestStateAndResolve TestEvent TestParticipant world
-        let world = Eventable.publish 0 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.subscribe incTestStateAndCascade TestEvent TestParticipant world
+        let world = EventWorld.subscribe incTestStateAndResolve TestEvent TestParticipant world
+        let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (1, world.TestState)
 
     let [<Fact>] unsubscribeWorks () =
         let key = makeGuid ()
         let world = TestWorld.make ignore false EventFilter.Empty
-        let world = Eventable.subscribe5 key incTestStateAndResolve TestEvent TestParticipant world
-        let world = Eventable.unsubscribe key world
-        let world = Eventable.publish 0 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.subscribe5 key incTestStateAndResolve TestEvent TestParticipant world
+        let world = EventWorld.unsubscribe key world
+        let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (0, world.TestState)
 
     let [<Fact>] observeWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
         let world = observe TestEvent TestParticipant |> subscribe incTestStateAndCascade <| world
-        let world = Eventable.publish 0 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (1, world.TestState)
 
     let [<Fact>] observeSubscribeTwiceUnsubscribeOnceWorks () =
@@ -90,15 +90,15 @@ module EventTests =
         let world = subscribe incTestStateAndCascade observation world
         let (unsubscribe, world) = subscribePlus incTestStateAndCascade observation world
         let world = unsubscribe world
-        let world = Eventable.publish 0 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (1, world.TestState)
 
     let [<Fact>] observeUnsubscribeWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
         let (unsubscribe, world) = observe TestEvent TestParticipant |> subscribePlus incTestStateAndCascade <| world
         let world = unsubscribe world
-        let world = Eventable.publish 0 TestEvent EventTrace.empty TestParticipant world
-        Assert.True ^ Vmap.isEmpty ^ Eventable.getSubscriptions world
+        let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
+        Assert.True ^ Vmap.isEmpty ^ EventWorld.getSubscriptions world
         Assert.Equal (0, world.TestState)
 
     let [<Fact>] filterWorks () =
@@ -108,8 +108,8 @@ module EventTests =
             filter (fun _ world -> world.TestState = 0) |>
             subscribe incTestStateAndCascade <|
             world
-        let world = Eventable.publish 0 TestEvent EventTrace.empty TestParticipant world
-        let world = Eventable.publish 0 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (1, world.TestState)
 
     let [<Fact>] mapWorks () =
@@ -119,7 +119,7 @@ module EventTests =
             map (fun evt _ -> evt.Data * 2) |>
             subscribe (fun evt world -> (Cascade, { world with TestState = evt.Data })) <|
             world
-        let world = Eventable.publish 1 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.publish 1 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (2, world.TestState)
 
     let [<Fact>] productWorks () =
@@ -129,7 +129,7 @@ module EventTests =
             product TestEvent |>
             subscribe (fun evt world -> (Cascade, { world with TestState = fst evt.Data + snd evt.Data })) <|
             world
-        let world = Eventable.publish 1 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.publish 1 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (2, world.TestState)
 
     let [<Fact>] scanWorks () =
@@ -139,8 +139,8 @@ module EventTests =
             scan (fun acc evt _ -> acc + evt.Data) 0 |>
             subscribe (fun evt world -> (Cascade, { world with TestState = evt.Data })) <|
             world
-        let world = Eventable.publish 1 TestEvent EventTrace.empty TestParticipant world
-        let world = Eventable.publish 2 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.publish 1 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.publish 2 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (3, world.TestState)
 
     let [<Fact>] scanDoesntLeaveGarbage () =
@@ -150,9 +150,9 @@ module EventTests =
             scan2 (fun a _ _ -> a) |>
             subscribePlus incTestStateAndCascade <|
             world
-        let world = Eventable.publish 0 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
         let world = unsubscribe world
-        Assert.True ^ Vmap.isEmpty ^ Eventable.getSubscriptions world
+        Assert.True ^ Vmap.isEmpty ^ EventWorld.getSubscriptions world
 
     let [<Fact>] chainWorks () =
         
@@ -171,20 +171,20 @@ module EventTests =
         Assert.Equal (0, world.TestState)
 
         // assert the first publish executes the first chained operation
-        let world = Eventable.publish 1 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.publish 1 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (1, world.TestState)
 
         // assert the second publish executes the second chained operation
-        let world = Eventable.publish 2 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.publish 2 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (2, world.TestState)
         
         // and so on...
-        let world = Eventable.publish 3 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.publish 3 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (3, world.TestState)
         
         // and so on...
-        let world = Eventable.publish 4 TestEvent EventTrace.empty TestParticipant world
+        let world = EventWorld.publish 4 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (7, world.TestState)
         
         // assert no garbage is left over after chained computation is concluded
-        Assert.True ^ Vmap.isEmpty ^ Eventable.getSubscriptions world
+        Assert.True ^ Vmap.isEmpty ^ EventWorld.getSubscriptions world

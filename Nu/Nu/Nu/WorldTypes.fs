@@ -665,7 +665,7 @@ module WorldTypes =
               GroupStates : Vmap<Group Address, GroupState>
               EntityStates : Vmap<Entity Address, EntityState> }
 
-        interface World Eventable with
+        interface World EventWorld with
             member this.GetLiveness () = AmbientState.getLiveness this.AmbientState
             member this.GetEventSystem () = this.EventSystem
             member this.GetEmptyParticipant () = Game.proxy Address.empty :> Participant
@@ -679,10 +679,10 @@ module WorldTypes =
                 | _ -> failwithumf ()
             member this.PublishEvent (participant : Participant) publisher eventData eventAddress eventTrace subscription world = 
                 match Address.getNames participant.ParticipantAddress with
-                | [] -> Eventable.publishEvent<'a, 'p, Game, World> participant publisher eventData eventAddress eventTrace subscription world
-                | [_] -> Eventable.publishEvent<'a, 'p, Screen, World> participant publisher eventData eventAddress eventTrace subscription world
-                | [_; _] -> Eventable.publishEvent<'a, 'p, Group, World> participant publisher eventData eventAddress eventTrace subscription world
-                | [_; _; _] -> Eventable.publishEvent<'a, 'p, Entity, World> participant publisher eventData eventAddress eventTrace subscription world
+                | [] -> EventWorld.publishEvent<'a, 'p, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                | [_] -> EventWorld.publishEvent<'a, 'p, Screen, World> participant publisher eventData eventAddress eventTrace subscription world
+                | [_; _] -> EventWorld.publishEvent<'a, 'p, Group, World> participant publisher eventData eventAddress eventTrace subscription world
+                | [_; _; _] -> EventWorld.publishEvent<'a, 'p, Entity, World> participant publisher eventData eventAddress eventTrace subscription world
                 | _ -> failwithumf ()
 
         (* Debug *)
@@ -699,51 +699,51 @@ module WorldTypes =
 
         /// Get event subscriptions.
         static member getSubscriptions world =
-            Eventable.getSubscriptions<World> world
+            EventWorld.getSubscriptions<World> world
 
         /// Get event unsubscriptions.
         static member getUnsubscriptions world =
-            Eventable.getUnsubscriptions<World> world
+            EventWorld.getUnsubscriptions<World> world
 
         /// Add event state to the world.
         static member addEventState key state world =
-            Eventable.addEventState<'a, World> key state world
+            EventWorld.addEventState<'a, World> key state world
 
         /// Remove event state from the world.
         static member removeEventState key world =
-            Eventable.removeEventState<World> key world
+            EventWorld.removeEventState<World> key world
 
         /// Get event state from the world.
         static member getEventState<'a> key world =
-            Eventable.getEventState<'a, World> key world
+            EventWorld.getEventState<'a, World> key world
 
         /// Get whether events are being traced.
         static member getEventTracing world =
-            Eventable.getEventTracing world
+            EventWorld.getEventTracing world
 
         /// Set whether events are being traced.
         static member setEventTracing tracing world =
-            Eventable.setEventTracing tracing world
+            EventWorld.setEventTracing tracing world
 
         /// Get the state of the event filter.
         static member getEventFilter world =
-            Eventable.getEventFilter world
+            EventWorld.getEventFilter world
 
         /// Set the state of the event filter.
         static member setEventFilter filter world =
-            Eventable.setEventFilter filter world
+            EventWorld.setEventFilter filter world
 
         /// TODO: document.
         static member getSubscriptionsSorted (publishSorter : SubscriptionSorter<World>) eventAddress world =
-            Eventable.getSubscriptionsSorted publishSorter eventAddress world
+            EventWorld.getSubscriptionsSorted publishSorter eventAddress world
 
         /// TODO: document.
         static member getSubscriptionsSorted3 (publishSorter : SubscriptionSorter<World>) eventAddress world =
-            Eventable.getSubscriptionsSorted3 publishSorter eventAddress world
+            EventWorld.getSubscriptionsSorted3 publishSorter eventAddress world
 
         /// Sort subscriptions using categorization via the 'by' procedure.
         static member sortSubscriptionsBy by (subscriptions : SubscriptionEntry list) (world : World) =
-            Eventable.sortSubscriptionsBy by subscriptions world
+            EventWorld.sortSubscriptionsBy by subscriptions world
 
         /// Sort subscriptions by their place in the world's simulant hierarchy.
         static member sortSubscriptionsByHierarchy subscriptions world =
@@ -754,54 +754,54 @@ module WorldTypes =
 
         /// A 'no-op' for subscription sorting - that is, performs no sorting at all.
         static member sortSubscriptionsNone (subscriptions : SubscriptionEntry list) (world : World) =
-            Eventable.sortSubscriptionsNone subscriptions world
+            EventWorld.sortSubscriptionsNone subscriptions world
 
         /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
         static member publish7<'a, 'p when 'p :> Simulant> getSubscriptions publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-            Eventable.publish7<'a, 'p, World> getSubscriptions publishSorter eventData eventAddress eventTrace publisher world
+            EventWorld.publish7<'a, 'p, World> getSubscriptions publishSorter eventData eventAddress eventTrace publisher world
 
         /// Publish an event, using the given publishSorter procedure to arrange the order to which subscriptions are published.
         static member publish6<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-            Eventable.publish6<'a, 'p, World> publishSorter eventData eventAddress eventTrace publisher world
+            EventWorld.publish6<'a, 'p, World> publishSorter eventData eventAddress eventTrace publisher world
 
         /// Publish an event.
         static member publish<'a, 'p when 'p :> Simulant>
             (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-            Eventable.publish6<'a, 'p, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher world
+            EventWorld.publish6<'a, 'p, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher world
 
         /// Unsubscribe from an event.
         static member unsubscribe subscriptionKey world =
-            Eventable.unsubscribe<World> subscriptionKey world
+            EventWorld.unsubscribe<World> subscriptionKey world
 
         /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
         static member subscribePlus5<'a, 's when 's :> Simulant>
             subscriptionKey (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
-            Eventable.subscribePlus5<'a, 's, World> subscriptionKey subscription eventAddress subscriber world
+            EventWorld.subscribePlus5<'a, 's, World> subscriptionKey subscription eventAddress subscriber world
 
         /// Subscribe to an event, and be provided with an unsubscription callback.
         static member subscribePlus<'a, 's when 's :> Simulant>
             (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
-            Eventable.subscribePlus<'a, 's, World> subscription eventAddress subscriber world
+            EventWorld.subscribePlus<'a, 's, World> subscription eventAddress subscriber world
 
         /// Subscribe to an event using the given subscriptionKey.
         static member subscribe5<'a, 's when 's :> Simulant>
             subscriptionKey (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
-            Eventable.subscribe5<'a, 's, World> subscriptionKey subscription eventAddress subscriber world
+            EventWorld.subscribe5<'a, 's, World> subscriptionKey subscription eventAddress subscriber world
 
         /// Subscribe to an event.
         static member subscribe<'a, 's when 's :> Simulant>
             (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
-            Eventable.subscribe<'a, 's, World> subscription eventAddress subscriber world
+            EventWorld.subscribe<'a, 's, World> subscription eventAddress subscriber world
 
         /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
         static member monitorPlus<'a, 's when 's :> Simulant>
             (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
-            Eventable.monitorPlus<'a, 's, World> subscription eventAddress subscriber world
+            EventWorld.monitorPlus<'a, 's, World> subscription eventAddress subscriber world
 
         /// Keep active a subscription for the lifetime of a simulant.
         static member monitor<'a, 's when 's :> Simulant>
             (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
-            Eventable.monitor<'a, 's, World> subscription eventAddress subscriber world
+            EventWorld.monitor<'a, 's, World> subscription eventAddress subscriber world
 
         (* Dispatchers *)
 
