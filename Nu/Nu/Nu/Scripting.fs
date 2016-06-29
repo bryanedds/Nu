@@ -73,9 +73,3 @@ module Scripting =
         | Map of Event * Expr
         | Handler of Event * Expr
         | Handlers of Event * Expr list
-
-    type [<NoEquality; NoComparison>] Dispatcher =
-        { DispatcherName : string
-          DispatcherType : string // TODO: make DU?
-          PropertyDefinitions : PropertyDefinition list
-          IntrinsicFacetNames : string list }
