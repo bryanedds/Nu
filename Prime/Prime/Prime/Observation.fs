@@ -363,16 +363,16 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] inline productN observation = scan2 (fun n a _ -> n * a.Data) observation
     
     /// Transform an observation of pairs into its fst values.
-    let [<DebuggerHidden; DebuggerStepThrough>] toFst observation = map (fun a _ -> fst a.Data) observation
+    let [<DebuggerHidden; DebuggerStepThrough>] first observation = map (fun a _ -> fst a.Data) observation
     
     /// Transform an observation of pairs into its snd values.
-    let [<DebuggerHidden; DebuggerStepThrough>] toSnd observation = map (fun a _ -> snd a.Data) observation
+    let [<DebuggerHidden; DebuggerStepThrough>] second observation = map (fun a _ -> snd a.Data) observation
     
     /// Transform an observation's pairs by a mapping of its fst values.
-    let [<DebuggerHidden; DebuggerStepThrough>] withFst mapper observation = map (fun a _ -> (mapper ^ fst a.Data, snd a.Data)) observation
+    let [<DebuggerHidden; DebuggerStepThrough>] mapFirst mapper observation = map (fun a _ -> (mapper ^ fst a.Data, snd a.Data)) observation
     
     /// Transform an observation of pairs by a mapping of its snd values.
-    let [<DebuggerHidden; DebuggerStepThrough>] withSnd mapper observation = map (fun a _ -> (fst a.Data, mapper ^ snd a.Data)) observation
+    let [<DebuggerHidden; DebuggerStepThrough>] mapSecond mapper observation = map (fun a _ -> (fst a.Data, mapper ^ snd a.Data)) observation
     
     /// Transform an observation by duplicating its data into pairs.
     let [<DebuggerHidden; DebuggerStepThrough>] duplicate observation = map (fun a _ -> (a.Data, a.Data)) observation
@@ -407,7 +407,7 @@ module Observation =
     let [<DebuggerHidden; DebuggerStepThrough>] min observation = scan2 (fun n a _ -> if a.Data < n then a.Data else n) observation
 
     /// Filter out the events with non-unique data as defined by 'by' from an observation.
-    let [<DebuggerHidden; DebuggerStepThrough>] distinctBy by observation = observation |> organize by |> toFst |> choose
+    let [<DebuggerHidden; DebuggerStepThrough>] distinctBy by observation = observation |> organize by |> first |> choose
     
     /// Filter out the events with non-unique data from an observation.
     let [<DebuggerHidden; DebuggerStepThrough>] distinct observation = distinctBy (fun a -> a.Data) observation

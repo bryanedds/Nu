@@ -11,32 +11,33 @@ open Nu
 open Nu.Scripting
 
 [<AutoOpen>]
-module ScriptingEnvModule =
+module ScriptEnvModule =
 
     /// An environemt in which scripting declarations can be found.
     /// Internally a Dictionary for fast look-ups, but without add functions for immutability. Append, however, stays
     /// functional without greater big-O compexity!
-    type [<NoEquality; NoComparison>] ScriptingEnv =
+    type [<NoEquality; NoComparison>] ScriptEnv =
         private
-            ScriptingEnv of Dictionary<string, Declaration>
+            ScriptEnv of Dictionary<string, Declaration>
+            
+    [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+    module ScriptEnv =
 
-    let tryFind key (ScriptingEnv env) =
-        Dictionary.tryFind key env
+        let tryFind key (ScriptEnv env) =
+            Dictionary.tryFind key env
 
-    let make declarations =
-        ScriptingEnv ^ dictC declarations
+        let make declarations =
+            ScriptEnv ^ dictC declarations
 
-    let append (ScriptingEnv env) (ScriptingEnv env2) =
-        make (Seq.append env env2)
+        let append (ScriptEnv env) (ScriptEnv env2) =
+            make (Seq.append env env2)
 
 [<AutoOpen>]
-module ScriptingSystemModule =
+module ScriptSystemModule =
 
     /// An abstract data type for executing scripts.
-    type [<NoEquality; NoComparison>] ScriptingSystem =
+    type [<NoEquality; NoComparison>] ScriptSystem =
         private
-            { ScriptingEnvs : Vmap<obj Address, ScriptingEnv>
-              Handlers : Event list
-              Equalities : string option * Referent * Expr
-              Variables : Value list
+            { ScriptEnvs : Vmap<obj Address, ScriptEnv>
+              Scripts : Vmap<Guid, Script>
               Debugging : bool }

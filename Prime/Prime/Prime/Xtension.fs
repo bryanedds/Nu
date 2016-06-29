@@ -36,9 +36,9 @@ module XtensionModule =
               CanDefault : bool
               Sealed : bool }
 
-        /// Get the default value of an instance of type 'r taking into account XDefaultValue decorations.
-        static member private getDefaultValue () : 'r =
-            let defaultPropertyType = typeof<'r>
+        /// Get the default value of an instance of type 'a taking into account XDefaultValue decorations.
+        static member private getDefaultValue () : 'a =
+            let defaultPropertyType = typeof<'a>
             let optDefaultValueAttribute =
                 defaultPropertyType.GetCustomAttributes (typeof<XDefaultValueAttribute>, true) |>
                 Seq.map (fun attr -> attr :?> XDefaultValueAttribute) |>
@@ -46,24 +46,24 @@ module XtensionModule =
             match optDefaultValueAttribute with
             | Some defaultValueAttribute ->
                 match defaultValueAttribute.DefaultValue with
-                | :? 'r as defaultValue -> defaultValue
+                | :? 'a as defaultValue -> defaultValue
                 | _ as defaultValue ->
                     let defaultValueType = defaultValue.GetType ()
                     let converter = SymbolicConverter defaultValueType
                     if converter.CanConvertFrom defaultPropertyType
-                    then converter.ConvertFrom defaultValue :?> 'r
+                    then converter.ConvertFrom defaultValue :?> 'a
                     else failwith ^ "Cannot convert '" + scstring defaultValue + "' to type '" + defaultPropertyType.Name + "'."
-            | None -> Unchecked.defaultof<'r>
+            | None -> Unchecked.defaultof<'a>
 
         /// Try to get the default value for a given xtension member, returning None when defaulting is disallowed.
-        static member private tryGetDefaultValue (this : Xtension) propertyName : 'r =
+        static member private tryGetDefaultValue (this : Xtension) propertyName : 'a =
             if this.CanDefault then Xtension.getDefaultValue ()
             else failwith ^ "Xtension property '" + propertyName + "' does not exist and no default is permitted because CanDefault is false."
 
         /// The dynamic look-up operator for an Xtension.
         /// Example:
         ///     let parallax = xtn?Parallax : single
-        static member (?) (xtension, propertyName) : 'r =
+        static member (?) (xtension, propertyName) : 'a =
 
             // check if dynamic member is an existing property
             match Vmap.tryFind propertyName xtension.Properties with
@@ -71,8 +71,8 @@ module XtensionModule =
                 
                 // return property directly if the return type matches, otherwise the default value for that type
                 match property.PropertyValue with
-                | :? 'r as propertyValue -> propertyValue
-                | _ -> failwith ^ "Xtension property '" + propertyName + "' of type '" + property.PropertyType.Name + "' is not of the expected type '" + typeof<'r>.Name + "'."
+                | :? 'a as propertyValue -> propertyValue
+                | _ -> failwith ^ "Xtension property '" + propertyName + "' of type '" + property.PropertyType.Name + "' is not of the expected type '" + typeof<'a>.Name + "'."
 
             | None ->
 

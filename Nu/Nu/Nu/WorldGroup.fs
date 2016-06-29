@@ -26,7 +26,7 @@ module WorldGroupModule =
         member this.SetPersistent value world = World.updateGroupState (fun groupState -> { groupState with Persistent = value }) this world
 
         /// Get a dynamic property.
-        member this.Get propertyName world : 'r =
+        member this.Get propertyName world : 'a =
             GroupState.get (World.getGroupState this world) propertyName
 
         /// Set a dynamic property.

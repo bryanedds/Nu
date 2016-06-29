@@ -24,7 +24,7 @@ module WorldGameModule =
         member this.SetOptSelectedScreen value world = World.updateGameState (fun gameState -> { gameState with OptSelectedScreen = value }) world
 
         /// Get a dynamic property.
-        member this.Get propertyName world : 'r =
+        member this.Get propertyName world : 'a =
             GameState.get (World.getGameState world) propertyName
 
         /// Set a dynamic property.
