@@ -447,7 +447,8 @@ module EffectSystemModule =
         let eval effect slice effectSystem =
             let localTime =
                 match effect.OptLifetime with
-                | Some lifetime -> if lifetime <> 0L then effectSystem.EffectTime % lifetime else 0L
+                | Some lifetime when lifetime > 0L -> effectSystem.EffectTime % lifetime
+                | Some _ -> effectSystem.EffectTime
                 | None -> effectSystem.EffectTime
             let effectSystem =
                 { effectSystem with
@@ -457,7 +458,7 @@ module EffectSystemModule =
             with exn ->
                 let effectKeywords0 = match typeof<Effect>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
                 let effectStr = Symbol.prettyPrint effectKeywords0 ^ scstring effect
-                Log.debug ^ "Error in effect:\r\n" + effectStr + "' due to: " + scstring exn
+                Log.debug ^ "Error in effect:\r\n" + effectStr + "\r\ndue to '" + scstring exn + "'."
                 []
 
         let combineEffects effects =

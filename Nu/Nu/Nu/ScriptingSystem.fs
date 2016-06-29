@@ -36,7 +36,6 @@ module ScriptingSystemModule =
     type [<NoEquality; NoComparison>] ScriptingSystem =
         private
             { ScriptingEnvs : Vmap<obj Address, ScriptingEnv>
-              Dispatchers : Dispatcher list
               Handlers : Event list
               Equalities : string option * Referent * Expr
               Variables : Value list
