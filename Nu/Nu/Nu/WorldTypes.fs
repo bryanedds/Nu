@@ -1,6 +1,11 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2012-2016.
 
+// NOTE: this file is about twice as long as should be permissible, but the fact that I have to define mutally
+// recursive types in the same file, as is also the case for abstract data types and their functions, prevents me from
+// separating things out. This is doesn't really have a big impact on modularity - mostly it just hampers code
+// organization.
+
 namespace Debug
 open System
 module internal World =
@@ -259,7 +264,7 @@ module WorldTypes =
           OptScreenTransitionDestination : Screen option }
 
         /// The dynamic look-up operator.
-        static member get gameState propertyName : 'r =
+        static member get gameState propertyName : 'a =
             Xtension.(?) (gameState.Xtension, propertyName)
 
         /// The dynamic assignment operator.
@@ -300,7 +305,7 @@ module WorldTypes =
           Persistent : bool }
 
         /// The dynamic look-up operator.
-        static member get screenState propertyName : 'r =
+        static member get screenState propertyName : 'a =
             Xtension.(?) (screenState.Xtension, propertyName)
 
         /// The dynamic assignment operator.
@@ -346,7 +351,7 @@ module WorldTypes =
           Persistent : bool }
 
         /// The dynamic look-up operator.
-        static member get groupState propertyName : 'r =
+        static member get groupState propertyName : 'a =
             Xtension.(?) (groupState.Xtension, propertyName)
 
         /// The dynamic assignment operator.
@@ -397,7 +402,7 @@ module WorldTypes =
           FacetsNp : Facet list }
 
         /// The dynamic look-up operator.
-        static member get entityState propertyName : 'r =
+        static member get entityState propertyName : 'a =
             Xtension.(?) (entityState.Xtension, propertyName)
 
         /// The dynamic assignment operator.

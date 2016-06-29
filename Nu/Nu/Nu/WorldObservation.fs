@@ -15,7 +15,7 @@ module Observation =
 
     /// Take only one event from an observation per game update.
     let [<DebuggerHidden; DebuggerStepThrough>] noMoreThanOncePerUpdate observation =
-        observation |> organize (fun _ world -> World.getUpdateCount world) |> toFst |> choose
+        observation |> organize (fun _ world -> World.getUpdateCount world) |> first |> choose
 
     /// Take events from an observation only while World.isTicking evaluates to true.
     let [<DebuggerHidden; DebuggerStepThrough>] isTicking _ world =

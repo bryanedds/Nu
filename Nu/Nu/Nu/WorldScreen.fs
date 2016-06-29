@@ -35,7 +35,7 @@ module WorldScreenModule =
         member this.SetPersistent value world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) this world
 
         /// Get a dynamic property.
-        member this.Get propertyName world : 'r =
+        member this.Get propertyName world : 'a =
             ScreenState.get (World.getScreenState this world) propertyName
 
         /// Set a dynamic property.

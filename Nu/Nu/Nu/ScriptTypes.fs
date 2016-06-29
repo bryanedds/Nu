@@ -73,3 +73,8 @@ module Scripting =
         | Map of Event * Expr
         | Handler of Event * Expr
         | Handlers of Event * Expr list
+
+    type [<NoComparison>] Script =
+        { Variables : Value list
+          Equalities : (string option * Referent * Expr) list
+          Handlers : Event list }

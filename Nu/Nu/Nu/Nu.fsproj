@@ -79,7 +79,7 @@
     <Compile Include="Input.fs" />
     <Compile Include="Effect.fs" />
     <Compile Include="EffectSystem.fs" />
-    <Compile Include="Scripting.fs" />
+    <Compile Include="ScriptTypes.fs" />
     <Compile Include="ScriptingSystem.fs" />
     <Compile Include="Sdl.fs" />
     <Compile Include="Subsystems.fs" />
