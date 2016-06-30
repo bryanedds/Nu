@@ -36,6 +36,7 @@ module Observation =
 
 [<AutoOpen>]
 module ObservationModule =
+
     open Observation
 
     /// Make an observation of one of the observer's change events per frame.
