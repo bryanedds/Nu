@@ -23,25 +23,27 @@ module Scripting =
     type [<NoComparison>] Metadata =
         { Documentation : string
           BreakpointEnabled : bool
-          BreakpointCondition : Expr }
+          BreakpointCondition : Expr option }
 
     and [<NoComparison>] Lambda =
-        | Not of Expr
-        | And of Expr * Expr | Or of Expr * Expr
-        | Eq of Expr * Expr | Not_Eq of Expr * Expr | Lt of Expr * Expr | Gt of Expr * Expr | Lt_Eq of Expr * Expr | Gt_Eq of Expr * Expr
-        | Add of Expr * Expr | Sub of Expr * Expr | Mul of Expr * Expr | Div of Expr * Expr | Mod of Expr * Expr | Rem of Expr * Expr | Pow of Expr * Expr | Root of Expr * Expr
-        | Floor of Expr | Ceiling of Expr | Truncate of Expr | Round of Expr
-        | Exp of Expr | Log of Expr | Square of Expr | Sqrt of Expr
-        | Sin of Expr | Cos of Expr | Tan of Expr | Asin of Expr | Acos of Expr | Atan of Expr
-        | Cross of Expr * Expr | Dot of Expr * Expr | Length of Expr | Normal of Expr
-        | Head of Expr | Tail of Expr | Empty of Expr | Cons of Expr * Expr
-        | Map of Expr * Expr | Filter of Expr * Expr | Fold of Expr * Expr * Expr | All of Expr | Any of Expr | NotAny of Expr
+        | Not
+        | And | Or
+        | Eq | Not_Eq | Lt | Gt | Lt_Eq | Gt_Eq
+        | Add | Sub | Mul | Div | Mod | Pow | Root | Sqr | Sqrt
+        | Floor | Ceiling | Truncate | Round | Exp | Log
+        | Sin | Cos | Tan | Asin | Acos | Atan
+        | Length
+        | Cross | Dot | Normal
+        | ToInteger | ToInteger64 | ToSingle | ToDouble
+        | Head | Tail | Empty | Cons
+        | Map | Filter | Fold | All | Any | NotAny
         | Get of Referent * string
-        | If of Expr * Expr * Expr
-        | Try of Expr * Expr
+        | If
+        | Try
         | Fun of string list * Expr * int
 
     and [<NoComparison>] Value =
+        | Unit
         | Boolean of bool
         | Integer of int
         | Integer64 of int64
