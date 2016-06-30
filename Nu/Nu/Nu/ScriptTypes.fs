@@ -32,9 +32,9 @@ module Scripting =
         | Add | Sub | Mul | Div | Mod | Pow | Root | Sqr | Sqrt
         | Floor | Ceiling | Truncate | Round | Exp | Log
         | Sin | Cos | Tan | Asin | Acos | Atan
-        | Length
-        | Cross | Dot | Normal
-        | ToInteger | ToInteger64 | ToSingle | ToDouble
+        | Length | Normal
+        | Cross | Dot
+        | ToInteger | ToInteger64 | ToSingle | ToDouble | ToVector2 | ToString
         | Head | Tail | Empty | Cons
         | Map | Filter | Fold | All | Any | NotAny
         | Get of Referent * string

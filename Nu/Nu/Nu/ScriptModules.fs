@@ -149,31 +149,13 @@ module Unary =
           String = fun _ -> Violation "Cannot atan a string." }
 
     let Length =
-        { Boolean = fun value -> Integer (if value then 1 else 0)
-          Integer = fun value -> Integer (Math.Abs value)
-          Integer64 = fun value -> Integer64 (Math.Abs value)
-          Single = fun value -> Single (Math.Abs value)
-          Double = fun value -> Double (Math.Abs value)
+        { Boolean = fun _ -> Violation "Cannot get length of a boolean."
+          Integer = fun value -> Integer ^ Math.Abs value
+          Integer64 = fun value -> Integer64 ^ Math.Abs value
+          Single = fun value -> Single ^ Math.Abs value
+          Double = fun value -> Double ^ Math.Abs value
           Vector2 = fun value -> Single value.Length
           String = fun value -> Integer value.Length }
-
-    let Cross =
-        { Boolean = fun _ -> Violation "Cannot cross multiply a boolean."
-          Integer = fun value -> Integer (Math.Abs value)
-          Integer64 = fun value -> Integer64 (Math.Abs value)
-          Single = fun value -> Single (Math.Abs value)
-          Double = fun value -> Double (Math.Abs value)
-          Vector2 = fun value -> Single value.Length
-          String = fun _ -> Violation "Cannot cross multiply a string." }
-
-    let Dot =
-        { Boolean = fun _ -> Violation "Cannot dot multiply a boolean."
-          Integer = fun value -> Integer (Math.Abs value)
-          Integer64 = fun value -> Integer64 (Math.Abs value)
-          Single = fun value -> Single (Math.Abs value)
-          Double = fun value -> Double (Math.Abs value)
-          Vector2 = fun value -> Single value.Length
-          String = fun _ -> Violation "Cannot dot multiply a boolean." }
 
     let Normal =
         { Boolean = fun _ -> Violation "Cannot normalize a boolean."
@@ -185,40 +167,58 @@ module Unary =
           String = fun _ -> Violation "Cannot normalize a string." }
 
     let ToInteger =
-        { Boolean = fun value -> Integer (if value then 1 else 0)
+        { Boolean = fun value -> Integer ^ if value then 1 else 0
           Integer = fun value -> Integer value
-          Integer64 = fun value -> Integer (int value)
-          Single = fun value -> Integer (int value)
-          Double = fun value -> Integer (int value)
+          Integer64 = fun value -> Integer ^ int value
+          Single = fun value -> Integer ^ int value
+          Double = fun value -> Integer ^ int value
           Vector2 = fun _ -> Violation "Cannot convert a vector to an integer."
-          String = fun value -> match Int32.TryParse value with (true, integer) -> Integer integer | (false, _) -> Violation ^ "Could not parse string '" + value + "' to integer." }
+          String = fun value -> Integer ^ scvalue value }
 
     let ToInteger64 =
-        { Boolean = fun value -> Integer64 (if value then 1L else 0L)
-          Integer = fun value -> Integer64 (int64 value)
+        { Boolean = fun value -> Integer64 ^ if value then 1L else 0L
+          Integer = fun value -> Integer64 ^ int64 value
           Integer64 = fun value -> Integer64 value
-          Single = fun value -> Integer64 (int64 value)
-          Double = fun value -> Integer64 (int64 value)
+          Single = fun value -> Integer64 ^ int64 value
+          Double = fun value -> Integer64 ^ int64 value
           Vector2 = fun _ -> Violation "Cannot convert a vector to a 64-bit integer."
-          String = fun value -> match Int64.TryParse value with (true, integer64) -> Integer64 integer64 | (false, _) -> Violation ^ "Could not parse string '" + value + "' to 64-bit integer." }
+          String = fun value -> Integer64 ^ scvalue value }
 
     let ToSingle =
-        { Boolean = fun value -> Single (if value then 1.0f else 0.0f)
-          Integer = fun value -> Single (single value)
-          Integer64 = fun value -> Single (single value)
+        { Boolean = fun value -> Single ^ if value then 1.0f else 0.0f
+          Integer = fun value -> Single ^ single value
+          Integer64 = fun value -> Single ^ single value
           Single = fun value -> Single value
-          Double = fun value -> Single (single value)
+          Double = fun value -> Single ^ single value
           Vector2 = fun _ -> Violation "Cannot convert a vector to a single."
-          String = fun value -> match Single.TryParse value with (true, single) -> Single single | (false, _) -> Violation ^ "Could not parse string '" + value + "' to single." }
+          String = fun value -> Single ^ scvalue value }
 
     let ToDouble =
-        { Boolean = fun value -> Double (if value then 1.0 else 0.0)
-          Integer = fun value -> Double (double value)
-          Integer64 = fun value -> Double (double value)
-          Single = fun value -> Double (double value)
+        { Boolean = fun value -> Double ^ if value then 1.0 else 0.0
+          Integer = fun value -> Double ^ double value
+          Integer64 = fun value -> Double ^ double value
+          Single = fun value -> Double ^ double value
           Double = fun value -> Double value
           Vector2 = fun _ -> Violation "Cannot convert a vector to a double."
-          String = fun value -> match Double.TryParse value with (true, double) -> Double double | (false, _) -> Violation ^ "Could not parse string '" + value + "' to double." }
+          String = fun value -> Double ^ scvalue value }
+
+    let ToVector2 =
+        { Boolean = fun value -> Vector2 ^ OpenTK.Vector2 (if value then 1.0f else 0.0f)
+          Integer = fun value -> Vector2 ^ OpenTK.Vector2 (single value)
+          Integer64 = fun value -> Vector2 ^ OpenTK.Vector2 (single value)
+          Single = fun value -> Vector2 ^ OpenTK.Vector2 value
+          Double = fun value -> Vector2 ^ OpenTK.Vector2 (single value)
+          Vector2 = fun value -> Vector2 value
+          String = fun value -> Vector2 ^ OpenTK.Vector2 (scvalue<single> value) }
+
+    let ToString =
+        { Boolean = fun value -> String ^ scstring value
+          Integer = fun value -> String ^ scstring value
+          Integer64 = fun value -> String ^ scstring value
+          Single = fun value -> String ^ scstring value
+          Double = fun value -> String ^ scstring value
+          Vector2 = fun value -> String ^ scstring value
+          String = fun value -> String value }
 
 [<RequireQualifiedAccess>]
 module Binary =
@@ -305,7 +305,7 @@ module Binary =
           String = fun left right -> String (left.Replace (right, String.Empty)) }
 
     let Mul =
-        { Boolean = fun left right -> Boolean (if left && right then true else false)
+        { Boolean = fun _ _ -> Violation "Cannot multiply booleans."
           Integer = fun left right -> Integer (left * right)
           Integer64 = fun left right -> Integer64 (left * right)
           Single = fun left right -> Single (left * right)
@@ -348,6 +348,24 @@ module Binary =
           Double = fun left right -> Double (Math.Pow (double left, 1.0 / double right))
           Vector2 = fun left right -> Vector2 (OpenTK.Vector2 (single ^ Math.Pow (double left.X, 1.0 / double right.X), single ^ Math.Pow (double left.Y, 1.0 / double right.Y)))
           String = fun _ _ -> Violation "Cannot root strings." }
+
+    let Cross =
+        { Boolean = fun _ _ -> Violation "Cannot cross multiply booleans."
+          Integer = fun left right -> Integer (left * right)
+          Integer64 = fun left right -> Integer64 (left * right)
+          Single = fun left right -> Single (left * right)
+          Double = fun left right -> Double (left * right)
+          Vector2 = fun left right -> Vector2 (Vector2.Multiply (left, right))
+          String = fun _ _ -> Violation "Cannot cross multiply strings." }
+
+    let Dot =
+        { Boolean = fun _ _ -> Violation "Cannot dot multiply booleans."
+          Integer = fun left right -> Integer (left * right)
+          Integer64 = fun left right -> Integer64 (left * right)
+          Single = fun left right -> Single (left * right)
+          Double = fun left right -> Double (left * right)
+          Vector2 = fun left right -> Single (Vector2.Dot (left, right))
+          String = fun _ _ -> Violation "Cannot dot multiply strings." }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Scripting =
@@ -469,9 +487,9 @@ module Scripting =
                         | Acos -> evalUnary "Acos" Unary.Acos args env
                         | Atan -> evalUnary "Atan" Unary.Atan args env
                         | Length -> evalUnary "Length" Unary.Length args env
-                        | Cross -> evalUnary "Cross" Unary.Cross args env
-                        | Dot -> evalUnary "Dot" Unary.Dot args env
                         | Normal -> evalUnary "Normal" Unary.Normal args env
+                        | Cross -> evalBinary "Cross" Binary.Cross args env
+                        | Dot -> evalBinary "Dot" Binary.Dot args env
                         | ToInteger -> evalUnary "ToInteger" Unary.ToInteger args env
                         | ToInteger64 -> evalUnary "ToInteger64" Unary.ToInteger64 args env
                         | ToSingle -> evalUnary "ToSingle" Unary.ToSingle args env
