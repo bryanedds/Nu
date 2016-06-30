@@ -13,6 +13,8 @@ open Nu.Scripting
 [<RequireQualifiedAccess>]
 module Unary =
 
+    open Scripting
+
     type [<NoEquality; NoComparison>] Fns =
         { Boolean : bool -> Value
           Integer : int -> Value
@@ -20,7 +22,8 @@ module Unary =
           Single : single -> Value
           Double : double -> Value
           Vector2 : Vector2 -> Value
-          String : string -> Value }
+          String : string -> Value
+          List : Value list -> Value }
 
     let Sqr =
         { Boolean = fun _ -> Violation "Cannot square a boolean."
@@ -29,7 +32,8 @@ module Unary =
           Single = fun value -> Single (value * value)
           Double = fun value -> Double (value * value)
           Vector2 = fun value -> Vector2 (Vector2.Multiply (value, value))
-          String = fun _ -> Violation "Cannot square a string." }
+          String = fun _ -> Violation "Cannot square a string."
+          List = fun _ -> Violation "Cannot square a list." }
 
     let Sqrt =
         { Boolean = fun _ -> Violation "Cannot square root a boolean."
@@ -38,7 +42,8 @@ module Unary =
           Single = fun value -> Single (single ^ Math.Sqrt (double value))
           Double = fun value -> Double (Math.Sqrt value)
           Vector2 = fun value -> Vector2 (OpenTK.Vector2 (single ^ Math.Sqrt (double value.X), single ^ Math.Sqrt (double value.Y)))
-          String = fun _ -> Violation "Cannot square root a string." }
+          String = fun _ -> Violation "Cannot square root a string."
+          List = fun _ -> Violation "Cannot square root a list." }
 
     let Floor =
         { Boolean = fun _ -> Violation "Cannot floor a boolean."
@@ -47,7 +52,8 @@ module Unary =
           Single = fun value -> Single (single ^ Math.Floor (double value))
           Double = fun value -> Double (Math.Floor value)
           Vector2 = fun value -> Vector2 (OpenTK.Vector2 (single ^ Math.Floor (double value.X), single ^ Math.Floor (double value.Y)))
-          String = fun _ -> Violation "Cannot floor a string." }
+          String = fun _ -> Violation "Cannot floor a string."
+          List = fun _ -> Violation "Cannot floor a list." }
 
     let Ceiling =
         { Boolean = fun _ -> Violation "Cannot ceiling a boolean."
@@ -56,7 +62,8 @@ module Unary =
           Single = fun value -> Single (single ^ Math.Ceiling (double value))
           Double = fun value -> Double (Math.Ceiling value)
           Vector2 = fun value -> Vector2 (OpenTK.Vector2 (single ^ Math.Ceiling (double value.X), single ^ Math.Ceiling (double value.Y)))
-          String = fun _ -> Violation "Cannot ceiling a string." }
+          String = fun _ -> Violation "Cannot ceiling a string."
+          List = fun _ -> Violation "Cannot ceiling a list." }
 
     let Truncate =
         { Boolean = fun _ -> Violation "Cannot truncate a boolean."
@@ -65,7 +72,8 @@ module Unary =
           Single = fun value -> Single (single ^ Math.Truncate (double value))
           Double = fun value -> Double (Math.Truncate value)
           Vector2 = fun value -> Vector2 (OpenTK.Vector2 (single ^ Math.Truncate (double value.X), single ^ Math.Truncate (double value.Y)))
-          String = fun _ -> Violation "Cannot truncate a string." }
+          String = fun _ -> Violation "Cannot truncate a string."
+          List = fun _ -> Violation "Cannot truncate a list." }
 
     let Exp =
         { Boolean = fun _ -> Violation "Cannot exponentiate a boolean."
@@ -74,7 +82,8 @@ module Unary =
           Single = fun value -> Single (single ^ Math.Exp (double value))
           Double = fun value -> Double (Math.Exp value)
           Vector2 = fun value -> Vector2 (OpenTK.Vector2 (single ^ Math.Exp (double value.X), single ^ Math.Exp (double value.Y)))
-          String = fun _ -> Violation "Cannot exponentiate a string." }
+          String = fun _ -> Violation "Cannot exponentiate a string."
+          List = fun _ -> Violation "Cannot exponentiate a list." }
 
     let Round =
         { Boolean = fun _ -> Violation "Cannot round a boolean."
@@ -83,7 +92,8 @@ module Unary =
           Single = fun value -> Single (single ^ Math.Round (double value))
           Double = fun value -> Double (Math.Round value)
           Vector2 = fun value -> Vector2 (OpenTK.Vector2 (single ^ Math.Round (double value.X), single ^ Math.Round (double value.Y)))
-          String = fun _ -> Violation "Cannot round a string." }
+          String = fun _ -> Violation "Cannot round a string."
+          List = fun _ -> Violation "Cannot round a list." }
 
     let Log =
         { Boolean = fun _ -> Violation "Cannot log a boolean."
@@ -92,7 +102,8 @@ module Unary =
           Single = fun value -> if value = 0.0f then Violation "Cannot log a zero single." else Single (single ^ Math.Log (double value))
           Double = fun value -> if value = 0.0 then Violation "Cannot log a zero double." else Double (Math.Log value)
           Vector2 = fun value -> if value.X = 0.0f || value.Y == 0.0f then Violation "Cannot log a vector containing a zero member." else Vector2 (OpenTK.Vector2 (single ^ Math.Log (double value.X), single ^ Math.Log (double value.Y)))
-          String = fun _ -> Violation "Cannot log a string." }
+          String = fun _ -> Violation "Cannot log a string."
+          List = fun _ -> Violation "Cannot log a list." }
 
     let Sin =
         { Boolean = fun _ -> Violation "Cannot sin a boolean."
@@ -101,7 +112,8 @@ module Unary =
           Single = fun value -> Single (single ^ Math.Sin (double value))
           Double = fun value -> Double (Math.Sin value)
           Vector2 = fun value -> Vector2 (OpenTK.Vector2 (single ^ Math.Sin (double value.X), single ^ Math.Sin (double value.Y)))
-          String = fun _ -> Violation "Cannot sin a string." }
+          String = fun _ -> Violation "Cannot sin a string."
+          List = fun _ -> Violation "Cannot sin a list." }
 
     let Cos =
         { Boolean = fun _ -> Violation "Cannot cos a boolean."
@@ -110,7 +122,8 @@ module Unary =
           Single = fun value -> Single (single ^ Math.Cos (double value))
           Double = fun value -> Double (Math.Cos value)
           Vector2 = fun value -> Vector2 (OpenTK.Vector2 (single ^ Math.Cos (double value.X), single ^ Math.Cos (double value.Y)))
-          String = fun _ -> Violation "Cannot cos a string." }
+          String = fun _ -> Violation "Cannot cos a string."
+          List = fun _ -> Violation "Cannot cos a list." }
 
     let Tan =
         { Boolean = fun _ -> Violation "Cannot tan a boolean."
@@ -119,7 +132,8 @@ module Unary =
           Single = fun value -> Single (single ^ Math.Tan (double value))
           Double = fun value -> Double (Math.Tan value)
           Vector2 = fun value -> Vector2 (OpenTK.Vector2 (single ^ Math.Tan (double value.X), single ^ Math.Tan (double value.Y)))
-          String = fun _ -> Violation "Cannot tan a string." }
+          String = fun _ -> Violation "Cannot tan a string."
+          List = fun _ -> Violation "Cannot tan a list." }
 
     let Asin =
         { Boolean = fun _ -> Violation "Cannot asin a boolean."
@@ -128,7 +142,8 @@ module Unary =
           Single = fun value -> Single (single ^ Math.Asin (double value))
           Double = fun value -> Double (Math.Asin value)
           Vector2 = fun value -> Vector2 (OpenTK.Vector2 (single ^ Math.Asin (double value.X), single ^ Math.Asin (double value.Y)))
-          String = fun _ -> Violation "Cannot asin a string." }
+          String = fun _ -> Violation "Cannot asin a string."
+          List = fun _ -> Violation "Cannot asin a list." }
 
     let Acos =
         { Boolean = fun _ -> Violation "Cannot acos a boolean."
@@ -137,7 +152,8 @@ module Unary =
           Single = fun value -> Single (single ^ Math.Acos (double value))
           Double = fun value -> Double (Math.Acos value)
           Vector2 = fun value -> Vector2 (OpenTK.Vector2 (single ^ Math.Acos (double value.X), single ^ Math.Acos (double value.Y)))
-          String = fun _ -> Violation "Cannot acos a string." }
+          String = fun _ -> Violation "Cannot acos a string."
+          List = fun _ -> Violation "Cannot acos a list." }
 
     let Atan =
         { Boolean = fun _ -> Violation "Cannot atan a boolean."
@@ -146,7 +162,8 @@ module Unary =
           Single = fun value -> Single (single ^ Math.Atan (double value))
           Double = fun value -> Double (Math.Atan value)
           Vector2 = fun value -> Vector2 (OpenTK.Vector2 (single ^ Math.Atan (double value.X), single ^ Math.Atan (double value.Y)))
-          String = fun _ -> Violation "Cannot atan a string." }
+          String = fun _ -> Violation "Cannot atan a string."
+          List = fun _ -> Violation "Cannot atan a list." }
 
     let Length =
         { Boolean = fun _ -> Violation "Cannot get length of a boolean."
@@ -155,7 +172,8 @@ module Unary =
           Single = fun value -> Single ^ Math.Abs value
           Double = fun value -> Double ^ Math.Abs value
           Vector2 = fun value -> Single value.Length
-          String = fun value -> Integer value.Length }
+          String = fun value -> Integer value.Length
+          List = fun value -> Integer ^ List.length value }
 
     let Normal =
         { Boolean = fun _ -> Violation "Cannot normalize a boolean."
@@ -164,7 +182,8 @@ module Unary =
           Single = fun value -> if value = 0.0f then Violation "Cannot get the normal of a zero single." elif value < 0.0f then Single -1.0f else Single 1.0f
           Double = fun value -> if value = 0.0 then Violation "Cannot get the normal of a zero double." elif value < 0.0 then Double -1.0 else Double 1.0
           Vector2 = fun value -> if value = Vector2.Zero then Violation "Cannot get the normal of a zero vector." else Vector2 ^ Vector2.Normalize value
-          String = fun _ -> Violation "Cannot normalize a string." }
+          String = fun _ -> Violation "Cannot normalize a string."
+          List = fun _ -> Violation "Cannot normalize a list." }
 
     let ToInteger =
         { Boolean = fun value -> Integer ^ if value then 1 else 0
@@ -173,7 +192,8 @@ module Unary =
           Single = fun value -> Integer ^ int value
           Double = fun value -> Integer ^ int value
           Vector2 = fun _ -> Violation "Cannot convert a vector to an integer."
-          String = fun value -> Integer ^ scvalue value }
+          String = fun value -> Integer ^ scvalue value
+          List = fun _ -> Violation "Cannot convert a list to an integer." }
 
     let ToInteger64 =
         { Boolean = fun value -> Integer64 ^ if value then 1L else 0L
@@ -182,7 +202,8 @@ module Unary =
           Single = fun value -> Integer64 ^ int64 value
           Double = fun value -> Integer64 ^ int64 value
           Vector2 = fun _ -> Violation "Cannot convert a vector to a 64-bit integer."
-          String = fun value -> Integer64 ^ scvalue value }
+          String = fun value -> Integer64 ^ scvalue value
+          List = fun _ -> Violation "Cannot convert a list to a 64-bit integer." }
 
     let ToSingle =
         { Boolean = fun value -> Single ^ if value then 1.0f else 0.0f
@@ -191,7 +212,8 @@ module Unary =
           Single = fun value -> Single value
           Double = fun value -> Single ^ single value
           Vector2 = fun _ -> Violation "Cannot convert a vector to a single."
-          String = fun value -> Single ^ scvalue value }
+          String = fun value -> Single ^ scvalue value
+          List = fun _ -> Violation "Cannot convert a list to a single." }
 
     let ToDouble =
         { Boolean = fun value -> Double ^ if value then 1.0 else 0.0
@@ -200,7 +222,8 @@ module Unary =
           Single = fun value -> Double ^ double value
           Double = fun value -> Double value
           Vector2 = fun _ -> Violation "Cannot convert a vector to a double."
-          String = fun value -> Double ^ scvalue value }
+          String = fun value -> Double ^ scvalue value
+          List = fun _ -> Violation "Cannot convert a list to a double." }
 
     let ToVector2 =
         { Boolean = fun value -> Vector2 ^ OpenTK.Vector2 (if value then 1.0f else 0.0f)
@@ -209,7 +232,8 @@ module Unary =
           Single = fun value -> Vector2 ^ OpenTK.Vector2 value
           Double = fun value -> Vector2 ^ OpenTK.Vector2 (single value)
           Vector2 = fun value -> Vector2 value
-          String = fun value -> Vector2 ^ OpenTK.Vector2 (scvalue<single> value) }
+          String = fun value -> Vector2 ^ OpenTK.Vector2 (scvalue<single> value)
+          List = fun _ -> Violation "Cannot convert a list to a vector." }
 
     let ToString =
         { Boolean = fun value -> String ^ scstring value
@@ -218,7 +242,8 @@ module Unary =
           Single = fun value -> String ^ scstring value
           Double = fun value -> String ^ scstring value
           Vector2 = fun value -> String ^ scstring value
-          String = fun value -> String value }
+          String = fun value -> String value
+          List = fun value -> String ^ scstring value }
 
 [<RequireQualifiedAccess>]
 module Binary =
@@ -230,7 +255,8 @@ module Binary =
           Single : single -> single -> Value
           Double : double -> double -> Value
           Vector2 : Vector2 -> Vector2 -> Value
-          String : string -> string -> Value }
+          String : string -> string -> Value
+          List : Value list -> Value list -> Value }
 
     let Eq =
         { Boolean = fun left right -> Boolean (left = right)
@@ -239,7 +265,8 @@ module Binary =
           Single = fun left right -> Boolean (left = right)
           Double = fun left right -> Boolean (left = right)
           Vector2 = fun left right -> Boolean (left = right)
-          String = fun left right -> Boolean (left = right) }
+          String = fun left right -> Boolean (left = right)
+          List = fun left right -> Boolean (left = right) }
 
     let NotEq =
         { Boolean = fun left right -> Boolean (left <> right)
@@ -248,7 +275,8 @@ module Binary =
           Single = fun left right -> Boolean (left <> right)
           Double = fun left right -> Boolean (left <> right)
           Vector2 = fun left right -> Boolean (left <> right)
-          String = fun left right -> Boolean (left <> right) }
+          String = fun left right -> Boolean (left <> right)
+          List = fun left right -> Boolean (left <> right) }
 
     let Lt =
         { Boolean = fun left right -> Boolean (left < right)
@@ -257,7 +285,8 @@ module Binary =
           Single = fun left right -> Boolean (left < right)
           Double = fun left right -> Boolean (left < right)
           Vector2 = fun left right -> Boolean (left.LengthSquared < right.LengthSquared)
-          String = fun left right -> Boolean (left < right) }
+          String = fun left right -> Boolean (left < right)
+          List = fun _ _ -> Violation "Cannot compare lists." }
 
     let Gt =
         { Boolean = fun left right -> Boolean (left > right)
@@ -266,7 +295,8 @@ module Binary =
           Single = fun left right -> Boolean (left > right)
           Double = fun left right -> Boolean (left > right)
           Vector2 = fun left right -> Boolean (left.LengthSquared > right.LengthSquared)
-          String = fun left right -> Boolean (left > right) }
+          String = fun left right -> Boolean (left > right)
+          List = fun _ _ -> Violation "Cannot compare lists." }
 
     let LtEq =
         { Boolean = fun left right -> Boolean (left <= right)
@@ -275,7 +305,8 @@ module Binary =
           Single = fun left right -> Boolean (left <= right)
           Double = fun left right -> Boolean (left <= right)
           Vector2 = fun left right -> Boolean (left.LengthSquared <= right.LengthSquared)
-          String = fun left right -> Boolean (left <= right) }
+          String = fun left right -> Boolean (left <= right)
+          List = fun _ _ -> Violation "Cannot compare lists." }
 
     let GtEq =
         { Boolean = fun left right -> Boolean (left >= right)
@@ -284,7 +315,8 @@ module Binary =
           Single = fun left right -> Boolean (left >= right)
           Double = fun left right -> Boolean (left >= right)
           Vector2 = fun left right -> Boolean (left.LengthSquared >= right.LengthSquared)
-          String = fun left right -> Boolean (left >= right) }
+          String = fun left right -> Boolean (left >= right)
+          List = fun _ _ -> Violation "Cannot compare lists." }
 
     let Add =
         { Boolean = fun left right -> Boolean (if left && right then false elif left then true elif right then true else false)
@@ -293,7 +325,8 @@ module Binary =
           Single = fun left right -> Single (left + right)
           Double = fun left right -> Double (left + right)
           Vector2 = fun left right -> Vector2 (left + right)
-          String = fun left right -> String (left + right) }
+          String = fun left right -> String (left + right)
+          List = fun left right -> List (left @ right) }
 
     let Sub =
         { Boolean = fun left right -> Boolean (if left && right then false elif left then true elif right then true else false)
@@ -302,7 +335,8 @@ module Binary =
           Single = fun left right -> Single (left - right)
           Double = fun left right -> Double (left - right)
           Vector2 = fun left right -> Vector2 (left - right)
-          String = fun left right -> String (left.Replace (right, String.Empty)) }
+          String = fun left right -> String (left.Replace (right, String.Empty))
+          List = fun _ _ -> Violation "Cannot subtract lists. TODO: implement this like string subtraction!" }
 
     let Mul =
         { Boolean = fun _ _ -> Violation "Cannot multiply booleans."
@@ -311,7 +345,8 @@ module Binary =
           Single = fun left right -> Single (left * right)
           Double = fun left right -> Double (left * right)
           Vector2 = fun left right -> Vector2 (Vector2.Multiply (left, right))
-          String = fun _ _ -> Violation "Cannot multiply strings." }
+          String = fun _ _ -> Violation "Cannot multiply strings."
+          List = fun _ _ -> Violation "Cannot multiply lists." }
 
     let Div =
         { Boolean = fun left right -> if right = false then Violation "Cannot divide by a false boolean." else Boolean (if left && right then true else false)
@@ -320,7 +355,8 @@ module Binary =
           Single = fun left right -> Single (left / right)
           Double = fun left right -> Double (left / right)
           Vector2 = fun left right -> Vector2 (Vector2.Divide (left, right))
-          String = fun _ _ -> Violation "Cannot divide strings." }
+          String = fun _ _ -> Violation "Cannot divide strings."
+          List = fun _ _ -> Violation "Cannot divide lists." }
 
     let Mod =
         { Boolean = fun _ _ -> Violation "Cannot modulate booleans."
@@ -329,7 +365,8 @@ module Binary =
           Single = fun left right -> Single (left % right)
           Double = fun left right -> Double (left % right)
           Vector2 = fun left right -> Vector2 (OpenTK.Vector2 (left.X % right.X, left.Y % right.Y))
-          String = fun _ _ -> Violation "Cannot modulate strings." }
+          String = fun _ _ -> Violation "Cannot modulate strings."
+          List = fun _ _ -> Violation "Cannot modulate lists." }
 
     let Pow =
         { Boolean = fun _ _ -> Violation "Cannot power booleans."
@@ -338,7 +375,8 @@ module Binary =
           Single = fun left right -> Single (single ^ Math.Pow (double left, double right))
           Double = fun left right -> Double (Math.Pow (double left, double right))
           Vector2 = fun left right -> Vector2 (OpenTK.Vector2 (single ^ Math.Pow (double left.X, double right.X), single ^ Math.Pow (double left.Y, double right.Y)))
-          String = fun _ _ -> Violation "Cannot power strings." }
+          String = fun _ _ -> Violation "Cannot power strings."
+          List = fun _ _ -> Violation "Cannot power lists." }
 
     let Root =
         { Boolean = fun _ _ -> Violation "Cannot root booleans."
@@ -347,7 +385,8 @@ module Binary =
           Single = fun left right -> Single (single ^ Math.Pow (double left, 1.0 / double right))
           Double = fun left right -> Double (Math.Pow (double left, 1.0 / double right))
           Vector2 = fun left right -> Vector2 (OpenTK.Vector2 (single ^ Math.Pow (double left.X, 1.0 / double right.X), single ^ Math.Pow (double left.Y, 1.0 / double right.Y)))
-          String = fun _ _ -> Violation "Cannot root strings." }
+          String = fun _ _ -> Violation "Cannot root strings."
+          List = fun _ _ -> Violation "Cannot root lists." }
 
     let Cross =
         { Boolean = fun _ _ -> Violation "Cannot cross multiply booleans."
@@ -355,8 +394,9 @@ module Binary =
           Integer64 = fun left right -> Integer64 (left * right)
           Single = fun left right -> Single (left * right)
           Double = fun left right -> Double (left * right)
-          Vector2 = fun left right -> Vector2 (Vector2.Multiply (left, right))
-          String = fun _ _ -> Violation "Cannot cross multiply strings." }
+          Vector2 = fun _ _ -> Violation "Cannot cross multiply 2-dimensional vectors."
+          String = fun _ _ -> Violation "Cannot cross multiply strings."
+          List = fun _ _ -> Violation "Cannot cross multiply lists." }
 
     let Dot =
         { Boolean = fun _ _ -> Violation "Cannot dot multiply booleans."
@@ -365,7 +405,8 @@ module Binary =
           Single = fun left right -> Single (left * right)
           Double = fun left right -> Double (left * right)
           Vector2 = fun left right -> Single (Vector2.Dot (left, right))
-          String = fun _ _ -> Violation "Cannot dot multiply strings." }
+          String = fun _ _ -> Violation "Cannot dot multiply strings."
+          List = fun _ _ -> Violation "Cannot dot multiply lists." }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Scripting =
@@ -412,6 +453,7 @@ module Scripting =
                 | (Double doubleValue) -> (Value (fns.Double doubleValue, Metadata.empty), env)
                 | (Vector2 vector2Value) -> (Value (fns.Vector2 vector2Value, Metadata.empty), env)
                 | (String stringValue) -> (Value (fns.String stringValue, Metadata.empty), env)
+                | (List listValue) -> (Value (fns.List listValue, Metadata.empty), env)
                 | _ -> (Value (Violation "Cannot apply an unary function on an incompatible value.", Metadata.empty), env)
             | _ -> failwithumf ()
         | _ -> (Value (Violation ^ "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", Metadata.empty), env)
@@ -429,6 +471,7 @@ module Scripting =
                 | (Double doubleLeft, Double doubleRight) -> (Value (fns.Double doubleLeft doubleRight, Metadata.empty), env)
                 | (Vector2 vector2Left, Vector2 vector2Right) -> (Value (fns.Vector2 vector2Left vector2Right, Metadata.empty), env)
                 | (String stringLeft, String stringRight) -> (Value (fns.String stringLeft stringRight, Metadata.empty), env)
+                | (List listLeft, List listRight) -> (Value (fns.List listLeft listRight, Metadata.empty), env)
                 | _ -> (Value (Violation "Cannot apply a binary function on unlike or incompatible values.", Metadata.empty), env)
             | (_, _) -> failwithumf ()
         | _ -> (Value (Violation ^ "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", Metadata.empty), env)
@@ -451,7 +494,8 @@ module Scripting =
                     | Single _
                     | Double _
                     | Vector2 _
-                    | String _ -> (Value (Violation "Cannot apply a literal value.", Metadata.empty), env)
+                    | String _
+                    | List _ -> (Value (Violation "Cannot apply a non-function value.", Metadata.empty), env)
                     | Violation _ -> (fn, env)
                     | Reference _ -> failwithumf ()
                     | Lambda lambda ->

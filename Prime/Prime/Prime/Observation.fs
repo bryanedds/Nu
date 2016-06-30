@@ -423,6 +423,7 @@ module Observation =
 
 [<AutoOpen>]
 module ObservationOperators =
+
     open Observation
 
     /// Pipe-right arrow that provides special precedence for observations.

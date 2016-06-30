@@ -34,7 +34,8 @@ module Scripting =
         | Sin | Cos | Tan | Asin | Acos | Atan
         | Length | Normal
         | Cross | Dot
-        | ToInteger | ToInteger64 | ToSingle | ToDouble | ToVector2 | ToString
+        | ToInteger | ToInteger64 | ToSingle | ToDouble | ToVector2
+        | ToString
         | Head | Tail | Empty | Cons
         | Map | Filter | Fold | All | Any | NotAny
         | Get of Referent * string
@@ -51,6 +52,7 @@ module Scripting =
         | Double of double
         | Vector2 of Vector2
         | String of string
+        | List of Value list
         | Violation of string
         | Reference of Referent
         | Lambda of Lambda
