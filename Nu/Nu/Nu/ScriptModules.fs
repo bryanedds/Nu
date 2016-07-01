@@ -480,6 +480,7 @@ module Scripting =
         | Mapping optOrigin -> (Violation ("Cannot apply a non-function term.", optOrigin), env)
         | Violation _ -> (expr, env)
         | Reference _ -> failwithumf ()
+        | Break (expr, _) -> (expr, env)
         | Call (exprs, optOrigin) ->
             let (evaleds, env) = List.foldBack (fun expr (evaleds, env) -> mapFst (fun evaled -> evaled :: evaleds) (eval expr env)) exprs ([], env)
             match evaleds with
