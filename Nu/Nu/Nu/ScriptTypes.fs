@@ -14,7 +14,6 @@ open Prime
 /// Unreal Blueprints.
 ///
 /// TODO: also raise event for all effect tags so they can be handled in scripts?
-/// TODO: It would be nice if the visual editor also worked with Effects and other s-expr systems.
 module Scripting =
 
     type [<NoComparison>] Referent =
@@ -124,10 +123,6 @@ module Scripting =
             | :? Vector2 -> source
             | _ -> failconv "Invalid Vector2Converter conversion from source." None
 
-    type [<NoComparison>] Declaration =
-        { DeclName : string
-          DeclExpr : Expr }
-
     type [<NoComparison>] Event =
         | Event of obj Address
         | Product of Event * Event
@@ -141,6 +136,6 @@ module Scripting =
         { Bindings : Dictionary<Name, Expr> }
 
     type [<NoComparison>] Script =
-        { Bindings : Expr list
+        { Bindings : (Name * Expr) list
           Equalities : (string option * Referent * Expr) list
           Handlers : Event list }
