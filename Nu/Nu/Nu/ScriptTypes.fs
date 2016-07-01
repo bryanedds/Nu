@@ -78,7 +78,7 @@ module Scripting =
             | Try optOrigin -> optOrigin
             | Binding (_, optOrigin) -> optOrigin
 
-    /// Converts Vector2 types.
+    /// Converts Expr types.
     and ExprConverter () =
         inherit TypeConverter ()
 
@@ -123,8 +123,8 @@ module Scripting =
                     match symbols with
                     | [Atom ("Break", optOrigin); symbol] -> Break (SymbolicDescriptor.convertTo (symbol, typeof<Expr>) :?> Expr, optOrigin) :> obj
                     | _ -> Call (List.map (fun symbol -> SymbolicDescriptor.convertTo (symbol, typeof<Expr>) :?> Expr) symbols, optOrigin) :> obj
-            | :? Vector2 -> source
-            | _ -> failconv "Invalid Vector2Converter conversion from source." None
+            | :? Expr -> source
+            | _ -> failconv "Invalid ExprConverter conversion from source." None
 
     type [<NoComparison>] Event =
         | Event of obj Address
