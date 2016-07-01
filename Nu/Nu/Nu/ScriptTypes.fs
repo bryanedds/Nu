@@ -86,16 +86,12 @@ module Scripting =
             destType = typeof<Symbol> ||
             destType = typeof<Expr>
 
-        override this.ConvertTo (_, _, source, destType) =
-            if destType = typeof<Symbol> then
-                let v2 = source :?> Vector2
-                Symbols ([Number (string v2.X, None); Number (string v2.Y, None)], None) :> obj
-            elif destType = typeof<Vector2> then source
-            else failconv "Invalid Vector2Converter conversion to source." None
+        override this.ConvertTo (_, _, _, _) =
+            failwith "Not yet implemented"
 
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Symbol> ||
-            sourceType = typeof<Vector2>
+            sourceType = typeof<Expr>
 
         override this.ConvertFrom (_, _, source) =
             match source with
