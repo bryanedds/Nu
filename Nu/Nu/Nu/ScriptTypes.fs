@@ -49,6 +49,7 @@ module Scripting =
         | Mapping of Origin option
         | Violation of string * Origin option
         | Reference of Referent * Origin option
+        | Break of Expr * Origin option
         | Call of Expr list * Origin option
         | Fun of string list * Expr * int * Origin option
         | Get of Referent * string * Origin option
@@ -70,6 +71,7 @@ module Scripting =
             | Violation (_, optOrigin)
             | Reference (_, optOrigin)
             | Call (_, optOrigin)
+            | Break (_, optOrigin)
             | Fun (_, _, _, optOrigin)
             | Get (_, _, optOrigin)
             | If optOrigin
@@ -111,15 +113,20 @@ module Scripting =
                         match Int64.TryParse str with
                         | (true, int64) -> Integer64 (int64, optOrigin) :> obj
                         | (false, _) ->
-                            match Single.TryParse str with
-                            | (true, single) -> Single (single, optOrigin) :> obj
-                            | (false, _) ->
+                            if str.EndsWith "f" then
+                                match Single.TryParse str with
+                                | (true, single) -> Single (single, optOrigin) :> obj
+                                | (false, _) -> Violation ("Unexpected number parse failure.", optOrigin) :> obj
+                            else
                                 match Double.TryParse str with
                                 | (true, double) -> Double (double, optOrigin) :> obj
                                 | (false, _) -> Violation ("Unexpected number parse failure.", optOrigin) :> obj
                 | Symbol.String (str, optOrigin) -> String (str, optOrigin) :> obj
-                | Symbol.Quote (_, optOrigin) -> Violation ("Quotations not supported in script.", optOrigin) :> obj
-                | Symbol.Symbols (symbols, optOrigin) -> Call (List.map (fun symbol -> SymbolicDescriptor.convertTo (symbol, typeof<Expr>) :?> Expr) symbols, optOrigin) :> obj
+                | Symbol.Quote (_, optOrigin) -> Violation ("Quotations not yet supported in script. TODO: implement?", optOrigin) :> obj
+                | Symbol.Symbols (symbols, optOrigin) ->
+                    match symbols with
+                    | [Atom ("Break", optOrigin); symbol] -> Break (SymbolicDescriptor.convertTo (symbol, typeof<Expr>) :?> Expr, optOrigin) :> obj
+                    | _ -> Call (List.map (fun symbol -> SymbolicDescriptor.convertTo (symbol, typeof<Expr>) :?> Expr) symbols, optOrigin) :> obj
             | :? Vector2 -> source
             | _ -> failconv "Invalid Vector2Converter conversion from source." None
 
