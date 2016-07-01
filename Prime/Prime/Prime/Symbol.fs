@@ -63,7 +63,8 @@ module Symbol =
         NumberLiteralOptions.AllowPlusSign |||
         NumberLiteralOptions.AllowExponent |||
         NumberLiteralOptions.AllowFraction |||
-        NumberLiteralOptions.AllowHexadecimal
+        NumberLiteralOptions.AllowHexadecimal |||
+        NumberLiteralOptions.AllowSuffix
     
     let isExplicit (str : string) = str.StartsWith OpenStringStr && str.EndsWith CloseStringStr
     let isWhitespaceChar chr = isAnyOf WhitespaceChars chr
