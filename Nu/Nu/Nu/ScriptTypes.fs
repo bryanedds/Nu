@@ -116,7 +116,7 @@ module Scripting =
                 match symbol with
                 | Symbol.Atom (str, optOrigin) ->
                     match str with
-                    | "None" -> Option (None, optOrigin) :> obj
+                    | "none" -> Option (None, optOrigin) :> obj
                     | _ ->
                         if Char.IsUpper str.[0]
                         then Keyword (!!str, optOrigin) :> obj

@@ -26,11 +26,11 @@ type LogicApplicator =
     | Eq
 
 type TweenApplicator =
-    | Add
-    | Sub
-    | Mul
-    | Div
-    | Eq
+    | Add // TODO: rename to Sum
+    | Sub // TODO: rename to Diff
+    | Mul // TODO: rename to Scale
+    | Div // TODO: rename to Ratio
+    | Eq // TODO: rename to Set
 
 type [<StructuralEquality; NoComparison>] Slice =
     { Position : Vector2
