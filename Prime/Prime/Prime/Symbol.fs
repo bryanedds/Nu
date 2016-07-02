@@ -55,9 +55,6 @@ module Symbol =
     let [<Literal>] StructureCharsNoStr = "[]`\'"
     let [<Literal>] StructureChars = "\"" + StructureCharsNoStr
     let [<Literal>] OpsReserved = "@#:." // @ reserved for wildcards, # reserved for comment syntax, : reserved for pair syntax (expands to [key value]), . reserved for pathing
-    let (*Literal*) OpsSeparator =  [|  '_'|]
-    let (*Literal*) OpsExpanded =   [|  "Nor";  "Not";  "Nand"; "Mod";  "Xor";  "And";  "Mul";  "Add";  "Sub";  "Eq";   "Or";   "Lt";   "Gt";   "Get";  "Div"   |]
-    let (*Literal*) OpsUnexpanded = [|  '~';    '!';    '$';    '%';    '^';    '&';    '*';    '+';    '-';    '=';    '|';    '<';    '>';    '?';    '/'     |]
     let [<Literal>] NumberFormat =
         NumberLiteralOptions.AllowMinusSign |||
         NumberLiteralOptions.AllowPlusSign |||
@@ -85,23 +82,6 @@ module Symbol =
     let isNumber str = match run isNumberParser str with Success (_, _, position) -> position.Index = int64 str.Length | Failure _ -> false
     let shouldBeExplicit str = Seq.exists (fun chr -> Char.IsWhiteSpace chr || Seq.contains chr StructureCharsNoStr) str
 
-    /// Expand the operator chars in a string.
-    let expand (unexpanded : string) =
-        if unexpanded.IndexOfAny OpsUnexpanded = 0 then
-            let partsExpanded = Seq.map (fun (part : char) -> match Array.IndexOf (OpsUnexpanded, part) with -1 -> string part | i -> OpsExpanded.[i]) unexpanded
-            let expanded = String.Join (string OpsSeparator.[0], partsExpanded)
-            expanded
-        else unexpanded
-
-    /// Unexpand the operator words in a string.
-    let unexpand (expanded : string) =
-        let parts = expanded.Split OpsSeparator
-        if Array.contains parts.[0] OpsExpanded then
-            let partsUnexpanded = Array.map (fun (part : string) -> match Array.IndexOf (OpsExpanded, part) with -1 -> part | i -> string OpsUnexpanded.[i]) parts
-            let unexpanded = String.Concat partsUnexpanded
-            unexpanded
-        else expanded
-
     let readAtomChars = many1 (noneOf (StructureChars + WhitespaceChars))
     let readStringChars = many (noneOf [CloseStringChar])
     let readQuoteChars = many (noneOf [CloseQuoteChar])
@@ -120,7 +100,7 @@ module Symbol =
             let! chars = readAtomChars
             let! stop = getPosition
             do! skipWhitespaces
-            let str = chars |> String.implode |> (fun str -> str.TrimEnd ()) |> expand
+            let str = chars |> String.implode |> fun str -> str.TrimEnd ()
             let origin = Some { Start = start; Stop = stop }
             return Atom (str, origin) }
 
@@ -186,7 +166,7 @@ module Symbol =
             if Seq.isEmpty str then OpenStringStr + CloseStringStr
             elif not (isExplicit str) && shouldBeExplicit str then OpenStringStr + str + CloseStringStr
             elif isExplicit str && not (shouldBeExplicit str) then str.Substring (1, str.Length - 2)
-            else unexpand str
+            else str
         | Number (str, _) -> String.clean str
         | String (str, _) -> OpenStringStr + String.clean str + CloseStringStr
         | Quote (str, _) -> OpenQuoteStr + String.clean str + CloseQuoteStr
