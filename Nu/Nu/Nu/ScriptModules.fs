@@ -490,47 +490,49 @@ module Scripting =
                     match env.Bindings.TryGetValue name with
                     | (true, binding) -> evalFn binding args env
                     | (false, _) ->
-                        match Name.getNameStr name with
-                        | "Not" -> evalBoolUnary optOrigin "!" not args env
-                        | "And" -> evalBoolBinary optOrigin "&" (&&) args env
-                        | "Or" -> evalBoolBinary optOrigin "|" (||) args env
-                        | "Eq" -> evalBinary optOrigin "=" Binary.Eq args env
-                        | "Not_Eq" -> evalBinary optOrigin "!=" Binary.NotEq args env
-                        | "Lt" -> evalBinary optOrigin "<" Binary.Lt args env
-                        | "Gt" -> evalBinary optOrigin ">" Binary.Gt args env
-                        | "Lt_Eq" -> evalBinary optOrigin "<=" Binary.LtEq args env
-                        | "Gt_Eq" -> evalBinary optOrigin ">=" Binary.GtEq args env
-                        | "Add" -> evalBinary optOrigin "+" Binary.Add args env
-                        | "Sub" -> evalBinary optOrigin "-" Binary.Sub args env
-                        | "Mul" -> evalBinary optOrigin "*" Binary.Mul args env
-                        | "Div" -> evalBinary optOrigin "/" Binary.Div args env
-                        | "Mod" -> evalBinary optOrigin "%" Binary.Mod args env
-                        | "pow" -> evalBinary optOrigin "pow" Binary.Pow args env
-                        | "root" -> evalBinary optOrigin "root" Binary.Root args env
-                        | "sqr" -> evalUnary optOrigin "sqr" Unary.Sqr args env
-                        | "sqrt" -> evalUnary optOrigin "sqrt" Unary.Sqrt args env
-                        | "floor" -> evalUnary optOrigin "floor" Unary.Floor args env
-                        | "ceiling" -> evalUnary optOrigin "ceiling" Unary.Ceiling args env
-                        | "truncate" -> evalUnary optOrigin "truncate" Unary.Truncate args env
-                        | "round" -> evalUnary optOrigin "round" Unary.Round args env
-                        | "exp" -> evalUnary optOrigin "exp" Unary.Exp args env
-                        | "log" -> evalUnary optOrigin "log" Unary.Log args env
-                        | "sin" -> evalUnary optOrigin "sin" Unary.Sin args env
-                        | "cos" -> evalUnary optOrigin "cos" Unary.Cos args env
-                        | "tan" -> evalUnary optOrigin "tan" Unary.Tan args env
-                        | "asin" -> evalUnary optOrigin "asin" Unary.Asin args env
-                        | "acos" -> evalUnary optOrigin "acos" Unary.Acos args env
-                        | "atan" -> evalUnary optOrigin "atan" Unary.Atan args env
-                        | "length" -> evalUnary optOrigin "length" Unary.Length args env
-                        | "normal" -> evalUnary optOrigin "normal" Unary.Normal args env
-                        | "cross" -> evalBinary optOrigin "cross" Binary.Cross args env
-                        | "dot" -> evalBinary optOrigin "dot" Binary.Dot args env
-                        | "bool" -> evalUnary optOrigin "bool" Unary.Bool args env
-                        | "int" -> evalUnary optOrigin "int" Unary.Int args env
-                        | "int64" -> evalUnary optOrigin "int64" Unary.Int64 args env
-                        | "single" -> evalUnary optOrigin "single" Unary.Single args env
-                        | "double" -> evalUnary optOrigin "double" Unary.Double args env
-                        | "string" -> evalUnary optOrigin "string" Unary.String args env
+                        let nameStr = Name.getNameStr name
+                        match nameStr with
+                        | "!"  | "not" -> evalBoolUnary optOrigin nameStr not args env
+                        | "&"  | "and" -> evalBoolBinary optOrigin nameStr (&&) args env
+                        | "|"  | "or" -> evalBoolBinary optOrigin nameStr (||) args env
+                        | "="  | "eq" -> evalBinary optOrigin nameStr Binary.Eq args env
+                        | "<>" | "not_eq" -> evalBinary optOrigin nameStr Binary.NotEq args env
+                        | "<"  | "lt" -> evalBinary optOrigin nameStr Binary.Lt args env
+                        | ">"  | "gt" -> evalBinary optOrigin nameStr Binary.Gt args env
+                        | "<=" | "lt_eq" -> evalBinary optOrigin nameStr Binary.LtEq args env
+                        | ">=" | "gt_eq" -> evalBinary optOrigin nameStr Binary.GtEq args env
+                        | "+"  | "add" -> evalBinary optOrigin nameStr Binary.Add args env
+                        | "-"  | "sub" -> evalBinary optOrigin nameStr Binary.Sub args env
+                        | "*"  | "mul" -> evalBinary optOrigin nameStr Binary.Mul args env
+                        | "/"  | "div" -> evalBinary optOrigin nameStr Binary.Div args env
+                        | "%"  | "mod" -> evalBinary optOrigin nameStr Binary.Mod args env
+                        | "pow" -> evalBinary optOrigin nameStr Binary.Pow args env
+                        | "root" -> evalBinary optOrigin nameStr Binary.Root args env
+                        | "sqr" -> evalUnary optOrigin nameStr Unary.Sqr args env
+                        | "sqrt" -> evalUnary optOrigin nameStr Unary.Sqrt args env
+                        | "floor" -> evalUnary optOrigin nameStr Unary.Floor args env
+                        | "ceiling" -> evalUnary optOrigin nameStr Unary.Ceiling args env
+                        | "truncate" -> evalUnary optOrigin nameStr Unary.Truncate args env
+                        | "round" -> evalUnary optOrigin nameStr Unary.Round args env
+                        | "exp" -> evalUnary optOrigin nameStr Unary.Exp args env
+                        | "log" -> evalUnary optOrigin nameStr Unary.Log args env
+                        | "sin" -> evalUnary optOrigin nameStr Unary.Sin args env
+                        | "cos" -> evalUnary optOrigin nameStr Unary.Cos args env
+                        | "tan" -> evalUnary optOrigin nameStr Unary.Tan args env
+                        | "asin" -> evalUnary optOrigin nameStr Unary.Asin args env
+                        | "acos" -> evalUnary optOrigin nameStr Unary.Acos args env
+                        | "atan" -> evalUnary optOrigin nameStr Unary.Atan args env
+                        | "length" -> evalUnary optOrigin nameStr Unary.Length args env
+                        | "normal" -> evalUnary optOrigin nameStr Unary.Normal args env
+                        | "cross" -> evalBinary optOrigin nameStr Binary.Cross args env
+                        | "dot" -> evalBinary optOrigin nameStr Binary.Dot args env
+                        | "bool" -> evalUnary optOrigin nameStr Unary.Bool args env
+                        | "int" -> evalUnary optOrigin nameStr Unary.Int args env
+                        | "int64" -> evalUnary optOrigin nameStr Unary.Int64 args env
+                        | "single" -> evalUnary optOrigin nameStr Unary.Single args env
+                        | "double" -> evalUnary optOrigin nameStr Unary.Double args env
+                        | "string" -> evalUnary optOrigin nameStr Unary.String args env
+                        | "some"
                         | "head"
                         | "tail"
                         | "empty"

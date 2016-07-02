@@ -21,16 +21,17 @@ module Scripting =
         | EyeCenter
         | Simulant of obj Address
 
-    and [<Syntax(   "Not And Or " +
-                    "Eq Not_Eq Lt Gt Lt_Eq Gt_Eq " +
-                    "Add Sub Mul Div Mod " +
-                    "Violation Some None List " +
+    and [<Syntax(   "not and or " +
+                    "eq not_eq lt gt lt_eq gt_eq " +
+                    "add sub mul div mod " +
                     "pow root sqr sqrt " +
                     "floor ceiling truncate round exp log " +
                     "sin cos tan asin acos atan " +
                     "length normal " +
                     "cross dot " +
                     "bool int int64 single double string " +
+                    "violation some none list " +
+                    "camera entity event " +
                     "head tail empty cons " +
                     "map filter fold all any notAny",
                     "");
@@ -45,6 +46,7 @@ module Scripting =
         | Double of double * Origin option
         | Vector2 of Vector2 * Origin option
         | String of string * Origin option
+        | Keyphrase of Expr list * Origin option
         | Option of Expr option * Origin option
         | List of Expr list * Origin option
         | Reference of Referent * Origin option
@@ -55,7 +57,10 @@ module Scripting =
         | Get of Referent * string * Origin option
         | Let of Name * Expr * Origin option
         | If of Expr * Expr * Expr * Origin option
+        | Cases of (Expr * Expr) list * Origin option
+        | Match of Expr * (Expr * Expr) list * Origin option
         | Try of Expr * Expr list * Origin option
+        | Keyword of Name * Origin option
         | Binding of Name * Origin option
         | Quote of string * Origin option
         static member getOptOrigin term =
@@ -69,6 +74,7 @@ module Scripting =
             | Double (_, optOrigin)
             | Vector2 (_, optOrigin)
             | String (_, optOrigin)
+            | Keyphrase (_, optOrigin)
             | Option (_, optOrigin)
             | List (_, optOrigin)
             | Reference (_, optOrigin)
@@ -79,7 +85,10 @@ module Scripting =
             | Get (_, _, optOrigin)
             | Let (_, _, optOrigin)
             | If (_, _, _, optOrigin)
+            | Cases (_, optOrigin)
+            | Match (_, _, optOrigin)
             | Try (_, _, optOrigin)
+            | Keyword (_, optOrigin)
             | Binding (_, optOrigin)
             | Quote (_, optOrigin) -> optOrigin
 
@@ -108,7 +117,10 @@ module Scripting =
                 | Symbol.Atom (str, optOrigin) ->
                     match str with
                     | "None" -> Option (None, optOrigin) :> obj
-                    | _ -> Binding (!!str, optOrigin) :> obj
+                    | _ ->
+                        if Char.IsUpper str.[0]
+                        then Keyword (!!str, optOrigin) :> obj
+                        else Binding (!!str, optOrigin) :> obj
                 | Symbol.Number (str, optOrigin) ->
                     match Int32.TryParse str with
                     | (true, int) -> Int (int, optOrigin) :> obj
@@ -129,9 +141,12 @@ module Scripting =
                 | Symbol.Symbols (symbols, optOrigin) ->
                     match symbols with
                     | Atom (name, nameOptOrigin) :: tail when
-                        name = "Violation" ||
-                        name = "Some" ||
-                        name = "List" ||
+                        name = "violation" ||
+                        name = "some" ||
+                        name = "list" ||
+                        name = "camera" ||
+                        name = "entity" ||
+                        name = "event" ||
                         name = "let" ||
                         name = "try" ||
                         name = "if" ||
