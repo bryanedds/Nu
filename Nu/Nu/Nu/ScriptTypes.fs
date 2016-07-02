@@ -21,10 +21,10 @@ module Scripting =
         | EyeCenter
         | Simulant of obj Address
 
-    and [<Syntax(   "List Some None " +
-                    "Not And Or " +
+    and [<Syntax(   "Not And Or " +
                     "Eq Not_Eq Lt Gt Lt_Eq Gt_Eq " +
                     "Add Sub Mul Div Mod " +
+                    "Violation Some None List " +
                     "pow root sqr sqrt " +
                     "floor ceiling truncate round exp log " +
                     "sin cos tan asin acos atan " +
@@ -36,6 +36,7 @@ module Scripting =
                     "");
           NoComparison>]
         Expr =
+        | Violation of string * Origin option
         | Unit of Origin option
         | Bool of bool * Origin option
         | Int of int * Origin option
@@ -44,8 +45,8 @@ module Scripting =
         | Double of double * Origin option
         | Vector2 of Vector2 * Origin option
         | String of string * Origin option
+        | Option of Expr option * Origin option
         | List of Expr list * Origin option
-        | Violation of string * Origin option
         | Reference of Referent * Origin option
         | Break of Expr * Origin option
         | Do of Name * Expr list * Origin option // executes an engine command, some can be found in the NuPlugin
@@ -59,6 +60,7 @@ module Scripting =
         | Quote of string * Origin option
         static member getOptOrigin term =
             match term with
+            | Violation (_, optOrigin)
             | Unit optOrigin
             | Bool (_, optOrigin)
             | Int (_, optOrigin)
@@ -67,8 +69,8 @@ module Scripting =
             | Double (_, optOrigin)
             | Vector2 (_, optOrigin)
             | String (_, optOrigin)
+            | Option (_, optOrigin)
             | List (_, optOrigin)
-            | Violation (_, optOrigin)
             | Reference (_, optOrigin)
             | Call (_, optOrigin)
             | Break (_, optOrigin)
@@ -104,10 +106,9 @@ module Scripting =
             | :? Symbol as symbol ->
                 match symbol with
                 | Symbol.Atom (str, optOrigin) ->
-                    let unionCases = FSharpType.GetUnionCases typeof<Expr>
-                    match Array.tryFind (fun (unionCase : UnionCaseInfo) -> (unionCase.GetFields ()).Length = 1) unionCases with
-                    | Some unionCase -> FSharpValue.MakeUnion (unionCase, [||])
-                    | None -> Binding (!!str, optOrigin) :> obj
+                    match str with
+                    | "None" -> Option (None, optOrigin) :> obj
+                    | _ -> Binding (!!str, optOrigin) :> obj
                 | Symbol.Number (str, optOrigin) ->
                     match Int32.TryParse str with
                     | (true, int) -> Int (int, optOrigin) :> obj
@@ -127,7 +128,15 @@ module Scripting =
                 | Symbol.Quote (str, optOrigin) -> Quote (str, optOrigin) :> obj
                 | Symbol.Symbols (symbols, optOrigin) ->
                     match symbols with
-                    | Atom (name, nameOptOrigin) :: tail when name = "let" || name = "try" || name = "if" || name = "do" || name = "break" ->
+                    | Atom (name, nameOptOrigin) :: tail when
+                        name = "Violation" ||
+                        name = "Some" ||
+                        name = "List" ||
+                        name = "let" ||
+                        name = "try" ||
+                        name = "if" ||
+                        name = "do" ||
+                        name = "break" ->
                         match name with
                         | "let" ->
                             match tail with
