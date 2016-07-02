@@ -96,15 +96,15 @@ module EffectSystemModule =
             | Xor -> value <> value2
             | And -> value && value2
             | Nand -> not (value && value2)
-            | LogicApplicator.Eq -> value2
+            | Equal -> value2
     
         let inline private applyTween mul div (value : ^a) (value2 : ^a) applicator =
             match applicator with
-            | Add -> value + value2
-            | Sub -> value - value2
-            | Mul -> mul (value, value2)
-            | Div -> div (value, value2)
-            | TweenApplicator.Eq -> value2
+            | Sum -> value + value2
+            | Delta -> value - value2
+            | Scale -> mul (value, value2)
+            | Ratio -> div (value, value2)
+            | Set -> value2
     
         let private evalOptInset (celSize : Vector2i) celRun celCount stutter effectSystem =
             if stutter <> 0L && celRun <> 0 then

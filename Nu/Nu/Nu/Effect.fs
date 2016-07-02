@@ -23,14 +23,14 @@ type LogicApplicator =
     | Xor
     | And
     | Nand
-    | Eq
+    | Equal
 
 type TweenApplicator =
-    | Add // TODO: rename to Sum
-    | Sub // TODO: rename to Diff
-    | Mul // TODO: rename to Scale
-    | Div // TODO: rename to Ratio
-    | Eq // TODO: rename to Set
+    | Sum
+    | Delta
+    | Scale
+    | Ratio
+    | Set
 
 type [<StructuralEquality; NoComparison>] Slice =
     { Position : Vector2
@@ -147,8 +147,8 @@ type Definitions =
     Map<string, Definition>
 
 [<Syntax   ("Const Linear Random Chaos Ease EaseIn EaseOut Sin Cos " +
-            "Or Nor Xor And Nand Eq " +
-            "Add Sub Mul Div Eq " +
+            "Or Nor Xor And Nand Equal " +
+            "Sum Delta Scale Ratio Set " +
             "Position Size Rotation Depth Offset Color Volume Enabled " +
             "Once Loop Bounce " +
             "Cycle Iterate " +
