@@ -468,6 +468,7 @@ module Scripting =
 
     let rec eval expr (env : Env) =
         match expr with
+        | Violation _ -> (expr, env)
         | Unit optOrigin
         | Bool (_, optOrigin)
         | Int (_, optOrigin)
@@ -477,7 +478,6 @@ module Scripting =
         | Vector2 (_, optOrigin)
         | String (_, optOrigin)
         | List (_, optOrigin) -> (Violation ("Cannot apply a non-function term.", optOrigin), env)
-        | Violation _ -> (expr, env)
         | Reference _ -> failwithumf ()
         | Break (expr, _) -> (expr, env)
         | Call (exprs, optOrigin) ->
@@ -491,9 +491,6 @@ module Scripting =
                     | (true, binding) -> evalFn binding args env
                     | (false, _) ->
                         match Name.getNameStr name with
-                        //| "List" -> evalList optOrigin args env
-                        //| "Some" -> evalSome optOrigin args env
-                        //| "None" -> evalNone optOrigin args env
                         | "Not" -> evalBoolUnary optOrigin "!" not args env
                         | "And" -> evalBoolBinary optOrigin "&" (&&) args env
                         | "Or" -> evalBoolBinary optOrigin "|" (||) args env
@@ -538,7 +535,7 @@ module Scripting =
                         | "tail"
                         | "empty"
                         | "cons"
-                        | "expr.Map"
+                        | "map"
                         | "filter"
                         | "fold"
                         | "all"
