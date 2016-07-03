@@ -42,8 +42,8 @@ module WorldFacetModule =
         static member private getEntityPropertyDefinitionNamesToDetach entityState facetToRemove =
 
             // get the property definition name counts of the current, complete entity
-            let PropertyDefinitions = Reflection.getReflectivePropertyDefinitionMap entityState
-            let propertyDefinitionNameCounts = Reflection.getPropertyDefinitionNameCounts PropertyDefinitions
+            let propertyDefinitions = Reflection.getReflectivePropertyDefinitionMap entityState
+            let propertyDefinitionNameCounts = Reflection.getPropertyDefinitionNameCounts propertyDefinitions
 
             // get the property definition name counts of the facet to remove
             let facetType = facetToRemove.GetType ()

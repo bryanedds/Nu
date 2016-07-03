@@ -29,15 +29,14 @@ module Scripting =
                     "sin cos tan asin acos atan " +
                     "length normal " +
                     "cross dot " +
-                    "bool int int64 single double string " +
-                    "violation some none list " +
+                    "violation bool int int64 single double string " +
                     "camera entity event " +
-                    "head tail empty cons " +
-                    "map filter fold all any notAny",
+                    "some none isSome " +
+                    "head tail cons empty isEmpty",
                     "");
           NoComparison>]
         Expr =
-        | Violation of string * Origin option
+        | Violation of string * string * Origin option
         | Unit of Origin option
         | Bool of bool * Origin option
         | Int of int * Origin option
@@ -49,11 +48,9 @@ module Scripting =
         | Keyphrase of Expr list * Origin option
         | Option of Expr option * Origin option
         | List of Expr list * Origin option
-        | Reference of Referent * Origin option
-        | Break of Expr * Origin option
+        | Call of Expr list * Origin option
         | Do of Name * Expr list * Origin option // executes an engine command, some can be found in the NuPlugin
         | DoMany of Name * (Expr list) list * Origin option
-        | Call of Expr list * Origin option
         | Fun of string list * Expr * int * Origin option
         | Get of Referent * string * Origin option
         | Let of Name * Expr * Origin option
@@ -63,11 +60,13 @@ module Scripting =
         | Match of Expr * (Expr * Expr) list * Origin option
         | Try of Expr * Expr list * Origin option
         | Keyword of Name * Origin option
+        | Reference of Referent * Origin option
         | Binding of Name * Origin option
         | Quote of string * Origin option
+        | Break of Expr * Origin option
         static member getOptOrigin term =
             match term with
-            | Violation (_, optOrigin)
+            | Violation (_, _, optOrigin)
             | Unit optOrigin
             | Bool (_, optOrigin)
             | Int (_, optOrigin)
@@ -79,9 +78,7 @@ module Scripting =
             | Keyphrase (_, optOrigin)
             | Option (_, optOrigin)
             | List (_, optOrigin)
-            | Reference (_, optOrigin)
             | Call (_, optOrigin)
-            | Break (_, optOrigin)
             | Do (_, _, optOrigin)
             | DoMany (_, _, optOrigin)
             | Fun (_, _, _, optOrigin)
@@ -93,8 +90,10 @@ module Scripting =
             | Match (_, _, optOrigin)
             | Try (_, _, optOrigin)
             | Keyword (_, optOrigin)
+            | Reference (_, optOrigin)
             | Binding (_, optOrigin)
-            | Quote (_, optOrigin) -> optOrigin
+            | Quote (_, optOrigin)
+            | Break (_, optOrigin) -> optOrigin
 
     /// Converts Expr types.
     and ExprConverter () =
@@ -121,6 +120,7 @@ module Scripting =
                 | Symbol.Atom (str, optOrigin) ->
                     match str with
                     | "none" -> Option (None, optOrigin) :> obj
+                    | "empty" -> List (List.empty, optOrigin) :> obj
                     | _ ->
                         if Char.IsUpper str.[0]
                         then Keyword (!!str, optOrigin) :> obj
@@ -135,11 +135,11 @@ module Scripting =
                             if str.EndsWith "f" || str.EndsWith "F" then
                                 match Single.TryParse str with
                                 | (true, single) -> Single (single, optOrigin) :> obj
-                                | (false, _) -> Violation ("Unexpected number parse failure.", optOrigin) :> obj
+                                | (false, _) -> Violation ("invalidNumberForm", "Unexpected number parse failure.", optOrigin) :> obj
                             else
                                 match Double.TryParse str with
                                 | (true, double) -> Double (double, optOrigin) :> obj
-                                | (false, _) -> Violation ("Unexpected number parse failure.", optOrigin) :> obj
+                                | (false, _) -> Violation ("invalidNumberForm", "Unexpected number parse failure.", optOrigin) :> obj
                 | Symbol.String (str, optOrigin) -> String (str, optOrigin) :> obj
                 | Symbol.Quote (str, optOrigin) -> Quote (str, optOrigin) :> obj
                 | Symbol.Symbols (symbols, optOrigin) ->
@@ -160,19 +160,19 @@ module Scripting =
                         | "let" ->
                             match tail with
                             | [Atom (name, _); body] -> Let (!!name, symbolToExpr body, optOrigin) :> obj
-                            | _ -> Violation ("Invalid let form. Requires 1 name and 1 body.", optOrigin) :> obj
+                            | _ -> Violation ("invalidLetForm", "Invalid let form. Requires 1 name and 1 body.", optOrigin) :> obj
                         | "try" ->
                             match tail with
                             | [body; Symbols (handlers, _)] -> Try (symbolToExpr body, List.map symbolToExpr handlers, optOrigin) :> obj
-                            | _ -> Violation ("Invalid try form. Requires 1 body and a handler list.", optOrigin) :> obj
+                            | _ -> Violation ("invalidTryForm", "Invalid try form. Requires 1 body and a handler list.", optOrigin) :> obj
                         | "if" ->
                             match tail with
                             | [condition; consequent; alternative] -> If (symbolToExpr condition, symbolToExpr consequent, symbolToExpr alternative, optOrigin) :> obj
-                            | _ -> Violation ("Invalid if form. Requires 3 arguments.", optOrigin) :> obj
+                            | _ -> Violation ("invalidIfForm", "Invalid if form. Requires 3 arguments.", optOrigin) :> obj
                         | "do" ->
                             match tail with
                             | Atom (name, _) :: args -> Do (!!name, List.map symbolToExpr args, optOrigin) :> obj
-                            | _ -> Violation ("Invalid do form. Requires 1 name and an argument list.", optOrigin) :> obj
+                            | _ -> Violation ("invalidDoForm", "Invalid do form. Requires 1 name and an argument list.", optOrigin) :> obj
                         | "break" ->
                             let content = symbolToExpr (Symbols (tail, optOrigin))
                             Break (content, optOrigin) :> obj
@@ -192,6 +192,13 @@ module Scripting =
 
     type [<NoEquality; NoComparison>] Env =
         { Bindings : Dictionary<Name, Expr> }
+
+    type [<NoEquality; NoComparison>] Result =
+        struct
+            new (evaled, env) = { Evaled = evaled; Env = env }
+            val Evaled : Expr
+            val Env : Env
+            end
 
     type [<NoComparison>] Script =
         { Bindings : (Name * Expr) list
