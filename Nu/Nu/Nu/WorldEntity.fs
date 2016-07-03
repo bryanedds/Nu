@@ -58,6 +58,10 @@ module WorldEntityModule =
         member this.SetTransform value world =
             World.updateEntityStatePlus (EntityState.setTransform value) this world
 
+        /// Get a dynamic property and its type information.
+        member this.GetProperty propertyName world =
+            EntityState.getProperty (World.getEntityState this world) propertyName
+
         /// Get a dynamic property.
         member this.Get propertyName world : 'a =
             EntityState.get (World.getEntityState this world) propertyName

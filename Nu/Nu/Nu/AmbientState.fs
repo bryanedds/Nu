@@ -13,7 +13,7 @@ type [<ReferenceEquality>] 'w Tasklet =
       Operation : 'w -> 'w }
 
 [<AutoOpen>]
-module AmbientStateModule =
+module AmbientState =
 
     /// The ambient state of the world.
     type [<ReferenceEquality>] 'w AmbientState =

@@ -9,6 +9,7 @@ open System.Runtime.InteropServices
 open Microsoft.FSharp.Reflection
 open OpenTK
 open Prime
+open Nu
 
 /// A Visually-Scripted Reactive Language - A scripting language for Nu that is essentially a cross between Elm and
 /// Unreal Blueprints.
@@ -19,7 +20,6 @@ module Scripting =
     type [<NoComparison>] Referent =
         | TickTime
         | EyeCenter
-        | Simulant of obj Address
 
     and [<Syntax(   "not and or " +
                     "eq not_eq lt gt lt_eq gt_eq " +
@@ -45,14 +45,15 @@ module Scripting =
         | Double of double * Origin option
         | Vector2 of Vector2 * Origin option
         | String of string * Origin option
-        | Keyphrase of Expr list * Origin option
         | Option of Expr option * Origin option
         | List of Expr list * Origin option
+        | Keyphrase of Expr list * Origin option
         | Call of Expr list * Origin option
+        | Get of string * Origin option
+        | Entity of WorldTypes.Entity * Origin option
         | Do of Name * Expr list * Origin option // executes an engine command, some can be found in the NuPlugin
         | DoMany of Name * (Expr list) list * Origin option
         | Fun of string list * Expr * int * Origin option
-        | Get of Referent * string * Origin option
         | Let of Name * Expr * Origin option
         | LetMany of (Name * Expr) list * Origin option
         | If of Expr * Expr * Expr * Origin option
@@ -75,14 +76,15 @@ module Scripting =
             | Double (_, optOrigin)
             | Vector2 (_, optOrigin)
             | String (_, optOrigin)
-            | Keyphrase (_, optOrigin)
             | Option (_, optOrigin)
             | List (_, optOrigin)
+            | Keyphrase (_, optOrigin)
             | Call (_, optOrigin)
+            | Get (_, optOrigin)
+            | Entity (_, optOrigin)
             | Do (_, _, optOrigin)
             | DoMany (_, _, optOrigin)
             | Fun (_, _, _, optOrigin)
-            | Get (_, _, optOrigin)
             | Let (_, _, optOrigin)
             | LetMany (_, optOrigin)
             | If (_, _, _, optOrigin)
@@ -191,7 +193,8 @@ module Scripting =
         | Handlers of Event * Expr list
 
     type [<NoEquality; NoComparison>] Env =
-        { Bindings : Dictionary<Name, Expr> }
+        { Bindings : Dictionary<Name, Expr>
+          World : World }
 
     type [<NoEquality; NoComparison>] Result =
         struct

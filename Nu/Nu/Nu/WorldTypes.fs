@@ -401,6 +401,10 @@ module WorldTypes =
           FacetNames : string Set
           FacetsNp : Facet list }
 
+        /// Get a dynamic property and its type information.
+        static member getProperty entityState propertyName =
+            Xtension.getProperty propertyName entityState.Xtension
+
         /// The dynamic look-up operator.
         static member get entityState propertyName : 'a =
             Xtension.(?) (entityState.Xtension, propertyName)
