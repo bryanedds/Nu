@@ -563,16 +563,21 @@ module Scripting =
         | "isEmpty" -> evalIsEmpty optOrigin nameStr args env
         | _ -> Result (Violation ("invalidFunctionTargetBinding", "Cannot apply an non-existent binding.", optOrigin), env)
 
-    let rec evalCall exprs optOrigin env =
-        let (violations, evaleds, env) =
-            List.foldBack (fun expr (violations, evaleds, env) ->
+    let rec evalExprs exprs env =
+        List.foldBack
+            (fun expr (violations, evaleds, env) ->
                 let result = eval expr env
                 match result.Evaled with
                 | Violation _ as violation -> (violation :: violations, evaleds, env)
                 | evaled -> (violations, evaled :: evaleds, env))
-                exprs ([], [], env)
+            exprs
+            ([], [], env)
+
+    and evalCall exprs optOrigin env =
+        let oldEnv = env
+        let (violations, evaleds, env) = evalExprs exprs env
         match violations with
-        | Violation _ as violation :: _ -> Result (violation, env)
+        | Violation _ as violation :: _ -> Result (violation, oldEnv)
         | _ ->
             match evaleds with
             | fn :: args ->
@@ -594,6 +599,25 @@ module Scripting =
                     | (false, _) -> evalIntrinsic optOrigin name args env
                 | _ -> Result (Violation ("TODO: proper violation category.", "Cannot apply a non-binding.", optOrigin), env)
             | [] -> Result (Unit optOrigin, env)
+
+    and evalIf condition consequent alternative optOrigin env =
+        let oldEnv = env
+        let conditionEvaled = eval condition env
+        match conditionEvaled.Evaled with
+        | Violation _ -> Result (conditionEvaled.Evaled, oldEnv)
+        | Bool (bool, _) -> if bool then eval consequent env else eval alternative env
+        | _ -> Result (Violation ("invalidIfCondition", "Must provide an expression that evaluates to a bool in an if condition.", optOrigin), env)
+
+    and evalCase exprPairs optOrigin env =
+        List.foldUntil
+            (fun (result : Result) (condition, consequent) ->
+                let conditionEvaled = eval condition env
+                match conditionEvaled.Evaled with
+                | Violation _ -> Some (Result (conditionEvaled.Evaled, result.Env))
+                | Bool (bool, _) -> if bool then Some (eval consequent env) else None
+                | _ -> Some (Result (Violation ("invalidCaseCondition", "Must provide an expression that evaluates to a bool in a case condition.", optOrigin), env)))
+            (Result (Unit optOrigin, env))
+            exprPairs
 
     and evalFn _ _ env =
         // TODO: implement
@@ -621,8 +645,8 @@ module Scripting =
         | Fun _ -> Result (expr, env)
         | Let _ -> Result (expr, env)
         | LetMany _ -> Result (expr, env)
-        | If _ -> Result (expr, env)
-        | Cases _ -> Result (expr, env)
+        | If (condition, consequent, alternative, optOrigin) -> evalIf condition consequent alternative optOrigin env
+        | Case (exprPairs, optOrigin) -> evalCase exprPairs optOrigin env
         | Match _ -> Result (expr, env)
         | Try _ -> Result (expr, env)
         | Keyword _ -> Result (expr, env)

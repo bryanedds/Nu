@@ -73,6 +73,20 @@ let foldWhile folder (state : 's) (seq : 't seq) =
     | Some state -> state
     | None -> lastState
 
+/// Implement a fold until folder results in Some.
+let foldUntil folder (state : 's) (seq : 't seq) =
+    let mutable isFirst = true // no do while necessitates this flag
+    let mutable lastState = state
+    let mutable optState = Some lastState
+    use mutable enr = seq.GetEnumerator ()
+    while (isFirst || optState.IsNone) && enr.MoveNext () do
+        isFirst <- false
+        lastState <- optState.Value
+        optState <- folder lastState enr.Current
+    match optState with
+    | Some state -> state
+    | None -> lastState
+
 /// Check that a predicate passes for NO items in a sequence.
 let rec notExists pred seq =
     match tryHead seq with

@@ -53,11 +53,11 @@ module Scripting =
         | Entity of WorldTypes.Entity * Origin option
         | Do of Name * Expr list * Origin option // executes an engine command, some can be found in the NuPlugin
         | DoMany of Name * (Expr list) list * Origin option
-        | Fun of string list * Expr * int * Origin option
         | Let of Name * Expr * Origin option
         | LetMany of (Name * Expr) list * Origin option
+        | Fun of string list * Expr * int * Origin option
         | If of Expr * Expr * Expr * Origin option
-        | Cases of (Expr * Expr) list * Origin option
+        | Case of (Expr * Expr) list * Origin option
         | Match of Expr * (Expr * Expr) list * Origin option
         | Try of Expr * Expr list * Origin option
         | Keyword of Name * Origin option
@@ -88,7 +88,7 @@ module Scripting =
             | Let (_, _, optOrigin)
             | LetMany (_, optOrigin)
             | If (_, _, _, optOrigin)
-            | Cases (_, optOrigin)
+            | Case (_, optOrigin)
             | Match (_, _, optOrigin)
             | Try (_, _, optOrigin)
             | Keyword (_, optOrigin)
