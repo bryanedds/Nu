@@ -17,11 +17,7 @@ open Nu
 /// TODO: also raise event for all effect tags so they can be handled in scripts?
 module Scripting =
 
-    type [<NoComparison>] Referent =
-        | TickTime
-        | EyeCenter
-
-    and [<Syntax(   "not and or " +
+    type [<Syntax(  "not and or " +
                     "eq not_eq lt gt lt_eq gt_eq " +
                     "add sub mul div mod " +
                     "pow root sqr sqrt " +
@@ -32,7 +28,8 @@ module Scripting =
                     "violation bool int int64 single double string " +
                     "camera entity event " +
                     "some none isSome " +
-                    "head tail cons empty isEmpty",
+                    "head tail cons empty isEmpty " +
+                    "getTickRate getTickTime getUpdateCount",
                     "");
           NoComparison>]
         Expr =
@@ -51,6 +48,7 @@ module Scripting =
         | Call of Expr list * Origin option
         | Get of string * Origin option
         | Entity of WorldTypes.Entity * Origin option
+        | Camera of Origin option
         | Do of Name * Expr list * Origin option // executes an engine command, some can be found in the NuPlugin
         | DoMany of Name * (Expr list) list * Origin option
         | Let of Name * Expr * Origin option
@@ -58,10 +56,8 @@ module Scripting =
         | Fun of string list * Expr * int * Origin option
         | If of Expr * Expr * Expr * Origin option
         | Case of (Expr * Expr) list * Origin option
-        | Match of Expr * (Expr * Expr) list * Origin option
         | Try of Expr * Expr list * Origin option
         | Keyword of Name * Origin option
-        | Reference of Referent * Origin option
         | Binding of Name * Origin option
         | Quote of string * Origin option
         | Break of Expr * Origin option
@@ -82,17 +78,16 @@ module Scripting =
             | Call (_, optOrigin)
             | Get (_, optOrigin)
             | Entity (_, optOrigin)
+            | Camera optOrigin
             | Do (_, _, optOrigin)
             | DoMany (_, _, optOrigin)
-            | Fun (_, _, _, optOrigin)
             | Let (_, _, optOrigin)
             | LetMany (_, optOrigin)
+            | Fun (_, _, _, optOrigin)
             | If (_, _, _, optOrigin)
             | Case (_, optOrigin)
-            | Match (_, _, optOrigin)
             | Try (_, _, optOrigin)
             | Keyword (_, optOrigin)
-            | Reference (_, optOrigin)
             | Binding (_, optOrigin)
             | Quote (_, optOrigin)
             | Break (_, optOrigin) -> optOrigin
@@ -205,5 +200,5 @@ module Scripting =
 
     type [<NoComparison>] Script =
         { Bindings : (Name * Expr) list
-          Equalities : (string option * Referent * Expr) list
+          Equalities : (string option * unit * Expr) list
           Handlers : Event list }

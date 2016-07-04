@@ -213,6 +213,15 @@ module Descriptors =
           EntityProperties = Map.ofSeq properties }
 
 [<AutoOpen>]
+module CommandModule =
+
+    /// A command that transforms the world in some manner.
+    /// ExecuteInEditor denotes whether this command should be executed in Gaia. EG - changing screens should not be.
+    type [<NoEquality; NoComparison>] Command =
+        { ExecuteInEditor : bool
+          Execute : World -> World }
+
+[<AutoOpen>]
 module WorldAmbientStateModule =
 
     type World with
