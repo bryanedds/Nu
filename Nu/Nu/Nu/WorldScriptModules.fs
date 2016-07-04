@@ -640,17 +640,16 @@ module Scripting =
         | Call (exprs, optOrigin) -> evalCall exprs optOrigin env
         | Get _ -> Result (expr, env)
         | Entity _ -> Result (expr, env)
+        | Camera _ -> Result (expr, env)
         | Do _ -> Result (expr, env)
         | DoMany _ -> Result (expr, env)
-        | Fun _ -> Result (expr, env)
         | Let _ -> Result (expr, env)
+        | Fun _ -> Result (expr, env)
         | LetMany _ -> Result (expr, env)
         | If (condition, consequent, alternative, optOrigin) -> evalIf condition consequent alternative optOrigin env
         | Case (exprPairs, optOrigin) -> evalCase exprPairs optOrigin env
-        | Match _ -> Result (expr, env)
         | Try _ -> Result (expr, env)
         | Keyword _ -> Result (expr, env)
-        | Reference _ -> Result (expr, env)
         | Binding _ -> Result (expr, env)
         | Quote _  -> Result (expr, env)
         | Break (expr, _) -> Result (expr, env)
