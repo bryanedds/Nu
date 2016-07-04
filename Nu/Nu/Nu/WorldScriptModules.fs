@@ -511,6 +511,27 @@ module Scripting =
         | [List (evaleds, optOrigin)] -> Result (Bool (List.isEmpty evaleds, optOrigin), env)
         | [_] -> Result (Violation (["invalidArgumentType"; "list"; fnName], "Cannot apply " + fnName + " to a non-list.", fnOptOrigin), env)
         | _ -> Result (Violation (["invalidArgumentCount"; "list"; fnName], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOptOrigin), env)
+    
+    let evalNth5 fnOptOrigin fnName index args env =
+        match args with
+        | [List (evaleds, optOrigin)] ->
+            match List.tryFindAt index evaleds with
+            | Some _ as optEvaled -> Result (Option (optEvaled, optOrigin), env)
+            | None -> Result (Option (None, optOrigin), env)
+        | [Keyphrase (evaleds, optOrigin)] | [Tuple (evaleds, optOrigin)] ->
+            match Map.tryFind index evaleds with
+            | Some _ as optEvaled -> Result (Option (optEvaled, optOrigin), env)
+            | None -> Result (Option (None, optOrigin), env)
+        | [_] -> Result (Violation (["invalidArgumentType"; "sequence"; fnName], "Cannot apply " + fnName + " to a non-sequence.", fnOptOrigin), env)
+        | _ -> Result (Violation (["invalidArgumentCount"; "sequence"; fnName], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOptOrigin), env)
+        
+    let evalNth fnOptOrigin fnName args env =
+        match args with
+        | [head; foot] ->
+            match head with
+            | Int (int, _) -> evalNth5 fnOptOrigin fnName int [foot] env
+            | _ -> Result (Violation (["invalidNthArgumentType"; "sequence"; fnName], "Application of " + fnName + " requires an int for the first argument.", fnOptOrigin), env)
+        | _ ->  Result (Violation (["invalidArgumentCount"; "sequence"; fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
 
     let evalIntrinsic optOrigin name args env =
         let nameStr = Name.getNameStr name
@@ -561,6 +582,12 @@ module Scripting =
         | "tail" -> evalTail optOrigin nameStr args env
         | "cons" -> evalCons optOrigin nameStr args env
         | "isEmpty" -> evalIsEmpty optOrigin nameStr args env
+        | "first" -> evalNth5 optOrigin nameStr 0 args env
+        | "second" -> evalNth5 optOrigin nameStr 1 args env
+        | "third" -> evalNth5 optOrigin nameStr 2 args env
+        | "fourth" -> evalNth5 optOrigin nameStr 3 args env
+        | "fifth" -> evalNth5 optOrigin nameStr 4 args env
+        | "nth" -> evalNth optOrigin nameStr args env
         | _ -> Result (Violation (["invalidFunctionTargetBinding"], "Cannot apply an non-existent binding.", optOrigin), env)
 
     let rec evalExprs exprs env =
@@ -594,6 +621,9 @@ module Scripting =
                         else Result (Violation (["invalidEntity"], "Entity '" + scstring entity + "' does not exist.", optOrigin), env)
                     | [_] -> Result (Violation (["invalidGetTargetType"], "TODO: proper error msg.", optOrigin), env)
                     | _ -> Result (Violation (["invalidGetForm"], "TODO: proper error msg.", optOrigin), env)
+                | Keyword (name, optOrigin) ->
+                    let map = String (name, optOrigin) :: args |> List.indexed |> Map.ofList
+                    Result (Keyphrase (map, optOrigin), env)
                 | Binding (name, optOrigin) ->
                     match Env.tryGetBinding name env with
                     | Some binding -> evalFn binding args env
@@ -650,6 +680,7 @@ module Scripting =
         | Option _ -> Result (expr, env)
         | List _ -> Result (expr, env)
         | Keyphrase _ -> Result (expr, env)
+        | Tuple _ -> Result (expr, env)
         | Call (exprs, optOrigin) -> evalCall exprs optOrigin env
         | Get _ -> Result (expr, env)
         | Entity _ -> Result (expr, env)
