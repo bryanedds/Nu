@@ -92,3 +92,14 @@ let rec notExists pred seq =
     match tryHead seq with
     | Some head -> not ^ pred head && notExists pred (Seq.skip 1 seq)
     | None -> true
+
+/// Split a sequence on a predicate.
+let split pred seq =
+    let rec splitInner pred left right seq =
+        match tryHead seq with
+        | Some head ->
+            if pred head
+            then splitInner pred (head :: left) right (Seq.tail seq)
+            else splitInner pred left (head :: right) (Seq.tail seq)
+        | None -> (left, right)
+    splitInner pred [] [] seq
