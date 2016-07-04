@@ -28,7 +28,8 @@ module Scripting =
                     "violation bool int int64 single double string " +
                     "camera entity event " +
                     "some none isSome " +
-                    "head tail cons empty isEmpty " +
+                    "list head tail cons empty isEmpty " +
+                    "tuple first second third fourth fifth nth " +
                     "getTickRate getTickTime getUpdateCount",
                     "");
           TypeConverter (typeof<ExprConverter>);
@@ -45,7 +46,8 @@ module Scripting =
         | String of string * Origin option
         | Option of Expr option * Origin option
         | List of Expr list * Origin option
-        | Keyphrase of Expr list * Origin option
+        | Keyphrase of Map<int, Expr> * Origin option
+        | Tuple of Map<int, Expr> * Origin option
         | Call of Expr list * Origin option
         | Get of string * Origin option
         | Entity of WorldTypes.Entity * Origin option
@@ -58,7 +60,7 @@ module Scripting =
         | If of Expr * Expr * Expr * Origin option
         | Case of (Expr * Expr) list * Origin option
         | Try of Expr * (string list * Expr) list * Origin option
-        | Keyword of Name * Origin option
+        | Keyword of string * Origin option
         | Binding of Name * Origin option
         | Quote of string * Origin option
         | Break of Expr * Origin option
@@ -76,6 +78,7 @@ module Scripting =
             | Option (_, optOrigin)
             | List (_, optOrigin)
             | Keyphrase (_, optOrigin)
+            | Tuple (_, optOrigin)
             | Call (_, optOrigin)
             | Get (_, optOrigin)
             | Entity (_, optOrigin)
@@ -121,7 +124,7 @@ module Scripting =
                     | "empty" -> List (List.empty, optOrigin) :> obj
                     | _ ->
                         if Char.IsUpper str.[0]
-                        then Keyword (!!str, optOrigin) :> obj
+                        then Keyword (str, optOrigin) :> obj
                         else Binding (!!str, optOrigin) :> obj
                 | Symbol.Number (str, optOrigin) ->
                     match Int32.TryParse str with
@@ -146,6 +149,7 @@ module Scripting =
                         name = "violation" ||
                         name = "some" ||
                         name = "list" ||
+                        name = "tuple" ||
                         name = "camera" ||
                         name = "entity" ||
                         name = "event" ||
