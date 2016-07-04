@@ -245,6 +245,10 @@ let toHashSet list =
 let foldWhile folder (state : 's) (list : 't list) =
     Seq.foldWhile folder state ^ List.toSeq list
 
+/// Implement a fold until folder results in Nome.
+let foldUntil folder (state : 's) (list : 't list) =
+    Seq.foldUntil folder state ^ List.toSeq list
+
 /// Remove all items from a list that satisfy a predicate.
 let rec remove pred list =
     List.foldBack
