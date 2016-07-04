@@ -13,10 +13,6 @@ let cons head tail = head :: tail
 /// Cons with flipped arguments.
 let inline flipCons tail head = head :: tail
 
-/// Check that a predicate passes for NO items in a list.
-let rec notExists pred list =
-    Seq.notExists pred list
-
 /// Partition a list.
 let partitionPlus fnOptU list =
     let rec subpartitionPlus fnOptU list left right =
@@ -248,6 +244,14 @@ let foldWhile folder (state : 's) (list : 't list) =
 /// Implement a fold until folder results in Nome.
 let foldUntil folder (state : 's) (list : 't list) =
     Seq.foldUntil folder state ^ List.toSeq list
+
+/// Check that a predicate passes for NO items in a list.
+let notExists pred (list : 't list) =
+    Seq.notExists pred list
+
+/// Split a list on a predicate.
+let split pred (list : 't list) =
+    Seq.split pred list
 
 /// Remove all items from a list that satisfy a predicate.
 let rec remove pred list =
