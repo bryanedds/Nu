@@ -253,3 +253,9 @@ module Scripting =
         { Bindings : (Name * Expr) list
           Equalities : (string option * unit * Expr) list
           Handlers : Event list }
+
+    /// An abstract data type for executing scripts.
+    type [<NoEquality; NoComparison>] ScriptSystem =
+        private
+            { Scripts : Vmap<Guid, Script>
+              Debugging : bool }
