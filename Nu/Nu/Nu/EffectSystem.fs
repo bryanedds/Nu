@@ -474,3 +474,6 @@ module EffectSystemModule =
               EffectTime = effectTime
               EffectEnv = globalEnv
               Chaos = Random () }
+              
+/// An abstract data type for executing effects.
+type EffectSystem = EffectSystemModule.EffectSystem

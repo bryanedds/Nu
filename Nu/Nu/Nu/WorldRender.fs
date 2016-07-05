@@ -51,3 +51,6 @@ module WorldRenderModule =
         static member reloadRenderAssets world =
             let reloadRenderAssetsMessage = ReloadRenderAssetsMessage
             World.addRenderMessage reloadRenderAssetsMessage world
+
+/// The subsystem for the world's renderer.
+type RendererSubsystem = WorldRenderModule.RendererSubsystem

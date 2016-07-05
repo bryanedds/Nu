@@ -244,3 +244,6 @@ module AssetGraphModule =
                 make |>
                 Right
             with exn -> Left ^ "Could not make asset graph from file '" + filePath + "' due to: " + scstring exn
+
+/// A graph of all the assets used in a game.
+type AssetGraph = AssetGraphModule.AssetGraph

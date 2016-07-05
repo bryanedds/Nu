@@ -228,3 +228,6 @@ module Sdl =
             | Right world -> run9 tautology handleEvent handleUpdate handleRender handlePlay handleChoose handleExit sdlDeps Running world
             | Left error -> Log.trace error; Constants.Engine.FailureExitCode
         | Left error -> Log.trace error; Constants.Engine.FailureExitCode
+
+/// The dependencies needed to initialize SDL.
+type SdlDeps = SdlDepsModule.SdlDeps

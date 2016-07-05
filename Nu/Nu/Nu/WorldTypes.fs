@@ -26,88 +26,86 @@ open TiledSharp
 open Prime
 open Nu
 
+/// The type of a screen transition. Incoming means a new screen is being shown, and Outgoing
+/// means an existing screen being hidden.
+type TransitionType =
+    | Incoming
+    | Outgoing
+
+/// The state of a screen's transition.
+type TransitionState =
+    | IncomingState
+    | OutgoingState
+    | IdlingState
+
+/// Describes one of a screen's transition processes.
+type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
+    { TransitionType : TransitionType
+      TransitionLifetime : int64
+      OptDissolveImage : AssetTag option }
+
+    /// Make a screen transition.
+    static member make transitionType =
+        { TransitionType = transitionType
+          TransitionLifetime = 0L
+          OptDissolveImage = None }
+
+/// Describes the behavior of the screen dissolving algorithm.
+type [<StructuralEquality; NoComparison>] DissolveData =
+    { IncomingTime : int64
+      OutgoingTime : int64
+      DissolveImage : AssetTag }
+
+/// Describes the behavior of the screen splash algorithm.
+type [<StructuralEquality; NoComparison>] SplashData =
+    { DissolveData : DissolveData
+      IdlingTime : int64
+      SplashImage : AssetTag }
+
+/// The data needed to describe a Tiled tile map.
+type [<StructuralEquality; NoComparison>] TileMapData =
+    { Map : TmxMap
+      MapSize : Vector2i
+      TileSize : Vector2i
+      TileSizeF : Vector2
+      TileMapSize : Vector2i
+      TileMapSizeF : Vector2
+      TileSet : TmxTileset
+      TileSetSize : Vector2i }
+
+/// The data needed to describe a Tiled tile.
+type [<StructuralEquality; NoComparison>] TileData =
+    { Tile : TmxLayerTile
+      I : int
+      J : int
+      Gid : int
+      GidPosition : int
+      Gid2 : Vector2i
+      OptTileSetTile : TmxTilesetTile option
+      TilePosition : Vector2i }
+
 [<AutoOpen>]
 module WorldTypes =
 
-    /// The type of a screen transition. Incoming means a new screen is being shown, and Outgoing
-    /// means an existing screen being hidden.
-    type TransitionType =
-        | Incoming
-        | Outgoing
-    
-    /// The state of a screen's transition.
-    type TransitionState =
-        | IncomingState
-        | OutgoingState
-        | IdlingState
-    
-    /// Describes one of a screen's transition processes.
-    type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
-        { TransitionType : TransitionType
-          TransitionLifetime : int64
-          OptDissolveImage : AssetTag option }
-    
-        /// Make a screen transition.
-        static member make transitionType =
-            { TransitionType = transitionType
-              TransitionLifetime = 0L
-              OptDissolveImage = None }
-    
-    /// Describes the behavior of the screen dissolving algorithm.
-    type [<StructuralEquality; NoComparison>] DissolveData =
-        { IncomingTime : int64
-          OutgoingTime : int64
-          DissolveImage : AssetTag }
-    
-    /// Describes the behavior of the screen splash algorithm.
-    type [<StructuralEquality; NoComparison>] SplashData =
-        { DissolveData : DissolveData
-          IdlingTime : int64
-          SplashImage : AssetTag }
-    
-    /// The data needed to describe a Tiled tile map.
-    type [<StructuralEquality; NoComparison>] TileMapData =
-        { Map : TmxMap
-          MapSize : Vector2i
-          TileSize : Vector2i
-          TileSizeF : Vector2
-          TileMapSize : Vector2i
-          TileMapSizeF : Vector2
-          TileSet : TmxTileset
-          TileSetSize : Vector2i }
-    
-    /// The data needed to describe a Tiled tile.
-    type [<StructuralEquality; NoComparison>] TileData =
-        { Tile : TmxLayerTile
-          I : int
-          J : int
-          Gid : int
-          GidPosition : int
-          Gid2 : Vector2i
-          OptTileSetTile : TmxTilesetTile option
-          TilePosition : Vector2i }
-    
     /// A simulant in the world.
     type Simulant =
         interface
             inherit Participant
             abstract member SimulantAddress : Simulant Address
             end
-    
+
     /// Operators for the Simulant type.
     type SimulantOperators =
         private
             | SimulantOperators
-    
+
         /// Concatenate two addresses, forcing the type of first address.
         static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.SimulantAddress)
-    
+
         /// Concatenate two addresses, takings the type of first address.
         static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
 
     /// The data for a change in the world's ambient state.
-    /// NOTE: I couldn't give its field the more normal name of 'OldWorld' due to field name conflicts with the more
-    /// pervasive ParticipantChangeData type.
     type [<StructuralEquality; NoComparison>] AmbientChangeData = 
         { OldWorldWithOldState : World }
     
@@ -1221,3 +1219,66 @@ module WorldTypes =
                   GroupStates = Vmap.makeEmpty ()
                   EntityStates = Vmap.makeEmpty () }
             World.choose world
+
+/// A simulant in the world.
+type Simulant = WorldTypes.Simulant
+
+/// The data for a change in the world's ambient state.
+type AmbientChangeData = WorldTypes.AmbientChangeData
+
+/// The default dispatcher for games.
+type GameDispatcher = WorldTypes.GameDispatcher
+
+/// The default dispatcher for screens.
+type ScreenDispatcher = WorldTypes.ScreenDispatcher
+
+/// The default dispatcher for groups.
+type GroupDispatcher = WorldTypes.GroupDispatcher
+
+/// The default dispatcher for entities.
+type EntityDispatcher = WorldTypes.EntityDispatcher
+
+/// Dynamically augments an entity's behavior in a composable way.
+type Facet = WorldTypes.Facet
+
+/// Hosts the ongoing state of a game. The end-user of this engine should never touch this.
+type internal GameState = WorldTypes.GameState
+
+/// Hosts the ongoing state of a screen. The end-user of this engine should never touch this.
+type internal ScreenState = WorldTypes.ScreenState
+
+/// Hosts the ongoing state of a group. The end-user of this engine should never touch this.
+type internal GroupState = WorldTypes.GroupState
+
+/// Hosts the ongoing state of an entity. The end-user of this engine should never touch this.
+type internal EntityState = WorldTypes.EntityState
+
+/// The game type that hosts the various screens used to navigate through a game.
+type Game = WorldTypes.Game
+
+/// The screen type that allows transitioning to and from other screens, and also hosts the
+/// currently interactive groups of entities.
+type Screen = WorldTypes.Screen
+
+/// Forms a logical group of entities.
+type Group = WorldTypes.Group
+
+/// The type around which the whole game engine is based! Used in combination with dispatchers
+/// to implement things like buttons, characters, blocks, and things of that sort.
+/// OPTIMIZATION: Includes pre-constructed entity change and update event address to avoid
+/// reconstructing new ones for each entity every frame.
+type Entity = WorldTypes.Entity
+
+/// The world's dispatchers (including facets).
+/// 
+/// I would prefer this type to be inlined in World, but it has been extracted to its own white-box
+/// type for efficiency reasons.
+type internal Dispatchers = WorldTypes.Dispatchers
+
+/// The world, in a functional programming sense. Hosts the game object, the dependencies needed
+/// to implement a game, messages to by consumed by the various engine sub-systems, and general
+/// configuration data.
+///
+/// For efficiency, this type is kept under 64 bytes on 32-bit machines as to not exceed the size
+/// of a typical cache line.
+type World = WorldTypes.World
