@@ -781,6 +781,9 @@ module Scripting =
         | Binding _ -> Result (expr, env)
         | Quote _  -> Result (expr, env)
         | Break (expr, _) -> Result (expr, env)
+        | Define (_, _, optOrigin) -> Result (Unit optOrigin, env)
+        | Handle (_, optOrigin) -> Result (Unit optOrigin, env)
+        | Equate (_, _, optOrigin) -> Result (Unit optOrigin, env)
 
 [<AutoOpen>]
 module ScriptSystemModule =
