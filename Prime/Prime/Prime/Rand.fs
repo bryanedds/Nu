@@ -100,3 +100,6 @@ module RandModule =
         /// Make a rand value generator from the default seed state.
         let make () =
             makeFromSeedState DefaultSeedState
+
+/// An immutable random number generator using the xorshift* algorithm.
+type Rand = RandModule.Rand

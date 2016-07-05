@@ -28,7 +28,7 @@ type XProperties = Vmap<string, XProperty>
 [<AutoOpen>]
 module XtensionModule =
 
-    /// Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way
+    /// Xtensions (and their supporting types) are a dynamic, functional, and convenient way
     /// to implement dynamic properties.
     type [<NoEquality; NoComparison>] Xtension =
         private
@@ -129,3 +129,7 @@ module XtensionModule =
     
         /// Convert an xtension to a sequence of its entries.
         let ofSeq seq = attachProperties seq empty
+
+/// Xtensions (and their supporting types) are a dynamic, functional, and convenient way
+/// to implement dynamic properties.
+type Xtension = XtensionModule.Xtension

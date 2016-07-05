@@ -75,6 +75,8 @@ module MountFacetModule =
 [<AutoOpen>]
 module EffectFacetModule =
 
+    open Effects
+
     type EffectTags =
         Map<string, Symbol * Slice list>
 

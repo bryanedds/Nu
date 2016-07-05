@@ -7,13 +7,17 @@ open FSharpx.Collections
 open Prime
 open Nu
 
+/// A command that transforms the world in some manner.
+type [<NoEquality; NoComparison>] 'w Command =
+    { Execute : 'w -> 'w }
+
 /// A tasklet to be completed at the scheduled tick time.
-type [<ReferenceEquality>] 'w Tasklet =
+type [<NoEquality; NoComparison>] 'w Tasklet =
     { ScheduledTime : int64
-      Operation : 'w -> 'w }
+      Command : 'w Command }
 
 [<AutoOpen>]
-module AmbientState =
+module AmbientStateModule =
 
     /// The ambient state of the world.
     type [<ReferenceEquality>] 'w AmbientState =
@@ -172,3 +176,6 @@ module AmbientState =
               Overlayer = overlayer
               SymbolStore = symbolStore
               UserState = userState }
+
+/// The ambient state of the world.
+type 'w AmbientState = 'w AmbientStateModule.AmbientState

@@ -5,7 +5,7 @@ namespace Nu
 open System
 open OpenTK
 open Prime
-open global.Nu // TODO: see if this req'd explicit qualification is due to a compiler bug
+open global.Nu
 open global.Nu.Descriptors
 module Program =
 

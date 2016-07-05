@@ -240,3 +240,8 @@ module VsyncBuilderModule =
     /// The VsyncBuilder instance.
     /// Used like: vsync { return 0 }
     let vsync = VsyncBuilder ()
+
+/// The 'Vsync' (AKA, 'Variable Synchrony') monad.
+/// Allows code to run in either an async or synchronous fashion to aid in debugging.
+/// NOTE: to reference how all this stuff works in F#, see here - https://msdn.microsoft.com/en-us/library/dd233182.aspx
+type 'a Vsync = 'a VsyncModule.Vsync

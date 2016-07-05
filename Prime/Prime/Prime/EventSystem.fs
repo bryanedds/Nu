@@ -169,3 +169,6 @@ module EventSystemModule =
               EventTracing = eventTracing
               EventFilter = eventFilter
               EventAddresses = [] }
+
+/// A publisher-neutral, purely functional event system.
+type 'w EventSystem = 'w EventSystemModule.EventSystem

@@ -416,16 +416,19 @@ module RendererModule =
                 let renderer = { renderer with RenderPackageMap = Map.empty }
                 renderer :> IRenderer
 
-    /// The mock implementation of IRenderer.
-    type [<ReferenceEquality>] MockRenderer =
-        private
-            { MockRenderer : unit }
+/// The primary implementation of IRenderer.
+type Renderer = RendererModule.Renderer
 
-        interface IRenderer with
-            member renderer.ClearMessages () = renderer :> IRenderer
-            member renderer.EnqueueMessage _ = renderer :> IRenderer
-            member renderer.Render _ = renderer :> IRenderer
-            member renderer.CleanUp () = renderer :> IRenderer
+/// The mock implementation of IRenderer.
+type [<ReferenceEquality>] MockRenderer =
+    private
+        { MockRenderer : unit }
 
-        static member make () =
-            { MockRenderer = () }
+    interface IRenderer with
+        member renderer.ClearMessages () = renderer :> IRenderer
+        member renderer.EnqueueMessage _ = renderer :> IRenderer
+        member renderer.Render _ = renderer :> IRenderer
+        member renderer.CleanUp () = renderer :> IRenderer
+
+    static member make () =
+        { MockRenderer = () }

@@ -546,22 +546,6 @@ module PhysicsEngineModule =
                 physicsEngine.IntegrationMessages.Clear ()
                 (messages, physicsEngine :> IPhysicsEngine)
 
-    /// The mock implementation of IPhysicsEngine.
-    type MockPhysicsEngine =
-        private { MockPhysicsEngine : unit }
-        static member make () = { MockPhysicsEngine = () }
-        interface IPhysicsEngine with
-            member physicsEngine.BodyExists _ = false
-            member physicsEngine.GetBodyContactNormals _ = failwith "No bodies in MockPhysicsEngine"
-            member physicsEngine.GetBodyLinearVelocity _ = failwith "No bodies in MockPhysicsEngine"
-            member physicsEngine.GetBodyGroundContactNormals _ = failwith "No bodies in MockPhysicsEngine"
-            member physicsEngine.GetBodyOptGroundContactNormal _ = failwith "No bodies in MockPhysicsEngine"
-            member physicsEngine.GetBodyOptGroundContactTangent _ = failwith "No bodies in MockPhysicsEngine"
-            member physicsEngine.BodyOnGround _ = failwith "No bodies in MockPhysicsEngine"
-            member physicsEngine.ClearMessages () = physicsEngine :> IPhysicsEngine
-            member physicsEngine.EnqueueMessage _ = physicsEngine :> IPhysicsEngine
-            member physicsEngine.Integrate _ = ([], physicsEngine :> IPhysicsEngine)
-
 [<RequireQualifiedAccess>]
 module Physics =
 
@@ -586,3 +570,22 @@ module Physics =
         | BodyPolygon bodyPolygon ->
             let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) bodyPolygon.Vertices
             BodyPolygon { Vertices = vertices; Center = Vector2.Multiply (extent, bodyPolygon.Center) }
+
+/// The primary implementation of IPhysicsEngine.
+type PhysicsEngine = PhysicsEngineModule.PhysicsEngine
+
+/// The mock implementation of IPhysicsEngine.
+type MockPhysicsEngine =
+    private { MockPhysicsEngine : unit }
+    static member make () = { MockPhysicsEngine = () }
+    interface IPhysicsEngine with
+        member physicsEngine.BodyExists _ = false
+        member physicsEngine.GetBodyContactNormals _ = failwith "No bodies in MockPhysicsEngine"
+        member physicsEngine.GetBodyLinearVelocity _ = failwith "No bodies in MockPhysicsEngine"
+        member physicsEngine.GetBodyGroundContactNormals _ = failwith "No bodies in MockPhysicsEngine"
+        member physicsEngine.GetBodyOptGroundContactNormal _ = failwith "No bodies in MockPhysicsEngine"
+        member physicsEngine.GetBodyOptGroundContactTangent _ = failwith "No bodies in MockPhysicsEngine"
+        member physicsEngine.BodyOnGround _ = failwith "No bodies in MockPhysicsEngine"
+        member physicsEngine.ClearMessages () = physicsEngine :> IPhysicsEngine
+        member physicsEngine.EnqueueMessage _ = physicsEngine :> IPhysicsEngine
+        member physicsEngine.Integrate _ = ([], physicsEngine :> IPhysicsEngine)

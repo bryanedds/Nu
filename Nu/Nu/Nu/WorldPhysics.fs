@@ -167,3 +167,6 @@ module WorldPhysicsModule =
         static member applyBodyForce force physicsId world =
             let applyBodyForceMessage = ApplyBodyForceMessage { PhysicsId = physicsId; Force = force }
             World.addPhysicsMessage applyBodyForceMessage world
+
+/// The subsystem for the world's physics system.
+type PhysicsEngineSubsystem = WorldPhysicsModule.PhysicsEngineSubsystem

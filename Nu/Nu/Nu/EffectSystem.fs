@@ -10,6 +10,9 @@ open OpenTK
 [<AutoOpen>]
 module EffectSystemModule =
 
+    // open related module
+    open Effects
+
     /// An abstract data type for executing effects.
     type [<NoEquality; NoComparison>] EffectSystem =
         private
@@ -22,7 +25,7 @@ module EffectSystemModule =
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module EffectSystem =
-    
+
         let rec private selectKeyFrames2 localTime playback (keyFrames : IKeyFrame list) =
             match playback with
             | Once ->
@@ -55,7 +58,7 @@ module EffectSystemModule =
             List.map (fun keyFrame -> keyFrame :> IKeyFrame) |>
             selectKeyFrames2 localTime playback |>
             fun (fst, snd, thd) -> (fst, snd :?> 'n, thd :?> 'n)
-    
+
         let inline private tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) progress algorithm effectSystem =
             match algorithm with
             | Const ->
@@ -88,7 +91,7 @@ module EffectSystemModule =
                 let progressScaled = float progress * Math.PI * 2.0
                 let progressCos = Math.Cos progressScaled
                 value + scale (value2 - value, single progressCos)
-    
+
         let private applyLogic value value2 applicator =
             match applicator with
             | Or -> value || value2
@@ -97,7 +100,7 @@ module EffectSystemModule =
             | And -> value && value2
             | Nand -> not (value && value2)
             | Equal -> value2
-    
+
         let inline private applyTween mul div (value : ^a) (value2 : ^a) applicator =
             match applicator with
             | Sum -> value + value2
@@ -105,7 +108,7 @@ module EffectSystemModule =
             | Scale -> mul (value, value2)
             | Ratio -> div (value, value2)
             | Set -> value2
-    
+
         let private evalOptInset (celSize : Vector2i) celRun celCount stutter effectSystem =
             if stutter <> 0L && celRun <> 0 then
                 let cel = int (effectSystem.EffectTime / stutter) % celCount
@@ -126,7 +129,7 @@ module EffectSystemModule =
                 { DefinitionParams = []; DefinitionBody = SymbolicCompressionB (SymbolicCompressionA aspect) }
             | SymbolicCompressionB (SymbolicCompressionB content) ->
                 { DefinitionParams = []; DefinitionBody = SymbolicCompressionB (SymbolicCompressionB content) }
-    
+
         let rec evalResource resource effectSystem : AssetTag =
             match resource with
             | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
@@ -141,21 +144,21 @@ module EffectSystemModule =
                 | None ->
                     Log.info ^ "Could not find definition with name '" + definitionName + "'."
                     scvalue<AssetTag> Constants.Assets.DefaultImageValue
-    
+
         let rec private iterateArtifacts incrementAspects content slice effectSystem =
             let effectSystem = { effectSystem with ProgressOffset = 0.0f }
             let slice = evalAspects incrementAspects slice effectSystem
             (slice, evalContent content slice effectSystem)
-    
+
         and private cycleArtifacts incrementAspects content slice effectSystem =
             let slice = evalAspects incrementAspects slice effectSystem
             evalContent content slice effectSystem
-    
+
         and private evalProgress keyFrameTime keyFrameLength effectSystem =
             let progress = if keyFrameLength = 0L then 1.0f else single keyFrameTime / single keyFrameLength
             let progress = progress + effectSystem.ProgressOffset
             if progress > 1.0f then progress - 1.0f else progress
-    
+
         and private evalAspect aspect slice effectSystem =
             match aspect with
             | Enabled (applicator, playback, keyFrames) ->
@@ -239,10 +242,10 @@ module EffectSystemModule =
                     | SymbolicCompressionB (SymbolicCompressionA aspect) -> evalAspect aspect slice effectSystem
                     | _ -> Log.info ^ "Expected Aspect for definition '" + definitionName + "'."; slice
                 | None -> Log.info ^ "Could not find definition with name '" + definitionName + "'."; slice
-            
+        
         and private evalAspects aspects slice effectSystem =
             List.fold (fun slice aspect -> evalAspect aspect slice effectSystem) slice aspects
-    
+
         and private evalExpand definitionName arguments slice effectSystem =
             match Map.tryFind definitionName effectSystem.EffectEnv with
             | Some definition ->
@@ -256,15 +259,15 @@ module EffectSystemModule =
                     | None -> Log.info "Wrong number of arguments provided to ExpandContent."; []
                 | _ -> Log.info ^ "Expected Content for definition '" + definitionName + "'."; []
             | None -> Log.info ^ "Could not find definition with name '" + definitionName + "'."; []
-    
+
         and private evalStaticSprite resource aspects content slice effectSystem =
-    
+
             // pull image from resource
             let image = evalResource resource effectSystem
-    
+
             // eval aspects
             let slice = evalAspects aspects slice effectSystem
-    
+
             // build sprite artifacts
             let spriteArtifacts =
                 if slice.Enabled then
@@ -282,13 +285,13 @@ module EffectSystemModule =
                                       ViewType = effectSystem.ViewType
                                       Color = slice.Color }}]]
                 else []
-    
+
             // build implicitly mounted content
             let mountedArtifacts = evalContent content slice effectSystem
-    
+
             // return artifacts
             mountedArtifacts @ spriteArtifacts
-    
+
         and private evalAnimatedSprite resource celSize celRun celCount stutter aspects content slice effectSystem =
 
             // pull image from resource
@@ -325,36 +328,36 @@ module EffectSystemModule =
             mountedArtifacts @ animatedSpriteArtifacts
 
         and private evalSoundEffect resource aspects content slice effectSystem =
-    
+
             // pull sound from resource
             let sound = evalResource resource effectSystem
-    
+
             // eval aspects
             let slice = evalAspects aspects slice effectSystem
-    
+
             // build sprite artifacts
             let soundArtifacts =
                 if slice.Enabled
                 then [SoundArtifact (slice.Volume, sound)]
                 else []
-    
+
             // build implicitly mounted content
             let mountedArtifacts = evalContent content slice effectSystem
-    
+
             // return artifacts
             mountedArtifacts @ soundArtifacts
-    
+
         and private evalMount shift aspects content (slice : Slice) effectSystem =
             let slice = { slice with Depth = slice.Depth + shift }
             let slice = evalAspects aspects slice effectSystem
             evalContent content slice effectSystem
-    
+
         and private evalRepeat shift repetition incrementAspects content (slice : Slice) effectSystem =
-            
+        
             // eval repeat either as iterative or cycling
             let slice = { slice with Depth = slice.Depth + shift }
             match repetition with
-            
+        
             // eval iterative repeat
             | Iterate count ->
                 List.fold
@@ -364,7 +367,7 @@ module EffectSystemModule =
                     (slice, [])
                     [0 .. count - 1] |>
                 snd
-    
+
             // eval cycling repeat
             | Cycle count ->
                 List.fold
@@ -373,7 +376,7 @@ module EffectSystemModule =
                         let artifacts' = cycleArtifacts incrementAspects content slice effectSystem
                         artifacts @ artifacts')
                     [] [0 .. count - 1]
-    
+
         and private evalEmit shift rate emitterAspects aspects content effectSystem =
             let artifacts =
                 Seq.foldi
@@ -408,11 +411,11 @@ module EffectSystemModule =
                     []
                     effectSystem.History
             artifacts
-    
+
         and private evalComposite shift contents (slice : Slice) effectSystem =
             let slice = { slice with Depth = slice.Depth + shift }
             evalContents contents slice effectSystem
-    
+
         and private evalContent content slice effectSystem =
             match content with
             | Nil ->
@@ -435,7 +438,7 @@ module EffectSystemModule =
                 evalComposite shift contents slice effectSystem
             | Expand (definitionName, arguments) ->
                 evalExpand definitionName arguments slice effectSystem
-    
+
         and private evalContents contents slice effectSystem =
             List.fold
                 (fun artifacts content ->
@@ -443,7 +446,7 @@ module EffectSystemModule =
                     artifacts' @ artifacts)
                 []
                 contents
-    
+
         let eval effect slice effectSystem =
             let alive =
                 match effect.OptLifetime with
@@ -466,11 +469,14 @@ module EffectSystemModule =
                   Definitions = List.fold (fun definitions effect -> Map.concat definitions effect.Definitions) Map.empty effects
                   Content = Composite (Shift 0.0f, List.map (fun effect -> effect.Content) effects) }
             effectCombined
-    
+
         let make viewType history effectTime globalEnv = 
             { ViewType = viewType
               History = history
               ProgressOffset = 0.0f
               EffectTime = effectTime
               EffectEnv = globalEnv
-              Chaos = Random () }
+              Chaos = System.Random () }
+
+/// An abstract data type for executing effects.
+type EffectSystem = EffectSystemModule.EffectSystem

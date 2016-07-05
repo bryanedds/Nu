@@ -57,13 +57,6 @@ type AddressConverter (targetType : Type) =
 [<AutoOpen>]
 module AddressModule =
 
-    /// The interface of an address.
-    type IAddress =
-        interface
-            /// The names of an address.
-            abstract Names : Name list
-            end
-
     /// Specifies the address of an identifiable value.
     type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
         private
@@ -152,9 +145,6 @@ module AddressModule =
 
         /// Concatenate two addresses, forcing the type of second address.
         static member (-<<-) (address : 'a Address, address2 : 'b Address) = Address.acatsf address address2
-
-        interface IAddress with
-            member this.Names = this.Names
 
         interface 'a Address IComparable with
             member this.CompareTo that =
@@ -284,3 +274,7 @@ module AddressOperators =
 
     /// Concatenate two addresses, forcing the type of second address.
     let inline acatsf<'a, 'b> (address : 'a Address) (address2 : 'b Address) = Address.acatsf<'a, 'b> address address2
+
+
+/// Specifies the address of an identifiable value.
+type 'a Address = 'a AddressModule.Address

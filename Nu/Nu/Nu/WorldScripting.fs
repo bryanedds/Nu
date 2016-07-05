@@ -11,10 +11,7 @@ open OpenTK
 open Prime
 open Nu
 
-/// A Visually-Scripted Reactive Language - A scripting language for Nu that is essentially a cross between Elm and
-/// Unreal Blueprints.
-///
-/// TODO: also raise event for all effect tags so they can be handled in scripts?
+/// A scripting language for Nu that is hoped to eventually be a cross between Elm and Unreal Blueprints.
 module Scripting =
 
     type [<NoComparison>] Event =
@@ -60,7 +57,7 @@ module Scripting =
         | Apply of Expr list * Origin option
         | Get of string * Origin option
         | Set of string * Origin option
-        | Entity of WorldTypes.Entity * Origin option
+        | Entity of Nu.Entity * Origin option
         | Camera of Origin option
         | Do of Name * Expr list * Origin option // executes an engine command, more can be found in the NuPlugin
         | DoMany of Name * (Expr list) list * Origin option

@@ -84,3 +84,6 @@ module SubsystemsModule =
     
         let make subsystems =
             { SubsystemMap = subsystems }
+
+/// The subsystems of a world.
+type 'w Subsystems = 'w SubsystemsModule.Subsystems

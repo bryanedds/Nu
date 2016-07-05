@@ -35,3 +35,6 @@ module OverlayRouterModule =
                     Map.empty
                     dispatchers
             { Routes = Map.addMany userRoutes router }
+
+/// Maps from dispatcher names to optional overlay names.
+type OverlayRouter = OverlayRouterModule.OverlayRouter
