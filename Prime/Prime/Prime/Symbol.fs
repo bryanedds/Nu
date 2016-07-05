@@ -179,7 +179,7 @@ module Symbol =
     /// CharacterAnimationFacing
     /// 
     /// (* Number values *)
-    /// 0
+    /// 0.0f
     /// -5
     ///
     /// (* String value *)
@@ -209,7 +209,7 @@ module Symbol =
     /// CharacterAnimationFacing
     /// 
     /// (* Number values *)
-    /// 0
+    /// 0.0f
     /// -5
     ///
     /// (* String value *)

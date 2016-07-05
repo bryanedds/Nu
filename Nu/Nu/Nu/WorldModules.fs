@@ -216,11 +216,8 @@ module Descriptors =
 module CommandModule =
 
     /// A command that transforms the world in some manner.
-    /// ExecuteInEditor denotes whether this command should be executed in Gaia. EG - changing screens should not be.
-    /// Perhaps someday in Nu 2.0 the editor could do more than edit entity groups, and thus this flag could be removed.
     type [<NoEquality; NoComparison>] Command =
-        { ExecuteInEditor : bool
-          Execute : World -> World }
+        { Execute : World -> World }
 
 [<AutoOpen>]
 module WorldAmbientStateModule =

@@ -17,7 +17,16 @@ open Nu
 /// TODO: also raise event for all effect tags so they can be handled in scripts?
 module Scripting =
 
-    type [<Syntax(  "not and or " +
+    type [<NoComparison>] Event =
+        | Event of obj Address
+        | Product of Event * Event
+        | Sum of Event * Event
+        | Filter of Event * Expr
+        | Map of Event * Expr
+        | Handler of Event * Expr
+        | Handlers of Event * Expr list
+
+    and [<Syntax(  "not and or " +
                     "eq not_eq lt gt lt_eq gt_eq " +
                     "add sub mul div mod " +
                     "pow root sqr sqrt " +
@@ -65,6 +74,9 @@ module Scripting =
         | Binding of Name * Origin option
         | Quote of string * Origin option
         | Break of Expr * Origin option
+        | Define of Name * Expr * Origin option // only works at the top level, and always returns unit
+        | Handle of Event * Origin option // only works at the top level, and always returns unit
+        | Equate of Name * string * Origin option // only works at the top level, and always returns unit
         static member getOptOrigin term =
             match term with
             | Violation (_, _, optOrigin)
@@ -96,7 +108,10 @@ module Scripting =
             | Keyword (_, optOrigin)
             | Binding (_, optOrigin)
             | Quote (_, optOrigin)
-            | Break (_, optOrigin) -> optOrigin
+            | Break (_, optOrigin)
+            | Define (_, _, optOrigin)
+            | Handle (_, optOrigin)
+            | Equate (_, _, optOrigin) -> optOrigin
 
     /// Converts Expr types.
     and ExprConverter () =
@@ -197,15 +212,6 @@ module Scripting =
                     | _ -> Apply (List.map symbolToExpr symbols, optOrigin) :> obj
             | :? Expr -> source
             | _ -> failconv "Invalid ExprConverter conversion from source." None
-
-    type [<NoComparison>] Event =
-        | Event of obj Address
-        | Product of Event * Event
-        | Sum of Event * Event
-        | Filter of Event * Expr
-        | Map of Event * Expr
-        | Handler of Event * Expr
-        | Handlers of Event * Expr list
 
     type [<NoEquality; NoComparison>] Env =
         private
