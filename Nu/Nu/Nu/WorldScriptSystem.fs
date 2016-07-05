@@ -11,10 +11,10 @@ open Nu
 open Nu.Scripting
 
 [<AutoOpen>]
-module ScriptingSystemModule =
+module ScriptSystemModule =
 
     [<RequireQualifiedAccess>]
-    module ScriptingSystem =
+    module ScriptSystem =
 
         type [<NoEquality; NoComparison>] UnaryFns =
             { Bool : bool -> Origin option -> Expr
@@ -784,10 +784,10 @@ module ScriptingSystemModule =
             
     /// An abstract data type for executing scripts.
     /// Has an unused type param to give it a unique name.
-    type [<NoEquality; NoComparison>] 'a ScriptingSystem =
+    type [<NoEquality; NoComparison>] 'a ScriptSystem =
         private
             { Scripts : Vmap<Guid, Script>
               Debugging : bool }
 
 /// An abstract data type for executing scripts.
-type ScriptingSystem = unit ScriptingSystemModule.ScriptingSystem
+type ScriptSystem = unit ScriptSystemModule.ScriptSystem
