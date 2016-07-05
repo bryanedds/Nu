@@ -26,7 +26,7 @@ module Scripting =
         | Handler of Event * Expr
         | Handlers of Event * Expr list
 
-    and [<Syntax(  "not and or " +
+    and [<Syntax(   "not and or " +
                     "eq not_eq lt gt lt_eq gt_eq " +
                     "add sub mul div mod " +
                     "pow root sqr sqrt " +
@@ -215,11 +215,13 @@ module Scripting =
 
     type [<NoEquality; NoComparison>] Env =
         private
-            { Bindings : Dictionary<Name, Expr>
+            { Rebinding : bool // rebinding should be enabled in Terminal or perhaps when reloading existing scripts.
+              Bindings : Dictionary<Name, Expr>
               World : World }
 
-        static member make bindings world =
-            { Bindings = bindings
+        static member make rebinding bindings world =
+            { Rebinding = rebinding
+              Bindings = bindings
               World = World.choose world }
 
         static member tryGetBinding name env =
@@ -228,7 +230,7 @@ module Scripting =
             | (false, _) -> None
 
         static member tryAddBinding name evaled env =
-            if not ^ env.Bindings.ContainsKey name then
+            if env.Rebinding || not ^ env.Bindings.ContainsKey name then
                 env.Bindings.Add (name, evaled)
                 Some env
             else None

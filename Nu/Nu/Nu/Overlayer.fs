@@ -105,7 +105,6 @@ module OverlayerModule =
                     | Some propertySymbol -> tryApplyOverlayToRecordProperty facetNames property propertySymbol oldOverlayName target oldOverlayer
                     | None -> ()
 
-        // TODO: see if this can be decomposed
         let private applyOverlayToXtension oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
             let targetType = target.GetType ()
             match targetType.GetProperty "Xtension" with
