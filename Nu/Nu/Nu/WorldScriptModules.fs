@@ -24,7 +24,9 @@ module Scripting =
               Double : double -> Origin option -> Expr
               Vector2 : Vector2 -> Origin option -> Expr
               String : string -> Origin option -> Expr
-              List : Expr list -> Origin option -> Expr }
+              List : Expr list -> Origin option -> Expr
+              Tuple : Map<int, Expr> -> Origin option -> Expr
+              Keyphrase : Map<int, Expr> -> Origin option -> Expr }
     
         let Sqr =
             { Bool = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sqr"], "Cannot square a bool.", optOrigin)
@@ -34,7 +36,9 @@ module Scripting =
               Double = fun value optOrigin -> Double (value * value, optOrigin)
               Vector2 = fun value optOrigin -> Vector2 (Vector2.Multiply (value, value), optOrigin)
               String = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sqr"], "Cannot square a string.", optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sqr"], "Cannot square a list.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sqr"], "Cannot square a list.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sqr"], "Cannot square a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sqr"], "Cannot square a keyphrase.", optOrigin) }
     
         let Sqrt =
             { Bool = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sqrt"], "Cannot square root a bool.", optOrigin)
@@ -44,7 +48,9 @@ module Scripting =
               Double = fun value optOrigin -> Double (Math.Sqrt value, optOrigin)
               Vector2 = fun value optOrigin -> Vector2 (OpenTK.Vector2 (single ^ Math.Sqrt (double value.X), single ^ Math.Sqrt (double value.Y)), optOrigin)
               String = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sqrt"], "Cannot square root a string.", optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sqrt"], "Cannot square root a list.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sqrt"], "Cannot square root a list.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sqrt"], "Cannot square root a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sqrt"], "Cannot square root a keyphrase.", optOrigin) }
     
         let Floor =
             { Bool = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "floor"], "Cannot floor a bool.", optOrigin)
@@ -54,7 +60,9 @@ module Scripting =
               Double = fun value optOrigin -> Double (Math.Floor value, optOrigin)
               Vector2 = fun value optOrigin -> Vector2 (OpenTK.Vector2 (single ^ Math.Floor (double value.X), single ^ Math.Floor (double value.Y)), optOrigin)
               String = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "floor"], "Cannot floor a string.", optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "floor"], "Cannot floor a list.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "floor"], "Cannot floor a list.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "floor"], "Cannot floor a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "floor"], "Cannot floor a keyphrase.", optOrigin) }
     
         let Ceiling =
             { Bool = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "ceiling"], "Cannot ceiling a bool.", optOrigin)
@@ -64,7 +72,9 @@ module Scripting =
               Double = fun value optOrigin -> Double (Math.Ceiling value, optOrigin)
               Vector2 = fun value optOrigin -> Vector2 (OpenTK.Vector2 (single ^ Math.Ceiling (double value.X), single ^ Math.Ceiling (double value.Y)), optOrigin)
               String = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "ceiling"], "Cannot ceiling a string.", optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "ceiling"], "Cannot ceiling a list.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "ceiling"], "Cannot ceiling a list.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "ceiling"], "Cannot ceiling a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "ceiling"], "Cannot ceiling a keyphrase.", optOrigin) }
     
         let Truncate =
             { Bool = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "truncate"], "Cannot truncate a bool.", optOrigin)
@@ -74,7 +84,9 @@ module Scripting =
               Double = fun value optOrigin -> Double (Math.Truncate value, optOrigin)
               Vector2 = fun value optOrigin -> Vector2 (OpenTK.Vector2 (single ^ Math.Truncate (double value.X), single ^ Math.Truncate (double value.Y)), optOrigin)
               String = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "truncate"], "Cannot truncate a string.", optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "truncate"], "Cannot truncate a list.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "truncate"], "Cannot truncate a list.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "truncate"], "Cannot truncate a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "truncate"], "Cannot truncate a keyphrase.", optOrigin) }
     
         let Exp =
             { Bool = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "exp"], "Cannot exponentiate a bool.", optOrigin)
@@ -84,7 +96,9 @@ module Scripting =
               Double = fun value optOrigin -> Double (Math.Exp value, optOrigin)
               Vector2 = fun value optOrigin -> Vector2 (OpenTK.Vector2 (single ^ Math.Exp (double value.X), single ^ Math.Exp (double value.Y)), optOrigin)
               String = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "exp"], "Cannot exponentiate a string.", optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "exp"], "Cannot exponentiate a list.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "exp"], "Cannot exponentiate a list.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "exp"], "Cannot exponentiate a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "exp"], "Cannot exponentiate a keyphrase.", optOrigin) }
     
         let Round =
             { Bool = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "round"], "Cannot round a bool.", optOrigin)
@@ -94,7 +108,9 @@ module Scripting =
               Double = fun value optOrigin -> Double (Math.Round value, optOrigin)
               Vector2 = fun value optOrigin -> Vector2 (OpenTK.Vector2 (single ^ Math.Round (double value.X), single ^ Math.Round (double value.Y)), optOrigin)
               String = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "round"], "Cannot round a string.", optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "round"], "Cannot round a list.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "round"], "Cannot round a list.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "round"], "Cannot round a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "round"], "Cannot round a keyphrase.", optOrigin) }
     
         let Log =
             { Bool = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "log"], "Cannot log a bool.", optOrigin)
@@ -104,7 +120,9 @@ module Scripting =
               Double = fun value optOrigin -> if value = 0.0 then Violation (["invalidArgumentValue"; "unary"; "log"], "Cannot log a zero double.", optOrigin) else Double (Math.Log value, optOrigin)
               Vector2 = fun value optOrigin -> if value.X = 0.0f || value.Y == 0.0f then Violation (["invalidArgumentValue"; "unary"; "log"], "Cannot log a vector containing a zero member.", optOrigin) else Vector2 (OpenTK.Vector2 (single ^ Math.Log (double value.X), single ^ Math.Log (double value.Y)), optOrigin)
               String = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "log"], "Cannot log a string.", optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "log"], "Cannot log a list.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "log"], "Cannot log a list.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "log"], "Cannot log a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "log"], "Cannot log a keyphrase.", optOrigin) }
     
         let Sin =
             { Bool = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sin"], "Cannot sin a bool.", optOrigin)
@@ -114,7 +132,9 @@ module Scripting =
               Double = fun value optOrigin -> Double (Math.Sin value, optOrigin)
               Vector2 = fun value optOrigin -> Vector2 (OpenTK.Vector2 (single ^ Math.Sin (double value.X), single ^ Math.Sin (double value.Y)), optOrigin)
               String = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sin"], "Cannot sin a string.", optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sin"], "Cannot sin a list.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sin"], "Cannot sin a list.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sin"], "Cannot sin a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "sin"], "Cannot sin a keyphrase.", optOrigin) }
     
         let Cos =
             { Bool = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "cos"], "Cannot cos a bool.", optOrigin)
@@ -124,7 +144,9 @@ module Scripting =
               Double = fun value optOrigin -> Double (Math.Cos value, optOrigin)
               Vector2 = fun value optOrigin -> Vector2 (OpenTK.Vector2 (single ^ Math.Cos (double value.X), single ^ Math.Cos (double value.Y)), optOrigin)
               String = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "cos"], "Cannot cos a string.", optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "cos"], "Cannot cos a list.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "cos"], "Cannot cos a list.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "cos"], "Cannot cos a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "cos"], "Cannot cos a keyphrase.", optOrigin) }
     
         let Tan =
             { Bool = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "tan"], "Cannot tan a bool.", optOrigin)
@@ -134,7 +156,9 @@ module Scripting =
               Double = fun value optOrigin -> Double (Math.Tan value, optOrigin)
               Vector2 = fun value optOrigin -> Vector2 (OpenTK.Vector2 (single ^ Math.Tan (double value.X), single ^ Math.Tan (double value.Y)), optOrigin)
               String = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "tan"], "Cannot tan a string.", optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "tan"], "Cannot tan a list.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "tan"], "Cannot tan a list.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "tan"], "Cannot tan a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "tan"], "Cannot tan a keyphrase.", optOrigin) }
     
         let Asin =
             { Bool = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "asin"], "Cannot asin a bool.", optOrigin)
@@ -144,7 +168,9 @@ module Scripting =
               Double = fun value optOrigin -> Double (Math.Asin value, optOrigin)
               Vector2 = fun value optOrigin -> Vector2 (OpenTK.Vector2 (single ^ Math.Asin (double value.X), single ^ Math.Asin (double value.Y)), optOrigin)
               String = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "asin"], "Cannot asin a string.", optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "asin"], "Cannot asin a list.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "asin"], "Cannot asin a list.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "asin"], "Cannot asin a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "asin"], "Cannot asin a keyphrase.", optOrigin) }
     
         let Acos =
             { Bool = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "acos"], "Cannot acos a bool.", optOrigin)
@@ -154,7 +180,9 @@ module Scripting =
               Double = fun value optOrigin -> Double (Math.Acos value, optOrigin)
               Vector2 = fun value optOrigin -> Vector2 (OpenTK.Vector2 (single ^ Math.Acos (double value.X), single ^ Math.Acos (double value.Y)), optOrigin)
               String = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "acos"], "Cannot acos a string.", optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "acos"], "Cannot acos a list.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "acos"], "Cannot acos a list.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "acos"], "Cannot acos a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "acos"], "Cannot acos a keyphrase.", optOrigin) }
     
         let Atan =
             { Bool = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "atan"], "Cannot atan a bool.", optOrigin)
@@ -164,7 +192,9 @@ module Scripting =
               Double = fun value optOrigin -> Double (Math.Atan value, optOrigin)
               Vector2 = fun value optOrigin -> Vector2 (OpenTK.Vector2 (single ^ Math.Atan (double value.X), single ^ Math.Atan (double value.Y)), optOrigin)
               String = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "atan"], "Cannot atan a string.", optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "atan"], "Cannot atan a list.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "atan"], "Cannot atan a list.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "atan"], "Cannot atan a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "atan"], "Cannot atan a keyphrase.", optOrigin) }
     
         let Length =
             { Bool = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "length"], "Cannot get length of a bool.", optOrigin)
@@ -174,7 +204,9 @@ module Scripting =
               Double = fun value optOrigin -> Double (Math.Abs value, optOrigin)
               Vector2 = fun value optOrigin -> Single (value.Length, optOrigin)
               String = fun value optOrigin -> Int (value.Length, optOrigin)
-              List = fun value optOrigin -> Int (List.length value, optOrigin) }
+              List = fun value optOrigin -> Int (List.length value, optOrigin)
+              Tuple = fun value optOrigin -> Int (Array.length ^ Map.toArray value, optOrigin)
+              Keyphrase = fun value optOrigin -> Int (Array.length ^ Map.toArray value, optOrigin) }
     
         let Normal =
             { Bool = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "normal"], "Cannot normalize a bool.", optOrigin)
@@ -184,7 +216,9 @@ module Scripting =
               Double = fun value optOrigin -> if value = 0.0 then Violation (["invalidArgumentValue"; "unary"; "normal"], "Cannot get the normal of a zero double.", optOrigin) elif value < 0.0 then Double (-1.0, optOrigin) else Double (1.0, optOrigin)
               Vector2 = fun value optOrigin -> if value = Vector2.Zero then Violation (["invalidArgumentValue"; "unary"; "normal"], "Cannot get the normal of a zero vector.", optOrigin) else Vector2 (Vector2.Normalize value, optOrigin)
               String = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "normal"], "Cannot normalize a string.", optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "normal"], "Cannot normalize a list.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "normal"], "Cannot normalize a list.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "normal"], "Cannot normal a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "normal"], "Cannot normal a keyphrase.", optOrigin) }
     
         let Bool =
             { Bool = fun value optOrigin -> Bool (value, optOrigin)
@@ -194,7 +228,9 @@ module Scripting =
               Double = fun value optOrigin -> Bool ((value = 0.0), optOrigin)
               Vector2 = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "conversion"; "bool"], "Cannot convert a vector to a bool.", optOrigin)
               String = fun value optOrigin -> Bool (scvalue value, optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "conversion"; "bool"], "Cannot convert a list to a bool.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "conversion"; "bool"], "Cannot convert a list to a bool.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "bool"], "Cannot bool a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "bool"], "Cannot bool a keyphrase.", optOrigin) }
     
         let Int =
             { Bool = fun value optOrigin -> Int ((if value then 1 else 0), optOrigin)
@@ -204,7 +240,9 @@ module Scripting =
               Double = fun value optOrigin -> Int (int value, optOrigin)
               Vector2 = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "conversion"; "int"], "Cannot convert a vector to an int.", optOrigin)
               String = fun value optOrigin -> Int (scvalue value, optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "conversion"; "int"], "Cannot convert a list to an int.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "conversion"; "int"], "Cannot convert a list to an int.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "int"], "Cannot int a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "int"], "Cannot int a keyphrase.", optOrigin) }
     
         let Int64 =
             { Bool = fun value optOrigin -> Int64 ((if value then 1L else 0L), optOrigin)
@@ -214,7 +252,9 @@ module Scripting =
               Double = fun value optOrigin -> Int64 (int64 value, optOrigin)
               Vector2 = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "conversion"; "int64"], "Cannot convert a vector to a 64-bit int.", optOrigin)
               String = fun value optOrigin -> Int64 (scvalue value, optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "conversion"; "int64"], "Cannot convert a list to a 64-bit int.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "conversion"; "int64"], "Cannot convert a list to a 64-bit int.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "int64"], "Cannot int64 a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "int64"], "Cannot int64 a keyphrase.", optOrigin) }
     
         let Single =
             { Bool = fun value optOrigin -> Single ((if value then 1.0f else 0.0f), optOrigin)
@@ -224,7 +264,9 @@ module Scripting =
               Double = fun value optOrigin -> Single (single value, optOrigin)
               Vector2 = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "conversion"; "single"], "Cannot convert a vector to a single.", optOrigin)
               String = fun value optOrigin -> Single (scvalue value, optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "conversion"; "single"], "Cannot convert a list to a single.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "conversion"; "single"], "Cannot convert a list to a single.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "single"], "Cannot single a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "single"], "Cannot single a keyphrase.", optOrigin) }
     
         let Double =
             { Bool = fun value optOrigin -> Double ((if value then 1.0 else 0.0), optOrigin)
@@ -234,7 +276,9 @@ module Scripting =
               Double = fun value optOrigin -> Double (value, optOrigin)
               Vector2 = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "conversion"; "double"], "Cannot convert a vector to a double.", optOrigin)
               String = fun value optOrigin -> Double (scvalue value, optOrigin)
-              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "conversion"; "double"], "Cannot convert a list to a double.", optOrigin) }
+              List = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "conversion"; "double"], "Cannot convert a list to a double.", optOrigin)
+              Tuple = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "double"], "Cannot double a tuple.", optOrigin)
+              Keyphrase = fun _ optOrigin -> Violation (["invalidArgumentType"; "unary"; "double"], "Cannot double a keyphrase.", optOrigin) }
     
         let String =
             { Bool = fun value optOrigin -> String (scstring value, optOrigin)
@@ -244,7 +288,9 @@ module Scripting =
               Double = fun value optOrigin -> String (scstring value, optOrigin)
               Vector2 = fun value optOrigin -> String (scstring value, optOrigin)
               String = fun value optOrigin -> String (value, optOrigin)
-              List = fun value optOrigin -> String (scstring value, optOrigin) }
+              List = fun value optOrigin -> String (scstring value, optOrigin)
+              Tuple = fun value optOrigin -> String (scstring value, optOrigin)
+              Keyphrase = fun value optOrigin -> String (scstring value, optOrigin) }
     
     [<RequireQualifiedAccess>]
     module Binary =
@@ -257,7 +303,9 @@ module Scripting =
               Double : double -> double -> Origin option -> Expr
               Vector2 : Vector2 -> Vector2 -> Origin option -> Expr
               String : string -> string -> Origin option -> Expr
-              List : Expr list -> Expr list -> Origin option -> Expr }
+              List : Expr list -> Expr list -> Origin option -> Expr
+              Tuple : Map<int, Expr> -> Map<int, Expr> -> Origin option -> Expr
+              Keyphrase : Map<int, Expr> -> Map<int, Expr> -> Origin option -> Expr }
     
         let Eq =
             { Bool = fun left right optOrigin -> Bool ((left = right), optOrigin)
@@ -267,7 +315,9 @@ module Scripting =
               Double = fun left right optOrigin -> Bool ((left = right), optOrigin)
               Vector2 = fun left right optOrigin -> Bool ((left = right), optOrigin)
               String = fun left right optOrigin -> Bool ((left = right), optOrigin)
-              List = fun left right optOrigin -> Bool ((left = right), optOrigin) }
+              List = fun left right optOrigin -> Bool ((left = right), optOrigin)
+              Tuple = fun left right optOrigin -> Bool ((left = right), optOrigin)
+              Keyphrase = fun left right optOrigin -> Bool ((left = right), optOrigin) }
     
         let NotEq =
             { Bool = fun left right optOrigin -> Bool ((left <> right), optOrigin)
@@ -277,7 +327,9 @@ module Scripting =
               Double = fun left right optOrigin -> Bool ((left <> right), optOrigin)
               Vector2 = fun left right optOrigin -> Bool ((left <> right), optOrigin)
               String = fun left right optOrigin -> Bool ((left <> right), optOrigin)
-              List = fun left right optOrigin -> Bool ((left <> right), optOrigin) }
+              List = fun left right optOrigin -> Bool ((left <> right), optOrigin)
+              Tuple = fun left right optOrigin -> Bool ((left <> right), optOrigin)
+              Keyphrase = fun left right optOrigin -> Bool ((left <> right), optOrigin) }
     
         let Lt =
             { Bool = fun left right optOrigin -> Bool ((left < right), optOrigin)
@@ -287,7 +339,9 @@ module Scripting =
               Double = fun left right optOrigin -> Bool ((left < right), optOrigin)
               Vector2 = fun left right optOrigin -> Bool ((left.LengthSquared < right.LengthSquared), optOrigin)
               String = fun left right optOrigin -> Bool ((left < right), optOrigin)
-              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "comparison"; "lt"], "Cannot compare lists.", optOrigin) }
+              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "comparison"; "lt"], "Cannot compare lists.", optOrigin)
+              Tuple = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "comparison"; "lt"], "Cannot compare tuples.", optOrigin)
+              Keyphrase = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "comparison"; "lt"], "Cannot compare keyphrases.", optOrigin) }
     
         let Gt =
             { Bool = fun left right optOrigin -> Bool ((left > right), optOrigin)
@@ -297,7 +351,9 @@ module Scripting =
               Double = fun left right optOrigin -> Bool ((left > right), optOrigin)
               Vector2 = fun left right optOrigin -> Bool ((left.LengthSquared > right.LengthSquared), optOrigin)
               String = fun left right optOrigin -> Bool ((left > right), optOrigin)
-              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "comparison"; "gt"], "Cannot compare lists.", optOrigin) }
+              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "comparison"; "gt"], "Cannot compare lists.", optOrigin)
+              Tuple = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "comparison"; "gt"], "Cannot compare tuples.", optOrigin)
+              Keyphrase = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "comparison"; "gt"], "Cannot compare keyphrases.", optOrigin) }
     
         let LtEq =
             { Bool = fun left right optOrigin -> Bool ((left <= right), optOrigin)
@@ -307,7 +363,9 @@ module Scripting =
               Double = fun left right optOrigin -> Bool ((left <= right), optOrigin)
               Vector2 = fun left right optOrigin -> Bool ((left.LengthSquared <= right.LengthSquared), optOrigin)
               String = fun left right optOrigin -> Bool ((left <= right), optOrigin)
-              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "comparison"; "lt_eq"], "Cannot compare lists.", optOrigin) }
+              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "comparison"; "lt_eq"], "Cannot compare lists.", optOrigin)
+              Tuple = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "comparison"; "lt_eq"], "Cannot compare tuples.", optOrigin)
+              Keyphrase = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "comparison"; "lt_eq"], "Cannot compare keyphrases.", optOrigin) }
     
         let GtEq =
             { Bool = fun left right optOrigin -> Bool ((left >= right), optOrigin)
@@ -317,7 +375,9 @@ module Scripting =
               Double = fun left right optOrigin -> Bool ((left >= right), optOrigin)
               Vector2 = fun left right optOrigin -> Bool ((left.LengthSquared >= right.LengthSquared), optOrigin)
               String = fun left right optOrigin -> Bool ((left >= right), optOrigin)
-              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "comparison"; "gt_eq"], "Cannot compare lists.", optOrigin) }
+              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "comparison"; "gt_eq"], "Cannot compare lists.", optOrigin)
+              Tuple = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "comparison"; "gt_eq"], "Cannot compare tuples.", optOrigin)
+              Keyphrase = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "comparison"; "gt_eq"], "Cannot compare keyphrases.", optOrigin) }
     
         let Add =
             { Bool = fun left right optOrigin -> Bool ((if left && right then false elif left then true elif right then true else false), optOrigin)
@@ -327,7 +387,9 @@ module Scripting =
               Double = fun left right optOrigin -> Double ((left + right), optOrigin)
               Vector2 = fun left right optOrigin -> Vector2 ((left + right), optOrigin)
               String = fun left right optOrigin -> String ((left + right), optOrigin)
-              List = fun left right optOrigin -> List ((left @ right), optOrigin) }
+              List = fun left right optOrigin -> List ((left @ right), optOrigin)
+              Tuple = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "add"], "Cannot add tuples.", optOrigin)
+              Keyphrase = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "add"], "Cannot add keyphrases.", optOrigin) }
     
         let Sub =
             { Bool = fun left right optOrigin -> Bool ((if left && right then false elif left then true elif right then true else false), optOrigin)
@@ -337,7 +399,9 @@ module Scripting =
               Double = fun left right optOrigin -> Double ((left - right), optOrigin)
               Vector2 = fun left right optOrigin -> Vector2 ((left - right), optOrigin)
               String = fun left right optOrigin -> String (left.Replace (right, String.Empty), optOrigin)
-              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "sub"], "Cannot subtract lists. TODO: implement this like string subtraction!", optOrigin) }
+              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "sub"], "Cannot subtract lists.", optOrigin)
+              Tuple = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "sub"], "Cannot subtract tuples.", optOrigin)
+              Keyphrase = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "sub"], "Cannot subtract keyphrases.", optOrigin) }
     
         let Mul =
             { Bool = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "mul"], "Cannot multiply bools.", optOrigin)
@@ -347,7 +411,9 @@ module Scripting =
               Double = fun left right optOrigin -> Double ((left * right), optOrigin)
               Vector2 = fun left right optOrigin -> Vector2 (Vector2.Multiply (left, right), optOrigin)
               String = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "mul"], "Cannot multiply strings.", optOrigin)
-              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "mul"], "Cannot multiply lists.", optOrigin) }
+              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "mul"], "Cannot multiply lists.", optOrigin)
+              Tuple = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "mul"], "Cannot multiply tuples.", optOrigin)
+              Keyphrase = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "mul"], "Cannot multiply keyphrases.", optOrigin) }
     
         let Div =
             { Bool = fun left right optOrigin -> if right = false then Violation (["invalidArgumentValue"; "binary"; "div"], "Cannot divide by a false bool.", optOrigin) else Bool ((if left && right then true else false), optOrigin)
@@ -357,7 +423,9 @@ module Scripting =
               Double = fun left right optOrigin -> Double ((left / right), optOrigin)
               Vector2 = fun left right optOrigin -> Vector2 (Vector2.Divide (left, right), optOrigin)
               String = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "div"], "Cannot divide strings.", optOrigin)
-              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "div"], "Cannot divide lists.", optOrigin) }
+              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "div"], "Cannot divide lists.", optOrigin)
+              Tuple = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "div"], "Cannot divide tuples.", optOrigin)
+              Keyphrase = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "div"], "Cannot divide keyphrases.", optOrigin) }
     
         let Mod =
             { Bool = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "mod"], "Cannot modulate bools.", optOrigin)
@@ -367,7 +435,9 @@ module Scripting =
               Double = fun left right optOrigin -> Double ((left % right), optOrigin)
               Vector2 = fun left right optOrigin -> Vector2 (OpenTK.Vector2 (left.X % right.X, left.Y % right.Y), optOrigin)
               String = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "mod"], "Cannot modulate strings.", optOrigin)
-              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "mod"], "Cannot modulate lists.", optOrigin) }
+              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "mod"], "Cannot modulate lists.", optOrigin)
+              Tuple = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "mod"], "Cannot modulate tuples.", optOrigin)
+              Keyphrase = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "mod"], "Cannot modulate keyphrases.", optOrigin) }
     
         let Pow =
             { Bool = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "pow"], "Cannot power bools.", optOrigin)
@@ -377,7 +447,9 @@ module Scripting =
               Double = fun left right optOrigin -> Double (Math.Pow (double left, double right), optOrigin)
               Vector2 = fun left right optOrigin -> Vector2 (OpenTK.Vector2 (single ^ Math.Pow (double left.X, double right.X), single ^ Math.Pow (double left.Y, double right.Y)), optOrigin)
               String = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "pow"], "Cannot power strings.", optOrigin)
-              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "pow"], "Cannot power lists.", optOrigin) }
+              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "pow"], "Cannot power lists.", optOrigin)
+              Tuple = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "pow"], "Cannot power tuples.", optOrigin)
+              Keyphrase = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "pow"], "Cannot power keyphrases.", optOrigin) }
     
         let Root =
             { Bool = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "root"], "Cannot root bools.", optOrigin)
@@ -387,7 +459,9 @@ module Scripting =
               Double = fun left right optOrigin -> Double (Math.Pow (double left, 1.0 / double right), optOrigin)
               Vector2 = fun left right optOrigin -> Vector2 (OpenTK.Vector2 (single ^ Math.Pow (double left.X, 1.0 / double right.X), single ^ Math.Pow (double left.Y, 1.0 / double right.Y)), optOrigin)
               String = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "root"], "Cannot root strings.", optOrigin)
-              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "root"], "Cannot root lists.", optOrigin) }
+              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "root"], "Cannot root lists.", optOrigin)
+              Tuple = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "root"], "Cannot root tuples.", optOrigin)
+              Keyphrase = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "root"], "Cannot root keyphrases.", optOrigin) }
     
         let Cross =
             { Bool = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "cross"], "Cannot cross multiply bools.", optOrigin)
@@ -397,7 +471,9 @@ module Scripting =
               Double = fun left right optOrigin -> Double ((left * right), optOrigin)
               Vector2 = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "cross"], "Cannot cross multiply 2-dimensional vectors.", optOrigin)
               String = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "cross"], "Cannot cross multiply strings.", optOrigin)
-              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "cross"], "Cannot cross multiply lists.", optOrigin) }
+              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "cross"], "Cannot cross multiply lists.", optOrigin)
+              Tuple = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "cross"], "Cannot cross multiply tuples.", optOrigin)
+              Keyphrase = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "cross"], "Cannot cross multiple keyphrases.", optOrigin) }
     
         let Dot =
             { Bool = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "dot"], "Cannot dot multiply bools.", optOrigin)
@@ -407,7 +483,9 @@ module Scripting =
               Double = fun left right optOrigin -> Double ((left * right), optOrigin)
               Vector2 = fun left right optOrigin -> Single (Vector2.Dot (left, right), optOrigin)
               String = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "dot"], "Cannot dot multiply strings.", optOrigin)
-              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "dot"], "Cannot dot multiply lists.", optOrigin) }
+              List = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "dot"], "Cannot dot multiply lists.", optOrigin)
+              Tuple = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "dot"], "Cannot dot multiply tuples.", optOrigin)
+              Keyphrase = fun _ _ optOrigin -> Violation (["invalidArgumentType"; "binary"; "dot"], "Cannot dot multiply keyphrases.", optOrigin) }
 
     let InputDictionary =
         [(typeof<bool>, fun (value : obj) (optOrigin : Origin option) -> Bool (value :?> bool, optOrigin))
@@ -453,6 +531,8 @@ module Scripting =
             | Vector2 (vector2Value, optOrigin) -> Result ((fns.Vector2 vector2Value optOrigin), env)
             | String (stringValue, optOrigin) -> Result ((fns.String stringValue optOrigin), env)
             | List (listValue, optOrigin) -> Result ((fns.List listValue optOrigin), env)
+            | Tuple (tupleValue, optOrigin) -> Result ((fns.Tuple tupleValue optOrigin), env)
+            | Keyphrase (keyphraseValue, optOrigin) -> Result ((fns.Keyphrase keyphraseValue optOrigin), env)
             | _ -> Result (Violation (["invalidArgumentType"; "unary"; fnName], "Cannot apply an unary function on an incompatible value.", Expr.getOptOrigin evaled), env)
         | _ -> Result (Violation (["invalidArgumentCount"; "unary"; fnName], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOptOrigin), env)
 
@@ -468,6 +548,8 @@ module Scripting =
             | (Vector2 (vector2Left, optOriginLeft), Vector2 (vector2Right, optOriginRight)) -> Result ((fns.Vector2 vector2Left vector2Right (combine optOriginLeft optOriginRight)), env)
             | (String (stringLeft, optOriginLeft), String (stringRight, optOriginRight)) -> Result ((fns.String stringLeft stringRight (combine optOriginLeft optOriginRight)), env)
             | (List (listLeft, optOriginLeft), List (listRight, optOriginRight)) -> Result ((fns.List listLeft listRight (combine optOriginLeft optOriginRight)), env)
+            | (Tuple (tupleLeft, optOriginLeft), Tuple (tupleRight, optOriginRight)) -> Result ((fns.Tuple tupleLeft tupleRight (combine optOriginLeft optOriginRight)), env)
+            | (Keyphrase (keyphraseLeft, optOriginLeft), Keyphrase (keyphraseRight, optOriginRight)) -> Result ((fns.Keyphrase keyphraseLeft keyphraseRight (combine optOriginLeft optOriginRight)), env)
             | _ -> Result (Violation (["invalidArgumentType"; "binary"; fnName], "Cannot apply a binary function on unlike or incompatible values.", combine (Expr.getOptOrigin evaledLeft) (Expr.getOptOrigin evaledRight)), env)
         | _ -> Result (Violation (["invalidArgumentCount"; "binary"; fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
         
@@ -518,7 +600,7 @@ module Scripting =
             match List.tryFindAt index evaleds with
             | Some _ as optEvaled -> Result (Option (optEvaled, optOrigin), env)
             | None -> Result (Option (None, optOrigin), env)
-        | [Keyphrase (evaleds, optOrigin)] | [Tuple (evaleds, optOrigin)] ->
+        | [Tuple (evaleds, optOrigin)] | [Keyphrase (evaleds, optOrigin)] ->
             match Map.tryFind index evaleds with
             | Some _ as optEvaled -> Result (Option (optEvaled, optOrigin), env)
             | None -> Result (Option (None, optOrigin), env)
@@ -600,7 +682,7 @@ module Scripting =
             exprs
             ([], [], env)
 
-    and evalCall exprs optOrigin env =
+    and evalApply exprs optOrigin env =
         let oldEnv = env
         let (violations, evaleds, env) = evalExprs exprs env
         match violations with
@@ -621,6 +703,7 @@ module Scripting =
                         else Result (Violation (["invalidEntity"], "Entity '" + scstring entity + "' does not exist.", optOrigin), env)
                     | [_] -> Result (Violation (["invalidGetTargetType"], "TODO: proper error msg.", optOrigin), env)
                     | _ -> Result (Violation (["invalidGetForm"], "TODO: proper error msg.", optOrigin), env)
+                // TODO: | Set (name, optOrigin) ->
                 | Keyword (name, optOrigin) ->
                     let map = String (name, optOrigin) :: args |> List.indexed |> Map.ofList
                     Result (Keyphrase (map, optOrigin), env)
@@ -679,10 +762,11 @@ module Scripting =
         | String _ -> Result (expr, env)
         | Option _ -> Result (expr, env)
         | List _ -> Result (expr, env)
-        | Keyphrase _ -> Result (expr, env)
         | Tuple _ -> Result (expr, env)
-        | Call (exprs, optOrigin) -> evalCall exprs optOrigin env
+        | Keyphrase _ -> Result (expr, env)
+        | Apply (exprs, optOrigin) -> evalApply exprs optOrigin env
         | Get _ -> Result (expr, env)
+        | Set _ -> Result (expr, env)
         | Entity _ -> Result (expr, env)
         | Camera _ -> Result (expr, env)
         | Do _ -> Result (expr, env)

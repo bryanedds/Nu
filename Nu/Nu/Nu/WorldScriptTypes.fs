@@ -30,7 +30,7 @@ module Scripting =
                     "some none isSome " +
                     "list head tail cons empty isEmpty " +
                     "tuple first second third fourth fifth nth " +
-                    "getTickRate getTickTime getUpdateCount",
+                    "tickRate tickTime updateCount",
                     "");
           TypeConverter (typeof<ExprConverter>);
           NoComparison>]
@@ -46,10 +46,11 @@ module Scripting =
         | String of string * Origin option
         | Option of Expr option * Origin option
         | List of Expr list * Origin option
-        | Keyphrase of Map<int, Expr> * Origin option
         | Tuple of Map<int, Expr> * Origin option
-        | Call of Expr list * Origin option
+        | Keyphrase of Map<int, Expr> * Origin option
+        | Apply of Expr list * Origin option
         | Get of string * Origin option
+        | Set of string * Origin option
         | Entity of WorldTypes.Entity * Origin option
         | Camera of Origin option
         | Do of Name * Expr list * Origin option // executes an engine command, more can be found in the NuPlugin
@@ -77,10 +78,11 @@ module Scripting =
             | String (_, optOrigin)
             | Option (_, optOrigin)
             | List (_, optOrigin)
-            | Keyphrase (_, optOrigin)
             | Tuple (_, optOrigin)
-            | Call (_, optOrigin)
+            | Keyphrase (_, optOrigin)
+            | Apply (_, optOrigin)
             | Get (_, optOrigin)
+            | Set (_, optOrigin)
             | Entity (_, optOrigin)
             | Camera optOrigin
             | Do (_, _, optOrigin)
@@ -173,7 +175,7 @@ module Scripting =
                                             | Symbols ([Atom (categoriesStr, _); handlerBody], _) ->
                                                 Right (categoriesStr.Split [|'/'|] |> List.ofArray, handlerBody)
                                             | _ ->
-                                                Left ^ "Invalid try handler form for handler #" + scstring (i + 1) + ". Requires 1 path and 1 body.")
+                                                Left ("Invalid try handler form for handler #" + scstring (i + 1) + ". Requires 1 path and 1 body."))
                                         handlers
                                 let (errors, handlers) = Either.split eirHandlers
                                 match errors with
@@ -191,8 +193,8 @@ module Scripting =
                         | "break" ->
                             let content = symbolToExpr (Symbols (tail, optOrigin))
                             Break (content, optOrigin) :> obj
-                        | _ -> Call (Binding (!!name, nameOptOrigin) :: List.map symbolToExpr tail, optOrigin) :> obj
-                    | _ -> Call (List.map symbolToExpr symbols, optOrigin) :> obj
+                        | _ -> Apply (Binding (!!name, nameOptOrigin) :: List.map symbolToExpr tail, optOrigin) :> obj
+                    | _ -> Apply (List.map symbolToExpr symbols, optOrigin) :> obj
             | :? Expr -> source
             | _ -> failconv "Invalid ExprConverter conversion from source." None
 
