@@ -95,8 +95,8 @@
     <Compile Include="WorldRender.fs" />
     <Compile Include="WorldAudio.fs" />
     <Compile Include="WorldObservation.fs" />
-    <Compile Include="WorldScriptTypes.fs" />
-    <Compile Include="WorldScriptModules.fs" />
+    <Compile Include="WorldScriptingTypes.fs" />
+    <Compile Include="WorldScriptingModules.fs" />
     <Compile Include="WorldDispatchers.fs" />
     <Compile Include="World.fs" />
     <Compile Include="ReflectionTests.fs" />
