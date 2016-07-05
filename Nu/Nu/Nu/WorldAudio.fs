@@ -79,3 +79,6 @@ module WorldAudioModule =
         static member reloadAudioAssets world =
             let reloadAudioAssetsMessage = ReloadAudioAssetsMessage
             World.addAudioMessage reloadAudioAssetsMessage world
+
+/// The subsystem for the world's audio player.
+type AudioPlayerSubsystem = WorldAudioModule.AudioPlayerSubsystem

@@ -57,42 +57,7 @@ module Nu =
             // mark init flag
             Initialized <- true
 
-/// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
-/// specific values.
-type NuPlugin () =
-
-    /// Make user-defined subsystems such that Nu can utilitze them at run-time.
-    abstract MakeSubsystems : unit -> (string * World Subsystem) list
-    default this.MakeSubsystems () = []
-    
-    /// Optionally make a user-defined game dispatchers such that Nu can utililize it at run-time.
-    abstract MakeOptGameDispatcher : unit -> GameDispatcher option
-    default this.MakeOptGameDispatcher () = None
-    
-    /// Make user-defined screen dispatchers such that Nu can utililize them at run-time.
-    abstract MakeScreenDispatchers : unit -> ScreenDispatcher list
-    default this.MakeScreenDispatchers () = []
-    
-    /// Make user-defined group dispatchers such that Nu can utililize them at run-time.
-    abstract MakeGroupDispatchers : unit -> GroupDispatcher list
-    default this.MakeGroupDispatchers () = []
-    
-    /// Make user-defined entity dispatchers such that Nu can utililize them at run-time.
-    abstract MakeEntityDispatchers : unit -> EntityDispatcher list
-    default this.MakeEntityDispatchers () = []
-    
-    /// Make user-defined assets such that Nu can utililize them at run-time.
-    abstract MakeFacets : unit -> Facet list
-    default this.MakeFacets () = []
-    
-    /// Make the overlay routes that will allow Nu to use different overlays for the specified
-    /// types. For example, a returned router of (typeof<ButtonDispatcher>.Name, Some "CustomButtonOverlay")
-    /// will cause all buttons to use the overlay with the name "CustomButtonOverlay" rather
-    /// than the default "ButtonDispatcher" overlay.
-    abstract MakeOverlayRoutes : unit -> (string * string option) list
-    default this.MakeOverlayRoutes () = []
-
-[<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+[<AutoOpen>]
 module WorldModule =
 
     let private ScreenTransitionMouseLeftKey = makeGuid ()
@@ -423,7 +388,7 @@ module WorldModule =
                                     match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
                                     | Right (entityState, world) ->
                                         let oldWorld = world
-                                        let facetNames = World.getEntityFacetNamesReflectively entityState // hacky copy elided
+                                        let facetNames = World.getEntityFacetNamesReflectively entityState
                                         let entityState = Overlayer.applyOverlay6 EntityState.copy overlayName overlayName facetNames entityState oldOverlayer overlayer
                                         let world = World.setEntityStateWithoutEvent entityState entity world
                                         World.updateEntityInEntityTree entity oldWorld world
@@ -499,7 +464,7 @@ module WorldModule =
         static member private processTasklet (taskletsNotRun, world) tasklet =
             let tickTime = World.getTickTime world
             if tickTime = tasklet.ScheduledTime then
-                let world = tasklet.Operation world
+                let world = tasklet.Command.Execute world
                 (taskletsNotRun, world)
             elif tickTime > tasklet.ScheduledTime then
                 Log.debug ^ "Tasklet leak found for time '" + scstring tickTime + "'."

@@ -115,7 +115,7 @@ module WorldScreenModule =
         static member destroyScreen screen world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
-                  Operation = fun world -> World.destroyScreenImmediate screen world }
+                  Command = { Execute = fun world -> World.destroyScreenImmediate screen world }}
             World.addTasklet tasklet world
 
         /// Create a screen and add it to the world.

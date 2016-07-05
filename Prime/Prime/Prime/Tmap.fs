@@ -128,3 +128,5 @@ module TmapModule =
                 (fun state k v -> if pred k v then add k v state else state)
                 (makeEmpty ^ Some map.CommitMultiplier)
                 map
+
+type Tmap<'k, 'v when 'k : comparison> = TmapModule.Tmap<'k, 'v>

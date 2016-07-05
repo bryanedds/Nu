@@ -104,7 +104,7 @@ module WorldGroupModule =
         static member destroyGroup group world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
-                  Operation = fun world -> World.destroyGroupImmediate group world }
+                  Command = { Execute = fun world -> World.destroyGroupImmediate group world }}
             World.addTasklet tasklet world
             
         /// Destroy multiple groups in the world immediately. Can be dangerous if existing in-flight publishing depends
@@ -120,7 +120,7 @@ module WorldGroupModule =
         static member destroyGroups groups world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
-                  Operation = fun world -> World.destroyGroupsImmediate groups world }
+                  Command = { Execute = fun world -> World.destroyGroupsImmediate groups world }}
             World.addTasklet tasklet world
 
         /// Create a group and add it to the world.

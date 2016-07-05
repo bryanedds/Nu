@@ -159,3 +159,6 @@ module NameOperators =
     /// Convert a name string to a name.
     let inline (!!) nameStr =
         Name.make nameStr
+
+/// A name for optimized keying in hashing containers.
+type Name = NameModule.Name

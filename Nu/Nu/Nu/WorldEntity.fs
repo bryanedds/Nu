@@ -295,7 +295,7 @@ module WorldEntityModule =
         static member destroyEntity entity world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
-                  Operation = fun world -> World.destroyEntityImmediate entity world }
+                  Command = { Execute = fun world -> World.destroyEntityImmediate entity world }}
             World.addTasklet tasklet world
 
         /// Destroy multiple entities in the world immediately. Can be dangerous if existing in-flight publishing
@@ -311,7 +311,7 @@ module WorldEntityModule =
         static member destroyEntities entities world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
-                  Operation = fun world -> World.destroyEntitiesImmediate entities world }
+                  Command = { Execute = fun world -> World.destroyEntitiesImmediate entities world }}
             World.addTasklet tasklet world
 
         /// Reassign an entity's identity and / or group. Note that since this destroys the reassigned entity

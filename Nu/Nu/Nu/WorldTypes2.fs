@@ -7,30 +7,108 @@ open OpenTK
 open Prime
 open Nu
     
-[<AutoOpen>]
-module EventsModule =
+/// The data for a mouse move event.
+type [<StructuralEquality; NoComparison>] MouseMoveData =
+    { Position : Vector2 }
 
-    /// The data for a mouse move event.
-    type [<StructuralEquality; NoComparison>] MouseMoveData =
-        { Position : Vector2 }
+/// The data for a mouse button event.
+type [<StructuralEquality; NoComparison>] MouseButtonData =
+    { Position : Vector2
+      Button : MouseButton
+      Down : bool }
 
-    /// The data for a mouse button event.
-    type [<StructuralEquality; NoComparison>] MouseButtonData =
-        { Position : Vector2
-          Button : MouseButton
-          Down : bool }
+/// The data for a keyboard key event.
+type [<StructuralEquality; NoComparison>] KeyboardKeyData =
+    { ScanCode : int
+      Repeated : bool
+      Down : bool }
 
-    /// The data for a keyboard key event.
-    type [<StructuralEquality; NoComparison>] KeyboardKeyData =
-        { ScanCode : int
-          Repeated : bool
-          Down : bool }
+/// The data for a collision event.
+type [<StructuralEquality; NoComparison>] CollisionData =
+    { Normal : Vector2
+      Speed : single
+      Collidee : Entity }
 
-    /// The data for a collision event.
-    type [<StructuralEquality; NoComparison>] CollisionData =
-        { Normal : Vector2
-          Speed : single
-          Collidee : Entity }
+/// Describes an entity value independent of the engine.
+type [<NoComparison>] EntityDescriptor =
+    { EntityDispatcher : string
+      EntityProperties : Map<string, Symbol> }
+
+    /// The empty entity descriptor.
+    static member empty =
+        { EntityDispatcher = String.Empty
+          EntityProperties = Map.empty }
+
+/// Describes a group value independent of the engine.
+type [<NoComparison>] GroupDescriptor =
+    { GroupDispatcher : string
+      GroupProperties : Map<string, Symbol>
+      Entities : EntityDescriptor list }
+
+    /// The empty group descriptor.
+    static member empty =
+        { GroupDispatcher = String.Empty
+          GroupProperties = Map.empty
+          Entities = [] }
+
+/// Describes a screen value independent of the engine.
+type [<NoComparison>] ScreenDescriptor =
+    { ScreenDispatcher : string
+      ScreenProperties : Map<string, Symbol>
+      Groups : GroupDescriptor list }
+
+    /// The empty screen descriptor.
+    static member empty =
+        { ScreenDispatcher = String.Empty
+          ScreenProperties = Map.empty
+          Groups = [] }
+
+/// Describes a game value independent of the engine.
+type [<NoComparison>] GameDescriptor =
+    { GameDispatcher : string
+      GameProperties : Map<string, Symbol>
+      Screens : ScreenDescriptor list }
+
+    /// The empty game descriptor.
+    static member empty =
+        { GameDispatcher = String.Empty
+          GameProperties = Map.empty
+          Screens = [] }
+
+/// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
+/// specific values.
+type NuPlugin () =
+
+    /// Make user-defined subsystems such that Nu can utilitze them at run-time.
+    abstract MakeSubsystems : unit -> (string * World Subsystem) list
+    default this.MakeSubsystems () = []
+    
+    /// Optionally make a user-defined game dispatchers such that Nu can utililize it at run-time.
+    abstract MakeOptGameDispatcher : unit -> GameDispatcher option
+    default this.MakeOptGameDispatcher () = None
+    
+    /// Make user-defined screen dispatchers such that Nu can utililize them at run-time.
+    abstract MakeScreenDispatchers : unit -> ScreenDispatcher list
+    default this.MakeScreenDispatchers () = []
+    
+    /// Make user-defined group dispatchers such that Nu can utililize them at run-time.
+    abstract MakeGroupDispatchers : unit -> GroupDispatcher list
+    default this.MakeGroupDispatchers () = []
+    
+    /// Make user-defined entity dispatchers such that Nu can utililize them at run-time.
+    abstract MakeEntityDispatchers : unit -> EntityDispatcher list
+    default this.MakeEntityDispatchers () = []
+    
+    /// Make user-defined assets such that Nu can utililize them at run-time.
+    abstract MakeFacets : unit -> Facet list
+    default this.MakeFacets () = []
+    
+    /// Make the overlay routes that will allow Nu to use different overlays for the specified
+    /// types. For example, a returned router of (typeof<ButtonDispatcher>.Name, Some "CustomButtonOverlay")
+    /// will cause all buttons to use the overlay with the name "CustomButtonOverlay" rather
+    /// than the default "ButtonDispatcher" overlay.
+    abstract MakeOverlayRoutes : unit -> (string * string option) list
+    default this.MakeOverlayRoutes () = []
 
 [<RequireQualifiedAccess>]
 module Events =
@@ -138,55 +216,6 @@ module Simulants =
     /// The default entity - may or may not exist.
     let DefaultEntity = DefaultGroup => Constants.Engine.DefaultEntityName
 
-[<AutoOpen>]
-module DescriptorsModule =
-
-    /// Describes an entity value independent of the engine.
-    type [<NoComparison>] EntityDescriptor =
-        { EntityDispatcher : string
-          EntityProperties : Map<string, Symbol> }
-    
-        /// The empty entity descriptor.
-        static member empty =
-            { EntityDispatcher = String.Empty
-              EntityProperties = Map.empty }
-    
-    /// Describes a group value independent of the engine.
-    type [<NoComparison>] GroupDescriptor =
-        { GroupDispatcher : string
-          GroupProperties : Map<string, Symbol>
-          Entities : EntityDescriptor list }
-    
-        /// The empty group descriptor.
-        static member empty =
-            { GroupDispatcher = String.Empty
-              GroupProperties = Map.empty
-              Entities = [] }
-    
-    /// Describes a screen value independent of the engine.
-    type [<NoComparison>] ScreenDescriptor =
-        { ScreenDispatcher : string
-          ScreenProperties : Map<string, Symbol>
-          Groups : GroupDescriptor list }
-    
-        /// The empty screen descriptor.
-        static member empty =
-            { ScreenDispatcher = String.Empty
-              ScreenProperties = Map.empty
-              Groups = [] }
-    
-    /// Describes a game value independent of the engine.
-    type [<NoComparison>] GameDescriptor =
-        { GameDispatcher : string
-          GameProperties : Map<string, Symbol>
-          Screens : ScreenDescriptor list }
-    
-        /// The empty game descriptor.
-        static member empty =
-            { GameDispatcher = String.Empty
-              GameProperties = Map.empty
-              Screens = [] }
-
 module Descriptors =
 
     /// Describe a game with the given properties values and contained screens.
@@ -213,13 +242,6 @@ module Descriptors =
           EntityProperties = Map.ofSeq properties }
 
 [<AutoOpen>]
-module CommandModule =
-
-    /// A command that transforms the world in some manner.
-    type [<NoEquality; NoComparison>] Command =
-        { Execute : World -> World }
-
-[<AutoOpen>]
 module WorldAmbientStateModule =
 
     type World with
@@ -242,13 +264,13 @@ module WorldAmbientStateModule =
         static member setTickRate tickRate world =
             World.updateAmbientState
                 (AmbientState.addTasklet
-                    { ScheduledTime = World.getTickTime world; Operation = fun world -> World.setTickRateImmediately tickRate world }) world
+                    { ScheduledTime = World.getTickTime world; Command = { Execute = fun world -> World.setTickRateImmediately tickRate world }}) world
 
         /// Reset the tick time to 0.
         static member resetTickTime world =
             World.updateAmbientState
                 (AmbientState.addTasklet
-                    { ScheduledTime = World.getTickTime world; Operation = fun world -> World.updateAmbientState AmbientState.resetTickTime world }) world
+                    { ScheduledTime = World.getTickTime world; Command = { Execute = fun world -> World.updateAmbientState AmbientState.resetTickTime world }}) world
 
         /// Get the world's tick time.
         static member getTickTime world =

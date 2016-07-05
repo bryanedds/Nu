@@ -195,3 +195,6 @@ module OverlayerModule =
                     scvalue<Overlay list>
                 make intrinsicOverlays extrinsicOverlays |> Right
             with exn -> Left ^ "Could not make overlayer from file '" + filePath + "' due to: " + scstring exn
+
+/// Defines the manner in which overlays are applied to targets.
+type Overlayer = OverlayerModule.Overlayer

@@ -56,13 +56,6 @@ type RelationConverter (targetType : Type) =
 [<AutoOpen>]
 module RelationModule =
 
-    /// The interface of a relation.
-    type IAddress =
-        interface
-            /// The names of an address.
-            abstract OptNames : Name option list
-            end
-
     /// A relation that can be resolved to an address via projection.
     type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>] 'a Relation =
         private
@@ -91,9 +84,6 @@ module RelationModule =
         /// Equate Relations.
         static member equals relation relation2 =
             relation.OptNames = relation2.OptNames
-
-        interface IAddress with
-            member this.OptNames = this.OptNames
     
         interface 'a Relation IEquatable with
             member this.Equals that =
@@ -125,3 +115,6 @@ module RelationModule =
         /// Make an address from a '/' delimited string.
         let makeFromFullName<'a> fullName =
             Address<'a>.makeFromFullName fullName
+
+/// A relation that can be resolved to an address via projection.
+type 'a Relation = 'a RelationModule.Relation

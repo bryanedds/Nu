@@ -7,6 +7,8 @@ type [<CLIMutable; ReferenceEquality>] EventInfo =
       FunctionName : string
       MoreInfo : string }
 
+type EventTrace = EventInfo list
+
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module EventInfo =
 
@@ -20,19 +22,14 @@ module EventInfo =
           FunctionName = functionName
           MoreInfo = moreInfo }
 
-[<AutoOpen>]
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module EventTrace =
 
-    type EventTrace = EventInfo list
+    let record moduleName functionName eventTrace : EventTrace =
+        EventInfo.record moduleName functionName :: eventTrace
 
-    [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-    module EventTrace =
+    let record4 moduleName functionName moreInfo eventTrace : EventTrace =
+        EventInfo.record3 moduleName functionName moreInfo :: eventTrace
 
-        let record moduleName functionName eventTrace : EventTrace =
-            EventInfo.record moduleName functionName :: eventTrace
-
-        let record4 moduleName functionName moreInfo eventTrace : EventTrace =
-            EventInfo.record3 moduleName functionName moreInfo :: eventTrace
-
-        let empty : EventTrace =
-            []
+    let empty : EventTrace =
+        []

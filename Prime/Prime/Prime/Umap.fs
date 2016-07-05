@@ -59,3 +59,5 @@ module UmapModule =
             let (result, tmap) = Tmap.filter pred !map.RefMap
             map.RefMap := tmap
             result
+
+type Umap<'k, 'v when 'k : comparison> = UmapModule.Umap<'k, 'v>

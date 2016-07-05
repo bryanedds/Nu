@@ -252,3 +252,7 @@ module VmapModule =
                 (fun map (k, v) -> add k v map)
                 (makeEmpty ())
                 pairs
+
+/// A very fast persistent hash map.
+/// Works in effectively constant-time for look-ups and updates.
+type Vmap<'k, 'v when 'k : comparison> = VmapModule.Vmap<'k, 'v>
