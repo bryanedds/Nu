@@ -96,3 +96,6 @@ module SymbolStoreModule =
         /// The empty symbolStore.
         let empty =
             { SymbolStorePackageMap = Map.empty }
+
+/// Provides references to Symbols that are loaded from files.
+type SymbolStore = SymbolStoreModule.SymbolStore

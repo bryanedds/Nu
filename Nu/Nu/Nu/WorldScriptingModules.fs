@@ -778,12 +778,3 @@ module Scripting =
         | Define (_, _, optOrigin) -> Result (Unit optOrigin, env)
         | Handle (_, optOrigin) -> Result (Unit optOrigin, env)
         | Equate (_, _, optOrigin) -> Result (Unit optOrigin, env)
-
-[<AutoOpen>]
-module ScriptSystemModule =
-
-    /// An abstract data type for executing scripts.
-    type [<NoEquality; NoComparison>] ScriptSystem =
-        private
-            { Scripts : Vmap<Guid, Script>
-              Debugging : bool }

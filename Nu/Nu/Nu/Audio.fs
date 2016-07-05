@@ -255,16 +255,19 @@ module AudioPlayerModule =
                 let audioPlayer = AudioPlayer.handleAudioMessages audioMessages audioPlayer
                 let audioPlayer = AudioPlayer.updateAudioPlayer audioPlayer
                 audioPlayer :> IAudioPlayer
+
+/// The primary implementation of IAudioPlayer.
+type AudioPlayer = AudioPlayerModule.AudioPlayer
     
-    /// The mock implementation of IAudioPlayer.
-    type [<ReferenceEquality>] MockAudioPlayer =
-        private
-            { MockAudioPlayer : unit }
+/// The mock implementation of IAudioPlayer.
+type [<ReferenceEquality>] MockAudioPlayer =
+    private
+        { MockAudioPlayer : unit }
     
-        interface IAudioPlayer with
-            member audioPlayer.ClearMessages () = audioPlayer :> IAudioPlayer
-            member audioPlayer.EnqueueMessage _ = audioPlayer :> IAudioPlayer
-            member audioPlayer.Play () = audioPlayer :> IAudioPlayer
+    interface IAudioPlayer with
+        member audioPlayer.ClearMessages () = audioPlayer :> IAudioPlayer
+        member audioPlayer.EnqueueMessage _ = audioPlayer :> IAudioPlayer
+        member audioPlayer.Play () = audioPlayer :> IAudioPlayer
     
-        static member make () =
-            { MockAudioPlayer = () }
+    static member make () =
+        { MockAudioPlayer = () }

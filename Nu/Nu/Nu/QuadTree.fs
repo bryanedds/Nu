@@ -96,6 +96,7 @@ module internal QuadNodeModule =
 [<AutoOpen>]
 module QuadTreeModule =
 
+    /// A spatial structure that organizes elements by recurring 2-dimensional quads.
     type [<NoEquality; NoComparison>] QuadTree<'e when 'e : equality> =
         private
             { Node : 'e QuadNode
@@ -143,3 +144,6 @@ module QuadTreeModule =
         let make<'e when 'e : equality> depth bounds =
             { Node = QuadNode.make<'e> depth bounds
               OmnipresentElements = HashSet HashIdentity.Structural }
+
+/// A spatial structure that organizes elements by recurring 2-dimensional quads.
+type QuadTree<'e when 'e : equality> = QuadTreeModule.QuadTree<'e>
