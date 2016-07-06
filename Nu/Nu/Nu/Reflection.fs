@@ -104,8 +104,7 @@ module Reflection =
         | None -> Name.make ^ scstring id
 
     /// Derive a simulant id and name from an optional name.
-    /// TODO: see if we can improve the name of this function.
-    let deriveIdAndName optName =
+    let deriveNameAndId optName =
         let id = makeGuid ()
         let name = deriveName optName id
         (id, name)
