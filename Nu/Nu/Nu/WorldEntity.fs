@@ -205,7 +205,7 @@ module WorldEntityModule =
             else failwith ^ "Adding an entity that the world already contains at address '" + scstring entity.EntityAddress + "'."
 
         /// Remove an entity in the world. Can be dangerous if existing in-flight publishing depends on the entity's
-        /// existence. Use with caution.
+        /// existence. Consider using World.destroyEntity instead.
         static member internal removeEntity entity world =
             
             // ensure entity exists in the world
@@ -268,6 +268,22 @@ module WorldEntityModule =
         static member internal getEntityFacetNamesReflectively entityState =
             List.map getTypeName entityState.FacetsNp
 
+        static member internal updateEntity (entity : Entity) world =
+            let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
+            let facets = entity.GetFacetsNp world
+            let world = dispatcher.Update (entity, world)
+            let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
+            if entity.GetPublishUpdatesNp world then
+                let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
+                World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () entity.UpdateAddress eventTrace Simulants.Game world
+            else world
+
+        static member internal actualizeEntity (entity : Entity) world =
+            let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
+            let facets = entity.GetFacetsNp world
+            let world = dispatcher.Actualize (entity, world)
+            List.foldBack (fun (facet : Facet) world -> facet.Actualize (entity, world)) facets world
+
         /// Query that the world contains an entity.
         static member containsEntity entity world =
             Option.isSome ^ World.getOptEntityState entity world
@@ -286,7 +302,7 @@ module WorldEntityModule =
             | _ -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
 
         /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight publishing depends on
-        /// the entity's existence. Use with caution.
+        /// the entity's existence. Consider using World.destroyEntity instead.
         static member destroyEntityImmediate entity world =
             World.removeEntity entity world
 
@@ -299,7 +315,7 @@ module WorldEntityModule =
             World.addTasklet tasklet world
 
         /// Destroy multiple entities in the world immediately. Can be dangerous if existing in-flight publishing
-        /// depends on any of the entities' existences. Use with caution.
+        /// depends on any of the entities' existences. Consider using World.destroyEntities instead.
         static member destroyEntitiesImmediate entities world =
             List.foldBack
                 (fun entity world -> World.destroyEntityImmediate entity world)
@@ -387,24 +403,6 @@ module WorldEntityModule =
             let world = dispatcher.PropagatePhysics (entity, world)
             List.fold (fun world (facet : Facet) -> facet.PropagatePhysics (entity, world)) world facets
 
-        /// Update an entity.
-        static member updateEntity (entity : Entity) world =
-            let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
-            let facets = entity.GetFacetsNp world
-            let world = dispatcher.Update (entity, world)
-            let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
-            if entity.GetPublishUpdatesNp world then
-                let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
-                World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () entity.UpdateAddress eventTrace Simulants.Game world
-            else world
-
-        /// Actualize an entity.
-        static member actualizeEntity (entity : Entity) world =
-            let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
-            let facets = entity.GetFacetsNp world
-            let world = dispatcher.Actualize (entity, world)
-            List.foldBack (fun (facet : Facet) world -> facet.Actualize (entity, world)) facets world
-
         /// Get the quick size of an entity (the appropriate user-defined size for an entity).
         static member getEntityQuickSize (entity : Entity) world =
             let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
@@ -449,7 +447,7 @@ module WorldEntityModule =
                     picked)
                 entitiesSorted
 
-        /// Try to set an entity's overlay name.
+        /// Try to set an entity's optional overlay name.
         static member trySetEntityOptOverlayName optOverlayName entity world =
             let oldEntityState = World.getEntityState entity world
             let oldOptOverlayName = oldEntityState.OptOverlayName

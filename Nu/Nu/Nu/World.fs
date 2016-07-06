@@ -107,7 +107,7 @@ module WorldModule =
                  (typeof<StaticSpriteFacet>.Name, StaticSpriteFacet () :> Facet)
                  (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
 
-        static member rebuildEntityTreeImpl screen world =
+        static member internal rebuildEntityTreeImpl screen world =
             let tree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
             let entities = screen |> flip World.proxyGroups world |> Seq.map (flip World.proxyEntities world) |> Seq.concat
             for entity in entities do
@@ -159,7 +159,7 @@ module WorldModule =
                     World.subscribe5 ScreenTransitionMouseX2Key World.handleAsSwallow (Events.MouseX2 ->- Events.Any) Simulants.Game |>
                     World.subscribe5 ScreenTransitionKeyboardKeyKey World.handleAsSwallow (Events.KeyboardKey ->- Events.Any) Simulants.Game
 
-        /// Select the given screen without transitioning.
+        /// Select the given screen without transitioning, even if another transition is taking place.
         static member selectScreen screen world =
             let world =
                 match World.getOptSelectedScreen world with
@@ -478,7 +478,7 @@ module WorldModule =
             World.restoreTasklets taskletsNotRun world
 
         /// Process an input event from SDL and ultimately publish any related game events.
-        static member processInput (evt : SDL.SDL_Event) world =
+        static member private processInput (evt : SDL.SDL_Event) world =
             let world =
                 match evt.``type`` with
                 | SDL.SDL_EventType.SDL_QUIT ->
@@ -591,7 +591,7 @@ module WorldModule =
             | None -> world
 
         /// Update the game engine once per frame, updating its subsystems and publishing the Update event.
-        static member processUpdate handleUpdate world =
+        static member private processUpdate handleUpdate world =
             let world = handleUpdate world
             match World.getLiveness world with
             | Running ->
@@ -611,19 +611,16 @@ module WorldModule =
                 | Exiting -> (Exiting, world)
             | Exiting -> (Exiting, world)
 
-        /// TODO: document!
-        static member processRender handleRender world =
+        static member private processRender handleRender world =
             let world = World.processSubsystems RenderType world
             handleRender world
 
-        /// TODO: document!
-        static member processPlay world =
+        static member private processPlay world =
             let world = World.processSubsystems AudioType world
             let world = World.updateTickTime world
             World.incrementUpdateCount world
 
-        /// TODO: document!
-        static member cleanUp world =
+        static member private cleanUp world =
             World.cleanUpSubsystems world |> ignore
 
         /// TODO: document!

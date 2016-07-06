@@ -781,7 +781,7 @@ module ScriptSystemModule =
             | Define (_, _, optOrigin) -> Result (Unit optOrigin, env)
             | Handle (_, optOrigin) -> Result (Unit optOrigin, env)
             | Equate (_, _, optOrigin) -> Result (Unit optOrigin, env)
-            
+
     /// An abstract data type for executing scripts.
     /// Has an unused type param to give it a unique name.
     type [<NoEquality; NoComparison>] 'a ScriptSystem =

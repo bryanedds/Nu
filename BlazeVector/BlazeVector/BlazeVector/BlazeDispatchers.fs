@@ -166,7 +166,7 @@ module PlayerModule =
             else (Cascade, world)
 
         static let getLastTimeOnGround (player : Entity) world =
-            if not ^ World.bodyOnGround (player.GetPhysicsId world) world
+            if not ^ World.isBodyOnGround (player.GetPhysicsId world) world
             then player.GetLastTimeOnGroundNp world
             else World.getTickTime world
 

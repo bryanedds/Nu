@@ -72,7 +72,7 @@ module WorldGameModule =
             Simulants.Game.GetOptSelectedScreen world
 
         /// Set the currently selected screen or None. Be careful using this function directly as
-        //// you may be wanting to use the higher-level World.transitionScreen function instead.
+        /// you may be wanting to use the higher-level World.transitionScreen function instead.
         static member setOptSelectedScreen optScreen world =
             Simulants.Game.SetOptSelectedScreen optScreen world
 
