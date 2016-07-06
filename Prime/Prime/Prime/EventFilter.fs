@@ -45,11 +45,11 @@ and [<TypeConverter (typeof<RexprConverter>)>] Rexpr (pattern) =
 module EventFilter =
 
     /// Describes how events are filtered.
-    [<Syntax ("Any All None Pattern Empty", "")>]
-    type [<ReferenceEquality>] EventFilter =
-        | Any of EventFilter list
-        | All of EventFilter list
-        | None of EventFilter list
+    [<Syntax ("Any All NotAny Pattern Empty", "")>]
+    type [<NoEquality; NoComparison>] Filter =
+        | Any of Filter list
+        | All of Filter list
+        | NotAny of Filter list
         | Pattern of Rexpr * Rexpr list
         | Empty
 
@@ -58,7 +58,7 @@ module EventFilter =
         match eventFilter with
         | Any exprs -> List.fold (fun passed eventFilter -> passed || filter addressStr traceRev eventFilter) false exprs
         | All exprs -> List.fold (fun passed eventFilter -> passed && filter addressStr traceRev eventFilter) true exprs
-        | None exprs -> not ^ List.fold (fun passed eventFilter -> passed || filter addressStr traceRev eventFilter) false exprs
+        | NotAny exprs -> not ^ List.fold (fun passed eventFilter -> passed || filter addressStr traceRev eventFilter) false exprs
         | Pattern (addressRexpr, traceRexpr) ->
             if addressRexpr.IsMatch addressStr then
                 let mutable passes = true
@@ -69,9 +69,3 @@ module EventFilter =
                 passes
             else false
         | Empty -> true
-
-[<AutoOpen>]
-module EventFilterModule =
-
-    /// Describes how events are filtered.
-    type EventFilter = EventFilter.EventFilter

@@ -69,7 +69,7 @@ module Core =
     let getEventFilter () =
         match ConfigurationManager.AppSettings.["EventFilter"] with
         | null -> EventFilter.Empty
-        | eventFilter -> scvalue<EventFilter> eventFilter
+        | eventFilter -> scvalue<EventFilter.Filter> eventFilter
 
 [<AutoOpen>]
 module CoreOperators =

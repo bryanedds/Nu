@@ -89,7 +89,7 @@ module EventSystemModule =
               EventStates : Vmap<Guid, obj>
               EventTracer : string -> unit
               EventTracing : bool
-              EventFilter : EventFilter
+              EventFilter : EventFilter.Filter
               EventAddresses : obj Address list }
 
     [<RequireQualifiedAccess>]

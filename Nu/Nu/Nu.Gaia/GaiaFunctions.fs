@@ -674,8 +674,8 @@ module Gaia =
 
     let private handleApplyEventFilterClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            try let eventFilter = scvalue<EventFilter> form.eventFilterTextBox.Text
-                let eventFilterKeywords0 = match typeof<EventFilter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
+            try let eventFilter = scvalue<EventFilter.Filter> form.eventFilterTextBox.Text
+                let eventFilterKeywords0 = match typeof<EventFilter.Filter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
                 let world = World.setEventFilter eventFilter world
                 form.eventFilterTextBox.Text <- (Symbol.prettyPrint eventFilterKeywords0 ^ scstring eventFilter) + "\r\n"
                 world
@@ -688,7 +688,7 @@ module Gaia =
         addWorldChanger ^ fun world ->
             let eventFilter = World.getEventFilter world
             let eventFilterStr = scstring eventFilter
-            let eventFilterKeywords0 = match typeof<EventFilter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
+            let eventFilterKeywords0 = match typeof<EventFilter.Filter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             let eventFilterPretty = Symbol.prettyPrint eventFilterKeywords0 eventFilterStr
             form.eventFilterTextBox.Text <- eventFilterPretty + "\r\n"
             form.eventFilterTextBox.EmptyUndoBuffer ()
@@ -937,7 +937,7 @@ module Gaia =
         form.Closing.Add (handleFormClosing form)
         
         // populate event filter keywords
-        match typeof<EventFilter>.GetCustomAttribute<SyntaxAttribute> true with
+        match typeof<EventFilter.Filter>.GetCustomAttribute<SyntaxAttribute> true with
         | null -> ()
         | syntax ->
             form.eventFilterTextBox.Keywords0 <- syntax.Keywords0
