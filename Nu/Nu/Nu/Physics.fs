@@ -212,13 +212,13 @@ type IPhysicsEngine =
     /// Get the linear velocity of the body with the given physics id.
     abstract GetBodyLinearVelocity : PhysicsId -> Vector2
     /// Get the contact normals where the body with the given physics id is touching the ground.
-    abstract GetBodyGroundContactNormals : PhysicsId -> Vector2 list
-    /// Try to get a contact normal where the body with the given physics id is touching the ground.
-    abstract GetBodyOptGroundContactNormal : PhysicsId -> Vector2 option
-    /// Try to get a contact tangent where the body with the given physics id is touching the ground.
-    abstract GetBodyOptGroundContactTangent : PhysicsId -> Vector2 option
+    abstract GetBodyToGroundContactNormals : PhysicsId -> Vector2 list
+    /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
+    abstract GetOptBodyToGroundContactNormal : PhysicsId -> Vector2 option
+    /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).
+    abstract GetOptBodyToGroundContactTangent : PhysicsId -> Vector2 option
     /// Query that the body with the given physics id is on the ground.
-    abstract BodyOnGround : PhysicsId -> bool
+    abstract IsBodyOnGround : PhysicsId -> bool
     /// Clear all of the physics messages that have been enqueued.
     abstract ClearMessages : unit -> IPhysicsEngine
     /// Enqueue a message from an external source.
@@ -501,7 +501,7 @@ module PhysicsEngineModule =
                 let body = physicsEngine.Bodies.[physicsId]
                 PhysicsEngine.toPixelV2 body.LinearVelocity
     
-            member physicsEngine.GetBodyGroundContactNormals physicsId =
+            member physicsEngine.GetBodyToGroundContactNormals physicsId =
                 let normals = (physicsEngine :> IPhysicsEngine).GetBodyContactNormals physicsId
                 List.filter
                     (fun normal ->
@@ -509,21 +509,21 @@ module PhysicsEngineModule =
                         theta < Math.PI * 0.25)
                     normals
     
-            member physicsEngine.GetBodyOptGroundContactNormal physicsId =
-                let groundNormals = (physicsEngine :> IPhysicsEngine).GetBodyGroundContactNormals physicsId
+            member physicsEngine.GetOptBodyToGroundContactNormal physicsId =
+                let groundNormals = (physicsEngine :> IPhysicsEngine).GetBodyToGroundContactNormals physicsId
                 match groundNormals with
                 | [] -> None
                 | _ :: _ ->
                     let averageNormal = List.reduce (fun normal normal2 -> (normal + normal2) * 0.5f) groundNormals
                     Some averageNormal
     
-            member physicsEngine.GetBodyOptGroundContactTangent physicsId =
-                match (physicsEngine :> IPhysicsEngine).GetBodyOptGroundContactNormal physicsId with
+            member physicsEngine.GetOptBodyToGroundContactTangent physicsId =
+                match (physicsEngine :> IPhysicsEngine).GetOptBodyToGroundContactNormal physicsId with
                 | Some normal -> Some ^ Vector2 (normal.Y, -normal.X)
                 | None -> None
     
-            member physicsEngine.BodyOnGround physicsId =
-                let groundNormals = (physicsEngine :> IPhysicsEngine).GetBodyGroundContactNormals physicsId
+            member physicsEngine.IsBodyOnGround physicsId =
+                let groundNormals = (physicsEngine :> IPhysicsEngine).GetBodyToGroundContactNormals physicsId
                 not ^ List.isEmpty groundNormals
     
             member physicsEngine.ClearMessages () =
@@ -582,10 +582,10 @@ type MockPhysicsEngine =
         member physicsEngine.BodyExists _ = false
         member physicsEngine.GetBodyContactNormals _ = failwith "No bodies in MockPhysicsEngine"
         member physicsEngine.GetBodyLinearVelocity _ = failwith "No bodies in MockPhysicsEngine"
-        member physicsEngine.GetBodyGroundContactNormals _ = failwith "No bodies in MockPhysicsEngine"
-        member physicsEngine.GetBodyOptGroundContactNormal _ = failwith "No bodies in MockPhysicsEngine"
-        member physicsEngine.GetBodyOptGroundContactTangent _ = failwith "No bodies in MockPhysicsEngine"
-        member physicsEngine.BodyOnGround _ = failwith "No bodies in MockPhysicsEngine"
+        member physicsEngine.GetBodyToGroundContactNormals _ = failwith "No bodies in MockPhysicsEngine"
+        member physicsEngine.GetOptBodyToGroundContactNormal _ = failwith "No bodies in MockPhysicsEngine"
+        member physicsEngine.GetOptBodyToGroundContactTangent _ = failwith "No bodies in MockPhysicsEngine"
+        member physicsEngine.IsBodyOnGround _ = failwith "No bodies in MockPhysicsEngine"
         member physicsEngine.ClearMessages () = physicsEngine :> IPhysicsEngine
         member physicsEngine.EnqueueMessage _ = physicsEngine :> IPhysicsEngine
         member physicsEngine.Integrate _ = ([], physicsEngine :> IPhysicsEngine)

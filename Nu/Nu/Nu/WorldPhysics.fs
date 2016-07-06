@@ -53,9 +53,9 @@ module WorldPhysicsModule =
         member this.BodyExists physicsId = this.PhysicsEngine.BodyExists physicsId
         member this.GetBodyContactNormals physicsId = this.PhysicsEngine.GetBodyContactNormals physicsId
         member this.GetBodyLinearVelocity physicsId = this.PhysicsEngine.GetBodyLinearVelocity physicsId
-        member this.GetBodyGroundContactNormals physicsId = this.PhysicsEngine.GetBodyGroundContactNormals physicsId
-        member this.GetBodyOptGroundContactNormal physicsId = this.PhysicsEngine.GetBodyOptGroundContactNormal physicsId
-        member this.GetBodyOptGroundContactTangent physicsId = this.PhysicsEngine.GetBodyOptGroundContactTangent physicsId
+        member this.GetBodyToGroundContactNormals physicsId = this.PhysicsEngine.GetBodyToGroundContactNormals physicsId
+        member this.GetOptBodyToGroundContactNormal physicsId = this.PhysicsEngine.GetOptBodyToGroundContactNormal physicsId
+        member this.GetOptBodyToGroundContactTangent physicsId = this.PhysicsEngine.GetOptBodyToGroundContactTangent physicsId
         member this.IsBodyOnGround physicsId = this.PhysicsEngine.IsBodyOnGround physicsId
     
         interface World Subsystem with
@@ -98,16 +98,16 @@ module WorldPhysicsModule =
             World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyLinearVelocity physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Get the contact normals where the body with the given physics id is touching the ground.
-        static member getBodyGroundContactNormals physicsId world =
-            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyGroundContactNormals physicsId) Constants.Engine.PhysicsEngineSubsystemName world
+        static member getBodyToGroundContactNormals physicsId world =
+            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyToGroundContactNormals physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
-        /// Try to get a contact normal where the body with the given physics id is touching the ground.
-        static member getBodyOptGroundContactNormal physicsId world =
-            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyOptGroundContactNormal physicsId) Constants.Engine.PhysicsEngineSubsystemName world
+        /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
+        static member getOptBodyToGroundContactNormal physicsId world =
+            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetOptBodyToGroundContactNormal physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
-        /// Try to get a contact tangent where the body with the given physics id is touching the ground.
-        static member getBodyOptGroundContactTangent physicsId world =
-            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyOptGroundContactTangent physicsId) Constants.Engine.PhysicsEngineSubsystemName world
+        /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).
+        static member getOptBodyToGroundContactTangent physicsId world =
+            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetOptBodyToGroundContactTangent physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Query that the body with the given physics id is on the ground.
         static member isBodyOnGround physicsId world =

@@ -175,7 +175,7 @@ module PlayerModule =
             let lastTimeOnGround = getLastTimeOnGround player world
             let world = player.SetLastTimeOnGroundNp lastTimeOnGround world
             let physicsId = player.GetPhysicsId world
-            let optGroundTangent = World.getBodyOptGroundContactTangent physicsId world
+            let optGroundTangent = World.getOptBodyToGroundContactTangent physicsId world
             let force =
                 match optGroundTangent with
                 | Some groundTangent ->
