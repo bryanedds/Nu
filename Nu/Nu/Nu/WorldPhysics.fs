@@ -56,7 +56,7 @@ module WorldPhysicsModule =
         member this.GetBodyGroundContactNormals physicsId = this.PhysicsEngine.GetBodyGroundContactNormals physicsId
         member this.GetBodyOptGroundContactNormal physicsId = this.PhysicsEngine.GetBodyOptGroundContactNormal physicsId
         member this.GetBodyOptGroundContactTangent physicsId = this.PhysicsEngine.GetBodyOptGroundContactTangent physicsId
-        member this.BodyOnGround physicsId = this.PhysicsEngine.BodyOnGround physicsId
+        member this.IsBodyOnGround physicsId = this.PhysicsEngine.IsBodyOnGround physicsId
     
         interface World Subsystem with
             member this.SubsystemType = UpdateType
@@ -110,8 +110,8 @@ module WorldPhysicsModule =
             World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyOptGroundContactTangent physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Query that the body with the given physics id is on the ground.
-        static member bodyOnGround physicsId world =
-            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.BodyOnGround physicsId) Constants.Engine.PhysicsEngineSubsystemName world
+        static member isBodyOnGround physicsId world =
+            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.IsBodyOnGround physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Send a message to the physics system to create a physics body.
         static member createBody (entity : Entity) entityId bodyProperties world =

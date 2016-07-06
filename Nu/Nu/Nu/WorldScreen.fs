@@ -82,7 +82,7 @@ module WorldScreenModule =
             else failwith ^ "Adding a screen that the world already contains at address '" + scstring screen.ScreenAddress + "'."
 
         /// Remove a screen from the world. Can be dangerous if existing in-flight publishing depends on the screen's
-        /// existence. Use with caution.
+        /// existence. Consider using World.destroyScreen instead.
         static member removeScreen screen world =
             let eventTrace = EventTrace.record "World" "removeScreen" EventTrace.empty
             let world = World.publish () (Events.ScreenRemoving ->- screen) eventTrace screen world
@@ -106,7 +106,7 @@ module WorldScreenModule =
                 _ seq
 
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight publishing depends on the
-        /// screen's existence. Use with caution.
+        /// screen's existence. Consider using World.destroyScreen instead.
         static member destroyScreenImmediate screen world =
             World.removeScreen screen world
 

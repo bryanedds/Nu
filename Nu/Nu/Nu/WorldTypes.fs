@@ -702,6 +702,12 @@ module WorldTypes =
 #endif
             world
 
+        (* EntityTree *)
+
+        /// Rebuild the entity tree if needed.
+        static member internal rebuildEntityTree screen world =
+            world.Dispatchers.RebuildEntityTree screen world
+
         (* EventSystem *)
 
         /// Get event subscriptions.
@@ -831,10 +837,6 @@ module WorldTypes =
         /// Get the facets of the world.
         static member getFacets world =
             world.Dispatchers.Facets
-
-        /// Rebuild the entity tree if needed.
-        static member rebuildEntityTree screen world =
-            world.Dispatchers.RebuildEntityTree screen world
 
         (* Subsystems *)
 

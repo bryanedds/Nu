@@ -69,7 +69,7 @@ module WorldGroupModule =
             else failwith ^ "Adding a group that the world already contains at address '" + scstring group.GroupAddress + "'."
 
         /// Remove a group in the world. Can be dangerous if existing in-flight publishing depends on the group's
-        /// existence. Use with caution.
+        /// existence. Consider using World.destroyGroup instead.
         static member internal removeGroup group world =
             let eventTrace = EventTrace.record "World" "removeGroup" EventTrace.empty
             let world = World.publish () (Events.GroupRemoving ->- group) eventTrace group world
@@ -95,7 +95,7 @@ module WorldGroupModule =
             | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
 
         /// Destroy a group in the world immediately. Can be dangerous if existing in-flight publishing depends on the
-        /// group's existence. Use with caution.
+        /// group's existence. Consider using World.destroyGroup instead.
         static member destroyGroupImmediate group world =
             World.removeGroup group world
 
@@ -108,7 +108,7 @@ module WorldGroupModule =
             World.addTasklet tasklet world
             
         /// Destroy multiple groups in the world immediately. Can be dangerous if existing in-flight publishing depends
-        /// on any of the groups' existences. Use with caution.
+        /// on any of the groups' existences. Consider using World.destroyGroups instead.
         static member destroyGroupsImmediate groups world =
             List.foldBack
                 (fun group world -> World.destroyGroupImmediate group world)
