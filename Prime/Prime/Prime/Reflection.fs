@@ -34,7 +34,7 @@ module Reflection =
 
     // NOTE: had to do some reflection hacking get this assembly as it was the only way I could
     // access ListModule.OfSeq dynamically.
-    let FSharpCoreAssembly =
+    let private FSharpCoreAssembly =
         Array.find
             (fun (assembly : Assembly) -> assembly.FullName.StartsWith ("FSharp.Core,", StringComparison.Ordinal))
             (AppDomain.CurrentDomain.GetAssemblies ())

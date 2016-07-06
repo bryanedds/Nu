@@ -316,7 +316,7 @@ module WorldTypes =
     
         /// Make a screen state value.
         static member make optSpecialization optName dispatcher =
-            let (id, name) = Reflection.deriveIdAndName optName
+            let (id, name) = Reflection.deriveNameAndId optName
             let screenState =
                 { Id = id
                   Name = name
@@ -362,7 +362,7 @@ module WorldTypes =
     
         /// Make a group state value.
         static member make optSpecialization optName dispatcher =
-            let (id, name) = Reflection.deriveIdAndName optName
+            let (id, name) = Reflection.deriveNameAndId optName
             { GroupState.Id = id
               Name = name
               Xtension = Xtension.safe
@@ -436,7 +436,7 @@ module WorldTypes =
 
         /// Make an entity state value.
         static member make optSpecialization optName optOverlayName dispatcher =
-            let (id, name) = Reflection.deriveIdAndName optName
+            let (id, name) = Reflection.deriveNameAndId optName
             { Id = id
               Name = name
               Xtension = Xtension.safe
@@ -1243,18 +1243,6 @@ type EntityDispatcher = WorldTypes.EntityDispatcher
 /// Dynamically augments an entity's behavior in a composable way.
 type Facet = WorldTypes.Facet
 
-/// Hosts the ongoing state of a game. The end-user of this engine should never touch this.
-type internal GameState = WorldTypes.GameState
-
-/// Hosts the ongoing state of a screen. The end-user of this engine should never touch this.
-type internal ScreenState = WorldTypes.ScreenState
-
-/// Hosts the ongoing state of a group. The end-user of this engine should never touch this.
-type internal GroupState = WorldTypes.GroupState
-
-/// Hosts the ongoing state of an entity. The end-user of this engine should never touch this.
-type internal EntityState = WorldTypes.EntityState
-
 /// The game type that hosts the various screens used to navigate through a game.
 type Game = WorldTypes.Game
 
@@ -1270,12 +1258,6 @@ type Group = WorldTypes.Group
 /// OPTIMIZATION: Includes pre-constructed entity change and update event address to avoid
 /// reconstructing new ones for each entity every frame.
 type Entity = WorldTypes.Entity
-
-/// The world's dispatchers (including facets).
-/// 
-/// I would prefer this type to be inlined in World, but it has been extracted to its own white-box
-/// type for efficiency reasons.
-type internal Dispatchers = WorldTypes.Dispatchers
 
 /// The world, in a functional programming sense. Hosts the game object, the dependencies needed
 /// to implement a game, messages to by consumed by the various engine sub-systems, and general
