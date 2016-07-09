@@ -84,6 +84,7 @@
     <Compile Include="AmbientState.fs" />
     <Compile Include="WorldTypes.fs" />
     <Compile Include="WorldTypes2.fs" />
+    <Compile Include="WorldEvents.fs" />
     <Compile Include="WorldFacet.fs" />
     <Compile Include="WorldEntity.fs" />
     <Compile Include="WorldGroup.fs" />

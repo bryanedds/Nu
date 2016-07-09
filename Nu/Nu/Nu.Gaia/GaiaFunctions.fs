@@ -806,7 +806,8 @@ module Gaia =
         then World.exit world
         else world
 
-    let private attachToWorld targetDir form world =
+    /// Attach Gaia to the given world.
+    let attachToWorld targetDir form world =
         match World.getUserState world : obj with
         | :? unit ->
             if World.getSelectedScreen world = Simulants.EditorScreen then
