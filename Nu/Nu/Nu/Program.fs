@@ -20,13 +20,14 @@ module Program =
 
     system          | language      | editor
     -----------------------------------------------
-    overlay         | s-expr DSL    | Visual Studio
-    asset graph     | s-expr DSL    | Visual Studio
+    overlay         | s-expr DSL    | Visual Studio & Gaia
+    asset graph     | s-expr DSL    | Visual Studio & Gaia
     simulants defs  | s-expr DSL    | Gaia
     event filtering | s-expr DSL    | Gaia
     collision bodies| s-expr DSL    | Gaia
-    effect system   | s-expr DSL    | Aether (TBA)
-    mind (TBA)      | s-expr DSL    | Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
+    effect system   | s-expr DSL    | Gaia & Aether (TBA)
+    mind(TBA)       | s-expr DSL    | Gaia & Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
+    vsrl script(WIP)| s-expr DSL    | Visual Studio & Gaia
     interactions    | F# (chains)   | Visual Studio
     subsystems      | F#            | Visual Studio
     dispatchers     | F#            | Visual Studio

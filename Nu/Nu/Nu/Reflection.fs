@@ -15,11 +15,8 @@ type [<NoEquality; NoComparison>] PropertyExpr =
     | DefineExpr of obj
     | VariableExpr of (unit -> obj)
 
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module PropertyExpr =
-
     /// Evaluate a property expression.
-    let eval expr =
+    static member eval expr =
         match expr with
         | DefineExpr value -> value
         | VariableExpr fn -> fn ()
@@ -30,11 +27,8 @@ type [<NoEquality; NoComparison>] PropertyDefinition =
       PropertyType : Type
       PropertyExpr : PropertyExpr }
 
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module PropertyDefinition =
-
     /// Validate a property definition.
-    let validate propertyDefinition =
+    static member validate propertyDefinition =
         if propertyDefinition.PropertyName = "FacetNames" then failwith "FacetNames cannot be an intrinsic property."
         if propertyDefinition.PropertyName = "OptOverlayName" then failwith "OptOverlayName cannot be an intrinsic property."
         if Array.exists (fun gta -> gta = typeof<obj>) propertyDefinition.PropertyType.GenericTypeArguments then
@@ -43,13 +37,13 @@ module PropertyDefinition =
                 "Use explicit typing on all values that carry incomplete type information such as empty lists, empty sets, and none options."
 
     /// Make a property definition.
-    let make propertyName propertyType propertyExpr =
+    static member make propertyName propertyType propertyExpr =
         { PropertyName = propertyName; PropertyType = propertyType; PropertyExpr = propertyExpr }
 
     /// Make a property definition, validating it in the process.
-    let makeValidated propertyName propertyType propertyExpr =
-        let result = make propertyName propertyType propertyExpr
-        validate result
+    static member makeValidated propertyName propertyType propertyExpr =
+        let result = PropertyDefinition.make propertyName propertyType propertyExpr
+        PropertyDefinition.validate result
         result
 
 /// In tandem with the define literal, grants a nice syntax to define value properties.
