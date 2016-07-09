@@ -98,7 +98,6 @@
     <Compile Include="WorldScripting.fs" />
     <Compile Include="WorldScriptSystem.fs" />
     <Compile Include="WorldDispatchers.fs" />
-    <Compile Include="WorldPlugin.fs" />
     <Compile Include="World.fs" />
     <Compile Include="ReflectionTests.fs" />
     <Compile Include="EffectTests.fs" />
