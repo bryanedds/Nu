@@ -48,14 +48,6 @@ module SymbolTests =
         let value = scvalue<int> "0"
         Assert.Equal (0, value)
 
-    let [<Fact>] canConvertStringToOperator () =
-        match Symbol.fromString "!=" with
-        | Atom (str, _) -> Assert.Equal<string> ("Not_Eq", str)
-        | _ -> Assert.True false
-
-    let [<Fact>] canConvertOperatorToString () =
-        Assert.Equal<string> (Symbol.toString ^ Atom ("Not_Eq", None), "!=")
-
     let [<Fact>] canConvertStringToNone () =
         let value = scvalue<string option> "None"
         Assert.Equal<string option> (None, value)

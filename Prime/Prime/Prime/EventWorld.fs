@@ -184,7 +184,7 @@ module EventWorld =
                 (fun (handling, world : 'w) (_, subscriber : Participant, subscription) ->
 #if DEBUG
                     let eventAddresses = getEventAddresses world
-                    let cycleDetected = List.containsDuplicates eventAddresses
+                    let cycleDetected = List.containsTriplicates eventAddresses
                     if cycleDetected then Log.info ^ "Event cycle detected in '" + scstring eventAddresses + "'."
 #else
                     let cycleDetected = false
