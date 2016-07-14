@@ -7,6 +7,7 @@ open Prime
 open Prime.Chain
 open Prime.Observation
 open Nu
+open Nu.Observation
 open AStar
 open InfinityRpg
 

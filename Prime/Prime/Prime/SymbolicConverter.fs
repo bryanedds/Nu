@@ -153,9 +153,15 @@ type SymbolicConverter (pointType : Type) =
             // symbolize vanilla .NET type
             else
                 let typeConverter = TypeDescriptor.GetConverter sourceType
-                if typeConverter.CanConvertTo typeof<Symbol>
-                then typeConverter.ConvertTo (source, typeof<Symbol>) :?> Symbol
-                else (typeConverter.ConvertTo (source, typeof<string>) :?> string, None) |> Atom
+                match typeConverter with
+                | :? DateTimeConverter ->
+                    // HACK: we do not want to use this converter here as it strips the time when converting to string!
+                    let dateTimeStr = source.ToString ()
+                    String (dateTimeStr, None)
+                | _ ->
+                    if typeConverter.CanConvertTo typeof<Symbol>
+                    then typeConverter.ConvertTo (source, typeof<Symbol>) :?> Symbol
+                    else (typeConverter.ConvertTo (source, typeof<string>) :?> string, None) |> Atom
 
     let toString (sourceType : Type) (source : obj) =
         let symbol = toSymbol sourceType source
