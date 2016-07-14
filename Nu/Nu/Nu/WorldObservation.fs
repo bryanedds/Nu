@@ -1,7 +1,7 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2012-2016.
 
-namespace Prime
+namespace Nu
 open System
 open System.Diagnostics
 open LanguagePrimitives
