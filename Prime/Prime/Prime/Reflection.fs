@@ -53,8 +53,8 @@ module Reflection =
         let iEnumerable = source :?> IEnumerable
         Set.ofSeq ^ enumerable<IComparable> iEnumerable
 
-    let objsToCollection collectionTypeName (arrayType : Type) (objs : _ seq) =
-        let gargs = arrayType.GetGenericArguments ()
+    let objsToCollection collectionTypeName (sequenceType : Type) (objs : _ seq) =
+        let gargs = if sequenceType.IsArray then [|sequenceType.GetElementType ()|] else (sequenceType.GetGenericArguments ())
         let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod gargs
         let ofSeq = ((FSharpCoreAssembly.GetType collectionTypeName).GetMethod ("OfSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod gargs
         ofSeq.Invoke (null, [|cast.Invoke (null, [|objs|])|])
