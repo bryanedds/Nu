@@ -65,7 +65,7 @@ module Scripting =
         | LetMany of (Name * Expr) list * Origin option
         | Fun of string list * Expr * int * Origin option
         | If of Expr * Expr * Expr * Origin option
-        | Case of (Expr * Expr) list * Origin option
+        | Cond of (Expr * Expr) list * Origin option
         | Try of Expr * (string list * Expr) list * Origin option
         | Keyword of string * Origin option
         | Binding of Name * Origin option
@@ -100,7 +100,7 @@ module Scripting =
             | LetMany (_, optOrigin)
             | Fun (_, _, _, optOrigin)
             | If (_, _, _, optOrigin)
-            | Case (_, optOrigin)
+            | Cond (_, optOrigin)
             | Try (_, _, optOrigin)
             | Keyword (_, optOrigin)
             | Binding (_, optOrigin)

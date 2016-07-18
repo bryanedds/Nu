@@ -719,14 +719,14 @@ module ScriptSystemModule =
             | Bool (bool, _) -> if bool then eval consequent env else eval alternative env
             | _ -> Result (Violation (["invalidIfCondition"], "Must provide an expression that evaluates to a bool in an if condition.", optOrigin), env)
 
-        and evalCase exprPairs optOrigin env =
+        and evalCond exprPairs optOrigin env =
             List.foldUntil
                 (fun (result : Result) (condition, consequent) ->
                     let conditionEvaled = eval condition env
                     match conditionEvaled.Evaled with
                     | Violation _ -> Some (Result (conditionEvaled.Evaled, result.Env))
                     | Bool (bool, _) -> if bool then Some (eval consequent env) else None
-                    | _ -> Some (Result (Violation (["invalidCaseCondition"], "Must provide an expression that evaluates to a bool in a case condition.", optOrigin), env)))
+                    | _ -> Some (Result (Violation (["invalidCondCondition"], "Must provide an expression that evaluates to a bool in a case condition.", optOrigin), env)))
                 (Result (Unit optOrigin, env))
                 exprPairs
 
@@ -772,7 +772,7 @@ module ScriptSystemModule =
             | Fun _ -> Result (expr, env)
             | LetMany _ -> Result (expr, env)
             | If (condition, consequent, alternative, optOrigin) -> evalIf condition consequent alternative optOrigin env
-            | Case (exprPairs, optOrigin) -> evalCase exprPairs optOrigin env
+            | Cond (exprPairs, optOrigin) -> evalCond exprPairs optOrigin env
             | Try (body, handlers, optOrigin) -> evalTry body handlers optOrigin env
             | Keyword _ -> Result (expr, env)
             | Binding _ -> Result (expr, env)
