@@ -78,10 +78,9 @@ type SymbolicConverter (pointType : Type) =
                 Symbols ([keySymbol; valueSymbol], None)
 
             // symbolize array
-            elif sourceType.Name = typedefof<_ array>.Name then
-                let gargs = sourceType.GetGenericArguments ()
+            elif sourceType.IsArray then
                 let items = Reflection.objToObjList source
-                let symbols = List.map (toSymbol gargs.[0]) items
+                let symbols = List.map (toSymbol ^ sourceType.GetElementType ()) items
                 Symbols (symbols, None)
 
             // symbolize list
@@ -201,12 +200,10 @@ type SymbolicConverter (pointType : Type) =
             | None ->
 
                 // desymbolize array
-                if destType.Name = typedefof<_ array>.Name then
+                if destType.IsArray then
                     match symbol with
                     | Symbols (symbols, _) ->
-                        let gargs = destType.GetGenericArguments ()
-                        let elementType = gargs.[0]
-                        let elements = List.map (fromSymbol elementType) symbols
+                        let elements = List.map (fromSymbol ^ destType.GetElementType ()) symbols
                         Reflection.objsToArray destType elements
                     | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
                         failconv "Expected Symbols for conversion to array." ^ Some symbol
