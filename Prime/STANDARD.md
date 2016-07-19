@@ -34,7 +34,7 @@ What people often don't understand is that good code standards aren't designed t
 
 11) Avoid object and struct types, as well as instance members and properties, unless you have a specific need for them (such as for a plug-in, interop, or a DSL, etc), and document that need.
 
-12) Avoid arrays generally, and if they can't be avoided due to, say, interop, avoid exposing them to consuming functions by converting them to an immutable data structure, or at minimum, a seq.
+12) Avoid arrays except when needed for performance reasons, and if they're need for, say, interop, avoid exposing them to consuming functions by converting them to an immutable data structure, or at minimum, a seq.
 
 13) Try to preserve debuggability of code by -
 
@@ -63,7 +63,7 @@ This is required due to an unresolved compiler bug touched on here - http://stac
 
 1) Use 4 spaces for indentation, not 2, nor 3. [*5 is right out.*](https://www.youtube.com/watch?v=xOrgLj9lOwk&t=1m48s)
 
-2) Use column 120 as the line length limit where practicable. Column 120 is not a hard limit, but is elegantly acheivable in most cases. An exception to this rule is code that constructs error messages.
+2) Use column 120 as the line length limit where practicable. Column 120 is not a hard limit, but is elegantly acheivable in most cases. An exception to this rule is code that constructs logging messages and such.
 
 3) Use the standard F\# naming conventions by -
 
@@ -97,6 +97,8 @@ let result =
                         banana
                         caribou
 ```
+
+For more detailed justification on this rule, please watch starting at 19 minutes and 30 seconds [this presentation](https://www.infoq.com/presentations/7-ineffective-coding-habits).
 
 10) F\#'s syntax is based on ML, which is structurally derived from Lisp rather than C, so use Lisp-style bracing instead of C-style. For example, write this -
 
