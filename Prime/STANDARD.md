@@ -102,9 +102,9 @@ let result =
 
 ```
     let ys =
-        [ f x
-          g x
-          h x ]
+        [f x
+         g x
+         h x]
 ```
 
 - rather than this -
