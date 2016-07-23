@@ -38,8 +38,7 @@ module WorldPhysicsModule =
                     else world
                 | BodyCollisionMessage bodyCollisionMessage ->
                     let source = bodyCollisionMessage.SourceParticipant :?> Entity
-                    match World.getOptEntityState source world with
-                    | Some _ ->
+                    if World.containsEntity source world then
                         let collisionAddress = Events.Collision ->>- source.EntityAddress
                         let collisionData =
                             { Normal = bodyCollisionMessage.Normal
@@ -47,7 +46,7 @@ module WorldPhysicsModule =
                               Collidee = bodyCollisionMessage.SourceParticipant2 :?> Entity }
                         let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
                         World.publish collisionData collisionAddress eventTrace Simulants.Game world
-                    | None -> world
+                    else world
             | Exiting -> world
     
         member this.BodyExists physicsId = this.PhysicsEngine.BodyExists physicsId

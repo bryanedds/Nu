@@ -219,8 +219,8 @@ module Reflection =
         let propertyDefinitions = Map.ofListBy (fun property -> (property.PropertyName, property)) propertyDefinitions
         Map.toValueList propertyDefinitions
         
-    /// Try to read just the target's OptOverlayName from property descriptors.
-    let private tryReadProperty propertyDescriptors (property : PropertyInfo) target =
+    /// Try to read the target's member property from property descriptors.
+    let private tryReadMemberProperty propertyDescriptors (property : PropertyInfo) target =
         match Map.tryFind property.Name propertyDescriptors with
         | Some (propertySymbol : Symbol) ->
             let converter = SymbolicConverter property.PropertyType
@@ -229,7 +229,7 @@ module Reflection =
                 property.SetValue (target, propertyValue)
         | None -> ()
         
-    /// Read one of a target's XProperties from property descriptors.
+    /// Read one of a target's xtension properties from property descriptors.
     let private readXProperty xtension propertyDescriptors (target : 'a) propertyDefinition =
         let targetType = target.GetType ()
         if Seq.notExists
@@ -247,7 +247,7 @@ module Reflection =
             | None -> xtension
         else xtension
         
-    /// Read a target's XProperties from property descriptors.
+    /// Read a target's xtension properties from property descriptors.
     let private readXProperties xtension propertyDescriptors (target : 'a) =
         let propertyDefinitions = getReflectivePropertyDefinitions target
         List.fold (fun xtension -> readXProperty xtension propertyDescriptors target) xtension propertyDefinitions
@@ -311,20 +311,20 @@ module Reflection =
             target
         | None -> target
 
-    /// Read all of a target's .NET properties from property descriptors (except OptOverlayName and FacetNames).
-    let readPropertiesToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
+    /// Read all of a target's member properties from property descriptors (except OptOverlayName and FacetNames).
+    let readMemberPropertiesToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
         let target = copyTarget target
         let properties = (target.GetType ()).GetPropertiesWritable ()
         for property in properties do
             if  property.Name <> "FacetNames" &&
                 property.Name <> "OptOverlayName" &&
                 isPropertyPersistentByName property.Name then
-                tryReadProperty propertyDescriptors property target
+                tryReadMemberProperty propertyDescriptors property target
         target
 
-    /// Read all of a target's member values from property descriptors (except OptOverlayName and FacetNames).
-    let readMembersToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
-        let target = readPropertiesToTarget copyTarget propertyDescriptors target
+    /// Read all of a target's property values from property descriptors (except OptOverlayName and FacetNames).
+    let readPropertiesToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
+        let target = readMemberPropertiesToTarget copyTarget propertyDescriptors target
         readXtension copyTarget propertyDescriptors target
         
     /// Write an Xtension to property descriptors.
@@ -340,22 +340,22 @@ module Reflection =
             propertyDescriptors
             (Xtension.toSeq xtension)
             
-    /// Write a non-Xtension property to a property descriptors.
-    let private writeProperty (propertyValue : obj) (property : PropertyInfo) shouldWriteProperty propertyDescriptors (target : 'a) =
+    /// Write a member property value to a property descriptors.
+    let private writeMemberProperty (propertyValue : obj) (property : PropertyInfo) shouldWriteProperty propertyDescriptors (target : 'a) =
         if  isPropertyPersistent property target &&
             shouldWriteProperty property.Name property.PropertyType propertyValue then
             let valueSymbol = (SymbolicConverter property.PropertyType).ConvertTo (propertyValue, typeof<Symbol>) :?> Symbol
             Map.add property.Name valueSymbol propertyDescriptors
         else propertyDescriptors
 
-    /// Write all of a target's member values to property descriptors.
-    let writeMembersFromTarget shouldWriteProperty propertyDescriptors (target : 'a) =
+    /// Write all of a target's property values to property descriptors.
+    let writePropertiesFromTarget shouldWriteProperty propertyDescriptors (target : 'a) =
         let targetType = target.GetType ()
         let properties = targetType.GetProperties ()
         Seq.fold (fun propertyDescriptors (property : PropertyInfo) ->
             match property.GetValue target with
             | :? Xtension as xtension -> writeXtension shouldWriteProperty propertyDescriptors xtension
-            | propertyValue -> writeProperty propertyValue property shouldWriteProperty propertyDescriptors target)
+            | propertyValue -> writeMemberProperty propertyValue property shouldWriteProperty propertyDescriptors target)
             propertyDescriptors
             properties
 

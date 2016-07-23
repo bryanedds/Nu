@@ -138,7 +138,7 @@ module WorldGroupModule =
             let groupState = World.getGroupState group world
             let groupDispatcherName = getTypeName groupState.DispatcherNp
             let groupDescriptor = { groupDescriptor with GroupDispatcher = groupDispatcherName }
-            let getGroupProperties = Reflection.writeMembersFromTarget tautology3 groupDescriptor.GroupProperties groupState
+            let getGroupProperties = Reflection.writePropertiesFromTarget tautology3 groupDescriptor.GroupProperties groupState
             let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
             let entities = World.proxyEntities group world
             World.writeEntities entities groupDescriptor world
@@ -182,7 +182,7 @@ module WorldGroupModule =
             let groupState = Reflection.attachProperties GroupState.copy groupState.DispatcherNp groupState
 
             // read the group state's value
-            let groupState = Reflection.readMembersToTarget GroupState.copy groupDescriptor.GroupProperties groupState
+            let groupState = Reflection.readPropertiesToTarget GroupState.copy groupDescriptor.GroupProperties groupState
 
             // apply the name if one is provided
             let groupState =
@@ -220,7 +220,7 @@ open System.Reflection
 open System.Collections.Generic
 type Group =
 
-    /// Provides a view of all the built-in properties of a group. Useful for debugging such as with
+    /// Provides a view of all the member properties of a group. Useful for debugging such as with
     /// the Watch feature in Visual Studio.
     static member viewProperties group world =
         let state = World.getGroupState group world

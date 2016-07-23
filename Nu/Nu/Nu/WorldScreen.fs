@@ -141,7 +141,7 @@ module WorldScreenModule =
             let screenState = World.getScreenState screen world
             let screenDispatcherName = getTypeName screenState.DispatcherNp
             let screenDescriptor = { screenDescriptor with ScreenDispatcher = screenDispatcherName }
-            let getScreenProperties = Reflection.writeMembersFromTarget tautology3 screenDescriptor.ScreenProperties screenState
+            let getScreenProperties = Reflection.writePropertiesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
             let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
             let groups = World.proxyGroups screen world
             World.writeGroups groups screenDescriptor world
@@ -185,7 +185,7 @@ module WorldScreenModule =
             let screenState = Reflection.attachProperties ScreenState.copy screenState.DispatcherNp screenState
 
             // read the screen state's value
-            let screenState = Reflection.readMembersToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
+            let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
 
             // apply the name if one is provided
             let screenState =
@@ -227,7 +227,7 @@ open System.Reflection
 open System.Collections.Generic
 type Screen =
 
-    /// Provides a view of all the built-in properties of a screen. Useful for debugging such as with
+    /// Provides a view of all the member properties of a screen. Useful for debugging such as with
     /// the Watch feature in Visual Studio.
     static member viewProperties screen world =
         let state = World.getScreenState screen world

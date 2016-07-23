@@ -377,25 +377,7 @@ module WorldModule =
                     // update overlayer and apply overlays to all entities
                     let world = World.setOverlayer overlayer world
                     let entities = World.proxyEntities1 world
-                    let world =
-                        Seq.fold
-                            (fun world (entity : Entity) ->
-                                let entityState = World.getEntityState entity world
-                                match entityState.OptOverlayName with
-                                | Some overlayName ->
-                                    let oldFacetNames = entityState.FacetNames
-                                    let entityState = Overlayer.applyOverlayToFacetNames EntityState.copy overlayName overlayName entityState oldOverlayer overlayer
-                                    match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
-                                    | Right (entityState, world) ->
-                                        let oldWorld = world
-                                        let facetNames = World.getEntityFacetNamesReflectively entityState
-                                        let entityState = Overlayer.applyOverlay6 EntityState.copy overlayName overlayName facetNames entityState oldOverlayer overlayer
-                                        let world = World.setEntityStateWithoutEvent entityState entity world
-                                        World.updateEntityInEntityTree entity oldWorld world
-                                    | Left error -> Log.info ^ "There was an issue in applying a reloaded overlay: " + error; world
-                                | None -> world)
-                            world
-                            entities
+                    let world = Seq.fold (World.applyEntityOverlay oldOverlayer overlayer) world entities
                     Right (overlayer, world)
 
                 // propagate errors

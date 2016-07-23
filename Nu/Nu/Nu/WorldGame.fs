@@ -118,7 +118,7 @@ module WorldGameModule =
             let gameState = World.getGameState world
             let gameDispatcherName = getTypeName gameState.DispatcherNp
             let gameDescriptor = { gameDescriptor with GameDispatcher = gameDispatcherName }
-            let viewGameProperties = Reflection.writeMembersFromTarget tautology3 gameDescriptor.GameProperties gameState
+            let viewGameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
             let gameDescriptor = { gameDescriptor with GameProperties = viewGameProperties }
             let screens = World.proxyScreens world
             World.writeScreens screens gameDescriptor world
@@ -151,7 +151,7 @@ module WorldGameModule =
             let gameState = World.makeGameState dispatcher
 
             // read the game state's value
-            let gameState = Reflection.readMembersToTarget GameState.copy gameDescriptor.GameProperties gameState
+            let gameState = Reflection.readPropertiesToTarget GameState.copy gameDescriptor.GameProperties gameState
 
             // set the game's state in the world
             let world = World.setGameState gameState world
@@ -172,7 +172,7 @@ open System.Reflection
 open System.Collections.Generic
 type Game =
 
-    /// Provides a view of all the built-in properties of a game. Useful for debugging such as with
+    /// Provides a view of all the member properties of a game. Useful for debugging such as with
     /// the Watch feature in Visual Studio.
     static member viewProperties world =
         let state = World.getGameState world
