@@ -1455,6 +1455,7 @@ module WorldTypes =
             | "Xtension" -> (World.getEntityXtension entity world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getEntityDispatcherNp entity world :> obj, typeof<EntityDispatcher>)
             | "CreationTimeStampNp" -> (World.getEntityCreationTimeStampNp entity world :> obj, typeof<int64>)
+            | "OptOverlayName" -> (World.getEntityOptOverlayName entity world :> obj, typeof<string option>)
             | "OptSpecialization" -> (World.getEntityOptSpecialization entity world :> obj, typeof<string option>)
             | "Position" -> (World.getEntityPosition entity world :> obj, typeof<Vector2>)
             | "Size" -> (World.getEntitySize entity world :> obj, typeof<Vector2>)
