@@ -1412,6 +1412,7 @@ module WorldTypes =
 
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
+        static member internal getEntityXtension entity world = (World.getEntityState entity world).Xtension // TODO: try to get rid of this
         static member internal getEntityDispatcherNp entity world = (World.getEntityState entity world).DispatcherNp
         static member internal getEntityCreationTimeStampNp entity world = (World.getEntityState entity world).CreationTimeStampNp
         static member internal getEntityOptSpecialization entity world = (World.getEntityState entity world).OptSpecialization
@@ -1451,6 +1452,7 @@ module WorldTypes =
             match propertyName with // NOTE: string match for speed
             | "Id" -> (World.getEntityId entity world :> obj, typeof<Guid>)
             | "Name" -> (World.getEntityName entity world :> obj, typeof<Name>)
+            | "Xtension" -> (World.getEntityXtension entity world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getEntityDispatcherNp entity world :> obj, typeof<EntityDispatcher>)
             | "CreationTimeStampNp" -> (World.getEntityCreationTimeStampNp entity world :> obj, typeof<int64>)
             | "OptSpecialization" -> (World.getEntityOptSpecialization entity world :> obj, typeof<string option>)

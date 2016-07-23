@@ -69,7 +69,7 @@ and EntityPropertyDescriptor (property, attributes) =
         | null -> null // WHY THE FUCK IS THIS EVER null???
         | source ->
             let entityTds = source :?> EntityTypeDescriptorSource
-            EntityMemberValue.getValue property entityTds.DescribedEntity !entityTds.RefWorld
+            EntityPropertyValue.getValue property entityTds.DescribedEntity !entityTds.RefWorld
 
     override this.SetValue (source, value) =
         
@@ -118,7 +118,7 @@ and EntityPropertyDescriptor (property, attributes) =
                         match World.trySetEntityOptOverlayName (value :?> string option) entity world with
                         | Right world -> world
                         | Left error -> Log.trace error; world
-                    | _ -> EntityMemberValue.setValue property value entity world
+                    | _ -> EntityPropertyValue.setValue property value entity world
                 let world = World.propagateEntityPhysics entityTds.DescribedEntity world
                 entityTds.RefWorld := world // must be set for property grid
                 entityTds.Form.propertyGrid.Refresh ()
@@ -136,9 +136,8 @@ and EntityTypeDescriptor (optSource : obj) =
             match optSource with
             | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity.GetXtension !source.RefWorld)
             | _ -> None
-        ignore optXtension
         let makePropertyDescriptor = fun (emv, tcas) -> (EntityPropertyDescriptor (emv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
-        let propertyDescriptors = EntityMemberValue.getPropertyDescriptors makePropertyDescriptor optXtension
+        let propertyDescriptors = EntityPropertyValue.getPropertyDescriptors makePropertyDescriptor optXtension
         PropertyDescriptorCollection (Array.ofList propertyDescriptors)
 
 and EntityTypeDescriptorProvider () =
