@@ -19,6 +19,7 @@ module WorldEntityModule =
 
         member this.GetId world = World.getEntityId this world
         member this.GetName world = World.getEntityName this world
+        member this.GetXtension world = World.getEntityXtension this world
         member this.GetDispatcherNp world = World.getEntityDispatcherNp this world
         member this.GetCreationTimeStampNp world = World.getEntityCreationTimeStampNp this world
         member this.GetOptSpecialization world = World.getEntityOptSpecialization this world
