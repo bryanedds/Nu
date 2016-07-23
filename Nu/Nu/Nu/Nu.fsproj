@@ -74,7 +74,7 @@
     <Compile Include="Physics.fs" />
     <Compile Include="Render.fs" />
     <Compile Include="Audio.fs" />
-    <Compile Include="Symbol.fs" />
+    <Compile Include="SymbolStore.fs" />
     <Compile Include="Metadata.fs" />
     <Compile Include="Input.fs" />
     <Compile Include="Effects.fs" />
@@ -83,15 +83,13 @@
     <Compile Include="Subsystems.fs" />
     <Compile Include="AmbientState.fs" />
     <Compile Include="WorldTypes.fs" />
-    <Compile Include="WorldTypes2.fs" />
+    <Compile Include="WorldModules.fs" />
     <Compile Include="WorldEvents.fs" />
-    <Compile Include="WorldFacet.fs" />
     <Compile Include="WorldEntity.fs" />
     <Compile Include="WorldGroup.fs" />
     <Compile Include="WorldScreen.fs" />
     <Compile Include="WorldGame.fs" />
     <Compile Include="WorldInput.fs" />
-    <Compile Include="WorldClipboard.fs" />
     <Compile Include="WorldPhysics.fs" />
     <Compile Include="WorldRender.fs" />
     <Compile Include="WorldAudio.fs" />

@@ -693,9 +693,9 @@ module ScriptSystemModule =
                         | [Entity (entity, optOrigin)] ->
                             let world = Env.getWorld env
                             if World.containsEntity entity world then
-                                let property = entity.GetProperty name world
-                                match InputDictionary.TryGetValue property.PropertyType with
-                                | (true, fn) -> Result (fn property.PropertyValue optOrigin, env)
+                                let (propertyValue, propertyType) = entity.GetProperty name world
+                                match InputDictionary.TryGetValue propertyType with
+                                | (true, fn) -> Result (fn propertyValue optOrigin, env)
                                 | (false, _) -> Result (Violation (["unsupportedPropertyType"], "TODO: proper error msg.", optOrigin), env)
                             else Result (Violation (["invalidEntity"], "Entity '" + scstring entity + "' does not exist.", optOrigin), env)
                         | [_] -> Result (Violation (["invalidGetTargetType"], "TODO: proper error msg.", optOrigin), env)
