@@ -16,24 +16,27 @@ module WorldGameModule =
 
     type Game with
 
-        member this.GetId world = (World.getGameState world).Id
-        member this.GetXtension world = (World.getGameState world).Xtension
-        member this.GetDispatcherNp world = (World.getGameState world).DispatcherNp
-        member this.GetCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
-        member this.GetOptSelectedScreen world = (World.getGameState world).OptSelectedScreen
-        member this.SetOptSelectedScreen value world = World.updateGameState (fun gameState -> { gameState with OptSelectedScreen = value }) world
+        member this.GetId world = World.getGameId world
+        member this.GetXtension world = World.getGameXtension world
+        member this.GetDispatcherNp world = World.getGameDispatcherNp world
+        member this.GetCreationTimeStampNp world = World.getGameCreationTimeStampNp world
+        member this.GetOptSpecialization world = World.getGameOptSpecialization world
+        member this.GetOptSelectedScreen world = World.getGameOptSelectedScreen world
+        member this.SetOptSelectedScreen value world = World.setGameOptSelectedScreen value world
+        member this.GetOptScreenTransitionDestination world = World.getGameOptScreenTransitionDestination world
+        member this.SetOptScreenTransitionDestination value world = World.setGameOptScreenTransitionDestination value world
 
-        /// Get a dynamic property.
-        member this.Get propertyName world : 'a =
-            GameState.get (World.getGameState world) propertyName
+        /// Get a property value and type.
+        member this.GetProperty propertyName world = World.getGameProperty propertyName world
 
-        /// Set a dynamic property.
-        member this.Set propertyName (value : 'a) world = 
-            World.setGameState (GameState.set (World.getGameState world) propertyName value) world
+        /// Get a property value.
+        member this.Get propertyName world : 'a = World.getGamePropertyValue propertyName world
 
-        /// Query that a game dispatches in the same manner as the dispatcher with the target type.
-        member this.DispatchesAs (dispatcherTargetType : Type) world =
-            Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
+        /// Set a property value.
+        member this.Set propertyName (value : 'a) world = World.setGamePropertyValue propertyName value world
+
+        /// Query that a group dispatches in the same manner as the dispatcher with the target type.
+        member this.DispatchesAs (dispatcherTargetType : Type) world = Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
 
     type World with
 
@@ -50,10 +53,6 @@ module WorldGameModule =
         static member internal actualizeGame world =
             let dispatcher = Simulants.Game.GetDispatcherNp world
             dispatcher.Actualize (Simulants.Game, world)
-
-        static member internal makeGameState dispatcher =
-            let gameState = GameState.make dispatcher
-            Reflection.attachProperties GameState.copy dispatcher gameState
 
         // Get all the entities in the world.
         static member proxyEntities1 world =
@@ -115,13 +114,10 @@ module WorldGameModule =
 
         /// Write a game to a game descriptor.
         static member writeGame gameDescriptor world =
-            let gameState = World.getGameState world
-            let gameDispatcherName = getTypeName gameState.DispatcherNp
-            let gameDescriptor = { gameDescriptor with GameDispatcher = gameDispatcherName }
-            let viewGameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
-            let gameDescriptor = { gameDescriptor with GameProperties = viewGameProperties }
-            let screens = World.proxyScreens world
-            World.writeScreens screens gameDescriptor world
+            let writeScreens gameDescriptor world =
+                let screens = World.proxyScreens world
+                World.writeScreens screens gameDescriptor world
+            World.writeGame3 writeScreens gameDescriptor world
 
         /// Write a game to a file.
         static member writeGameToFile (filePath : string) world =
@@ -135,29 +131,7 @@ module WorldGameModule =
 
         /// Read a game from a game descriptor.
         static member readGame gameDescriptor world =
-
-            // create the dispatcher
-            let dispatcherName = gameDescriptor.GameDispatcher
-            let dispatchers = World.getGameDispatchers world
-            let dispatcher =
-                match Map.tryFind dispatcherName dispatchers with
-                | Some dispatcher -> dispatcher
-                | None ->
-                    Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
-                    let dispatcherName = typeof<GameDispatcher>.Name
-                    Map.find dispatcherName dispatchers
-            
-            // make the bare game state
-            let gameState = World.makeGameState dispatcher
-
-            // read the game state's value
-            let gameState = Reflection.readPropertiesToTarget GameState.copy gameDescriptor.GameProperties gameState
-
-            // set the game's state in the world
-            let world = World.setGameState gameState world
-            
-            // read the game's screens
-            World.readScreens gameDescriptor world |> snd
+            World.readGame3 World.readScreens gameDescriptor world
 
         /// Read a game from a file.
         static member readGameFromFile (filePath : string) world =
@@ -174,23 +148,12 @@ type Game =
 
     /// Provides a view of all the member properties of a game. Useful for debugging such as with
     /// the Watch feature in Visual Studio.
-    static member viewProperties world =
-        let state = World.getGameState world
-        state |>
-        getType |>
-        getProperties |>
-        Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state))
-        
+    static member viewMemberProperties world = World.viewGameMemberProperties world
+
     /// Provides a view of all the xtension properties of a game. Useful for debugging such as
     /// with the Watch feature in Visual Studio.
-    static member viewXProperties world =
-        let state = World.getGameState world
-        Xtension.toSeq state.Xtension |>
-        Array.ofSeq |>
-        Array.sortBy fst |>
-        Array.map (fun (name, property) -> (name, property.PropertyValue))
+    static member viewXProperties world = World.viewGameXProperties world
 
     /// Provides a full view of all the member values of a game. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
-    static member view world =
-        Array.append (Game.viewProperties world) (Game.viewXProperties world)
+    static member view world = World.viewGame world
