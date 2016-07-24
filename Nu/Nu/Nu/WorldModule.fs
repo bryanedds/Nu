@@ -542,7 +542,7 @@ module WorldModule =
                 (World.viewMemberProperties state)
                 (World.viewXProperties state)
 
-        (* EntityState *)
+        (* Entity *)
 
         static member private optEntityStateKeyEquality 
             (entityAddress : Entity Address, world : World)
@@ -1130,7 +1130,7 @@ module WorldModule =
             let state = World.getEntityState entity world
             World.view state
 
-        (* GroupState *)
+        (* Group *)
 
         static member private groupStateSetter groupState group world =
 #if DEBUG
@@ -1328,7 +1328,7 @@ module WorldModule =
             let state = World.getGroupState group world
             World.view state
 
-        (* ScreenState *)
+        (* Screen *)
 
         static member private screenStateSetter screenState screen world =
 #if DEBUG
@@ -1546,33 +1546,43 @@ module WorldModule =
             let world = readGroups screenDescriptor screen world |> snd
             (screen, world)
 
-        static member viewScreenMemberProperties entity world =
-            let state = World.getScreenState entity world
+        static member viewScreenMemberProperties screen world =
+            let state = World.getScreenState screen world
             World.viewMemberProperties state
 
-        static member viewScreenXProperties entity world =
-            let state = World.getScreenState entity world
+        static member viewScreenXProperties screen world =
+            let state = World.getScreenState screen world
             World.viewXProperties state
 
-        static member viewScreen entity world =
-            let state = World.getScreenState entity world
+        static member viewScreen screen world =
+            let state = World.getScreenState screen world
             World.view state
 
-        (* GameState *)
+        (* Game *)
 
-        static member internal getGameState world =
+        static member private getGameState world =
             world.GameState
 
-        static member internal setGameState gameState world =
+        static member private setGameState gameState world =
             let _ = world
             let world = World.choose { world with GameState = gameState }
             let _ = EventTrace.record "World" "setGameState" EventTrace.empty
             world
 
-        static member internal updateGameState updater world =
+        static member private updateGameState updater world =
             let gameState = World.getGameState world
             let gameState = updater gameState
             World.setGameState gameState world
+
+        static member internal getGameId world = (World.getGameState world).Id
+        static member internal getGameXtension world = (World.getGameState world).Xtension // TODO: try to get rid of this
+        static member internal getGameDispatcherNp world = (World.getGameState world).DispatcherNp
+        static member internal getGameCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
+        static member internal getGameOptSpecialization world = (World.getGameState world).OptSpecialization
+        static member internal getGameOptSelectedScreen world = (World.getGameState world).OptSelectedScreen
+        static member internal setGameOptSelectedScreen value world = World.updateGameState (fun groupState -> { groupState with OptSelectedScreen = value }) world
+        static member internal getGameOptScreenTransitionDestination world = (World.getGameState world).OptScreenTransitionDestination
+        static member internal setGameOptScreenTransitionDestination value world = World.updateGameState (fun groupState -> { groupState with OptScreenTransitionDestination = value }) world
 
         /// Get the current destination screen if a screen transition is currently underway.
         static member getOptScreenTransitionDestination world =
@@ -1583,21 +1593,82 @@ module WorldModule =
             World.updateGameState
                 (fun gameState -> { gameState with OptScreenTransitionDestination = destination })
                 world
-                
-        // Make the world.
-        static member internal make eventSystem dispatchers subsystems ambientState gameState =
-            let world =
-                { EventSystem = eventSystem
-                  Dispatchers = dispatchers
-                  Subsystems = subsystems
-                  OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
-                  ScreenDirectory = Vmap.makeEmpty ()
-                  AmbientState = ambientState
-                  GameState = gameState
-                  ScreenStates = Vmap.makeEmpty ()
-                  GroupStates = Vmap.makeEmpty ()
-                  EntityStates = Vmap.makeEmpty () }
-            World.choose world
+
+        static member internal getGameProperty propertyName world =
+            match propertyName with // NOTE: string match for speed
+            | "Id" -> (World.getGameId world :> obj, typeof<Guid>)
+            | "Xtension" -> (World.getGameXtension world :> obj, typeof<Xtension>)
+            | "DispatcherNp" -> (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
+            | "CreationTimeStampNp" -> (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
+            | "OptSpecialization" -> (World.getGameOptSpecialization world :> obj, typeof<string option>)
+            | "OptSelectedScreen" -> (World.getGameOptSelectedScreen world :> obj, typeof<Screen option>)
+            | "OptScreenTransitionDestination" -> (World.getGameOptScreenTransitionDestination world :> obj, typeof<Screen option>)
+            | _ ->
+                let property = GameState.getProperty (World.getGameState world) propertyName
+                (property.PropertyValue, property.PropertyType)
+
+        static member internal getGamePropertyValue propertyName world : 'a =
+            let property = World.getGameProperty propertyName world
+            fst property :?> 'a
+
+        static member internal setGamePropertyValue propertyName (value : 'a) world =
+            match propertyName with // NOTE: string match for speed
+            | "Id" -> failwith "Cannot change group id."
+            | "DispatcherNp" -> failwith "Cannot change group dispatcher."
+            | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
+            | "OptSpecialization" -> failwith "Cannot change group specialization."
+            | "OptOptSelectedScreen" -> World.setGameOptSelectedScreen (value :> obj :?> Screen option) world
+            | "OptScreenTransitionDestination" -> World.setGameOptScreenTransitionDestination (value :> obj :?> Screen option) world
+            | _ -> World.setGameState (GameState.set (World.getGameState world) propertyName value) world
+
+        static member internal makeGameState optSpecialization dispatcher =
+            let gameState = GameState.make optSpecialization dispatcher
+            Reflection.attachProperties GameState.copy dispatcher gameState
+
+        static member internal writeGame3 writeScreens gameDescriptor world =
+            let gameState = World.getGameState world
+            let gameDispatcherName = getTypeName gameState.DispatcherNp
+            let gameDescriptor = { gameDescriptor with GameDispatcher = gameDispatcherName }
+            let viewGameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
+            let gameDescriptor = { gameDescriptor with GameProperties = viewGameProperties }
+            writeScreens gameDescriptor world
+
+        static member internal readGame3 readScreens gameDescriptor world =
+
+            // create the dispatcher
+            let dispatcherName = gameDescriptor.GameDispatcher
+            let dispatchers = World.getGameDispatchers world
+            let dispatcher =
+                match Map.tryFind dispatcherName dispatchers with
+                | Some dispatcher -> dispatcher
+                | None ->
+                    Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
+                    let dispatcherName = typeof<GameDispatcher>.Name
+                    Map.find dispatcherName dispatchers
+            
+            // make the bare game state
+            let gameState = World.makeGameState None dispatcher
+
+            // read the game state's value
+            let gameState = Reflection.readPropertiesToTarget GameState.copy gameDescriptor.GameProperties gameState
+
+            // set the game's state in the world
+            let world = World.setGameState gameState world
+            
+            // read the game's screens
+            readScreens gameDescriptor world |> snd
+
+        static member viewGameMemberProperties world =
+            let state = World.getGameState world
+            World.viewMemberProperties state
+
+        static member viewGameXProperties world =
+            let state = World.getGameState world
+            World.viewXProperties state
+
+        static member viewGame world =
+            let state = World.getGameState world
+            World.view state
 
         (* Clipboard *)
         
@@ -1631,3 +1702,21 @@ module WorldModule =
                 let world = World.addEntity false entityState entity world
                 (Some entity, world)
             | None -> (None, world)
+
+        (* World *)
+
+        // Make the world.
+        static member internal make eventSystem dispatchers subsystems ambientState optGameSpecialization activeGameDispatcher =
+            let gameState = GameState.make optGameSpecialization activeGameDispatcher
+            let world =
+                { EventSystem = eventSystem
+                  Dispatchers = dispatchers
+                  Subsystems = subsystems
+                  OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
+                  ScreenDirectory = Vmap.makeEmpty ()
+                  AmbientState = ambientState
+                  GameState = gameState
+                  ScreenStates = Vmap.makeEmpty ()
+                  GroupStates = Vmap.makeEmpty ()
+                  EntityStates = Vmap.makeEmpty () }
+            World.choose world

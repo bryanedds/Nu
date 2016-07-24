@@ -678,11 +678,6 @@ module WorldModule2 =
                          (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockAudioPlayer.make ()) :> World Subsystem)]
                 Subsystems.make subsystemMap
 
-            // make the game state
-            let gameState =
-                let gameDispatcher = dispatchers.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
-                World.makeGameState gameDispatcher
-
             // make the world's ambient state
             let ambientState =
                 let overlayRouter = OverlayRouter.make dispatchers.EntityDispatchers []
@@ -690,8 +685,11 @@ module WorldModule2 =
                 let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                 AmbientState.make 1L camera Map.empty overlayRouter Overlayer.empty SymbolStore.empty userState
 
+            // select the first game dispatcher as active
+            let activeGameDispatcher = dispatchers.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
+
             // make and choose the world
-            let world = World.make eventSystem dispatchers subsystems ambientState gameState
+            let world = World.make eventSystem dispatchers subsystems ambientState None activeGameDispatcher
 
             // initialize OptEntityCache after the fact due to back reference
             let world = World.setOptEntityCache (KeyedCache.make (Address.empty<Entity>, world) None) world
@@ -705,7 +703,7 @@ module WorldModule2 =
 
         /// Try to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member attemptMake preferPluginGameDispatcher tickRate userState (plugin : NuPlugin) sdlDeps =
+        static member attemptMake preferPluginGameDispatcher optGameSpecialization tickRate userState (plugin : NuPlugin) sdlDeps =
 
             // ensure game engine is initialized
             Nu.init false
@@ -786,7 +784,7 @@ module WorldModule2 =
                         AmbientState.make tickRate camera assetMetadataMap overlayRouter overlayer SymbolStore.empty userState
 
                     // make and choose the world
-                    let world = World.make eventSystem dispatchers subsystems ambientState (World.makeGameState activeGameDispatcher)
+                    let world = World.make eventSystem dispatchers subsystems ambientState optGameSpecialization activeGameDispatcher
 
                     // initialize OptEntityCache after the fact due to back reference
                     let world = World.setOptEntityCache (KeyedCache.make (Address.empty<Entity>, world) None) world

@@ -107,6 +107,9 @@ module WorldTypes =
     /// The default dispatcher for games.
     and GameDispatcher () =
     
+        static member PropertyDefinitions =
+            [Define? OptSpecialization (None : string option)]
+    
         /// Register a game when adding it to the world. Note that there is no corresponding
         /// Unregister method due to the inability to remove a game from the world.
         abstract Register : Game * World -> World
@@ -259,6 +262,7 @@ module WorldTypes =
           Xtension : Xtension
           DispatcherNp : GameDispatcher
           CreationTimeStampNp : int64
+          OptSpecialization : string option
           OptSelectedScreen : Screen option
           OptScreenTransitionDestination : Screen option }
 
@@ -279,11 +283,12 @@ module WorldTypes =
             { gameState with GameState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } gameState.Xtension }
     
         /// Make a game state value.
-        static member make dispatcher =
+        static member make optSpecialization dispatcher =
             { Id = makeGuid ()
               Xtension = Xtension.safe
               DispatcherNp = dispatcher
               CreationTimeStampNp = Core.getTimeStamp ()
+              OptSpecialization = optSpecialization
               OptSelectedScreen = None
               OptScreenTransitionDestination = None }
 

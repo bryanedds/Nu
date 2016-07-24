@@ -959,7 +959,7 @@ module Gaia =
     /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
     /// function's various requirements.
     let attemptMakeWorld plugin sdlDeps =
-        let eitherWorld = World.attemptMake false 0L () plugin sdlDeps
+        let eitherWorld = World.attemptMake false None 0L () plugin sdlDeps
         match eitherWorld with
         | Right world ->
             let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.EditorScreen.ScreenName) world |> snd
