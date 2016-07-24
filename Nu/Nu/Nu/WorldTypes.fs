@@ -317,6 +317,10 @@ module WorldTypes =
           OptSelectedScreen : Screen option
           OptScreenTransitionDestination : Screen option }
 
+        /// Get an dynamic property and its type information.
+        static member getProperty gameState propertyName =
+            Xtension.getProperty propertyName gameState.Xtension
+
         /// The dynamic look-up operator.
         static member get gameState propertyName : 'a =
             Xtension.(?) (gameState.Xtension, propertyName)
@@ -360,6 +364,10 @@ module WorldTypes =
           Incoming : Transition
           Outgoing : Transition
           Persistent : bool }
+
+        /// Get an dynamic property and its type information.
+        static member getProperty screenState propertyName =
+            Xtension.getProperty propertyName screenState.Xtension
 
         /// The dynamic look-up operator.
         static member get screenState propertyName : 'a =
@@ -409,6 +417,10 @@ module WorldTypes =
           CreationTimeStampNp : int64
           OptSpecialization : string option
           Persistent : bool }
+
+        /// Get an dynamic property and its type information.
+        static member getProperty groupState propertyName =
+            Xtension.getProperty propertyName groupState.Xtension
 
         /// The dynamic look-up operator.
         static member get groupState propertyName : 'a =
@@ -464,7 +476,7 @@ module WorldTypes =
           FacetNames : string Set
           FacetsNp : Facet list }
 
-        /// Get a dynamic property and its type information.
+        /// Get an dynamic property and its type information.
         static member getProperty entityState propertyName =
             Xtension.getProperty propertyName entityState.Xtension
 
@@ -1592,8 +1604,7 @@ module WorldTypes =
 
         /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight publishing depends on
         /// the entity's existence. Consider using World.destroyEntity instead.
-        static member destroyEntityImmediate entity world =
-            World.removeEntity entity world
+        static member destroyEntityImmediate entity world = World.removeEntity entity world
 
         /// Create an entity and add it to the world.
         static member createEntity dispatcherName optSpecialization optName group world =
@@ -1849,18 +1860,6 @@ module WorldTypes =
                 Right world
             | Left error -> Left error
 
-        static member viewEntityMemberProperties entity world =
-            let state = World.getEntityState entity world
-            World.viewMemberProperties state
-
-        static member viewEntityXProperties entity world =
-            let state = World.getEntityState entity world
-            World.viewXProperties state
-
-        static member viewEntity entity world =
-            let state = World.getEntityState entity world
-            World.view state
-
         static member applyEntityOverlay oldOverlayer overlayer world entity =
             let entityState = World.getEntityState entity world
             match entityState.OptOverlayName with
@@ -1876,6 +1875,18 @@ module WorldTypes =
                     World.updateEntityInEntityTree entity oldWorld world
                 | Left error -> Log.info ^ "There was an issue in applying a reloaded overlay: " + error; world
             | None -> world
+
+        static member viewEntityMemberProperties entity world =
+            let state = World.getEntityState entity world
+            World.viewMemberProperties state
+
+        static member viewEntityXProperties entity world =
+            let state = World.getEntityState entity world
+            World.viewXProperties state
+
+        static member viewEntity entity world =
+            let state = World.getEntityState entity world
+            World.view state
 
         (* GroupState *)
 
@@ -1919,33 +1930,165 @@ module WorldTypes =
             let groupStates = Vmap.remove group.GroupAddress world.GroupStates
             World.choose { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
 
-        static member inline internal getOptGroupState group world =
+        static member private getOptGroupState group world =
             Vmap.tryFind group.GroupAddress world.GroupStates
 
-        static member internal getGroupState group world =
+        static member private getGroupState group world =
             match World.getOptGroupState group world with
             | Some groupState -> groupState
             | None -> failwith ^ "Could not find group with address '" + scstring group.GroupAddress + "'."
 
-        static member internal addGroupState groupState group world =
+        static member private addGroupState groupState group world =
             World.groupStateAdder groupState group world
 
-        static member internal removeGroupState group world =
+        static member private removeGroupState group world =
             World.groupStateRemover group world
 
-        static member inline internal setGroupStateWithoutEvent groupState group world =
+        static member private setGroupStateWithoutEvent groupState group world =
             World.groupStateSetter groupState group world
 
-        static member internal setGroupState groupState group world =
+        static member private setGroupState groupState group world =
             let _ = world
             let world = World.groupStateSetter groupState group world
             let _ = EventTrace.record "World" "setGroupState" EventTrace.empty
             world
 
-        static member internal updateGroupState updater group world =
+        static member private updateGroupState updater group world =
             let groupState = World.getGroupState group world
             let groupState = updater groupState
             World.setGroupState groupState group world
+
+        /// Query that the world contains a group.
+        static member containsGroup group world =
+            Option.isSome ^ World.getOptGroupState group world
+
+        static member internal getGroupId group world = (World.getGroupState group world).Id
+        static member internal getGroupName group world = (World.getGroupState group world).Name
+        static member internal getGroupXtension group world = (World.getGroupState group world).Xtension // TODO: try to get rid of this
+        static member internal getGroupDispatcherNp group world = (World.getGroupState group world).DispatcherNp
+        static member internal getGroupCreationTimeStampNp group world = (World.getGroupState group world).CreationTimeStampNp
+        static member internal getGroupOptSpecialization group world = (World.getGroupState group world).OptSpecialization
+        static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
+        static member internal setGroupPersistent value group world = World.updateGroupState (fun groupState -> { groupState with Persistent = value }) group world
+
+        /// Get a group's property.
+        static member internal getGroupProperty propertyName group world =
+            match propertyName with // NOTE: string match for speed
+            | "Id" -> (World.getGroupId group world :> obj, typeof<Guid>)
+            | "Name" -> (World.getGroupName group world :> obj, typeof<Name>)
+            | "Xtension" -> (World.getGroupXtension group world :> obj, typeof<Xtension>)
+            | "DispatcherNp" -> (World.getGroupDispatcherNp group world :> obj, typeof<GroupDispatcher>)
+            | "CreationTimeStampNp" -> (World.getGroupCreationTimeStampNp group world :> obj, typeof<int64>)
+            | "OptSpecialization" -> (World.getGroupOptSpecialization group world :> obj, typeof<string option>)
+            | "Persistent" -> (World.getGroupPersistent group world :> obj, typeof<bool>)
+            | _ ->
+                let property = GroupState.getProperty (World.getGroupState group world) propertyName
+                (property.PropertyValue, property.PropertyType)
+
+        /// Get a group's property value.
+        static member internal getGroupPropertyValue propertyName group world : 'a =
+            let property = World.getGroupProperty propertyName group world
+            fst property :?> 'a
+
+        /// Set a group's property value.
+        static member internal setGroupPropertyValue propertyName (value : 'a) group world =
+            match propertyName with // NOTE: string match for speed
+            | "Id" -> failwith "Cannot change group id."
+            | "Name" -> failwith "Cannot change group name."
+            | "DispatcherNp" -> failwith "Cannot change group dispatcher."
+            | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
+            | "OptSpecialization" -> failwith "Cannot change group specialization."
+            | "Persistent" -> World.setGroupPersistent (value :> obj :?> bool) group world
+            | _ -> World.setGroupState (GroupState.set (World.getGroupState group world) propertyName value) group world
+
+        static member private addGroup mayReplace groupState group world =
+            let isNew = not ^ World.containsGroup group world
+            if isNew || mayReplace then
+                let world = World.addGroupState groupState group world
+                if isNew then
+                    let dispatcher = World.getGroupDispatcherNp group world
+                    let world = dispatcher.Register (group, world)
+                    let eventTrace = EventTrace.record "World" "addGroup" EventTrace.empty
+                    World.publish () (ftoa<unit> !!"Group/Add" ->- group) eventTrace group world
+                else world
+            else failwith ^ "Adding a group that the world already contains at address '" + scstring group.GroupAddress + "'."
+
+        static member internal removeGroup3 removeEntities group world =
+            let eventTrace = EventTrace.record "World" "removeGroup" EventTrace.empty
+            let world = World.publish () (ftoa<unit> !!"Entity/Removing" ->- group) eventTrace group world
+            if World.containsGroup group world then
+                let dispatcher = World.getGroupDispatcherNp group world
+                let world = dispatcher.Unregister (group, world)
+                let world = removeEntities group world
+                World.removeGroupState group world
+            else world
+
+        /// Create a group and add it to the world.
+        static member createGroup dispatcherName optSpecialization optName screen world =
+            let dispatchers = World.getGroupDispatchers world
+            let dispatcher = Map.find dispatcherName dispatchers
+            let groupState = GroupState.make optSpecialization optName dispatcher
+            let groupState = Reflection.attachProperties GroupState.copy dispatcher groupState
+            let group = screen.ScreenAddress -<<- ntoa<Group> groupState.Name |> Group.proxy
+            let world = World.addGroup false groupState group world
+            (group, world)
+
+        /// Write a group, not including its entities, to a group descriptor.
+        static member writeGroupAlone (group : Group) groupDescriptor world =
+            let groupState = World.getGroupState group world
+            let groupDispatcherName = getTypeName groupState.DispatcherNp
+            let groupDescriptor = { groupDescriptor with GroupDispatcher = groupDispatcherName }
+            let getGroupProperties = Reflection.writePropertiesFromTarget tautology3 groupDescriptor.GroupProperties groupState
+            { groupDescriptor with GroupProperties = getGroupProperties }
+
+        /// Read a group from a group descriptor.
+        static member readGroup5 readEntities groupDescriptor optName screen world =
+
+            // create the dispatcher
+            let dispatcherName = groupDescriptor.GroupDispatcher
+            let dispatchers = World.getGroupDispatchers world
+            let dispatcher =
+                match Map.tryFind dispatcherName dispatchers with
+                | Some dispatcher -> dispatcher
+                | None ->
+                    Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
+                    let dispatcherName = typeof<GroupDispatcher>.Name
+                    Map.find dispatcherName dispatchers
+            
+            // make the bare group state with name as id
+            let groupState = GroupState.make None None dispatcher
+
+            // attach the group state's instrinsic properties from its dispatcher if any
+            let groupState = Reflection.attachProperties GroupState.copy groupState.DispatcherNp groupState
+
+            // read the group state's value
+            let groupState = Reflection.readPropertiesToTarget GroupState.copy groupDescriptor.GroupProperties groupState
+
+            // apply the name if one is provided
+            let groupState =
+                match optName with
+                | Some name -> { groupState with Name = name }
+                | None -> groupState
+
+            // add the group's state to the world
+            let group = screen.ScreenAddress -<<- ntoa<Group> groupState.Name |> Group.proxy
+            let world = World.addGroup true groupState group world
+
+            // read the group's entities
+            let world = readEntities groupDescriptor group world |> snd
+            (group, world)
+
+        static member viewGroupMemberProperties group world =
+            let state = World.getGroupState group world
+            World.viewMemberProperties state
+
+        static member viewGroupXProperties group world =
+            let state = World.getGroupState group world
+            World.viewXProperties state
+
+        static member viewGroup group world =
+            let state = World.getGroupState group world
+            World.view state
 
         (* ScreenState *)
 
