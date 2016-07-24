@@ -58,7 +58,7 @@ module Nu =
             Initialized <- true
 
 [<AutoOpen>]
-module WorldModule =
+module WorldModule2 =
 
     let private ScreenTransitionMouseLeftKey = makeGuid ()
     let private ScreenTransitionMouseCenterKey = makeGuid ()
@@ -524,8 +524,8 @@ module WorldModule =
                 let groups = World.proxyGroups selectedScreen world
                 let world = Seq.fold (fun world group -> World.updateGroup group world) world groups
                 let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
-                let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTree world)
-                let world = World.updateScreenState (fun screenState -> { screenState with EntityTreeNp = entityTree }) selectedScreen world
+                let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTreeNp world)
+                let world = selectedScreen.SetEntityTreeNp entityTree world
                 let entities = QuadTree.getElementsNearBounds viewBounds quadTree
                 List.fold (fun world (entity : Entity) -> World.updateEntity entity world) world entities
             | None -> world
@@ -566,8 +566,8 @@ module WorldModule =
                 let groups = World.proxyGroups selectedScreen world
                 let world = Seq.fold (fun world group -> World.actualizeGroup group world) world groups
                 let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
-                let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTree world)
-                let world = World.updateScreenState (fun screenState -> { screenState with EntityTreeNp = entityTree }) selectedScreen world
+                let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTreeNp world)
+                let world = selectedScreen.SetEntityTreeNp entityTree world
                 let entities = QuadTree.getElementsNearBounds viewBounds quadTree
                 List.fold (fun world (entity : Entity) -> World.actualizeEntity entity world) world entities
             | None -> world

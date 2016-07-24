@@ -35,8 +35,7 @@ module WorldGroupModule =
         member this.Set propertyName (value : 'a) world = World.setGroupPropertyValue propertyName value this world
 
         /// Query that a group dispatches in the same manner as the dispatcher with the target type.
-        member this.DispatchesAs (dispatcherTargetType : Type) world =
-            Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
+        member this.DispatchesAs (dispatcherTargetType : Type) world = Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
 
     type World with
 
@@ -95,10 +94,11 @@ module WorldGroupModule =
             World.addTasklet tasklet world
 
         /// Write a group to a group descriptor.
-        static member writeGroup (group : Group) groupDescriptor world =
-            let groupDescriptor = World.writeGroupAlone group groupDescriptor world
-            let entities = World.proxyEntities group world
-            World.writeEntities entities groupDescriptor world
+        static member writeGroup group groupDescriptor world =
+            let writeEntities group groupDescriptor world =
+                let entities = World.proxyEntities group world
+                World.writeEntities entities groupDescriptor world
+            World.writeGroup4 writeEntities group groupDescriptor world
 
         /// Write multiple groups to a screen descriptor.
         static member writeGroups groups screenDescriptor world =
