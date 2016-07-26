@@ -49,9 +49,13 @@ module Program =
         (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Umap.find k map) entries)
         "Umap"
 
-    // run dictionary timings
-    let dic = Dictionary<string, string * string> ()
-    runTimings
-        (fun entries -> Array.iter (fun (k, v) -> if not ^ dic.ContainsKey k then dic.Add (k, v)) entries)
-        (fun entries () -> Array.iter (fun (k, _) -> ignore ^ dic.[k]) entries)
-        ".NET Dictionary"
+    /// Run timings.
+    /// NOTE: even if this timing functionality is cleared out, the main entry point must remain in tact due to -
+    /// https://github.com/Microsoft/visualfsharp/issues/1371#issuecomment-235101700
+    let [<EntryPoint; STAThread>] main _ =
+        let dic = Dictionary<string, string * string> ()
+        runTimings
+            (fun entries -> Array.iter (fun (k, v) -> if not ^ dic.ContainsKey k then dic.Add (k, v)) entries)
+            (fun entries () -> Array.iter (fun (k, _) -> ignore ^ dic.[k]) entries)
+            ".NET Dictionary"
+        0
