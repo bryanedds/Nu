@@ -97,4 +97,4 @@ module Events =
     let Entity = ntoa<obj> !!"Entity"
     let EntityAdd = Entity -<- ntoa<unit> !!"Add"
     let EntityRemoving = Entity -<- ntoa<unit> !!"Removing"
-    let EntityChange = Entity -<- ntoa<ParticipantChangeData<Entity, World>> !!"Change"
+    let EntityChange propertyName = Entity -<- ltoa<ParticipantChangeData<Entity, World>> [!!"Change"; !!propertyName]

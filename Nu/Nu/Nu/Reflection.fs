@@ -10,6 +10,34 @@ open System.Reflection
 open Prime
 open Nu
 
+/// Describes a simulant property.
+type [<NoEquality; NoComparison>] PropertyTag<'s, 'a, 'w> =
+    { This : 's
+      Name : string
+      Get : 'w -> 'a
+      OptSet : ('a -> 'w -> 'w) option }
+
+    member this.MapGet mapper =
+        { this with Get = mapper this.Get }
+
+    member this.MapSet mapper =
+        { this with OptSet = match this.OptSet with Some set -> Some ^ (fun value -> set ^ mapper value) | None -> None }
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module PropertyTag =
+
+    let mapGet mapper (property : PropertyTag<_, _, _>) =
+        property.MapGet mapper
+
+    let mapSet mapper (property : PropertyTag<_, _, _>) =
+        property.MapSet mapper
+
+    let makeReadOnly this name get =
+        { This = this; Name = name; Get = get; OptSet = None }
+
+    let make this name get set =
+        { This = this; Name = name; Get = get; OptSet = Some set }
+
 /// An evaluatable expression for defining a property.
 type [<NoEquality; NoComparison>] PropertyExpr =
     | DefineExpr of obj
