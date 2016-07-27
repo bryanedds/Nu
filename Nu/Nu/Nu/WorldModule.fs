@@ -441,7 +441,7 @@ module WorldModule =
                 match optEntity with
                 | Some entity ->
                     let oldWorld = world
-                    let world = World.setEntityStateWithoutEvent entityState entity world
+                    let world = World.setEntityState entityState entity world
                     let world = World.updateEntityInEntityTree entity oldWorld world
                     Right (World.getEntityState entity world, world)
                 | None -> Right (entityState, world)
@@ -460,7 +460,7 @@ module WorldModule =
                     match optEntity with
                     | Some entity ->
                         let oldWorld = world
-                        let world = World.setEntityStateWithoutEvent entityState entity world
+                        let world = World.setEntityState entityState entity world
                         let world = World.updateEntityInEntityTree entity oldWorld world
                         let world = facet.Register (entity, world)
                         Right (World.getEntityState entity world, world)
@@ -547,14 +547,6 @@ module WorldModule =
                 (entity.EntityAddress, world)
                 (World.getOptEntityCache world)
 
-        static member private entityStateSetter entityState entity world =
-#if DEBUG
-            if not ^ Vmap.containsKey entity.EntityAddress world.EntityStates then
-                failwith ^ "Cannot set the state of a non-existent entity '" + scstring entity.EntityAddress + "'"
-#endif
-            let entityStates = Vmap.add entity.EntityAddress entityState world.EntityStates
-            World.choose { world with EntityStates = entityStates }
-
         static member private entityStateAdder entityState entity world =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
@@ -589,6 +581,52 @@ module WorldModule =
             let entityStates = Vmap.remove entity.EntityAddress world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
+        static member private entityStateSetter entityState entity world =
+#if DEBUG
+            if not ^ Vmap.containsKey entity.EntityAddress world.EntityStates then
+                failwith ^ "Cannot set the state of a non-existent entity '" + scstring entity.EntityAddress + "'"
+#endif
+            let entityStates = Vmap.add entity.EntityAddress entityState world.EntityStates
+            World.choose { world with EntityStates = entityStates }
+
+        static member private addEntityState entityState entity world =
+            World.entityStateAdder entityState entity world
+
+        static member private removeEntityState entity world =
+            World.entityStateRemover entity world
+
+        static member private publishEntityChange (propertyName : string) (entity : Entity) oldWorld world =
+            let changeEventAddress = ltoa [!!"Entity"; !!"Change"; !!propertyName] ->>- entity.EntityAddress
+            let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
+            World.publish { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity world
+
+        static member private getOptEntityState entity world =
+            World.optEntityStateFinder entity world
+
+        static member private getEntityState entity world =
+            match World.getOptEntityState entity world with
+            | Some entityState -> entityState
+            | None -> failwith ^ "Could not find entity with address '" + scstring entity.EntityAddress + "'."
+
+        static member private setEntityState entityState entity world =
+            World.entityStateSetter entityState entity world
+
+        static member private updateEntityStateWithoutEvent updater entity world =
+            let entityState = World.getEntityState entity world
+            let entityState = updater entityState
+            World.setEntityState entityState entity world
+
+        static member private updateEntityState updater propertyName entity world =
+            let oldWorld = world
+            let world = World.updateEntityStateWithoutEvent updater entity world
+            World.publishEntityChange propertyName entity oldWorld world
+
+        static member private updateEntityStatePlus updater propertyName entity world =
+            let oldWorld = world
+            let world = World.updateEntityStateWithoutEvent updater entity world
+            let world = World.updateEntityInEntityTree entity oldWorld world
+            World.publishEntityChange propertyName entity oldWorld world
+
         /// Query that the world contains an entity.
         static member containsEntity entity world =
             Option.isSome ^ World.getOptEntityState entity world
@@ -611,49 +649,6 @@ module WorldModule =
                 let newPosition = center - newSizeOver2
                 let newSize = newSizeOver2 * 2.0f
                 Vector4 (newPosition.X, newPosition.Y, newPosition.X + newSize.X, newPosition.Y + newSize.Y)
-
-        static member private publishEntityChange (propertyName : string) (entity : Entity) oldWorld world =
-            let changeEventAddress = ltoa [!!"Entity"; !!"Change"; !!propertyName] ->>- entity.EntityAddress
-            let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
-            World.publish { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity world
-
-        static member private getOptEntityState entity world =
-            World.optEntityStateFinder entity world
-
-        static member private getEntityState entity world =
-            match World.getOptEntityState entity world with
-            | Some entityState -> entityState
-            | None -> failwith ^ "Could not find entity with address '" + scstring entity.EntityAddress + "'."
-
-        static member private addEntityState entityState entity world =
-            World.entityStateAdder entityState entity world
-
-        static member private removeEntityState entity world =
-            World.entityStateRemover entity world
-
-        static member private setEntityStateWithoutEvent entityState entity world =
-            World.entityStateSetter entityState entity world
-
-        static member private setEntityState propertyName entityState entity world =
-            let oldWorld = world
-            let world = World.entityStateSetter entityState entity world
-            World.publishEntityChange propertyName entity oldWorld world
-
-        static member private updateEntityStateWithoutEvent updater entity world =
-            let entityState = World.getEntityState entity world
-            let entityState = updater entityState
-            World.setEntityStateWithoutEvent entityState entity world
-
-        static member private updateEntityState updater propertyName entity world =
-            let entityState = World.getEntityState entity world
-            let entityState = updater entityState
-            World.setEntityState propertyName entityState entity world
-
-        static member private updateEntityStatePlus updater propertyName entity world =
-            let oldWorld = world
-            let world = World.updateEntityStateWithoutEvent updater entity world
-            let world = World.updateEntityInEntityTree entity oldWorld world
-            World.publishEntityChange propertyName entity oldWorld world
 
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
@@ -699,10 +694,10 @@ module WorldModule =
             World.publishEntityChange Property? Depth entity oldWorld world
 
         static member internal attachEntityProperty name value entity world =
-            World.setEntityStateWithoutEvent (EntityState.attachProperty name value ^ World.getEntityState entity world) entity world
+            World.setEntityState (EntityState.attachProperty name value ^ World.getEntityState entity world) entity world
 
         static member internal detachEntityProperty name entity world =
-            World.setEntityStateWithoutEvent (EntityState.detachProperty name ^ World.getEntityState entity world) entity world
+            World.setEntityState (EntityState.detachProperty name ^ World.getEntityState entity world) entity world
 
         static member internal getEntityProperty propertyName entity world =
             match propertyName with // NOTE: string match for speed
@@ -725,9 +720,7 @@ module WorldModule =
             | "Persistent" -> (World.getEntityPersistent entity world :> obj, typeof<bool>)
             | "FacetNames" -> (World.getEntityFacetNames entity world :> obj, typeof<string Set>)
             | "FacetsNp" -> (World.getEntityFacetsNp entity world :> obj, typeof<Facet list>)
-            | _ ->
-                let property = EntityState.getProperty (World.getEntityState entity world) propertyName
-                (property.PropertyValue, property.PropertyType)
+            | _ -> let property = EntityState.getProperty propertyName (World.getEntityState entity world) in (property.PropertyValue, property.PropertyType)
 
         static member internal getEntityPropertyValue propertyName entity world : 'a =
             let property = World.getEntityProperty propertyName entity world
@@ -752,7 +745,7 @@ module WorldModule =
             | "Persistent" -> World.setEntityPersistent (value :> obj :?> bool) entity world
             | "FacetNames" -> failwith "Cannot change entity facet names with a property setter."
             | "FacetsNp" -> failwith "Cannot change entity facets with a property setter."
-            | _ -> World.setEntityState propertyName (EntityState.set (World.getEntityState entity world) propertyName value) entity world
+            | _ -> World.updateEntityState (EntityState.set propertyName value) propertyName entity world
 
         /// Get the maxima bounds of the entity as determined by size, position, rotation, and overflow.
         static member getEntityBoundsMax entity world =
@@ -810,8 +803,7 @@ module WorldModule =
                             QuadTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
                             entityTree)
                         screenState.EntityTreeNp
-                let screenState = { screenState with EntityTreeNp = entityTree }
-                let world = World.setScreenState screenState screen world
+                let world = World.setScreenEntityTreeNp entityTree screen world
 
                 // register entity if needed
                 if isNew then
@@ -1056,7 +1048,7 @@ module WorldModule =
                 let facetNames = World.getEntityFacetNamesReflectively entityState
                 let entityState = Overlayer.applyOverlay EntityState.copy oldOverlayName overlayName facetNames entityState overlayer
                 let oldWorld = world
-                let world = World.setEntityStateWithoutEvent entityState entity world
+                let world = World.setEntityState entityState entity world
                 let world = World.updateEntityInEntityTree entity oldWorld world
                 let properties = World.getProperties entityState
                 let world = List.fold (fun world (propertyName, _) -> World.publishEntityChange propertyName entity oldWorld world) world properties
@@ -1069,7 +1061,7 @@ module WorldModule =
             match World.trySetFacetNames facetNames entityState (Some entity) world with
             | Right (entityState, world) ->
                 let oldWorld = world
-                let world = World.setEntityStateWithoutEvent entityState entity world
+                let world = World.setEntityState entityState entity world
                 let world = World.updateEntityInEntityTree entity oldWorld world
                 Right world
             | Left error -> Left error
@@ -1085,7 +1077,7 @@ module WorldModule =
                     let oldWorld = world
                     let facetNames = World.getEntityFacetNamesReflectively entityState
                     let entityState = Overlayer.applyOverlay6 EntityState.copy overlayName overlayName facetNames entityState oldOverlayer overlayer
-                    let world = World.setEntityStateWithoutEvent entityState entity world
+                    let world = World.setEntityState entityState entity world
                     World.updateEntityInEntityTree entity oldWorld world
                 | Left error -> Log.info ^ "There was an issue in applying a reloaded overlay: " + error; world
             | None -> world
@@ -1103,14 +1095,6 @@ module WorldModule =
             World.getProperties state
 
         (* Group *)
-
-        static member private groupStateSetter groupState group world =
-#if DEBUG
-            if not ^ Vmap.containsKey group.GroupAddress world.GroupStates then
-                failwith ^ "Cannot set the state of a non-existent group '" + scstring group.GroupAddress + "'"
-#endif
-            let groupStates = Vmap.add group.GroupAddress groupState world.GroupStates
-            World.choose { world with GroupStates = groupStates }
 
         static member private groupStateAdder groupState group world =
             let screenDirectory =
@@ -1144,6 +1128,25 @@ module WorldModule =
             let groupStates = Vmap.remove group.GroupAddress world.GroupStates
             World.choose { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
 
+        static member private groupStateSetter groupState group world =
+#if DEBUG
+            if not ^ Vmap.containsKey group.GroupAddress world.GroupStates then
+                failwith ^ "Cannot set the state of a non-existent group '" + scstring group.GroupAddress + "'"
+#endif
+            let groupStates = Vmap.add group.GroupAddress groupState world.GroupStates
+            World.choose { world with GroupStates = groupStates }
+
+        static member private addGroupState groupState group world =
+            World.groupStateAdder groupState group world
+
+        static member private removeGroupState group world =
+            World.groupStateRemover group world
+
+        static member private publishGroupChange (propertyName : string) (group : Group) oldWorld world =
+            let changeEventAddress = ltoa [!!"Group"; !!"Change"; !!propertyName] ->>- group.GroupAddress
+            let eventTrace = EventTrace.record "World" "publishGroupChange" EventTrace.empty
+            World.publish { Participant = group; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace group world
+
         static member private getOptGroupState group world =
             Vmap.tryFind group.GroupAddress world.GroupStates
 
@@ -1152,25 +1155,18 @@ module WorldModule =
             | Some groupState -> groupState
             | None -> failwith ^ "Could not find group with address '" + scstring group.GroupAddress + "'."
 
-        static member private addGroupState groupState group world =
-            World.groupStateAdder groupState group world
-
-        static member private removeGroupState group world =
-            World.groupStateRemover group world
-
-        static member private setGroupStateWithoutEvent groupState group world =
+        static member private setGroupState groupState group world =
             World.groupStateSetter groupState group world
 
-        static member private setGroupState groupState group world =
-            let _ = world
-            let world = World.groupStateSetter groupState group world
-            let _ = EventTrace.record "World" "setGroupState" EventTrace.empty
-            world
-
-        static member private updateGroupState updater group world =
+        static member private updateGroupStateWithoutEvent updater group world =
             let groupState = World.getGroupState group world
             let groupState = updater groupState
             World.setGroupState groupState group world
+
+        static member private updateGroupState updater propertyName group world =
+            let oldWorld = world
+            let world = World.updateGroupStateWithoutEvent updater group world
+            World.publishGroupChange propertyName group oldWorld world
 
         /// Query that the world contains a group.
         static member containsGroup group world =
@@ -1183,7 +1179,7 @@ module WorldModule =
         static member internal getGroupCreationTimeStampNp group world = (World.getGroupState group world).CreationTimeStampNp
         static member internal getGroupOptSpecialization group world = (World.getGroupState group world).OptSpecialization
         static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
-        static member internal setGroupPersistent value group world = World.updateGroupState (fun groupState -> { groupState with Persistent = value }) group world
+        static member internal setGroupPersistent value group world = World.updateGroupState (fun groupState -> { groupState with Persistent = value }) Property? Persistent group world
 
         static member internal getGroupProperty propertyName group world =
             match propertyName with // NOTE: string match for speed
@@ -1194,9 +1190,7 @@ module WorldModule =
             | "CreationTimeStampNp" -> (World.getGroupCreationTimeStampNp group world :> obj, typeof<int64>)
             | "OptSpecialization" -> (World.getGroupOptSpecialization group world :> obj, typeof<string option>)
             | "Persistent" -> (World.getGroupPersistent group world :> obj, typeof<bool>)
-            | _ ->
-                let property = GroupState.getProperty (World.getGroupState group world) propertyName
-                (property.PropertyValue, property.PropertyType)
+            | _ -> let property = GroupState.getProperty propertyName (World.getGroupState group world) in (property.PropertyValue, property.PropertyType)
 
         static member internal getGroupPropertyValue propertyName group world : 'a =
             let property = World.getGroupProperty propertyName group world
@@ -1210,7 +1204,7 @@ module WorldModule =
             | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
             | "OptSpecialization" -> failwith "Cannot change group specialization."
             | "Persistent" -> World.setGroupPersistent (value :> obj :?> bool) group world
-            | _ -> World.setGroupState (GroupState.set (World.getGroupState group world) propertyName value) group world
+            | _ -> World.updateGroupState (GroupState.set propertyName value) propertyName group world
 
         static member private addGroup mayReplace groupState group world =
             let isNew = not ^ World.containsGroup group world
@@ -1302,14 +1296,6 @@ module WorldModule =
 
         (* Screen *)
 
-        static member private screenStateSetter screenState screen world =
-#if DEBUG
-            if not ^ Vmap.containsKey screen.ScreenAddress world.ScreenStates then
-                failwith ^ "Cannot set the state of a non-existent screen '" + scstring screen.ScreenAddress + "'"
-#endif
-            let screenStates = Vmap.add screen.ScreenAddress screenState world.ScreenStates
-            World.choose { world with ScreenStates = screenStates }
-
         static member private screenStateAdder screenState screen world =
             let screenDirectory =
                 match Address.getNames screen.ScreenAddress with
@@ -1333,6 +1319,25 @@ module WorldModule =
             let screenStates = Vmap.remove screen.ScreenAddress world.ScreenStates
             World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
 
+        static member private screenStateSetter screenState screen world =
+#if DEBUG
+            if not ^ Vmap.containsKey screen.ScreenAddress world.ScreenStates then
+                failwith ^ "Cannot set the state of a non-existent screen '" + scstring screen.ScreenAddress + "'"
+#endif
+            let screenStates = Vmap.add screen.ScreenAddress screenState world.ScreenStates
+            World.choose { world with ScreenStates = screenStates }
+
+        static member private addScreenState screenState screen world =
+            World.screenStateAdder screenState screen world
+
+        static member private removeScreenState screen world =
+            World.screenStateRemover screen world
+
+        static member private publishScreenChange (propertyName : string) (screen : Screen) oldWorld world =
+            let changeEventAddress = ltoa [!!"Screen"; !!"Change"; !!propertyName] ->>- screen.ScreenAddress
+            let eventTrace = EventTrace.record "World" "publishScreenChange" EventTrace.empty
+            World.publish { Participant = screen; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace screen world
+
         static member private getOptScreenState screen world =
             Vmap.tryFind screen.ScreenAddress world.ScreenStates
 
@@ -1341,26 +1346,20 @@ module WorldModule =
             | Some screenState -> screenState
             | None -> failwith ^ "Could not find screen with address '" + scstring screen.ScreenAddress + "'."
 
-        static member private addScreenState screenState screen world =
-            World.screenStateAdder screenState screen world
-
-        static member private removeScreenState screen world =
-            World.screenStateRemover screen world
-
-        static member private setScreenStateWithoutEvent screenState screen world =
+        static member private setScreenState screenState screen world =
             World.screenStateSetter screenState screen world
 
-        static member private setScreenState screenState screen world =
-            let _ = world
-            let world = World.screenStateSetter screenState screen world
-            let _ = EventTrace.record "World" "setScreenState" EventTrace.empty
-            world
-
-        static member private updateScreenState updater screen world =
+        static member private updateScreenStateWithoutEvent updater screen world =
             let screenState = World.getScreenState screen world
             let screenState = updater screenState
             World.setScreenState screenState screen world
 
+        static member private updateScreenState updater propertyName screen world =
+            let oldWorld = world
+            let world = World.updateScreenStateWithoutEvent updater screen world
+            World.publishScreenChange propertyName screen oldWorld world
+
+        /// Query that the world contains the proxied screen.
         static member containsScreen screen world =
             Option.isSome ^ World.getOptScreenState screen world
 
@@ -1371,18 +1370,18 @@ module WorldModule =
         static member internal getScreenCreationTimeStampNp screen world = (World.getScreenState screen world).CreationTimeStampNp
         static member internal getScreenOptSpecialization screen world = (World.getScreenState screen world).OptSpecialization
         static member internal getScreenEntityTreeNp screen world = (World.getScreenState screen world).EntityTreeNp
-        static member internal setScreenEntityTreeNp value screen world = World.updateScreenState (fun screenState -> { screenState with EntityTreeNp = value }) screen world
+        static member internal setScreenEntityTreeNp value screen world = World.updateScreenState (fun screenState -> { screenState with EntityTreeNp = value }) Property? EntityTreeNp screen world
         static member internal getScreenTransitionStateNp screen world = (World.getScreenState screen world).TransitionStateNp
-        static member internal setScreenTransitionStateNp value screen world = World.updateScreenState (fun screenState -> { screenState with TransitionStateNp = value }) screen world
+        static member internal setScreenTransitionStateNp value screen world = World.updateScreenState (fun screenState -> { screenState with TransitionStateNp = value }) Property? TransitionStateNp screen world
         static member internal getScreenTransitionTicksNp screen world = (World.getScreenState screen world).TransitionTicksNp
-        static member internal setScreenTransitionTicksNp value screen world = World.updateScreenState (fun screenState -> { screenState with TransitionTicksNp = value }) screen world
+        static member internal setScreenTransitionTicksNp value screen world = World.updateScreenState (fun screenState -> { screenState with TransitionTicksNp = value }) Property? TransitionTicksNp screen world
         static member internal getScreenIncoming screen world = (World.getScreenState screen world).Incoming
-        static member internal setScreenIncoming value screen world = World.updateScreenState (fun screenState -> { screenState with Incoming = value }) screen world
+        static member internal setScreenIncoming value screen world = World.updateScreenState (fun screenState -> { screenState with Incoming = value }) Property? Incoming screen world
         static member internal getScreenOutgoing screen world = (World.getScreenState screen world).Outgoing
-        static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) screen world
+        static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) Property? Outgoing screen world
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
-        static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) screen world
-        
+        static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) Property? Persistent screen world
+
         static member internal getScreenProperty propertyName screen world =
             match propertyName with // NOTE: string match for speed
             | "Id" -> (World.getScreenId screen world :> obj, typeof<Guid>)
@@ -1397,9 +1396,7 @@ module WorldModule =
             | "Incoming" -> (World.getScreenIncoming screen world :> obj, typeof<Transition>)
             | "Outgoing" -> (World.getScreenOutgoing screen world :> obj, typeof<Transition>)
             | "Persistent" -> (World.getScreenPersistent screen world :> obj, typeof<bool>)
-            | _ ->
-                let property = ScreenState.getProperty (World.getScreenState screen world) propertyName
-                (property.PropertyValue, property.PropertyType)
+            | _ -> let property = ScreenState.getProperty propertyName (World.getScreenState screen world) in (property.PropertyValue, property.PropertyType)
 
         static member internal getScreenPropertyValue propertyName screen world : 'a =
             let property = World.getScreenProperty propertyName screen world
@@ -1418,7 +1415,7 @@ module WorldModule =
             | "Incoming" -> World.setScreenIncoming (value :> obj :?> Transition) screen world
             | "Outgoing" -> World.setScreenOutgoing (value :> obj :?> Transition) screen world
             | "Persistent" -> World.setScreenPersistent (value :> obj :?> bool) screen world
-            | _ -> World.setScreenState (ScreenState.set (World.getScreenState screen world) propertyName value) screen world
+            | _ -> World.updateScreenState (ScreenState.set propertyName value) propertyName screen world
 
         static member internal updateEntityInEntityTree entity oldWorld world =
 
@@ -1446,7 +1443,7 @@ module WorldModule =
                         entityTree)
                     screenState.EntityTreeNp
             let screenState = { screenState with EntityTreeNp = entityTree }
-            World.setScreenStateWithoutEvent screenState screen world
+            World.setScreenState screenState screen world
 
         static member internal addScreen mayReplace screenState screen world =
             let isNew = not ^ World.containsScreen screen world
@@ -1532,48 +1529,77 @@ module WorldModule =
 
         (* Game *)
 
+        static member private publishGameChange (propertyName : string) oldWorld world =
+            let game = Game.proxy Address.empty
+            let changeEventAddress = ltoa [!!"Game"; !!"Change"; !!propertyName] ->>- game.GameAddress
+            let eventTrace = EventTrace.record "World" "publishGameChange" EventTrace.empty
+            World.publish { Participant = game; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace game world
+
         static member private getGameState world =
             world.GameState
 
         static member private setGameState gameState world =
-            let _ = world
-            let world = World.choose { world with GameState = gameState }
-            let _ = EventTrace.record "World" "setGameState" EventTrace.empty
-            world
+            World.choose { world with GameState = gameState }
 
-        static member private updateGameState updater world =
+        static member private updateGameStateWithoutEvent updater world =
             let gameState = World.getGameState world
             let gameState = updater gameState
             World.setGameState gameState world
+
+        static member private updateGameState updater propertyName world =
+            let oldWorld = world
+            let world = World.updateGameStateWithoutEvent updater world
+            World.publishGameChange propertyName oldWorld world
 
         static member internal getGameId world = (World.getGameState world).Id
         static member internal getGameXtension world = (World.getGameState world).Xtension // TODO: try to get rid of this
         static member internal getGameDispatcherNp world = (World.getGameState world).DispatcherNp
         static member internal getGameCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
         static member internal getGameOptSpecialization world = (World.getGameState world).OptSpecialization
-        static member internal getGameOptSelectedScreen world = (World.getGameState world).OptSelectedScreen
-        static member internal setGameOptSelectedScreen value world = World.updateGameState (fun groupState -> { groupState with OptSelectedScreen = value }) world
-        static member internal getGameOptScreenTransitionDestination world = (World.getGameState world).OptScreenTransitionDestination
-        static member internal setGameOptScreenTransitionDestination value world = World.updateGameState (fun groupState -> { groupState with OptScreenTransitionDestination = value }) world
 
         /// Get the current eye center.
-        static member getEyeCenter world = (World.getGameState world).EyeCenter
+        static member getEyeCenter world =
+            (World.getGameState world).EyeCenter
 
         /// Set the current eye center.
-        static member setEyeCenter value world = World.updateGameState (fun groupState -> { groupState with EyeCenter = value }) world
+        static member setEyeCenter value world =
+            World.updateGameState (fun groupState -> { groupState with EyeCenter = value }) Property? EyeCenter world
 
         /// Get the current eye size.
-        static member getEyeSize world = (World.getGameState world).EyeSize
+        static member getEyeSize world =
+            (World.getGameState world).EyeSize
 
         /// Set the current eye size.
-        static member setEyeSize value world = World.updateGameState (fun groupState -> { groupState with EyeSize = value }) world
+        static member setEyeSize value world =
+            World.updateGameState (fun groupState -> { groupState with EyeSize = value }) Property? EyeSize world
+
+        /// Get the currently selected screen, if any.
+        static member getOptSelectedScreen world =
+            (World.getGameState world).OptSelectedScreen
+        
+        /// Set the currently selected screen or None. Be careful using this function directly as
+        /// you may be wanting to use the higher-level World.transitionScreen function instead.
+        static member setOptSelectedScreen value world =
+            World.updateGameState (fun groupState -> { groupState with OptSelectedScreen = value }) Property? OptSelectedScreen world
+
+        /// Get the currently selected screen (failing with an exception if there isn't one).
+        static member getSelectedScreen world =
+            Option.get ^ World.getOptSelectedScreen world
+        
+        /// Set the currently selected screen. Be careful using this function directly as you may
+        /// be wanting to use the higher-level World.transitionScreen function instead.
+        static member setSelectedScreen screen world =
+            World.setOptSelectedScreen (Some screen) world
 
         /// Get the current destination screen if a screen transition is currently underway.
-        static member getOptScreenTransitionDestination world = (World.getGameState world).OptScreenTransitionDestination
+        static member getOptScreenTransitionDestination world =
+            (World.getGameState world).OptScreenTransitionDestination
 
-        /// Set the current destination screen on the precondition that no screen transition is currently underway.
+        /// Set the current destination screen or None. Be careful using this function as calling
+        /// it is predicated that no screen transition is currently underway.
+        /// TODO: consider asserting such predication here.
         static member internal setOptScreenTransitionDestination destination world =
-            World.updateGameState (fun gameState -> { gameState with OptScreenTransitionDestination = destination }) world
+            World.updateGameState (fun gameState -> { gameState with OptScreenTransitionDestination = destination }) Property? OptScreenTransitionDestination world
 
         /// Get the view of the eye in absolute terms (world space).
         static member getViewAbsolute world =
@@ -1654,13 +1680,11 @@ module WorldModule =
             | "DispatcherNp" -> (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
             | "CreationTimeStampNp" -> (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
             | "OptSpecialization" -> (World.getGameOptSpecialization world :> obj, typeof<string option>)
-            | "OptSelectedScreen" -> (World.getGameOptSelectedScreen world :> obj, typeof<Screen option>)
-            | "OptScreenTransitionDestination" -> (World.getGameOptScreenTransitionDestination world :> obj, typeof<Screen option>)
+            | "OptSelectedScreen" -> (World.getOptSelectedScreen world :> obj, typeof<Screen option>)
+            | "OptScreenTransitionDestination" -> (World.getOptScreenTransitionDestination world :> obj, typeof<Screen option>)
             | "EyeCenter" -> (World.getEyeCenter world :> obj, typeof<Vector2>)
             | "EyeSize" -> (World.getEyeSize world :> obj, typeof<Vector2>)
-            | _ ->
-                let property = GameState.getProperty (World.getGameState world) propertyName
-                (property.PropertyValue, property.PropertyType)
+            | _ -> let property = GameState.getProperty propertyName (World.getGameState world) in (property.PropertyValue, property.PropertyType)
 
         static member internal getGamePropertyValue propertyName world : 'a =
             let property = World.getGameProperty propertyName world
@@ -1672,11 +1696,11 @@ module WorldModule =
             | "DispatcherNp" -> failwith "Cannot change group dispatcher."
             | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
             | "OptSpecialization" -> failwith "Cannot change group specialization."
-            | "OptOptSelectedScreen" -> World.setGameOptSelectedScreen (value :> obj :?> Screen option) world
-            | "OptScreenTransitionDestination" -> World.setGameOptScreenTransitionDestination (value :> obj :?> Screen option) world
+            | "OptOptSelectedScreen" -> World.setOptSelectedScreen (value :> obj :?> Screen option) world
+            | "OptScreenTransitionDestination" -> World.setOptScreenTransitionDestination (value :> obj :?> Screen option) world
             | "EyeCenter" -> World.setEyeCenter (value :> obj :?> Vector2) world
             | "EyeSize" -> World.setEyeSize (value :> obj :?> Vector2) world
-            | _ -> World.setGameState (GameState.set (World.getGameState world) propertyName value) world
+            | _ -> World.updateGameState (GameState.set propertyName value) propertyName world
 
         static member internal makeGameState optSpecialization dispatcher =
             let gameState = GameState.make optSpecialization dispatcher

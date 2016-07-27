@@ -76,12 +76,6 @@ module WorldEntityModule =
         /// Set a property value.
         member this.Set propertyName (value : 'a) world = World.setEntityPropertyValue propertyName value this world
 
-        /// Attach a dynamic property.
-        member this.AttachProperty name value world = World.attachEntityProperty name value this world
-
-        /// Detach a dynamic property.
-        member this.DetachProperty name world = World.detachEntityProperty name this world
-
         /// Get an entity's transform.
         member this.GetTransform world = World.getEntityTransform this world
         

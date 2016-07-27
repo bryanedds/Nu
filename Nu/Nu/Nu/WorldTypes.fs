@@ -268,15 +268,15 @@ module WorldTypes =
           EyeSize : Vector2 }
 
         /// Get an dynamic property and its type information.
-        static member getProperty gameState propertyName =
+        static member getProperty propertyName gameState =
             Xtension.getProperty propertyName gameState.Xtension
 
         /// The dynamic look-up operator.
-        static member get gameState propertyName : 'a =
+        static member get propertyName gameState : 'a =
             Xtension.(?) (gameState.Xtension, propertyName)
 
         /// The dynamic assignment operator.
-        static member set gameState propertyName (value : 'a) =
+        static member set propertyName (value : 'a) gameState =
             { gameState with GameState.Xtension = Xtension.(?<-) (gameState.Xtension, propertyName, value) }
 
         /// Attach a dynamic property.
@@ -321,15 +321,15 @@ module WorldTypes =
           Persistent : bool }
 
         /// Get an dynamic property and its type information.
-        static member getProperty screenState propertyName =
+        static member getProperty propertyName screenState =
             Xtension.getProperty propertyName screenState.Xtension
 
         /// The dynamic look-up operator.
-        static member get screenState propertyName : 'a =
+        static member get propertyName screenState : 'a =
             Xtension.(?) (screenState.Xtension, propertyName)
 
         /// The dynamic assignment operator.
-        static member set screenState propertyName (value : 'a) =
+        static member set propertyName (value : 'a) screenState =
             { screenState with ScreenState.Xtension = Xtension.(?<-) (screenState.Xtension, propertyName, value) }
 
         /// Attach a dynamic property.
@@ -374,15 +374,15 @@ module WorldTypes =
           Persistent : bool }
 
         /// Get an dynamic property and its type information.
-        static member getProperty groupState propertyName =
+        static member getProperty propertyName groupState =
             Xtension.getProperty propertyName groupState.Xtension
 
         /// The dynamic look-up operator.
-        static member get groupState propertyName : 'a =
+        static member get propertyName groupState : 'a =
             Xtension.(?) (groupState.Xtension, propertyName)
 
         /// The dynamic assignment operator.
-        static member set groupState propertyName (value : 'a) =
+        static member set propertyName (value : 'a) groupState =
             { groupState with GroupState.Xtension = Xtension.(?<-) (groupState.Xtension, propertyName, value) }
 
         /// Attach a dynamic property.
@@ -431,15 +431,15 @@ module WorldTypes =
           FacetsNp : Facet list }
 
         /// Get an dynamic property and its type information.
-        static member getProperty entityState propertyName =
+        static member getProperty propertyName entityState =
             Xtension.getProperty propertyName entityState.Xtension
 
         /// The dynamic look-up operator.
-        static member get entityState propertyName : 'a =
+        static member get propertyName entityState : 'a =
             Xtension.(?) (entityState.Xtension, propertyName)
 
         /// The dynamic assignment operator.
-        static member set entityState propertyName (value : 'a) =
+        static member set propertyName (value : 'a) entityState =
             { entityState with EntityState.Xtension = Xtension.(?<-) (entityState.Xtension, propertyName, value) }
 
         /// Attach a dynamic property.

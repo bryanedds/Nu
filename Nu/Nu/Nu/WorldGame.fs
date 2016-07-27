@@ -21,10 +21,10 @@ module WorldGameModule =
         member this.GetDispatcherNp world = World.getGameDispatcherNp world
         member this.GetCreationTimeStampNp world = World.getGameCreationTimeStampNp world
         member this.GetOptSpecialization world = World.getGameOptSpecialization world
-        member this.GetOptSelectedScreen world = World.getGameOptSelectedScreen world
-        member this.SetOptSelectedScreen value world = World.setGameOptSelectedScreen value world
-        member this.GetOptScreenTransitionDestination world = World.getGameOptScreenTransitionDestination world
-        member this.SetOptScreenTransitionDestination value world = World.setGameOptScreenTransitionDestination value world
+        member this.GetOptSelectedScreen world = World.getOptSelectedScreen world
+        member this.SetOptSelectedScreen value world = World.setOptSelectedScreen value world
+        member this.GetOptScreenTransitionDestination world = World.getOptScreenTransitionDestination world
+        member this.SetOptScreenTransitionDestination value world = World.setOptScreenTransitionDestination value world
         member this.GetEyeCenter world = World.getEyeCenter world
         member this.SetEyeCenter value world = World.setEyeCenter value world
         member this.GetEyeSize world = World.getEyeSize world
@@ -105,24 +105,6 @@ module WorldGameModule =
             World.proxyScreens world |>
             Seq.map (fun screen -> World.proxyGroups screen world) |>
             Seq.concat
-
-        /// Try to get the currently selected screen.
-        static member getOptSelectedScreen world =
-            Simulants.Game.GetOptSelectedScreen world
-
-        /// Set the currently selected screen or None. Be careful using this function directly as
-        /// you may be wanting to use the higher-level World.transitionScreen function instead.
-        static member setOptSelectedScreen optScreen world =
-            Simulants.Game.SetOptSelectedScreen optScreen world
-
-        /// Get the currently selected screen (failing with an exception if there isn't one).
-        static member getSelectedScreen world =
-            Option.get ^ World.getOptSelectedScreen world
-        
-        /// Set the currently selected screen. Be careful using this function directly as you may
-        /// be wanting to use the higher-level World.transitionScreen function instead.
-        static member setSelectedScreen screen world =
-            World.setOptSelectedScreen (Some screen) world
 
         /// Determine if an entity is selected by being in a group of the currently selected screeen.
         static member isEntitySelected entity world =
