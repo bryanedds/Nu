@@ -334,15 +334,12 @@ module WorldModule2 =
             (splashScreen, world)
 
         static member private handleSubscribeAndUnsubscribe event world =
-            // here we need to update the publish flags for entities based on whether there are subscriptions to their
-            // respective events. These publish flags exist solely for efficiency reasons. We also look for subscription
+            // here we need to update the publish update flag for entities based on whether there are subscriptions to
+            // their update event. This flag exists solely for efficiency reasons. We also look for subscription
             // patterns that this optimization does not support, and warn the developer if they arise.
             let eventAddress = event.Data
             let eventNames = Address.getNames eventAddress
             match eventNames with
-            | [head; neck; _; _; toe] when Name.getNameStr head = "Entity" && Name.getNameStr neck = "Change" && Name.getNameStr toe = "@" ->
-                Log.debug "Subscribing to multiple entity change events with one subscription is not supported. This will cause a bug where some entity change events are not published."
-                (Cascade, world)
             | [head; _; _; toe] when Name.getNameStr head = "Update" && Name.getNameStr toe = "@" ->
                 Log.debug "Subscribing to multiple entity update events with one subscription is not supported. This will cause a bug where some entity update events are not published."
                 (Cascade, world)
