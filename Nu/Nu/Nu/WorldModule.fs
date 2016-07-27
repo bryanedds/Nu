@@ -585,7 +585,7 @@ module WorldModule =
         static member private removeEntityState entity world =
             World.entityStateRemover entity world
 
-        static member private publishEntityChange (propertyName : string) (entity : Entity) oldWorld world =
+        static member private publishEntityChange propertyName entity oldWorld world =
             let changeEventAddress = ltoa [!!"Entity"; !!"Change"; !!propertyName] ->>- entity.EntityAddress
             let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
             World.publish { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity world
@@ -616,6 +616,11 @@ module WorldModule =
             let world = World.updateEntityStateWithoutEvent updater entity world
             let world = World.updateEntityInEntityTree entity oldWorld world
             World.publishEntityChange propertyName entity oldWorld world
+
+        static member private publishEntityChanges entity oldWorld world =
+            let entityState = World.getEntityState entity world
+            let properties = World.getProperties entityState
+            List.fold (fun world (propertyName, _) -> World.publishEntityChange propertyName entity oldWorld world) world properties
 
         /// Query that the world contains an entity.
         static member containsEntity entity world =
@@ -683,11 +688,21 @@ module WorldModule =
             let world = World.publishEntityChange Property? Rotation entity oldWorld world
             World.publishEntityChange Property? Depth entity oldWorld world
 
-        static member internal attachEntityProperty name value entity world =
-            World.setEntityState (EntityState.attachProperty name value ^ World.getEntityState entity world) entity world
-
-        static member internal detachEntityProperty name entity world =
-            World.setEntityState (EntityState.detachProperty name ^ World.getEntityState entity world) entity world
+        static member internal applyEntityOverlay oldOverlayer overlayer world entity =
+            let entityState = World.getEntityState entity world
+            match entityState.OptOverlayName with
+            | Some overlayName ->
+                let oldFacetNames = entityState.FacetNames
+                let entityState = Overlayer.applyOverlayToFacetNames EntityState.copy overlayName overlayName entityState oldOverlayer overlayer
+                match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
+                | Right (entityState, world) ->
+                    let oldWorld = world
+                    let facetNames = World.getEntityFacetNamesReflectively entityState
+                    let entityState = Overlayer.applyOverlay6 EntityState.copy overlayName overlayName facetNames entityState oldOverlayer overlayer
+                    let world = World.setEntityState entityState entity world
+                    World.updateEntityInEntityTree entity oldWorld world
+                | Left error -> Log.info ^ "There was an issue in applying a reloaded overlay: " + error; world
+            | None -> world
 
         static member internal getEntityProperty propertyName entity world =
             match propertyName with // NOTE: string match for speed
@@ -773,7 +788,7 @@ module WorldModule =
             let isNew = not ^ World.containsEntity entity world
             if isNew || mayReplace then
 
-                // get old world for entity tree rebuild
+                // get old world for entity tree rebuild and change events
                 let oldWorld = world
                 
                 // adding entity to world
@@ -796,15 +811,19 @@ module WorldModule =
                 let world = World.setScreenEntityTreeNp entityTree screen world
 
                 // register entity if needed
-                if isNew then
-                    let dispatcher = World.getEntityDispatcherNp entity world : EntityDispatcher
-                    let facets = World.getEntityFacetsNp entity world
-                    let world = dispatcher.Register (entity, world)
-                    let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
-                    let world = World.updateEntityPublishUpdates entity world
-                    let eventTrace = EventTrace.record "World" "addEntity" EventTrace.empty
-                    World.publish () (ftoa<unit> !!"Entity/Add" ->- entity) eventTrace entity world
-                else world
+                let world =
+                    if isNew then
+                        let dispatcher = World.getEntityDispatcherNp entity world : EntityDispatcher
+                        let facets = World.getEntityFacetsNp entity world
+                        let world = dispatcher.Register (entity, world)
+                        let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
+                        let world = World.updateEntityPublishUpdates entity world
+                        let eventTrace = EventTrace.record "World" "addEntity" EventTrace.empty
+                        World.publish () (ftoa<unit> !!"Entity/Add" ->- entity) eventTrace entity world
+                    else world
+
+                // publish change event for every property
+                World.publishEntityChanges entity oldWorld world
 
             // handle failure
             else failwith ^ "Adding an entity that the world already contains at address '" + scstring entity.EntityAddress + "'."
@@ -1008,20 +1027,6 @@ module WorldModule =
             let world = World.addEntity false entityState transmutedEntity world
             (transmutedEntity, world)
 
-        static member internal updateEntityPublishingFlags eventAddress world =
-            let eventNames = Address.getNames eventAddress
-            match eventNames with
-            | head :: tail when Name.getNameStr head = "Update" ->
-                let publishUpdates =
-                    match Vmap.tryFind eventAddress (EventWorld.getSubscriptions world) with
-                    | Some [] -> failwithumf () // NOTE: implementation of event system should clean up all empty subscription entries, AFAIK
-                    | Some (_ :: _) -> true
-                    | None -> false
-                let entity = Entity.proxy ^ ltoa<Entity> tail
-                let world = if World.containsEntity entity world then World.setEntityPublishUpdatesNp publishUpdates entity world else world
-                world
-            | _ -> world
-
         /// Try to set an entity's optional overlay name.
         static member trySetEntityOptOverlayName optOverlayName entity world =
             let oldEntityState = World.getEntityState entity world
@@ -1040,8 +1045,7 @@ module WorldModule =
                 let oldWorld = world
                 let world = World.setEntityState entityState entity world
                 let world = World.updateEntityInEntityTree entity oldWorld world
-                let properties = World.getProperties entityState
-                let world = List.fold (fun world (propertyName, _) -> World.publishEntityChange propertyName entity oldWorld world) world properties
+                let world = World.publishEntityChanges entity oldWorld world
                 Right world
             | (_, _) -> let _ = World.choose world in Left "Could not set the entity's overlay name."
 
@@ -1053,34 +1057,33 @@ module WorldModule =
                 let oldWorld = world
                 let world = World.setEntityState entityState entity world
                 let world = World.updateEntityInEntityTree entity oldWorld world
+                let world = World.publishEntityChanges entity oldWorld world
                 Right world
             | Left error -> Left error
 
-        static member applyEntityOverlay oldOverlayer overlayer world entity =
-            let entityState = World.getEntityState entity world
-            match entityState.OptOverlayName with
-            | Some overlayName ->
-                let oldFacetNames = entityState.FacetNames
-                let entityState = Overlayer.applyOverlayToFacetNames EntityState.copy overlayName overlayName entityState oldOverlayer overlayer
-                match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
-                | Right (entityState, world) ->
-                    let oldWorld = world
-                    let facetNames = World.getEntityFacetNamesReflectively entityState
-                    let entityState = Overlayer.applyOverlay6 EntityState.copy overlayName overlayName facetNames entityState oldOverlayer overlayer
-                    let world = World.setEntityState entityState entity world
-                    World.updateEntityInEntityTree entity oldWorld world
-                | Left error -> Log.info ^ "There was an issue in applying a reloaded overlay: " + error; world
-            | None -> world
+        static member internal updateEntityPublishingFlags eventAddress world =
+            let eventNames = Address.getNames eventAddress
+            match eventNames with
+            | head :: tail when Name.getNameStr head = "Update" ->
+                let publishUpdates =
+                    match Vmap.tryFind eventAddress (EventWorld.getSubscriptions world) with
+                    | Some [] -> failwithumf () // NOTE: implementation of event system should clean up all empty subscription entries, AFAIK
+                    | Some (_ :: _) -> true
+                    | None -> false
+                let entity = Entity.proxy ^ ltoa<Entity> tail
+                let world = if World.containsEntity entity world then World.setEntityPublishUpdatesNp publishUpdates entity world else world
+                world
+            | _ -> world
 
-        static member viewEntityMemberProperties entity world =
+        static member internal viewEntityMemberProperties entity world =
             let state = World.getEntityState entity world
             World.getMemberProperties state
 
-        static member viewEntityXProperties entity world =
+        static member internal viewEntityXProperties entity world =
             let state = World.getEntityState entity world
             World.getXProperties state
 
-        static member viewEntity entity world =
+        static member internal viewEntity entity world =
             let state = World.getEntityState entity world
             World.getProperties state
 
@@ -1158,6 +1161,11 @@ module WorldModule =
             let world = World.updateGroupStateWithoutEvent updater group world
             World.publishGroupChange propertyName group oldWorld world
 
+        static member private publishGroupChanges group oldWorld world =
+            let groupState = World.getGroupState group world
+            let properties = World.getProperties groupState
+            List.fold (fun world (propertyName, _) -> World.publishGroupChange propertyName group oldWorld world) world properties
+
         /// Query that the world contains a group.
         static member containsGroup group world =
             Option.isSome ^ World.getOptGroupState group world
@@ -1199,13 +1207,16 @@ module WorldModule =
         static member private addGroup mayReplace groupState group world =
             let isNew = not ^ World.containsGroup group world
             if isNew || mayReplace then
+                let oldWorld = world
                 let world = World.addGroupState groupState group world
-                if isNew then
-                    let dispatcher = World.getGroupDispatcherNp group world
-                    let world = dispatcher.Register (group, world)
-                    let eventTrace = EventTrace.record "World" "addGroup" EventTrace.empty
-                    World.publish () (ftoa<unit> !!"Group/Add" ->- group) eventTrace group world
-                else world
+                let world =
+                    if isNew then
+                        let dispatcher = World.getGroupDispatcherNp group world
+                        let world = dispatcher.Register (group, world)
+                        let eventTrace = EventTrace.record "World" "addGroup" EventTrace.empty
+                        World.publish () (ftoa<unit> !!"Group/Add" ->- group) eventTrace group world
+                    else world
+                World.publishGroupChanges group oldWorld world
             else failwith ^ "Adding a group that the world already contains at address '" + scstring group.GroupAddress + "'."
 
         static member internal removeGroup3 removeEntities group world =
@@ -1349,6 +1360,11 @@ module WorldModule =
             let world = World.updateScreenStateWithoutEvent updater screen world
             World.publishScreenChange propertyName screen oldWorld world
 
+        static member private publishScreenChanges screen oldWorld world =
+            let screenState = World.getScreenState screen world
+            let properties = World.getProperties screenState
+            List.fold (fun world (propertyName, _) -> World.publishScreenChange propertyName screen oldWorld world) world properties
+
         /// Query that the world contains the proxied screen.
         static member containsScreen screen world =
             Option.isSome ^ World.getOptScreenState screen world
@@ -1438,13 +1454,16 @@ module WorldModule =
         static member internal addScreen mayReplace screenState screen world =
             let isNew = not ^ World.containsScreen screen world
             if isNew || mayReplace then
+                let oldWorld = world
                 let world = World.addScreenState screenState screen world
-                if isNew then
-                    let dispatcher = World.getScreenDispatcherNp screen world
-                    let world = dispatcher.Register (screen, world)
-                    let eventTrace = EventTrace.record "World" "addScreen" EventTrace.empty
-                    World.publish () (ftoa<unit> !!"Screen/Add" ->- screen) eventTrace screen world
-                else world
+                let world =
+                    if isNew then
+                        let dispatcher = World.getScreenDispatcherNp screen world
+                        let world = dispatcher.Register (screen, world)
+                        let eventTrace = EventTrace.record "World" "addScreen" EventTrace.empty
+                        World.publish () (ftoa<unit> !!"Screen/Add" ->- screen) eventTrace screen world
+                    else world
+                World.publishScreenChanges screen oldWorld world
             else failwith ^ "Adding a screen that the world already contains at address '" + scstring screen.ScreenAddress + "'."
 
         static member internal removeScreen3 removeGroups screen world =
