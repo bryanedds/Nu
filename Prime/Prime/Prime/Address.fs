@@ -85,6 +85,7 @@ module AddressModule =
                 
         /// Equate Addresses.
         static member equals address address2 =
+            address.HashCode = address2.HashCode && // OPTIMIZATION: first check hash equality
             Name.equateNames address.Names address2.Names
     
         /// Compare Addresses.

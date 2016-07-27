@@ -70,6 +70,7 @@ module NameModule =
     
         /// Equate Names.
         static member equals name name2 =
+            name.HashCode = name2.HashCode && // OPTIMIZATION: first check hash equality
             strEq name.NameStr name2.NameStr
     
         /// Compare Names.
