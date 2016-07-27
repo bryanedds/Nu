@@ -183,7 +183,6 @@ module WorldTypes =
              Define? Visible true
              Define? Omnipresent false
              Define? PublishUpdatesNp false
-             Define? PublishChangesNp false
              Define? Persistent true]
     
         /// Register an entity when adding it to a group.
@@ -427,7 +426,6 @@ module WorldTypes =
           Visible : bool
           Omnipresent : bool
           PublishUpdatesNp : bool
-          PublishChangesNp : bool
           Persistent : bool
           FacetNames : string Set
           FacetsNp : Facet list }
@@ -486,7 +484,6 @@ module WorldTypes =
               Visible = true
               Omnipresent = false
               PublishUpdatesNp = false
-              PublishChangesNp = false
               Persistent = true
               FacetNames = Set.empty
               FacetsNp = [] }
@@ -680,7 +677,6 @@ module WorldTypes =
     /// reconstructing new ones for each entity every frame.
     and [<StructuralEquality; NoComparison>] Entity =
         { EntityAddress : Entity Address
-          ChangeAddress : ParticipantChangeData<Entity, World> Address
           UpdateAddress : unit Address }
     
         interface Simulant with
@@ -705,7 +701,6 @@ module WorldTypes =
         /// Create an Entity proxy from an address.
         static member proxy address =
             { EntityAddress = address
-              ChangeAddress = ltoa [!!"Entity"; !!"Change"] ->>- address
               UpdateAddress = ntoa !!"Update" ->>- address }
     
         /// Concatenate two addresses, taking the type of first address.

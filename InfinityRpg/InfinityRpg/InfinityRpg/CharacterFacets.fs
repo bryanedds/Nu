@@ -12,32 +12,45 @@ module CharacterStateFacetModule =
 
     type Entity with
 
-        member this.GetCharacterType world : CharacterType = this.Get "CharacterType" world
-        member this.SetCharacterType (value : CharacterType) world = this.Set "ActivityState" value world
-        member this.GetActivityState world : ActivityState = this.Get "ActivityState" world
-        member this.SetActivityState (value : ActivityState) world = this.Set "ActivityState" value world
-        member this.GetHitPoints world : int = this.Get "HitPoints" world
-        member this.SetHitPoints (value : int) world = this.Set "HitPoints" value world
-        member this.GetSpecialPoints world : int = this.Get "SpecialPoints" world
-        member this.SetSpecialPoints (value : int) world = this.Set "SpecialPoints" value world
-        member this.GetPowerBuff world : single = this.Get "PowerBuff" world
-        member this.SetPowerBuff (value : single) world = this.Set "PowerBuff" value world
-        member this.GetShieldBuff world : single = this.Get "ShieldBuff" world
-        member this.SetShieldBuff (value : single) world = this.Set "ShieldBuff" value world
-        member this.GetMindBuff world : single = this.Get "MindBuff" world
-        member this.SetMindBuff (value : single) world = this.Set "MindBuff" value world
-        member this.GetCounterBuff world : single = this.Get "CounterBuff" world
-        member this.SetCounterBuff (value : single) world = this.Set "CounterBuff" value world
-        member this.GetStatuses world : StatusType Set = this.Get "Statuses" world
-        member this.SetStatuses (value : StatusType Set) world = this.Set "Statuses" value world
-        member this.GetEquippedWeapon world : WeaponType option = this.Get "EquippedWeapon" world
-        member this.SetEquippedWeapon (value : WeaponType option) world = this.Set "EquippedWeapon" value world
-        member this.GetEquippedArmor world : ArmorType option = this.Get "EquippedArmor" world
-        member this.SetEquippedArmor (value : ArmorType option) world = this.Set "EquippedArmor" value world
-        member this.GetEquippedRelics world : RelicType list = this.Get "EquippedRelics" world
-        member this.SetEquippedRelics (value : RelicType list) world = this.Set "EquippedRelics" value world
-        member this.GetControlType world : ControlType = this.Get "ControlType" world
-        member this.SetControlType (value : ControlType) world = this.Set "ControlType" value world
+        member this.GetCharacterType world : CharacterType = this.Get Property? CharacterType world
+        member this.SetCharacterType (value : CharacterType) world = this.Set Property? ActivityState value world
+        member this.TagCharacterType = PropertyTag.make this Property? CharacterType this.GetCharacterType this.SetCharacterType
+        member this.GetActivityState world : ActivityState = this.Get Property? ActivityState world
+        member this.SetActivityState (value : ActivityState) world = this.Set Property? ActivityState value world
+        member this.TagActivityState = PropertyTag.make this Property? ActivityState this.GetActivityState this.SetActivityState
+        member this.GetHitPoints world : int = this.Get Property? HitPoints world
+        member this.SetHitPoints (value : int) world = this.Set Property? HitPoints value world
+        member this.TagHitPoints = PropertyTag.make this Property? HitPoints this.GetHitPoints this.SetHitPoints
+        member this.GetSpecialPoints world : int = this.Get Property? SpecialPoints world
+        member this.SetSpecialPoints (value : int) world = this.Set Property? SpecialPoints value world
+        member this.TagSpecialPoints = PropertyTag.make this Property? SpecialPoints this.GetSpecialPoints this.SetSpecialPoints
+        member this.GetPowerBuff world : single = this.Get Property? PowerBuff world
+        member this.SetPowerBuff (value : single) world = this.Set Property? PowerBuff value world
+        member this.TagPowerBuff = PropertyTag.make this Property? PowerBuff this.GetPowerBuff this.SetPowerBuff
+        member this.GetShieldBuff world : single = this.Get Property? ShieldBuff world
+        member this.SetShieldBuff (value : single) world = this.Set Property? ShieldBuff value world
+        member this.TagShieldBuff = PropertyTag.make this Property? ShieldBuff this.GetShieldBuff this.SetShieldBuff
+        member this.GetMindBuff world : single = this.Get Property? MindBuff world
+        member this.SetMindBuff (value : single) world = this.Set Property? MindBuff value world
+        member this.TagMindBuff = PropertyTag.make this Property? MindBuff this.GetMindBuff this.SetMindBuff
+        member this.GetCounterBuff world : single = this.Get Property? CounterBuff world
+        member this.SetCounterBuff (value : single) world = this.Set Property? CounterBuff value world
+        member this.TagCounterBuff = PropertyTag.make this Property? CounterBuff this.GetCounterBuff this.SetCounterBuff
+        member this.GetStatuses world : StatusType Set = this.Get Property? Statuses world
+        member this.SetStatuses (value : StatusType Set) world = this.Set Property? Statuses value world
+        member this.TagStatuses = PropertyTag.make this Property? Statuses this.GetStatuses this.SetStatuses
+        member this.GetEquippedWeapon world : WeaponType option = this.Get Property? EquippedWeapon world
+        member this.SetEquippedWeapon (value : WeaponType option) world = this.Set Property? EquippedWeapon value world
+        member this.TagEquippedWeapon = PropertyTag.make this Property? EquippedWeapon this.GetEquippedWeapon this.SetEquippedWeapon
+        member this.GetEquippedArmor world : ArmorType option = this.Get Property? EquippedArmor world
+        member this.SetEquippedArmor (value : ArmorType option) world = this.Set Property? EquippedArmor value world
+        member this.TagEquippedArmor = PropertyTag.make this Property? EquippedArmor this.GetEquippedArmor this.SetEquippedArmor
+        member this.GetEquippedRelics world : RelicType list = this.Get Property? EquippedRelics world
+        member this.SetEquippedRelics (value : RelicType list) world = this.Set Property? EquippedRelics value world
+        member this.TagEquippedRelics = PropertyTag.make this Property? EquippedRelics this.GetEquippedRelics this.SetEquippedRelics
+        member this.GetControlType world : ControlType = this.Get Property? ControlType world
+        member this.SetControlType (value : ControlType) world = this.Set Property? ControlType value world
+        member this.TagControlType = PropertyTag.make this Property? ControlType this.GetControlType this.SetControlType
 
     type CharacterStateFacet () =
         inherit Facet ()
@@ -74,10 +87,12 @@ module CharacterAnimationFacetModule =
 
     type Entity with
     
-        member this.GetCharacterAnimationState world : CharacterAnimationState = this.Get "CharacterAnimationState" world
-        member this.SetCharacterAnimationState (value : CharacterAnimationState) world = this.Set "CharacterAnimationState" value world
-        member this.GetCharacterAnimationSheet world : AssetTag = this.Get "CharacterAnimationSheet" world
-        member this.SetCharacterAnimationSheet (value : AssetTag) world = this.Set "CharacterAnimationSheet" value world
+        member this.GetCharacterAnimationState world : CharacterAnimationState = this.Get Property? CharacterAnimationState world
+        member this.SetCharacterAnimationState (value : CharacterAnimationState) world = this.Set Property? CharacterAnimationState value world
+        member this.TagCharacterAnimationState = PropertyTag.make this Property? CharacterAnimationState this.GetCharacterAnimationState this.SetCharacterAnimationState
+        member this.GetCharacterAnimationSheet world : AssetTag = this.Get Property? CharacterAnimationSheet world
+        member this.SetCharacterAnimationSheet (value : AssetTag) world = this.Set Property? CharacterAnimationSheet value world
+        member this.TagCharacterAnimationSheet = PropertyTag.make this Property? CharacterAnimationSheet this.GetCharacterAnimationSheet this.SetCharacterAnimationSheet
 
     type CharacterAnimationFacet () =
         inherit Facet ()

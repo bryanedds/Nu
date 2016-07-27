@@ -420,34 +420,3 @@ module Observation =
             let newValue = valueGetter world
             oldValue <> newValue)
             observation
-
-[<AutoOpen>]
-module ObservationOperators =
-
-    // open related module
-    open Observation
-
-    /// Pipe-right arrow that provides special precedence for observations.
-    let (-|>) = (|>)
-
-    /// Make an observation of the observer's change events.
-    let [<DebuggerHidden; DebuggerStepThrough>] ( *-- ) (participant : 'a, valueGetter : 'w -> 'b) (observer : 'o) =
-        let changeEventAddress = ftoa<ParticipantChangeData<'a, 'w>> !!(typeof<'a>.Name + "/Change") ->>- participant.ParticipantAddress
-        observe changeEventAddress observer |> participantValue valueGetter
-
-    /// Propagate the event data of an observation to a value in the observing participant when the
-    /// observer exists (doing nothing otherwise).
-    let [<DebuggerHidden; DebuggerStepThrough>] (-->) observation valueSetter =
-        subscribe (fun a world ->
-            let world =
-                if world.ContainsParticipant a.Subscriber
-                then valueSetter a.Data world
-                else world
-            (Cascade, world))
-            observation
-
-    // Propagate a value from the given source participant to a value in the given destination participant.
-    let [<DebuggerHidden; DebuggerStepThrough>] ( *-> ) (source : 'a, valueGetter : 'w -> 'b) (destination : 'o, valueSetter : 'b -> 'w -> 'w) =
-        (source, valueGetter) *-- destination --> fun _ world ->
-            let sourceValue = valueGetter world
-            valueSetter sourceValue world

@@ -18,39 +18,54 @@ module WorldEntityModule =
     type Entity with
 
         member this.GetId world = World.getEntityId this world
+        member this.TagId = PropertyTag.makeReadOnly this Property? Id this.GetId
         member this.GetName world = World.getEntityName this world
+        member this.TagName = PropertyTag.makeReadOnly this Property? Name this.GetName
         member this.GetXtension world = World.getEntityXtension this world
+        member this.TagXtension = PropertyTag.makeReadOnly this Property? Xtension this.GetXtension
         member this.GetDispatcherNp world = World.getEntityDispatcherNp this world
+        member this.TagDispatcherNp = PropertyTag.makeReadOnly this Property? DispatcherNp this.GetDispatcherNp
         member this.GetCreationTimeStampNp world = World.getEntityCreationTimeStampNp this world
+        member this.TagCreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
         member this.GetOptSpecialization world = World.getEntityOptSpecialization this world
+        member this.TagOptSpecialization = PropertyTag.makeReadOnly this Property? OptSpecialization this.GetOptSpecialization
         member this.GetOptOverlayName world = World.getEntityOptOverlayName this world
         member this.SetOptOverlayName value world = World.setEntityOptOverlayName value this world
+        member this.TagOptOverlayName = PropertyTag.make this Property? OptOverlayName this.GetOptOverlayName this.SetOptOverlayName
         member this.GetPosition world = World.getEntityPosition this world
         member this.SetPosition value world = World.setEntityPosition value this world
+        member this.TagPosition = PropertyTag.make this Property? Position this.GetPosition this.SetPosition
         member this.GetSize world = World.getEntitySize this world
         member this.SetSize value world = World.setEntitySize value this world
+        member this.TagSize = PropertyTag.make this Property? Size this.GetSize this.SetSize
         member this.GetRotation world = World.getEntityRotation this world
         member this.SetRotation value world = World.setEntityRotation value this world
+        member this.TagRotation = PropertyTag.make this Property? Rotation this.GetRotation this.SetRotation
         member this.GetDepth world = World.getEntityDepth this world
         member this.SetDepth value world = World.setEntityDepth value this world
+        member this.TagDepth = PropertyTag.make this Property? Depth this.GetDepth this.SetDepth
         member this.GetOverflow world = World.getEntityOverflow this world
         member this.SetOverflow value world = World.setEntityOverflow value this world
+        member this.TagOverflow = PropertyTag.make this Property? Overflow this.GetOverflow this.SetOverflow
         member this.GetViewType world = World.getEntityViewType this world
         member this.SetViewType value world = World.setEntityViewType value this world
+        member this.TagViewType = PropertyTag.make this Property? ViewType this.GetViewType this.SetViewType
         member this.GetVisible world = World.getEntityVisible this world
         member this.SetVisible value world = World.setEntityVisible value this world
+        member this.TagVisible = PropertyTag.make this Property? Visible this.GetVisible this.SetVisible
         member this.GetOmnipresent world = World.getEntityOmnipresent this world
         member this.SetOmnipresent value world = World.setEntityOmnipresent value this world
+        member this.TagOmnipresent = PropertyTag.make this Property? Omnipresent this.GetOmnipresent this.SetOmnipresent
         member this.GetPublishUpdatesNp world = World.getEntityPublishUpdatesNp this world
         member this.SetPublishUpdatesNp value world = World.setEntityPublishUpdatesNp value this world
-        member this.GetPublishChangesNp world = World.getEntityPublishChangesNp this world
-        member this.SetPublishChangesNp value world = World.setEntityPublishChangesNp value this world
+        member this.TagPublishUpdatesNp = PropertyTag.make this Property? PublishUpdatesNp this.GetPublishUpdatesNp this.SetPublishUpdatesNp
         member this.GetPersistent world = World.getEntityPersistent this world
         member this.SetPersistent value world = World.setEntityPersistent value this world
+        member this.TagPersistent = PropertyTag.make this Property? Persistent this.GetPersistent this.SetPersistent
         member this.GetFacetNames world = World.getEntityFacetNames this world
+        member this.TagFacetNames = PropertyTag.makeReadOnly this Property? FacetNames this.GetFacetNames
         member this.GetFacetsNp world = World.getEntityFacetsNp this world
-        member this.GetTransform world = World.getEntityTransform this world
-        member this.SetTransform value world = World.setEntityTransform value this world
+        member this.TagFacetsNp = PropertyTag.makeReadOnly this Property? FacetsNp this.GetFacetsNp
 
         /// Get a property value and type.
         member this.GetProperty propertyName world = World.getEntityProperty propertyName this world
@@ -67,11 +82,20 @@ module WorldEntityModule =
         /// Detach a dynamic property.
         member this.DetachProperty name world = World.detachEntityProperty name this world
 
+        /// Get an entity's transform.
+        member this.GetTransform world = World.getEntityTransform this world
+        
+        /// Set an entity's transform.
+        member this.SetTransform value world = World.setEntityTransform value this world
+
         /// Get an entity's bounds, not taking into account its overflow.
         member this.GetBounds world = Math.makeBounds (this.GetPosition world) (this.GetSize world)
 
         /// Get an entity's bounds, taking into account its overflow.
         member this.GetBoundsOverflow world = Math.makeBoundsOverflow (this.GetPosition world) (this.GetSize world) (this.GetOverflow world)
+
+        /// Get an entity's change event address.
+        member this.GetChangeEvent propertyName = Events.EntityChange propertyName ->>- this.EntityAddress
 
         /// Query than an entity is in the camera's view.
         member this.InView world =

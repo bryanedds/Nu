@@ -443,7 +443,6 @@ module WorldModule =
                     let oldWorld = world
                     let world = World.setEntityStateWithoutEvent entityState entity world
                     let world = World.updateEntityInEntityTree entity oldWorld world
-                    let world = World.publishEntityChange entityState entity oldWorld world
                     Right (World.getEntityState entity world, world)
                 | None -> Right (entityState, world)
             | None -> let _ = World.choose world in Left ^ "Failure to remove facet '" + facetName + "' from entity."
@@ -463,7 +462,6 @@ module WorldModule =
                         let oldWorld = world
                         let world = World.setEntityStateWithoutEvent entityState entity world
                         let world = World.updateEntityInEntityTree entity oldWorld world
-                        let world = World.publishEntityChange entityState entity oldWorld world
                         let world = facet.Register (entity, world)
                         Right (World.getEntityState entity world, world)
                     | None -> Right (entityState, world)
@@ -510,25 +508,26 @@ module WorldModule =
         (* SimulantState *)
 
         /// View the member properties of some SimulantState.
-        static member internal viewMemberProperties (state : SimulantState) =
+        static member internal getMemberProperties (state : SimulantState) =
             state |>
             getType |>
             getProperties |>
-            Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state))
+            Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) |>
+            Array.toList
 
         /// View the xtension properties of some SimulantState.
-        static member internal viewXProperties (state : SimulantState) =
+        static member internal getXProperties (state : SimulantState) =
             state.GetXtension () |>
             Xtension.toSeq |>
-            Array.ofSeq |>
-            Array.sortBy fst |>
-            Array.map (fun (name, property) -> (name, property.PropertyValue))
+            List.ofSeq |>
+            List.sortBy fst |>
+            List.map (fun (name, property) -> (name, property.PropertyValue))
 
         /// Provides a full view of all the member values of some SimulantState.
-        static member internal view state =
-            Array.append
-                (World.viewMemberProperties state)
-                (World.viewXProperties state)
+        static member internal getProperties state =
+            List.append
+                (World.getMemberProperties state)
+                (World.getXProperties state)
 
         (* Entity *)
 
@@ -613,11 +612,10 @@ module WorldModule =
                 let newSize = newSizeOver2 * 2.0f
                 Vector4 (newPosition.X, newPosition.Y, newPosition.X + newSize.X, newPosition.Y + newSize.Y)
 
-        static member private publishEntityChange entityState (entity : Entity) oldWorld world =
-            if entityState.PublishChangesNp then
-                let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
-                World.publish { Participant = entity; OldWorld = oldWorld } entity.ChangeAddress eventTrace entity world
-            else world
+        static member private publishEntityChange (propertyName : string) (entity : Entity) oldWorld world =
+            let changeEventAddress = ltoa [!!"Entity"; !!"Change"; !!propertyName] ->>- entity.EntityAddress
+            let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
+            World.publish { Participant = entity; OldWorld = oldWorld } changeEventAddress eventTrace entity world
 
         static member private getOptEntityState entity world =
             World.optEntityStateFinder entity world
@@ -636,26 +634,26 @@ module WorldModule =
         static member private setEntityStateWithoutEvent entityState entity world =
             World.entityStateSetter entityState entity world
 
-        static member private setEntityState entityState (entity : Entity) world =
+        static member private setEntityState propertyName entityState entity world =
             let oldWorld = world
             let world = World.entityStateSetter entityState entity world
-            World.publishEntityChange entityState entity oldWorld world
+            World.publishEntityChange propertyName entity oldWorld world
 
         static member private updateEntityStateWithoutEvent updater entity world =
             let entityState = World.getEntityState entity world
             let entityState = updater entityState
             World.setEntityStateWithoutEvent entityState entity world
 
-        static member private updateEntityState updater entity world =
+        static member private updateEntityState updater propertyName entity world =
             let entityState = World.getEntityState entity world
             let entityState = updater entityState
-            World.setEntityState entityState entity world
+            World.setEntityState propertyName entityState entity world
 
-        static member private updateEntityStatePlus updater entity world =
+        static member private updateEntityStatePlus updater propertyName entity world =
             let oldWorld = world
             let world = World.updateEntityStateWithoutEvent updater entity world
             let world = World.updateEntityInEntityTree entity oldWorld world
-            World.publishEntityChange (World.getEntityState entity world) entity oldWorld world
+            World.publishEntityChange propertyName entity oldWorld world
 
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
@@ -664,35 +662,47 @@ module WorldModule =
         static member internal getEntityCreationTimeStampNp entity world = (World.getEntityState entity world).CreationTimeStampNp
         static member internal getEntityOptSpecialization entity world = (World.getEntityState entity world).OptSpecialization
         static member internal getEntityOptOverlayName entity world = (World.getEntityState entity world).OptOverlayName
-        static member internal setEntityOptOverlayName value entity world = World.updateEntityState (fun entityState -> { entityState with OptOverlayName = value }) entity world
+        static member internal setEntityOptOverlayName value entity world = World.updateEntityState (fun entityState -> { entityState with OptOverlayName = value }) Property? OptOverlayName entity world
         static member internal getEntityPosition entity world = (World.getEntityState entity world).Position
-        static member internal setEntityPosition value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with EntityState.Position = value }) entity world
+        static member internal setEntityPosition value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with EntityState.Position = value }) Property? Position entity world
         static member internal getEntitySize entity world = (World.getEntityState entity world).Size
-        static member internal setEntitySize value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with Size = value }) entity world
+        static member internal setEntitySize value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with Size = value }) Property? Size entity world
         static member internal getEntityRotation entity world = (World.getEntityState entity world).Rotation
-        static member internal setEntityRotation value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with Rotation = value }) entity world
+        static member internal setEntityRotation value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with Rotation = value }) Property? Rotation entity world
         static member internal getEntityDepth entity world = (World.getEntityState entity world).Depth
-        static member internal setEntityDepth value entity world = World.updateEntityState (fun entityState -> { entityState with Depth = value }) entity world
+        static member internal setEntityDepth value entity world = World.updateEntityState (fun entityState -> { entityState with Depth = value }) Property? Depth entity world
         static member internal getEntityOverflow entity world = (World.getEntityState entity world).Overflow
-        static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with Overflow = value }) entity world
+        static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with Overflow = value }) Property? Overflow entity world
         static member internal getEntityViewType entity world = (World.getEntityState entity world).ViewType
-        static member internal setEntityViewType value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with ViewType = value }) entity world
+        static member internal setEntityViewType value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with ViewType = value }) Property? ViewType entity world
         static member internal getEntityVisible entity world = (World.getEntityState entity world).Visible
-        static member internal setEntityVisible value entity world = World.updateEntityState (fun entityState -> { entityState with Visible = value }) entity world
+        static member internal setEntityVisible value entity world = World.updateEntityState (fun entityState -> { entityState with Visible = value }) Property? Visible entity world
         static member internal getEntityOmnipresent entity world = (World.getEntityState entity world).Omnipresent
-        static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with Omnipresent = value }) entity world
+        static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with Omnipresent = value }) Property? Omnipresent entity world
         static member internal getEntityPublishUpdatesNp entity world = (World.getEntityState entity world).PublishUpdatesNp
-        static member internal setEntityPublishUpdatesNp value entity world = World.updateEntityState (fun entityState -> { entityState with PublishUpdatesNp = value }) entity world
-        static member internal getEntityPublishChangesNp entity world = (World.getEntityState entity world).PublishChangesNp
-        static member internal setEntityPublishChangesNp value entity world = World.updateEntityState (fun entityState -> { entityState with PublishChangesNp = value }) entity world
+        static member internal setEntityPublishUpdatesNp value entity world = World.updateEntityState (fun entityState -> { entityState with PublishUpdatesNp = value }) Property? PublishUpdatesNp entity world
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
-        static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> { entityState with Persistent = value }) entity world
+        static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> { entityState with Persistent = value }) Property? Persistent entity world
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
         static member internal getEntityFacetsNp entity world = (World.getEntityState entity world).FacetsNp
-        static member internal getEntityTransform entity world = EntityState.getTransform (World.getEntityState entity world)
-        static member internal setEntityTransform value entity world = World.updateEntityStatePlus (EntityState.setTransform value) entity world
-        static member internal attachEntityProperty name value entity world = World.setEntityState (EntityState.attachProperty name value ^ World.getEntityState entity world) entity world
-        static member internal detachEntityProperty name entity world = World.setEntityState (EntityState.detachProperty name ^ World.getEntityState entity world) entity world
+
+        static member internal getEntityTransform entity world =
+            EntityState.getTransform (World.getEntityState entity world)
+        
+        static member internal setEntityTransform value entity world =
+            let oldWorld = world
+            let world = World.updateEntityStateWithoutEvent (EntityState.setTransform value) entity world
+            let world = World.updateEntityInEntityTree entity oldWorld world
+            let world = World.publishEntityChange Property? Position entity oldWorld world
+            let world = World.publishEntityChange Property? Size entity oldWorld world
+            let world = World.publishEntityChange Property? Rotation entity oldWorld world
+            World.publishEntityChange Property? Depth entity oldWorld world
+
+        static member internal attachEntityProperty name value entity world =
+            World.setEntityStateWithoutEvent (EntityState.attachProperty name value ^ World.getEntityState entity world) entity world
+
+        static member internal detachEntityProperty name entity world =
+            World.setEntityStateWithoutEvent (EntityState.detachProperty name ^ World.getEntityState entity world) entity world
 
         static member internal getEntityProperty propertyName entity world =
             match propertyName with // NOTE: string match for speed
@@ -712,11 +722,9 @@ module WorldModule =
             | "Visible" -> (World.getEntityVisible entity world :> obj, typeof<bool>)
             | "Omnipresent" -> (World.getEntityOmnipresent entity world :> obj, typeof<bool>)
             | "PublishUpdatesNp" -> (World.getEntityPublishUpdatesNp entity world :> obj, typeof<bool>)
-            | "PublishChangesNp" -> (World.getEntityPublishChangesNp entity world :> obj, typeof<bool>)
             | "Persistent" -> (World.getEntityPersistent entity world :> obj, typeof<bool>)
             | "FacetNames" -> (World.getEntityFacetNames entity world :> obj, typeof<string Set>)
             | "FacetsNp" -> (World.getEntityFacetsNp entity world :> obj, typeof<Facet list>)
-            | "Transform" -> (World.getEntityTransform entity world :> obj, typeof<Transform>)
             | _ ->
                 let property = EntityState.getProperty (World.getEntityState entity world) propertyName
                 (property.PropertyValue, property.PropertyType)
@@ -741,12 +749,10 @@ module WorldModule =
             | "Visible" -> World.setEntityVisible (value :> obj :?> bool) entity world
             | "Omnipresent" -> World.setEntityOmnipresent (value :> obj :?> bool) entity world
             | "PublishUpdatesNp" -> failwith "Cannot change entity publish updates."
-            | "PublishChangesNp" -> failwith "Cannot change entity publish updates."
             | "Persistent" -> World.setEntityPersistent (value :> obj :?> bool) entity world
             | "FacetNames" -> failwith "Cannot change entity facet names with a property setter."
             | "FacetsNp" -> failwith "Cannot change entity facets with a property setter."
-            | "Transform" -> World.setEntityTransform (value :> obj :?> Transform) entity world
-            | _ -> World.setEntityState (EntityState.set (World.getEntityState entity world) propertyName value) entity world
+            | _ -> World.setEntityState propertyName (EntityState.set (World.getEntityState entity world) propertyName value) entity world
 
         /// Get the maxima bounds of the entity as determined by size, position, rotation, and overflow.
         static member getEntityBoundsMax entity world =
@@ -765,18 +771,6 @@ module WorldModule =
         /// Get an entity's facet names via reflection.
         static member getEntityFacetNamesReflectively entityState =
             List.map getTypeName entityState.FacetsNp
-
-        static member private updateEntityPublishChanges entity world =
-            let entityChangeEventAddress = entity.ChangeAddress |> atooa
-            let publishChanges =
-                let subscriptions = Vmap.tryFind entityChangeEventAddress (World.getSubscriptions world)
-                match subscriptions with
-                | Some [] -> failwithumf () // NOTE: implementation of event system should clean up all empty subscription entries, AFAIK
-                | Some (_ :: _) -> true
-                | None -> false
-            if World.containsEntity entity world
-            then World.setEntityPublishChangesNp publishChanges entity world
-            else world
 
         static member private updateEntityPublishUpdates entity world =
             let entityUpdateEventAddress = entity.UpdateAddress |> atooa
@@ -825,7 +819,6 @@ module WorldModule =
                     let facets = World.getEntityFacetsNp entity world
                     let world = dispatcher.Register (entity, world)
                     let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
-                    let world = World.updateEntityPublishChanges entity world
                     let world = World.updateEntityPublishUpdates entity world
                     let eventTrace = EventTrace.record "World" "addEntity" EventTrace.empty
                     World.publish () (ftoa<unit> !!"Entity/Add" ->- entity) eventTrace entity world
@@ -1036,15 +1029,6 @@ module WorldModule =
         static member internal updateEntityPublishingFlags eventAddress world =
             let eventNames = Address.getNames eventAddress
             match eventNames with
-            | head :: neck :: tail when Name.getNameStr head = "Entity" && Name.getNameStr neck = "Change" ->
-                let publishChanges =
-                    match Vmap.tryFind eventAddress (EventWorld.getSubscriptions world) with
-                    | Some [] -> failwithumf () // NOTE: implementation of event system should clean up all empty subscription entries, AFAIK
-                    | Some (_ :: _) -> true
-                    | None -> false
-                let entity = Entity.proxy ^ ltoa<Entity> tail
-                let world = if World.containsEntity entity world then World.setEntityPublishChangesNp publishChanges entity world else world
-                world
             | head :: tail when Name.getNameStr head = "Update" ->
                 let publishUpdates =
                     match Vmap.tryFind eventAddress (EventWorld.getSubscriptions world) with
@@ -1074,7 +1058,8 @@ module WorldModule =
                 let oldWorld = world
                 let world = World.setEntityStateWithoutEvent entityState entity world
                 let world = World.updateEntityInEntityTree entity oldWorld world
-                let world = World.publishEntityChange entityState entity oldWorld world
+                let properties = World.getProperties entityState
+                let world = List.fold (fun world (propertyName, _) -> World.publishEntityChange propertyName entity oldWorld world) world properties
                 Right world
             | (_, _) -> let _ = World.choose world in Left "Could not set the entity's overlay name."
 
@@ -1086,7 +1071,6 @@ module WorldModule =
                 let oldWorld = world
                 let world = World.setEntityStateWithoutEvent entityState entity world
                 let world = World.updateEntityInEntityTree entity oldWorld world
-                let world = World.publishEntityChange entityState entity oldWorld world
                 Right world
             | Left error -> Left error
 
@@ -1108,15 +1092,15 @@ module WorldModule =
 
         static member viewEntityMemberProperties entity world =
             let state = World.getEntityState entity world
-            World.viewMemberProperties state
+            World.getMemberProperties state
 
         static member viewEntityXProperties entity world =
             let state = World.getEntityState entity world
-            World.viewXProperties state
+            World.getXProperties state
 
         static member viewEntity entity world =
             let state = World.getEntityState entity world
-            World.view state
+            World.getProperties state
 
         (* Group *)
 
@@ -1306,15 +1290,15 @@ module WorldModule =
 
         static member viewGroupMemberProperties group world =
             let state = World.getGroupState group world
-            World.viewMemberProperties state
+            World.getMemberProperties state
 
         static member viewGroupXProperties group world =
             let state = World.getGroupState group world
-            World.viewXProperties state
+            World.getXProperties state
 
         static member viewGroup group world =
             let state = World.getGroupState group world
-            World.view state
+            World.getProperties state
 
         (* Screen *)
 
@@ -1536,15 +1520,15 @@ module WorldModule =
 
         static member viewScreenMemberProperties screen world =
             let state = World.getScreenState screen world
-            World.viewMemberProperties state
+            World.getMemberProperties state
 
         static member viewScreenXProperties screen world =
             let state = World.getScreenState screen world
-            World.viewXProperties state
+            World.getXProperties state
 
         static member viewScreen screen world =
             let state = World.getScreenState screen world
-            World.view state
+            World.getProperties state
 
         (* Game *)
 
@@ -1733,15 +1717,15 @@ module WorldModule =
 
         static member viewGameMemberProperties world =
             let state = World.getGameState world
-            World.viewMemberProperties state
+            World.getMemberProperties state
 
         static member viewGameXProperties world =
             let state = World.getGameState world
-            World.viewXProperties state
+            World.getXProperties state
 
         static member viewGame world =
             let state = World.getGameState world
-            World.view state
+            World.getProperties state
 
         (* Clipboard *)
         

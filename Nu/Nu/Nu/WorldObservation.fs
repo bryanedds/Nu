@@ -40,12 +40,45 @@ module ObservationModule =
     // open related module
     open Observation
 
+    /// Pipe-right arrow that provides special precedence for observations.
+    let (-|>) = (|>)
+
+    /// Make an observation of the observer's change events.
+    let [<DebuggerHidden; DebuggerStepThrough>] ( *-- ) (property : PropertyTag<'a, 'b, World>) (observer : 'o) =
+        let changeEventAddress = ltoa<ParticipantChangeData<'a, World>> [!!typeof<'a>.Name; !!"Change"; !!property.Name] ->>- property.This.ParticipantAddress
+        observe changeEventAddress observer |> participantValue property.Get
+
+    /// Propagate the event data of an observation to a value in the observing participant when the
+    /// observer exists (doing nothing otherwise).
+    let [<DebuggerHidden; DebuggerStepThrough>] (-->) observation valueSetter =
+        subscribe (fun a world ->
+            let world =
+                if world.ContainsParticipant a.Subscriber
+                then valueSetter a.Data world
+                else world
+            (Cascade, world))
+            observation
+
+    // Propagate a value from the given source participant to a value in the given destination participant.
+    let [<DebuggerHidden; DebuggerStepThrough>] ( *-> )
+        (sourceProperty : PropertyTag<'a, 'b, World>)
+        (destinationProperty : PropertyTag<'o, 'b, World>) =
+        sourceProperty *-- destinationProperty.This --> fun _ world ->
+            let sourceValue = sourceProperty.Get world
+            match destinationProperty.OptSet with
+            | Some set -> set sourceValue world
+            | None -> world // TODO: log info here about property not being set-able?
+
     /// Make an observation of one of the observer's change events per frame.
-    let [<DebuggerHidden; DebuggerStepThrough>] (/--) (participant, valueGetter) observer =
-        (participant, valueGetter) *-- observer |> noMoreThanOncePerUpdate
+    let [<DebuggerHidden; DebuggerStepThrough>] (/--) property observer =
+        property *-- observer |> noMoreThanOncePerUpdate
 
     // Propagate a value from the given source participant to a value in the given destination participant, but with frame-based cycle-breaking.
-    let [<DebuggerHidden; DebuggerStepThrough>] (/->) (source : 'a, valueGetter : World -> 'b) (destination : 'o, valueSetter : 'b -> World -> World) =
-        (source, valueGetter) /-- destination --> fun _ world ->
-            let sourceValue = valueGetter world
-            valueSetter sourceValue world
+    let [<DebuggerHidden; DebuggerStepThrough>] (/->)
+        (sourceProperty : PropertyTag<'a, 'b, World>)
+        (destinationProperty : PropertyTag<'o, 'b, World>) =
+        sourceProperty /-- destinationProperty.This --> fun _ world ->
+            let sourceValue = sourceProperty.Get world
+            match destinationProperty.OptSet with
+            | Some set -> set sourceValue world
+            | None -> world // TODO: log info here about property not being set-able?

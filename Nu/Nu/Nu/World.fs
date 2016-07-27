@@ -569,7 +569,7 @@ module WorldModule2 =
                 let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTreeNp world)
                 let world = selectedScreen.SetEntityTreeNp entityTree world
                 let entities = QuadTree.getElementsNearBounds viewBounds quadTree
-                List.fold (fun world (entity : Entity) -> World.actualizeEntity entity world) world entities
+                List.fold (fun world entity -> World.actualizeEntity entity world) world entities
             | None -> world
 
         /// Update the game engine once per frame, updating its subsystems and publishing the Update event.

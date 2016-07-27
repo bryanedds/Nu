@@ -23,10 +23,13 @@ module GameplayDispatcherModule =
 
         member this.GetContentRandState world : uint64 = this.Get Property? ContentRandState world
         member this.SetContentRandState (value : uint64) world = this.Set Property? ContentRandState value world
+        member this.TagContentRandState = PropertyTag.make this Property? ContentRandState this.GetContentRandState this.SetContentRandState
         member this.GetOngoingRandState world : uint64 = this.Get Property? OngoingRandState world
         member this.SetOngoingRandState (value : uint64) world = this.Set Property? OngoingRandState value world
+        member this.TagOngoingRandState = PropertyTag.make this Property? OngoingRandState this.GetOngoingRandState this.SetOngoingRandState
         member this.GetShallLoadGame world : bool = this.Get Property? ShallLoadGame world
         member this.SetShallLoadGame (value : bool) world = this.Set Property? ShallLoadGame value world
+        member this.TagShallLoadGame = PropertyTag.make this Property? ShallLoadGame this.GetShallLoadGame this.SetShallLoadGame
 
     type GameplayDispatcher () =
         inherit ScreenDispatcher ()
@@ -486,7 +489,7 @@ module GameplayDispatcherModule =
                 runAssumingCascade chain observation world |> snd
             else world
 
-        static let handlePlayerChange _ world =
+        static let handlePlayerActivityChange _ world =
             let playerNavigatingPath = isPlayerNavigatingPath world
             let world = Simulants.HudHalt.SetEnabled playerNavigatingPath world
             (Cascade, world)
@@ -570,7 +573,7 @@ module GameplayDispatcherModule =
 
         override dispatcher.Register (gameplay, world) =
             world |>
-                (observe (Events.EntityChange ->- Simulants.Player) gameplay |> subscribe handlePlayerChange) |>
+                (observe (Events.EntityChange Property? ActivityState ->- Simulants.Player) gameplay |> subscribe handlePlayerActivityChange) |>
                 (observe (Events.Touch ->- Simulants.HudFeeler) gameplay |> filter isObserverSelected |> monitor handleTouchFeeler) |>
                 (observe (Events.Down ->- Simulants.HudDetailUp) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Upward)) |>
                 (observe (Events.Down ->- Simulants.HudDetailRight) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Rightward)) |>
