@@ -317,7 +317,7 @@ module WorldModule2 =
 
         /// Create a splash screen that transitions to the given destination upon completion.
         static member createSplashScreen persistent splashData destination dispatcherName optSpecialization optName world =
-            let cameraEyeSize = World.getCameraBy (fun camera -> camera.EyeSize) world
+            let cameraEyeSize = World.getEyeSize world
             let (splashScreen, world) = World.createDissolveScreen splashData.DissolveData dispatcherName optSpecialization optName world
             let (splashGroup, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some !!"SplashGroup") splashScreen world
             let (splashLabel, world) = World.createEntity typeof<LabelDispatcher>.Name None (Some !!"SplashLabel") splashGroup world
@@ -523,14 +523,14 @@ module WorldModule2 =
                 let world = World.updateScreenTransition selectedScreen world
                 let groups = World.proxyGroups selectedScreen world
                 let world = Seq.fold (fun world group -> World.updateGroup group world) world groups
-                let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
+                let viewBounds = World.getViewBoundsRelative world
                 let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTreeNp world)
                 let world = selectedScreen.SetEntityTreeNp entityTree world
                 let entities = QuadTree.getElementsNearBounds viewBounds quadTree
                 List.fold (fun world (entity : Entity) -> World.updateEntity entity world) world entities
             | None -> world
 
-        static member private actualizeScreenTransition camera (screen : Screen) transition world =
+        static member private actualizeScreenTransition (_ : Vector2) eyeSize (screen : Screen) transition world =
             match transition.OptDissolveImage with
             | Some dissolveImage ->
                 let progress = single (screen.GetTransitionTicksNp world) / single transition.TransitionLifetime
@@ -542,8 +542,8 @@ module WorldModule2 =
                             { Depth = Single.MaxValue
                               LayeredDescriptor =
                                 SpriteDescriptor
-                                    { Position = -camera.EyeSize * 0.5f // negation for right-handedness
-                                      Size = camera.EyeSize
+                                    { Position = -eyeSize * 0.5f // negation for right-handedness
+                                      Size = eyeSize
                                       Rotation = 0.0f
                                       Offset = Vector2.Zero
                                       ViewType = Absolute
@@ -560,12 +560,12 @@ module WorldModule2 =
                 let world = World.actualizeScreen selectedScreen world
                 let world =
                     match selectedScreen.GetTransitionStateNp world with
-                    | IncomingState -> World.actualizeScreenTransition (World.getCamera world) selectedScreen (selectedScreen.GetIncoming world) world
-                    | OutgoingState -> World.actualizeScreenTransition (World.getCamera world) selectedScreen (selectedScreen.GetOutgoing world) world
+                    | IncomingState -> World.actualizeScreenTransition (World.getEyeCenter world) (World.getEyeSize world) selectedScreen (selectedScreen.GetIncoming world) world
+                    | OutgoingState -> World.actualizeScreenTransition (World.getEyeCenter world) (World.getEyeSize world) selectedScreen (selectedScreen.GetOutgoing world) world
                     | IdlingState -> world
                 let groups = World.proxyGroups selectedScreen world
                 let world = Seq.fold (fun world group -> World.actualizeGroup group world) world groups
-                let viewBounds = World.getCameraBy Camera.getViewBoundsRelative world
+                let viewBounds = World.getViewBoundsRelative world
                 let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTreeNp world)
                 let world = selectedScreen.SetEntityTreeNp entityTree world
                 let entities = QuadTree.getElementsNearBounds viewBounds quadTree
@@ -681,9 +681,7 @@ module WorldModule2 =
             // make the world's ambient state
             let ambientState =
                 let overlayRouter = OverlayRouter.make dispatchers.EntityDispatchers []
-                let eyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault)
-                let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
-                AmbientState.make 1L camera Map.empty overlayRouter Overlayer.empty SymbolStore.empty userState
+                AmbientState.make 1L Map.empty overlayRouter Overlayer.empty SymbolStore.empty userState
 
             // select the first game dispatcher as active
             let activeGameDispatcher = dispatchers.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
@@ -775,13 +773,10 @@ module WorldModule2 =
             
                     // make the world's ambient state
                     let ambientState =
-                        let sdlConfig = SdlDeps.getConfig sdlDeps
-                        let eyeSize = Vector2 (single sdlConfig.ViewW, single sdlConfig.ViewH)
-                        let camera = { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                         let assetMetadataMap = Metadata.generateAssetMetadataMap assetGraph
                         let pluginOverlayRoutes = plugin.MakeOverlayRoutes ()
                         let overlayRouter = OverlayRouter.make dispatchers.EntityDispatchers pluginOverlayRoutes
-                        AmbientState.make tickRate camera assetMetadataMap overlayRouter overlayer SymbolStore.empty userState
+                        AmbientState.make tickRate assetMetadataMap overlayRouter overlayer SymbolStore.empty userState
 
                     // make and choose the world
                     let world = World.make eventSystem dispatchers subsystems ambientState optGameSpecialization activeGameDispatcher

@@ -225,3 +225,25 @@ module Math =
         let xy = center - sizeHalfOverflow
         let x2y2 = center + sizeHalfOverflow
         Vector4 (xy.X, xy.Y, x2y2.X, x2y2.Y)
+
+    /// Get the view of the eye in absolute terms (world space).
+    let getViewAbsolute (_ : Vector2) (_ : Vector2) =
+        Matrix3.Identity
+        
+    /// Get the view of the eye in absolute terms (world space) with translation sliced on
+    /// integers.
+    let getViewAbsoluteI (_ : Vector2) (_ : Vector2) =
+        Matrix3.Identity
+
+    /// The relative view of the eye with original single values. Due to the problems with
+    /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
+    /// coordinates is very, very bad for rendering.
+    let getViewRelative (eyeCenter : Vector2) (_ : Vector2) =
+        let translation = eyeCenter
+        Matrix3.CreateFromTranslation translation
+
+    /// The relative view of the eye with translation sliced on integers. Good for rendering.
+    let getViewRelativeI (eyeCenter : Vector2) (_ : Vector2) =
+        let translation = eyeCenter
+        let translationI = Vector2 (single ^ int translation.X, single ^ int translation.Y)
+        Matrix3.CreateFromTranslation translationI

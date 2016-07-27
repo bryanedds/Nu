@@ -209,7 +209,7 @@ module Gaia =
             match tryMousePick form mousePosition world with
             | Some entity ->
                 let world = pushPastWorld world world
-                let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (entity.GetViewType world) mousePosition) world
+                let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
                 let dragState = DragEntityPosition (entity.GetPosition world + mousePositionWorld, mousePositionWorld, entity)
                 let world = World.updateUserState (fun editorState -> { editorState with DragEntityState = dragState }) world
                 (handled, world)
@@ -229,10 +229,9 @@ module Gaia =
             | DragEntityNone -> (Resolve, world)
 
     let private handleNuCameraDragBegin (_ : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
-        let camera = World.getCamera world
         let mousePosition = World.getMousePositionF world
-        let mousePositionScreen = Camera.mouseToScreen mousePosition camera
-        let dragState = DragCameraPosition (camera.EyeCenter + mousePositionScreen, mousePositionScreen)
+        let mousePositionScreen = World.mouseToScreen mousePosition world
+        let dragState = DragCameraPosition (World.getEyeCenter world + mousePositionScreen, mousePositionScreen)
         let world = World.updateUserState (fun editorState -> { editorState with DragCameraState = dragState }) world
         (Resolve, world)
 
@@ -465,11 +464,10 @@ module Gaia =
                 let (entity, world) = World.createEntity form.createEntityComboBox.Text None None selectedGroup world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
-                let camera = World.getCamera world
                 let entityPosition =
                     if atMouse
-                    then Camera.mouseToWorld (entity.GetViewType world) mousePosition camera
-                    else Camera.mouseToWorld (entity.GetViewType world) (camera.EyeSize * 0.5f) camera
+                    then World.mouseToWorld (entity.GetViewType world) mousePosition world
+                    else World.mouseToWorld (entity.GetViewType world) (World.getEyeSize world * 0.5f) world
                 let entityTransform =
                     { Transform.Position = entityPosition
                       Size = entity.GetSize world
@@ -640,7 +638,7 @@ module Gaia =
 
     let private handleFormResetCamera (_ : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            World.updateCamera (fun camera -> { camera with EyeCenter = Vector2.Zero }) world
+            World.setEyeCenter Vector2.Zero world
 
     let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
@@ -745,7 +743,7 @@ module Gaia =
             | DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) ->
                 let (positionSnap, _) = getSnaps form
                 let mousePosition = World.getMousePositionF world
-                let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (entity.GetViewType world) mousePosition) world
+                let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
                 let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                 let world = entity.SetPositionSnapped positionSnap entityPosition world
                 let world = World.propagateEntityPhysics entity world
@@ -762,13 +760,10 @@ module Gaia =
     let private updateCameraDrag (_ : GaiaForm) world =
         match (World.getUserState world).DragCameraState with
         | DragCameraPosition (pickOffset, mousePositionScreenOrig) ->
-            let world =
-                World.updateCamera (fun camera ->
-                    let mousePosition = World.getMousePositionF world
-                    let mousePositionScreen = Camera.mouseToScreen mousePosition camera
-                    let eyeCenter = (pickOffset - mousePositionScreenOrig) + -CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
-                    { camera with EyeCenter = eyeCenter })
-                    world
+            let mousePosition = World.getMousePositionF world
+            let mousePositionScreen = World.mouseToScreen mousePosition world
+            let eyeCenter = (pickOffset - mousePositionScreenOrig) + -CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
+            let world = World.setEyeCenter eyeCenter world
             World.updateUserState (fun editorState ->
                 { editorState with DragCameraState = DragCameraPosition (pickOffset, mousePositionScreenOrig) })
                 world

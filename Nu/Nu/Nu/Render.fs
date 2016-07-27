@@ -94,7 +94,7 @@ type IRenderer =
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> IRenderer
     /// Render a frame of the game.
-    abstract Render : Camera -> IRenderer
+    abstract Render : Vector2 -> Vector2 -> IRenderer
 
 [<AutoOpen>]
 module RendererModule =
@@ -197,7 +197,13 @@ module RendererModule =
         static member private handleRenderMessages renderMessages renderer =
             Queue.fold Renderer.handleRenderMessage renderer renderMessages
 
-        static member private renderSprite (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (sprite : SpriteDescriptor) renderer =
+        static member private renderSprite
+            (viewAbsolute : Matrix3)
+            (viewRelative : Matrix3)
+            (_ : Vector2)
+            (eyeSize : Vector2)
+            (sprite : SpriteDescriptor)
+            renderer =
             let view = match sprite.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
             let position = sprite.Position - Vector2.Multiply (sprite.Offset, sprite.Size)
             let positionView = position * view
@@ -223,8 +229,8 @@ module RendererModule =
                         sourceRect.w <- textureSizeX
                         sourceRect.h <- textureSizeY
                     let mutable destRect = SDL.SDL_Rect ()
-                    destRect.x <- int ^ positionView.X + camera.EyeSize.X * 0.5f
-                    destRect.y <- int ^ -positionView.Y + camera.EyeSize.Y * 0.5f - sizeView.Y // negation for right-handedness
+                    destRect.x <- int ^ positionView.X + eyeSize.X * 0.5f
+                    destRect.y <- int ^ -positionView.Y + eyeSize.Y * 0.5f - sizeView.Y // negation for right-handedness
                     destRect.w <- int sizeView.X
                     destRect.h <- int sizeView.Y
                     let rotation = double -sprite.Rotation * Constants.Math.RadiansToDegrees // negation for right-handedness
@@ -247,13 +253,19 @@ module RendererModule =
                 | _ -> Log.trace "Cannot render sprite with a non-texture asset."; renderer
             | None -> Log.info ^ "SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'."; renderer
 
-        static member private renderSprites viewAbsolute viewRelative camera sprites renderer =
+        static member private renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer =
             List.fold
-                (fun renderer sprite -> Renderer.renderSprite viewAbsolute viewRelative camera sprite renderer)
+                (fun renderer sprite -> Renderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer)
                 renderer
                 sprites
 
-        static member private renderTileLayerDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (descriptor : TileLayerDescriptor) renderer =
+        static member private renderTileLayerDescriptor
+            (viewAbsolute : Matrix3)
+            (viewRelative : Matrix3)
+            (_ : Vector2)
+            (eyeSize : Vector2)
+            (descriptor : TileLayerDescriptor)
+            renderer =
             let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
             let positionView = descriptor.Position * view
             let sizeView = descriptor.Size * view.ExtractScaleMatrix ()
@@ -280,10 +292,10 @@ module RendererModule =
                             let (i, j) = (n % mapRun, n / mapRun)
                             let tilePosition =
                                 Vector2
-                                    (positionView.X + tileSize.X * single i + camera.EyeSize.X * 0.5f,
-                                     -(positionView.Y - tileSize.Y * single j + sizeView.Y) + camera.EyeSize.Y * 0.5f) // negation for right-handedness
+                                    (positionView.X + tileSize.X * single i + eyeSize.X * 0.5f,
+                                     -(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
                             let tileBounds = Math.makeBounds tilePosition tileSize
-                            let viewBounds = Math.makeBounds Vector2.Zero camera.EyeSize
+                            let viewBounds = Math.makeBounds Vector2.Zero eyeSize
                             if Math.isBoundsInBounds tileBounds viewBounds then
                                 let gid = tiles.[n].Gid - tileSet.FirstGid
                                 let gidPosition = gid * tileSourceSize.X
@@ -315,7 +327,13 @@ module RendererModule =
                 | _ -> Log.trace "Cannot render tile with a non-texture asset."; renderer
             | None -> Log.info ^ "TileLayerDescriptor failed due to unloadable assets for '" + scstring tileSetImage + "'."; renderer
 
-        static member private renderTextDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (descriptor : TextDescriptor) renderer =
+        static member private renderTextDescriptor
+            (viewAbsolute : Matrix3)
+            (viewRelative : Matrix3)
+            (_ : Vector2)
+            (eyeSize : Vector2)
+            (descriptor : TextDescriptor)
+            renderer =
             let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
             let positionView = descriptor.Position * view
             let sizeView = descriptor.Size * view.ExtractScaleMatrix ()
@@ -346,8 +364,8 @@ module RendererModule =
                         sourceRect.w <- textureSizeX
                         sourceRect.h <- textureSizeY
                         let mutable destRect = SDL.SDL_Rect ()
-                        destRect.x <- int ^ positionView.X + camera.EyeSize.X * 0.5f
-                        destRect.y <- int ^ -positionView.Y + camera.EyeSize.Y * 0.5f - single textureSizeY // negation for right-handedness
+                        destRect.x <- int ^ positionView.X + eyeSize.X * 0.5f
+                        destRect.y <- int ^ -positionView.Y + eyeSize.Y * 0.5f - single textureSizeY // negation for right-handedness
                         destRect.w <- textureSizeX
                         destRect.h <- textureSizeY
                         if textTexture <> IntPtr.Zero then SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect) |> ignore
@@ -357,14 +375,20 @@ module RendererModule =
                 | _ -> Log.trace "Cannot render text with a non-font asset."; renderer
             | None -> Log.info ^ "TextDescriptor failed due to unloadable assets for '" + scstring font + "'."; renderer
 
-        static member private renderLayerableDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera renderer layerableDescriptor =
+        static member private renderLayerableDescriptor
+            (viewAbsolute : Matrix3)
+            (viewRelative : Matrix3)
+            (eyeCenter : Vector2)
+            (eyeSize : Vector2)
+            renderer
+            layerableDescriptor =
             match layerableDescriptor with
-            | SpriteDescriptor sprite -> Renderer.renderSprite viewAbsolute viewRelative camera sprite renderer
-            | SpritesDescriptor sprites -> Renderer.renderSprites viewAbsolute viewRelative camera sprites renderer
-            | TileLayerDescriptor descriptor -> Renderer.renderTileLayerDescriptor viewAbsolute viewRelative camera descriptor renderer
-            | TextDescriptor descriptor -> Renderer.renderTextDescriptor viewAbsolute viewRelative camera descriptor renderer
+            | SpriteDescriptor sprite -> Renderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer
+            | SpritesDescriptor sprites -> Renderer.renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer
+            | TileLayerDescriptor descriptor -> Renderer.renderTileLayerDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
+            | TextDescriptor descriptor -> Renderer.renderTextDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
 
-        static member private renderDescriptors camera renderDescriptors renderer =
+        static member private renderDescriptors eyeCenter eyeSize renderDescriptors renderer =
             let renderContext = renderer.RenderContext
             let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
             match targetResult with
@@ -373,9 +397,9 @@ module RendererModule =
                 let renderDescriptorsRev = List.rev renderDescriptors
                 let renderDescriptorsSorted = List.sortBy (fun (LayerableDescriptor descriptor) -> descriptor.Depth) renderDescriptorsRev
                 let layeredDescriptors = List.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
-                let viewAbsolute = Matrix3.InvertView ^ Camera.getViewAbsoluteI camera
-                let viewRelative = Matrix3.InvertView ^ Camera.getViewRelativeI camera
-                List.fold (Renderer.renderLayerableDescriptor viewAbsolute viewRelative camera) renderer layeredDescriptors
+                let viewAbsolute = Matrix3.InvertView ^ Math.getViewAbsoluteI eyeCenter eyeSize
+                let viewRelative = Matrix3.InvertView ^ Math.getViewRelativeI eyeCenter eyeSize
+                List.fold (Renderer.renderLayerableDescriptor viewAbsolute viewRelative eyeCenter eyeSize) renderer layeredDescriptors
             | _ ->
                 Log.trace ^ "Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + "."
                 renderer
@@ -400,13 +424,13 @@ module RendererModule =
                 let renderer = { renderer with RenderMessages = renderMessages }
                 renderer :> IRenderer
 
-            member renderer.Render camera =
+            member renderer.Render eyeCenter eyeSize =
                 let renderMessages = renderer.RenderMessages
                 let renderer = { renderer with RenderMessages = Queue.empty }
                 let renderer = Renderer.handleRenderMessages renderMessages renderer
                 let renderDescriptors = renderer.RenderDescriptors
                 let renderer = { renderer with RenderDescriptors = [] }
-                let renderer = Renderer.renderDescriptors camera renderDescriptors renderer
+                let renderer = Renderer.renderDescriptors eyeCenter eyeSize renderDescriptors renderer
                 renderer :> IRenderer
 
             member renderer.CleanUp () =
@@ -427,7 +451,7 @@ type [<ReferenceEquality>] MockRenderer =
     interface IRenderer with
         member renderer.ClearMessages () = renderer :> IRenderer
         member renderer.EnqueueMessage _ = renderer :> IRenderer
-        member renderer.Render _ = renderer :> IRenderer
+        member renderer.Render _ _ = renderer :> IRenderer
         member renderer.CleanUp () = renderer :> IRenderer
 
     static member make () =

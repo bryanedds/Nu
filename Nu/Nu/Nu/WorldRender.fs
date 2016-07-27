@@ -21,7 +21,9 @@ module WorldRenderModule =
             member this.SubsystemOrder = this.SubsystemOrder
             member this.ClearMessages () = { this with Renderer = this.Renderer.ClearMessages () } :> World Subsystem
             member this.EnqueueMessage message = { this with Renderer = this.Renderer.EnqueueMessage (message :?> RenderMessage) } :> World Subsystem
-            member this.ProcessMessages world = (() :> obj, { this with Renderer = this.Renderer.Render ^ World.getCamera world } :> World Subsystem, world)
+            member this.ProcessMessages world =
+                let this = { this with Renderer = this.Renderer.Render (World.getEyeCenter world) (World.getEyeSize world) }
+                (() :> obj, this :> World Subsystem, world)
             member this.ApplyResult (_, world) = world
             member this.CleanUp world = (this :> World Subsystem, world)
 

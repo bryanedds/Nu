@@ -43,7 +43,7 @@ module FieldDispatcherModule =
                     (field.GetPosition world)
                     (Vector2.Multiply (Constants.Layout.TileSize, Constants.Layout.TileSheetSize))
                     (field.GetOverflow world)
-            if World.getCameraBy (Camera.inView viewType bounds) world then
+            if World.inView viewType bounds world then
                 let fieldMap = field.GetFieldMapNp world
                 let sprites =
                     Map.foldBack

@@ -64,8 +64,8 @@ module EnemyModule =
         member this.SetHealth (value : int) world = this.Set Property? Health value world
         
         member this.IsOnScreen world =
-            let cameraBounds = World.getCameraBy Camera.getViewBoundsRelative world
-            Math.isPointInBounds (this.GetCenter world) cameraBounds
+            let viewBounds = World.getViewBoundsRelative world
+            Math.isPointInBounds (this.GetCenter world) viewBounds
 
     type EnemyDispatcher () =
         inherit EntityDispatcher ()
@@ -236,13 +236,12 @@ module PlayerGroupModule =
         inherit GroupDispatcher ()
 
         static let adjustCamera world =
-            World.updateCamera
-                (fun camera -> 
-                    let playerPosition = Simulants.Player.GetPosition world
-                    let playerSize = Simulants.Player.GetSize world
-                    let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + camera.EyeSize.X * 0.33f, camera.EyeCenter.Y)
-                    { camera with EyeCenter = eyeCenter })
-                world
+            let playerPosition = Simulants.Player.GetPosition world
+            let playerSize = Simulants.Player.GetSize world
+            let eyeCenter = World.getEyeCenter world
+            let eyeSize = World.getEyeSize world
+            let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f, eyeCenter.Y)
+            Simulants.Game.SetEyeCenter eyeCenter world
 
         static let handleAdjustCamera _ world =
             (Cascade, adjustCamera world)

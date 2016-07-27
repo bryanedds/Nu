@@ -442,7 +442,7 @@ module GuiDispatcherModule =
             let data = evt.Data : MouseButtonData
             let handling =
                 if World.isEntitySelected gui world && gui.GetVisible world then
-                    let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (gui.GetViewType world) data.Position) world
+                    let mousePositionWorld = World.mouseToWorld (gui.GetViewType world) data.Position world
                     if data.Down &&
                        gui.GetSwallowMouseLeft world &&
                        Math.isPointInBounds mousePositionWorld (gui.GetBounds world) then
@@ -483,7 +483,7 @@ module ButtonDispatcherModule =
             let button = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             if World.isEntitySelected button world then
-                let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (button.GetViewType world) data.Position) world
+                let mousePositionWorld = World.mouseToWorld (button.GetViewType world) data.Position world
                 if  button.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (button.GetBounds world) then
                     if button.GetEnabled world then
@@ -501,7 +501,7 @@ module ButtonDispatcherModule =
             if World.isEntitySelected button world then
                 let wasDown = button.GetDown world
                 let world = button.SetDown false world
-                let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (button.GetViewType world) data.Position) world
+                let mousePositionWorld = World.mouseToWorld (button.GetViewType world) data.Position world
                 if  button.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (button.GetBounds world) then
                     if button.GetEnabled world && wasDown then
@@ -671,7 +671,7 @@ module ToggleDispatcherModule =
             let toggle = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             if World.isEntitySelected toggle world then
-                let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (toggle.GetViewType world) data.Position) world
+                let mousePositionWorld = World.mouseToWorld (toggle.GetViewType world) data.Position world
                 if  toggle.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (toggle.GetBounds world) then
                     if toggle.GetEnabled world then
@@ -687,7 +687,7 @@ module ToggleDispatcherModule =
             if World.isEntitySelected toggle world then
                 let wasPressed = toggle.GetPressed world
                 let world = toggle.SetPressed false world
-                let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (toggle.GetViewType world) data.Position) world
+                let mousePositionWorld = World.mouseToWorld (toggle.GetViewType world) data.Position world
                 if  toggle.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (toggle.GetBounds world) then
                     if toggle.GetEnabled world && wasPressed then
@@ -754,7 +754,7 @@ module FeelerDispatcherModule =
             let feeler = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             if World.isEntitySelected feeler world then
-                let mousePositionWorld = World.getCameraBy (Camera.mouseToWorld (feeler.GetViewType world) data.Position) world
+                let mousePositionWorld = World.mouseToWorld (feeler.GetViewType world) data.Position world
                 if  feeler.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (feeler.GetBounds world) then
                     if feeler.GetEnabled world then
@@ -1075,7 +1075,6 @@ module TileMapDispatcherModule =
         override dispatcher.Actualize (tileMap, world) =
             match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getAssetMetadataMap world) with
             | Some (_, images, map) ->
-                let camera = World.getCamera world
                 let layers = List.ofSeq map.Layers
                 let tileSourceSize = Vector2i (map.TileWidth, map.TileHeight)
                 let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
@@ -1086,10 +1085,10 @@ module TileMapDispatcherModule =
                         let parallaxTranslation =
                             match viewType with
                             | Absolute -> Vector2.Zero
-                            | Relative -> tileMap.GetParallax world * depth * -camera.EyeCenter
+                            | Relative -> tileMap.GetParallax world * depth * -World.getEyeCenter world
                         let parallaxPosition = tileMap.GetPosition world + parallaxTranslation
                         let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
-                        if World.getCameraBy (Camera.inView viewType (Math.makeBounds parallaxPosition size)) world then
+                        if World.inView viewType (Math.makeBounds parallaxPosition size) world then
                             World.addRenderMessage
                                 (RenderDescriptorsMessage
                                     [LayerableDescriptor 
