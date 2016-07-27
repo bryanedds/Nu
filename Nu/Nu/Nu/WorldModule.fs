@@ -199,12 +199,6 @@ module WorldModule =
 
         static member internal updateAmbientState updater world =
             World.choose { world with AmbientState = updater world.AmbientState }
-
-        static member internal updateAmbientStateWithoutEvent updater world =
-            let _ = world
-            let world = World.choose { world with AmbientState = updater world.AmbientState }
-            let _ = EventTrace.record "World" "updateAmbientState" EventTrace.empty
-            world
     
         /// Get the tick rate.
         static member getTickRate world =
@@ -241,14 +235,14 @@ module WorldModule =
             World.getAmbientStateBy AmbientState.isTicking world
 
         static member internal updateTickTime world =
-            World.updateAmbientStateWithoutEvent AmbientState.updateTickTime world
+            World.updateAmbientState AmbientState.updateTickTime world
 
         /// Get the world's update count.
         static member getUpdateCount world =
             World.getAmbientStateBy AmbientState.getUpdateCount world
 
         static member internal incrementUpdateCount world =
-            World.updateAmbientStateWithoutEvent AmbientState.incrementUpdateCount world
+            World.updateAmbientState AmbientState.incrementUpdateCount world
 
         /// Get the the liveness state of the engine.
         static member getLiveness world =
@@ -262,18 +256,18 @@ module WorldModule =
             World.getAmbientStateBy AmbientState.getTasklets world
 
         static member internal clearTasklets world =
-            World.updateAmbientStateWithoutEvent AmbientState.clearTasklets world
+            World.updateAmbientState AmbientState.clearTasklets world
 
         static member internal restoreTasklets tasklets world =
-            World.updateAmbientStateWithoutEvent (AmbientState.restoreTasklets tasklets) world
+            World.updateAmbientState (AmbientState.restoreTasklets tasklets) world
 
         /// Add a tasklet to be executed by the engine at the scheduled time.
         static member addTasklet tasklet world =
-            World.updateAmbientStateWithoutEvent (AmbientState.addTasklet tasklet) world
+            World.updateAmbientState (AmbientState.addTasklet tasklet) world
 
         /// Add multiple tasklets to be executed by the engine at the scheduled times.
         static member addTasklets tasklets world =
-            World.updateAmbientStateWithoutEvent (AmbientState.addTasklets tasklets) world
+            World.updateAmbientState (AmbientState.addTasklets tasklets) world
 
         /// Get the asset metadata map.
         static member getAssetMetadataMap world =
