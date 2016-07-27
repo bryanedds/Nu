@@ -382,7 +382,7 @@ module WorldModule =
                 List.notExists
                     (fun definition ->
                         match Xtension.tryGetProperty definition.PropertyName entityState.Xtension with
-                        | Some property -> property.GetType () <> definition.PropertyType
+                        | Some property -> property.PropertyType <> definition.PropertyType
                         | None -> false)
                     facetPropertyDefinitions
             else false
@@ -432,12 +432,10 @@ module WorldModule =
                         let entityState = World.getEntityState entity world
                         (entityState, world)
                     | None -> (entityState, world)
-                let facetNames = Set.remove facetName entityState.FacetNames
-                let facetsNp = List.remove ((=) facet) entityState.FacetsNp
-                let entityState = { entityState with FacetNames = facetNames }
-                let entityState = { entityState with FacetsNp = facetsNp }
                 let propertyNames = World.getEntityPropertyDefinitionNamesToDetach entityState facet
                 let entityState = Reflection.detachPropertiesViaNames EntityState.copy propertyNames entityState
+                let entityState = { entityState with FacetNames = Set.remove facetName entityState.FacetNames }
+                let entityState = { entityState with FacetsNp = List.remove ((=) facet) entityState.FacetsNp }
                 match optEntity with
                 | Some entity ->
                     let oldWorld = world
@@ -452,10 +450,8 @@ module WorldModule =
             | Right facet ->
                 let entityDispatchers = World.getEntityDispatchers world
                 if World.isFacetCompatibleWithEntity entityDispatchers facet entityState then
-                    let facetNames = Set.add facetName entityState.FacetNames
-                    let facetsNp = facet :: entityState.FacetsNp
-                    let entityState = { entityState with FacetNames = facetNames }
-                    let entityState = { entityState with FacetsNp = facetsNp }
+                    let entityState = { entityState with FacetNames = Set.add facetName entityState.FacetNames }
+                    let entityState = { entityState with FacetsNp = facet :: entityState.FacetsNp }
                     let entityState = Reflection.attachProperties EntityState.copy facet entityState
                     match optEntity with
                     | Some entity ->
