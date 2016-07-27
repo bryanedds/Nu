@@ -264,7 +264,9 @@ module WorldTypes =
           CreationTimeStampNp : int64
           OptSpecialization : string option
           OptSelectedScreen : Screen option
-          OptScreenTransitionDestination : Screen option }
+          OptScreenTransitionDestination : Screen option
+          EyeCenter : Vector2
+          EyeSize : Vector2 }
 
         /// Get an dynamic property and its type information.
         static member getProperty gameState propertyName =
@@ -284,13 +286,17 @@ module WorldTypes =
     
         /// Make a game state value.
         static member make optSpecialization dispatcher =
+            let eyeCenter = Vector2.Zero
+            let eyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault)
             { Id = makeGuid ()
               Xtension = Xtension.safe
               DispatcherNp = dispatcher
               CreationTimeStampNp = Core.getTimeStamp ()
               OptSpecialization = optSpecialization
               OptSelectedScreen = None
-              OptScreenTransitionDestination = None }
+              OptScreenTransitionDestination = None
+              EyeCenter = eyeCenter
+              EyeSize = eyeSize }
 
         /// Copy a game such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =

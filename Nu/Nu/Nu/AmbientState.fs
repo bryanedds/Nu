@@ -27,7 +27,6 @@ module AmbientStateModule =
               UpdateCount : int64
               Liveness : Liveness
               Tasklets : 'w Tasklet Queue
-              Camera : Camera
               AssetMetadataMap : AssetMetadataMap
               Overlayer : Overlayer
               OverlayRouter : OverlayRouter
@@ -82,19 +81,6 @@ module AmbientStateModule =
         /// Place the engine into a state such that the app will exit at the end of the current update.
         let exit state =
             { state with Liveness = Exiting }
-
-        /// Get a value from the camera.
-        let getCameraBy by state =
-            by state.Camera
-
-        /// Get the camera used to view the scene.
-        let getCamera state =
-            getCameraBy id state
-
-        /// Update the camera used to view the scene.
-        let updateCamera updater state =
-            let camera = updater ^ getCamera state
-            { state with Camera = camera }
 
         /// Get the tasklets scheduled for future processing.
         let getTasklets state =
@@ -164,13 +150,12 @@ module AmbientStateModule =
             { state with UserState = userState }
     
         /// Make an ambient state value.
-        let make tickRate camera assetMetadataMap overlayRouter overlayer symbolStore userState =
+        let make tickRate assetMetadataMap overlayRouter overlayer symbolStore userState =
             { TickRate = tickRate
               TickTime = 0L
               UpdateCount = 0L
               Liveness = Running
               Tasklets = Queue.empty
-              Camera = camera
               AssetMetadataMap = assetMetadataMap
               OverlayRouter = overlayRouter
               Overlayer = overlayer

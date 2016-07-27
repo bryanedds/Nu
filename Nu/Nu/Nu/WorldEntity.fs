@@ -76,11 +76,10 @@ module WorldEntityModule =
         /// Query than an entity is in the camera's view.
         member this.InView world =
             if not ^ this.GetOmnipresent world then
-                let camera = World.getCamera world
-                Camera.inView
+                World.inView
                     (this.GetViewType world)
                     (this.GetBoundsOverflow world)
-                    camera
+                    world
              else true
 
         /// Get the center position of an entity.
@@ -199,7 +198,7 @@ module WorldEntityModule =
             let entitiesSorted = World.pickingSortEntities entities world
             List.tryFind
                 (fun (entity : Entity) ->
-                    let positionWorld = World.getCameraBy (Camera.mouseToWorld (entity.GetViewType world) position) world
+                    let positionWorld = World.mouseToWorld (entity.GetViewType world) position world
                     let picked = Math.isPointInBounds positionWorld (entity.GetBounds world)
                     picked)
                 entitiesSorted

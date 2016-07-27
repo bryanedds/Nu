@@ -25,6 +25,10 @@ module WorldGameModule =
         member this.SetOptSelectedScreen value world = World.setGameOptSelectedScreen value world
         member this.GetOptScreenTransitionDestination world = World.getGameOptScreenTransitionDestination world
         member this.SetOptScreenTransitionDestination value world = World.setGameOptScreenTransitionDestination value world
+        member this.GetEyeCenter world = World.getEyeCenter world
+        member this.SetEyeCenter value world = World.setEyeCenter value world
+        member this.GetEyeSize world = World.getEyeSize world
+        member this.SetEyeSize value world = World.setEyeSize value world
 
         /// Get a property value and type.
         member this.GetProperty propertyName world = World.getGameProperty propertyName world
@@ -34,6 +38,42 @@ module WorldGameModule =
 
         /// Set a property value.
         member this.Set propertyName (value : 'a) world = World.setGamePropertyValue propertyName value world
+
+        /// Get the view of the eye in absolute terms (world space).
+        member this.GetViewAbsolute (_ : World) = World.getViewAbsolute
+        
+        /// Get the view of the eye in absolute terms (world space) with translation sliced on
+        /// integers.
+        member this.GetViewAbsoluteI (_ : World) = World.getViewAbsoluteI
+
+        /// The relative view of the eye with original single values. Due to the problems with
+        /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
+        /// coordinates is very, very bad for rendering.
+        member this.GetViewRelative world = World.getViewRelative world
+
+        /// The relative view of the eye with translation sliced on integers. Good for rendering.
+        member this.GetViewRelativeI world = World.getViewRelativeI world
+
+        /// Get the bounds of the eye's sight relative to its position.
+        member this.GetViewBoundsRelative world = World.getViewBoundsRelative world
+
+        /// Get the bounds of the eye's sight not relative to its position.
+        member this.GetViewBoundsAbsolute world = World.getViewAbsolute world
+
+        /// Get the bounds of the eye's sight.
+        member this.GetViewBounds viewType world = World.getViewBounds viewType world
+
+        /// Query that the given bounds is within the eye's sight.
+        member this.InView viewType bounds world = World.inView viewType bounds world
+
+        /// Transform the given mouse position to screen space.
+        member this.MouseToScreen mousePosition world = World.mouseToScreen mousePosition world
+
+        /// Transform the given mouse position to world space.
+        member this.MouseToWorld viewType mousePosition world = World.mouseToWorld viewType mousePosition world
+
+        /// Transform the given mouse position to entity space.
+        member this.MouseToEntity viewType entityPosition mousePosition world = World.mouseToEntity viewType entityPosition mousePosition world
 
         /// Query that a group dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world = Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)

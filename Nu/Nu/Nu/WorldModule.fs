@@ -275,18 +275,6 @@ module WorldModule =
         static member addTasklets tasklets world =
             World.updateAmbientStateWithoutEvent (AmbientState.addTasklets tasklets) world
 
-        /// Get a value from the camera used to view the world.
-        static member getCameraBy by world =
-            World.getAmbientStateBy (AmbientState.getCameraBy by) world
-
-        /// Get the camera used to view the world.
-        static member getCamera world =
-            World.getAmbientStateBy AmbientState.getCamera world
-
-        /// Update the camera used to view the world.
-        static member updateCamera updater world =
-            World.updateAmbientState (AmbientState.updateCamera updater) world
-
         /// Get the asset metadata map.
         static member getAssetMetadataMap world =
             AmbientState.getAssetMetadataMap ^ World.getAmbientState world
@@ -1584,15 +1572,96 @@ module WorldModule =
         static member internal getGameOptScreenTransitionDestination world = (World.getGameState world).OptScreenTransitionDestination
         static member internal setGameOptScreenTransitionDestination value world = World.updateGameState (fun groupState -> { groupState with OptScreenTransitionDestination = value }) world
 
+        /// Get the current eye center.
+        static member getEyeCenter world = (World.getGameState world).EyeCenter
+
+        /// Set the current eye center.
+        static member setEyeCenter value world = World.updateGameState (fun groupState -> { groupState with EyeCenter = value }) world
+
+        /// Get the current eye size.
+        static member getEyeSize world = (World.getGameState world).EyeSize
+
+        /// Set the current eye size.
+        static member setEyeSize value world = World.updateGameState (fun groupState -> { groupState with EyeSize = value }) world
+
         /// Get the current destination screen if a screen transition is currently underway.
-        static member getOptScreenTransitionDestination world =
-            (World.getGameState world).OptScreenTransitionDestination
+        static member getOptScreenTransitionDestination world = (World.getGameState world).OptScreenTransitionDestination
 
         /// Set the current destination screen on the precondition that no screen transition is currently underway.
         static member internal setOptScreenTransitionDestination destination world =
-            World.updateGameState
-                (fun gameState -> { gameState with OptScreenTransitionDestination = destination })
-                world
+            World.updateGameState (fun gameState -> { gameState with OptScreenTransitionDestination = destination }) world
+
+        /// Get the view of the eye in absolute terms (world space).
+        static member getViewAbsolute world =
+            Math.getViewAbsolute (World.getEyeCenter world) (World.getEyeSize world)
+        
+        /// Get the view of the eye in absolute terms (world space) with translation sliced on
+        /// integers.
+        static member getViewAbsoluteI world =
+            Math.getViewAbsolute (World.getEyeCenter world) (World.getEyeSize world)
+
+        /// The relative view of the eye with original single values. Due to the problems with
+        /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
+        /// coordinates is very, very bad for rendering.
+        static member getViewRelative world =
+            Math.getViewRelative (World.getEyeCenter world) (World.getEyeSize world)
+
+        /// The relative view of the eye with translation sliced on integers. Good for rendering.
+        static member getViewRelativeI world =
+            Math.getViewRelativeI (World.getEyeCenter world) (World.getEyeSize world)
+
+        /// Get the bounds of the eye's sight relative to its position.
+        static member getViewBoundsRelative world =
+            let gameState = World.getGameState world
+            Vector4
+                (gameState.EyeCenter.X - gameState.EyeSize.X * 0.5f,
+                 gameState.EyeCenter.Y - gameState.EyeSize.Y * 0.5f,
+                 gameState.EyeCenter.X + gameState.EyeSize.X * 0.5f,
+                 gameState.EyeCenter.Y + gameState.EyeSize.Y * 0.5f)
+
+        /// Get the bounds of the eye's sight not relative to its position.
+        static member getViewBoundsAbsolute world =
+            let gameState = World.getGameState world
+            Vector4
+                (gameState.EyeSize.X * -0.5f,
+                 gameState.EyeSize.Y * -0.5f,
+                 gameState.EyeSize.X * 0.5f,
+                 gameState.EyeSize.Y * 0.5f)
+
+        /// Get the bounds of the eye's sight.
+        static member getViewBounds viewType world =
+            match viewType with
+            | Relative -> World.getViewBoundsRelative world
+            | Absolute -> World.getViewBoundsAbsolute world
+
+        /// Query that the given bounds is within the eye's sight.
+        static member inView viewType (bounds : Vector4) world =
+            let viewBounds = World.getViewBounds viewType world
+            Math.isBoundsInBounds bounds viewBounds
+
+        /// Transform the given mouse position to screen space.
+        static member mouseToScreen (mousePosition : Vector2) world =
+            let gameState = World.getGameState world
+            let positionScreen =
+                Vector2
+                    (mousePosition.X - gameState.EyeSize.X * 0.5f,
+                     -(mousePosition.Y - gameState.EyeSize.Y * 0.5f)) // negation for right-handedness
+            positionScreen
+
+        /// Transform the given mouse position to world space.
+        static member mouseToWorld viewType mousePosition world =
+            let positionScreen = World.mouseToScreen mousePosition world
+            let view =
+                match viewType with
+                | Relative -> World.getViewRelative world
+                | Absolute -> World.getViewAbsolute world
+            let positionWorld = positionScreen * view
+            positionWorld
+
+        /// Transform the given mouse position to entity space.
+        static member mouseToEntity viewType entityPosition mousePosition world =
+            let mousePositionWorld = World.mouseToWorld viewType mousePosition world
+            entityPosition - mousePositionWorld
 
         static member internal getGameProperty propertyName world =
             match propertyName with // NOTE: string match for speed
@@ -1603,6 +1672,8 @@ module WorldModule =
             | "OptSpecialization" -> (World.getGameOptSpecialization world :> obj, typeof<string option>)
             | "OptSelectedScreen" -> (World.getGameOptSelectedScreen world :> obj, typeof<Screen option>)
             | "OptScreenTransitionDestination" -> (World.getGameOptScreenTransitionDestination world :> obj, typeof<Screen option>)
+            | "EyeCenter" -> (World.getEyeCenter world :> obj, typeof<Vector2>)
+            | "EyeSize" -> (World.getEyeSize world :> obj, typeof<Vector2>)
             | _ ->
                 let property = GameState.getProperty (World.getGameState world) propertyName
                 (property.PropertyValue, property.PropertyType)
@@ -1619,6 +1690,8 @@ module WorldModule =
             | "OptSpecialization" -> failwith "Cannot change group specialization."
             | "OptOptSelectedScreen" -> World.setGameOptSelectedScreen (value :> obj :?> Screen option) world
             | "OptScreenTransitionDestination" -> World.setGameOptScreenTransitionDestination (value :> obj :?> Screen option) world
+            | "EyeCenter" -> World.setEyeCenter (value :> obj :?> Vector2) world
+            | "EyeSize" -> World.setEyeSize (value :> obj :?> Vector2) world
             | _ -> World.setGameState (GameState.set (World.getGameState world) propertyName value) world
 
         static member internal makeGameState optSpecialization dispatcher =
@@ -1690,11 +1763,10 @@ module WorldModule =
                 let id = makeGuid ()
                 let name = Name.make ^ scstring id
                 let entityState = { entityState with Id = id; Name = name }
-                let camera = World.getCamera world
                 let position =
                     if atMouse
-                    then Camera.mouseToWorld entityState.ViewType rightClickPosition camera
-                    else Camera.mouseToWorld entityState.ViewType (camera.EyeSize * 0.5f) camera
+                    then World.mouseToWorld entityState.ViewType rightClickPosition world
+                    else World.mouseToWorld entityState.ViewType (World.getEyeSize world * 0.5f) world
                 let transform = { EntityState.getTransform entityState with Position = position }
                 let transform = Math.snapTransform positionSnap rotationSnap transform
                 let entityState = EntityState.setTransform transform entityState

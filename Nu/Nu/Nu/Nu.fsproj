@@ -69,7 +69,6 @@
     <Compile Include="Overlayer.fs" />
     <Compile Include="OverlayRouter.fs" />
     <Compile Include="Reflection.fs" />
-    <Compile Include="Camera.fs" />
     <Compile Include="AssetGraph.fs" />
     <Compile Include="Physics.fs" />
     <Compile Include="Render.fs" />
