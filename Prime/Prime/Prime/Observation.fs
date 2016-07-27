@@ -7,6 +7,34 @@ open System.Diagnostics
 open LanguagePrimitives
 open Prime
 
+/// Describes a simulant property.
+type [<NoEquality; NoComparison>] PropertyTag<'s, 'a, 'w> =
+    { This : 's
+      Name : string
+      Get : 'w -> 'a
+      OptSet : ('a -> 'w -> 'w) option }
+
+    member this.MapGet mapper =
+        { this with Get = mapper this.Get }
+
+    member this.MapSet mapper =
+        { this with OptSet = match this.OptSet with Some set -> Some ^ (fun value -> set ^ mapper value) | None -> None }
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module PropertyTag =
+
+    let mapGet mapper (property : PropertyTag<_, _, _>) =
+        property.MapGet mapper
+
+    let mapSet mapper (property : PropertyTag<_, _, _>) =
+        property.MapSet mapper
+
+    let makeReadOnly this name get =
+        { This = this; Name = name; Get = get; OptSet = None }
+
+    let make this name get set =
+        { This = this; Name = name; Get = get; OptSet = Some set }
+
 /// An observation in the functional reactive style.
 type [<ReferenceEquality>] Observation<'a, 'o, 'w when 'o :> Participant and 'w :> 'w EventWorld> =
     { Observer : 'o
@@ -412,11 +440,35 @@ module Observation =
     /// Filter out the events with non-unique data from an observation.
     let [<DebuggerHidden; DebuggerStepThrough>] distinct observation = distinctBy (fun a -> a.Data) observation
 
-    /// Filter out participant change events that do not relate to those returned by 'valueGetter'.
-    let [<DebuggerHidden; DebuggerStepThrough>] participantValue
-        (valueGetter : 'w -> 'b) (observation : Observation<ParticipantChangeData<'a, 'w>, 'o, 'w>) =
-        filter (fun a world ->
-            let oldValue = valueGetter a.Data.OldWorld
-            let newValue = valueGetter world
-            oldValue <> newValue)
+[<AutoOpen>]
+module ObservationOperators =
+
+    // open related module
+    open Observation
+
+    /// Pipe-right arrow that provides special precedence for observations.
+    let (-|>) = (|>)
+
+    /// Make an observation of the observer's change events.
+    let [<DebuggerHidden; DebuggerStepThrough>] ( *-- ) (property : PropertyTag<'a, 'b, 'w>) (observer : 'o) =
+        let changeEventAddress = ltoa<ParticipantChangeData<'a, 'w>> [!!typeof<'a>.Name; !!"Change"; !!property.Name] ->>- property.This.ParticipantAddress
+        observe changeEventAddress observer
+
+    /// Propagate the event data of an observation to a property in the observing participant when the
+    /// observer exists (doing nothing otherwise).
+    let [<DebuggerHidden; DebuggerStepThrough>] ( --> ) observation (property : PropertyTag<'a, 'b, 'w>) =
+        subscribe (fun a world ->
+            let world =
+                if world.ContainsParticipant a.Subscriber then
+                    match property.OptSet with
+                    | Some set -> set a.Data world
+                    | None -> world // TODO: log info here about property not being set-able?
+                else world
+            (Cascade, world))
             observation
+
+    /// Propagate a property value from the given source participant to a property in the given destination participant.
+    let [<DebuggerHidden; DebuggerStepThrough>] ( *-> )
+        (sourceProperty : PropertyTag<'a, 'b, 'w>)
+        (destinationProperty : PropertyTag<'o, 'b, 'w>) =
+        sourceProperty *-- destinationProperty.This -|> map (fun _ world -> sourceProperty.Get world) --> destinationProperty

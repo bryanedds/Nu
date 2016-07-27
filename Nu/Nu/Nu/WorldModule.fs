@@ -615,7 +615,7 @@ module WorldModule =
         static member private publishEntityChange (propertyName : string) (entity : Entity) oldWorld world =
             let changeEventAddress = ltoa [!!"Entity"; !!"Change"; !!propertyName] ->>- entity.EntityAddress
             let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
-            World.publish { Participant = entity; OldWorld = oldWorld } changeEventAddress eventTrace entity world
+            World.publish { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity world
 
         static member private getOptEntityState entity world =
             World.optEntityStateFinder entity world

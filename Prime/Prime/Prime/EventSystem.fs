@@ -70,6 +70,7 @@ type internal UnsubscriptionEntries =
 /// The data for a change in a participant.
 type [<StructuralEquality; NoComparison>] ParticipantChangeData<'p, 'w when 'p :> Participant> =
     { Participant : 'p
+      PropertyName : string
       OldWorld : 'w }
 
 [<RequireQualifiedAccess>]
