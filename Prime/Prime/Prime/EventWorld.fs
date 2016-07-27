@@ -84,18 +84,21 @@ module EventWorld =
     let private getAnyEventAddresses eventAddress =
         // OPTIMIZATION: uses memoization.
         if not ^ Address.isEmpty eventAddress then
-            let anyEventAddressesKey = Address.allButLast eventAddress
-            match AnyEventAddressesCache.TryGetValue anyEventAddressesKey with
-            | (true, anyEventAddresses) -> anyEventAddresses
-            | (false, _) ->
-                let eventAddressNames = Address.getNames eventAddress
-                let anyEventAddressNames = Address.getNames Events.Any
-                let anyEventAddresses =
-                    [for i in 0 .. List.length eventAddressNames - 1 do
-                        let subNames = List.take i eventAddressNames @ anyEventAddressNames
-                        yield ltoa subNames]
-                AnyEventAddressesCache.Add (anyEventAddressesKey, anyEventAddresses)
-                anyEventAddresses
+            // OPTIMIZATION: Using Name.equals directly to avoid inefficient equality indirection as of F# 4.0.
+            if Name.equals (Address.last eventAddress) (Address.head Events.Any) then
+                let anyEventAddressesKey = Address.allButLast eventAddress
+                match AnyEventAddressesCache.TryGetValue anyEventAddressesKey with
+                | (true, anyEventAddresses) -> anyEventAddresses
+                | (false, _) ->
+                    let eventAddressNames = Address.getNames eventAddress
+                    let anyEventAddressNames = Address.getNames Events.Any
+                    let anyEventAddresses =
+                        [for i in 0 .. List.length eventAddressNames - 1 do
+                            let subNames = List.take i eventAddressNames @ anyEventAddressNames
+                            yield ltoa subNames]
+                    AnyEventAddressesCache.Add (anyEventAddressesKey, anyEventAddresses)
+                    anyEventAddresses
+            else [eventAddress]
         else failwith "Event name cannot be empty."
 
     let private boxSubscription<'a, 's, 'w when 's :> Participant and 'w :> 'w EventWorld> (subscription : Subscription<'a, 's, 'w>) =
