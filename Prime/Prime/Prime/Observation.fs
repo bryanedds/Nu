@@ -348,6 +348,7 @@ module Observation =
         scan4 f id s observation
 
     /// Transform an observation into a running average of its event's numeric data.
+    /// TODO: see what can be done to keep the numerator from overflowing.
     let [<DebuggerHidden; DebuggerStepThrough>] inline average (observation : Observation<'a, 'o, 'w>) : Observation<'a, 'o, 'w> =
         scan4
             (fun (_ : 'a, n : 'a, d : 'a) a _ ->
