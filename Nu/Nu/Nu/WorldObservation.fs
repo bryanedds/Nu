@@ -13,10 +13,16 @@ open Nu
 /// compiled into different DLLs... This seems strange and potentially fragile...
 module Observation =
 
-    /// Take only one event from an observation per game update.
-    /// TODO: see if we can make this more efficient.
-    let [<DebuggerHidden; DebuggerStepThrough>] noMoreThanOncePerUpdate observation =
-        observation |> organize (fun _ world -> World.getUpdateCount world) |> first |> choose
+    /// Take only one event from an observation per update.
+    let [<DebuggerHidden; DebuggerStepThrough>] noMoreThanOncePerUpdate (observation : Observation<'a, 'o, World>) =
+        observation |>
+        track4
+            (fun (a, (_, current)) _ world ->
+                let previous = current
+                let current = World.getUpdateCount world
+                ((a, (previous, current)), previous < current))
+            id (Unchecked.defaultof<'a>, (0L, 0L)) |>
+        first
 
     /// Take events from an observation only while World.isTicking evaluates to true.
     let [<DebuggerHidden; DebuggerStepThrough>] isTicking _ world =

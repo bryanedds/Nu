@@ -688,6 +688,9 @@ module ScriptSystemModule =
                 match evaleds with
                 | fn :: args ->
                     match fn with
+                    | Keyword (name, optOrigin) ->
+                        let map = String (name, optOrigin) :: args |> List.indexed |> Map.ofList
+                        Result (Keyphrase (map, optOrigin), env)
                     | Get (name, optOrigin) ->
                         match args with
                         | [Entity (entity, optOrigin)] ->
@@ -701,9 +704,6 @@ module ScriptSystemModule =
                         | [_] -> Result (Violation (["invalidGetTargetType"], "TODO: proper error msg.", optOrigin), env)
                         | _ -> Result (Violation (["invalidGetForm"], "TODO: proper error msg.", optOrigin), env)
                     // TODO: | Set (name, optOrigin) ->
-                    | Keyword (name, optOrigin) ->
-                        let map = String (name, optOrigin) :: args |> List.indexed |> Map.ofList
-                        Result (Keyphrase (map, optOrigin), env)
                     | Binding (name, optOrigin) ->
                         match Env.tryGetBinding name env with
                         | Some binding -> evalFn binding args env
@@ -760,12 +760,16 @@ module ScriptSystemModule =
             | Option _ -> Result (expr, env)
             | List _ -> Result (expr, env)
             | Tuple _ -> Result (expr, env)
+            | Keyword _ -> Result (expr, env)
             | Keyphrase _ -> Result (expr, env)
             | Apply (exprs, optOrigin) -> evalApply exprs optOrigin env
+            | Quote _  -> Result (expr, env)
             | Get _ -> Result (expr, env)
             | Set _ -> Result (expr, env)
             | Entity _ -> Result (expr, env)
-            | Camera _ -> Result (expr, env)
+            | Group _ -> Result (expr, env)
+            | Screen _ -> Result (expr, env)
+            | Game _ -> Result (expr, env)
             | Do _ -> Result (expr, env)
             | DoMany _ -> Result (expr, env)
             | Let _ -> Result (expr, env)
@@ -774,13 +778,11 @@ module ScriptSystemModule =
             | If (condition, consequent, alternative, optOrigin) -> evalIf condition consequent alternative optOrigin env
             | Cond (exprPairs, optOrigin) -> evalCond exprPairs optOrigin env
             | Try (body, handlers, optOrigin) -> evalTry body handlers optOrigin env
-            | Keyword _ -> Result (expr, env)
-            | Binding _ -> Result (expr, env)
-            | Quote _  -> Result (expr, env)
             | Break (expr, _) -> Result (expr, env)
-            | Define (_, _, optOrigin) -> Result (Unit optOrigin, env)
-            | Handle (_, optOrigin) -> Result (Unit optOrigin, env)
-            | Equate (_, _, optOrigin) -> Result (Unit optOrigin, env)
+            | Binding _ -> Result (expr, env)
+            | Stream (_, _, optOrigin) -> Result (Unit optOrigin, env)
+            | Handler (_, _, optOrigin) -> Result (Unit optOrigin, env)
+            | Equality (_, _, optOrigin) -> Result (Unit optOrigin, env)
 
     /// An abstract data type for executing scripts.
     /// Has an unused type param to give it a unique name.

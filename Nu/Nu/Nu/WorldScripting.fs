@@ -32,7 +32,7 @@ module Scripting =
                     "length normal " +
                     "cross dot " +
                     "violation bool int int64 single double string " +
-                    "camera entity event " +
+                    "entity group screen game event " +
                     "some none isSome " +
                     "list head tail cons empty isEmpty " +
                     "tuple first second third fourth fifth nth " +
@@ -41,6 +41,7 @@ module Scripting =
           TypeConverter (typeof<ExprConverter>);
           NoComparison>]
         Expr =
+        (* Primitive Types *)
         | Violation of string list * string * Origin option
         | Unit of Origin option
         | Bool of bool * Origin option
@@ -53,12 +54,17 @@ module Scripting =
         | Option of Expr option * Origin option
         | List of Expr list * Origin option
         | Tuple of Map<int, Expr> * Origin option
+        | Keyword of string * Origin option
         | Keyphrase of Map<int, Expr> * Origin option
+        (* Special Forms *)
         | Apply of Expr list * Origin option
+        | Quote of string * Origin option
         | Get of string * Origin option
         | Set of string * Origin option
         | Entity of Nu.Entity * Origin option
-        | Camera of Origin option
+        | Group of Nu.Group * Origin option
+        | Screen of Nu.Screen * Origin option
+        | Game of Nu.Game * Origin option
         | Do of Name * Expr list * Origin option // executes an engine command, more can be found in the NuPlugin
         | DoMany of Name * (Expr list) list * Origin option
         | Let of Name * Expr * Origin option
@@ -67,13 +73,12 @@ module Scripting =
         | If of Expr * Expr * Expr * Origin option
         | Cond of (Expr * Expr) list * Origin option
         | Try of Expr * (string list * Expr) list * Origin option
-        | Keyword of string * Origin option
-        | Binding of Name * Origin option
-        | Quote of string * Origin option
         | Break of Expr * Origin option
-        | Define of Name * Expr * Origin option // only works at the top level, and always returns unit
-        | Handle of Event * Origin option // only works at the top level, and always returns unit
-        | Equate of Name * string * Origin option // only works at the top level, and always returns unit
+        (* Special Declarations *)
+        | Binding of Name * Origin option // only works at the top level, and always returns unit.
+        | Stream of Name * Expr * Origin option // only works at the top level, and always returns unit. Only accessible by a handler or equality.
+        | Handler of Name * Event * Origin option // only works at the top level, and always returns unit. Not accessible in script (name is just for debugging purposes).
+        | Equality of Name * string * Origin option // only works at the top level, and always returns unit Not accessible in script (name is just for debugging purposes).
         static member getOptOrigin term =
             match term with
             | Violation (_, _, optOrigin)
@@ -88,12 +93,16 @@ module Scripting =
             | Option (_, optOrigin)
             | List (_, optOrigin)
             | Tuple (_, optOrigin)
+            | Keyword (_, optOrigin)
             | Keyphrase (_, optOrigin)
             | Apply (_, optOrigin)
+            | Quote (_, optOrigin)
             | Get (_, optOrigin)
             | Set (_, optOrigin)
             | Entity (_, optOrigin)
-            | Camera optOrigin
+            | Group (_, optOrigin)
+            | Screen (_, optOrigin)
+            | Game (_, optOrigin)
             | Do (_, _, optOrigin)
             | DoMany (_, _, optOrigin)
             | Let (_, _, optOrigin)
@@ -102,13 +111,11 @@ module Scripting =
             | If (_, _, _, optOrigin)
             | Cond (_, optOrigin)
             | Try (_, _, optOrigin)
-            | Keyword (_, optOrigin)
-            | Binding (_, optOrigin)
-            | Quote (_, optOrigin)
             | Break (_, optOrigin)
-            | Define (_, _, optOrigin)
-            | Handle (_, optOrigin)
-            | Equate (_, _, optOrigin) -> optOrigin
+            | Binding (_, optOrigin)
+            | Stream (_, _, optOrigin)
+            | Handler (_, _, optOrigin)
+            | Equality (_, _, optOrigin) -> optOrigin
 
     /// Converts Expr types.
     and ExprConverter () =
@@ -164,8 +171,10 @@ module Scripting =
                         name = "some" ||
                         name = "list" ||
                         name = "tuple" ||
-                        name = "camera" ||
                         name = "entity" ||
+                        name = "group" ||
+                        name = "screen" ||
+                        name = "game" ||
                         name = "event" ||
                         name = "let" ||
                         name = "try" ||
