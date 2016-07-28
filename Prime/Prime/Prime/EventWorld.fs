@@ -21,7 +21,7 @@ type EventWorld<'w when 'w :> 'w EventWorld> =
 [<RequireQualifiedAccess>]
 module EventWorld =
 
-    let private AnyEventAddressesCache =
+    let private EventAddressesCache =
         Dictionary<obj Address, obj Address list> (HashIdentity.FromFunctions Address<obj>.hash Address<obj>.equals)
 
     /// Get the event system.
@@ -81,25 +81,26 @@ module EventWorld =
     let setEventFilter<'w when 'w :> 'w EventWorld> filter (world : 'w) =
         updateEventSystem (EventSystem.setEventFilter filter) world
 
-    let private getAnyEventAddresses eventAddress =
+    let private getEventAddresses1 eventAddress =
         // OPTIMIZATION: uses memoization.
-        if not ^ Address.isEmpty eventAddress then
-            // OPTIMIZATION: Using Name.equals directly to avoid inefficient equality indirection as of F# 4.0.
-            if Name.equals (Address.last eventAddress) (Address.head Events.Any) then
-                let anyEventAddressesKey = Address.allButLast eventAddress
-                match AnyEventAddressesCache.TryGetValue anyEventAddressesKey with
-                | (true, anyEventAddresses) -> anyEventAddresses
-                | (false, _) ->
-                    let eventAddressNames = Address.getNames eventAddress
-                    let anyEventAddressNames = Address.getNames Events.Any
-                    let anyEventAddresses =
-                        [for i in 0 .. List.length eventAddressNames - 1 do
-                            let subNames = List.take i eventAddressNames @ anyEventAddressNames
-                            yield ltoa subNames]
-                    AnyEventAddressesCache.Add (anyEventAddressesKey, anyEventAddresses)
-                    anyEventAddresses
-            else [eventAddress]
-        else failwith "Event name cannot be empty."
+        match EventAddressesCache.TryGetValue eventAddress with
+        | (false, _) ->
+            // OPTIMIZATION: imperative for speed
+            let eventAddressNames = Array.ofList ^ Address.getNames eventAddress
+            let eventAddressesAny =
+                Seq.foldi (fun index eventAddresses _ ->
+                    let index = eventAddressNames.Length - index - 1
+                    let eventAddressNamesAny = Array.zeroCreate eventAddressNames.Length
+                    Array.Copy (eventAddressNames, 0, eventAddressNamesAny, 0, eventAddressNames.Length)
+                    eventAddressNamesAny.[index] <- Address.head Events.Any
+                    let eventAddressAny = eventAddressNamesAny |> List.ofArray |> Address.ltoa
+                    eventAddressAny :: eventAddresses)
+                    []
+                    eventAddressNames
+            let eventAddresses = eventAddress :: eventAddressesAny
+            EventAddressesCache.Add (eventAddress, eventAddresses)
+            eventAddresses
+        | (true, eventAddressesAny) -> eventAddressesAny
 
     let private boxSubscription<'a, 's, 'w when 's :> Participant and 'w :> 'w EventWorld> (subscription : Subscription<'a, 's, 'w>) =
         let boxableSubscription = fun (evt : obj) world ->
@@ -136,8 +137,8 @@ module EventWorld =
     let getSubscriptionsSorted3 (publishSorter : SubscriptionSorter<'w>) eventAddress (world : 'w) =
         let eventSystem = getEventSystem world
         let subscriptions = EventSystem.getSubscriptions eventSystem
-        let anyEventAddresses = getAnyEventAddresses eventAddress
-        let optSubLists = List.map (fun anyEventAddress -> Vmap.tryFind anyEventAddress subscriptions) anyEventAddresses
+        let eventAddresses = getEventAddresses1 eventAddress
+        let optSubLists = List.map (fun anyEventAddress -> Vmap.tryFind anyEventAddress subscriptions) eventAddresses
         let optSubLists = Vmap.tryFind eventAddress subscriptions :: optSubLists
         let subLists = List.definitize optSubLists
         let subList = List.concat subLists
