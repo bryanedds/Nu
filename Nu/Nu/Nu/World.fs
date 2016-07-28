@@ -340,8 +340,8 @@ module WorldModule2 =
             let eventAddress = event.Data
             let eventNames = Address.getNames eventAddress
             match eventNames with
-            | [head; _; _; toe] when Name.getNameStr head = "Update" && Name.getNameStr toe = "@" ->
-                Log.debug "Subscribing to multiple entity update events with one subscription is not supported. This will cause a bug where some entity update events are not published."
+            | head :: tail when Name.getNameStr head = "Update" && List.contains (Address.head Events.Any) tail ->
+                Log.debug "Subscribing to entity update events with a wild card is not supported. This will cause a bug where some entity update events are not published."
                 (Cascade, world)
             | _ ->
                 let world = World.updateEntityPublishingFlags event.Data world

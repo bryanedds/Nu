@@ -585,10 +585,16 @@ module WorldModule =
         static member private removeEntityState entity world =
             World.entityStateRemover entity world
 
+        static member private shouldPublishEntityChange entity world =
+            let entityState = World.getEntityState entity world
+            entityState.PublishChanges
+
         static member private publishEntityChange propertyName entity oldWorld world =
-            let changeEventAddress = ltoa [!!"Entity"; !!"Change"; !!propertyName] ->>- entity.EntityAddress
-            let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
-            World.publish { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity world
+            if World.shouldPublishEntityChange entity world then
+                let changeEventAddress = ltoa [!!"Entity"; !!"Change"; !!propertyName] ->>- entity.EntityAddress
+                let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
+                World.publish { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity world
+            else world
 
         static member private getOptEntityState entity world =
             World.optEntityStateFinder entity world
@@ -618,9 +624,11 @@ module WorldModule =
             World.publishEntityChange propertyName entity oldWorld world
 
         static member private publishEntityChanges entity oldWorld world =
-            let entityState = World.getEntityState entity world
-            let properties = World.getProperties entityState
-            List.fold (fun world (propertyName, _) -> World.publishEntityChange propertyName entity oldWorld world) world properties
+            if World.shouldPublishEntityChange entity world then
+                let entityState = World.getEntityState entity world
+                let properties = World.getProperties entityState
+                List.fold (fun world (propertyName, _) -> World.publishEntityChange propertyName entity oldWorld world) world properties
+            else world
 
         /// Query that the world contains an entity.
         static member containsEntity entity world =
@@ -669,6 +677,8 @@ module WorldModule =
         static member internal setEntityVisible value entity world = World.updateEntityState (fun entityState -> { entityState with Visible = value }) Property? Visible entity world
         static member internal getEntityOmnipresent entity world = (World.getEntityState entity world).Omnipresent
         static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with Omnipresent = value }) Property? Omnipresent entity world
+        static member internal getEntityPublishChanges entity world = (World.getEntityState entity world).PublishChanges
+        static member internal setEntityPublishChanges value entity world = World.updateEntityState (fun entityState -> { entityState with PublishChanges = value }) Property? PublishChanges entity world
         static member internal getEntityPublishUpdatesNp entity world = (World.getEntityState entity world).PublishUpdatesNp
         static member internal setEntityPublishUpdatesNp value entity world = World.updateEntityState (fun entityState -> { entityState with PublishUpdatesNp = value }) Property? PublishUpdatesNp entity world
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
@@ -683,10 +693,12 @@ module WorldModule =
             let oldWorld = world
             let world = World.updateEntityStateWithoutEvent (EntityState.setTransform value) entity world
             let world = World.updateEntityInEntityTree entity oldWorld world
-            let world = World.publishEntityChange Property? Position entity oldWorld world
-            let world = World.publishEntityChange Property? Size entity oldWorld world
-            let world = World.publishEntityChange Property? Rotation entity oldWorld world
-            World.publishEntityChange Property? Depth entity oldWorld world
+            if World.shouldPublishEntityChange entity world then
+                let world = World.publishEntityChange Property? Position entity oldWorld world
+                let world = World.publishEntityChange Property? Size entity oldWorld world
+                let world = World.publishEntityChange Property? Rotation entity oldWorld world
+                World.publishEntityChange Property? Depth entity oldWorld world
+            else world
 
         static member internal applyEntityOverlay oldOverlayer overlayer world entity =
             let entityState = World.getEntityState entity world
@@ -721,6 +733,7 @@ module WorldModule =
             | "ViewType" -> (World.getEntityViewType entity world :> obj, typeof<ViewType>)
             | "Visible" -> (World.getEntityVisible entity world :> obj, typeof<bool>)
             | "Omnipresent" -> (World.getEntityOmnipresent entity world :> obj, typeof<bool>)
+            | "PublishChanges" -> (World.getEntityPublishChanges entity world :> obj, typeof<bool>)
             | "PublishUpdatesNp" -> (World.getEntityPublishUpdatesNp entity world :> obj, typeof<bool>)
             | "Persistent" -> (World.getEntityPersistent entity world :> obj, typeof<bool>)
             | "FacetNames" -> (World.getEntityFacetNames entity world :> obj, typeof<string Set>)
@@ -746,6 +759,7 @@ module WorldModule =
             | "ViewType" -> World.setEntityViewType (value :> obj :?> ViewType) entity world
             | "Visible" -> World.setEntityVisible (value :> obj :?> bool) entity world
             | "Omnipresent" -> World.setEntityOmnipresent (value :> obj :?> bool) entity world
+            | "PublishChanges" -> World.setEntityPublishChanges (value :> obj :?> bool) entity world
             | "PublishUpdatesNp" -> failwith "Cannot change entity publish updates."
             | "Persistent" -> World.setEntityPersistent (value :> obj :?> bool) entity world
             | "FacetNames" -> failwith "Cannot change entity facet names with a property setter."
