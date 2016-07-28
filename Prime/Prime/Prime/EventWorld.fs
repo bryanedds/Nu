@@ -21,9 +21,6 @@ type EventWorld<'w when 'w :> 'w EventWorld> =
 [<RequireQualifiedAccess>]
 module EventWorld =
 
-    let private EventAddressesCache =
-        Dictionary<obj Address, obj Address list> (HashIdentity.FromFunctions Address<obj>.hash Address<obj>.equals)
-
     /// Get the event system.
     let getEventSystem<'w when 'w :> 'w EventWorld> (world : 'w) =
         world.GetEventSystem ()
@@ -82,25 +79,21 @@ module EventWorld =
         updateEventSystem (EventSystem.setEventFilter filter) world
 
     let private getEventAddresses1 eventAddress =
-        // OPTIMIZATION: uses memoization.
-        match EventAddressesCache.TryGetValue eventAddress with
-        | (false, _) ->
-            // OPTIMIZATION: imperative for speed
-            let eventAddressNames = Array.ofList ^ Address.getNames eventAddress
-            let eventAddressesAny =
-                Seq.foldi (fun index eventAddresses _ ->
-                    let index = eventAddressNames.Length - index - 1
-                    let eventAddressNamesAny = Array.zeroCreate eventAddressNames.Length
-                    Array.Copy (eventAddressNames, 0, eventAddressNamesAny, 0, eventAddressNames.Length)
-                    eventAddressNamesAny.[index] <- Address.head Events.Any
-                    let eventAddressAny = eventAddressNamesAny |> List.ofArray |> Address.ltoa
-                    eventAddressAny :: eventAddresses)
-                    []
-                    eventAddressNames
-            let eventAddresses = eventAddress :: eventAddressesAny
-            EventAddressesCache.Add (eventAddress, eventAddresses)
-            eventAddresses
-        | (true, eventAddressesAny) -> eventAddressesAny
+        // OPTIMIZATION: imperative for speed
+        // TODO: see if we can make this faster and / or produce less garbage.
+        let eventAddressNames = Array.ofList ^ Address.getNames eventAddress
+        let eventAddressesAny =
+            Seq.foldi (fun index eventAddresses _ ->
+                let index = eventAddressNames.Length - index - 1
+                let eventAddressNamesAny = Array.zeroCreate eventAddressNames.Length
+                Array.Copy (eventAddressNames, 0, eventAddressNamesAny, 0, eventAddressNames.Length)
+                eventAddressNamesAny.[index] <- Address.head Events.Any
+                let eventAddressAny = eventAddressNamesAny |> List.ofArray |> Address.ltoa
+                eventAddressAny :: eventAddresses)
+                []
+                eventAddressNames
+        let eventAddresses = eventAddress :: eventAddressesAny
+        eventAddresses
 
     let private boxSubscription<'a, 's, 'w when 's :> Participant and 'w :> 'w EventWorld> (subscription : Subscription<'a, 's, 'w>) =
         let boxableSubscription = fun (evt : obj) world ->

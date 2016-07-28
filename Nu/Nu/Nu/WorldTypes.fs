@@ -182,6 +182,7 @@ module WorldTypes =
              Define? ViewType Relative
              Define? Visible true
              Define? Omnipresent false
+             Define? PublishChanges true
              Define? PublishUpdatesNp false
              Define? Persistent true]
     
@@ -425,6 +426,7 @@ module WorldTypes =
           ViewType : ViewType
           Visible : bool
           Omnipresent : bool
+          PublishChanges : bool
           PublishUpdatesNp : bool
           Persistent : bool
           FacetNames : string Set
@@ -483,6 +485,7 @@ module WorldTypes =
               ViewType = Relative
               Visible = true
               Omnipresent = false
+              PublishChanges = true
               PublishUpdatesNp = false
               Persistent = true
               FacetNames = Set.empty
