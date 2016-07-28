@@ -98,7 +98,7 @@ module AddressModule =
 
         /// Convert a names list into an address.
         static member ltoa<'a> (names : _ list) =
-            { Names = names |> List.ofSeq; HashCode = Name.hashNames names; TypeCarrier = fun (_ : 'a) -> () }
+            { Names = names; HashCode = Name.hashNames names; TypeCarrier = fun (_ : 'a) -> () }
 
         /// Convert a full name into an address.
         static member ftoa<'a> fullName : 'a Address =
