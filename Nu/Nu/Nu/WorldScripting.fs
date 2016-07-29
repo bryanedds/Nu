@@ -14,14 +14,14 @@ open Nu
 /// A scripting language for Nu that is hoped to eventually be a cross between Elm and Unreal Blueprints.
 module Scripting =
 
-    type [<NoComparison>] Event =
+    type [<NoComparison>] Stream =
         | Event of obj Address
-        | Product of Event * Event
-        | Sum of Event * Event
-        | Filter of Event * Expr
-        | Map of Event * Expr
-        | Handler of Event * Expr
-        | Handlers of Event * Expr list
+        | Property of Simulant Address * string
+        | Product of Stream * Stream
+        | Sum of Either<Stream, Stream>
+        | Fold of Stream * Expr * Expr
+        | Filter of Stream * Expr
+        | Map of Stream * Expr
 
     and [<Syntax(   "not and or " +
                     "eq not_eq lt gt lt_eq gt_eq " +
@@ -32,11 +32,12 @@ module Scripting =
                     "length normal " +
                     "cross dot " +
                     "violation bool int int64 single double string " +
-                    "entity group screen game event " +
+                    "entity group screen game " +
                     "some none isSome " +
                     "list head tail cons empty isEmpty " +
                     "tuple first second third fourth fifth nth " +
-                    "tickRate tickTime updateCount",
+                    "tickRate tickTime updateCount " +
+                    "constant variable equality",
                     "");
           TypeConverter (typeof<ExprConverter>);
           NoComparison>]
@@ -54,9 +55,10 @@ module Scripting =
         | Option of Expr option * Origin option
         | List of Expr list * Origin option
         | Tuple of Map<int, Expr> * Origin option
-        | Keyword of string * Origin option
         | Keyphrase of Map<int, Expr> * Origin option
         (* Special Forms *)
+        | Binding of Name * Origin option
+        | Keyword of string * Origin option
         | Apply of Expr list * Origin option
         | Quote of string * Origin option
         | Get of string * Origin option
@@ -74,11 +76,10 @@ module Scripting =
         | Cond of (Expr * Expr) list * Origin option
         | Try of Expr * (string list * Expr) list * Origin option
         | Break of Expr * Origin option
-        (* Special Declarations *)
-        | Binding of Name * Origin option // only works at the top level, and always returns unit.
-        | Stream of Name * Expr * Origin option // only works at the top level, and always returns unit. Only accessible by a handler or equality.
-        | Handler of Name * Event * Origin option // only works at the top level, and always returns unit. Not accessible in script (name is just for debugging purposes).
-        | Equality of Name * string * Origin option // only works at the top level, and always returns unit Not accessible in script (name is just for debugging purposes).
+        (* Special Declarations - only work at the top level, and always return unit. *)
+        | Constant of Name * Expr * Origin option
+        | Variable of Name * Guid * Stream * Origin option // only accessible by variables and equalities
+        | Equality of Name * Guid * Stream * Origin option // only accessible by variables and equalities
         static member getOptOrigin term =
             match term with
             | Violation (_, _, optOrigin)
@@ -93,8 +94,9 @@ module Scripting =
             | Option (_, optOrigin)
             | List (_, optOrigin)
             | Tuple (_, optOrigin)
-            | Keyword (_, optOrigin)
             | Keyphrase (_, optOrigin)
+            | Binding (_, optOrigin)
+            | Keyword (_, optOrigin)
             | Apply (_, optOrigin)
             | Quote (_, optOrigin)
             | Get (_, optOrigin)
@@ -112,10 +114,9 @@ module Scripting =
             | Cond (_, optOrigin)
             | Try (_, _, optOrigin)
             | Break (_, optOrigin)
-            | Binding (_, optOrigin)
-            | Stream (_, _, optOrigin)
-            | Handler (_, _, optOrigin)
-            | Equality (_, _, optOrigin) -> optOrigin
+            | Constant (_, _, optOrigin)
+            | Variable (_, _, _, optOrigin)
+            | Equality (_, _, _, optOrigin) -> optOrigin
 
     /// Converts Expr types.
     and ExprConverter () =
@@ -175,12 +176,14 @@ module Scripting =
                         name = "group" ||
                         name = "screen" ||
                         name = "game" ||
-                        name = "event" ||
                         name = "let" ||
                         name = "try" ||
                         name = "if" ||
                         name = "do" ||
-                        name = "break" ->
+                        name = "break" ||
+                        name = "constant" ||
+                        name = "variable" ||
+                        name = "equality" ->
                         match name with
                         | "let" ->
                             match tail with
@@ -259,9 +262,9 @@ module Scripting =
             end
 
     type [<NoComparison>] Script =
-        { Bindings : (Name * Expr) list
-          Equalities : (string option * unit * Expr) list
-          Handlers : Event list }
+        { Constants : (Name * Expr) list
+          Streams : (Name * Guid * Stream * Expr) list
+          Equalities : (Name * Guid * Stream) list }
 
     /// An abstract data type for executing scripts.
     type [<NoEquality; NoComparison>] ScriptSystem =

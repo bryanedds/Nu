@@ -760,8 +760,9 @@ module ScriptSystemModule =
             | Option _ -> Result (expr, env)
             | List _ -> Result (expr, env)
             | Tuple _ -> Result (expr, env)
-            | Keyword _ -> Result (expr, env)
             | Keyphrase _ -> Result (expr, env)
+            | Binding _ -> Result (expr, env)
+            | Keyword _ -> Result (expr, env)
             | Apply (exprs, optOrigin) -> evalApply exprs optOrigin env
             | Quote _  -> Result (expr, env)
             | Get _ -> Result (expr, env)
@@ -779,10 +780,9 @@ module ScriptSystemModule =
             | Cond (exprPairs, optOrigin) -> evalCond exprPairs optOrigin env
             | Try (body, handlers, optOrigin) -> evalTry body handlers optOrigin env
             | Break (expr, _) -> Result (expr, env)
-            | Binding _ -> Result (expr, env)
-            | Stream (_, _, optOrigin) -> Result (Unit optOrigin, env)
-            | Handler (_, _, optOrigin) -> Result (Unit optOrigin, env)
-            | Equality (_, _, optOrigin) -> Result (Unit optOrigin, env)
+            | Constant (_, _, optOrigin) -> Result (Unit optOrigin, env)
+            | Variable (_, _, _, optOrigin) -> Result (Unit optOrigin, env)
+            | Equality (_, _, _, optOrigin) -> Result (Unit optOrigin, env)
 
     /// An abstract data type for executing scripts.
     /// Has an unused type param to give it a unique name.
