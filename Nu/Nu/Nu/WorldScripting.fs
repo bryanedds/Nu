@@ -15,13 +15,18 @@ open Nu
 module Scripting =
 
     type [<NoComparison>] Stream =
+        // constructed as [event X/Y/Z]
         | Event of obj Address
+        // constructed as [property X/Y/Z]
         | Property of Simulant Address * string
+        // constructed as [variable v]
+        | Variable of Name
+        // constructed as [product stream stream]
         | Product of Stream * Stream
         | Sum of Either<Stream, Stream>
-        | Fold of Stream * Expr * Expr
-        | Filter of Stream * Expr
-        | Map of Stream * Expr
+        | Fold of Expr * Expr * Stream
+        | Filter of Expr * Stream
+        | Map of Expr * Stream
 
     and [<Syntax(   "not and or " +
                     "eq not_eq lt gt lt_eq gt_eq " +
@@ -77,9 +82,12 @@ module Scripting =
         | Try of Expr * (string list * Expr) list * Origin option
         | Break of Expr * Origin option
         (* Special Declarations - only work at the top level, and always return unit. *)
+        // accessible anywhere. constructed as [constant c 0]
         | Constant of Name * Expr * Origin option
-        | Variable of Name * Guid * Stream * Origin option // only accessible by variables and equalities
-        | Equality of Name * Guid * Stream * Origin option // only accessible by variables and equalities
+        // only accessible by variables and equalities. constructed as [variable v stream]
+        | Variable of Name * Stream * Guid * Origin option
+        // only accessible by variables and equalities. constructed as [equality Screen/Group/Player/Density stream]
+        | Equality of obj Address * Stream * Guid * Origin option
         static member getOptOrigin term =
             match term with
             | Violation (_, _, optOrigin)
