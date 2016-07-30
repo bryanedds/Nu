@@ -3,6 +3,11 @@
 
 [<RequireQualifiedAccess>]
 module Set
+open Prime
+
+/// Check that a set is not empty.
+let rec notEmpty set =
+    not ^ Set.isEmpty set
 
 /// Make a singleton set.
 let singleton value =

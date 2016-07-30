@@ -3,6 +3,11 @@
 
 [<RequireQualifiedAccess>]
 module Array
+open Prime
+
+/// Check that an array is not empty.
+let rec notEmpty arr =
+    not ^ Array.isEmpty arr
 
 /// Try to find an index in reverse.
 let tryFindIndexRev pred arr =

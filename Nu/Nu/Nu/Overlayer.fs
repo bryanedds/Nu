@@ -156,11 +156,11 @@ module OverlayerModule =
         let applyOverlay copyTarget oldOverlayName newOverlayName facetNames target overlayer =
             applyOverlay6 copyTarget oldOverlayName newOverlayName facetNames target overlayer overlayer
 
-        /// Query that a property should be serialized.
+        /// Check that a property should be serialized.
         let shouldPropertySerialize overlayName facetNames propertyName propertyType target overlayer =
             not ^ isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer
 
-        /// Query that a property should be serialized.
+        /// Check that a property should be serialized.
         let shouldPropertySerialize5 facetNames propertyName propertyType target overlayer =
             not ^ isPropertyOverlaid5 facetNames propertyName propertyType target overlayer
 

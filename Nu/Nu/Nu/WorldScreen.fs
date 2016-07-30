@@ -44,10 +44,10 @@ module WorldScreenModule =
         /// Set a property value.
         member this.Set propertyName (value : 'a) world = World.setScreenPropertyValue propertyName value this world
 
-        /// Query that a screen is in an idling state (not transitioning in nor out).
+        /// Check that a screen is in an idling state (not transitioning in nor out).
         member this.IsIdling world = this.GetTransitionStateNp world = IdlingState
 
-        /// Query that a screen dispatches in the same manner as the dispatcher with the target type.
+        /// Check that a screen dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world = Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
 
     type World with

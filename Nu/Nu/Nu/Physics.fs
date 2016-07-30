@@ -205,7 +205,7 @@ type [<StructuralEquality; NoComparison>] IntegrationMessage =
 
 /// Represents a physics engine in Nu.
 type IPhysicsEngine =
-    /// Query that the physics engine contain the body with the given physics id.
+    /// Check that the physics engine contain the body with the given physics id.
     abstract BodyExists : PhysicsId -> bool
     /// Get the contact normals of the body with the given physics id.
     abstract GetBodyContactNormals : PhysicsId -> Vector2 list
@@ -217,7 +217,7 @@ type IPhysicsEngine =
     abstract GetOptBodyToGroundContactNormal : PhysicsId -> Vector2 option
     /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).
     abstract GetOptBodyToGroundContactTangent : PhysicsId -> Vector2 option
-    /// Query that the body with the given physics id is on the ground.
+    /// Check that the body with the given physics id is on the ground.
     abstract IsBodyOnGround : PhysicsId -> bool
     /// Clear all of the physics messages that have been enqueued.
     abstract ClearMessages : unit -> IPhysicsEngine

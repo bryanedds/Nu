@@ -118,7 +118,7 @@ module Reflection =
              property.PropertyType = typeof<Name> &&
              fst ^ Guid.TryParse (property.GetValue target :?> Name |> Name.getNameStr))
 
-    /// Query that the dispatcher has behavior congruent to the given type.
+    /// Check that the dispatcher has behavior congruent to the given type.
     let dispatchesAs (dispatcherTargetType : Type) (dispatcher : 'a) =
         let dispatcherType = dispatcher.GetType ()
         let result =

@@ -6,6 +6,10 @@ module Seq
 open System
 open Prime
 
+/// Check that a sequence is not empty.
+let rec notEmpty seq =
+    not ^ Seq.isEmpty seq
+
 /// Get Some head of the seq or None.
 let inline tryHead seq =
     Seq.tryFind tautology seq

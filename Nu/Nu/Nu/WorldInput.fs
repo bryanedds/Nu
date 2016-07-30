@@ -20,7 +20,7 @@ module WorldInputModule =
         static member internal toNuMouseButton mouseButton =
             MouseState.toNuButton mouseButton
 
-        /// Query that the given mouse button is down.
+        /// Check that the given mouse button is down.
         static member isMouseButtonDown mouseButton (_ : World) =
             MouseState.isButtonDown mouseButton
 
@@ -32,7 +32,7 @@ module WorldInputModule =
         static member getMousePositionF (_ : World) =
             MouseState.getPositionF ()
 
-        /// Query that the given keyboard key is down.
+        /// Check that the given keyboard key is down.
         static member isKeyboardKeyDown scanCode (_ : World) =
             KeyboardState.isKeyDown scanCode
 

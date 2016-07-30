@@ -527,8 +527,8 @@ module ScriptSystemModule =
                 | Double (doubleValue, optOrigin) -> Result ((fns.Double doubleValue optOrigin), env)
                 | Vector2 (vector2Value, optOrigin) -> Result ((fns.Vector2 vector2Value optOrigin), env)
                 | String (stringValue, optOrigin) -> Result ((fns.String stringValue optOrigin), env)
-                | List (listValue, optOrigin) -> Result ((fns.List listValue optOrigin), env)
                 | Tuple (tupleValue, optOrigin) -> Result ((fns.Tuple tupleValue optOrigin), env)
+                | List (listValue, optOrigin) -> Result ((fns.List listValue optOrigin), env)
                 | Keyphrase (keyphraseValue, optOrigin) -> Result ((fns.Keyphrase keyphraseValue optOrigin), env)
                 | _ -> Result (Violation (["invalidArgumentType"; "unary"; fnName], "Cannot apply an unary function on an incompatible value.", Expr.getOptOrigin evaled), env)
             | _ -> Result (Violation (["invalidArgumentCount"; "unary"; fnName], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOptOrigin), env)
@@ -544,8 +544,8 @@ module ScriptSystemModule =
                 | (Double (doubleLeft, optOriginLeft), Double (doubleRight, optOriginRight)) -> Result ((fns.Double doubleLeft doubleRight (combine optOriginLeft optOriginRight)), env)
                 | (Vector2 (vector2Left, optOriginLeft), Vector2 (vector2Right, optOriginRight)) -> Result ((fns.Vector2 vector2Left vector2Right (combine optOriginLeft optOriginRight)), env)
                 | (String (stringLeft, optOriginLeft), String (stringRight, optOriginRight)) -> Result ((fns.String stringLeft stringRight (combine optOriginLeft optOriginRight)), env)
-                | (List (listLeft, optOriginLeft), List (listRight, optOriginRight)) -> Result ((fns.List listLeft listRight (combine optOriginLeft optOriginRight)), env)
                 | (Tuple (tupleLeft, optOriginLeft), Tuple (tupleRight, optOriginRight)) -> Result ((fns.Tuple tupleLeft tupleRight (combine optOriginLeft optOriginRight)), env)
+                | (List (listLeft, optOriginLeft), List (listRight, optOriginRight)) -> Result ((fns.List listLeft listRight (combine optOriginLeft optOriginRight)), env)
                 | (Keyphrase (keyphraseLeft, optOriginLeft), Keyphrase (keyphraseRight, optOriginRight)) -> Result ((fns.Keyphrase keyphraseLeft keyphraseRight (combine optOriginLeft optOriginRight)), env)
                 | _ -> Result (Violation (["invalidArgumentType"; "binary"; fnName], "Cannot apply a binary function on unlike or incompatible values.", combine (Expr.getOptOrigin evaledLeft) (Expr.getOptOrigin evaledRight)), env)
             | _ -> Result (Violation (["invalidArgumentCount"; "binary"; fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
@@ -593,12 +593,12 @@ module ScriptSystemModule =
     
         let evalNth5 fnOptOrigin fnName index args env =
             match args with
-            | [List (evaleds, optOrigin)] ->
-                match List.tryFindAt index evaleds with
-                | Some _ as optEvaled -> Result (Option (optEvaled, optOrigin), env)
-                | None -> Result (Option (None, optOrigin), env)
             | [Tuple (evaleds, optOrigin)] | [Keyphrase (evaleds, optOrigin)] ->
                 match Map.tryFind index evaleds with
+                | Some _ as optEvaled -> Result (Option (optEvaled, optOrigin), env)
+                | None -> Result (Option (None, optOrigin), env)
+            | [List (evaleds, optOrigin)] ->
+                match List.tryFindAt index evaleds with
                 | Some _ as optEvaled -> Result (Option (optEvaled, optOrigin), env)
                 | None -> Result (Option (None, optOrigin), env)
             | [_] -> Result (Violation (["invalidArgumentType"; "sequence"; fnName], "Cannot apply " + fnName + " to a non-sequence.", fnOptOrigin), env)
@@ -615,20 +615,20 @@ module ScriptSystemModule =
         let evalIntrinsic optOrigin name args env =
             let nameStr = Name.getNameStr name
             match nameStr with
-            | "!"  | "not" -> evalBoolUnary optOrigin nameStr not args env
-            | "&"  | "and" -> evalBoolBinary optOrigin nameStr (&&) args env
-            | "|"  | "or" -> evalBoolBinary optOrigin nameStr (||) args env
-            | "="  | "eq" -> evalBinary optOrigin nameStr EqFns args env
-            | "<>" | "not_eq" -> evalBinary optOrigin nameStr NotEqFns args env
-            | "<"  | "lt" -> evalBinary optOrigin nameStr LtFns args env
-            | ">"  | "gt" -> evalBinary optOrigin nameStr GtFns args env
-            | "<=" | "lt_eq" -> evalBinary optOrigin nameStr LtEqFns args env
-            | ">=" | "gt_eq" -> evalBinary optOrigin nameStr GtEqFns args env
-            | "+"  | "add" -> evalBinary optOrigin nameStr AddFns args env
-            | "-"  | "sub" -> evalBinary optOrigin nameStr SubFns args env
-            | "*"  | "mul" -> evalBinary optOrigin nameStr MulFns args env
-            | "/"  | "div" -> evalBinary optOrigin nameStr DivFns args env
-            | "%"  | "mod" -> evalBinary optOrigin nameStr ModFns args env
+            | "!"  -> evalBoolUnary optOrigin nameStr not args env
+            | "&"  -> evalBoolBinary optOrigin nameStr (&&) args env
+            | "|"  -> evalBoolBinary optOrigin nameStr (||) args env
+            | "="  -> evalBinary optOrigin nameStr EqFns args env
+            | "<>" -> evalBinary optOrigin nameStr NotEqFns args env
+            | "<"  -> evalBinary optOrigin nameStr LtFns args env
+            | ">"  -> evalBinary optOrigin nameStr GtFns args env
+            | "<=" -> evalBinary optOrigin nameStr LtEqFns args env
+            | ">=" -> evalBinary optOrigin nameStr GtEqFns args env
+            | "+"  -> evalBinary optOrigin nameStr AddFns args env
+            | "-"  -> evalBinary optOrigin nameStr SubFns args env
+            | "*"  -> evalBinary optOrigin nameStr MulFns args env
+            | "/"  -> evalBinary optOrigin nameStr DivFns args env
+            | "%"  -> evalBinary optOrigin nameStr ModFns args env
             | "pow" -> evalBinary optOrigin nameStr PowFns args env
             | "root" -> evalBinary optOrigin nameStr RootFns args env
             | "sqr" -> evalUnary optOrigin nameStr SqrFns args env
@@ -757,12 +757,12 @@ module ScriptSystemModule =
             | Double _ -> Result (expr, env)
             | Vector2 _ -> Result (expr, env)
             | String _ -> Result (expr, env)
+            | Keyword _ -> Result (expr, env)
             | Option _ -> Result (expr, env)
-            | List _ -> Result (expr, env)
             | Tuple _ -> Result (expr, env)
+            | List _ -> Result (expr, env)
             | Keyphrase _ -> Result (expr, env)
             | Binding _ -> Result (expr, env)
-            | Keyword _ -> Result (expr, env)
             | Apply (exprs, optOrigin) -> evalApply exprs optOrigin env
             | Quote _  -> Result (expr, env)
             | Get _ -> Result (expr, env)

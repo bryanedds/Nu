@@ -57,13 +57,14 @@ module NameModule =
         private
             { NameStr : string
               HashCode : int } // OPTIMIZATION: hash cached for speed
-    
+
         /// Make a name from a non-empty string without whitespace.
         static member make (nameStr : string) =
 #if DEBUG   
-            // NOTE: we cannot do this checking at run-time because running an FParsec parser this often is too slow
-            if nameStr.IndexOfAny Symbol.WhitespaceCharsArray <> -1 then failwith "Invalid name; must have no whitespace characters."
-            elif Symbol.isNumber nameStr then failwith "Invalid name; name cannot be a number."
+            // NOTE: we cannot do this checking at run-time because running an FParsec parser that often is too slow
+            if nameStr.IndexOf '.' <> -1 then failwith ^ "Invalid name '" + nameStr + "'; must have no dot characters."
+            elif nameStr.IndexOfAny Symbol.WhitespaceCharsArray <> -1 then failwith ^ "Invalid name '" + nameStr + "'; must have no whitespace characters."
+            elif Symbol.isNumber nameStr then failwith ^ "Invalid name '" + nameStr + "'; cannot be a number."
             else
 #endif
                 { NameStr = nameStr; HashCode = nameStr.GetHashCode () }

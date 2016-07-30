@@ -122,7 +122,7 @@ module WorldModule2 =
             | Some selectedScreen -> Some ^ selectedScreen.IsIdling world
             | None -> None
 
-        /// Query that the selected screen is idling; that is, neither transitioning in or
+        /// Check that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen (failing with an exception if no screen is selected).
         static member isSelectedScreenIdling world =
             match World.tryGetIsSelectedScreenIdling world with
@@ -133,7 +133,7 @@ module WorldModule2 =
         static member tryGetIsSelectedScreenTransitioning world =
             Option.map not ^ World.tryGetIsSelectedScreenIdling world
 
-        /// Query that the selected screen is transitioning (failing with an exception if no screen
+        /// Check that the selected screen is transitioning (failing with an exception if no screen
         /// is selected).
         static member isSelectedScreenTransitioning world =
             not ^ World.isSelectedScreenIdling world

@@ -28,26 +28,28 @@ module Scripting =
         | Filter of Expr * Stream
         | Map of Expr * Stream
 
-    and [<Syntax(   "not and or " +
-                    "eq not_eq lt gt lt_eq gt_eq " +
-                    "add sub mul div mod " +
-                    "pow root sqr sqrt " +
+    and [<Syntax(   "pow root sqr sqrt " +
                     "floor ceiling truncate round exp log " +
                     "sin cos tan asin acos atan " +
                     "length normal " +
                     "cross dot " +
                     "violation bool int int64 single double string " +
+                    "emptyKeyword " +
                     "entity group screen game " +
-                    "some none isSome " +
-                    "list head tail cons empty isEmpty " +
-                    "tuple first second third fourth fifth nth " +
+                    "some none isNone isSome map " +
+                    // TODO: "either isLeft isRight left right " +
+                    "tuple unit fst snd thd nth " +
+                    "list emptyList head tail cons isEmpty notEmpty filter fold contains " +
+                    // TODO: "set emptySet add remove " +
+                    // TODO: "table emptyTable tryFind find " +
+                    "emptyKeyphrase " +
                     "tickRate tickTime updateCount " +
                     "constant variable equality",
                     "");
           TypeConverter (typeof<ExprConverter>);
           NoComparison>]
         Expr =
-        (* Primitive Types *)
+        (* Primitive Value Types *)
         | Violation of string list * string * Origin option
         | Unit of Origin option
         | Bool of bool * Origin option
@@ -57,13 +59,14 @@ module Scripting =
         | Double of double * Origin option
         | Vector2 of Vector2 * Origin option
         | String of string * Origin option
+        | Keyword of string * Origin option
+        (* Primitive Data Structures *)
         | Option of Expr option * Origin option
-        | List of Expr list * Origin option
         | Tuple of Map<int, Expr> * Origin option
+        | List of Expr list * Origin option
         | Keyphrase of Map<int, Expr> * Origin option
         (* Special Forms *)
         | Binding of Name * Origin option
-        | Keyword of string * Origin option
         | Apply of Expr list * Origin option
         | Quote of string * Origin option
         | Get of string * Origin option
@@ -99,12 +102,12 @@ module Scripting =
             | Double (_, optOrigin)
             | Vector2 (_, optOrigin)
             | String (_, optOrigin)
+            | Keyword (_, optOrigin)
             | Option (_, optOrigin)
-            | List (_, optOrigin)
             | Tuple (_, optOrigin)
+            | List (_, optOrigin)
             | Keyphrase (_, optOrigin)
             | Binding (_, optOrigin)
-            | Keyword (_, optOrigin)
             | Apply (_, optOrigin)
             | Quote (_, optOrigin)
             | Get (_, optOrigin)

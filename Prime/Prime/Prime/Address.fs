@@ -239,7 +239,7 @@ module AddressModule =
         let length address =
             List.length address.Names
 
-        /// Query that an address is devoid of names.
+        /// Check that an address is devoid of names.
         let isEmpty address =
             List.isEmpty address.Names
 
