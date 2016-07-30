@@ -8,11 +8,11 @@ open Prime
 [<RequireQualifiedAccess>]
 module SymbolicDescriptor =
 
-    /// Query that a value of the source type can be converted to the destination type.
+    /// Check that a value of the source type can be converted to the destination type.
     let canConvertTo sourceType destType =
         (SymbolicConverter sourceType).CanConvertTo destType
     
-    /// Query that a value of the destination type can be converted from the source type.
+    /// Check that a value of the destination type can be converted from the source type.
     let canConvertFrom sourceType destType =
         (SymbolicConverter destType).CanConvertFrom sourceType
 

@@ -34,7 +34,7 @@ module WorldGroupModule =
         /// Set a property value.
         member this.Set propertyName (value : 'a) world = World.setGroupPropertyValue propertyName value this world
 
-        /// Query that a group dispatches in the same manner as the dispatcher with the target type.
+        /// Check that a group dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world = Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
 
     type World with

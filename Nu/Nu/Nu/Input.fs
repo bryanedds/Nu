@@ -41,7 +41,7 @@ module MouseState =
         | SDL2.SDL.SDL_BUTTON_X2 -> MouseX2
         | _ -> failwith "Invalid SDL mouse button."
 
-    /// Query that the given mouse button is down.
+    /// Check that the given mouse button is down.
     let isButtonDown mouseButton =
         let sdlMouseButton = toSdlButton mouseButton
         SDL.SDL_BUTTON sdlMouseButton = 1u
@@ -59,7 +59,7 @@ module MouseState =
 [<RequireQualifiedAccess>]
 module KeyboardState =
 
-    /// Query that the given keyboard key is down.
+    /// Check that the given keyboard key is down.
     let isKeyDown scanCode =
         let keyboardStatePtr = fst ^ SDL.SDL_GetKeyboardState ()
         let keyboardStatePtr = NativeInterop.NativePtr.ofNativeInt keyboardStatePtr

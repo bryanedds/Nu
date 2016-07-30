@@ -230,7 +230,7 @@ module WorldModule =
         static member getTickTime world =
             World.getAmbientStateBy AmbientState.getTickTime world
 
-        /// Query that the world is ticking.
+        /// Check that the world is ticking.
         static member isTicking world =
             World.getAmbientStateBy AmbientState.isTicking world
 
@@ -630,7 +630,7 @@ module WorldModule =
                 List.fold (fun world (propertyName, _) -> World.publishEntityChange propertyName entity oldWorld world) world properties
             else world
 
-        /// Query that the world contains an entity.
+        /// Check that the world contains an entity.
         static member containsEntity entity world =
             Option.isSome ^ World.getOptEntityState entity world
 
@@ -1180,7 +1180,7 @@ module WorldModule =
             let properties = World.getProperties groupState
             List.fold (fun world (propertyName, _) -> World.publishGroupChange propertyName group oldWorld world) world properties
 
-        /// Query that the world contains a group.
+        /// Check that the world contains a group.
         static member containsGroup group world =
             Option.isSome ^ World.getOptGroupState group world
 
@@ -1379,7 +1379,7 @@ module WorldModule =
             let properties = World.getProperties screenState
             List.fold (fun world (propertyName, _) -> World.publishScreenChange propertyName screen oldWorld world) world properties
 
-        /// Query that the world contains the proxied screen.
+        /// Check that the world contains the proxied screen.
         static member containsScreen screen world =
             Option.isSome ^ World.getOptScreenState screen world
 
@@ -1667,7 +1667,7 @@ module WorldModule =
             | Relative -> World.getViewBoundsRelative world
             | Absolute -> World.getViewBoundsAbsolute world
 
-        /// Query that the given bounds is within the eye's sight.
+        /// Check that the given bounds is within the eye's sight.
         static member inView viewType (bounds : Vector4) world =
             let viewBounds = World.getViewBounds viewType world
             Math.isBoundsInBounds bounds viewBounds

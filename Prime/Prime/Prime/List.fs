@@ -7,11 +7,21 @@ open System
 open System.Collections.Generic
 open Prime
 
+/// Check that a list is not empty.
+let rec notEmpty list =
+    not ^ List.isEmpty list
+
+/// Make a singleton list.
+let singleton value =
+    [value]
+
 /// The missing cons function.
-let cons head tail = head :: tail
+let cons head tail =
+    head :: tail
 
 /// Cons with flipped arguments.
-let inline flipCons tail head = head :: tail
+let inline flipCons tail head =
+    head :: tail
 
 /// Partition a list.
 let partitionPlus fnOptU list =
@@ -25,31 +35,31 @@ let partitionPlus fnOptU list =
             | None -> subpartitionPlus fnOptU tail left (head :: right)
     subpartitionPlus fnOptU list [] []
 
-/// Query that a list has at least n items.
+/// Check that a list has at least n items.
 let rec hasAtLeast n (list : 'a list) =
     if n = 0 then true
     elif list.IsEmpty then false
     else hasAtLeast (n - 1) list.Tail
 
-/// Query that a list has at most n items.
+/// Check that a list has at most n items.
 let rec hasAtMost n (list : 'a list) =
     if list.IsEmpty then true
     elif n = 0 then false
     else hasAtMost (n - 1) list.Tail
 
-/// Query that a list has exactly n items.
+/// Check that a list has exactly n items.
 let rec hasExactly n (list : 'a list) =
     if n = 0 then list.IsEmpty
     elif list.IsEmpty then false
     else hasExactly (n - 1) list.Tail
 
-/// Query that a list has at least n items.
+/// Check that a list has at least n items.
 let rec hasBetween n m (list : 'a list) =
     if n = 0 then hasAtMost m list
     elif list.IsEmpty then false
     else hasBetween (n - 1) (m - 1) list.Tail
 
-/// Query that two lists are of the same length.
+/// Check that two lists are of the same length.
 let rec areSameLength (list : 'a list) (list2 : 'b list) =
     if list.IsEmpty then list2.IsEmpty
     elif list2.IsEmpty then false
@@ -199,11 +209,11 @@ let setBinop binop firstList secondList =
     let secondSet = Set.ofList secondList
     binop firstSet secondSet
 
-/// Query that the first list a subset of the second list.
+/// Check that the first list a subset of the second list.
 let isSubset firstList secondList =
     setBinop Set.isSubset firstList secondList
 
-/// Query that the first list a superset of the second list.
+/// Check that the first list a superset of the second list.
 let isSuperset firstList secondList =
     setBinop Set.isSuperset firstList secondList
 

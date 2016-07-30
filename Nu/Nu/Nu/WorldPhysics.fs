@@ -84,7 +84,7 @@ module WorldPhysicsModule =
         static member addPhysicsMessage (message : PhysicsMessage) world =
             World.updateSubsystem (fun is _ -> is.EnqueueMessage message) Constants.Engine.PhysicsEngineSubsystemName world
 
-        /// Query that the world contains a body with the given physics id?
+        /// Check that the world contains a body with the given physics id?
         static member bodyExists physicsId world =
             World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.BodyExists physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
@@ -108,7 +108,7 @@ module WorldPhysicsModule =
         static member getOptBodyToGroundContactTangent physicsId world =
             World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetOptBodyToGroundContactTangent physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
-        /// Query that the body with the given physics id is on the ground.
+        /// Check that the body with the given physics id is on the ground.
         static member isBodyOnGround physicsId world =
             World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.IsBodyOnGround physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 

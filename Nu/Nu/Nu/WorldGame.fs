@@ -63,7 +63,7 @@ module WorldGameModule =
         /// Get the bounds of the eye's sight.
         member this.GetViewBounds viewType world = World.getViewBounds viewType world
 
-        /// Query that the given bounds is within the eye's sight.
+        /// Check that the given bounds is within the eye's sight.
         member this.InView viewType bounds world = World.inView viewType bounds world
 
         /// Transform the given mouse position to screen space.
@@ -75,7 +75,7 @@ module WorldGameModule =
         /// Transform the given mouse position to entity space.
         member this.MouseToEntity viewType entityPosition mousePosition world = World.mouseToEntity viewType entityPosition mousePosition world
 
-        /// Query that a group dispatches in the same manner as the dispatcher with the target type.
+        /// Check that a group dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world = Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
 
     type World with

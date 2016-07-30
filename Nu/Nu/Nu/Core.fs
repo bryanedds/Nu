@@ -59,7 +59,7 @@ module Core =
         | null -> defaultResolution
         | resolution -> scvalue<int> resolution
 
-    /// Query that events should be trace as specified in the App.config file.
+    /// Check that events should be trace as specified in the App.config file.
     let getEventTracing () =
         match ConfigurationManager.AppSettings.["EventTracing"] with
         | null -> false

@@ -67,6 +67,12 @@ module TmapModule =
             map.Tmap <- map
             map
 
+        let isEmpty map =
+            map.Dict.Count = 0
+
+        let notEmpty map =
+            not ^ isEmpty map
+
         let add key value map =
             let map = validate map
             let map = { map with Logs = Add (key, value) :: map.Logs; LogsLength = map.LogsLength + 1; Tmap = map }

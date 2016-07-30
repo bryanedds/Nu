@@ -58,7 +58,7 @@ module AmbientStateModule =
         let getTickTime state =
             state.TickTime
 
-        /// Query that ticking is enabled.
+        /// Check that ticking is enabled.
         let isTicking state =
             getTickRate state <> 0L
 

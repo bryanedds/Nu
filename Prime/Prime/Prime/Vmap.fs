@@ -178,9 +178,13 @@ module VmapModule =
             { Node = Vnode.empty
               EmptyArray = Array.create 32 Vnode.empty }
     
-        /// Query that a Vmap is empty.
+        /// Check that a Vmap is empty.
         let isEmpty map =
             Vnode.isEmpty map.Node
+    
+        /// Check that a Vmap is empty.
+        let notEmpty map =
+            not ^ Vnode.isEmpty map.Node
     
         /// Add a value with the key to a Vmap.
         let add (k : 'k) (v : 'v) map =
@@ -212,7 +216,7 @@ module VmapModule =
         let find (k : 'k) map : 'v =
             tryFind k map |> Option.get
     
-        /// Query that a Vmap contains a value with the given key.
+        /// Check that a Vmap contains a value with the given key.
         let containsKey k map =
             match tryFind k map with
             | Some _ -> true

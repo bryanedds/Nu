@@ -123,7 +123,7 @@ module WorldEntityModule =
             let transform = Math.snapTransform positionSnap rotationSnap transform
             this.SetTransform transform world
 
-        /// Query that an entity dispatches in the same manner as the dispatcher with the target type.
+        /// Check that an entity dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world =
             Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
 
@@ -246,7 +246,7 @@ module WorldEntityModule =
         | EntityXPropertyDescriptor of XPropertyDescriptor
         | EntityPropertyInfo of PropertyInfo
 
-        /// Query that an entity contains the given property.
+        /// Check that an entity contains the given property.
         static member containsProperty (property : PropertyInfo) =
             let properties = typeof<EntityState>.GetProperties property.Name
             Seq.exists (fun item -> item = property) properties
