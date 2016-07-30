@@ -69,8 +69,6 @@ module Scripting =
         | Binding of Name * Origin option
         | Apply of Expr list * Origin option
         | Quote of string * Origin option
-        | Get of string * Origin option
-        | Set of string * Origin option
         | Entity of Nu.Entity * Origin option
         | Group of Nu.Group * Origin option
         | Screen of Nu.Screen * Origin option
@@ -110,8 +108,6 @@ module Scripting =
             | Binding (_, optOrigin)
             | Apply (_, optOrigin)
             | Quote (_, optOrigin)
-            | Get (_, optOrigin)
-            | Set (_, optOrigin)
             | Entity (_, optOrigin)
             | Group (_, optOrigin)
             | Screen (_, optOrigin)

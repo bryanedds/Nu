@@ -691,19 +691,6 @@ module ScriptSystemModule =
                     | Keyword (name, optOrigin) ->
                         let map = String (name, optOrigin) :: args |> List.indexed |> Map.ofList
                         Result (Keyphrase (map, optOrigin), env)
-                    | Get (name, optOrigin) ->
-                        match args with
-                        | [Entity (entity, optOrigin)] ->
-                            let world = Env.getWorld env
-                            if World.containsEntity entity world then
-                                let (propertyValue, propertyType) = entity.GetProperty name world
-                                match InputDictionary.TryGetValue propertyType with
-                                | (true, fn) -> Result (fn propertyValue optOrigin, env)
-                                | (false, _) -> Result (Violation (["unsupportedPropertyType"], "TODO: proper error msg.", optOrigin), env)
-                            else Result (Violation (["invalidEntity"], "Entity '" + scstring entity + "' does not exist.", optOrigin), env)
-                        | [_] -> Result (Violation (["invalidGetTargetType"], "TODO: proper error msg.", optOrigin), env)
-                        | _ -> Result (Violation (["invalidGetForm"], "TODO: proper error msg.", optOrigin), env)
-                    // TODO: | Set (name, optOrigin) ->
                     | Binding (name, optOrigin) ->
                         match Env.tryGetBinding name env with
                         | Some binding -> evalFn binding args env
@@ -765,8 +752,6 @@ module ScriptSystemModule =
             | Binding _ -> Result (expr, env)
             | Apply (exprs, optOrigin) -> evalApply exprs optOrigin env
             | Quote _  -> Result (expr, env)
-            | Get _ -> Result (expr, env)
-            | Set _ -> Result (expr, env)
             | Entity _ -> Result (expr, env)
             | Group _ -> Result (expr, env)
             | Screen _ -> Result (expr, env)
