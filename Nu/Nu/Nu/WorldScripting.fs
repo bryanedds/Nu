@@ -34,6 +34,7 @@ module Scripting =
         | Properties of obj Relation * Classification * string
         // constructed as [product stream stream]
         | Product of Stream * Stream
+        // constructed as [sum stream stream]
         | Sum of Stream * Stream 
         | Fold of Expr * Expr * Stream
         | Filter of Expr * Stream
