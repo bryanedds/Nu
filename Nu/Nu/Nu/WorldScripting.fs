@@ -19,17 +19,19 @@ module Scripting =
           CommandArgs : Expr list }
 
     and [<NoComparison>] Stream =
+        // constructed as [constant v]
+        | Constant of Name
+        // constructed as [variable v]
+        | Variable of Name
         // constructed as [event X/Y/Z]
         // does not allow for entity, group, screen, or game events
         | Event of obj Address
-        // constructed as [property P ./.]
-        // does not allow for properties of parents or siblings, or a wildcard in the relation
+        // constructed as [property P] or [property P ././.]
+        // does not allow for properties of parents or siblings, or for a wildcard in the relation
         | Property of obj Relation * string
-        // constructed as [properties P ./@ EntityDispatcher/Vanilla]
+        // constructed as [properties P ././@ EntityDispatcher/Vanilla]
         // does not allow for properties of parents or siblings
         | Properties of obj Relation * Classification * string
-        // constructed as [variable v]. Variables can only access lexically prior variables.
-        | Variable of Name
         // constructed as [product stream stream]
         | Product of Stream * Stream
         | Sum of Stream * Stream 
@@ -88,7 +90,7 @@ module Scripting =
         | Try of Expr * (string list * Expr) list * Origin option
         | Break of Expr * Origin option
         // constructed as [get Density] or [get Density ././Player]
-        // does not allow for relations to parents or siblings, or a wildcard in the relation
+        // does not allow for relations to parents or siblings, or for a wildcard in the relation
         | Get of string * obj Relation * Origin option
 
         (* Special Declarations - only work at the top level, and always return unit. *)
@@ -101,9 +103,9 @@ module Scripting =
         // constructed as [handler stream command] or [handler stream [command]]
         | Handler of Stream * Command list * Guid * Origin option
         // constructed as [equality Density stream] or [equality Density ././Player stream]
-        // does not allow for relations to parents or siblings, or a wildcard in the relation
+        // does not allow for relations to parents or siblings, or for a wildcard in the relation
         | Equality of string * obj Relation * Stream * Guid * Origin option
-        // constructed as [equalities Density ././@ BoxDispatcher/Vanilla None stream]
+        // constructed as [equalities Density ././@ BoxDispatcher/Vanilla stream]
         // does not allow for relations to parents or siblings
         | Equalities of string * obj Relation * Classification * Stream * Guid * Origin option
 
