@@ -857,23 +857,23 @@ module WorldModule =
             let dispatchers = World.getEntityDispatchers world
             let dispatcher = Map.find dispatcherName dispatchers
             
-            // compute the default opt overlay name
-            let intrinsicOverlayName = dispatcherName
-            let defaultOptOverlayName = OverlayRouter.findOptOverlayName intrinsicOverlayName overlayRouter
+            // try to compute the routed overlay name
+            let classification = Classification.make dispatcherName ^ Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
+            let optRoutedOverlayName = OverlayRouter.findOptOverlayName classification overlayRouter
 
             // make the bare entity state (with name as id if none is provided)
-            let entityState = EntityState.make optSpecialization optName defaultOptOverlayName dispatcher
+            let entityState = EntityState.make optSpecialization optName optRoutedOverlayName dispatcher
 
             // attach the entity state's intrinsic facets and their properties
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
 
             // apply the entity state's overlay to its facet names
             let entityState =
-                match defaultOptOverlayName with
-                | Some defaultOverlayName ->
+                match optRoutedOverlayName with
+                | Some routedOverlayName ->
 
                     // apply overlay to facets
-                    let entityState = Overlayer.applyOverlayToFacetNames EntityState.copy intrinsicOverlayName defaultOverlayName entityState overlayer overlayer
+                    let entityState = Overlayer.applyOverlayToFacetNames EntityState.copy dispatcherName routedOverlayName entityState overlayer overlayer
 
                     // synchronize the entity's facets (and attach their properties)
                     match World.trySynchronizeFacetsToNames Set.empty entityState None world with
@@ -888,10 +888,10 @@ module WorldModule =
             let entityState =
                 match entityState.OptOverlayName with
                 | Some overlayName ->
-                    // OPTIMIZATION: apply overlay only when it will change something (EG - when it's not the intrinsic overlay)
-                    if intrinsicOverlayName <> overlayName then
+                    // OPTIMIZATION: apply overlay only when it will change something
+                    if dispatcherName <> overlayName then
                         let facetNames = World.getEntityFacetNamesReflectively entityState
-                        Overlayer.applyOverlay EntityState.copy intrinsicOverlayName overlayName facetNames entityState overlayer
+                        Overlayer.applyOverlay EntityState.copy dispatcherName overlayName facetNames entityState overlayer
                     else entityState
                 | None -> entityState
 
@@ -957,13 +957,13 @@ module WorldModule =
                     let dispatcherName = typeof<EntityDispatcher>.Name
                     let dispatcher = Map.find dispatcherName dispatchers
                     (dispatcherName, dispatcher)
-
-            // compute the default overlay names
-            let intrinsicOverlayName = dispatcherName
-            let defaultOptOverlayName = OverlayRouter.findOptOverlayName intrinsicOverlayName overlayRouter
+            
+            // try to compute the routed overlay name
+            let classification = Classification.makeVanilla dispatcherName
+            let optRoutedOverlayName = OverlayRouter.findOptOverlayName classification overlayRouter
 
             // make the bare entity state with name as id
-            let entityState = EntityState.make None None defaultOptOverlayName dispatcher
+            let entityState = EntityState.make None None optRoutedOverlayName dispatcher
 
             // attach the entity state's intrinsic facets and their properties
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
@@ -971,8 +971,8 @@ module WorldModule =
             // read the entity state's overlay and apply it to its facet names if applicable
             let entityState = Reflection.tryReadOptOverlayNameToTarget EntityState.copy entityDescriptor.EntityProperties entityState
             let entityState =
-                match (defaultOptOverlayName, entityState.OptOverlayName) with
-                | (Some defaultOverlayName, Some overlayName) -> Overlayer.applyOverlayToFacetNames EntityState.copy defaultOverlayName overlayName entityState overlayer overlayer
+                match (optRoutedOverlayName, entityState.OptOverlayName) with
+                | (Some routedOverlayName, Some overlayName) -> Overlayer.applyOverlayToFacetNames EntityState.copy routedOverlayName overlayName entityState overlayer overlayer
                 | (_, _) -> entityState
 
             // read the entity state's facet names
@@ -991,10 +991,10 @@ module WorldModule =
             let entityState =
                 match entityState.OptOverlayName with
                 | Some overlayName ->
-                    // OPTIMIZATION: applying overlay only when it will change something (EG - when it's not the default overlay)
-                    if intrinsicOverlayName <> overlayName then
+                    // OPTIMIZATION: applying overlay only when it will change something
+                    if dispatcherName <> overlayName then
                         let facetNames = World.getEntityFacetNamesReflectively entityState
-                        Overlayer.applyOverlay EntityState.copy intrinsicOverlayName overlayName facetNames entityState overlayer
+                        Overlayer.applyOverlay EntityState.copy dispatcherName overlayName facetNames entityState overlayer
                     else entityState
                 | None -> entityState
 
@@ -1020,7 +1020,8 @@ module WorldModule =
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
                 if propertyName = "OptOverlayName" && propertyType = typeof<string option> then
                     let overlayRouter = World.getOverlayRouter world
-                    let defaultOptOverlayName = OverlayRouter.findOptOverlayName entityDispatcherName overlayRouter
+                    let classification = Classification.make entityDispatcherName entityState.Specialization
+                    let defaultOptOverlayName = OverlayRouter.findOptOverlayName classification overlayRouter
                     defaultOptOverlayName <> (propertyValue :?> string option)
                 else
                     let overlayer = World.getOverlayer world

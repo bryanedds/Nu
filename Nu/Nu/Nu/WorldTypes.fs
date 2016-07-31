@@ -804,10 +804,8 @@ module WorldTypes =
         default this.MakeFacets () = []
     
         /// Make the overlay routes that will allow Nu to use different overlays for the specified
-        /// types. For example, a returned router of (typeof<ButtonDispatcher>.Name, Some "CustomButtonOverlay")
-        /// will cause all buttons to use the overlay with the name "CustomButtonOverlay" rather
-        /// than the default "ButtonDispatcher" overlay.
-        abstract MakeOverlayRoutes : unit -> (string * string option) list
+        /// classifications.
+        abstract MakeOverlayRoutes : unit -> (Classification * string option) list
         default this.MakeOverlayRoutes () = []
 
 /// A simulant in the world.
