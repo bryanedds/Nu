@@ -19,10 +19,15 @@ module Scripting =
           CommandArgs : Expr list }
 
     and [<NoComparison>] Stream =
-        // constructed as [event X/Y/Z]. Does not allow for entity, group, screen, or game events
+        // constructed as [event X/Y/Z]
+        // does not allow for entity, group, screen, or game events
         | Event of obj Address
-        // constructed as [property ./Y/Z]. Does not allow for properties of parents or siblings.
+        // constructed as [property P ./.]
+        // does not allow for properties of parents or siblings, or a wildcard in the relation
         | Property of obj Relation * string
+        // constructed as [properties P ./@ EntityDispatcher/Vanilla]
+        // does not allow for properties of parents or siblings
+        | Properties of obj Relation * Classification * string
         // constructed as [variable v]. Variables can only access lexically prior variables.
         | Variable of Name
         // constructed as [product stream stream]
@@ -38,14 +43,14 @@ module Scripting =
                     "length normal " +
                     "cross dot " +
                     "violation bool int int64 single double string " +
-                    "emptyKeyword " +
+                    "kempty " +
                     "some none isNone isSome map " +
                     // TODO: "either isLeft isRight left right " +
                     "tuple unit fst snd thd nth " +
-                    "list emptyList head tail cons isEmpty notEmpty filter fold contains " +
-                    // TODO: "set emptySet add remove " +
-                    // TODO: "table emptyTable tryFind find " +
-                    "emptyKeyphrase " +
+                    "list lempty head tail cons isEmpty notEmpty filter fold contains " +
+                    // TODO: "set sempty add remove " +
+                    // TODO: "table tempty tryFind find " +
+                    "pempty " +
                     "tickRate tickTime updateCount " +
                     "constant variable equality rule",
                     "");
@@ -69,7 +74,7 @@ module Scripting =
         | Option of Expr option * Origin option
         | Tuple of Map<int, Expr> * Origin option
         | List of Expr list * Origin option
-        | Keyphrase of Map<int, Expr> * Origin option
+        | Phrase of Map<int, Expr> * Origin option
 
         (* Special Forms *)
         | Binding of Name * Origin option
@@ -82,6 +87,9 @@ module Scripting =
         | Cond of (Expr * Expr) list * Origin option
         | Try of Expr * (string list * Expr) list * Origin option
         | Break of Expr * Origin option
+        // constructed as [get Density] or [get Density ././Player]
+        // does not allow for relations to parents or siblings, or a wildcard in the relation
+        | Get of string * obj Relation * Origin option
 
         (* Special Declarations - only work at the top level, and always return unit. *)
         // accessible anywhere
@@ -90,14 +98,14 @@ module Scripting =
         // only accessible by variables and equalities
         // constructed as [variable v stream]
         | Variable of Name * Stream * Guid * Origin option
-        // constructed as [handler ./Group/@/Density]
-        //| Handler of Stream * Command list * Guid * Origin option
-        // constructed as [equality ./Group/Player/Density stream]
+        // constructed as [handler stream command] or [handler stream [command]]
+        | Handler of Stream * Command list * Guid * Origin option
+        // constructed as [equality Density stream] or [equality Density ././Player stream]
         // does not allow for relations to parents or siblings, or a wildcard in the relation
-        | Equality of obj Relation * Stream * Guid * Origin option
-        // constructed as [rule ./Group/@/Density BoxDispatcher/@ None stream]
+        | Equality of string * obj Relation * Stream * Guid * Origin option
+        // constructed as [equalities Density ././@ BoxDispatcher/Vanilla None stream]
         // does not allow for relations to parents or siblings
-        | Rule of obj Relation * obj Address * Stream * Guid * Origin option
+        | Equalities of string * obj Relation * Classification * Stream * Guid * Origin option
 
         static member getOptOrigin term =
             match term with
@@ -114,7 +122,7 @@ module Scripting =
             | Option (_, optOrigin)
             | Tuple (_, optOrigin)
             | List (_, optOrigin)
-            | Keyphrase (_, optOrigin)
+            | Phrase (_, optOrigin)
             | Binding (_, optOrigin)
             | Apply (_, optOrigin)
             | Quote (_, optOrigin)
@@ -125,10 +133,12 @@ module Scripting =
             | Cond (_, optOrigin)
             | Try (_, _, optOrigin)
             | Break (_, optOrigin)
+            | Get (_, _, optOrigin)
             | Constant (_, _, optOrigin)
             | Variable (_, _, _, optOrigin)
-            | Equality (_, _, _, optOrigin)
-            | Rule (_, _, _, _, optOrigin) -> optOrigin
+            | Handler (_, _, _, optOrigin)
+            | Equality (_, _, _, _, optOrigin)
+            | Equalities (_, _, _, _, _, optOrigin) -> optOrigin
 
     /// Converts Expr types.
     and ExprConverter () =
