@@ -32,6 +32,7 @@ module Constants =
         let EntityTreeDepth = 9
         let EntityTreeSize = Vector2 (single ^ Math.Pow (2.0, 18.0))
         let EntityTreeBounds = Vector4 (EntityTreeSize.X * -0.5f, EntityTreeSize.Y * -0.5f, EntityTreeSize.X * 0.5f, EntityTreeSize.Y * 0.5f)
+        let VanillaSpecialization = "Vanilla"
         let InvalidId = Guid.Empty
 
     [<RequireQualifiedAccess>]

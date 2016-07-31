@@ -108,7 +108,7 @@ module WorldTypes =
     and GameDispatcher () =
     
         static member PropertyDefinitions =
-            [Define? OptSpecialization (None : string option)]
+            [Define? Specialization Constants.Engine.VanillaSpecialization]
     
         /// Register a game when adding it to the world. Note that there is no corresponding
         /// Unregister method due to the inability to remove a game from the world.
@@ -127,7 +127,7 @@ module WorldTypes =
     and ScreenDispatcher () =
     
         static member PropertyDefinitions =
-            [Define? OptSpecialization (None : string option)
+            [Define? Specialization Constants.Engine.VanillaSpecialization
              Define? Persistent true]
     
         /// Register a screen when adding it to the world.
@@ -150,7 +150,7 @@ module WorldTypes =
     and GroupDispatcher () =
     
         static member PropertyDefinitions =
-            [Define? OptSpecialization (None : string option)
+            [Define? Specialization Constants.Engine.VanillaSpecialization
              Define? Persistent true]
     
         /// Register a group when adding it to a screen.
@@ -173,7 +173,7 @@ module WorldTypes =
     and EntityDispatcher () =
     
         static member PropertyDefinitions =
-            [Define? OptSpecialization (None : string option)
+            [Define? Specialization Constants.Engine.VanillaSpecialization
              Define? Position Vector2.Zero
              Define? Size Constants.Engine.DefaultEntitySize
              Define? Rotation 0.0f
@@ -261,8 +261,8 @@ module WorldTypes =
         { Id : Guid
           Xtension : Xtension
           DispatcherNp : GameDispatcher
+          Specialization : string
           CreationTimeStampNp : int64
-          OptSpecialization : string option
           OptSelectedScreen : Screen option
           OptScreenTransitionDestination : Screen option
           EyeCenter : Vector2
@@ -291,8 +291,8 @@ module WorldTypes =
             { Id = makeGuid ()
               Xtension = Xtension.safe
               DispatcherNp = dispatcher
+              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
               CreationTimeStampNp = Core.getTimeStamp ()
-              OptSpecialization = optSpecialization
               OptSelectedScreen = None
               OptScreenTransitionDestination = None
               EyeCenter = eyeCenter
@@ -312,8 +312,8 @@ module WorldTypes =
           Name : Name
           Xtension : Xtension
           DispatcherNp : ScreenDispatcher
+          Specialization : string
           CreationTimeStampNp : int64
-          OptSpecialization : string option
           EntityTreeNp : Entity QuadTree MutantCache
           TransitionStateNp : TransitionState
           TransitionTicksNp : int64
@@ -345,8 +345,8 @@ module WorldTypes =
                   Name = name
                   Xtension = Xtension.safe
                   DispatcherNp = dispatcher
+                  Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
                   CreationTimeStampNp = Core.getTimeStamp ()
-                  OptSpecialization = optSpecialization 
                   EntityTreeNp = Unchecked.defaultof<Entity QuadTree MutantCache>
                   TransitionStateNp = IdlingState
                   TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
@@ -370,8 +370,8 @@ module WorldTypes =
           Name : Name
           Xtension : Xtension
           DispatcherNp : GroupDispatcher
+          Specialization : string
           CreationTimeStampNp : int64
-          OptSpecialization : string option
           Persistent : bool }
 
         /// Get an dynamic property and its type information.
@@ -397,8 +397,8 @@ module WorldTypes =
               Name = name
               Xtension = Xtension.safe
               DispatcherNp = dispatcher
+              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
               CreationTimeStampNp = Core.getTimeStamp ()
-              OptSpecialization = optSpecialization
               Persistent = true }
 
         /// Copy a group such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
@@ -415,8 +415,8 @@ module WorldTypes =
           Name : Name
           Xtension : Xtension
           DispatcherNp : EntityDispatcher
+          Specialization : string
           CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
-          OptSpecialization : string option
           OptOverlayName : string option
           Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
@@ -474,8 +474,8 @@ module WorldTypes =
               Name = name
               Xtension = Xtension.safe
               DispatcherNp = dispatcher
+              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
               CreationTimeStampNp = Core.getTimeStamp ()
-              OptSpecialization = optSpecialization
               OptOverlayName = optOverlayName
               Position = Vector2.Zero
               Size = Constants.Engine.DefaultEntitySize

@@ -14,16 +14,20 @@ open Nu
 /// A scripting language for Nu that is hoped to eventually be a cross between Elm and Unreal Blueprints.
 module Scripting =
 
-    type [<NoComparison>] Stream =
-        // constructed as [event X/Y/Z]
+    type [<NoComparison>] Command = // includes simulant get and set
+        { CommandName : Name
+          CommandArgs : Expr list }
+
+    and [<NoComparison>] Stream =
+        // constructed as [event X/Y/Z]. Does not allow for entity, group, screen, or game events
         | Event of obj Address
-        // constructed as [property X/Y/Z]
-        | Property of Simulant Address * string
-        // constructed as [variable v]
+        // constructed as [property ./Y/Z]. Does not allow for properties of parents or siblings.
+        | Property of obj Relation * string
+        // constructed as [variable v]. Variables can only access lexically prior variables.
         | Variable of Name
         // constructed as [product stream stream]
         | Product of Stream * Stream
-        | Sum of Either<Stream, Stream>
+        | Sum of Stream * Stream 
         | Fold of Expr * Expr * Stream
         | Filter of Expr * Stream
         | Map of Expr * Stream
@@ -35,7 +39,6 @@ module Scripting =
                     "cross dot " +
                     "violation bool int int64 single double string " +
                     "emptyKeyword " +
-                    "entity group screen game " +
                     "some none isNone isSome map " +
                     // TODO: "either isLeft isRight left right " +
                     "tuple unit fst snd thd nth " +
@@ -44,11 +47,12 @@ module Scripting =
                     // TODO: "table emptyTable tryFind find " +
                     "emptyKeyphrase " +
                     "tickRate tickTime updateCount " +
-                    "constant variable equality",
+                    "constant variable equality rule",
                     "");
           TypeConverter (typeof<ExprConverter>);
           NoComparison>]
         Expr =
+
         (* Primitive Value Types *)
         | Violation of string list * string * Origin option
         | Unit of Origin option
@@ -60,21 +64,17 @@ module Scripting =
         | Vector2 of Vector2 * Origin option
         | String of string * Origin option
         | Keyword of string * Origin option
+
         (* Primitive Data Structures *)
         | Option of Expr option * Origin option
         | Tuple of Map<int, Expr> * Origin option
         | List of Expr list * Origin option
         | Keyphrase of Map<int, Expr> * Origin option
+
         (* Special Forms *)
         | Binding of Name * Origin option
         | Apply of Expr list * Origin option
         | Quote of string * Origin option
-        | Entity of Nu.Entity * Origin option
-        | Group of Nu.Group * Origin option
-        | Screen of Nu.Screen * Origin option
-        | Game of Nu.Game * Origin option
-        | Do of Name * Expr list * Origin option // executes an engine command, more can be found in the NuPlugin
-        | DoMany of Name * (Expr list) list * Origin option
         | Let of Name * Expr * Origin option
         | LetMany of (Name * Expr) list * Origin option
         | Fun of string list * Expr * int * Origin option
@@ -82,13 +82,23 @@ module Scripting =
         | Cond of (Expr * Expr) list * Origin option
         | Try of Expr * (string list * Expr) list * Origin option
         | Break of Expr * Origin option
+
         (* Special Declarations - only work at the top level, and always return unit. *)
-        // accessible anywhere. constructed as [constant c 0]
+        // accessible anywhere
+        // constructed as [constant c 0]
         | Constant of Name * Expr * Origin option
-        // only accessible by variables and equalities. constructed as [variable v stream]
+        // only accessible by variables and equalities
+        // constructed as [variable v stream]
         | Variable of Name * Stream * Guid * Origin option
-        // only accessible by variables and equalities. constructed as [equality Screen/Group/Player/Density stream]
-        | Equality of obj Address * Stream * Guid * Origin option
+        // constructed as [handler ./Group/@/Density]
+        //| Handler of Stream * Command list * Guid * Origin option
+        // constructed as [equality ./Group/Player/Density stream]
+        // does not allow for relations to parents or siblings, or a wildcard in the relation
+        | Equality of obj Relation * Stream * Guid * Origin option
+        // constructed as [rule ./Group/@/Density BoxDispatcher/@ None stream]
+        // does not allow for relations to parents or siblings
+        | Rule of obj Relation * obj Address * Stream * Guid * Origin option
+
         static member getOptOrigin term =
             match term with
             | Violation (_, _, optOrigin)
@@ -108,12 +118,6 @@ module Scripting =
             | Binding (_, optOrigin)
             | Apply (_, optOrigin)
             | Quote (_, optOrigin)
-            | Entity (_, optOrigin)
-            | Group (_, optOrigin)
-            | Screen (_, optOrigin)
-            | Game (_, optOrigin)
-            | Do (_, _, optOrigin)
-            | DoMany (_, _, optOrigin)
             | Let (_, _, optOrigin)
             | LetMany (_, optOrigin)
             | Fun (_, _, _, optOrigin)
@@ -123,7 +127,8 @@ module Scripting =
             | Break (_, optOrigin)
             | Constant (_, _, optOrigin)
             | Variable (_, _, _, optOrigin)
-            | Equality (_, _, _, optOrigin) -> optOrigin
+            | Equality (_, _, _, optOrigin)
+            | Rule (_, _, _, _, optOrigin) -> optOrigin
 
     /// Converts Expr types.
     and ExprConverter () =
@@ -152,7 +157,8 @@ module Scripting =
                     | "none" -> Option (None, optOrigin) :> obj
                     | "empty" -> List (List.empty, optOrigin) :> obj
                     | _ ->
-                        if Char.IsUpper str.[0]
+                        let firstChar = str.[0]
+                        if firstChar = '.' || Char.IsUpper firstChar
                         then Keyword (str, optOrigin) :> obj
                         else Binding (!!str, optOrigin) :> obj
                 | Symbol.Number (str, optOrigin) ->
@@ -217,10 +223,6 @@ module Scripting =
                             match tail with
                             | [condition; consequent; alternative] -> If (symbolToExpr condition, symbolToExpr consequent, symbolToExpr alternative, optOrigin) :> obj
                             | _ -> Violation (["invalidIfForm"], "Invalid if form. Requires 3 arguments.", optOrigin) :> obj
-                        | "do" ->
-                            match tail with
-                            | Atom (name, _) :: args -> Do (!!name, List.map symbolToExpr args, optOrigin) :> obj
-                            | _ -> Violation (["invalidDoForm"], "Invalid do form. Requires 1 name and an argument list.", optOrigin) :> obj
                         | "break" ->
                             let content = symbolToExpr (Symbols (tail, optOrigin))
                             Break (content, optOrigin) :> obj
@@ -269,9 +271,11 @@ module Scripting =
             end
 
     type [<NoComparison>] Script =
-        { Constants : (Name * Expr) list
+        { Context : obj Address
+          Constants : (Name * Expr) list
           Streams : (Name * Guid * Stream * Expr) list
-          Equalities : (Name * Guid * Stream) list }
+          Equalities : (Name * Guid * Stream) list
+          Rules : unit list } // TODO
 
     /// An abstract data type for executing scripts.
     type [<NoEquality; NoComparison>] ScriptSystem =

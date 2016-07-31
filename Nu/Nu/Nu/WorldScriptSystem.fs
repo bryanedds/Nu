@@ -752,12 +752,6 @@ module ScriptSystemModule =
             | Binding _ -> Result (expr, env)
             | Apply (exprs, optOrigin) -> evalApply exprs optOrigin env
             | Quote _  -> Result (expr, env)
-            | Entity _ -> Result (expr, env)
-            | Group _ -> Result (expr, env)
-            | Screen _ -> Result (expr, env)
-            | Game _ -> Result (expr, env)
-            | Do _ -> Result (expr, env)
-            | DoMany _ -> Result (expr, env)
             | Let _ -> Result (expr, env)
             | Fun _ -> Result (expr, env)
             | LetMany _ -> Result (expr, env)
@@ -768,6 +762,7 @@ module ScriptSystemModule =
             | Constant (_, _, optOrigin) -> Result (Unit optOrigin, env)
             | Variable (_, _, _, optOrigin) -> Result (Unit optOrigin, env)
             | Equality (_, _, _, optOrigin) -> Result (Unit optOrigin, env)
+            | Rule (_, _, _, _, optOrigin) -> Result (Unit optOrigin, env)
 
     /// An abstract data type for executing scripts.
     /// Has an unused type param to give it a unique name.

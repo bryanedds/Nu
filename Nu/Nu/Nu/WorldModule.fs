@@ -657,8 +657,8 @@ module WorldModule =
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
         static member internal getEntityXtension entity world = (World.getEntityState entity world).Xtension // TODO: try to get rid of this
         static member internal getEntityDispatcherNp entity world = (World.getEntityState entity world).DispatcherNp
+        static member internal getEntitySpecialization entity world = (World.getEntityState entity world).Specialization
         static member internal getEntityCreationTimeStampNp entity world = (World.getEntityState entity world).CreationTimeStampNp
-        static member internal getEntityOptSpecialization entity world = (World.getEntityState entity world).OptSpecialization
         static member internal getEntityOptOverlayName entity world = (World.getEntityState entity world).OptOverlayName
         static member internal setEntityOptOverlayName value entity world = World.updateEntityState (fun entityState -> { entityState with OptOverlayName = value }) Property? OptOverlayName entity world
         static member internal getEntityPosition entity world = (World.getEntityState entity world).Position
@@ -723,8 +723,8 @@ module WorldModule =
             | "Xtension" -> (World.getEntityXtension entity world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getEntityDispatcherNp entity world :> obj, typeof<EntityDispatcher>)
             | "CreationTimeStampNp" -> (World.getEntityCreationTimeStampNp entity world :> obj, typeof<int64>)
+            | "Specialization" -> (World.getEntitySpecialization entity world :> obj, typeof<string>)
             | "OptOverlayName" -> (World.getEntityOptOverlayName entity world :> obj, typeof<string option>)
-            | "OptSpecialization" -> (World.getEntityOptSpecialization entity world :> obj, typeof<string option>)
             | "Position" -> (World.getEntityPosition entity world :> obj, typeof<Vector2>)
             | "Size" -> (World.getEntitySize entity world :> obj, typeof<Vector2>)
             | "Rotation" -> (World.getEntityRotation entity world :> obj, typeof<single>)
@@ -750,7 +750,7 @@ module WorldModule =
             | "Name" -> failwith "Cannot change entity name."
             | "DispatcherNp" -> failwith "Cannot change entity dispatcher."
             | "CreationTimeStampNp" -> failwith "Cannot change entity creation time stamp."
-            | "OptSpecialization" -> failwith "Cannot change entity specialization."
+            | "Specialization" -> failwith "Cannot change entity specialization."
             | "Position" -> World.setEntityPosition (value :> obj :?> Vector2) entity world
             | "Size" -> World.setEntitySize (value :> obj :?> Vector2) entity world
             | "Rotation" -> World.setEntityRotation (value :> obj :?> single) entity world
@@ -1189,7 +1189,7 @@ module WorldModule =
         static member internal getGroupXtension group world = (World.getGroupState group world).Xtension // TODO: try to get rid of this
         static member internal getGroupDispatcherNp group world = (World.getGroupState group world).DispatcherNp
         static member internal getGroupCreationTimeStampNp group world = (World.getGroupState group world).CreationTimeStampNp
-        static member internal getGroupOptSpecialization group world = (World.getGroupState group world).OptSpecialization
+        static member internal getGroupSpecialization group world = (World.getGroupState group world).Specialization
         static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
         static member internal setGroupPersistent value group world = World.updateGroupState (fun groupState -> { groupState with Persistent = value }) Property? Persistent group world
 
@@ -1199,8 +1199,8 @@ module WorldModule =
             | "Name" -> (World.getGroupName group world :> obj, typeof<Name>)
             | "Xtension" -> (World.getGroupXtension group world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getGroupDispatcherNp group world :> obj, typeof<GroupDispatcher>)
+            | "Specialization" -> (World.getGroupSpecialization group world :> obj, typeof<string>)
             | "CreationTimeStampNp" -> (World.getGroupCreationTimeStampNp group world :> obj, typeof<int64>)
-            | "OptSpecialization" -> (World.getGroupOptSpecialization group world :> obj, typeof<string option>)
             | "Persistent" -> (World.getGroupPersistent group world :> obj, typeof<bool>)
             | _ -> let property = GroupState.getProperty propertyName (World.getGroupState group world) in (property.PropertyValue, property.PropertyType)
 
@@ -1213,8 +1213,8 @@ module WorldModule =
             | "Id" -> failwith "Cannot change group id."
             | "Name" -> failwith "Cannot change group name."
             | "DispatcherNp" -> failwith "Cannot change group dispatcher."
+            | "Specialization" -> failwith "Cannot change group specialization."
             | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
-            | "OptSpecialization" -> failwith "Cannot change group specialization."
             | "Persistent" -> World.setGroupPersistent (value :> obj :?> bool) group world
             | _ -> World.updateGroupState (GroupState.set propertyName value) propertyName group world
 
@@ -1388,7 +1388,7 @@ module WorldModule =
         static member internal getScreenXtension screen world = (World.getScreenState screen world).Xtension // TODO: try to get rid of this
         static member internal getScreenDispatcherNp screen world = (World.getScreenState screen world).DispatcherNp
         static member internal getScreenCreationTimeStampNp screen world = (World.getScreenState screen world).CreationTimeStampNp
-        static member internal getScreenOptSpecialization screen world = (World.getScreenState screen world).OptSpecialization
+        static member internal getScreenSpecialization screen world = (World.getScreenState screen world).Specialization
         static member internal getScreenEntityTreeNp screen world = (World.getScreenState screen world).EntityTreeNp
         static member internal setScreenEntityTreeNp value screen world = World.updateScreenState (fun screenState -> { screenState with EntityTreeNp = value }) Property? EntityTreeNp screen world
         static member internal getScreenTransitionStateNp screen world = (World.getScreenState screen world).TransitionStateNp
@@ -1408,8 +1408,8 @@ module WorldModule =
             | "Name" -> (World.getScreenName screen world :> obj, typeof<Name>)
             | "Xtension" -> (World.getScreenXtension screen world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getScreenDispatcherNp screen world :> obj, typeof<ScreenDispatcher>)
+            | "Specialization" -> (World.getScreenSpecialization screen world :> obj, typeof<string>)
             | "CreationTimeStampNp" -> (World.getScreenCreationTimeStampNp screen world :> obj, typeof<int64>)
-            | "OptSpecialization" -> (World.getScreenOptSpecialization screen world :> obj, typeof<string option>)
             | "EntityTreeNp" -> (World.getScreenEntityTreeNp screen world :> obj, typeof<Entity QuadTree MutantCache>)
             | "TransitionStateNp" -> (World.getScreenTransitionStateNp screen world :> obj, typeof<TransitionState>)
             | "TransitionTicksNp" -> (World.getScreenTransitionTicksNp screen world :> obj, typeof<int64>)
@@ -1427,8 +1427,8 @@ module WorldModule =
             | "Id" -> failwith "Cannot change screen id."
             | "Name" -> failwith "Cannot change screen name."
             | "DispatcherNp" -> failwith "Cannot change screen dispatcher."
+            | "Specialization" -> failwith "Cannot change screen specialization."
             | "CreationTimeStampNp" -> failwith "Cannot change screen creation time stamp."
-            | "OptSpecialization" -> failwith "Cannot change screen specialization."
             | "EntityTreeNp" -> failwith "Cannot change screen entity tree."
             | "TransitionStateNp" -> World.setScreenTransitionStateNp (value :> obj :?> TransitionState) screen world
             | "TransitionTicksNp" -> World.setScreenTransitionTicksNp (value :> obj :?> int64) screen world
@@ -1578,7 +1578,7 @@ module WorldModule =
         static member internal getGameXtension world = (World.getGameState world).Xtension // TODO: try to get rid of this
         static member internal getGameDispatcherNp world = (World.getGameState world).DispatcherNp
         static member internal getGameCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
-        static member internal getGameOptSpecialization world = (World.getGameState world).OptSpecialization
+        static member internal getGameSpecialization world = (World.getGameState world).Specialization
 
         /// Get the current eye center.
         static member getEyeCenter world =
@@ -1702,7 +1702,7 @@ module WorldModule =
             | "Xtension" -> (World.getGameXtension world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
             | "CreationTimeStampNp" -> (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
-            | "OptSpecialization" -> (World.getGameOptSpecialization world :> obj, typeof<string option>)
+            | "Specialization" -> (World.getGameSpecialization world :> obj, typeof<string>)
             | "OptSelectedScreen" -> (World.getOptSelectedScreen world :> obj, typeof<Screen option>)
             | "OptScreenTransitionDestination" -> (World.getOptScreenTransitionDestination world :> obj, typeof<Screen option>)
             | "EyeCenter" -> (World.getEyeCenter world :> obj, typeof<Vector2>)
@@ -1717,8 +1717,8 @@ module WorldModule =
             match propertyName with // NOTE: string match for speed
             | "Id" -> failwith "Cannot change group id."
             | "DispatcherNp" -> failwith "Cannot change group dispatcher."
+            | "Specialization" -> failwith "Cannot change group specialization."
             | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
-            | "OptSpecialization" -> failwith "Cannot change group specialization."
             | "OptOptSelectedScreen" -> World.setOptSelectedScreen (value :> obj :?> Screen option) world
             | "OptScreenTransitionDestination" -> World.setOptScreenTransitionDestination (value :> obj :?> Screen option) world
             | "EyeCenter" -> World.setEyeCenter (value :> obj :?> Vector2) world

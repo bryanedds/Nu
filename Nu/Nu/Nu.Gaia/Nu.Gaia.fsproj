@@ -63,7 +63,7 @@
     <Compile Include="GaiaConstants.fs" />
     <Compile Include="GaiaSimulants.fs" />
     <Compile Include="GaiaTypes.fs" />
-    <Compile Include="GaiaFunctions.fs" />
+    <Compile Include="GaiaModule.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="App.config" />
