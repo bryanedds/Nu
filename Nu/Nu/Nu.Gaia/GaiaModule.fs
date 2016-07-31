@@ -457,11 +457,11 @@ module Gaia =
                 | _ -> world // don't have an entity address
             else world
 
-    let private handleFormCreate atMouse (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormCreateEntity atMouse (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             try let world = pushPastWorld world world
                 let selectedGroup = (World.getUserState world).SelectedGroup
-                let (entity, world) = World.createEntity form.createEntityComboBox.Text None None selectedGroup world
+                let (entity, world) = World.createEntity form.createEntityComboBox.Text (Some form.specializationTextBox.Text) None selectedGroup world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
                 let entityPosition =
@@ -484,7 +484,7 @@ module Gaia =
                 ignore ^ MessageBox.Show (scstring exn, "Could not create Gaia form", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 world
 
-    let private handleFormDelete (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormDeleteEntity (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             let world = pushPastWorld world world
             match form.propertyGrid.SelectedObject with
@@ -732,6 +732,9 @@ module Gaia =
         elif form.rolloutTabControl.SelectedTab = form.overlayerTabPage then
             handleLoadOverlayerClick form args
 
+    let private handleCreateEntityComboBoxSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
+        form.specializationTextBox.Text <- Constants.Engine.VanillaSpecialization
+
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
         match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.YesNo) with
         | DialogResult.No -> args.Cancel <- true
@@ -875,6 +878,7 @@ module Gaia =
         form.positionSnapTextBox.Text <- scstring DefaultPositionSnap
         form.rotationSnapTextBox.Text <- scstring DefaultRotationSnap
         form.createDepthTextBox.Text <- scstring DefaultCreationDepth
+        form.specializationTextBox.Text <- Constants.Engine.VanillaSpecialization
 
         // sort tree view nodes with a bias against guids
         form.treeView.Sorted <- true
@@ -891,7 +895,6 @@ module Gaia =
         form.exitToolStripMenuItem.Click.Add (handleFormExit form)
         form.createDepthPlusButton.Click.Add (handleFormCreateDepthPlusClick form)
         form.createDepthMinusButton.Click.Add (handleFormCreateDepthMinusClick form)
-        form.rolloutTabControl.SelectedIndexChanged.Add (handleRolloutTabSelectedIndexChanged form)
         form.propertyGrid.SelectedObjectsChanged.Add (handleFormPropertyGridSelectedObjectsChanged form)
         form.propertyGrid.SelectedGridItemChanged.Add (handleFormPropertyGridSelectedGridItemChanged form)
         form.propertyRefreshButton.Click.Add (handleFormPropertyRefreshClick form)
@@ -904,12 +907,12 @@ module Gaia =
         form.saveOverlayerButton.Click.Add (handleSaveOverlayerClick form)
         form.loadOverlayerButton.Click.Add (handleLoadOverlayerClick form)
         form.treeView.AfterSelect.Add (handleFormTreeViewNodeSelect form)
-        form.createEntityButton.Click.Add (handleFormCreate false form)
-        form.createToolStripMenuItem.Click.Add (handleFormCreate false form)
-        form.createContextMenuItem.Click.Add (handleFormCreate true form)
-        form.deleteEntityButton.Click.Add (handleFormDelete form)
-        form.deleteToolStripMenuItem.Click.Add (handleFormDelete form)
-        form.deleteContextMenuItem.Click.Add (handleFormDelete form)
+        form.createEntityButton.Click.Add (handleFormCreateEntity false form)
+        form.createToolStripMenuItem.Click.Add (handleFormCreateEntity false form)
+        form.createContextMenuItem.Click.Add (handleFormCreateEntity true form)
+        form.deleteEntityButton.Click.Add (handleFormDeleteEntity form)
+        form.deleteToolStripMenuItem.Click.Add (handleFormDeleteEntity form)
+        form.deleteContextMenuItem.Click.Add (handleFormDeleteEntity form)
         form.newToolStripMenuItem.Click.Add (handleFormNew form)
         form.saveToolStripMenuItem.Click.Add (handleFormSave form)
         form.openToolStripMenuItem.Click.Add (handleFormOpen form)
@@ -930,6 +933,8 @@ module Gaia =
         form.resetCameraButton.Click.Add (handleFormResetCamera form)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
         form.groupTabs.Selected.Add (handleFormGroupTabSelected form)
+        form.rolloutTabControl.SelectedIndexChanged.Add (handleRolloutTabSelectedIndexChanged form)
+        form.createEntityComboBox.SelectedIndexChanged.Add (handleCreateEntityComboBoxSelectedIndexChanged form)
         form.Closing.Add (handleFormClosing form)
         
         // populate event filter keywords
