@@ -58,16 +58,26 @@ module NameModule =
             { NameStr : string
               HashCode : int } // OPTIMIZATION: hash cached for speed
 
-        /// Make a name from a non-empty string without whitespace.
-        static member make (nameStr : string) =
-#if DEBUG   
-            // NOTE: we cannot do this checking at run-time because running an FParsec parser that often is too slow
+        /// Validate that a name string can be used in an address.
+        static member validateAddressability (nameStr : string) =
+#if DEBUG
             if nameStr.IndexOf '.' <> -1 then failwith ^ "Invalid name '" + nameStr + "'; must have no dot characters."
             elif nameStr.IndexOfAny Symbol.WhitespaceCharsArray <> -1 then failwith ^ "Invalid name '" + nameStr + "'; must have no whitespace characters."
-            elif Symbol.isNumber nameStr then failwith ^ "Invalid name '" + nameStr + "'; cannot be a number."
-            else
+            elif Guid.TryParse nameStr |> fst |> not && Symbol.isNumber nameStr // OPTIMIZATION: short-circuited to avoid hitting fparsec
+            then failwith ^ "Invalid name '" + nameStr + "'; cannot be a number."
+#else
+            ignore nameStr
 #endif
-                { NameStr = nameStr; HashCode = nameStr.GetHashCode () }
+
+        /// Make a name that can't necessarily be part of an Address.
+        /// TODO: A month or two from now (as of 8/3/16), rename this to Name.make.
+        static member makeVanilla (nameStr : string) =
+            { NameStr = nameStr; HashCode = nameStr.GetHashCode () }
+
+        /// Make a name from a string that can be part of an Address.
+        static member makeAddressable (nameStr : string) =
+            Name.validateAddressability nameStr
+            Name.makeVanilla nameStr
     
         /// Equate Names.
         static member equals name name2 =
@@ -111,16 +121,16 @@ module NameModule =
             name.NameStr
     
         /// Join a list of names by a separator string.
-        let join sep names =
+        let join addressable sep names =
             let nameStrs = Seq.map getNameStr names
             let namesStr = String.Join (sep, nameStrs)
-            Name.make namesStr
+            if addressable then Name.makeAddressable namesStr else Name.makeVanilla namesStr
     
         /// Split a name on a separator char array.
-        let split sep name =
+        let split addressable sep name =
             name.NameStr |>
             (fun nameStr -> nameStr.Split sep) |>
-            Array.map Name.make |>
+            Array.map (if addressable then Name.makeAddressable else Name.makeVanilla) |>
             Seq.ofArray
     
         /// Query for equality a list of names lexicographically.
@@ -152,15 +162,17 @@ module NameModule =
             hashValue
     
         /// The empty name, consisting of an empty string.
-        let empty =
-            Name.make String.Empty
+        let empty = Name.makeAddressable String.Empty
 
 [<AutoOpen>]
 module NameOperators =
 
+    /// Convert a name string to an addressable name.
+    /// TODO: try to find a nice operator for Name.make as well.
+    let inline (!!) nameStr = Name.makeAddressable nameStr
+
     /// Convert a name string to a name.
-    let inline (!!) nameStr =
-        Name.make nameStr
+    let inline (~%) nameStr = Name.makeVanilla nameStr
 
 /// A name for optimized keying in hashing containers.
 type Name = NameModule.Name

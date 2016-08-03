@@ -34,7 +34,7 @@ module EventTests =
         static member make eventTracer eventTracing eventFilter =
             { TestState = 0; TestEventSystem = EventSystem.make eventTracer eventTracing eventFilter }
 
-    let TestEvent = ntoa<int> !!"Int"
+    let TestEvent = ntoa<int> !!"Inc"
     let TestParticipant = { TestAddress = Address.empty<TestParticipant> }
     let incTestState _ world = TestWorld.incTestState world
     let incTestStateNoEvent world = TestWorld.incTestState world

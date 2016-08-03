@@ -1036,7 +1036,7 @@ module WorldModule =
             let entityState = World.getEntityState entity world
             let world = World.removeEntity entity world
             let id = makeGuid ()
-            let name = match optName with Some name -> name | None -> Name.make ^ scstring id
+            let name = match optName with Some name -> name | None -> !!(scstring id)
             let entityState = { entityState with Id = id; Name = name }
             let transmutedEntity = group.GroupAddress -<<- ntoa<Entity> name |> Entity.proxy
             let world = World.addEntity false entityState transmutedEntity world
@@ -1793,7 +1793,7 @@ module WorldModule =
             | Some entityStateObj ->
                 let entityState = entityStateObj :?> EntityState
                 let id = makeGuid ()
-                let name = Name.make ^ scstring id
+                let name = !!(scstring id)
                 let entityState = { entityState with Id = id; Name = name }
                 let position =
                     if atMouse

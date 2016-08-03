@@ -95,7 +95,7 @@ module Reflection =
     let deriveName optName id =
         match optName with
         | Some name -> name
-        | None -> Name.make ^ scstring id
+        | None -> !!(scstring id)
 
     /// Derive a simulant id and name from an optional name.
     let deriveNameAndId optName =

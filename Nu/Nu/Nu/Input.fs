@@ -17,7 +17,7 @@ type MouseButton =
     | MouseX1
     | MouseX2
     override this.ToString () = scstring this
-    static member toEventName this = Name.make ^ (scstring this).Substring "Mouse".Length
+    static member toEventName this = !!((scstring this).Substring "Mouse".Length)
 
 [<RequireQualifiedAccess>]
 module MouseState =

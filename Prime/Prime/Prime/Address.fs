@@ -38,14 +38,14 @@ type AddressConverter (targetType : Type) =
     override this.ConvertFrom (_, _, source) =
         match source with
         | :? string as addressStr ->
-            let fullName = Name.make addressStr
+            let fullName = !!addressStr
             let ftoaFunction = targetType.GetMethod ("makeFromFullName", BindingFlags.Static ||| BindingFlags.Public)
             let ftoaFunctionGeneric = ftoaFunction.MakeGenericMethod ((targetType.GetGenericArguments ()).[0])
             ftoaFunctionGeneric.Invoke (null, [|fullName|])
         | :? Symbol as addressSymbol ->
             match addressSymbol with
             | Atom (addressStr, _) | String (addressStr, _) ->
-                let fullName = Name.make addressStr
+                let fullName = !!addressStr
                 let ftoaFunction = targetType.GetMethod ("makeFromFullName", BindingFlags.Static ||| BindingFlags.Public)
                 ftoaFunction.Invoke (null, [|fullName|])
             | Number (_, _) | Quote (_, _) | Symbols (_, _) ->
@@ -63,31 +63,31 @@ module AddressModule =
             { Names : Name list
               HashCode : int // OPTIMIZATION: hash cached for speed
               TypeCarrier : 'a -> unit }
-    
+
         static member internal join (names : Name seq) =
-            Name.join "/" names
-    
+            Name.join true "/" names
+
         static member internal split (name : Name) =
-            Name.split [|'/'|] name
-    
+            Name.split true [|'/'|] name
+
         static member internal getFullName (address : 'a Address) =
             Address<'a>.join address.Names
-    
+
         /// Make an address from a '/' delimited string.
         /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
         static member makeFromFullName<'a> fullName =
             let names = Address<'a>.split fullName |> List.ofSeq
             { Names = names; HashCode = Name.hashNames names; TypeCarrier = fun (_ : 'a) -> () }
-    
+
         /// Hash an Address.
         static member hash (address : 'a Address) =
             address.HashCode
-                
+
         /// Equate Addresses.
         static member equals address address2 =
             address.HashCode = address2.HashCode && // OPTIMIZATION: first check hash equality
             Name.equateNames address.Names address2.Names
-    
+
         /// Compare Addresses.
         static member compare address address2 =
             Name.compareNames address.Names address2.Names
