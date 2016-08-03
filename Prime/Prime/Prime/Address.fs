@@ -65,10 +65,10 @@ module AddressModule =
               TypeCarrier : 'a -> unit }
 
         static member internal join (names : Name seq) =
-            Name.join true "/" names
+            Name.join "/" names
 
         static member internal split (name : Name) =
-            Name.split true [|'/'|] name
+            Name.split [|'/'|] name
 
         static member internal getFullName (address : 'a Address) =
             Address<'a>.join address.Names
