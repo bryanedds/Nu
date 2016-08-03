@@ -63,12 +63,12 @@ module RelationModule =
               TypeCarrier : 'a -> unit }
     
         static member internal split (name : Name) =
-            Name.split [|'/'|] name
+            Name.split true [|'/'|] name
     
         static member internal getFullName (relation : 'a Relation) =
             relation.OptNames |>
             List.map ^ Option.getOrDefault !!"." |>
-            Name.join "/"
+            Name.join true "/"
     
         /// Make a relation from a '/' delimited string where '.' are empty.
         /// NOTE: do not move this function as the RelationConverter's reflection code relies on it being exactly here!

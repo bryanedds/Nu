@@ -11,7 +11,7 @@ open Nu
 module SimulantOperators =
 
     /// Convert a name string to a screen's proxy.
-    let (!>) screenNameStr = Screen.proxy ^ ntoa ^ Name.make screenNameStr
+    let (!>) screenNameStr = Screen.proxy ^ ntoa !!screenNameStr
 
     /// Convert a name to a screen's proxy.
     let ntos screenName = Screen.proxy ^ ntoa screenName

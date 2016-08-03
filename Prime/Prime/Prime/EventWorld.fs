@@ -131,8 +131,7 @@ module EventWorld =
         let eventSystem = getEventSystem world
         let subscriptions = EventSystem.getSubscriptions eventSystem
         let eventAddresses = getEventAddresses1 eventAddress
-        let optSubLists = List.map (fun anyEventAddress -> Vmap.tryFind anyEventAddress subscriptions) eventAddresses
-        let optSubLists = Vmap.tryFind eventAddress subscriptions :: optSubLists
+        let optSubLists = List.map (fun eventAddress -> Vmap.tryFind eventAddress subscriptions) eventAddresses
         let subLists = List.definitize optSubLists
         let subList = List.concat subLists
         publishSorter subList world

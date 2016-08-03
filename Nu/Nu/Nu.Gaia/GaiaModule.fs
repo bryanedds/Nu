@@ -447,7 +447,7 @@ module Gaia =
     let private handleFormTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             if isNotNull form.treeView.SelectedNode then
-                let entity = Entity.proxy ^ ftoa ^ Name.make form.treeView.SelectedNode.Name
+                let entity = Entity.proxy ^ ftoa !!form.treeView.SelectedNode.Name
                 match Address.getNames entity.EntityAddress with
                 | [_; _; _] ->
                     RefWorld := world // must be set for property grid
@@ -502,7 +502,7 @@ module Gaia =
                 let world = pushPastWorld world world
                 let groupName = groupNameEntryForm.nameTextBox.Text
                 try if groupName.Length = 0 then failwith "Group name cannot be empty in Gaia due to WinForms limitations."
-                    let world = World.createGroup typeof<GroupDispatcher>.Name None (Some ^ Name.make groupName) Simulants.EditorScreen world |> snd
+                    let world = World.createGroup typeof<GroupDispatcher>.Name None (Some !!groupName) Simulants.EditorScreen world |> snd
                     refreshGroupTabs form world
                     form.groupTabs.SelectTab (form.groupTabs.TabPages.IndexOfKey groupName)
                     world
@@ -658,7 +658,7 @@ module Gaia =
                 World.updateUserState (fun editorState ->
                     let groupTabs = form.groupTabs
                     let groupTab = groupTabs.SelectedTab
-                    { editorState with SelectedGroup = stog Simulants.EditorScreen ^ Name.make groupTab.Text })
+                    { editorState with SelectedGroup = stog Simulants.EditorScreen !!groupTab.Text })
                     world
             let world = subscribeToEntityEvents form world
             deselectEntity form world
