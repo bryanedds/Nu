@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>Prime</id>
+        <version>1.7.4.1</version>
+        <title>Prime - An F# primitives library.</title>
+        <authors>Bryan Edds</authors>
+        <owners>Bryan Edds</owners>
+        <licenseUrl>https://github.com/bryanedds/Nu/blob/master/LICENSE.md</licenseUrl>
+        <projectUrl>https://github.com/bryanedds/Nu</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>An F# code library for hardcore pure functional programming, and much more!</description>
+        <summary />
+        <releaseNotes>Includes important fix for redundant event publishings bug.</releaseNotes>
+        <copyright>Copyright (c) 2016 Bryan Edds</copyright>
+        <language>en-US</language>
+        <tags>F# Functional Programming</tags>
+        <dependencies>
+            <dependency id="xunit" version="1.9.2" />
+            <dependency id="FParsec" version="1.0.1" />
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="..\Prime\Prime\bin\Release\Prime.exe" target="lib\net40\Prime.exe" />
+        <file src="..\Prime\Prime\bin\Release\Prime.exe.config" target="lib\net40\Prime.exe.config" />
+        <file src="..\Prime\Prime\bin\Release\Prime.pdb" target="lib\net40\Prime.pdb" />
+        <file src="..\Prime\Prime\bin\Release\Prime.XML" target="lib\net40\Prime.XML" />
+    </files>
+</package>
