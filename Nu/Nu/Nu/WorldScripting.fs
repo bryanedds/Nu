@@ -28,10 +28,10 @@ module Scripting =
         | Event of obj Address
         // constructed as [property P] or [property P ././.]
         // does not allow for properties of parents or siblings, or for a wildcard in the relation
-        | Property of obj Relation * string
+        | Property of string * obj Relation
         // constructed as [properties P ././@ EntityDispatcher/Vanilla]
         // does not allow for properties of parents or siblings
-        | Properties of obj Relation * Classification * string
+        | Properties of string * obj Relation * Classification
         // constructed as [product stream stream]
         | Product of Stream * Stream
         // constructed as [sum stream stream]
