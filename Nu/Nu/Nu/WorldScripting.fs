@@ -227,6 +227,10 @@ module Scripting =
                             match tail with
                             | [Symbol.Atom (name, _); body] -> Let (name, symbolToExpr body, optOrigin) :> obj
                             | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. Requires 1 name and 1 body.", optOrigin) :> obj
+                        | "if" ->
+                            match tail with
+                            | [condition; consequent; alternative] -> If (symbolToExpr condition, symbolToExpr consequent, symbolToExpr alternative, optOrigin) :> obj
+                            | _ -> Violation ([!!"InvalidIfForm"], "Invalid if form. Requires 3 arguments.", optOrigin) :> obj
                         | "try" ->
                             match tail with
                             | [body; Symbols (handlers, _)] ->
@@ -244,10 +248,6 @@ module Scripting =
                                 | [] -> Try (symbolToExpr body, List.map (mapSnd symbolToExpr) handlers, optOrigin) :> obj
                                 | error :: _ -> Violation ([!!"InvalidTryForm"], error, optOrigin) :> obj
                             | _ -> Violation ([!!"InvalidTryForm"], "Invalid try form. Requires 1 body and a handler list.", optOrigin) :> obj
-                        | "if" ->
-                            match tail with
-                            | [condition; consequent; alternative] -> If (symbolToExpr condition, symbolToExpr consequent, symbolToExpr alternative, optOrigin) :> obj
-                            | _ -> Violation ([!!"InvalidIfForm"], "Invalid if form. Requires 3 arguments.", optOrigin) :> obj
                         | "break" ->
                             let content = symbolToExpr (Symbols (tail, optOrigin))
                             Break (content, optOrigin) :> obj
