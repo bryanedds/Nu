@@ -52,10 +52,10 @@ type NameConverter (targetType : Type) =
 [<AutoOpen>]
 module NameModule =
 
-    /// A name for use as a compenent of an Address.
+    /// A name for use as a part of a chain of names, such as part of an Address.
     /// NOTE: currently this type has a nice general capability of being a hash code carrying
-    /// string, but that capability is hard-wired into the related Address concept. TODO: pull out
-    /// this concept into its own type, then use it in here.
+    /// string, but that capability is hard-wired into this concept. TODO: pull out this capability
+    /// into its own type, then use it in here.
     type [<CustomEquality; CustomComparison; TypeConverter (typeof<NameConverter>)>] Name =
         private
             { NameStr : string
