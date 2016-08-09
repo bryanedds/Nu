@@ -73,7 +73,10 @@ module WorldEntityModule =
         member this.TagFacetsNp = PropertyTag.makeReadOnly this Property? FacetsNp this.GetFacetsNp
 
         /// Get a property value and type.
-        member this.GetProperty propertyName world = World.getEntityProperty propertyName this world
+        member this.GetPropertyValueAndType propertyName world = World.getEntityPropertyValueAndType propertyName this world
+
+        /// Get a property type.
+        member this.GetPropertyType propertyName world = this.GetPropertyValueAndType propertyName world |> snd
 
         /// Get a property value.
         member this.Get propertyName world : 'a = World.getEntityPropertyValue propertyName this world

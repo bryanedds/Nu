@@ -49,7 +49,7 @@ module Scripting =
                     "mum " + // the empty keyword
                     "some none isNone isSome map " +
                     // TODO: "either isLeft isRight left right " +
-                    "tuple unit fst snd thd nth " +
+                    "tuple unit fst snd thd fth fif nth " +
                     "list empty head tail cons isEmpty notEmpty filter fold contains " +
                     // TODO: "set emptySet add remove " +
                     // TODO: "table emptyTable tryFind find " +
