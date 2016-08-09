@@ -35,7 +35,10 @@ module WorldGroupModule =
         member this.TagPersistent = PropertyTag.makeReadOnly this Property? Persistent this.GetPersistent
 
         /// Get a property value and type.
-        member this.GetProperty propertyName world = World.getGroupProperty propertyName this world
+        member this.GetPropertyValueAndType propertyName world = World.getGroupPropertyValueAndType propertyName this world
+
+        /// Get a property type.
+        member this.GetPropertyType propertyName world = this.GetPropertyValueAndType propertyName world |> snd
 
         /// Get a property value.
         member this.Get propertyName world : 'a = World.getGroupPropertyValue propertyName this world

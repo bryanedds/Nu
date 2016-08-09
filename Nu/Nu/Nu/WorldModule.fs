@@ -716,7 +716,7 @@ module WorldModule =
                 | Left error -> Log.info ^ "There was an issue in applying a reloaded overlay: " + error; world
             | None -> world
 
-        static member internal getEntityProperty propertyName entity world =
+        static member internal getEntityPropertyValueAndType propertyName entity world =
             match propertyName with // NOTE: string match for speed
             | "Id" -> (World.getEntityId entity world :> obj, typeof<Guid>)
             | "Name" -> (World.getEntityName entity world :> obj, typeof<Name>)
@@ -741,7 +741,7 @@ module WorldModule =
             | _ -> let property = EntityState.getProperty propertyName (World.getEntityState entity world) in (property.PropertyValue, property.PropertyType)
 
         static member internal getEntityPropertyValue propertyName entity world : 'a =
-            let property = World.getEntityProperty propertyName entity world
+            let property = World.getEntityPropertyValueAndType propertyName entity world
             fst property :?> 'a
 
         static member internal setEntityPropertyValue propertyName (value : 'a) entity world =
@@ -1194,7 +1194,7 @@ module WorldModule =
         static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
         static member internal setGroupPersistent value group world = World.updateGroupState (fun groupState -> { groupState with Persistent = value }) Property? Persistent group world
 
-        static member internal getGroupProperty propertyName group world =
+        static member internal getGroupPropertyValueAndType propertyName group world =
             match propertyName with // NOTE: string match for speed
             | "Id" -> (World.getGroupId group world :> obj, typeof<Guid>)
             | "Name" -> (World.getGroupName group world :> obj, typeof<Name>)
@@ -1206,7 +1206,7 @@ module WorldModule =
             | _ -> let property = GroupState.getProperty propertyName (World.getGroupState group world) in (property.PropertyValue, property.PropertyType)
 
         static member internal getGroupPropertyValue propertyName group world : 'a =
-            let property = World.getGroupProperty propertyName group world
+            let property = World.getGroupPropertyValueAndType propertyName group world
             fst property :?> 'a
 
         static member internal setGroupPropertyValue propertyName (value : 'a) group world =
@@ -1403,7 +1403,7 @@ module WorldModule =
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
         static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) Property? Persistent screen world
 
-        static member internal getScreenProperty propertyName screen world =
+        static member internal getScreenPropertyValueAndType propertyName screen world =
             match propertyName with // NOTE: string match for speed
             | "Id" -> (World.getScreenId screen world :> obj, typeof<Guid>)
             | "Name" -> (World.getScreenName screen world :> obj, typeof<Name>)
@@ -1420,7 +1420,7 @@ module WorldModule =
             | _ -> let property = ScreenState.getProperty propertyName (World.getScreenState screen world) in (property.PropertyValue, property.PropertyType)
 
         static member internal getScreenPropertyValue propertyName screen world : 'a =
-            let property = World.getScreenProperty propertyName screen world
+            let property = World.getScreenPropertyValueAndType propertyName screen world
             fst property :?> 'a
 
         static member internal setScreenPropertyValue propertyName (value : 'a) screen world =
@@ -1697,7 +1697,7 @@ module WorldModule =
             let mousePositionWorld = World.mouseToWorld viewType mousePosition world
             entityPosition - mousePositionWorld
 
-        static member internal getGameProperty propertyName world =
+        static member internal getGamePropertyValueAndType propertyName world =
             match propertyName with // NOTE: string match for speed
             | "Id" -> (World.getGameId world :> obj, typeof<Guid>)
             | "Xtension" -> (World.getGameXtension world :> obj, typeof<Xtension>)
@@ -1711,7 +1711,7 @@ module WorldModule =
             | _ -> let property = GameState.getProperty propertyName (World.getGameState world) in (property.PropertyValue, property.PropertyType)
 
         static member internal getGamePropertyValue propertyName world : 'a =
-            let property = World.getGameProperty propertyName world
+            let property = World.getGamePropertyValueAndType propertyName world
             fst property :?> 'a
 
         static member internal setGamePropertyValue propertyName (value : 'a) world =

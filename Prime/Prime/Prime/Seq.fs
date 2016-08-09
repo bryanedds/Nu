@@ -31,8 +31,8 @@ let definitizePlus opts =
             (fun opt (anyNone, values) ->
                 match opt with
                 | Some value -> (anyNone, value :: values)
-                | None -> (true, values))
-            opts (false, [])
+                | None -> (false, values))
+            opts (true, [])
     (flag, Seq.ofList list)
 
 /// Fold with two inputs (plus state).

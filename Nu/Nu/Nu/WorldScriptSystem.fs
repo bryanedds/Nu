@@ -15,19 +15,27 @@ open Nu.Scripting
 [<AutoOpen>]
 module ScriptSystemModule =
 
-    let rec private importList (value : obj) optOrigin =
-        let objList = Reflection.objToObjList value
-        let evaledList = List.map (fun item -> importValue.[getTypeName item] item optOrigin) objList
-        List (evaledList, optOrigin)
+    let rec private tryImportList (value : obj) optOrigin =
+        try let objList = Reflection.objToObjList value
+            let optEvaledList =
+                List.map (fun item ->
+                    match Importers.TryGetValue (getTypeName item) with
+                    | (true, tryImport) -> tryImport item optOrigin
+                    | (false, _) -> None)
+                    objList
+            match List.definitizePlus optEvaledList with
+            | (true, evaledList) -> Some (List (evaledList, optOrigin))
+            | (false, _) -> None
+        with _ -> None
 
-    and private importValue : Dictionary<string, obj -> Origin option -> Expr> =
-        [(typeof<bool>.Name, (fun (value : obj) optOrigin -> Bool (value :?> bool, optOrigin)))
-         (typeof<int>.Name, (fun (value : obj) optOrigin -> Int (value :?> int, optOrigin)))
-         (typeof<int64>.Name, (fun (value : obj) optOrigin -> Int64 (value :?> int64, optOrigin)))
-         (typeof<single>.Name, (fun (value : obj) optOrigin -> Single (value :?> single, optOrigin)))
-         (typeof<double>.Name, (fun (value : obj) optOrigin -> Double (value :?> double, optOrigin)))
-         (typeof<Vector2>.Name, (fun (value : obj) optOrigin -> Vector2 (value :?> Vector2, optOrigin)))
-         (typedefof<_ list>.Name, importList)] |>
+    and private Importers : Dictionary<string, obj -> Origin option -> Expr option> =
+        [(typeof<bool>.Name, (fun (value : obj) optOrigin -> match value with :? bool as bool -> Some (Bool (bool, optOrigin)) | _ -> None))
+         (typeof<int>.Name, (fun (value : obj) optOrigin -> match value with :? int as int -> Some (Int (int, optOrigin)) | _ -> None))
+         (typeof<int64>.Name, (fun (value : obj) optOrigin -> match value with :? int64 as int64 -> Some (Int64 (int64, optOrigin)) | _ -> None))
+         (typeof<single>.Name, (fun (value : obj) optOrigin -> match value with :? single as single -> Some (Single (single, optOrigin)) | _ -> None))
+         (typeof<double>.Name, (fun (value : obj) optOrigin -> match value with :? double as double -> Some (Double (double, optOrigin)) | _ -> None))
+         (typeof<Vector2>.Name, (fun (value : obj) optOrigin -> match value with :? Vector2 as vector2 -> Some (Vector2 (vector2, optOrigin)) | _ -> None))
+         (typedefof<_ list>.Name, tryImportList)] |>
         dictC
 
     let rec private tryExportList (evaled : Expr) (ty : Type) =
@@ -35,13 +43,18 @@ module ScriptSystemModule =
         | List (evaleds, _) ->
             let garg = ty.GetGenericArguments () |> Array.item 0
             let itemType = if garg.IsGenericType then garg.GetGenericTypeDefinition () else garg
-            let optItems = List.map (fun evaledItem -> tryExportValue.[itemType.Name] evaledItem itemType) evaleds
+            let optItems =
+                List.map (fun evaledItem ->
+                    match Exporters.TryGetValue itemType.Name with
+                    | (true, tryExport) -> tryExport evaledItem itemType
+                    | (false, _) -> None)
+                    evaleds
             match List.definitizePlus optItems with
             | (true, items) -> Some (Reflection.objsToList ty items)
             | (false, _) -> None
         | _ -> None
 
-    and private tryExportValue : Dictionary<string, Expr -> Type -> obj option> =
+    and private Exporters : Dictionary<string, Expr -> Type -> obj option> =
         [(typeof<bool>.Name, (fun evaled _ -> match evaled with Bool (value, _) -> value :> obj |> Some | _ -> None))
          (typeof<int>.Name, (fun evaled _ -> match evaled with Int (value, _) -> value :> obj |> Some | _ -> None))
          (typeof<int64>.Name, (fun evaled _ -> match evaled with Int64 (value, _) -> value :> obj |> Some | _ -> None))
@@ -687,11 +700,11 @@ module ScriptSystemModule =
             | "tail" -> evalTail optOrigin name args env
             | "cons" -> evalCons optOrigin name args env
             | "isEmpty" -> evalIsEmpty optOrigin name args env
-            | "first" -> evalNth5 optOrigin name 0 args env
-            | "second" -> evalNth5 optOrigin name 1 args env
-            | "third" -> evalNth5 optOrigin name 2 args env
-            | "fourth" -> evalNth5 optOrigin name 3 args env
-            | "fifth" -> evalNth5 optOrigin name 4 args env
+            | "fst" -> evalNth5 optOrigin name 0 args env
+            | "snd" -> evalNth5 optOrigin name 1 args env
+            | "thd" -> evalNth5 optOrigin name 2 args env
+            | "fth" -> evalNth5 optOrigin name 3 args env
+            | "fif" -> evalNth5 optOrigin name 4 args env
             | "nth" -> evalNth optOrigin name args env
             | _ -> (Violation ([!!"InvalidFunctionTargetBinding"], "Cannot apply an non-existent binding.", optOrigin), env)
 
@@ -755,13 +768,13 @@ module ScriptSystemModule =
                     handlers
             | _ -> (evaled, env)
 
-        and evalGet name optExpr optOrigin env =
+        and evalGet propertyName optRelationArg optOrigin env =
             let context = Env.getContext env
             let eirAddressAndEnv =
-                match optExpr with
-                | Some expr ->
-                    let (evaled, env) = eval expr env
-                    match evaled with
+                match optRelationArg with
+                | Some relationArg ->
+                    let (evaledArg, env) = eval relationArg env
+                    match evaledArg with
                     | String (str, optOrigin)
                     | Keyword (str, optOrigin) ->
                         ignore optOrigin
@@ -775,15 +788,68 @@ module ScriptSystemModule =
                 let world = Env.getWorld env
                 let eirPropertyValueAndType =
                     match Address.getNames address with
-                    | [] -> Right (Simulants.Game.GetProperty name world)
-                    | [_] -> let screen = Screen.proxy (Address.changeType<obj, Screen> address) in Right (screen.GetProperty name world)
-                    | [_; _] -> let group = Group.proxy (Address.changeType<obj, Group> address) in Right (group.GetProperty name world)
-                    | [_; _; _] -> let entity = Entity.proxy (Address.changeType<obj, Entity> address) in Right (entity.GetProperty name world)
-                    | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or keyword.", optOrigin))
+                    | [] -> Right (Simulants.Game.GetPropertyValueAndType propertyName world)
+                    | [_] -> let screen = Screen.proxy (Address.changeType<obj, Screen> address) in Right (screen.GetPropertyValueAndType propertyName world)
+                    | [_; _] -> let group = Group.proxy (Address.changeType<obj, Group> address) in Right (group.GetPropertyValueAndType propertyName world)
+                    | [_; _; _] -> let entity = Entity.proxy (Address.changeType<obj, Entity> address) in Right (entity.GetPropertyValueAndType propertyName world)
+                    | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be game, screen, group, or entity.", optOrigin))
                 match eirPropertyValueAndType with
                 | Right (propertyValue, propertyType) ->
-                    let propertyValue = importValue.[propertyType.Name] propertyValue optOrigin
-                    (propertyValue, env)
+                    match Importers.TryGetValue propertyType.Name with
+                    | (true, tryImport) ->
+                        match tryImport propertyValue optOrigin with
+                        | Some propertyValue -> (propertyValue, env)
+                        | None -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting environment.", optOrigin), env)
+                    | (false, _) -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting environment.", optOrigin), env)
+                | Left violation -> (violation, env)
+            | Left violation -> (violation, env)
+
+        and evalSet propertyName optRelationArg propertyValueArg optOrigin env =
+            let context = Env.getContext env
+            let eirAddressAndEnv =
+                match optRelationArg with
+                | Some relationArg ->
+                    let (evaledArg, env) = eval relationArg env
+                    match evaledArg with
+                    | String (str, optOrigin)
+                    | Keyword (str, optOrigin) ->
+                        ignore optOrigin
+                        let relation = Relation.makeFromString str
+                        let address = Relation.resolve context relation
+                        Right (address, env)
+                    | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or keyword.", optOrigin))
+                | None -> Right (context, env)
+            let (propertyValue, env) = eval propertyValueArg env
+            match eirAddressAndEnv with
+            | Right (address, env) ->
+                let world = Env.getWorld env
+                let eirPropertyType =
+                    match Address.getNames address with
+                    | [] -> Right (Simulants.Game.GetPropertyType propertyName world)
+                    | [_] -> let screen = Screen.proxy (Address.changeType<obj, Screen> address) in Right (screen.GetPropertyType propertyName world)
+                    | [_; _] -> let group = Group.proxy (Address.changeType<obj, Group> address) in Right (group.GetPropertyType propertyName world)
+                    | [_; _; _] -> let entity = Entity.proxy (Address.changeType<obj, Entity> address) in Right (entity.GetPropertyType propertyName world)
+                    | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be game, screen, group, or entity.", optOrigin))
+                match eirPropertyType with
+                | Right propertyType ->
+                    match Exporters.TryGetValue propertyType.Name with
+                    | (true, tryExport) ->
+                        match tryExport propertyValue propertyType with
+                        | Some propertyValue ->
+                            let eirWorld =
+                                match Address.getNames address with
+                                | [] -> Right (Simulants.Game.Set propertyName propertyValue world)
+                                | [_] -> let screen = Screen.proxy (Address.changeType<obj, Screen> address) in Right (screen.Set propertyName propertyValue world)
+                                | [_; _] -> let group = Group.proxy (Address.changeType<obj, Group> address) in Right (group.Set propertyName propertyValue world)
+                                | [_; _; _] -> let entity = Entity.proxy (Address.changeType<obj, Entity> address) in Right (entity.Set propertyName propertyValue world)
+                                | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be game, screen, group, or entity.", optOrigin))
+                            match eirWorld with
+                            | Right world ->
+                                let env = Env.setWorld world env
+                                (Unit optOrigin, env)
+                            | Left violation -> (violation, env)
+                        | None -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be exported into simulant property.", optOrigin), env)
+                    | (false, _) -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be exported into simulant property.", optOrigin), env)
                 | Left violation -> (violation, env)
             | Left violation -> (violation, env)
 
