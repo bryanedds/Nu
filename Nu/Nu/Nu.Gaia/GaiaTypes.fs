@@ -99,7 +99,7 @@ and EntityPropertyDescriptor (property, attributes) =
 
             // TODO: comment
             | "FacetNames" ->
-                let facetNames = value :?> Name Set
+                let facetNames = value :?> string Set
                 let entity = entityTds.DescribedEntity
                 let world =
                     match World.trySetEntityFacetNames facetNames entity world with
@@ -115,7 +115,7 @@ and EntityPropertyDescriptor (property, attributes) =
                 let world =
                     match propertyName with
                     | "OptOverlayName" ->
-                        match World.trySetEntityOptOverlayName (value :?> Name option) entity world with
+                        match World.trySetEntityOptOverlayName (value :?> string option) entity world with
                         | Right world -> world
                         | Left error -> Log.trace error; world
                     | _ -> EntityPropertyValue.setValue property value entity world

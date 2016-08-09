@@ -16,4 +16,4 @@ module PlayerDispatcherModule =
              Define? ControlType Player]
 
         static member IntrinsicFacetNames =
-            [!!typeof<CharacterCameraFacet>.Name]
+            [typeof<CharacterCameraFacet>.Name]

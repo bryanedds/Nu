@@ -15,21 +15,21 @@ open Nu
 module Scripting =
 
     type [<NoComparison>] Command = // includes simulant get and set
-        { CommandName : Name
+        { CommandName : string
           CommandArgs : Expr list }
 
     and [<NoComparison>] Stream =
         // constructed as [constant v]
-        | Constant of Name
+        | Constant of string
         // constructed as [variable v]
-        | Variable of Name
+        | Variable of string
         // constructed as [event X/Y/Z]
         // does not allow for entity, group, screen, or game events
         | Event of obj Address
         // constructed as [property P] or [property P ././.]
         // does not allow for properties of parents or siblings, or for a wildcard in the relation
         | Property of string * obj Relation
-        // constructed as [properties P ././@ EntityDispatcher/Vanilla]
+        // constructed as [properties P ././@ EntityDispatcher] or [properties P ././@ EntityDispatcher Vanilla]
         // does not allow for properties of parents or siblings
         | Properties of string * obj Relation * Classification
         // constructed as [product stream stream]
@@ -81,11 +81,11 @@ module Scripting =
         | Phrase of Map<int, Expr> * Origin option
 
         (* Special Forms *)
-        | Binding of Name * Origin option
+        | Binding of string * Origin option
         | Apply of Expr list * Origin option
         | Quote of string * Origin option
-        | Let of Name * Expr * Origin option
-        | LetMany of (Name * Expr) list * Origin option
+        | Let of string * Expr * Origin option
+        | LetMany of (string * Expr) list * Origin option
         | Fun of string list * Expr * int * Origin option
         | If of Expr * Expr * Expr * Origin option
         | Cond of (Expr * Expr) list * Origin option
@@ -97,14 +97,14 @@ module Scripting =
         (* Special Declarations - only work at the top level, and always return unit. *)
         // accessible anywhere
         // constructed as [constant c 0]
-        | Constant of Name * Expr * Origin option
+        | Constant of string * Expr * Origin option
         // only accessible by variables and equalities
         // constructed as [variable v stream]
-        | Variable of Name * Stream * Guid * Origin option
+        | Variable of string * Stream * Guid * Origin option
         // constructed as [equality Density stream] or [equality Density ././Player stream]
         // does not allow for relations to parents or siblings, or for a wildcard in the relation
         | Equality of string * obj Relation * Stream * Guid * Origin option
-        // constructed as [equality Density ././@ BoxDispatcher/Vanilla stream]
+        // constructed as [equality Density ././@ BoxDispatcher stream] or [equality Density ././@ BoxDispatcher Vanilla stream]
         // does not allow for relations to parents or siblings
         | EqualityMany of string * obj Relation * Classification * Stream * Guid * Origin option
         // constructed as [handler stream command] or [handler stream [command]]
@@ -174,7 +174,7 @@ module Scripting =
                         let firstChar = str.[0]
                         if firstChar = '.' || Char.IsUpper firstChar
                         then Keyword (str, optOrigin) :> obj
-                        else Binding (!!str, optOrigin) :> obj
+                        else Binding (str, optOrigin) :> obj
                 | Symbol.Number (str, optOrigin) ->
                     match Int32.TryParse str with
                     | (true, int) -> Int (int, optOrigin) :> obj
@@ -225,7 +225,7 @@ module Scripting =
                             | _ -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Requires 1 tag.", optOrigin) :> obj
                         | "let" ->
                             match tail with
-                            | [Symbol.Atom (name, _); body] -> Let (!!name, symbolToExpr body, optOrigin) :> obj
+                            | [Symbol.Atom (name, _); body] -> Let (name, symbolToExpr body, optOrigin) :> obj
                             | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. Requires 1 name and 1 body.", optOrigin) :> obj
                         | "try" ->
                             match tail with
@@ -237,7 +237,7 @@ module Scripting =
                                             | Symbols ([Atom (categoriesStr, _); handlerBody], _) ->
                                                 Right (Name.split [|'/'|] !!categoriesStr, handlerBody)
                                             | _ ->
-                                                Left ("Invalid try handler form for handler #" + scstring (i + 1) + ". Requires 1 path and 1 body."))
+                                                Left ("Invalid try handler form for handler #" + scstring (inc i) + ". Requires 1 path and 1 body."))
                                         handlers
                                 let (errors, handlers) = Either.split eirHandlers
                                 match errors with
@@ -251,7 +251,7 @@ module Scripting =
                         | "break" ->
                             let content = symbolToExpr (Symbols (tail, optOrigin))
                             Break (content, optOrigin) :> obj
-                        | _ -> Apply (Binding (!!name, nameOptOrigin) :: List.map symbolToExpr tail, optOrigin) :> obj
+                        | _ -> Apply (Binding (name, nameOptOrigin) :: List.map symbolToExpr tail, optOrigin) :> obj
                     | _ -> Apply (List.map symbolToExpr symbols, optOrigin) :> obj
             | :? Expr -> source
             | _ -> failconv "Invalid ExprConverter conversion from source." None
@@ -259,7 +259,7 @@ module Scripting =
     type [<NoEquality; NoComparison>] Env =
         private
             { Rebinding : bool // rebinding should be enabled in Terminal or perhaps when reloading existing scripts.
-              Bindings : Dictionary<Name, Expr>
+              Bindings : Dictionary<string, Expr>
               Context : obj Address
               World : World }
 

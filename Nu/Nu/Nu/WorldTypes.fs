@@ -261,7 +261,7 @@ module WorldTypes =
         { Id : Guid
           Xtension : Xtension
           DispatcherNp : GameDispatcher
-          Specialization : Name
+          Specialization : string
           CreationTimeStampNp : int64
           OptSelectedScreen : Screen option
           OptScreenTransitionDestination : Screen option
@@ -312,7 +312,7 @@ module WorldTypes =
           Name : Name
           Xtension : Xtension
           DispatcherNp : ScreenDispatcher
-          Specialization : Name
+          Specialization : string
           CreationTimeStampNp : int64
           EntityTreeNp : Entity QuadTree MutantCache
           TransitionStateNp : TransitionState
@@ -370,7 +370,7 @@ module WorldTypes =
           Name : Name
           Xtension : Xtension
           DispatcherNp : GroupDispatcher
-          Specialization : Name
+          Specialization : string
           CreationTimeStampNp : int64
           Persistent : bool }
 
@@ -415,9 +415,9 @@ module WorldTypes =
           Name : Name
           Xtension : Xtension
           DispatcherNp : EntityDispatcher
-          Specialization : Name
+          Specialization : string
           CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
-          OptOverlayName : Name option
+          OptOverlayName : string option
           Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
@@ -429,7 +429,7 @@ module WorldTypes =
           PublishChanges : bool
           PublishUpdatesNp : bool
           Persistent : bool
-          FacetNames : Name Set
+          FacetNames : string Set
           FacetsNp : Facet list }
 
         /// Get an dynamic property and its type information.
@@ -500,48 +500,48 @@ module WorldTypes =
 
     /// Describes a game value independent of the engine.
     and [<NoComparison>] GameDescriptor =
-        { GameDispatcher : Name
+        { GameDispatcher : string
           GameProperties : Map<string, Symbol>
           Screens : ScreenDescriptor list }
 
         /// The empty game descriptor.
         static member empty =
-            { GameDispatcher = Name.empty
+            { GameDispatcher = String.Empty
               GameProperties = Map.empty
               Screens = [] }
 
     /// Describes a screen value independent of the engine.
     and [<NoComparison>] ScreenDescriptor =
-        { ScreenDispatcher : Name
+        { ScreenDispatcher : string
           ScreenProperties : Map<string, Symbol>
           Groups : GroupDescriptor list }
 
         /// The empty screen descriptor.
         static member empty =
-            { ScreenDispatcher = Name.empty
+            { ScreenDispatcher = String.Empty
               ScreenProperties = Map.empty
               Groups = [] }
 
     /// Describes a group value independent of the engine.
     and [<NoComparison>] GroupDescriptor =
-        { GroupDispatcher : Name
+        { GroupDispatcher : string
           GroupProperties : Map<string, Symbol>
           Entities : EntityDescriptor list }
 
         /// The empty group descriptor.
         static member empty =
-            { GroupDispatcher = Name.empty
+            { GroupDispatcher = String.Empty
               GroupProperties = Map.empty
               Entities = [] }
 
     /// Describes an entity value independent of the engine.
     and [<NoComparison>] EntityDescriptor =
-        { EntityDispatcher : Name
+        { EntityDispatcher : string
           EntityProperties : Map<string, Symbol> }
 
         /// The empty entity descriptor.
         static member empty =
-            { EntityDispatcher = Name.empty
+            { EntityDispatcher = String.Empty
               EntityProperties = Map.empty }
     
     /// The game type that hosts the various screens used to navigate through a game.
@@ -726,11 +726,11 @@ module WorldTypes =
     /// I would prefer this type to be inlined in World, but it has been extracted to its own white-box
     /// type for efficiency reasons.
     and [<ReferenceEquality>] internal Dispatchers =
-        { GameDispatchers : Map<Name, GameDispatcher>
-          ScreenDispatchers : Map<Name, ScreenDispatcher>
-          GroupDispatchers : Map<Name, GroupDispatcher>
-          EntityDispatchers : Map<Name, EntityDispatcher>
-          Facets : Map<Name, Facet>
+        { GameDispatchers : Map<string, GameDispatcher>
+          ScreenDispatchers : Map<string, ScreenDispatcher>
+          GroupDispatchers : Map<string, GroupDispatcher>
+          EntityDispatchers : Map<string, EntityDispatcher>
+          Facets : Map<string, Facet>
           RebuildEntityTree : Screen -> World -> Entity QuadTree }
     
     /// The world, in a functional programming sense. Hosts the game object, the dependencies needed
@@ -805,7 +805,7 @@ module WorldTypes =
     
         /// Make the overlay routes that will allow Nu to use different overlays for the specified
         /// classifications.
-        abstract MakeOverlayRoutes : unit -> (Classification * Name option) list
+        abstract MakeOverlayRoutes : unit -> (Classification * string option) list
         default this.MakeOverlayRoutes () = []
 
 /// A simulant in the world.
