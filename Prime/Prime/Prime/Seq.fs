@@ -24,6 +24,17 @@ let inline headOrDefault seq aDefault =
 let inline definitize opts =
     Seq.choose id opts
 
+/// Convert option values to definite values, returning an additional flag to indicate that any were none.
+let definitizePlus opts =
+    let (flag, list) =
+        Seq.foldBack
+            (fun opt (anyNone, values) ->
+                match opt with
+                | Some value -> (anyNone, value :: values)
+                | None -> (true, values))
+            opts (false, [])
+    (flag, Seq.ofList list)
+
 /// Fold with two inputs (plus state).
 let fold2 folder state seq seq2 =
     let zipped = Seq.zip seq seq2

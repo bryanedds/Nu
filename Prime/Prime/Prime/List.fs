@@ -143,6 +143,11 @@ let allButLast list =
 let definitize opts =
     List.choose id opts
 
+/// Convert option values to definite values, returning an additional flag to indicate that any were none.
+let definitizePlus opts =
+    let (flag, seq) = Seq.definitizePlus opts
+    (flag, List.ofSeq seq)
+
 /// Make a list of options an all or nothing proposition.
 /// TODO: optimize with program fusion.
 let allOrEmpty (opts : 'a option list) =

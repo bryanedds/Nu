@@ -68,7 +68,7 @@ module WorldScreenModule =
 
         static member private removeScreen screen world =
             let removeGroups screen world =
-                let groups = World.proxyGroups screen world
+                let groups = World.getGroups screen world
                 World.destroyGroupsImmediate groups world
             World.removeScreen3 removeGroups screen world
 
@@ -83,7 +83,7 @@ module WorldScreenModule =
             dispatcher.Actualize (screen, world)
 
         /// Get all the world's screens.
-        static member proxyScreens world =
+        static member getScreens world =
             Vmap.fold
                 (fun state _ (screenAddress, _) -> Screen.proxy screenAddress :: state)
                 [] (World.getScreenDirectory world) :> _ seq
@@ -122,7 +122,7 @@ module WorldScreenModule =
         /// Write a screen to a screen descriptor.
         static member writeScreen screen screenDescriptor world =
             let writeGroups screen screenDescriptor world =
-                let groups = World.proxyGroups screen world
+                let groups = World.getGroups screen world
                 World.writeGroups groups screenDescriptor world
             World.writeScreen4 writeGroups screen screenDescriptor world
 

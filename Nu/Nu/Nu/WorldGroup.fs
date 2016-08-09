@@ -50,7 +50,7 @@ module WorldGroupModule =
 
         static member private removeGroup group world =
             let removeEntities group world =
-                let entities = World.proxyEntities group world
+                let entities = World.getEntities group world
                 World.destroyEntitiesImmediate entities world
             World.removeGroup3 removeEntities group world
 
@@ -65,7 +65,7 @@ module WorldGroupModule =
             dispatcher.Actualize (group, world)
 
         /// Get all the groups in a screen.
-        static member proxyGroups screen world =
+        static member getGroups screen world =
             match Address.getNames screen.ScreenAddress with
             | [screenName] ->
                 match Vmap.tryFind screenName ^ World.getScreenDirectory world with
@@ -105,7 +105,7 @@ module WorldGroupModule =
         /// Write a group to a group descriptor.
         static member writeGroup group groupDescriptor world =
             let writeEntities group groupDescriptor world =
-                let entities = World.proxyEntities group world
+                let entities = World.getEntities group world
                 World.writeEntities entities groupDescriptor world
             World.writeGroup4 writeEntities group groupDescriptor world
 

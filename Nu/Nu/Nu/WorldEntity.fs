@@ -147,8 +147,8 @@ module WorldEntityModule =
             let world = dispatcher.Actualize (entity, world)
             List.foldBack (fun (facet : Facet) world -> facet.Actualize (entity, world)) facets world
 
-        /// Proxy all the entities contained by a group.
-        static member proxyEntities group world =
+        /// Get all the entities contained by a group.
+        static member getEntities group world =
             match Address.getNames group.GroupAddress with
             | [screenName; groupName] ->
                 match Vmap.tryFind screenName ^ World.getScreenDirectory world with

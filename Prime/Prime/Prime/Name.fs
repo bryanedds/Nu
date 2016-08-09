@@ -66,8 +66,11 @@ module NameModule =
 #if DEBUG
             if nameStr.IndexOf '.' <> -1 then failwith ^ "Invalid name '" + nameStr + "'; must have no dot characters."
             elif nameStr.IndexOfAny Symbol.WhitespaceCharsArray <> -1 then failwith ^ "Invalid name '" + nameStr + "'; must have no whitespace characters."
-            elif Guid.TryParse nameStr |> fst |> not && Symbol.isNumber nameStr // OPTIMIZATION: short-circuited to avoid hitting fparsec
-            then failwith ^ "Invalid name '" + nameStr + "'; cannot be a number."
+            elif
+                nameStr.Length > 0 && Char.IsLetter nameStr.[0] |> not && // OPTIMIZATION: short-circuited to avoid hitting fparsec
+                Guid.TryParse nameStr |> fst |> not && // OPTIMIZATION: short-circuited to avoid hitting fparsec
+                Symbol.isNumber nameStr then
+                failwith ^ "Invalid name '" + nameStr + "'; cannot be a number."
 #endif
             { NameStr = nameStr; HashCode = nameStr.GetHashCode () }
     
