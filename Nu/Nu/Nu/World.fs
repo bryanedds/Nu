@@ -109,7 +109,7 @@ module WorldModule2 =
 
         static member internal rebuildEntityTreeImpl screen world =
             let tree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
-            let entities = screen |> flip World.proxyGroups world |> Seq.map (flip World.proxyEntities world) |> Seq.concat
+            let entities = screen |> flip World.getGroups world |> Seq.map (flip World.getEntities world) |> Seq.concat
             for entity in entities do
                 let entityMaxBounds = World.getEntityBoundsMax entity world
                 QuadTree.addElement (entity.GetOmnipresent world || entity.GetViewType world = Absolute) entityMaxBounds entity tree
@@ -373,7 +373,7 @@ module WorldModule2 =
                 
                     // update overlayer and apply overlays to all entities
                     let world = World.setOverlayer overlayer world
-                    let entities = World.proxyEntities1 world
+                    let entities = World.getEntities1 world
                     let world = Seq.fold (World.applyEntityOverlay oldOverlayer overlayer) world entities
                     Right (overlayer, world)
 
@@ -417,7 +417,7 @@ module WorldModule2 =
             // processed.
             let world = World.clearSubsystemsMessages world
             let world = World.addPhysicsMessage RebuildPhysicsHackMessage world
-            let entities = World.proxyEntities group world
+            let entities = World.getEntities group world
             Seq.fold (flip World.propagateEntityPhysics) world entities
 
         static member private processSubsystems subsystemType world =
@@ -518,7 +518,7 @@ module WorldModule2 =
             | Some selectedScreen ->
                 let world = World.updateScreen selectedScreen world
                 let world = World.updateScreenTransition selectedScreen world
-                let groups = World.proxyGroups selectedScreen world
+                let groups = World.getGroups selectedScreen world
                 let world = Seq.fold (fun world group -> World.updateGroup group world) world groups
                 let viewBounds = World.getViewBoundsRelative world
                 let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTreeNp world)
@@ -560,7 +560,7 @@ module WorldModule2 =
                     | IncomingState -> World.actualizeScreenTransition (World.getEyeCenter world) (World.getEyeSize world) selectedScreen (selectedScreen.GetIncoming world) world
                     | OutgoingState -> World.actualizeScreenTransition (World.getEyeCenter world) (World.getEyeSize world) selectedScreen (selectedScreen.GetOutgoing world) world
                     | IdlingState -> world
-                let groups = World.proxyGroups selectedScreen world
+                let groups = World.getGroups selectedScreen world
                 let world = Seq.fold (fun world group -> World.actualizeGroup group world) world groups
                 let viewBounds = World.getViewBoundsRelative world
                 let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTreeNp world)

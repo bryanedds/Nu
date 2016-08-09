@@ -106,15 +106,15 @@ module WorldGameModule =
             dispatcher.Actualize (Simulants.Game, world)
 
         // Get all the entities in the world.
-        static member proxyEntities1 world =
-            World.proxyGroups1 world |>
-            Seq.map (fun group -> World.proxyEntities group world) |>
+        static member getEntities1 world =
+            World.getGroups1 world |>
+            Seq.map (fun group -> World.getEntities group world) |>
             Seq.concat
 
         // Get all the groups in the world.
-        static member proxyGroups1 world =
-            World.proxyScreens world |>
-            Seq.map (fun screen -> World.proxyGroups screen world) |>
+        static member getGroups1 world =
+            World.getScreens world |>
+            Seq.map (fun screen -> World.getGroups screen world) |>
             Seq.concat
 
         /// Determine if an entity is selected by being in a group of the currently selected screeen.
@@ -148,7 +148,7 @@ module WorldGameModule =
         /// Write a game to a game descriptor.
         static member writeGame gameDescriptor world =
             let writeScreens gameDescriptor world =
-                let screens = World.proxyScreens world
+                let screens = World.getScreens world
                 World.writeScreens screens gameDescriptor world
             World.writeGame3 writeScreens gameDescriptor world
 

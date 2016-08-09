@@ -281,7 +281,7 @@ module GameplayScreenModule =
 
         static let createSectionFromFile filePath sectionName xShift world =
             let (section, world) = World.readGroupFromFile filePath (Some sectionName) Simulants.Gameplay world
-            let sectionEntities = World.proxyEntities section world
+            let sectionEntities = World.getEntities section world
             shiftEntities xShift sectionEntities world
 
         static let createSectionGroups world =

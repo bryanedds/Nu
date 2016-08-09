@@ -34,22 +34,22 @@ module GameplayDispatcherModule =
     type GameplayDispatcher () =
         inherit ScreenDispatcher ()
 
-        static let proxyCharacters world =
-            let entities = World.proxyEntities Simulants.Scene world
+        static let getCharacters world =
+            let entities = World.getEntities Simulants.Scene world
             Seq.filter (fun (entity : Entity) -> entity.DispatchesAs typeof<CharacterDispatcher> world) entities
 
-        static let proxyOptCharacterAtPosition position world =
-            let characters = proxyCharacters world
+        static let tryGetCharacterAtPosition position world =
+            let characters = getCharacters world
             Seq.tryFind (fun (character : Entity) -> character.GetPosition world = position) characters
         
-        static let proxyOptCharacterInDirection position direction world =
-            proxyOptCharacterAtPosition (position + dtovf direction) world
+        static let tryGetCharacterInDirection position direction world =
+            tryGetCharacterAtPosition (position + dtovf direction) world
         
-        static let proxyCharacterInDirection position direction world =
-            Option.get ^ proxyOptCharacterInDirection position direction world
+        static let getCharacterInDirection position direction world =
+            Option.get ^ tryGetCharacterInDirection position direction world
 
-        static let proxyEnemies world =
-            let entities = World.proxyEntities Simulants.Scene world
+        static let getEnemies world =
+            let entities = World.getEntities Simulants.Scene world
             Seq.filter (fun (entity : Entity) -> entity.DispatchesAs typeof<EnemyDispatcher> world) entities
 
         static let makeAttackTurn targetPositionM =
@@ -142,7 +142,7 @@ module GameplayDispatcherModule =
                 enemies
 
         static let anyTurnsInProgress world =
-            let enemies = proxyEnemies world
+            let enemies = getEnemies world
             anyTurnsInProgress2 Simulants.Player enemies world
 
         static let updateCharacterByWalk walkDescriptor (character : Entity) world =
@@ -252,7 +252,7 @@ module GameplayDispatcherModule =
 
         static let determinePlayerTurnFromTouch touchPosition world =
             let fieldMap = Simulants.Field.GetFieldMapNp world
-            let enemies = proxyEnemies world
+            let enemies = getEnemies world
             let enemyPositions = Seq.map (fun (enemy : Entity) -> enemy.GetPosition world) enemies
             if not ^ anyTurnsInProgress2 Simulants.Player enemies world then
                 let touchPositionW = World.mouseToWorld Relative touchPosition world
@@ -272,7 +272,7 @@ module GameplayDispatcherModule =
 
         static let determinePlayerTurnFromDetailNavigation direction world =
             let fieldMap = Simulants.Field.GetFieldMapNp world
-            let enemies = proxyEnemies world
+            let enemies = getEnemies world
             let enemyPositions = Seq.map (fun (enemy : Entity) -> enemy.GetPosition world) enemies
             if not ^ anyTurnsInProgress2 Simulants.Player enemies world then
                 let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters fieldMap.FieldTiles enemyPositions
@@ -292,7 +292,7 @@ module GameplayDispatcherModule =
                 let walkDescriptor = navigationDescriptor.WalkDescriptor
                 if Simulants.Player.GetPosition world = vmtovf walkDescriptor.WalkOriginM then
                     let fieldMap = Simulants.Field.GetFieldMapNp world
-                    let enemies = proxyEnemies world
+                    let enemies = getEnemies world
                     let enemyPositions = Seq.map (fun (enemy : Entity) -> enemy.GetPosition world) enemies
                     let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters fieldMap.FieldTiles enemyPositions
                     let walkDestinationM = walkDescriptor.WalkOriginM + dtovm walkDescriptor.WalkDirection
@@ -339,7 +339,7 @@ module GameplayDispatcherModule =
             // TODO: implement animations
             if actionDescriptor.ActionTicks = Constants.InfinityRpg.ActionTicksMax then
                 let reactor =
-                    proxyCharacterInDirection
+                    getCharacterInDirection
                         (initiator.GetPosition world)
                         (initiator.GetCharacterAnimationState world).Direction
                         world
@@ -417,7 +417,7 @@ module GameplayDispatcherModule =
             // construct occupation map
             let occupationMap =
                 let fieldMap = Simulants.Field.GetFieldMapNp world
-                let enemies = proxyEnemies world
+                let enemies = getEnemies world
                 let enemyPositions = Seq.map (fun (enemy : Entity) -> enemy.GetPosition world) enemies
                 OccupationMap.makeFromFieldTilesAndCharactersAndDesiredTurn fieldMap.FieldTiles enemyPositions playerTurn
 
@@ -441,7 +441,7 @@ module GameplayDispatcherModule =
                 | Some (Action _)
                 | Some (Navigation _) ->
                     let rand = Rand.makeFromSeedState ^ Simulants.Gameplay.GetOngoingRandState world
-                    let enemies = proxyEnemies world
+                    let enemies = getEnemies world
                     let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns occupationMap Simulants.Player enemies rand world
                     let world = Seq.fold2 (fun world (enemy : Entity) turn -> enemy.SetDesiredTurn turn world) world enemies enemyDesiredTurns
                     Simulants.Gameplay.SetOngoingRandState (Rand.getState rand) world
@@ -450,7 +450,7 @@ module GameplayDispatcherModule =
 
             // run enemy activities in accordance with the player's current activity
             let world =
-                let enemies = proxyEnemies world
+                let enemies = getEnemies world
                 match Simulants.Player.GetActivityState world with
                 | Action _ -> world
                 | Navigation _ 

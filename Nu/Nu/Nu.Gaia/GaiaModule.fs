@@ -43,7 +43,7 @@ module Gaia =
 
     let private getPickableEntities world =
         let selectedGroup = (World.getUserState world).SelectedGroup
-        World.proxyEntities selectedGroup world
+        World.getEntities selectedGroup world
 
     let private getSnaps (form : GaiaForm) =
         let positionSnap = snd ^ Int32.TryParse form.positionSnapTextBox.Text
@@ -102,13 +102,13 @@ module Gaia =
 
     let private populateTreeViewNodes (form : GaiaForm) world =
         let selectedGroup = (World.getUserState world).SelectedGroup
-        for entity in World.proxyEntities selectedGroup world do
+        for entity in World.getEntities selectedGroup world do
             addTreeViewNode form entity world
 
     let private populateGroupTabs (form : GaiaForm) world =
         let groupTabPages = form.groupTabs.TabPages
         groupTabPages.Clear ()
-        let groups = World.proxyGroups Simulants.EditorScreen world
+        let groups = World.getGroups Simulants.EditorScreen world
         for group in groups do
             let groupNameStr = Name.getNameStr group.GroupName
             groupTabPages.Add (groupNameStr, groupNameStr)
@@ -809,7 +809,7 @@ module Gaia =
         match World.getUserState world : obj with
         | :? unit ->
             if World.getSelectedScreen world = Simulants.EditorScreen then
-                if World.proxyGroups Simulants.EditorScreen world |> Seq.isEmpty |> not then
+                if World.getGroups Simulants.EditorScreen world |> Seq.isEmpty |> not then
                     let world = flip World.updateUserState world (fun _ ->
                         { TargetDir = targetDir
                           RightClickPosition = Vector2.Zero

@@ -15,19 +15,40 @@ open Nu.Scripting
 [<AutoOpen>]
 module ScriptSystemModule =
 
-    let rec private injectList (value : obj) optOrigin =
+    let rec private importList (value : obj) optOrigin =
         let objList = Reflection.objToObjList value
-        let evaledList = List.map (fun item -> injectValue.[getTypeName item] item optOrigin) objList
+        let evaledList = List.map (fun item -> importValue.[getTypeName item] item optOrigin) objList
         List (evaledList, optOrigin)
 
-    and private injectValue : Dictionary<string, obj -> Origin option -> Expr> =
+    and private importValue : Dictionary<string, obj -> Origin option -> Expr> =
         [(typeof<bool>.Name, (fun (value : obj) optOrigin -> Bool (value :?> bool, optOrigin)))
          (typeof<int>.Name, (fun (value : obj) optOrigin -> Int (value :?> int, optOrigin)))
          (typeof<int64>.Name, (fun (value : obj) optOrigin -> Int64 (value :?> int64, optOrigin)))
          (typeof<single>.Name, (fun (value : obj) optOrigin -> Single (value :?> single, optOrigin)))
          (typeof<double>.Name, (fun (value : obj) optOrigin -> Double (value :?> double, optOrigin)))
          (typeof<Vector2>.Name, (fun (value : obj) optOrigin -> Vector2 (value :?> Vector2, optOrigin)))
-         (typeof<_ list>.Name, injectList)] |>
+         (typedefof<_ list>.Name, importList)] |>
+        dictC
+
+    let rec private tryExportList (evaled : Expr) (ty : Type) =
+        match evaled with
+        | List (evaleds, _) ->
+            let garg = ty.GetGenericArguments () |> Array.item 0
+            let itemType = if garg.IsGenericType then garg.GetGenericTypeDefinition () else garg
+            let optItems = List.map (fun evaledItem -> tryExportValue.[itemType.Name] evaledItem itemType) evaleds
+            match List.definitizePlus optItems with
+            | (true, items) -> Some (Reflection.objsToList ty items)
+            | (false, _) -> None
+        | _ -> None
+
+    and private tryExportValue : Dictionary<string, Expr -> Type -> obj option> =
+        [(typeof<bool>.Name, (fun evaled _ -> match evaled with Bool (value, _) -> value :> obj |> Some | _ -> None))
+         (typeof<int>.Name, (fun evaled _ -> match evaled with Int (value, _) -> value :> obj |> Some | _ -> None))
+         (typeof<int64>.Name, (fun evaled _ -> match evaled with Int64 (value, _) -> value :> obj |> Some | _ -> None))
+         (typeof<single>.Name, (fun evaled _ -> match evaled with Single (value, _) -> value :> obj |> Some | _ -> None))
+         (typeof<double>.Name, (fun evaled _ -> match evaled with Double (value, _) -> value :> obj |> Some | _ -> None))
+         (typeof<Vector2>.Name, (fun evaled _ -> match evaled with Vector2 (value, _) -> value :> obj |> Some | _ -> None))
+         (typedefof<_ list>.Name, tryExportList)] |>
         dictC
 
     [<RequireQualifiedAccess>]
@@ -761,7 +782,7 @@ module ScriptSystemModule =
                     | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or keyword.", optOrigin))
                 match eirPropertyValueAndType with
                 | Right (propertyValue, propertyType) ->
-                    let propertyValue = injectValue.[propertyType.Name] propertyValue optOrigin
+                    let propertyValue = importValue.[propertyType.Name] propertyValue optOrigin
                     (propertyValue, env)
                 | Left violation -> (violation, env)
             | Left violation -> (violation, env)
@@ -800,9 +821,9 @@ module ScriptSystemModule =
             | GetFrom (name, expr, optOrigin) -> evalGet name (Some expr) optOrigin env
             | Constant (_, _, optOrigin) -> (Unit optOrigin, env)
             | Variable (_, _, _, optOrigin) -> (Unit optOrigin, env)
-            | Equality (_, _, _, _, optOrigin) -> (Unit optOrigin, env)
-            | EqualityMany (_, _, _, _, _, optOrigin) -> (Unit optOrigin, env)
-            | Handler (_, _, _, optOrigin) -> (Unit optOrigin, env)
+            | Equate (_, _, _, _, optOrigin) -> (Unit optOrigin, env)
+            | EquateMany (_, _, _, _, _, optOrigin) -> (Unit optOrigin, env)
+            | Handle (_, _, _, optOrigin) -> (Unit optOrigin, env)
 
     /// An abstract data type for executing scripts.
     /// Has an unused type param to give it a unique name.

@@ -46,14 +46,14 @@ module Scripting =
                     "length normal " +
                     "cross dot " +
                     "violation bool int int64 single double string " +
-                    "kempty " +
+                    "mum " + // the empty keyword
                     "some none isNone isSome map " +
                     // TODO: "either isLeft isRight left right " +
                     "tuple unit fst snd thd nth " +
                     "list empty head tail cons isEmpty notEmpty filter fold contains " +
-                    // TODO: "set sempty add remove " +
-                    // TODO: "table tempty tryFind find " +
-                    "pempty " +
+                    // TODO: "set emptySet add remove " +
+                    // TODO: "table emptyTable tryFind find " +
+                    "emptyPhrase " +
                     "let fun if cond try break get " +
                     "constant variable equality handler " +
                     "tickRate tickTime updateCount",
@@ -101,14 +101,14 @@ module Scripting =
         // only accessible by variables and equalities
         // constructed as [variable v stream]
         | Variable of string * Stream * Guid * Origin option
-        // constructed as [equality Density stream] or [equality Density ././Player stream]
+        // constructed as [equate Density stream] or [equate Density ././Player stream]
         // does not allow for relations to parents or siblings, or for a wildcard in the relation
-        | Equality of string * obj Relation * Stream * Guid * Origin option
-        // constructed as [equality Density ././@ BoxDispatcher stream] or [equality Density ././@ BoxDispatcher Vanilla stream]
+        | Equate of string * obj Relation * Stream * Guid * Origin option
+        // constructed as [equate Density ././@ BoxDispatcher stream] or [equate Density ././@ [BoxDispatcher Vanilla] stream]
         // does not allow for relations to parents or siblings
-        | EqualityMany of string * obj Relation * Classification * Stream * Guid * Origin option
-        // constructed as [handler stream command] or [handler stream [command]]
-        | Handler of Stream * Command list * Guid * Origin option
+        | EquateMany of string * obj Relation * Classification * Stream * Guid * Origin option
+        // constructed as [handle stream command] or [handle stream [command]]
+        | Handle of Stream * Command list * Guid * Origin option
 
         static member getOptOrigin term =
             match term with
@@ -140,9 +140,9 @@ module Scripting =
             | GetFrom (_, _, optOrigin)
             | Constant (_, _, optOrigin)
             | Variable (_, _, _, optOrigin)
-            | Equality (_, _, _, _, optOrigin)
-            | EqualityMany (_, _, _, _, _, optOrigin)
-            | Handler (_, _, _, optOrigin) -> optOrigin
+            | Equate (_, _, _, _, optOrigin)
+            | EquateMany (_, _, _, _, _, optOrigin)
+            | Handle (_, _, _, optOrigin) -> optOrigin
 
     /// Converts Expr types.
     and ExprConverter () =
