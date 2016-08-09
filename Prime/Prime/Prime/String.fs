@@ -28,6 +28,13 @@ module String =
     let clean (str : string) =
         str.Replace ("\"", "")
 
+    /// Capitalize a string.
+    let capitalize (str : string) =
+        match str.ToCharArray () |> List.ofArray with
+        | [] -> str
+        | [head] -> [|Char.ToUpperInvariant head|] |> String
+        | head :: tail -> Char.ToUpperInvariant head :: tail |> Array.ofList |> String
+
     /// Textualize a string for usage as text.
     let textualize (str : string) =
         (clean str).Replace ('_', '\"')

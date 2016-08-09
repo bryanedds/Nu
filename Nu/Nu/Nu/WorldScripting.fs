@@ -50,20 +50,21 @@ module Scripting =
                     "some none isNone isSome map " +
                     // TODO: "either isLeft isRight left right " +
                     "tuple unit fst snd thd nth " +
-                    "list lempty head tail cons isEmpty notEmpty filter fold contains " +
+                    "list empty head tail cons isEmpty notEmpty filter fold contains " +
                     // TODO: "set sempty add remove " +
                     // TODO: "table tempty tryFind find " +
                     "pempty " +
-                    "tickRate tickTime updateCount " +
-                    "constant variable equality rule",
+                    "let fun if cond try break get " +
+                    "constant variable equality handler " +
+                    "tickRate tickTime updateCount",
                     "");
           TypeConverter (typeof<ExprConverter>);
           NoComparison>]
         Expr =
 
         (* Primitive Value Types *)
-        | Violation of string list * string * Origin option
-        | Unit of Origin option
+        | Violation of Name list * string * Origin option // [violation X/Y/Z "Error message."]
+        | Unit of Origin option // []
         | Bool of bool * Origin option
         | Int of int * Origin option
         | Int64 of int64 * Origin option
@@ -88,11 +89,10 @@ module Scripting =
         | Fun of string list * Expr * int * Origin option
         | If of Expr * Expr * Expr * Origin option
         | Cond of (Expr * Expr) list * Origin option
-        | Try of Expr * (string list * Expr) list * Origin option
+        | Try of Expr * (Name list * Expr) list * Origin option
         | Break of Expr * Origin option
-        // constructed as [get Density] or [get Density ././Player]
-        // does not allow for relations to parents or siblings, or for a wildcard in the relation
-        | Get of string * obj Relation * Origin option
+        | Get of string * Origin option
+        | GetFrom of string * Expr * Origin option
 
         (* Special Declarations - only work at the top level, and always return unit. *)
         // accessible anywhere
@@ -101,14 +101,14 @@ module Scripting =
         // only accessible by variables and equalities
         // constructed as [variable v stream]
         | Variable of Name * Stream * Guid * Origin option
-        // constructed as [handler stream command] or [handler stream [command]]
-        | Handler of Stream * Command list * Guid * Origin option
         // constructed as [equality Density stream] or [equality Density ././Player stream]
         // does not allow for relations to parents or siblings, or for a wildcard in the relation
         | Equality of string * obj Relation * Stream * Guid * Origin option
-        // constructed as [equalities Density ././@ BoxDispatcher/Vanilla stream]
+        // constructed as [equality Density ././@ BoxDispatcher/Vanilla stream]
         // does not allow for relations to parents or siblings
-        | Equalities of string * obj Relation * Classification * Stream * Guid * Origin option
+        | EqualityMany of string * obj Relation * Classification * Stream * Guid * Origin option
+        // constructed as [handler stream command] or [handler stream [command]]
+        | Handler of Stream * Command list * Guid * Origin option
 
         static member getOptOrigin term =
             match term with
@@ -136,12 +136,13 @@ module Scripting =
             | Cond (_, optOrigin)
             | Try (_, _, optOrigin)
             | Break (_, optOrigin)
-            | Get (_, _, optOrigin)
+            | Get (_, optOrigin)
+            | GetFrom (_, _, optOrigin)
             | Constant (_, _, optOrigin)
             | Variable (_, _, _, optOrigin)
-            | Handler (_, _, _, optOrigin)
             | Equality (_, _, _, _, optOrigin)
-            | Equalities (_, _, _, _, _, optOrigin) -> optOrigin
+            | EqualityMany (_, _, _, _, _, optOrigin)
+            | Handler (_, _, _, optOrigin) -> optOrigin
 
     /// Converts Expr types.
     and ExprConverter () =
@@ -184,37 +185,48 @@ module Scripting =
                             if str.EndsWith "f" || str.EndsWith "F" then
                                 match Single.TryParse str with
                                 | (true, single) -> Single (single, optOrigin) :> obj
-                                | (false, _) -> Violation (["invalidNumberForm"], "Unexpected number parse failure.", optOrigin) :> obj
+                                | (false, _) -> Violation ([!!"InvalidNumberForm"], "Unexpected number parse failure.", optOrigin) :> obj
                             else
                                 match Double.TryParse str with
                                 | (true, double) -> Double (double, optOrigin) :> obj
-                                | (false, _) -> Violation (["invalidNumberForm"], "Unexpected number parse failure.", optOrigin) :> obj
+                                | (false, _) -> Violation ([!!"InvalidNumberForm"], "Unexpected number parse failure.", optOrigin) :> obj
                 | Symbol.String (str, optOrigin) -> String (str, optOrigin) :> obj
                 | Symbol.Quote (str, optOrigin) -> Quote (str, optOrigin) :> obj
                 | Symbol.Symbols (symbols, optOrigin) ->
                     match symbols with
                     | Atom (name, nameOptOrigin) :: tail when
-                        name = "violation" ||
-                        name = "some" ||
-                        name = "list" ||
-                        name = "tuple" ||
-                        name = "entity" ||
-                        name = "group" ||
-                        name = "screen" ||
-                        name = "game" ||
-                        name = "let" ||
-                        name = "try" ||
-                        name = "if" ||
-                        name = "do" ||
-                        name = "break" ||
-                        name = "constant" ||
-                        name = "variable" ||
-                        name = "equality" ->
+                        (match name with
+                         | "violation" -> true
+                         | "tuple" -> true
+                         | "list" -> true
+                         | "let" -> true
+                         | "fun" -> true
+                         | "if" -> true
+                         | "cond" -> true
+                         | "try" -> true
+                         | "break" -> true
+                         | "get" -> true
+                         | "constant" -> true
+                         | "variable" -> true
+                         | "equality" -> true
+                         | "handler" -> true
+                         | _ -> false) ->
                         match name with
+                        | "violation" ->
+                            match tail with
+                            | [Symbol.Atom (tagStr, _)]
+                            | [Symbol.String (tagStr, _)] ->
+                                try let tagName = !!tagStr in Violation (Name.split [|'/'|] tagName, "User-defined error.", optOrigin) :> obj
+                                with exn -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", optOrigin) :> obj
+                            | [Symbol.Atom (tagStr, _); Symbol.String (errorMsg, _)]
+                            | [Symbol.String (tagStr, _); Symbol.String (errorMsg, _)] ->
+                                try let tagName = !!tagStr in Violation (Name.split [|'/'|] tagName, errorMsg, optOrigin) :> obj
+                                with exn -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", optOrigin) :> obj
+                            | _ -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Requires 1 tag.", optOrigin) :> obj
                         | "let" ->
                             match tail with
-                            | [Atom (name, _); body] -> Let (!!name, symbolToExpr body, optOrigin) :> obj
-                            | _ -> Violation (["invalidLetForm"], "Invalid let form. Requires 1 name and 1 body.", optOrigin) :> obj
+                            | [Symbol.Atom (name, _); body] -> Let (!!name, symbolToExpr body, optOrigin) :> obj
+                            | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. Requires 1 name and 1 body.", optOrigin) :> obj
                         | "try" ->
                             match tail with
                             | [body; Symbols (handlers, _)] ->
@@ -223,19 +235,19 @@ module Scripting =
                                         (fun i handler ->
                                             match handler with
                                             | Symbols ([Atom (categoriesStr, _); handlerBody], _) ->
-                                                Right (categoriesStr.Split [|'/'|] |> List.ofArray, handlerBody)
+                                                Right (Name.split [|'/'|] !!categoriesStr, handlerBody)
                                             | _ ->
                                                 Left ("Invalid try handler form for handler #" + scstring (i + 1) + ". Requires 1 path and 1 body."))
                                         handlers
                                 let (errors, handlers) = Either.split eirHandlers
                                 match errors with
                                 | [] -> Try (symbolToExpr body, List.map (mapSnd symbolToExpr) handlers, optOrigin) :> obj
-                                | error :: _ -> Violation (["invalidTryForm"], error, optOrigin) :> obj
-                            | _ -> Violation (["invalidTryForm"], "Invalid try form. Requires 1 body and a handler list.", optOrigin) :> obj
+                                | error :: _ -> Violation ([!!"InvalidTryForm"], error, optOrigin) :> obj
+                            | _ -> Violation ([!!"InvalidTryForm"], "Invalid try form. Requires 1 body and a handler list.", optOrigin) :> obj
                         | "if" ->
                             match tail with
                             | [condition; consequent; alternative] -> If (symbolToExpr condition, symbolToExpr consequent, symbolToExpr alternative, optOrigin) :> obj
-                            | _ -> Violation (["invalidIfForm"], "Invalid if form. Requires 3 arguments.", optOrigin) :> obj
+                            | _ -> Violation ([!!"InvalidIfForm"], "Invalid if form. Requires 3 arguments.", optOrigin) :> obj
                         | "break" ->
                             let content = symbolToExpr (Symbols (tail, optOrigin))
                             Break (content, optOrigin) :> obj
@@ -248,11 +260,13 @@ module Scripting =
         private
             { Rebinding : bool // rebinding should be enabled in Terminal or perhaps when reloading existing scripts.
               Bindings : Dictionary<Name, Expr>
+              Context : obj Address
               World : World }
 
-        static member make rebinding bindings world =
+        static member make rebinding bindings context world =
             { Rebinding = rebinding
               Bindings = bindings
+              Context = context
               World = World.choose world }
 
         static member tryGetBinding name env =
@@ -270,18 +284,14 @@ module Scripting =
             List.iter (fun (name, evaled) -> env.Bindings.Add (name, evaled)) entries
             env
 
+        static member getContext env =
+            env.Context
+
         static member getWorld env =
             env.World
 
         static member setWorld world env =
             { env with World = World.choose world }
-
-    type [<NoEquality; NoComparison>] Result =
-        struct
-            new (evaled, env) = { Evaled = evaled; Env = env }
-            val Evaled : Expr
-            val Env : Env
-            end
 
     type [<NoComparison>] Script =
         { Context : obj Address

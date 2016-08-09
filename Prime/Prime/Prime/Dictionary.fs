@@ -63,5 +63,5 @@ module DictionaryOperators =
     /// NOTE: Also uses forced adding, allowing multiple of the same key in the kvps.
     let dictC kvps =
         let dictionary = Dictionary HashIdentity.Structural
-        for (kvp : KeyValuePair<_, _>) in kvps do dictionary.ForceAdd (kvp.Key, kvp.Value)
+        for (key, value) in kvps do dictionary.ForceAdd (key, value)
         dictionary

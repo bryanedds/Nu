@@ -279,14 +279,14 @@ module Reflection =
             Array.tryFind
                 (fun (property : PropertyInfo) ->
                     property.Name = "OptOverlayName" &&
-                    property.PropertyType = typeof<string option> &&
+                    property.PropertyType = typeof<Name option> &&
                     property.CanWrite)
                 targetProperties
         match optOptOverlayNameProperty with
         | Some optOverlayNameProperty ->
             match Map.tryFind optOverlayNameProperty.Name propertyDescriptors with
             | Some optOverlayNameSymbol ->
-                let optOverlayName = valueize<string option> optOverlayNameSymbol
+                let optOverlayName = valueize<Name option> optOverlayNameSymbol
                 optOverlayNameProperty.SetValue (target, optOverlayName)
                 target
             | None -> target
@@ -301,12 +301,12 @@ module Reflection =
             Array.find
                 (fun (property : PropertyInfo) ->
                     property.Name = "FacetNames" &&
-                    property.PropertyType = typeof<string Set> &&
+                    property.PropertyType = typeof<Name Set> &&
                     property.CanWrite)
                 targetProperties
         match Map.tryFind facetNamesProperty.Name propertyDescriptors with
         | Some facetNamesSymbol ->
-            let facetNames = valueize<string Set> facetNamesSymbol
+            let facetNames = valueize<Name Set> facetNamesSymbol
             facetNamesProperty.SetValue (target, facetNames)
             target
         | None -> target
@@ -367,8 +367,8 @@ module Reflection =
             let intrinsicFacetNames = intrinsicFacetNamesProperty.GetValue null
             match intrinsicFacetNames with
             | :? (obj list) as intrinsicFacetNames when List.isEmpty intrinsicFacetNames -> []
-            | :? (string list) as intrinsicFacetNames -> intrinsicFacetNames
-            | _ -> failwith ^ "IntrinsicFacetNames property for type '" + targetType.Name + "' must be of type string list."
+            | :? (Name list) as intrinsicFacetNames -> intrinsicFacetNames
+            | _ -> failwith ^ "IntrinsicFacetNames property for type '" + targetType.Name + "' must be of type Name list."
 
     /// Get the intrinsic facet names of a target type.
     let getIntrinsicFacetNames (targetType : Type) =
@@ -434,7 +434,7 @@ module Reflection =
         | null -> true
         | reqdDispatcherNameProperty ->
             match reqdDispatcherNameProperty.GetValue null with
-            | :? string as reqdDispatcherName ->
+            | :? Name as reqdDispatcherName ->
                 match Map.tryFind reqdDispatcherName dispatcherMap with
                 | Some reqdDispatcher ->
                     let reqdDispatcherType = reqdDispatcher.GetType ()
@@ -443,7 +443,7 @@ module Reflection =
                     | dispatcherNpProperty ->
                         let dispatcher = dispatcherNpProperty.GetValue target
                         dispatchesAs reqdDispatcherType dispatcher
-                | None -> failwith ^ "Could not find required dispatcher '" + reqdDispatcherName + "' in dispatcher map."
+                | None -> failwith ^ "Could not find required dispatcher '" + Name.getNameStr reqdDispatcherName + "' in dispatcher map."
             | _ -> failwith ^ "Static member 'RequiredDispatcherName' for facet '" + facetType.Name + "' is not of type string."
 
     /// Check for facet compatibility with the target's dispatcher.
@@ -462,7 +462,7 @@ module Reflection =
                 (fun facetName ->
                     match Map.tryFind facetName facetMap with
                     | Some facet -> facet
-                    | None -> failwith ^ "Could not find facet '" + facetName + "' in facet map.")
+                    | None -> failwith ^ "Could not find facet '" + Name.getNameStr facetName + "' in facet map.")
                 facetNames
         let targetType = target.GetType ()
         match targetType.GetPropertyWritable "FacetsNp" with
@@ -497,10 +497,10 @@ module Reflection =
         let overlayDescriptors =
             List.map
                 (fun (sourceType : Type) ->
-                    let includeNames = if sourceType.BaseType <> typeof<obj> then [sourceType.BaseType.Name] else []
+                    let includeNames = if sourceType.BaseType <> typeof<obj> then [!!sourceType.BaseType.Name] else []
                     let propertyDefinitions = getPropertyDefinitionsNoInherit sourceType
                     let requiresFacetNames = requiresFacetNames sourceType
-                    (sourceType.Name, includeNames, propertyDefinitions, requiresFacetNames))
+                    (!!sourceType.Name, includeNames, propertyDefinitions, requiresFacetNames))
                 sourceTypes
 
         // create the intrinsic overlays with the above descriptors

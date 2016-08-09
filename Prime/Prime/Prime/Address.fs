@@ -37,17 +37,17 @@ type AddressConverter (targetType : Type) =
 
     override this.ConvertFrom (_, _, source) =
         match source with
-        | :? string as addressStr ->
-            let fullName = !!addressStr
-            let ftoaFunction = targetType.GetMethod ("makeFromFullName", BindingFlags.Static ||| BindingFlags.Public)
-            let ftoaFunctionGeneric = ftoaFunction.MakeGenericMethod ((targetType.GetGenericArguments ()).[0])
-            ftoaFunctionGeneric.Invoke (null, [|fullName|])
+        | :? string as fullNameStr ->
+            let fullName = !!fullNameStr
+            let makeFromStringFunction = targetType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+            let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((targetType.GetGenericArguments ()).[0])
+            makeFromStringFunctionGeneric.Invoke (null, [|fullName|])
         | :? Symbol as addressSymbol ->
             match addressSymbol with
-            | Atom (addressStr, _) | String (addressStr, _) ->
-                let fullName = !!addressStr
-                let ftoaFunction = targetType.GetMethod ("makeFromFullName", BindingFlags.Static ||| BindingFlags.Public)
-                ftoaFunction.Invoke (null, [|fullName|])
+            | Atom (fullNameStr, _) | String (fullNameStr, _) ->
+                let fullName = !!fullNameStr
+                let makeFromStringFunction = targetType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                makeFromStringFunction.Invoke (null, [|fullName|])
             | Number (_, _) | Quote (_, _) | Symbols (_, _) ->
                 failconv "Expected Symbol or String for conversion to Address." ^ Some addressSymbol
         | _ ->
@@ -72,9 +72,13 @@ module AddressModule =
 
         static member internal getFullName (address : 'a Address) =
             Address<'a>.join address.Names
+    
+        /// Make a relation from a '/' delimited string where '.' are empty.
+        /// NOTE: do not move this function as the RelationConverter's reflection code relies on it being exactly here!
+        static member makeFromString (addressStr : string) =
+            Address<'a>.makeFromFullName !!addressStr
 
         /// Make an address from a '/' delimited string.
-        /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
         static member makeFromFullName<'a> fullName =
             let names = Address<'a>.split fullName |> List.ofSeq
             { Names = names; HashCode = Name.hashNames names; TypeCarrier = fun (_ : 'a) -> () }
@@ -275,7 +279,6 @@ module AddressOperators =
 
     /// Concatenate two addresses, forcing the type of second address.
     let inline acatsf<'a, 'b> (address : 'a Address) (address2 : 'b Address) = Address.acatsf<'a, 'b> address address2
-
 
 /// Specifies the address of an identifiable value.
 type 'a Address = 'a AddressModule.Address

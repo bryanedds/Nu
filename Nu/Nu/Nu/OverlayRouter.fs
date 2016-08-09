@@ -9,8 +9,8 @@ open Nu
 /// The classification of a Simulant.
 /// TODO: see if we can find a better place for this.
 type Classification =
-    { DispatcherName : string
-      Specialization : string }
+    { DispatcherName : Name
+      Specialization : Name }
 
     static member make dispatcherName specialization =
         { DispatcherName = dispatcherName
@@ -25,7 +25,7 @@ module OverlayRouterModule =
     /// Maps from dispatcher names to optional overlay names.
     type OverlayRouter =
         private
-            { Routes : Map<Classification, string option> }
+            { Routes : Map<Classification, Name option> }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module OverlayRouter =
@@ -43,8 +43,9 @@ module OverlayRouterModule =
             let router = 
                 Map.fold
                     (fun overlayRouter _ dispatcher ->
-                        let classification = Classification.makeVanilla (dispatcher.GetType ()).Name
-                        Map.add classification (Some classification.DispatcherName) overlayRouter)
+                        let dispatcherName = !!(dispatcher.GetType ()).Name
+                        let classification = Classification.makeVanilla dispatcherName
+                        Map.add classification (Some dispatcherName) overlayRouter)
                     Map.empty
                     dispatchers
             { Routes = Map.addMany userRoutes router }

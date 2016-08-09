@@ -123,7 +123,7 @@ module NameModule =
             name.NameStr |>
             (fun nameStr -> nameStr.Split sep) |>
             Array.map Name.make |>
-            Seq.ofArray
+            List.ofArray
     
         /// Query for equality a list of names lexicographically.
         let rec equateNames (names : Name list) (names2 : Name list) =

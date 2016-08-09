@@ -12,8 +12,8 @@ open Nu
 
 /// An overlay.
 type Overlay =
-    { OverlayName : string
-      OverlayIncludeNames : string list
+    { OverlayName : Name
+      OverlayIncludeNames : Name list
       OverlayProperties : Map<string, Symbol> }
 
 /// Describes the overlay state of a property.
@@ -28,7 +28,7 @@ module OverlayerModule =
     /// Defines the manner in which overlays are applied to targets.
     type [<ReferenceEquality>] Overlayer =
         private
-            { MappedOverlays : Map<string, Overlay>
+            { MappedOverlays : Map<Name, Overlay>
               IntrinsicOverlays : Overlay list
               ExtrinsicOverlays : Overlay list }
 
@@ -80,7 +80,7 @@ module OverlayerModule =
             | null -> false
             | optOverlayNameProperty ->
                 match optOverlayNameProperty.GetValue target with
-                | :? (string option) as optOverlayName ->
+                | :? (Name option) as optOverlayName ->
                     match optOverlayName with
                     | Some overlayName -> isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer
                     | None -> false
@@ -100,7 +100,7 @@ module OverlayerModule =
             let targetType = target.GetType ()
             let targetProperties = targetType.GetProperties ()
             for property in targetProperties do
-                if property.Name <> "FacetNames" && property.PropertyType <> typeof<string Set> then
+                if property.Name <> "FacetNames" && property.PropertyType <> typeof<Name Set> then
                     match tryFindPropertySymbol newOverlayName property.Name newOverlayer with
                     | Some propertySymbol -> tryApplyOverlayToRecordProperty facetNames property propertySymbol oldOverlayName target oldOverlayer
                     | None -> ()
