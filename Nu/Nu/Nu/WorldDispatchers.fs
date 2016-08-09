@@ -936,8 +936,8 @@ module BlockDispatcherModule =
              Define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
 
         static member IntrinsicFacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<StaticSpriteFacet>.Name]
+            [!!typeof<RigidBodyFacet>.Name
+             !!typeof<StaticSpriteFacet>.Name]
 
 [<AutoOpen>]
 module BoxDispatcherModule =
@@ -949,8 +949,8 @@ module BoxDispatcherModule =
             [Define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
 
         static member IntrinsicFacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<StaticSpriteFacet>.Name]
+            [!!typeof<RigidBodyFacet>.Name
+             !!typeof<StaticSpriteFacet>.Name]
 
 [<AutoOpen>]
 module TopViewCharacterDispatcherModule =
@@ -966,8 +966,8 @@ module TopViewCharacterDispatcherModule =
              Define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image7" }]
         
         static member IntrinsicFacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<StaticSpriteFacet>.Name]
+            [!!typeof<RigidBodyFacet>.Name
+             !!typeof<StaticSpriteFacet>.Name]
 
 [<AutoOpen>]
 module SideViewCharacterDispatcherModule =
@@ -982,8 +982,8 @@ module SideViewCharacterDispatcherModule =
              Define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image6" }]
 
         static member IntrinsicFacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<StaticSpriteFacet>.Name]
+            [!!typeof<RigidBodyFacet>.Name
+             !!typeof<StaticSpriteFacet>.Name]
 
 [<AutoOpen>]
 module TileMapDispatcherModule =

@@ -365,7 +365,7 @@ module WorldModule =
             let facets = World.getFacets world
             match Map.tryFind facetName facets with
             | Some facet -> Right facet
-            | None -> Left ^ "Invalid facet name '" + facetName + "'."
+            | None -> Left ^ "Invalid facet name '" + Name.getNameStr facetName + "'."
 
         static member private isFacetCompatibleWithEntity entityDispatcherMap facet (entityState : EntityState) =
             // Note a facet is incompatible with any other facet if it contains any properties that has
@@ -417,7 +417,7 @@ module WorldModule =
                 finalPropertyDefinitionNameCounts
 
         static member private tryRemoveFacet facetName entityState optEntity world =
-            match List.tryFind (fun facet -> getTypeName facet = facetName) entityState.FacetsNp with
+            match List.tryFind (fun facet -> getTypeName facet = Name.getNameStr facetName) entityState.FacetsNp with
             | Some facet ->
                 let (entityState, world) =
                     match optEntity with
@@ -437,7 +437,7 @@ module WorldModule =
                     let world = World.updateEntityInEntityTree entity oldWorld world
                     Right (World.getEntityState entity world, world)
                 | None -> Right (entityState, world)
-            | None -> let _ = World.choose world in Left ^ "Failure to remove facet '" + facetName + "' from entity."
+            | None -> let _ = World.choose world in Left ^ "Failure to remove facet '" + Name.getNameStr facetName + "' from entity."
 
         static member private tryAddFacet facetName (entityState : EntityState) optEntity world =
             match World.tryGetFacet facetName world with
@@ -723,8 +723,8 @@ module WorldModule =
             | "Xtension" -> (World.getEntityXtension entity world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getEntityDispatcherNp entity world :> obj, typeof<EntityDispatcher>)
             | "CreationTimeStampNp" -> (World.getEntityCreationTimeStampNp entity world :> obj, typeof<int64>)
-            | "Specialization" -> (World.getEntitySpecialization entity world :> obj, typeof<string>)
-            | "OptOverlayName" -> (World.getEntityOptOverlayName entity world :> obj, typeof<string option>)
+            | "Specialization" -> (World.getEntitySpecialization entity world :> obj, typeof<Name>)
+            | "OptOverlayName" -> (World.getEntityOptOverlayName entity world :> obj, typeof<Name option>)
             | "Position" -> (World.getEntityPosition entity world :> obj, typeof<Vector2>)
             | "Size" -> (World.getEntitySize entity world :> obj, typeof<Vector2>)
             | "Rotation" -> (World.getEntityRotation entity world :> obj, typeof<single>)
@@ -736,7 +736,7 @@ module WorldModule =
             | "PublishChanges" -> (World.getEntityPublishChanges entity world :> obj, typeof<bool>)
             | "PublishUpdatesNp" -> (World.getEntityPublishUpdatesNp entity world :> obj, typeof<bool>)
             | "Persistent" -> (World.getEntityPersistent entity world :> obj, typeof<bool>)
-            | "FacetNames" -> (World.getEntityFacetNames entity world :> obj, typeof<string Set>)
+            | "FacetNames" -> (World.getEntityFacetNames entity world :> obj, typeof<Name Set>)
             | "FacetsNp" -> (World.getEntityFacetsNp entity world :> obj, typeof<Facet list>)
             | _ -> let property = EntityState.getProperty propertyName (World.getEntityState entity world) in (property.PropertyValue, property.PropertyType)
 
@@ -782,7 +782,7 @@ module WorldModule =
 
         /// Get an entity's facet names via reflection.
         static member getEntityFacetNamesReflectively entityState =
-            List.map getTypeName entityState.FacetsNp
+            List.map (getTypeName >> Name.make) entityState.FacetsNp
 
         static member private updateEntityPublishUpdates entity world =
             let entityUpdateEventAddress = entity.UpdateAddress |> atooa
@@ -858,7 +858,8 @@ module WorldModule =
             let dispatcher = Map.find dispatcherName dispatchers
             
             // try to compute the routed overlay name
-            let classification = Classification.make dispatcherName ^ Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
+            let specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
+            let classification = Classification.make dispatcherName specialization
             let optRoutedOverlayName = OverlayRouter.findOptOverlayName classification overlayRouter
 
             // make the bare entity state (with name as id if none is provided)
@@ -953,8 +954,8 @@ module WorldModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> (dispatcherName, dispatcher)
                 | None ->
-                    Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
-                    let dispatcherName = typeof<EntityDispatcher>.Name
+                    Log.info ^ "Could not locate dispatcher '" + Name.getNameStr dispatcherName + "'."
+                    let dispatcherName = !!typeof<EntityDispatcher>.Name
                     let dispatcher = Map.find dispatcherName dispatchers
                     (dispatcherName, dispatcher)
             
@@ -1015,14 +1016,14 @@ module WorldModule =
         /// Write an entity to an entity descriptor.
         static member writeEntity (entity : Entity) entityDescriptor world =
             let entityState = World.getEntityState entity world
-            let entityDispatcherName = getTypeName entityState.DispatcherNp
+            let entityDispatcherName = !!(getTypeName entityState.DispatcherNp)
             let entityDescriptor = { entityDescriptor with EntityDispatcher = entityDispatcherName }
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
-                if propertyName = "OptOverlayName" && propertyType = typeof<string option> then
+                if propertyName = "OptOverlayName" && propertyType = typeof<Name option> then
                     let overlayRouter = World.getOverlayRouter world
                     let classification = Classification.make entityDispatcherName entityState.Specialization
                     let defaultOptOverlayName = OverlayRouter.findOptOverlayName classification overlayRouter
-                    defaultOptOverlayName <> (propertyValue :?> string option)
+                    defaultOptOverlayName <> (propertyValue :?> Name option)
                 else
                     let overlayer = World.getOverlayer world
                     let facetNames = World.getEntityFacetNamesReflectively entityState
@@ -1200,7 +1201,7 @@ module WorldModule =
             | "Name" -> (World.getGroupName group world :> obj, typeof<Name>)
             | "Xtension" -> (World.getGroupXtension group world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getGroupDispatcherNp group world :> obj, typeof<GroupDispatcher>)
-            | "Specialization" -> (World.getGroupSpecialization group world :> obj, typeof<string>)
+            | "Specialization" -> (World.getGroupSpecialization group world :> obj, typeof<Name>)
             | "CreationTimeStampNp" -> (World.getGroupCreationTimeStampNp group world :> obj, typeof<int64>)
             | "Persistent" -> (World.getGroupPersistent group world :> obj, typeof<bool>)
             | _ -> let property = GroupState.getProperty propertyName (World.getGroupState group world) in (property.PropertyValue, property.PropertyType)
@@ -1256,7 +1257,7 @@ module WorldModule =
 
         static member internal writeGroup4 writeEntities group groupDescriptor world =
             let groupState = World.getGroupState group world
-            let groupDispatcherName = getTypeName groupState.DispatcherNp
+            let groupDispatcherName = !!(getTypeName groupState.DispatcherNp)
             let groupDescriptor = { groupDescriptor with GroupDispatcher = groupDispatcherName }
             let getGroupProperties = Reflection.writePropertiesFromTarget tautology3 groupDescriptor.GroupProperties groupState
             let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
@@ -1271,8 +1272,8 @@ module WorldModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
-                    let dispatcherName = typeof<GroupDispatcher>.Name
+                    Log.info ^ "Could not locate dispatcher '" + Name.getNameStr dispatcherName + "'."
+                    let dispatcherName = !!typeof<GroupDispatcher>.Name
                     Map.find dispatcherName dispatchers
             
             // make the bare group state with name as id
@@ -1409,7 +1410,7 @@ module WorldModule =
             | "Name" -> (World.getScreenName screen world :> obj, typeof<Name>)
             | "Xtension" -> (World.getScreenXtension screen world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getScreenDispatcherNp screen world :> obj, typeof<ScreenDispatcher>)
-            | "Specialization" -> (World.getScreenSpecialization screen world :> obj, typeof<string>)
+            | "Specialization" -> (World.getScreenSpecialization screen world :> obj, typeof<Name>)
             | "CreationTimeStampNp" -> (World.getScreenCreationTimeStampNp screen world :> obj, typeof<int64>)
             | "EntityTreeNp" -> (World.getScreenEntityTreeNp screen world :> obj, typeof<Entity QuadTree MutantCache>)
             | "TransitionStateNp" -> (World.getScreenTransitionStateNp screen world :> obj, typeof<TransitionState>)
@@ -1493,7 +1494,7 @@ module WorldModule =
 
         static member internal writeScreen4 writeGroups screen screenDescriptor world =
             let screenState = World.getScreenState screen world
-            let screenDispatcherName = getTypeName screenState.DispatcherNp
+            let screenDispatcherName = !!(getTypeName screenState.DispatcherNp)
             let screenDescriptor = { screenDescriptor with ScreenDispatcher = screenDispatcherName }
             let getScreenProperties = Reflection.writePropertiesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
             let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
@@ -1508,8 +1509,8 @@ module WorldModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
-                    let dispatcherName = typeof<ScreenDispatcher>.Name
+                    Log.info ^ "Could not locate dispatcher '" + Name.getNameStr dispatcherName + "'."
+                    let dispatcherName = !!typeof<ScreenDispatcher>.Name
                     Map.find dispatcherName dispatchers
             
             // make the bare screen state with name as id
@@ -1703,7 +1704,7 @@ module WorldModule =
             | "Xtension" -> (World.getGameXtension world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
             | "CreationTimeStampNp" -> (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
-            | "Specialization" -> (World.getGameSpecialization world :> obj, typeof<string>)
+            | "Specialization" -> (World.getGameSpecialization world :> obj, typeof<Name>)
             | "OptSelectedScreen" -> (World.getOptSelectedScreen world :> obj, typeof<Screen option>)
             | "OptScreenTransitionDestination" -> (World.getOptScreenTransitionDestination world :> obj, typeof<Screen option>)
             | "EyeCenter" -> (World.getEyeCenter world :> obj, typeof<Vector2>)
@@ -1732,7 +1733,7 @@ module WorldModule =
 
         static member internal writeGame3 writeScreens gameDescriptor world =
             let gameState = World.getGameState world
-            let gameDispatcherName = getTypeName gameState.DispatcherNp
+            let gameDispatcherName = !!(getTypeName gameState.DispatcherNp)
             let gameDescriptor = { gameDescriptor with GameDispatcher = gameDispatcherName }
             let viewGameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
             let gameDescriptor = { gameDescriptor with GameProperties = viewGameProperties }
@@ -1747,8 +1748,8 @@ module WorldModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
-                    let dispatcherName = typeof<GameDispatcher>.Name
+                    Log.info ^ "Could not locate dispatcher '" + Name.getNameStr dispatcherName + "'."
+                    let dispatcherName = !!typeof<GameDispatcher>.Name
                     Map.find dispatcherName dispatchers
             
             // make the bare game state

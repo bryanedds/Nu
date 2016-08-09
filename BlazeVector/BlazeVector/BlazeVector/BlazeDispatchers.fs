@@ -48,8 +48,8 @@ module BulletModule =
              Define? Age 0L]
 
         static member IntrinsicFacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<StaticSpriteFacet>.Name]
+            [!!typeof<RigidBodyFacet>.Name
+             !!typeof<StaticSpriteFacet>.Name]
 
         override dispatcher.Register (bullet, world) =
             world |>
@@ -113,8 +113,8 @@ module EnemyModule =
              Define? Health 6]
 
         static member IntrinsicFacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<AnimatedSpriteFacet>.Name]
+            [!!typeof<RigidBodyFacet>.Name
+             !!typeof<AnimatedSpriteFacet>.Name]
 
         override dispatcher.Register (enemy, world) =
             world |>
@@ -142,7 +142,7 @@ module PlayerModule =
         static let [<Literal>] ClimbForce = 12000.0f
 
         static let createBullet (playerTransform : Transform) world =
-            let (bullet, world) = World.createEntity typeof<BulletDispatcher>.Name None None Simulants.GameplayScene world
+            let (bullet, world) = World.createEntity !!typeof<BulletDispatcher>.Name None None Simulants.GameplayScene world
             let bulletPosition = playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)
             let world = bullet.SetPosition bulletPosition world
             let world = bullet.SetDepth playerTransform.Depth world
@@ -223,8 +223,8 @@ module PlayerModule =
              Define? LastTimeJumpNp Int64.MinValue]
 
         static member IntrinsicFacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<AnimatedSpriteFacet>.Name]
+            [!!typeof<RigidBodyFacet>.Name
+             !!typeof<AnimatedSpriteFacet>.Name]
 
         override dispatcher.Register (player, world) =
             world |>
