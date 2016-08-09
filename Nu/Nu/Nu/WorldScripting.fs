@@ -63,8 +63,8 @@ module Scripting =
         Expr =
 
         (* Primitive Value Types *)
-        | Violation of Name list * string * Origin option // [violation X/Y/Z "Error message."]
-        | Unit of Origin option // []
+        | Violation of Name list * string * Origin option
+        | Unit of Origin option // constructed as []
         | Bool of bool * Origin option
         | Int of int * Origin option
         | Int64 of int64 * Origin option

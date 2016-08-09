@@ -668,31 +668,31 @@ module ScriptSystemModule =
             | "*"  -> evalBinary optOrigin name MulFns args env
             | "/"  -> evalBinary optOrigin name DivFns args env
             | "%"  -> evalBinary optOrigin name ModFns args env
-            | "Pow" -> evalBinary optOrigin name PowFns args env
-            | "Root" -> evalBinary optOrigin name RootFns args env
-            | "Sqr" -> evalUnary optOrigin name SqrFns args env
-            | "Sqrt" -> evalUnary optOrigin name SqrtFns args env
-            | "Floor" -> evalUnary optOrigin name FloorFns args env
-            | "Ceiling" -> evalUnary optOrigin name CeilingFns args env
-            | "Truncate" -> evalUnary optOrigin name TruncateFns args env
-            | "Round" -> evalUnary optOrigin name RoundFns args env
-            | "Exp" -> evalUnary optOrigin name ExpFns args env
-            | "Log" -> evalUnary optOrigin name LogFns args env
-            | "Sin" -> evalUnary optOrigin name SinFns args env
-            | "Cos" -> evalUnary optOrigin name CosFns args env
-            | "Tan" -> evalUnary optOrigin name TanFns args env
-            | "Asin" -> evalUnary optOrigin name AsinFns args env
-            | "Acos" -> evalUnary optOrigin name AcosFns args env
-            | "Atan" -> evalUnary optOrigin name AtanFns args env
+            | "pow" -> evalBinary optOrigin name PowFns args env
+            | "root" -> evalBinary optOrigin name RootFns args env
+            | "sqr" -> evalUnary optOrigin name SqrFns args env
+            | "sqrt" -> evalUnary optOrigin name SqrtFns args env
+            | "floor" -> evalUnary optOrigin name FloorFns args env
+            | "ceiling" -> evalUnary optOrigin name CeilingFns args env
+            | "truncate" -> evalUnary optOrigin name TruncateFns args env
+            | "round" -> evalUnary optOrigin name RoundFns args env
+            | "exp" -> evalUnary optOrigin name ExpFns args env
+            | "log" -> evalUnary optOrigin name LogFns args env
+            | "sin" -> evalUnary optOrigin name SinFns args env
+            | "cos" -> evalUnary optOrigin name CosFns args env
+            | "tan" -> evalUnary optOrigin name TanFns args env
+            | "asin" -> evalUnary optOrigin name AsinFns args env
+            | "acos" -> evalUnary optOrigin name AcosFns args env
+            | "atan" -> evalUnary optOrigin name AtanFns args env
             | "length" -> evalUnary optOrigin name LengthFns args env
-            | "Normal" -> evalUnary optOrigin name NormalFns args env
-            | "Cross" -> evalBinary optOrigin name CrossFns args env
-            | "Dot" -> evalBinary optOrigin name DotFns args env
-            | "Bool" -> evalUnary optOrigin name BoolFns args env
-            | "Int" -> evalUnary optOrigin name IntFns args env
-            | "Int64" -> evalUnary optOrigin name Int64Fns args env
-            | "Single" -> evalUnary optOrigin name SingleFns args env
-            | "Double" -> evalUnary optOrigin name DoubleFns args env
+            | "normal" -> evalUnary optOrigin name NormalFns args env
+            | "cross" -> evalBinary optOrigin name CrossFns args env
+            | "dot" -> evalBinary optOrigin name DotFns args env
+            | "bool" -> evalUnary optOrigin name BoolFns args env
+            | "int" -> evalUnary optOrigin name IntFns args env
+            | "int64" -> evalUnary optOrigin name Int64Fns args env
+            | "single" -> evalUnary optOrigin name SingleFns args env
+            | "double" -> evalUnary optOrigin name DoubleFns args env
             | "string" -> evalUnary optOrigin name StringFns args env
             | "some" -> evalSome optOrigin name args env
             | "isSome" -> evalIsSome optOrigin name args env
