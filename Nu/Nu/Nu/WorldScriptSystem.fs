@@ -619,60 +619,59 @@ module ScriptSystemModule =
             | _ ->  (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
 
         let evalIntrinsic optOrigin name args env =
-            let nameStr = Name.getNameStr name
-            match nameStr with
-            | "!"  -> evalBoolUnary optOrigin nameStr not args env
-            | "&"  -> evalBoolBinary optOrigin nameStr (&&) args env
-            | "|"  -> evalBoolBinary optOrigin nameStr (||) args env
-            | "="  -> evalBinary optOrigin nameStr EqFns args env
-            | "<>" -> evalBinary optOrigin nameStr NotEqFns args env
-            | "<"  -> evalBinary optOrigin nameStr LtFns args env
-            | ">"  -> evalBinary optOrigin nameStr GtFns args env
-            | "<=" -> evalBinary optOrigin nameStr LtEqFns args env
-            | ">=" -> evalBinary optOrigin nameStr GtEqFns args env
-            | "+"  -> evalBinary optOrigin nameStr AddFns args env
-            | "-"  -> evalBinary optOrigin nameStr SubFns args env
-            | "*"  -> evalBinary optOrigin nameStr MulFns args env
-            | "/"  -> evalBinary optOrigin nameStr DivFns args env
-            | "%"  -> evalBinary optOrigin nameStr ModFns args env
-            | "Pow" -> evalBinary optOrigin nameStr PowFns args env
-            | "Root" -> evalBinary optOrigin nameStr RootFns args env
-            | "Sqr" -> evalUnary optOrigin nameStr SqrFns args env
-            | "Sqrt" -> evalUnary optOrigin nameStr SqrtFns args env
-            | "Floor" -> evalUnary optOrigin nameStr FloorFns args env
-            | "Ceiling" -> evalUnary optOrigin nameStr CeilingFns args env
-            | "Truncate" -> evalUnary optOrigin nameStr TruncateFns args env
-            | "Round" -> evalUnary optOrigin nameStr RoundFns args env
-            | "Exp" -> evalUnary optOrigin nameStr ExpFns args env
-            | "Log" -> evalUnary optOrigin nameStr LogFns args env
-            | "Sin" -> evalUnary optOrigin nameStr SinFns args env
-            | "Cos" -> evalUnary optOrigin nameStr CosFns args env
-            | "Tan" -> evalUnary optOrigin nameStr TanFns args env
-            | "Asin" -> evalUnary optOrigin nameStr AsinFns args env
-            | "Acos" -> evalUnary optOrigin nameStr AcosFns args env
-            | "Atan" -> evalUnary optOrigin nameStr AtanFns args env
-            | "length" -> evalUnary optOrigin nameStr LengthFns args env
-            | "Normal" -> evalUnary optOrigin nameStr NormalFns args env
-            | "Cross" -> evalBinary optOrigin nameStr CrossFns args env
-            | "Dot" -> evalBinary optOrigin nameStr DotFns args env
-            | "Bool" -> evalUnary optOrigin nameStr BoolFns args env
-            | "Int" -> evalUnary optOrigin nameStr IntFns args env
-            | "Int64" -> evalUnary optOrigin nameStr Int64Fns args env
-            | "Single" -> evalUnary optOrigin nameStr SingleFns args env
-            | "Double" -> evalUnary optOrigin nameStr DoubleFns args env
-            | "string" -> evalUnary optOrigin nameStr StringFns args env
-            | "some" -> evalSome optOrigin nameStr args env
-            | "isSome" -> evalIsSome optOrigin nameStr args env
-            | "head" -> evalHead optOrigin nameStr args env
-            | "tail" -> evalTail optOrigin nameStr args env
-            | "cons" -> evalCons optOrigin nameStr args env
-            | "isEmpty" -> evalIsEmpty optOrigin nameStr args env
-            | "first" -> evalNth5 optOrigin nameStr 0 args env
-            | "second" -> evalNth5 optOrigin nameStr 1 args env
-            | "third" -> evalNth5 optOrigin nameStr 2 args env
-            | "fourth" -> evalNth5 optOrigin nameStr 3 args env
-            | "fifth" -> evalNth5 optOrigin nameStr 4 args env
-            | "nth" -> evalNth optOrigin nameStr args env
+            match name with
+            | "!"  -> evalBoolUnary optOrigin name not args env
+            | "&"  -> evalBoolBinary optOrigin name (&&) args env
+            | "|"  -> evalBoolBinary optOrigin name (||) args env
+            | "="  -> evalBinary optOrigin name EqFns args env
+            | "<>" -> evalBinary optOrigin name NotEqFns args env
+            | "<"  -> evalBinary optOrigin name LtFns args env
+            | ">"  -> evalBinary optOrigin name GtFns args env
+            | "<=" -> evalBinary optOrigin name LtEqFns args env
+            | ">=" -> evalBinary optOrigin name GtEqFns args env
+            | "+"  -> evalBinary optOrigin name AddFns args env
+            | "-"  -> evalBinary optOrigin name SubFns args env
+            | "*"  -> evalBinary optOrigin name MulFns args env
+            | "/"  -> evalBinary optOrigin name DivFns args env
+            | "%"  -> evalBinary optOrigin name ModFns args env
+            | "Pow" -> evalBinary optOrigin name PowFns args env
+            | "Root" -> evalBinary optOrigin name RootFns args env
+            | "Sqr" -> evalUnary optOrigin name SqrFns args env
+            | "Sqrt" -> evalUnary optOrigin name SqrtFns args env
+            | "Floor" -> evalUnary optOrigin name FloorFns args env
+            | "Ceiling" -> evalUnary optOrigin name CeilingFns args env
+            | "Truncate" -> evalUnary optOrigin name TruncateFns args env
+            | "Round" -> evalUnary optOrigin name RoundFns args env
+            | "Exp" -> evalUnary optOrigin name ExpFns args env
+            | "Log" -> evalUnary optOrigin name LogFns args env
+            | "Sin" -> evalUnary optOrigin name SinFns args env
+            | "Cos" -> evalUnary optOrigin name CosFns args env
+            | "Tan" -> evalUnary optOrigin name TanFns args env
+            | "Asin" -> evalUnary optOrigin name AsinFns args env
+            | "Acos" -> evalUnary optOrigin name AcosFns args env
+            | "Atan" -> evalUnary optOrigin name AtanFns args env
+            | "length" -> evalUnary optOrigin name LengthFns args env
+            | "Normal" -> evalUnary optOrigin name NormalFns args env
+            | "Cross" -> evalBinary optOrigin name CrossFns args env
+            | "Dot" -> evalBinary optOrigin name DotFns args env
+            | "Bool" -> evalUnary optOrigin name BoolFns args env
+            | "Int" -> evalUnary optOrigin name IntFns args env
+            | "Int64" -> evalUnary optOrigin name Int64Fns args env
+            | "Single" -> evalUnary optOrigin name SingleFns args env
+            | "Double" -> evalUnary optOrigin name DoubleFns args env
+            | "string" -> evalUnary optOrigin name StringFns args env
+            | "some" -> evalSome optOrigin name args env
+            | "isSome" -> evalIsSome optOrigin name args env
+            | "head" -> evalHead optOrigin name args env
+            | "tail" -> evalTail optOrigin name args env
+            | "cons" -> evalCons optOrigin name args env
+            | "isEmpty" -> evalIsEmpty optOrigin name args env
+            | "first" -> evalNth5 optOrigin name 0 args env
+            | "second" -> evalNth5 optOrigin name 1 args env
+            | "third" -> evalNth5 optOrigin name 2 args env
+            | "fourth" -> evalNth5 optOrigin name 3 args env
+            | "fifth" -> evalNth5 optOrigin name 4 args env
+            | "nth" -> evalNth optOrigin name args env
             | _ -> (Violation ([!!"InvalidFunctionTargetBinding"], "Cannot apply an non-existent binding.", optOrigin), env)
 
         let rec evalExprs exprs env =
@@ -737,7 +736,7 @@ module ScriptSystemModule =
 
         and evalGet name optExpr optOrigin env =
             let context = Env.getContext env
-            let optAddressAndEnv =
+            let eirAddressAndEnv =
                 match optExpr with
                 | Some expr ->
                     let (evaled, env) = eval expr env
@@ -750,17 +749,17 @@ module ScriptSystemModule =
                         Right (address, env)
                     | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or keyword.", optOrigin))
                 | None -> Right (context, env)
-            match optAddressAndEnv with
+            match eirAddressAndEnv with
             | Right (address, env) ->
                 let world = Env.getWorld env
-                let optPropertyValueAndType =
+                let eirPropertyValueAndType =
                     match Address.getNames address with
                     | [] -> Right (Simulants.Game.GetProperty name world)
                     | [_] -> let screen = Screen.proxy (Address.changeType<obj, Screen> address) in Right (screen.GetProperty name world)
                     | [_; _] -> let group = Group.proxy (Address.changeType<obj, Group> address) in Right (group.GetProperty name world)
                     | [_; _; _] -> let entity = Entity.proxy (Address.changeType<obj, Entity> address) in Right (entity.GetProperty name world)
                     | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or keyword.", optOrigin))
-                match optPropertyValueAndType with
+                match eirPropertyValueAndType with
                 | Right (propertyValue, propertyType) ->
                     let propertyValue = injectValue.[propertyType.Name] propertyValue optOrigin
                     (propertyValue, env)

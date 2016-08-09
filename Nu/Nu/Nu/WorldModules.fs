@@ -46,25 +46,25 @@ module Descriptors =
 
     /// Describe a game with the given properties values and contained screens.
     let Game<'d when 'd :> GameDispatcher> properties screens =
-        { GameDispatcher = !!typeof<'d>.Name
+        { GameDispatcher = typeof<'d>.Name
           GameProperties = Map.ofSeq properties
           Screens = List.ofSeq screens }
 
     /// Describe a screen with the given properties values and contained groups.
     let Screen<'d when 'd :> ScreenDispatcher> properties groups =
-        { ScreenDispatcher = !!typeof<'d>.Name
+        { ScreenDispatcher = typeof<'d>.Name
           ScreenProperties = Map.ofSeq properties
           Groups = List.ofSeq groups }
 
     /// Describe a group with the given properties values and contained entities.
     let Group<'d when 'd :> GroupDispatcher> properties entities =
-        { GroupDispatcher = !!typeof<'d>.Name
+        { GroupDispatcher = typeof<'d>.Name
           GroupProperties = Map.ofSeq properties
           Entities = List.ofSeq entities }
 
     /// Describe an entity with the given properties values.
     let Entity<'d when 'd :> EntityDispatcher> properties =
-        { EntityDispatcher = !!typeof<'d>.Name
+        { EntityDispatcher = typeof<'d>.Name
           EntityProperties = Map.ofSeq properties }
 
 [<AutoOpen>]

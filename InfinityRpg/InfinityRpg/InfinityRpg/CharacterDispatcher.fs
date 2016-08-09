@@ -12,8 +12,8 @@ module CharacterDispatcherModule =
         inherit EntityDispatcher ()
 
         static member IntrinsicFacetNames =
-            [!!typeof<CharacterStateFacet>.Name
-             !!typeof<CharacterAnimationFacet>.Name]
+            [typeof<CharacterStateFacet>.Name
+             typeof<CharacterAnimationFacet>.Name]
 
         static member PropertyDefinitions =
             [Define? Omnipresent true]

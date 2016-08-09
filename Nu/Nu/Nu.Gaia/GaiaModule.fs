@@ -96,7 +96,7 @@ module Gaia =
 
     let private populateTreeViewGroups (form : GaiaForm) world =
         for dispatcherKvp in World.getEntityDispatchers world do
-            let treeGroup = TreeNode ^ Name.getNameStr dispatcherKvp.Key
+            let treeGroup = TreeNode dispatcherKvp.Key
             treeGroup.Name <- treeGroup.Text
             form.treeView.Nodes.Add treeGroup |> ignore
 
@@ -461,7 +461,7 @@ module Gaia =
         addWorldChanger ^ fun world ->
             try let world = pushPastWorld world world
                 let selectedGroup = (World.getUserState world).SelectedGroup
-                let (entity, world) = World.createEntity !!form.createEntityComboBox.Text (Some !!form.specializationTextBox.Text) None selectedGroup world
+                let (entity, world) = World.createEntity form.createEntityComboBox.Text (Some form.specializationTextBox.Text) None selectedGroup world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
                 let entityPosition =
@@ -502,7 +502,7 @@ module Gaia =
                 let world = pushPastWorld world world
                 let groupName = groupNameEntryForm.nameTextBox.Text
                 try if groupName.Length = 0 then failwith "Group name cannot be empty in Gaia due to WinForms limitations."
-                    let world = World.createGroup !!typeof<GroupDispatcher>.Name None (Some !!groupName) Simulants.EditorScreen world |> snd
+                    let world = World.createGroup typeof<GroupDispatcher>.Name None (Some !!groupName) Simulants.EditorScreen world |> snd
                     refreshGroupTabs form world
                     form.groupTabs.SelectTab (form.groupTabs.TabPages.IndexOfKey groupName)
                     world
@@ -733,7 +733,7 @@ module Gaia =
             handleLoadOverlayerClick form args
 
     let private handleCreateEntityComboBoxSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
-        form.specializationTextBox.Text <- Name.getNameStr Constants.Engine.VanillaSpecialization
+        form.specializationTextBox.Text <- Constants.Engine.VanillaSpecialization
 
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
         match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.YesNo) with
@@ -878,7 +878,7 @@ module Gaia =
         form.positionSnapTextBox.Text <- scstring DefaultPositionSnap
         form.rotationSnapTextBox.Text <- scstring DefaultRotationSnap
         form.createDepthTextBox.Text <- scstring DefaultCreationDepth
-        form.specializationTextBox.Text <- Name.getNameStr Constants.Engine.VanillaSpecialization
+        form.specializationTextBox.Text <- Constants.Engine.VanillaSpecialization
 
         // sort tree view nodes with a bias against guids
         form.treeView.Sorted <- true
@@ -962,8 +962,8 @@ module Gaia =
         let eitherWorld = World.attemptMake false None 0L () plugin sdlDeps
         match eitherWorld with
         | Right world ->
-            let world = World.createScreen !!typeof<ScreenDispatcher>.Name None (Some Simulants.EditorScreen.ScreenName) world |> snd
-            let world = World.createGroup !!typeof<GroupDispatcher>.Name None (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen world |> snd
+            let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.EditorScreen.ScreenName) world |> snd
+            let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen world |> snd
             let world = World.setSelectedScreen Simulants.EditorScreen world
             Right world
         | Left error -> Left error

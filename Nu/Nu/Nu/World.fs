@@ -71,7 +71,7 @@ module WorldModule2 =
     type World with
 
         static member private pairWithName source =
-            (!!(getTypeName source), source)
+            (getTypeName source, source)
 
         static member private makeDefaultGameDispatchers () =
             Map.ofList [World.pairWithName ^ GameDispatcher ()]
@@ -101,11 +101,11 @@ module WorldModule2 =
 
         static member private makeDefaultFacets () =
             Map.ofList
-                [(!!typeof<MountFacet>.Name, MountFacet () :> Facet)
-                 (!!typeof<EffectFacet>.Name, EffectFacet () :> Facet)
-                 (!!typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet)
-                 (!!typeof<StaticSpriteFacet>.Name, StaticSpriteFacet () :> Facet)
-                 (!!typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
+                [(typeof<MountFacet>.Name, MountFacet () :> Facet)
+                 (typeof<EffectFacet>.Name, EffectFacet () :> Facet)
+                 (typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet)
+                 (typeof<StaticSpriteFacet>.Name, StaticSpriteFacet () :> Facet)
+                 (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
 
         static member internal rebuildEntityTreeImpl screen world =
             let tree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
@@ -319,8 +319,8 @@ module WorldModule2 =
         static member createSplashScreen persistent splashData destination dispatcherName optSpecialization optName world =
             let cameraEyeSize = World.getEyeSize world
             let (splashScreen, world) = World.createDissolveScreen splashData.DissolveData dispatcherName optSpecialization optName world
-            let (splashGroup, world) = World.createGroup !!typeof<GroupDispatcher>.Name None (Some !!"SplashGroup") splashScreen world
-            let (splashLabel, world) = World.createEntity !!typeof<LabelDispatcher>.Name None (Some !!"SplashLabel") splashGroup world
+            let (splashGroup, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some !!"SplashGroup") splashScreen world
+            let (splashLabel, world) = World.createEntity typeof<LabelDispatcher>.Name None (Some !!"SplashLabel") splashGroup world
             let world =
                 splashScreen.SetPersistent persistent world |>
                 splashGroup.SetPersistent persistent |>
