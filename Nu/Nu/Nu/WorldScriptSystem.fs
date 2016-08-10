@@ -768,13 +768,13 @@ module ScriptSystemModule =
                     handlers
             | _ -> (evaled, env)
 
-        and evalGet propertyName optRelationArg optOrigin env =
+        and evalGet propertyName optRelationExpr optOrigin env =
             let context = Env.getContext env
             let eirAddressAndEnv =
-                match optRelationArg with
-                | Some relationArg ->
-                    let (evaledArg, env) = eval relationArg env
-                    match evaledArg with
+                match optRelationExpr with
+                | Some relationExpr ->
+                    let (evaledExpr, env) = eval relationExpr env
+                    match evaledExpr with
                     | String (str, optOrigin)
                     | Keyword (str, optOrigin) ->
                         ignore optOrigin
@@ -804,13 +804,13 @@ module ScriptSystemModule =
                 | Left violation -> (violation, env)
             | Left violation -> (violation, env)
 
-        and evalSet propertyName optRelationArg propertyValueArg optOrigin env =
+        and evalSet propertyName propertyValueExpr optRelationExpr optOrigin env =
             let context = Env.getContext env
             let eirAddressAndEnv =
-                match optRelationArg with
-                | Some relationArg ->
-                    let (evaledArg, env) = eval relationArg env
-                    match evaledArg with
+                match optRelationExpr with
+                | Some relationExpr ->
+                    let (evaledExpr, env) = eval relationExpr env
+                    match evaledExpr with
                     | String (str, optOrigin)
                     | Keyword (str, optOrigin) ->
                         ignore optOrigin
@@ -819,7 +819,7 @@ module ScriptSystemModule =
                         Right (address, env)
                     | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or keyword.", optOrigin))
                 | None -> Right (context, env)
-            let (propertyValue, env) = eval propertyValueArg env
+            let (propertyValue, env) = eval propertyValueExpr env
             match eirAddressAndEnv with
             | Right (address, env) ->
                 let world = Env.getWorld env
@@ -885,11 +885,13 @@ module ScriptSystemModule =
             | Break (expr, _) -> (expr, env)
             | Get (name, optOrigin) -> evalGet name None optOrigin env
             | GetFrom (name, expr, optOrigin) -> evalGet name (Some expr) optOrigin env
+            | Set (name, expr, optOrigin) -> evalSet name expr None optOrigin env
+            | SetTo (name, expr, expr2, optOrigin) -> evalSet name expr2 (Some expr) optOrigin env
             | Constant (_, _, optOrigin) -> (Unit optOrigin, env)
             | Variable (_, _, _, optOrigin) -> (Unit optOrigin, env)
             | Equate (_, _, _, _, optOrigin) -> (Unit optOrigin, env)
             | EquateMany (_, _, _, _, _, optOrigin) -> (Unit optOrigin, env)
-            | Handle (_, _, _, optOrigin) -> (Unit optOrigin, env)
+            | Handle (_, _, optOrigin) -> (Unit optOrigin, env)
 
     /// An abstract data type for executing scripts.
     /// Has an unused type param to give it a unique name.
