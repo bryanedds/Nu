@@ -29,9 +29,9 @@ module Scripting =
         // constructed as [property P] or [property P ././.]
         // does not allow for properties of parents or siblings, or for a wildcard in the relation
         | Property of string * obj Relation
-        // constructed as [properties P ././@ EntityDispatcher] or [properties P ././@ EntityDispatcher Vanilla]
+        // constructed as [property P ././@ EntityDispatcher] or [properties P ././@ EntityDispatcher Vanilla]
         // does not allow for properties of parents or siblings
-        | Properties of string * obj Relation * Classification
+        | PropertyMany of string * obj Relation * Classification
         // constructed as [product stream stream]
         | Product of Stream * Stream
         // constructed as [sum stream stream]
@@ -46,16 +46,16 @@ module Scripting =
                     "length normal " +
                     "cross dot " +
                     "violation bool int int64 single double string " +
-                    "mum " + // the empty keyword
+                    "nil " + // the empty keyword
                     "some none isNone isSome map " +
                     // TODO: "either isLeft isRight left right " +
                     "tuple unit fst snd thd fth fif nth " +
-                    "list empty head tail cons isEmpty notEmpty filter fold contains " +
-                    // TODO: "set emptySet add remove " +
-                    // TODO: "table emptyTable tryFind find " +
+                    "list head tail cons isEmpty notEmpty filter fold contains " + // empty list is just [list]
+                    // TODO: "ring add remove " +
+                    // TODO: "table tryFind find " +
                     "emptyPhrase " +
-                    "let fun if cond try break get " +
-                    "constant variable equality handler " +
+                    "let fun if cond try break get set " +
+                    "constant variable equate handle " +
                     "tickRate tickTime updateCount",
                     "");
           TypeConverter (typeof<ExprConverter>);
@@ -93,6 +93,8 @@ module Scripting =
         | Break of Expr * Origin option
         | Get of string * Origin option
         | GetFrom of string * Expr * Origin option
+        | Set of string * Expr * Origin option
+        | SetTo of string * Expr * Expr * Origin option
 
         (* Special Declarations - only work at the top level, and always return unit. *)
         // accessible anywhere
@@ -107,8 +109,8 @@ module Scripting =
         // constructed as [equate Density ././@ BoxDispatcher stream] or [equate Density ././@ [BoxDispatcher Vanilla] stream]
         // does not allow for relations to parents or siblings
         | EquateMany of string * obj Relation * Classification * Stream * Guid * Origin option
-        // constructed as [handle stream command] or [handle stream [command]]
-        | Handle of Stream * Command list * Guid * Origin option
+        // constructed as [handle stream]
+        | Handle of Stream * Guid * Origin option
 
         static member getOptOrigin term =
             match term with
@@ -138,11 +140,13 @@ module Scripting =
             | Break (_, optOrigin)
             | Get (_, optOrigin)
             | GetFrom (_, _, optOrigin)
+            | Set (_, _, optOrigin)
+            | SetTo (_, _, _, optOrigin)
             | Constant (_, _, optOrigin)
             | Variable (_, _, _, optOrigin)
             | Equate (_, _, _, _, optOrigin)
             | EquateMany (_, _, _, _, _, optOrigin)
-            | Handle (_, _, _, optOrigin) -> optOrigin
+            | Handle (_, _, optOrigin) -> optOrigin
 
     /// Converts Expr types.
     and ExprConverter () =
@@ -206,6 +210,7 @@ module Scripting =
                          | "try" -> true
                          | "break" -> true
                          | "get" -> true
+                         | "set" -> true
                          | "constant" -> true
                          | "variable" -> true
                          | "equality" -> true
@@ -233,12 +238,12 @@ module Scripting =
                             | _ -> Violation ([!!"InvalidIfForm"], "Invalid if form. Requires 3 arguments.", optOrigin) :> obj
                         | "try" ->
                             match tail with
-                            | [body; Symbols (handlers, _)] ->
+                            | [body; Symbol.Symbols (handlers, _)] ->
                                 let eirHandlers =
                                     List.mapi
                                         (fun i handler ->
                                             match handler with
-                                            | Symbols ([Atom (categoriesStr, _); handlerBody], _) ->
+                                            | Symbol.Symbols ([Symbol.Atom (categoriesStr, _); handlerBody], _) ->
                                                 Right (Name.split [|'/'|] !!categoriesStr, handlerBody)
                                             | _ ->
                                                 Left ("Invalid try handler form for handler #" + scstring (inc i) + ". Requires 1 path and 1 body."))
@@ -251,6 +256,24 @@ module Scripting =
                         | "break" ->
                             let content = symbolToExpr (Symbols (tail, optOrigin))
                             Break (content, optOrigin) :> obj
+                        | "get" ->
+                            match tail with
+                            | Symbol.Atom (nameStr, optOrigin) :: tail2
+                            | Symbol.String (nameStr, optOrigin) :: tail2 ->
+                                match tail2 with
+                                | [] -> Get (nameStr, optOrigin) :> obj
+                                | [relation] -> GetFrom (nameStr, symbolToExpr relation, optOrigin) :> obj
+                                | _ -> Violation ([!!"InvalidGetForm"], "Invalid get form. Requires a name and an optional relation expression.", optOrigin) :> obj
+                            | _ -> Violation ([!!"InvalidGetForm"], "Invalid get form. Requires a name and an optional relation expression.", optOrigin) :> obj
+                        | "set" ->
+                            match tail with
+                            | Symbol.Atom (nameStr, optOrigin) :: value :: tail2
+                            | Symbol.String (nameStr, optOrigin) :: value :: tail2 ->
+                                match tail2 with
+                                | [] -> Set (nameStr, symbolToExpr value, optOrigin) :> obj
+                                | [relation] -> SetTo (nameStr, symbolToExpr value, symbolToExpr relation, optOrigin) :> obj
+                                | _ -> Violation ([!!"InvalidSetForm"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", optOrigin) :> obj
+                            | _ -> Violation ([!!"InvalidSetForm"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", optOrigin) :> obj
                         | _ -> Apply (Binding (name, nameOptOrigin) :: List.map symbolToExpr tail, optOrigin) :> obj
                     | _ -> Apply (List.map symbolToExpr symbols, optOrigin) :> obj
             | :? Expr -> source
