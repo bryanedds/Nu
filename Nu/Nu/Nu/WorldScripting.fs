@@ -19,26 +19,19 @@ module Scripting =
           CommandArgs : Expr list }
 
     and [<NoComparison>] Stream =
-        // constructed as [constant v]
+        // constructed as [constantStream v]
         | Constant of string
-        // constructed as [variable v]
+        // constructed as [variableStream v]
         | Variable of string
-        // constructed as [event X/Y/Z]
+        // constructed as [eventStream X/Y/Z]
         // does not allow for entity, group, screen, or game events
         | Event of obj Address
-        // constructed as [property P] or [property P ././.]
+        // constructed as [propertyStream P] or [propertyStream P ././.]
         // does not allow for properties of parents or siblings, or for a wildcard in the relation
         | Property of string * obj Relation
-        // constructed as [property P ././@ EntityDispatcher] or [properties P ././@ EntityDispatcher Vanilla]
+        // constructed as [propertyStream P ././@ EntityDispatcher] or [propertyStream P ././@ EntityDispatcher Vanilla]
         // does not allow for properties of parents or siblings
         | PropertyMany of string * obj Relation * Classification
-        // constructed as [product stream stream]
-        | Product of Stream * Stream
-        // constructed as [sum stream stream]
-        | Sum of Stream * Stream 
-        | Fold of Expr * Expr * Stream
-        | Filter of Expr * Stream
-        | Map of Expr * Stream
 
     and [<Syntax(   "pow root sqr sqrt " +
                     "floor ceiling truncate round exp log " +
@@ -50,10 +43,10 @@ module Scripting =
                     "some none isNone isSome map " +
                     // TODO: "either isLeft isRight left right " +
                     "tuple unit fst snd thd fth fif nth " +
-                    "list head tail cons isEmpty notEmpty filter fold contains " + // empty list is just [list]
+                    "list head tail cons isEmpty notEmpty fold filter product sum contains " + // empty list is just [list]
                     // TODO: "ring add remove " +
                     // TODO: "table tryFind find " +
-                    "emptyPhrase " +
+                    "nix " + // the empty phrase
                     "let fun if cond try break get set " +
                     "constant variable equate handle " +
                     "tickRate tickTime updateCount",
