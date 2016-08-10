@@ -37,14 +37,15 @@ type RelationConverter (targetType : Type) =
         
     override this.ConvertFrom (_, _, source) =
         match source with
-        | :? string as relationStr ->
-            let makeFromStrFunction = targetType.GetMethod ("makeFromStr", BindingFlags.Static ||| BindingFlags.Public)
-            makeFromStrFunction.Invoke (null, [|relationStr|])
+        | :? string as fullNameStr ->
+            let makeFromStringFunction = targetType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+            let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((targetType.GetGenericArguments ()).[0])
+            makeFromStringFunctionGeneric.Invoke (null, [|fullNameStr|])
         | :? Symbol as relationSymbol ->
             match relationSymbol with
-            | Atom (relationStr, _) | String (relationStr, _) -> 
-                let makeFromStrFunction = targetType.GetMethod ("makeFromStr", BindingFlags.Static ||| BindingFlags.Public)
-                makeFromStrFunction.Invoke (null, [|relationStr|])
+            | Atom (fullNameStr, _) | String (fullNameStr, _) ->
+                let makeFromStringFunction = targetType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                makeFromStringFunction.Invoke (null, [|fullNameStr|])
             | Number (_, _) | Quote (_, _) | Symbols (_, _) ->
                 failconv "Expected Symbol or String for conversion to Relation." ^ Some relationSymbol
         | _ ->
@@ -62,7 +63,7 @@ module RelationModule =
     
         /// Make a relation from a '/' delimited string where '.' are empty.
         /// NOTE: do not move this function as the RelationConverter's reflection code relies on it being exactly here!
-        static member makeFromString (relationStr : string) =
+        static member makeFromString<'a> (relationStr : string) =
             let optNameList = relationStr.Split '/' |> List.ofSeq
             let optNames = List.map (fun name -> match name with "." -> None | _ -> Some !!name) optNameList
             { OptNames = optNames; TypeCarrier = fun (_ : 'a) -> () }
