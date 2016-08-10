@@ -93,7 +93,7 @@
     <Compile Include="WorldPhysics.fs" />
     <Compile Include="WorldRender.fs" />
     <Compile Include="WorldAudio.fs" />
-    <Compile Include="WorldObservation.fs" />
+    <Compile Include="WorldStream.fs" />
     <Compile Include="WorldScripting.fs" />
     <Compile Include="WorldScriptSystem.fs" />
     <Compile Include="WorldDispatchers.fs" />
