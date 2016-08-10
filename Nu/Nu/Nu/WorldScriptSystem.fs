@@ -779,19 +779,19 @@ module ScriptSystemModule =
                     | Keyword (str, optOrigin) ->
                         ignore optOrigin
                         let relation = Relation.makeFromString str
-                        let address = Relation.resolve context relation
+                        let address = Relation.resolve context.SimulantAddress relation
                         Right (address, env)
                     | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or keyword.", optOrigin))
-                | None -> Right (context, env)
+                | None -> Right (context.SimulantAddress, env)
             match eirAddressAndEnv with
             | Right (address, env) ->
                 let world = Env.getWorld env
                 let eirPropertyValueAndType =
                     match Address.getNames address with
                     | [] -> Right (Simulants.Game.GetPropertyValueAndType propertyName world)
-                    | [_] -> let screen = Screen.proxy (Address.changeType<obj, Screen> address) in Right (screen.GetPropertyValueAndType propertyName world)
-                    | [_; _] -> let group = Group.proxy (Address.changeType<obj, Group> address) in Right (group.GetPropertyValueAndType propertyName world)
-                    | [_; _; _] -> let entity = Entity.proxy (Address.changeType<obj, Entity> address) in Right (entity.GetPropertyValueAndType propertyName world)
+                    | [_] -> let screen = Screen.proxy (Address.changeType<Simulant, Screen> address) in Right (screen.GetPropertyValueAndType propertyName world)
+                    | [_; _] -> let group = Group.proxy (Address.changeType<Simulant, Group> address) in Right (group.GetPropertyValueAndType propertyName world)
+                    | [_; _; _] -> let entity = Entity.proxy (Address.changeType<Simulant, Entity> address) in Right (entity.GetPropertyValueAndType propertyName world)
                     | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be game, screen, group, or entity.", optOrigin))
                 match eirPropertyValueAndType with
                 | Right (propertyValue, propertyType) ->
@@ -815,10 +815,10 @@ module ScriptSystemModule =
                     | Keyword (str, optOrigin) ->
                         ignore optOrigin
                         let relation = Relation.makeFromString str
-                        let address = Relation.resolve context relation
+                        let address = Relation.resolve context.SimulantAddress relation
                         Right (address, env)
                     | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or keyword.", optOrigin))
-                | None -> Right (context, env)
+                | None -> Right (context.SimulantAddress, env)
             let (propertyValue, env) = eval propertyValueExpr env
             match eirAddressAndEnv with
             | Right (address, env) ->
@@ -826,9 +826,9 @@ module ScriptSystemModule =
                 let eirPropertyType =
                     match Address.getNames address with
                     | [] -> Right (Simulants.Game.GetPropertyType propertyName world)
-                    | [_] -> let screen = Screen.proxy (Address.changeType<obj, Screen> address) in Right (screen.GetPropertyType propertyName world)
-                    | [_; _] -> let group = Group.proxy (Address.changeType<obj, Group> address) in Right (group.GetPropertyType propertyName world)
-                    | [_; _; _] -> let entity = Entity.proxy (Address.changeType<obj, Entity> address) in Right (entity.GetPropertyType propertyName world)
+                    | [_] -> let screen = Screen.proxy (Address.changeType<Simulant, Screen> address) in Right (screen.GetPropertyType propertyName world)
+                    | [_; _] -> let group = Group.proxy (Address.changeType<Simulant, Group> address) in Right (group.GetPropertyType propertyName world)
+                    | [_; _; _] -> let entity = Entity.proxy (Address.changeType<Simulant, Entity> address) in Right (entity.GetPropertyType propertyName world)
                     | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be game, screen, group, or entity.", optOrigin))
                 match eirPropertyType with
                 | Right propertyType ->
@@ -839,9 +839,9 @@ module ScriptSystemModule =
                             let eirWorld =
                                 match Address.getNames address with
                                 | [] -> Right (Simulants.Game.Set propertyName propertyValue world)
-                                | [_] -> let screen = Screen.proxy (Address.changeType<obj, Screen> address) in Right (screen.Set propertyName propertyValue world)
-                                | [_; _] -> let group = Group.proxy (Address.changeType<obj, Group> address) in Right (group.Set propertyName propertyValue world)
-                                | [_; _; _] -> let entity = Entity.proxy (Address.changeType<obj, Entity> address) in Right (entity.Set propertyName propertyValue world)
+                                | [_] -> let screen = Screen.proxy (Address.changeType<Simulant, Screen> address) in Right (screen.Set propertyName propertyValue world)
+                                | [_; _] -> let group = Group.proxy (Address.changeType<Simulant, Group> address) in Right (group.Set propertyName propertyValue world)
+                                | [_; _; _] -> let entity = Entity.proxy (Address.changeType<Simulant, Entity> address) in Right (entity.Set propertyName propertyValue world)
                                 | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be game, screen, group, or entity.", optOrigin))
                             match eirWorld with
                             | Right world ->
@@ -859,20 +859,20 @@ module ScriptSystemModule =
             | Some env -> (Unit optOrigin, env)
             | None -> (Violation ([!!"InvalidConstantDeclaration"], "Constant '" + name + "' could not be declared due to having the same name as another top-level binding.", optOrigin), env)
 
-        and evalVariable name stream subscriptionKey optOrigin env =
+        and evalVariable name stream streamKey optOrigin env =
             match stream with
             | ConstantStream name -> (Unit optOrigin, env)
             | VariableStream name -> (Unit optOrigin, env)
             | EventStream address ->
-                let (addressEvaled, env) = eval address
+                let (addressEvaled, env) = eval address env
                 match addressEvaled with
-                | String (addressStr, env)
-                | Keyword (addressStr, env) ->
+                | String (addressStr, optOrigin)
+                | Keyword (addressStr, optOrigin) ->
                     try let address = Address.makeFromString addressStr
                         let context = Env.getContext env
-                        let world = Env.getWorld env
-                        let world = World.unsubscribe subscriptionKey world
-                        let world = World.subscribe5 subscriptionKey () address context world
+                        let stream = Stream.stream address context
+                        let env = Env.addStream streamKey stream env
+                        (Unit optOrigin, env)
                     with exn -> (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidEventStreamAddress"], "Variable '" + name + "' could not be declared due to invalid event stream address '" + addressStr + "'.", optOrigin), env)
                 
                 
