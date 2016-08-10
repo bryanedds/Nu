@@ -32,8 +32,6 @@ module Scripting =
         // constructed as [propertyStream P ././@ EntityDispatcher] or [propertyStream P ././@ EntityDispatcher Vanilla]
         // does not allow for properties of parents or siblings
         | PropertyStreamMany of string * Expr * Classification
-        // not constructable directly
-        | StreamImpl of Prime.Stream<obj, Simulant, World>
 
     and [<Syntax(   "pow root sqr sqrt " +
                     "floor ceiling truncate round exp log " +
@@ -299,13 +297,15 @@ module Scripting =
             { Rebinding : bool // rebinding should be enabled in Terminal or perhaps when reloading existing scripts.
               TopLevel : Dictionary<string, Expr>
               SubscriptionKeys : Map<string, Guid>
-              Context : obj Address
+              Streams : Map<Guid, Prime.Stream<obj, Simulant, World>>
+              Context : Simulant
               World : World }
 
         static member make rebinding topLevel context world =
             { Rebinding = rebinding
               TopLevel = topLevel
               SubscriptionKeys = Map.empty
+              Streams = Map.empty
               Context = context
               World = World.choose world }
 
@@ -320,6 +320,12 @@ module Scripting =
                 Some env
             else None
 
+        static member tryGetStream guid env =
+            Map.tryFind guid env.Streams
+
+        static member addStream guid stream env =
+            { env with Streams = Map.add guid stream env.Streams }
+
         static member getContext env =
             env.Context
 
@@ -330,7 +336,7 @@ module Scripting =
             { env with World = World.choose world }
 
     type [<NoComparison>] Script =
-        { Context : obj Address
+        { Context : Simulant
           Constants : (Name * Expr) list
           Streams : (Name * Guid * Stream * Expr) list
           Equalities : (Name * Guid * Stream) list
