@@ -185,6 +185,10 @@ module AddressModule =
         let makeFromNames<'a> names : 'a Address =
             Address.ltoa<'a> names
 
+        /// Make an address from a name.
+        let makeFromName<'a> name : 'a Address =
+            Address.ntoa<'a> name
+
         /// Make an address from a '/' delimited string.
         let makeFromFullName<'a> fullName : 'a Address =
             Address.makeFromFullName<'a> fullName
