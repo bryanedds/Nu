@@ -853,6 +853,31 @@ module ScriptSystemModule =
                 | Left violation -> (violation, env)
             | Left violation -> (violation, env)
 
+        and evalConstant name expr optOrigin env =
+            let (evaled, env) = eval expr env
+            match Env.tryAddBinding true name evaled env with
+            | Some env -> (Unit optOrigin, env)
+            | None -> (Violation ([!!"InvalidConstantDeclaration"], "Constant '" + name + "' could not be declared due to having the same name as another top-level binding.", optOrigin), env)
+
+        and evalVariable name stream subscriptionKey optOrigin env =
+            match stream with
+            | ConstantStream name -> (Unit optOrigin, env)
+            | VariableStream name -> (Unit optOrigin, env)
+            | EventStream address ->
+                let (addressEvaled, env) = eval address
+                match addressEvaled with
+                | String (addressStr, env)
+                | Keyword (addressStr, env) ->
+                    try let address = Address.makeFromString addressStr
+                        let context = Env.getContext env
+                        let world = Env.getWorld env
+                        let world = World.unsubscribe subscriptionKey world
+                        let world = World.subscribe5 subscriptionKey () address context world
+                    with exn -> (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidEventStreamAddress"], "Variable '" + name + "' could not be declared due to invalid event stream address '" + addressStr + "'.", optOrigin), env)
+                
+                
+                
+
         and evalFn _ _ env =
             // TODO: implement
             (Unit None, env)
@@ -873,6 +898,7 @@ module ScriptSystemModule =
             | Tuple _ -> (expr, env)
             | List _ -> (expr, env)
             | Phrase _ -> (expr, env)
+            | Stream _ -> (expr, env)
             | Binding _ -> (expr, env)
             | Apply (exprs, optOrigin) -> evalApply exprs optOrigin env
             | Quote _  -> (expr, env)
@@ -887,8 +913,8 @@ module ScriptSystemModule =
             | GetFrom (name, expr, optOrigin) -> evalGet name (Some expr) optOrigin env
             | Set (name, expr, optOrigin) -> evalSet name expr None optOrigin env
             | SetTo (name, expr, expr2, optOrigin) -> evalSet name expr2 (Some expr) optOrigin env
-            | Constant (_, _, optOrigin) -> (Unit optOrigin, env)
-            | Variable (_, _, _, optOrigin) -> (Unit optOrigin, env)
+            | Constant (name, expr, optOrigin) -> evalConstant name expr optOrigin env
+            | Variable (name, stream, guid, optOrigin) -> evalVariable name stream guid env
             | Equate (_, _, _, _, optOrigin) -> (Unit optOrigin, env)
             | EquateMany (_, _, _, _, _, optOrigin) -> (Unit optOrigin, env)
             | Handle (_, _, optOrigin) -> (Unit optOrigin, env)

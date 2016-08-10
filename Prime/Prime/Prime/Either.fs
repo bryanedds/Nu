@@ -3,7 +3,6 @@
 
 namespace Prime
 open System
-open System.ComponentModel
 open Prime
 
 /// Haskell-style Either type.

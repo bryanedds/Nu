@@ -235,7 +235,7 @@ module EventWorld =
                     (EventTrace.record "EventWorld" "unsubscribe" EventTrace.empty)
                     (world.GetEmptyParticipant ())
                     world
-            | None -> world // TODO: consider an assert fail here?
+            | None -> world
         | None -> world
 
     /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
