@@ -96,7 +96,7 @@
     <Compile Include="EventFilter.fs" />
     <Compile Include="EventSystem.fs" />
     <Compile Include="EventWorld.fs" />
-    <Compile Include="Observation.fs" />
+    <Compile Include="Stream.fs" />
     <Compile Include="Chain.fs" />
     <Compile Include="RandTests.fs" />
     <Compile Include="AddressTests.fs" />
