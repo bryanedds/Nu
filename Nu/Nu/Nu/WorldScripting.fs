@@ -20,18 +20,20 @@ module Scripting =
 
     and [<NoComparison>] Stream =
         // constructed as [constantStream v]
-        | Constant of string
+        | ConstantStream of string
         // constructed as [variableStream v]
-        | Variable of string
+        | VariableStream of string
         // constructed as [eventStream X/Y/Z]
         // does not allow for entity, group, screen, or game events
-        | Event of obj Address
+        | EventStream of Expr
         // constructed as [propertyStream P] or [propertyStream P ././.]
         // does not allow for properties of parents or siblings, or for a wildcard in the relation
-        | Property of string * obj Relation
+        | PropertyStream of string * Expr
         // constructed as [propertyStream P ././@ EntityDispatcher] or [propertyStream P ././@ EntityDispatcher Vanilla]
         // does not allow for properties of parents or siblings
-        | PropertyMany of string * obj Relation * Classification
+        | PropertyStreamMany of string * Expr * Classification
+        // not constructable directly
+        | StreamImpl of Prime.Stream<obj, Simulant, World>
 
     and [<Syntax(   "pow root sqr sqrt " +
                     "floor ceiling truncate round exp log " +
@@ -72,6 +74,7 @@ module Scripting =
         | Tuple of Map<int, Expr> * Origin option
         | List of Expr list * Origin option
         | Phrase of Map<int, Expr> * Origin option
+        | Stream of Stream * Origin option
 
         (* Special Forms *)
         | Binding of string * Origin option
@@ -121,6 +124,7 @@ module Scripting =
             | Tuple (_, optOrigin)
             | List (_, optOrigin)
             | Phrase (_, optOrigin)
+            | Stream (_, optOrigin)
             | Binding (_, optOrigin)
             | Apply (_, optOrigin)
             | Quote (_, optOrigin)
@@ -163,7 +167,7 @@ module Scripting =
             match source with
             | :? Symbol as symbol ->
                 match symbol with
-                | Symbol.Atom (str, optOrigin) ->
+                | Prime.Atom (str, optOrigin) ->
                     match str with
                     | "none" -> Option (None, optOrigin) :> obj
                     | "empty" -> List (List.empty, optOrigin) :> obj
@@ -172,7 +176,7 @@ module Scripting =
                         if firstChar = '.' || Char.IsUpper firstChar
                         then Keyword (str, optOrigin) :> obj
                         else Binding (str, optOrigin) :> obj
-                | Symbol.Number (str, optOrigin) ->
+                | Prime.Number (str, optOrigin) ->
                     match Int32.TryParse str with
                     | (true, int) -> Int (int, optOrigin) :> obj
                     | (false, _) ->
@@ -187,9 +191,9 @@ module Scripting =
                                 match Double.TryParse str with
                                 | (true, double) -> Double (double, optOrigin) :> obj
                                 | (false, _) -> Violation ([!!"InvalidNumberForm"], "Unexpected number parse failure.", optOrigin) :> obj
-                | Symbol.String (str, optOrigin) -> String (str, optOrigin) :> obj
-                | Symbol.Quote (str, optOrigin) -> Quote (str, optOrigin) :> obj
-                | Symbol.Symbols (symbols, optOrigin) ->
+                | Prime.String (str, optOrigin) -> String (str, optOrigin) :> obj
+                | Prime.Quote (str, optOrigin) -> Quote (str, optOrigin) :> obj
+                | Prime.Symbols (symbols, optOrigin) ->
                     match symbols with
                     | Atom (name, nameOptOrigin) :: tail when
                         (match name with
@@ -204,6 +208,10 @@ module Scripting =
                          | "break" -> true
                          | "get" -> true
                          | "set" -> true
+                         | "constantStream" -> true
+                         | "variableStream" -> true
+                         | "eventStream" -> true
+                         | "propertyStream" -> true
                          | "constant" -> true
                          | "variable" -> true
                          | "equality" -> true
@@ -212,18 +220,18 @@ module Scripting =
                         match name with
                         | "violation" ->
                             match tail with
-                            | [Symbol.Atom (tagStr, _)]
-                            | [Symbol.String (tagStr, _)] ->
+                            | [Prime.Atom (tagStr, _)]
+                            | [Prime.String (tagStr, _)] ->
                                 try let tagName = !!tagStr in Violation (Name.split [|'/'|] tagName, "User-defined error.", optOrigin) :> obj
                                 with exn -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", optOrigin) :> obj
-                            | [Symbol.Atom (tagStr, _); Symbol.String (errorMsg, _)]
-                            | [Symbol.String (tagStr, _); Symbol.String (errorMsg, _)] ->
+                            | [Prime.Atom (tagStr, _); Prime.String (errorMsg, _)]
+                            | [Prime.String (tagStr, _); Prime.String (errorMsg, _)] ->
                                 try let tagName = !!tagStr in Violation (Name.split [|'/'|] tagName, errorMsg, optOrigin) :> obj
                                 with exn -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", optOrigin) :> obj
                             | _ -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Requires 1 tag.", optOrigin) :> obj
                         | "let" ->
                             match tail with
-                            | [Symbol.Atom (name, _); body] -> Let (name, symbolToExpr body, optOrigin) :> obj
+                            | [Prime.Atom (name, _); body] -> Let (name, symbolToExpr body, optOrigin) :> obj
                             | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. Requires 1 name and 1 body.", optOrigin) :> obj
                         | "if" ->
                             match tail with
@@ -231,12 +239,12 @@ module Scripting =
                             | _ -> Violation ([!!"InvalidIfForm"], "Invalid if form. Requires 3 arguments.", optOrigin) :> obj
                         | "try" ->
                             match tail with
-                            | [body; Symbol.Symbols (handlers, _)] ->
+                            | [body; Prime.Symbols (handlers, _)] ->
                                 let eirHandlers =
                                     List.mapi
                                         (fun i handler ->
                                             match handler with
-                                            | Symbol.Symbols ([Symbol.Atom (categoriesStr, _); handlerBody], _) ->
+                                            | Prime.Symbols ([Prime.Atom (categoriesStr, _); handlerBody], _) ->
                                                 Right (Name.split [|'/'|] !!categoriesStr, handlerBody)
                                             | _ ->
                                                 Left ("Invalid try handler form for handler #" + scstring (inc i) + ". Requires 1 path and 1 body."))
@@ -251,8 +259,8 @@ module Scripting =
                             Break (content, optOrigin) :> obj
                         | "get" ->
                             match tail with
-                            | Symbol.Atom (nameStr, optOrigin) :: tail2
-                            | Symbol.String (nameStr, optOrigin) :: tail2 ->
+                            | Prime.Atom (nameStr, optOrigin) :: tail2
+                            | Prime.String (nameStr, optOrigin) :: tail2 ->
                                 match tail2 with
                                 | [] -> Get (nameStr, optOrigin) :> obj
                                 | [relation] -> GetFrom (nameStr, symbolToExpr relation, optOrigin) :> obj
@@ -260,13 +268,27 @@ module Scripting =
                             | _ -> Violation ([!!"InvalidGetForm"], "Invalid get form. Requires a name and an optional relation expression.", optOrigin) :> obj
                         | "set" ->
                             match tail with
-                            | Symbol.Atom (nameStr, optOrigin) :: value :: tail2
-                            | Symbol.String (nameStr, optOrigin) :: value :: tail2 ->
+                            | Prime.Atom (nameStr, optOrigin) :: value :: tail2
+                            | Prime.String (nameStr, optOrigin) :: value :: tail2 ->
                                 match tail2 with
                                 | [] -> Set (nameStr, symbolToExpr value, optOrigin) :> obj
                                 | [relation] -> SetTo (nameStr, symbolToExpr value, symbolToExpr relation, optOrigin) :> obj
                                 | _ -> Violation ([!!"InvalidSetForm"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", optOrigin) :> obj
                             | _ -> Violation ([!!"InvalidSetForm"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", optOrigin) :> obj
+                        | "constantStream" ->
+                            match tail with
+                            | [Prime.Atom (nameStr, optOrigin)]
+                            | [Prime.String (nameStr, optOrigin)] -> Stream (ConstantStream nameStr, optOrigin) :> obj
+                            | _ -> Violation ([!!"InvalidConstantStreamForm"], "Invalid constant stream form. Requires a name.", optOrigin) :> obj
+                        | "variableStream" ->
+                            match tail with
+                            | [Prime.Atom (nameStr, optOrigin)]
+                            | [Prime.String (nameStr, optOrigin)] -> Stream (ConstantStream nameStr, optOrigin) :> obj
+                            | _ -> Violation ([!!"InvalidVariableStreamForm"], "Invalid variable stream form. Requires a name.", optOrigin) :> obj
+                        | "eventStream" ->
+                            match tail with
+                            | [relation] -> Stream (EventStream (symbolToExpr relation), optOrigin) :> obj
+                            | _ -> Violation ([!!"InvalidEventStreamForm"], "Invalid event stream form. Requires a relation expression.", optOrigin) :> obj
                         | _ -> Apply (Binding (name, nameOptOrigin) :: List.map symbolToExpr tail, optOrigin) :> obj
                     | _ -> Apply (List.map symbolToExpr symbols, optOrigin) :> obj
             | :? Expr -> source
@@ -275,30 +297,28 @@ module Scripting =
     type [<NoEquality; NoComparison>] Env =
         private
             { Rebinding : bool // rebinding should be enabled in Terminal or perhaps when reloading existing scripts.
-              Bindings : Dictionary<string, Expr>
+              TopLevel : Dictionary<string, Expr>
+              SubscriptionKeys : Map<string, Guid>
               Context : obj Address
               World : World }
 
-        static member make rebinding bindings context world =
+        static member make rebinding topLevel context world =
             { Rebinding = rebinding
-              Bindings = bindings
+              TopLevel = topLevel
+              SubscriptionKeys = Map.empty
               Context = context
               World = World.choose world }
 
         static member tryGetBinding name env =
-            match env.Bindings.TryGetValue name with
+            match env.TopLevel.TryGetValue name with
             | (true, binding) -> Some binding
             | (false, _) -> None
 
-        static member tryAddBinding name evaled env =
-            if env.Rebinding || not ^ env.Bindings.ContainsKey name then
-                env.Bindings.Add (name, evaled)
+        static member tryAddBinding isTopLevel name evaled env =
+            if isTopLevel && (env.Rebinding || not ^ env.TopLevel.ContainsKey name) then
+                env.TopLevel.Add (name, evaled)
                 Some env
             else None
-
-        static member addBindings entries env =
-            List.iter (fun (name, evaled) -> env.Bindings.Add (name, evaled)) entries
-            env
 
         static member getContext env =
             env.Context
