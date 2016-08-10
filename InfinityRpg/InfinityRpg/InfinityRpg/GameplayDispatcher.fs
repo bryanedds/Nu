@@ -5,9 +5,9 @@ open SDL2
 open OpenTK
 open Prime
 open Prime.Chain
-open Prime.Observation
+open Prime.Stream
 open Nu
-open Nu.Observation
+open Nu.Stream
 open AStar
 open InfinityRpg
 
@@ -368,8 +368,8 @@ module GameplayDispatcherModule =
                             | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
                         updateCharacterByNavigation navigationDescriptor character world
                     do! pass }}
-            let observation = character |> observe (Events.Update ->- character) |> until (Events.Deselect ->- Simulants.Gameplay)
-            runAssumingCascade chain observation world |> snd
+            let stream = character |> observe (Events.Update ->- character) |> until (Events.Deselect ->- Simulants.Gameplay)
+            runAssumingCascade chain stream world |> snd
 
         static let runCharacterAction newActionDescriptor (character : Entity) world =
             // NOTE: currently just implements attack
@@ -384,8 +384,8 @@ module GameplayDispatcherModule =
                         let world = updateCharacterByAction actionDescriptor character world
                         runCharacterReaction actionDescriptor character world
                     do! pass }}
-            let observation = character |> observe (Events.Update ->- character) |> until (Events.Deselect ->- Simulants.Gameplay)
-            runAssumingCascade chain observation world |> snd
+            let stream = character |> observe (Events.Update ->- character) |> until (Events.Deselect ->- Simulants.Gameplay)
+            runAssumingCascade chain stream world |> snd
 
         static let runCharacterNoActivity (character : Entity) world =
             character.SetActivityState NoActivity world
@@ -481,12 +481,12 @@ module GameplayDispatcherModule =
                             | Left _ -> chain {
                                 do! update ^ cancelNavigation Simulants.Player }}
                     do! update ^ Simulants.HudSaveGame.SetEnabled true }
-                let observation =
+                let stream =
                     Simulants.Gameplay |>
                     observe (Events.Click ->- Simulants.HudHalt) |>
                     sum (Events.Update ->- Simulants.Player) |>
                     until (Events.Deselect ->- Simulants.Gameplay)
-                runAssumingCascade chain observation world |> snd
+                runAssumingCascade chain stream world |> snd
             else world
 
         static let handlePlayerActivityChange _ world =

@@ -3,7 +3,7 @@ open System
 open SDL2
 open OpenTK
 open Prime
-open Prime.Observation
+open Prime.Stream
 open Nu
 open InfinityRpg
 

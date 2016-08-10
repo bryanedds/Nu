@@ -27,7 +27,7 @@ open SDL2
 open OpenTK
 open TiledSharp
 open Prime
-open Prime.Observation
+open Prime.Stream
 open Prime.Chain
 open Nu
 open Nu.Gaia

@@ -9,7 +9,7 @@ open Prime
 /// The Chain monad. Allows the user to define a chain of operations over the world that
 /// optionally spans across a bounded number of events.
 ///
-/// The following is a potentially tail-recursible representation as speculated by @tpetracek -
+/// The following is a potentially tail-recursible representation as speculated by @tpetricek -
 /// 'w -> ('w * Either<'e -> Chain<'e, 'a, 'w>, 'a> -> 'a) -> 'a
 type [<NoComparison; NoEquality>] Chain<'e, 'a, 'w when 'w :> 'w EventWorld> =
     Chain of ('w -> 'w * Either<'e -> Chain<'e, 'a, 'w>, 'a>)
@@ -59,7 +59,7 @@ module Chain =
     let get : Chain<'e, 'w, 'w> =
         Chain (fun world -> (world, Right world))
 
-    /// Get the world transformed by 'by'.
+    /// Get the world as transformed via 'by'.
     let [<DebuggerHidden; DebuggerStepThrough>] getBy by : Chain<'e, 'a, 'w> =
         Chain (fun world -> (world, Right ^ by world))
 
@@ -136,17 +136,17 @@ module Chain =
     let [<DebuggerHidden; DebuggerStepThrough>] run (m : Chain<unit, 'a, 'w>) (world : 'w) : 'w =
         run2 m world |> fst
 
-    let private run4 handling (chain : Chain<Event<'a, 'o>, unit, 'w>) (observation : Observation<'a, 'o, 'w>) world =
+    let private run4 handling (chain : Chain<Event<'a, 's>, unit, 'w>) (stream : Stream<'a, 's, 'w>) world =
         let stateKey = makeGuid ()
         let subscriptionKey = makeGuid ()
-        let world = EventWorld.addEventState stateKey (fun (_ : Event<'a, 'o>) -> chain) world
-        let (eventAddress, unsubscribe, world) = observation.Subscribe world
+        let world = EventWorld.addEventState stateKey (fun (_ : Event<'a, 's>) -> chain) world
+        let (eventAddress, unsubscribe, world) = stream.Subscribe world
         let unsubscribe = fun world ->
             let world = EventWorld.removeEventState stateKey world
             let world = unsubscribe world
             EventWorld.unsubscribe subscriptionKey world
         let advance = fun evt world ->
-            let chain = EventWorld.getEventState stateKey world : Event<'a, 'o> -> Chain<Event<'a, 'o>, unit, 'w>
+            let chain = EventWorld.getEventState stateKey world : Event<'a, 's> -> Chain<Event<'a, 's>, unit, 'w>
             let (world, advanceResult) = advance chain evt world
             match advanceResult with
             | Right () -> unsubscribe world
@@ -154,18 +154,18 @@ module Chain =
         let subscription = fun evt world ->
             let world = advance evt world
             (handling, world)
-        let world = advance Unchecked.defaultof<Event<'a, 'o>> world
-        let world = EventWorld.subscribe5<'a, 'o, 'w> subscriptionKey subscription eventAddress observation.Observer world
+        let world = advance Unchecked.defaultof<Event<'a, 's>> world
+        let world = EventWorld.subscribe5<'a, 's, 'w> subscriptionKey subscription eventAddress stream.Subscriber world
         (unsubscribe, world)
 
     /// Run a chain over Nu's event system.
     /// Allows each chainhronized operation to run without referencing its source event, and
     /// without specifying its event handling approach by assuming Cascade.
-    let runAssumingCascade chain (observation : Observation<'a, 'o, 'w>) world =
-        run4 Cascade chain observation world
+    let runAssumingCascade chain (stream : Stream<'a, 's, 'w>) world =
+        run4 Cascade chain stream world
 
     /// Run a chain over Nu's event system.
     /// Allows each chainhronized operation to run without referencing its source event, and
     /// without specifying its event handling approach by assuming Resolve.
-    let runAssumingResolve chain (observation : Observation<'a, 'o, 'w>) world =
-        run4 Resolve chain observation world
+    let runAssumingResolve chain (stream : Stream<'a, 's, 'w>) world =
+        run4 Resolve chain stream world

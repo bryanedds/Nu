@@ -38,16 +38,14 @@ type AddressConverter (targetType : Type) =
     override this.ConvertFrom (_, _, source) =
         match source with
         | :? string as fullNameStr ->
-            let fullName = !!fullNameStr
             let makeFromStringFunction = targetType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
             let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((targetType.GetGenericArguments ()).[0])
-            makeFromStringFunctionGeneric.Invoke (null, [|fullName|])
+            makeFromStringFunctionGeneric.Invoke (null, [|fullNameStr|])
         | :? Symbol as addressSymbol ->
             match addressSymbol with
             | Atom (fullNameStr, _) | String (fullNameStr, _) ->
-                let fullName = !!fullNameStr
                 let makeFromStringFunction = targetType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                makeFromStringFunction.Invoke (null, [|fullName|])
+                makeFromStringFunction.Invoke (null, [|fullNameStr|])
             | Number (_, _) | Quote (_, _) | Symbols (_, _) ->
                 failconv "Expected Symbol or String for conversion to Address." ^ Some addressSymbol
         | _ ->
@@ -75,7 +73,7 @@ module AddressModule =
     
         /// Make a relation from a '/' delimited string where '.' are empty.
         /// NOTE: do not move this function as the RelationConverter's reflection code relies on it being exactly here!
-        static member makeFromString (addressStr : string) =
+        static member makeFromString<'a> (addressStr : string) =
             Address<'a>.makeFromFullName !!addressStr
 
         /// Make an address from a '/' delimited string.

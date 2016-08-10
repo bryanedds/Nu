@@ -4,7 +4,7 @@ open FSharpx
 open SDL2
 open OpenTK
 open Prime
-open Prime.Observation
+open Prime.Stream
 open Prime.Chain
 open Nu
 
