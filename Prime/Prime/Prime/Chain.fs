@@ -129,12 +129,12 @@ module Chain =
         | (world', Right v) -> (world', v)
 
     /// Run a chain to its end, providing unit for all its steps.
-    let rec [<DebuggerHidden; DebuggerStepThrough>] run2 (m : Chain<unit, 'a, 'w>) (world : 'w) : ('w * 'a) =
+    let [<DebuggerHidden; DebuggerStepThrough>] run2 (m : Chain<unit, 'a, 'w>) (world : 'w) : ('w * 'a) =
         run3 m () world
 
     /// Run a chain to its end, providing unit for all its steps.
-    let rec [<DebuggerHidden; DebuggerStepThrough>] run (m : Chain<unit, 'a, 'w>) (world : 'w) : 'w =
-        run3 m () world |> fst
+    let [<DebuggerHidden; DebuggerStepThrough>] run (m : Chain<unit, 'a, 'w>) (world : 'w) : 'w =
+        run2 m world |> fst
 
     let private run4 handling (chain : Chain<Event<'a, 'o>, unit, 'w>) (observation : Observation<'a, 'o, 'w>) world =
         let stateKey = makeGuid ()
