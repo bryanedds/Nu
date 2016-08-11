@@ -925,7 +925,7 @@ module WorldScriptSystem =
                     with exn -> Left (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidPropertyStreamRelation"], "Variable '" + name + "' could not be created due to invalid property stream relation '" + propertyRelationStr + "'.", optOrigin))
                 | _ -> Left (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidPropertyStreamRelation"], "Variable '" + name + "' could not be created due to invalid property stream relation. Relation must be either a string or a keyword", optOrigin))
             | PropertyStreamMany _ -> Left (Violation ([!!"Unimplemented"], "Unimplemented feature.", optOrigin))
-            | ComputedStream _ -> failwithumf ()
+            | ComputedStream _ -> Left (Violation ([!!"InvalidStream"], "Cannot have a computed stream on the left-hand side.", optOrigin))
 
         and evalStreamToStream name stream optOrigin env =
             match stream with
