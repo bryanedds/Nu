@@ -50,8 +50,8 @@ module WorldScriptSystem =
              (typedefof<_ list>.Name, (fun value ty optOrigin -> tryImportList value ty optOrigin))] |>
             dictC
 
-        and private tryImportEventData event optOrigin =
-            match tryImport event.Data event.DataType optOrigin with
+        and private tryImportEventData evt optOrigin =
+            match tryImport evt.Data evt.DataType optOrigin with
             | Some data -> data
             | None -> Violation ([!!"InvalidStreamValue"], "Stream value could not be imported into scripting environment.", optOrigin)
 
@@ -557,11 +557,11 @@ module WorldScriptSystem =
         let addStream name stream optOrigin env =
             let context = Env.getContext env
             let streamAddress = Address.makeFromNames [!!"Stream"; !!name] ->>- context.ParticipantAddress
-            let stream = stream |> Stream.map (fun event _ -> tryImportEventData event optOrigin :> obj) |> Stream.lifetime context
+            let stream = stream |> Stream.map (fun evt _ -> tryImportEventData evt optOrigin :> obj) |> Stream.lifetime context
             let (unsubscribe, env) =
                 let world = Env.getWorld env
                 let world = match Env.tryGetStream streamAddress env with Some (_, unsubscribe) -> unsubscribe world | None -> world
-                let (unsubscribe, world) = Stream.subscribePlus (fun event world -> (Cascade, World.publish event.Data streamAddress EventTrace.empty context world)) context stream world
+                let (unsubscribe, world) = Stream.subscribePlus (fun evt world -> (Cascade, World.publish evt.Data streamAddress EventTrace.empty context world)) context stream world
                 let env = Env.setWorld World.choose world env
                 (unsubscribe, env)
             Env.addStream streamAddress (stream, unsubscribe) env

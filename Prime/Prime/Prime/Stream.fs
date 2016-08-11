@@ -123,7 +123,6 @@ module Stream =
     /// Combine a stream with a stream of events from the given address. Combination is in 'sum
     /// form', which is defined as an Either of the data of the combined events, where only data
     /// from the most recent event is available at a time.
-    /// TODO: unit test for this!
     let [<DebuggerHidden; DebuggerStepThrough>] sum
         (stream : Stream<'a, 'w>) (stream' : Stream<'b, 'w>) : Stream<Either<'a, 'b>, 'w> =
         let subscribe = fun world ->
