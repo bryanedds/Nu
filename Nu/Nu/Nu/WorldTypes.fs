@@ -262,6 +262,9 @@ module WorldTypes =
           Xtension : Xtension
           DispatcherNp : GameDispatcher
           Specialization : string
+          OptScriptAsset : AssetTag option
+          OptScriptAssetLc : AssetTag option
+          Script : Script
           CreationTimeStampNp : int64
           OptSelectedScreen : Screen option
           OptScreenTransitionDestination : Screen option
@@ -292,6 +295,9 @@ module WorldTypes =
               Xtension = Xtension.safe
               DispatcherNp = dispatcher
               Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
+              OptScriptAsset = None
+              OptScriptAssetLc = None
+              Script = Script.empty
               CreationTimeStampNp = Core.getTimeStamp ()
               OptSelectedScreen = None
               OptScreenTransitionDestination = None
@@ -314,6 +320,9 @@ module WorldTypes =
           DispatcherNp : ScreenDispatcher
           Specialization : string
           Persistent : bool
+          OptScriptAsset : AssetTag option
+          OptScriptAssetLc : AssetTag option
+          Script : Script
           CreationTimeStampNp : int64
           EntityTreeNp : Entity QuadTree MutantCache
           TransitionStateNp : TransitionState
@@ -347,6 +356,9 @@ module WorldTypes =
                   DispatcherNp = dispatcher
                   Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
                   Persistent = true
+                  OptScriptAsset = None
+                  OptScriptAssetLc = None
+                  Script = Script.empty
                   CreationTimeStampNp = Core.getTimeStamp ()
                   EntityTreeNp = Unchecked.defaultof<Entity QuadTree MutantCache>
                   TransitionStateNp = IdlingState
@@ -372,8 +384,8 @@ module WorldTypes =
           DispatcherNp : GroupDispatcher
           Specialization : string
           Persistent : bool
-          OptScripts : AssetTag list option
-          OptScriptsLc : AssetTag list option
+          OptScriptAsset : AssetTag option
+          OptScriptAssetLc : AssetTag option
           Script : Script
           CreationTimeStampNp : int64 }
 
@@ -402,8 +414,8 @@ module WorldTypes =
               DispatcherNp = dispatcher
               Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
               Persistent = true
-              OptScripts = None
-              OptScriptsLc = None
+              OptScriptAsset = None
+              OptScriptAssetLc = None
               Script = Script.empty
               CreationTimeStampNp = Core.getTimeStamp () }
 
@@ -423,9 +435,6 @@ module WorldTypes =
           DispatcherNp : EntityDispatcher
           Specialization : string
           Persistent : bool
-          OptScripts : AssetTag list option
-          OptScriptsLc : AssetTag list option
-          Script : Script
           CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
           OptOverlayName : string option
           Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
@@ -485,9 +494,6 @@ module WorldTypes =
               DispatcherNp = dispatcher
               Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
               Persistent = true
-              OptScripts = None
-              OptScriptsLc = None
-              Script = Script.empty
               CreationTimeStampNp = Core.getTimeStamp ()
               OptOverlayName = optOverlayName
               Position = Vector2.Zero
