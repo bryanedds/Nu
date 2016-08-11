@@ -61,7 +61,7 @@ module Stream =
     /// as 'zip' for event streams.
     /// TODO: unit test for this!
     let [<DebuggerHidden; DebuggerStepThrough>] product
-        (eventAddress : 'b Address) (stream : Stream<'a, 'w>) : Stream<'a * 'b, 'w> =
+        (stream : Stream<'a, 'w>) (stream' : Stream<'b, 'w>) : Stream<'a * 'b, 'w> =
         let subscribe = fun world ->
 
             // initialize event state, subscription keys and addresses
@@ -72,12 +72,12 @@ module Stream =
             let subscriptionKey' = makeGuid ()
             let subscriptionKey'' = makeGuid ()
             let (subscriptionAddress, unsubscribe, world) = stream.Subscribe world
-            let subscriptionAddress' = eventAddress
+            let (subscriptionAddress', unsubscribe', world) = stream'.Subscribe world
             let subscriptionAddress'' = ntoa<'a * 'b> !!(scstring subscriptionKey'')
             
             // unsubscribe from 'a and 'b events, and remove event state
             let unsubscribe = fun world ->
-                let world = unsubscribe world
+                let world = unsubscribe (unsubscribe' world)
                 let world = EventWorld.unsubscribe<'w> subscriptionKey world
                 let world = EventWorld.unsubscribe<'w> subscriptionKey' world
                 EventWorld.removeEventState stateKey world
@@ -125,16 +125,16 @@ module Stream =
     /// from the most recent event is available at a time.
     /// TODO: unit test for this!
     let [<DebuggerHidden; DebuggerStepThrough>] sum
-        (eventAddress : 'b Address) (stream : Stream<'a, 'w>) : Stream<Either<'a, 'b>, 'w> =
+        (stream : Stream<'a, 'w>) (stream' : Stream<'b, 'w>) : Stream<Either<'a, 'b>, 'w> =
         let subscribe = fun world ->
             let subscriptionKey = makeGuid ()
             let subscriptionKey' = makeGuid ()
             let subscriptionKey'' = makeGuid ()
             let (subscriptionAddress, unsubscribe, world) = stream.Subscribe world
-            let subscriptionAddress' = eventAddress
+            let (subscriptionAddress', unsubscribe', world) = stream'.Subscribe world
             let subscriptionAddress'' = ntoa<Either<'a, 'b>> !!(scstring subscriptionKey'')
             let unsubscribe = fun world ->
-                let world = unsubscribe world
+                let world = unsubscribe (unsubscribe' world)
                 let world = EventWorld.unsubscribe<'w> subscriptionKey world
                 EventWorld.unsubscribe<'w> subscriptionKey' world
             let subscription = fun evt world ->
