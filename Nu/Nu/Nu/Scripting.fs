@@ -292,59 +292,59 @@ module Scripting =
             | :? Expr -> source
             | _ -> failconv "Invalid ExprConverter conversion from source." None
 
-    type [<NoEquality; NoComparison>] Env =
-        private
-            { Rebinding : bool // rebinding should be enabled in Terminal or perhaps when reloading existing scripts.
-              TopLevel : Dictionary<string, Expr>
-              Streams : Map<obj Address, Prime.Stream<obj, Simulant, World> * (World -> World)>
-              Context : Simulant
-              World : World }
+    [<AutoOpen>]
+    module EnvModule =
 
-        static member make rebinding topLevel context world =
-            { Rebinding = rebinding
-              TopLevel = topLevel
-              Streams = Map.empty
-              Context = context
-              World = World.choose world }
+        type [<NoEquality; NoComparison>] Env<'p, 'w when 'p :> Participant and 'w :> EventWorld<'w>> =
+            private
+                { Rebinding : bool // rebinding should be enabled in Terminal or perhaps when reloading existing scripts.
+                  TopLevel : Dictionary<string, Expr>
+                  Streams : Map<obj Address, Prime.Stream<obj, 'p, 'w> * ('w -> 'w)>
+                  Context : 'p
+                  World : 'w }
 
-        static member tryGetBinding name env =
-            match env.TopLevel.TryGetValue name with
-            | (true, binding) -> Some binding
-            | (false, _) -> None
+        [<RequireQualifiedAccess>]
+        module Env =
 
-        static member tryAddBinding isTopLevel name evaled env =
-            if isTopLevel && (env.Rebinding || not ^ env.TopLevel.ContainsKey name) then
-                env.TopLevel.Add (name, evaled)
-                Some env
-            else None
+            let make chooseWorld rebinding topLevel (context : 'p) (world : 'w) =
+                { Rebinding = rebinding
+                  TopLevel = topLevel
+                  Streams = Map.empty
+                  Context = context
+                  World = chooseWorld world }
 
-        static member tryGetStream streamAddress env =
-            Map.tryFind streamAddress env.Streams
+            let tryGetBinding name (env : Env<'p, 'w>) =
+                match env.TopLevel.TryGetValue name with
+                | (true, binding) -> Some binding
+                | (false, _) -> None
 
-        static member addStream streamAddress address env =
-            { env with Streams = Map.add streamAddress address env.Streams }
+            let tryAddBinding isTopLevel name evaled (env : Env<'p, 'w>) =
+                if isTopLevel && (env.Rebinding || not ^ env.TopLevel.ContainsKey name) then
+                    env.TopLevel.Add (name, evaled)
+                    Some env
+                else None
 
-        static member getContext env =
-            env.Context
+            let tryGetStream streamAddress (env : Env<'p, 'w>) =
+                Map.tryFind streamAddress env.Streams
 
-        static member getWorld env =
-            env.World
+            let addStream streamAddress address (env : Env<'p, 'w>) =
+                { env with Streams = Map.add streamAddress address env.Streams }
 
-        static member setWorld world env =
-            { env with World = World.choose world }
+            let getContext (env : Env<'p, 'w>) =
+                env.Context
 
-        static member updateWorld by env =
-            Env.setWorld (by (Env.getWorld env)) env
+            let getWorld (env : Env<'p, 'w>) =
+                env.World
 
-    type [<NoComparison>] Script =
-        { Context : Simulant
+            let setWorld chooseWorld world (env : Env<'p, 'w>) =
+                { env with World = chooseWorld world }
+
+            let updateWorld chooseWorld by (env : Env<'p, 'w>) =
+                setWorld chooseWorld (by (getWorld env)) env
+
+    type [<NoComparison>] Script<'p when 'p :> Participant> =
+        { Context : 'p
           Constants : (Name * Expr) list
           Streams : (Name * Guid * Stream * Expr) list
           Equalities : (Name * Guid * Stream) list
           Rules : unit list } // TODO
-
-    /// An abstract data type for executing scripts.
-    type [<NoEquality; NoComparison>] ScriptSystem =
-        private
-            { Scripts : Vmap<Guid, Script>
-              Debugging : bool }

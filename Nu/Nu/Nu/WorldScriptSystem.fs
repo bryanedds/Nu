@@ -9,63 +9,67 @@ open OpenTK
 open Prime
 open Nu
 open Nu.Scripting
-#nowarn "21"
-#nowarn "40"
 
 [<AutoOpen>]
-module ScriptSystemModule =
+module WorldScriptingModule =
 
-    let rec private tryImportList (value : obj) optOrigin =
-        try let objList = Reflection.objToObjList value
-            let optEvaledList =
-                List.map (fun item ->
-                    match Importers.TryGetValue (getTypeName item) with
-                    | (true, tryImport) -> tryImport item optOrigin
-                    | (false, _) -> None)
-                    objList
-            match List.definitizePlus optEvaledList with
-            | (true, evaledList) -> Some (List (evaledList, optOrigin))
-            | (false, _) -> None
-        with _ -> None
+    /// An abstract data type for executing scripts.
+    type [<NoEquality; NoComparison>] ScriptSystem =
+        private
+            { Scripts : Vmap<Guid, Script<Simulant>>
+              Debugging : bool }
 
-    and private Importers : Dictionary<string, obj -> Origin option -> Expr option> =
-        [(typeof<bool>.Name, (fun (value : obj) optOrigin -> match value with :? bool as bool -> Some (Bool (bool, optOrigin)) | _ -> None))
-         (typeof<int>.Name, (fun (value : obj) optOrigin -> match value with :? int as int -> Some (Int (int, optOrigin)) | _ -> None))
-         (typeof<int64>.Name, (fun (value : obj) optOrigin -> match value with :? int64 as int64 -> Some (Int64 (int64, optOrigin)) | _ -> None))
-         (typeof<single>.Name, (fun (value : obj) optOrigin -> match value with :? single as single -> Some (Single (single, optOrigin)) | _ -> None))
-         (typeof<double>.Name, (fun (value : obj) optOrigin -> match value with :? double as double -> Some (Double (double, optOrigin)) | _ -> None))
-         (typeof<Vector2>.Name, (fun (value : obj) optOrigin -> match value with :? Vector2 as vector2 -> Some (Vector2 (vector2, optOrigin)) | _ -> None))
-         (typedefof<_ list>.Name, tryImportList)] |>
-        dictC
-
-    let rec private tryExportList (evaled : Expr) (ty : Type) =
-        match evaled with
-        | List (evaleds, _) ->
-            let garg = ty.GetGenericArguments () |> Array.item 0
-            let itemType = if garg.IsGenericType then garg.GetGenericTypeDefinition () else garg
-            let optItems =
-                List.map (fun evaledItem ->
-                    match Exporters.TryGetValue itemType.Name with
-                    | (true, tryExport) -> tryExport evaledItem itemType
-                    | (false, _) -> None)
-                    evaleds
-            match List.definitizePlus optItems with
-            | (true, items) -> Some (Reflection.objsToList ty items)
-            | (false, _) -> None
-        | _ -> None
-
-    and private Exporters : Dictionary<string, Expr -> Type -> obj option> =
-        [(typeof<bool>.Name, (fun evaled _ -> match evaled with Bool (value, _) -> value :> obj |> Some | _ -> None))
-         (typeof<int>.Name, (fun evaled _ -> match evaled with Int (value, _) -> value :> obj |> Some | _ -> None))
-         (typeof<int64>.Name, (fun evaled _ -> match evaled with Int64 (value, _) -> value :> obj |> Some | _ -> None))
-         (typeof<single>.Name, (fun evaled _ -> match evaled with Single (value, _) -> value :> obj |> Some | _ -> None))
-         (typeof<double>.Name, (fun evaled _ -> match evaled with Double (value, _) -> value :> obj |> Some | _ -> None))
-         (typeof<Vector2>.Name, (fun evaled _ -> match evaled with Vector2 (value, _) -> value :> obj |> Some | _ -> None))
-         (typedefof<_ list>.Name, tryExportList)] |>
-        dictC
-
-    [<RequireQualifiedAccess>]
+    [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module ScriptSystem =
+
+        let rec private tryImportList (value : obj) optOrigin =
+            try let objList = Reflection.objToObjList value
+                let optEvaledList =
+                    List.map (fun item ->
+                        match Importers.TryGetValue (getTypeName item) with
+                        | (true, tryImport) -> tryImport item optOrigin
+                        | (false, _) -> None)
+                        objList
+                match List.definitizePlus optEvaledList with
+                | (true, evaledList) -> Some (List (evaledList, optOrigin))
+                | (false, _) -> None
+            with _ -> None
+
+        and private Importers : Dictionary<string, obj -> Origin option -> Expr option> =
+            [(typeof<bool>.Name, (fun (value : obj) optOrigin -> match value with :? bool as bool -> Some (Bool (bool, optOrigin)) | _ -> None))
+             (typeof<int>.Name, (fun (value : obj) optOrigin -> match value with :? int as int -> Some (Int (int, optOrigin)) | _ -> None))
+             (typeof<int64>.Name, (fun (value : obj) optOrigin -> match value with :? int64 as int64 -> Some (Int64 (int64, optOrigin)) | _ -> None))
+             (typeof<single>.Name, (fun (value : obj) optOrigin -> match value with :? single as single -> Some (Single (single, optOrigin)) | _ -> None))
+             (typeof<double>.Name, (fun (value : obj) optOrigin -> match value with :? double as double -> Some (Double (double, optOrigin)) | _ -> None))
+             (typeof<Vector2>.Name, (fun (value : obj) optOrigin -> match value with :? Vector2 as vector2 -> Some (Vector2 (vector2, optOrigin)) | _ -> None))
+             (typedefof<_ list>.Name, tryImportList)] |>
+            dictC
+
+        let rec private tryExportList (evaled : Expr) (ty : Type) =
+            match evaled with
+            | List (evaleds, _) ->
+                let garg = ty.GetGenericArguments () |> Array.item 0
+                let itemType = if garg.IsGenericType then garg.GetGenericTypeDefinition () else garg
+                let optItems =
+                    List.map (fun evaledItem ->
+                        match Exporters.TryGetValue itemType.Name with
+                        | (true, tryExport) -> tryExport evaledItem itemType
+                        | (false, _) -> None)
+                        evaleds
+                match List.definitizePlus optItems with
+                | (true, items) -> Some (Reflection.objsToList ty items)
+                | (false, _) -> None
+            | _ -> None
+
+        and private Exporters : Dictionary<string, Expr -> Type -> obj option> =
+            [(typeof<bool>.Name, (fun evaled _ -> match evaled with Bool (value, _) -> value :> obj |> Some | _ -> None))
+             (typeof<int>.Name, (fun evaled _ -> match evaled with Int (value, _) -> value :> obj |> Some | _ -> None))
+             (typeof<int64>.Name, (fun evaled _ -> match evaled with Int64 (value, _) -> value :> obj |> Some | _ -> None))
+             (typeof<single>.Name, (fun evaled _ -> match evaled with Single (value, _) -> value :> obj |> Some | _ -> None))
+             (typeof<double>.Name, (fun evaled _ -> match evaled with Double (value, _) -> value :> obj |> Some | _ -> None))
+             (typeof<Vector2>.Name, (fun evaled _ -> match evaled with Vector2 (value, _) -> value :> obj |> Some | _ -> None))
+             (typedefof<_ list>.Name, tryExportList)] |>
+            dictC
 
         type [<NoEquality; NoComparison>] UnaryFns =
             { Bool : bool -> Origin option -> Expr
@@ -542,12 +546,12 @@ module ScriptSystemModule =
 
         let streamSource sourceAddress streamAddress env =
             let context = Env.getContext env
-            let sourceStream = Stream.stream sourceAddress context
+            let sourceStream = context |> Stream.stream sourceAddress |> Stream.lifetime
             let (unsubscribe, env) =
                 let world = Env.getWorld env
                 let world = match Env.tryGetStream streamAddress env with Some (_, unsubscribe) -> unsubscribe world | None -> world
                 let (unsubscribe, world) = Stream.subscribePlus (fun event world -> (Cascade, World.publish event.Data streamAddress EventTrace.empty context world)) sourceStream world
-                let env = Env.setWorld world env
+                let env = Env.setWorld World.choose world env
                 (unsubscribe, env)
             Env.addStream streamAddress (sourceStream, unsubscribe) env
 
@@ -856,7 +860,7 @@ module ScriptSystemModule =
                                 | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be game, screen, group, or entity.", optOrigin))
                             match eirWorld with
                             | Right world ->
-                                let env = Env.setWorld world env
+                                let env = Env.setWorld World.choose world env
                                 (Unit optOrigin, env)
                             | Left violation -> (violation, env)
                         | None -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be exported into simulant property.", optOrigin), env)
@@ -898,7 +902,7 @@ module ScriptSystemModule =
             // TODO: implement
             (Unit None, env)
 
-        and eval expr env : Expr * Env =
+        and eval expr env : Expr * Env<Simulant, World> =
             match expr with
             | Violation _ -> (expr, env)
             | Unit _ -> (expr, env)
@@ -935,12 +939,5 @@ module ScriptSystemModule =
             | EquateMany (_, _, _, _, _, optOrigin) -> (Unit optOrigin, env)
             | Handle (_, _, optOrigin) -> (Unit optOrigin, env)
 
-    /// An abstract data type for executing scripts.
-    /// Has an unused type param to give it a unique name.
-    type [<NoEquality; NoComparison>] 'a ScriptSystem =
-        private
-            { Scripts : Vmap<Guid, Script>
-              Debugging : bool }
-
 /// An abstract data type for executing scripts.
-type ScriptSystem = unit ScriptSystemModule.ScriptSystem
+type ScriptSystem = WorldScriptingModule.ScriptSystem
