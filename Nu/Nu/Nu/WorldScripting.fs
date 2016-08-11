@@ -96,7 +96,7 @@ module Scripting =
         | Constant of string * Expr * Origin option
         // only accessible by variables and equalities
         // constructed as [variable v stream]
-        | Variable of string * Stream * Stream Address * Origin option
+        | Variable of string * Stream * Origin option
         // constructed as [equate Density stream] or [equate Density ././Player stream]
         // does not allow for relations to parents or siblings, or for a wildcard in the relation
         | Equate of string * obj Relation * Stream * Guid * Origin option
@@ -138,7 +138,7 @@ module Scripting =
             | Set (_, _, optOrigin)
             | SetTo (_, _, _, optOrigin)
             | Constant (_, _, optOrigin)
-            | Variable (_, _, _, optOrigin)
+            | Variable (_, _, optOrigin)
             | Equate (_, _, _, _, optOrigin)
             | EquateMany (_, _, _, _, _, optOrigin)
             | Handle (_, _, optOrigin) -> optOrigin
@@ -296,15 +296,13 @@ module Scripting =
         private
             { Rebinding : bool // rebinding should be enabled in Terminal or perhaps when reloading existing scripts.
               TopLevel : Dictionary<string, Expr>
-              StreamAddresses : Map<string, Stream Address>
-              Streams : Map<Stream Address, Prime.Stream<Stream, Simulant, World> * (World -> World)>
+              Streams : Map<obj Address, Prime.Stream<obj, Simulant, World> * (World -> World)>
               Context : Simulant
               World : World }
 
         static member make rebinding topLevel context world =
             { Rebinding = rebinding
               TopLevel = topLevel
-              StreamAddresses = Map.empty
               Streams = Map.empty
               Context = context
               World = World.choose world }

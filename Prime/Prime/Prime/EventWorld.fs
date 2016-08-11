@@ -95,18 +95,22 @@ module EventWorld =
         let eventAddresses = eventAddress :: eventAddressesAny
         eventAddresses
 
+    let debugSubscriptionTypeMismatch () =
+        Log.debug ^
+            "If you've reached this exception, then you've probably inadvertantly mixed up an event type " +
+            "parameter for some form of EventWorld.publish or subscribe. " +
+            "This exception can also crop up when your implementation of EventWorld.PublishEvent doesn't " +
+            "correctly specialize its 's and 'w types for EventWorld.publishEvent calls."
+
     let private boxSubscription<'a, 's, 'w when 's :> Participant and 'w :> 'w EventWorld> (subscription : Subscription<'a, 's, 'w>) =
-        let boxableSubscription = fun (evt : obj) world ->
-            try subscription (evt :?> Event<'a, 's>) world
-            with
-            | :? InvalidCastException ->
-                Log.debug ^
-                    "If you've reached this exception, then you've probably inadvertantly mixed up an event type " +
-                    "parameter for some form of EventWorld.publish or subscribe. " +
-                    "This exception can also crop up when your implementation of EventWorld.PublishEvent doesn't " +
-                    "correctly specialize its 's and 'w types for EventWorld.publishEvent calls."
-                reraise ()
-            | _ -> reraise ()
+        let boxableSubscription = fun (evtObj : obj) world ->
+            match subscription :> obj with
+            | :? Subscription<obj, 's, 'w> as subscriptionGeneric ->
+                let evt = try evtObj :?> Event<obj, 's> with exn -> debugSubscriptionTypeMismatch (); reraise ()
+                subscriptionGeneric evt world
+            | _ ->
+                let evt = try evtObj :?> Event<'a, 's> with exn -> debugSubscriptionTypeMismatch (); reraise ()
+                subscription evt world
         box boxableSubscription
 
     let getSortableSubscriptions
