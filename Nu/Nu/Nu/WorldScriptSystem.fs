@@ -540,6 +540,17 @@ module ScriptSystemModule =
             | (Some originLeft, Some originRight) -> Some { Start = originLeft.Start; Stop = originRight.Stop }
             | (_, _) -> None
 
+        let streamSource sourceAddress streamAddress env =
+            let context = Env.getContext env
+            let sourceStream = Stream.stream sourceAddress context
+            let (unsubscribe, env) =
+                let world = Env.getWorld env
+                let world = match Env.tryGetStream streamAddress env with Some (_, unsubscribe) -> unsubscribe world | None -> world
+                let (unsubscribe, world) = Stream.subscribePlus (fun event world -> (Cascade, World.publish event.Data streamAddress EventTrace.empty context world)) sourceStream world
+                let env = Env.setWorld world env
+                (unsubscribe, env)
+            Env.addStream streamAddress (sourceStream, unsubscribe) env
+
         let evalBoolUnary fnOptOrigin fnName fn evaledArgs env =
             match evaledArgs with
             | [evaled] ->
@@ -866,14 +877,7 @@ module ScriptSystemModule =
                 let context = Env.getContext env
                 let variableAddress = Address.makeFromNames [!!"Stream"; !!variableName] ->>- context.ParticipantAddress
                 let streamAddress = Address.makeFromNames [!!"Stream"; !!name] ->>- context.ParticipantAddress
-                let stream = Stream.stream variableAddress context
-                let (unsubscribe, env) =
-                    let world = Env.getWorld env
-                    let world = match Env.tryGetStream streamAddress env with Some (_, unsubscribe) -> unsubscribe world | None -> world
-                    let (unsubscribe, world) = Stream.subscribePlus (fun event world -> (Cascade, World.publish event.Data streamAddress EventTrace.empty context world)) stream world
-                    let env = Env.setWorld world env
-                    (unsubscribe, env)
-                let env = Env.addStream streamAddress (stream, unsubscribe) env
+                let env = streamSource variableAddress streamAddress env
                 (Unit optOrigin, env)
             | EventStream eventAddress ->
                 let (eventAddressEvaled, env) = eval eventAddress env
@@ -883,14 +887,7 @@ module ScriptSystemModule =
                     try let context = Env.getContext env
                         let eventAddress = Address.makeFromName !!eventAddressStr
                         let streamAddress = Address.makeFromNames [!!"Stream"; !!name] ->>- context.ParticipantAddress
-                        let stream = Stream.stream eventAddress context
-                        let (unsubscribe, env) =
-                            let world = Env.getWorld env
-                            let world = match Env.tryGetStream streamAddress env with Some (_, unsubscribe) -> unsubscribe world | None -> world
-                            let (unsubscribe, world) = Stream.subscribePlus (fun event world -> (Cascade, World.publish event.Data streamAddress EventTrace.empty context world)) stream world
-                            let env = Env.setWorld world env
-                            (unsubscribe, env)
-                        let env = Env.addStream streamAddress (stream, unsubscribe) env
+                        let env = streamSource eventAddress streamAddress env
                         (Unit optOrigin, env)
                     with exn -> (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidEventStreamAddress"], "Variable '" + name + "' could not be declared due to invalid event stream address '" + eventAddressStr + "'.", optOrigin), env)
                 | _ -> (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidEventStreamAddress"], "Variable '" + name + "' could not be declared due to invalid event stream address. Address must be either a string or a keyword", optOrigin), env)
