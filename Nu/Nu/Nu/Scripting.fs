@@ -308,7 +308,7 @@ module EnvModule =
         private
             { Rebinding : bool // rebinding should be enabled in Terminal or perhaps when reloading existing scripts.
               TopLevel : Dictionary<string, Scripting.Expr>
-              Streams : Map<obj Address, Prime.Stream<obj, 'p, 'w> * ('w -> 'w)>
+              Streams : Map<obj Address, Prime.Stream<obj, 'w> * ('w -> 'w)>
               Context : 'p
               World : 'w }
 

@@ -563,10 +563,10 @@ module WorldTypes =
               EntityProperties = Map.empty }
 
     /// The null simulant. You should never encounter this as the user.
-    and NullSimulant () =
+    and private NullSimulant () =
         interface Simulant with
-            member this.ParticipantAddress = Address.makeFromString "N/U/L/L"
-            member this.SimulantAddress = Address.makeFromString "N/U/L/L"
+            member this.ParticipantAddress = Address.makeFromName !!"Null"
+            member this.SimulantAddress = Address.makeFromName !!"Null"
             member this.GetPublishingPriority _ _ = 0.0f
             end
     

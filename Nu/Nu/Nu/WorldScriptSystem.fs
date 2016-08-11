@@ -557,7 +557,7 @@ module WorldScriptSystem =
         let addStream name stream optOrigin env =
             let context = Env.getContext env
             let streamAddress = Address.makeFromNames [!!"Stream"; !!name] ->>- context.ParticipantAddress
-            let stream = stream |> Stream.map (fun event _ -> tryImportEventData event optOrigin :> obj) |> Stream.lifetime
+            let stream = stream |> Stream.map (fun event _ -> tryImportEventData event optOrigin :> obj) |> Stream.lifetime context
             let (unsubscribe, env) =
                 let world = Env.getWorld env
                 let world = match Env.tryGetStream streamAddress env with Some (_, unsubscribe) -> unsubscribe world | None -> world
@@ -929,11 +929,11 @@ module WorldScriptSystem =
 
         and evalStreamToStream name stream optOrigin env =
             match stream with
-            | ComputedStream computedStream -> Right (computedStream :?> Prime.Stream<obj, Simulant, World>, env)
+            | ComputedStream computedStream -> Right (computedStream :?> Prime.Stream<obj, World>, env)
             | _ ->
                 match evalStreamToAddress name stream optOrigin env with
                 | Right (streamAddress, env) ->
-                    let stream = env |> Env.getContext |> Stream.stream streamAddress
+                    let stream = Stream.stream streamAddress
                     Right (stream, env)
                 | Left violation -> Left violation
 
