@@ -658,6 +658,8 @@ module WorldModule =
         static member internal getEntityXtension entity world = (World.getEntityState entity world).Xtension // TODO: try to get rid of this
         static member internal getEntityDispatcherNp entity world = (World.getEntityState entity world).DispatcherNp
         static member internal getEntitySpecialization entity world = (World.getEntityState entity world).Specialization
+        static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
+        static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> { entityState with Persistent = value }) Property? Persistent entity world
         static member internal getEntityCreationTimeStampNp entity world = (World.getEntityState entity world).CreationTimeStampNp
         static member internal getEntityOptOverlayName entity world = (World.getEntityState entity world).OptOverlayName
         static member internal setEntityOptOverlayName value entity world = World.updateEntityState (fun entityState -> { entityState with OptOverlayName = value }) Property? OptOverlayName entity world
@@ -681,8 +683,6 @@ module WorldModule =
         static member internal setEntityPublishChanges value entity world = World.updateEntityState (fun entityState -> { entityState with PublishChanges = value }) Property? PublishChanges entity world
         static member internal getEntityPublishUpdatesNp entity world = (World.getEntityState entity world).PublishUpdatesNp
         static member internal setEntityPublishUpdatesNp value entity world = World.updateEntityState (fun entityState -> { entityState with PublishUpdatesNp = value }) Property? PublishUpdatesNp entity world
-        static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
-        static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> { entityState with Persistent = value }) Property? Persistent entity world
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
         static member internal getEntityFacetsNp entity world = (World.getEntityState entity world).FacetsNp
 
@@ -722,8 +722,9 @@ module WorldModule =
             | "Name" -> (World.getEntityName entity world :> obj, typeof<Name>)
             | "Xtension" -> (World.getEntityXtension entity world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getEntityDispatcherNp entity world :> obj, typeof<EntityDispatcher>)
-            | "CreationTimeStampNp" -> (World.getEntityCreationTimeStampNp entity world :> obj, typeof<int64>)
+            | "Persistent" -> (World.getEntityPersistent entity world :> obj, typeof<bool>)
             | "Specialization" -> (World.getEntitySpecialization entity world :> obj, typeof<string>)
+            | "CreationTimeStampNp" -> (World.getEntityCreationTimeStampNp entity world :> obj, typeof<int64>)
             | "OptOverlayName" -> (World.getEntityOptOverlayName entity world :> obj, typeof<string option>)
             | "Position" -> (World.getEntityPosition entity world :> obj, typeof<Vector2>)
             | "Size" -> (World.getEntitySize entity world :> obj, typeof<Vector2>)
@@ -735,7 +736,6 @@ module WorldModule =
             | "Omnipresent" -> (World.getEntityOmnipresent entity world :> obj, typeof<bool>)
             | "PublishChanges" -> (World.getEntityPublishChanges entity world :> obj, typeof<bool>)
             | "PublishUpdatesNp" -> (World.getEntityPublishUpdatesNp entity world :> obj, typeof<bool>)
-            | "Persistent" -> (World.getEntityPersistent entity world :> obj, typeof<bool>)
             | "FacetNames" -> (World.getEntityFacetNames entity world :> obj, typeof<string Set>)
             | "FacetsNp" -> (World.getEntityFacetsNp entity world :> obj, typeof<Facet list>)
             | _ -> let property = EntityState.getProperty propertyName (World.getEntityState entity world) in (property.PropertyValue, property.PropertyType)
@@ -748,9 +748,11 @@ module WorldModule =
             match propertyName with // NOTE: string match for speed
             | "Id" -> failwith "Cannot change entity id."
             | "Name" -> failwith "Cannot change entity name."
+            | "Xtension" -> failwith "Cannot change group xtension."
             | "DispatcherNp" -> failwith "Cannot change entity dispatcher."
-            | "CreationTimeStampNp" -> failwith "Cannot change entity creation time stamp."
             | "Specialization" -> failwith "Cannot change entity specialization."
+            | "Persistent" -> World.setEntityPersistent (value :> obj :?> bool) entity world
+            | "CreationTimeStampNp" -> failwith "Cannot change entity creation time stamp."
             | "Position" -> World.setEntityPosition (value :> obj :?> Vector2) entity world
             | "Size" -> World.setEntitySize (value :> obj :?> Vector2) entity world
             | "Rotation" -> World.setEntityRotation (value :> obj :?> single) entity world
@@ -761,7 +763,6 @@ module WorldModule =
             | "Omnipresent" -> World.setEntityOmnipresent (value :> obj :?> bool) entity world
             | "PublishChanges" -> World.setEntityPublishChanges (value :> obj :?> bool) entity world
             | "PublishUpdatesNp" -> failwith "Cannot change entity publish updates."
-            | "Persistent" -> World.setEntityPersistent (value :> obj :?> bool) entity world
             | "FacetNames" -> failwith "Cannot change entity facet names with a property setter."
             | "FacetsNp" -> failwith "Cannot change entity facets with a property setter."
             | _ -> World.updateEntityState (EntityState.set propertyName value) propertyName entity world
@@ -1189,10 +1190,10 @@ module WorldModule =
         static member internal getGroupName group world = (World.getGroupState group world).Name
         static member internal getGroupXtension group world = (World.getGroupState group world).Xtension // TODO: try to get rid of this
         static member internal getGroupDispatcherNp group world = (World.getGroupState group world).DispatcherNp
-        static member internal getGroupCreationTimeStampNp group world = (World.getGroupState group world).CreationTimeStampNp
         static member internal getGroupSpecialization group world = (World.getGroupState group world).Specialization
         static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
         static member internal setGroupPersistent value group world = World.updateGroupState (fun groupState -> { groupState with Persistent = value }) Property? Persistent group world
+        static member internal getGroupCreationTimeStampNp group world = (World.getGroupState group world).CreationTimeStampNp
 
         static member internal getGroupPropertyValueAndType propertyName group world =
             match propertyName with // NOTE: string match for speed
@@ -1201,8 +1202,8 @@ module WorldModule =
             | "Xtension" -> (World.getGroupXtension group world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getGroupDispatcherNp group world :> obj, typeof<GroupDispatcher>)
             | "Specialization" -> (World.getGroupSpecialization group world :> obj, typeof<string>)
-            | "CreationTimeStampNp" -> (World.getGroupCreationTimeStampNp group world :> obj, typeof<int64>)
             | "Persistent" -> (World.getGroupPersistent group world :> obj, typeof<bool>)
+            | "CreationTimeStampNp" -> (World.getGroupCreationTimeStampNp group world :> obj, typeof<int64>)
             | _ -> let property = GroupState.getProperty propertyName (World.getGroupState group world) in (property.PropertyValue, property.PropertyType)
 
         static member internal getGroupPropertyValue propertyName group world : 'a =
@@ -1213,10 +1214,11 @@ module WorldModule =
             match propertyName with // NOTE: string match for speed
             | "Id" -> failwith "Cannot change group id."
             | "Name" -> failwith "Cannot change group name."
+            | "Xtension" -> failwith "Cannot change group xtension."
             | "DispatcherNp" -> failwith "Cannot change group dispatcher."
             | "Specialization" -> failwith "Cannot change group specialization."
-            | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
             | "Persistent" -> World.setGroupPersistent (value :> obj :?> bool) group world
+            | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
             | _ -> World.updateGroupState (GroupState.set propertyName value) propertyName group world
 
         static member private addGroup mayReplace groupState group world =
@@ -1388,8 +1390,10 @@ module WorldModule =
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
         static member internal getScreenXtension screen world = (World.getScreenState screen world).Xtension // TODO: try to get rid of this
         static member internal getScreenDispatcherNp screen world = (World.getScreenState screen world).DispatcherNp
-        static member internal getScreenCreationTimeStampNp screen world = (World.getScreenState screen world).CreationTimeStampNp
         static member internal getScreenSpecialization screen world = (World.getScreenState screen world).Specialization
+        static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
+        static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) Property? Persistent screen world
+        static member internal getScreenCreationTimeStampNp screen world = (World.getScreenState screen world).CreationTimeStampNp
         static member internal getScreenEntityTreeNp screen world = (World.getScreenState screen world).EntityTreeNp
         static member internal setScreenEntityTreeNp value screen world = World.updateScreenState (fun screenState -> { screenState with EntityTreeNp = value }) Property? EntityTreeNp screen world
         static member internal getScreenTransitionStateNp screen world = (World.getScreenState screen world).TransitionStateNp
@@ -1400,8 +1404,6 @@ module WorldModule =
         static member internal setScreenIncoming value screen world = World.updateScreenState (fun screenState -> { screenState with Incoming = value }) Property? Incoming screen world
         static member internal getScreenOutgoing screen world = (World.getScreenState screen world).Outgoing
         static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) Property? Outgoing screen world
-        static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
-        static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) Property? Persistent screen world
 
         static member internal getScreenPropertyValueAndType propertyName screen world =
             match propertyName with // NOTE: string match for speed
@@ -1410,13 +1412,13 @@ module WorldModule =
             | "Xtension" -> (World.getScreenXtension screen world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getScreenDispatcherNp screen world :> obj, typeof<ScreenDispatcher>)
             | "Specialization" -> (World.getScreenSpecialization screen world :> obj, typeof<string>)
+            | "Persistent" -> (World.getScreenPersistent screen world :> obj, typeof<bool>)
             | "CreationTimeStampNp" -> (World.getScreenCreationTimeStampNp screen world :> obj, typeof<int64>)
             | "EntityTreeNp" -> (World.getScreenEntityTreeNp screen world :> obj, typeof<Entity QuadTree MutantCache>)
             | "TransitionStateNp" -> (World.getScreenTransitionStateNp screen world :> obj, typeof<TransitionState>)
             | "TransitionTicksNp" -> (World.getScreenTransitionTicksNp screen world :> obj, typeof<int64>)
             | "Incoming" -> (World.getScreenIncoming screen world :> obj, typeof<Transition>)
             | "Outgoing" -> (World.getScreenOutgoing screen world :> obj, typeof<Transition>)
-            | "Persistent" -> (World.getScreenPersistent screen world :> obj, typeof<bool>)
             | _ -> let property = ScreenState.getProperty propertyName (World.getScreenState screen world) in (property.PropertyValue, property.PropertyType)
 
         static member internal getScreenPropertyValue propertyName screen world : 'a =
@@ -1427,15 +1429,16 @@ module WorldModule =
             match propertyName with // NOTE: string match for speed
             | "Id" -> failwith "Cannot change screen id."
             | "Name" -> failwith "Cannot change screen name."
+            | "Xtension" -> failwith "Cannot change group xtension."
             | "DispatcherNp" -> failwith "Cannot change screen dispatcher."
             | "Specialization" -> failwith "Cannot change screen specialization."
+            | "Persistent" -> World.setScreenPersistent (value :> obj :?> bool) screen world
             | "CreationTimeStampNp" -> failwith "Cannot change screen creation time stamp."
             | "EntityTreeNp" -> failwith "Cannot change screen entity tree."
             | "TransitionStateNp" -> World.setScreenTransitionStateNp (value :> obj :?> TransitionState) screen world
             | "TransitionTicksNp" -> World.setScreenTransitionTicksNp (value :> obj :?> int64) screen world
             | "Incoming" -> World.setScreenIncoming (value :> obj :?> Transition) screen world
             | "Outgoing" -> World.setScreenOutgoing (value :> obj :?> Transition) screen world
-            | "Persistent" -> World.setScreenPersistent (value :> obj :?> bool) screen world
             | _ -> World.updateScreenState (ScreenState.set propertyName value) propertyName screen world
 
         static member internal updateEntityInEntityTree entity oldWorld world =
@@ -1578,8 +1581,8 @@ module WorldModule =
         static member internal getGameId world = (World.getGameState world).Id
         static member internal getGameXtension world = (World.getGameState world).Xtension // TODO: try to get rid of this
         static member internal getGameDispatcherNp world = (World.getGameState world).DispatcherNp
-        static member internal getGameCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
         static member internal getGameSpecialization world = (World.getGameState world).Specialization
+        static member internal getGameCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
 
         /// Get the current eye center.
         static member getEyeCenter world =
@@ -1702,8 +1705,8 @@ module WorldModule =
             | "Id" -> (World.getGameId world :> obj, typeof<Guid>)
             | "Xtension" -> (World.getGameXtension world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
-            | "CreationTimeStampNp" -> (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
             | "Specialization" -> (World.getGameSpecialization world :> obj, typeof<string>)
+            | "CreationTimeStampNp" -> (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
             | "OptSelectedScreen" -> (World.getOptSelectedScreen world :> obj, typeof<Screen option>)
             | "OptScreenTransitionDestination" -> (World.getOptScreenTransitionDestination world :> obj, typeof<Screen option>)
             | "EyeCenter" -> (World.getEyeCenter world :> obj, typeof<Vector2>)
@@ -1717,6 +1720,7 @@ module WorldModule =
         static member internal setGamePropertyValue propertyName (value : 'a) world =
             match propertyName with // NOTE: string match for speed
             | "Id" -> failwith "Cannot change group id."
+            | "Xtension" -> failwith "Cannot change group xtension."
             | "DispatcherNp" -> failwith "Cannot change group dispatcher."
             | "Specialization" -> failwith "Cannot change group specialization."
             | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."

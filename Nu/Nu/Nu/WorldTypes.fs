@@ -174,6 +174,7 @@ module WorldTypes =
     
         static member PropertyDefinitions =
             [Define? Specialization Constants.Engine.VanillaSpecialization
+             Define? Persistent true
              Define? Position Vector2.Zero
              Define? Size Constants.Engine.DefaultEntitySize
              Define? Rotation 0.0f
@@ -183,8 +184,7 @@ module WorldTypes =
              Define? Visible true
              Define? Omnipresent false
              Define? PublishChanges true
-             Define? PublishUpdatesNp false
-             Define? Persistent true]
+             Define? PublishUpdatesNp false]
     
         /// Register an entity when adding it to a group.
         abstract Register : Entity * World -> World
@@ -313,13 +313,13 @@ module WorldTypes =
           Xtension : Xtension
           DispatcherNp : ScreenDispatcher
           Specialization : string
+          Persistent : bool
           CreationTimeStampNp : int64
           EntityTreeNp : Entity QuadTree MutantCache
           TransitionStateNp : TransitionState
           TransitionTicksNp : int64
           Incoming : Transition
-          Outgoing : Transition
-          Persistent : bool }
+          Outgoing : Transition }
 
         /// Get an dynamic property and its type information.
         static member getProperty propertyName screenState =
@@ -346,13 +346,13 @@ module WorldTypes =
                   Xtension = Xtension.safe
                   DispatcherNp = dispatcher
                   Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
+                  Persistent = true
                   CreationTimeStampNp = Core.getTimeStamp ()
                   EntityTreeNp = Unchecked.defaultof<Entity QuadTree MutantCache>
                   TransitionStateNp = IdlingState
                   TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
                   Incoming = Transition.make Incoming
-                  Outgoing = Transition.make Outgoing
-                  Persistent = true }
+                  Outgoing = Transition.make Outgoing }
             let quadTree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
             { screenState with EntityTreeNp = MutantCache.make Operators.id quadTree }
 
@@ -371,8 +371,11 @@ module WorldTypes =
           Xtension : Xtension
           DispatcherNp : GroupDispatcher
           Specialization : string
-          CreationTimeStampNp : int64
-          Persistent : bool }
+          Persistent : bool
+          OptScripts : AssetTag list option
+          OptScriptsLc : AssetTag list option
+          Script : Script
+          CreationTimeStampNp : int64 }
 
         /// Get an dynamic property and its type information.
         static member getProperty propertyName groupState =
@@ -398,8 +401,11 @@ module WorldTypes =
               Xtension = Xtension.safe
               DispatcherNp = dispatcher
               Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
-              CreationTimeStampNp = Core.getTimeStamp ()
-              Persistent = true }
+              Persistent = true
+              OptScripts = None
+              OptScriptsLc = None
+              Script = Script.empty
+              CreationTimeStampNp = Core.getTimeStamp () }
 
         /// Copy a group such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
@@ -416,6 +422,10 @@ module WorldTypes =
           Xtension : Xtension
           DispatcherNp : EntityDispatcher
           Specialization : string
+          Persistent : bool
+          OptScripts : AssetTag list option
+          OptScriptsLc : AssetTag list option
+          Script : Script
           CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
           OptOverlayName : string option
           Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
@@ -428,7 +438,6 @@ module WorldTypes =
           Omnipresent : bool
           PublishChanges : bool
           PublishUpdatesNp : bool
-          Persistent : bool
           FacetNames : string Set
           FacetsNp : Facet list }
 
@@ -475,6 +484,10 @@ module WorldTypes =
               Xtension = Xtension.safe
               DispatcherNp = dispatcher
               Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
+              Persistent = true
+              OptScripts = None
+              OptScriptsLc = None
+              Script = Script.empty
               CreationTimeStampNp = Core.getTimeStamp ()
               OptOverlayName = optOverlayName
               Position = Vector2.Zero
@@ -487,7 +500,6 @@ module WorldTypes =
               Omnipresent = false
               PublishChanges = true
               PublishUpdatesNp = false
-              Persistent = true
               FacetNames = Set.empty
               FacetsNp = [] }
 
