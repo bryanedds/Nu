@@ -368,7 +368,7 @@ module GameplayDispatcherModule =
                             | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
                         updateCharacterByNavigation navigationDescriptor character world
                     do! pass }}
-            let stream = character |> stream (Events.Update ->- character) |> until (Events.Deselect ->- Simulants.Gameplay)
+            let stream = stream (Events.Update ->- character) |> until (Events.Deselect ->- Simulants.Gameplay)
             runAssumingCascade chain stream world |> snd
 
         static let runCharacterAction newActionDescriptor (character : Entity) world =
@@ -384,7 +384,7 @@ module GameplayDispatcherModule =
                         let world = updateCharacterByAction actionDescriptor character world
                         runCharacterReaction actionDescriptor character world
                     do! pass }}
-            let stream = character |> stream (Events.Update ->- character) |> until (Events.Deselect ->- Simulants.Gameplay)
+            let stream = stream (Events.Update ->- character) |> until (Events.Deselect ->- Simulants.Gameplay)
             runAssumingCascade chain stream world |> snd
 
         static let runCharacterNoActivity (character : Entity) world =
@@ -482,9 +482,7 @@ module GameplayDispatcherModule =
                                 do! update ^ cancelNavigation Simulants.Player }}
                     do! update ^ Simulants.HudSaveGame.SetEnabled true }
                 let stream =
-                    Simulants.Gameplay |>
-                    stream (Events.Click ->- Simulants.HudHalt) |>
-                    sum (Events.Update ->- Simulants.Player) |>
+                    sum (stream (Events.Update ->- Simulants.Player)) (stream (Events.Click ->- Simulants.HudHalt)) |>
                     until (Events.Deselect ->- Simulants.Gameplay)
                 runAssumingCascade chain stream world |> snd
             else world
@@ -572,14 +570,14 @@ module GameplayDispatcherModule =
              Define? ShallLoadGame false]
 
         override dispatcher.Register (gameplay, world) =
-            world |>
-                (stream (Events.EntityChange Property? ActivityState ->- Simulants.Player) gameplay |> subscribe handlePlayerActivityChange) |>
-                (stream (Events.Touch ->- Simulants.HudFeeler) gameplay |> filter isObserverSelected |> monitor handleTouchFeeler) |>
-                (stream (Events.Down ->- Simulants.HudDetailUp) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Upward)) |>
-                (stream (Events.Down ->- Simulants.HudDetailRight) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Rightward)) |>
-                (stream (Events.Down ->- Simulants.HudDetailDown) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Downward)) |>
-                (stream (Events.Down ->- Simulants.HudDetailLeft) gameplay |> filter isObserverSelected |> monitor (handleDownDetail Leftward)) |>
-                (World.subscribe handleSelectTitle (Events.Select ->- Simulants.Title) gameplay) |>
-                (World.subscribe handleSelectGameplay (Events.Select ->- gameplay) gameplay) |>
-                (World.subscribe handleClickSaveGame (Events.Click ->- Simulants.HudSaveGame) gameplay) |>
-                (World.subscribe handleDeselectGameplay (Events.Deselect ->- gameplay) gameplay)
+            let world = stream (Events.EntityChange Property? ActivityState ->- Simulants.Player) |> subscribe handlePlayerActivityChange gameplay <| world
+            let world = stream (Events.Touch ->- Simulants.HudFeeler) |> filter (isSimulantSelected Simulants.HudFeeler) |> monitor handleTouchFeeler gameplay <| world
+            let world = stream (Events.Down ->- Simulants.HudDetailUp) |> filter (isSimulantSelected Simulants.HudDetailUp) |> monitor (handleDownDetail Upward) gameplay <| world
+            let world = stream (Events.Down ->- Simulants.HudDetailRight) |> filter (isSimulantSelected Simulants.HudDetailRight) |> monitor (handleDownDetail Rightward) gameplay <| world
+            let world = stream (Events.Down ->- Simulants.HudDetailDown) |> filter (isSimulantSelected Simulants.HudDetailDown) |> monitor (handleDownDetail Downward) gameplay <| world
+            let world = stream (Events.Down ->- Simulants.HudDetailLeft) |> filter (isSimulantSelected Simulants.HudDetailLeft) |> monitor (handleDownDetail Leftward) gameplay <| world
+            let world = World.subscribe handleSelectTitle (Events.Select ->- Simulants.Title) gameplay <| world
+            let world = World.subscribe handleSelectGameplay (Events.Select ->- gameplay) gameplay <| world
+            let world = World.subscribe handleClickSaveGame (Events.Click ->- Simulants.HudSaveGame) gameplay <| world
+            let world = World.subscribe handleDeselectGameplay (Events.Deselect ->- gameplay) gameplay <| world
+            world

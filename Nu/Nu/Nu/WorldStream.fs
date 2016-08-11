@@ -28,10 +28,10 @@ module Stream =
     let [<DebuggerHidden; DebuggerStepThrough>] isTicking _ world =
         World.isTicking world
 
-    /// Take events from an stream only when the subscriber is contained by, or is the same as,
+    /// Take events from an stream only when the simulant is contained by, or is the same as,
     /// the currently selected screen. Game is always considered 'selected' as well.
-    let [<DebuggerHidden; DebuggerStepThrough>] isObserverSelected evt world =
-        World.isSimulantSelected evt.Subscriber world
+    let [<DebuggerHidden; DebuggerStepThrough>] isSimulantSelected simulant (_ : Event<_, _>) world =
+        World.isSimulantSelected simulant world
 
     /// Take events from an stream only when the currently selected screen is idling (that
     /// is, there is no screen transition in progress).
