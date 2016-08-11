@@ -561,6 +561,14 @@ module WorldTypes =
         static member empty =
             { EntityDispatcher = String.Empty
               EntityProperties = Map.empty }
+
+    /// The null simulant. You should never encounter this as the user.
+    and NullSimulant () =
+        interface Simulant with
+            member this.ParticipantAddress = Address.makeFromString "N/U/L/L"
+            member this.SimulantAddress = Address.makeFromString "N/U/L/L"
+            member this.GetPublishingPriority _ _ = 0.0f
+            end
     
     /// The game type that hosts the various screens used to navigate through a game.
     and [<StructuralEquality; NoComparison>] Game =
@@ -776,22 +784,23 @@ module WorldTypes =
         interface World EventWorld with
             member this.GetLiveness () = AmbientState.getLiveness this.AmbientState
             member this.GetEventSystem () = this.EventSystem
-            member this.GetEmptyParticipant () = Game.proxy Address.empty :> Participant
+            member this.GetNullParticipant () = NullSimulant () :> Participant
+            member this.GetGlobalParticipant () = Game.proxy Address.empty :> Participant
             member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
             member this.ContainsParticipant participant =
                 match participant with
-                | :? Game -> true
-                | :? Screen as screen -> Vmap.containsKey screen.ScreenAddress this.ScreenStates
-                | :? Group as group -> Vmap.containsKey group.GroupAddress this.GroupStates
                 | :? Entity as entity -> Vmap.containsKey entity.EntityAddress this.EntityStates
-                | _ -> failwithumf ()
-            member this.PublishEvent (participant : Participant) publisher eventData eventAddress eventTrace subscription world = 
-                match Address.getNames participant.ParticipantAddress with
-                | [] -> EventWorld.publishEvent<'a, 'p, Game, World> participant publisher eventData eventAddress eventTrace subscription world
-                | [_] -> EventWorld.publishEvent<'a, 'p, Screen, World> participant publisher eventData eventAddress eventTrace subscription world
-                | [_; _] -> EventWorld.publishEvent<'a, 'p, Group, World> participant publisher eventData eventAddress eventTrace subscription world
-                | [_; _; _] -> EventWorld.publishEvent<'a, 'p, Entity, World> participant publisher eventData eventAddress eventTrace subscription world
-                | _ -> failwithumf ()
+                | :? Group as group -> Vmap.containsKey group.GroupAddress this.GroupStates
+                | :? Screen as screen -> Vmap.containsKey screen.ScreenAddress this.ScreenStates
+                | :? Game -> true
+                | _  -> true
+            member this.PublishEvent (participant : Participant) publisher eventData eventAddress eventTrace subscription world =
+                match participant with
+                | :? Entity -> EventWorld.publishEvent<'a, 'p, Entity, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Group -> EventWorld.publishEvent<'a, 'p, Group, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Screen -> EventWorld.publishEvent<'a, 'p, Screen, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Game -> EventWorld.publishEvent<'a, 'p, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                | _ -> EventWorld.publishEvent<'a, 'p, Participant, World> participant publisher eventData eventAddress eventTrace subscription world
 
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
     /// specific values.

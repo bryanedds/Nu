@@ -18,12 +18,12 @@ type [<NoComparison; NoEquality>] Chain<'e, 'a, 'w when 'w :> 'w EventWorld> =
 type ChainBuilder () =
 
     /// Monadic return for the chain monad.
-    [<DebuggerHidden; DebuggerStepThrough>]
+    (*[<DebuggerHidden; DebuggerStepThrough>]*)
     member this.Return (a : 'a) : Chain<'e, 'a, 'w> =
         Chain (fun world -> (world, Right a))
 
     /// Monadic bind for the chain monad.
-    [<DebuggerHidden; DebuggerStepThrough>]
+    (*[<DebuggerHidden; DebuggerStepThrough>]*)
     member this.Bind (m : Chain<'e, 'a, 'w>, cont : 'a -> Chain<'e, 'b, 'w>) : Chain<'e, 'b, 'w> =
         Chain (fun world ->
 
@@ -60,19 +60,19 @@ module Chain =
         Chain (fun world -> (world, Right world))
 
     /// Get the world as transformed via 'by'.
-    let [<DebuggerHidden; DebuggerStepThrough>] getBy by : Chain<'e, 'a, 'w> =
+    let (*[<DebuggerHidden; DebuggerStepThrough>]*) getBy by : Chain<'e, 'a, 'w> =
         Chain (fun world -> (world, Right ^ by world))
 
     /// Set the world.
-    let [<DebuggerHidden; DebuggerStepThrough>] set world : Chain<'e, unit, 'w> =
+    let (*[<DebuggerHidden; DebuggerStepThrough>]*) set world : Chain<'e, unit, 'w> =
         Chain (fun _ -> (world, Right ()))
 
     /// Update the world with an additional transformed world parameter.
-    let [<DebuggerHidden; DebuggerStepThrough>] updateBy by expr : Chain<'e, unit, 'w> =
+    let (*[<DebuggerHidden; DebuggerStepThrough>]*) updateBy by expr : Chain<'e, unit, 'w> =
         Chain (fun world -> (expr (by world) world, Right ()))
 
     /// Update the world.
-    let [<DebuggerHidden; DebuggerStepThrough>] update expr : Chain<'e, unit, 'w> =
+    let (*[<DebuggerHidden; DebuggerStepThrough>]*) update expr : Chain<'e, unit, 'w> =
         Chain (fun world -> (expr world, Right ()))
 
     /// Get the next event.
@@ -84,7 +84,7 @@ module Chain =
         Chain (fun world -> (world, Left (fun _ -> returnM ())))
 
     /// React to the next event, using the event's value in the reaction.
-    let [<DebuggerHidden; DebuggerStepThrough>] reactE expr : Chain<'e, unit, 'w> =
+    let (*[<DebuggerHidden; DebuggerStepThrough>]*) reactE expr : Chain<'e, unit, 'w> =
         chain {
             let! e = next
             let! world = get
@@ -92,7 +92,7 @@ module Chain =
             do! set world }
 
     /// React to the next event, discarding the event's value.
-    let [<DebuggerHidden; DebuggerStepThrough>] react expr : Chain<'e, unit, 'w> =
+    let (*[<DebuggerHidden; DebuggerStepThrough>]*) react expr : Chain<'e, unit, 'w> =
         chain {
             do! pass
             let! world = get
@@ -100,7 +100,7 @@ module Chain =
             do! set world }
 
     /// Loop in a chain context while 'pred' evaluate to true.
-    let rec [<DebuggerHidden; DebuggerStepThrough>] loop (i : 'i) (next : 'i -> 'i) (pred : 'i -> 'w -> bool) (m : 'i -> Chain<'e, unit, 'w>) =
+    let rec (*[<DebuggerHidden; DebuggerStepThrough>]*) loop (i : 'i) (next : 'i -> 'i) (pred : 'i -> 'w -> bool) (m : 'i -> Chain<'e, unit, 'w>) =
         chain {
             let! world = get
             do! if pred i world then
@@ -111,42 +111,42 @@ module Chain =
                 else returnM () }
 
     /// Loop in a chain context while 'pred' evaluates to true.
-    let [<DebuggerHidden; DebuggerStepThrough>] during (pred : 'w -> bool) (m : Chain<'e, unit, 'w>) =
+    let (*[<DebuggerHidden; DebuggerStepThrough>]*) during (pred : 'w -> bool) (m : Chain<'e, unit, 'w>) =
         loop () id (fun _ -> pred) (fun _ -> m)
 
     /// Step once into a chain.
-    let [<DebuggerHidden; DebuggerStepThrough>] step (m : Chain<'e, 'a, 'w>) (world : 'w) : 'w * Either<'e -> Chain<'e, 'a, 'w>, 'a> =
+    let (*[<DebuggerHidden; DebuggerStepThrough>]*) step (m : Chain<'e, 'a, 'w>) (world : 'w) : 'w * Either<'e -> Chain<'e, 'a, 'w>, 'a> =
         match m with Chain f -> f world
 
     /// Advance a chain value by one step, providing 'e'.
-    let [<DebuggerHidden; DebuggerStepThrough>] advance (m : 'e -> Chain<'e, 'a, 'w>) (e : 'e) (world : 'w) : 'w * Either<'e -> Chain<'e, 'a, 'w>, 'a> =
+    let (*[<DebuggerHidden; DebuggerStepThrough>]*) advance (m : 'e -> Chain<'e, 'a, 'w>) (e : 'e) (world : 'w) : 'w * Either<'e -> Chain<'e, 'a, 'w>, 'a> =
         step (m e) world
 
     /// Run a chain to its end, providing 'e' for all its steps.
-    let rec [<DebuggerHidden; DebuggerStepThrough>] run3 (m : Chain<'e, 'a, 'w>) (e : 'e) (world : 'w) : ('w * 'a) =
+    let rec (*[<DebuggerHidden; DebuggerStepThrough>]*) run3 (m : Chain<'e, 'a, 'w>) (e : 'e) (world : 'w) : ('w * 'a) =
         match step m world with
         | (world', Left m') -> run3 (m' e) e world'
         | (world', Right v) -> (world', v)
 
     /// Run a chain to its end, providing unit for all its steps.
-    let [<DebuggerHidden; DebuggerStepThrough>] run2 (m : Chain<unit, 'a, 'w>) (world : 'w) : ('w * 'a) =
+    let (*[<DebuggerHidden; DebuggerStepThrough>]*) run2 (m : Chain<unit, 'a, 'w>) (world : 'w) : ('w * 'a) =
         run3 m () world
 
     /// Run a chain to its end, providing unit for all its steps.
-    let [<DebuggerHidden; DebuggerStepThrough>] run (m : Chain<unit, 'a, 'w>) (world : 'w) : 'w =
+    let (*[<DebuggerHidden; DebuggerStepThrough>]*) run (m : Chain<unit, 'a, 'w>) (world : 'w) : 'w =
         run2 m world |> fst
 
-    let private run4 handling (chain : Chain<Event<'a, 's>, unit, 'w>) (stream : Stream<'a, 's, 'w>) world =
+    let private run4 handling (chain : Chain<Event<'a, Participant>, unit, 'w>) (stream : Stream<'a, 'w>) world =
         let stateKey = makeGuid ()
         let subscriptionKey = makeGuid ()
-        let world = EventWorld.addEventState stateKey (fun (_ : Event<'a, 's>) -> chain) world
+        let world = EventWorld.addEventState stateKey (fun (_ : Event<'a, Participant>) -> chain) world
         let (eventAddress, unsubscribe, world) = stream.Subscribe world
         let unsubscribe = fun world ->
             let world = EventWorld.removeEventState stateKey world
             let world = unsubscribe world
             EventWorld.unsubscribe subscriptionKey world
         let advance = fun evt world ->
-            let chain = EventWorld.getEventState stateKey world : Event<'a, 's> -> Chain<Event<'a, 's>, unit, 'w>
+            let chain = EventWorld.getEventState stateKey world : Event<'a, Participant> -> Chain<Event<'a, Participant>, unit, 'w>
             let (world, advanceResult) = advance chain evt world
             match advanceResult with
             | Right () -> unsubscribe world
@@ -154,18 +154,18 @@ module Chain =
         let subscription = fun evt world ->
             let world = advance evt world
             (handling, world)
-        let world = advance Unchecked.defaultof<Event<'a, 's>> world
-        let world = EventWorld.subscribe5<'a, 's, 'w> subscriptionKey subscription eventAddress stream.Subscriber world
+        let world = advance Unchecked.defaultof<Event<'a, Participant>> world
+        let world = EventWorld.subscribe5<'a, Participant, 'w> subscriptionKey subscription eventAddress (world.GetNullParticipant ()) world
         (unsubscribe, world)
 
     /// Run a chain over Nu's event system.
     /// Allows each chainhronized operation to run without referencing its source event, and
     /// without specifying its event handling approach by assuming Cascade.
-    let runAssumingCascade chain (stream : Stream<'a, 's, 'w>) world =
+    let runAssumingCascade chain (stream : Stream<'a, 'w>) world =
         run4 Cascade chain stream world
 
     /// Run a chain over Nu's event system.
     /// Allows each chainhronized operation to run without referencing its source event, and
     /// without specifying its event handling approach by assuming Resolve.
-    let runAssumingResolve chain (stream : Stream<'a, 's, 'w>) world =
+    let runAssumingResolve chain (stream : Stream<'a, 'w>) world =
         run4 Resolve chain stream world
