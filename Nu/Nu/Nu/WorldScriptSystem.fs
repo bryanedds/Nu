@@ -859,25 +859,40 @@ module ScriptSystemModule =
             | Some env -> (Unit optOrigin, env)
             | None -> (Violation ([!!"InvalidConstantDeclaration"], "Constant '" + name + "' could not be declared due to having the same name as another top-level binding.", optOrigin), env)
 
-        and evalVariable name stream streamAddress optOrigin env =
+        and evalVariable name stream optOrigin env =
             match stream with
             | ConstantStream _ -> (Unit optOrigin, env)
-            | VariableStream _ -> (Unit optOrigin, env)
-            | EventStream address ->
-                let (addressEvaled, env) = eval address env
-                match addressEvaled with
-                | String (addressStr, optOrigin)
-                | Keyword (addressStr, optOrigin) ->
-                    try let address = Address.makeFromString addressStr
-                        let context = Env.getContext env
-                        let world = Env.getWorld env
-                        let world = match Env.tryGetStream streamAddress env with Some (_, unsubscribe) -> unsubscribe world | None -> world
-                        let stream = Stream.stream address context
-                        let (unsubscribe, world) = Stream.subscribePlus (fun event world -> (Cascade, World.publish event.Data streamAddress EventTrace.empty context world)) stream world
+            | VariableStream variableName ->
+                let context = Env.getContext env
+                let variableAddress = Address.makeFromNames [!!"Stream"; !!variableName] ->>- context.ParticipantAddress
+                let streamAddress = Address.makeFromNames [!!"Stream"; !!name] ->>- context.ParticipantAddress
+                let stream = Stream.stream variableAddress context
+                let (unsubscribe, env) =
+                    let world = Env.getWorld env
+                    let world = match Env.tryGetStream streamAddress env with Some (_, unsubscribe) -> unsubscribe world | None -> world
+                    let (unsubscribe, world) = Stream.subscribePlus (fun event world -> (Cascade, World.publish event.Data streamAddress EventTrace.empty context world)) stream world
+                    let env = Env.setWorld world env
+                    (unsubscribe, env)
+                let env = Env.addStream streamAddress (stream, unsubscribe) env
+                (Unit optOrigin, env)
+            | EventStream eventAddress ->
+                let (eventAddressEvaled, env) = eval eventAddress env
+                match eventAddressEvaled with
+                | String (eventAddressStr, optOrigin)
+                | Keyword (eventAddressStr, optOrigin) ->
+                    try let context = Env.getContext env
+                        let eventAddress = Address.makeFromName !!eventAddressStr
+                        let streamAddress = Address.makeFromNames [!!"Stream"; !!name] ->>- context.ParticipantAddress
+                        let stream = Stream.stream eventAddress context
+                        let (unsubscribe, env) =
+                            let world = Env.getWorld env
+                            let world = match Env.tryGetStream streamAddress env with Some (_, unsubscribe) -> unsubscribe world | None -> world
+                            let (unsubscribe, world) = Stream.subscribePlus (fun event world -> (Cascade, World.publish event.Data streamAddress EventTrace.empty context world)) stream world
+                            let env = Env.setWorld world env
+                            (unsubscribe, env)
                         let env = Env.addStream streamAddress (stream, unsubscribe) env
-                        let env = Env.setWorld world env
                         (Unit optOrigin, env)
-                    with exn -> (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidEventStreamAddress"], "Variable '" + name + "' could not be declared due to invalid event stream address '" + addressStr + "'.", optOrigin), env)
+                    with exn -> (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidEventStreamAddress"], "Variable '" + name + "' could not be declared due to invalid event stream address '" + eventAddressStr + "'.", optOrigin), env)
                 | _ -> (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidEventStreamAddress"], "Variable '" + name + "' could not be declared due to invalid event stream address. Address must be either a string or a keyword", optOrigin), env)
             | PropertyStream _ -> (Unit optOrigin, env)
             | PropertyStreamMany _ -> (Unit optOrigin, env)
@@ -918,7 +933,7 @@ module ScriptSystemModule =
             | Set (name, expr, optOrigin) -> evalSet name expr None optOrigin env
             | SetTo (name, expr, expr2, optOrigin) -> evalSet name expr2 (Some expr) optOrigin env
             | Constant (name, expr, optOrigin) -> evalConstant name expr optOrigin env
-            | Variable (name, stream, streamAddress, optOrigin) -> evalVariable name stream streamAddress optOrigin env
+            | Variable (name, stream, optOrigin) -> evalVariable name stream optOrigin env
             | Equate (_, _, _, _, optOrigin) -> (Unit optOrigin, env)
             | EquateMany (_, _, _, _, _, optOrigin) -> (Unit optOrigin, env)
             | Handle (_, _, optOrigin) -> (Unit optOrigin, env)
