@@ -30,7 +30,7 @@ module Stream =
 
     /// Take events from an stream only when the simulant is contained by, or is the same as,
     /// the currently selected screen. Game is always considered 'selected' as well.
-    let [<DebuggerHidden; DebuggerStepThrough>] isSimulantSelected simulant (_ : Event<_, _>) world =
+    let [<DebuggerHidden; DebuggerStepThrough>] isSimulantSelected simulant _ world =
         World.isSimulantSelected simulant world
 
     /// Take events from an stream only when the currently selected screen is idling (that
@@ -42,12 +42,12 @@ module Stream =
     // TODO: re-enable let [<DebuggerHidden; DebuggerStepThrough>] isSelectedScreenTransitioning _ world = World.isSelectedScreenTransitioning world
 
 [<AutoOpen>]
-module ObservationModule =
+module StreamModule =
 
     // open related module
     open Stream
 
-    /// Pipe-right arrow that provides special precedence for observations.
+    /// Pipe-right arrow that provides special precedence for streams.
     let (-|>) = (|>)
 
     /// Make an stream of the subscriber's change events.

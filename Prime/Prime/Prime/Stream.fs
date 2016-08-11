@@ -441,12 +441,12 @@ module Stream =
     let [<DebuggerHidden; DebuggerStepThrough>] distinct stream = distinctBy (fun a -> a.Data) stream
 
 [<AutoOpen>]
-module ObservationOperators =
+module StreamOperators =
 
     // open related module
     open Stream
 
-    /// Pipe-right arrow that provides special precedence for observations.
+    /// Pipe-right arrow that provides special precedence for streams.
     let (-|>) = (|>)
 
     /// Make a stream of the subscriber's change events.
