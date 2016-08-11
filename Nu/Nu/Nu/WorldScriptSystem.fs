@@ -9,6 +9,8 @@ open OpenTK
 open Prime
 open Nu
 open Nu.Scripting
+#nowarn "21"
+#nowarn "40"
 
 [<AutoOpen>]
 module WorldScriptSystem =
@@ -22,34 +24,42 @@ module WorldScriptSystem =
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module ScriptSystem =
 
-        let rec private tryImportList (value : obj) optOrigin =
-            try let objList = Reflection.objToObjList value
-                let optEvaledList =
-                    List.map (fun item ->
-                        match Importers.TryGetValue (getTypeName item) with
-                        | (true, tryImport) -> tryImport item optOrigin
-                        | (false, _) -> None)
-                        objList
+        let rec private tryImportList (value : obj) (ty : Type) optOrigin =
+            try let garg = (ty.GetGenericArguments ()).[0]
+                let objList = Reflection.objToObjList value
+                let optEvaledList = List.map (fun item -> tryImport item garg optOrigin) objList
                 match List.definitizePlus optEvaledList with
                 | (true, evaledList) -> Some (List (evaledList, optOrigin))
                 | (false, _) -> None
             with _ -> None
 
-        and private Importers : Dictionary<string, obj -> Origin option -> Expr option> =
-            [(typeof<bool>.Name, (fun (value : obj) optOrigin -> match value with :? bool as bool -> Some (Bool (bool, optOrigin)) | _ -> None))
-             (typeof<int>.Name, (fun (value : obj) optOrigin -> match value with :? int as int -> Some (Int (int, optOrigin)) | _ -> None))
-             (typeof<int64>.Name, (fun (value : obj) optOrigin -> match value with :? int64 as int64 -> Some (Int64 (int64, optOrigin)) | _ -> None))
-             (typeof<single>.Name, (fun (value : obj) optOrigin -> match value with :? single as single -> Some (Single (single, optOrigin)) | _ -> None))
-             (typeof<double>.Name, (fun (value : obj) optOrigin -> match value with :? double as double -> Some (Double (double, optOrigin)) | _ -> None))
-             (typeof<Vector2>.Name, (fun (value : obj) optOrigin -> match value with :? Vector2 as vector2 -> Some (Vector2 (vector2, optOrigin)) | _ -> None))
-             (typedefof<_ list>.Name, tryImportList)] |>
+        and private tryImport value (ty : Type) optOrigin =
+            let ty = if ty.IsGenericTypeDefinition then ty.GetGenericTypeDefinition () else ty
+            match Importers.TryGetValue ty.Name with
+            | (true, tryImportFn) -> tryImportFn value ty optOrigin
+            | (false, _) -> None
+
+        and private Importers : Dictionary<string, obj -> Type -> Origin option -> Expr option> =
+            [(typeof<Expr>.Name, (fun (value : obj) _ _ -> Some (value :?> Expr)))
+             (typeof<bool>.Name, (fun (value : obj) _ optOrigin -> match value with :? bool as bool -> Some (Bool (bool, optOrigin)) | _ -> None))
+             (typeof<int>.Name, (fun (value : obj) _ optOrigin -> match value with :? int as int -> Some (Int (int, optOrigin)) | _ -> None))
+             (typeof<int64>.Name, (fun (value : obj) _ optOrigin -> match value with :? int64 as int64 -> Some (Int64 (int64, optOrigin)) | _ -> None))
+             (typeof<single>.Name, (fun (value : obj) _ optOrigin -> match value with :? single as single -> Some (Single (single, optOrigin)) | _ -> None))
+             (typeof<double>.Name, (fun (value : obj) _ optOrigin -> match value with :? double as double -> Some (Double (double, optOrigin)) | _ -> None))
+             (typeof<Vector2>.Name, (fun (value : obj) _ optOrigin -> match value with :? Vector2 as vector2 -> Some (Vector2 (vector2, optOrigin)) | _ -> None))
+             (typedefof<_ list>.Name, (fun value ty optOrigin -> tryImportList value ty optOrigin))] |>
             dictC
+
+        and private tryImportEventData event optOrigin =
+            match tryImport event.Data event.DataType optOrigin with
+            | Some data -> data
+            | None -> Violation ([!!"InvalidStreamValue"], "Stream value could not be imported into scripting environment.", optOrigin)
 
         let rec private tryExportList (evaled : Expr) (ty : Type) =
             match evaled with
             | List (evaleds, _) ->
                 let garg = ty.GetGenericArguments () |> Array.item 0
-                let itemType = if garg.IsGenericType then garg.GetGenericTypeDefinition () else garg
+                let itemType = if garg.IsGenericTypeDefinition then garg.GetGenericTypeDefinition () else garg
                 let optItems =
                     List.map (fun evaledItem ->
                         match Exporters.TryGetValue itemType.Name with
@@ -731,7 +741,12 @@ module WorldScriptSystem =
                 match evalStreamToAddress name streamLeft optOrigin env with
                 | Right (streamAddressLeft, env) ->
                     match evalStreamToStream name streamRight optOriginRight env with
-                    | Right (streamRight', env) -> (Stream (ComputedStream (Stream.product streamAddressLeft streamRight'), optOrigin), env)
+                    | Right (streamRight, env) ->
+                        let computedStream =
+                            streamRight |>
+                            Stream.product streamAddressLeft |>
+                            Stream.map (fun event _ -> tryImportEventData event optOrigin :> obj)
+                        (Stream (ComputedStream computedStream, optOrigin), env)
                     | Left violation -> (violation, env)
                 | Left violation -> (violation, env)
             | _ -> (Violation ([!!"InvalidArgumentTypes"; !!(String.capitalize name)], "Incorrect types of arguments for application of '" + name + "'; 1 relation and 1 stream required.", optOrigin), env)
@@ -825,7 +840,7 @@ module WorldScriptSystem =
                 | Right (propertyValue, propertyType) ->
                     match Importers.TryGetValue propertyType.Name with
                     | (true, tryImport) ->
-                        match tryImport propertyValue optOrigin with
+                        match tryImport propertyValue propertyType optOrigin with
                         | Some propertyValue -> (propertyValue, env)
                         | None -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting environment.", optOrigin), env)
                     | (false, _) -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting environment.", optOrigin), env)
@@ -920,7 +935,12 @@ module WorldScriptSystem =
             | ComputedStream computedStream -> Right (computedStream :?> Prime.Stream<obj, Simulant, World>, env)
             | _ ->
                 match evalStreamToAddress name stream optOrigin env with
-                | Right (streamAddress, env) -> Right (Stream.stream streamAddress (Env.getContext env), env)
+                | Right (streamAddress, env) ->
+                    let stream =
+                        Env.getContext env |>
+                        Stream.stream streamAddress |>
+                        Stream.map (fun event _ -> tryImportEventData event optOrigin :> obj)
+                    Right (stream, env)
                 | Left violation -> Left violation
 
         and evalVariable name stream optOrigin env =
