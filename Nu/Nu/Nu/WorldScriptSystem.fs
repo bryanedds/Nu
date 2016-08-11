@@ -561,7 +561,7 @@ module WorldScriptSystem =
             let (unsubscribe, env) =
                 let world = Env.getWorld env
                 let world = match Env.tryGetStream streamAddress env with Some (_, unsubscribe) -> unsubscribe world | None -> world
-                let (unsubscribe, world) = Stream.subscribePlus (fun event world -> (Cascade, World.publish event.Data streamAddress EventTrace.empty context world)) stream world
+                let (unsubscribe, world) = Stream.subscribePlus (fun event world -> (Cascade, World.publish event.Data streamAddress EventTrace.empty context world)) context stream world
                 let env = Env.setWorld World.choose world env
                 (unsubscribe, env)
             Env.addStream streamAddress (stream, unsubscribe) env
@@ -737,12 +737,12 @@ module WorldScriptSystem =
 
         and evalProduct optOrigin name args env =
             match args with
-            | [Stream (streamLeft, _); Stream (streamRight, optOriginRight)] ->
-                match evalStreamToAddress name streamLeft optOrigin env with
-                | Right (streamAddressLeft, env) ->
+            | [Stream (streamLeft, optOriginLeft); Stream (streamRight, optOriginRight)] ->
+                match evalStreamToStream name streamLeft optOriginLeft env with
+                | Right (streamLeft, env) ->
                     match evalStreamToStream name streamRight optOriginRight env with
                     | Right (streamRight, env) ->
-                        let computedStream = Stream.product streamAddressLeft streamRight
+                        let computedStream = Stream.product streamLeft streamRight
                         (Stream (ComputedStream computedStream, optOrigin), env)
                     | Left violation -> (violation, env)
                 | Left violation -> (violation, env)
@@ -899,18 +899,21 @@ module WorldScriptSystem =
             | Some env -> (Unit optOrigin, env)
             | None -> (Violation ([!!"InvalidDefinition"], "Definition '" + name + "' could not be created due to having the same name as another top-level binding.", optOrigin), env)
 
-        and evalStreamToAddress name stream optOrigin env =
+        and evalStreamToStream name stream optOrigin env =
             match stream with
             | VariableStream variableName ->
                 let context = Env.getContext env
                 let variableAddress = Address.makeFromNames [!!"Stream"; !!variableName] ->>- context.ParticipantAddress
-                Right (variableAddress, env)
+                let variableStream = Stream.stream variableAddress
+                Right (variableStream, env)
             | EventStream eventAddress ->
                 let (eventAddressEvaled, env) = eval eventAddress env
                 match eventAddressEvaled with
                 | String (eventAddressStr, optOrigin)
                 | Keyword (eventAddressStr, optOrigin) ->
-                    try let eventAddress = Address.makeFromString eventAddressStr in Right (eventAddress, env)
+                    try let eventAddress = Address.makeFromString eventAddressStr
+                        let eventStream = Stream.stream eventAddress
+                        Right (eventStream, env)
                     with exn -> Left (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidEventStreamAddress"], "Variable '" + name + "' could not be created due to invalid event stream address '" + eventAddressStr + "'.", optOrigin))
                 | _ -> Left (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidEventStreamAddress"], "Variable '" + name + "' could not be created due to invalid event stream address. Address must be either a string or a keyword", optOrigin))
             | PropertyStream (propertyName, propertyRelation) ->
@@ -921,21 +924,15 @@ module WorldScriptSystem =
                     try let context = Env.getContext env
                         let propertyRelation = Relation.makeFromString propertyRelationStr
                         let propertyAddress = Relation.resolve context.SimulantAddress propertyRelation -<<- Address.makeFromName !!propertyName
-                        Right (propertyAddress, env)
+                        let propertyStream = Stream.stream propertyAddress
+                        Right (propertyStream, env)
                     with exn -> Left (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidPropertyStreamRelation"], "Variable '" + name + "' could not be created due to invalid property stream relation '" + propertyRelationStr + "'.", optOrigin))
                 | _ -> Left (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidPropertyStreamRelation"], "Variable '" + name + "' could not be created due to invalid property stream relation. Relation must be either a string or a keyword", optOrigin))
-            | PropertyStreamMany _ -> Left (Violation ([!!"Unimplemented"], "Unimplemented feature.", optOrigin))
-            | ComputedStream _ -> Left (Violation ([!!"InvalidStream"], "Cannot have a computed stream on the left-hand side due to the non-monoidal nature of the Stream functor.", optOrigin))
-
-        and evalStreamToStream name stream optOrigin env =
-            match stream with
-            | ComputedStream computedStream -> Right (computedStream :?> Prime.Stream<obj, World>, env)
-            | _ ->
-                match evalStreamToAddress name stream optOrigin env with
-                | Right (streamAddress, env) ->
-                    let stream = Stream.stream streamAddress
-                    Right (stream, env)
-                | Left violation -> Left violation
+            | PropertyStreamMany _ ->
+                // TODO: implement
+                Left (Violation ([!!"Unimplemented"], "Unimplemented feature.", optOrigin))
+            | ComputedStream computedStream ->
+                Right (computedStream :?> Prime.Stream<obj, World>, env)
 
         and evalVariable name stream optOrigin env =
             match evalStreamToStream name stream optOrigin env with
