@@ -115,6 +115,10 @@ module NameModule =
         let getNameStr name =
             name.NameStr
     
+        /// Get the length of a name.
+        let length name =
+            name.NameStr.Length
+    
         /// Join a list of names by a separator string.
         let join sep names =
             let nameStrs = Seq.map getNameStr names

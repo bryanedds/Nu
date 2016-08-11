@@ -495,24 +495,29 @@ module Gaia =
             | _ -> world
 
     let private handleFormNew (form : GaiaForm) (_ : EventArgs) =
-        use groupNameEntryForm = new NameEntryForm ()
-        groupNameEntryForm.StartPosition <- FormStartPosition.CenterParent
-        groupNameEntryForm.okButton.Click.Add ^ fun _ ->
+        use groupCreationForm = new GroupCreationForm ()
+        groupCreationForm.StartPosition <- FormStartPosition.CenterParent
+        groupCreationForm.dispatcherTextBox.Text <- typeof<GroupDispatcher>.Name
+        groupCreationForm.specializationTextBox.Text <- Constants.Engine.VanillaSpecialization
+        groupCreationForm.okButton.Click.Add ^ fun _ ->
             addWorldChanger ^ fun world ->
                 let world = pushPastWorld world world
-                let groupName = groupNameEntryForm.nameTextBox.Text
-                try if groupName.Length = 0 then failwith "Group name cannot be empty in Gaia due to WinForms limitations."
-                    let world = World.createGroup typeof<GroupDispatcher>.Name None (Some !!groupName) Simulants.EditorScreen world |> snd
+                let groupNameStr = groupCreationForm.nameTextBox.Text
+                let groupName = !!groupNameStr
+                let groupDispatcher = groupCreationForm.dispatcherTextBox.Text
+                let groupSpecialization = groupCreationForm.specializationTextBox.Text
+                try if Name.length groupName = 0 then failwith "Group name cannot be empty in Gaia due to WinForms limitations."
+                    let world = World.createGroup groupDispatcher (Some groupSpecialization) (Some groupName) Simulants.EditorScreen world |> snd
                     refreshGroupTabs form world
-                    form.groupTabs.SelectTab (form.groupTabs.TabPages.IndexOfKey groupName)
+                    form.groupTabs.SelectTab (form.groupTabs.TabPages.IndexOfKey groupNameStr)
                     world
                 with exn ->
                     let world = World.choose world
                     ignore ^ MessageBox.Show (scstring exn, "Group creation error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                     world
-            groupNameEntryForm.Close ()
-        groupNameEntryForm.cancelButton.Click.Add (fun _ -> groupNameEntryForm.Close ())
-        groupNameEntryForm.ShowDialog form |> ignore
+            groupCreationForm.Close ()
+        groupCreationForm.cancelButton.Click.Add (fun _ -> groupCreationForm.Close ())
+        groupCreationForm.ShowDialog form |> ignore
 
     let private handleFormSave (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->

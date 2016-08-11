@@ -59,11 +59,11 @@
     <Compile Include="GaiaForm.Designer.cs">
       <DependentUpon>GaiaForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="NameEntryForm.cs">
+    <Compile Include="GroupCreationForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="NameEntryForm.Designer.cs">
-      <DependentUpon>NameEntryForm.cs</DependentUpon>
+    <Compile Include="GroupCreationForm.Designer.cs">
+      <DependentUpon>GroupCreationForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -77,8 +77,8 @@
       <DependentUpon>GaiaForm.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="NameEntryForm.resx">
-      <DependentUpon>NameEntryForm.cs</DependentUpon>
+    <EmbeddedResource Include="GroupCreationForm.resx">
+      <DependentUpon>GroupCreationForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
