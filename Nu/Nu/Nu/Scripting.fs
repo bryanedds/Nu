@@ -14,7 +14,8 @@ open Nu
 /// A scripting language for Nu that is hoped to eventually be a cross between Elm and Unreal Blueprints.
 module Scripting =
 
-    type [<NoComparison>] Command = // includes simulant get and set
+    /// Commands to the engine, EG - applyLinearImpulse, playSound, etc.
+    type [<NoComparison>] Command =
         { CommandName : string
           CommandArgs : Expr list }
 
@@ -30,6 +31,9 @@ module Scripting =
         // constructed as [propertyStream P ././@ EntityDispatcher] or [propertyStream P ././@ EntityDispatcher Vanilla]
         // does not allow for properties of parents or siblings
         | PropertyStreamMany of string * Expr * Classification
+        // not constructable by user
+        // untyped in order to try to keep things simple
+        | ComputedStream of obj // actual type is Prime.Stream<'p, 'w when 'p :> Participant and 'w :> EventWorld<'w>>
 
     and [<Syntax(   "pow root sqr sqrt " +
                     "floor ceiling truncate round exp log " +
@@ -285,6 +289,17 @@ module Scripting =
             | :? Expr -> source
             | _ -> failconv "Invalid ExprConverter conversion from source." None
 
+/// Dynamically drives behavior for simulants.
+type [<NoComparison>] Script =
+    { Constants : (Name * Scripting.Expr) list
+      Streams : (Name * Guid * Scripting.Stream * Scripting.Expr) list
+      Equalities : (Name * Guid * Scripting.Stream) list }
+
+    static member empty =
+        { Constants = []
+          Streams = []
+          Equalities = [] }
+
 [<AutoOpen>]
 module EnvModule =
 
@@ -335,17 +350,6 @@ module EnvModule =
 
         let updateWorld chooseWorld by (env : Env<'p, 'w>) =
             setWorld chooseWorld (by (getWorld env)) env
-
-/// Dynamically drives behavior for simulants.
-type [<NoComparison>] Script =
-    { Constants : (Name * Scripting.Expr) list
-      Streams : (Name * Guid * Scripting.Stream * Scripting.Expr) list
-      Equalities : (Name * Guid * Scripting.Stream) list }
-
-    static member empty =
-        { Constants = []
-          Streams = []
-          Equalities = [] }
 
 /// The execution environment for scripts.
 type Env<'p, 'w when 'p :> Participant and 'w :> EventWorld<'w>> = EnvModule.Env<'p, 'w>
