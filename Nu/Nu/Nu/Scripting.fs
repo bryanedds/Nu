@@ -196,27 +196,7 @@ module Scripting =
                 | Prime.Quote (str, optOrigin) -> Quote (str, optOrigin) :> obj
                 | Prime.Symbols (symbols, optOrigin) ->
                     match symbols with
-                    | Atom (name, nameOptOrigin) :: tail when
-                        (match name with
-                         | "violation" -> true
-                         | "tuple" -> true
-                         | "list" -> true
-                         | "let" -> true
-                         | "fun" -> true
-                         | "if" -> true
-                         | "cond" -> true
-                         | "try" -> true
-                         | "break" -> true
-                         | "get" -> true
-                         | "set" -> true
-                         | "variableStream" -> true
-                         | "eventStream" -> true
-                         | "propertyStream" -> true
-                         | "define" -> true
-                         | "variable" -> true
-                         | "equality" -> true
-                         | "handler" -> true
-                         | _ -> false) ->
+                    | Atom (name, _) :: tail ->
                         match name with
                         | "violation" ->
                             match tail with
@@ -284,7 +264,7 @@ module Scripting =
                             match tail with
                             | [relation] -> Stream (EventStream (symbolToExpr relation), optOrigin) :> obj
                             | _ -> Violation ([!!"InvalidEventStreamForm"], "Invalid event stream form. Requires a relation expression.", optOrigin) :> obj
-                        | _ -> Apply (Binding (name, nameOptOrigin) :: List.map symbolToExpr tail, optOrigin) :> obj
+                        | _ -> Apply (List.map symbolToExpr symbols, optOrigin) :> obj
                     | _ -> Apply (List.map symbolToExpr symbols, optOrigin) :> obj
             | :? Expr -> source
             | _ -> failconv "Invalid ExprConverter conversion from source." None
