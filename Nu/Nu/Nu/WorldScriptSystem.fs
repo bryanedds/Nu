@@ -554,10 +554,10 @@ module WorldScriptSystem =
             | (Some originLeft, Some originRight) -> Some { Start = originLeft.Start; Stop = originRight.Stop }
             | (_, _) -> None
 
-        let addStream name stream env =
+        let addStream name stream optOrigin env =
             let context = Env.getContext env
             let streamAddress = Address.makeFromNames [!!"Stream"; !!name] ->>- context.ParticipantAddress
-            let stream = stream |> Stream.lifetime
+            let stream = stream |> Stream.map (fun event _ -> tryImportEventData event optOrigin :> obj) |> Stream.lifetime
             let (unsubscribe, env) =
                 let world = Env.getWorld env
                 let world = match Env.tryGetStream streamAddress env with Some (_, unsubscribe) -> unsubscribe world | None -> world
@@ -742,10 +742,7 @@ module WorldScriptSystem =
                 | Right (streamAddressLeft, env) ->
                     match evalStreamToStream name streamRight optOriginRight env with
                     | Right (streamRight, env) ->
-                        let computedStream =
-                            streamRight |>
-                            Stream.product streamAddressLeft |>
-                            Stream.map (fun event _ -> tryImportEventData event optOrigin :> obj)
+                        let computedStream = Stream.product streamAddressLeft streamRight
                         (Stream (ComputedStream computedStream, optOrigin), env)
                     | Left violation -> (violation, env)
                 | Left violation -> (violation, env)
@@ -936,16 +933,13 @@ module WorldScriptSystem =
             | _ ->
                 match evalStreamToAddress name stream optOrigin env with
                 | Right (streamAddress, env) ->
-                    let stream =
-                        Env.getContext env |>
-                        Stream.stream streamAddress |>
-                        Stream.map (fun event _ -> tryImportEventData event optOrigin :> obj)
+                    let stream = env |> Env.getContext |> Stream.stream streamAddress
                     Right (stream, env)
                 | Left violation -> Left violation
 
         and evalVariable name stream optOrigin env =
             match evalStreamToStream name stream optOrigin env with
-            | Right (stream', env) -> (Unit optOrigin, addStream name stream' env)
+            | Right (stream', env) -> (Unit optOrigin, addStream name stream' optOrigin env)
             | Left violation -> (violation, env)
 
         and evalFn _ _ env =
