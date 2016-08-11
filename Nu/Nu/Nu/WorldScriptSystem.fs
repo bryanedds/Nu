@@ -796,7 +796,7 @@ module WorldScriptSystem =
                         let relation = Relation.makeFromString str
                         let address = Relation.resolve context.SimulantAddress relation
                         Right (address, env)
-                    | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or keyword.", optOrigin))
+                    | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or a keyword.", optOrigin))
                 | None -> Right (context.SimulantAddress, env)
             match eirAddressAndEnv with
             | Right (address, env) ->
@@ -807,7 +807,7 @@ module WorldScriptSystem =
                     | [_] -> let screen = Screen.proxy (Address.changeType<Simulant, Screen> address) in Right (screen.GetPropertyValueAndType propertyName world)
                     | [_; _] -> let group = Group.proxy (Address.changeType<Simulant, Group> address) in Right (group.GetPropertyValueAndType propertyName world)
                     | [_; _; _] -> let entity = Entity.proxy (Address.changeType<Simulant, Entity> address) in Right (entity.GetPropertyValueAndType propertyName world)
-                    | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be game, screen, group, or entity.", optOrigin))
+                    | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation can have no more than 3 parts.", optOrigin))
                 match eirPropertyValueAndType with
                 | Right (propertyValue, propertyType) ->
                     match Importers.TryGetValue propertyType.Name with
@@ -832,7 +832,7 @@ module WorldScriptSystem =
                         let relation = Relation.makeFromString str
                         let address = Relation.resolve context.SimulantAddress relation
                         Right (address, env)
-                    | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or keyword.", optOrigin))
+                    | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or a keyword.", optOrigin))
                 | None -> Right (context.SimulantAddress, env)
             let (propertyValue, env) = eval propertyValueExpr env
             match eirAddressAndEnv with
@@ -844,7 +844,7 @@ module WorldScriptSystem =
                     | [_] -> let screen = Screen.proxy (Address.changeType<Simulant, Screen> address) in Right (screen.GetPropertyType propertyName world)
                     | [_; _] -> let group = Group.proxy (Address.changeType<Simulant, Group> address) in Right (group.GetPropertyType propertyName world)
                     | [_; _; _] -> let entity = Entity.proxy (Address.changeType<Simulant, Entity> address) in Right (entity.GetPropertyType propertyName world)
-                    | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be game, screen, group, or entity.", optOrigin))
+                    | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation can have no more than 3 parts.", optOrigin))
                 match eirPropertyType with
                 | Right propertyType ->
                     match Exporters.TryGetValue propertyType.Name with
@@ -857,7 +857,7 @@ module WorldScriptSystem =
                                 | [_] -> let screen = Screen.proxy (Address.changeType<Simulant, Screen> address) in Right (screen.Set propertyName propertyValue world)
                                 | [_; _] -> let group = Group.proxy (Address.changeType<Simulant, Group> address) in Right (group.Set propertyName propertyValue world)
                                 | [_; _; _] -> let entity = Entity.proxy (Address.changeType<Simulant, Entity> address) in Right (entity.Set propertyName propertyValue world)
-                                | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be game, screen, group, or entity.", optOrigin))
+                                | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation can have no more than 3 parts.", optOrigin))
                             match eirWorld with
                             | Right world ->
                                 let env = Env.setWorld World.choose world env
@@ -868,15 +868,14 @@ module WorldScriptSystem =
                 | Left violation -> (violation, env)
             | Left violation -> (violation, env)
 
-        and evalConstant name expr optOrigin env =
+        and evalDefine name expr optOrigin env =
             let (evaled, env) = eval expr env
             match Env.tryAddBinding true name evaled env with
             | Some env -> (Unit optOrigin, env)
-            | None -> (Violation ([!!"InvalidConstantDeclaration"], "Constant '" + name + "' could not be declared due to having the same name as another top-level binding.", optOrigin), env)
+            | None -> (Violation ([!!"InvalidDefinition"], "Definition '" + name + "' could not be created due to having the same name as another top-level binding.", optOrigin), env)
 
         and evalVariable name stream optOrigin env =
             match stream with
-            | ConstantStream _ -> (Unit optOrigin, env)
             | VariableStream variableName ->
                 let context = Env.getContext env
                 let variableAddress = Address.makeFromNames [!!"Stream"; !!variableName] ->>- context.ParticipantAddress
@@ -889,13 +888,25 @@ module WorldScriptSystem =
                 | String (eventAddressStr, optOrigin)
                 | Keyword (eventAddressStr, optOrigin) ->
                     try let context = Env.getContext env
-                        let eventAddress = Address.makeFromName !!eventAddressStr
+                        let eventAddress = Address.makeFromString eventAddressStr
                         let streamAddress = Address.makeFromNames [!!"Stream"; !!name] ->>- context.ParticipantAddress
                         let env = streamSource eventAddress streamAddress env
                         (Unit optOrigin, env)
-                    with exn -> (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidEventStreamAddress"], "Variable '" + name + "' could not be declared due to invalid event stream address '" + eventAddressStr + "'.", optOrigin), env)
-                | _ -> (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidEventStreamAddress"], "Variable '" + name + "' could not be declared due to invalid event stream address. Address must be either a string or a keyword", optOrigin), env)
-            | PropertyStream _ -> (Unit optOrigin, env)
+                    with exn -> (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidEventStreamAddress"], "Variable '" + name + "' could not be created due to invalid event stream address '" + eventAddressStr + "'.", optOrigin), env)
+                | _ -> (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidEventStreamAddress"], "Variable '" + name + "' could not be created due to invalid event stream address. Address must be either a string or a keyword", optOrigin), env)
+            | PropertyStream (propertyName, propertyRelation) ->
+                let (propertyRelationEvaled, env) = eval propertyRelation env
+                match propertyRelationEvaled with
+                | String (propertyRelationStr, optOrigin)
+                | Keyword (propertyRelationStr, optOrigin) ->
+                    try let context = Env.getContext env
+                        let propertyRelation = Relation.makeFromString propertyRelationStr
+                        let propertyAddress = Relation.resolve context.SimulantAddress propertyRelation -<<- Address.makeFromName !!propertyName
+                        let streamAddress = Address.makeFromNames [!!"Stream"; !!name] ->>- context.ParticipantAddress
+                        let env = streamSource propertyAddress streamAddress env
+                        (Unit optOrigin, env)
+                    with exn -> (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidPropertyStreamRelation"], "Variable '" + name + "' could not be created due to invalid property stream relation '" + propertyRelationStr + "'.", optOrigin), env)
+                | _ -> (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidPropertyStreamRelation"], "Variable '" + name + "' could not be created due to invalid property stream relation. Relation must be either a string or a keyword", optOrigin), env)
             | PropertyStreamMany _ -> (Unit optOrigin, env)
 
         and evalFn _ _ env =
@@ -933,7 +944,7 @@ module WorldScriptSystem =
             | GetFrom (name, expr, optOrigin) -> evalGet name (Some expr) optOrigin env
             | Set (name, expr, optOrigin) -> evalSet name expr None optOrigin env
             | SetTo (name, expr, expr2, optOrigin) -> evalSet name expr2 (Some expr) optOrigin env
-            | Constant (name, expr, optOrigin) -> evalConstant name expr optOrigin env
+            | Define (name, expr, optOrigin) -> evalDefine name expr optOrigin env
             | Variable (name, stream, optOrigin) -> evalVariable name stream optOrigin env
             | Equate (_, _, _, _, optOrigin) -> (Unit optOrigin, env)
             | EquateMany (_, _, _, _, _, optOrigin) -> (Unit optOrigin, env)
