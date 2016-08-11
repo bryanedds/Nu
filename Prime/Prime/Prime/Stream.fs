@@ -348,15 +348,15 @@ module Stream =
         scan4 f id s stream
 
     /// Transform a stream into a running average of its event's numeric data.
-    /// TODO: see what can be done to keep the numerator from overflowing.
     let [<DebuggerHidden; DebuggerStepThrough>] inline average (stream : Stream<'a, 's, 'w>) : Stream<'a, 's, 'w> =
         scan4
-            (fun (_ : 'a, n : 'a, d : 'a) a _ ->
-                let n = n + a.Data
-                let d = d + one ()
-                (n / d, n, d))
-            Triple.fst
-            (zero (), zero (), zero ())
+            (fun (avg : 'a, den : 'a) a _ ->
+                let den' = den + one ()
+                let dod' = den / den'
+                let avg' = avg * dod' + a.Data / den
+                (avg', den'))
+            fst
+            (zero (), zero ())
             stream
 
     /// Transform a stream into a running map from its event's data to keys as defined by 'f'.
