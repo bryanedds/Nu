@@ -43,6 +43,7 @@ module EventTests =
             { TestState = 0; TestEventSystem = EventSystem.make eventTracer eventTracing eventFilter }
 
     let TestEvent = ntoa<int> !!"Inc"
+    let TestEvent2 = ntoa<bool> !!"Flag"
     let TestParticipant = { TestAddress = Address.empty<TestParticipant> }
     let incTestState _ world = TestWorld.incTestState world
     let incTestStateNoEvent world = TestWorld.incTestState world
@@ -138,6 +139,17 @@ module EventTests =
             world
         let world = EventWorld.publish 1 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (2, world.TestState)
+
+    let [<Fact>] sumWorks () =
+        let world = TestWorld.make ignore false EventFilter.Empty
+        let world =
+            sum (stream TestEvent) (stream TestEvent2) |>
+            subscribe (fun evt world -> (Cascade, { world with TestState = match evt.Data with Left i -> i | Right _ -> 10 })) TestParticipant <|
+            world
+        let world = EventWorld.publish 1 TestEvent EventTrace.empty TestParticipant world
+        Assert.Equal (1, world.TestState)
+        let world = EventWorld.publish true TestEvent2 EventTrace.empty TestParticipant world
+        Assert.Equal (10, world.TestState)
 
     let [<Fact>] scanWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
