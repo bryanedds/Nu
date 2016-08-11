@@ -19,8 +19,6 @@ module Scripting =
           CommandArgs : Expr list }
 
     and [<NoComparison>] Stream =
-        // constructed as [constantStream v]
-        | ConstantStream of string
         // constructed as [variableStream v]
         | VariableStream of string
         // constructed as [eventStream X/Y/Z]
@@ -48,7 +46,8 @@ module Scripting =
                     // TODO: "table tryFind find " +
                     "nix " + // the empty phrase
                     "let fun if cond try break get set " +
-                    "constant variable equate handle " +
+                    "variableStream eventStream propertyStream " +
+                    "define variable equate handle " +
                     "tickRate tickTime updateCount",
                     "");
           TypeConverter (typeof<ExprConverter>);
@@ -92,9 +91,9 @@ module Scripting =
 
         (* Special Declarations - only work at the top level, and always return unit. *)
         // accessible anywhere
-        // constructed as [constant c 0]
-        | Constant of string * Expr * Origin option
-        // only accessible by variables and equalities
+        // constructed as [define c 0]
+        | Define of string * Expr * Origin option
+        // only accessible by variables and equations
         // constructed as [variable v stream]
         | Variable of string * Stream * Origin option
         // constructed as [equate Density stream] or [equate Density ././Player stream]
@@ -137,7 +136,7 @@ module Scripting =
             | GetFrom (_, _, optOrigin)
             | Set (_, _, optOrigin)
             | SetTo (_, _, _, optOrigin)
-            | Constant (_, _, optOrigin)
+            | Define (_, _, optOrigin)
             | Variable (_, _, optOrigin)
             | Equate (_, _, _, _, optOrigin)
             | EquateMany (_, _, _, _, _, optOrigin)
@@ -206,11 +205,10 @@ module Scripting =
                          | "break" -> true
                          | "get" -> true
                          | "set" -> true
-                         | "constantStream" -> true
                          | "variableStream" -> true
                          | "eventStream" -> true
                          | "propertyStream" -> true
-                         | "constant" -> true
+                         | "define" -> true
                          | "variable" -> true
                          | "equality" -> true
                          | "handler" -> true
@@ -273,15 +271,10 @@ module Scripting =
                                 | [relation] -> SetTo (nameStr, symbolToExpr value, symbolToExpr relation, optOrigin) :> obj
                                 | _ -> Violation ([!!"InvalidSetForm"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", optOrigin) :> obj
                             | _ -> Violation ([!!"InvalidSetForm"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", optOrigin) :> obj
-                        | "constantStream" ->
-                            match tail with
-                            | [Prime.Atom (nameStr, optOrigin)]
-                            | [Prime.String (nameStr, optOrigin)] -> Stream (ConstantStream nameStr, optOrigin) :> obj
-                            | _ -> Violation ([!!"InvalidConstantStreamForm"], "Invalid constant stream form. Requires a name.", optOrigin) :> obj
                         | "variableStream" ->
                             match tail with
                             | [Prime.Atom (nameStr, optOrigin)]
-                            | [Prime.String (nameStr, optOrigin)] -> Stream (ConstantStream nameStr, optOrigin) :> obj
+                            | [Prime.String (nameStr, optOrigin)] -> Stream (VariableStream nameStr, optOrigin) :> obj
                             | _ -> Violation ([!!"InvalidVariableStreamForm"], "Invalid variable stream form. Requires a name.", optOrigin) :> obj
                         | "eventStream" ->
                             match tail with
