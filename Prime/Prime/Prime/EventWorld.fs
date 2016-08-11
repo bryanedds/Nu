@@ -12,7 +12,8 @@ type EventWorld<'w when 'w :> 'w EventWorld> =
     interface
         abstract member GetLiveness : unit -> Liveness
         abstract member GetEventSystem : unit -> 'w EventSystem
-        abstract member GetEmptyParticipant : unit -> Participant
+        abstract member GetNullParticipant : unit -> Participant
+        abstract member GetGlobalParticipant : unit -> Participant
         abstract member UpdateEventSystem : ('w EventSystem -> 'w EventSystem) -> 'w
         abstract member ContainsParticipant : Participant -> bool
         abstract member PublishEvent<'a, 'p when 'p :> Participant> : Participant -> 'p -> 'a -> 'a Address -> EventTrace -> obj -> 'w -> Handling * 'w
@@ -238,10 +239,34 @@ module EventWorld =
                     eventAddress
                     (ntoa<obj Address> !!"Unsubscribe")
                     (EventTrace.record "EventWorld" "unsubscribe" EventTrace.empty)
-                    (world.GetEmptyParticipant ())
+                    (world.GetGlobalParticipant ())
                     world
             | None -> world
         | None -> world
+
+    /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
+    let subscribePlus4<'a, 's, 'w when 's :> Participant and 'w :> 'w EventWorld>
+        subscriptionKey (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
+        if not ^ Address.isEmpty eventAddress then
+            let objEventAddress = atooa eventAddress
+            let (subscriptions, unsubscriptions) = (getSubscriptions world, getUnsubscriptions world)
+            let subscriptions =
+                let subscriptionEntry = (subscriptionKey, subscriber :> Participant, boxSubscription subscription)
+                match Vmap.tryFind objEventAddress subscriptions with
+                | Some subscriptionEntries -> Vmap.add objEventAddress (subscriptionEntry :: subscriptionEntries) subscriptions
+                | None -> Vmap.add objEventAddress [subscriptionEntry] subscriptions
+            let unsubscriptions = Vmap.add subscriptionKey (objEventAddress, subscriber :> Participant) unsubscriptions
+            let world = setSubscriptions subscriptions world
+            let world = setUnsubscriptions unsubscriptions world
+            let world =
+                publish
+                    objEventAddress
+                    (ntoa<obj Address> !!"Subscribe")
+                    (EventTrace.record "EventWorld" "subscribePlus5" EventTrace.empty)
+                    (world.GetGlobalParticipant ())
+                    world
+            (unsubscribe<'w> subscriptionKey, world)
+        else failwith "Event name cannot be empty."
 
     /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
     let subscribePlus5<'a, 's, 'w when 's :> Participant and 'w :> 'w EventWorld>
@@ -262,7 +287,7 @@ module EventWorld =
                     objEventAddress
                     (ntoa<obj Address> !!"Subscribe")
                     (EventTrace.record "EventWorld" "subscribePlus5" EventTrace.empty)
-                    (world.GetEmptyParticipant ())
+                    (world.GetGlobalParticipant ())
                     world
             (unsubscribe<'w> subscriptionKey, world)
         else failwith "Event name cannot be empty."

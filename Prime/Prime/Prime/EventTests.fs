@@ -10,6 +10,12 @@ open Prime.Stream
 open Prime.Chain
 module EventTests =
 
+    type NullParticipant () =
+        interface Participant with
+            member this.ParticipantAddress = Address.makeFromName !!"Null"
+            member this.GetPublishingPriority _ _ = 0.0f
+            end
+
     type [<StructuralEquality; NoComparison>] TestParticipant =
         { TestAddress : TestParticipant Address }
         interface Participant with
@@ -23,12 +29,14 @@ module EventTests =
         interface TestWorld EventWorld with
             member this.GetLiveness () = Running
             member this.GetEventSystem () = this.TestEventSystem
-            member this.GetEmptyParticipant () = { TestAddress = Address.empty } :> Participant
+            member this.GetNullParticipant () = NullParticipant () :> Participant
+            member this.GetGlobalParticipant () = { TestAddress = Address.empty } :> Participant
             member this.UpdateEventSystem updater = { this with TestEventSystem = updater this.TestEventSystem }
             member this.ContainsParticipant _ = true
-            member this.PublishEvent
-                (participant : Participant) publisher eventData eventAddress eventTrace subscription world = 
-                EventWorld.publishEvent<'a, 'p, TestParticipant, TestWorld> participant publisher eventData eventAddress eventTrace subscription world
+            member this.PublishEvent (participant : Participant) publisher eventData eventAddress eventTrace subscription world =
+                match participant with
+                | :? TestParticipant -> EventWorld.publishEvent<'a, 'p, TestParticipant, TestWorld> participant publisher eventData eventAddress eventTrace subscription world
+                | _ -> EventWorld.publishEvent<'a, 'p, Participant, TestWorld> participant publisher eventData eventAddress eventTrace subscription world
         static member incTestState this =
             { this with TestState = inc this.TestState }
         static member make eventTracer eventTracing eventFilter =
@@ -80,22 +88,22 @@ module EventTests =
 
     let [<Fact>] streamWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
-        let world = stream TestEvent TestParticipant |> subscribe incTestStateAndCascade <| world
+        let world = stream TestEvent |> subscribe incTestStateAndCascade TestParticipant <| world
         let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (1, world.TestState)
 
     let [<Fact>] streamSubscribeTwiceUnsubscribeOnceWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
-        let stream = stream TestEvent TestParticipant
-        let world = subscribe incTestStateAndCascade stream world
-        let (unsubscribe, world) = subscribePlus incTestStateAndCascade stream world
+        let stream = stream TestEvent
+        let world = subscribe incTestStateAndCascade TestParticipant stream world
+        let (unsubscribe, world) = subscribePlus incTestStateAndCascade TestParticipant stream world
         let world = unsubscribe world
         let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (1, world.TestState)
 
     let [<Fact>] streamUnsubscribeWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
-        let (unsubscribe, world) = stream TestEvent TestParticipant |> subscribePlus incTestStateAndCascade <| world
+        let (unsubscribe, world) = stream TestEvent |> subscribePlus incTestStateAndCascade TestParticipant <| world
         let world = unsubscribe world
         let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
         Assert.True ^ Vmap.isEmpty ^ EventWorld.getSubscriptions world
@@ -104,9 +112,9 @@ module EventTests =
     let [<Fact>] filterWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
         let world =
-            stream TestEvent TestParticipant |>
+            stream TestEvent |>
             filter (fun _ world -> world.TestState = 0) |>
-            subscribe incTestStateAndCascade <|
+            subscribe incTestStateAndCascade TestParticipant <|
             world
         let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
         let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
@@ -115,9 +123,9 @@ module EventTests =
     let [<Fact>] mapWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
         let world =
-            stream TestEvent TestParticipant |>
+            stream TestEvent |>
             map (fun evt _ -> evt.Data * 2) |>
-            subscribe (fun evt world -> (Cascade, { world with TestState = evt.Data })) <|
+            subscribe (fun evt world -> (Cascade, { world with TestState = evt.Data })) TestParticipant <|
             world
         let world = EventWorld.publish 1 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (2, world.TestState)
@@ -125,9 +133,9 @@ module EventTests =
     let [<Fact>] productWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
         let world =
-            stream TestEvent TestParticipant |>
+            stream TestEvent |>
             product TestEvent |>
-            subscribe (fun evt world -> (Cascade, { world with TestState = fst evt.Data + snd evt.Data })) <|
+            subscribe (fun evt world -> (Cascade, { world with TestState = fst evt.Data + snd evt.Data })) TestParticipant <|
             world
         let world = EventWorld.publish 1 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (2, world.TestState)
@@ -135,9 +143,9 @@ module EventTests =
     let [<Fact>] scanWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
         let world =
-            stream TestEvent TestParticipant |>
+            stream TestEvent |>
             scan (fun acc evt _ -> acc + evt.Data) 0 |>
-            subscribe (fun evt world -> (Cascade, { world with TestState = evt.Data })) <|
+            subscribe (fun evt world -> (Cascade, { world with TestState = evt.Data })) TestParticipant <|
             world
         let world = EventWorld.publish 1 TestEvent EventTrace.empty TestParticipant world
         let world = EventWorld.publish 2 TestEvent EventTrace.empty TestParticipant world
@@ -146,9 +154,9 @@ module EventTests =
     let [<Fact>] scanDoesntLeaveGarbage () =
         let world = TestWorld.make ignore false EventFilter.Empty
         let (unsubscribe, world) =
-            stream TestEvent TestParticipant |>
+            stream TestEvent |>
             scan2 (fun a _ _ -> a) |>
-            subscribePlus incTestStateAndCascade <|
+            subscribePlus incTestStateAndCascade TestParticipant <|
             world
         let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
         let world = unsubscribe world
@@ -166,7 +174,7 @@ module EventTests =
                 do! reactE incTestState
                 do! pass
                 do! loop 0 inc (fun i _ -> i < 2) (fun _ -> update incTestStateTwiceNoEvent) }
-        let stream = stream TestEvent TestParticipant
+        let stream = stream TestEvent
         let world = Chain.runAssumingCascade chain stream world |> snd
         Assert.Equal (0, world.TestState)
 

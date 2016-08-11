@@ -30,6 +30,8 @@ module Program =
     /// https://github.com/Microsoft/visualfsharp/issues/1371#issuecomment-235101700
     let [<EntryPoint; STAThread>] main _ =
 
+        EventTests.streamWorks ()
+
         // run map timings
         runTimings
             (fun entries -> Array.fold (fun map (k, v) -> Map.add k v map) Map.empty entries)
