@@ -513,7 +513,7 @@ module Gaia =
                     world
                 with exn ->
                     let world = World.choose world
-                    ignore ^ MessageBox.Show (scstring exn, "Group creation error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    ignore ^ MessageBox.Show ("Could not create group due to: " + scstring exn, "Group creation error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                     world
             groupCreationForm.Close ()
         groupCreationForm.cancelButton.Click.Add (fun _ -> groupCreationForm.Close ())
