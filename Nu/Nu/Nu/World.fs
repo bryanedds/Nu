@@ -327,9 +327,8 @@ module WorldModule2 =
                 splashLabel.SetPersistent persistent |>
                 splashLabel.SetSize cameraEyeSize |>
                 splashLabel.SetPosition (-cameraEyeSize * 0.5f) |>
-                splashLabel.SetLabelImage splashData.SplashImage
-            let world =
-                World.monitor (World.handleSplashScreenIdle splashData.IdlingTime splashScreen) (Events.IncomingFinish ->- splashScreen) splashScreen world |>
+                splashLabel.SetLabelImage splashData.SplashImage |>
+                World.monitor (World.handleSplashScreenIdle splashData.IdlingTime splashScreen) (Events.IncomingFinish ->- splashScreen) splashScreen |>
                 World.monitor (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish ->- splashScreen) splashScreen
             (splashScreen, world)
 
