@@ -47,7 +47,7 @@ module WorldTests =
         let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Jim.EntityName) Simulants.DefaultGroup world |> snd
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Bob.EntityName) Simulants.DefaultGroup world |> snd
-        let world = world |> Bob.TagVisible *-> Jim.TagVisible
+        let world = world |> Bob.TagVisible -!> Jim.TagVisible
         let world = Bob.SetVisible false world
         Assert.False ^ Bob.GetVisible world
         Assert.False ^ Jim.GetVisible world
@@ -60,8 +60,8 @@ module WorldTests =
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Bob.EntityName) Simulants.DefaultGroup world |> snd
         let world =
             world |>
-                Bob.TagVisible *-> Jim.TagVisible |>
-                Jim.TagVisible /-> Bob.TagVisible.MapSet not
+                Bob.TagVisible -!> Jim.TagVisible |>
+                Jim.TagVisible -/> Bob.TagVisible.MapSet not
         let world = Bob.SetVisible false world
         Assert.True ^ Bob.GetVisible world
         Assert.True ^ Jim.GetVisible world

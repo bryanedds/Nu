@@ -50,69 +50,69 @@ module VsyncModule =
                 OptSync <- Some result
                 result
     
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) private Extract v =
+        let [<DebuggerHidden; DebuggerStepThrough>] private Extract v =
             match v with
             | Sync _ -> failwithumf ()
             | Async a -> a
     
         /// Creates a potentially asynchronous operation that runs computation, and when computation results, runs binder resolution.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) Bind v f =
+        let [<DebuggerHidden; DebuggerStepThrough>] Bind v f =
             match v with
             | Sync a -> f ^ a ()
             | Async a -> Async ^ async.Bind (a, f >> Extract)
     
         /// Creates a potentially asynchronous operation that returns the result 'a'.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) Return a =
+        let [<DebuggerHidden; DebuggerStepThrough>] Return a =
             if isSync ()
             then Sync ^ fun () -> a
             else Async ^ async.Return a
     
         /// Delegates to input computation.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) ReturnFrom v =
+        let [<DebuggerHidden; DebuggerStepThrough>] ReturnFrom v =
             match v with
             | Sync a -> Sync ^ fun () -> a ()
             | Async a -> Async ^ async.ReturnFrom a
     
         /// Creates a potentially asynchronous computation that runs binder 'f' over resource 'd'.
         /// Dispose is executed as this computation yields its result or if the asynchronous computation raises or by cancellation.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) Using d f =
+        let [<DebuggerHidden; DebuggerStepThrough>] Using d f =
             if isSync ()
             then Sync ^ fun () -> use u = d in match f u with Sync b -> b () | Async _ -> failwithumf ()
             else Async ^ async.Using (d, f >> Extract)
     
         /// Creates a potentially asynchronous computation that runs generator 'f'.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) Delay f =
+        let [<DebuggerHidden; DebuggerStepThrough>] Delay f =
             if isSync ()
             then Sync ^ fun () -> match f () with Sync a -> a () | _ -> failwithumf ()
             else Async ^ async.Delay (f >> Extract)
     
         /// Creates a potentially asynchronous computation that just returns unit.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) Zero () =
+        let [<DebuggerHidden; DebuggerStepThrough>] Zero () =
             if isSync ()
             then Sync ^ fun () -> ()
             else Async ^ async.Zero ()
     
         /// Creates a potentially asynchronous computation that first runs computation 'a' and then computation 'b', returning the result of the latter.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) Combine a b =
+        let [<DebuggerHidden; DebuggerStepThrough>] Combine a b =
             match b with
             | Sync b' -> Sync ^ fun () -> b' ()
             | Async b' -> Async ^ async.Combine (Extract a, b')
     
         /// Creates a potentially asynchronous computation that enumerates the sequence 's', and runs the body 'f' for each item.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) For s f =
+        let [<DebuggerHidden; DebuggerStepThrough>] For s f =
             if isSync ()
             then Sync ^ fun () -> Seq.iter (f >> ignore) s
             else Async ^ async.For (s, f >> Extract)
     
         /// Creates a potentially asynchronous computation that runs computation until guard 'g' becomes false.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) While g v =
+        let [<DebuggerHidden; DebuggerStepThrough>] While g v =
             match v with
             | Sync a -> Sync ^ fun () -> while g () do a ()
             | Async a -> Async ^ async.While (g, a)
     
         /// Creates a potentially asynchronous computation that runs computation and returns its result.
         /// If an exception happens, then handler 'h' is called and the resulting computation executes instead.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) TryWith (v : 'a Vsync) (h : exn -> 'a Vsync) : 'a Vsync =
+        let [<DebuggerHidden; DebuggerStepThrough>] TryWith (v : 'a Vsync) (h : exn -> 'a Vsync) : 'a Vsync =
             match v with
             | Sync a -> Sync ^ fun () -> try a () with exn -> match h exn with Sync b -> b () | Async _ -> failwithumf ()
             | Async a -> Async ^ async.TryWith (a, h >> Extract)
@@ -120,13 +120,13 @@ module VsyncModule =
         /// Creates a potentially asynchronous computation that runs computation.
         /// The action compensation 'h' is executed after the computation completes regardless of the outcome.
         /// If the computation raises and exception itself, the original exception is discarded and the new exception becomes the overall result.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) TryFinally (v : 'a Vsync) (h : unit -> unit) : 'a Vsync =
+        let [<DebuggerHidden; DebuggerStepThrough>] TryFinally (v : 'a Vsync) (h : unit -> unit) : 'a Vsync =
             match v with
             | Sync a -> Sync ^ fun () -> try a () finally h ()
             | Async a -> Async ^ async.TryFinally (a, h)
     
         /// Creates a potentially asynchronous computation that runs the given computation and ignores its results.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) Ignore v =
+        let [<DebuggerHidden; DebuggerStepThrough>] Ignore v =
             match v with
             | Sync a -> Sync ^ fun () -> ignore ^ a ()
             | Async a -> Async ^ Async.Ignore a
@@ -134,13 +134,13 @@ module VsyncModule =
         /// Creates a potentially asynchronous computation that will sleep for the given time.
         /// The operation will not block operating system threads for the duration of the wait when running asynchronously.
         /// The operation will block operating system thread for the duration of the wait otherwise.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) Sleep (t : int) =
+        let [<DebuggerHidden; DebuggerStepThrough>] Sleep (t : int) =
             if isSync ()
             then Sync ^ fun () -> Thread.Sleep t
             else Async ^ Async.Sleep t
     
         /// Runs the potentially asynchronous computation and awaits its result.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) RunSynchronously v =
+        let [<DebuggerHidden; DebuggerStepThrough>] RunSynchronously v =
             match v with
             | Sync a -> a ()
             | Async a -> Async.RunSynchronously a
@@ -148,25 +148,25 @@ module VsyncModule =
         /// Starts the potentially asynchronous computation.
         /// Computation is run in the thread pool not awaiting its result when asynchronous.
         /// Computation is run in the current thread awaiting its result otherwise.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) Start v =
+        let [<DebuggerHidden; DebuggerStepThrough>] Start v =
             match v with
             | Sync a -> a ()
             | Async a -> Async.Start a
     
         /// Executes a computation in the thread pool when asynchronous, in the same thread otherwise.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) StartAsTask v =
+        let [<DebuggerHidden; DebuggerStepThrough>] StartAsTask v =
             match v with
             | Sync a -> Task.Factory.StartNew a
             | Async a -> Async.StartAsTask a
     
         /// Return a potentially asynchronous computation that will wait for the given task to complete and return its result.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) AwaitTaskT (t : _ Task) =
+        let [<DebuggerHidden; DebuggerStepThrough>] AwaitTaskT (t : _ Task) =
             if isSync ()
             then Sync ^ fun () -> t.Result
             else Async ^ Async.AwaitTask t
     
         /// Return a potentially asynchronous computation that will wait for the given task to complete and return its result.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) AwaitTask (t : Task) =
+        let [<DebuggerHidden; DebuggerStepThrough>] AwaitTask (t : Task) =
             if isSync ()
             then Sync ^ fun () -> t.Wait ()
             else Async ^ Async.AwaitTask t
@@ -174,7 +174,7 @@ module VsyncModule =
         /// Creates a potentially asynchronous computation that executes computation.
         /// If this computation completes successfully, then return Choice1Of2 with the returned value.
         /// If this computation raises before completion, then return Choice2Of2 with the raised exception.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) Catch v =
+        let [<DebuggerHidden; DebuggerStepThrough>] Catch v =
             match v with
             | Sync a -> Sync ^ fun () -> try Choice1Of2 ^ a () with exn -> Choice2Of2 exn
             | Async a -> Async ^ Async.Catch a
@@ -182,25 +182,25 @@ module VsyncModule =
         /// Creates a potentially asynchronous computation that executes all the given computations
         /// Initially queues each as work item using a fork/join pattern when asynchronous.
         /// Executes each work item sequentially on the same thread otherwise.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) Parallel s =
+        let [<DebuggerHidden; DebuggerStepThrough>] Parallel s =
             if isSync ()
             then Sync ^ fun () -> Array.ofSeq ^ Seq.map (function Sync a -> a () | Async _ -> failwithumf ()) s
             else Async ^ Async.Parallel ^ Seq.map Extract s
     
         /// Creates a potentially asynchronous operation that runs 'f' over computation of 'a'.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) Map f v =
+        let [<DebuggerHidden; DebuggerStepThrough>] Map f v =
             match v with
             | Sync a -> Sync ^ fun () -> f ^ a ()
             | Async a -> Async ^ Async.Map f a
     
         (* TODO: Re-enable this code once we find a good definition of Async.ParallelThrottled.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) ParallelThrottled i s =
+        let [<DebuggerHidden; DebuggerStepThrough>] ParallelThrottled i s =
             if isSync ()
             then Sync ^ fun () -> Array.ofSeq ^ Seq.map (function Sync a -> a () | Async _ -> failwithumf ()) s
             else Async ^ Async.ParallelThrottled i ^ Seq.map Extract s*)
     
         (* TODO: Re-enable this code once we find a good definition of Async.ParallelIgnore.
-        let (*[<DebuggerHidden; DebuggerStepThrough>]*) ParallelIgnore i s =
+        let [<DebuggerHidden; DebuggerStepThrough>] ParallelIgnore i s =
             if isSync ()
             then Sync ^ fun () -> ignore ^ Array.ofSeq ^ Seq.map (function Sync a -> a () | Async _ -> failwithumf ()) s
             else Async ^ Async.ParallelIgnore i ^ Seq.map Extract s*)

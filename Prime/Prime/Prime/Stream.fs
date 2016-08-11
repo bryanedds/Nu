@@ -42,7 +42,7 @@ type [<ReferenceEquality>] Stream<'a, 'w when 'w :> 'w EventWorld> =
 module Stream =
 
     /// Make a stream of an event at the given address.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) stream<'a, 'w when 'w :> 'w EventWorld>
+    let [<DebuggerHidden; DebuggerStepThrough>] stream<'a, 'w when 'w :> 'w EventWorld>
         (eventAddress : 'a Address) : Stream<'a, 'w> =
         let subscribe = fun (world : 'w) ->
             let subscriptionKey = makeGuid ()
@@ -60,7 +60,7 @@ module Stream =
     /// 'product form', which is defined as a pair of the data of the combined events. Think of it
     /// as 'zip' for event streams.
     /// TODO: unit test for this!
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) product
+    let [<DebuggerHidden; DebuggerStepThrough>] product
         (eventAddress : 'b Address) (stream : Stream<'a, 'w>) : Stream<'a * 'b, 'w> =
         let subscribe = fun world ->
 
@@ -124,7 +124,7 @@ module Stream =
     /// form', which is defined as an Either of the data of the combined events, where only data
     /// from the most recent event is available at a time.
     /// TODO: unit test for this!
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) sum
+    let [<DebuggerHidden; DebuggerStepThrough>] sum
         (eventAddress : 'b Address) (stream : Stream<'a, 'w>) : Stream<Either<'a, 'b>, 'w> =
         let subscribe = fun world ->
             let subscriptionKey = makeGuid ()
@@ -153,7 +153,7 @@ module Stream =
         { Subscribe = subscribe }
 
     /// Filter a stream by the given 'pred' procedure.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) filter
+    let [<DebuggerHidden; DebuggerStepThrough>] filter
         (pred : Event<'a, Participant> -> 'w -> bool) (stream : Stream<'a, 'w>) =
         let subscribe = fun world ->
             let subscriptionKey = makeGuid ()
@@ -174,7 +174,7 @@ module Stream =
         { Subscribe = subscribe }
 
     /// Map a stream by the given 'mapper' procedure.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) map
+    let [<DebuggerHidden; DebuggerStepThrough>] map
         (mapper : Event<'a, Participant> -> 'w -> 'b) (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
         let subscribe = fun world ->
             let subscriptionKey = makeGuid ()
@@ -192,7 +192,7 @@ module Stream =
         { Subscribe = subscribe }
 
     /// TODO: document!
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) track4
+    let [<DebuggerHidden; DebuggerStepThrough>] track4
         (tracker : 'c -> Event<'a, Participant> -> 'w -> 'c * bool) (transformer : 'c -> 'b) (state : 'c) (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
         let subscribe = fun world ->
             let stateKey = makeGuid ()
@@ -220,7 +220,7 @@ module Stream =
         { Subscribe = subscribe }
 
     /// TODO: document!
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) track2
+    let [<DebuggerHidden; DebuggerStepThrough>] track2
         (tracker : 'a -> Event<'a, Participant> -> 'w -> 'a * bool) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
         let subscribe = fun world ->
             let stateKey = makeGuid ()
@@ -248,7 +248,7 @@ module Stream =
         { Subscribe = subscribe }
 
     /// TODO: document!
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) track
+    let [<DebuggerHidden; DebuggerStepThrough>] track
         (tracker : 'b -> 'w -> 'b * bool) (state : 'b) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
         let subscribe = fun world ->
             let stateKey = makeGuid ()
@@ -277,7 +277,7 @@ module Stream =
     /// Subscribe to a stream, handling each event with the given 'handleEvent' procedure,
     /// returning both an unsubscription procedure as well as the world as augmented with said
     /// subscription.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) subscribePlus handleEvent (subscriber : 's) stream world =
+    let [<DebuggerHidden; DebuggerStepThrough>] subscribePlus handleEvent (subscriber : 's) stream world =
         let subscribe = fun world ->
             let subscriptionKey = makeGuid ()
             let subscriptionAddress = ntoa<'a> !!(scstring subscriptionKey)
@@ -291,11 +291,11 @@ module Stream =
         stream.Subscribe world |> _bc
 
     /// Subscribe to a stream, handling each event with the given 'handleEvent' procedure.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) subscribe handleEvent subscriber stream world =
+    let [<DebuggerHidden; DebuggerStepThrough>] subscribe handleEvent subscriber stream world =
         subscribePlus handleEvent subscriber stream world |> snd
 
     /// Terminate a stream when an event at the given address is raised.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) until
+    let [<DebuggerHidden; DebuggerStepThrough>] until
         (eventAddress : unit Address) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
         let subscribe = fun world ->
             let eventKey = makeGuid ()
@@ -317,7 +317,7 @@ module Stream =
         { Subscribe = subscribe }
 
     /// Terminate a stream when the subscriber is removed from the world.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) lifetime<'s, 'a, 'w when 's :> Participant and 'w :> 'w EventWorld>
+    let [<DebuggerHidden; DebuggerStepThrough>] lifetime<'s, 'a, 'w when 's :> Participant and 'w :> 'w EventWorld>
         (subscriber : 's) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
         let removingEventAddress = ltoa<unit> [!!typeof<'s>.Name; !!"/Removing"] ->>- subscriber.ParticipantAddress
         until removingEventAddress stream
@@ -325,29 +325,29 @@ module Stream =
     /// Subscribe to a stream until the subscriber is removed from the world,
     /// returning both an unsubscription procedure as well as the world as augmented with said
     /// subscription.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) monitorWithUnsub eventAddress subscriber stream world =
+    let [<DebuggerHidden; DebuggerStepThrough>] monitorWithUnsub eventAddress subscriber stream world =
         (stream |> lifetime subscriber |> subscribePlus eventAddress subscriber) world
 
     /// Subscribe to a stream until the subscriber is removed from the world.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) monitor eventAddress subscriber stream world =
+    let [<DebuggerHidden; DebuggerStepThrough>] monitor eventAddress subscriber stream world =
         monitorWithUnsub eventAddress subscriber stream world |> snd
     
     (* Advanced Combinators *)
 
     /// Scan over a stream, accumulating state.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) scan4 (f : 'b -> Event<'a, Participant> -> 'w -> 'b) g s (stream : Stream<'a, 'w>) : Stream<'c, 'w> =
+    let [<DebuggerHidden; DebuggerStepThrough>] scan4 (f : 'b -> Event<'a, Participant> -> 'w -> 'b) g s (stream : Stream<'a, 'w>) : Stream<'c, 'w> =
         track4 (fun b a w -> (f b a w, true)) g s stream
         
     /// Scan over a stream, accumulating state.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) scan2 (f : 'a -> Event<'a, Participant> -> 'w -> 'a) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
+    let [<DebuggerHidden; DebuggerStepThrough>] scan2 (f : 'a -> Event<'a, Participant> -> 'w -> 'a) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
         track2 (fun a a2 w -> (f a a2 w, true)) stream
         
     /// Scan over a stream, accumulating state.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) scan (f : 'b -> Event<'a, Participant> -> 'w -> 'b) s (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
+    let [<DebuggerHidden; DebuggerStepThrough>] scan (f : 'b -> Event<'a, Participant> -> 'w -> 'b) s (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
         scan4 f id s stream
 
     /// Transform a stream into a running average of its event's numeric data.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) inline average (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
+    let [<DebuggerHidden; DebuggerStepThrough>] inline average (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
         scan4
             (fun (avg : 'a, den : 'a) a _ ->
                 let den' = den + one ()
@@ -359,7 +359,7 @@ module Stream =
             stream
 
     /// Transform a stream into a running map from its event's data to keys as defined by 'f'.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) organize f (stream : Stream<'a, 'w>) : Stream<('a * 'b) option * Map<'b, 'a>, 'w> =
+    let [<DebuggerHidden; DebuggerStepThrough>] organize f (stream : Stream<'a, 'w>) : Stream<('a * 'b) option * Map<'b, 'a>, 'w> =
         scan
             (fun (_, m) a world ->
                 let b = f a world
@@ -370,7 +370,7 @@ module Stream =
             stream
 
     /// Transform a stream into a running set of its event's unique data as defined via 'by'.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) groupBy by (stream : Stream<'a, 'w>) : Stream<'b * bool * 'b Set, 'w> =
+    let [<DebuggerHidden; DebuggerStepThrough>] groupBy by (stream : Stream<'a, 'w>) : Stream<'b * bool * 'b Set, 'w> =
         scan
             (fun (_, _, set) a world ->
                 let b = by a world
@@ -381,64 +381,64 @@ module Stream =
             stream
 
     /// Transform a stream into a running set of its event's unique data.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) group (stream : Stream<'a, 'w>) : Stream<'a * bool * 'a Set, 'w> =
+    let [<DebuggerHidden; DebuggerStepThrough>] group (stream : Stream<'a, 'w>) : Stream<'a * bool * 'a Set, 'w> =
         groupBy (fun a _ -> a.Data) stream
 
     /// Transform a stream into a running sum of its data.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) inline sumN stream = scan2 (fun n a _ -> n + a.Data) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] inline sumN stream = scan2 (fun n a _ -> n + a.Data) stream
 
     /// Transform a stream into a running product of its data.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) inline productN stream = scan2 (fun n a _ -> n * a.Data) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] inline productN stream = scan2 (fun n a _ -> n * a.Data) stream
     
     /// Transform a stream of pairs into its fst values.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) first stream = map (fun a _ -> fst a.Data) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] first stream = map (fun a _ -> fst a.Data) stream
     
     /// Transform a stream of pairs into its snd values.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) second stream = map (fun a _ -> snd a.Data) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] second stream = map (fun a _ -> snd a.Data) stream
     
     /// Transform a stream's pairs by a mapping of its fst values.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) mapFirst mapper stream = map (fun a _ -> (mapper ^ fst a.Data, snd a.Data)) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] mapFirst mapper stream = map (fun a _ -> (mapper ^ fst a.Data, snd a.Data)) stream
     
     /// Transform a stream of pairs by a mapping of its snd values.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) mapSecond mapper stream = map (fun a _ -> (fst a.Data, mapper ^ snd a.Data)) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] mapSecond mapper stream = map (fun a _ -> (fst a.Data, mapper ^ snd a.Data)) stream
     
     /// Transform a stream by duplicating its data into pairs.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) duplicate stream = map (fun a _ -> (a.Data, a.Data)) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] duplicate stream = map (fun a _ -> (a.Data, a.Data)) stream
     
     /// Take only the first n events from a stream.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) take n stream = track (fun m _ -> (m + 1, m < n)) 0 stream
+    let [<DebuggerHidden; DebuggerStepThrough>] take n stream = track (fun m _ -> (m + 1, m < n)) 0 stream
     
     /// Skip the first n events in a stream.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) skip n stream = track (fun m _ -> (m + 1, m >= n)) 0 stream
+    let [<DebuggerHidden; DebuggerStepThrough>] skip n stream = track (fun m _ -> (m + 1, m >= n)) 0 stream
     
     /// Take only the first event from a stream.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) head stream = take 1 stream
+    let [<DebuggerHidden; DebuggerStepThrough>] head stream = take 1 stream
     
     /// Skip the first event of a stream.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) tail stream = skip 1 stream
+    let [<DebuggerHidden; DebuggerStepThrough>] tail stream = skip 1 stream
     
     /// Take only the nth event from a stream.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) nth n stream = stream |> skip n |> head
+    let [<DebuggerHidden; DebuggerStepThrough>] nth n stream = stream |> skip n |> head
     
     /// Take only the first event from a stream that satisfies 'p'.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) search p stream = stream |> filter p |> head
+    let [<DebuggerHidden; DebuggerStepThrough>] search p stream = stream |> filter p |> head
     
     /// Filter out the None data values from a stream and strip the Some constructor from
     /// the remaining values.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) choose (stream : Stream<'a option, 'w>) =
+    let [<DebuggerHidden; DebuggerStepThrough>] choose (stream : Stream<'a option, 'w>) =
         stream |> filter (fun opt _ -> Option.isSome opt.Data) |> map (fun a _ -> Option.get a.Data)
     
     /// Transform a stream into a running maximum of it numeric data.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) max stream = scan2 (fun n a _ -> if n < a.Data then a.Data else n) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] max stream = scan2 (fun n a _ -> if n < a.Data then a.Data else n) stream
     
     /// Transform a stream into a running minimum of it numeric data.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) min stream = scan2 (fun n a _ -> if a.Data < n then a.Data else n) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] min stream = scan2 (fun n a _ -> if a.Data < n then a.Data else n) stream
 
     /// Filter out the events with non-unique data as defined via 'by' from a stream.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) distinctBy by stream = stream |> organize by |> first |> choose
+    let [<DebuggerHidden; DebuggerStepThrough>] distinctBy by stream = stream |> organize by |> first |> choose
     
     /// Filter out the events with non-unique data from a stream.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) distinct stream = distinctBy (fun a -> a.Data) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] distinct stream = distinctBy (fun a -> a.Data) stream
 
 [<AutoOpen>]
 module ObservationOperators =
@@ -450,13 +450,13 @@ module ObservationOperators =
     let (-|>) = (|>)
 
     /// Make a stream of the subscriber's change events.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) ( !-- ) (property : PropertyTag<'a, 'b, 'w>) =
+    let [<DebuggerHidden; DebuggerStepThrough>] ( !-- ) (property : PropertyTag<'a, 'b, 'w>) =
         let changeEventAddress = ltoa<ParticipantChangeData<'a, 'w>> [!!typeof<'a>.Name; !!"Change"; !!property.Name] ->>- property.This.ParticipantAddress
         stream changeEventAddress
 
     /// Propagate the event data of a stream to a property in the observing participant when the
     /// subscriber exists (doing nothing otherwise).
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) ( --> ) stream (property : PropertyTag<'a, 'b, 'w>) =
+    let [<DebuggerHidden; DebuggerStepThrough>] ( --> ) stream (property : PropertyTag<'a, 'b, 'w>) =
         subscribe (fun a world ->
             let world =
                 if world.ContainsParticipant a.Subscriber then
@@ -469,7 +469,7 @@ module ObservationOperators =
             stream
 
     /// Propagate a property value from the given source participant to a property in the given destination participant.
-    let (*[<DebuggerHidden; DebuggerStepThrough>]*) ( *-> )
+    let [<DebuggerHidden; DebuggerStepThrough>] ( -!> )
         (sourceProperty : PropertyTag<'a, 'b, 'w>)
         (destinationProperty : PropertyTag<'s, 'b, 'w>) =
         !-- sourceProperty -|> map (fun _ world -> sourceProperty.Get world) --> destinationProperty
