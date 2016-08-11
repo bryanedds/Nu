@@ -28,11 +28,11 @@ module WorldGroupModule =
         member this.TagSpecialization = PropertyTag.makeReadOnly this Property? Specialization this.GetSpecialization
         member this.GetClassification world = Classification.make (getTypeName ^ this.GetDispatcherNp world) (this.GetSpecialization world)
         member this.TagClassification = PropertyTag.makeReadOnly this Property? Classification this.GetClassification
-        member this.GetCreationTimeStampNp world = World.getGroupCreationTimeStampNp this world
-        member this.TagCreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
         member this.GetPersistent world = World.getGroupPersistent this world
         member this.SetPersistent value world = World.setGroupPersistent value this world
         member this.TagPersistent = PropertyTag.makeReadOnly this Property? Persistent this.GetPersistent
+        member this.GetCreationTimeStampNp world = World.getGroupCreationTimeStampNp this world
+        member this.TagCreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
 
         /// Get a property value and type.
         member this.GetPropertyValueAndType propertyName world = World.getGroupPropertyValueAndType propertyName this world

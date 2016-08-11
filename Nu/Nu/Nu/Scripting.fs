@@ -292,59 +292,67 @@ module Scripting =
             | :? Expr -> source
             | _ -> failconv "Invalid ExprConverter conversion from source." None
 
-    [<AutoOpen>]
-    module EnvModule =
+[<AutoOpen>]
+module EnvModule =
 
-        type [<NoEquality; NoComparison>] Env<'p, 'w when 'p :> Participant and 'w :> EventWorld<'w>> =
-            private
-                { Rebinding : bool // rebinding should be enabled in Terminal or perhaps when reloading existing scripts.
-                  TopLevel : Dictionary<string, Expr>
-                  Streams : Map<obj Address, Prime.Stream<obj, 'p, 'w> * ('w -> 'w)>
-                  Context : 'p
-                  World : 'w }
+    /// The execution environment for scripts.
+    type [<NoEquality; NoComparison>] Env<'p, 'w when 'p :> Participant and 'w :> EventWorld<'w>> =
+        private
+            { Rebinding : bool // rebinding should be enabled in Terminal or perhaps when reloading existing scripts.
+              TopLevel : Dictionary<string, Scripting.Expr>
+              Streams : Map<obj Address, Prime.Stream<obj, 'p, 'w> * ('w -> 'w)>
+              Context : 'p
+              World : 'w }
 
-        [<RequireQualifiedAccess>]
-        module Env =
+    [<RequireQualifiedAccess>]
+    module Env =
 
-            let make chooseWorld rebinding topLevel (context : 'p) (world : 'w) =
-                { Rebinding = rebinding
-                  TopLevel = topLevel
-                  Streams = Map.empty
-                  Context = context
-                  World = chooseWorld world }
+        let make chooseWorld rebinding topLevel (context : 'p) (world : 'w) =
+            { Rebinding = rebinding
+              TopLevel = topLevel
+              Streams = Map.empty
+              Context = context
+              World = chooseWorld world }
 
-            let tryGetBinding name (env : Env<'p, 'w>) =
-                match env.TopLevel.TryGetValue name with
-                | (true, binding) -> Some binding
-                | (false, _) -> None
+        let tryGetBinding name (env : Env<'p, 'w>) =
+            match env.TopLevel.TryGetValue name with
+            | (true, binding) -> Some binding
+            | (false, _) -> None
 
-            let tryAddBinding isTopLevel name evaled (env : Env<'p, 'w>) =
-                if isTopLevel && (env.Rebinding || not ^ env.TopLevel.ContainsKey name) then
-                    env.TopLevel.Add (name, evaled)
-                    Some env
-                else None
+        let tryAddBinding isTopLevel name evaled (env : Env<'p, 'w>) =
+            if isTopLevel && (env.Rebinding || not ^ env.TopLevel.ContainsKey name) then
+                env.TopLevel.Add (name, evaled)
+                Some env
+            else None
 
-            let tryGetStream streamAddress (env : Env<'p, 'w>) =
-                Map.tryFind streamAddress env.Streams
+        let tryGetStream streamAddress (env : Env<'p, 'w>) =
+            Map.tryFind streamAddress env.Streams
 
-            let addStream streamAddress address (env : Env<'p, 'w>) =
-                { env with Streams = Map.add streamAddress address env.Streams }
+        let addStream streamAddress address (env : Env<'p, 'w>) =
+            { env with Streams = Map.add streamAddress address env.Streams }
 
-            let getContext (env : Env<'p, 'w>) =
-                env.Context
+        let getContext (env : Env<'p, 'w>) =
+            env.Context
 
-            let getWorld (env : Env<'p, 'w>) =
-                env.World
+        let getWorld (env : Env<'p, 'w>) =
+            env.World
 
-            let setWorld chooseWorld world (env : Env<'p, 'w>) =
-                { env with World = chooseWorld world }
+        let setWorld chooseWorld world (env : Env<'p, 'w>) =
+            { env with World = chooseWorld world }
 
-            let updateWorld chooseWorld by (env : Env<'p, 'w>) =
-                setWorld chooseWorld (by (getWorld env)) env
+        let updateWorld chooseWorld by (env : Env<'p, 'w>) =
+            setWorld chooseWorld (by (getWorld env)) env
 
-    type [<NoComparison>] Script<'p when 'p :> Participant> =
-        { Context : 'p
-          Constants : (Name * Expr) list
-          Streams : (Name * Guid * Stream * Expr) list
-          Equalities : (Name * Guid * Stream) list
-          Rules : unit list } // TODO
+/// Dynamically drives behavior for simulants.
+type [<NoComparison>] Script =
+    { Constants : (Name * Scripting.Expr) list
+      Streams : (Name * Guid * Scripting.Stream * Scripting.Expr) list
+      Equalities : (Name * Guid * Scripting.Stream) list }
+
+    static member empty =
+        { Constants = []
+          Streams = []
+          Equalities = [] }
+
+/// The execution environment for scripts.
+type Env<'p, 'w when 'p :> Participant and 'w :> EventWorld<'w>> = EnvModule.Env<'p, 'w>

@@ -139,7 +139,7 @@ module Effects =
         { DefinitionParams : string list
           DefinitionBody : SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>> }
 
-    type [<NoComparison>] EffectArtifact =
+    type [<NoComparison>] Artifact =
         | RenderArtifact of RenderDescriptor list
         | SoundArtifact of single * AssetTag
         | TagArtifact of string * Symbol * Slice
@@ -147,28 +147,28 @@ module Effects =
     type Definitions =
         Map<string, Definition>
 
-    /// Describes an effect in a compositional manner.
-    [<Syntax   ("Const Linear Random Chaos Ease EaseIn EaseOut Sin Cos " +
-                "Or Nor Xor And Nand Equal " +
-                "Sum Delta Scale Ratio Set " +
-                "Position Size Rotation Depth Offset Color Volume Enabled " +
-                "Once Loop Bounce " +
-                "Cycle Iterate " +
-                "Rate " +
-                "Shift " +
-                "Expand Resource " +
-                "Expand Enabled Position Translation Offset Size Rotation Depth Color Volume Bone " +
-                "Expand StaticSprite AnimatedSprite SoundEffect Mount Repeat Emit Composite Tag Nil " +
-                "RenderArtifact SoundArtifact TagArtifact",
-                "")>]
-    type [<NoEquality; NoComparison>] Effect =
-        { EffectName : string
-          OptLifetime : int64 option
-          Definitions : Definitions
-          Content : Content }
+/// Describes an effect in a compositional manner.
+[<Syntax   ("Const Linear Random Chaos Ease EaseIn EaseOut Sin Cos " +
+            "Or Nor Xor And Nand Equal " +
+            "Sum Delta Scale Ratio Set " +
+            "Position Size Rotation Depth Offset Color Volume Enabled " +
+            "Once Loop Bounce " +
+            "Cycle Iterate " +
+            "Rate " +
+            "Shift " +
+            "Expand Resource " +
+            "Expand Enabled Position Translation Offset Size Rotation Depth Color Volume Bone " +
+            "Expand StaticSprite AnimatedSprite SoundEffect Mount Repeat Emit Composite Tag Nil " +
+            "RenderArtifact SoundArtifact TagArtifact",
+            "")>]
+type [<NoEquality; NoComparison>] Effect =
+    { EffectName : string
+      OptLifetime : int64 option
+      Definitions : Effects.Definitions
+      Content : Effects.Content }
 
-        static member empty =
-            { EffectName = "Empty"
-              OptLifetime = None
-              Definitions = Map.empty
-              Content = Composite (Shift 0.0f, []) }
+    static member empty =
+        { EffectName = "Empty"
+          OptLifetime = None
+          Definitions = Map.empty
+          Content = Effects.Composite (Effects.Shift 0.0f, []) }

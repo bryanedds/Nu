@@ -84,10 +84,8 @@ module MountFacetModule =
 [<AutoOpen>]
 module EffectFacetModule =
 
-    open Effects
-
     type EffectTags =
-        Map<string, Symbol * Slice list>
+        Map<string, Symbol * Effects.Slice list>
 
     type Entity with
     
@@ -103,8 +101,8 @@ module EffectFacetModule =
         member this.GetOptEffectStartTime world : int64 option = this.Get Property? OptEffectStartTime world
         member this.SetOptEffectStartTime (value : int64 option) world = this.Set Property? OptEffectStartTime value world
         member this.TagOptEffectStartTime = PropertyTag.make this Property? OptEffectStartTime this.GetOptEffectStartTime this.SetOptEffectStartTime
-        member this.GetEffectDefinitions world : Definitions = this.Get Property? EffectDefinitions world
-        member this.SetEffectDefinitions (value : Definitions) world = this.Set Property? EffectDefinitions value world
+        member this.GetEffectDefinitions world : Effects.Definitions = this.Get Property? EffectDefinitions world
+        member this.SetEffectDefinitions (value : Effects.Definitions) world = this.Set Property? EffectDefinitions value world
         member this.TagEffectDefinitions = PropertyTag.make this Property? EffectDefinitions this.GetEffectDefinitions this.SetEffectDefinitions
         member this.GetEffect world : Effect = this.Get Property? Effect world
         member this.SetEffect (value : Effect) world = this.Set Property? Effect value world
@@ -115,8 +113,8 @@ module EffectFacetModule =
         member this.GetEffectHistoryMax world : int = this.Get Property? EffectHistoryMax world
         member this.SetEffectHistoryMax (value : int) world = this.Set Property? EffectHistoryMax value world
         member this.TagEffectHistoryMax = PropertyTag.make this Property? EffectHistoryMax this.GetEffectHistoryMax this.SetEffectHistoryMax
-        member this.GetEffectHistoryNp world : Slice Deque = this.Get Property? EffectHistoryNp world
-        member private this.SetEffectHistoryNp (value : Slice Deque) world = this.Set Property? EffectHistoryNp value world
+        member this.GetEffectHistoryNp world : Effects.Slice Deque = this.Get Property? EffectHistoryNp world
+        member private this.SetEffectHistoryNp (value : Effects.Slice Deque) world = this.Set Property? EffectHistoryNp value world
         member this.TagEffectHistoryNp = PropertyTag.makeReadOnly this Property? EffectHistoryNp this.GetEffectHistoryNp
         member this.GetEffectPhysicsShapesNp world : unit = this.Get Property? EffectPhysicsShapesNp world // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
         member private this.SetEffectPhysicsShapesNp (value : unit) world = this.Set Property? EffectPhysicsShapesNp value world
@@ -172,11 +170,11 @@ module EffectFacetModule =
              Define? OptEffects (None : AssetTag list option)
              Define? OptEffectsLc (None : AssetTag list option)
              Define? OptEffectStartTime (None : int64 option)
-             Define? EffectDefinitions (Map.empty : Definitions)
+             Define? EffectDefinitions (Map.empty : Effects.Definitions)
              Define? Effect Effect.empty
              Define? EffectOffset Vector2.Zero
              Define? EffectHistoryMax Constants.Effects.DefaultEffectHistoryMax
-             Define? EffectHistoryNp Deque.empty<Slice>
+             Define? EffectHistoryNp Deque.empty<Effects.Slice>
              Define? EffectPhysicsShapesNp ()
              Define? EffectTagsNp (Map.empty : EffectTags)]
 
@@ -187,14 +185,14 @@ module EffectFacetModule =
                 let effectTime = entity.GetEffectTime world
                 let effectViewType = entity.GetViewType world
                 let effectSlice =
-                    { Position = entity.GetPosition world + Vector2.Multiply (entity.GetSize world, entity.GetEffectOffset world)
-                      Size = entity.GetSize world
-                      Rotation = entity.GetRotation world
-                      Depth = entity.GetDepth world
-                      Offset = Vector2 0.5f
-                      Color = Vector4.One
-                      Enabled = true
-                      Volume = 1.0f }
+                    { Effects.Position = entity.GetPosition world + Vector2.Multiply (entity.GetSize world, entity.GetEffectOffset world)
+                      Effects.Size = entity.GetSize world
+                      Effects.Rotation = entity.GetRotation world
+                      Effects.Depth = entity.GetDepth world
+                      Effects.Offset = Vector2 0.5f
+                      Effects.Color = Vector4.One
+                      Effects.Enabled = true
+                      Effects.Volume = 1.0f }
                 let effectHistory = entity.GetEffectHistoryNp world
                 let effectEnv = entity.GetEffectDefinitions world
                 let effectSystem = EffectSystem.make effectViewType effectHistory effectTime effectEnv
@@ -202,9 +200,9 @@ module EffectFacetModule =
                     let artifacts = EffectSystem.eval effect effectSlice effectSystem
                     List.fold (fun world artifact ->
                         match artifact with
-                        | RenderArtifact renderDescriptors -> World.addRenderMessage (RenderDescriptorsMessage renderDescriptors) world
-                        | SoundArtifact (volume, sound) -> World.playSound volume sound world
-                        | TagArtifact (name, metadata, slice) ->
+                        | Effects.RenderArtifact renderDescriptors -> World.addRenderMessage (RenderDescriptorsMessage renderDescriptors) world
+                        | Effects.SoundArtifact (volume, sound) -> World.playSound volume sound world
+                        | Effects.TagArtifact (name, metadata, slice) ->
                             let effectTags = entity.GetEffectTagsNp world
                             let effectTags =
                                 match Map.tryFind name effectTags with

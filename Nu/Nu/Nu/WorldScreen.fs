@@ -28,6 +28,9 @@ module WorldScreenModule =
         member this.TagSpecialization = PropertyTag.makeReadOnly this Property? Specialization this.GetSpecialization
         member this.GetClassification world = Classification.make (getTypeName ^ this.GetDispatcherNp world) (this.GetSpecialization world)
         member this.TagClassification = PropertyTag.makeReadOnly this Property? Classification this.GetClassification
+        member this.GetPersistent world = World.getScreenPersistent this world
+        member this.SetPersistent value world = World.setScreenPersistent value this world
+        member this.TagPersistent = PropertyTag.makeReadOnly this Property? Persistent this.GetPersistent
         member this.GetCreationTimeStampNp world = World.getScreenCreationTimeStampNp this world
         member this.TagCreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
         member this.GetEntityTreeNp world = World.getScreenEntityTreeNp this world
@@ -45,9 +48,6 @@ module WorldScreenModule =
         member this.GetOutgoing world = World.getScreenOutgoing this world
         member this.SetOutgoing value world = World.setScreenOutgoing value this world
         member this.TagOutgoing = PropertyTag.makeReadOnly this Property? Outgoing this.GetOutgoing
-        member this.GetPersistent world = World.getScreenPersistent this world
-        member this.SetPersistent value world = World.setScreenPersistent value this world
-        member this.TagPersistent = PropertyTag.makeReadOnly this Property? Persistent this.GetPersistent
 
         /// Get a property value and type.
         member this.GetPropertyValueAndType propertyName world = World.getScreenPropertyValueAndType propertyName this world

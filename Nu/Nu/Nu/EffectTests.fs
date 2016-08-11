@@ -10,8 +10,6 @@ open Prime
 open Nu
 module EffectSystemTests =
 
-    open Effects
-
     let [<Fact>] readEffectWorks () =
         Math.init ()
         let effectStr =

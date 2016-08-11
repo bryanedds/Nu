@@ -11,12 +11,12 @@ open Nu
 open Nu.Scripting
 
 [<AutoOpen>]
-module WorldScriptingModule =
+module WorldScriptSystem =
 
     /// An abstract data type for executing scripts.
     type [<NoEquality; NoComparison>] ScriptSystem =
         private
-            { Scripts : Vmap<Guid, Script<Simulant>>
+            { Scripts : Vmap<Guid, Script>
               Debugging : bool }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -940,4 +940,4 @@ module WorldScriptingModule =
             | Handle (_, _, optOrigin) -> (Unit optOrigin, env)
 
 /// An abstract data type for executing scripts.
-type ScriptSystem = WorldScriptingModule.ScriptSystem
+type ScriptSystem = WorldScriptSystem.ScriptSystem
