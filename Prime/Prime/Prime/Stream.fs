@@ -50,7 +50,7 @@ module Stream =
             let subscriptionAddress = (ntoa<'a> !!(scstring subscriptionKey)) ->>- subscriber.ParticipantAddress
             let unsubscribe = fun world -> EventWorld.unsubscribe<'w> subscriptionKey world
             let subscription = fun evt world ->
-                let eventTrace = EventTrace.record "Stream" "observe" evt.Trace
+                let eventTrace = EventTrace.record "Stream" "stream" evt.Trace
                 let world = EventWorld.publish6<'a, Participant, 'w> EventWorld.sortSubscriptionsNone evt.Data subscriptionAddress eventTrace evt.Publisher world
                 (Cascade, world)
             let world = EventWorld.subscribe5<'a, 's, 'w> subscriptionKey subscription eventAddress subscriber world
