@@ -793,7 +793,7 @@ module WorldTypes =
                 | :? Group as group -> Vmap.containsKey group.GroupAddress this.GroupStates
                 | :? Screen as screen -> Vmap.containsKey screen.ScreenAddress this.ScreenStates
                 | :? Game -> true
-                | _  -> true
+                | _  -> false
             member this.PublishEvent (participant : Participant) publisher eventData eventAddress eventTrace subscription world =
                 match participant with
                 | :? Entity -> EventWorld.publishEvent<'a, 'p, Entity, World> participant publisher eventData eventAddress eventTrace subscription world

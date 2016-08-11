@@ -133,8 +133,7 @@ module EventTests =
     let [<Fact>] productWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
         let world =
-            stream TestEvent |>
-            product TestEvent |>
+            product (stream TestEvent) (stream TestEvent) |>
             subscribe (fun evt world -> (Cascade, { world with TestState = fst evt.Data + snd evt.Data })) TestParticipant <|
             world
         let world = EventWorld.publish 1 TestEvent EventTrace.empty TestParticipant world
