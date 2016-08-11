@@ -20,7 +20,7 @@ type ChainBuilder () =
     /// Monadic return for the chain monad.
     [<DebuggerHidden; DebuggerStepThrough>]
     member this.Return (a : 'a) : Chain<'e, 'a, 'w> =
-        Chain (fun s -> (s, Right a))
+        Chain (fun world -> (world, Right a))
 
     /// Monadic bind for the chain monad.
     [<DebuggerHidden; DebuggerStepThrough>]
