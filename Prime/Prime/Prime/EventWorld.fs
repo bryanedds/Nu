@@ -105,9 +105,9 @@ module EventWorld =
     let private boxSubscription<'a, 's, 'w when 's :> Participant and 'w :> 'w EventWorld> (subscription : Subscription<'a, 's, 'w>) =
         let boxableSubscription = fun (evtObj : obj) world ->
             match subscription :> obj with
-            | :? Subscription<obj, 's, 'w> as subscriptionGeneric ->
+            | :? Subscription<obj, 's, 'w> as subscriptionDynamic ->
                 let evt = try evtObj :?> Event<obj, 's> with exn -> debugSubscriptionTypeMismatch (); reraise ()
-                subscriptionGeneric evt world
+                subscriptionDynamic evt world
             | _ ->
                 let evt = try evtObj :?> Event<'a, 's> with exn -> debugSubscriptionTypeMismatch (); reraise ()
                 subscription evt world
@@ -157,6 +157,7 @@ module EventWorld =
         (subscriber : Participant) (publisher : 'p) (eventData : 'a) (eventAddress : 'a Address) eventTrace subscription (world : 'w) =
         let evt =
             { Data = eventData
+              DataType = typeof<'a>
               Address = eventAddress
               Trace = eventTrace
               Subscriber = subscriber :?> 's

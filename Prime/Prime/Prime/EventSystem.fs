@@ -38,6 +38,7 @@ type ParticipantOperators =
 /// An event used by the event system.
 type [<ReferenceEquality>] Event<'a, 's when 's :> Participant> =
     { Data : 'a
+      DataType : Type // here so type can be recovered in a dynamic context
       Address : 'a Address
       Trace : EventTrace
       Publisher : Participant
