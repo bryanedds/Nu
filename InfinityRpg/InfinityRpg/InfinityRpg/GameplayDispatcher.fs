@@ -365,7 +365,7 @@ module GameplayDispatcherModule =
                         let navigationDescriptor =
                             match character.GetActivityState world with
                             | Navigation navigationDescriptor -> navigationDescriptor
-                            | _ -> failwith "Unexpected match failure in InfinityRpg.GameplayDispatcherModule.runCharacterNavigation."
+                            | _ -> failwithumf ()
                         updateCharacterByNavigation navigationDescriptor character world
                     do! pass }}
             let stream = stream (Events.Update ->- character) |> until (Events.Deselect ->- Simulants.Gameplay)
@@ -482,7 +482,8 @@ module GameplayDispatcherModule =
                                 do! update ^ cancelNavigation Simulants.Player }}
                     do! update ^ Simulants.HudSaveGame.SetEnabled true }
                 let stream =
-                    sum (stream (Events.Update ->- Simulants.Player)) (stream (Events.Click ->- Simulants.HudHalt)) |>
+                    stream (Events.Update ->- Simulants.Player) |>
+                    sum (stream (Events.Click ->- Simulants.HudHalt)) |>
                     until (Events.Deselect ->- Simulants.Gameplay)
                 runAssumingCascade chain stream world |> snd
             else world
