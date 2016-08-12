@@ -298,9 +298,9 @@ module WorldTypes =
             (xProperty.PropertyValue, xProperty.PropertyType)
 
         /// Set a dynamic property with explicit type information.
-        static member setProperty propertyName property entityState =
+        static member setProperty propertyName property gameState =
             let xProperty = { PropertyValue = fst property; PropertyType = snd property }
-            { entityState with EntityState.Xtension = Xtension.setProperty propertyName xProperty entityState.Xtension }
+            { gameState with GameState.Xtension = Xtension.setProperty propertyName xProperty gameState.Xtension }
 
         /// The dynamic look-up operator.
         static member get propertyName gameState : 'a =
@@ -363,9 +363,9 @@ module WorldTypes =
             (xProperty.PropertyValue, xProperty.PropertyType)
 
         /// Set a dynamic property with explicit type information.
-        static member setProperty propertyName property entityState =
+        static member setProperty propertyName property screenState =
             let xProperty = { PropertyValue = fst property; PropertyType = snd property }
-            { entityState with EntityState.Xtension = Xtension.setProperty propertyName xProperty entityState.Xtension }
+            { screenState with ScreenState.Xtension = Xtension.setProperty propertyName xProperty screenState.Xtension }
 
         /// The dynamic look-up operator.
         static member get propertyName screenState : 'a =
@@ -428,9 +428,9 @@ module WorldTypes =
             (xProperty.PropertyValue, xProperty.PropertyType)
 
         /// Set a dynamic property with explicit type information.
-        static member setProperty propertyName property entityState =
+        static member setProperty propertyName property groupState =
             let xProperty = { PropertyValue = fst property; PropertyType = snd property }
-            { entityState with EntityState.Xtension = Xtension.setProperty propertyName xProperty entityState.Xtension }
+            { groupState with GroupState.Xtension = Xtension.setProperty propertyName xProperty groupState.Xtension }
 
         /// The dynamic look-up operator.
         static member get propertyName groupState : 'a =

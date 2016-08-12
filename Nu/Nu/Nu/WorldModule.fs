@@ -1218,7 +1218,7 @@ module WorldModule =
             | "Specialization" -> failwith "Cannot change group specialization."
             | "Persistent" -> World.setGroupPersistent (property |> fst :?> bool) group world
             | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
-            | _ -> World.updateGroupState (GroupState.set propertyName property) propertyName group world
+            | _ -> World.updateGroupState (GroupState.setProperty propertyName property) propertyName group world
 
         static member private addGroup mayReplace groupState group world =
             let isNew = not ^ World.containsGroup group world
@@ -1434,7 +1434,7 @@ module WorldModule =
             | "TransitionTicksNp" -> World.setScreenTransitionTicksNp (property |> fst :?> int64) screen world
             | "Incoming" -> World.setScreenIncoming (property |> fst :?> Transition) screen world
             | "Outgoing" -> World.setScreenOutgoing (property |> fst :?> Transition) screen world
-            | _ -> World.updateScreenState (ScreenState.set propertyName property) propertyName screen world
+            | _ -> World.updateScreenState (ScreenState.setProperty propertyName property) propertyName screen world
 
         static member internal updateEntityInEntityTree entity oldWorld world =
 
@@ -1719,7 +1719,7 @@ module WorldModule =
             | "OptScreenTransitionDestination" -> World.setOptScreenTransitionDestination (property |> fst :?> Screen option) world
             | "EyeCenter" -> World.setEyeCenter (property |> fst :?> Vector2) world
             | "EyeSize" -> World.setEyeSize (property |> fst :?> Vector2) world
-            | _ -> World.updateGameState (GameState.set propertyName property) propertyName world
+            | _ -> World.updateGameState (GameState.setProperty propertyName property) propertyName world
 
         static member internal makeGameState optSpecialization dispatcher =
             let gameState = GameState.make optSpecialization dispatcher
