@@ -47,7 +47,7 @@ module AmbientStateModule =
         /// Set the tick rate without waiting for the end of the current update. Only use
         /// this if you need it and understand the engine internals well enough to know the
         /// consequences.
-        let setTickRateImmediately tickRate state =
+        let setTickRateImmediate tickRate state =
             { state with TickRate = tickRate }
 
         /// Reset the tick time to 0.

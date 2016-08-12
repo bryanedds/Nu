@@ -150,7 +150,7 @@ module GameplayDispatcherModule =
             let world = character.SetPosition newPosition world
             let characterAnimationState = { character.GetCharacterAnimationState world with Direction = walkDescriptor.WalkDirection }
             let world = character.SetCharacterAnimationState characterAnimationState world
-            (world, walkState)
+            (walkState, world)
 
         static let updateCharacterByWalkState walkState navigationDescriptor (character : Entity) world =
             match walkState with
@@ -167,7 +167,7 @@ module GameplayDispatcherModule =
             | WalkContinuing -> world
 
         static let updateCharacterByNavigation navigationDescriptor character world =
-            let (world, walkState) = updateCharacterByWalk navigationDescriptor.WalkDescriptor character world
+            let (walkState, world) = updateCharacterByWalk navigationDescriptor.WalkDescriptor character world
             updateCharacterByWalkState walkState navigationDescriptor character world
 
         static let updateCharacterByAction actionDescriptor (character : Entity) world =
