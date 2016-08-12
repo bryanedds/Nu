@@ -79,7 +79,7 @@ module RelationModule =
         /// Resolve a relationship to an address.
         static member resolve<'a> (address : 'a Address) (relation : 'a Relation) =
             let names = List.project id (Address.getNames address) relation.OptNames
-            Address.makeFromNames<'a> names
+            Address.makeFromList<'a> names
 
         /// Concatenate two addresses of the same type.
         static member (+|+) (address : 'a Address, relation : 'a Relation) = Relation.resolve address relation
@@ -104,7 +104,7 @@ module RelationModule =
     module Relation =
 
         /// Make a relation from a list of option names.
-        let makeFromOptNamesList<'a> optNamesList =
+        let makeFromList<'a> optNamesList =
             { OptNames = optNamesList |> List.ofSeq; TypeCarrier = fun (_ : 'a) -> () }
     
         /// Make an address from a '/' delimited string.

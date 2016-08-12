@@ -64,7 +64,7 @@ module NameModule =
         /// Make a name from a string that can be part of an Address.
         static member make (nameStr : string) =
 #if DEBUG
-            if nameStr.IndexOf '.' <> -1 then failwith ^ "Invalid name '" + nameStr + "'; must have no dot characters."
+            if nameStr.IndexOfAny [|'.'; '/'|] <> -1 then failwith ^ "Invalid name '" + nameStr + "'; must have no dot characters."
             elif nameStr.IndexOfAny Symbol.WhitespaceCharsArray <> -1 then failwith ^ "Invalid name '" + nameStr + "'; must have no whitespace characters."
             elif
                 nameStr.Length > 0 && Char.IsLetter nameStr.[0] |> not && // OPTIMIZATION: short-circuited to avoid hitting fparsec
