@@ -218,8 +218,8 @@ module AddressModule =
             List.head address.Names
             
         /// Take the tail of an address.
-        let tail<'a> address =
-            makeFromNames<'a> ^ List.tail address.Names
+        let tail<'a, 'b> (address : 'a Address) =
+            makeFromNames<'b> ^ List.tail address.Names
 
         /// Take a name of an address.
         let item index address =

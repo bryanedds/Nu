@@ -177,7 +177,7 @@ module CharacterCameraFacetModule =
     type CharacterCameraFacet () =
         inherit Facet ()
 
-        static let handleUpdate evt world =
+        static let handlePostUpdate evt world =
             let character = evt.Subscriber : Entity
             let world =
                 let eyeCenter = character.GetPosition world + character.GetSize world * 0.5f
@@ -204,4 +204,4 @@ module CharacterCameraFacetModule =
             (Cascade, world)
 
         override facet.Register (entity, world) =
-            monitor handleUpdate entity (stream (Events.Update ->- entity)) world
+            monitor handlePostUpdate entity (stream (Events.PostUpdate ->- entity)) world

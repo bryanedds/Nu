@@ -104,6 +104,12 @@ module WorldGameModule =
             let eventTrace = EventTrace.record "World" "updateGame" EventTrace.empty
             World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () Events.Update eventTrace Simulants.Game world
         
+        static member internal postUpdateGame world =
+            let dispatcher = Simulants.Game.GetDispatcherNp world
+            let world = dispatcher.PostUpdate (Simulants.Game, world)
+            let eventTrace = EventTrace.record "World" "postUpdateGame" EventTrace.empty
+            World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () Events.PostUpdate eventTrace Simulants.Game world
+        
         static member internal actualizeGame world =
             let dispatcher = Simulants.Game.GetDispatcherNp world
             dispatcher.Actualize (Simulants.Game, world)

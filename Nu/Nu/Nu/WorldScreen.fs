@@ -81,6 +81,12 @@ module WorldScreenModule =
             let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
             World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () (Events.Update ->- screen) eventTrace Simulants.Game world
 
+        static member internal postUpdateScreen (screen : Screen) world =
+            let dispatcher = World.getScreenDispatcherNp screen world
+            let world = dispatcher.PostUpdate (screen, world)
+            let eventTrace = EventTrace.record "World" "postUpdateScreen" EventTrace.empty
+            World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- screen) eventTrace Simulants.Game world
+
         static member internal actualizeScreen (screen : Screen) world =
             let dispatcher = screen.GetDispatcherNp world
             dispatcher.Actualize (screen, world)

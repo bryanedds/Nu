@@ -683,6 +683,8 @@ module WorldModule =
         static member internal setEntityPublishChanges value entity world = World.updateEntityState (fun entityState -> { entityState with PublishChanges = value }) Property? PublishChanges entity world
         static member internal getEntityPublishUpdatesNp entity world = (World.getEntityState entity world).PublishUpdatesNp
         static member internal setEntityPublishUpdatesNp value entity world = World.updateEntityState (fun entityState -> { entityState with PublishUpdatesNp = value }) Property? PublishUpdatesNp entity world
+        static member internal getEntityPublishPostUpdatesNp entity world = (World.getEntityState entity world).PublishPostUpdatesNp
+        static member internal setEntityPublishPostUpdatesNp value entity world = World.updateEntityState (fun entityState -> { entityState with PublishPostUpdatesNp = value }) Property? PublishPostUpdatesNp entity world
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
         static member internal getEntityFacetsNp entity world = (World.getEntityState entity world).FacetsNp
 
@@ -736,6 +738,7 @@ module WorldModule =
             | "Omnipresent" -> (World.getEntityOmnipresent entity world :> obj, typeof<bool>)
             | "PublishChanges" -> (World.getEntityPublishChanges entity world :> obj, typeof<bool>)
             | "PublishUpdatesNp" -> (World.getEntityPublishUpdatesNp entity world :> obj, typeof<bool>)
+            | "PublishPostUpdatesNp" -> (World.getEntityPublishPostUpdatesNp entity world :> obj, typeof<bool>)
             | "FacetNames" -> (World.getEntityFacetNames entity world :> obj, typeof<string Set>)
             | "FacetsNp" -> (World.getEntityFacetsNp entity world :> obj, typeof<Facet list>)
             | _ -> let property = EntityState.getProperty propertyName (World.getEntityState entity world) in (property.PropertyValue, property.PropertyType)
@@ -763,6 +766,7 @@ module WorldModule =
             | "Omnipresent" -> World.setEntityOmnipresent (value :> obj :?> bool) entity world
             | "PublishChanges" -> World.setEntityPublishChanges (value :> obj :?> bool) entity world
             | "PublishUpdatesNp" -> failwith "Cannot change entity publish updates."
+            | "PublishPostUpdatesNp" -> failwith "Cannot change entity post-publish updates."
             | "FacetNames" -> failwith "Cannot change entity facet names with a property setter."
             | "FacetsNp" -> failwith "Cannot change entity facets with a property setter."
             | _ -> World.updateEntityState (EntityState.set propertyName value) propertyName entity world
@@ -785,17 +789,26 @@ module WorldModule =
         static member getEntityFacetNamesReflectively entityState =
             List.map getTypeName entityState.FacetsNp
 
-        static member private updateEntityPublishUpdates entity world =
-            let entityUpdateEventAddress = entity.UpdateAddress |> atooa
+        static member private updateEntityPublishEventFlag setFlag entity eventAddress world =
             let publishUpdates =
-                let subscriptions = Vmap.tryFind entityUpdateEventAddress (World.getSubscriptions world)
-                match subscriptions with
-                | Some [] -> failwithumf () // NOTE: implementation of event system should clean up all empty subscription entries, AFAIK
+                match Vmap.tryFind eventAddress ^ World.getSubscriptions world with
+                | Some [] -> failwithumf () // NOTE: event system is defined to clean up all empty subscription entries
                 | Some (_ :: _) -> true
                 | None -> false
             if World.containsEntity entity world
-            then World.setEntityPublishUpdatesNp publishUpdates entity world
+            then setFlag publishUpdates entity world
             else world
+
+        static member internal updateEntityPublishUpdateFlag entity world =
+            World.updateEntityPublishEventFlag World.setEntityPublishUpdatesNp entity (atooa entity.UpdateAddress) world
+
+        static member internal updateEntityPublishPostUpdateFlag entity world =
+            World.updateEntityPublishEventFlag World.setEntityPublishPostUpdatesNp entity (atooa entity.PostUpdateAddress) world
+
+        static member internal updateEntityPublishFlags entity world =
+            let world = World.updateEntityPublishUpdateFlag entity world
+            let world = World.updateEntityPublishPostUpdateFlag entity world
+            world
 
         static member private addEntity mayReplace entityState entity world =
 
@@ -832,7 +845,7 @@ module WorldModule =
                         let facets = World.getEntityFacetsNp entity world
                         let world = dispatcher.Register (entity, world)
                         let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
-                        let world = World.updateEntityPublishUpdates entity world
+                        let world = World.updateEntityPublishFlags entity world
                         let eventTrace = EventTrace.record "World" "addEntity" EventTrace.empty
                         World.publish () (ftoa<unit> !!"Entity/Add" ->- entity) eventTrace entity world
                     else world
@@ -1076,20 +1089,6 @@ module WorldModule =
                 let world = World.publishEntityChanges entity oldWorld world
                 Right world
             | Left error -> Left error
-
-        static member internal updateEntityPublishingFlags eventAddress world =
-            let eventNames = Address.getNames eventAddress
-            match eventNames with
-            | head :: tail when Name.getNameStr head = "Update" ->
-                let publishUpdates =
-                    match Vmap.tryFind eventAddress (EventWorld.getSubscriptions world) with
-                    | Some [] -> failwithumf () // NOTE: implementation of event system should clean up all empty subscription entries, AFAIK
-                    | Some (_ :: _) -> true
-                    | None -> false
-                let entity = Entity.proxy ^ ltoa<Entity> tail
-                let world = if World.containsEntity entity world then World.setEntityPublishUpdatesNp publishUpdates entity world else world
-                world
-            | _ -> world
 
         static member internal viewEntityMemberProperties entity world =
             let state = World.getEntityState entity world

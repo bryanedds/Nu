@@ -63,6 +63,12 @@ module WorldGroupModule =
             let eventTrace = EventTrace.record "World" "updateGroup" EventTrace.empty
             World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () (Events.Update ->- group) eventTrace Simulants.Game world
 
+        static member internal postUpdateGroup (group : Group) world =
+            let dispatcher = group.GetDispatcherNp world
+            let world = dispatcher.PostUpdate (group, world)
+            let eventTrace = EventTrace.record "World" "postUpdateGroup" EventTrace.empty
+            World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- group) eventTrace Simulants.Game world
+
         static member internal actualizeGroup (group : Group) world =
             let dispatcher = group.GetDispatcherNp world
             dispatcher.Actualize (group, world)

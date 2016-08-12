@@ -67,6 +67,9 @@ module WorldEntityModule =
         member this.GetPublishUpdatesNp world = World.getEntityPublishUpdatesNp this world
         member private this.SetPublishUpdatesNp value world = World.setEntityPublishUpdatesNp value this world
         member this.TagPublishUpdatesNp = PropertyTag.makeReadOnly this Property? PublishUpdatesNp this.GetPublishUpdatesNp
+        member this.GetPublishPostUpdatesNp world = World.getEntityPublishPostUpdatesNp this world
+        member private this.SetPublishPostUpdatesNp value world = World.setEntityPublishPostUpdatesNp value this world
+        member this.TagPublishPostUpdatesNp = PropertyTag.makeReadOnly this Property? PublishPostUpdatesNp this.GetPublishPostUpdatesNp
         member this.GetFacetNames world = World.getEntityFacetNames this world
         member this.TagFacetNames = PropertyTag.makeReadOnly this Property? FacetNames this.GetFacetNames
         member this.GetFacetsNp world = World.getEntityFacetsNp this world
@@ -142,6 +145,16 @@ module WorldEntityModule =
             if entity.GetPublishUpdatesNp world then
                 let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
                 World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () entity.UpdateAddress eventTrace Simulants.Game world
+            else world
+
+        static member internal postUpdateEntity (entity : Entity) world =
+            let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
+            let facets = entity.GetFacetsNp world
+            let world = dispatcher.PostUpdate (entity, world)
+            let world = List.foldBack (fun (facet : Facet) world -> facet.PostUpdate (entity, world)) facets world
+            if entity.GetPublishPostUpdatesNp world then
+                let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
+                World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () entity.PostUpdateAddress eventTrace Simulants.Game world
             else world
 
         static member internal actualizeEntity (entity : Entity) world =
