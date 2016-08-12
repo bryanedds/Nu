@@ -74,8 +74,8 @@ module EventTests =
 
     let [<Fact>] subscribeWithResolutionWorks () =
         let world = TestWorld.make ignore false EventFilter.Empty
-        let world = EventWorld.subscribe incTestStateAndCascade TestEvent TestParticipant world
         let world = EventWorld.subscribe incTestStateAndResolve TestEvent TestParticipant world
+        let world = EventWorld.subscribe incTestStateAndCascade TestEvent TestParticipant world
         let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (1, world.TestState)
 
