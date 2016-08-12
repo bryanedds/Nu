@@ -76,16 +76,16 @@ module WorldEntityModule =
         member this.TagFacetsNp = PropertyTag.makeReadOnly this Property? FacetsNp this.GetFacetsNp
 
         /// Get a property value and type.
-        member this.GetPropertyValueAndType propertyName world = World.getEntityPropertyValueAndType propertyName this world
+        member this.GetProperty propertyName world = World.getEntityProperty propertyName this world
 
-        /// Get a property type.
-        member this.GetPropertyType propertyName world = this.GetPropertyValueAndType propertyName world |> snd
+        /// Set a property value with explicit type.
+        member this.SetProperty propertyName property world = World.setEntityProperty propertyName property this world
 
         /// Get a property value.
-        member this.Get propertyName world : 'a = World.getEntityPropertyValue propertyName this world
+        member this.Get propertyName world : 'a = World.getEntityProperty propertyName this world |> fst :?> 'a
 
         /// Set a property value.
-        member this.Set propertyName (value : 'a) world = World.setEntityPropertyValue propertyName value this world
+        member this.Set propertyName (value : 'a) world = World.setEntityProperty propertyName (value :> obj, typeof<'a>) this world
 
         /// Get an entity's transform.
         member this.GetTransform world = World.getEntityTransform this world
@@ -275,15 +275,15 @@ module WorldEntityModule =
                 match property with
                 | EntityXPropertyDescriptor xfd -> xfd.PropertyName
                 | EntityPropertyInfo propertyInfo -> propertyInfo.Name
-            World.getEntityPropertyValue propertyName entity world : obj
+            World.getEntityProperty propertyName entity world |> fst
 
         /// Set the entity's property value.
-        static member setValue property value (entity : Entity) world =
-            let propertyName =
+        static member setValue property propertyValue (entity : Entity) world =
+            let (propertyName, propertyType) =
                 match property with
-                | EntityXPropertyDescriptor xfd -> xfd.PropertyName
-                | EntityPropertyInfo propertyInfo -> propertyInfo.Name
-            World.setEntityPropertyValue propertyName value entity world
+                | EntityXPropertyDescriptor xfd -> (xfd.PropertyName, xfd.PropertyType)
+                | EntityPropertyInfo propertyInfo -> (propertyInfo.Name, propertyInfo.PropertyType)
+            World.setEntityProperty propertyName (propertyValue, propertyType) entity world
 
         // TODO: put this in a better place! And of course, document.
         static member getPropertyDescriptors makePropertyDescriptor optXtension =

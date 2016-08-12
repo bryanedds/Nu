@@ -292,9 +292,15 @@ module WorldTypes =
           EyeCenter : Vector2
           EyeSize : Vector2 }
 
-        /// Get an dynamic property and its type information.
+        /// Get a dynamic property and its type information.
         static member getProperty propertyName gameState =
-            Xtension.getProperty propertyName gameState.Xtension
+            let xProperty = Xtension.getProperty propertyName gameState.Xtension
+            (xProperty.PropertyValue, xProperty.PropertyType)
+
+        /// Set a dynamic property with explicit type information.
+        static member setProperty propertyName property entityState =
+            let xProperty = { PropertyValue = fst property; PropertyType = snd property }
+            { entityState with EntityState.Xtension = Xtension.setProperty propertyName xProperty entityState.Xtension }
 
         /// The dynamic look-up operator.
         static member get propertyName gameState : 'a =
@@ -351,9 +357,15 @@ module WorldTypes =
           Incoming : Transition
           Outgoing : Transition }
 
-        /// Get an dynamic property and its type information.
+        /// Get a dynamic property and its type information.
         static member getProperty propertyName screenState =
-            Xtension.getProperty propertyName screenState.Xtension
+            let xProperty = Xtension.getProperty propertyName screenState.Xtension
+            (xProperty.PropertyValue, xProperty.PropertyType)
+
+        /// Set a dynamic property with explicit type information.
+        static member setProperty propertyName property entityState =
+            let xProperty = { PropertyValue = fst property; PropertyType = snd property }
+            { entityState with EntityState.Xtension = Xtension.setProperty propertyName xProperty entityState.Xtension }
 
         /// The dynamic look-up operator.
         static member get propertyName screenState : 'a =
@@ -410,9 +422,15 @@ module WorldTypes =
           Script : Script
           CreationTimeStampNp : int64 }
 
-        /// Get an dynamic property and its type information.
+        /// Get a dynamic property and its type information.
         static member getProperty propertyName groupState =
-            Xtension.getProperty propertyName groupState.Xtension
+            let xProperty = Xtension.getProperty propertyName groupState.Xtension
+            (xProperty.PropertyValue, xProperty.PropertyType)
+
+        /// Set a dynamic property with explicit type information.
+        static member setProperty propertyName property entityState =
+            let xProperty = { PropertyValue = fst property; PropertyType = snd property }
+            { entityState with EntityState.Xtension = Xtension.setProperty propertyName xProperty entityState.Xtension }
 
         /// The dynamic look-up operator.
         static member get propertyName groupState : 'a =
@@ -472,9 +490,15 @@ module WorldTypes =
           FacetNames : string Set
           FacetsNp : Facet list }
 
-        /// Get an dynamic property and its type information.
+        /// Get a dynamic property and its type information.
         static member getProperty propertyName entityState =
-            Xtension.getProperty propertyName entityState.Xtension
+            let xProperty = Xtension.getProperty propertyName entityState.Xtension
+            (xProperty.PropertyValue, xProperty.PropertyType)
+
+        /// Set a dynamic property with explicit type information.
+        static member setProperty propertyName property entityState =
+            let xProperty = { PropertyValue = fst property; PropertyType = snd property }
+            { entityState with EntityState.Xtension = Xtension.setProperty propertyName xProperty entityState.Xtension }
 
         /// The dynamic look-up operator.
         static member get propertyName entityState : 'a =

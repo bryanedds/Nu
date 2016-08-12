@@ -718,7 +718,7 @@ module WorldModule =
                 | Left error -> Log.info ^ "There was an issue in applying a reloaded overlay: " + error; world
             | None -> world
 
-        static member internal getEntityPropertyValueAndType propertyName entity world =
+        static member internal getEntityProperty propertyName entity world =
             match propertyName with // NOTE: string match for speed
             | "Id" -> (World.getEntityId entity world :> obj, typeof<Guid>)
             | "Name" -> (World.getEntityName entity world :> obj, typeof<Name>)
@@ -741,35 +741,31 @@ module WorldModule =
             | "PublishPostUpdatesNp" -> (World.getEntityPublishPostUpdatesNp entity world :> obj, typeof<bool>)
             | "FacetNames" -> (World.getEntityFacetNames entity world :> obj, typeof<string Set>)
             | "FacetsNp" -> (World.getEntityFacetsNp entity world :> obj, typeof<Facet list>)
-            | _ -> let property = EntityState.getProperty propertyName (World.getEntityState entity world) in (property.PropertyValue, property.PropertyType)
+            | _ -> EntityState.getProperty propertyName (World.getEntityState entity world)
 
-        static member internal getEntityPropertyValue propertyName entity world : 'a =
-            let property = World.getEntityPropertyValueAndType propertyName entity world
-            fst property :?> 'a
-
-        static member internal setEntityPropertyValue propertyName (value : 'a) entity world =
+        static member internal setEntityProperty propertyName (property : obj * Type) entity world =
             match propertyName with // NOTE: string match for speed
             | "Id" -> failwith "Cannot change entity id."
             | "Name" -> failwith "Cannot change entity name."
             | "Xtension" -> failwith "Cannot change group xtension."
             | "DispatcherNp" -> failwith "Cannot change entity dispatcher."
             | "Specialization" -> failwith "Cannot change entity specialization."
-            | "Persistent" -> World.setEntityPersistent (value :> obj :?> bool) entity world
+            | "Persistent" -> World.setEntityPersistent (property |> fst :?> bool) entity world
             | "CreationTimeStampNp" -> failwith "Cannot change entity creation time stamp."
-            | "Position" -> World.setEntityPosition (value :> obj :?> Vector2) entity world
-            | "Size" -> World.setEntitySize (value :> obj :?> Vector2) entity world
-            | "Rotation" -> World.setEntityRotation (value :> obj :?> single) entity world
-            | "Depth" -> World.setEntityDepth (value :> obj :?> single) entity world
-            | "Overflow" -> World.setEntityOverflow (value :> obj :?> Vector2) entity world
-            | "ViewType" -> World.setEntityViewType (value :> obj :?> ViewType) entity world
-            | "Visible" -> World.setEntityVisible (value :> obj :?> bool) entity world
-            | "Omnipresent" -> World.setEntityOmnipresent (value :> obj :?> bool) entity world
-            | "PublishChanges" -> World.setEntityPublishChanges (value :> obj :?> bool) entity world
+            | "Position" -> World.setEntityPosition (property |> fst :?> Vector2) entity world
+            | "Size" -> World.setEntitySize (property |> fst :?> Vector2) entity world
+            | "Rotation" -> World.setEntityRotation (property |> fst :?> single) entity world
+            | "Depth" -> World.setEntityDepth (property |> fst :?> single) entity world
+            | "Overflow" -> World.setEntityOverflow (property |> fst :?> Vector2) entity world
+            | "ViewType" -> World.setEntityViewType (property |> fst :?> ViewType) entity world
+            | "Visible" -> World.setEntityVisible (property |> fst :?> bool) entity world
+            | "Omnipresent" -> World.setEntityOmnipresent (property |> fst :?> bool) entity world
+            | "PublishChanges" -> World.setEntityPublishChanges (property |> fst :?> bool) entity world
             | "PublishUpdatesNp" -> failwith "Cannot change entity publish updates."
             | "PublishPostUpdatesNp" -> failwith "Cannot change entity post-publish updates."
             | "FacetNames" -> failwith "Cannot change entity facet names with a property setter."
             | "FacetsNp" -> failwith "Cannot change entity facets with a property setter."
-            | _ -> World.updateEntityState (EntityState.set propertyName value) propertyName entity world
+            | _ -> World.updateEntityState (EntityState.setProperty propertyName property) propertyName entity world
 
         /// Get the maxima bounds of the entity as determined by size, position, rotation, and overflow.
         static member getEntityBoundsMax entity world =
@@ -1202,7 +1198,7 @@ module WorldModule =
         static member internal setGroupPersistent value group world = World.updateGroupState (fun groupState -> { groupState with Persistent = value }) Property? Persistent group world
         static member internal getGroupCreationTimeStampNp group world = (World.getGroupState group world).CreationTimeStampNp
 
-        static member internal getGroupPropertyValueAndType propertyName group world =
+        static member internal getGroupProperty propertyName group world =
             match propertyName with // NOTE: string match for speed
             | "Id" -> (World.getGroupId group world :> obj, typeof<Guid>)
             | "Name" -> (World.getGroupName group world :> obj, typeof<Name>)
@@ -1211,22 +1207,18 @@ module WorldModule =
             | "Specialization" -> (World.getGroupSpecialization group world :> obj, typeof<string>)
             | "Persistent" -> (World.getGroupPersistent group world :> obj, typeof<bool>)
             | "CreationTimeStampNp" -> (World.getGroupCreationTimeStampNp group world :> obj, typeof<int64>)
-            | _ -> let property = GroupState.getProperty propertyName (World.getGroupState group world) in (property.PropertyValue, property.PropertyType)
+            | _ -> GroupState.getProperty propertyName (World.getGroupState group world)
 
-        static member internal getGroupPropertyValue propertyName group world : 'a =
-            let property = World.getGroupPropertyValueAndType propertyName group world
-            fst property :?> 'a
-
-        static member internal setGroupPropertyValue propertyName (value : 'a) group world =
+        static member internal setGroupProperty propertyName (property : obj * Type) group world =
             match propertyName with // NOTE: string match for speed
             | "Id" -> failwith "Cannot change group id."
             | "Name" -> failwith "Cannot change group name."
             | "Xtension" -> failwith "Cannot change group xtension."
             | "DispatcherNp" -> failwith "Cannot change group dispatcher."
             | "Specialization" -> failwith "Cannot change group specialization."
-            | "Persistent" -> World.setGroupPersistent (value :> obj :?> bool) group world
+            | "Persistent" -> World.setGroupPersistent (property |> fst :?> bool) group world
             | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
-            | _ -> World.updateGroupState (GroupState.set propertyName value) propertyName group world
+            | _ -> World.updateGroupState (GroupState.set propertyName property) propertyName group world
 
         static member private addGroup mayReplace groupState group world =
             let isNew = not ^ World.containsGroup group world
@@ -1412,7 +1404,7 @@ module WorldModule =
         static member internal getScreenOutgoing screen world = (World.getScreenState screen world).Outgoing
         static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) Property? Outgoing screen world
 
-        static member internal getScreenPropertyValueAndType propertyName screen world =
+        static member internal getScreenProperty propertyName screen world =
             match propertyName with // NOTE: string match for speed
             | "Id" -> (World.getScreenId screen world :> obj, typeof<Guid>)
             | "Name" -> (World.getScreenName screen world :> obj, typeof<Name>)
@@ -1426,27 +1418,23 @@ module WorldModule =
             | "TransitionTicksNp" -> (World.getScreenTransitionTicksNp screen world :> obj, typeof<int64>)
             | "Incoming" -> (World.getScreenIncoming screen world :> obj, typeof<Transition>)
             | "Outgoing" -> (World.getScreenOutgoing screen world :> obj, typeof<Transition>)
-            | _ -> let property = ScreenState.getProperty propertyName (World.getScreenState screen world) in (property.PropertyValue, property.PropertyType)
+            | _ -> ScreenState.getProperty propertyName (World.getScreenState screen world)
 
-        static member internal getScreenPropertyValue propertyName screen world : 'a =
-            let property = World.getScreenPropertyValueAndType propertyName screen world
-            fst property :?> 'a
-
-        static member internal setScreenPropertyValue propertyName (value : 'a) screen world =
+        static member internal setScreenProperty propertyName (property : obj * Type) screen world =
             match propertyName with // NOTE: string match for speed
             | "Id" -> failwith "Cannot change screen id."
             | "Name" -> failwith "Cannot change screen name."
             | "Xtension" -> failwith "Cannot change group xtension."
             | "DispatcherNp" -> failwith "Cannot change screen dispatcher."
             | "Specialization" -> failwith "Cannot change screen specialization."
-            | "Persistent" -> World.setScreenPersistent (value :> obj :?> bool) screen world
+            | "Persistent" -> World.setScreenPersistent (property |> fst :?> bool) screen world
             | "CreationTimeStampNp" -> failwith "Cannot change screen creation time stamp."
             | "EntityTreeNp" -> failwith "Cannot change screen entity tree."
-            | "TransitionStateNp" -> World.setScreenTransitionStateNp (value :> obj :?> TransitionState) screen world
-            | "TransitionTicksNp" -> World.setScreenTransitionTicksNp (value :> obj :?> int64) screen world
-            | "Incoming" -> World.setScreenIncoming (value :> obj :?> Transition) screen world
-            | "Outgoing" -> World.setScreenOutgoing (value :> obj :?> Transition) screen world
-            | _ -> World.updateScreenState (ScreenState.set propertyName value) propertyName screen world
+            | "TransitionStateNp" -> World.setScreenTransitionStateNp (property |> fst :?> TransitionState) screen world
+            | "TransitionTicksNp" -> World.setScreenTransitionTicksNp (property |> fst :?> int64) screen world
+            | "Incoming" -> World.setScreenIncoming (property |> fst :?> Transition) screen world
+            | "Outgoing" -> World.setScreenOutgoing (property |> fst :?> Transition) screen world
+            | _ -> World.updateScreenState (ScreenState.set propertyName property) propertyName screen world
 
         static member internal updateEntityInEntityTree entity oldWorld world =
 
@@ -1707,7 +1695,7 @@ module WorldModule =
             let mousePositionWorld = World.mouseToWorld viewType mousePosition world
             entityPosition - mousePositionWorld
 
-        static member internal getGamePropertyValueAndType propertyName world =
+        static member internal getGameProperty propertyName world =
             match propertyName with // NOTE: string match for speed
             | "Id" -> (World.getGameId world :> obj, typeof<Guid>)
             | "Xtension" -> (World.getGameXtension world :> obj, typeof<Xtension>)
@@ -1718,24 +1706,20 @@ module WorldModule =
             | "OptScreenTransitionDestination" -> (World.getOptScreenTransitionDestination world :> obj, typeof<Screen option>)
             | "EyeCenter" -> (World.getEyeCenter world :> obj, typeof<Vector2>)
             | "EyeSize" -> (World.getEyeSize world :> obj, typeof<Vector2>)
-            | _ -> let property = GameState.getProperty propertyName (World.getGameState world) in (property.PropertyValue, property.PropertyType)
+            | _ -> GameState.getProperty propertyName (World.getGameState world)
 
-        static member internal getGamePropertyValue propertyName world : 'a =
-            let property = World.getGamePropertyValueAndType propertyName world
-            fst property :?> 'a
-
-        static member internal setGamePropertyValue propertyName (value : 'a) world =
+        static member internal setGameProperty propertyName (property : obj * Type) world =
             match propertyName with // NOTE: string match for speed
             | "Id" -> failwith "Cannot change group id."
             | "Xtension" -> failwith "Cannot change group xtension."
             | "DispatcherNp" -> failwith "Cannot change group dispatcher."
             | "Specialization" -> failwith "Cannot change group specialization."
             | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
-            | "OptOptSelectedScreen" -> World.setOptSelectedScreen (value :> obj :?> Screen option) world
-            | "OptScreenTransitionDestination" -> World.setOptScreenTransitionDestination (value :> obj :?> Screen option) world
-            | "EyeCenter" -> World.setEyeCenter (value :> obj :?> Vector2) world
-            | "EyeSize" -> World.setEyeSize (value :> obj :?> Vector2) world
-            | _ -> World.updateGameState (GameState.set propertyName value) propertyName world
+            | "OptOptSelectedScreen" -> World.setOptSelectedScreen (property |> fst :?> Screen option) world
+            | "OptScreenTransitionDestination" -> World.setOptScreenTransitionDestination (property |> fst :?> Screen option) world
+            | "EyeCenter" -> World.setEyeCenter (property |> fst :?> Vector2) world
+            | "EyeSize" -> World.setEyeSize (property |> fst :?> Vector2) world
+            | _ -> World.updateGameState (GameState.set propertyName property) propertyName world
 
         static member internal makeGameState optSpecialization dispatcher =
             let gameState = GameState.make optSpecialization dispatcher

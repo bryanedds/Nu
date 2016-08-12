@@ -864,10 +864,10 @@ module WorldScriptSystem =
                 let world = Env.getWorld env
                 let eirPropertyValueAndType =
                     match Address.getNames address with
-                    | [] -> Right (Simulants.Game.GetPropertyValueAndType propertyName world)
-                    | [_] -> let screen = Screen.proxy (Address.changeType<Simulant, Screen> address) in Right (screen.GetPropertyValueAndType propertyName world)
-                    | [_; _] -> let group = Group.proxy (Address.changeType<Simulant, Group> address) in Right (group.GetPropertyValueAndType propertyName world)
-                    | [_; _; _] -> let entity = Entity.proxy (Address.changeType<Simulant, Entity> address) in Right (entity.GetPropertyValueAndType propertyName world)
+                    | [] -> Right (Simulants.Game.GetProperty propertyName world)
+                    | [_] -> let screen = Screen.proxy (Address.changeType<Simulant, Screen> address) in Right (screen.GetProperty propertyName world)
+                    | [_; _] -> let group = Group.proxy (Address.changeType<Simulant, Group> address) in Right (group.GetProperty propertyName world)
+                    | [_; _; _] -> let entity = Entity.proxy (Address.changeType<Simulant, Entity> address) in Right (entity.GetProperty propertyName world)
                     | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation can have no more than 3 parts.", optOrigin))
                 match eirPropertyValueAndType with
                 | Right (propertyValue, propertyType) ->
@@ -901,10 +901,10 @@ module WorldScriptSystem =
                 let world = Env.getWorld env
                 let eirPropertyType =
                     match Address.getNames address with
-                    | [] -> Right (Simulants.Game.GetPropertyType propertyName world)
-                    | [_] -> let screen = Screen.proxy (Address.changeType<Simulant, Screen> address) in Right (screen.GetPropertyType propertyName world)
-                    | [_; _] -> let group = Group.proxy (Address.changeType<Simulant, Group> address) in Right (group.GetPropertyType propertyName world)
-                    | [_; _; _] -> let entity = Entity.proxy (Address.changeType<Simulant, Entity> address) in Right (entity.GetPropertyType propertyName world)
+                    | [] -> Right (Simulants.Game.GetProperty propertyName world |> snd)
+                    | [_] -> let screen = Screen.proxy (Address.changeType<Simulant, Screen> address) in Right (screen.GetProperty propertyName world |> snd)
+                    | [_; _] -> let group = Group.proxy (Address.changeType<Simulant, Group> address) in Right (group.GetProperty propertyName world |> snd)
+                    | [_; _; _] -> let entity = Entity.proxy (Address.changeType<Simulant, Entity> address) in Right (entity.GetProperty propertyName world |> snd)
                     | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation can have no more than 3 parts.", optOrigin))
                 match eirPropertyType with
                 | Right propertyType ->

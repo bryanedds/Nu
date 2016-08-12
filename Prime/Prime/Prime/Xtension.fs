@@ -83,13 +83,16 @@ module XtensionModule =
         /// Example:
         ///     let xtn = xtn.Position <- Vector2 (4.0, 5.0).
         static member (?<-) (xtension, propertyName, value : 'a) =
-            // TODO: consider writing a 'Map.addDidContainKey' function to efficently add and return a
-            // result that the key was already contained.
-            if xtension.Sealed && not ^ Vmap.containsKey propertyName xtension.Properties
-            then failwith "Cannot add property to a sealed Xtension."
-            else
-                let properties = Vmap.add propertyName { PropertyValue = value :> obj; PropertyType = typeof<'a> } xtension.Properties
-                { xtension with Properties = properties }
+            let property =
+                match Vmap.tryFind propertyName xtension.Properties with
+                | Some property ->
+                    if xtension.Sealed && property.PropertyType <> typeof<'a> then failwith "Cannot change the type of a sealed Xtension's property."
+                    { property with PropertyValue = value :> obj }
+                | None ->
+                    if xtension.Sealed then failwith "Cannot add property to a sealed Xtension."
+                    { PropertyValue = value :> obj; PropertyType = typeof<'a> }
+            let properties = Vmap.add propertyName property xtension.Properties
+            { xtension with Properties = properties }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module Xtension =
@@ -111,6 +114,9 @@ module XtensionModule =
     
         /// Try to get a property from an xtension.
         let tryGetProperty name xtension = Vmap.tryFind name xtension.Properties
+    
+        /// Set a property on an Xtension.
+        let setProperty name property xtension = { xtension with Properties = Vmap.add name property xtension.Properties }
     
         /// Attach a property to an Xtension.
         let attachProperty name property xtension = { xtension with Properties = Vmap.add name property xtension.Properties }

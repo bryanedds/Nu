@@ -35,16 +35,16 @@ module WorldGroupModule =
         member this.TagCreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
 
         /// Get a property value and type.
-        member this.GetPropertyValueAndType propertyName world = World.getGroupPropertyValueAndType propertyName this world
+        member this.GetProperty propertyName world = World.getGroupProperty propertyName this world
 
-        /// Get a property type.
-        member this.GetPropertyType propertyName world = this.GetPropertyValueAndType propertyName world |> snd
+        /// Set a property value with explicit type.
+        member this.SetProperty propertyName property world = World.setGroupProperty propertyName property this world
 
         /// Get a property value.
-        member this.Get propertyName world : 'a = World.getGroupPropertyValue propertyName this world
+        member this.Get propertyName world : 'a = World.getGroupProperty propertyName this world |> fst :?> 'a
 
         /// Set a property value.
-        member this.Set propertyName (value : 'a) world = World.setGroupPropertyValue propertyName value this world
+        member this.Set propertyName (value : 'a) world = World.setGroupProperty propertyName (value :> obj, typeof<'a>) this world
 
         /// Check that a group dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world = Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)

@@ -50,16 +50,16 @@ module WorldScreenModule =
         member this.TagOutgoing = PropertyTag.makeReadOnly this Property? Outgoing this.GetOutgoing
 
         /// Get a property value and type.
-        member this.GetPropertyValueAndType propertyName world = World.getScreenPropertyValueAndType propertyName this world
+        member this.GetProperty propertyName world = World.getScreenProperty propertyName this world
 
-        /// Get a property type.
-        member this.GetPropertyType propertyName world = this.GetPropertyValueAndType propertyName world |> snd
+        /// Set a property value with explicit type.
+        member this.SetProperty propertyName property world = World.setScreenProperty propertyName property this world
 
         /// Get a property value.
-        member this.Get propertyName world : 'a = World.getScreenPropertyValue propertyName this world
+        member this.Get propertyName world : 'a = World.getScreenProperty propertyName this world |> fst :?> 'a
 
         /// Set a property value.
-        member this.Set propertyName (value : 'a) world = World.setScreenPropertyValue propertyName value this world
+        member this.Set propertyName (value : 'a) world = World.setScreenProperty propertyName (value :> obj, typeof<'a>) this world
 
         /// Check that a screen is in an idling state (not transitioning in nor out).
         member this.IsIdling world = this.GetTransitionStateNp world = IdlingState

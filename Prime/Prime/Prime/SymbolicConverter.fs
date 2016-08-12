@@ -18,6 +18,8 @@ type SymbolicCompression<'a, 'b> =
 type SymbolicConverter (pointType : Type) =
     inherit TypeConverter ()
 
+    do if pointType = typeof<obj> then Console.WriteLine "Fuck you!"
+
     let padWithDefaults (fieldTypes : PropertyInfo array) (values : obj array) =
         if values.Length < fieldTypes.Length then
             let valuesPadded =
@@ -346,11 +348,11 @@ type SymbolicConverter (pointType : Type) =
         fromSymbol destType symbol
 
     override this.CanConvertTo (_, destType) =
-        if pointType <> typeof<obj> then
+        //if pointType <> typeof<obj> then
             destType = typeof<string> ||
             destType = typeof<Symbol> ||
             destType = pointType
-        else false // I can do fucking nothing with obj point type!
+        //else false // I can do fucking nothing with obj point type!
 
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<string> then
@@ -367,11 +369,11 @@ type SymbolicConverter (pointType : Type) =
         else failconv "Invalid SymbolicConverter conversion to source." None
 
     override this.CanConvertFrom (_, sourceType) =
-        if pointType <> typeof<obj> then
+        //if pointType <> typeof<obj> then
             sourceType = typeof<string> ||
             sourceType = typeof<Symbol> ||
             sourceType = pointType
-        else false // I can do fucking nothing with obj point type!
+        //else false // I can do fucking nothing with obj point type!
 
     override this.ConvertFrom (_, _, source) =
         match source with
