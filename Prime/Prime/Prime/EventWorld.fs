@@ -245,30 +245,6 @@ module EventWorld =
         | None -> world
 
     /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
-    let subscribePlus4<'a, 's, 'w when 's :> Participant and 'w :> 'w EventWorld>
-        subscriptionKey (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
-        if not ^ Address.isEmpty eventAddress then
-            let objEventAddress = atooa eventAddress
-            let (subscriptions, unsubscriptions) = (getSubscriptions world, getUnsubscriptions world)
-            let subscriptions =
-                let subscriptionEntry = (subscriptionKey, subscriber :> Participant, boxSubscription subscription)
-                match Vmap.tryFind objEventAddress subscriptions with
-                | Some subscriptionEntries -> Vmap.add objEventAddress (subscriptionEntry :: subscriptionEntries) subscriptions
-                | None -> Vmap.add objEventAddress [subscriptionEntry] subscriptions
-            let unsubscriptions = Vmap.add subscriptionKey (objEventAddress, subscriber :> Participant) unsubscriptions
-            let world = setSubscriptions subscriptions world
-            let world = setUnsubscriptions unsubscriptions world
-            let world =
-                publish
-                    objEventAddress
-                    (ntoa<obj Address> !!"Subscribe")
-                    (EventTrace.record "EventWorld" "subscribePlus5" EventTrace.empty)
-                    (world.GetGlobalParticipant ())
-                    world
-            (unsubscribe<'w> subscriptionKey, world)
-        else failwith "Event name cannot be empty."
-
-    /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
     let subscribePlus5<'a, 's, 'w when 's :> Participant and 'w :> 'w EventWorld>
         subscriptionKey (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
         if not ^ Address.isEmpty eventAddress then
@@ -277,7 +253,7 @@ module EventWorld =
             let subscriptions =
                 let subscriptionEntry = (subscriptionKey, subscriber :> Participant, boxSubscription subscription)
                 match Vmap.tryFind objEventAddress subscriptions with
-                | Some subscriptionEntries -> Vmap.add objEventAddress (subscriptionEntry :: subscriptionEntries) subscriptions
+                | Some subscriptionEntries -> Vmap.add objEventAddress (subscriptionEntries @ [subscriptionEntry]) subscriptions // NOTE: inefficient to add to back of list! Use a Queue instead!
                 | None -> Vmap.add objEventAddress [subscriptionEntry] subscriptions
             let unsubscriptions = Vmap.add subscriptionKey (objEventAddress, subscriber :> Participant) unsubscriptions
             let world = setSubscriptions subscriptions world
