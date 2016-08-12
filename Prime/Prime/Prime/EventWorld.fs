@@ -82,8 +82,10 @@ module EventWorld =
     let private getEventAddresses1 eventAddress =
         // OPTIMIZATION: imperative for speed
         // TODO: see if we can make this faster and / or produce less garbage.
+        // NOTE: event addresses are ordered from general to specific. This is so a generalized subscriber can preempt
+        // any specific subscribers. Whether this is the best order is open for discussion.
         let eventAddressNames = Array.ofList ^ Address.getNames eventAddress
-        let eventAddressesAny =
+        let eventAddresses =
             Seq.foldi (fun index eventAddresses _ ->
                 let index = eventAddressNames.Length - index - 1
                 let eventAddressNamesAny = Array.zeroCreate eventAddressNames.Length
@@ -91,9 +93,8 @@ module EventWorld =
                 eventAddressNamesAny.[index] <- Address.head Events.Any
                 let eventAddressAny = eventAddressNamesAny |> List.ofArray |> Address.ltoa
                 eventAddressAny :: eventAddresses)
-                []
+                [eventAddress]
                 eventAddressNames
-        let eventAddresses = eventAddress :: eventAddressesAny
         eventAddresses
 
     let debugSubscriptionTypeMismatch () =
