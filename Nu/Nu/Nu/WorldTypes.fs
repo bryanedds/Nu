@@ -119,6 +119,10 @@ module WorldTypes =
         abstract Update : Game * World -> World
         default dispatcher.Update (_, world) = world
     
+        /// Post-update a game.
+        abstract PostUpdate : Game * World -> World
+        default dispatcher.PostUpdate (_, world) = world
+    
         /// Actualize a game.
         abstract Actualize : Game * World -> World
         default dispatcher.Actualize (_, world) = world
@@ -141,6 +145,10 @@ module WorldTypes =
         /// Update a screen.
         abstract Update : Screen * World -> World
         default dispatcher.Update (_, world) = world
+    
+        /// Post-update a screen.
+        abstract PostUpdate : Screen * World -> World
+        default dispatcher.PostUpdate (_, world) = world
     
         /// Actualize a screen.
         abstract Actualize : Screen * World -> World
@@ -165,6 +173,10 @@ module WorldTypes =
         abstract Update : Group * World -> World
         default dispatcher.Update (_, world) = world
     
+        /// Post-update a group.
+        abstract PostUpdate : Group * World -> World
+        default dispatcher.PostUpdate (_, world) = world
+    
         /// Actualize a group.
         abstract Actualize : Group * World -> World
         default dispatcher.Actualize (_, world) = world
@@ -184,7 +196,8 @@ module WorldTypes =
              Define? Visible true
              Define? Omnipresent false
              Define? PublishChanges true
-             Define? PublishUpdatesNp false]
+             Define? PublishUpdatesNp false
+             Define? PublishPostUpdatesNp false]
     
         /// Register an entity when adding it to a group.
         abstract Register : Entity * World -> World
@@ -201,6 +214,10 @@ module WorldTypes =
         /// Update an entity.
         abstract Update : Entity * World -> World
         default dispatcher.Update (_, world) = world
+    
+        /// Post-update an entity.
+        abstract PostUpdate : Entity * World -> World
+        default dispatcher.PostUpdate (_, world) = world
     
         /// Actualize an entity.
         abstract Actualize : Entity * World -> World
@@ -240,6 +257,10 @@ module WorldTypes =
         /// Update a facet.
         abstract Update : Entity * World -> World
         default facet.Update (_, world) = world
+    
+        /// Post-update a facet.
+        abstract PostUpdate : Entity * World -> World
+        default facet.PostUpdate (_, world) = world
     
         /// Actualize a facet.
         abstract Actualize : Entity * World -> World
@@ -447,6 +468,7 @@ module WorldTypes =
           Omnipresent : bool
           PublishChanges : bool
           PublishUpdatesNp : bool
+          PublishPostUpdatesNp : bool
           FacetNames : string Set
           FacetsNp : Facet list }
 
@@ -506,6 +528,7 @@ module WorldTypes =
               Omnipresent = false
               PublishChanges = true
               PublishUpdatesNp = false
+              PublishPostUpdatesNp = false
               FacetNames = Set.empty
               FacetsNp = [] }
 
@@ -702,11 +725,12 @@ module WorldTypes =
     
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, characters, blocks, and things of that sort.
-    /// OPTIMIZATION: Includes pre-constructed entity change and update event address to avoid
+    /// OPTIMIZATION: Includes pre-constructed entity change and update event addresses to avoid
     /// reconstructing new ones for each entity every frame.
     and [<StructuralEquality; NoComparison>] Entity =
         { EntityAddress : Entity Address
-          UpdateAddress : unit Address }
+          UpdateAddress : unit Address
+          PostUpdateAddress : unit Address }
     
         interface Simulant with
             member this.ParticipantAddress = atoa<Entity, Participant> this.EntityAddress
@@ -730,7 +754,8 @@ module WorldTypes =
         /// Create an Entity proxy from an address.
         static member proxy address =
             { EntityAddress = address
-              UpdateAddress = ntoa !!"Update" ->>- address }
+              UpdateAddress = ntoa !!"Update" ->>- address
+              PostUpdateAddress = ntoa !!"PostUpdate" ->>- address }
     
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (entity : Entity) = acatf address (atooa entity.EntityAddress)
@@ -880,8 +905,8 @@ type Group = WorldTypes.Group
 
 /// The type around which the whole game engine is based! Used in combination with dispatchers
 /// to implement things like buttons, characters, blocks, and things of that sort.
-/// OPTIMIZATION: Includes pre-constructed entity change and update event address to avoid
-/// reconstructing new ones for each entity every frame.
+/// OPTIMIZATION: Includes pre-constructed entity event addresses to avoid reconstructing
+/// new ones for each entity every frame.
 type Entity = WorldTypes.Entity
 
 /// The world, in a functional programming sense. Hosts the game object, the dependencies needed

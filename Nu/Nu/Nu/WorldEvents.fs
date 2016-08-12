@@ -36,6 +36,7 @@ module Events =
     let Subscribe = ntoa<obj Address> !!"Subscribe"
     let Unsubscribe = ntoa<obj Address> !!"Unsubscribe"
     let Update = ntoa<unit> !!"Update"
+    let PostUpdate = ntoa<unit> !!"PostUpdate"
     let Select = ntoa<unit> !!"Select"
     let Deselect = ntoa<unit> !!"Deselect"
     let Down = ntoa<unit> !!"Down"

@@ -333,18 +333,31 @@ module WorldModule2 =
             (splashScreen, world)
 
         static member private handleSubscribeAndUnsubscribe event world =
-            // here we need to update the publish update flag for entities based on whether there are subscriptions to
-            // their update event. This flag exists solely for efficiency reasons. We also look for subscription
-            // patterns that this optimization does not support, and warn the developer if they arise.
+            // here we need to update the event publish flags for entities based on whether there are subscriptions to
+            // these events. These flags exists solely for efficiency reasons. We also look for subscription patterns
+            // that these optimization do not support, and warn the developer if they are invoked.
             let eventAddress = event.Data
             let eventNames = Address.getNames eventAddress
-            match eventNames with
-            | head :: tail when Name.getNameStr head = "Update" && List.contains (Address.head Events.Any) tail ->
-                Log.debug "Subscribing to entity update events with a wild card is not supported. This will cause a bug where some entity update events are not published."
-                (Cascade, world)
-            | _ ->
-                let world = World.updateEntityPublishingFlags event.Data world
-                (Cascade, world)
+            let world =
+                match eventNames with
+                | eventName :: [_ ;_ ; _] ->
+                    let entity = Entity.proxy ^ Address.tail eventAddress
+                    match Name.getNameStr eventName with
+                    | "Update" ->
+                        if List.contains (Address.head Events.Any) eventNames then
+                            Log.debug ^
+                                "Subscribing to entity update events with a wild card is not supported. " +
+                                "This will cause a bug where some entity update events are not published."
+                        World.updateEntityPublishUpdateFlag entity world
+                    | "PostUpdate" ->
+                        if List.contains (Address.head Events.Any) eventNames then
+                            Log.debug ^
+                                "Subscribing to entity post-update events with a wild card is not supported. " +
+                                "This will cause a bug where some entity post-update events are not published."
+                        World.updateEntityPublishPostUpdateFlag entity world
+                    | _ -> world
+                | _ -> world
+            (Cascade, world)
 
         static member private createIntrinsicOverlays facets entityDispatchers =
             let requiresFacetNames = fun sourceType -> sourceType = typeof<EntityDispatcher>
@@ -512,19 +525,38 @@ module WorldModule2 =
             (World.getLiveness world, world)
 
         static member private updateSimulants world =
-            let world = World.updateGame world
+            
+            // check for existence of screen; otherwise just operate on game
             match World.getOptSelectedScreen world with
             | Some selectedScreen ->
-                let world = World.updateScreen selectedScreen world
-                let world = World.updateScreenTransition selectedScreen world
+            
+                // gather simulants. Note that we do not re-discover simulants during the update process because the
+                // engine is defined to discourage the removal or simulants in the middle of a frame.
                 let groups = World.getGroups selectedScreen world
-                let world = Seq.fold (fun world group -> World.updateGroup group world) world groups
                 let viewBounds = World.getViewBoundsRelative world
                 let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTreeNp world)
                 let world = selectedScreen.SetEntityTreeNp entityTree world
                 let entities = QuadTree.getElementsNearBounds viewBounds quadTree
-                List.fold (fun world (entity : Entity) -> World.updateEntity entity world) world entities
-            | None -> world
+                
+                // update simulants
+                let world = World.updateGame world
+                let world = World.updateScreen selectedScreen world
+                let world = World.updateScreenTransition selectedScreen world
+                let world = Seq.fold (fun world group -> World.updateGroup group world) world groups
+                let world = List.fold (fun world (entity : Entity) -> World.updateEntity entity world) world entities
+
+                // post-update simulants
+                let world = World.postUpdateGame world
+                let world = World.postUpdateScreen selectedScreen world
+                let world = Seq.fold (fun world group -> World.postUpdateGroup group world) world groups
+                let world = List.fold (fun world (entity : Entity) -> World.postUpdateEntity entity world) world entities
+                world
+            
+            // no screen; just operate on the game
+            | None ->
+               let world = World.updateGame world
+               let world = World.postUpdateGame world
+               world
 
         static member private actualizeScreenTransition (_ : Vector2) eyeSize (screen : Screen) transition world =
             match transition.OptDissolveImage with

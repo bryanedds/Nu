@@ -561,7 +561,8 @@ module WorldScriptSystem =
             let (unsubscribe, env) =
                 let world = Env.getWorld env
                 let world = match Env.tryGetStream streamAddress env with Some (_, unsubscribe) -> unsubscribe world | None -> world
-                let (unsubscribe, world) = Stream.subscribePlus (fun evt world -> (Cascade, World.publish evt.Data streamAddress EventTrace.empty context world)) context stream world
+                let eventTrace = EventTrace.empty // TODO: implement event trace!
+                let (unsubscribe, world) = Stream.subscribePlus (fun evt world -> (Cascade, World.publish evt.Data streamAddress eventTrace context world)) context stream world
                 let env = Env.setWorld World.choose world env
                 (unsubscribe, env)
             Env.addStream streamAddress (stream, unsubscribe) env
