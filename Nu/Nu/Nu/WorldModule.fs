@@ -211,14 +211,14 @@ module WorldModule =
         /// Set the tick rate without waiting for the end of the current update. Only use
         /// this if you need it and understand the engine internals well enough to know the
         /// consequences.
-        static member setTickRateImmediately tickRate world =
-            World.updateAmbientState (AmbientState.setTickRateImmediately tickRate) world
+        static member setTickRateImmediate tickRate world =
+            World.updateAmbientState (AmbientState.setTickRateImmediate tickRate) world
 
         /// Set the tick rate.
         static member setTickRate tickRate world =
             World.updateAmbientState
                 (AmbientState.addTasklet
-                    { ScheduledTime = World.getTickTime world; Command = { Execute = fun world -> World.setTickRateImmediately tickRate world }}) world
+                    { ScheduledTime = World.getTickTime world; Command = { Execute = fun world -> World.setTickRateImmediate tickRate world }}) world
 
         /// Reset the tick time to 0.
         static member resetTickTime world =
@@ -1046,7 +1046,7 @@ module WorldModule =
 
         /// Reassign an entity's identity and / or group. Note that since this destroys the reassigned entity
         /// immediately, you should not call this inside an event handler that involves the reassigned entity itself.
-        static member reassignEntity entity optName group world =
+        static member reassignEntityImmediate entity optName group world =
             let entityState = World.getEntityState entity world
             let world = World.removeEntity entity world
             let id = makeGuid ()
@@ -1055,6 +1055,12 @@ module WorldModule =
             let transmutedEntity = group.GroupAddress -<<- ntoa<Entity> name |> Entity.proxy
             let world = World.addEntity false entityState transmutedEntity world
             (transmutedEntity, world)
+
+        static member reassignEntity entity optName group world =
+            let tasklet =
+                { ScheduledTime = World.getTickTime world
+                  Command = { Execute = fun world -> World.reassignEntityImmediate entity optName group world |> snd }}
+            World.addTasklet tasklet world
 
         /// Try to set an entity's optional overlay name.
         static member trySetEntityOptOverlayName optOverlayName entity world =
@@ -1076,7 +1082,9 @@ module WorldModule =
                 let world = World.updateEntityInEntityTree entity oldWorld world
                 let world = World.publishEntityChanges entity oldWorld world
                 Right world
-            | (_, _) -> let _ = World.choose world in Left "Could not set the entity's overlay name."
+            | (_, _) ->
+                World.choose world |> ignore
+                Left "Could not set the entity's overlay name because setting an overlay to or from None is currently unimplemented."
 
         /// Try to set the entity's facet names.
         static member trySetEntityFacetNames facetNames entity world =

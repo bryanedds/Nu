@@ -356,7 +356,7 @@ type SymbolicConverter (pointType : Type) =
             | null ->
                 if FSharpType.IsUnion pointType
                 then (FSharpType.GetUnionCases pointType).[0].Name :> obj
-                else toString pointType source :> obj
+                else source
             | _ -> toString pointType source :> obj
         elif destType = typeof<Symbol> then toSymbol pointType source :> obj
         elif destType = pointType then source
