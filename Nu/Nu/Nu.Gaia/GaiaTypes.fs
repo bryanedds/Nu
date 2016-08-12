@@ -121,7 +121,8 @@ and EntityPropertyDescriptor (property, attributes) =
 
 and EntityTypeDescriptor (optSource : obj) =
     inherit CustomTypeDescriptor ()
-    override this.GetProperties _ =
+
+    override this.GetProperties () =
         let optXtension =
             match optSource with
             | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity.GetXtension !source.RefWorld)
@@ -129,6 +130,9 @@ and EntityTypeDescriptor (optSource : obj) =
         let makePropertyDescriptor = fun (epv, tcas) -> (EntityPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
         let propertyDescriptors = EntityPropertyValue.getPropertyDescriptors makePropertyDescriptor optXtension
         PropertyDescriptorCollection (Array.ofList propertyDescriptors)
+
+    override this.GetProperties _ =
+        this.GetProperties ()
 
 and EntityTypeDescriptorProvider () =
     inherit TypeDescriptionProvider ()

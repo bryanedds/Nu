@@ -42,16 +42,16 @@ module WorldGameModule =
         member this.TagEyeSize = PropertyTag.makeReadOnly this Property? EyeSize this.GetEyeSize
 
         /// Get a property value and type.
-        member this.GetPropertyValueAndType propertyName world = World.getGamePropertyValueAndType propertyName world
+        member this.GetProperty propertyName world = World.getGameProperty propertyName world
 
-        /// Get a property type.
-        member this.GetPropertyType propertyName world = this.GetPropertyValueAndType propertyName world |> snd
+        /// Set a property value with explicit type.
+        member this.SetProperty propertyName property world = World.setGameProperty propertyName property world
 
         /// Get a property value.
-        member this.Get propertyName world : 'a = World.getGamePropertyValue propertyName world
+        member this.Get propertyName world : 'a = World.getGameProperty propertyName world |> fst :?> 'a
 
         /// Set a property value.
-        member this.Set propertyName (value : 'a) world = World.setGamePropertyValue propertyName value world
+        member this.Set propertyName (value : 'a) world = World.setGameProperty propertyName (value :> obj, typeof<'a>) world
 
         /// Get the view of the eye in absolute terms (world space).
         member this.GetViewAbsolute (_ : World) = World.getViewAbsolute
