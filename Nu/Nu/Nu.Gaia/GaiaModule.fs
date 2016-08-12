@@ -447,7 +447,7 @@ module Gaia =
     let private handleFormTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             if isNotNull form.treeView.SelectedNode then
-                let entity = Entity.proxy ^ ftoa !!form.treeView.SelectedNode.Name
+                let entity = Entity.proxy ^ Address.makeFromString form.treeView.SelectedNode.Name
                 match Address.getNames entity.EntityAddress with
                 | [_; _; _] ->
                     RefWorld := world // must be set for property grid

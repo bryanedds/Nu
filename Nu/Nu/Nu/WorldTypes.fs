@@ -607,7 +607,7 @@ module WorldTypes =
         override this.ToString () = scstring this.GameAddress
     
         /// Get the full name of a game proxy.
-        member this.GameFullName = Address.getFullName this.GameAddress
+        member this.GameFullName = atos this.GameAddress
     
         /// Get the latest value of a game's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
@@ -643,7 +643,7 @@ module WorldTypes =
         override this.ToString () = scstring this.ScreenAddress
     
         /// Get the full name of a screen proxy.
-        member this.ScreenFullName = Address.getFullName this.ScreenAddress
+        member this.ScreenFullName = atos this.ScreenAddress
     
         /// Get the name of a screen proxy.
         member this.ScreenName = Address.getName this.ScreenAddress
@@ -690,7 +690,7 @@ module WorldTypes =
         override this.ToString () = scstring this.GroupAddress
     
         /// Get the full name of a group proxy.
-        member this.GroupFullName = Address.getFullName this.GroupAddress
+        member this.GroupFullName = atos this.GroupAddress
     
         /// Get the name of a group proxy.
         member this.GroupName = Address.getName this.GroupAddress
@@ -742,7 +742,7 @@ module WorldTypes =
         override this.ToString () = scstring this.EntityAddress
     
         /// Get the name of an entity proxy.
-        member this.EntityFullName = Address.getFullName this.EntityAddress
+        member this.EntityFullName = atos this.EntityAddress
     
         /// Get the name of an entity proxy.
         member this.EntityName = Address.getName this.EntityAddress

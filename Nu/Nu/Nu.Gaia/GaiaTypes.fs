@@ -82,18 +82,10 @@ and EntityPropertyDescriptor (property, attributes) =
             match propertyName with
             | "Name" ->
                 let name = value :?> Name
-                let nameStr = Name.getNameStr name
-                if fst ^ Int64.TryParse nameStr then
-                    Log.trace ^ "Invalid entity name '" + nameStr + "' (must not be a number)."
-                    world
-                elif nameStr.IndexOf '/' <> -1 then
-                    Log.trace ^ "Invalid entity name '" + nameStr + "' (must not contain '/')."
-                    world
-                else
-                    let entity = entityTds.DescribedEntity
-                    let world = World.reassignEntity entity (Some name) (etog entity) world
-                    entityTds.RefWorld := world // must be set for property grid
-                    world
+                let entity = entityTds.DescribedEntity
+                let world = World.reassignEntity entity (Some name) (etog entity) world
+                entityTds.RefWorld := world // must be set for property grid
+                world
 
             // TODO: comment
             | "FacetNames" ->
@@ -134,7 +126,7 @@ and EntityTypeDescriptor (optSource : obj) =
             match optSource with
             | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity.GetXtension !source.RefWorld)
             | _ -> None
-        let makePropertyDescriptor = fun (emv, tcas) -> (EntityPropertyDescriptor (emv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
+        let makePropertyDescriptor = fun (epv, tcas) -> (EntityPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
         let propertyDescriptors = EntityPropertyValue.getPropertyDescriptors makePropertyDescriptor optXtension
         PropertyDescriptorCollection (Array.ofList propertyDescriptors)
 

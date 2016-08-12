@@ -847,7 +847,7 @@ module WorldModule =
                         let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
                         let world = World.updateEntityPublishFlags entity world
                         let eventTrace = EventTrace.record "World" "addEntity" EventTrace.empty
-                        World.publish () (ftoa<unit> !!"Entity/Add" ->- entity) eventTrace entity world
+                        World.publish () (ltoa<unit> [!!"Entity"; !!"Add"] ->- entity) eventTrace entity world
                     else world
 
                 // publish change event for every property
@@ -921,7 +921,7 @@ module WorldModule =
                 
                 // publish event and unregister entity
                 let eventTrace = EventTrace.record "World" "removeEntity" EventTrace.empty
-                let world = World.publish () (ftoa<unit> !!"Entity/Removing" ->- entity) eventTrace entity world
+                let world = World.publish () (ltoa<unit> [!!"Entity"; !!"Removing"] ->- entity) eventTrace entity world
                 let dispatcher = World.getEntityDispatcherNp entity world : EntityDispatcher
                 let facets = World.getEntityFacetsNp entity world
                 let world = dispatcher.Unregister (entity, world)
@@ -1238,14 +1238,14 @@ module WorldModule =
                         let dispatcher = World.getGroupDispatcherNp group world
                         let world = dispatcher.Register (group, world)
                         let eventTrace = EventTrace.record "World" "addGroup" EventTrace.empty
-                        World.publish () (ftoa<unit> !!"Group/Add" ->- group) eventTrace group world
+                        World.publish () (ltoa<unit> [!!"Group"; !!"Add"] ->- group) eventTrace group world
                     else world
                 World.publishGroupChanges group oldWorld world
             else failwith ^ "Adding a group that the world already contains at address '" + scstring group.GroupAddress + "'."
 
         static member internal removeGroup3 removeEntities group world =
             let eventTrace = EventTrace.record "World" "removeGroup" EventTrace.empty
-            let world = World.publish () (ftoa<unit> !!"Group/Removing" ->- group) eventTrace group world
+            let world = World.publish () (ltoa<unit> [!!"Group"; !!"Removing"] ->- group) eventTrace group world
             if World.containsGroup group world then
                 let dispatcher = World.getGroupDispatcherNp group world
                 let world = dispatcher.Unregister (group, world)
@@ -1486,14 +1486,14 @@ module WorldModule =
                         let dispatcher = World.getScreenDispatcherNp screen world
                         let world = dispatcher.Register (screen, world)
                         let eventTrace = EventTrace.record "World" "addScreen" EventTrace.empty
-                        World.publish () (ftoa<unit> !!"Screen/Add" ->- screen) eventTrace screen world
+                        World.publish () (ltoa<unit> [!!"Screen"; !!"Add"] ->- screen) eventTrace screen world
                     else world
                 World.publishScreenChanges screen oldWorld world
             else failwith ^ "Adding a screen that the world already contains at address '" + scstring screen.ScreenAddress + "'."
 
         static member internal removeScreen3 removeGroups screen world =
             let eventTrace = EventTrace.record "World" "removeScreen" EventTrace.empty
-            let world = World.publish () (ftoa<unit> !!"Screen/Removing" ->- screen) eventTrace screen world
+            let world = World.publish () (ltoa<unit> [!!"Screen"; !!"Removing"] ->- screen) eventTrace screen world
             if World.containsScreen screen world then
                 let dispatcher = World.getScreenDispatcherNp screen world
                 let world = dispatcher.Unregister (screen, world)

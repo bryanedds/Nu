@@ -61,24 +61,11 @@ module AddressModule =
             { Names : Name list
               HashCode : int // OPTIMIZATION: hash cached for speed
               TypeCarrier : 'a -> unit }
-
-        static member internal join (names : Name seq) =
-            Name.join "/" names
-
-        static member internal split (name : Name) =
-            Name.split [|'/'|] name
-
-        static member internal getFullName (address : 'a Address) =
-            Address<'a>.join address.Names
     
         /// Make a relation from a '/' delimited string where '.' are empty.
         /// NOTE: do not move this function as the RelationConverter's reflection code relies on it being exactly here!
         static member makeFromString<'a> (addressStr : string) =
-            Address<'a>.makeFromFullName !!addressStr
-
-        /// Make an address from a '/' delimited string.
-        static member makeFromFullName<'a> fullName =
-            let names = Address<'a>.split fullName |> List.ofSeq
+            let names = addressStr.Split '/' |> List.ofArray |> List.map Name.make
             { Names = names; HashCode = Name.hashNames names; TypeCarrier = fun (_ : 'a) -> () }
 
         /// Hash an Address.
@@ -94,6 +81,14 @@ module AddressModule =
         static member compare address address2 =
             Name.compareNames address.Names address2.Names
 
+        /// Convert a string into an address.
+        static member stoa<'a> str =
+            Address<'a>.makeFromString str
+
+        /// Convert a string into an address.
+        static member atos<'a> (address : 'a Address) =
+            String.Join ("/", address.Names)
+
         /// Convert an address of type 'a to an address of type 'b.
         static member atoa<'a, 'b> (address : 'a Address) =
             { Names = address.Names; HashCode = address.HashCode; TypeCarrier = fun (_ : 'b) -> () }
@@ -101,10 +96,6 @@ module AddressModule =
         /// Convert a names list into an address.
         static member ltoa<'a> (names : _ list) =
             { Names = names; HashCode = Name.hashNames names; TypeCarrier = fun (_ : 'a) -> () }
-
-        /// Convert a full name into an address.
-        static member ftoa<'a> fullName : 'a Address =
-            Address.makeFromFullName<'a> fullName
 
         /// Convert a single name into an address.
         static member ntoa<'a> name : 'a Address =
@@ -172,7 +163,7 @@ module AddressModule =
             Address<'a>.hash this
         
         override this.ToString () =
-            Address<'a>.getFullName this |> Name.getNameStr
+            Address.atos<'a> this
 
     [<RequireQualifiedAccess>]
     module Address =
@@ -181,17 +172,13 @@ module AddressModule =
         let empty<'a> =
             { Names = []; HashCode = 0; TypeCarrier = fun (_ : 'a) -> () }
 
-        /// Make an address from names.
-        let makeFromNames<'a> names : 'a Address =
+        /// Make an address from a list of names.
+        let makeFromList<'a> names : 'a Address =
             Address.ltoa<'a> names
 
         /// Make an address from a name.
         let makeFromName<'a> name : 'a Address =
             Address.ntoa<'a> name
-
-        /// Make an address from a '/' delimited string.
-        let makeFromFullName<'a> fullName : 'a Address =
-            Address.makeFromFullName<'a> fullName
 
         /// Get the names of an address.
         let getNames address =
@@ -200,10 +187,6 @@ module AddressModule =
         /// Change the type of an address.
         let changeType<'a, 'b> (address : 'a Address) =
             Address.atoa<'a, 'b> address
-
-        /// Get the full name of an address.
-        let getFullName address =
-            Address.getFullName address
 
         /// Get the name of an address.
         let getName address =
@@ -219,7 +202,7 @@ module AddressModule =
             
         /// Take the tail of an address.
         let tail<'a, 'b> (address : 'a Address) =
-            makeFromNames<'b> ^ List.tail address.Names
+            makeFromList<'b> ^ List.tail address.Names
 
         /// Take a name of an address.
         let item index address =
@@ -227,11 +210,11 @@ module AddressModule =
 
         /// Take an address composed of the name of an address minus a skipped amount of names.
         let skip<'a, 'b> n (address : 'a Address) =
-            makeFromNames<'b> ^ List.skip n address.Names
+            makeFromList<'b> ^ List.skip n address.Names
 
         /// Take an address composed of the given number of names of an address.
         let take<'a, 'b> n (address : 'a Address) =
-            makeFromNames<'b> ^ List.take n address.Names
+            makeFromList<'b> ^ List.take n address.Names
 
         /// Take the last name of an address.
         let last address =
@@ -239,7 +222,7 @@ module AddressModule =
 
         /// Take an address composed of all but the last name of an address.
         let allButLast<'a, 'b> (address : 'a Address) =
-            makeFromNames<'b> ^ List.allButLast address.Names
+            makeFromList<'b> ^ List.allButLast address.Names
 
         /// Get the length of an address by its names.
         let length address =
@@ -255,11 +238,14 @@ module AddressOperators =
     /// Convert an address of type 'a to an address of type 'b.
     let inline atoa<'a, 'b> (address : 'a Address) = Address.atoa<'a, 'b> address
 
+    /// Convert a string into an address.
+    let inline stoa<'a> str = Address.stoa<'a> str
+
+    /// Convert an address into a string.
+    let inline atos<'a> (address : 'a Address) = Address.atos<'a> address
+
     /// Convert a names list into an address.
     let inline ltoa<'a> names : 'a Address  = Address.ltoa<'a> names
-
-    /// Convert a full name into an address.
-    let inline ftoa<'a> fullName : 'a Address = Address.ftoa<'a> fullName
 
     /// Convert a single name into an address.
     let inline ntoa<'a> name : 'a Address  = Address.ntoa<'a> name
