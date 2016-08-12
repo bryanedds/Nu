@@ -346,9 +346,11 @@ type SymbolicConverter (pointType : Type) =
         fromSymbol destType symbol
 
     override this.CanConvertTo (_, destType) =
-        destType = typeof<string> ||
-        destType = typeof<Symbol> ||
-        destType = pointType
+        if pointType <> typeof<obj> then
+            destType = typeof<string> ||
+            destType = typeof<Symbol> ||
+            destType = pointType
+        else false // I can do fucking nothing with obj point type!
 
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<string> then
@@ -356,6 +358,8 @@ type SymbolicConverter (pointType : Type) =
             | null ->
                 if FSharpType.IsUnion pointType
                 then (FSharpType.GetUnionCases pointType).[0].Name :> obj
+                // here we are totally fucked because PropertyGrid passes typeof<obj> to the converter's ctor and we
+                // have no information about what the fuck to do...
                 else source
             | _ -> toString pointType source :> obj
         elif destType = typeof<Symbol> then toSymbol pointType source :> obj
@@ -363,9 +367,11 @@ type SymbolicConverter (pointType : Type) =
         else failconv "Invalid SymbolicConverter conversion to source." None
 
     override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<string> ||
-        sourceType = typeof<Symbol> ||
-        sourceType = pointType
+        if pointType <> typeof<obj> then
+            sourceType = typeof<string> ||
+            sourceType = typeof<Symbol> ||
+            sourceType = pointType
+        else false // I can do fucking nothing with obj point type!
 
     override this.ConvertFrom (_, _, source) =
         match source with
