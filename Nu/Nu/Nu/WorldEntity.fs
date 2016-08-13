@@ -94,7 +94,7 @@ module WorldEntityModule =
         member this.SetTransform value world = World.setEntityTransform value this world
 
         /// Get an entity's quick size.
-        member this.GetQuickSize world = (this.GetDispatcherNp world).GetQuickSize (this, world)
+        member this.GetQuickSize world = World.getEntityQuickSize this world
 
         /// Get an entity's bounds, not taking into account its overflow.
         member this.GetBounds world = Math.makeBounds (this.GetPosition world) (this.GetSize world)
@@ -209,20 +209,6 @@ module WorldEntityModule =
             let facets = entity.GetFacetsNp world
             let world = dispatcher.PropagatePhysics (entity, world)
             List.fold (fun world (facet : Facet) -> facet.PropagatePhysics (entity, world)) world facets
-
-        /// Get the quick size of an entity (the appropriate user-defined size for an entity).
-        static member getEntityQuickSize (entity : Entity) world =
-            let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
-            let facets = entity.GetFacetsNp world
-            let quickSize = dispatcher.GetQuickSize (entity, world)
-            List.fold
-                (fun (maxSize : Vector2) (facet : Facet) ->
-                    let quickSize = facet.GetQuickSize (entity, world)
-                    Vector2
-                        (Math.Max (quickSize.X, maxSize.X),
-                         Math.Max (quickSize.Y, maxSize.Y)))
-                quickSize
-                facets
 
         /// Sort subscriptions by their editor picking priority.
         static member sortSubscriptionsByPickingPriority subscriptions world =

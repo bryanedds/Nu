@@ -784,6 +784,20 @@ module WorldModule =
             let entityState = World.getEntityState entity world
             World.getEntityStateBoundsMax entityState
 
+        /// Get the quick size of an entity (the appropriate user-defined size for an entity).
+        static member getEntityQuickSize (entity : Entity) world =
+            let dispatcher = World.getEntityDispatcherNp entity world
+            let facets = World.getEntityFacetsNp entity world
+            let quickSize = dispatcher.GetQuickSize (entity, world)
+            List.fold
+                (fun (maxSize : Vector2) (facet : Facet) ->
+                    let quickSize = facet.GetQuickSize (entity, world)
+                    Vector2
+                        (Math.Max (quickSize.X, maxSize.X),
+                         Math.Max (quickSize.Y, maxSize.Y)))
+                quickSize
+                facets
+
         /// Get an entity's picking priority.
         static member getEntityPickingPriority (participant : Participant) world =
             match participant with
