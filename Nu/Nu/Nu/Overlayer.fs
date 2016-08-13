@@ -72,7 +72,7 @@ module OverlayerModule =
 
         let private isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer =
             getPropertyState overlayName propertyName propertyType target overlayer = Overlaid ||
-            List.exists (fun facetName -> getPropertyState facetName propertyName propertyType target overlayer = Overlaid) facetNames
+            Set.exists (fun facetName -> getPropertyState facetName propertyName propertyType target overlayer = Overlaid) facetNames
 
         let private isPropertyOverlaid5 facetNames propertyName propertyType target overlayer =
             let targetType = target.GetType ()
@@ -139,7 +139,7 @@ module OverlayerModule =
             | null -> target
             | facetNamesProperty ->
                 match tryFindPropertySymbol newOverlayName facetNamesProperty.Name newOverlayer with
-                | Some propertySymbol -> tryApplyOverlayToRecordProperty [] facetNamesProperty propertySymbol oldOverlayName target oldOverlayer; target
+                | Some propertySymbol -> tryApplyOverlayToRecordProperty Set.empty facetNamesProperty propertySymbol oldOverlayName target oldOverlayer; target
                 | None -> target
 
         /// Apply an overlay to the given target (except for any FacetNames property).
