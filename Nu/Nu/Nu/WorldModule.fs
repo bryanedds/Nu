@@ -525,7 +525,7 @@ module WorldModule =
             List.sortBy fst |>
             List.map (fun (name, property) -> (name, property.PropertyValue))
 
-        /// Provides a full view of all the member values of some SimulantState.
+        /// Provides a full view of all the properties of some SimulantState.
         static member internal getProperties state =
             List.append
                 (World.getMemberProperties state)
@@ -1102,17 +1102,11 @@ module WorldModule =
                 Right world
             | Left error -> Left error
 
-        static member internal viewEntityMemberProperties entity world =
+        /// View all of the properties of an entity.
+        static member viewEntityProperties entity world =
             let state = World.getEntityState entity world
-            World.getMemberProperties state
-
-        static member internal viewEntityXProperties entity world =
-            let state = World.getEntityState entity world
-            World.getXProperties state
-
-        static member internal viewEntity entity world =
-            let state = World.getEntityState entity world
-            World.getProperties state
+            let properties = World.getProperties state
+            Array.ofList properties
 
         (* Group *)
 
@@ -1307,17 +1301,11 @@ module WorldModule =
             let world = readEntities groupDescriptor group world |> snd
             (group, world)
 
-        static member viewGroupMemberProperties group world =
+        /// View all of the properties of a group.
+        static member viewGroupProperties group world =
             let state = World.getGroupState group world
-            World.getMemberProperties state
-
-        static member viewGroupXProperties group world =
-            let state = World.getGroupState group world
-            World.getXProperties state
-
-        static member viewGroup group world =
-            let state = World.getGroupState group world
-            World.getProperties state
+            let properties = World.getProperties state
+            Array.ofList properties
 
         (* Screen *)
 
@@ -1545,17 +1533,11 @@ module WorldModule =
             let world = readGroups screenDescriptor screen world |> snd
             (screen, world)
 
-        static member viewScreenMemberProperties screen world =
+        /// View all of the properties of a screen.
+        static member viewScreenProperties screen world =
             let state = World.getScreenState screen world
-            World.getMemberProperties state
-
-        static member viewScreenXProperties screen world =
-            let state = World.getScreenState screen world
-            World.getXProperties state
-
-        static member viewScreen screen world =
-            let state = World.getScreenState screen world
-            World.getProperties state
+            let properties = World.getProperties state
+            Array.ofList properties
 
         (* Game *)
 
@@ -1766,17 +1748,11 @@ module WorldModule =
             // read the game's screens
             readScreens gameDescriptor world |> snd
 
-        static member viewGameMemberProperties world =
+        /// View all of the properties of a game.
+        static member viewGameProperties world =
             let state = World.getGameState world
-            World.getMemberProperties state
-
-        static member viewGameXProperties world =
-            let state = World.getGameState world
-            World.getXProperties state
-
-        static member viewGame world =
-            let state = World.getGameState world
-            World.getProperties state
+            let properties = World.getProperties state
+            Array.ofList properties
 
         (* Clipboard *)
         
