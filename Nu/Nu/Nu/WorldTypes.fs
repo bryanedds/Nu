@@ -225,7 +225,7 @@ module WorldTypes =
     
         /// Get the quick size of an entity (the appropriate user-define size for an entity).
         abstract GetQuickSize : Entity * World -> Vector2
-        default dispatcher.GetQuickSize (_, _) = Vector2.One
+        default dispatcher.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
     
         /// Get the priority with which an entity is picked in the editor.
         abstract GetPickingPriority : Entity * single * World -> single

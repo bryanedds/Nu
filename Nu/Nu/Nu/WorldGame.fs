@@ -188,14 +188,6 @@ open System.Reflection
 open System.Collections.Generic
 type Game =
 
-    /// Provides a view of all the member properties of a game. Useful for debugging such as with
-    /// the Watch feature in Visual Studio.
-    static member viewMemberProperties world = World.viewGameMemberProperties world
-
-    /// Provides a view of all the xtension properties of a game. Useful for debugging such as
-    /// with the Watch feature in Visual Studio.
-    static member viewXProperties world = World.viewGameXProperties world
-
-    /// Provides a full view of all the member values of a game. Useful for debugging such
-    /// as with the Watch feature in Visual Studio.
-    static member view world = World.viewGame world
+    /// Provides a full view of all the properties of a game. Useful for debugging such as with the
+    /// Watch feature in Visual Studio.
+    static member view world = World.viewGameProperties world

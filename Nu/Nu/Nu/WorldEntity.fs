@@ -93,6 +93,9 @@ module WorldEntityModule =
         /// Set an entity's transform.
         member this.SetTransform value world = World.setEntityTransform value this world
 
+        /// Get an entity's quick size.
+        member this.GetQuickSize world = (this.GetDispatcherNp world).GetQuickSize (this, world)
+
         /// Get an entity's bounds, not taking into account its overflow.
         member this.GetBounds world = Math.makeBounds (this.GetPosition world) (this.GetSize world)
 
@@ -313,20 +316,9 @@ module WorldEntityModule =
             List.ofSeq propertyDescriptors
 
 namespace Debug
-open Prime
 open Nu
-open System.Reflection
-open System.Collections.Generic
 type Entity =
 
-    /// Provides a view of all the member properties of an entity. Useful for debugging such as with
-    /// the Watch feature in Visual Studio.
-    static member viewMemberProperties entity world = World.viewEntityMemberProperties entity world
-        
-    /// Provides a view of all the xtension properties of an entity. Useful for debugging such as
-    /// with the Watch feature in Visual Studio.
-    static member viewXProperties entity world = World.viewEntityXProperties entity world
-
-    /// Provides a full view of all the member values of an entity. Useful for debugging such
+    /// Provides a full view of all the properties of an entity. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
-    static member view entity world = World.viewEntity entity world
+    static member view entity world = World.viewEntityProperties entity world

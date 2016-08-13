@@ -156,20 +156,9 @@ module WorldGroupModule =
                 ([], world)
 
 namespace Debug
-open Prime
 open Nu
-open System.Reflection
-open System.Collections.Generic
 type Group =
 
-    /// Provides a view of all the member properties of a group. Useful for debugging such as with
-    /// the Watch feature in Visual Studio.
-    static member viewMemberProperties group world = World.viewGroupMemberProperties group world
-
-    /// Provides a view of all the xtension properties of a group. Useful for debugging such as
-    /// with the Watch feature in Visual Studio.
-    static member viewXProperties group world = World.viewGroupXProperties group world
-
-    /// Provides a full view of all the member values of a group. Useful for debugging such
+    /// Provides a full view of all the properties of a group. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
-    static member view group world = World.viewGroup group world
+    static member view group world = World.viewGroupProperties group world

@@ -179,14 +179,6 @@ open System.Reflection
 open System.Collections.Generic
 type Screen =
 
-    /// Provides a view of all the member properties of a screen. Useful for debugging such as with
-    /// the Watch feature in Visual Studio.
-    static member viewMemberProperties screen world = World.viewScreenMemberProperties screen world
-
-    /// Provides a view of all the xtension properties of a screen. Useful for debugging such as
-    /// with the Watch feature in Visual Studio.
-    static member viewXProperties screen world = World.viewScreenXProperties screen world
-
-    /// Provides a full view of all the member values of a screen. Useful for debugging such
+    /// Provides a full view of all the member properties of a screen. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
-    static member view screen world = World.viewScreen screen world
+    static member view screen world = World.viewScreenProperties screen world
