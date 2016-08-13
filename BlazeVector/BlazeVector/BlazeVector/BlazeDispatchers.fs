@@ -37,7 +37,7 @@ module BulletModule =
             else (Cascade, world)
 
         static member PropertyDefinitions =
-            [Define? Size ^ Vector2 (24.0f, 24.0f)
+            [Define? Size ^ Vector2 (20.0f, 20.0f)
              Define? Density 0.25f
              Define? Restitution 0.5f
              Define? LinearDamping 0.0f
@@ -150,7 +150,7 @@ module PlayerModule =
             (bullet, world)
 
         static let propelBullet (bullet : Entity) world =
-            let world = World.applyBodyLinearImpulse (Vector2 (50.0f, 0.0f)) (bullet.GetPhysicsId world) world
+            let world = World.applyBodyLinearImpulse (Vector2 (35.0f, 0.0f)) (bullet.GetPhysicsId world) world
             World.playSound 1.0f Constants.Assets.ShotSound world
 
         static let shootBullet (player : Entity) world =
@@ -162,7 +162,7 @@ module PlayerModule =
             let player = evt.Subscriber : Entity
             if World.isTicking world then
                 if not ^ player.HasFallen world then
-                    if World.getTickTime world % 6L = 0L then
+                    if World.getTickTime world % 5L = 0L then
                         let world = shootBullet player world
                         (Cascade, world)
                     else (Cascade, world)
