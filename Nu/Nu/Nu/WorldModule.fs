@@ -416,6 +416,16 @@ module WorldModule =
                 Set.empty
                 finalPropertyDefinitionNameCounts
 
+        /// Get an entity's intrinsic facet names.
+        static member getEntityIntrinsicFacetNames entityState =
+            let intrinsicFacetNames = entityState.DispatcherNp |> getType |> Reflection.getIntrinsicFacetNames
+            Set.ofList intrinsicFacetNames
+
+        /// Get an entity's facet names via reflection.
+        static member getEntityFacetNamesReflectively entityState =
+            let facetNames = List.map getTypeName entityState.FacetsNp
+            Set.ofList facetNames
+
         static member private tryRemoveFacet facetName entityState optEntity world =
             match List.tryFind (fun facet -> getTypeName facet = facetName) entityState.FacetsNp with
             | Some facet ->
@@ -477,8 +487,10 @@ module WorldModule =
                 facetNamesToAdd
 
         static member internal trySetFacetNames facetNames entityState optEntity world =
-            let facetNamesToRemove = World.getFacetNamesToRemove entityState.FacetNames facetNames
-            let facetNamesToAdd = World.getFacetNamesToAdd entityState.FacetNames facetNames
+            let intrinsicFacetNames = World.getEntityIntrinsicFacetNames entityState
+            let extrinsicFacetNames = Set.fold (flip Set.remove) facetNames intrinsicFacetNames
+            let facetNamesToRemove = World.getFacetNamesToRemove entityState.FacetNames extrinsicFacetNames
+            let facetNamesToAdd = World.getFacetNamesToAdd entityState.FacetNames extrinsicFacetNames
             match World.tryRemoveFacets facetNamesToRemove entityState optEntity world with
             | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
             | Left _ as left -> left
@@ -780,10 +792,6 @@ module WorldModule =
                 let dispatcher = entityState.DispatcherNp
                 dispatcher.GetPickingPriority (entity, entityState.Depth, world)
             | _ -> failwithumf ()
-
-        /// Get an entity's facet names via reflection.
-        static member getEntityFacetNamesReflectively entityState =
-            List.map getTypeName entityState.FacetsNp
 
         static member private updateEntityPublishEventFlag setFlag entity eventAddress world =
             let publishUpdates =
