@@ -106,12 +106,20 @@ module Gaia =
             addTreeViewNode form entity world
 
     let private populateGroupTabs (form : GaiaForm) world =
-        let groupTabPages = form.groupTabs.TabPages
-        groupTabPages.Clear ()
+
+        // add groups imperatively to preserve existing group tabs 
         let groups = World.getGroups Simulants.EditorScreen world
+        let groupTabPages = form.groupTabs.TabPages
         for group in groups do
             let groupNameStr = Name.getNameStr group.GroupName
-            groupTabPages.Add (groupNameStr, groupNameStr)
+            if not ^ groupTabPages.ContainsKey groupNameStr then
+                groupTabPages.Add (groupNameStr, groupNameStr)
+    
+        // remove groups imperatively to preserve existing group tabs 
+        for groupTabPage in groupTabPages do
+            if Seq.notExists (fun (group : Group) -> Name.getNameStr group.GroupName = groupTabPage.Name) groups then
+                groupTabPages.RemoveByKey groupTabPage.Name
+
 
     let private setTreeViewSelectionToPropertyGridSelection (form : GaiaForm) =
         match form.propertyGrid.SelectedObject with
@@ -141,7 +149,7 @@ module Gaia =
             if World.containsEntity entityTds.DescribedEntity world
             then form.propertyGrid.Refresh ()
             else deselectEntity form world
-        | _ -> deselectEntity form world
+        | _ -> ()
 
     let private refreshTreeView (form : GaiaForm) world =
         let treeState = getExpansionState form.treeView
@@ -656,9 +664,16 @@ module Gaia =
                 ignore ^ MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 world
 
-    let private handleFormGroupTabSelected (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormGroupTabDeselected (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             let world = unsubscribeFromEntityEvents world
+            deselectEntity form world
+            refreshPropertyGrid form world
+            refreshTreeView form world
+            world
+
+    let private handleFormGroupTabSelected (form : GaiaForm) (_ : EventArgs) =
+        addWorldChanger ^ fun world ->
             let world =
                 World.updateUserState (fun editorState ->
                     let groupTabs = form.groupTabs
@@ -666,7 +681,6 @@ module Gaia =
                     { editorState with SelectedGroup = stog Simulants.EditorScreen !!groupTab.Text })
                     world
             let world = subscribeToEntityEvents form world
-            deselectEntity form world
             refreshPropertyGrid form world
             refreshTreeView form world
             world
@@ -937,6 +951,7 @@ module Gaia =
         form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form)
         form.resetCameraButton.Click.Add (handleFormResetCamera form)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
+        form.groupTabs.Deselected.Add (handleFormGroupTabDeselected form)
         form.groupTabs.Selected.Add (handleFormGroupTabSelected form)
         form.rolloutTabControl.SelectedIndexChanged.Add (handleRolloutTabSelectedIndexChanged form)
         form.createEntityComboBox.SelectedIndexChanged.Add (handleCreateEntityComboBoxSelectedIndexChanged form)
