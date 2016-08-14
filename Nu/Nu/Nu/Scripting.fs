@@ -42,6 +42,7 @@ module Scripting =
                     "cross dot " +
                     "violation bool int int64 single double string " +
                     "nil " + // the empty keyword
+                    "xOf yOf xAs yAs " + // vector operations
                     "some none isNone isSome map " +
                     // TODO: "either isLeft isRight left right " +
                     "tuple unit fst snd thd fth fif nth " +
