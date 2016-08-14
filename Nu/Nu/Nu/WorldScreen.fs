@@ -102,8 +102,7 @@ module WorldScreenModule =
         static member destroyScreenImmediate screen world =
             World.removeScreen screen world
 
-        /// Destroy a screen in the world on the next tick. Use this rather than destroyScreenImmediate unless you need
-        /// the latter's specific behavior.
+        /// Destroy a screen in the world at the end of the current update.
         static member destroyScreen screen world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world

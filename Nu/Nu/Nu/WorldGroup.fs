@@ -87,8 +87,7 @@ module WorldGroupModule =
         /// group's existence. Consider using World.destroyGroup instead.
         static member destroyGroupImmediate group world = World.removeGroup group world
 
-        /// Destroy a group in the world on the next tick. Use this rather than destroyGroupImmediate unless you need
-        /// the latter's specific behavior.
+        /// Destroy a group in the world at the end of the current update.
         static member destroyGroup group world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
@@ -103,8 +102,7 @@ module WorldGroupModule =
                 (List.ofSeq groups)
                 world
 
-        /// Destroy multiple groups from the world. Use this rather than destroyEntitiesImmediate unless you need the
-        /// latter's specific behavior.
+        /// Destroy multiple groups from the world at the end of the current update.
         static member destroyGroups groups world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
