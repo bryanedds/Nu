@@ -458,13 +458,13 @@ module EffectSystemModule =
                 with exn ->
                     let effectKeywords0 = match typeof<Effect>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
                     let effectStr = Symbol.prettyPrint effectKeywords0 ^ scstring effect
-                    Log.debug ^ "Error in effect:\r\n" + effectStr + "\r\ndue to '" + scstring exn + "'."
+                    Log.debug ^ "Error in effect:\r\n" + effectStr + "\r\ndue to: " + scstring exn
                     []
             else []
 
         let combineEffects effects =
             let effectCombined =
-                { EffectName = String.Join ("@", List.map (fun effect -> effect.EffectName) effects)
+                { EffectName = String.Join ("+", List.map (fun effect -> effect.EffectName) effects)
                   OptLifetime = None
                   Definitions = List.fold (fun definitions effect -> Map.concat definitions effect.Definitions) Map.empty effects
                   Content = Composite (Shift 0.0f, List.map (fun effect -> effect.Content) effects) }

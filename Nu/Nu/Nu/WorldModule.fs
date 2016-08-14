@@ -1064,6 +1064,7 @@ module WorldModule =
             let world = World.addEntity false entityState transmutedEntity world
             (transmutedEntity, world)
 
+        /// Reassign an entity's identity and / or group.
         static member reassignEntity entity optName group world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
