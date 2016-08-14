@@ -208,23 +208,19 @@ module WorldModule =
         static member getTickRateF world =
             World.getAmbientStateBy AmbientState.getTickRateF world
 
-        /// Set the tick rate without waiting for the end of the current update. Only use
-        /// this if you need it and understand the engine internals well enough to know the
-        /// consequences.
-        static member setTickRateImmediate tickRate world =
-            World.updateAmbientState (AmbientState.setTickRateImmediate tickRate) world
-
-        /// Set the tick rate.
+        /// Set the tick rate at the end of the current update.
         static member setTickRate tickRate world =
             World.updateAmbientState
                 (AmbientState.addTasklet
-                    { ScheduledTime = World.getTickTime world; Command = { Execute = fun world -> World.setTickRateImmediate tickRate world }}) world
+                    { ScheduledTime = World.getTickTime world
+                      Command = { Execute = fun world -> World.updateAmbientState (AmbientState.setTickRateImmediate tickRate) world }}) world
 
-        /// Reset the tick time to 0.
+        /// Reset the tick time to 0 at the end of the current update.
         static member resetTickTime world =
             World.updateAmbientState
                 (AmbientState.addTasklet
-                    { ScheduledTime = World.getTickTime world; Command = { Execute = fun world -> World.updateAmbientState AmbientState.resetTickTime world }}) world
+                    { ScheduledTime = World.getTickTime world
+                      Command = { Execute = fun world -> World.updateAmbientState AmbientState.resetTickTimeImmediate world }}) world
 
         /// Get the world's tick time.
         static member getTickTime world =

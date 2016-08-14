@@ -179,8 +179,7 @@ module WorldEntityModule =
                 | None -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
             | _ -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
 
-        /// Destroy an entity in the world on the next tick. Use this rather than destroyEntityImmediate unless you
-        /// need the latter's specific behavior.
+        /// Destroy an entity in the world at the end of the current update.
         static member destroyEntity entity world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
@@ -195,8 +194,7 @@ module WorldEntityModule =
                 (List.ofSeq entities)
                 world
 
-        /// Destroy multiple entities in the world. Use this rather than destroyEntitiesImmediate unless you need the
-        /// latter's specific behavior.
+        /// Destroy multiple entities in the world at the end of the current update.
         static member destroyEntities entities world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
