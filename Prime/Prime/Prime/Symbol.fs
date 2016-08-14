@@ -54,7 +54,7 @@ module Symbol =
     let [<Literal>] CloseQuoteStr = "\'"
     let [<Literal>] StructureCharsNoStr = "[]`\'"
     let [<Literal>] StructureChars = "\"" + StructureCharsNoStr
-    let [<Literal>] OpsReserved = "@#:." // @ reserved for wildcards, # reserved for comment syntax, : reserved for pair syntax (expands to [key value]), . reserved for pathing
+    let [<Literal>] ReservedChars = "#:" // # reserved for comment syntax, : reserved for pair syntax (expands to [key value])
     let [<Literal>] NumberFormat =
         NumberLiteralOptions.AllowMinusSign |||
         NumberLiteralOptions.AllowPlusSign |||
