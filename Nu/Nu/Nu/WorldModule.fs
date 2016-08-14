@@ -345,13 +345,13 @@ module WorldModule =
         static member internal getOptEntityCache world =
             world.OptEntityCache
 
-        /// Get the opt entity cache.
+        /// Set the opt entity cache.
         static member internal setOptEntityCache optEntityCache world =
             World.choose { world with OptEntityCache = optEntityCache }
 
         (* ScreenDirectory *)
 
-        /// Get the opt entity cache.
+        /// Get the screen directory.
         static member internal getScreenDirectory world =
             world.ScreenDirectory
 
@@ -376,12 +376,6 @@ module WorldModule =
                         | None -> false)
                     facetPropertyDefinitions
             else false
-
-        static member private getFacetNamesToAdd oldFacetNames newFacetNames =
-            Set.difference newFacetNames oldFacetNames
-
-        static member private getFacetNamesToRemove oldFacetNames newFacetNames =
-            Set.difference oldFacetNames newFacetNames
 
         static member private getEntityPropertyDefinitionNamesToDetach entityState facetToRemove =
 
@@ -413,12 +407,12 @@ module WorldModule =
                 finalPropertyDefinitionNameCounts
 
         /// Get an entity's intrinsic facet names.
-        static member getEntityIntrinsicFacetNames entityState =
+        static member getIntrinsicFacetNames entityState =
             let intrinsicFacetNames = entityState.DispatcherNp |> getType |> Reflection.getIntrinsicFacetNames
             Set.ofList intrinsicFacetNames
 
         /// Get an entity's facet names via reflection.
-        static member getEntityFacetNamesReflectively entityState =
+        static member getFacetNamesReflectively entityState =
             let facetNames = List.map getTypeName entityState.FacetsNp
             Set.ofList facetNames
 
@@ -483,17 +477,17 @@ module WorldModule =
                 facetNamesToAdd
 
         static member internal trySetFacetNames facetNames entityState optEntity world =
-            let intrinsicFacetNames = World.getEntityIntrinsicFacetNames entityState
+            let intrinsicFacetNames = World.getIntrinsicFacetNames entityState
             let extrinsicFacetNames = Set.fold (flip Set.remove) facetNames intrinsicFacetNames
-            let facetNamesToRemove = World.getFacetNamesToRemove entityState.FacetNames extrinsicFacetNames
-            let facetNamesToAdd = World.getFacetNamesToAdd entityState.FacetNames extrinsicFacetNames
+            let facetNamesToRemove = Set.difference entityState.FacetNames extrinsicFacetNames
+            let facetNamesToAdd = Set.difference extrinsicFacetNames entityState.FacetNames
             match World.tryRemoveFacets facetNamesToRemove entityState optEntity world with
             | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
             | Left _ as left -> left
 
         static member internal trySynchronizeFacetsToNames oldFacetNames entityState optEntity world =
-            let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames entityState.FacetNames
-            let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames entityState.FacetNames
+            let facetNamesToRemove = Set.difference oldFacetNames entityState.FacetNames
+            let facetNamesToAdd = Set.difference entityState.FacetNames oldFacetNames
             match World.tryRemoveFacets facetNamesToRemove entityState optEntity world with
             | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
             | Left _ as left -> left
@@ -719,7 +713,7 @@ module WorldModule =
                 match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
                 | Right (entityState, world) ->
                     let oldWorld = world
-                    let facetNames = World.getEntityFacetNamesReflectively entityState
+                    let facetNames = World.getFacetNamesReflectively entityState
                     let entityState = Overlayer.applyOverlay6 EntityState.copy overlayName overlayName facetNames entityState oldOverlayer overlayer
                     let world = World.setEntityState entityState entity world
                     World.updateEntityInEntityTree entity oldWorld world
@@ -918,7 +912,7 @@ module WorldModule =
                 | Some overlayName ->
                     // OPTIMIZATION: apply overlay only when it will change something
                     if dispatcherName <> overlayName then
-                        let facetNames = World.getEntityFacetNamesReflectively entityState
+                        let facetNames = World.getFacetNamesReflectively entityState
                         Overlayer.applyOverlay EntityState.copy dispatcherName overlayName facetNames entityState overlayer
                     else entityState
                 | None -> entityState
@@ -1021,7 +1015,7 @@ module WorldModule =
                 | Some overlayName ->
                     // OPTIMIZATION: applying overlay only when it will change something
                     if dispatcherName <> overlayName then
-                        let facetNames = World.getEntityFacetNamesReflectively entityState
+                        let facetNames = World.getFacetNamesReflectively entityState
                         Overlayer.applyOverlay EntityState.copy dispatcherName overlayName facetNames entityState overlayer
                     else entityState
                 | None -> entityState
@@ -1053,7 +1047,7 @@ module WorldModule =
                     defaultOptOverlayName <> (propertyValue :?> string option)
                 else
                     let overlayer = World.getOverlayer world
-                    let facetNames = World.getEntityFacetNamesReflectively entityState
+                    let facetNames = World.getFacetNamesReflectively entityState
                     Overlayer.shouldPropertySerialize5 facetNames propertyName propertyType entityState overlayer
             let getEntityProperties = Reflection.writePropertiesFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
             { entityDescriptor with EntityProperties = getEntityProperties }
@@ -1089,7 +1083,7 @@ module WorldModule =
                     match World.trySynchronizeFacetsToNames entityState.FacetNames entityState (Some entity) world with
                     | Right (entityState, world) -> (entityState, world)
                     | Left error -> Log.debug error; (entityState, world)
-                let facetNames = World.getEntityFacetNamesReflectively entityState
+                let facetNames = World.getFacetNamesReflectively entityState
                 let entityState = Overlayer.applyOverlay EntityState.copy oldOverlayName overlayName facetNames entityState overlayer
                 let oldWorld = world
                 let world = World.setEntityState entityState entity world
