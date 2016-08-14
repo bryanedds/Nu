@@ -1756,7 +1756,10 @@ module WorldModule =
             let world = World.setGameState gameState world
             
             // read the game's screens
-            readScreens gameDescriptor world |> snd
+            let world = readScreens gameDescriptor world |> snd
+            
+            // choose the world
+            World.choose world
 
         /// View all of the properties of a game.
         static member viewGameProperties world =
