@@ -57,7 +57,7 @@ module Metadata =
                     Log.trace errorMessage
                     InvalidMetadata errorMessage
             with _ as exn ->
-                let errorMessage = "Failed to load Bitmap '" + asset.FilePath + "' due to '" + scstring exn + "'."
+                let errorMessage = "Failed to load Bitmap '" + asset.FilePath + "' due to: " + scstring exn
                 Log.trace errorMessage
                 InvalidMetadata errorMessage
 
@@ -67,7 +67,7 @@ module Metadata =
             let tileSetImages = List.map getTileSetProperties tileSets
             TileMapMetadata (asset.FilePath, tileSetImages, tmxMap)
         with _ as exn ->
-            let errorMessage = "Failed to load TmxMap '" + asset.FilePath + "' due to '" + scstring exn + "'."
+            let errorMessage = "Failed to load TmxMap '" + asset.FilePath + "' due to: " + scstring exn
             Log.trace errorMessage
             InvalidMetadata errorMessage
 
