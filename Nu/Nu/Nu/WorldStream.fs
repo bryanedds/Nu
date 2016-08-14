@@ -8,9 +8,6 @@ open LanguagePrimitives
 open Prime
 open Prime.Stream
 open Nu
-
-/// Apparently we can have two modules with the same namespace and name so long as they are
-/// compiled into different DLLs... This seems strange and potentially fragile...
 module Stream =
 
     /// Take only one event from an stream per update.
@@ -42,7 +39,7 @@ module Stream =
     // TODO: re-enable let [<DebuggerHidden; DebuggerStepThrough>] isSelectedScreenTransitioning _ world = World.isSelectedScreenTransitioning world
 
 [<AutoOpen>]
-module StreamModule =
+module StreamOperators =
 
     // open related module
     open Stream

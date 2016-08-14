@@ -543,13 +543,13 @@ module WorldModule2 =
                 let world = World.updateScreen selectedScreen world
                 let world = World.updateScreenTransition selectedScreen world
                 let world = Seq.fold (fun world group -> World.updateGroup group world) world groups
-                let world = List.fold (fun world (entity : Entity) -> World.updateEntity entity world) world entities
+                let world = List.fold (fun world entity -> World.updateEntity entity world) world entities
 
                 // post-update simulants
                 let world = World.postUpdateGame world
                 let world = World.postUpdateScreen selectedScreen world
                 let world = Seq.fold (fun world group -> World.postUpdateGroup group world) world groups
-                let world = List.fold (fun world (entity : Entity) -> World.postUpdateEntity entity world) world entities
+                let world = List.fold (fun world entity -> World.postUpdateEntity entity world) world entities
                 world
             
             // no screen; just operate on the game
@@ -558,7 +558,7 @@ module WorldModule2 =
                let world = World.postUpdateGame world
                world
 
-        static member private actualizeScreenTransition (_ : Vector2) eyeSize (screen : Screen) transition world =
+        static member private actualizeScreenTransition (_ : Vector2) (eyeSize : Vector2) (screen : Screen) transition world =
             match transition.OptDissolveImage with
             | Some dissolveImage ->
                 let progress = single (screen.GetTransitionTicksNp world) / single transition.TransitionLifetime
@@ -600,7 +600,6 @@ module WorldModule2 =
                 List.fold (fun world entity -> World.actualizeEntity entity world) world entities
             | None -> world
 
-        /// Update the game engine once per frame, updating its subsystems and publishing the Update event.
         static member private processUpdate handleUpdate world =
             let world = handleUpdate world
             match World.getLiveness world with
@@ -679,6 +678,7 @@ module WorldModule2 =
         static member makeEmpty userState =
 
             // ensure game engine is initialized
+            // TODO: parameterize hard-coded boolean
             Nu.init false
 
             // make the world's event system
@@ -714,7 +714,7 @@ module WorldModule2 =
             // select the first game dispatcher as active
             let activeGameDispatcher = dispatchers.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
 
-            // make and choose the world
+            // make and choose the world for debugging
             let world = World.make eventSystem dispatchers subsystems ambientState None activeGameDispatcher
 
             // initialize OptEntityCache after the fact due to back reference
@@ -732,6 +732,7 @@ module WorldModule2 =
         static member attemptMake preferPluginGameDispatcher optGameSpecialization tickRate userState (plugin : NuPlugin) sdlDeps =
 
             // ensure game engine is initialized
+            // TODO: parameterize hard-coded boolean
             Nu.init false
 
             // attempt to create asset graph
@@ -770,7 +771,7 @@ module WorldModule2 =
                       Facets = Map.addMany pluginFacets ^ World.makeDefaultFacets ()
                       RebuildEntityTree = World.rebuildEntityTreeImpl }
 
-                // make world's subsystems
+                // make the world's subsystems
                 let subsystems =
                     let userSubsystems = plugin.MakeSubsystems ()
                     let physicsEngine = PhysicsEngine.make Constants.Physics.Gravity
@@ -806,7 +807,7 @@ module WorldModule2 =
                         let overlayRouter = OverlayRouter.make dispatchers.EntityDispatchers pluginOverlayRoutes
                         AmbientState.make tickRate assetMetadataMap overlayRouter overlayer SymbolStore.empty userState
 
-                    // make and choose the world
+                    // make and choose the world for debugging
                     let world = World.make eventSystem dispatchers subsystems ambientState optGameSpecialization activeGameDispatcher
 
                     // initialize OptEntityCache after the fact due to back reference
