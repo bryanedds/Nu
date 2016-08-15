@@ -18,8 +18,6 @@ type SymbolicCompression<'a, 'b> =
 type SymbolicConverter (pointType : Type) =
     inherit TypeConverter ()
 
-    do if pointType = typeof<obj> then Console.WriteLine "Fuck you!"
-
     let padWithDefaults (fieldTypes : PropertyInfo array) (values : obj array) =
         if values.Length < fieldTypes.Length then
             let valuesPadded =

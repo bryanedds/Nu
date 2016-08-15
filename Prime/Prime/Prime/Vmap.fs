@@ -37,7 +37,8 @@ module internal VnodeModule =
     
         /// OPTIMIZATION: Array.Clone () is not used since it's been profiled to be slower
         let inline cloneArray (arr : Vnode<'k, 'v> array) : Vnode<'k, 'v> array =
-            let arr' = Array.zeroCreate 32 // there's an unecessary check against the size here, but that's the only inefficiency
+            let arr' = Array.zeroCreate 32  // NOTE: there's an unecessary check against the size here, but that's the only inefficiency
+                                            // TODO: use Array.zeroCreateUnchecked if / when it becomes available
             Array.Copy (arr, 0, arr', 0, 32) // param checks are inefficient, but hopefully there's at least a memcpy underneath...
             arr'
     
