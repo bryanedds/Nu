@@ -9,12 +9,24 @@ open Prime
 open Prime.Tests
 module Program =
 
+    /// The number of samples taken for each timing.
+    let [<Literal>] Samples = 3
+
+    /// Performs some ad-hoc tests to compare performance of fns.
+    let runTimings fn name =
+        printfn "%s timings..." name
+        for _ in 1 .. Samples do
+            let watch = Stopwatch.StartNew ()
+            let _ = fn ()
+            watch.Stop ()
+            printfn "Run time: %A" watch.Elapsed
+
     /// Performs some ad-hoc tests to compare performance of maps.
-    let runTimings make lookup name =
+    let runMapTimings make lookup name =
         printfn "%s timings..." name
         let rand = Random 1
-        let entries = [|for _ in 0 .. 524280 do yield (let n = rand.Next () in (string n, (string n, string n)))|]
-        for _ in 0 .. 4 do
+        let entries = [|for _ in 0 .. 524280 do yield let n = rand.Next () in (string n, (string n, string n))|]
+        for _ in 1 .. Samples do
             GC.Collect ()
             let watch = Stopwatch.StartNew ()
             let made = make entries
@@ -30,33 +42,41 @@ module Program =
     /// https://github.com/Microsoft/visualfsharp/issues/1371#issuecomment-235101700
     let [<EntryPoint; STAThread>] main _ =
 
+        // run array timings
+        let array = [|0 .. 10000000|]
+        runTimings (fun () -> array |> Array.map (fun x -> x + x * 13)) "Array Compute"
+
+        // run list timings
+        let list = [0 .. 10000000]
+        runTimings (fun () -> list |> List.map (fun x -> x + x * 13)) "List Compute"
+        
         // run map timings
-        runTimings
+        runMapTimings
             (fun entries -> Array.fold (fun map (k, v) -> Map.add k v map) Map.empty entries)
             (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Map.find k map) entries)
             "F# Map"
-
+        
         // run vmap timings
-        runTimings
+        runMapTimings
             (fun entries -> Array.fold (fun map (k, v) -> Vmap.add k v map) (Vmap.makeEmpty ()) entries)
             (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Vmap.find k map) entries)
             "Vmap"
-
+        
         // run tmap timings with computation expressions
-        runTimings
+        runMapTimings
             (fun entries -> Array.fold (fun map (k, v) -> Tmap.add k v map) (Tmap.makeEmpty None) entries)
             (fun entries map -> entries |> Array.iter (fun (k, _) -> ignore ^ Tmap.find k map))
             "Tmap"
-
+        
         // run tmap timings without computation expressions
-        runTimings
+        runMapTimings
             (fun entries -> Array.fold (fun map (k, v) -> Umap.add k v map) (Umap.makeEmpty None) entries)
             (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Umap.find k map) entries)
             "Umap"
-
+        
         // run dictionary timings
         let dic = Dictionary<string, string * string> ()
-        runTimings
+        runMapTimings
             (fun entries -> Array.iter (fun (k, v) -> if not ^ dic.ContainsKey k then dic.Add (k, v)) entries)
             (fun entries () -> Array.iter (fun (k, _) -> ignore ^ dic.[k]) entries)
             ".NET Dictionary"
