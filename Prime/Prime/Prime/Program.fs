@@ -35,7 +35,7 @@ module Program =
             let watch2 = Stopwatch.StartNew ()
             lookup entries made
             watch2.Stop ()
-            printfn "Make time: %A\tLookup time: %A" watch.Elapsed watch2.Elapsed
+            printfn "Make time: %A\tLookup time: %A\tRun time: %A" watch.Elapsed watch2.Elapsed (watch.Elapsed + watch2.Elapsed)
 
     /// Run timings.
     /// NOTE: even if this timing functionality is cleared out, the main entry point must remain in tact due to -
