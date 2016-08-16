@@ -20,20 +20,19 @@ type internal Hkv<'k, 'v when 'k : comparison> =
         end
 
 [<AutoOpen>]
-module internal VnodeModule =
+module VmapModule =
 
     /// TODO: there's an F# issue where UseNullAsTrueValue does not work on unions with 4 or more cases
     /// https://github.com/Microsoft/visualfsharp/issues/711 . Once resolved, should use it and be able
     /// to make arrays with Array.zeroCreate alone without also copying over the empty array.
-    type [<NoComparison>] internal Vnode<'k, 'v when 'k : comparison> =
-        private
-            | Nil
-            | Singleton of Hkv<'k, 'v>
-            | Multiple of Vnode<'k, 'v> array
-            | Clash of Map<'k, 'v>
+    type [<NoComparison>] private Vnode<'k, 'v when 'k : comparison> =
+        | Nil
+        | Singleton of Hkv<'k, 'v>
+        | Multiple of Vnode<'k, 'v> array
+        | Clash of Map<'k, 'v>
 
     [<RequireQualifiedAccess>]
-    module internal Vnode =
+    module private Vnode =
     
         /// OPTIMIZATION: Array.Clone () is not used since it's been profiled to be slower
         let inline cloneArray (arr : Vnode<'k, 'v> array) : Vnode<'k, 'v> array =
@@ -122,14 +121,10 @@ module internal VnodeModule =
                 
                 // handle clash cases
                 match node with
-                | Nil ->
-                    Clash ^ Map.singleton hkv.K hkv.V
-                | Singleton hkv' ->
-                    Clash ^ Map.add hkv.K hkv.V ^ Map.singleton hkv'.K hkv'.V
-                | Multiple _ ->
-                    failwithumf () // should never hit here
-                | Clash clashMap ->
-                    Clash ^ Map.add hkv.K hkv.V clashMap
+                | Nil -> Clash ^ Map.singleton hkv.K hkv.V
+                | Singleton hkv' -> Clash ^ Map.add hkv.K hkv.V ^ Map.singleton hkv'.K hkv'.V
+                | Multiple _ -> failwithumf () // should never hit here
+                | Clash clashMap -> Clash ^ Map.add hkv.K hkv.V clashMap
     
         let rec remove (h : int) (k : 'k) (dep : int) (node : Vnode<'k, 'v>) : Vnode<'k, 'v> =
             match node with
@@ -154,9 +149,6 @@ module internal VnodeModule =
     
         let empty =
             Nil
-
-[<AutoOpen>]
-module VmapModule =
 
     /// A very fast persistent hash map.
     /// Works in effectively constant-time for look-ups and updates.

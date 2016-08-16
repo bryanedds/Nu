@@ -183,7 +183,7 @@ module WorldScriptSystem =
               Int64 = fun value optOrigin -> if value = 0L then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Log"], "Cannot log a zero 64-bit int.", optOrigin) else Int64 (int64 ^ Math.Log (double value), optOrigin)
               Single = fun value optOrigin -> if value = 0.0f then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Log"], "Cannot log a zero single.", optOrigin) else Single (single ^ Math.Log (double value), optOrigin)
               Double = fun value optOrigin -> if value = 0.0 then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Log"], "Cannot log a zero double.", optOrigin) else Double (Math.Log value, optOrigin)
-              Vector2 = fun value optOrigin -> if value.X = 0.0f || value.Y == 0.0f then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Log"], "Cannot log a vector containing a zero member.", optOrigin) else Vector2 (OpenTK.Vector2 (single ^ Math.Log (double value.X), single ^ Math.Log (double value.Y)), optOrigin)
+              Vector2 = fun value optOrigin -> if value.X = 0.0f || value.Y = 0.0f then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Log"], "Cannot log a vector containing a zero member.", optOrigin) else Vector2 (OpenTK.Vector2 (single ^ Math.Log (double value.X), single ^ Math.Log (double value.Y)), optOrigin)
               String = fun _ optOrigin -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a string.", optOrigin)
               List = fun _ optOrigin -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a list.", optOrigin)
               Tuple = fun _ optOrigin -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a tuple.", optOrigin)

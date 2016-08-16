@@ -40,7 +40,7 @@ module TmapModule =
             List.foldBack (fun log () ->
                 match log with
                 | Add (key, value) -> dictOrigin.[key] <- value
-                | Remove key -> ignore ^ dictOrigin.Remove(key))
+                | Remove key -> ignore ^ dictOrigin.Remove key)
                 map.Logs ()
             let dict = Dictionary<'k, 'a> (dictOrigin, HashIdentity.Structural)
             let map = { map with Dict = dict; DictOrigin = dictOrigin; Logs = []; LogsLength = 0 }
@@ -108,8 +108,8 @@ module TmapModule =
             let seq =
                 map.Dict |>
                 Seq.map (fun kvp -> (kvp.Key, kvp.Value)) |>
-                List.ofSeq |>
-                Seq.ofList
+                Array.ofSeq :>
+                seq<'k * 'v>
             (seq, map)
 
         let ofSeq pairs =
@@ -125,7 +125,7 @@ module TmapModule =
 
         let map mapper map =
             fold
-                (fun state key value -> add key (mapper value) state)
+                (fun map key value -> add key (mapper value) map)
                 (makeEmpty ^ Some map.CommitMultiplier)
                 map
 

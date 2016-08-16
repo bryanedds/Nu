@@ -84,8 +84,11 @@
     <Compile Include="MutantCache.fs" />
     <Compile Include="Texpr.fs" />
     <Compile Include="Tmap.fs" />
+    <Compile Include="Tset.fs" />
     <Compile Include="Umap.fs" />
+    <Compile Include="Uset.fs" />
     <Compile Include="Vmap.fs" />
+    <Compile Include="Vset.fs" />
     <Compile Include="Vsync.fs" />
     <Compile Include="Reflection.fs" />
     <Compile Include="SymbolicConverter.fs" />
