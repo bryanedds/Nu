@@ -43,8 +43,8 @@ bin/
 obj/
 Refinement/
 
-##########
-# Custom #
-##########
-
-!Nu/Nu.Template.Export/NuGame.zip
+#########
+# Nuget #
+#########
+Packages/
+!packages/repositories.config
