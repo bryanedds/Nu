@@ -91,7 +91,7 @@ module Stream =
                     match (List.rev aList, List.rev bList) with
                     | (a :: aList, b :: bList) ->
                         let state = (aList, bList)
-                        let world = EventWorld.publish<'a * 'b, Participant, 'w> (a, b) subscriptionAddress'' eventTrace evt.Publisher world
+                        let world = EventWorld.publish<'a * 'b, Participant, _> (a, b) subscriptionAddress'' eventTrace evt.Publisher world
                         (state, world)
                     | state -> (state, world)
                 let world = EventWorld.addEventState stateKey state world
@@ -106,7 +106,7 @@ module Stream =
                     match (List.rev aList, List.rev bList) with
                     | (a :: aList, b :: bList) ->
                         let state = (aList, bList)
-                        let world = EventWorld.publish<'a * 'b, Participant, 'w> (a, b) subscriptionAddress'' eventTrace evt.Publisher world
+                        let world = EventWorld.publish<'a * 'b, Participant, _> (a, b) subscriptionAddress'' eventTrace evt.Publisher world
                         (state, world)
                     | state -> (state, world)
                 let world = EventWorld.addEventState stateKey state world
@@ -139,12 +139,12 @@ module Stream =
             let subscription = fun evt world ->
                 let eventTrace = EventTrace.record "Stream" "sum" evt.Trace
                 let eventData = Left evt.Data
-                let world = EventWorld.publish<Either<'a, 'b>, Participant, 'w> eventData subscriptionAddress'' eventTrace evt.Publisher world
+                let world = EventWorld.publish<Either<'a, 'b>, Participant, _> eventData subscriptionAddress'' eventTrace evt.Publisher world
                 (Cascade, world)
             let subscription' = fun evt world ->
                 let eventTrace = EventTrace.record "Stream" "sum" evt.Trace
                 let eventData = Right evt.Data
-                let world = EventWorld.publish<Either<'a, 'b>, Participant, 'w> eventData subscriptionAddress'' eventTrace evt.Publisher world
+                let world = EventWorld.publish<Either<'a, 'b>, Participant, _> eventData subscriptionAddress'' eventTrace evt.Publisher world
                 (Cascade, world)
             let world = EventWorld.subscribe5<'b, Participant, 'w> subscriptionKey' subscription' subscriptionAddress' (world.GetNullParticipant ()) world
             let world = EventWorld.subscribe5<'a, Participant, 'w> subscriptionKey subscription subscriptionAddress (world.GetNullParticipant ()) world
