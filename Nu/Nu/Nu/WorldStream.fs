@@ -14,11 +14,11 @@ module Stream =
     let [<DebuggerHidden; DebuggerStepThrough>] noMoreThanOncePerUpdate (stream : Stream<'a, World>) =
         stream |>
         track4
-            (fun (a, (_, current)) _ world ->
+            (fun (a, current) _ world ->
                 let previous = current
                 let current = World.getUpdateCount world
-                ((a, (previous, current)), previous < current))
-            id (Unchecked.defaultof<'a>, (0L, 0L)) |>
+                ((a, current), previous < current))
+            id (Unchecked.defaultof<'a>, -1L) |>
         first
 
     /// Take events from an stream only while World.isTicking evaluates to true.

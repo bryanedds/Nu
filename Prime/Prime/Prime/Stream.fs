@@ -18,7 +18,7 @@ type [<NoEquality; NoComparison>] PropertyTag<'s, 'a, 'w> =
         { this with Get = mapper this.Get }
 
     member this.MapSet mapper =
-        { this with OptSet = match this.OptSet with Some set -> Some ^ (fun value -> set ^ mapper value) | None -> None }
+        { this with OptSet = match this.OptSet with Some set -> Some (fun value -> set (mapper value)) | None -> None }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module PropertyTag =
