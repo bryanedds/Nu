@@ -47,12 +47,8 @@ module MapTests =
         let genKey = Gen.choose(Int32.MinValue + 1, Int32.MaxValue)
         let genVal = Gen.choose(Int32.MinValue + 1, Int32.MaxValue)
         let eqDict (m:Vmap<_,_>) (dict:Dictionary<_,_>) =
-            dict.Keys
-            |> Seq.cast<_>
-            |> Seq.forall(fun k ->
-                let dictVal = dict.[k]
-                let vmapVal = Vmap.find k m
-                dictVal = vmapVal)
+            Seq.forall (fun (KeyValue(k,v)) -> Vmap.find k m = v) dict
+
         eqDictAfterSteps actions (Vmap.makeEmpty) (Vmap.add) (Vmap.remove) genKey genVal eqDict
 
     [<Property>]
@@ -60,20 +56,7 @@ module MapTests =
         let genKey = Gen.choose(Int32.MinValue + 1, Int32.MaxValue)
         let genVal = Gen.choose(Int32.MinValue + 1, Int32.MaxValue)
         let eqDict (m:Umap<_,_>) (dict:Dictionary<_,_>) =
-            dict.Keys
-            |> Seq.cast<_>
-            |> Seq.forall(fun k ->
-                let dictVal = dict.[k]
-                let vmapVal = Umap.find k m
-                dictVal = vmapVal)
+            Seq.forall (fun (KeyValue(k,v)) -> Umap.find k m = v) dict
         let ctor() = Umap.makeEmpty(None)
+
         eqDictAfterSteps actions ctor (Umap.add) (Umap.remove) genKey genVal eqDict
-
-       
-
-            
-
-    
-
-    
-
