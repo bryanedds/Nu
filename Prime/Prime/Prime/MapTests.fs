@@ -15,6 +15,7 @@ module MapTests =
         | SetKey
         | RemoveRandom
 
+    /// Checks if a map is equal to a dictionary with the all the actions applied
     let inline eqDictAfterSteps
         (actions: MapAction[]) 
         (mapCtor: unit->'m) 
@@ -60,3 +61,64 @@ module MapTests =
         let ctor() = Umap.makeEmpty(None)
 
         eqDictAfterSteps actions ctor (Umap.add) (Umap.remove) genKey genVal eqDict
+
+    /// Keeps a reference to all persistent collections returned after
+    /// performing an action, and after they are all applied, checks
+    /// that they equal what we would get from FSharp.Core.Map
+    let inline eqMapsAfterSteps
+        (actions: MapAction[])
+        (mapCtor: unit->'m)
+        (setKey: 'k->'v->'m->'m when 'k: comparison and 'v: comparison)
+        (removeKey: 'k->'m->'m when 'k: comparison and 'v: comparison)
+        (genKey: Gen<'k>)
+        (genVal: Gen<'v>)
+        (eqDict: 'm->Map<'k, 'v>->bool) =
+
+        let applyAction fsMap testMap action =
+            match action with
+            | MapAction.SetKey ->
+                let k = genKey.Sample(0, 1).Head
+                let v = genVal.Sample(0, 1).Head
+                (Map.add k v fsMap, setKey k v testMap)
+            | MapAction.RemoveRandom when Map.isEmpty fsMap ->
+                (fsMap, testMap)
+            | MapAction.RemoveRandom ->
+                let idx = Gen.choose(0, fsMap.Count - 1).Sample(0, 1).Head
+                let ary = Map.toArray fsMap
+                let key = fst ary.[idx]
+                (Map.remove key fsMap, removeKey key testMap)
+
+        let (fsMaps, testMaps) =
+            Array.fold
+                (fun acc action ->
+                    match acc with
+                    | (fsMap::fsMaps, testMap::testMaps) ->
+                        let (newF, newT) = applyAction fsMap testMap action
+                        (newF::fsMap::fsMaps, newT::testMap::testMaps)
+                    | _ -> failwith "Logic error")
+                ([Map.empty], [mapCtor()])
+                actions
+
+        List.forall2
+            eqDict
+            testMaps
+            fsMaps
+
+    [<Property>]
+    let vMapsEqualFsMapsAfterSteps (actions: MapAction[]) =
+        let genKey = Gen.choose(Int32.MinValue + 1, Int32.MaxValue)
+        let genVal = Gen.choose(Int32.MinValue + 1, Int32.MaxValue)
+        let eqDict (m:Vmap<_,_>) (dict:Map<_,_>) =
+            Seq.forall (fun (KeyValue(k,v)) -> Vmap.find k m = v) dict
+
+        eqMapsAfterSteps actions (Vmap.makeEmpty) (Vmap.add) (Vmap.remove) genKey genVal eqDict
+
+    [<Property>]
+    let uMapsEqualFsMapsAfterSteps (actions: MapAction[]) =
+        let genKey = Gen.choose(Int32.MinValue + 1, Int32.MaxValue)
+        let genVal = Gen.choose(Int32.MinValue + 1, Int32.MaxValue)
+        let eqDict (m:Umap<_,_>) (dict:Map<_,_>) =
+            Seq.forall (fun (KeyValue(k,v)) -> Umap.find k m = v) dict
+        let ctor() = Umap.makeEmpty(None)
+
+        eqMapsAfterSteps actions ctor (Umap.add) (Umap.remove) genKey genVal eqDict
