@@ -9,7 +9,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Prime</RootNamespace>
     <AssemblyName>Prime</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <Name>Prime</Name>
     <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <TargetFrameworkProfile />
@@ -114,6 +114,7 @@
     <Compile Include="SymbolTests.fs" />
     <Compile Include="XtensionTests.fs" />
     <Compile Include="EventTests.fs" />
+    <Compile Include="MapTests.fs" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
@@ -127,7 +128,12 @@
     <Reference Include="FParsecCS">
       <HintPath>..\..\FParsec\FParsecCS.dll</HintPath>
     </Reference>
-    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="FsCheck">
+      <HintPath>..\..\..\.\Packages\FsCheck.2.6.0\lib\net45\FsCheck.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="FsCheck.Xunit">
+      <HintPath>..\..\..\.\Packages\FsCheck.Xunit.2.6.0\lib\net45\FsCheck.Xunit.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="mscorlib" />
@@ -136,6 +142,18 @@
     <Reference Include="System.Numerics" />
     <Reference Include="xunit">
       <HintPath>..\..\xUnit\xunit.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit.abstractions">
+      <HintPath>..\..\..\.\Packages\xunit.abstractions.2.0.0\lib\net35\xunit.abstractions.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="xunit.core">
+      <HintPath>..\..\..\.\Packages\xunit.extensibility.core.2.1.0\lib\portable-net45+win8+wp8+wpa81\xunit.core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="xunit.execution.desktop">
+      <HintPath>..\..\..\.\Packages\xunit.extensibility.execution.2.1.0\lib\net45\xunit.execution.desktop.dll</HintPath>
+      <Private>True</Private>
     </Reference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
