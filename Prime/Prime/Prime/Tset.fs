@@ -36,6 +36,7 @@ module TsetModule =
     module Tset =
 
         let private commit set =
+            let oldSet = set
             let hashSetOrigin = HashSet<'a> (set.HashSetOrigin, HashIdentity.Structural)
             List.foldBack (fun log () ->
                 match log with
@@ -45,16 +46,27 @@ module TsetModule =
             let hashSet = HashSet<'a> (hashSetOrigin, HashIdentity.Structural)
             let set = { set with HashSet = hashSet; HashSetOrigin = hashSetOrigin; Logs = []; LogsLength = 0 }
             set.Tset <- set
+            oldSet.Tset <- set
             set
 
         let private isValid set =
-            obj.ReferenceEquals (set.Tset, set) &&
-            set.LogsLength <= set.HashSet.Count * set.CommitMultiplier
+            let validity =
+                obj.ReferenceEquals (set.Tset, set) &&
+                set.LogsLength <= set.HashSet.Count * set.CommitMultiplier
+            validity
 
         let private validate set =
             if not ^ isValid set
             then commit set
             else set
+
+        let private update updater set =
+            let oldSet = set
+            let set = validate set
+            let set = updater set
+            set.Tset <- set
+            oldSet.Tset <- set
+            set
 
         let makeEmpty<'a when 'a : comparison> optCommitMultiplier =
             let set =
@@ -74,18 +86,18 @@ module TsetModule =
             not ^ isEmpty set
 
         let add value set =
-            let set = validate set
-            let set = { set with Logs = Add value :: set.Logs; LogsLength = set.LogsLength + 1; Tset = set }
-            ignore ^ set.HashSet.ForceAdd value
-            set.Tset <- set
-            set
+            update (fun set ->
+                let set = { set with Logs = Add value :: set.Logs; LogsLength = set.LogsLength + 1; Tset = set }
+                ignore ^ set.HashSet.ForceAdd value
+                set)
+                set
             
         let remove value set =
-            let set = validate set
-            let set = { set with Logs = Remove value :: set.Logs; LogsLength = set.LogsLength + 1 }
-            set.HashSet.Remove value |> ignore
-            set.Tset <- set
-            set
+            update (fun set ->
+                let set = { set with Logs = Remove value :: set.Logs; LogsLength = set.LogsLength + 1 }
+                set.HashSet.Remove value |> ignore
+                set)
+                set
 
         let contains value set =
             let set = validate set
