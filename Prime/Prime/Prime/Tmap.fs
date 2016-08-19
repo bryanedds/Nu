@@ -36,6 +36,7 @@ module TmapModule =
     module Tmap =
 
         let private commit map =
+            let oldMap = map
             let dictOrigin = Dictionary<'k, 'a> (map.DictOrigin, HashIdentity.Structural)
             List.foldBack (fun log () ->
                 match log with
@@ -45,17 +46,28 @@ module TmapModule =
             let dict = Dictionary<'k, 'a> (dictOrigin, HashIdentity.Structural)
             let map = { map with Dict = dict; DictOrigin = dictOrigin; Logs = []; LogsLength = 0 }
             map.Tmap <- map
+            oldMap.Tmap <- map
             map
 
         let private isValid map =
-            obj.ReferenceEquals (map.Tmap, map) &&
-            map.LogsLength <= map.Dict.Count * map.CommitMultiplier
+            let validity =
+                obj.ReferenceEquals (map.Tmap, map) &&
+                map.LogsLength <= map.Dict.Count * map.CommitMultiplier
+            validity
 
         let private validate map =
             if not ^ isValid map
             then commit map
             else map
-    
+
+        let private update updater map =
+            let oldMap = map
+            let map = validate map
+            let map = updater map
+            map.Tmap <- map
+            oldMap.Tmap <- map
+            map
+
         let makeEmpty<'k, 'a when 'k : comparison> optCommitMultiplier =
             let map =
                 { Tmap = Unchecked.defaultof<Tmap<'k, 'a>>
@@ -74,18 +86,18 @@ module TmapModule =
             not ^ isEmpty map
 
         let add key value map =
-            let map = validate map
-            let map = { map with Logs = Add (key, value) :: map.Logs; LogsLength = map.LogsLength + 1; Tmap = map }
-            map.Dict.[key] <- value
-            map.Tmap <- map
-            map
+            update (fun map ->
+                let map = { map with Logs = Add (key, value) :: map.Logs; LogsLength = map.LogsLength + 1 }
+                map.Dict.[key] <- value
+                map)
+                map
             
         let remove key map =
-            let map = validate map
-            let map = { map with Logs = Remove key :: map.Logs; LogsLength = map.LogsLength + 1 }
-            map.Dict.Remove key |> ignore
-            map.Tmap <- map
-            map
+            update (fun map ->
+                let map = { map with Logs = Remove key :: map.Logs; LogsLength = map.LogsLength + 1 }
+                map.Dict.Remove key |> ignore
+                map)
+                map
 
         let tryFind key map =
             let map = validate map
