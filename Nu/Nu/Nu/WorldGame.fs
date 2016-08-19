@@ -48,10 +48,10 @@ module WorldGameModule =
         member this.SetProperty propertyName property world = World.setGameProperty propertyName property world
 
         /// Get a property value.
-        member this.Get propertyName world : 'a = World.getGameProperty propertyName world |> fst :?> 'a
+        member this.Get<'a> propertyName world : 'a = World.getGameProperty propertyName world |> fst :?> 'a
 
         /// Set a property value.
-        member this.Set propertyName (value : 'a) world = World.setGameProperty propertyName (value :> obj, typeof<'a>) world
+        member this.Set<'a> propertyName (value : 'a) world = World.setGameProperty propertyName (value :> obj, typeof<'a>) world
 
         /// Get the view of the eye in absolute terms (world space).
         member this.GetViewAbsolute (_ : World) = World.getViewAbsolute

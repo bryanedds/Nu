@@ -82,10 +82,10 @@ module WorldEntityModule =
         member this.SetProperty propertyName property world = World.setEntityProperty propertyName property this world
 
         /// Get a property value.
-        member this.Get propertyName world : 'a = World.getEntityProperty propertyName this world |> fst :?> 'a
+        member this.Get<'a> propertyName world : 'a = World.getEntityProperty propertyName this world |> fst :?> 'a
 
         /// Set a property value.
-        member this.Set propertyName (value : 'a) world = World.setEntityProperty propertyName (value :> obj, typeof<'a>) this world
+        member this.Set<'a> propertyName (value : 'a) world = World.setEntityProperty propertyName (value :> obj, typeof<'a>) this world
 
         /// Get an entity's transform.
         member this.GetTransform world = World.getEntityTransform this world

@@ -49,8 +49,8 @@ module WorldTests =
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Bob.EntityName) Simulants.DefaultGroup world |> snd
         let world = world |> Bob.TagVisible -!> Jim.TagVisible
         let world = Bob.SetVisible false world
-        Assert.False ^ Bob.GetVisible world
-        Assert.False ^ Jim.GetVisible world
+        Assert.False (Bob.GetVisible world)
+        Assert.False (Jim.GetVisible world)
 
     let [<Fact>] iterativeFrpCyclicWorks () =
         let world = World.makeEmpty ()
@@ -63,5 +63,5 @@ module WorldTests =
                 Bob.TagVisible -!> Jim.TagVisible.MapSet not |>
                 Jim.TagVisible -/> Bob.TagVisible
         let world = Bob.SetVisible true world
-        Assert.False ^ Bob.GetVisible world
-        Assert.True ^ Jim.GetVisible world
+        Assert.False (Bob.GetVisible world)
+        Assert.True (Jim.GetVisible world)
