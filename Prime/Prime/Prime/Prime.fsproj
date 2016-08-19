@@ -9,7 +9,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Prime</RootNamespace>
     <AssemblyName>Prime</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <Name>Prime</Name>
     <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <TargetFrameworkProfile />
@@ -109,6 +109,7 @@
     <Compile Include="EventWorld.fs" />
     <Compile Include="Stream.fs" />
     <Compile Include="Chain.fs" />
+    <Compile Include="MapTests.fs" />
     <Compile Include="RandTests.fs" />
     <Compile Include="AddressTests.fs" />
     <Compile Include="SymbolTests.fs" />
@@ -127,6 +128,12 @@
     <Reference Include="FParsecCS">
       <HintPath>..\..\FParsec\FParsecCS.dll</HintPath>
     </Reference>
+    <Reference Include="FsCheck">
+      <HintPath>..\..\FsCheck\FsCheck.dll</HintPath>
+    </Reference>
+    <Reference Include="FsCheck.Xunit">
+      <HintPath>..\..\FsCheck.Xunit\FsCheck.Xunit.dll</HintPath>
+    </Reference>
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
@@ -134,8 +141,17 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <Reference Include="xunit">
-      <HintPath>..\..\xUnit\xunit.dll</HintPath>
+    <Reference Include="xunit.abstractions">
+      <HintPath>..\..\xunit\xunit.abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit.assert">
+      <HintPath>..\..\xunit\xunit.assert.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit.core">
+      <HintPath>..\..\xunit\xunit.core.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit.execution.desktop">
+      <HintPath>..\..\xunit\xunit.execution.desktop.dll</HintPath>
     </Reference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

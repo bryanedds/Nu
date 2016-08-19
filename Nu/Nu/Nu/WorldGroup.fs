@@ -41,10 +41,10 @@ module WorldGroupModule =
         member this.SetProperty propertyName property world = World.setGroupProperty propertyName property this world
 
         /// Get a property value.
-        member this.Get propertyName world : 'a = World.getGroupProperty propertyName this world |> fst :?> 'a
+        member this.Get<'a> propertyName world : 'a = World.getGroupProperty propertyName this world |> fst :?> 'a
 
         /// Set a property value.
-        member this.Set propertyName (value : 'a) world = World.setGroupProperty propertyName (value :> obj, typeof<'a>) this world
+        member this.Set<'a> propertyName (value : 'a) world = World.setGroupProperty propertyName (value :> obj, typeof<'a>) this world
 
         /// Check that a group dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world = Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)

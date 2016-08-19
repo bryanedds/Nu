@@ -142,8 +142,17 @@
     <Reference Include="TiledSharp">
       <HintPath>..\..\..\Nu\TiledSharp\Release\TiledSharp.dll</HintPath>
     </Reference>
-    <Reference Include="xunit">
-      <HintPath>..\..\..\Prime\xUnit\xunit.dll</HintPath>
+    <Reference Include="xunit.abstractions">
+      <HintPath>..\..\..\Prime\xunit\xunit.abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit.assert">
+      <HintPath>..\..\..\Prime\xunit\xunit.assert.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit.core">
+      <HintPath>..\..\..\Prime\xunit\xunit.core.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit.execution.desktop">
+      <HintPath>..\..\..\Prime\xunit\xunit.execution.desktop.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Target Name="AfterClean">
