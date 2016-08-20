@@ -40,7 +40,7 @@ module TmapModule =
             let dictOrigin = Dictionary<'k, 'v> (map.DictOrigin, HashIdentity.Structural)
             List.foldBack (fun log () ->
                 match log with
-                | Add (key, value) -> dictOrigin.[key] <- value
+                | Add (key, value) -> dictOrigin.ForceAdd (key, value)
                 | Remove key -> ignore ^ dictOrigin.Remove key)
                 map.Logs ()
             let dict = Dictionary<'k, 'v> (dictOrigin, HashIdentity.Structural)
@@ -88,7 +88,7 @@ module TmapModule =
         let add key value map =
             update (fun map ->
                 let map = { map with Logs = Add (key, value) :: map.Logs; LogsLength = map.LogsLength + 1 }
-                map.Dict.[key] <- value
+                map.Dict.ForceAdd (key, value)
                 map)
                 map
             

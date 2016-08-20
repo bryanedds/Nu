@@ -40,7 +40,7 @@ module TsetModule =
             let hashSetOrigin = HashSet<'a> (set.HashSetOrigin, HashIdentity.Structural)
             List.foldBack (fun log () ->
                 match log with
-                | Add value -> ignore ^ hashSetOrigin.ForceAdd value
+                | Add value -> ignore ^ hashSetOrigin.TryAdd value
                 | Remove value -> ignore ^ hashSetOrigin.Remove value)
                 set.Logs ()
             let hashSet = HashSet<'a> (hashSetOrigin, HashIdentity.Structural)
@@ -48,12 +48,6 @@ module TsetModule =
             set.Tset <- set
             oldSet.Tset <- set
             set
-
-        let private isValid set =
-            let validity =
-                obj.ReferenceEquals (set.Tset, set) &&
-                set.LogsLength <= set.HashSet.Count * set.BloatFactor
-            validity
 
         let private compress set =
             let hashSetOrigin = HashSet<'a> (set.HashSet, HashIdentity.Structural)
@@ -63,7 +57,7 @@ module TsetModule =
 
         let private validate set =
             match obj.ReferenceEquals (set.Tset, set) with
-            | true -> if set.LogsLength <= set.HashSet.Count * set.BloatFactor then compress set else set
+            | true -> if set.LogsLength > set.HashSet.Count * set.BloatFactor then compress set else set
             | false -> commit set
 
         let private update updater set =
@@ -94,7 +88,7 @@ module TsetModule =
         let add value set =
             update (fun set ->
                 let set = { set with Logs = Add value :: set.Logs; LogsLength = set.LogsLength + 1; Tset = set }
-                ignore ^ set.HashSet.ForceAdd value
+                ignore ^ set.HashSet.TryAdd value
                 set)
                 set
             
