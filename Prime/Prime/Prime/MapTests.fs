@@ -14,6 +14,7 @@ module MapTests =
     type MapAction<'k, 'v> = 
         | SetKey of 'k * 'v
         | RemoveRandom
+        | FoldCombine of 'v
 
     /// Keeps a reference to all persistent collections returned after
     /// performing an action, and after they are all applied, checks
@@ -24,6 +25,8 @@ module MapTests =
         (actions : MapAction<'k, 'v>[])
         (setKey : 'k->'v->'m->'m when 'k : comparison and 'v : comparison)
         (removeKey : 'k->'m->'m when 'k : comparison and 'v : comparison)
+        (fold: ('m->'k->'v->'m)->'m->'m->'m)
+        (combineValues : 'v->'v->'v)
         (eqMap : 'm->Map<'k, 'v>->bool) =
 
         let applyAction fsmap testMap action =
@@ -37,6 +40,10 @@ module MapTests =
                 let ary = Map.toArray fsmap
                 let key = fst ary.[idx]
                 (Map.remove key fsmap, removeKey key testMap)
+            | MapAction.FoldCombine (arg) ->
+                let newFsmap = Map.fold (fun acc k v -> Map.add k (combineValues v arg) acc) fsmap fsmap
+                let newTestmap = fold (fun acc k v -> setKey k (combineValues v arg) acc) testMap testMap
+                (newFsmap, newTestmap)
 
         let (fsmaps, testMaps) =
             Array.fold
@@ -55,10 +62,10 @@ module MapTests =
     let vmapsEqualFsmapsAfterSteps (initialMap : Map<int, string>) (actions : MapAction<int, string>[]) =
         let testMap = Vmap.ofSeq ^ Map.toSeq initialMap
         let eqMap (vmap : Vmap<_,_>) (fsmap : Map<_,_>) = Map.ofSeq vmap = fsmap
-        eqMapsAfterSteps initialMap testMap actions Vmap.add Vmap.remove eqMap
+        eqMapsAfterSteps initialMap testMap actions Vmap.add Vmap.remove Vmap.fold (+) eqMap
 
     [<Property>]
     let umapsEqualFsmapsAfterSteps (initialMap : Map<int, string>) (actions : MapAction<int, string>[]) =
         let testMap = Umap.ofSeq ^ Map.toSeq initialMap
         let eqMap (umap : Umap<_,_>) (fsmap : Map<_,_>) = Map.ofSeq umap = fsmap
-        eqMapsAfterSteps initialMap testMap actions Umap.add Umap.remove eqMap
+        eqMapsAfterSteps initialMap testMap actions Umap.add Umap.remove Umap.fold (+) eqMap
