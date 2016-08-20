@@ -8,8 +8,8 @@ open System.Collections.Generic
 [<AutoOpen>]
 module TmapModule =
 
-    type private Log<'k, 'a when 'k : comparison> =
-        | Add of 'k * 'a
+    type private Log<'k, 'v when 'k : comparison> =
+        | Add of 'k * 'v
         | Remove of 'k
 
     type [<NoEquality; NoComparison>] Tmap<'k, 'v when 'k : comparison> =
@@ -19,15 +19,15 @@ module TmapModule =
               DictOrigin : Dictionary<'k, 'v>
               Logs : Log<'k, 'v> list
               LogsLength : int
-              CommitMultiplier : int }
+              BloatFactor : int }
 
         static member (>>.) (map : Tmap<'k2, 'v2>, builder : Texpr<unit, Tmap<'k2, 'v2>>) =
             (snd ^ builder map)
 
-        static member (.>>) (map : Tmap<'k2, 'v2>, builder : Texpr<'a2, Tmap<'k2, 'v2>>) =
+        static member (.>>) (map : Tmap<'k2, 'v2>, builder : Texpr<'v2, Tmap<'k2, 'v2>>) =
             (fst ^ builder map)
 
-        static member (.>>.) (map : Tmap<'k2, 'v2>, builder : Texpr<'a2, Tmap<'k2, 'v2>>) =
+        static member (.>>.) (map : Tmap<'k2, 'v2>, builder : Texpr<'v2, Tmap<'k2, 'v2>>) =
             builder map
 
     let tmap<'k, 'v when 'k : comparison> = TexprBuilder<Tmap<'k, 'v>> ()
@@ -37,28 +37,28 @@ module TmapModule =
 
         let private commit map =
             let oldMap = map
-            let dictOrigin = Dictionary<'k, 'a> (map.DictOrigin, HashIdentity.Structural)
+            let dictOrigin = Dictionary<'k, 'v> (map.DictOrigin, HashIdentity.Structural)
             List.foldBack (fun log () ->
                 match log with
                 | Add (key, value) -> dictOrigin.[key] <- value
                 | Remove key -> ignore ^ dictOrigin.Remove key)
                 map.Logs ()
-            let dict = Dictionary<'k, 'a> (dictOrigin, HashIdentity.Structural)
+            let dict = Dictionary<'k, 'v> (dictOrigin, HashIdentity.Structural)
             let map = { map with Dict = dict; DictOrigin = dictOrigin; Logs = []; LogsLength = 0 }
             map.Tmap <- map
             oldMap.Tmap <- map
             map
 
-        let private isValid map =
-            let validity =
-                obj.ReferenceEquals (map.Tmap, map) &&
-                map.LogsLength <= map.Dict.Count * map.CommitMultiplier
-            validity
+        let private compress map =
+            let dictOrigin = Dictionary<'k, 'v> (map.Dict, HashIdentity.Structural)
+            let map = { map with DictOrigin = dictOrigin; Logs = []; LogsLength = 0 }
+            map.Tmap <- map
+            map
 
         let private validate map =
-            if not ^ isValid map
-            then commit map
-            else map
+            match obj.ReferenceEquals (map.Tmap, map) with
+            | true -> if map.LogsLength > map.Dict.Count * map.BloatFactor then compress map else map
+            | false -> commit map 
 
         let private update updater map =
             let oldMap = map
@@ -68,14 +68,14 @@ module TmapModule =
             oldMap.Tmap <- map
             map
 
-        let makeEmpty<'k, 'a when 'k : comparison> optCommitMultiplier =
+        let makeEmpty<'k, 'v when 'k : comparison> optBloatFactor =
             let map =
-                { Tmap = Unchecked.defaultof<Tmap<'k, 'a>>
-                  Dict = Dictionary<'k, 'a> HashIdentity.Structural
-                  DictOrigin = Dictionary<'k, 'a> HashIdentity.Structural
+                { Tmap = Unchecked.defaultof<Tmap<'k, 'v>>
+                  Dict = Dictionary<'k, 'v> HashIdentity.Structural
+                  DictOrigin = Dictionary<'k, 'v> HashIdentity.Structural
                   Logs = []
                   LogsLength = 0
-                  CommitMultiplier = match optCommitMultiplier with Some cm -> cm | None -> 2 }
+                  BloatFactor = Option.getOrDefault 1 optBloatFactor }
             map.Tmap <- map
             map
 
@@ -138,13 +138,13 @@ module TmapModule =
         let map mapper map =
             fold
                 (fun map key value -> add key (mapper value) map)
-                (makeEmpty ^ Some map.CommitMultiplier)
+                (makeEmpty ^ Some map.BloatFactor)
                 map
 
         let filter pred map =
             fold
                 (fun state k v -> if pred k v then add k v state else state)
-                (makeEmpty ^ Some map.CommitMultiplier)
+                (makeEmpty ^ Some map.BloatFactor)
                 map
 
 type Tmap<'k, 'v when 'k : comparison> = TmapModule.Tmap<'k, 'v>

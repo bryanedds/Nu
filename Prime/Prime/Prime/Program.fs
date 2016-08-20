@@ -68,7 +68,7 @@ module Program =
             (fun entries map -> entries |> Array.iter (fun (k, _) -> ignore ^ Tmap.find k map))
             "Tmap"
         
-        // run tmap timings without computation expressions
+        // run umap timings without computation expressions
         runMapTimings
             (fun entries -> Array.fold (fun map (k, v) -> Umap.add k v map) (Umap.makeEmpty None) entries)
             (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Umap.find k map) entries)

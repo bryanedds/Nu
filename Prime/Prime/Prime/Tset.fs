@@ -19,7 +19,7 @@ module TsetModule =
               HashSetOrigin : 'a HashSet
               Logs : 'a Log list
               LogsLength : int
-              CommitMultiplier : int }
+              BloatFactor : int }
 
         static member (>>.) (set : 'a2 Tset, builder : Texpr<unit, 'a2 Tset>) =
             (snd ^ builder set)
@@ -52,13 +52,19 @@ module TsetModule =
         let private isValid set =
             let validity =
                 obj.ReferenceEquals (set.Tset, set) &&
-                set.LogsLength <= set.HashSet.Count * set.CommitMultiplier
+                set.LogsLength <= set.HashSet.Count * set.BloatFactor
             validity
 
+        let private compress set =
+            let hashSetOrigin = HashSet<'a> (set.HashSet, HashIdentity.Structural)
+            let set = { set with HashSetOrigin = hashSetOrigin; Logs = []; LogsLength = 0 }
+            set.Tset <- set
+            set
+
         let private validate set =
-            if not ^ isValid set
-            then commit set
-            else set
+            match obj.ReferenceEquals (set.Tset, set) with
+            | true -> if set.LogsLength <= set.HashSet.Count * set.BloatFactor then compress set else set
+            | false -> commit set
 
         let private update updater set =
             let oldSet = set
@@ -68,14 +74,14 @@ module TsetModule =
             oldSet.Tset <- set
             set
 
-        let makeEmpty<'a when 'a : comparison> optCommitMultiplier =
+        let makeEmpty<'a when 'a : comparison> optBloatFactor =
             let set =
                 { Tset = Unchecked.defaultof<'a Tset>
                   HashSet = HashSet<'a> HashIdentity.Structural
                   HashSetOrigin = HashSet<'a> HashIdentity.Structural
                   Logs = []
                   LogsLength = 0
-                  CommitMultiplier = match optCommitMultiplier with Some cm -> cm | None -> 2 }
+                  BloatFactor = Option.getOrDefault 1 optBloatFactor }
             set.Tset <- set
             set
 
@@ -127,13 +133,13 @@ module TsetModule =
         let map mapper set =
             fold
                 (fun set value -> add (mapper value) set)
-                (makeEmpty ^ Some set.CommitMultiplier)
+                (makeEmpty ^ Some set.BloatFactor)
                 set
 
         let filter pred set =
             fold
                 (fun set value -> if pred value then add value set else set)
-                (makeEmpty ^ Some set.CommitMultiplier)
+                (makeEmpty ^ Some set.BloatFactor)
                 set
 
 type Tset<'a when 'a : comparison> = TsetModule.Tset<'a>
