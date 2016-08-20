@@ -18,7 +18,7 @@ module WorldScriptSystem =
     /// An abstract data type for executing scripts.
     type [<NoEquality; NoComparison>] ScriptSystem =
         private
-            { Scripts : Vmap<Guid, Script>
+            { Scripts : Umap<Guid, Script>
               Debugging : bool }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]

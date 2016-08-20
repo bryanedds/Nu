@@ -62,11 +62,11 @@ type internal 'w BoxableSubscription =
 
 /// A map of event subscriptions.
 type internal SubscriptionEntries =
-    Vmap<obj Address, SubscriptionEntry list>
+    Umap<obj Address, SubscriptionEntry list>
 
 /// A map of subscription keys to unsubscription data.
 type internal UnsubscriptionEntries =
-    Vmap<Guid, obj Address * Participant>
+    Umap<Guid, obj Address * Participant>
 
 /// The data for a change in a participant.
 type [<StructuralEquality; NoComparison>] ParticipantChangeData<'p, 'w when 'p :> Participant> =
@@ -89,7 +89,7 @@ module EventSystemModule =
         private
             { Subscriptions : SubscriptionEntries
               Unsubscriptions : UnsubscriptionEntries
-              EventStates : Vmap<Guid, obj>
+              EventStates : Umap<Guid, obj>
               EventTracer : string -> unit
               EventTracing : bool
               EventFilter : EventFilter.Filter
@@ -100,11 +100,11 @@ module EventSystemModule =
 
         /// Add event state.
         let addEventState<'a, 'w> key (state : 'a) (eventSystem : 'w EventSystem) =
-            { eventSystem with EventStates = Vmap.add key (state :> obj) eventSystem.EventStates }
+            { eventSystem with EventStates = Umap.add key (state :> obj) eventSystem.EventStates }
 
         /// Remove event state.
         let removeEventState<'w> key (eventSystem : 'w EventSystem) =
-            { eventSystem with EventStates = Vmap.remove key eventSystem.EventStates }
+            { eventSystem with EventStates = Umap.remove key eventSystem.EventStates }
 
         /// Get subscriptions.
         let getSubscriptions<'w> (eventSystem : 'w EventSystem) =
@@ -124,7 +124,7 @@ module EventSystemModule =
 
         /// Get event state.
         let getEventState<'a, 'w> key (eventSystem : 'w EventSystem) =
-            let state = Vmap.find key eventSystem.EventStates
+            let state = Umap.find key eventSystem.EventStates
             state :?> 'a
 
         /// Get whether events are being traced.
@@ -165,9 +165,9 @@ module EventSystemModule =
 
         /// Make an event system.
         let make eventTracer eventTracing eventFilter =
-            { Subscriptions = Vmap.makeEmpty ()
-              Unsubscriptions = Vmap.makeEmpty ()
-              EventStates = Vmap.makeEmpty ()
+            { Subscriptions = Umap.makeEmpty None
+              Unsubscriptions = Umap.makeEmpty None
+              EventStates = Umap.makeEmpty None
               EventTracer = eventTracer
               EventTracing = eventTracing
               EventFilter = eventFilter

@@ -129,7 +129,7 @@ module EventWorld =
     let getSubscriptionsSorted (publishSorter : SubscriptionSorter<'w>) eventAddress (world : 'w) =
         let eventSystem = getEventSystem world
         let subscriptions = EventSystem.getSubscriptions eventSystem
-        match Vmap.tryFind eventAddress subscriptions with
+        match Umap.tryFind eventAddress subscriptions with
         | Some subList -> publishSorter subList world
         | None -> []
 
@@ -137,7 +137,7 @@ module EventWorld =
         let eventSystem = getEventSystem world
         let subscriptions = EventSystem.getSubscriptions eventSystem
         let eventAddresses = getEventAddresses1 eventAddress
-        let optSubLists = List.map (fun eventAddress -> Vmap.tryFind eventAddress subscriptions) eventAddresses
+        let optSubLists = List.map (fun eventAddress -> Umap.tryFind eventAddress subscriptions) eventAddresses
         let subLists = List.definitize optSubLists
         let subList = List.concat subLists
         publishSorter subList world
@@ -221,9 +221,9 @@ module EventWorld =
     /// Unsubscribe from an event.
     let unsubscribe<'w when 'w :> 'w EventWorld> subscriptionKey (world : 'w) =
         let (subscriptions, unsubscriptions) = (getSubscriptions world, getUnsubscriptions world)
-        match Vmap.tryFind subscriptionKey unsubscriptions with
+        match Umap.tryFind subscriptionKey unsubscriptions with
         | Some (eventAddress, subscriber) ->
-            match Vmap.tryFind eventAddress subscriptions with
+            match Umap.tryFind eventAddress subscriptions with
             | Some subscriptionList ->
                 let subscriptionList =
                     List.remove
@@ -231,9 +231,9 @@ module EventWorld =
                         subscriptionList
                 let subscriptions = 
                     match subscriptionList with
-                    | [] -> Vmap.remove eventAddress subscriptions
-                    | _ -> Vmap.add eventAddress subscriptionList subscriptions
-                let unsubscriptions = Vmap.remove subscriptionKey unsubscriptions
+                    | [] -> Umap.remove eventAddress subscriptions
+                    | _ -> Umap.add eventAddress subscriptionList subscriptions
+                let unsubscriptions = Umap.remove subscriptionKey unsubscriptions
                 let world = setSubscriptions subscriptions world
                 let world = setUnsubscriptions unsubscriptions world
                 publish
@@ -253,10 +253,10 @@ module EventWorld =
             let (subscriptions, unsubscriptions) = (getSubscriptions world, getUnsubscriptions world)
             let subscriptions =
                 let subscriptionEntry = (subscriptionKey, subscriber :> Participant, boxSubscription subscription)
-                match Vmap.tryFind objEventAddress subscriptions with
-                | Some subscriptionEntries -> Vmap.add objEventAddress (subscriptionEntries @ [subscriptionEntry]) subscriptions // NOTE: inefficient to add to back of list! Use a Queue instead!
-                | None -> Vmap.add objEventAddress [subscriptionEntry] subscriptions
-            let unsubscriptions = Vmap.add subscriptionKey (objEventAddress, subscriber :> Participant) unsubscriptions
+                match Umap.tryFind objEventAddress subscriptions with
+                | Some subscriptionEntries -> Umap.add objEventAddress (subscriptionEntries @ [subscriptionEntry]) subscriptions // NOTE: inefficient to add to back of list! Use a Queue instead!
+                | None -> Umap.add objEventAddress [subscriptionEntry] subscriptions
+            let unsubscriptions = Umap.add subscriptionKey (objEventAddress, subscriber :> Participant) unsubscriptions
             let world = setSubscriptions subscriptions world
             let world = setUnsubscriptions unsubscriptions world
             let world =
