@@ -823,12 +823,12 @@ module WorldTypes =
               Dispatchers : Dispatchers
               Subsystems : World Subsystems
               OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
-              ScreenDirectory : Vmap<Name, Screen Address * Vmap<Name, Group Address * Vmap<Name, Entity Address>>>
+              ScreenDirectory : Umap<Name, Screen Address * Umap<Name, Group Address * Umap<Name, Entity Address>>>
               AmbientState : World AmbientState
               GameState : GameState
-              ScreenStates : Vmap<Screen Address, ScreenState>
-              GroupStates : Vmap<Group Address, GroupState>
-              EntityStates : Vmap<Entity Address, EntityState> }
+              ScreenStates : Umap<Screen Address, ScreenState>
+              GroupStates : Umap<Group Address, GroupState>
+              EntityStates : Umap<Entity Address, EntityState> }
 
         interface World EventWorld with
             member this.GetLiveness () = AmbientState.getLiveness this.AmbientState
@@ -838,9 +838,9 @@ module WorldTypes =
             member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
             member this.ContainsParticipant participant =
                 match participant with
-                | :? Entity as entity -> Vmap.containsKey entity.EntityAddress this.EntityStates
-                | :? Group as group -> Vmap.containsKey group.GroupAddress this.GroupStates
-                | :? Screen as screen -> Vmap.containsKey screen.ScreenAddress this.ScreenStates
+                | :? Entity as entity -> Umap.containsKey entity.EntityAddress this.EntityStates
+                | :? Group as group -> Umap.containsKey group.GroupAddress this.GroupStates
+                | :? Screen as screen -> Umap.containsKey screen.ScreenAddress this.ScreenStates
                 | :? Game -> true
                 | _  -> false
             member this.PublishEvent (participant : Participant) publisher eventData eventAddress eventTrace subscription world =

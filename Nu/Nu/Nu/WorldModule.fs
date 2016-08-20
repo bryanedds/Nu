@@ -529,7 +529,7 @@ module WorldModule =
             refEq entityAddress entityAddress2 && refEq world world2
 
         static member private optEntityGetFreshKeyAndValue entity world =
-            let optEntityState = Vmap.tryFind entity.EntityAddress ^ world.EntityStates
+            let optEntityState = Umap.tryFind entity.EntityAddress ^ world.EntityStates
             ((entity.EntityAddress, world), optEntityState)
 
         static member private optEntityStateFinder entity world =
@@ -543,42 +543,42 @@ module WorldModule =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
                 | [screenName; groupName; entityName] ->
-                    match Vmap.tryFind screenName world.ScreenDirectory with
+                    match Umap.tryFind screenName world.ScreenDirectory with
                     | Some (screenAddress, groupDirectory) ->
-                        match Vmap.tryFind groupName groupDirectory with
+                        match Umap.tryFind groupName groupDirectory with
                         | Some (groupAddress, entityDirectory) ->
-                            let entityDirectory = Vmap.add entityName entity.EntityAddress entityDirectory
-                            let groupDirectory = Vmap.add groupName (groupAddress, entityDirectory) groupDirectory
-                            Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
+                            let entityDirectory = Umap.add entityName entity.EntityAddress entityDirectory
+                            let groupDirectory = Umap.add groupName (groupAddress, entityDirectory) groupDirectory
+                            Umap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
                         | None -> failwith ^ "Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent group."
                     | None -> failwith ^ "Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent screen."
                 | _ -> failwith ^ "Invalid entity address '" + scstring entity.EntityAddress + "'."
-            let entityStates = Vmap.add entity.EntityAddress entityState world.EntityStates
+            let entityStates = Umap.add entity.EntityAddress entityState world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
         static member private entityStateRemover entity world =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
                 | [screenName; groupName; entityName] ->
-                    match Vmap.tryFind screenName world.ScreenDirectory with
+                    match Umap.tryFind screenName world.ScreenDirectory with
                     | Some (screenAddress, groupDirectory) ->
-                        match Vmap.tryFind groupName groupDirectory with
+                        match Umap.tryFind groupName groupDirectory with
                         | Some (groupAddress, entityDirectory) ->
-                            let entityDirectory = Vmap.remove entityName entityDirectory
-                            let groupDirectory = Vmap.add groupName (groupAddress, entityDirectory) groupDirectory
-                            Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
+                            let entityDirectory = Umap.remove entityName entityDirectory
+                            let groupDirectory = Umap.add groupName (groupAddress, entityDirectory) groupDirectory
+                            Umap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
                         | None -> failwith ^ "Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent group."
                     | None -> failwith ^ "Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent screen."
                 | _ -> failwith ^ "Invalid entity address '" + scstring entity.EntityAddress + "'."
-            let entityStates = Vmap.remove entity.EntityAddress world.EntityStates
+            let entityStates = Umap.remove entity.EntityAddress world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
         static member private entityStateSetter entityState entity world =
 #if DEBUG
-            if not ^ Vmap.containsKey entity.EntityAddress world.EntityStates then
+            if not ^ Umap.containsKey entity.EntityAddress world.EntityStates then
                 failwith ^ "Cannot set the state of a non-existent entity '" + scstring entity.EntityAddress + "'"
 #endif
-            let entityStates = Vmap.add entity.EntityAddress entityState world.EntityStates
+            let entityStates = Umap.add entity.EntityAddress entityState world.EntityStates
             World.choose { world with EntityStates = entityStates }
 
         static member private addEntityState entityState entity world =
@@ -799,7 +799,7 @@ module WorldModule =
 
         static member private updateEntityPublishEventFlag setFlag entity eventAddress world =
             let publishUpdates =
-                match Vmap.tryFind eventAddress ^ World.getSubscriptions world with
+                match Umap.tryFind eventAddress ^ World.getSubscriptions world with
                 | Some [] -> failwithumf () // NOTE: event system is defined to clean up all empty subscription entries
                 | Some (_ :: _) -> true
                 | None -> false
@@ -1119,40 +1119,40 @@ module WorldModule =
             let screenDirectory =
                 match Address.getNames group.GroupAddress with
                 | [screenName; groupName] ->
-                    match Vmap.tryFind screenName world.ScreenDirectory with
+                    match Umap.tryFind screenName world.ScreenDirectory with
                     | Some (screenAddress, groupDirectory) ->
-                        match Vmap.tryFind groupName groupDirectory with
+                        match Umap.tryFind groupName groupDirectory with
                         | Some (groupAddress, entityDirectory) ->
-                            let groupDirectory = Vmap.add groupName (groupAddress, entityDirectory) groupDirectory
-                            Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
+                            let groupDirectory = Umap.add groupName (groupAddress, entityDirectory) groupDirectory
+                            Umap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
                         | None ->
-                            let entityDirectory = Vmap.makeEmpty ()
-                            let groupDirectory = Vmap.add groupName (group.GroupAddress, entityDirectory) groupDirectory
-                            Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
+                            let entityDirectory = Umap.makeEmpty None
+                            let groupDirectory = Umap.add groupName (group.GroupAddress, entityDirectory) groupDirectory
+                            Umap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
                     | None -> failwith ^ "Cannot add group '" + scstring group.GroupAddress + "' to non-existent screen."
                 | _ -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
-            let groupStates = Vmap.add group.GroupAddress groupState world.GroupStates
+            let groupStates = Umap.add group.GroupAddress groupState world.GroupStates
             World.choose { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
 
         static member private groupStateRemover group world =
             let screenDirectory =
                 match Address.getNames group.GroupAddress with
                 | [screenName; groupName] ->
-                    match Vmap.tryFind screenName world.ScreenDirectory with
+                    match Umap.tryFind screenName world.ScreenDirectory with
                     | Some (screenAddress, groupDirectory) ->
-                        let groupDirectory = Vmap.remove groupName groupDirectory
-                        Vmap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
+                        let groupDirectory = Umap.remove groupName groupDirectory
+                        Umap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
                     | None -> failwith ^ "Cannot remove group '" + scstring group.GroupAddress + "' from non-existent screen."
                 | _ -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
-            let groupStates = Vmap.remove group.GroupAddress world.GroupStates
+            let groupStates = Umap.remove group.GroupAddress world.GroupStates
             World.choose { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
 
         static member private groupStateSetter groupState group world =
 #if DEBUG
-            if not ^ Vmap.containsKey group.GroupAddress world.GroupStates then
+            if not ^ Umap.containsKey group.GroupAddress world.GroupStates then
                 failwith ^ "Cannot set the state of a non-existent group '" + scstring group.GroupAddress + "'"
 #endif
-            let groupStates = Vmap.add group.GroupAddress groupState world.GroupStates
+            let groupStates = Umap.add group.GroupAddress groupState world.GroupStates
             World.choose { world with GroupStates = groupStates }
 
         static member private addGroupState groupState group world =
@@ -1167,7 +1167,7 @@ module WorldModule =
             World.publish { Participant = group; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace group world
 
         static member private getOptGroupState group world =
-            Vmap.tryFind group.GroupAddress world.GroupStates
+            Umap.tryFind group.GroupAddress world.GroupStates
 
         static member private getGroupState group world =
             match World.getOptGroupState group world with
@@ -1318,31 +1318,31 @@ module WorldModule =
             let screenDirectory =
                 match Address.getNames screen.ScreenAddress with
                 | [screenName] ->
-                    match Vmap.tryFind screenName world.ScreenDirectory with
+                    match Umap.tryFind screenName world.ScreenDirectory with
                     | Some (_, groupDirectory) ->
                         // NOTE: this is logically a redundant operation...
-                        Vmap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
+                        Umap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
                     | None ->
-                        let groupDirectory = Vmap.makeEmpty ()
-                        Vmap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
+                        let groupDirectory = Umap.makeEmpty None
+                        Umap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
                 | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
-            let screenStates = Vmap.add screen.ScreenAddress screenState world.ScreenStates
+            let screenStates = Umap.add screen.ScreenAddress screenState world.ScreenStates
             World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
 
         static member private screenStateRemover screen world =
             let screenDirectory =
                 match Address.getNames screen.ScreenAddress with
-                | [screenName] -> Vmap.remove screenName world.ScreenDirectory
+                | [screenName] -> Umap.remove screenName world.ScreenDirectory
                 | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
-            let screenStates = Vmap.remove screen.ScreenAddress world.ScreenStates
+            let screenStates = Umap.remove screen.ScreenAddress world.ScreenStates
             World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
 
         static member private screenStateSetter screenState screen world =
 #if DEBUG
-            if not ^ Vmap.containsKey screen.ScreenAddress world.ScreenStates then
+            if not ^ Umap.containsKey screen.ScreenAddress world.ScreenStates then
                 failwith ^ "Cannot set the state of a non-existent screen '" + scstring screen.ScreenAddress + "'"
 #endif
-            let screenStates = Vmap.add screen.ScreenAddress screenState world.ScreenStates
+            let screenStates = Umap.add screen.ScreenAddress screenState world.ScreenStates
             World.choose { world with ScreenStates = screenStates }
 
         static member private addScreenState screenState screen world =
@@ -1357,7 +1357,7 @@ module WorldModule =
             World.publish { Participant = screen; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace screen world
 
         static member private getOptScreenState screen world =
-            Vmap.tryFind screen.ScreenAddress world.ScreenStates
+            Umap.tryFind screen.ScreenAddress world.ScreenStates
 
         static member private getScreenState screen world =
             match World.getOptScreenState screen world with
@@ -1804,10 +1804,10 @@ module WorldModule =
                   Dispatchers = dispatchers
                   Subsystems = subsystems
                   OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
-                  ScreenDirectory = Vmap.makeEmpty ()
+                  ScreenDirectory = Umap.makeEmpty None
                   AmbientState = ambientState
                   GameState = gameState
-                  ScreenStates = Vmap.makeEmpty ()
-                  GroupStates = Vmap.makeEmpty ()
-                  EntityStates = Vmap.makeEmpty () }
+                  ScreenStates = Umap.makeEmpty None
+                  GroupStates = Umap.makeEmpty None
+                  EntityStates = Umap.makeEmpty None }
             World.choose world

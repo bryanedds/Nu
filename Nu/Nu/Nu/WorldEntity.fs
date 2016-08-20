@@ -170,11 +170,11 @@ module WorldEntityModule =
         static member getEntities group world =
             match Address.getNames group.GroupAddress with
             | [screenName; groupName] ->
-                match Vmap.tryFind screenName ^ World.getScreenDirectory world with
+                match Umap.tryFind screenName ^ World.getScreenDirectory world with
                 | Some (_, groupDirectory) ->
-                    match Vmap.tryFind groupName groupDirectory with
+                    match Umap.tryFind groupName groupDirectory with
                     | Some (_, entityDirectory) ->
-                        Vmap.fold (fun state _ entityAddress -> Entity.proxy entityAddress :: state) [] entityDirectory :> _ seq
+                        Umap.fold (fun state _ entityAddress -> Entity.proxy entityAddress :: state) [] entityDirectory :> _ seq
                     | None -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
                 | None -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
             | _ -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."

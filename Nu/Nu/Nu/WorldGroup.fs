@@ -77,9 +77,9 @@ module WorldGroupModule =
         static member getGroups screen world =
             match Address.getNames screen.ScreenAddress with
             | [screenName] ->
-                match Vmap.tryFind screenName ^ World.getScreenDirectory world with
+                match Umap.tryFind screenName ^ World.getScreenDirectory world with
                 | Some (_, groupDirectory) ->
-                    Vmap.fold (fun state _ (groupAddress, _) -> Group.proxy groupAddress :: state) [] groupDirectory :> _ seq
+                    Umap.fold (fun state _ (groupAddress, _) -> Group.proxy groupAddress :: state) [] groupDirectory :> _ seq
                 | None -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
             | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
 
