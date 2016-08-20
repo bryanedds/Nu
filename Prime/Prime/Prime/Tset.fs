@@ -98,6 +98,14 @@ module TsetModule =
                 set.HashSet.Remove value |> ignore
                 set)
                 set
+    
+        /// Add all the given values to the set.
+        let addMany values set =
+            Seq.fold (fun set (value : 'a) -> add value set) set values
+    
+        /// Remove all the given values from the set.
+        let removeMany values set =
+            Seq.fold (fun set (value : 'a) -> remove value set) set values
 
         let contains value set =
             let set = validate set

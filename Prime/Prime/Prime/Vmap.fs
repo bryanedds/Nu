@@ -185,14 +185,14 @@ module VmapModule =
             let node = Vnode.add hkv map.EmptyArray 0 map.Node
             { map with Node = node }
     
-        /// Add a list of values with associated keys to a Vmap.
-        let addMany entries map =
-            Seq.fold (fun map (k : 'k, v : 'v) -> add k v map) map entries
-    
         /// Remove a value with the given key from a Vmap.
         let remove (k : 'k) map =
             let h = k.GetHashCode ()
             { map with Node = Vnode.remove h k 0 map.Node }
+    
+        /// Add all the given entries to a Vmap.
+        let addMany entries map =
+            Seq.fold (fun map (k : 'k, v : 'v) -> add k v map) map entries
     
         /// Remove all values with the given keys from a Vmap.
         let removeMany keys map =
