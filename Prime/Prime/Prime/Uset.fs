@@ -13,8 +13,8 @@ module UsetModule =
     [<RequireQualifiedAccess>]
     module Uset =
 
-        let makeEmpty<'a when 'a : comparison> optCommitMultiplier =
-            { RefSet = ref ^ Tset.makeEmpty<'a> optCommitMultiplier }
+        let makeEmpty<'a when 'a : comparison> optBloatFactor =
+            { RefSet = ref ^ Tset.makeEmpty<'a> optBloatFactor }
 
         let add value set =
             { RefSet = ref ^ Tset.add value !set.RefSet }

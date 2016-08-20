@@ -13,8 +13,8 @@ module UmapModule =
     [<RequireQualifiedAccess>]
     module Umap =
 
-        let makeEmpty<'k, 'v when 'k : comparison> optCommitMultiplier =
-            { RefMap = ref ^ Tmap.makeEmpty<'k, 'v> optCommitMultiplier }
+        let makeEmpty<'k, 'v when 'k : comparison> optBloatFactor =
+            { RefMap = ref ^ Tmap.makeEmpty<'k, 'v> optBloatFactor }
 
         let add key value map =
             { RefMap = ref ^ Tmap.add key value !map.RefMap }
