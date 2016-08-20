@@ -2,6 +2,8 @@
 // Copyright (C) Bryan Edds, 2012-2016.
 
 namespace Prime
+open System.Collections
+open System.Collections.Generic
 
 [<AutoOpen>]
 module UmapModule =
@@ -9,6 +11,16 @@ module UmapModule =
     type [<NoEquality; NoComparison>] Umap<'k, 'v when 'k : comparison> =
         private
             { RefMap : Tmap<'k, 'v> ref }
+    
+        interface IEnumerable<'k * 'v> with
+            member this.GetEnumerator () =
+                let (seq, tmap) = Tmap.toSeq !this.RefMap
+                this.RefMap := tmap
+                seq.GetEnumerator ()
+    
+        interface IEnumerable with
+            member this.GetEnumerator () =
+                (this :> IEnumerable<'k * 'v>).GetEnumerator () :> IEnumerator
 
     [<RequireQualifiedAccess>]
     module Umap =
@@ -21,6 +33,14 @@ module UmapModule =
 
         let remove key map =
             { RefMap = ref ^ Tmap.remove key !map.RefMap }
+    
+        /// Add all the given entries to the map.
+        let addMany entries map =
+            { RefMap = ref ^ Tmap.addMany entries !map.RefMap }
+    
+        /// Remove all values with the given keys from the map.
+        let removeMany keys map =
+            { RefMap = ref ^ Tmap.removeMany keys !map.RefMap }
 
         let isEmpty map =
             Tmap.isEmpty !map.RefMap
@@ -42,14 +62,12 @@ module UmapModule =
             let (result, tmap) = Tmap.containsKey key !map.RefMap
             map.RefMap := tmap
             result
-
-        let toSeq map =
-            let (seq, tmap) = Tmap.toSeq !map.RefMap
-            map.RefMap := tmap
-            seq
     
         let ofSeq pairs =
             { RefMap = ref ^ Tmap.ofSeq pairs }
+
+        let toSeq (map : Umap<_, _>) =
+            map :> _ seq
 
         let fold folder state map =
             let (result, tmap) = Tmap.fold folder state !map.RefMap

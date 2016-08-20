@@ -98,6 +98,14 @@ module TmapModule =
                 map.Dict.Remove key |> ignore
                 map)
                 map
+    
+        /// Add all the given entries to the map.
+        let addMany entries map =
+            Seq.fold (fun map (k : 'k, v : 'v) -> add k v map) map entries
+    
+        /// Remove all values with the given keys from the map.
+        let removeMany keys map =
+            Seq.fold (fun map (k : 'k) -> remove k map) map keys
 
         let tryFind key map =
             let map = validate map

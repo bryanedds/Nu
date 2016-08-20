@@ -110,7 +110,7 @@ module EnemyModule =
              Define? CelSize ^ Vector2 (48.0f, 96.0f)
              Define? AnimationStutter 8L
              Define? AnimationSheet Constants.Assets.EnemyImage
-             Define? Health 6]
+             Define? Health 7]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
