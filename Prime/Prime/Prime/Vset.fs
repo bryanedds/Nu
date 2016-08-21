@@ -186,7 +186,7 @@ module VsetModule =
     
         /// Add a list of values with associated keys to a Vset.
         let addMany entries set =
-            Seq.fold (fun set (v : 'a) -> add v set) set entries
+            Seq.fold (fun set (value : 'a) -> add value set) set entries
     
         /// Remove a value with the given key from a Vset.
         let remove (value : 'a) set =
@@ -195,7 +195,7 @@ module VsetModule =
     
         /// Remove all values with the given keys from a Vset.
         let removeMany keys set =
-            Seq.fold (fun set (v : 'a) -> remove v set) set keys
+            Seq.fold (fun set (value : 'a) -> remove value set) set keys
     
         /// Check that a Vset contains a value.
         let contains value set =
@@ -204,7 +204,7 @@ module VsetModule =
             
         /// Combine the contents of two Vsets.
         let concat set set2 =
-            Seq.fold (fun set v -> add v set) set set2
+            Seq.fold (fun set value -> add value set) set set2
     
         /// Fold over a Vset.
         let fold folder state (set : 'a Vset) =
@@ -213,14 +213,14 @@ module VsetModule =
         /// Map over a Vset.
         let map mapper (set : 'a Vset) =
             fold
-                (fun state v -> add (mapper v) state)
+                (fun state value -> add (mapper value) state)
                 (makeEmpty ())
                 set
     
         /// Filter a Vset.
         let filter pred (set : 'a Vset) =
             fold
-                (fun state v -> if pred v then add v state else state)
+                (fun state value -> if pred value then add value state else state)
                 (makeEmpty ())
                 set
     
@@ -233,7 +233,7 @@ module VsetModule =
         /// Convert a sequence of keys and values to a Vset.
         let ofSeq pairs =
             Seq.fold
-                (fun set v -> add v set)
+                (fun set value -> add value set)
                 (makeEmpty ())
                 pairs
 
