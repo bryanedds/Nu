@@ -50,9 +50,11 @@ module TmapModule =
             map
 
         let private compress map =
+            let oldMap = map
             let dictOrigin = Dictionary<'k, 'v> (map.Dict, HashIdentity.Structural)
             let map = { map with DictOrigin = dictOrigin; Logs = []; LogsLength = 0 }
             map.Tmap <- map
+            oldMap.Tmap <- map
             map
 
         let private validate map =
@@ -121,8 +123,8 @@ module TmapModule =
             | (Some _, map) -> (true, map)
             | (None, map) -> (false, map)
 
-        /// Convert a Tmap to a seq. Note that entire map is iterated eagerly since the underlying Dictionary could
-        /// otherwise opaquely change during iteration.
+        /// Convert a Tmap to a seq. Note that entire map is iterated eagerly since the underlying
+        /// Dictionary could otherwise opaquely change during iteration.
         let toSeq map =
             let map = validate map
             let seq =
