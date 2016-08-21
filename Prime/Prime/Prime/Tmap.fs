@@ -91,21 +91,21 @@ module TmapModule =
                 map.Dict.ForceAdd (key, value)
                 map)
                 map
-            
+
         let remove key map =
             update (fun map ->
                 let map = { map with Logs = Remove key :: map.Logs; LogsLength = map.LogsLength + 1 }
                 map.Dict.Remove key |> ignore
                 map)
                 map
-    
+
         /// Add all the given entries to the map.
         let addMany entries map =
-            Seq.fold (fun map (k : 'k, v : 'v) -> add k v map) map entries
-    
+            Seq.fold (flip ^ uncurry add) map entries
+
         /// Remove all values with the given keys from the map.
         let removeMany keys map =
-            Seq.fold (fun map (k : 'k) -> remove k map) map keys
+            Seq.fold (flip remove) map keys
 
         let tryFind key map =
             let map = validate map
@@ -134,13 +134,13 @@ module TmapModule =
 
         let ofSeq pairs =
             Seq.fold
-                (fun map (k, v) -> add k v map)
+                (flip ^ uncurry add)
                 (makeEmpty None)
                 pairs
 
         let fold folder state map =
             let (seq, map) = toSeq map
-            let result = Seq.fold (fun state (key, value) -> folder state key value) state seq
+            let result = Seq.fold (folder >> uncurry) state seq
             (result, map)
 
         let map mapper map =

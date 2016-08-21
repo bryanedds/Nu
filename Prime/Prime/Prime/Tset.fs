@@ -87,25 +87,25 @@ module TsetModule =
 
         let add value set =
             update (fun set ->
-                let set = { set with Logs = Add value :: set.Logs; LogsLength = set.LogsLength + 1; Tset = set }
+                let set = { set with Logs = Add value :: set.Logs; LogsLength = set.LogsLength + 1 }
                 ignore ^ set.HashSet.TryAdd value
                 set)
                 set
-            
+
         let remove value set =
             update (fun set ->
                 let set = { set with Logs = Remove value :: set.Logs; LogsLength = set.LogsLength + 1 }
                 set.HashSet.Remove value |> ignore
                 set)
                 set
-    
+
         /// Add all the given values to the set.
         let addMany values set =
-            Seq.fold (fun set (value : 'a) -> add value set) set values
-    
+            Seq.fold (flip add) set values
+
         /// Remove all the given values from the set.
         let removeMany values set =
-            Seq.fold (fun set (value : 'a) -> remove value set) set values
+            Seq.fold (flip remove) set values
 
         let contains value set =
             let set = validate set
@@ -123,13 +123,13 @@ module TsetModule =
 
         let ofSeq pairs =
             Seq.fold
-                (fun set value -> add value set)
+                (flip add)
                 (makeEmpty None)
                 pairs
 
         let fold folder state set =
             let (seq, set) = toSeq set
-            let result = Seq.fold (fun state value -> folder state value) state seq
+            let result = Seq.fold folder state seq
             (result, set)
 
         let map mapper set =
