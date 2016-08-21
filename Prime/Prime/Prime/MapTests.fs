@@ -22,28 +22,28 @@ module MapTests =
     let eqMapsAfterSteps
         (fsmap : Map<'k, 'v>)
         (testMap : 'm)
-        (actions : MapAction<'k, 'v>[])
-        (setKey : 'k->'v->'m->'m when 'k : comparison and 'v : comparison)
-        (removeKey : 'k->'m->'m when 'k : comparison and 'v : comparison)
-        (fold: ('m->'k->'v->'m)->'m->'m->'m)
+        (actions : MapAction<'k, 'v> array)
+        (add : 'k->'v->'m->'m when 'k : comparison and 'v : comparison)
+        (remove : 'k->'m->'m when 'k : comparison and 'v : comparison)
+        (fold : ('m->'k->'v->'m)->'m->'m->'m)
         (combineValues : 'v->'v->'v)
-        (eqMap : 'm->Map<'k, 'v>->bool) =
+        (eq : 'm->Map<'k, 'v>->bool) =
 
         let applyAction fsmap testMap action =
             match action with
             | MapAction.SetKey (k, v) ->
-                (Map.add k v fsmap, setKey k v testMap)
+                (Map.add k v fsmap, add k v testMap)
             | MapAction.RemoveRandom when Map.isEmpty fsmap ->
                 (fsmap, testMap)
             | MapAction.RemoveRandom ->
                 let idx = Gen.choose (0, fsmap.Count - 1) |> Gen.sample 0 1 |> List.head
                 let ary = Map.toArray fsmap
                 let key = fst ary.[idx]
-                (Map.remove key fsmap, removeKey key testMap)
-            | MapAction.FoldCombine (arg) ->
+                (Map.remove key fsmap, remove key testMap)
+            | MapAction.FoldCombine arg ->
                 let newFsmap = Map.fold (fun acc k v -> Map.add k (combineValues v arg) acc) fsmap fsmap
-                let newTestmap = fold (fun acc k v -> setKey k (combineValues v arg) acc) testMap testMap
-                (newFsmap, newTestmap)
+                let newTestMap = fold (fun acc k v -> add k (combineValues v arg) acc) testMap testMap
+                (newFsmap, newTestMap)
 
         let (fsmaps, testMaps) =
             Array.fold
@@ -56,16 +56,16 @@ module MapTests =
                 ([fsmap], [testMap])
                 actions
 
-        List.forall2 eqMap testMaps fsmaps
+        List.forall2 eq testMaps fsmaps
 
     [<Property>]
     let vmapsEqualFsmapsAfterSteps (initialMap : Map<int, string>) (actions : MapAction<int, string>[]) =
         let testMap = Vmap.ofSeq ^ Map.toSeq initialMap
-        let eqMap (vmap : Vmap<_,_>) (fsmap : Map<_,_>) = Map.ofSeq vmap = fsmap
-        eqMapsAfterSteps initialMap testMap actions Vmap.add Vmap.remove Vmap.fold (+) eqMap
+        let eq (vmap : Vmap<_,_>) (fsmap : Map<_,_>) = Map.ofSeq vmap = fsmap
+        eqMapsAfterSteps initialMap testMap actions Vmap.add Vmap.remove Vmap.fold (+) eq
 
     [<Property>]
     let umapsEqualFsmapsAfterSteps (initialMap : Map<int, string>) (actions : MapAction<int, string>[]) =
         let testMap = Umap.ofSeq ^ Map.toSeq initialMap
-        let eqMap (umap : Umap<_,_>) (fsmap : Map<_,_>) = Map.ofSeq umap = fsmap
-        eqMapsAfterSteps initialMap testMap actions Umap.add Umap.remove Umap.fold (+) eqMap
+        let eq (umap : Umap<_,_>) (fsmap : Map<_,_>) = Map.ofSeq umap = fsmap
+        eqMapsAfterSteps initialMap testMap actions Umap.add Umap.remove Umap.fold (+) eq
