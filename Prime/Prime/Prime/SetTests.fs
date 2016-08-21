@@ -12,10 +12,8 @@ module SetTests =
 
     type SetAction<'k when 'k: comparison> = 
         | Add of 'k
-        | AddMany of Set<'k>
         | FoldAddingCombination of 'k
         | Remove of 'k
-        | RemoveMany of Set<'k>
 
     /// Keeps a reference to all persistent collections returned after
     /// performing actions, and after they are all applied, checks
@@ -25,28 +23,21 @@ module SetTests =
         (testSet : 's)
         (actions : SetAction<'k>[])
         (addKey : 'k->'s->'s)
-        (addKeys : 's->'s->'s)
         (removeKey : 'k->'s->'s)
-        (removeKeys : 's->'s->'s)
         (fold: ('s->'k->'s)->'s->'s->'s)
         (combine : 'k->'k->'k)
-        (fromFsset : Set<'k>->'s)
         (eqSet : 's->Set<'k>->bool) =
 
         let applyAction fsset testSet action =
             match action with
             | SetAction.Add(k) ->
                 (Set.add k fsset, addKey k testSet)
-            | SetAction.AddMany(set) ->
-                (Set.union set fsset, addKeys (fromFsset set) testSet)
             | SetAction.FoldAddingCombination(arg) ->
                 let newFsset = Set.fold (fun acc e -> Set.add (combine arg e) acc) fsset fsset
                 let newTestset = fold (fun acc e -> addKey (combine arg e) acc) testSet testSet
                 (newFsset, newTestset)
             | SetAction.Remove(k) ->
                 (Set.remove k fsset, removeKey k testSet)
-            | SetAction.RemoveMany(set) -> 
-                (Set.difference fsset set, removeKeys (fromFsset set) testSet)
 
         let (fssets, testMaps) =
             Array.fold
@@ -72,13 +63,11 @@ module SetTests =
     [<Property>]
     let vsetsEqSetsAfterSteps (initialSet : Set<int>) (actions : SetAction<int>[]) =
         let testSet = Vset.ofSeq ^ Set.toSeq initialSet
-        let fromFsset fsset = Vset.ofSeq ^ Set.toSeq fsset
         let eqSet (vset : Vset<_>) (fsset : Set<_>) = Set.ofSeq vset = fsset
-        eqSetsAfterSteps initialSet testSet actions Vset.add Vset.addMany Vset.remove Vset.removeMany Vset.fold (+) fromFsset eqSet
+        eqSetsAfterSteps initialSet testSet actions Vset.add Vset.remove Vset.fold (+) eqSet
 
     [<Property>]
     let usetsEqSetsAfterSteps (initialSet : Set<int>) (actions : SetAction<int>[]) =
         let testSet = Uset.ofSeq ^ Set.toSeq initialSet
-        let fromFsset fsset = Uset.ofSeq ^ Set.toSeq fsset
         let eqSet (uset : Uset<_>) (fsset : Set<_>) = Set.ofSeq uset = fsset
-        eqSetsAfterSteps initialSet testSet actions Uset.add Uset.addMany Uset.remove Uset.removeMany Uset.fold (+) fromFsset eqSet
+        eqSetsAfterSteps initialSet testSet actions Uset.add Uset.remove Uset.fold (+) eqSet
