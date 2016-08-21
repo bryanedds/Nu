@@ -50,9 +50,11 @@ module TsetModule =
             set
 
         let private compress set =
+            let oldSet = set
             let hashSetOrigin = HashSet<'a> (set.HashSet, HashIdentity.Structural)
             let set = { set with HashSetOrigin = hashSetOrigin; Logs = []; LogsLength = 0 }
             set.Tset <- set
+            oldSet.Tset <- set
             set
 
         let private validate set =
