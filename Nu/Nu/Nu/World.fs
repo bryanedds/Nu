@@ -709,7 +709,7 @@ module WorldModule2 =
             // make the world's ambient state
             let ambientState =
                 let overlayRouter = OverlayRouter.make dispatchers.EntityDispatchers []
-                AmbientState.make 1L Map.empty overlayRouter Overlayer.empty SymbolStore.empty userState
+                AmbientState.make 1L (Umap.makeEmpty None) overlayRouter Overlayer.empty SymbolStore.empty userState
 
             // select the first game dispatcher as active
             let activeGameDispatcher = dispatchers.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
