@@ -12,6 +12,8 @@ open Prime
 open Nu
 
 /// A scripting language for Nu that is hoped to eventually be a cross between Elm and Unreal Blueprints.
+/// TODO: down the line, I'd like to separate the lispy core of the scripting language from the Nu-specific vocabulary,
+/// placing the core language into Prime and extending the Nu-specific requirements with a language plug-in of sorts.
 module Scripting =
 
     /// Commands to the engine, EG - applyLinearImpulse, playSound, etc.
