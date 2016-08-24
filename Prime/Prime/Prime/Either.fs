@@ -26,7 +26,7 @@ module Either =
     let returnFrom a = a
 
     /// Builds an either monad.
-    type EitherBuilder () =
+    type Builder () =
         member inline this.Bind (a, f) = bind a f
         member inline this.Return a = returnM a
         member inline this.ReturnFrom a = returnFrom a
@@ -55,9 +55,6 @@ module Either =
             match optError with
             | Some error -> error
             | None -> this.Zero ()
-
-    /// The computation expression builder for Either.
-    let either = EitherBuilder ()
 
     /// Query whether an Either value is a Left value.
     let isLeft either =
@@ -116,3 +113,15 @@ module Either =
                 | Left l -> (l :: ls, rs))
             (List.ofSeq eithers)
             ([], [])
+
+    /// Pick whichever of the either values exists so long as they are the same type.
+    let amb (eir : Either<'a, 'a>) =
+        match eir with
+        | Right value -> value
+        | Left value -> value
+
+[<AutoOpen>]
+module EitherOperators =
+
+    /// The computation expression builder for Either.
+    let either = Either.Builder ()
