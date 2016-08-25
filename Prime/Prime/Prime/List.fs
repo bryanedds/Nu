@@ -275,9 +275,9 @@ let rec remove pred list =
         list
         []
 
-/// Stack a list from the left, starting with the empty list.
+/// Compute the 'power set' of a list.
 /// Example - [0, 1, 2] becomes [[]; [0]; [0; 1]; [0; 1; 2]]
-let stackLeft list =
+let power list =
     [for x in 0 .. List.length list do
         yield List.take x list]
 
