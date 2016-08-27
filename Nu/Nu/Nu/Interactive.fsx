@@ -5,7 +5,12 @@
 #r "System.Configuration"
 #r "../../../Prime/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
 #r "../../../Prime/FParsec/FParsec.dll"
-#r "../../../Prime/xUnit/xunit.dll"
+#r "../../../Prime/xunit/xunit.core.dll"
+#r "../../../Prime/xunit/xunit.abstractions.dll"
+#r "../../../Prime/xunit/xunit.assert.dll"
+#r "../../../Prime/xunit/xunit.execution.desktop.dll"
+#r "../../../Prime/FsCheck/FsCheck.dll"
+#r "../../../Prime/FsCheck.Xunit/FsCheck.Xunit.dll"
 #r "../../../Nu/FSharpx.Core/FSharpx.Core.dll"
 #r "../../../Nu/FSharpx.Collections/FSharpx.Collections.dll"
 #r "../../../Nu/Farseer/FarseerPhysics.dll"
