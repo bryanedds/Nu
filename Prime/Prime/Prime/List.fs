@@ -160,6 +160,13 @@ let allOrEmptyBy by list =
     let definites = List.choose (fun item -> by item) list
     if areSameLength definites list then definites else []
 
+/// Resize a list with the given elem for expanded elements.
+let resize count elem list =
+    let taken = List.tryTake size list
+    let takenCount = List.length taken
+    let delta = count - takenCount
+    if delta < 1 then taken else List.append taken (List.init delta (fun _ -> elem))
+
 /// Pad a list with count instances of its last item, removing items from back if count is negative.
 let pad count elem list =
     if count = 0 then list
