@@ -162,7 +162,7 @@ let allOrEmptyBy by list =
 
 /// Resize a list with the given elem for expanded elements.
 let resize count elem list =
-    let taken = List.tryTake size list
+    let taken = tryTake count list
     let takenCount = List.length taken
     let delta = count - takenCount
     if delta < 1 then taken else List.append taken (List.init delta (fun _ -> elem))
