@@ -63,9 +63,10 @@ module Symbol =
         NumberLiteralOptions.AllowHexadecimal |||
         NumberLiteralOptions.AllowSuffix
     
-    let isExplicit (str : string) = str.StartsWith OpenStringStr && str.EndsWith CloseStringStr
     let isWhitespaceChar chr = isAnyOf WhitespaceChars chr
     let isStructureChar chr = isAnyOf StructureChars chr
+    let isExplicit (str : string) = str.StartsWith OpenStringStr && str.EndsWith CloseStringStr
+    let distillate (str : string) = (str.Replace (OpenStringStr, "")).Replace (CloseStringStr, "")
     
     let skipWhitespace = skipAnyOf WhitespaceChars
     let skipWhitespaces = skipMany skipWhitespace
@@ -162,14 +163,14 @@ module Symbol =
     let rec writeSymbol symbol =
         match symbol with
         | Atom (str, _) ->
-            let str = String.clean str
+            let str = distillate str
             if Seq.isEmpty str then OpenStringStr + CloseStringStr
             elif not (isExplicit str) && shouldBeExplicit str then OpenStringStr + str + CloseStringStr
             elif isExplicit str && not (shouldBeExplicit str) then str.Substring (1, str.Length - 2)
             else str
-        | Number (str, _) -> String.clean str
-        | String (str, _) -> OpenStringStr + String.clean str + CloseStringStr
-        | Quote (str, _) -> OpenQuoteStr + String.clean str + CloseQuoteStr
+        | Number (str, _) -> distillate str
+        | String (str, _) -> OpenStringStr + distillate str + CloseStringStr
+        | Quote (str, _) -> OpenQuoteStr + distillate str + CloseQuoteStr
         | Symbols (symbols, _) -> OpenSymbolsStr + String.Join (" ", List.map writeSymbol symbols) + CloseSymbolsStr
 
     /// Convert a string to a symbol, with the following parses:
