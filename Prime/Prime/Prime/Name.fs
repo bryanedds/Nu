@@ -52,6 +52,12 @@ type NameConverter (targetType : Type) =
 [<AutoOpen>]
 module NameModule =
 
+    /// The non-whitespace characters that a Name cannot contain.
+    let (*Literal*) IllegalChars = Symbol.ReservedChars + Symbol.StructureChars + Symbol.WhitespaceChars
+
+    /// The non-whitespace characters that a Name cannot contain - in an array for search speed.
+    let (*Literal*) IllegalCharsArray = Array.ofSeq IllegalChars
+
     /// A name for use as a part of a chain of names, such as part of an Address.
     /// NOTE: currently this type has a nice general capability of being a hash code carrying
     /// string, but that capability is hard-wired into this concept. TODO: pull out this capability
@@ -64,8 +70,8 @@ module NameModule =
         /// Make a name from a string that can be part of an Address.
         static member make (nameStr : string) =
 #if DEBUG
-            if nameStr.IndexOfAny [|'.'; '/'|] <> -1 then failwith ^ "Invalid name '" + nameStr + "'; must have no dot characters."
-            elif nameStr.IndexOfAny Symbol.WhitespaceCharsArray <> -1 then failwith ^ "Invalid name '" + nameStr + "'; must have no whitespace characters."
+            if nameStr.IndexOfAny IllegalCharsArray <> -1
+            then failwith ^ "Invalid name '" + nameStr + "'; must have none of the following characters: '" + String.escape IllegalChars + "'."
             elif
                 nameStr.Length > 0 && Char.IsLetter nameStr.[0] |> not && // OPTIMIZATION: short-circuited to avoid hitting fparsec
                 Guid.TryParse nameStr |> fst |> not && // OPTIMIZATION: short-circuited to avoid hitting fparsec
@@ -167,7 +173,6 @@ module NameModule =
 module NameOperators =
 
     /// Convert a name string to an addressable name.
-    /// TODO: try to find a nice operator for Name.make as well.
     let inline (!!) nameStr = Name.make nameStr
 
 /// A name for optimized keying in hashing containers.

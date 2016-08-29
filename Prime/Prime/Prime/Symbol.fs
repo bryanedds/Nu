@@ -37,7 +37,6 @@ module Symbol =
 
     let [<Literal>] NewlineChars = "\n\r"
     let [<Literal>] WhitespaceChars = "\t " + NewlineChars
-    let (*Literal*) WhitespaceCharsArray = Array.ofSeq WhitespaceChars
     let [<Literal>] SeparatorChar = ' '
     let [<Literal>] SeparatorStr = " "
     let [<Literal>] OpenSymbolsChar = '['
@@ -52,9 +51,9 @@ module Symbol =
     let [<Literal>] OpenQuoteStr = "`"
     let [<Literal>] CloseQuoteChar = '\''
     let [<Literal>] CloseQuoteStr = "\'"
+    let [<Literal>] ReservedChars = "#:" // # reserved for comment syntax, : reserved for pair syntax (expands to [key value])
     let [<Literal>] StructureCharsNoStr = "[]`\'"
     let [<Literal>] StructureChars = "\"" + StructureCharsNoStr
-    let [<Literal>] ReservedChars = "#:" // # reserved for comment syntax, : reserved for pair syntax (expands to [key value])
     let [<Literal>] NumberFormat =
         NumberLiteralOptions.AllowMinusSign |||
         NumberLiteralOptions.AllowPlusSign |||
