@@ -179,7 +179,11 @@ type SymbolicConverter (pointType : Type) =
         // desymbolize string
         elif destType = typeof<string> then
             match symbol with
-            | Atom (str, _) | Number (str, _) | String (str, _) ->
+            | Atom (str, _) | String (str, _) ->
+                if Symbol.isExplicit str
+                then str.Substring (1, str.Length - 2) :> obj
+                else str :> obj
+            | Number (str, _) ->
                 str :> obj
             | Quote (_, _) | Symbols (_, _) ->
                 failconv "Expected Symbol, Number, or String for conversion to string." ^ Some symbol
@@ -346,11 +350,9 @@ type SymbolicConverter (pointType : Type) =
         fromSymbol destType symbol
 
     override this.CanConvertTo (_, destType) =
-        //if pointType <> typeof<obj> then
-            destType = typeof<string> ||
-            destType = typeof<Symbol> ||
-            destType = pointType
-        //else false // I can do fucking nothing with obj point type!
+        destType = typeof<string> ||
+        destType = typeof<Symbol> ||
+        destType = pointType
 
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<string> then
@@ -367,11 +369,9 @@ type SymbolicConverter (pointType : Type) =
         else failconv "Invalid SymbolicConverter conversion to source." None
 
     override this.CanConvertFrom (_, sourceType) =
-        //if pointType <> typeof<obj> then
-            sourceType = typeof<string> ||
-            sourceType = typeof<Symbol> ||
-            sourceType = pointType
-        //else false // I can do fucking nothing with obj point type!
+        sourceType = typeof<string> ||
+        sourceType = typeof<Symbol> ||
+        sourceType = pointType
 
     override this.ConvertFrom (_, _, source) =
         match source with

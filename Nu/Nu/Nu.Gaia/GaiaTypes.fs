@@ -77,6 +77,12 @@ and EntityPropertyDescriptor (property, attributes) =
         let entityTds = source :?> EntityTypeDescriptorSource
         let changer = (fun world ->
 
+            // pull string quotes out of string
+            let value =
+                match value with
+                | :? string as str -> str.Replace ("\"", "") :> obj
+                | _ -> value
+
             // TODO: comment
             let world = pushPastWorld world world
             match propertyName with
