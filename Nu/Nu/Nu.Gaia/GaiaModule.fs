@@ -314,7 +314,7 @@ module Gaia =
                 let ty = selectedGridItem.PropertyDescriptor.PropertyType
                 let typeConverter = SymbolicConverter ty
                 form.propertyEditor.Enabled <- true
-                form.propertyNameLabel.Text <- scstring selectedGridItem.Label
+                form.propertyNameLabel.Text <- selectedGridItem.Label
                 form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
                 if isNotNull selectedGridItem.Value || isNullTrueValue ty then
                     let (keywords0, keywords1) =
@@ -389,7 +389,8 @@ module Gaia =
         | Right (assetGraph, world) ->
             let keywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             let selectionStart = form.propertyValueTextBox.SelectionStart
-            form.assetGraphTextBox.Text <- (Symbol.prettyPrint keywords0 ^ scstring ^ AssetGraph.getPackageDescriptors assetGraph) + "\r\n"
+            let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
+            form.assetGraphTextBox.Text <- Symbol.prettyPrint keywords0 packageDescriptorsStr + "\r\n"
             form.assetGraphTextBox.SelectionStart <- selectionStart
             form.assetGraphTextBox.ScrollCaret ()
             Some world
@@ -401,9 +402,9 @@ module Gaia =
         let editorState = World.getUserState world
         let assetSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
         let assetGraphFilePath = Path.Combine (assetSourceDir, Constants.Assets.AssetGraphFilePath)
-        try let packageDescriptors = scvalue<Map<string, PackageDescriptor>> ^ form.assetGraphTextBox.Text.TrimEnd ()
+        try let packageDescriptorsStr = form.assetGraphTextBox.Text.TrimEnd () |> scvalue<Map<string, PackageDescriptor>> |> scstring
             let assetGraphKeywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
-            File.WriteAllText (assetGraphFilePath, Symbol.prettyPrint assetGraphKeywords0 ^ scstring packageDescriptors)
+            File.WriteAllText (assetGraphFilePath, Symbol.prettyPrint assetGraphKeywords0 packageDescriptorsStr)
             true
         with exn ->
             ignore ^ MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to save asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -419,7 +420,8 @@ module Gaia =
         | Right (overlayer, world) ->
             let keywords0 = match typeof<Overlayer>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             let selectionStart = form.propertyValueTextBox.SelectionStart
-            form.overlayerTextBox.Text <- (Symbol.prettyPrint keywords0 ^ scstring ^ Overlayer.getExtrinsicOverlays overlayer) + "\r\n"
+            let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
+            form.overlayerTextBox.Text <- Symbol.prettyPrint keywords0 extrinsicOverlaysStr + "\r\n"
             form.overlayerTextBox.SelectionStart <- selectionStart
             form.overlayerTextBox.ScrollCaret ()
             Some world
@@ -433,7 +435,7 @@ module Gaia =
         let overlayerFilePath = Path.Combine (overlayerSourceDir, Constants.Assets.OverlayerFilePath)
         try let overlays = scvalue<Overlay list> ^ form.overlayerTextBox.Text.TrimEnd ()
             let overlayerKeywords0 = match typeof<Overlayer>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
-            File.WriteAllText (overlayerFilePath, Symbol.prettyPrint overlayerKeywords0 ^ scstring overlays)
+            File.WriteAllText (overlayerFilePath, Symbol.prettyPrint overlayerKeywords0 (scstring overlays))
             true
         with exn ->
             ignore ^ MessageBox.Show ("Could not save overlayer due to: " + scstring exn, "Failed to save overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -658,7 +660,7 @@ module Gaia =
             match tryReloadAssets form world with
             | Right (assetGraph, world) ->
                 let assetGraphKeywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
-                form.assetGraphTextBox.Text <- Symbol.prettyPrint assetGraphKeywords0 ^ scstring assetGraph + "\r\n"
+                form.assetGraphTextBox.Text <- Symbol.prettyPrint assetGraphKeywords0 (scstring assetGraph) + "\r\n"
                 world
             | Left error ->
                 ignore ^ MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -694,7 +696,7 @@ module Gaia =
             try let eventFilter = scvalue<EventFilter.Filter> form.eventFilterTextBox.Text
                 let eventFilterKeywords0 = match typeof<EventFilter.Filter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
                 let world = World.setEventFilter eventFilter world
-                form.eventFilterTextBox.Text <- (Symbol.prettyPrint eventFilterKeywords0 ^ scstring eventFilter) + "\r\n"
+                form.eventFilterTextBox.Text <- Symbol.prettyPrint eventFilterKeywords0 (scstring eventFilter) + "\r\n"
                 world
             with exn ->
                 let world = World.choose world

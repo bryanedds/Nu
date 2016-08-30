@@ -381,7 +381,7 @@ module WorldTypes =
     
         /// Make a screen state value.
         static member make optSpecialization optName dispatcher =
-            let (id, name) = Reflection.deriveNameAndId optName
+            let (id, name) = Reflection.deriveIdAndName optName
             let screenState =
                 { Id = id
                   Name = name
@@ -446,7 +446,7 @@ module WorldTypes =
     
         /// Make a group state value.
         static member make optSpecialization optName dispatcher =
-            let (id, name) = Reflection.deriveNameAndId optName
+            let (id, name) = Reflection.deriveIdAndName optName
             { GroupState.Id = id
               Name = name
               Xtension = Xtension.safe
@@ -533,7 +533,7 @@ module WorldTypes =
 
         /// Make an entity state value.
         static member make optSpecialization optName optOverlayName dispatcher =
-            let (id, name) = Reflection.deriveNameAndId optName
+            let (id, name) = Reflection.deriveIdAndName optName
             { Id = id
               Name = name
               Xtension = Xtension.safe

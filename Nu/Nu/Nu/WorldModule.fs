@@ -1057,8 +1057,7 @@ module WorldModule =
         static member reassignEntityImmediate entity optName group world =
             let entityState = World.getEntityState entity world
             let world = World.removeEntity entity world
-            let id = makeGuid ()
-            let name = match optName with Some name -> name | None -> !!(scstring id)
+            let (id, name) = Reflection.deriveIdAndName optName
             let entityState = { entityState with Id = id; Name = name }
             let transmutedEntity = group.GroupAddress -<<- ntoa<Entity> name |> Entity.proxy
             let world = World.addEntity false entityState transmutedEntity world
