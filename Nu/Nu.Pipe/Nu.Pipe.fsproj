@@ -70,28 +70,28 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FParsec">
-      <HintPath>..\..\..\Prime\FParsec\FParsec.dll</HintPath>
+      <HintPath>..\..\Prime\Prime.Dependencies\FParsec\FParsec.dll</HintPath>
     </Reference>
     <Reference Include="FParsecCS">
-      <HintPath>..\..\..\Prime\FParsec\FParsecCS.dll</HintPath>
+      <HintPath>..\..\Prime\Prime.Dependencies\FParsec\FParsecCS.dll</HintPath>
     </Reference>
     <Reference Include="FSharpx.Collections">
-      <HintPath>..\..\FSharpx.Collections\FSharpx.Collections.dll</HintPath>
+      <HintPath>..\Nu.Dependencies\FSharpx.Collections\FSharpx.Collections.dll</HintPath>
     </Reference>
     <Reference Include="FSharpx.Core">
-      <HintPath>..\..\FSharpx.Core\FSharpx.Core.dll</HintPath>
+      <HintPath>..\Nu.Dependencies\FSharpx.Core\FSharpx.Core.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
     <Reference Include="SDL2#">
-      <HintPath>..\..\SDL2#\Release\SDL2#.dll</HintPath>
+      <HintPath>..\Nu.Dependencies\SDL2#\Release\SDL2#.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <ProjectReference Include="..\..\..\Prime\Prime\Prime\Prime.fsproj">
+    <ProjectReference Include="..\..\Prime\Prime\Prime.fsproj">
       <Name>Prime</Name>
       <Project>{fe09ae81-b66b-42e0-8192-eadecefc9893}</Project>
       <Private>True</Private>
