@@ -17,6 +17,3 @@ The Prime F# Code Library [![License](https://img.shields.io/badge/license-MIT-b
 Prime is built with clean and modular **Abstract Data Type** programming style as presented here - https://vimeo.com/128464151
 
 This library makes a good base for non-trivial projects like renderers, simulations, and other real thangs that absolutely *need* to be built with good program semantics.
-
-## Needs More Cowbell
-This project has reached alpha-status, but is rather lacking in docs and tests, having its correctness proven mostly by its heavy use in the pure functional game engine Nu -  https://github.com/bryanedds/NuGameEngine. More docs and tests are coming along, however :)
