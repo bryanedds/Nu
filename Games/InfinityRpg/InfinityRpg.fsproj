@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -61,7 +61,7 @@
     <PreBuildEvent />
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>"$(ProjectDir)..\..\..\Nu\Nu\Nu.Pipe\bin\$(ConfigurationName)\Nu.Pipe.exe" "$(ProjectDir)\" "$(TargetDir)\" "$(ProjectDir)Refinement" False</PostBuildEvent>
+    <PostBuildEvent>"$(ProjectDir)..\..\Nu\Nu.Pipe\bin\$(ConfigurationName)\Nu.Pipe.exe" "$(ProjectDir)\" "$(TargetDir)\" "$(ProjectDir)Refinement" False</PostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="InfinityConstants.fs" />
@@ -89,70 +89,70 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\AStar\AStar\AStar\AStar.csproj">
+    <ProjectReference Include="..\..\Nu\Nu.AStar\Nu.AStar.csproj">
       <Name>AStar</Name>
       <Project>{61667008-ee77-43b4-8825-0231d241cca6}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\Nu\Nu\Nu.Pipe\Nu.Pipe.fsproj">
+    <ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj">
       <Name>Nu.Pipe</Name>
       <Project>{85d631a5-821a-4755-a68e-c1ffc64e469a}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\Prime\Prime\Prime\Prime.fsproj">
+    <ProjectReference Include="..\..\Prime\Prime\Prime.fsproj">
       <Name>Prime</Name>
       <Project>{fe09ae81-b66b-42e0-8192-eadecefc9893}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\SDL2Addendum\SDL2Addendum\SDL2Addendum\SDL2Addendum.csproj">
-      <Name>SDL2Addendum</Name>
+    <ProjectReference Include="..\..\Nu\Nu.SDL2\Nu.SDL2.csproj">
+      <Name>Nu.SDL2</Name>
       <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>
       <Private>True</Private>
     </ProjectReference>
     <Reference Include="FarseerPhysics">
-      <HintPath>..\..\..\Nu\Farseer\FarseerPhysics.dll</HintPath>
+      <HintPath>..\..\Nu\Nu.Dependencies\Farseer\FarseerPhysics.dll</HintPath>
     </Reference>
     <Reference Include="FParsec">
-      <HintPath>..\..\..\Prime\FParsec\FParsec.dll</HintPath>
+      <HintPath>..\..\Prime\Prime.Dependencies\FParsec\FParsec.dll</HintPath>
     </Reference>
     <Reference Include="FParsecCS">
-      <HintPath>..\..\..\Prime\FParsec\FParsecCS.dll</HintPath>
+      <HintPath>..\..\Prime\Prime.Dependencies\FParsec\FParsecCS.dll</HintPath>
     </Reference>
     <Reference Include="FSharpx.Collections">
-      <HintPath>..\..\..\Nu\FSharpx.Collections\FSharpx.Collections.dll</HintPath>
+      <HintPath>..\..\Nu\Nu.Dependencies\FSharpx.Collections\FSharpx.Collections.dll</HintPath>
     </Reference>
     <Reference Include="FSharpx.Core">
-      <HintPath>..\..\..\Nu\FSharpx.Core\FSharpx.Core.dll</HintPath>
+      <HintPath>..\..\Nu\Nu.Dependencies\FSharpx.Core\FSharpx.Core.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
     <Reference Include="SDL2#">
-      <HintPath>..\..\..\Nu\SDL2#\Release\SDL2#.dll</HintPath>
+      <HintPath>..\..\Nu\Nu.Dependencies\SDL2#\Release\SDL2#.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <ProjectReference Include="..\..\..\Nu\Nu\Nu\Nu.fsproj">
+    <ProjectReference Include="..\..\Nu\Nu\Nu.fsproj">
       <Name>Nu</Name>
       <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
       <Private>True</Private>
     </ProjectReference>
     <Reference Include="TiledSharp">
-      <HintPath>..\..\..\Nu\TiledSharp\Release\TiledSharp.dll</HintPath>
+      <HintPath>..\..\Nu\Nu.Dependencies\TiledSharp\Release\TiledSharp.dll</HintPath>
     </Reference>
     <Reference Include="xunit.abstractions">
-      <HintPath>..\..\..\Prime\xunit\xunit.abstractions.dll</HintPath>
+      <HintPath>..\..\Prime\Prime.Dependencies\xunit\xunit.abstractions.dll</HintPath>
     </Reference>
     <Reference Include="xunit.assert">
-      <HintPath>..\..\..\Prime\xunit\xunit.assert.dll</HintPath>
+      <HintPath>..\..\Prime\Prime.Dependencies\xunit\xunit.assert.dll</HintPath>
     </Reference>
     <Reference Include="xunit.core">
-      <HintPath>..\..\..\Prime\xunit\xunit.core.dll</HintPath>
+      <HintPath>..\..\Prime\Prime.Dependencies\xunit\xunit.core.dll</HintPath>
     </Reference>
     <Reference Include="xunit.execution.desktop">
-      <HintPath>..\..\..\Prime\xunit\xunit.execution.desktop.dll</HintPath>
+      <HintPath>..\..\Prime\Prime.Dependencies\xunit\xunit.execution.desktop.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Target Name="AfterClean">
