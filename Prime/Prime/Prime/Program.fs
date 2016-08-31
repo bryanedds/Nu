@@ -43,11 +43,11 @@ module Program =
     let [<EntryPoint; STAThread>] main _ =
 
         // run array timings
-        let array = [|0 .. 10000000|]
+        let array = [|0 .. 1000000|]
         runTimings (fun () -> array |> Array.map (fun x -> x + x * 13)) "Array Compute"
 
         // run list timings
-        let list = [0 .. 10000000]
+        let list = [0 .. 1000000]
         runTimings (fun () -> list |> List.map (fun x -> x + x * 13)) "List Compute"
         
         // run map timings
