@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -7,8 +7,8 @@
     <ProjectGuid>{F184A111-8C28-40B4-8CDE-7BF2A64B3CA7}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SDL2Addendum</RootNamespace>
-    <AssemblyName>SDL2Addendum</AssemblyName>
+    <RootNamespace>SDL2</RootNamespace>
+    <AssemblyName>Nu.SDL2</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -32,7 +32,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="SDL2#">
-      <HintPath>..\..\..\Nu\SDL2#\Release\SDL2#.dll</HintPath>
+      <HintPath>..\..\Nu\Nu.Dependencies\SDL2#\Release\SDL2#.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
