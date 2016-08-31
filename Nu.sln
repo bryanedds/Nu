@@ -4,31 +4,31 @@ VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nu", "Nu\Nu.fsproj", "{A7A6F758-E122-4C2C-9525-1F29802D007C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nu.Gaia.Design", "Nu.Gaia.Design\Nu.Gaia.Design.csproj", "{F67217C1-6BB3-4180-916B-B7B4CDC14C2D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nu.Gaia.Design", "Nu\Nu.Gaia.Design\Nu.Gaia.Design.csproj", "{F67217C1-6BB3-4180-916B-B7B4CDC14C2D}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nu.Gaia", "Nu.Gaia\Nu.Gaia.fsproj", "{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nu.Gaia", "Nu\Nu.Gaia\Nu.Gaia.fsproj", "{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DCE0536A-59E0-4AB5-86C5-EE919E430583} = {DCE0536A-59E0-4AB5-86C5-EE919E430583}
 		{85D631A5-821A-4755-A68E-C1FFC64E469A} = {85D631A5-821A-4755-A68E-C1FFC64E469A}
 		{516010F3-7BDC-4D92-A4B3-38ECFEC429A8} = {516010F3-7BDC-4D92-A4B3-38ECFEC429A8}
 	EndProjectSection
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nu.Template", "Nu.Template\Nu.Template.fsproj", "{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nu.Template", "Nu\Nu.Template\Nu.Template.fsproj", "{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}"
 	ProjectSection(ProjectDependencies) = postProject
 		{85D631A5-821A-4755-A68E-C1FFC64E469A} = {85D631A5-821A-4755-A68E-C1FFC64E469A}
 	EndProjectSection
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nu.Pipe", "Nu.Pipe\Nu.Pipe.fsproj", "{85D631A5-821A-4755-A68E-C1FFC64E469A}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Prime", "Prime\Prime\Prime.fsproj", "{FE09AE81-B66B-42E0-8192-EADECEFC9893}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SDL2Addendum", "..\..\SDL2Addendum\SDL2Addendum\SDL2Addendum\SDL2Addendum.csproj", "{F184A111-8C28-40B4-8CDE-7BF2A64B3CA7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nu.AStar", "Nu\Nu.AStar\Nu.AStar.csproj", "{61667008-EE77-43B4-8825-0231D241CCA6}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "BlazeVector", "..\..\BlazeVector\BlazeVector\BlazeVector\BlazeVector.fsproj", "{516010F3-7BDC-4D92-A4B3-38ECFEC429A8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nu.SDL2", "Nu\Nu.SDL2\Nu.SDL2.csproj", "{F184A111-8C28-40B4-8CDE-7BF2A64B3CA7}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "InfinityRpg", "..\..\InfinityRpg\InfinityRpg\InfinityRpg\InfinityRpg.fsproj", "{DCE0536A-59E0-4AB5-86C5-EE919E430583}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nu.Pipe", "Nu\Nu.Pipe\Nu.Pipe.fsproj", "{85D631A5-821A-4755-A68E-C1FFC64E469A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AStar", "..\..\AStar\AStar\AStar\AStar.csproj", "{61667008-EE77-43B4-8825-0231D241CCA6}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "BlazeVector", "Games\BlazeVector\BlazeVector.fsproj", "{516010F3-7BDC-4D92-A4B3-38ECFEC429A8}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Prime", "..\..\Prime\Prime\Prime\Prime.fsproj", "{FE09AE81-B66B-42E0-8192-EADECEFC9893}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "InfinityRpg", "Games\InfinityRpg\InfinityRpg.fsproj", "{DCE0536A-59E0-4AB5-86C5-EE919E430583}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

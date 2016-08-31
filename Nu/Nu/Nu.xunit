@@ -1,7 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<xunit>
-  <assemblies>
-    <assembly filename="Nu\bin\Debug\Nu.exe" shadow-copy="true" />
-    <assembly filename="Nu\bin\Release\Nu.exe" shadow-copy="true" />
-  </assemblies>
-</xunit>
