@@ -8,7 +8,6 @@ open Prime.Chain
 open Prime.Stream
 open Nu
 open Nu.Stream
-open AStar
 open InfinityRpg
 
 [<AutoOpen>]
