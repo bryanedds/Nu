@@ -63,7 +63,7 @@
     <PreBuildEvent />
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>"$(ProjectDir)..\Nu.Pipe\bin\$(ConfigurationName)\Nu.Pipe.exe" "$(ProjectDir)\" "$(TargetDir)\" "$(ProjectDir)refinement" False</PostBuildEvent>
+    <PostBuildEvent>"$(ProjectDir)..\..\Nu\Nu.Pipe\bin\$(ConfigurationName)\Nu.Pipe.exe" "$(ProjectDir)\" "$(TargetDir)\" "$(ProjectDir)refinement" False</PostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.fs" />
@@ -98,12 +98,12 @@
       <Project>{fe09ae81-b66b-42e0-8192-eadecefc9893}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Nu.SDL2\Nu.SDL2.csproj">
+    <ProjectReference Include="..\..\Nu\Nu.SDL2\Nu.SDL2.csproj">
       <Name>Nu.SDL2</Name>
       <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Nu.Pipe\Nu.Pipe.fsproj">
+    <ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj">
       <Name>Nu.Pipe</Name>
       <Project>{85d631a5-821a-4755-a68e-c1ffc64e469a}</Project>
       <Private>True</Private>
