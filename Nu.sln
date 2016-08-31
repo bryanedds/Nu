@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nu", "Nu\Nu.fsproj", "{A7A6F758-E122-4C2C-9525-1F29802D007C}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nu", "Nu\Nu\Nu.fsproj", "{A7A6F758-E122-4C2C-9525-1F29802D007C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nu.Gaia.Design", "Nu\Nu.Gaia.Design\Nu.Gaia.Design.csproj", "{F67217C1-6BB3-4180-916B-B7B4CDC14C2D}"
 EndProject
