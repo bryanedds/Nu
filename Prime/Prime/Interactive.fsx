@@ -2,15 +2,15 @@
 // Copyright (C) Bryan Edds, 2012-2016.
 
 #I __SOURCE_DIRECTORY__
-#r "../../../Prime/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
-#r "../../../Prime/FParsec/FParsec.dll"
-#r "../../../Prime/xunit/xunit.core.dll"
-#r "../../../Prime/xunit/xunit.abstractions.dll"
-#r "../../../Prime/xunit/xunit.assert.dll"
-#r "../../../Prime/xunit/xunit.execution.desktop.dll"
-#r "../../../Prime/FsCheck/FsCheck.dll"
-#r "../../../Prime/FsCheck.Xunit/FsCheck.Xunit.dll"
-#r "../../../Prime/Prime/Prime/bin/Debug/Prime.exe"
+#r "../../Prime/Prime.Dependencies/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
+#r "../../Prime/Prime.Dependencies/FParsec/FParsec.dll"
+#r "../../Prime/Prime.Dependencies/xunit/xunit.core.dll"
+#r "../../Prime/Prime.Dependencies/xunit/xunit.abstractions.dll"
+#r "../../Prime/Prime.Dependencies/xunit/xunit.assert.dll"
+#r "../../Prime/Prime.Dependencies/xunit/xunit.execution.desktop.dll"
+#r "../../Prime/Prime.Dependencies/FsCheck/FsCheck.dll"
+#r "../../Prime/Prime.Dependencies/FsCheck.Xunit/FsCheck.Xunit.dll"
+#r "../../Prime/Prime/bin/Debug/Prime.exe"
 
 open System
 open FParsec

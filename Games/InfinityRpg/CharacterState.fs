@@ -1,6 +1,5 @@
 ﻿namespace InfinityRpg
 open System
-open AStar
 open OpenTK
 open Prime
 open Nu
