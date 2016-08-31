@@ -26,9 +26,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nu.SDL2", "Nu\Nu.SDL2\Nu.SD
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nu.Pipe", "Nu\Nu.Pipe\Nu.Pipe.fsproj", "{85D631A5-821A-4755-A68E-C1FFC64E469A}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "BlazeVector", "Games\BlazeVector\BlazeVector.fsproj", "{516010F3-7BDC-4D92-A4B3-38ECFEC429A8}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "BlazeVector", "Projects\BlazeVector\BlazeVector.fsproj", "{516010F3-7BDC-4D92-A4B3-38ECFEC429A8}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "InfinityRpg", "Games\InfinityRpg\InfinityRpg.fsproj", "{DCE0536A-59E0-4AB5-86C5-EE919E430583}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "InfinityRpg", "Projects\InfinityRpg\InfinityRpg.fsproj", "{DCE0536A-59E0-4AB5-86C5-EE919E430583}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
