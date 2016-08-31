@@ -89,7 +89,7 @@ module Operators =
     let inline getPropertyValue indices (p : PropertyInfo) (x : obj) = p.GetValue (x, indices)
 
     /// Test for equality, usually faster than (=).
-    let inline fastEq (x : 'a) (y : 'a) = System.IEquatable<'a>.Equals (x, y)
+    let fastEq (x : 'a) (y : 'a) = System.IEquatable<'a>.Equals (x, y)
 
     /// Test for reference equality.
     let inline refEq (x : 'a) (y : 'a) = obj.ReferenceEquals (x, y)
