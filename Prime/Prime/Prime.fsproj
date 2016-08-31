@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\Packages\xunit.runner.visualstudio.2.1.0\build\net20\xunit.runner.visualstudio.props" Condition="Exists('..\..\..\Packages\xunit.runner.visualstudio.2.1.0\build\net20\xunit.runner.visualstudio.props')" />
   <PropertyGroup>
@@ -124,16 +124,16 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FParsec">
-      <HintPath>..\..\FParsec\FParsec.dll</HintPath>
+      <HintPath>..\Prime.Dependencies\FParsec\FParsec.dll</HintPath>
     </Reference>
     <Reference Include="FParsecCS">
-      <HintPath>..\..\FParsec\FParsecCS.dll</HintPath>
+      <HintPath>..\Prime.Dependencies\FParsec\FParsecCS.dll</HintPath>
     </Reference>
     <Reference Include="FsCheck">
-      <HintPath>..\..\FsCheck\FsCheck.dll</HintPath>
+      <HintPath>..\Prime.Dependencies\FsCheck\FsCheck.dll</HintPath>
     </Reference>
     <Reference Include="FsCheck.Xunit">
-      <HintPath>..\..\FsCheck.Xunit\FsCheck.Xunit.dll</HintPath>
+      <HintPath>..\Prime.Dependencies\FsCheck.Xunit\FsCheck.Xunit.dll</HintPath>
     </Reference>
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
@@ -143,16 +143,16 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
     <Reference Include="xunit.abstractions">
-      <HintPath>..\..\xunit\xunit.abstractions.dll</HintPath>
+      <HintPath>..\Prime.Dependencies\xunit\xunit.abstractions.dll</HintPath>
     </Reference>
     <Reference Include="xunit.assert">
-      <HintPath>..\..\xunit\xunit.assert.dll</HintPath>
+      <HintPath>..\Prime.Dependencies\xunit\xunit.assert.dll</HintPath>
     </Reference>
     <Reference Include="xunit.core">
-      <HintPath>..\..\xunit\xunit.core.dll</HintPath>
+      <HintPath>..\Prime.Dependencies\xunit\xunit.core.dll</HintPath>
     </Reference>
     <Reference Include="xunit.execution.desktop">
-      <HintPath>..\..\xunit\xunit.execution.desktop.dll</HintPath>
+      <HintPath>..\Prime.Dependencies\xunit\xunit.execution.desktop.dll</HintPath>
     </Reference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
