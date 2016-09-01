@@ -46,5 +46,5 @@ Refinement/
 #########
 # Nuget #
 #########
-Packages/
+packages/
 !packages/repositories.config
