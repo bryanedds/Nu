@@ -194,6 +194,7 @@ module WorldTypes =
              Define? Overflow Vector2.Zero
              Define? ViewType Relative
              Define? Visible true
+             Define? Enabled true
              Define? Omnipresent false
              Define? PublishChanges true
              Define? PublishUpdatesNp false
@@ -483,6 +484,7 @@ module WorldTypes =
           Overflow : Vector2
           ViewType : ViewType
           Visible : bool
+          Enabled : bool
           Omnipresent : bool
           PublishChanges : bool
           PublishUpdatesNp : bool
@@ -549,6 +551,7 @@ module WorldTypes =
               Overflow = Vector2.Zero
               ViewType = Relative
               Visible = true
+              Enabled = true
               Omnipresent = false
               PublishChanges = true
               PublishUpdatesNp = false
