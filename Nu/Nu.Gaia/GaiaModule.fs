@@ -275,8 +275,12 @@ module Gaia =
             let world = unsubscribeFromEntityEvents world
             let world = World.destroyGroupImmediate selectedGroup world
 
-            // load and add group
-            let world = World.readGroupFromFile filePath (Some selectedGroup.GroupName) Simulants.EditorScreen world |> snd
+            // load and add group, updating tab and selected group in the process
+            let (group, world) = World.readGroupFromFile filePath None Simulants.EditorScreen world
+            let groupNameStr = Name.getNameStr (group.GetName world)
+            form.groupTabs.SelectedTab.Text <- groupNameStr
+            form.groupTabs.SelectedTab.Name <- groupNameStr
+            let world = World.updateUserState (fun editorState -> { editorState with SelectedGroup = group }) world
             let world = subscribeToEntityEvents form world
 
             // refresh tree view
