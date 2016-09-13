@@ -495,7 +495,7 @@ module Gaia =
                 world
             with exn ->
                 let world = World.choose world
-                ignore ^ MessageBox.Show (scstring exn, "Could not create Gaia form", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                ignore ^ MessageBox.Show (scstring exn, "Could not create entity", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 world
 
     let private handleFormDeleteEntity (form : GaiaForm) (_ : EventArgs) =

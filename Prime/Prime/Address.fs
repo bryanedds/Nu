@@ -45,7 +45,8 @@ type AddressConverter (targetType : Type) =
             match addressSymbol with
             | Atom (fullNameStr, _) | String (fullNameStr, _) ->
                 let makeFromStringFunction = targetType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                makeFromStringFunction.Invoke (null, [|fullNameStr|])
+                let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((targetType.GetGenericArguments ()).[0])
+                makeFromStringFunctionGeneric.Invoke (null, [|fullNameStr|])
             | Number (_, _) | Quote (_, _) | Symbols (_, _) ->
                 failconv "Expected Symbol or String for conversion to Address." ^ Some addressSymbol
         | _ ->

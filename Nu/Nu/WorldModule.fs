@@ -679,6 +679,8 @@ module WorldModule =
         static member internal setEntityViewType value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with ViewType = value }) Property? ViewType entity world
         static member internal getEntityVisible entity world = (World.getEntityState entity world).Visible
         static member internal setEntityVisible value entity world = World.updateEntityState (fun entityState -> { entityState with Visible = value }) Property? Visible entity world
+        static member internal getEntityEnabled entity world = (World.getEntityState entity world).Enabled
+        static member internal setEntityEnabled value entity world = World.updateEntityState (fun entityState -> { entityState with Enabled = value }) Property? Enabled entity world
         static member internal getEntityOmnipresent entity world = (World.getEntityState entity world).Omnipresent
         static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with Omnipresent = value }) Property? Omnipresent entity world
         static member internal getEntityPublishChanges entity world = (World.getEntityState entity world).PublishChanges
@@ -737,6 +739,7 @@ module WorldModule =
             | "Overflow" -> (World.getEntityOverflow entity world :> obj, typeof<Vector2>)
             | "ViewType" -> (World.getEntityViewType entity world :> obj, typeof<ViewType>)
             | "Visible" -> (World.getEntityVisible entity world :> obj, typeof<bool>)
+            | "Enabled" -> (World.getEntityEnabled entity world :> obj, typeof<bool>)
             | "Omnipresent" -> (World.getEntityOmnipresent entity world :> obj, typeof<bool>)
             | "PublishChanges" -> (World.getEntityPublishChanges entity world :> obj, typeof<bool>)
             | "PublishUpdatesNp" -> (World.getEntityPublishUpdatesNp entity world :> obj, typeof<bool>)
@@ -761,6 +764,7 @@ module WorldModule =
             | "Overflow" -> World.setEntityOverflow (property |> fst :?> Vector2) entity world
             | "ViewType" -> World.setEntityViewType (property |> fst :?> ViewType) entity world
             | "Visible" -> World.setEntityVisible (property |> fst :?> bool) entity world
+            | "Enabled" -> World.setEntityEnabled (property |> fst :?> bool) entity world
             | "Omnipresent" -> World.setEntityOmnipresent (property |> fst :?> bool) entity world
             | "PublishChanges" -> World.setEntityPublishChanges (property |> fst :?> bool) entity world
             | "PublishUpdatesNp" -> failwith "Cannot change entity publish updates."

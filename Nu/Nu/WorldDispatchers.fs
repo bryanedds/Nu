@@ -25,6 +25,9 @@ module MountFacetModule =
         member this.GetDepthLocal world : single = this.Get Property? DepthLocal world
         member this.SetDepthLocal (value : single) world = this.Set Property? DepthLocal value world
         member this.TagDepthLocal = PropertyTag.make this Property? DepthLocal this.GetDepthLocal this.SetDepthLocal
+        member this.GetEnabledLocal world : bool = this.Get Property? EnabledLocal world
+        member this.SetEnabledLocal (value : bool) world = this.Set Property? EnabledLocal value world
+        member this.TagEnabledLocal = PropertyTag.make this Property? EnabledLocal this.GetEnabledLocal this.SetEnabledLocal
         member private this.GetMountUpdateCountNp world : int64 = this.Get Property? MountUpdateCountNp world
         member private this.SetMountUpdateCountNp (value : int64) world = this.Set Property? MountUpdateCountNp value world
         member private this.TagMountUpdateCountNp = PropertyTag.make this Property? MountUpdateCountNp this.GetMountUpdateCountNp this.SetMountUpdateCountNp
@@ -32,54 +35,62 @@ module MountFacetModule =
         member private this.SetMountUnsubscribeNp (value : World -> World) world = this.Set Property? MountUnsubscribeNp value world
         member private this.TagMountUnsubscribeNp = PropertyTag.make this Property? MountUnsubscribeNp this.GetMountUnsubscribeNp this.SetMountUnsubscribeNp
 
-    type MountFacet () =
-        inherit Facet ()
-
-        static let handleRelationChange evt world =
-            let entity = evt.Subscriber : Entity
-            let target = evt.Publisher :?> Entity
-            let transform = target.GetTransform world
-            let updateCount = World.getUpdateCount world
-            if  transform <> target.GetTransform evt.Data.OldWorld &&
-                updateCount <> entity.GetMountUpdateCountNp world then
-                let transform =
-                    { transform with
-                        Position = transform.Position + entity.GetPositionLocal world
-                        Depth = transform.Depth + entity.GetDepthLocal world }
-                let world = entity.SetTransform transform world
-                let world = entity.SetMountUpdateCountNp updateCount world
-                (Cascade, world)
-            else (Cascade, world)
-
-        static let rec handleEntityChange evt world =
-            let entity = evt.Subscriber : Entity
-            if entity.GetOptMountRelation evt.Data.OldWorld <> entity.GetOptMountRelation world then
-                let world = (entity.GetMountUnsubscribeNp world) world
-                let (unsubscribe, world) = World.monitorPlus handleRelationChange (entity.GetChangeEvent Property? Position) entity world
-                let (unsubscribe2, world) = World.monitorPlus handleRelationChange (entity.GetChangeEvent Property? Depth) entity world
-                let world = entity.SetMountUnsubscribeNp (unsubscribe2 >> unsubscribe) world
-                (Cascade, world)
-            else (Cascade, world)
-
-        static member PropertyDefinitions =
-            [Define? OptMountRelation (None : Entity Relation option)
-             Define? PositionLocal Vector2.Zero
-             Define? DepthLocal 0.0f
-             Define? MountUpdateCountNp Int64.MinValue
-             Define? MountUnsubscribeNp (id : World -> World)]
-
-        override facet.Register (entity, world) =
-            let world = World.monitor handleEntityChange (entity.GetChangeEvent Property? Position) entity world
-            let world = World.monitor handleEntityChange (entity.GetChangeEvent Property? Depth) entity world
-            let (unsubscribe, world) =
-                match entity.GetOptMountRelation world with
-                | Some target ->
-                    let address = Relation.resolve entity.EntityAddress target
-                    let (unsubscribe, world) = World.monitorPlus handleRelationChange (Events.EntityChange Property? Position ->>- address) entity world
-                    let (unsubscribe2, world) = World.monitorPlus handleRelationChange (Events.EntityChange Property? Depth ->>- address) entity world
-                    (unsubscribe2 >> unsubscribe, world)
-                | None -> (id, world)
-            entity.SetMountUnsubscribeNp unsubscribe world
+    //type MountFacet () =
+    //    inherit Facet ()
+    //
+    //    static let handleRelationChange evt world =
+    //        let entity = evt.Subscriber : Entity
+    //        let target = evt.Publisher :?> Entity
+    //        let targetPosition = target.GetPosition world
+    //        let targetDepth = target.GetDepth world
+    //        let targetEnabled = target.GetEnabled world
+    //        let updateCount = World.getUpdateCount world
+    //        if  World.containsEntity target evt.Data.OldWorld &&
+    //            (targetPosition <> target.GetPosition evt.Data.OldWorld ||
+    //             targetDepth <> target.GetDepth evt.Data.OldWorld ||
+    //             targetEnabled <> target.GetEnabled evt.Data.OldWorld) &&
+    //            updateCount <> entity.GetMountUpdateCountNp world then
+    //            let world = entity.SetPosition (targetPosition + entity.GetPositionLocal world) world
+    //            let world = entity.SetDepth (targetDepth + entity.GetDepthLocal world) world
+    //            let world = entity.SetEnabled (targetEnabled && entity.GetEnabledLocal world) world
+    //            let world = entity.SetMountUpdateCountNp updateCount world
+    //            (Cascade, world)
+    //        else (Cascade, world)
+    //
+    //    static let rec handleEntityChange evt world =
+    //        let entity = evt.Subscriber : Entity
+    //        if  World.containsEntity entity evt.Data.OldWorld &&
+    //            entity.GetOptMountRelation evt.Data.OldWorld <> entity.GetOptMountRelation world then
+    //            let world = (entity.GetMountUnsubscribeNp world) world
+    //            let (unsubscribe, world) = World.monitorPlus handleRelationChange (entity.GetChangeEvent Property? Position) entity world
+    //            let (unsubscribe2, world) = World.monitorPlus handleRelationChange (entity.GetChangeEvent Property? Depth) entity world
+    //            let (unsubscribe3, world) = World.monitorPlus handleRelationChange (entity.GetChangeEvent Property? Enabled) entity world
+    //            let world = entity.SetMountUnsubscribeNp (unsubscribe3 >> unsubscribe2 >> unsubscribe) world
+    //            (Cascade, world)
+    //        else (Cascade, world)
+    //
+    //    static member PropertyDefinitions =
+    //        [Define? OptMountRelation (None : Entity Relation option)
+    //         Define? PositionLocal Vector2.Zero
+    //         Define? DepthLocal 0.0f
+    //         Define? EnabledLocal true
+    //         Define? MountUpdateCountNp Int64.MinValue
+    //         Define? MountUnsubscribeNp (id : World -> World)]
+    //
+    //    override facet.Register (entity, world) =
+    //        let world = World.monitor handleEntityChange (entity.GetChangeEvent Property? Position) entity world
+    //        let world = World.monitor handleEntityChange (entity.GetChangeEvent Property? Depth) entity world
+    //        let world = World.monitor handleEntityChange (entity.GetChangeEvent Property? Enabled) entity world
+    //        let (unsubscribe, world) =
+    //            match entity.GetOptMountRelation world with
+    //            | Some target ->
+    //                let address = Relation.resolve entity.EntityAddress target
+    //                let (unsubscribe, world) = World.monitorPlus handleRelationChange (Events.EntityChange Property? Position ->>- address) entity world
+    //                let (unsubscribe2, world) = World.monitorPlus handleRelationChange (Events.EntityChange Property? Depth ->>- address) entity world
+    //                let (unsubscribe3, world) = World.monitorPlus handleRelationChange (Events.EntityChange Property? Enabled ->>- address) entity world
+    //                (unsubscribe3 >> unsubscribe2 >> unsubscribe, world)
+    //            | None -> (id, world)
+    //        entity.SetMountUnsubscribeNp unsubscribe world
 
 [<AutoOpen>]
 module EffectFacetModule =
@@ -256,9 +267,6 @@ module RigidBodyFacetModule =
         member this.GetAwake world : bool = this.Get Property? Awake world
         member this.SetAwake (value : bool) world = this.Set Property? Awake value world
         member this.TagAwake = PropertyTag.make this Property? Awake this.GetAwake this.SetAwake
-        member this.GetEnabled world : bool = this.Get Property? Enabled world
-        member this.SetEnabled (value : bool) world = this.Set Property? Enabled value world
-        member this.TagEnabled = PropertyTag.make this Property? Enabled this.GetEnabled this.SetEnabled
         member this.GetDensity world : single = this.Get Property? Density world
         member this.SetDensity (value : single) world = this.Set Property? Density value world
         member this.TagDensity = PropertyTag.make this Property? Density this.GetDensity this.SetDensity
@@ -314,7 +322,6 @@ module RigidBodyFacetModule =
             [Variable? MinorId ^ fun () -> makeGuid ()
              Define? BodyType Dynamic
              Define? Awake true
-             Define? Enabled true
              Define? Density Constants.Physics.NormalDensity
              Define? Friction 0.0f
              Define? Restitution 0.0f
@@ -495,10 +502,12 @@ module GuiDispatcherModule =
                     else Cascade
                 else Cascade
             (handling, world)
-        
+
+        //static member IntrinsicFacetNames =
+        //    [typeof<MountFacet>.Name]
+
         static member PropertyDefinitions =
             [Define? ViewType Absolute
-             Define? Enabled true
              Define? DisabledColor ^ Vector4 0.75f
              Define? SwallowMouseLeft true]
 

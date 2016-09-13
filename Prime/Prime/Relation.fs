@@ -45,7 +45,8 @@ type RelationConverter (targetType : Type) =
             match relationSymbol with
             | Atom (fullNameStr, _) | String (fullNameStr, _) ->
                 let makeFromStringFunction = targetType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                makeFromStringFunction.Invoke (null, [|fullNameStr|])
+                let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((targetType.GetGenericArguments ()).[0])
+                makeFromStringFunctionGeneric.Invoke (null, [|fullNameStr|])
             | Number (_, _) | Quote (_, _) | Symbols (_, _) ->
                 failconv "Expected Symbol or String for conversion to Relation." ^ Some relationSymbol
         | _ ->
@@ -97,8 +98,8 @@ module RelationModule =
             Relation<'a>.hash this
         
         override this.ToString () =
-            let optNames = List.map (fun optName -> match optName with Some name -> Name.getNameStr name | None -> ".")
-            String.Join ("/", optNames)
+            let names = List.map (fun optName -> match optName with Some name -> Name.getNameStr name | None -> ".") this.OptNames
+            String.Join ("/", names)
 
     [<RequireQualifiedAccess>]
     module Relation =
@@ -107,7 +108,7 @@ module RelationModule =
         let makeFromList<'a> optNamesList =
             { OptNames = optNamesList |> List.ofSeq; TypeCarrier = fun (_ : 'a) -> () }
     
-        /// Make an address from a '/' delimited string.
+        /// Make a relation from a '/' delimited string.
         let makeFromString<'a> relationStr =
             Relation<'a>.makeFromString relationStr
 
