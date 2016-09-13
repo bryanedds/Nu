@@ -877,8 +877,11 @@ module WorldModule =
 
             // find the entity's dispatcher
             let dispatchers = World.getEntityDispatchers world
-            let dispatcher = Map.find dispatcherName dispatchers
-            
+            let dispatcher =
+                match Map.tryFind dispatcherName dispatchers with
+                | Some dispatcher -> dispatcher
+                | None -> failwith ^ "Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
+
             // try to compute the routed overlay name
             let classification = Classification.make dispatcherName ^ Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
             let optRoutedOverlayName = OverlayRouter.findOptOverlayName classification overlayRouter
@@ -977,9 +980,12 @@ module WorldModule =
                 | None ->
                     Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<EntityDispatcher>.Name
-                    let dispatcher = Map.find dispatcherName dispatchers
+                    let dispatcher =
+                        match Map.tryFind dispatcherName dispatchers with
+                        | Some dispatcher -> dispatcher
+                        | None -> failwith ^ "Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
                     (dispatcherName, dispatcher)
-            
+
             // try to compute the routed overlay name
             let classification = Classification.makeVanilla dispatcherName
             let optRoutedOverlayName = OverlayRouter.findOptOverlayName classification overlayRouter
@@ -1254,7 +1260,10 @@ module WorldModule =
         /// Create a group and add it to the world.
         static member createGroup dispatcherName optSpecialization optName screen world =
             let dispatchers = World.getGroupDispatchers world
-            let dispatcher = Map.find dispatcherName dispatchers
+            let dispatcher =
+                match Map.tryFind dispatcherName dispatchers with
+                | Some dispatcher -> dispatcher
+                | None -> failwith ^ "Could not find a GroupDispatcher named '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
             let groupState = GroupState.make optSpecialization optName dispatcher
             let groupState = Reflection.attachProperties GroupState.copy dispatcher groupState
             let group = screen.ScreenAddress -<<- ntoa<Group> groupState.Name |> Group.proxy
@@ -1278,10 +1287,10 @@ module WorldModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
+                    Log.info ^ "Could not find GroupDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
                     let dispatcherName = typeof<GroupDispatcher>.Name
                     Map.find dispatcherName dispatchers
-            
+
             // make the bare group state with name as id
             let groupState = GroupState.make None None dispatcher
 
@@ -1506,10 +1515,10 @@ module WorldModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
+                    Log.info ^ "Could not find ScreenDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
                     let dispatcherName = typeof<ScreenDispatcher>.Name
                     Map.find dispatcherName dispatchers
-            
+
             // make the bare screen state with name as id
             let screenState = ScreenState.make None None dispatcher
 
