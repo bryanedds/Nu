@@ -112,7 +112,10 @@ module WorldScreenModule =
         /// Create a screen and add it to the world.
         static member createScreen dispatcherName optSpecialization optName world =
             let dispatchers = World.getScreenDispatchers world
-            let dispatcher = Map.find dispatcherName dispatchers
+            let dispatcher =
+                match Map.tryFind dispatcherName dispatchers with
+                | Some dispatcher -> dispatcher
+                | None -> failwith ^ "Could not find ScreenDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
             let screenState = ScreenState.make optSpecialization optName dispatcher
             let screenState = Reflection.attachProperties ScreenState.copy dispatcher screenState
             let screen = ntos screenState.Name
