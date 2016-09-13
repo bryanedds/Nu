@@ -1745,10 +1745,10 @@ module WorldModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
+                    Log.info ^ "Could not find GameDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
                     let dispatcherName = typeof<GameDispatcher>.Name
                     Map.find dispatcherName dispatchers
-            
+
             // make the bare game state
             let gameState = World.makeGameState None dispatcher
 
