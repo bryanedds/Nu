@@ -128,17 +128,17 @@ module WorldEntityModule =
             this.SetPosition (center - size * 0.5f) world
 
         /// TODO: document!
-        member this.SetPositionSnapped snap position world =
-            let snapped = Math.snap2F snap position
-            this.SetPosition snapped world
-
-        /// TODO: document!
         member this.SetTransformSnapped positionSnap rotationSnap transform world =
             let transform = Math.snapTransform positionSnap rotationSnap transform
             this.SetTransform transform world
 
+        /// Query the an entity uses a facet of type 'a.
+        member this.HasFacet facetType world =
+            let facets = this.GetFacetsNp world
+            List.exists (fun facet -> getType facet = facetType) facets
+
         /// Check that an entity dispatches in the same manner as the dispatcher with the target type.
-        member this.DispatchesAs (dispatcherTargetType : Type) world =
+        member this.DispatchesAs dispatcherTargetType world =
             Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
 
     type World with
