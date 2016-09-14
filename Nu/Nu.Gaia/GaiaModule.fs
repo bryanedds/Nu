@@ -217,9 +217,15 @@ module Gaia =
             match tryMousePick form mousePosition world with
             | Some entity ->
                 let world = pushPastWorld world world
-                let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
-                let dragState = DragEntityPosition (entity.GetPosition world + mousePositionWorld, mousePositionWorld, entity)
-                let world = World.updateUserState (fun editorState -> { editorState with DragEntityState = dragState }) world
+                let world =
+                    World.updateUserState (fun editorState ->
+                        let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
+                        let entityPosition = 
+                            if entity.HasFacet typeof<MountFacet> world && Option.isSome (entity.GetOptParent world)
+                            then entity.GetPositionLocal world
+                            else entity.GetPosition world
+                        { editorState with DragEntityState = DragEntityPosition (entityPosition + mousePositionWorld, mousePositionWorld, entity) })
+                        world
                 (handled, world)
             | None -> (handled, world)
         else (Cascade, world)
@@ -773,7 +779,11 @@ module Gaia =
                 let mousePosition = World.getMousePositionF world
                 let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
                 let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
-                let world = entity.SetPositionSnapped positionSnap entityPosition world
+                let entityPositionSnapped = Math.snap2F positionSnap entityPosition
+                let world =
+                    if entity.HasFacet typeof<MountFacet> world && Option.isSome (entity.GetOptParent world)
+                    then entity.SetPositionLocal entityPositionSnapped world
+                    else entity.SetPosition entityPositionSnapped world
                 let world = World.propagateEntityPhysics entity world
                 let world =
                     World.updateUserState (fun editorState ->

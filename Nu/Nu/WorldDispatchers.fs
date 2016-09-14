@@ -16,81 +16,82 @@ module MountFacetModule =
 
     type Entity with
     
-        member this.GetOptMountRelation world : Entity Relation option = this.Get Property? OptMountRelation world
-        member this.SetOptMountRelation (value : Entity Relation option) world = this.Set Property? OptMountRelation value world
-        member this.TagOptMountRelation = PropertyTag.make this Property? OptMountRelation this.GetOptMountRelation this.SetOptMountRelation
+        member this.GetOptParent world : Entity Relation option = this.Get Property? OptParent world
+        member this.SetOptParent (value : Entity Relation option) world = this.Set Property? OptParent value world
+        member this.TagOptParent = PropertyTag.make this Property? OptParent this.GetOptParent this.SetOptParent
         member this.GetPositionLocal world : Vector2 = this.Get Property? PositionLocal world
         member this.SetPositionLocal (value : Vector2) world = this.Set Property? PositionLocal value world
         member this.TagPositionLocal = PropertyTag.make this Property? PositionLocal this.GetPositionLocal this.SetPositionLocal
         member this.GetDepthLocal world : single = this.Get Property? DepthLocal world
         member this.SetDepthLocal (value : single) world = this.Set Property? DepthLocal value world
         member this.TagDepthLocal = PropertyTag.make this Property? DepthLocal this.GetDepthLocal this.SetDepthLocal
+        member this.GetVisibleLocal world : bool = this.Get Property? VisibleLocal world
+        member this.SetVisibleLocal (value : bool) world = this.Set Property? VisibleLocal value world
+        member this.TagVisibleLocal = PropertyTag.make this Property? VisibleLocal this.GetVisibleLocal this.SetVisibleLocal
         member this.GetEnabledLocal world : bool = this.Get Property? EnabledLocal world
         member this.SetEnabledLocal (value : bool) world = this.Set Property? EnabledLocal value world
         member this.TagEnabledLocal = PropertyTag.make this Property? EnabledLocal this.GetEnabledLocal this.SetEnabledLocal
-        member private this.GetMountUpdateCountNp world : int64 = this.Get Property? MountUpdateCountNp world
-        member private this.SetMountUpdateCountNp (value : int64) world = this.Set Property? MountUpdateCountNp value world
-        member private this.TagMountUpdateCountNp = PropertyTag.make this Property? MountUpdateCountNp this.GetMountUpdateCountNp this.SetMountUpdateCountNp
         member private this.GetMountUnsubscribeNp world : World -> World = this.Get Property? MountUnsubscribeNp world
         member private this.SetMountUnsubscribeNp (value : World -> World) world = this.Set Property? MountUnsubscribeNp value world
         member private this.TagMountUnsubscribeNp = PropertyTag.make this Property? MountUnsubscribeNp this.GetMountUnsubscribeNp this.SetMountUnsubscribeNp
 
-    //type MountFacet () =
-    //    inherit Facet ()
-    //
-    //    static let handleRelationChange evt world =
-    //        let entity = evt.Subscriber : Entity
-    //        let target = evt.Publisher :?> Entity
-    //        let targetPosition = target.GetPosition world
-    //        let targetDepth = target.GetDepth world
-    //        let targetEnabled = target.GetEnabled world
-    //        let updateCount = World.getUpdateCount world
-    //        if  World.containsEntity target evt.Data.OldWorld &&
-    //            (targetPosition <> target.GetPosition evt.Data.OldWorld ||
-    //             targetDepth <> target.GetDepth evt.Data.OldWorld ||
-    //             targetEnabled <> target.GetEnabled evt.Data.OldWorld) &&
-    //            updateCount <> entity.GetMountUpdateCountNp world then
-    //            let world = entity.SetPosition (targetPosition + entity.GetPositionLocal world) world
-    //            let world = entity.SetDepth (targetDepth + entity.GetDepthLocal world) world
-    //            let world = entity.SetEnabled (targetEnabled && entity.GetEnabledLocal world) world
-    //            let world = entity.SetMountUpdateCountNp updateCount world
-    //            (Cascade, world)
-    //        else (Cascade, world)
-    //
-    //    static let rec handleEntityChange evt world =
-    //        let entity = evt.Subscriber : Entity
-    //        if  World.containsEntity entity evt.Data.OldWorld &&
-    //            entity.GetOptMountRelation evt.Data.OldWorld <> entity.GetOptMountRelation world then
-    //            let world = (entity.GetMountUnsubscribeNp world) world
-    //            let (unsubscribe, world) = World.monitorPlus handleRelationChange (entity.GetChangeEvent Property? Position) entity world
-    //            let (unsubscribe2, world) = World.monitorPlus handleRelationChange (entity.GetChangeEvent Property? Depth) entity world
-    //            let (unsubscribe3, world) = World.monitorPlus handleRelationChange (entity.GetChangeEvent Property? Enabled) entity world
-    //            let world = entity.SetMountUnsubscribeNp (unsubscribe3 >> unsubscribe2 >> unsubscribe) world
-    //            (Cascade, world)
-    //        else (Cascade, world)
-    //
-    //    static member PropertyDefinitions =
-    //        [Define? OptMountRelation (None : Entity Relation option)
-    //         Define? PositionLocal Vector2.Zero
-    //         Define? DepthLocal 0.0f
-    //         Define? EnabledLocal true
-    //         Define? MountUpdateCountNp Int64.MinValue
-    //         Define? MountUnsubscribeNp (id : World -> World)]
-    //
-    //    override facet.Register (entity, world) =
-    //        let world = World.monitor handleEntityChange (entity.GetChangeEvent Property? Position) entity world
-    //        let world = World.monitor handleEntityChange (entity.GetChangeEvent Property? Depth) entity world
-    //        let world = World.monitor handleEntityChange (entity.GetChangeEvent Property? Enabled) entity world
-    //        let (unsubscribe, world) =
-    //            match entity.GetOptMountRelation world with
-    //            | Some target ->
-    //                let address = Relation.resolve entity.EntityAddress target
-    //                let (unsubscribe, world) = World.monitorPlus handleRelationChange (Events.EntityChange Property? Position ->>- address) entity world
-    //                let (unsubscribe2, world) = World.monitorPlus handleRelationChange (Events.EntityChange Property? Depth ->>- address) entity world
-    //                let (unsubscribe3, world) = World.monitorPlus handleRelationChange (Events.EntityChange Property? Enabled ->>- address) entity world
-    //                (unsubscribe3 >> unsubscribe2 >> unsubscribe, world)
-    //            | None -> (id, world)
-    //        entity.SetMountUnsubscribeNp unsubscribe world
+    type MountFacet () =
+        inherit Facet ()
+
+        static let handleLocalPropertyChange evt world =
+            let entity = evt.Subscriber : Entity
+            match entity.GetOptParent world with
+            | Some parentRelation ->
+                let parentAddress = Relation.resolve entity.EntityAddress parentRelation
+                let parent = Entity.proxy parentAddress
+                let world = entity.SetPosition (parent.GetPosition world + entity.GetPositionLocal world) world
+                let world = entity.SetDepth (parent.GetDepth world + entity.GetDepthLocal world) world
+                let world = entity.SetVisible (parent.GetVisible world && entity.GetVisibleLocal world) world
+                let world = entity.SetEnabled (parent.GetEnabled world && entity.GetEnabledLocal world) world
+                (Cascade, world)
+            | None -> (Cascade, world)
+
+        static let handleParentPropertyChange evt world =
+            let entity = evt.Subscriber : Entity
+            let parent = evt.Publisher :?> Entity
+            let world = entity.SetPosition (parent.GetPosition world + entity.GetPositionLocal world) world
+            let world = entity.SetDepth (parent.GetDepth world + entity.GetDepthLocal world) world
+            let world = entity.SetVisible (parent.GetVisible world && entity.GetVisibleLocal world) world
+            let world = entity.SetEnabled (parent.GetEnabled world && entity.GetEnabledLocal world) world
+            (Cascade, world)
+
+        static let rec handleParentChange evt world =
+            let entity = evt.Subscriber : Entity
+            let world = (entity.GetMountUnsubscribeNp world) world // NOTE: unsubscribes
+            match entity.GetOptParent world with
+            | Some parentRelation ->
+                let parentAddress = Relation.resolve entity.EntityAddress parentRelation
+                let (unsubscribe, world) = World.monitorPlus handleParentPropertyChange (Events.EntityChange Property? Position ->>- parentAddress) entity world
+                let (unsubscribe2, world) = World.monitorPlus handleParentPropertyChange (Events.EntityChange Property? Depth ->>- parentAddress) entity world
+                let (unsubscribe3, world) = World.monitorPlus handleParentPropertyChange (Events.EntityChange Property? Visible ->>- parentAddress) entity world
+                let (unsubscribe4, world) = World.monitorPlus handleParentPropertyChange (Events.EntityChange Property? Enabled ->>- parentAddress) entity world
+                let world = entity.SetMountUnsubscribeNp (unsubscribe4 >> unsubscribe3 >> unsubscribe2 >> unsubscribe) world
+                (Cascade, world)
+            | None -> (Cascade, world)
+
+        static member PropertyDefinitions =
+            [Define? OptParent (None : Entity Relation option)
+             Define? PositionLocal Vector2.Zero
+             Define? DepthLocal 0.0f
+             Define? VisibleLocal true
+             Define? EnabledLocal true
+             Define? MountUnsubscribeNp (id : World -> World)]
+
+        override facet.Register (entity, world) =
+            let world = entity.SetMountUnsubscribeNp id world // ensure unsubscribe function reference doesn't get copied in Gaia...
+            let world = World.monitor handleParentChange (entity.GetChangeEvent Property? OptParent) entity world
+            let world = World.monitorPlus handleLocalPropertyChange (entity.GetChangeEvent Property? PositionLocal) entity world |> snd
+            let world = World.monitorPlus handleLocalPropertyChange (entity.GetChangeEvent Property? DepthLocal) entity world |> snd
+            let world = World.monitorPlus handleLocalPropertyChange (entity.GetChangeEvent Property? VisibleLocal) entity world |> snd
+            World.monitorPlus handleLocalPropertyChange (entity.GetChangeEvent Property? EnabledLocal) entity world |> snd
+
+        override facet.Unregister (entity, world) =
+            (entity.GetMountUnsubscribeNp world) world // NOTE: unsubscribes - not sure if this is necessary.
 
 [<AutoOpen>]
 module EffectFacetModule =
@@ -190,7 +191,7 @@ module EffectFacetModule =
              Define? EffectTagsNp (Map.empty : EffectTags)]
 
         override facet.Actualize (entity, world) =
-            if entity.InView world then
+            if entity.GetVisible world && entity.InView world then
                 let world = entity.SetEffectTagsNp Map.empty world
                 let effect = entity.GetEffect world
                 let effectTime = entity.GetEffectTime world
@@ -384,7 +385,7 @@ module StaticSpriteFacetModule =
             [Define? StaticImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image3" }]
 
         override facet.Actualize (entity, world) =
-            if entity.InView world then
+            if entity.GetVisible world && entity.InView world then
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
@@ -453,7 +454,7 @@ module AnimatedSpriteFacetModule =
              Define? AnimationSheet { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image7" }]
 
         override facet.Actualize (entity, world) =
-            if entity.InView world then
+            if entity.GetVisible world && entity.InView world then
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
@@ -503,8 +504,8 @@ module GuiDispatcherModule =
                 else Cascade
             (handling, world)
 
-        //static member IntrinsicFacetNames =
-        //    [typeof<MountFacet>.Name]
+        static member IntrinsicFacetNames =
+            [typeof<MountFacet>.Name]
 
         static member PropertyDefinitions =
             [Define? ViewType Absolute
@@ -589,21 +590,23 @@ module ButtonDispatcherModule =
                 World.monitor handleMouseLeftUp Events.MouseLeftUp button
 
         override dispatcher.Actualize (button, world) =
-            World.addRenderMessage
-                (RenderDescriptorsMessage
-                    [LayerableDescriptor
-                        { Depth = button.GetDepth world
-                          LayeredDescriptor =
-                            SpriteDescriptor
-                                { Position = button.GetPosition world
-                                  Size = button.GetSize world
-                                  Rotation = 0.0f
-                                  Offset = Vector2.Zero
-                                  ViewType = Absolute
-                                  OptInset = None
-                                  Image = if button.GetDown world then button.GetDownImage world else button.GetUpImage world
-                                  Color = if button.GetEnabled world then Vector4.One else button.GetDisabledColor world }}])
-                world
+            if button.GetVisible world then
+                World.addRenderMessage
+                    (RenderDescriptorsMessage
+                        [LayerableDescriptor
+                            { Depth = button.GetDepth world
+                              LayeredDescriptor =
+                                SpriteDescriptor
+                                    { Position = button.GetPosition world
+                                      Size = button.GetSize world
+                                      Rotation = 0.0f
+                                      Offset = Vector2.Zero
+                                      ViewType = Absolute
+                                      OptInset = None
+                                      Image = if button.GetDown world then button.GetDownImage world else button.GetUpImage world
+                                      Color = if button.GetEnabled world then Vector4.One else button.GetDisabledColor world }}])
+                    world
+            else world
 
         override dispatcher.GetQuickSize (button, world) =
             match Metadata.tryGetTextureSizeAsVector2 (button.GetUpImage world) (World.getAssetMetadataMap world) with
@@ -627,21 +630,23 @@ module LabelDispatcherModule =
              Define? LabelImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image4" }]
 
         override dispatcher.Actualize (label, world) =
-            World.addRenderMessage
-                (RenderDescriptorsMessage
-                    [LayerableDescriptor
-                        { Depth = label.GetDepth world
-                          LayeredDescriptor =
-                            SpriteDescriptor
-                                { Position = label.GetPosition world
-                                  Size = label.GetSize world
-                                  Rotation = 0.0f
-                                  Offset = Vector2.Zero
-                                  ViewType = Absolute
-                                  OptInset = None
-                                  Image = label.GetLabelImage world
-                                  Color = if label.GetEnabled world then Vector4.One else label.GetDisabledColor world }}])
-                world
+            if label.GetVisible world then
+                World.addRenderMessage
+                    (RenderDescriptorsMessage
+                        [LayerableDescriptor
+                            { Depth = label.GetDepth world
+                              LayeredDescriptor =
+                                SpriteDescriptor
+                                    { Position = label.GetPosition world
+                                      Size = label.GetSize world
+                                      Rotation = 0.0f
+                                      Offset = Vector2.Zero
+                                      ViewType = Absolute
+                                      OptInset = None
+                                      Image = label.GetLabelImage world
+                                      Color = if label.GetEnabled world then Vector4.One else label.GetDisabledColor world }}])
+                    world
+            else world
 
         override dispatcher.GetQuickSize (label, world) =
             match Metadata.tryGetTextureSizeAsVector2 (label.GetLabelImage world) (World.getAssetMetadataMap world) with
@@ -681,31 +686,33 @@ module TextDispatcherModule =
              Define? BackgroundImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image4" }]
 
         override dispatcher.Actualize (text, world) =
-            World.addRenderMessage
-                (RenderDescriptorsMessage
-                    [LayerableDescriptor
-                        { Depth = text.GetDepth world
-                          LayeredDescriptor =
-                            TextDescriptor
-                                { Text = text.GetText world
-                                  Position = (text.GetPosition world + text.GetTextOffset world)
-                                  Size = text.GetSize world - text.GetTextOffset world
-                                  ViewType = Absolute
-                                  Font = text.GetTextFont world
-                                  Color = text.GetTextColor world }}
-                     LayerableDescriptor
-                        { Depth = text.GetDepth world
-                          LayeredDescriptor =
-                            SpriteDescriptor
-                                { Position = text.GetPosition world
-                                  Size = text.GetSize world
-                                  Rotation = 0.0f
-                                  Offset = Vector2.Zero
-                                  ViewType = Absolute
-                                  OptInset = None
-                                  Image = text.GetBackgroundImage world
-                                  Color = if text.GetEnabled world then Vector4.One else text.GetDisabledColor world }}])
-                world
+            if text.GetVisible world then
+                World.addRenderMessage
+                    (RenderDescriptorsMessage
+                        [LayerableDescriptor
+                            { Depth = text.GetDepth world
+                              LayeredDescriptor =
+                                TextDescriptor
+                                    { Text = text.GetText world
+                                      Position = (text.GetPosition world + text.GetTextOffset world)
+                                      Size = text.GetSize world - text.GetTextOffset world
+                                      ViewType = Absolute
+                                      Font = text.GetTextFont world
+                                      Color = text.GetTextColor world }}
+                         LayerableDescriptor
+                            { Depth = text.GetDepth world
+                              LayeredDescriptor =
+                                SpriteDescriptor
+                                    { Position = text.GetPosition world
+                                      Size = text.GetSize world
+                                      Rotation = 0.0f
+                                      Offset = Vector2.Zero
+                                      ViewType = Absolute
+                                      OptInset = None
+                                      Image = text.GetBackgroundImage world
+                                      Color = if text.GetEnabled world then Vector4.One else text.GetDisabledColor world }}])
+                    world
+            else world
 
         override dispatcher.GetQuickSize (text, world) =
             match Metadata.tryGetTextureSizeAsVector2 (text.GetBackgroundImage world) (World.getAssetMetadataMap world) with
@@ -787,21 +794,23 @@ module ToggleDispatcherModule =
                 World.monitor handleMouseLeftUp Events.MouseLeftUp toggle
 
         override dispatcher.Actualize (toggle, world) =
-            World.addRenderMessage
-                (RenderDescriptorsMessage
-                    [LayerableDescriptor
-                        { Depth = toggle.GetDepth world
-                          LayeredDescriptor =
-                            SpriteDescriptor
-                                { Position = toggle.GetPosition world
-                                  Size = toggle.GetSize world
-                                  Rotation = 0.0f
-                                  Offset = Vector2.Zero
-                                  ViewType = Absolute
-                                  OptInset = None
-                                  Image = if toggle.GetOn world || toggle.GetPressed world then toggle.GetOnImage world else toggle.GetOffImage world
-                                  Color = if toggle.GetEnabled world then Vector4.One else toggle.GetDisabledColor world }}])
-                world
+            if toggle.GetVisible world then
+                World.addRenderMessage
+                    (RenderDescriptorsMessage
+                        [LayerableDescriptor
+                            { Depth = toggle.GetDepth world
+                              LayeredDescriptor =
+                                SpriteDescriptor
+                                    { Position = toggle.GetPosition world
+                                      Size = toggle.GetSize world
+                                      Rotation = 0.0f
+                                      Offset = Vector2.Zero
+                                      ViewType = Absolute
+                                      OptInset = None
+                                      Image = if toggle.GetOn world || toggle.GetPressed world then toggle.GetOnImage world else toggle.GetOffImage world
+                                      Color = if toggle.GetEnabled world then Vector4.One else toggle.GetDisabledColor world }}])
+                    world
+            else world
 
         override dispatcher.GetQuickSize (toggle, world) =
             match Metadata.tryGetTextureSizeAsVector2 (toggle.GetOffImage world) (World.getAssetMetadataMap world) with
@@ -897,35 +906,37 @@ module FillBarDispatcherModule =
              Define? BorderImage { PackageName = Constants.Assets.DefaultPackageName; AssetName = "Image10" }]
 
         override dispatcher.Actualize (fillBar, world) =
-            let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar world
-            let fillBarColor = if fillBar.GetEnabled world then Vector4.One else fillBar.GetDisabledColor world
-            World.addRenderMessage
-                (RenderDescriptorsMessage
-                    [LayerableDescriptor
-                        { Depth = fillBar.GetDepth world
-                          LayeredDescriptor =
-                            SpriteDescriptor
-                                { Position = fillBar.GetPosition world
-                                  Size = fillBar.GetSize world
-                                  Rotation = 0.0f
-                                  Offset = Vector2.Zero
-                                  ViewType = Absolute
-                                  OptInset = None
-                                  Image = fillBar.GetBorderImage world
-                                  Color = fillBarColor }}
-                     LayerableDescriptor
-                        { Depth = fillBar.GetDepth world
-                          LayeredDescriptor =
-                            SpriteDescriptor
-                                { Position = fillBarSpritePosition
-                                  Size = fillBarSpriteSize
-                                  Rotation = 0.0f
-                                  Offset = Vector2.Zero
-                                  ViewType = Absolute
-                                  OptInset = None
-                                  Image = fillBar.GetFillImage world
-                                  Color = fillBarColor }}])
-                world
+            if fillBar.GetVisible world then
+                let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar world
+                let fillBarColor = if fillBar.GetEnabled world then Vector4.One else fillBar.GetDisabledColor world
+                World.addRenderMessage
+                    (RenderDescriptorsMessage
+                        [LayerableDescriptor
+                            { Depth = fillBar.GetDepth world
+                              LayeredDescriptor =
+                                SpriteDescriptor
+                                    { Position = fillBar.GetPosition world
+                                      Size = fillBar.GetSize world
+                                      Rotation = 0.0f
+                                      Offset = Vector2.Zero
+                                      ViewType = Absolute
+                                      OptInset = None
+                                      Image = fillBar.GetBorderImage world
+                                      Color = fillBarColor }}
+                         LayerableDescriptor
+                            { Depth = fillBar.GetDepth world
+                              LayeredDescriptor =
+                                SpriteDescriptor
+                                    { Position = fillBarSpritePosition
+                                      Size = fillBarSpriteSize
+                                      Rotation = 0.0f
+                                      Offset = Vector2.Zero
+                                      ViewType = Absolute
+                                      OptInset = None
+                                      Image = fillBar.GetFillImage world
+                                      Color = fillBarColor }}])
+                    world
+            else world
 
         override dispatcher.GetQuickSize (fillBar, world) =
             match Metadata.tryGetTextureSizeAsVector2 (fillBar.GetBorderImage world) (World.getAssetMetadataMap world) with
@@ -1149,43 +1160,45 @@ module TileMapDispatcherModule =
                 registerTileMapPhysics tileMap
 
         override dispatcher.Actualize (tileMap, world) =
-            match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getAssetMetadataMap world) with
-            | Some (_, images, map) ->
-                let layers = List.ofSeq map.Layers
-                let tileSourceSize = Vector2i (map.TileWidth, map.TileHeight)
-                let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
-                let viewType = tileMap.GetViewType world
-                List.foldi
-                    (fun i world (layer : TmxLayer) ->
-                        let depth = tileMap.GetDepth world + single i * 2.0f // MAGIC_VALUE: assumption
-                        let parallaxTranslation =
-                            match viewType with
-                            | Absolute -> Vector2.Zero
-                            | Relative -> tileMap.GetParallax world * depth * -World.getEyeCenter world
-                        let parallaxPosition = tileMap.GetPosition world + parallaxTranslation
-                        let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
-                        if World.inView viewType (Math.makeBounds parallaxPosition size) world then
-                            World.addRenderMessage
-                                (RenderDescriptorsMessage
-                                    [LayerableDescriptor 
-                                        { Depth = depth
-                                          LayeredDescriptor =
-                                            TileLayerDescriptor
-                                                { Position = parallaxPosition
-                                                  Size = size
-                                                  Rotation = tileMap.GetRotation world
-                                                  ViewType = viewType
-                                                  MapSize = Vector2i (map.Width, map.Height)
-                                                  Tiles = layer.Tiles
-                                                  TileSourceSize = tileSourceSize
-                                                  TileSize = tileSize
-                                                  TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                                                  TileSetImage = List.head images }}]) // MAGIC_VALUE: for same reason as above
-                                world
-                        else world)
-                    world
-                    layers
-            | None -> world
+            if tileMap.GetVisible world then
+                match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getAssetMetadataMap world) with
+                | Some (_, images, map) ->
+                    let layers = List.ofSeq map.Layers
+                    let tileSourceSize = Vector2i (map.TileWidth, map.TileHeight)
+                    let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
+                    let viewType = tileMap.GetViewType world
+                    List.foldi
+                        (fun i world (layer : TmxLayer) ->
+                            let depth = tileMap.GetDepth world + single i * 2.0f // MAGIC_VALUE: assumption
+                            let parallaxTranslation =
+                                match viewType with
+                                | Absolute -> Vector2.Zero
+                                | Relative -> tileMap.GetParallax world * depth * -World.getEyeCenter world
+                            let parallaxPosition = tileMap.GetPosition world + parallaxTranslation
+                            let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
+                            if World.inView viewType (Math.makeBounds parallaxPosition size) world then
+                                World.addRenderMessage
+                                    (RenderDescriptorsMessage
+                                        [LayerableDescriptor 
+                                            { Depth = depth
+                                              LayeredDescriptor =
+                                                TileLayerDescriptor
+                                                    { Position = parallaxPosition
+                                                      Size = size
+                                                      Rotation = tileMap.GetRotation world
+                                                      ViewType = viewType
+                                                      MapSize = Vector2i (map.Width, map.Height)
+                                                      Tiles = layer.Tiles
+                                                      TileSourceSize = tileSourceSize
+                                                      TileSize = tileSize
+                                                      TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
+                                                      TileSetImage = List.head images }}]) // MAGIC_VALUE: for same reason as above
+                                    world
+                            else world)
+                        world
+                        layers
+                | None -> world
+            else world
 
         override dispatcher.GetQuickSize (tileMap, world) =
             match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getAssetMetadataMap world) with
