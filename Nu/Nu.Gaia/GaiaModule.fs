@@ -43,7 +43,9 @@ module Gaia =
 
     let private getPickableEntities world =
         let selectedGroup = (World.getUserState world).SelectedGroup
-        World.getEntities selectedGroup world
+        let (entities, world) = World.getEntitiesNearView Simulants.EditorScreen world
+        let entitiesInGroup = List.filter (fun entity -> etog entity = selectedGroup) entities
+        (entitiesInGroup, world)
 
     let private getSnaps (form : GaiaForm) =
         let positionSnap = snd ^ Int32.TryParse form.positionSnapTextBox.Text
@@ -173,13 +175,13 @@ module Gaia =
         not form.editWhileInteractiveCheckBox.Checked
 
     let private tryMousePick (form : GaiaForm) mousePosition world =
-        let entities = getPickableEntities world
+        let (entities, world) = getPickableEntities world
         let optPicked = World.tryPickEntity mousePosition entities world
         match optPicked with
         | Some entity ->
             selectEntity form entity world
-            Some entity
-        | None -> None
+            (Some entity, world)
+        | None -> (None, world)
 
     let private handleNuEntityAdd (form : GaiaForm) evt world =
         let entity = Entity.proxy ^ atoa evt.Publisher.ParticipantAddress
@@ -206,7 +208,7 @@ module Gaia =
     let private handleNuMouseRightDown (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         let handled = if World.isTicking world then Cascade else Resolve
         let mousePosition = World.getMousePositionF world
-        tryMousePick form mousePosition world |> ignore
+        let (_, world) = tryMousePick form mousePosition world
         let world = World.updateUserState (fun editorState -> { editorState with RightClickPosition = mousePosition }) world
         (handled, world)
 
@@ -215,7 +217,7 @@ module Gaia =
             let handled = if World.isTicking world then Cascade else Resolve
             let mousePosition = World.getMousePositionF world
             match tryMousePick form mousePosition world with
-            | Some entity ->
+            | (Some entity, world) ->
                 let world = pushPastWorld world world
                 let world =
                     World.updateUserState (fun editorState ->
@@ -227,7 +229,7 @@ module Gaia =
                         { editorState with DragEntityState = DragEntityPosition (entityPosition + mousePositionWorld, mousePositionWorld, entity) })
                         world
                 (handled, world)
-            | None -> (handled, world)
+            | (None, world) -> (handled, world)
         else (Cascade, world)
 
     let private handleNuEntityDragEnd (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =

@@ -524,6 +524,13 @@ module WorldModule2 =
                 | _ -> world
             (World.getLiveness world, world)
 
+        static member getEntitiesNearView selectedScreen world =
+            let viewBounds = World.getViewBoundsRelative world
+            let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTreeNp world)
+            let world = selectedScreen.SetEntityTreeNp entityTree world
+            let entities = QuadTree.getElementsNearBounds viewBounds quadTree
+            (entities, world)
+
         static member private updateSimulants world =
             
             // check for existence of screen; otherwise just operate on game
@@ -531,13 +538,10 @@ module WorldModule2 =
             | Some selectedScreen ->
             
                 // gather simulants. Note that we do not re-discover simulants during the update process because the
-                // engine is defined to discourage the removal or simulants in the middle of a frame.
+                // engine is defined to discourage the removal of simulants in the middle of a frame.
                 let groups = World.getGroups selectedScreen world
-                let viewBounds = World.getViewBoundsRelative world
-                let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTreeNp world)
-                let world = selectedScreen.SetEntityTreeNp entityTree world
-                let entities = QuadTree.getElementsNearBounds viewBounds quadTree
-                
+                let (entities, world) = World.getEntitiesNearView selectedScreen world
+
                 // update simulants
                 let world = World.updateGame world
                 let world = World.updateScreen selectedScreen world
@@ -593,10 +597,7 @@ module WorldModule2 =
                     | IdlingState -> world
                 let groups = World.getGroups selectedScreen world
                 let world = Seq.fold (fun world group -> World.actualizeGroup group world) world groups
-                let viewBounds = World.getViewBoundsRelative world
-                let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTreeNp world)
-                let world = selectedScreen.SetEntityTreeNp entityTree world
-                let entities = QuadTree.getElementsNearBounds viewBounds quadTree
+                let (entities, world) = World.getEntitiesNearView selectedScreen world
                 List.fold (fun world entity -> World.actualizeEntity entity world) world entities
             | None -> world
 
