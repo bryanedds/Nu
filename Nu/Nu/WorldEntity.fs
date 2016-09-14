@@ -217,15 +217,18 @@ module WorldEntityModule =
 
         /// TODO: document!
         static member pickingSortEntities entities world =
-            let entities = List.ofSeq entities
-            let prioritiesAndEntities = List.map (fun (entity : Entity) -> (World.getEntityPickingPriority entity world, entity)) entities
-            let prioritiesAndEntities = List.sortWith Pair.sortFstDescending prioritiesAndEntities
-            List.map snd prioritiesAndEntities
+            entities |>
+            Array.rev |>
+            Array.map (fun (entity : Entity) -> (World.getEntityPickingPriority entity world, entity)) |>
+            Seq.sortWith Pair.sortFstDescending |> // Seq.sort is stable, unlike Array.sort...
+            Array.ofSeq |>
+            Array.map snd
 
         /// TODO: document!
         static member tryPickEntity position entities world =
+            let entities = Array.ofList entities // OPTIMIZATION: using arrays for speed
             let entitiesSorted = World.pickingSortEntities entities world
-            List.tryFind
+            Array.tryFind
                 (fun (entity : Entity) ->
                     let positionWorld = World.mouseToWorld (entity.GetViewType world) position world
                     let picked = Math.isPointInBounds positionWorld (entity.GetBounds world)
