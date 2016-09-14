@@ -395,7 +395,12 @@ module RendererModule =
             | 0 ->
                 // OPTIMIZATION: uses arrays for speed
                 SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-                let renderDescriptorsSorted = renderDescriptors |> Seq.sortBy (fun (LayerableDescriptor descriptor) -> descriptor.Depth) |> Array.ofSeq
+                let renderDescriptorsSorted =
+                    renderDescriptors |>
+                    Array.ofList |>
+                    Array.rev |>
+                    Seq.sortBy (fun (LayerableDescriptor descriptor) -> descriptor.Depth) |> // Seq.sort is stable, unlike Array.sort...
+                    Array.ofSeq
                 let layeredDescriptors = Array.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
                 let viewAbsolute = Matrix3.InvertView ^ Math.getViewAbsoluteI eyeCenter eyeSize
                 let viewRelative = Matrix3.InvertView ^ Math.getViewRelativeI eyeCenter eyeSize
