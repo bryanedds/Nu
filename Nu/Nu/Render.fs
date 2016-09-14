@@ -393,13 +393,13 @@ module RendererModule =
             let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
             match targetResult with
             | 0 ->
+                // OPTIMIZATION: uses arrays for speed
                 SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-                let renderDescriptorsRev = List.rev renderDescriptors
-                let renderDescriptorsSorted = List.sortBy (fun (LayerableDescriptor descriptor) -> descriptor.Depth) renderDescriptorsRev
-                let layeredDescriptors = List.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
+                let renderDescriptorsSorted = renderDescriptors |> Seq.sortBy (fun (LayerableDescriptor descriptor) -> descriptor.Depth) |> Array.ofSeq
+                let layeredDescriptors = Array.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
                 let viewAbsolute = Matrix3.InvertView ^ Math.getViewAbsoluteI eyeCenter eyeSize
                 let viewRelative = Matrix3.InvertView ^ Math.getViewRelativeI eyeCenter eyeSize
-                List.fold (Renderer.renderLayerableDescriptor viewAbsolute viewRelative eyeCenter eyeSize) renderer layeredDescriptors
+                Array.fold (Renderer.renderLayerableDescriptor viewAbsolute viewRelative eyeCenter eyeSize) renderer layeredDescriptors
             | _ ->
                 Log.trace ^ "Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + "."
                 renderer
