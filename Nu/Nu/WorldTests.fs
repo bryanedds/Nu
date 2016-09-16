@@ -11,7 +11,7 @@ open Nu
 module WorldTests =
 
     let TestFilePath = "TestFile.nugame"
-    let StringEvent = ntoa<string> !!"String"
+    let StringEvent = stoa<string> "String/Event"
     let Jim = Simulants.DefaultGroup => "Jim"
     let Bob = Simulants.DefaultGroup => "Bob"
 

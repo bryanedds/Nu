@@ -84,15 +84,7 @@ module AddressModule =
 
         /// Convert a string into an address.
         static member stoa<'a> str =
-            Address<'a>.makeFromString str
-
-        /// Convert a string into an address.
-        static member atos<'a> (address : 'a Address) =
-            String.Join ("/", address.Names)
-
-        /// Convert an address of type 'a to an address of type 'b.
-        static member atoa<'a, 'b> (address : 'a Address) =
-            { Names = address.Names; HashCode = address.HashCode; TypeCarrier = fun (_ : 'b) -> () }
+            Address<'a>.makeFromString<'a> str
 
         /// Convert a names list into an address.
         static member ltoa<'a> (names : _ list) =
@@ -101,6 +93,14 @@ module AddressModule =
         /// Convert a single name into an address.
         static member ntoa<'a> name : 'a Address =
             Address.ltoa<'a> [name]
+
+        /// Convert a string into an address.
+        static member atos<'a> (address : 'a Address) =
+            String.Join ("/", address.Names)
+
+        /// Convert an address of type 'a to an address of type 'b.
+        static member atoa<'a, 'b> (address : 'a Address) =
+            { Names = address.Names; HashCode = address.HashCode; TypeCarrier = fun (_ : 'b) -> () }
 
         /// Convert any address to an obj Address.
         static member atooa<'a> (address : 'a Address) =
@@ -240,16 +240,16 @@ module AddressOperators =
     let inline atoa<'a, 'b> (address : 'a Address) = Address.atoa<'a, 'b> address
 
     /// Convert a string into an address.
-    let inline stoa<'a> str = Address.stoa<'a> str
+    let inline stoa<'a> str = Address<'a>.stoa<'a> str
+
+    /// Convert a names list into an address.
+    let inline ltoa<'a> names : 'a Address  = Address<'a>.ltoa<'a> names
+
+    /// Convert a single name into an address.
+    let inline ntoa<'a> name : 'a Address  = Address<'a>.ntoa<'a> name
 
     /// Convert an address into a string.
     let inline atos<'a> (address : 'a Address) = Address.atos<'a> address
-
-    /// Convert a names list into an address.
-    let inline ltoa<'a> names : 'a Address  = Address.ltoa<'a> names
-
-    /// Convert a single name into an address.
-    let inline ntoa<'a> name : 'a Address  = Address.ntoa<'a> name
 
     /// Convert any address to an obj Address.
     let inline atooa<'a> (address : 'a Address) = Address.atooa<'a> address

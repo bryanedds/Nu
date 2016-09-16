@@ -90,7 +90,7 @@ module EventWorld =
                 let index = eventAddressNames.Length - index - 1
                 let eventAddressNamesAny = Array.zeroCreate eventAddressNames.Length // TODO: use Array.zeroCreateUnchecked if / when it becomes available
                 Array.Copy (eventAddressNames, 0, eventAddressNamesAny, 0, eventAddressNames.Length)
-                eventAddressNamesAny.[index] <- Address.head Events.Any
+                eventAddressNamesAny.[index] <- Address.head Events.Wildcard
                 let eventAddressAny = eventAddressNamesAny |> List.ofArray |> Address.ltoa
                 eventAddressAny :: eventAddresses)
                 [eventAddress]
@@ -238,7 +238,7 @@ module EventWorld =
                 let world = setUnsubscriptions unsubscriptions world
                 publish
                     eventAddress
-                    (ntoa<obj Address> !!"Unsubscribe")
+                    (ltoa<obj Address> [!!"Unsubscribe"; !!"Event"])
                     (EventTrace.record "EventWorld" "unsubscribe" EventTrace.empty)
                     (world.GetGlobalParticipant ())
                     world
@@ -262,7 +262,7 @@ module EventWorld =
             let world =
                 publish
                     objEventAddress
-                    (ntoa<obj Address> !!"Subscribe")
+                    (ltoa<obj Address> [!!"Subscribe"; !!"Event"])
                     (EventTrace.record "EventWorld" "subscribePlus5" EventTrace.empty)
                     (world.GetGlobalParticipant ())
                     world
@@ -297,7 +297,7 @@ module EventWorld =
                 let world = unsubscribe monitorKey world
                 world
             let subscription' = fun _ eventSystem -> (Cascade, unsubscribe eventSystem)
-            let removingEventAddress = ltoa<unit> [!!typeof<'s>.Name; !!"Removing"] ->>- subscriberAddress
+            let removingEventAddress = ltoa<unit> [!!typeof<'s>.Name; !!"Removing"; !!"Event"] ->>- subscriberAddress
             let world = subscribe5<unit, 's, 'w> removalKey subscription' removingEventAddress subscriber world
             (unsubscribe, world)
         else failwith "Cannot monitor events with an anonymous subscriber."

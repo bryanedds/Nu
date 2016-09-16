@@ -103,6 +103,13 @@ module WorldTypes =
     /// The data for a change in the world's ambient state.
     type [<StructuralEquality; NoComparison>] AmbientChangeData = 
         { OldWorldWithOldState : World }
+
+    /// Generalized interface tag for dispatchers.
+    and Dispatcher = interface end
+
+    /// Generalized interface tag for simulant dispatchers.
+    and SimulantDispatcher =
+        inherit Dispatcher
     
     /// The default dispatcher for games.
     and GameDispatcher () =
@@ -126,6 +133,8 @@ module WorldTypes =
         /// Actualize a game.
         abstract Actualize : Game * World -> World
         default dispatcher.Actualize (_, world) = world
+
+        interface SimulantDispatcher
     
     /// The default dispatcher for screens.
     and ScreenDispatcher () =
@@ -153,6 +162,8 @@ module WorldTypes =
         /// Actualize a screen.
         abstract Actualize : Screen * World -> World
         default dispatcher.Actualize (_, world) = world
+
+        interface SimulantDispatcher
     
     /// The default dispatcher for groups.
     and GroupDispatcher () =
@@ -180,6 +191,8 @@ module WorldTypes =
         /// Actualize a group.
         abstract Actualize : Group * World -> World
         default dispatcher.Actualize (_, world) = world
+
+        interface SimulantDispatcher
     
     /// The default dispatcher for entities.
     and EntityDispatcher () =
@@ -231,6 +244,8 @@ module WorldTypes =
         /// Get the priority with which an entity is picked in the editor.
         abstract GetPickingPriority : Entity * single * World -> single
         default dispatcher.GetPickingPriority (_, depth, _) = depth
+
+        interface SimulantDispatcher
     
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
@@ -271,7 +286,9 @@ module WorldTypes =
         abstract GetQuickSize : Entity * World -> Vector2
         default facet.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
 
-    /// Interface tag for simulant state.
+        interface Dispatcher
+
+    /// Generalized interface for simulant state.
     and SimulantState =
         interface
             abstract member GetXtension : unit -> Xtension
@@ -781,8 +798,8 @@ module WorldTypes =
         /// Create an Entity proxy from an address.
         static member proxy address =
             { EntityAddress = address
-              UpdateAddress = ntoa !!"Update" ->>- address
-              PostUpdateAddress = ntoa !!"PostUpdate" ->>- address }
+              UpdateAddress = ltoa [!!"Update"; !!"Event"] ->>- address
+              PostUpdateAddress = ltoa [!!"PostUpdate"; !!"Event"] ->>- address }
     
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (entity : Entity) = acatf address (atooa entity.EntityAddress)
