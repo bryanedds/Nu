@@ -318,7 +318,7 @@ module Stream =
     /// Terminate a stream when the subscriber is removed from the world.
     let [<DebuggerHidden; DebuggerStepThrough>] lifetime<'s, 'a, 'w when 's :> Participant and 'w :> 'w EventWorld>
         (subscriber : 's) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
-        let removingEventAddress = ltoa<unit> [!!typeof<'s>.Name; !!"Removing"] ->>- subscriber.ParticipantAddress
+        let removingEventAddress = ltoa<unit> [!!typeof<'s>.Name; !!"Removing"; !!"Event"] ->>- subscriber.ParticipantAddress
         until removingEventAddress stream
 
     /// Subscribe to a stream until the subscriber is removed from the world,
@@ -450,7 +450,7 @@ module StreamOperators =
 
     /// Make a stream of the subscriber's change events.
     let [<DebuggerHidden; DebuggerStepThrough>] ( !-- ) (property : PropertyTag<'a, 'b, 'w>) =
-        let changeEventAddress = ltoa<ParticipantChangeData<'a, 'w>> [!!typeof<'a>.Name; !!"Change"; !!property.Name] ->>- property.This.ParticipantAddress
+        let changeEventAddress = ltoa<ParticipantChangeData<'a, 'w>> [!!typeof<'a>.Name; !!"Change"; !!property.Name; !!"Event"] ->>- property.This.ParticipantAddress
         stream changeEventAddress
 
     /// Propagate the event data of a stream to a property in the observing participant when the

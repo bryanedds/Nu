@@ -593,7 +593,7 @@ module WorldModule =
 
         static member private publishEntityChange propertyName entity oldWorld world =
             if World.shouldPublishEntityChange entity world then
-                let changeEventAddress = ltoa [!!"Entity"; !!"Change"; !!propertyName] ->>- entity.EntityAddress
+                let changeEventAddress = ltoa [!!"Entity"; !!"Change"; !!propertyName; !!"Event"] ->>- entity.EntityAddress
                 let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
                 World.publish { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity world
             else world
@@ -859,7 +859,7 @@ module WorldModule =
                         let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
                         let world = World.updateEntityPublishFlags entity world
                         let eventTrace = EventTrace.record "World" "addEntity" EventTrace.empty
-                        World.publish () (ltoa<unit> [!!"Entity"; !!"Add"] ->- entity) eventTrace entity world
+                        World.publish () (ltoa<unit> [!!"Entity"; !!"Add"; !!"Event"] ->- entity) eventTrace entity world
                     else world
 
                 // publish change event for every property
@@ -936,7 +936,7 @@ module WorldModule =
                 
                 // publish event and unregister entity
                 let eventTrace = EventTrace.record "World" "removeEntity" EventTrace.empty
-                let world = World.publish () (ltoa<unit> [!!"Entity"; !!"Removing"] ->- entity) eventTrace entity world
+                let world = World.publish () (ltoa<unit> [!!"Entity"; !!"Removing"; !!"Event"] ->- entity) eventTrace entity world
                 let dispatcher = World.getEntityDispatcherNp entity world : EntityDispatcher
                 let facets = World.getEntityFacetsNp entity world
                 let world = dispatcher.Unregister (entity, world)
@@ -1171,7 +1171,7 @@ module WorldModule =
             World.groupStateRemover group world
 
         static member private publishGroupChange (propertyName : string) (group : Group) oldWorld world =
-            let changeEventAddress = ltoa [!!"Group"; !!"Change"; !!propertyName] ->>- group.GroupAddress
+            let changeEventAddress = ltoa [!!"Group"; !!"Change"; !!propertyName; !!"Event"] ->>- group.GroupAddress
             let eventTrace = EventTrace.record "World" "publishGroupChange" EventTrace.empty
             World.publish { Participant = group; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace group world
 
@@ -1246,14 +1246,14 @@ module WorldModule =
                         let dispatcher = World.getGroupDispatcherNp group world
                         let world = dispatcher.Register (group, world)
                         let eventTrace = EventTrace.record "World" "addGroup" EventTrace.empty
-                        World.publish () (ltoa<unit> [!!"Group"; !!"Add"] ->- group) eventTrace group world
+                        World.publish () (ltoa<unit> [!!"Group"; !!"Add"; !!"Event"] ->- group) eventTrace group world
                     else world
                 World.publishGroupChanges group oldWorld world
             else failwith ^ "Adding a group that the world already contains at address '" + scstring group.GroupAddress + "'."
 
         static member internal removeGroup3 removeEntities group world =
             let eventTrace = EventTrace.record "World" "removeGroup" EventTrace.empty
-            let world = World.publish () (ltoa<unit> [!!"Group"; !!"Removing"] ->- group) eventTrace group world
+            let world = World.publish () (ltoa<unit> [!!"Group"; !!"Removing"; !!"Event"] ->- group) eventTrace group world
             if World.containsGroup group world then
                 let dispatcher = World.getGroupDispatcherNp group world
                 let world = dispatcher.Unregister (group, world)
@@ -1364,7 +1364,7 @@ module WorldModule =
             World.screenStateRemover screen world
 
         static member private publishScreenChange (propertyName : string) (screen : Screen) oldWorld world =
-            let changeEventAddress = ltoa [!!"Screen"; !!"Change"; !!propertyName] ->>- screen.ScreenAddress
+            let changeEventAddress = ltoa [!!"Screen"; !!"Change"; !!propertyName; !!"Event"] ->>- screen.ScreenAddress
             let eventTrace = EventTrace.record "World" "publishScreenChange" EventTrace.empty
             World.publish { Participant = screen; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace screen world
 
@@ -1487,14 +1487,14 @@ module WorldModule =
                         let dispatcher = World.getScreenDispatcherNp screen world
                         let world = dispatcher.Register (screen, world)
                         let eventTrace = EventTrace.record "World" "addScreen" EventTrace.empty
-                        World.publish () (ltoa<unit> [!!"Screen"; !!"Add"] ->- screen) eventTrace screen world
+                        World.publish () (ltoa<unit> [!!"Screen"; !!"Add"; !!"Event"] ->- screen) eventTrace screen world
                     else world
                 World.publishScreenChanges screen oldWorld world
             else failwith ^ "Adding a screen that the world already contains at address '" + scstring screen.ScreenAddress + "'."
 
         static member internal removeScreen3 removeGroups screen world =
             let eventTrace = EventTrace.record "World" "removeScreen" EventTrace.empty
-            let world = World.publish () (ltoa<unit> [!!"Screen"; !!"Removing"] ->- screen) eventTrace screen world
+            let world = World.publish () (ltoa<unit> [!!"Screen"; !!"Removing"; !!"Event"] ->- screen) eventTrace screen world
             if World.containsScreen screen world then
                 let dispatcher = World.getScreenDispatcherNp screen world
                 let world = dispatcher.Unregister (screen, world)
@@ -1560,7 +1560,7 @@ module WorldModule =
 
         static member private publishGameChange (propertyName : string) oldWorld world =
             let game = Game.proxy Address.empty
-            let changeEventAddress = ltoa [!!"Game"; !!"Change"; !!propertyName] ->>- game.GameAddress
+            let changeEventAddress = ltoa [!!"Game"; !!"Change"; !!propertyName; !!"Event"] ->>- game.GameAddress
             let eventTrace = EventTrace.record "World" "publishGameChange" EventTrace.empty
             World.publish { Participant = game; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace game world
 

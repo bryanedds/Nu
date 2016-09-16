@@ -261,8 +261,8 @@ module Gaia =
     let private subscribeToEntityEvents form world =
         let selectedGroup = (World.getUserState world).SelectedGroup
         world |>
-            World.subscribe5 Constants.SubscriptionKeys.AddEntity (handleNuEntityAdd form) (Events.EntityAdd ->- selectedGroup ->- Events.Any) Simulants.Game |>
-            World.subscribe5 Constants.SubscriptionKeys.RemovingEntity (handleNuEntityRemoving form) (Events.EntityRemoving ->- selectedGroup ->- Events.Any) Simulants.Game
+            World.subscribe5 Constants.SubscriptionKeys.AddEntity (handleNuEntityAdd form) (Events.EntityAdd ->- selectedGroup ->- Events.Wildcard) Simulants.Game |>
+            World.subscribe5 Constants.SubscriptionKeys.RemovingEntity (handleNuEntityRemoving form) (Events.EntityRemoving ->- selectedGroup ->- Events.Wildcard) Simulants.Game
 
     let private unsubscribeFromEntityEvents world =
         world |>

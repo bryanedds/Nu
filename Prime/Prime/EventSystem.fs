@@ -77,9 +77,8 @@ type [<StructuralEquality; NoComparison>] ParticipantChangeData<'p, 'w when 'p :
 [<RequireQualifiedAccess>]
 module Events =
 
-    /// Represents a wild card in an event.
-    /// TODO: rename Any to Wildcard.
-    let Any = ntoa<obj> !!"@"
+    /// Represents a wildcard in an event.
+    let Wildcard = ntoa<obj> !!"@"
 
 [<AutoOpen>]
 module EventSystemModule =

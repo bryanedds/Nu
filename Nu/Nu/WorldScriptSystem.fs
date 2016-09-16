@@ -556,7 +556,7 @@ module WorldScriptSystem =
 
         let addStream name stream optOrigin env =
             let context = Env.getContext env
-            let streamAddress = ltoa [!!"Stream"; !!name] ->>- context.ParticipantAddress
+            let streamAddress = ltoa [!!"Stream"; !!name; !!"Event"] ->>- context.ParticipantAddress
             let stream = stream |> Stream.map (fun evt _ -> tryImportEventData evt optOrigin :> obj) |> Stream.lifetime context
             let (unsubscribe, env) =
                 let world = Env.getWorld env
@@ -753,7 +753,7 @@ module WorldScriptSystem =
             match stream with
             | VariableStream variableName ->
                 let context = Env.getContext env
-                let variableAddress = ltoa [!!"Stream"; !!variableName] ->>- context.ParticipantAddress
+                let variableAddress = ltoa [!!"Stream"; !!variableName; !!"Event"] ->>- context.ParticipantAddress
                 let variableStream = Stream.stream variableAddress
                 Right (variableStream, env)
             | EventStream eventAddress ->

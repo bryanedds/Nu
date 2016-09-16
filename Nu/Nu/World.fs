@@ -152,12 +152,12 @@ module WorldModule2 =
             | IncomingState
             | OutgoingState ->
                 world |>
-                    World.subscribe5 ScreenTransitionMouseLeftKey World.handleAsSwallow (Events.MouseLeft ->- Events.Any) Simulants.Game |>
-                    World.subscribe5 ScreenTransitionMouseCenterKey World.handleAsSwallow (Events.MouseCenter ->- Events.Any) Simulants.Game |>
-                    World.subscribe5 ScreenTransitionMouseRightKey World.handleAsSwallow (Events.MouseRight ->- Events.Any) Simulants.Game |>
-                    World.subscribe5 ScreenTransitionMouseX1Key World.handleAsSwallow (Events.MouseX1 ->- Events.Any) Simulants.Game |>
-                    World.subscribe5 ScreenTransitionMouseX2Key World.handleAsSwallow (Events.MouseX2 ->- Events.Any) Simulants.Game |>
-                    World.subscribe5 ScreenTransitionKeyboardKeyKey World.handleAsSwallow (Events.KeyboardKey ->- Events.Any) Simulants.Game
+                    World.subscribe5 ScreenTransitionMouseLeftKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Left/@/Event") Simulants.Game |>
+                    World.subscribe5 ScreenTransitionMouseCenterKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Center/@/Event") Simulants.Game |>
+                    World.subscribe5 ScreenTransitionMouseRightKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Right/@/Event") Simulants.Game |>
+                    World.subscribe5 ScreenTransitionMouseX1Key World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X1/@/Event") Simulants.Game |>
+                    World.subscribe5 ScreenTransitionMouseX2Key World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X2/@/Event") Simulants.Game |>
+                    World.subscribe5 ScreenTransitionKeyboardKeyKey World.handleAsSwallow (stoa<KeyboardKeyData> "KeyboardKey/@/Event") Simulants.Game
 
         /// Select the given screen without transitioning, even if another transition is taking place.
         static member selectScreen screen world =
@@ -340,19 +340,19 @@ module WorldModule2 =
             let eventNames = Address.getNames eventAddress
             let world =
                 match eventNames with
-                | eventName :: [_ ;_ ; _] ->
-                    let entity = Entity.proxy ^ Address.tail eventAddress
-                    match Name.getNameStr eventName with
+                | eventFirstName :: _ :: ([_ ;_ ; _] as entityAddress) ->
+                    let entity = Entity.proxy ^ ltoa entityAddress
+                    match Name.getNameStr eventFirstName with
                     | "Update" ->
-                        if List.contains (Address.head Events.Any) eventNames then
+                        if List.contains (Address.head Events.Wildcard) eventNames then
                             Log.debug ^
-                                "Subscribing to entity update events with a wild card is not supported. " +
+                                "Subscribing to entity update events with a wildcard is not supported. " +
                                 "This will cause a bug where some entity update events are not published."
                         World.updateEntityPublishUpdateFlag entity world
                     | "PostUpdate" ->
-                        if List.contains (Address.head Events.Any) eventNames then
+                        if List.contains (Address.head Events.Wildcard) eventNames then
                             Log.debug ^
-                                "Subscribing to entity post-update events with a wild card is not supported. " +
+                                "Subscribing to entity post-update events with a wildcard is not supported. " +
                                 "This will cause a bug where some entity post-update events are not published."
                         World.updateEntityPublishPostUpdateFlag entity world
                     | _ -> world
@@ -413,7 +413,7 @@ module WorldModule2 =
                     let world = World.reloadRenderAssets world
                     let world = World.reloadAudioAssets world
                     let world = World.reloadSymbols world
-                    let world = World.publish () Events.AssetsReload (EventTrace.record "World" "publishEntityChange" EventTrace.empty) Simulants.Game world
+                    let world = World.publish () Events.AssetsReload (EventTrace.record "World" "publishAssetsReload" EventTrace.empty) Simulants.Game world
                     Right (assetGraph, world)
         
                 // propagate errors
@@ -486,25 +486,23 @@ module WorldModule2 =
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
-                    let mouseButtonEventAddress = ntoa ^ MouseButton.toEventName mouseButton
-                    let mouseButtonDownEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> !!"Down"
-                    let mouseButtonChangeEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> !!"Change"
+                    let mouseButtonDownEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Down/Event")
+                    let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonDown" EventTrace.empty
-                    let world = World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonDownEventAddress eventTrace Simulants.Game world
+                    let world = World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonDownEvent eventTrace Simulants.Game world
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress eventTrace Simulants.Game world
+                    World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEvent eventTrace Simulants.Game world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
-                    let mouseButtonEventAddress = ntoa ^ MouseButton.toEventName mouseButton
-                    let mouseButtonUpEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> !!"Up"
-                    let mouseButtonChangeEventAddress = Events.Mouse -<- mouseButtonEventAddress -<- ntoa<MouseButtonData> !!"Change"
+                    let mouseButtonUpEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Up/Event")
+                    let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonUp" EventTrace.empty
-                    let world = World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEventAddress eventTrace Simulants.Game world
+                    let world = World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEvent eventTrace Simulants.Game world
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEventAddress eventTrace Simulants.Game world
+                    World.publish6 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEvent eventTrace Simulants.Game world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
