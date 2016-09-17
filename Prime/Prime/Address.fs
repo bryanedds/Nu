@@ -57,14 +57,15 @@ type AddressConverter (targetType : Type) =
 module AddressModule =
 
     /// Specifies the address of an identifiable value.
+    /// TODO: have an Address constructor to check if multiple wildcards exist in a given address, and throw if so.
     type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
         private
             { Names : Name list
               HashCode : int // OPTIMIZATION: hash cached for speed
               TypeCarrier : 'a -> unit }
     
-        /// Make a relation from a '/' delimited string where '.' are empty.
-        /// NOTE: do not move this function as the RelationConverter's reflection code relies on it being exactly here!
+        /// Make an address from a '/' delimited string.
+        /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
         static member makeFromString<'a> (addressStr : string) =
             let names = addressStr.Split '/' |> List.ofArray |> List.map Name.make
             { Names = names; HashCode = Name.hashNames names; TypeCarrier = fun (_ : 'a) -> () }
