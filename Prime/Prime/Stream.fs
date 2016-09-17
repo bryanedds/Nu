@@ -14,20 +14,20 @@ type [<NoEquality; NoComparison>] PropertyTag<'s, 'a, 'w> =
       Get : 'w -> 'a
       OptSet : ('a -> 'w -> 'w) option }
 
-    member this.MapGet mapper =
-        { this with Get = mapper this.Get }
+    member this.Map mapper =
+        { this with Get = fun world -> mapper (this.Get world) }
 
-    member this.MapSet mapper =
+    member this.Comap mapper =
         { this with OptSet = match this.OptSet with Some set -> Some (fun value -> set (mapper value)) | None -> None }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module PropertyTag =
 
-    let mapGet mapper (property : PropertyTag<_, _, _>) =
-        property.MapGet mapper
+    let map mapper (property : PropertyTag<_, _, _>) =
+        property.Map mapper
 
-    let mapSet mapper (property : PropertyTag<_, _, _>) =
-        property.MapSet mapper
+    let comap mapper (property : PropertyTag<_, _, _>) =
+        property.Comap mapper
 
     let makeReadOnly this name get =
         { This = this; Name = name; Get = get; OptSet = None }
