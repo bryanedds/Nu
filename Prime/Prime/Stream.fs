@@ -14,11 +14,23 @@ type [<NoEquality; NoComparison>] PropertyTag<'s, 'a, 'w> =
       Get : 'w -> 'a
       OptSet : ('a -> 'w -> 'w) option }
 
-    member this.Map mapper =
-        { this with Get = fun world -> mapper (this.Get world) }
+    member this.Map mapper : PropertyTag<'s, 'a, 'w> =
+        { This = this.This
+          Name = this.Name
+          Get = fun world -> mapper (this.Get world)
+          OptSet = match this.OptSet with Some set -> Some (fun value -> set (mapper value)) | None -> None }
 
-    member this.Comap comapper =
-        { this with OptSet = match this.OptSet with Some set -> Some (fun value -> set (comapper value)) | None -> None }
+    member this.Imap mapper inverter : PropertyTag<'s, 'b, 'w> =
+        { This = this.This
+          Name = this.Name
+          Get = fun world -> mapper (this.Get world)
+          OptSet = match this.OptSet with Some set -> Some (fun value -> set (inverter value)) | None -> None }
+
+    member this.View mapper : PropertyTag<'s, 'b, 'w> =
+        { This = this.This
+          Name = this.Name
+          Get = fun world -> mapper (this.Get world)
+          OptSet = None }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module PropertyTag =
@@ -26,8 +38,11 @@ module PropertyTag =
     let map mapper (property : PropertyTag<_, _, _>) =
         property.Map mapper
 
-    let comap mapper (property : PropertyTag<_, _, _>) =
-        property.Comap mapper
+    let imap mapper inverter (property : PropertyTag<_, _, _>) =
+        property.Imap mapper inverter
+
+    let view mapper (property : PropertyTag<_, _, _>) =
+        property.View mapper
 
     let makeReadOnly this name get =
         { This = this; Name = name; Get = get; OptSet = None }
