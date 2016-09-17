@@ -17,8 +17,8 @@ type [<NoEquality; NoComparison>] PropertyTag<'s, 'a, 'w> =
     member this.Map mapper =
         { this with Get = fun world -> mapper (this.Get world) }
 
-    member this.Comap mapper =
-        { this with OptSet = match this.OptSet with Some set -> Some (fun value -> set (mapper value)) | None -> None }
+    member this.Comap comapper =
+        { this with OptSet = match this.OptSet with Some set -> Some (fun value -> set (comapper value)) | None -> None }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module PropertyTag =
