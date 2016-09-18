@@ -45,11 +45,8 @@ module StreamOperators =
     // open related module
     open Stream
 
-    /// Pipe-right arrow that provides special precedence for streams.
-    let (-|>) = (|>)
-
-    /// Pipe-left arrow that provides special precedence for streams.
-    let (<|-) = (<|)
+    /// Stream sequencing operator.
+    let (---) = (|>)
 
     /// Make a stream of the subscriber's change events.
     let [<DebuggerHidden; DebuggerStepThrough>] ( !-- ) (property : PropertyTag<'a, 'b, World>) = !-- property

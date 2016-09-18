@@ -456,15 +456,12 @@ module StreamOperators =
     open Stream
 
     /// Pipe-right arrow that provides special precedence for streams.
-    let (-|>) = (|>)
-
-    /// Pipe-left arrow that provides special precedence for streams.
-    let (<|-) = (<|)
+    let (---) = (|>)
 
     /// Make a stream of the subscriber's change events.
     let [<DebuggerHidden; DebuggerStepThrough>] ( !-- ) (property : PropertyTag<'a, 'b, 'w>) =
         let changeEventAddress = ltoa<ParticipantChangeData<'a, 'w>> [!!typeof<'a>.Name; !!"Change"; !!property.Name; !!"Event"] ->>- property.This.ParticipantAddress
-        stream changeEventAddress -|> mapPlus (fun _ world -> property.Get world)
+        stream changeEventAddress --- mapPlus (fun _ world -> property.Get world)
 
     /// Propagate the event data of a stream to a property in the observing participant when the
     /// subscriber exists (doing nothing otherwise).
