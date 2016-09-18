@@ -33,7 +33,7 @@ module Stream =
                 let world = EventWorld.addEventState stateKey state world
                 let world =
                     if tracked then
-                        let eventTrace = EventTrace.record "Stream" "track4" evt.Trace
+                        let eventTrace = EventTrace.record "Stream" "trackPlus4" evt.Trace
                         let eventData = transformer state
                         EventWorld.publish<'b, Participant, 'w> eventData subscriptionAddress eventTrace evt.Publisher world
                     else world
@@ -62,7 +62,7 @@ module Stream =
                 let world = EventWorld.addEventState stateKey state world
                 let world =
                     if tracked then
-                        let eventTrace = EventTrace.record "Stream" "track2" evt.Trace
+                        let eventTrace = EventTrace.record "Stream" "trackPlus2" evt.Trace
                         EventWorld.publish<'a, Participant, 'w> state subscriptionAddress eventTrace evt.Publisher world
                     else world
                 (Cascade, world)
@@ -89,7 +89,7 @@ module Stream =
                 let world = EventWorld.addEventState stateKey state world
                 let world =
                     if tracked then
-                        let eventTrace = EventTrace.record "Stream" "track" evt.Trace
+                        let eventTrace = EventTrace.record "Stream" "trackPlus" evt.Trace
                         EventWorld.publish<'a, Participant, 'w> evt.Data subscriptionAddress eventTrace evt.Publisher world
                     else world
                 (Cascade, world)
@@ -122,7 +122,7 @@ module Stream =
             let subscription = fun evt world ->
                 let world =
                     if pred evt world then
-                        let eventTrace = EventTrace.record "Stream" "filter" evt.Trace
+                        let eventTrace = EventTrace.record "Stream" "filterPlus" evt.Trace
                         EventWorld.publish<'a, Participant, 'w> evt.Data subscriptionAddress eventTrace evt.Publisher world
                     else world
                 (Cascade, world)
@@ -141,7 +141,7 @@ module Stream =
                 let world = unsubscribe world
                 EventWorld.unsubscribe<'w> subscriptionKey world
             let subscription = fun evt world ->
-                let eventTrace = EventTrace.record "Stream" "map" evt.Trace
+                let eventTrace = EventTrace.record "Stream" "mapPlus" evt.Trace
                 let world = EventWorld.publish<'b, Participant, 'w> (mapper evt world) subscriptionAddress eventTrace evt.Publisher world
                 (Cascade, world)
             let world = EventWorld.subscribe5<'a, Participant, 'w> subscriptionKey subscription eventAddress (world.GetNullParticipant ()) world
