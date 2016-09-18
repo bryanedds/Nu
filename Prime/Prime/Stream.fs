@@ -436,7 +436,7 @@ module Stream =
     /// Filter out the None data values from a stream and strip the Some constructor from
     /// the remaining values.
     let [<DebuggerHidden; DebuggerStepThrough>] choose (stream : Stream<'a option, 'w>) =
-        stream |> filter (fun opt -> Option.isSome opt) |> map (fun a -> Option.get a)
+        stream |> filter Option.isSome |> map Option.get
 
     /// Transform a stream into a running maximum of it numeric data.
     let [<DebuggerHidden; DebuggerStepThrough>] max stream = scan2 (fun n a -> if n < a then a else n) stream
