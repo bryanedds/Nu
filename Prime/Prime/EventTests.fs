@@ -114,7 +114,7 @@ module EventTests =
         let world = TestWorld.make ignore false EventFilter.Empty
         let world =
             stream TestEvent |>
-            filter (fun _ world -> world.TestState = 0) |>
+            filterPlus (fun _ world -> world.TestState = 0) |>
             subscribe incTestStateAndCascade TestParticipant <|
             world
         let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
@@ -125,7 +125,7 @@ module EventTests =
         let world = TestWorld.make ignore false EventFilter.Empty
         let world =
             stream TestEvent |>
-            map (fun evt _ -> evt.Data * 2) |>
+            map (fun a -> a * 2) |>
             subscribe (fun evt world -> (Cascade, { world with TestState = evt.Data })) TestParticipant <|
             world
         let world = EventWorld.publish 1 TestEvent EventTrace.empty TestParticipant world
@@ -155,18 +155,18 @@ module EventTests =
         let world = TestWorld.make ignore false EventFilter.Empty
         let world =
             stream TestEvent |>
-            scan (fun acc evt _ -> acc + evt.Data) 0 |>
+            scan (+) 0 |>
             subscribe (fun evt world -> (Cascade, { world with TestState = evt.Data })) TestParticipant <|
             world
         let world = EventWorld.publish 1 TestEvent EventTrace.empty TestParticipant world
         let world = EventWorld.publish 2 TestEvent EventTrace.empty TestParticipant world
         Assert.Equal (3, world.TestState)
 
-    let [<Fact>] scanDoesntLeaveGarbage () =
+    let [<Fact>] scan2DoesntLeaveGarbage () =
         let world = TestWorld.make ignore false EventFilter.Empty
         let (unsubscribe, world) =
             stream TestEvent |>
-            scan2 (fun a _ _ -> a) |>
+            scan2 (fun a _ -> a) |>
             subscribePlus incTestStateAndCascade TestParticipant <|
             world
         let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world

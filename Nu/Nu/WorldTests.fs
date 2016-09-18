@@ -7,6 +7,7 @@ open System.IO
 open SDL2
 open Xunit
 open Prime
+open Prime.Stream
 open Nu
 module WorldTests =
 
@@ -47,10 +48,10 @@ module WorldTests =
         let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Jim.EntityName) Simulants.DefaultGroup world |> snd
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Bob.EntityName) Simulants.DefaultGroup world |> snd
-        let world = world |> Bob.TagVisible -!> Jim.TagVisible
+        let world = (!-- Bob.TagVisible -|> map not --> Jim.TagVisible) world
         let world = Bob.SetVisible false world
         Assert.False (Bob.GetVisible world)
-        Assert.False (Jim.GetVisible world)
+        Assert.True (Jim.GetVisible world)
 
     let [<Fact>] iterativeFrpCyclicWorks () =
         let world = World.makeEmpty ()
@@ -58,10 +59,8 @@ module WorldTests =
         let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Jim.EntityName) Simulants.DefaultGroup world |> snd
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Bob.EntityName) Simulants.DefaultGroup world |> snd
-        let world =
-            world |>
-                Bob.TagVisible -!> Jim.TagVisible |>
-                Jim.TagVisible.Map not -/> Bob.TagVisible
-        let world = Bob.SetVisible true world
+        let world = (!-- Bob.TagVisible --> Jim.TagVisible) world
+        let world = (!-- Jim.TagVisible -/> Bob.TagVisible) world
+        let world = Bob.SetVisible false world
         Assert.False (Bob.GetVisible world)
         Assert.False (Jim.GetVisible world)

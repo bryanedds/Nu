@@ -571,11 +571,11 @@ module GameplayDispatcherModule =
 
         override dispatcher.Register (gameplay, world) =
             let world = stream (Simulants.Player.GetChangeEvent Property? ActivityState) |> subscribe handlePlayerActivityChange gameplay <| world
-            let world = stream (Events.Touch ->- Simulants.HudFeeler) |> filter (isSimulantSelected Simulants.HudFeeler) |> monitor handleTouchFeeler gameplay <| world
-            let world = stream (Events.Down ->- Simulants.HudDetailUp) |> filter (isSimulantSelected Simulants.HudDetailUp) |> monitor (handleDownDetail Upward) gameplay <| world
-            let world = stream (Events.Down ->- Simulants.HudDetailRight) |> filter (isSimulantSelected Simulants.HudDetailRight) |> monitor (handleDownDetail Rightward) gameplay <| world
-            let world = stream (Events.Down ->- Simulants.HudDetailDown) |> filter (isSimulantSelected Simulants.HudDetailDown) |> monitor (handleDownDetail Downward) gameplay <| world
-            let world = stream (Events.Down ->- Simulants.HudDetailLeft) |> filter (isSimulantSelected Simulants.HudDetailLeft) |> monitor (handleDownDetail Leftward) gameplay <| world
+            let world = stream (Events.Touch ->- Simulants.HudFeeler) |> isSimulantSelected Simulants.HudFeeler |> monitor handleTouchFeeler gameplay <| world
+            let world = stream (Events.Down ->- Simulants.HudDetailUp) |> isSimulantSelected Simulants.HudDetailUp |> monitor (handleDownDetail Upward) gameplay <| world
+            let world = stream (Events.Down ->- Simulants.HudDetailRight) |> isSimulantSelected Simulants.HudDetailRight |> monitor (handleDownDetail Rightward) gameplay <| world
+            let world = stream (Events.Down ->- Simulants.HudDetailDown) |> isSimulantSelected Simulants.HudDetailDown |> monitor (handleDownDetail Downward) gameplay <| world
+            let world = stream (Events.Down ->- Simulants.HudDetailLeft) |> isSimulantSelected Simulants.HudDetailLeft |> monitor (handleDownDetail Leftward) gameplay <| world
             let world = World.subscribe handleSelectTitle (Events.Select ->- Simulants.Title) gameplay world
             let world = World.subscribe handleSelectGameplay (Events.Select ->- gameplay) gameplay world
             let world = World.subscribe handleClickSaveGame (Events.Click ->- Simulants.HudSaveGame) gameplay world
