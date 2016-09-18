@@ -2,9 +2,7 @@
 // Copyright (C) Bryan Edds, 2012-2016.
 
 namespace Nu
-open System
 open System.Diagnostics
-open LanguagePrimitives
 open Prime
 open Prime.Stream
 open global.Nu
