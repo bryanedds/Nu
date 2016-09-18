@@ -12,10 +12,10 @@ type [<ReferenceEquality>] Stream<'a, 'w when 'w :> 'w EventWorld> =
 
 module Stream =
 
-    (* Primitive Combinators *)
+    (* Event-Based Combinators *)
 
     /// TODO: document!
-    let [<DebuggerHidden; DebuggerStepThrough>] trackPlus4
+    let [<DebuggerHidden; DebuggerStepThrough>] trackEvent4
         (tracker : 'c -> Event<'a, Participant> -> 'w -> 'c * bool) (transformer : 'c -> 'b) (state : 'c) (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
         let subscribe = fun world ->
             let stateKey = makeGuid ()
@@ -33,7 +33,7 @@ module Stream =
                 let world = EventWorld.addEventState stateKey state world
                 let world =
                     if tracked then
-                        let eventTrace = EventTrace.record "Stream" "trackPlus4" evt.Trace
+                        let eventTrace = EventTrace.record "Stream" "trackEvent4" evt.Trace
                         let eventData = transformer state
                         EventWorld.publish<'b, Participant, 'w> eventData subscriptionAddress eventTrace evt.Publisher world
                     else world
@@ -43,7 +43,7 @@ module Stream =
         { Subscribe = subscribe }
 
     /// TODO: document!
-    let [<DebuggerHidden; DebuggerStepThrough>] trackPlus2
+    let [<DebuggerHidden; DebuggerStepThrough>] trackEvent2
         (tracker : 'a -> Event<'a, Participant> -> 'w -> 'a * bool) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
         let subscribe = fun world ->
             let stateKey = makeGuid ()
@@ -62,7 +62,7 @@ module Stream =
                 let world = EventWorld.addEventState stateKey state world
                 let world =
                     if tracked then
-                        let eventTrace = EventTrace.record "Stream" "trackPlus2" evt.Trace
+                        let eventTrace = EventTrace.record "Stream" "trackEvent2" evt.Trace
                         EventWorld.publish<'a, Participant, 'w> state subscriptionAddress eventTrace evt.Publisher world
                     else world
                 (Cascade, world)
@@ -71,7 +71,7 @@ module Stream =
         { Subscribe = subscribe }
 
     /// TODO: document!
-    let [<DebuggerHidden; DebuggerStepThrough>] trackPlus
+    let [<DebuggerHidden; DebuggerStepThrough>] trackEvent
         (tracker : 'b -> 'w -> 'b * bool) (state : 'b) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
         let subscribe = fun world ->
             let stateKey = makeGuid ()
@@ -89,7 +89,7 @@ module Stream =
                 let world = EventWorld.addEventState stateKey state world
                 let world =
                     if tracked then
-                        let eventTrace = EventTrace.record "Stream" "trackPlus" evt.Trace
+                        let eventTrace = EventTrace.record "Stream" "trackEvent" evt.Trace
                         EventWorld.publish<'a, Participant, 'w> evt.Data subscriptionAddress eventTrace evt.Publisher world
                     else world
                 (Cascade, world)
@@ -98,19 +98,19 @@ module Stream =
         { Subscribe = subscribe }
 
     /// Fold over a stream, then map the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldMapPlus (f : 'b -> Event<'a, Participant> -> 'w -> 'b) g s (stream : Stream<'a, 'w>) : Stream<'c, 'w> =
-        trackPlus4 (fun b a w -> (f b a w, true)) g s stream
+    let [<DebuggerHidden; DebuggerStepThrough>] foldMapEvent (f : 'b -> Event<'a, Participant> -> 'w -> 'b) g s (stream : Stream<'a, 'w>) : Stream<'c, 'w> =
+        trackEvent4 (fun b a w -> (f b a w, true)) g s stream
 
     /// Fold over a stream, aggegating the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldPlus (f : 'b -> Event<'a, Participant> -> 'w -> 'b) s (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
-        trackPlus4 (fun b a w -> (f b a w, true)) id s stream
+    let [<DebuggerHidden; DebuggerStepThrough>] foldEvent (f : 'b -> Event<'a, Participant> -> 'w -> 'b) s (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
+        trackEvent4 (fun b a w -> (f b a w, true)) id s stream
 
     /// Reduce over a stream, accumulating the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] reducePlus (f : 'a -> Event<'a, Participant> -> 'w -> 'a) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
-        trackPlus2 (fun a a2 w -> (f a a2 w, true)) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] reduceEvent (f : 'a -> Event<'a, Participant> -> 'w -> 'a) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
+        trackEvent2 (fun a a2 w -> (f a a2 w, true)) stream
 
     /// Filter a stream by the given 'pred' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] filterPlus
+    let [<DebuggerHidden; DebuggerStepThrough>] filterEvent
         (pred : Event<'a, Participant> -> 'w -> bool) (stream : Stream<'a, 'w>) =
         let subscribe = fun world ->
             let subscriptionKey = makeGuid ()
@@ -122,7 +122,7 @@ module Stream =
             let subscription = fun evt world ->
                 let world =
                     if pred evt world then
-                        let eventTrace = EventTrace.record "Stream" "filterPlus" evt.Trace
+                        let eventTrace = EventTrace.record "Stream" "filterEvent" evt.Trace
                         EventWorld.publish<'a, Participant, 'w> evt.Data subscriptionAddress eventTrace evt.Publisher world
                     else world
                 (Cascade, world)
@@ -131,7 +131,7 @@ module Stream =
         { Subscribe = subscribe }
 
     /// Map a stream by the given 'mapper' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] mapPlus
+    let [<DebuggerHidden; DebuggerStepThrough>] mapEvent
         (mapper : Event<'a, Participant> -> 'w -> 'b) (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
         let subscribe = fun world ->
             let subscriptionKey = makeGuid ()
@@ -141,30 +141,86 @@ module Stream =
                 let world = unsubscribe world
                 EventWorld.unsubscribe<'w> subscriptionKey world
             let subscription = fun evt world ->
-                let eventTrace = EventTrace.record "Stream" "mapPlus" evt.Trace
+                let eventTrace = EventTrace.record "Stream" "mapEvent" evt.Trace
                 let world = EventWorld.publish<'b, Participant, 'w> (mapper evt world) subscriptionAddress eventTrace evt.Publisher world
                 (Cascade, world)
             let world = EventWorld.subscribe5<'a, Participant, 'w> subscriptionKey subscription eventAddress (world.GetNullParticipant ()) world
             (subscriptionAddress, unsubscribe, world)
         { Subscribe = subscribe }
 
-    /// Subscribe to a stream, handling each event with the given 'handleEvent' procedure,
-    /// returning both an unsubscription procedure as well as the world as augmented with said
-    /// subscription.
-    let [<DebuggerHidden; DebuggerStepThrough>] subscribePlus handleEvent (subscriber : 's) stream world =
-        let subscribe = fun world ->
-            let subscriptionKey = makeGuid ()
-            let subscriptionAddress = ntoa<'a> !!(scstring subscriptionKey)
-            let (address, unsubscribe, world) = stream.Subscribe world
-            let unsubscribe = fun world ->
-                let world = unsubscribe world
-                EventWorld.unsubscribe<'w> subscriptionKey world
-            let world = EventWorld.subscribe5<'a, 's, 'w> subscriptionKey handleEvent address subscriber world
-            (subscriptionAddress, unsubscribe, world)
-        let stream = { Subscribe = subscribe }
-        stream.Subscribe world |> _bc
+    (* World-Accessing Combinators *)
 
-    (* Elementary Combinators *)
+    /// TODO: document!
+    let [<DebuggerHidden; DebuggerStepThrough>] trackWorld4
+        (tracker : 'c -> 'a -> 'w -> 'c * bool) (transformer : 'c -> 'b) (state : 'c) (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
+        trackEvent4 (fun c evt world -> tracker c evt.Data world) transformer state stream
+
+    /// TODO: document!
+    let [<DebuggerHidden; DebuggerStepThrough>] trackWorld2
+        (tracker : 'a -> 'a -> 'w -> 'a * bool) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
+        trackEvent2 (fun a evt world -> tracker a evt.Data world) stream
+
+    /// TODO: document!
+    let [<DebuggerHidden; DebuggerStepThrough>] trackWorld
+        (tracker : 'b -> 'w -> 'b * bool) (state : 'b) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
+        trackEvent tracker state stream
+
+    /// Fold over a stream, then map the result.
+    let [<DebuggerHidden; DebuggerStepThrough>] foldMapWorld (f : 'b -> 'a -> 'w -> 'b) g s (stream : Stream<'a, 'w>) : Stream<'c, 'w> =
+        foldMapEvent (fun b evt world -> f b evt.Data world) g s stream
+
+    /// Fold over a stream, aggegating the result.
+    let [<DebuggerHidden; DebuggerStepThrough>] foldWorld (f : 'b -> 'a -> 'w -> 'b) s (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
+        foldEvent (fun b evt world -> f b evt.Data world) s stream
+
+    /// Reduce over a stream, accumulating the result.
+    let [<DebuggerHidden; DebuggerStepThrough>] reduceWorld (f : 'a -> 'a -> 'w -> 'a) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
+        reduceEvent (fun a evt world -> f a evt.Data world) stream
+
+    /// Filter a stream by the given 'pred' procedure.
+    let [<DebuggerHidden; DebuggerStepThrough>] filterWorld (pred : 'a -> 'w -> bool) (stream : Stream<'a, 'w>) =
+        filterEvent (fun evt world -> pred evt.Data world) stream
+
+    /// Map a stream by the given 'mapper' procedure.
+    let [<DebuggerHidden; DebuggerStepThrough>] mapWorld (mapper : 'a -> 'w -> 'b) (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
+        mapEvent (fun evt world -> mapper evt.Data world) stream
+
+    (* Primitive Combinators *)
+
+    /// TODO: document!
+    let [<DebuggerHidden; DebuggerStepThrough>] track4
+        (tracker : 'c -> 'a -> 'c * bool) (transformer : 'c -> 'b) (state : 'c) (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
+        trackEvent4 (fun c evt _ -> tracker c evt.Data) transformer state stream
+
+    /// TODO: document!
+    let [<DebuggerHidden; DebuggerStepThrough>] track2
+        (tracker : 'a -> 'a -> 'a * bool) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
+        trackEvent2 (fun a evt _ -> tracker a evt.Data) stream
+
+    /// TODO: document!
+    let [<DebuggerHidden; DebuggerStepThrough>] track
+        (tracker : 'b -> 'b * bool) (state : 'b) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
+        trackEvent (fun b _ -> tracker b) state stream
+
+    /// Fold over a stream, then map the result.
+    let [<DebuggerHidden; DebuggerStepThrough>] foldMap (f : 'b -> 'a -> 'b) g s (stream : Stream<'a, 'w>) : Stream<'c, 'w> =
+        foldMapEvent (fun b evt _ -> f b evt.Data) g s stream
+
+    /// Fold over a stream, aggegating the result.
+    let [<DebuggerHidden; DebuggerStepThrough>] fold (f : 'b -> 'a -> 'b) s (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
+        foldEvent (fun b evt _ -> f b evt.Data) s stream
+
+    /// Reduce over a stream, accumulating the result.
+    let [<DebuggerHidden; DebuggerStepThrough>] reduce (f : 'a -> 'a -> 'a) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
+        reduceEvent (fun a evt _ -> f a evt.Data) stream
+
+    /// Filter a stream by the given 'pred' procedure.
+    let [<DebuggerHidden; DebuggerStepThrough>] filter (pred : 'a -> bool) (stream : Stream<'a, 'w>) =
+        filterEvent (fun evt _ -> pred evt.Data) stream
+
+    /// Map a stream by the given 'mapper' procedure.
+    let [<DebuggerHidden; DebuggerStepThrough>] map (mapper : 'a -> 'b) (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
+        mapEvent (fun evt _ -> mapper evt.Data) stream
 
     /// Combine a stream with a stream of the events from the given address. Combination is in
     /// 'product form', which is defined as a pair of the data of the combined events. Think of it
@@ -261,21 +317,6 @@ module Stream =
             (subscriptionAddress'', unsubscribe, world)
         { Subscribe = subscribe }
 
-    /// Make a stream of an event at the given address.
-    let [<DebuggerHidden; DebuggerStepThrough>] stream<'a, 'w when 'w :> 'w EventWorld>
-        (eventAddress : 'a Address) : Stream<'a, 'w> =
-        let subscribe = fun (world : 'w) ->
-            let subscriptionKey = makeGuid ()
-            let subscriptionAddress = ntoa<'a> !!(scstring subscriptionKey)
-            let unsubscribe = fun world -> EventWorld.unsubscribe<'w> subscriptionKey world
-            let subscription = fun evt world ->
-                let eventTrace = EventTrace.record "Stream" "stream" evt.Trace
-                let world = EventWorld.publish<'a, Participant, 'w> evt.Data subscriptionAddress eventTrace evt.Publisher world
-                (Cascade, world)
-            let world = EventWorld.subscribe5<'a, Participant, 'w> subscriptionKey subscription eventAddress (world.GetNullParticipant ()) world
-            (subscriptionAddress, unsubscribe, world)
-        { Subscribe = subscribe }
-
     /// Terminate a stream when an event at the given address is raised.
     let [<DebuggerHidden; DebuggerStepThrough>] until
         (eventAddress : unit Address) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
@@ -288,8 +329,8 @@ module Stream =
                 let world = unsubscribe world
                 let world = EventWorld.unsubscribe<'w> subscriptionKey world
                 EventWorld.unsubscribe<'w> eventKey world
-            let handleEvent = fun _ world -> let world = unsubscribe world in (Cascade, world)
-            let world = EventWorld.subscribe5 eventKey handleEvent eventAddress (world.GetNullParticipant ()) world
+            let handler = fun _ world -> let world = unsubscribe world in (Cascade, world)
+            let world = EventWorld.subscribe5 eventKey handler eventAddress (world.GetNullParticipant ()) world
             let subscription = fun evt world ->
                 let eventTrace = EventTrace.record "Stream" "until" evt.Trace
                 let world = EventWorld.publish<'a, Participant, 'w> evt.Data subscriptionAddress eventTrace evt.Publisher world
@@ -304,56 +345,37 @@ module Stream =
         let removingEventAddress = ltoa<unit> [!!typeof<'s>.Name; !!"Removing"; !!"Event"] ->>- subscriber.ParticipantAddress
         until removingEventAddress stream
 
-    /// Subscribe to a stream, handling each event with the given 'handleEvent' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] subscribe handleEvent subscriber stream world =
-        subscribePlus handleEvent subscriber stream world |> snd
+    /// Subscribe to a stream, handling each event with the given 'handler' procedure,
+    /// returning both an unsubscription procedure as well as the world as augmented with said
+    /// subscription.
+    let [<DebuggerHidden; DebuggerStepThrough>] subscribePlus handler (subscriber : 's) stream world =
+        let subscribe = fun world ->
+            let subscriptionKey = makeGuid ()
+            let subscriptionAddress = ntoa<'a> !!(scstring subscriptionKey)
+            let (address, unsubscribe, world) = stream.Subscribe world
+            let unsubscribe = fun world ->
+                let world = unsubscribe world
+                EventWorld.unsubscribe<'w> subscriptionKey world
+            let world = EventWorld.subscribe5<'a, 's, 'w> subscriptionKey handler address subscriber world
+            (subscriptionAddress, unsubscribe, world)
+        let stream = { Subscribe = subscribe }
+        stream.Subscribe world |> _bc
+
+    /// Subscribe to a stream, handling each event with the given 'handler' procedure.
+    let [<DebuggerHidden; DebuggerStepThrough>] subscribe handler subscriber stream world =
+        subscribePlus handler subscriber stream world |> snd
 
     /// Subscribe to a stream until the subscriber is removed from the world,
     /// returning both an unsubscription procedure as well as the world as augmented with said
     /// subscription.
-    let [<DebuggerHidden; DebuggerStepThrough>] monitorWithUnsub eventAddress subscriber stream world =
+    let [<DebuggerHidden; DebuggerStepThrough>] monitorPlus eventAddress subscriber stream world =
         (stream |> lifetime subscriber |> subscribePlus eventAddress subscriber) world
 
     /// Subscribe to a stream until the subscriber is removed from the world.
     let [<DebuggerHidden; DebuggerStepThrough>] monitor eventAddress subscriber stream world =
-        monitorWithUnsub eventAddress subscriber stream world |> snd
+        monitorPlus eventAddress subscriber stream world |> snd
 
-    /// TODO: document!
-    let [<DebuggerHidden; DebuggerStepThrough>] track4
-        (tracker : 'c -> 'a -> 'c * bool) (transformer : 'c -> 'b) (state : 'c) (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
-        trackPlus4 (fun c evt _ -> tracker c evt.Data) transformer state stream
-
-    /// TODO: document!
-    let [<DebuggerHidden; DebuggerStepThrough>] track2
-        (tracker : 'a -> 'a -> 'a * bool) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
-        trackPlus2 (fun a evt _ -> tracker a evt.Data) stream
-
-    /// TODO: document!
-    let [<DebuggerHidden; DebuggerStepThrough>] track
-        (tracker : 'b -> 'b * bool) (state : 'b) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
-        trackPlus (fun b _ -> tracker b) state stream
-
-    /// Fold over a stream, then map the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldMap (f : 'b -> 'a -> 'b) g s (stream : Stream<'a, 'w>) : Stream<'c, 'w> =
-        foldMapPlus (fun b evt _ -> f b evt.Data) g s stream
-
-    /// Fold over a stream, aggegating the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] fold (f : 'b -> 'a -> 'b) s (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
-        foldPlus (fun b evt _ -> f b evt.Data) s stream
-
-    /// Reduce over a stream, accumulating the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] reduce (f : 'a -> 'a -> 'a) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
-        reducePlus (fun a evt _ -> f a evt.Data) stream
-
-    /// Filter a stream by the given 'pred' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] filter (pred : 'a -> bool) (stream : Stream<'a, 'w>) =
-        filterPlus (fun evt _ -> pred evt.Data) stream
-
-    /// Map a stream by the given 'mapper' procedure.
-    let [<DebuggerHidden; DebuggerStepThrough>] map (mapper : 'a -> 'b) (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
-        mapPlus (fun evt _ -> mapper evt.Data) stream
-
-    (* Sophisticated Combinators *)
+    (* Derived Combinators *)
 
     /// Transform a stream into a running average of its event's numeric data.
     let [<DebuggerHidden; DebuggerStepThrough>] inline average (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
@@ -449,19 +471,36 @@ module Stream =
     /// Filter out the events with non-unique data from a stream.
     let [<DebuggerHidden; DebuggerStepThrough>] distinct stream = distinctBy id stream
 
+    (* Miscellaneous Combinators *)
+
+    /// Make a stream of an event at the given address.
+    let [<DebuggerHidden; DebuggerStepThrough>] stream<'a, 'w when 'w :> 'w EventWorld>
+        (eventAddress : 'a Address) : Stream<'a, 'w> =
+        let subscribe = fun (world : 'w) ->
+            let subscriptionKey = makeGuid ()
+            let subscriptionAddress = ntoa<'a> !!(scstring subscriptionKey)
+            let unsubscribe = fun world -> EventWorld.unsubscribe<'w> subscriptionKey world
+            let subscription = fun evt world ->
+                let eventTrace = EventTrace.record "Stream" "stream" evt.Trace
+                let world = EventWorld.publish<'a, Participant, 'w> evt.Data subscriptionAddress eventTrace evt.Publisher world
+                (Cascade, world)
+            let world = EventWorld.subscribe5<'a, Participant, 'w> subscriptionKey subscription eventAddress (world.GetNullParticipant ()) world
+            (subscriptionAddress, unsubscribe, world)
+        { Subscribe = subscribe }
+
 [<AutoOpen>]
 module StreamOperators =
 
     // open related module
     open Stream
 
-    /// Pipe-right arrow that provides special precedence for streams.
+    /// Stream sequencing operator.
     let (---) = (|>)
 
     /// Make a stream of the subscriber's change events.
     let [<DebuggerHidden; DebuggerStepThrough>] ( !-- ) (property : PropertyTag<'a, 'b, 'w>) =
         let changeEventAddress = ltoa<ParticipantChangeData<'a, 'w>> [!!typeof<'a>.Name; !!"Change"; !!property.Name; !!"Event"] ->>- property.This.ParticipantAddress
-        stream changeEventAddress --- mapPlus (fun _ world -> property.Get world)
+        stream changeEventAddress --- mapEvent (fun _ world -> property.Get world)
 
     /// Propagate the event data of a stream to a property in the observing participant when the
     /// subscriber exists (doing nothing otherwise).

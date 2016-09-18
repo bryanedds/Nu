@@ -12,7 +12,7 @@ module Stream =
     /// Take only one event from a stream per update.
     let [<DebuggerHidden; DebuggerStepThrough>] noMoreThanOncePerUpdate (stream : Stream<'a, World>) =
         stream |>
-        trackPlus4
+        trackEvent4
             (fun (a, current) _ world ->
                 let previous = current
                 let current = World.getUpdateCount world
@@ -22,22 +22,22 @@ module Stream =
 
     /// Take events from a stream only while World.isTicking evaluates to true.
     let [<DebuggerHidden; DebuggerStepThrough>] isTicking stream =
-        filterPlus (fun _ -> World.isTicking) stream
+        filterEvent (fun _ -> World.isTicking) stream
 
     /// Take events from a stream only when the simulant is contained by, or is the same as,
     /// the currently selected screen. Game is always considered 'selected' as well.
     let [<DebuggerHidden; DebuggerStepThrough>] isSimulantSelected simulant stream =
-        filterPlus (fun _ -> World.isSimulantSelected simulant) stream
+        filterEvent (fun _ -> World.isSimulantSelected simulant) stream
 
     /// Take events from a stream only when the currently selected screen is idling (that
     /// is, there is no screen transition in progress).+
     let [<DebuggerHidden; DebuggerStepThrough>] isSelectedScreenIdling stream =
-        filterPlus (fun _ -> World.isSelectedScreenIdling) stream
+        filterEvent (fun _ -> World.isSelectedScreenIdling) stream
     
     /// Take events from a stream only when the currently selected screen is transitioning
     /// (that is, there is a screen transition in progress).
     let [<DebuggerHidden; DebuggerStepThrough>] isSelectedScreenTransitioning stream =
-        filterPlus (fun _ -> World.isSelectedScreenTransitioning) stream
+        filterEvent (fun _ -> World.isSelectedScreenTransitioning) stream
 
 [<AutoOpen>]
 module StreamOperators =

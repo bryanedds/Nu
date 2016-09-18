@@ -112,7 +112,7 @@ module EventTests =
         let world = TestWorld.make ignore false EventFilter.Empty
         let world =
             stream TestEvent |>
-            filterPlus (fun _ world -> world.TestState = 0) |>
+            filterWorld (fun _ world -> world.TestState = 0) |>
             subscribe incTestStateAndCascade TestParticipant <|
             world
         let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world
