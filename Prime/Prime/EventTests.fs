@@ -155,7 +155,7 @@ module EventTests =
         let world = TestWorld.make ignore false EventFilter.Empty
         let world =
             stream TestEvent |>
-            scan (+) 0 |>
+            fold (+) 0 |>
             subscribe (fun evt world -> (Cascade, { world with TestState = evt.Data })) TestParticipant <|
             world
         let world = EventWorld.publish 1 TestEvent EventTrace.empty TestParticipant world
@@ -166,7 +166,7 @@ module EventTests =
         let world = TestWorld.make ignore false EventFilter.Empty
         let (unsubscribe, world) =
             stream TestEvent |>
-            scan2 (fun a _ -> a) |>
+            reduce (curry fst) |>
             subscribePlus incTestStateAndCascade TestParticipant <|
             world
         let world = EventWorld.publish 0 TestEvent EventTrace.empty TestParticipant world

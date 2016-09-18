@@ -2,9 +2,7 @@
 // Copyright (C) Bryan Edds, 2012-2016.
 
 namespace Prime
-open System
 open System.Diagnostics
-open LanguagePrimitives
 open Prime
 
 /// A stream in the functional reactive style.
@@ -98,17 +96,17 @@ module Stream =
             (subscriptionAddress, unsubscribe, world)
         { Subscribe = subscribe }
 
-    /// Scan over a stream, accumulating state.
-    let [<DebuggerHidden; DebuggerStepThrough>] scanPlus4 (f : 'b -> Event<'a, Participant> -> 'w -> 'b) g s (stream : Stream<'a, 'w>) : Stream<'c, 'w> =
+    /// Fold over a stream, then map the result.
+    let [<DebuggerHidden; DebuggerStepThrough>] foldMapPlus (f : 'b -> Event<'a, Participant> -> 'w -> 'b) g s (stream : Stream<'a, 'w>) : Stream<'c, 'w> =
         trackPlus4 (fun b a w -> (f b a w, true)) g s stream
-        
-    /// Scan over a stream, accumulating state.
-    let [<DebuggerHidden; DebuggerStepThrough>] scanPlus2 (f : 'a -> Event<'a, Participant> -> 'w -> 'a) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
+
+    /// Fold over a stream, aggegating the result.
+    let [<DebuggerHidden; DebuggerStepThrough>] foldPlus (f : 'b -> Event<'a, Participant> -> 'w -> 'b) s (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
+        trackPlus4 (fun b a w -> (f b a w, true)) id s stream
+
+    /// Reduce over a stream, accumulating the result.
+    let [<DebuggerHidden; DebuggerStepThrough>] reducePlus (f : 'a -> Event<'a, Participant> -> 'w -> 'a) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
         trackPlus2 (fun a a2 w -> (f a a2 w, true)) stream
-        
-    /// Scan over a stream, accumulating state.
-    let [<DebuggerHidden; DebuggerStepThrough>] scanPlus (f : 'b -> Event<'a, Participant> -> 'w -> 'b) s (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
-        scanPlus4 f id s stream
 
     /// Filter a stream by the given 'pred' procedure.
     let [<DebuggerHidden; DebuggerStepThrough>] filterPlus
@@ -334,17 +332,17 @@ module Stream =
         (tracker : 'b -> 'b * bool) (state : 'b) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
         trackPlus (fun b _ -> tracker b) state stream
 
-    /// Scan over a stream, accumulating state.
-    let [<DebuggerHidden; DebuggerStepThrough>] scan4 (f : 'b -> 'a -> 'b) g s (stream : Stream<'a, 'w>) : Stream<'c, 'w> =
-        scanPlus4 (fun b evt _ -> f b evt.Data) g s stream
-        
-    /// Scan over a stream, accumulating state.
-    let [<DebuggerHidden; DebuggerStepThrough>] scan2 (f : 'a -> 'a -> 'a) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
-        scanPlus2 (fun a evt _ -> f a evt.Data) stream
-        
-    /// Scan over a stream, accumulating state.
-    let [<DebuggerHidden; DebuggerStepThrough>] scan (f : 'b -> 'a -> 'b) s (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
-        scanPlus (fun b evt _ -> f b evt.Data) s stream
+    /// Fold over a stream, then map the result.
+    let [<DebuggerHidden; DebuggerStepThrough>] foldMap (f : 'b -> 'a -> 'b) g s (stream : Stream<'a, 'w>) : Stream<'c, 'w> =
+        foldMapPlus (fun b evt _ -> f b evt.Data) g s stream
+
+    /// Fold over a stream, aggegating the result.
+    let [<DebuggerHidden; DebuggerStepThrough>] fold (f : 'b -> 'a -> 'b) s (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
+        foldPlus (fun b evt _ -> f b evt.Data) s stream
+
+    /// Reduce over a stream, accumulating the result.
+    let [<DebuggerHidden; DebuggerStepThrough>] reduce (f : 'a -> 'a -> 'a) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
+        reducePlus (fun a evt _ -> f a evt.Data) stream
 
     /// Filter a stream by the given 'pred' procedure.
     let [<DebuggerHidden; DebuggerStepThrough>] filter (pred : 'a -> bool) (stream : Stream<'a, 'w>) =
@@ -358,7 +356,7 @@ module Stream =
 
     /// Transform a stream into a running average of its event's numeric data.
     let [<DebuggerHidden; DebuggerStepThrough>] inline average (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
-        scan4
+        foldMap
             (fun (avg : 'a, den : 'a) a ->
                 let den' = den + one ()
                 let dod' = den / den'
@@ -370,7 +368,7 @@ module Stream =
 
     /// Transform a stream into a running map from its event's data to keys as defined by 'f'.
     let [<DebuggerHidden; DebuggerStepThrough>] organize f (stream : Stream<'a, 'w>) : Stream<('a * 'b) option * Map<'b, 'a>, 'w> =
-        scan
+        fold
             (fun (_, m) a ->
                 let b = f a
                 if Map.containsKey b m
@@ -381,7 +379,7 @@ module Stream =
 
     /// Transform a stream into a running set of its event's unique data as defined via 'by'.
     let [<DebuggerHidden; DebuggerStepThrough>] groupBy by (stream : Stream<'a, 'w>) : Stream<'b * bool * 'b Set, 'w> =
-        scan
+        fold
             (fun (_, _, set) a ->
                 let b = by a
                 if Set.contains b set
@@ -395,10 +393,10 @@ module Stream =
         groupBy id stream
 
     /// Transform a stream into a running sum of its data.
-    let [<DebuggerHidden; DebuggerStepThrough>] inline sumN stream = scan2 (+) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] inline sumN stream = reduce (+) stream
 
     /// Transform a stream into a running product of its data.
-    let [<DebuggerHidden; DebuggerStepThrough>] inline productN stream = scan2 (*) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] inline productN stream = reduce (*) stream
 
     /// Transform a stream of pairs into its fst values.
     let [<DebuggerHidden; DebuggerStepThrough>] first stream = map fst stream
@@ -439,10 +437,10 @@ module Stream =
         stream |> filter Option.isSome |> map Option.get
 
     /// Transform a stream into a running maximum of it numeric data.
-    let [<DebuggerHidden; DebuggerStepThrough>] max stream = scan2 (fun n a -> if n < a then a else n) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] max stream = reduce (fun n a -> if n < a then a else n) stream
     
     /// Transform a stream into a running minimum of it numeric data.
-    let [<DebuggerHidden; DebuggerStepThrough>] min stream = scan2 (fun n a -> if a < n then a else n) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] min stream = reduce (fun n a -> if a < n then a else n) stream
 
     /// Filter out the events with non-unique data as defined via 'by' from a stream.
     let [<DebuggerHidden; DebuggerStepThrough>] distinctBy by stream = stream |> organize by |> first |> choose
