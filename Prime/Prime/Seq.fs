@@ -3,6 +3,7 @@
 
 [<RequireQualifiedAccess>]
 module Seq
+open System
 open Prime
 
 /// Check that a sequence is not empty.
