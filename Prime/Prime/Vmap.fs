@@ -5,9 +5,6 @@ namespace Prime
 open System
 open System.Collections
 open System.Collections.Generic
-open System.ComponentModel
-open System.Reflection
-open Microsoft.FSharp.Reflection
 open Prime
 
 /// A hash-key-value triple, implemented with a struct for efficiency.

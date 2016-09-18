@@ -3,7 +3,6 @@
 
 namespace Prime
 open System
-open System.Collections.Generic
 open Prime
 
 /// The context in which all events take place. Effectively a mix-in for the 'w type, where 'w is a type that

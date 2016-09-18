@@ -2,8 +2,6 @@
 // Copyright (C) Bryan Edds, 2012-2016.
 
 namespace Prime.Tests
-open Xunit
-open FsCheck
 open FsCheck.Xunit
 open Prime
 open System.Diagnostics

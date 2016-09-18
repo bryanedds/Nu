@@ -3,8 +3,6 @@
 
 namespace Prime
 open System
-open System.Diagnostics
-open LanguagePrimitives
 open Prime
 
 /// Describes a property.

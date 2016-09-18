@@ -1,6 +1,5 @@
 ﻿namespace Prime
 open System
-open System.ComponentModel
 
 type [<CLIMutable; ReferenceEquality>] EventInfo =
     { ModuleName : string

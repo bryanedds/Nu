@@ -3,8 +3,6 @@
 
 namespace Prime.Tests
 open System
-open System.ComponentModel
-open FParsec
 open Xunit
 open Prime
 

@@ -7,7 +7,6 @@ open System.ComponentModel
 open System.Collections
 open System.Collections.Generic
 open System.Reflection
-open System.IO
 open Microsoft.FSharp.Reflection
 
 /// Along with the Label binding, is used to elaborate the name of a target without using a
@@ -128,8 +127,8 @@ module TypeExtension =
             if this.IsPrimitive then Activator.CreateInstance this
             elif this = typeof<string> then "" :> obj
             elif this = typeof<Name> then Name.empty :> obj
-            elif this.Name = typedefof<_ array>.Name then Reflection.objsToArray this Array.empty
-            elif this.Name = typedefof<_ list>.Name then Reflection.objsToList this List.empty
+            elif this.Name = typedefof<_ array>.Name then Reflection.objsToArray this [||]
+            elif this.Name = typedefof<_ list>.Name then Reflection.objsToList this []
             elif this.Name = typedefof<_ Set>.Name then Reflection.objsToSet this Set.empty
             elif this.Name = typedefof<Map<_, _>>.Name then Reflection.pairsToMap this Map.empty
             elif this.Name = typedefof<Vmap<_, _>>.Name then Reflection.pairsToVmap this (Vmap.makeEmpty ())
@@ -213,7 +212,7 @@ module TypeExtension =
                 Seq.map
                     (fun (_, properties) -> Type.GetPropertyByPreference (preference, properties))
                     propertiesGrouped
-            Seq.filter (fun optProperty -> optProperty <> null) optProperties
+            Seq.filter isNotNull optProperties
 
         /// Get all the properties, preferring those that can be written to if there is a name clash.
         member this.GetPropertiesPreferWritable () =

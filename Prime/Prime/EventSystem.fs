@@ -3,8 +3,6 @@
 
 namespace Prime
 open System
-open System.IO
-open System.Collections.Generic
 open Prime
 
 /// Describes whether an in-flight event has been resolved or should cascade to down-stream handlers.

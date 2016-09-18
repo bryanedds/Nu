@@ -157,7 +157,7 @@ let allOrEmpty (opts : 'a option list) =
 /// Make a transformed list of options an all or nothing proposition.
 /// TODO: optimize with program fusion.
 let allOrEmptyBy by list =
-    let definites = List.choose (fun item -> by item) list
+    let definites = List.choose by list
     if areSameLength definites list then definites else []
 
 /// Resize a list with the given elem for expanded elements.
@@ -239,7 +239,7 @@ let addToDict (dictionary : Dictionary<'k, 'v>) list =
     
 /// Add a list of values to a Dictionary.
 let addToDictBy by (dictionary : Dictionary<'k, 'v>) list =
-    List.iter (fun value -> dictionary.Add (by value)) list
+    List.iter (by >> dictionary.Add) list
 
 /// Convert a list of pairs to a Dictionary.
 let toDict list =
@@ -256,7 +256,7 @@ let toDictBy by list =
 /// Convert a list to a HashSet.
 let toHashSet list =
     let hashSet = HashSet HashIdentity.Structural
-    List.iter (fun item -> hashSet.Add item |> ignore) list
+    List.iter (hashSet.Add >> ignore) list
     hashSet
 
 /// Implement a fold while folder results in Some.
