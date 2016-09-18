@@ -17,17 +17,17 @@ module RandTests =
             yield n]
 
     let [<Fact>] nextDoubleIsInRange () =
-        let samples = makeSamples (fun rand -> Rand.nextDouble rand)
+        let samples = makeSamples Rand.nextDouble
         let avg = List.average samples
         Assert.InRange (avg, 0.49, 0.51)
 
     let [<Fact>] nextSingleIsInRange () =
-        let samples = makeSamples (fun rand -> Rand.nextSingle rand)
+        let samples = makeSamples Rand.nextSingle
         let avg = List.average samples
         Assert.InRange (avg, 0.49f, 0.51f)
 
     let [<Fact>] nextIntIsInRange () =
-        let samples = makeSamples (fun rand -> Rand.nextInt rand)
+        let samples = makeSamples Rand.nextInt
         let sampleDoubles = List.map double samples
         let avg = List.average sampleDoubles
         Assert.InRange (avg, 1003741823.0, 1143741823.0)

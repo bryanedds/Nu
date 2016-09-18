@@ -2,8 +2,6 @@
 // Copyright (C) Bryan Edds, 2012-2016.
 
 namespace Prime.Tests
-open System
-open System.IO
 open Xunit
 open Prime
 open Prime.Stream

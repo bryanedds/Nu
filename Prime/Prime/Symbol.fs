@@ -3,8 +3,6 @@
 
 namespace Prime
 open System
-open System.ComponentModel
-open Microsoft.FSharp.Reflection
 open FParsec
 open Prime
 

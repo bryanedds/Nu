@@ -3,10 +3,8 @@
 
 namespace Prime
 open System
-open System.Configuration
 open System.ComponentModel
 open System.Reflection
-open System.Text
 open Prime
     
 /// Converts Relation types.

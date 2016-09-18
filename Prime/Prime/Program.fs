@@ -6,7 +6,6 @@ open System
 open System.Collections.Generic
 open System.Diagnostics
 open Prime
-open Prime.Tests
 module Program =
 
     /// The number of samples taken for each timing.
@@ -17,7 +16,7 @@ module Program =
         printfn "%s timings..." name
         for _ in 1 .. Samples do
             let watch = Stopwatch.StartNew ()
-            let _ = fn ()
+            fn () |> ignore
             watch.Stop ()
             printfn "Run time: %A" watch.Elapsed
 

@@ -3,9 +3,6 @@
 
 namespace Prime.Tests
 open System
-open System.IO
-open System.Collections.Generic
-open Xunit
 open FsCheck
 open FsCheck.Xunit
 open Prime

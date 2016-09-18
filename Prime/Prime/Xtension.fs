@@ -3,8 +3,6 @@
 
 namespace Prime
 open System
-open System.Reflection
-open System.ComponentModel
 open Prime
 
 /// An attribute to specify the default value of an XProperty.
