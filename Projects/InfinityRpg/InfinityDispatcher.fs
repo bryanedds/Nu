@@ -1,9 +1,6 @@
 ﻿namespace InfinityRpg
 open System
-open System.IO
-open OpenTK
 open Prime
-open Prime.Stream
 open Nu
 open InfinityRpg
 

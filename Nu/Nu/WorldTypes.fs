@@ -15,7 +15,6 @@ module internal World =
 namespace Nu
 open System
 open System.Diagnostics
-open FSharpx.Collections
 open OpenTK
 open TiledSharp
 open Prime

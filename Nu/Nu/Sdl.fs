@@ -3,8 +3,6 @@
 
 namespace Nu
 open System
-open System.Diagnostics
-open System.Threading
 open SDL2
 open Prime
 open Nu

@@ -5,17 +5,12 @@ namespace Nu.Gaia
 open Nu.Gaia.Design
 open SDL2
 open OpenTK
-open TiledSharp
-open Prime
 open System
 open System.IO
 open System.Collections
-open System.Collections.Generic
 open System.Reflection
-open System.Runtime.CompilerServices
 open System.Windows.Forms
 open System.ComponentModel
-open Microsoft.FSharp.Reflection
 open Prime
 open Nu
 

@@ -3,11 +3,8 @@
 
 namespace Nu
 open System
-open System.Diagnostics
 open System.Reflection
-open FSharpx.Collections
 open OpenTK
-open TiledSharp
 open Prime
 open Nu
 

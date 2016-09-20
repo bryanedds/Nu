@@ -3,10 +3,8 @@
 
 namespace Nu
 open System
-open System.ComponentModel
 open FSharpx.Collections
 open OpenTK
-open Prime
 open TiledSharp
 open Prime
 open Nu

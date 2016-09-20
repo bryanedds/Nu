@@ -3,7 +3,6 @@
 
 namespace Nu.Tests
 open System
-open System.IO
 open Xunit
 open Prime
 open Nu

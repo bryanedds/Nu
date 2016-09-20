@@ -5,8 +5,6 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.ComponentModel
-open System.Runtime.InteropServices
-open Microsoft.FSharp.Reflection
 open OpenTK
 open Prime
 open Nu

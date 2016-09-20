@@ -3,11 +3,8 @@
 
 namespace Nu
 open System
-open System.IO
 open System.Collections.Generic
-open System.ComponentModel
 open System.Reflection
-open FSharpx
 open Prime
 open Nu
 

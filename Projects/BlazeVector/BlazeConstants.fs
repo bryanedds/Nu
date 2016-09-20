@@ -1,4 +1,6 @@
 ﻿namespace BlazeVector
+open System
+open Prime
 open Nu
 
 [<RequireQualifiedAccess>]

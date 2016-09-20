@@ -3,11 +3,9 @@
 
 namespace Nu
 open System
-open System.ComponentModel
 open System.Collections.Generic
 open System.Drawing
 open System.IO
-open System.Linq
 open OpenTK
 open TiledSharp
 open Prime

@@ -6,7 +6,6 @@ open OpenTK
 open Prime
 open System
 open System.ComponentModel
-open System.Collections.Generic
 open Prime
 open Nu
 open Nu.Gaia
