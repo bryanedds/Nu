@@ -1,7 +1,6 @@
 ﻿namespace InfinityRpg
 open System
 open System.IO
-open SDL2
 open OpenTK
 open Prime
 open Prime.Chain

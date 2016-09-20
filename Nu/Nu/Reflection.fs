@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.ComponentModel
 open System.Collections
 open System.Collections.Generic
 open System.Reflection

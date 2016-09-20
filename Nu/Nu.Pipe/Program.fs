@@ -1,6 +1,5 @@
 ﻿namespace NuPipe
 open System
-open System.IO
 open Prime
 open Nu
 module Program =

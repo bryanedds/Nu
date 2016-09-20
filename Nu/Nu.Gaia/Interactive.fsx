@@ -35,6 +35,7 @@ open Prime
 open Prime.Stream
 open Prime.Chain
 open Nu
+open Nu.Stream
 open Nu.Gaia
 
 // set current directly to local for execution in VS F# interactive

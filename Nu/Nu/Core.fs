@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Diagnostics
 open System.Runtime.InteropServices
 open System.Configuration
 open Prime

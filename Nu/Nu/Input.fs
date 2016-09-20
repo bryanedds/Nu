@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.ComponentModel
 open OpenTK
 open SDL2
 open Prime

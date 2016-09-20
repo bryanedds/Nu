@@ -3,11 +3,9 @@
 
 namespace Nu
 open System
-open System.ComponentModel
 open System.Collections.Generic
 open FSharpx.Collections
 open FarseerPhysics
-open FarseerPhysics.Common
 open FarseerPhysics.Dynamics
 open FarseerPhysics.Dynamics.Contacts
 open OpenTK

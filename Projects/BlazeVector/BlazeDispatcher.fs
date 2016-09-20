@@ -1,6 +1,5 @@
 ﻿namespace BlazeVector
-open OpenTK
-open SDL2
+open System
 open Prime
 open Nu
 open BlazeVector

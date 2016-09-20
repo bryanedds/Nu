@@ -1,6 +1,5 @@
 ﻿namespace InfinityRpg
 open System
-open SDL2
 open OpenTK
 open Prime
 open Prime.Stream

@@ -3,10 +3,7 @@
 
 namespace Nu
 open System
-open OpenTK
-open Prime
 open global.Nu
-open global.Nu.Descriptors
 module Program =
 
     (* DISCUSSION - On Nu's authoring story...

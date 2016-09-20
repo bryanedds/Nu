@@ -1,5 +1,6 @@
 ﻿namespace InfinityRpg
-open OpenTK
+open System
+open Prime
 open Nu
 open InfinityRpg
 module Simulants =

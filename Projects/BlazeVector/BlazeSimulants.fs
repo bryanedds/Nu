@@ -1,6 +1,7 @@
 ﻿namespace BlazeVector
+open System
+open Prime
 open Nu
-open BlazeVector
 module Simulants =
 
     // this constant is the result of converting a name to a Screen proxy. A proxy is like an

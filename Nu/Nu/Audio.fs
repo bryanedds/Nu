@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.IO
-open System.ComponentModel
 open FSharpx.Collections
 open SDL2
 open Prime

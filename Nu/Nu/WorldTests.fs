@@ -3,8 +3,6 @@
 
 namespace Nu.Tests
 open System
-open System.IO
-open SDL2
 open Xunit
 open Prime
 open Prime.Stream

@@ -4,11 +4,8 @@
 namespace Nu
 open System
 open System.ComponentModel
-open System.Collections.Generic
-open System.IO
 open System.Reflection
 open System.Runtime.CompilerServices
-open OpenTK
 open Prime
 open Nu
 

@@ -5,7 +5,6 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.IO
-open System.ComponentModel
 open FSharpx.Collections
 open OpenTK
 open SDL2
