@@ -99,14 +99,14 @@ module WorldGameModule =
             let dispatcher = Simulants.Game.GetDispatcherNp world
             let world = dispatcher.Update (Simulants.Game, world)
             let eventTrace = EventTrace.record "World" "updateGame" EventTrace.empty
-            let world = World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () Events.Update eventTrace Simulants.Game world
+            let world = World.publish7 World.sortSubscriptionsByHierarchy () Events.Update eventTrace Simulants.Game true world
             World.choose world
 
         static member internal postUpdateGame world =
             let dispatcher = Simulants.Game.GetDispatcherNp world
             let world = dispatcher.PostUpdate (Simulants.Game, world)
             let eventTrace = EventTrace.record "World" "postUpdateGame" EventTrace.empty
-            let world = World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () Events.PostUpdate eventTrace Simulants.Game world
+            let world = World.publish7 World.sortSubscriptionsByHierarchy () Events.PostUpdate eventTrace Simulants.Game true world
             World.choose world
 
         static member internal actualizeGame world =
@@ -182,10 +182,7 @@ module WorldGameModule =
             World.readGame gameDescriptor world
 
 namespace Debug
-open Prime
 open Nu
-open System.Reflection
-open System.Collections.Generic
 type Game =
 
     /// Provides a full view of all the properties of a game. Useful for debugging such as with the

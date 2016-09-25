@@ -147,7 +147,7 @@ module WorldEntityModule =
             let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
             if entity.GetPublishUpdatesNp world then
                 let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
-                World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () entity.UpdateAddress eventTrace Simulants.Game world
+                World.publish7 World.sortSubscriptionsByHierarchy () entity.UpdateAddress eventTrace Simulants.Game false world
             else world
 
         static member internal postUpdateEntity (entity : Entity) world =
@@ -157,7 +157,7 @@ module WorldEntityModule =
             let world = List.foldBack (fun (facet : Facet) world -> facet.PostUpdate (entity, world)) facets world
             if entity.GetPublishPostUpdatesNp world then
                 let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
-                World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () entity.PostUpdateAddress eventTrace Simulants.Game world
+                World.publish7 World.sortSubscriptionsByHierarchy () entity.PostUpdateAddress eventTrace Simulants.Game false world
             else world
 
         static member internal actualizeEntity (entity : Entity) world =

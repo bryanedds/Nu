@@ -75,13 +75,13 @@ module WorldScreenModule =
             let dispatcher = World.getScreenDispatcherNp screen world
             let world = dispatcher.Update (screen, world)
             let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
-            World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () (Events.Update ->- screen) eventTrace Simulants.Game world
+            World.publish7 World.sortSubscriptionsByHierarchy () (Events.Update ->- screen) eventTrace Simulants.Game true world
 
         static member internal postUpdateScreen (screen : Screen) world =
             let dispatcher = World.getScreenDispatcherNp screen world
             let world = dispatcher.PostUpdate (screen, world)
             let eventTrace = EventTrace.record "World" "postUpdateScreen" EventTrace.empty
-            World.publish7 World.getSubscriptionsSorted World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- screen) eventTrace Simulants.Game world
+            World.publish7 World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- screen) eventTrace Simulants.Game true world
 
         static member internal actualizeScreen (screen : Screen) world =
             let dispatcher = screen.GetDispatcherNp world
@@ -171,10 +171,7 @@ module WorldScreenModule =
                 ([], world)
 
 namespace Debug
-open Prime
 open Nu
-open System.Reflection
-open System.Collections.Generic
 type Screen =
 
     /// Provides a full view of all the member properties of a screen. Useful for debugging such
