@@ -70,14 +70,6 @@ module WorldModule =
         static member setEventFilter filter world =
             EventWorld.setEventFilter filter world
 
-        /// TODO: document.
-        static member getSubscriptionsSorted (publishSorter : SubscriptionSorter<World>) eventAddress world =
-            EventWorld.getSubscriptionsSorted publishSorter eventAddress world
-
-        /// TODO: document.
-        static member getSubscriptionsSorted3 (publishSorter : SubscriptionSorter<World>) eventAddress world =
-            EventWorld.getSubscriptionsSorted3 publishSorter eventAddress world
-
         /// Sort subscriptions using categorization via the 'by' procedure.
         static member sortSubscriptionsBy by (subscriptions : SubscriptionEntry list) (world : World) =
             EventWorld.sortSubscriptionsBy by subscriptions world
@@ -94,17 +86,17 @@ module WorldModule =
             EventWorld.sortSubscriptionsNone subscriptions world
 
         /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
-        static member publish7<'a, 'p when 'p :> Simulant> getSubscriptions publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-            EventWorld.publish7<'a, 'p, World> getSubscriptions publishSorter eventData eventAddress eventTrace publisher world
+        static member publish7<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) allowWildcard world =
+            EventWorld.publish7<'a, 'p, World> publishSorter eventData eventAddress eventTrace publisher allowWildcard world
 
-        /// Publish an event, using the given publishSorter procedure to arrange the order to which subscriptions are published.
-        static member publish6<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-            EventWorld.publish6<'a, 'p, World> publishSorter eventData eventAddress eventTrace publisher world
+        /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
+        static member publish6<'a, 'p when 'p :> Simulant> (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) allowWildcard world =
+            EventWorld.publish7<'a, 'p, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher allowWildcard world
 
         /// Publish an event.
         static member publish<'a, 'p when 'p :> Simulant>
             (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-            EventWorld.publish6<'a, 'p, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher world
+            EventWorld.publish7<'a, 'p, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher true world
 
         /// Unsubscribe from an event.
         static member unsubscribe subscriptionKey world =

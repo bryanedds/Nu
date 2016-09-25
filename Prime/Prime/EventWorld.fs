@@ -78,23 +78,25 @@ module EventWorld =
     let setEventFilter<'w when 'w :> 'w EventWorld> filter (world : 'w) =
         updateEventSystem (EventSystem.setEventFilter filter) world
 
-    let private getEventAddresses1 eventAddress =
-        // OPTIMIZATION: imperative for speed
-        // TODO: see if we can make this faster and / or produce less garbage.
-        // NOTE: event addresses are ordered from general to specific. This is so a generalized subscriber can preempt
-        // any specific subscribers. Whether this is the best order is open for discussion.
-        let eventAddressNames = Array.ofList ^ Address.getNames eventAddress
-        let eventAddresses =
-            Seq.foldi (fun index eventAddresses _ ->
-                let index = eventAddressNames.Length - index - 1
-                let eventAddressNamesAny = Array.zeroCreate eventAddressNames.Length // TODO: use Array.zeroCreateUnchecked if / when it becomes available
-                Array.Copy (eventAddressNames, 0, eventAddressNamesAny, 0, eventAddressNames.Length)
-                eventAddressNamesAny.[index] <- Address.head Events.Wildcard
-                let eventAddressAny = eventAddressNamesAny |> List.ofArray |> Address.ltoa
-                eventAddressAny :: eventAddresses)
-                [eventAddress]
-                eventAddressNames
-        eventAddresses
+    let private getEventAddresses1 eventAddress allowWildcard =
+        if allowWildcard then
+            // OPTIMIZATION: imperative for speed
+            // TODO: see if we can make this faster and / or produce less garbage.
+            // NOTE: event addresses are ordered from general to specific. This is so a generalized subscriber can preempt
+            // any specific subscribers. Whether this is the best order is open for discussion.
+            let eventAddressNames = Array.ofList ^ Address.getNames eventAddress
+            let eventAddresses =
+                Seq.foldi (fun index eventAddresses _ ->
+                    let index = eventAddressNames.Length - index - 1
+                    let eventAddressNamesAny = Array.zeroCreate eventAddressNames.Length // TODO: use Array.zeroCreateUnchecked if / when it becomes available
+                    Array.Copy (eventAddressNames, 0, eventAddressNamesAny, 0, eventAddressNames.Length)
+                    eventAddressNamesAny.[index] <- Address.head Events.Wildcard
+                    let eventAddressAny = eventAddressNamesAny |> List.ofArray |> Address.ltoa
+                    eventAddressAny :: eventAddresses)
+                    [eventAddress]
+                    eventAddressNames
+            eventAddresses
+        else [eventAddress]
 
     let debugSubscriptionTypeMismatch () =
         Log.debug ^
@@ -125,17 +127,10 @@ module EventWorld =
             subscriptions
             []
 
-    let getSubscriptionsSorted (publishSorter : SubscriptionSorter<'w>) eventAddress (world : 'w) =
+    let private getSubscriptionsSorted (publishSorter : SubscriptionSorter<'w>) eventAddress allowWildcard (world : 'w) =
         let eventSystem = getEventSystem world
         let subscriptions = EventSystem.getSubscriptions eventSystem
-        match Umap.tryFind eventAddress subscriptions with
-        | Some subList -> publishSorter subList world
-        | None -> []
-
-    let getSubscriptionsSorted3 (publishSorter : SubscriptionSorter<'w>) eventAddress (world : 'w) =
-        let eventSystem = getEventSystem world
-        let subscriptions = EventSystem.getSubscriptions eventSystem
-        let eventAddresses = getEventAddresses1 eventAddress
+        let eventAddresses = getEventAddresses1 eventAddress allowWildcard
         let optSubLists = List.map (fun eventAddress -> Umap.tryFind eventAddress subscriptions) eventAddresses
         let subLists = List.definitize optSubLists
         let subList = List.concat subLists
@@ -176,11 +171,17 @@ module EventWorld =
     let sortSubscriptionsNone (subscriptions : SubscriptionEntry list) (_ : 'w) =
         subscriptions
 
-    /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
+    /// Publish an event, using the given publishSorter procedures to arrange the order to which subscriptions are published.
     let publish7<'a, 'p, 'w when 'p :> Participant and 'w :> 'w EventWorld>
-        getSubscriptions (publishSorter : SubscriptionSorter<'w>) (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) (world : 'w) =
+        (publishSorter : SubscriptionSorter<'w>)
+        (eventData : 'a)
+        (eventAddress : 'a Address)
+        eventTrace
+        (publisher : 'p)
+        allowWildcard
+        (world : 'w) =
         let objEventAddress = atooa eventAddress in logEvent<'w> objEventAddress eventTrace world
-        let subscriptions = getSubscriptions publishSorter objEventAddress world
+        let subscriptions = getSubscriptionsSorted publishSorter objEventAddress allowWildcard world
         let (_, world) =
             List.foldWhile
                 (fun (handling, world : 'w) (_, subscriber : Participant, subscription) ->
@@ -207,15 +208,15 @@ module EventWorld =
                 subscriptions
         world
 
-    /// Publish an event, using the given publishSorter procedure to arrange the order to which subscriptions are published.
+    /// Publish an event, specifying whether to allow usage of a wildcard subscription.
     let publish6<'a, 'p, 'w when 'p :> Participant and 'w :> 'w EventWorld>
-        (publishSorter : SubscriptionSorter<'w>) (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) (world : 'w) =
-        publish7<'a, 'p, 'w> getSubscriptionsSorted3 publishSorter eventData eventAddress eventTrace publisher world
+        (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) allowWildcard (world : 'w) =
+        publish7<'a, 'p, 'w> sortSubscriptionsNone eventData eventAddress eventTrace publisher allowWildcard world
 
     /// Publish an event with no subscription sorting.
     let publish<'a, 'p, 'w when 'p :> Participant and 'w :> 'w EventWorld>
         (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) (world : 'w) =
-        publish6<'a, 'p, 'w> sortSubscriptionsNone eventData eventAddress eventTrace publisher world
+        publish6<'a, 'p, 'w> eventData eventAddress eventTrace publisher true world
 
     /// Unsubscribe from an event.
     let unsubscribe<'w when 'w :> 'w EventWorld> subscriptionKey (world : 'w) =
