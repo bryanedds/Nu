@@ -239,10 +239,6 @@ module WorldTypes =
         /// Get the quick size of an entity (the appropriate user-define size for an entity).
         abstract GetQuickSize : Entity * World -> Vector2
         default dispatcher.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
-    
-        /// Get the priority with which an entity is picked in the editor.
-        abstract GetPickingPriority : Entity * single * World -> single
-        default dispatcher.GetPickingPriority (_, depth, _) = depth
 
         interface SimulantDispatcher
     
@@ -633,7 +629,7 @@ module WorldTypes =
         interface Simulant with
             member this.ParticipantAddress = Address.makeFromName !!"Null"
             member this.SimulantAddress = Address.makeFromName !!"Null"
-            member this.GetPublishingPriority _ _ = 0.0f
+            member this.GetPublishingPriority _ _ = 0.0f :> IComparable
             end
     
     /// The game type that hosts the various screens used to navigate through a game.
@@ -643,7 +639,7 @@ module WorldTypes =
         interface Simulant with
             member this.ParticipantAddress = atoa<Game, Participant> this.GameAddress
             member this.SimulantAddress = atoa<Game, Simulant> this.GameAddress
-            member this.GetPublishingPriority _ _ = Constants.Engine.GamePublishingPriority
+            member this.GetPublishingPriority _ _ = Constants.Engine.GamePublishingPriority :> IComparable
             end
     
         /// View as address string.
@@ -679,7 +675,7 @@ module WorldTypes =
         interface Simulant with
             member this.ParticipantAddress = atoa<Screen, Participant> this.ScreenAddress
             member this.SimulantAddress = atoa<Screen, Simulant> this.ScreenAddress
-            member this.GetPublishingPriority _ _ = Constants.Engine.ScreenPublishingPriority
+            member this.GetPublishingPriority _ _ = Constants.Engine.ScreenPublishingPriority :> IComparable
             end
     
         /// View as address string.
@@ -726,7 +722,7 @@ module WorldTypes =
         interface Simulant with
             member this.ParticipantAddress = atoa<Group, Participant> this.GroupAddress
             member this.SimulantAddress = atoa<Group, Simulant> this.GroupAddress
-            member this.GetPublishingPriority _ _ = Constants.Engine.GroupPublishingPriority
+            member this.GetPublishingPriority _ _ = Constants.Engine.GroupPublishingPriority :> IComparable
             end
     
         /// View as address string.
@@ -778,7 +774,7 @@ module WorldTypes =
         interface Simulant with
             member this.ParticipantAddress = atoa<Entity, Participant> this.EntityAddress
             member this.SimulantAddress = atoa<Entity, Simulant> this.EntityAddress
-            member this.GetPublishingPriority getEntityPublishingPriority world = getEntityPublishingPriority this world
+            member this.GetPublishingPriority getSpecialPublishingPriority world = getSpecialPublishingPriority this world
             end
     
         /// View as address string.

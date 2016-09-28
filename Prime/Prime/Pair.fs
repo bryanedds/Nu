@@ -28,10 +28,4 @@ module Pair =
     /// Make a pair.
     let make a b =
         (a, b)
-
-    /// Sort pairs by fst in descending order.
-    let sortFstDescending (priority : single, _) (priority2 : single, _) =
-        // OPTIMIZATION: priority parameter is annotated as 'single' to decrease GC pressure.
-        if priority > priority2 then -1
-        elif priority < priority2 then 1
-        else 0
+        

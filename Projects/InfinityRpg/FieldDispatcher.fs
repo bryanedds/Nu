@@ -64,7 +64,11 @@ module FieldDispatcherModule =
                         fieldMap.FieldTiles
                         []
                 World.addRenderMessage
-                    (RenderDescriptorsMessage [LayerableDescriptor { Depth = field.GetDepth world; LayeredDescriptor = SpritesDescriptor sprites }])
+                    (RenderDescriptorsMessage
+                        [LayerableDescriptor
+                            { Depth = field.GetDepth world
+                              PositionY = (field.GetPosition world).Y
+                              LayeredDescriptor = SpritesDescriptor sprites }])
                     world
             else world
 

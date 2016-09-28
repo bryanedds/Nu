@@ -55,6 +55,7 @@ type [<StructuralEquality; NoComparison>] LayeredDescriptor =
 /// Describes how to render a layerable 'thing' to the rendering system.
 type [<StructuralEquality; NoComparison>] LayerableDescriptor =
     { Depth : single
+      PositionY : single
       LayeredDescriptor : LayeredDescriptor }
 
 /// Describes how to render something to the rendering system.
@@ -105,6 +106,13 @@ module RendererModule =
               RenderPackageMap : RenderAsset PackageMap
               RenderMessages : RenderMessage Queue
               RenderDescriptors : RenderDescriptor list }
+
+        static member private sortDescriptors (LayerableDescriptor left) (LayerableDescriptor right) =
+            if left.Depth < right.Depth then -1
+            elif left.Depth > right.Depth then 1
+            elif left.PositionY < right.PositionY then 1
+            elif left.PositionY > right.PositionY then -1
+            else 0
 
         static member private freeRenderAsset renderAsset =
             match renderAsset with
@@ -398,7 +406,7 @@ module RendererModule =
                     renderDescriptors |>
                     Array.ofList |>
                     Array.rev |>
-                    Seq.sortBy (fun (LayerableDescriptor descriptor) -> descriptor.Depth) |> // Seq.sort is stable, unlike Array.sort...
+                    Seq.sortWith Renderer.sortDescriptors |> // Seq.sort is stable, unlike Array.sort...
                     Array.ofSeq
                 let layeredDescriptors = Array.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
                 let viewAbsolute = Matrix3.InvertView ^ Math.getViewAbsoluteI eyeCenter eyeSize

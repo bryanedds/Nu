@@ -157,6 +157,7 @@ module CharacterAnimationFacetModule =
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = entity.GetDepth world
+                              PositionY = (entity.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
                                     { Position = entity.GetPosition world

@@ -274,6 +274,7 @@ module EffectSystemModule =
                     [RenderArtifact
                         [LayerableDescriptor
                             { Depth = slice.Depth
+                              PositionY = slice.Position.Y
                               LayeredDescriptor =
                                 SpriteDescriptor 
                                     { Position = slice.Position
@@ -309,6 +310,7 @@ module EffectSystemModule =
                     [RenderArtifact
                         [LayerableDescriptor
                             { Depth = slice.Depth
+                              PositionY = slice.Position.Y
                               LayeredDescriptor =
                                 SpriteDescriptor 
                                     { Position = slice.Position

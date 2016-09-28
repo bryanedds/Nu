@@ -432,10 +432,10 @@ module WorldModule2 =
                     let world =
                         if World.isMouseButtonDown MouseLeft world then
                             let eventTrace = EventTrace.record4 "World" "processInput" "MouseDrag" EventTrace.empty
-                            World.publish7 World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseDrag eventTrace Simulants.Game true world
+                            World.publish7 World.sortSubscriptionsByEntitySortingPriority { MouseMoveData.Position = mousePosition } Events.MouseDrag eventTrace Simulants.Game true world
                         else world
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseMove" EventTrace.empty
-                    World.publish7 World.sortSubscriptionsByPickingPriority { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game true world
+                    World.publish7 World.sortSubscriptionsByEntitySortingPriority { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
@@ -443,9 +443,9 @@ module WorldModule2 =
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonDown" EventTrace.empty
-                    let world = World.publish7 World.sortSubscriptionsByPickingPriority eventData mouseButtonDownEvent eventTrace Simulants.Game true world
+                    let world = World.publish7 World.sortSubscriptionsByEntitySortingPriority eventData mouseButtonDownEvent eventTrace Simulants.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publish7 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
+                    World.publish7 World.sortSubscriptionsByEntitySortingPriority eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
@@ -453,9 +453,9 @@ module WorldModule2 =
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonUp" EventTrace.empty
-                    let world = World.publish7 World.sortSubscriptionsByPickingPriority eventData mouseButtonUpEvent eventTrace Simulants.Game true world
+                    let world = World.publish7 World.sortSubscriptionsByEntitySortingPriority eventData mouseButtonUpEvent eventTrace Simulants.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publish7 World.sortSubscriptionsByPickingPriority eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
+                    World.publish7 World.sortSubscriptionsByEntitySortingPriority eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
@@ -519,14 +519,17 @@ module WorldModule2 =
                 let progress = single (screen.GetTransitionTicksNp world) / single transition.TransitionLifetime
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                 let color = Vector4 (Vector3.One, alpha)
+                let position = -eyeSize * 0.5f // negation for right-handedness
+                let size = eyeSize
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = Single.MaxValue
+                              PositionY = position.Y
                               LayeredDescriptor =
                                 SpriteDescriptor
-                                    { Position = -eyeSize * 0.5f // negation for right-handedness
-                                      Size = eyeSize
+                                    { Position = position
+                                      Size = size
                                       Rotation = 0.0f
                                       Offset = Vector2.Zero
                                       ViewType = Absolute

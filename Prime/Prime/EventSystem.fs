@@ -19,7 +19,7 @@ type Liveness =
 type Participant =
     interface
         abstract member ParticipantAddress : Participant Address
-        abstract member GetPublishingPriority : (Participant -> 'w -> single) -> 'w -> single
+        abstract member GetPublishingPriority : (Participant -> 'w -> IComparable) -> 'w -> IComparable
         end
 
 /// Operators for the Participant type.
