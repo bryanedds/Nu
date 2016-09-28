@@ -208,23 +208,31 @@ module WorldEntityModule =
             let world = dispatcher.PropagatePhysics (entity, world)
             List.fold (fun world (facet : Facet) -> facet.PropagatePhysics (entity, world)) world facets
 
-        /// Sort subscriptions by their editor picking priority.
-        static member sortSubscriptionsByPickingPriority subscriptions world =
-            World.sortSubscriptionsBy World.getEntityPickingPriority subscriptions world
+        /// Sort subscriptions by their entity sorting priority.
+        static member sortSubscriptionsByEntitySortingPriority subscriptions world =
+            World.sortSubscriptionsBy
+                (fun (participant : Participant) world ->
+                    match participant with
+                    | :? Entity as entity -> World.getEntitySortingPriority entity world :> IComparable
+                    | _ -> failwithumf ())
+                subscriptions
+                world
 
         /// TODO: document!
-        static member pickingSortEntities entities world =
+        static member sortEntities entities world =
+            // OPTIMIZATION: using arrays for speed
             entities |>
             Array.rev |>
-            Array.map (fun (entity : Entity) -> (World.getEntityPickingPriority entity world, entity)) |>
-            Seq.sortWith Pair.sortFstDescending |> // Seq.sort is stable, unlike Array.sort...
+            Array.map (fun entity -> World.getEntitySortingPriority entity world) |>
+            Seq.sortWith EntitySortPriority.compare |> // Seq.sort is stable, unlike Array.sort...
             Array.ofSeq |>
-            Array.map snd
+            Array.map (fun p -> p.TargetEntity)
 
         /// TODO: document!
         static member tryPickEntity position entities world =
-            let entities = Array.ofList entities // OPTIMIZATION: using arrays for speed
-            let entitiesSorted = World.pickingSortEntities entities world
+            // OPTIMIZATION: using arrays for speed
+            let entities = Array.ofList entities
+            let entitiesSorted = World.sortEntities entities world
             Array.tryFind
                 (fun (entity : Entity) ->
                     let positionWorld = World.mouseToWorld (entity.GetViewType world) position world

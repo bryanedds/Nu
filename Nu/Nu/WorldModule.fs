@@ -8,6 +8,44 @@ open OpenTK
 open Prime
 open Nu
 
+/// Describes the information needed to sort entities.
+/// OPTIMIZATION: implemented as a struct and carries related entity to avoid GC pressure.
+/// TODO: see if there's a better file to place this in.
+type [<CustomEquality; CustomComparison>] EntitySortPriority =
+    { SortDepth : single
+      SortPositionY : single
+      TargetEntity : Entity }
+
+    static member equals left right =
+        left.SortDepth = right.SortDepth &&
+        left.SortPositionY = right.SortPositionY &&
+        left.TargetEntity = right.TargetEntity
+
+    static member compare left right =
+        if left.SortDepth < right.SortDepth then 1
+        elif left.SortDepth > right.SortDepth then -1
+        elif left.SortPositionY < right.SortPositionY then -1
+        elif left.SortPositionY > right.SortPositionY then 1
+        else 0
+
+    override this.GetHashCode () =
+        this.SortDepth.GetHashCode () ^^^ (this.SortPositionY.GetHashCode () * 13)
+
+    override this.Equals that =
+        match that with
+        | :? EntitySortPriority as that -> EntitySortPriority.equals this that
+        | _ -> failwithumf ()
+
+    interface IComparable<EntitySortPriority> with
+        member this.CompareTo that =
+            EntitySortPriority.compare this that
+
+    interface IComparable with
+        member this.CompareTo that =
+            match that with
+            | :? EntitySortPriority as that -> (this :> IComparable<EntitySortPriority>).CompareTo that
+            | _ -> failwithumf ()
+
 [<AutoOpen>]
 module WorldModule =
 
@@ -76,10 +114,9 @@ module WorldModule =
 
         /// Sort subscriptions by their place in the world's simulant hierarchy.
         static member sortSubscriptionsByHierarchy subscriptions world =
-            World.sortSubscriptionsBy
-                (fun _ _ -> Constants.Engine.EntityPublishingPriority)
-                subscriptions
-                world
+            // OPTIMIZATION: priority boxed up front to decrease GC pressure.
+            let priorityBoxed = Constants.Engine.EntityPublishingPriority :> IComparable
+            World.sortSubscriptionsBy (fun _ _ -> priorityBoxed) subscriptions world
 
         /// A 'no-op' for subscription sorting - that is, performs no sorting at all.
         static member sortSubscriptionsNone (subscriptions : SubscriptionEntry list) (world : World) =
@@ -781,14 +818,10 @@ module WorldModule =
                 quickSize
                 facets
 
-        /// Get an entity's picking priority.
-        static member getEntityPickingPriority (participant : Participant) world =
-            match participant with
-            | :? Entity as entity ->
-                let entityState = World.getEntityState entity world
-                let dispatcher = entityState.DispatcherNp
-                dispatcher.GetPickingPriority (entity, entityState.Depth, world)
-            | _ -> failwithumf ()
+        /// Get an entity's sorting priority.
+        static member getEntitySortingPriority entity world =
+            let entityState = World.getEntityState entity world
+            { SortDepth = entityState.Depth; SortPositionY = entityState.Position.Y; TargetEntity = entity }
 
         static member private updateEntityPublishEventFlag setFlag entity eventAddress world =
             let publishUpdates =

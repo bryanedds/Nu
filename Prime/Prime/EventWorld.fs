@@ -117,11 +117,13 @@ module EventWorld =
         box boxableSubscription
 
     let getSortableSubscriptions
-        (getEntityPublishingPriority : Participant -> 'w -> single) (subscriptions : SubscriptionEntry list) (world : 'w) :
-        (single * SubscriptionEntry) list =
+        (getSpecialPublishingPriority : Participant -> 'w -> IComparable)
+        (subscriptions : SubscriptionEntry list)
+        (world : 'w) :
+        (IComparable * SubscriptionEntry) list =
         List.foldBack
             (fun (key, participant : Participant, subscription) subscriptions ->
-                let priority = participant.GetPublishingPriority getEntityPublishingPriority world
+                let priority = participant.GetPublishingPriority getSpecialPublishingPriority world
                 let subscription = (priority, (key, participant, subscription))
                 subscription :: subscriptions)
             subscriptions
@@ -164,7 +166,7 @@ module EventWorld =
     /// Sort subscriptions using categorization via the 'by' procedure.
     let sortSubscriptionsBy by (subscriptions : SubscriptionEntry list) (world : 'w) =
         let subscriptions = getSortableSubscriptions by subscriptions world
-        let subscriptions = List.sortWith Pair.sortFstDescending subscriptions
+        let subscriptions = List.sortWith (fun ((p : IComparable), _) ((p2 : IComparable), _) -> p.CompareTo p2) subscriptions
         List.map snd subscriptions
 
     /// A 'no-op' for subscription sorting - that is, performs no sorting at all.

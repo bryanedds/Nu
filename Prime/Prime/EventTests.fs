@@ -2,6 +2,7 @@
 // Copyright (C) Bryan Edds, 2012-2016.
 
 namespace Prime.Tests
+open System
 open Xunit
 open Prime
 open Prime.Stream
@@ -11,14 +12,14 @@ module EventTests =
     type NullParticipant () =
         interface Participant with
             member this.ParticipantAddress = Address.makeFromName !!"Null"
-            member this.GetPublishingPriority _ _ = 0.0f
+            member this.GetPublishingPriority _ _ = 0.0f :> IComparable
             end
 
     type [<StructuralEquality; NoComparison>] TestParticipant =
         { TestAddress : TestParticipant Address }
         interface Participant with
             member this.ParticipantAddress = atoa<TestParticipant, Participant> this.TestAddress
-            member this.GetPublishingPriority _ _ = 0.0f
+            member this.GetPublishingPriority _ _ = 0.0f :> IComparable
             end
 
     type [<ReferenceEquality>] TestWorld =

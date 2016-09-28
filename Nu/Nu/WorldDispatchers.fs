@@ -388,6 +388,7 @@ module StaticSpriteFacetModule =
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = entity.GetDepth world
+                              PositionY = (entity.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
                                     { Position = entity.GetPosition world
@@ -457,6 +458,7 @@ module AnimatedSpriteFacetModule =
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = entity.GetDepth world
+                              PositionY = (entity.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
                                     { Position = entity.GetPosition world
@@ -593,6 +595,7 @@ module ButtonDispatcherModule =
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = button.GetDepth world
+                              PositionY = (button.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
                                     { Position = button.GetPosition world
@@ -633,6 +636,7 @@ module LabelDispatcherModule =
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = label.GetDepth world
+                              PositionY = (label.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
                                     { Position = label.GetPosition world
@@ -689,6 +693,7 @@ module TextDispatcherModule =
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = text.GetDepth world
+                              PositionY = (text.GetPosition world).Y
                               LayeredDescriptor =
                                 TextDescriptor
                                     { Text = text.GetText world
@@ -699,6 +704,7 @@ module TextDispatcherModule =
                                       Color = text.GetTextColor world }}
                          LayerableDescriptor
                             { Depth = text.GetDepth world
+                              PositionY = (text.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
                                     { Position = text.GetPosition world
@@ -797,6 +803,7 @@ module ToggleDispatcherModule =
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = toggle.GetDepth world
+                              PositionY = (toggle.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
                                     { Position = toggle.GetPosition world
@@ -911,6 +918,7 @@ module FillBarDispatcherModule =
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = fillBar.GetDepth world
+                              PositionY = (fillBar.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
                                     { Position = fillBar.GetPosition world
@@ -923,6 +931,7 @@ module FillBarDispatcherModule =
                                       Color = fillBarColor }}
                          LayerableDescriptor
                             { Depth = fillBar.GetDepth world
+                              PositionY = (fillBar.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
                                     { Position = fillBarSpritePosition
@@ -1179,6 +1188,7 @@ module TileMapDispatcherModule =
                                     (RenderDescriptorsMessage
                                         [LayerableDescriptor 
                                             { Depth = depth
+                                              PositionY = (tileMap.GetPosition world).Y
                                               LayeredDescriptor =
                                                 TileLayerDescriptor
                                                     { Position = parallaxPosition
