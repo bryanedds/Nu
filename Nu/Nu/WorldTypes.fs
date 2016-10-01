@@ -896,7 +896,7 @@ module WorldTypes =
     
         /// Make the overlay routes that will allow Nu to use different overlays for the specified
         /// classifications.
-        abstract MakeOverlayRoutes : unit -> (Classification * string option) list
+        abstract MakeOverlayRoutes : unit -> (string * OverlayDescriptor) list
         default this.MakeOverlayRoutes () = []
 
 /// A simulant in the world.

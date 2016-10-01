@@ -663,7 +663,8 @@ module WorldModule2 =
 
             // make the world's ambient state
             let ambientState =
-                let overlayRouter = OverlayRouter.make dispatchers.EntityDispatchers []
+                let overlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
+                let overlayRouter = OverlayRouter.make overlayRoutes
                 AmbientState.make 1L (Umap.makeEmpty None) overlayRouter Overlayer.empty SymbolStore.empty userState
 
             // select the first game dispatcher as active
@@ -758,8 +759,10 @@ module WorldModule2 =
                     // make the world's ambient state
                     let ambientState =
                         let assetMetadataMap = Metadata.generateAssetMetadataMap assetGraph
-                        let pluginOverlayRoutes = plugin.MakeOverlayRoutes ()
-                        let overlayRouter = OverlayRouter.make dispatchers.EntityDispatchers pluginOverlayRoutes
+                        let intrinsicOverlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
+                        let userOverlayRoutes = plugin.MakeOverlayRoutes ()
+                        let overlayRoutes = intrinsicOverlayRoutes @ userOverlayRoutes
+                        let overlayRouter = OverlayRouter.make overlayRoutes
                         AmbientState.make tickRate assetMetadataMap overlayRouter overlayer SymbolStore.empty userState
 
                     // make and choose the world for debugging
