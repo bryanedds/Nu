@@ -365,6 +365,12 @@ module WorldModule =
         static member updateUserState (updater : 'u -> 'v) world =
             World.updateAmbientState (AmbientState.updateUserState updater) world
 
+        /// Make 
+        static member dispatchersToOverlayRoutes entityDispatchers =
+            entityDispatchers |>
+            Map.toValueListBy getTypeName |>
+            List.map (fun typeName -> (typeName, OverlayDescriptor.makeVanilla (Some typeName)))
+
         (* OptEntityCache *)
 
         /// Get the opt entity cache.
@@ -910,17 +916,17 @@ module WorldModule =
 
             // try to compute the routed overlay name
             let classification = Classification.make dispatcherName ^ Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
-            let optRoutedOverlayName = OverlayRouter.findOptOverlayName classification overlayRouter
+            let optOverlayName = OverlayRouter.findOptOverlayName classification overlayRouter
 
             // make the bare entity state (with name as id if none is provided)
-            let entityState = EntityState.make optSpecialization optName optRoutedOverlayName dispatcher
+            let entityState = EntityState.make optSpecialization optName optOverlayName dispatcher
 
             // attach the entity state's intrinsic facets and their properties
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
 
             // apply the entity state's overlay to its facet names
             let entityState =
-                match optRoutedOverlayName with
+                match optOverlayName with
                 | Some routedOverlayName ->
 
                     // apply overlay to facets
@@ -1014,10 +1020,10 @@ module WorldModule =
 
             // try to compute the routed overlay name
             let classification = Classification.makeVanilla dispatcherName
-            let optRoutedOverlayName = OverlayRouter.findOptOverlayName classification overlayRouter
+            let optOverlayName = OverlayRouter.findOptOverlayName classification overlayRouter
 
             // make the bare entity state with name as id
-            let entityState = EntityState.make None None optRoutedOverlayName dispatcher
+            let entityState = EntityState.make None None optOverlayName dispatcher
 
             // attach the entity state's intrinsic facets and their properties
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
@@ -1025,7 +1031,7 @@ module WorldModule =
             // read the entity state's overlay and apply it to its facet names if applicable
             let entityState = Reflection.tryReadOptOverlayNameToTarget EntityState.copy entityDescriptor.EntityProperties entityState
             let entityState =
-                match (optRoutedOverlayName, entityState.OptOverlayName) with
+                match (optOverlayName, entityState.OptOverlayName) with
                 | (Some routedOverlayName, Some overlayName) -> Overlayer.applyOverlayToFacetNames EntityState.copy routedOverlayName overlayName entityState overlayer overlayer
                 | (_, _) -> entityState
 
