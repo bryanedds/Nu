@@ -20,9 +20,9 @@ module WorldTests =
 
     let [<Fact>] entitySubscribeWorks () =
         let world = World.makeEmpty ()
-        let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.DefaultScreen.ScreenName) world |> snd
-        let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
-        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Simulants.DefaultEntity.EntityName) Simulants.DefaultGroup world |> snd
+        let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some ^ Address.getName Simulants.DefaultScreen.ScreenAddress) world |> snd
+        let world = World.createGroup typeof<GroupDispatcher>.Name None (Some ^ Address.getName Simulants.DefaultGroup.GroupAddress) Simulants.DefaultScreen world |> snd
+        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some ^ Address.getName Simulants.DefaultEntity.EntityAddress) Simulants.DefaultGroup world |> snd
         let handleEvent = fun evt world -> (Cascade, World.updateUserState (fun _ -> evt.Subscriber) world)
         let world = World.subscribe handleEvent StringEvent Simulants.DefaultEntity world
         let world = World.publish String.Empty StringEvent EventTrace.empty Simulants.Game world
@@ -30,9 +30,9 @@ module WorldTests =
 
     let [<Fact>] gameSerializationWorks () =
         let world = World.makeEmpty ()
-        let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.DefaultScreen.ScreenName) world |> snd
-        let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
-        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Simulants.DefaultEntity.EntityName) Simulants.DefaultGroup world |> snd
+        let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some ^ Address.getName Simulants.DefaultScreen.ScreenAddress) world |> snd
+        let world = World.createGroup typeof<GroupDispatcher>.Name None (Some ^ Address.getName Simulants.DefaultGroup.GroupAddress) Simulants.DefaultScreen world |> snd
+        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some ^ Address.getName Simulants.DefaultEntity.EntityAddress) Simulants.DefaultGroup world |> snd
         let oldWorld = world
         World.writeGameToFile TestFilePath world
         let world = World.readGameFromFile TestFilePath world
@@ -42,10 +42,10 @@ module WorldTests =
 
     let [<Fact>] iterativeFrpWorks () =
         let world = World.makeEmpty ()
-        let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.DefaultScreen.ScreenName) world |> snd
-        let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
-        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Jim.EntityName) Simulants.DefaultGroup world |> snd
-        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Bob.EntityName) Simulants.DefaultGroup world |> snd
+        let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some ^ Address.getName Simulants.DefaultScreen.ScreenAddress) world |> snd
+        let world = World.createGroup typeof<GroupDispatcher>.Name None (Some ^ Address.getName Simulants.DefaultGroup.GroupAddress) Simulants.DefaultScreen world |> snd
+        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some ^ Address.getName Jim.EntityAddress) Simulants.DefaultGroup world |> snd
+        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some ^ Address.getName Bob.EntityAddress) Simulants.DefaultGroup world |> snd
         let world = !-- Bob.TagVisible --- map not --> Jim.TagVisible ^ world
         let world = Bob.SetVisible false world
         Assert.False (Bob.GetVisible world)
@@ -53,10 +53,10 @@ module WorldTests =
 
     let [<Fact>] iterativeFrpCyclicWorks () =
         let world = World.makeEmpty ()
-        let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.DefaultScreen.ScreenName) world |> snd
-        let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
-        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Jim.EntityName) Simulants.DefaultGroup world |> snd
-        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Bob.EntityName) Simulants.DefaultGroup world |> snd
+        let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some ^ Address.getName Simulants.DefaultScreen.ScreenAddress) world |> snd
+        let world = World.createGroup typeof<GroupDispatcher>.Name None (Some ^ Address.getName Simulants.DefaultGroup.GroupAddress) Simulants.DefaultScreen world |> snd
+        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some ^ Address.getName Jim.EntityAddress) Simulants.DefaultGroup world |> snd
+        let world = World.createEntity typeof<EntityDispatcher>.Name None (Some ^ Address.getName Bob.EntityAddress) Simulants.DefaultGroup world |> snd
         let world = !-- Bob.TagVisible --> Jim.TagVisible ^ world
         let world = !-- Jim.TagVisible -/> Bob.TagVisible ^ world
         let world = Bob.SetVisible false world
