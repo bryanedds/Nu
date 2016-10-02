@@ -1483,7 +1483,7 @@ module WorldModule =
             // OPTIMIZATION: assumes a valid entity address with List.head on its names
             let screen =
                 match (World.getGameState world).OptSelectedScreen with
-                | Some screen when screen.ScreenName = List.head ^ Address.getNames entity.EntityAddress -> screen
+                | Some screen when Address.getName screen.ScreenAddress = List.head ^ Address.getNames entity.EntityAddress -> screen
                 | Some _ | None -> entity.EntityAddress |> Address.getNames |> List.head |> ntoa<Screen> |> Screen.proxy
 
             // proceed with updating entity in entity tree

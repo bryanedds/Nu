@@ -130,14 +130,14 @@ module WorldGameModule =
         static member isEntitySelected entity world =
             let screenName = Address.head entity.EntityAddress
             match World.getOptSelectedScreen world with
-            | Some selectedScreen -> screenName = selectedScreen.ScreenName
+            | Some selectedScreen -> screenName = Address.getName selectedScreen.ScreenAddress
             | None -> false
 
         /// Determine if a group is selected by being in the currently selected screeen.
         static member isGroupSelected group world =
             let screenName = Address.head group.GroupAddress
             match World.getOptSelectedScreen world with
-            | Some selectedScreen -> screenName = selectedScreen.ScreenName
+            | Some selectedScreen -> screenName = Address.getName selectedScreen.ScreenAddress
             | None -> false
 
         /// Determine if a screen is the currently selected screeen.
@@ -151,7 +151,7 @@ module WorldGameModule =
             | [] -> true
             | screenName :: _ ->
                 match World.getOptSelectedScreen world with
-                | Some screen -> screen.ScreenName = screenName
+                | Some screen -> Address.getName screen.ScreenAddress = screenName
                 | None -> false
 
         /// Write a game to a game descriptor.

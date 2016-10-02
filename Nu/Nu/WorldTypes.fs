@@ -81,24 +81,6 @@ type [<StructuralEquality; NoComparison>] TileData =
 [<AutoOpen>]
 module WorldTypes =
 
-    /// A simulant in the world.
-    type Simulant =
-        interface
-            inherit Participant
-            abstract member SimulantAddress : Simulant Address
-            end
-
-    /// Operators for the Simulant type.
-    type SimulantOperators =
-        private
-            | SimulantOperators
-
-        /// Concatenate two addresses, forcing the type of first address.
-        static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.SimulantAddress)
-
-        /// Concatenate two addresses, takings the type of first address.
-        static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
-
     /// The data for a change in the world's ambient state.
     type [<StructuralEquality; NoComparison>] AmbientChangeData = 
         { OldWorldWithOldState : World }
@@ -282,6 +264,24 @@ module WorldTypes =
         default facet.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
 
         interface Dispatcher
+
+    /// A simulant in the world.
+    and Simulant =
+        interface
+            inherit Participant
+            abstract member SimulantAddress : Simulant Address
+            end
+
+    /// Operators for the Simulant type.
+    and SimulantOperators =
+        private
+            | SimulantOperators
+
+        /// Concatenate two addresses, forcing the type of first address.
+        static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.SimulantAddress)
+
+        /// Concatenate two addresses, takings the type of first address.
+        static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
 
     /// Generalized interface for simulant state.
     and SimulantState =
@@ -477,7 +477,7 @@ module WorldTypes =
 
         interface SimulantState with
             member this.GetXtension () = this.Xtension
-    
+
     /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     and [<CLIMutable; NoEquality; NoComparison>] EntityState =
@@ -645,9 +645,6 @@ module WorldTypes =
         /// View as address string.
         override this.ToString () = scstring this.GameAddress
     
-        /// Get the full name of a game proxy.
-        member this.GameFullName = atos this.GameAddress
-    
         /// Get the latest value of a game's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewGame Debug.World.Chosen
@@ -680,12 +677,6 @@ module WorldTypes =
     
         /// View as address string.
         override this.ToString () = scstring this.ScreenAddress
-    
-        /// Get the full name of a screen proxy.
-        member this.ScreenFullName = atos this.ScreenAddress
-    
-        /// Get the name of a screen proxy.
-        member this.ScreenName = Address.getName this.ScreenAddress
     
         /// Get the latest value of a screen's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
@@ -727,12 +718,6 @@ module WorldTypes =
     
         /// View as address string.
         override this.ToString () = scstring this.GroupAddress
-    
-        /// Get the full name of a group proxy.
-        member this.GroupFullName = atos this.GroupAddress
-    
-        /// Get the name of a group proxy.
-        member this.GroupName = Address.getName this.GroupAddress
     
         /// Get the latest value of a group's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
@@ -779,12 +764,6 @@ module WorldTypes =
     
         /// View as address string.
         override this.ToString () = scstring this.EntityAddress
-    
-        /// Get the name of an entity proxy.
-        member this.EntityFullName = atos this.EntityAddress
-    
-        /// Get the name of an entity proxy.
-        member this.EntityName = Address.getName this.EntityAddress
     
         /// Get the latest value of an entity's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
@@ -899,11 +878,14 @@ module WorldTypes =
         abstract MakeOverlayRoutes : unit -> (string * OverlayDescriptor) list
         default this.MakeOverlayRoutes () = []
 
-/// A simulant in the world.
-type Simulant = WorldTypes.Simulant
-
 /// The data for a change in the world's ambient state.
 type AmbientChangeData = WorldTypes.AmbientChangeData
+
+/// Generalized interface tag for dispatchers.
+type Dispatcher = WorldTypes.Dispatcher
+
+/// Generalized interface tag for simulant dispatchers.
+type SimulantDispatcher = WorldTypes.SimulantDispatcher
 
 /// The default dispatcher for games.
 type GameDispatcher = WorldTypes.GameDispatcher
@@ -917,6 +899,9 @@ type GroupDispatcher = WorldTypes.GroupDispatcher
 /// The default dispatcher for entities.
 type EntityDispatcher = WorldTypes.EntityDispatcher
 
+/// Dynamically augments an entity's behavior in a composable way.
+type Facet = WorldTypes.Facet
+
 /// Describes a game value independent of the engine.
 type GameDescriptor = WorldTypes.GameDescriptor
 
@@ -929,8 +914,11 @@ type GroupDescriptor = WorldTypes.GroupDescriptor
 /// Describes an entity value independent of the engine.
 type EntityDescriptor = WorldTypes.EntityDescriptor
 
-/// Dynamically augments an entity's behavior in a composable way.
-type Facet = WorldTypes.Facet
+/// A simulant in the world.
+type Simulant = WorldTypes.Simulant
+
+/// Operators for the Simulant type.
+type SimulantOperators = WorldTypes.SimulantOperators
 
 /// The game type that hosts the various screens used to navigate through a game.
 type Game = WorldTypes.Game
