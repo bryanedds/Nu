@@ -222,10 +222,8 @@ module Stream =
     let [<DebuggerHidden; DebuggerStepThrough>] map (mapper : 'a -> 'b) (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
         mapEvent (fun evt _ -> mapper evt.Data) stream
 
-    /// Combine a stream with a stream of the events from the given address. Combination is in
-    /// 'product form', which is defined as a pair of the data of the combined events. Think of it
-    /// as 'zip' for event streams.
-    /// TODO: unit test for this!
+    /// Combine two streams. Combination is in 'product form', which is defined as a pair of the data of the combined
+    /// events. Think of it as 'zip' for event streams.
     let [<DebuggerHidden; DebuggerStepThrough>] product
         (stream : Stream<'a, 'w>) (stream' : Stream<'b, 'w>) : Stream<'a * 'b, 'w> =
         let subscribe = fun world ->
