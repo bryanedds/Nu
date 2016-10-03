@@ -130,7 +130,7 @@ module Stream =
             (subscriptionAddress, unsubscribe, world)
         { Subscribe = subscribe }
 
-    /// Map a stream by the given 'mapper' procedure.
+    /// Map over a stream by the given 'mapper' procedure.
     let [<DebuggerHidden; DebuggerStepThrough>] mapEvent
         (mapper : Event<'a, Participant> -> 'w -> 'b) (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
         let subscribe = fun world ->
@@ -181,7 +181,7 @@ module Stream =
     let [<DebuggerHidden; DebuggerStepThrough>] filterWorld (pred : 'a -> 'w -> bool) (stream : Stream<'a, 'w>) =
         filterEvent (fun evt world -> pred evt.Data world) stream
 
-    /// Map a stream by the given 'mapper' procedure.
+    /// Map over a stream by the given 'mapper' procedure.
     let [<DebuggerHidden; DebuggerStepThrough>] mapWorld (mapper : 'a -> 'w -> 'b) (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
         mapEvent (fun evt world -> mapper evt.Data world) stream
 
@@ -218,7 +218,7 @@ module Stream =
     let [<DebuggerHidden; DebuggerStepThrough>] filter (pred : 'a -> bool) (stream : Stream<'a, 'w>) =
         filterEvent (fun evt _ -> pred evt.Data) stream
 
-    /// Map a stream by the given 'mapper' procedure.
+    /// Map over a stream by the given 'mapper' procedure.
     let [<DebuggerHidden; DebuggerStepThrough>] map (mapper : 'a -> 'b) (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
         mapEvent (fun evt _ -> mapper evt.Data) stream
 
@@ -284,9 +284,8 @@ module Stream =
         // fin
         { Subscribe = subscribe }
 
-    /// Combine a stream with a stream of events from the given address. Combination is in 'sum
-    /// form', which is defined as an Either of the data of the combined events, where only data
-    /// from the most recent event is available at a time.
+    /// Combine two streams. Combination is in 'sum form', which is defined as an Either of the data of the combined
+    /// events, where only data from the most recent event is available at a time.
     let [<DebuggerHidden; DebuggerStepThrough>] sum
         (stream : Stream<'a, 'w>) (stream' : Stream<'b, 'w>) : Stream<Either<'a, 'b>, 'w> =
         let subscribe = fun world ->
