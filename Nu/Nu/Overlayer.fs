@@ -8,17 +8,17 @@ open System.Reflection
 open Prime
 open Nu
 
-/// An overlay.
-type Overlay =
-    { OverlayName : string
-      OverlayIncludeNames : string list
-      OverlayProperties : Map<string, Symbol> }
-
 /// Describes the overlay state of a property.
 type internal OverlayState =
     | Bare
     | Altered
     | Overlaid
+
+/// An overlay.
+type Overlay =
+    { OverlayName : string
+      OverlayIncludeNames : string list
+      OverlayProperties : Map<string, Symbol> }
 
 [<AutoOpen>]
 module OverlayerModule =
