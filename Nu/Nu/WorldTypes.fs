@@ -678,6 +678,9 @@ module WorldTypes =
         /// View as address string.
         override this.ToString () = scstring this.ScreenAddress
     
+        /// Get the name of a screen proxy.
+        member this.ScreenName = Address.getName this.ScreenAddress
+    
         /// Get the latest value of a screen's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewScreen (this :> obj) Debug.World.Chosen
@@ -718,6 +721,9 @@ module WorldTypes =
     
         /// View as address string.
         override this.ToString () = scstring this.GroupAddress
+    
+        /// Get the name of a group proxy.
+        member this.GroupName = Address.getName this.GroupAddress
     
         /// Get the latest value of a group's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
@@ -764,6 +770,9 @@ module WorldTypes =
     
         /// View as address string.
         override this.ToString () = scstring this.EntityAddress
+    
+        /// Get the name of an entity proxy.
+        member this.EntityName = Address.getName this.EntityAddress
     
         /// Get the latest value of an entity's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
