@@ -46,7 +46,7 @@ module WorldTests =
         let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Jim.EntityName) Simulants.DefaultGroup world |> snd
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Bob.EntityName) Simulants.DefaultGroup world |> snd
-        let world = !-- Bob.TagVisible --- map not --> Jim.TagVisible ^ world
+        let world = !-- Bob.Visible --- map not --> Jim.Visible ^ world
         let world = Bob.SetVisible false world
         Assert.False (Bob.GetVisible world)
         Assert.True (Jim.GetVisible world)
@@ -57,8 +57,8 @@ module WorldTests =
         let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Jim.EntityName) Simulants.DefaultGroup world |> snd
         let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Bob.EntityName) Simulants.DefaultGroup world |> snd
-        let world = !-- Bob.TagVisible --> Jim.TagVisible ^ world
-        let world = !-- Jim.TagVisible -/> Bob.TagVisible ^ world
+        let world = !-- Bob.Visible --> Jim.Visible ^ world
+        let world = !-- Jim.Visible -/> Bob.Visible ^ world
         let world = Bob.SetVisible false world
         Assert.False (Bob.GetVisible world)
         Assert.False (Jim.GetVisible world)

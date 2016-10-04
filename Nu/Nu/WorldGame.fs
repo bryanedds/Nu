@@ -13,29 +13,29 @@ module WorldGameModule =
     type Game with
 
         member this.GetId world = World.getGameId world
-        member this.TagId = PropertyTag.makeReadOnly this Property? Id this.GetId
+        member this.Id = PropertyTag.makeReadOnly this Property? Id this.GetId
         member this.GetXtension world = World.getGameXtension world
-        member this.TagXtension = PropertyTag.makeReadOnly this Property? Xtension this.GetXtension
+        member this.Xtension = PropertyTag.makeReadOnly this Property? Xtension this.GetXtension
         member this.GetDispatcherNp world = World.getGameDispatcherNp world
-        member this.TagDispatcherNp = PropertyTag.makeReadOnly this Property? DispatcherNp this.GetDispatcherNp
+        member this.DispatcherNp = PropertyTag.makeReadOnly this Property? DispatcherNp this.GetDispatcherNp
         member this.GetSpecialization world = World.getGameSpecialization world
-        member this.TagSpecialization = PropertyTag.makeReadOnly this Property? Specialization this.GetSpecialization
+        member this.Specialization = PropertyTag.makeReadOnly this Property? Specialization this.GetSpecialization
         member this.GetClassification world = Classification.make (getTypeName ^ this.GetDispatcherNp world) (this.GetSpecialization world)
-        member this.TagClassification = PropertyTag.makeReadOnly this Property? Classification this.GetClassification
+        member this.Classification = PropertyTag.makeReadOnly this Property? Classification this.GetClassification
         member this.GetCreationTimeStampNp world = World.getGameCreationTimeStampNp world
-        member this.TagCreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
+        member this.CreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
         member this.GetOptSelectedScreen world = World.getOptSelectedScreen world
         member this.SetOptSelectedScreen value world = World.setOptSelectedScreen value world
-        member this.TagOptSelectedScreen = PropertyTag.makeReadOnly this Property? OptSelectedScreen this.GetOptSelectedScreen
+        member this.OptSelectedScreen = PropertyTag.makeReadOnly this Property? OptSelectedScreen this.GetOptSelectedScreen
         member this.GetOptScreenTransitionDestination world = World.getOptScreenTransitionDestination world
         member this.SetOptScreenTransitionDestination value world = World.setOptScreenTransitionDestination value world
-        member this.TagOptScreenTransitionDestination = PropertyTag.makeReadOnly this Property? OptScreenTransitionDestination this.GetOptScreenTransitionDestination
+        member this.OptScreenTransitionDestination = PropertyTag.makeReadOnly this Property? OptScreenTransitionDestination this.GetOptScreenTransitionDestination
         member this.GetEyeCenter world = World.getEyeCenter world
         member this.SetEyeCenter value world = World.setEyeCenter value world
-        member this.TagEyeCenter = PropertyTag.makeReadOnly this Property? EyeCenter this.GetEyeCenter
+        member this.EyeCenter = PropertyTag.makeReadOnly this Property? EyeCenter this.GetEyeCenter
         member this.GetEyeSize world = World.getEyeSize world
         member this.SetEyeSize value world = World.setEyeSize value world
-        member this.TagEyeSize = PropertyTag.makeReadOnly this Property? EyeSize this.GetEyeSize
+        member this.EyeSize = PropertyTag.makeReadOnly this Property? EyeSize this.GetEyeSize
 
         /// Get a property value and type.
         member this.GetProperty propertyName world = World.getGameProperty propertyName world
