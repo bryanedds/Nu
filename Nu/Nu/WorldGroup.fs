@@ -13,22 +13,22 @@ module WorldGroupModule =
     type Group with
     
         member this.GetId world = World.getGroupId this world
-        member this.TagId = PropertyTag.makeReadOnly this Property? Id this.GetId
+        member this.Id = PropertyTag.makeReadOnly this Property? Id this.GetId
         member this.GetName world = World.getGroupName this world
-        member this.TagName = PropertyTag.makeReadOnly this Property? Name this.GetName
+        member this.Name = PropertyTag.makeReadOnly this Property? Name this.GetName
         member this.GetXtension world = World.getGroupXtension this world
-        member this.TagXtension = PropertyTag.makeReadOnly this Property? Xtension this.GetXtension
+        member this.Xtension = PropertyTag.makeReadOnly this Property? Xtension this.GetXtension
         member this.GetDispatcherNp world = World.getGroupDispatcherNp this world
-        member this.TagDispatcherNp = PropertyTag.makeReadOnly this Property? DispatcherNp this.GetDispatcherNp
+        member this.DispatcherNp = PropertyTag.makeReadOnly this Property? DispatcherNp this.GetDispatcherNp
         member this.GetSpecialization world = World.getGroupSpecialization this world
-        member this.TagSpecialization = PropertyTag.makeReadOnly this Property? Specialization this.GetSpecialization
+        member this.Specialization = PropertyTag.makeReadOnly this Property? Specialization this.GetSpecialization
         member this.GetClassification world = Classification.make (getTypeName ^ this.GetDispatcherNp world) (this.GetSpecialization world)
-        member this.TagClassification = PropertyTag.makeReadOnly this Property? Classification this.GetClassification
+        member this.Classification = PropertyTag.makeReadOnly this Property? Classification this.GetClassification
         member this.GetPersistent world = World.getGroupPersistent this world
         member this.SetPersistent value world = World.setGroupPersistent value this world
-        member this.TagPersistent = PropertyTag.makeReadOnly this Property? Persistent this.GetPersistent
+        member this.Persistent = PropertyTag.makeReadOnly this Property? Persistent this.GetPersistent
         member this.GetCreationTimeStampNp world = World.getGroupCreationTimeStampNp this world
-        member this.TagCreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
+        member this.CreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
 
         /// Get a property value and type.
         member this.GetProperty propertyName world = World.getGroupProperty propertyName this world

@@ -21,13 +21,13 @@ module GameplayDispatcherModule =
 
         member this.GetContentRandState world : uint64 = this.Get Property? ContentRandState world
         member this.SetContentRandState (value : uint64) world = this.Set Property? ContentRandState value world
-        member this.TagContentRandState = PropertyTag.make this Property? ContentRandState this.GetContentRandState this.SetContentRandState
+        member this.ContentRandState = PropertyTag.make this Property? ContentRandState this.GetContentRandState this.SetContentRandState
         member this.GetOngoingRandState world : uint64 = this.Get Property? OngoingRandState world
         member this.SetOngoingRandState (value : uint64) world = this.Set Property? OngoingRandState value world
-        member this.TagOngoingRandState = PropertyTag.make this Property? OngoingRandState this.GetOngoingRandState this.SetOngoingRandState
+        member this.OngoingRandState = PropertyTag.make this Property? OngoingRandState this.GetOngoingRandState this.SetOngoingRandState
         member this.GetShallLoadGame world : bool = this.Get Property? ShallLoadGame world
         member this.SetShallLoadGame (value : bool) world = this.Set Property? ShallLoadGame value world
-        member this.TagShallLoadGame = PropertyTag.make this Property? ShallLoadGame this.GetShallLoadGame this.SetShallLoadGame
+        member this.ShallLoadGame = PropertyTag.make this Property? ShallLoadGame this.GetShallLoadGame this.SetShallLoadGame
 
     type GameplayDispatcher () =
         inherit ScreenDispatcher ()
