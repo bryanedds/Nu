@@ -6,12 +6,13 @@ The Prime F# Code Library [![License](https://img.shields.io/badge/license-MIT-b
 - A metaprogramming system based on symbolic expressions with **Symbol** and **SymbolicConverter** types.
 - A generalized serialization system based on the above and related types.
 - A purely functional, publisher-neutral event system with **EventSystem** and related types.
-- The functional-reactive **Observation** arrow and **Chain** monad for said event system.
+- The functional-reactive **Stream** and **Chain** monads for said event system.
 - A purely functional dynamic property system called **Xtension**.
 - A purely functional random number generator called **Rand**.
 - The incredibly valuable **Vsync** monad allowing the same program to be run in parallel or debugged sequentially.
 - The fastest-known persistent hash map in F#, **Vmap** - over twice as fast as Map, and 1/3 look-up speed of Dictionary!
-- Revolutionary pure-functional wrappers for arbitrary impure objects, **KeyedCache** and **MutantCache**.
+- Innovative pure-functional wrappers for arbitrary impure objects, **KeyedCache** and **MutantCache**.
+- Fastest pure functional **Umap** and **Uset** collections rivaling the speed of .NET Dictionary and HashSet.
 - So many extension primitives I couldn't hope to mention them all!
 
 Prime is built with clean and modular **Abstract Data Type** programming style as presented here - https://vimeo.com/128464151
