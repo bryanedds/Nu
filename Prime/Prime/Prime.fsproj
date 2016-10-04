@@ -86,7 +86,6 @@
     <Compile Include="Symbol.fs" />
     <Compile Include="Rand.fs" />
     <Compile Include="Name.fs" />
-    <Compile Include="PropertyTag.fs" />
     <Compile Include="Address.fs" />
     <Compile Include="Relation.fs" />
     <Compile Include="KeyedCache.fs" />
@@ -104,6 +103,7 @@
     <Compile Include="SymbolicDescriptor.fs" />
     <Compile Include="SymbolicOperators.fs" />
     <Compile Include="Xtension.fs" />
+    <Compile Include="EventParticipant.fs" />
     <Compile Include="EventTrace.fs" />
     <Compile Include="EventFilter.fs" />
     <Compile Include="EventSystem.fs" />

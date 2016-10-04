@@ -63,11 +63,11 @@ module MountFacetModule =
             let world = (entity.GetMountUnsubscribeNp world) world // NOTE: unsubscribes
             match entity.GetOptParent world with
             | Some parentRelation ->
-                let parentAddress = Relation.resolve entity.EntityAddress parentRelation
-                let (unsubscribe, world) = World.monitorPlus handleParentPropertyChange (Events.EntityChange Property? Position ->>- parentAddress) entity world
-                let (unsubscribe2, world) = World.monitorPlus handleParentPropertyChange (Events.EntityChange Property? Depth ->>- parentAddress) entity world
-                let (unsubscribe3, world) = World.monitorPlus handleParentPropertyChange (Events.EntityChange Property? Visible ->>- parentAddress) entity world
-                let (unsubscribe4, world) = World.monitorPlus handleParentPropertyChange (Events.EntityChange Property? Enabled ->>- parentAddress) entity world
+                let parent = parentRelation |> Relation.resolve entity.EntityAddress |> Entity.proxy
+                let (unsubscribe, world) = World.monitorPlus handleParentPropertyChange parent.Position.Change entity world
+                let (unsubscribe2, world) = World.monitorPlus handleParentPropertyChange parent.Depth.Change entity world
+                let (unsubscribe3, world) = World.monitorPlus handleParentPropertyChange parent.Visible.Change entity world
+                let (unsubscribe4, world) = World.monitorPlus handleParentPropertyChange parent.Enabled.Change entity world
                 let world = entity.SetMountUnsubscribeNp (unsubscribe4 >> unsubscribe3 >> unsubscribe2 >> unsubscribe) world
                 (Cascade, world)
             | None -> (Cascade, world)
@@ -82,11 +82,12 @@ module MountFacetModule =
 
         override facet.Register (entity, world) =
             let world = entity.SetMountUnsubscribeNp id world // ensure unsubscribe function reference doesn't get copied in Gaia...
-            let world = World.monitor handleParentChange (entity.GetChangeEvent Property? OptParent) entity world
-            let world = World.monitorPlus handleLocalPropertyChange (entity.GetChangeEvent Property? PositionLocal) entity world |> snd
-            let world = World.monitorPlus handleLocalPropertyChange (entity.GetChangeEvent Property? DepthLocal) entity world |> snd
-            let world = World.monitorPlus handleLocalPropertyChange (entity.GetChangeEvent Property? VisibleLocal) entity world |> snd
-            World.monitorPlus handleLocalPropertyChange (entity.GetChangeEvent Property? EnabledLocal) entity world |> snd
+            let world = World.monitor handleParentChange entity.OptParent.Change entity world
+            let world = World.monitorPlus handleLocalPropertyChange entity.PositionLocal.Change entity world |> snd
+            let world = World.monitorPlus handleLocalPropertyChange entity.DepthLocal.Change entity world |> snd
+            let world = World.monitorPlus handleLocalPropertyChange entity.VisibleLocal.Change entity world |> snd
+            let world = World.monitorPlus handleLocalPropertyChange entity.EnabledLocal.Change entity world |> snd
+            world
 
         override facet.Unregister (entity, world) =
             (entity.GetMountUnsubscribeNp world) world // NOTE: unsubscribes - not sure if this is necessary.
