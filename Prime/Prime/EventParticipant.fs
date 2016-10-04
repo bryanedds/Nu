@@ -12,6 +12,17 @@ type Participant =
         abstract member GetPublishingPriority : (Participant -> 'w -> IComparable) -> 'w -> IComparable
         end
 
+/// Operators for the Participant type.
+type ParticipantOperators =
+    private
+        | ParticipantOperators
+
+    /// Concatenate two addresses, forcing the type of first address.
+    static member acatf<'a> (address : 'a Address) (participant : Participant) = acatf address (atooa participant.ParticipantAddress)
+
+    /// Concatenate two addresses, takings the type of first address.
+    static member (->-) (address, participant : Participant) = ParticipantOperators.acatf address participant
+
 /// The data for a change in a participant.
 type [<StructuralEquality; NoComparison>] ParticipantChangeData<'p, 'w when 'p :> Participant> =
     { Participant : 'p

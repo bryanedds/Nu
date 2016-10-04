@@ -113,7 +113,7 @@ module TsetModule =
             let set = validate set
             (set.HashSet.Contains value, set)
 
-        /// Convert a Tset to a seq. Note that entire set is iterated eagerly since the underlying HasMap could
+        /// Convert a Tset to a seq. Note that entire set is iterated eagerly since the underlying HashMap could
         /// otherwise opaquely change during iteration.
         let toSeq set =
             let set = validate set
