@@ -61,8 +61,8 @@ module UlistModule =
             list.RefList := tlist
             result
 
-        let ofSeq pairs =
-            { RefList = ref ^ Tlist.ofSeq pairs }
+        let ofSeq items =
+            { RefList = ref ^ Tlist.ofSeq items }
 
         let toSeq (list : _ Ulist) =
             list :> _ seq

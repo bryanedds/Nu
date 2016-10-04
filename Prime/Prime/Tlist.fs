@@ -139,11 +139,11 @@ module TlistModule =
                 'a seq
             (seq, list)
 
-        let ofSeq pairs =
+        let ofSeq items =
             Seq.fold
                 (flip add)
                 (makeEmpty None)
-                pairs
+                items
 
         let fold folder state list =
             let (seq, list) = toSeq list
