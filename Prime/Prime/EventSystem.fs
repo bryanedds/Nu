@@ -15,13 +15,6 @@ type Liveness =
     | Running
     | Exiting
 
-/// A participant in the event system.
-type Participant =
-    interface
-        abstract member ParticipantAddress : Participant Address
-        abstract member GetPublishingPriority : (Participant -> 'w -> IComparable) -> 'w -> IComparable
-        end
-
 /// Operators for the Participant type.
 type ParticipantOperators =
     private
@@ -65,12 +58,6 @@ type internal SubscriptionEntries =
 /// A map of subscription keys to unsubscription data.
 type internal UnsubscriptionEntries =
     Umap<Guid, obj Address * Participant>
-
-/// The data for a change in a participant.
-type [<StructuralEquality; NoComparison>] ParticipantChangeData<'p, 'w when 'p :> Participant> =
-    { Participant : 'p
-      PropertyName : string
-      OldWorld : 'w }
 
 [<RequireQualifiedAccess>]
 module Events =

@@ -5,9 +5,22 @@ namespace Prime
 open System
 open Prime
 
-/// Describes a property.
+/// A participant in the event system.
+type Participant =
+    interface
+        abstract member ParticipantAddress : Participant Address
+        abstract member GetPublishingPriority : (Participant -> 'w -> IComparable) -> 'w -> IComparable
+        end
+
+/// The data for a change in a participant.
+type [<StructuralEquality; NoComparison>] ParticipantChangeData<'p, 'w when 'p :> Participant> =
+    { Participant : 'p
+      PropertyName : string
+      OldWorld : 'w }
+
+/// Describes a property of a participant.
 /// Similar to a Haskell lens, but specialized to properties.
-type [<NoEquality; NoComparison>] PropertyTag<'s, 'a, 'w> =
+type [<NoEquality; NoComparison>] PropertyTag<'s, 'a, 'w when 's :> Participant> =
     { This : 's
       Name : string
       Get : 'w -> 'a
@@ -30,6 +43,11 @@ type [<NoEquality; NoComparison>] PropertyTag<'s, 'a, 'w> =
           Name = this.Name
           Get = fun world -> mapper (this.Get world)
           OptSet = None }
+
+    member this.Change =
+        let changeEventAddress = Address<ParticipantChangeData<'s, 'w>>.ltoa [!!typeof<'s>.Name; !!"Change"; !!this.Name; !!"Event"]
+        let changeEvent = changeEventAddress ->>- this.This.ParticipantAddress
+        changeEvent
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module PropertyTag =
