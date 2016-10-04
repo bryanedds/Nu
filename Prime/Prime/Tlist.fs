@@ -31,9 +31,6 @@ module TlistModule =
         static member (.>>.) (list : 'a2 Tlist, builder : Texpr<'a2, 'a2 Tlist>) =
             builder list
 
-        member this.Item (index, value) =
-            this.ImpList.[index] <- value
-
     let tlist<'a when 'a : comparison> = TexprBuilder<'a Tlist> ()
 
     [<RequireQualifiedAccess>]
