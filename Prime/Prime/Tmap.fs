@@ -116,7 +116,8 @@ module TmapModule =
             | (false, _) -> (None, map)
 
         let find key map =
-            tryFind key map |> mapFst Option.get
+            let map = validate map
+            (map.Dict.[key], map)
 
         let containsKey key map =
             match tryFind key map with

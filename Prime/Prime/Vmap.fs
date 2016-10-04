@@ -30,6 +30,9 @@ module VmapModule =
 
     [<RequireQualifiedAccess>]
     module private Vnode =
+
+        let inline failwithKeyNotFound (k : 'k) =
+            raise ^ KeyNotFoundException ^ "Could not find Vmap key '" + k.ToString () + "'."
     
         /// OPTIMIZATION: Array.Clone () is not used since it's been profiled to be slower
         let inline cloneArray (arr : Vnode<'k, 'v> array) : Vnode<'k, 'v> array =
@@ -143,6 +146,13 @@ module VmapModule =
             | Singleton hkv -> if hkv.K == k then Some hkv.V else None
             | Multiple arr -> let idx = hashToIndex h dep in tryFind h k (dep + 1) arr.[idx]
             | Clash clashMap -> Map.tryFind k clashMap
+    
+        let rec find (h : int) (k : 'k) (dep : int) (node : Vnode<'k, 'v>) : 'v =
+            match node with
+            | Nil -> failwithKeyNotFound k
+            | Singleton hkv -> if hkv.K == k then hkv.V else failwithKeyNotFound k
+            | Multiple arr -> let idx = hashToIndex h dep in find h k (dep + 1) arr.[idx]
+            | Clash clashMap -> Map.find k clashMap
     
         let empty =
             Nil
