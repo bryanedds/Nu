@@ -22,16 +22,19 @@ module UlistModule =
             member this.GetEnumerator () =
                 (this :> IEnumerable<'a>).GetEnumerator () :> IEnumerator
 
+        member this.Item index =
+            let (result, tlist) = Tlist.get index !this.RefList
+            this.RefList := tlist
+            result
+
     [<RequireQualifiedAccess>]
     module Ulist =
 
         let makeEmpty<'a when 'a : comparison> optBloatFactor =
             { RefList = ref ^ Tlist.makeEmpty<'a> optBloatFactor }
 
-        let get (index : int) list =
-            let (result, tlist) = Tlist.get index !list.RefList
-            list.RefList := tlist
-            result
+        let get (index : int) (list : 'a Ulist) =
+            list.[index]
 
         let set index value list =
             { RefList = ref ^ Tlist.set index value !list.RefList }
