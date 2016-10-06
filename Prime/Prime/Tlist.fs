@@ -41,9 +41,9 @@ module TlistModule =
             let impListOrigin = List<'a> list.ImpListOrigin
             List.foldBack (fun log () ->
                 match log with
-                | Add value -> ignore ^ impListOrigin.Add value
+                | Add value -> impListOrigin.Add value
                 | Remove value -> ignore ^ impListOrigin.Remove value
-                | Set (value, index) -> ignore ^ impListOrigin.[index] <- value)
+                | Set (value, index) -> impListOrigin.[index] <- value)
                 list.Logs ()
             let impList = List<'a> impListOrigin
             let list = { list with ImpList = impList; ImpListOrigin = impListOrigin; Logs = []; LogsLength = 0 }
@@ -84,10 +84,12 @@ module TlistModule =
             list
 
         let isEmpty list =
-            list.ImpList.Count = 0
+            let list = validate list
+            (list.ImpList.Count = 0, list)
 
         let notEmpty list =
-            not ^ isEmpty list
+            let list = validate list
+            mapFst not ^ isEmpty list
 
         let get index list =
             let list = validate list
@@ -121,6 +123,11 @@ module TlistModule =
         /// Remove all the given values from the list.
         let removeMany values list =
             Seq.fold (flip remove) list values
+
+        /// Get the length of the list (constant-time, obviously).
+        let length list =
+            let list = validate list
+            (list.ImpList.Count, list)
 
         let contains value list =
             let list = validate list

@@ -53,8 +53,8 @@ module UsetModule =
             set.RefSet := tset
             result
 
-        let ofSeq pairs =
-            { RefSet = ref ^ Tset.ofSeq pairs }
+        let ofSeq items =
+            { RefSet = ref ^ Tset.ofSeq items }
 
         let toSeq (set : _ Uset) =
             set :> _ seq
