@@ -13,11 +13,27 @@ module ListTests =
         | FilterWithFn
         | SetNthToNth of int * int
 
+    let cloneAdd v (vs : ResizeArray<_>) =
+        seq {
+            for x in vs do yield x
+            yield v
+        } |> ResizeArray
+
+    let cloneMap f (vs : ResizeArray<_>) = Seq.map f vs |> ResizeArray
+
+    let cloneFilter f (vs : ResizeArray<_>) = Seq.filter f vs |> ResizeArray
+
+    let cloneSet (idx : int) (v : 'v) (vs : ResizeArray<_>) =
+        let vs2 = ResizeArray(vs.Capacity)
+        vs2.AddRange(vs)
+        vs2.[idx] <- v
+        vs2
+
     /// Keeps a reference to all persistent collections returned after
     /// performing actions, and after they are all applied, checks
     /// that they equal what we would get from FSharp.Core.List
-    let eqSetsAfterSteps
-        (fslist : 'v list)
+    let eqListsAfterSteps
+        (list : 'v ResizeArray)
         (testlist : 'l)
         (actions : ListAction<'v> array)
         (addLast : 'v->'l->'l)
@@ -27,31 +43,32 @@ module ListTests =
         (mapf : ('v->'v)->'l->'l)
         (pred: 'v->bool)
         (filter: ('v->bool)->'l->'l)
-        (eq : 'l->'v list->bool) =
+        (eq : 'l->'v ResizeArray->bool)
+        (lookBackwards : bool) =
 
-        let applyAction fslist testlist action =
+        let applyAction (list:'v ResizeArray) testlist action =
             match action with
             | ListAction.AddLast v ->
-                (fslist @ [v], addLast v testlist)
+                (cloneAdd v list, addLast v testlist)
             | ListAction.MapIncrementFn ->
-                (List.map incrf fslist, mapf incrf testlist)
+                (cloneMap incrf list, mapf incrf testlist)
             | ListAction.FilterWithFn ->
-                (List.filter pred fslist, filter pred testlist)
+                (cloneFilter pred list, filter pred testlist)
             | ListAction.SetNthToNth(n1, n2) ->
-                let len = List.length fslist
+                let len = list.Count
                 if len > 0 then
                     let idx1, idx2 = Math.Abs(n1) % len, Math.Abs(n2) % len
-                    let fs =
-                        let v2 = Seq.item idx2 fslist
-                        List.mapi (fun i v -> if i = idx1 then v2 else v) fslist
+                    let newlist = 
+                        let v2 = Seq.item idx2 list
+                        cloneSet idx1 v2 list
                     let test =
                         let v2 = getNth idx2 testlist
                         setNth idx1 v2 testlist
-                    (fs, test)
+                    (newlist, test)
                 else
-                    (fslist, testlist)
+                    (list, testlist)
 
-        let (fslists, testlists) =
+        let (lists, testlists) =
             Array.fold
                 (fun acc action ->
                     match acc with
@@ -59,24 +76,36 @@ module ListTests =
                         let (newF, newT) = applyAction fsmap testMap action
                         (newF :: fsmap :: fsmaps, newT :: testMap :: testMaps)
                     | _ -> failwithumf ())
-                ([fslist], [testlist])
+                ([list], [testlist])
                 actions
 
-        let success = List.forall2 eq testlists fslists
+        let success = 
+            if lookBackwards then
+                List.forall2 eq testlists lists
+            else
+                eq (List.head testlists) (List.head lists)
+
         if not success then
             Trace.WriteLine "FAILURE:"
-            List.iteri2 (fun i fsset testSet  ->
+            List.iteri2 (fun i list testlist  ->
                 if i > 0 then Trace.WriteLine (sprintf "After action %A" actions.[i-1])
-                Trace.WriteLine (sprintf "fsset: %A\ntestSet: %A" fsset testSet))
-                (List.rev fslists)
-                (List.rev fslists)
+                Trace.WriteLine (sprintf "list: %A\ntestlist: %A" list testlist))
+                (List.rev lists)
+                (List.rev testlists)
         success
+
+    open FsCheck
+
+    let getActionGen pred =
+        Gen.filter pred Arb.generate<ListAction<int>>
+        |> Gen.arrayOf
+        |> Arb.fromGen
 
     [<Property>]
     /// Proof of concept, we can delete this after we know test is correct
-    let aryEqListsAfterSteps (initialList : int list) (actions : ListAction<int> []) =
-        let ary = Array.ofList initialList
-        let eq (ary: int[]) (fslist: int list) = List.ofSeq ary = fslist
+    let aryEqListsLookingBackwards (initialList : ResizeArray<int>) (actions : ListAction<int> []) =
+        let ary = Array.ofSeq initialList
+        let eq (ary: int[]) (fslist: int ResizeArray) = List.ofSeq ary = List.ofSeq fslist
         let pred i = i % 2 = 0
 
         let add (v:int) (ary: int[]) =
@@ -92,12 +121,49 @@ module ListTests =
             ary2.[i] <- v
             ary2
 
-        eqSetsAfterSteps initialList ary actions add get set ((+) 1) Array.map pred Array.filter eq
+        eqListsAfterSteps initialList ary actions add get set ((+) 1) Array.map pred Array.filter eq true
+
+    let ulistEqLists (initialList : ResizeArray<int>) (actions : ListAction<int>[]) (lookBackwards : bool) =
+        let testList = Ulist.addMany initialList (Ulist.makeEmpty(None))
+        let eq (ulist : Ulist<_>) (fslist : _ ResizeArray) = List.ofSeq ulist = List.ofSeq fslist
+        let pred i = i % 2 = 0
+        eqListsAfterSteps initialList testList actions Ulist.add Ulist.get Ulist.set ((+) 1) Ulist.map pred Ulist.filter eq lookBackwards 
 
     [<Property>]
-    let ulistEqListsAfterSteps (initialList : int list) (actions : ListAction<int>[]) =
-        let testList = Ulist.addMany initialList (Ulist.makeEmpty(None))
-        let eq (ulist : Ulist<_>) (fslist : _ list) = List.ofSeq ulist = fslist
-        let pred i = i % 2 = 0
-        eqSetsAfterSteps initialList testList actions Ulist.add Ulist.get Ulist.set ((+) 1) Ulist.map pred Ulist.filter eq
+    let ulistEqList (initialList : ResizeArray<int>) (actions : ListAction<int>[]) =
+        ulistEqLists initialList actions false 
 
+    [<Property>]
+    let ulistEqListsLookingBackwards (initialList : ResizeArray<int>) =
+        let actionGen = getActionGen (fun _ -> true)
+        Prop.forAll actionGen (fun actions ->
+            ulistEqLists initialList actions true)
+
+    [<Property>]
+    let ulistEqListsLookingBackwardsAddOnly (initialList : ResizeArray<int>) =
+        let actionGen = getActionGen (function
+            | ListAction.AddLast(_) -> true
+            | _ -> false)
+
+        Prop.forAll actionGen (fun actions ->
+            ulistEqLists initialList actions true)
+
+    [<Property>]
+    let ulistEqListsLookingBackwardsAddSet (initialList : ResizeArray<int>) =
+        let actionGen = getActionGen (function
+            | ListAction.SetNthToNth(_,_)
+            | ListAction.AddLast(_) -> true
+            | _ -> false)
+
+        Prop.forAll actionGen (fun actions ->
+            ulistEqLists initialList actions true)
+
+    [<Property>]
+    let ulistEqListsLookingBackwardsMapFilter (initialList : ResizeArray<int>) =
+        let actionGen = getActionGen (function
+            | ListAction.MapIncrementFn(_)
+            | ListAction.FilterWithFn -> true
+            | _ -> false)
+
+        Prop.forAll actionGen (fun actions ->
+            ulistEqLists initialList actions true)
