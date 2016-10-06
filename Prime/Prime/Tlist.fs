@@ -11,7 +11,7 @@ module TlistModule =
     type private Log<'a when 'a : comparison> =
         | Add of 'a
         | Remove of 'a
-        | Set of 'a * int
+        | Set of int * 'a
 
     type [<NoEquality; NoComparison>] Tlist<'a when 'a : comparison> =
         private
@@ -43,7 +43,7 @@ module TlistModule =
                 match log with
                 | Add value -> impListOrigin.Add value
                 | Remove value -> ignore ^ impListOrigin.Remove value
-                | Set (value, index) -> impListOrigin.[index] <- value)
+                | Set (index, value) -> impListOrigin.[index] <- value)
                 list.Logs ()
             let impList = List<'a> impListOrigin
             let list = { list with ImpList = impList; ImpListOrigin = impListOrigin; Logs = []; LogsLength = 0 }
