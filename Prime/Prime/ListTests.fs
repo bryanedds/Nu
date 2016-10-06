@@ -43,7 +43,8 @@ module ListTests =
         (mapf : ('v->'v)->'l->'l)
         (pred: 'v->bool)
         (filter: ('v->bool)->'l->'l)
-        (eq : 'l->'v ResizeArray->bool) =
+        (eq : 'l->'v ResizeArray->bool)
+        (lookBackwards : bool) =
 
         let applyAction (list:'v ResizeArray) testlist action =
             match action with
@@ -78,7 +79,12 @@ module ListTests =
                 ([list], [testlist])
                 actions
 
-        let success = List.forall2 eq testlists lists 
+        let success = 
+            if lookBackwards then
+                List.forall2 eq testlists lists
+            else
+                eq (List.head testlists) (List.head lists)
+
         if not success then
             Trace.WriteLine "FAILURE:"
             List.iteri2 (fun i list testlist  ->
@@ -90,7 +96,7 @@ module ListTests =
 
     [<Property>]
     /// Proof of concept, we can delete this after we know test is correct
-    let aryEqListsAfterSteps (initialList : ResizeArray<int>) (actions : ListAction<int> []) =
+    let aryEqListsLookingBackwards (initialList : ResizeArray<int>) (actions : ListAction<int> []) =
         let ary = Array.ofSeq initialList
         let eq (ary: int[]) (fslist: int ResizeArray) = List.ofSeq ary = List.ofSeq fslist
         let pred i = i % 2 = 0
@@ -108,11 +114,18 @@ module ListTests =
             ary2.[i] <- v
             ary2
 
-        eqListsAfterSteps initialList ary actions add get set ((+) 1) Array.map pred Array.filter eq
+        eqListsAfterSteps initialList ary actions add get set ((+) 1) Array.map pred Array.filter eq true
 
-    [<Property>]
-    let ulistEqListsAfterSteps (initialList : ResizeArray<int>) (actions : ListAction<int>[]) =
+    let ulistEqLists (initialList : ResizeArray<int>) (actions : ListAction<int>[]) (lookBackwards : bool) =
         let testList = Ulist.addMany initialList (Ulist.makeEmpty(None))
         let eq (ulist : Ulist<_>) (fslist : _ ResizeArray) = List.ofSeq ulist = List.ofSeq fslist
         let pred i = i % 2 = 0
-        eqListsAfterSteps initialList testList actions Ulist.add Ulist.get Ulist.set ((+) 1) Ulist.map pred Ulist.filter eq
+        eqListsAfterSteps initialList testList actions Ulist.add Ulist.get Ulist.set ((+) 1) Ulist.map pred Ulist.filter eq lookBackwards 
+
+    [<Property>]
+    let ulistEqList (initialList : ResizeArray<int>) (actions : ListAction<int>[]) =
+        ulistEqLists initialList actions false 
+
+    [<Property>]
+    let ulistEqListsLookingBackwards (initialList : ResizeArray<int>) (actions : ListAction<int>[]) =
+        ulistEqLists initialList actions true
