@@ -54,9 +54,9 @@ module UmapModule =
             optValue
 
         let find key map =
-            let (value, tmap) = Tmap.find key !map.RefMap
-            map.RefMap := tmap
-            value
+            let kvp = Tmap.findNoAlloc key !map.RefMap
+            map.RefMap := kvp.Value
+            kvp.Key
 
         let containsKey key map =
             let (result, tmap) = Tmap.containsKey key !map.RefMap
