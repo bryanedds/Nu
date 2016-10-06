@@ -82,10 +82,16 @@ module TsetModule =
             set
 
         let isEmpty set =
-            set.HashSet.Count = 0
+            let set = validate set
+            (set.HashSet.Count = 0, set)
 
         let notEmpty set =
-            not ^ isEmpty set
+            mapFst not ^ isEmpty set
+
+        /// Get the length of the set (constant-time, obviously).
+        let length set =
+            let set = validate set
+            (set.HashSet.Count, set)
 
         let add value set =
             update (fun set ->
@@ -123,11 +129,11 @@ module TsetModule =
                 'a seq
             (seq, set)
 
-        let ofSeq pairs =
+        let ofSeq items =
             Seq.fold
                 (flip add)
                 (makeEmpty None)
-                pairs
+                items
 
         let fold folder state set =
             let (seq, set) = toSeq set

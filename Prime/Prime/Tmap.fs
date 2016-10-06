@@ -82,10 +82,16 @@ module TmapModule =
             map
 
         let isEmpty map =
-            map.Dict.Count = 0
+            let map = validate map
+            (map.Dict.Count = 0, map)
 
         let notEmpty map =
-            not ^ isEmpty map
+            mapFst not ^ isEmpty map
+
+        /// Get the length of the map (constant-time, obviously).
+        let length map =
+            let map = validate map
+            (map.Dict.Count, map)
 
         let add key value map =
             update (fun map ->

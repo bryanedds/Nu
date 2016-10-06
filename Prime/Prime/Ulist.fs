@@ -54,18 +54,20 @@ module UlistModule =
             { RefList = ref ^ Tlist.removeMany values !list.RefList }
 
         let isEmpty list =
-            Tlist.isEmpty !list.RefList
+            let (result, tlist) = Tlist.isEmpty !list.RefList
+            list.RefList := tlist
+            result
 
         let notEmpty list =
-            Tlist.notEmpty !list.RefList
+            not ^ isEmpty list
 
         let contains value list =
             let (result, tlist) = Tlist.contains value !list.RefList
             list.RefList := tlist
             result
 
-        let ofSeq items =
-            { RefList = ref ^ Tlist.ofSeq items }
+        let ofSeq values =
+            { RefList = ref ^ Tlist.ofSeq values }
 
         let toSeq (list : _ Ulist) =
             list :> _ seq
