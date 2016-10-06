@@ -114,6 +114,7 @@
     <Compile Include="Chain.fs" />
     <Compile Include="MapTests.fs" />
     <Compile Include="SetTests.fs" />
+    <Compile Include="ListTests.fs" />
     <Compile Include="RandTests.fs" />
     <Compile Include="AddressTests.fs" />
     <Compile Include="SymbolTests.fs" />
