@@ -43,10 +43,12 @@ module UmapModule =
             { RefMap = ref ^ Tmap.removeMany keys !map.RefMap }
 
         let isEmpty map =
-            Tmap.isEmpty !map.RefMap
+            let (result, tmap) = Tmap.isEmpty !map.RefMap
+            map.RefMap := tmap
+            result
 
         let notEmpty map =
-            Tmap.notEmpty !map.RefMap
+            not ^ isEmpty map
 
         let tryFind key map =
             let (optValue, tmap) = Tmap.tryFind key !map.RefMap
