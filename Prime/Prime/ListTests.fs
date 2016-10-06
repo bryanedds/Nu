@@ -94,6 +94,13 @@ module ListTests =
                 (List.rev testlists)
         success
 
+    open FsCheck
+
+    let getActionGen pred =
+        Gen.filter pred Arb.generate<ListAction<int>>
+        |> Gen.arrayOf
+        |> Arb.fromGen
+
     [<Property>]
     /// Proof of concept, we can delete this after we know test is correct
     let aryEqListsLookingBackwards (initialList : ResizeArray<int>) (actions : ListAction<int> []) =
@@ -127,5 +134,36 @@ module ListTests =
         ulistEqLists initialList actions false 
 
     [<Property>]
-    let ulistEqListsLookingBackwards (initialList : ResizeArray<int>) (actions : ListAction<int>[]) =
-        ulistEqLists initialList actions true
+    let ulistEqListsLookingBackwards (initialList : ResizeArray<int>) =
+        let actionGen = getActionGen (fun _ -> true)
+        Prop.forAll actionGen (fun actions ->
+            ulistEqLists initialList actions true)
+
+    [<Property>]
+    let ulistEqListsLookingBackwardsAddOnly (initialList : ResizeArray<int>) =
+        let actionGen = getActionGen (function
+            | ListAction.AddLast(_) -> true
+            | _ -> false)
+
+        Prop.forAll actionGen (fun actions ->
+            ulistEqLists initialList actions true)
+
+    [<Property>]
+    let ulistEqListsLookingBackwardsAddSet (initialList : ResizeArray<int>) =
+        let actionGen = getActionGen (function
+            | ListAction.SetNthToNth(_,_)
+            | ListAction.AddLast(_) -> true
+            | _ -> false)
+
+        Prop.forAll actionGen (fun actions ->
+            ulistEqLists initialList actions true)
+
+    [<Property>]
+    let ulistEqListsLookingBackwardsMapFilter (initialList : ResizeArray<int>) =
+        let actionGen = getActionGen (function
+            | ListAction.MapIncrementFn(_)
+            | ListAction.FilterWithFn -> true
+            | _ -> false)
+
+        Prop.forAll actionGen (fun actions ->
+            ulistEqLists initialList actions true)
