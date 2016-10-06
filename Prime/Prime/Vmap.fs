@@ -214,7 +214,8 @@ module VmapModule =
         /// Find a value with the given key in a Vmap.
         /// Constant-time complexity with approx. 1/3 speed of Dictionary.GetValue.
         let find (key : 'k) map : 'v =
-            tryFind key map |> Option.get
+            let h = key.GetHashCode ()
+            Vnode.find h key 0 map.Node
     
         /// Check that a Vmap contains a value with the given key.
         let containsKey key map =
