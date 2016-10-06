@@ -43,10 +43,12 @@ module UsetModule =
             { RefSet = ref ^ Tset.removeMany values !set.RefSet }
 
         let isEmpty set =
-            Tset.isEmpty !set.RefSet
+            let (result, tset) = Tset.isEmpty !set.RefSet
+            set.RefSet := tset
+            result
 
         let notEmpty set =
-            Tset.notEmpty !set.RefSet
+            not ^ isEmpty set
 
         let contains value set =
             let (result, tset) = Tset.contains value !set.RefSet
