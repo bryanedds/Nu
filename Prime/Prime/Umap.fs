@@ -77,11 +77,11 @@ module UmapModule =
         let map mapper map =
             let (result, tmap) = Tmap.map mapper !map.RefMap
             map.RefMap := tmap
-            result
+            { RefMap = ref result }
 
         let filter pred map =
             let (result, tmap) = Tmap.filter pred !map.RefMap
             map.RefMap := tmap
-            result
+            { RefMap = ref result }
 
 type Umap<'k, 'v when 'k : comparison> = UmapModule.Umap<'k, 'v>

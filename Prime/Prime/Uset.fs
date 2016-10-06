@@ -67,11 +67,11 @@ module UsetModule =
         let map mapper set =
             let (result, tset) = Tset.map mapper !set.RefSet
             set.RefSet := tset
-            result
+            { RefSet = ref result }
 
         let filter pred set =
             let (result, tset) = Tset.filter pred !set.RefSet
             set.RefSet := tset
-            result
+            { RefSet = ref result }
 
 type Uset<'a when 'a : comparison> = UsetModule.Uset<'a>
