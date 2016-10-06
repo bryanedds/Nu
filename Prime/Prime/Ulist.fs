@@ -78,11 +78,11 @@ module UlistModule =
         let map mapper list =
             let (result, tlist) = Tlist.map mapper !list.RefList
             list.RefList := tlist
-            result
+            { RefList = ref result }
 
         let filter pred list =
             let (result, tlist) = Tlist.filter pred !list.RefList
             list.RefList := tlist
-            result
+            { RefList = ref result }
 
 type Ulist<'a when 'a : comparison> = UlistModule.Ulist<'a>
