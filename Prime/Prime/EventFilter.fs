@@ -49,7 +49,7 @@ module EventFilter =
     type [<NoEquality; NoComparison>] Filter =
         | Any of Filter list
         | All of Filter list
-        | Nil of Filter list
+        | Nil of Filter list // TODO: rename Nil to NotAny
         | Pattern of Rexpr * Rexpr list
         | Empty
 
