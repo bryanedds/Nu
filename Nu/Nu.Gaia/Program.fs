@@ -8,7 +8,6 @@ open Prime
 open Nu
 
 // TODO: increase warning level to 5.
-// TODO: implement quick size on create.
 // TODO: implement selection box rendering.
 
 module Program =
