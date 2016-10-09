@@ -70,16 +70,19 @@ module TsetModule =
             oldSet.Tset <- set
             set
 
-        let makeEmpty<'a when 'a : comparison> optBloatFactor =
+        let makeFromSeq<'a when 'a : comparison> optBloatFactor items =
             let set =
                 { Tset = Unchecked.defaultof<'a Tset>
-                  HashSet = HashSet<'a> HashIdentity.Structural
-                  HashSetOrigin = HashSet<'a> HashIdentity.Structural
+                  HashSet = hashPlus items
+                  HashSetOrigin = hashPlus items
                   Logs = []
                   LogsLength = 0
                   BloatFactor = Option.getOrDefault 1 optBloatFactor }
             set.Tset <- set
             set
+
+        let makeEmpty<'a when 'a : comparison> optBloatFactor =
+            makeFromSeq<'a> optBloatFactor Seq.empty
 
         let isEmpty set =
             let set = validate set
@@ -130,10 +133,7 @@ module TsetModule =
             (seq, set)
 
         let ofSeq items =
-            Seq.fold
-                (flip add)
-                (makeEmpty None)
-                items
+            makeFromSeq None items
 
         let fold folder state set =
             let (seq, set) = toSeq set

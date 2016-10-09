@@ -22,3 +22,12 @@ module HashSetExtension =
             if not ^ this.Contains item
             then this.Add item
             else false
+
+[<AutoOpen>]
+module HashSetOperators =
+
+    /// Make a concrete HashSet instance populated with the given itesm and using structural hashing.
+    let hashPlus items =
+        let hashSet = HashSet HashIdentity.Structural
+        for item in items do ignore ^ hashSet.TryAdd item
+        hashSet

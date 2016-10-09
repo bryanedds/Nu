@@ -25,6 +25,9 @@ module UmapModule =
     [<RequireQualifiedAccess>]
     module Umap =
 
+        let makeFromSeq<'k, 'v when 'k : comparison> optBloatFactor entries =
+            { RefMap = ref ^ Tmap.makeFromSeq<'k, 'v> optBloatFactor entries }
+
         let makeEmpty<'k, 'v when 'k : comparison> optBloatFactor =
             { RefMap = ref ^ Tmap.makeEmpty<'k, 'v> optBloatFactor }
 
