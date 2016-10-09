@@ -146,7 +146,7 @@ module TlistModule =
             let seq = list.ImpList |> Array.ofSeq :> 'a seq
             (seq, list)
 
-        let ofSeq (items : 'a seq) =
+        let ofSeq items =
             makeFromSeq None items
 
         let fold folder state list =

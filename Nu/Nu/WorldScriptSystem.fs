@@ -47,7 +47,7 @@ module WorldScriptSystem =
              (typeof<double>.Name, (fun (value : obj) _ optOrigin -> match value with :? double as double -> Some (Double (double, optOrigin)) | _ -> None))
              (typeof<Vector2>.Name, (fun (value : obj) _ optOrigin -> match value with :? Vector2 as vector2 -> Some (Vector2 (vector2, optOrigin)) | _ -> None))
              (typedefof<_ list>.Name, (fun value ty optOrigin -> tryImportList value ty optOrigin))] |>
-            dictC
+            dictPlus
 
         and private tryImportEventData evt optOrigin =
             match tryImport evt.Data evt.DataType optOrigin with
@@ -78,7 +78,7 @@ module WorldScriptSystem =
              (typeof<double>.Name, (fun evaled _ -> match evaled with Double (value, _) -> value :> obj |> Some | _ -> None))
              (typeof<Vector2>.Name, (fun evaled _ -> match evaled with Vector2 (value, _) -> value :> obj |> Some | _ -> None))
              (typedefof<_ list>.Name, tryExportList)] |>
-            dictC
+            dictPlus
 
         type [<NoEquality; NoComparison>] UnaryFns =
             { Bool : bool -> Origin option -> Expr

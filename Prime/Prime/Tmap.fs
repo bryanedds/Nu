@@ -70,16 +70,19 @@ module TmapModule =
             oldMap.Tmap <- map
             map
 
-        let makeEmpty<'k, 'v when 'k : comparison> optBloatFactor =
+        let makeFromSeq<'k, 'v when 'k : comparison> optBloatFactor entries =
             let map =
                 { Tmap = Unchecked.defaultof<Tmap<'k, 'v>>
-                  Dict = Dictionary<'k, 'v> HashIdentity.Structural
-                  DictOrigin = Dictionary<'k, 'v> HashIdentity.Structural
+                  Dict = dictPlus entries
+                  DictOrigin = dictPlus entries
                   Logs = []
                   LogsLength = 0
                   BloatFactor = Option.getOrDefault 1 optBloatFactor }
             map.Tmap <- map
             map
+
+        let makeEmpty<'k, 'v when 'k : comparison> optBloatFactor =
+            makeFromSeq<'k, 'v> optBloatFactor Seq.empty
 
         let isEmpty map =
             let map = validate map
@@ -146,10 +149,7 @@ module TmapModule =
             (seq, map)
 
         let ofSeq pairs =
-            Seq.fold
-                (flip ^ uncurry add)
-                (makeEmpty None)
-                pairs
+            makeFromSeq None pairs
 
         let fold folder state map =
             let (seq, map) = toSeq map
