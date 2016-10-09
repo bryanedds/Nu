@@ -167,7 +167,7 @@ module TlistModule =
             let list = validate list
             let impList = list.ImpList
             let tempList = List<'a> impList.Count
-            for i in 0 .. impList.Count - 1 do let item = impList.[i] in if pred item then (ignore ^ tempList.Add item)
+            for i in 0 .. impList.Count - 1 do let item = impList.[i] in if pred item then tempList.Add item
             let listFiltered = makeFromTempList (Some list.BloatFactor) tempList
             (listFiltered, list)
 
@@ -175,28 +175,37 @@ module TlistModule =
             // OPTIMIZATION: elides building of avoidable transactions.
             let list = validate list
             let impList = list.ImpList
-            let tempList = List<'a> impList.Count
+            let tempList = List<'a> impList
             tempList.Reverse ()
             let listReversed = makeFromTempList (Some list.BloatFactor) tempList
             (listReversed, list)
 
-        let sortByWith (by : 'a -> 'b) comparison list =
+        let sortWith comparison list =
             // OPTIMIZATION: elides building of avoidable transactions.
             let list = validate list
             let impList = list.ImpList
-            let tempList = List<'b> impList.Count
-            for i in 0 .. impList.Count - 1 do tempList.[i] <- by impList.[i]
+            let tempList = List<'b> impList
             let tempListSorted = Seq.sortWith comparison tempList // NOTE: Generic.List.Sort is _not_ stable, so using a stable one instead...
             let listSorted = makeFromSeq (Some list.BloatFactor) tempListSorted
             (listSorted, list)
 
-        let sortWith comparison list =
-            sortByWith id comparison list
-
         let sortBy by list =
-            sortByWith by LanguagePrimitives.GenericComparison list
+            // OPTIMIZATION: elides building of avoidable transactions.
+            let list = validate list
+            let impList = list.ImpList
+            let tempList = List<'b> impList.Count
+            for i in 0 .. impList.Count - 1 do tempList.Add (by impList.[i])
+            let tempListSorted = Seq.sort tempList // NOTE: Generic.List.Sort is _not_ stable, so using a stable one instead...
+            let listSorted = makeFromSeq (Some list.BloatFactor) tempListSorted
+            (listSorted, list)
 
         let sort list =
-            sortByWith id LanguagePrimitives.GenericComparison list
+            // OPTIMIZATION: elides building of avoidable transactions.
+            let list = validate list
+            let impList = list.ImpList
+            let tempList = List<'b> impList
+            let tempListSorted = Seq.sort tempList // NOTE: Generic.List.Sort is _not_ stable, so using a stable one instead...
+            let listSorted = makeFromSeq (Some list.BloatFactor) tempListSorted
+            (listSorted, list)
 
 type 'a Tlist = 'a TlistModule.Tlist

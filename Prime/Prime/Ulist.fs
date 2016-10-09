@@ -95,11 +95,6 @@ module UlistModule =
             list.RefList := tlist
             { RefList = ref result }
 
-        let sortByWith by comparison list =
-            let (result, tlist) = Tlist.sortByWith by comparison !list.RefList
-            list.RefList := tlist
-            { RefList = ref result }
-
         let sortWith comparison list =
             let (result, tlist) = Tlist.sortWith comparison !list.RefList
             list.RefList := tlist
