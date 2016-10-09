@@ -83,8 +83,8 @@
     <Compile Include="Map.fs" />
     <Compile Include="HashSet.fs" />
     <Compile Include="Dictionary.fs" />
-    <Compile Include="Symbol.fs" />
     <Compile Include="Rand.fs" />
+    <Compile Include="Symbol.fs" />
     <Compile Include="Name.fs" />
     <Compile Include="Address.fs" />
     <Compile Include="Relation.fs" />
@@ -112,9 +112,9 @@
     <Compile Include="EventWorld.fs" />
     <Compile Include="Stream.fs" />
     <Compile Include="Chain.fs" />
+    <Compile Include="ListTests.fs" />
     <Compile Include="MapTests.fs" />
     <Compile Include="SetTests.fs" />
-    <Compile Include="ListTests.fs" />
     <Compile Include="RandTests.fs" />
     <Compile Include="AddressTests.fs" />
     <Compile Include="SymbolTests.fs" />
