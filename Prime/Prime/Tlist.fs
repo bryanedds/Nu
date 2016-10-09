@@ -84,27 +84,10 @@ module TlistModule =
             list
 
         let makeFromSeq optBloatFactor (items : 'a seq) =
-            let impList = List<'a> items
-            let list =
-                { Tlist = Unchecked.defaultof<'a Tlist>
-                  ImpList = impList
-                  ImpListOrigin = List<'a> impList
-                  Logs = []
-                  LogsLength = 0
-                  BloatFactor = Option.getOrDefault 1 optBloatFactor }
-            list.Tlist <- list
-            list
+            makeFromTempList optBloatFactor (List<'a> items)
 
         let makeEmpty<'a> optBloatFactor =
-            let list =
-                { Tlist = Unchecked.defaultof<'a Tlist>
-                  ImpList = List<'a> ()
-                  ImpListOrigin = List<'a> ()
-                  Logs = []
-                  LogsLength = 0
-                  BloatFactor = Option.getOrDefault 1 optBloatFactor }
-            list.Tlist <- list
-            list
+            makeFromSeq optBloatFactor (List<'a> ())
 
         let isEmpty list =
             let list = validate list
