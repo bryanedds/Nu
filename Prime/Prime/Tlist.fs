@@ -89,6 +89,9 @@ module TlistModule =
         let makeEmpty<'a> optBloatFactor =
             makeFromSeq optBloatFactor (List<'a> ())
 
+        let singleton item =
+            makeFromSeq None (Seq.singleton item)
+
         let isEmpty list =
             let list = validate list
             (list.ImpList.Count = 0, list)
@@ -154,11 +157,12 @@ module TlistModule =
             let result = Seq.fold folder state seq
             (result, list)
 
-        let map mapper list =
+        let map (mapper : 'a -> 'b) (list : 'a Tlist) =
             // OPTIMIZATION: elides building of avoidable transactions.
             let list = validate list
-            let tempList = List<'a> list.ImpList
-            for i in 0 .. tempList.Count - 1 do tempList.[i] <- mapper tempList.[i]
+            let impList = list.ImpList
+            let tempList = List<'b> impList.Count
+            for i in 0 .. impList.Count - 1 do tempList.Add ^ mapper impList.[i]
             let listMapped = makeFromTempList (Some list.BloatFactor) tempList
             (listMapped, list)
 
@@ -207,5 +211,16 @@ module TlistModule =
             let tempListSorted = Seq.sort tempList // NOTE: Generic.List.Sort is _not_ stable, so using a stable one instead...
             let listSorted = makeFromSeq (Some list.BloatFactor) tempListSorted
             (listSorted, list)
+
+        let concat lists =
+            // OPTIMIZATION: elides building of avoidable transactions.
+            let listsAsSeq = toSeq lists |> fst
+            let tempList = List<'a> ()
+            for list in listsAsSeq do tempList.AddRange (toSeq list |> fst)
+            makeFromSeq None tempList
+
+        let definitize list =
+            let listMapped = filter Option.isSome list |> fst
+            map Option.get listMapped
 
 type 'a Tlist = 'a TlistModule.Tlist
