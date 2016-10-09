@@ -36,6 +36,9 @@ module UlistModule =
         let makeEmpty<'a> optBloatFactor =
             { RefList = ref ^ Tlist.makeEmpty<'a> optBloatFactor }
 
+        let singleton item =
+            { RefList = ref ^ Tlist.singleton item }
+
         let get (index : int) (list : 'a Ulist) =
             list.[index]
 
@@ -109,5 +112,15 @@ module UlistModule =
             let (result, tlist) = Tlist.sort !list.RefList
             list.RefList := tlist
             { RefList = ref result }
+
+        let definitize list =
+            let (result, tlist) = Tlist.definitize !list.RefList
+            list.RefList := tlist
+            { RefList = ref result }
+
+        let concat lists =
+            let tlists = !(map (fun (list : 'a Ulist) -> !list.RefList) lists).RefList
+            let tlist = Tlist.concat tlists
+            { RefList = ref tlist }
 
 type 'a Ulist = 'a UlistModule.Ulist
