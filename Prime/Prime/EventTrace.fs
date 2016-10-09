@@ -6,6 +6,7 @@ type [<CLIMutable; ReferenceEquality>] EventInfo =
       FunctionName : string
       MoreInfo : string }
 
+// TODO: consider replacing this with Ulist since we really want to add to the back anyway.
 type EventTrace = EventInfo list
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]

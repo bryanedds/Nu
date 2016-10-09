@@ -7,6 +7,7 @@ open FsCheck.Xunit
 open Prime
 open System.Diagnostics
 module ListTests =
+
     type ListAction<'v> = 
         | AddLast of 'v
         | MapIncrementFn
@@ -16,8 +17,8 @@ module ListTests =
     let cloneAdd v (vs : ResizeArray<_>) =
         seq {
             for x in vs do yield x
-            yield v
-        } |> ResizeArray
+            yield v } |>
+        ResizeArray
 
     let cloneMap f (vs : ResizeArray<_>) = Seq.map f vs |> ResizeArray
 
@@ -57,7 +58,7 @@ module ListTests =
             | ListAction.SetNthToNth(n1, n2) ->
                 let len = list.Count
                 if len > 0 then
-                    let idx1, idx2 = Math.Abs(n1) % len, Math.Abs(n2) % len
+                    let idx1, idx2 = Math.Abs n1 % len, Math.Abs n2 % len
                     let newlist = 
                         let v2 = Seq.item idx2 list
                         cloneSet idx1 v2 list
@@ -105,7 +106,7 @@ module ListTests =
     /// Proof of concept, we can delete this after we know test is correct
     let aryEqListsLookingBackwards (initialList : ResizeArray<int>) (actions : ListAction<int> []) =
         let ary = Array.ofSeq initialList
-        let eq (ary: int[]) (fslist: int ResizeArray) = List.ofSeq ary = List.ofSeq fslist
+        let eq (ary : int[]) (fslist : int ResizeArray) = List.ofSeq ary = List.ofSeq fslist
         let pred i = i % 2 = 0
 
         let add (v:int) (ary: int[]) =
