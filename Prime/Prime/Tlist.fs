@@ -8,12 +8,13 @@ open System.Collections.Generic
 [<AutoOpen>]
 module TlistModule =
 
-    type private Log<'a when 'a : comparison> =
+    type [<NoEquality; NoComparison>] private 'a Log =
         | Add of 'a
         | Remove of 'a
         | Set of int * 'a
+        | SortWith of 'a Comparison
 
-    type [<NoEquality; NoComparison>] Tlist<'a when 'a : comparison> =
+    type [<NoEquality; NoComparison>] 'a Tlist =
         private
             { mutable Tlist : 'a Tlist
               ImpList : 'a List
@@ -31,7 +32,7 @@ module TlistModule =
         static member (.>>.) (list : 'a2 Tlist, builder : Texpr<'a2, 'a2 Tlist>) =
             builder list
 
-    let tlist<'a when 'a : comparison> = TexprBuilder<'a Tlist> ()
+    let tlist<'a> = TexprBuilder<'a Tlist> ()
 
     [<RequireQualifiedAccess>]
     module Tlist =
@@ -43,7 +44,8 @@ module TlistModule =
                 match log with
                 | Add value -> impListOrigin.Add value
                 | Remove value -> ignore ^ impListOrigin.Remove value
-                | Set (index, value) -> impListOrigin.[index] <- value)
+                | Set (index, value) -> impListOrigin.[index] <- value
+                | SortWith comparison -> impListOrigin.Sort comparison)
                 list.Logs ()
             let impList = List<'a> impListOrigin
             let list = { list with ImpList = impList; ImpListOrigin = impListOrigin; Logs = []; LogsLength = 0 }
@@ -72,7 +74,7 @@ module TlistModule =
             oldList.Tlist <- list
             list
 
-        let makeEmpty<'a when 'a : comparison> optBloatFactor =
+        let makeEmpty<'a> optBloatFactor =
             let list =
                 { Tlist = Unchecked.defaultof<'a Tlist>
                   ImpList = List<'a> ()
@@ -115,6 +117,16 @@ module TlistModule =
                 list.ImpList.Remove value |> ignore
                 list)
                 list
+
+        let sortWith comparison list =
+            update (fun list ->
+                let list = { list with Logs = SortWith (Comparison comparison) :: list.Logs; LogsLength = list.LogsLength + 1 }
+                list.ImpList.Sort (Comparison comparison) |> ignore
+                list)
+                list
+
+        let sort list =
+            sortWith LanguagePrimitives.GenericComparison list
 
         /// Add all the given values to the list.
         let addMany values list =
@@ -166,4 +178,4 @@ module TlistModule =
                 (makeEmpty ^ Some list.BloatFactor)
                 list
 
-type Tlist<'a when 'a : comparison> = TlistModule.Tlist<'a>
+type 'a Tlist = 'a TlistModule.Tlist

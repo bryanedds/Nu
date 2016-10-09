@@ -5,7 +5,6 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.IO
-open FSharpx.Collections
 open OpenTK
 open SDL2
 open TiledSharp
@@ -104,7 +103,7 @@ module RendererModule =
         private
             { RenderContext : nativeint
               RenderPackageMap : RenderAsset PackageMap
-              RenderMessages : RenderMessage Queue
+              RenderMessages : RenderMessage Ulist
               RenderDescriptors : RenderDescriptor list }
 
         static member private sortDescriptors (LayerableDescriptor left) (LayerableDescriptor right) =
@@ -202,7 +201,7 @@ module RendererModule =
             | ReloadRenderAssetsMessage -> Renderer.handleReloadRenderAssets renderer
 
         static member private handleRenderMessages renderMessages renderer =
-            Queue.fold Renderer.handleRenderMessage renderer renderMessages
+            Ulist.fold Renderer.handleRenderMessage renderer renderMessages
 
         static member private renderSprite
             (viewAbsolute : Matrix3)
@@ -421,24 +420,24 @@ module RendererModule =
             let renderer =
                 { RenderContext = renderContext
                   RenderPackageMap = Map.empty
-                  RenderMessages = Queue.empty
+                  RenderMessages = Ulist.makeEmpty None
                   RenderDescriptors = [] }
             renderer
 
         interface IRenderer with
 
             member renderer.ClearMessages () =
-                let renderer = { renderer with RenderMessages = Queue.empty }
+                let renderer = { renderer with RenderMessages = Ulist.makeEmpty None }
                 renderer :> IRenderer
 
             member renderer.EnqueueMessage renderMessage =
-                let renderMessages = Queue.conj renderMessage renderer.RenderMessages
+                let renderMessages = Ulist.add renderMessage renderer.RenderMessages
                 let renderer = { renderer with RenderMessages = renderMessages }
                 renderer :> IRenderer
 
             member renderer.Render eyeCenter eyeSize =
                 let renderMessages = renderer.RenderMessages
-                let renderer = { renderer with RenderMessages = Queue.empty }
+                let renderer = { renderer with RenderMessages = Ulist.makeEmpty None }
                 let renderer = Renderer.handleRenderMessages renderMessages renderer
                 let renderDescriptors = renderer.RenderDescriptors
                 let renderer = { renderer with RenderDescriptors = [] }

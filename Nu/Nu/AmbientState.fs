@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open FSharpx.Collections
 open Prime
 open Nu
 
@@ -26,7 +25,7 @@ module AmbientStateModule =
               TickTime : int64
               UpdateCount : int64
               Liveness : Liveness
-              Tasklets : 'w Tasklet Queue
+              Tasklets : 'w Tasklet Ulist
               AssetMetadataMap : AssetMetadataMap
               Overlayer : Overlayer
               OverlayRouter : OverlayRouter
@@ -86,19 +85,19 @@ module AmbientStateModule =
 
         /// Clear the tasklets from future processing.
         let clearTasklets state =
-            { state with Tasklets = Queue.empty }
+            { state with Tasklets = Ulist.makeEmpty None }
 
         /// Restore the given tasklets from future processing.
         let restoreTasklets tasklets state =
-            { state with Tasklets = Queue.ofSeq ^ Seq.append (state.Tasklets :> _ seq) (tasklets :> _ seq) }
+            { state with Tasklets = Ulist.ofSeq ^ Seq.append (state.Tasklets :> _ seq) (tasklets :> _ seq) }
 
         /// Add a tasklet to be executed at the scheduled time.
         let addTasklet tasklet state =
-            { state with Tasklets = Queue.conj tasklet state.Tasklets }
+            { state with Tasklets = Ulist.add tasklet state.Tasklets }
 
         /// Add multiple tasklets to be executed at the scheduled times.
         let addTasklets tasklets state =
-            { state with Tasklets = Queue.ofSeq ^ Seq.append (tasklets :> _ seq) (state.Tasklets :> _ seq) }
+            { state with Tasklets = Ulist.ofSeq ^ Seq.append (tasklets :> _ seq) (state.Tasklets :> _ seq) }
 
         /// Get the asset metadata map.
         let getAssetMetadataMap state =
@@ -153,7 +152,7 @@ module AmbientStateModule =
               TickTime = 0L
               UpdateCount = 0L
               Liveness = Running
-              Tasklets = Queue.empty
+              Tasklets = Ulist.makeEmpty None
               AssetMetadataMap = assetMetadataMap
               OverlayRouter = overlayRouter
               Overlayer = overlayer
