@@ -201,11 +201,10 @@ module TlistModule =
             // OPTIMIZATION: elides building of avoidable transactions.
             let list = validate list
             let impList = list.ImpList
-            let tempList = List<'a> impList.Count
-            let tempListB = List<'b> impList.Count
-            for i in 0 .. tempList.Count - 1 do tempListB.[i] <- by tempList.[i]
-            tempListB.Sort (Comparison comparison)
-            let listSorted = makeFromTempList (Some list.BloatFactor) tempListB
+            let tempList = List<'b> impList.Count
+            for i in 0 .. impList.Count - 1 do tempList.[i] <- by impList.[i]
+            let tempListSorted = Seq.sortWith comparison tempList // NOTE: Generic.List.Sort is _not_ stable, so using a stable one instead...
+            let listSorted = makeFromSeq (Some list.BloatFactor) tempListSorted
             (listSorted, list)
 
         let sortWith comparison list =
