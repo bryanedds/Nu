@@ -12,7 +12,6 @@ module TlistModule =
         | Add of 'a
         | Remove of 'a
         | Set of int * 'a
-        | SortWith of 'a Comparison
 
     type [<NoEquality; NoComparison>] 'a Tlist =
         private
@@ -44,8 +43,7 @@ module TlistModule =
                 match log with
                 | Add value -> impListOrigin.Add value
                 | Remove value -> ignore ^ impListOrigin.Remove value
-                | Set (index, value) -> impListOrigin.[index] <- value
-                | SortWith comparison -> impListOrigin.Sort comparison)
+                | Set (index, value) -> impListOrigin.[index] <- value)
                 list.Logs ()
             let impList = List<'a> impListOrigin
             let list = { list with ImpList = impList; ImpListOrigin = impListOrigin; Logs = []; LogsLength = 0 }
@@ -72,6 +70,29 @@ module TlistModule =
             let list = updater list
             list.Tlist <- list
             oldList.Tlist <- list
+            list
+
+        let private makeFromTempList optBloatFactor (tempList : 'a List) =
+            let list =
+                { Tlist = Unchecked.defaultof<'a Tlist>
+                  ImpList = tempList
+                  ImpListOrigin = List<'a> tempList
+                  Logs = []
+                  LogsLength = 0
+                  BloatFactor = Option.getOrDefault 1 optBloatFactor }
+            list.Tlist <- list
+            list
+
+        let makeFromSeq optBloatFactor (items : 'a seq) =
+            let impList = List<'a> items
+            let list =
+                { Tlist = Unchecked.defaultof<'a Tlist>
+                  ImpList = impList
+                  ImpListOrigin = List<'a> impList
+                  Logs = []
+                  LogsLength = 0
+                  BloatFactor = Option.getOrDefault 1 optBloatFactor }
+            list.Tlist <- list
             list
 
         let makeEmpty<'a> optBloatFactor =
@@ -118,16 +139,6 @@ module TlistModule =
                 list)
                 list
 
-        let sortWith comparison list =
-            update (fun list ->
-                let list = { list with Logs = SortWith (Comparison comparison) :: list.Logs; LogsLength = list.LogsLength + 1 }
-                list.ImpList.Sort (Comparison comparison) |> ignore
-                list)
-                list
-
-        let sort list =
-            sortWith LanguagePrimitives.GenericComparison list
-
         /// Add all the given values to the list.
         let addMany values list =
             Seq.fold (flip add) list values
@@ -149,17 +160,11 @@ module TlistModule =
         /// otherwise opaquely change during iteration.
         let toSeq list =
             let list = validate list
-            let seq =
-                list.ImpList |>
-                Array.ofSeq :>
-                'a seq
+            let seq = list.ImpList |> Array.ofSeq :> 'a seq
             (seq, list)
 
-        let ofSeq items =
-            Seq.fold
-                (flip add)
-                (makeEmpty None)
-                items
+        let ofSeq (items : 'a seq) =
+            makeFromSeq None items
 
         let fold folder state list =
             let (seq, list) = toSeq list
@@ -167,15 +172,49 @@ module TlistModule =
             (result, list)
 
         let map mapper list =
-            fold
-                (fun list value -> add (mapper value) list)
-                (makeEmpty ^ Some list.BloatFactor)
-                list
+            // OPTIMIZATION: elides building of avoidable transactions.
+            let list = validate list
+            let tempList = List<'a> list.ImpList
+            for i in 0 .. tempList.Count - 1 do tempList.[i] <- mapper tempList.[i]
+            let listMapped = makeFromTempList (Some list.BloatFactor) tempList
+            (listMapped, list)
 
         let filter pred list =
-            fold
-                (fun list value -> if pred value then add value list else list)
-                (makeEmpty ^ Some list.BloatFactor)
-                list
+            // OPTIMIZATION: elides building of avoidable transactions.
+            let list = validate list
+            let impList = list.ImpList
+            let tempList = List<'a> impList.Count
+            for i in 0 .. impList.Count - 1 do let item = impList.[i] in if pred item then (ignore ^ tempList.Add item)
+            let listFiltered = makeFromTempList (Some list.BloatFactor) tempList
+            (listFiltered, list)
+
+        let rev list =
+            // OPTIMIZATION: elides building of avoidable transactions.
+            let list = validate list
+            let impList = list.ImpList
+            let tempList = List<'a> impList.Count
+            tempList.Reverse ()
+            let listReversed = makeFromTempList (Some list.BloatFactor) tempList
+            (listReversed, list)
+
+        let sortByWith (by : 'a -> 'b) comparison list =
+            // OPTIMIZATION: elides building of avoidable transactions.
+            let list = validate list
+            let impList = list.ImpList
+            let tempList = List<'a> impList.Count
+            let tempListB = List<'b> impList.Count
+            for i in 0 .. tempList.Count - 1 do tempListB.[i] <- by tempList.[i]
+            tempListB.Sort (Comparison comparison)
+            let listSorted = makeFromTempList (Some list.BloatFactor) tempListB
+            (listSorted, list)
+
+        let sortWith comparison list =
+            sortByWith id comparison list
+
+        let sortBy by list =
+            sortByWith by LanguagePrimitives.GenericComparison list
+
+        let sort list =
+            sortByWith id LanguagePrimitives.GenericComparison list
 
 type 'a Tlist = 'a TlistModule.Tlist

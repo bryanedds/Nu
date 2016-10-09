@@ -30,6 +30,9 @@ module UlistModule =
     [<RequireQualifiedAccess>]
     module Ulist =
 
+        let makeFromSeq optBloatFactor items =
+            { RefList = ref ^ Tlist.makeFromSeq optBloatFactor items }
+
         let makeEmpty<'a> optBloatFactor =
             { RefList = ref ^ Tlist.makeEmpty<'a> optBloatFactor }
 
@@ -44,11 +47,11 @@ module UlistModule =
 
         let remove value list =
             { RefList = ref ^ Tlist.remove value !list.RefList }
-    
+
         /// Add all the given values to the list.
         let addMany values list =
             { RefList = ref ^ Tlist.addMany values !list.RefList }
-    
+
         /// Remove all the given values from the list.
         let removeMany values list =
             { RefList = ref ^ Tlist.removeMany values !list.RefList }
@@ -84,6 +87,31 @@ module UlistModule =
 
         let filter pred list =
             let (result, tlist) = Tlist.filter pred !list.RefList
+            list.RefList := tlist
+            { RefList = ref result }
+
+        let rev list =
+            let (result, tlist) = Tlist.rev !list.RefList
+            list.RefList := tlist
+            { RefList = ref result }
+
+        let sortByWith by comparison list =
+            let (result, tlist) = Tlist.sortByWith by comparison !list.RefList
+            list.RefList := tlist
+            { RefList = ref result }
+
+        let sortWith comparison list =
+            let (result, tlist) = Tlist.sortWith comparison !list.RefList
+            list.RefList := tlist
+            { RefList = ref result }
+
+        let sortBy by list =
+            let (result, tlist) = Tlist.sortBy by !list.RefList
+            list.RefList := tlist
+            { RefList = ref result }
+
+        let sort list =
+            let (result, tlist) = Tlist.sort !list.RefList
             list.RefList := tlist
             { RefList = ref result }
 
