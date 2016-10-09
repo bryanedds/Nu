@@ -15,6 +15,7 @@ module Program =
     let runTimings fn name =
         printfn "%s timings..." name
         for _ in 1 .. Samples do
+            GC.Collect ()
             let watch = Stopwatch.StartNew ()
             fn () |> ignore
             watch.Stop ()
@@ -42,12 +43,16 @@ module Program =
     let [<EntryPoint; STAThread>] main _ =
 
         // run array timings
-        let array = [|0 .. 1000000|]
-        runTimings (fun () -> array |> Array.map (fun x -> x + x * 13)) "Array Compute"
+        let array = [|0 .. 10000000|]
+        runTimings (fun () -> array |> Array.rev |> Array.sort |> Array.map (fun x -> x * 13) |> Array.filter (fun x -> x % 2 = 0)) "Array Compute"
 
         // run list timings
-        let list = [0 .. 1000000]
-        runTimings (fun () -> list |> List.map (fun x -> x + x * 13)) "List Compute"
+        let list = [0 .. 10000000]
+        runTimings (fun () -> list |> List.rev |> List.sort |> List.map (fun x -> x * 13) |> List.filter (fun x -> x % 2 = 0)) "F# List Compute"
+
+        // run list timings
+        let ulist = Ulist.ofSeq [|0 .. 10000000|]
+        runTimings (fun () -> ulist |> Ulist.rev |> Ulist.sort |> Ulist.map (fun x -> x * 13) |> Ulist.filter (fun x -> x % 2 = 0)) "Ulist Compute"
         
         // run map timings
         runMapTimings
