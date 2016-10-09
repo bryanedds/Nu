@@ -212,15 +212,15 @@ module TlistModule =
             let listSorted = makeFromSeq (Some list.BloatFactor) tempListSorted
             (listSorted, list)
 
+        let definitize list =
+            let listMapped = filter Option.isSome list |> fst
+            map Option.get listMapped
+
         let concat lists =
             // OPTIMIZATION: elides building of avoidable transactions.
             let listsAsSeq = toSeq lists |> fst
             let tempList = List<'a> ()
             for list in listsAsSeq do tempList.AddRange (toSeq list |> fst)
             makeFromSeq None tempList
-
-        let definitize list =
-            let listMapped = filter Option.isSome list |> fst
-            map Option.get listMapped
 
 type 'a Tlist = 'a TlistModule.Tlist
