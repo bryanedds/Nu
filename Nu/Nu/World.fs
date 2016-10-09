@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.IO
-open FSharpx.Collections
 open SDL2
 open OpenTK
 open Prime
@@ -413,12 +412,12 @@ module WorldModule2 =
             elif tickTime > tasklet.ScheduledTime then
                 Log.debug ^ "Tasklet leak found for time '" + scstring tickTime + "'."
                 (taskletsNotRun, world)
-            else (Queue.conj tasklet taskletsNotRun, world)
+            else (Ulist.add tasklet taskletsNotRun, world)
 
         static member private processTasklets world =
             let tasklets = World.getTasklets world
             let world = World.clearTasklets world
-            let (taskletsNotRun, world) = Queue.fold World.processTasklet (Queue.empty, world) tasklets
+            let (taskletsNotRun, world) = Ulist.fold World.processTasklet (Ulist.makeEmpty None, world) tasklets
             World.restoreTasklets taskletsNotRun world
 
         /// Process an input event from SDL and ultimately publish any related game events.

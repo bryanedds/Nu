@@ -8,11 +8,11 @@ open System.Collections.Generic
 [<AutoOpen>]
 module UlistModule =
 
-    type [<NoEquality; NoComparison>] Ulist<'a when 'a : comparison> =
+    type [<NoEquality; NoComparison>] 'a Ulist =
         private
             { RefList : 'a Tlist ref }
     
-        interface IEnumerable<'a> with
+        interface 'a IEnumerable with
             member this.GetEnumerator () =
                 let (seq, tlist) = Tlist.toSeq !this.RefList
                 this.RefList := tlist
@@ -20,7 +20,7 @@ module UlistModule =
     
         interface IEnumerable with
             member this.GetEnumerator () =
-                (this :> IEnumerable<'a>).GetEnumerator () :> IEnumerator
+                (this :> 'a IEnumerable).GetEnumerator () :> IEnumerator
 
         member this.Item index =
             let (result, tlist) = Tlist.get index !this.RefList
@@ -30,7 +30,7 @@ module UlistModule =
     [<RequireQualifiedAccess>]
     module Ulist =
 
-        let makeEmpty<'a when 'a : comparison> optBloatFactor =
+        let makeEmpty<'a> optBloatFactor =
             { RefList = ref ^ Tlist.makeEmpty<'a> optBloatFactor }
 
         let get (index : int) (list : 'a Ulist) =
@@ -87,4 +87,4 @@ module UlistModule =
             list.RefList := tlist
             { RefList = ref result }
 
-type Ulist<'a when 'a : comparison> = UlistModule.Ulist<'a>
+type 'a Ulist = 'a UlistModule.Ulist

@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.IO
-open FSharpx.Collections
 open SDL2
 open Prime
 open Nu
@@ -62,7 +61,7 @@ module AudioPlayerModule =
         private
             { AudioContext : unit // audio context, interestingly, is global. Good luck encapsulating that!
               AudioPackageMap : AudioAsset PackageMap
-              AudioMessages : AudioMessage Queue
+              AudioMessages : AudioMessage Ulist
               OptCurrentSong : PlaySongMessage option
               OptNextPlaySong : PlaySongMessage option }
     
@@ -205,7 +204,7 @@ module AudioPlayerModule =
             | ReloadAudioAssetsMessage -> AudioPlayer.handleReloadAudioAssets audioPlayer
     
         static member private handleAudioMessages audioMessages audioPlayer =
-            Queue.fold AudioPlayer.handleAudioMessage audioPlayer audioMessages
+            Ulist.fold AudioPlayer.handleAudioMessage audioPlayer audioMessages
     
         static member private tryUpdateCurrentSong audioPlayer =
             if SDL_mixer.Mix_PlayingMusic () = 1 then audioPlayer
@@ -232,7 +231,7 @@ module AudioPlayerModule =
             let audioPlayer =
                 { AudioContext = ()
                   AudioPackageMap = Map.empty
-                  AudioMessages = Queue.empty
+                  AudioMessages = Ulist.makeEmpty None
                   OptCurrentSong = None
                   OptNextPlaySong = None }
             audioPlayer
@@ -240,17 +239,17 @@ module AudioPlayerModule =
         interface IAudioPlayer with
     
             member audioPlayer.ClearMessages () =
-                let audioPlayer = { audioPlayer with AudioMessages = Queue.empty }
+                let audioPlayer = { audioPlayer with AudioMessages = Ulist.makeEmpty None }
                 audioPlayer :> IAudioPlayer
     
             member audioPlayer.EnqueueMessage audioMessage =
-                let audioMessages = Queue.conj audioMessage audioPlayer.AudioMessages
+                let audioMessages = Ulist.add audioMessage audioPlayer.AudioMessages
                 let audioPlayer = { audioPlayer with AudioMessages = audioMessages }
                 audioPlayer :> IAudioPlayer
     
             member audioPlayer.Play () =
                 let audioMessages = audioPlayer.AudioMessages
-                let audioPlayer = { audioPlayer with AudioMessages = Queue.empty }
+                let audioPlayer = { audioPlayer with AudioMessages = Ulist.makeEmpty None }
                 let audioPlayer = AudioPlayer.handleAudioMessages audioMessages audioPlayer
                 let audioPlayer = AudioPlayer.updateAudioPlayer audioPlayer
                 audioPlayer :> IAudioPlayer
