@@ -125,14 +125,6 @@ module TlistModule =
                 list)
                 list
 
-        /// Add all the given values to the list.
-        let addMany values list =
-            Seq.fold (flip add) list values
-
-        /// Remove all the given values from the list.
-        let removeMany values list =
-            Seq.fold (flip remove) list values
-
         /// Get the length of the list (constant-time, obviously).
         let length list =
             let list = validate list
@@ -222,5 +214,15 @@ module TlistModule =
             let tempList = List<'a> ()
             for list in listsAsSeq do tempList.AddRange (toSeq list |> fst)
             makeFromSeq None tempList
+
+        /// Add all the given values to the list.
+        let addMany (values : 'a seq) list =
+            let list = validate list
+            let lists = add list (singleton (ofSeq values))
+            concat lists
+
+        /// Remove all the given values from the list.
+        let removeMany values list =
+            Seq.fold (flip remove) list values
 
 type 'a Tlist = 'a TlistModule.Tlist
