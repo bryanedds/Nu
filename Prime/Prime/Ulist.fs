@@ -51,14 +51,6 @@ module UlistModule =
         let remove value list =
             { RefList = ref ^ Tlist.remove value !list.RefList }
 
-        /// Add all the given values to the list.
-        let addMany values list =
-            { RefList = ref ^ Tlist.addMany values !list.RefList }
-
-        /// Remove all the given values from the list.
-        let removeMany values list =
-            { RefList = ref ^ Tlist.removeMany values !list.RefList }
-
         let isEmpty list =
             let (result, tlist) = Tlist.isEmpty !list.RefList
             list.RefList := tlist
@@ -122,5 +114,13 @@ module UlistModule =
             let tlists = !(map (fun (list : 'a Ulist) -> !list.RefList) lists).RefList
             let tlist = Tlist.concat tlists
             { RefList = ref tlist }
+
+        /// Add all the given values to the list.
+        let addMany values list =
+            { RefList = ref ^ Tlist.addMany values !list.RefList }
+
+        /// Remove all the given values from the list.
+        let removeMany values list =
+            { RefList = ref ^ Tlist.removeMany values !list.RefList }
 
 type 'a Ulist = 'a UlistModule.Ulist
