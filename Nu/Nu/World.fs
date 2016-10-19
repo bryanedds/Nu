@@ -682,6 +682,14 @@ module WorldModule2 =
             // finally, register the game
             World.registerGame world
 
+        /// Make a default world with a default screen, group, and entity, such as for testing.
+        static member makeDefault () =
+            let world = World.makeEmpty ()
+            let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.DefaultScreen.ScreenName) world |> snd
+            let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
+            let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Simulants.DefaultEntity.EntityName) Simulants.DefaultGroup world |> snd
+            world
+
         /// Try to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
         static member attemptMake preferPluginGameDispatcher optGameSpecialization tickRate userState (plugin : NuPlugin) sdlDeps =
