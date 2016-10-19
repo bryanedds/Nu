@@ -478,7 +478,7 @@ module Gaia =
         addWorldChanger ^ fun world ->
             try let world = pushPastWorld world world
                 let selectedGroup = (World.getUserState world).SelectedGroup
-                let (entity, world) = World.createEntity form.createEntityComboBox.Text (Some form.specializationTextBox.Text) None selectedGroup world
+                let (entity, world) = World.createEntity5 form.createEntityComboBox.Text (Some form.specializationTextBox.Text) None selectedGroup world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
                 let entityPosition =
@@ -524,7 +524,7 @@ module Gaia =
                 let groupDispatcher = groupCreationForm.dispatcherTextBox.Text
                 let groupSpecialization = groupCreationForm.specializationTextBox.Text
                 try if Name.length groupName = 0 then failwith "Group name cannot be empty in Gaia due to WinForms limitations."
-                    let world = World.createGroup groupDispatcher (Some groupSpecialization) (Some groupName) Simulants.EditorScreen world |> snd
+                    let world = World.createGroup5 groupDispatcher (Some groupSpecialization) (Some groupName) Simulants.EditorScreen world |> snd
                     refreshGroupTabs form world
                     form.groupTabs.SelectTab (form.groupTabs.TabPages.IndexOfKey groupNameStr)
                     world
@@ -995,8 +995,8 @@ module Gaia =
         let eitherWorld = World.attemptMake false None 0L () plugin sdlDeps
         match eitherWorld with
         | Right world ->
-            let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.EditorScreen.ScreenName) world |> snd
-            let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen world |> snd
+            let world = World.createScreen None (Some Simulants.EditorScreen.ScreenName) world |> snd
+            let world = World.createGroup None (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen world |> snd
             let world = World.setSelectedScreen Simulants.EditorScreen world
             Right world
         | Left error -> Left error

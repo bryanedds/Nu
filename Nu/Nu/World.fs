@@ -261,18 +261,18 @@ module WorldModule2 =
             (Resolve, world)
 
         /// Create a dissolve screen whose contents is loaded from the given group file.
-        static member createDissolveScreenFromGroupFile persistent dissolveData groupFilePath dispatcherName optSpecialization optName world =
-            let (dissolveScreen, world) = World.createDissolveScreen dissolveData dispatcherName optSpecialization optName world
+        static member createDissolveScreenFromGroupFile<'d when 'd :> ScreenDispatcher> persistent dissolveData groupFilePath optSpecialization optName world =
+            let (dissolveScreen, world) = World.createDissolveScreen<'d> dissolveData optSpecialization optName world
             let world = dissolveScreen.SetPersistent persistent world
             let world = World.readGroupFromFile groupFilePath None dissolveScreen world |> snd
             (dissolveScreen, world)
 
         /// Create a splash screen that transitions to the given destination upon completion.
-        static member createSplashScreen persistent splashData destination dispatcherName optSpecialization optName world =
+        static member createSplashScreen<'d when 'd :> ScreenDispatcher> persistent splashData destination optSpecialization optName world =
             let cameraEyeSize = World.getEyeSize world
-            let (splashScreen, world) = World.createDissolveScreen splashData.DissolveData dispatcherName optSpecialization optName world
-            let (splashGroup, world) = World.createGroup typeof<GroupDispatcher>.Name None (Some !!"SplashGroup") splashScreen world
-            let (splashLabel, world) = World.createEntity typeof<LabelDispatcher>.Name None (Some !!"SplashLabel") splashGroup world
+            let (splashScreen, world) = World.createDissolveScreen<'d> splashData.DissolveData optSpecialization optName world
+            let (splashGroup, world) = World.createGroup<GroupDispatcher> None (Some !!"SplashGroup") splashScreen world
+            let (splashLabel, world) = World.createEntity<LabelDispatcher> None (Some !!"SplashLabel") splashGroup world
             let world =
                 splashScreen.SetPersistent persistent world |>
                 splashGroup.SetPersistent persistent |>
@@ -685,9 +685,9 @@ module WorldModule2 =
         /// Make a default world with a default screen, group, and entity, such as for testing.
         static member makeDefault () =
             let world = World.makeEmpty ()
-            let world = World.createScreen typeof<ScreenDispatcher>.Name None (Some Simulants.DefaultScreen.ScreenName) world |> snd
-            let world = World.createGroup typeof<GroupDispatcher>.Name None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
-            let world = World.createEntity typeof<EntityDispatcher>.Name None (Some Simulants.DefaultEntity.EntityName) Simulants.DefaultGroup world |> snd
+            let world = World.createScreen None (Some Simulants.DefaultScreen.ScreenName) world |> snd
+            let world = World.createGroup None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
+            let world = World.createEntity None (Some Simulants.DefaultEntity.EntityName) Simulants.DefaultGroup world |> snd
             world
 
         /// Try to make the world, returning either a Right World on success, or a Left string
