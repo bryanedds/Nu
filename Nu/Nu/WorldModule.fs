@@ -901,7 +901,7 @@ module WorldModule =
         static member destroyEntityImmediate entity world = World.removeEntity entity world
 
         /// Create an entity and add it to the world.
-        static member createEntity dispatcherName optSpecialization optName group world =
+        static member createEntity5 dispatcherName optSpecialization optName group world =
 
             // grab overlay dependencies
             let overlayer = World.getOverlayer world
@@ -956,6 +956,10 @@ module WorldModule =
             let entity = group.GroupAddress -<<- ntoa<Entity> entityState.Name |> Entity.proxy
             let world = World.addEntity false entityState entity world
             (entity, world)
+
+        /// Create an entity and add it to the world.
+        static member createEntity<'d when 'd :> EntityDispatcher> optSpecialization optName group world =
+            World.createEntity5 typeof<'d>.Name optSpecialization optName group world
 
         static member private removeEntity entity world =
             
@@ -1290,7 +1294,7 @@ module WorldModule =
             else world
 
         /// Create a group and add it to the world.
-        static member createGroup dispatcherName optSpecialization optName screen world =
+        static member createGroup5 dispatcherName optSpecialization optName screen world =
             let dispatchers = World.getGroupDispatchers world
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
@@ -1301,6 +1305,10 @@ module WorldModule =
             let group = screen.ScreenAddress -<<- ntoa<Group> groupState.Name |> Group.proxy
             let world = World.addGroup false groupState group world
             (group, world)
+
+        /// Create a group and add it to the world.
+        static member createGroup<'d when 'd :> GroupDispatcher> optSpecialization optName screen world =
+            World.createGroup5 typeof<'d>.Name optSpecialization optName screen world
 
         static member internal writeGroup4 writeEntities group groupDescriptor world =
             let groupState = World.getGroupState group world

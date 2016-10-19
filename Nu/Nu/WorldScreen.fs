@@ -106,7 +106,7 @@ module WorldScreenModule =
             World.addTasklet tasklet world
 
         /// Create a screen and add it to the world.
-        static member createScreen dispatcherName optSpecialization optName world =
+        static member createScreen4 dispatcherName optSpecialization optName world =
             let dispatchers = World.getScreenDispatchers world
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
@@ -117,11 +117,15 @@ module WorldScreenModule =
             let screen = ntos screenState.Name
             let world = World.addScreen false screenState screen world
             (screen, world)
+
+        /// Create a screen and add it to the world.
+        static member createScreen<'d when 'd :> ScreenDispatcher> optSpecialization optName world =
+            World.createScreen4 typeof<'d>.Name optSpecialization optName world
         
         /// Create a screen with a dissolving transition, and add it to the world.
-        static member createDissolveScreen dissolveData dispatcherName optSpecialization optName world =
+        static member createDissolveScreen<'d when 'd :> ScreenDispatcher> dissolveData optSpecialization optName world =
             let optDissolveImage = Some dissolveData.DissolveImage
-            let (screen, world) = World.createScreen dispatcherName optSpecialization optName world
+            let (screen, world) = World.createScreen<'d> optSpecialization optName world
             let world = screen.SetIncoming { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; OptDissolveImage = optDissolveImage } world
             let world = screen.SetOutgoing { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; OptDissolveImage = optDissolveImage } world
             (screen, world)
