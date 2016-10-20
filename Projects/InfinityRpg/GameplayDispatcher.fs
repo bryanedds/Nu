@@ -59,7 +59,7 @@ module GameplayDispatcherModule =
         static let createField scene rand world =
             let pathEdgesM = [(Vector2i (1, 10), Vector2i (20, 10))]
             let (fieldMap, rand) = FieldMap.make Constants.Assets.FieldTileSheetImage (Vector2i 22) pathEdgesM rand
-            let (field, world) = World.createEntity<FieldDispatcher> None (Some ^ Simulants.Field.EntityName) scene world
+            let (field, world) = World.createEntity<FieldDispatcher> None (Some Simulants.Field.EntityName) scene world
             let world = field.SetFieldMapNp fieldMap world
             let world = field.SetSize (World.getEntityQuickSize field world) world
             let world = field.SetPersistent false world
@@ -531,7 +531,7 @@ module GameplayDispatcherModule =
         static let handleLoadGame world =
 
             // get and initialize gameplay screen from read
-            let world = World.readScreenFromFile Constants.FilePaths.SaveFile (Some ^ Simulants.Gameplay.ScreenName) world |> snd
+            let world = World.readScreenFromFile Constants.FilePaths.SaveFile (Some Simulants.Gameplay.ScreenName) world |> snd
             let world = Simulants.Gameplay.SetTransitionStateNp IncomingState world
 
             // make rand from gameplay
