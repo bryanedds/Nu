@@ -261,22 +261,19 @@ module WorldModule2 =
             (Resolve, world)
 
         /// Create a dissolve screen whose contents is loaded from the given group file.
-        static member createDissolveScreenFromGroupFile<'d when 'd :> ScreenDispatcher> persistent dissolveData groupFilePath optSpecialization optName world =
+        static member createDissolveScreenFromGroupFile<'d when 'd :> ScreenDispatcher> optSpecialization optName dissolveData groupFilePath world =
             let (dissolveScreen, world) = World.createDissolveScreen<'d> dissolveData optSpecialization optName world
-            let world = dissolveScreen.SetPersistent persistent world
             let world = World.readGroupFromFile groupFilePath None dissolveScreen world |> snd
             (dissolveScreen, world)
 
         /// Create a splash screen that transitions to the given destination upon completion.
-        static member createSplashScreen<'d when 'd :> ScreenDispatcher> persistent splashData destination optSpecialization optName world =
+        static member createSplashScreen<'d when 'd :> ScreenDispatcher> optSpecialization optName splashData destination world =
             let cameraEyeSize = World.getEyeSize world
             let (splashScreen, world) = World.createDissolveScreen<'d> splashData.DissolveData optSpecialization optName world
             let (splashGroup, world) = World.createGroup<GroupDispatcher> None (Some !!"SplashGroup") splashScreen world
             let (splashLabel, world) = World.createEntity<LabelDispatcher> None (Some !!"SplashLabel") splashGroup world
             let world =
-                splashScreen.SetPersistent persistent world |>
-                splashGroup.SetPersistent persistent |>
-                splashLabel.SetPersistent persistent |>
+                world |>
                 splashLabel.SetSize cameraEyeSize |>
                 splashLabel.SetPosition (-cameraEyeSize * 0.5f) |>
                 splashLabel.SetLabelImage splashData.SplashImage |>
