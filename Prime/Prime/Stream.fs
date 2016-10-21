@@ -357,10 +357,10 @@ module Stream =
 
     /// Terminate a stream when the subscriber is removed from the world.
     let [<DebuggerHidden; DebuggerStepThrough>] lifetime<'s, 'a, 'w when 's :> Participant and 'w :> 'w EventWorld>
-        (subscriber : 's) (stream' : Stream<'a, 'w>) : Stream<'a, 'w> =
+        (subscriber : 's) (stream_ : Stream<'a, 'w>) : Stream<'a, 'w> =
         let removingEventAddress = ltoa<unit> [!!typeof<'s>.Name; !!"Removing"; !!"Event"] ->>- subscriber.ParticipantAddress
         let removingStream = stream removingEventAddress
-        until removingStream stream'
+        until removingStream stream_
 
     /// Subscribe to a stream, handling each event with the given 'handler' procedure,
     /// returning both an unsubscription procedure as well as the world as augmented with said
