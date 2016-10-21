@@ -16,7 +16,6 @@ module internal CoreInternal =
 //     mono_100ns_ticks as defined here - https://github.com/mono/mono/blob/master/mono/utils/mono-time.c
 //     does not necessarily lead to a high-resolution, linear-time path on all platforms.
 #if PLATFORM_AGNOSTIC_TIMESTAMPING
-    
     /// Get a time stamp at the highest-available resolution on linux.
     let internal getTimeStampInternal () =
         Stopwatch.GetTimestamp ()

@@ -14,6 +14,21 @@ module Stream =
 
     (* Event-Based Combinators *)
 
+    /// Make a stream of an event at the given address.
+    let [<DebuggerHidden; DebuggerStepThrough>] stream<'a, 'w when 'w :> 'w EventWorld>
+        (eventAddress : 'a Address) : Stream<'a, 'w> =
+        let subscribe = fun (world : 'w) ->
+            let subscriptionKey = makeGuid ()
+            let subscriptionAddress = ntoa<'a> !!(scstring subscriptionKey)
+            let unsubscribe = fun world -> EventWorld.unsubscribe<'w> subscriptionKey world
+            let subscription = fun evt world ->
+                let eventTrace = EventTrace.record "Stream" "stream" evt.Trace
+                let world = EventWorld.publish6<'a, Participant, 'w> evt.Data subscriptionAddress eventTrace evt.Publisher false world
+                (Cascade, world)
+            let world = EventWorld.subscribe5<'a, Participant, 'w> subscriptionKey subscription eventAddress (world.GetNullParticipant ()) world
+            (subscriptionAddress, unsubscribe, world)
+        { Subscribe = subscribe }
+
     /// TODO: document!
     let [<DebuggerHidden; DebuggerStepThrough>] trackEvent4
         (tracker : 'c -> Event<'a, Participant> -> 'w -> 'c * bool) (transformer : 'c -> 'b) (state : 'c) (stream : Stream<'a, 'w>) : Stream<'b, 'w> =
@@ -314,33 +329,38 @@ module Stream =
             (subscriptionAddress'', unsubscribe, world)
         { Subscribe = subscribe }
 
-    /// Terminate a stream when an event at the given address is raised.
+    /// Terminate a stream when a given stream receives a value.
     let [<DebuggerHidden; DebuggerStepThrough>] until
-        (eventAddress : unit Address) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
+        (stream : Stream<'b, 'w>) (stream' : Stream<'a, 'w>) : Stream<'a, 'w> =
         let subscribe = fun world ->
-            let eventKey = makeGuid ()
             let subscriptionKey = makeGuid ()
-            let subscriptionAddress = ntoa<'a> !!(scstring subscriptionKey)
-            let (eventAddress', unsubscribe, world) = stream.Subscribe world
+            let subscriptionKey' = makeGuid ()
+            let subscriptionKey'' = makeGuid ()
+            let (subscriptionAddress, unsubscribe, world) = stream.Subscribe world
+            let (subscriptionAddress', unsubscribe', world) = stream'.Subscribe world
+            let subscriptionAddress'' = ntoa<'a> !!(scstring subscriptionKey'')
             let unsubscribe = fun world ->
+                let world = unsubscribe (unsubscribe' world)
+                let world = EventWorld.unsubscribe<'w> subscriptionKey' world
+                EventWorld.unsubscribe<'w> subscriptionKey world
+            let subscription = fun _ world ->
                 let world = unsubscribe world
-                let world = EventWorld.unsubscribe<'w> subscriptionKey world
-                EventWorld.unsubscribe<'w> eventKey world
-            let handler = fun _ world -> let world = unsubscribe world in (Cascade, world)
-            let world = EventWorld.subscribe5 eventKey handler eventAddress (world.GetNullParticipant ()) world
-            let subscription = fun evt world ->
-                let eventTrace = EventTrace.record "Stream" "until" evt.Trace
-                let world = EventWorld.publish6<'a, Participant, 'w> evt.Data subscriptionAddress eventTrace evt.Publisher false world
                 (Cascade, world)
-            let world = EventWorld.subscribe5<'a, Participant, 'w> subscriptionKey subscription eventAddress' (world.GetNullParticipant ()) world
-            (subscriptionAddress, unsubscribe, world)
+            let subscription' = fun evt world ->
+                let eventTrace = EventTrace.record "Stream" "until" evt.Trace
+                let world = EventWorld.publish6<'a, Participant, 'w> evt.Data subscriptionAddress'' eventTrace evt.Publisher false world
+                (Cascade, world)
+            let world = EventWorld.subscribe5<'a, Participant, 'w> subscriptionKey' subscription' subscriptionAddress' (world.GetNullParticipant ()) world
+            let world = EventWorld.subscribe5<'b, Participant, 'w> subscriptionKey subscription subscriptionAddress (world.GetNullParticipant ()) world
+            (subscriptionAddress'', unsubscribe, world)
         { Subscribe = subscribe }
 
     /// Terminate a stream when the subscriber is removed from the world.
     let [<DebuggerHidden; DebuggerStepThrough>] lifetime<'s, 'a, 'w when 's :> Participant and 'w :> 'w EventWorld>
-        (subscriber : 's) (stream : Stream<'a, 'w>) : Stream<'a, 'w> =
+        (subscriber : 's) (stream' : Stream<'a, 'w>) : Stream<'a, 'w> =
         let removingEventAddress = ltoa<unit> [!!typeof<'s>.Name; !!"Removing"; !!"Event"] ->>- subscriber.ParticipantAddress
-        until removingEventAddress stream
+        let removingStream = stream removingEventAddress
+        until removingStream stream'
 
     /// Subscribe to a stream, handling each event with the given 'handler' procedure,
     /// returning both an unsubscription procedure as well as the world as augmented with said
@@ -467,23 +487,6 @@ module Stream =
 
     /// Filter out the events with non-unique data from a stream.
     let [<DebuggerHidden; DebuggerStepThrough>] distinct stream = distinctBy id stream
-
-    (* Miscellaneous Combinators *)
-
-    /// Make a stream of an event at the given address.
-    let [<DebuggerHidden; DebuggerStepThrough>] stream<'a, 'w when 'w :> 'w EventWorld>
-        (eventAddress : 'a Address) : Stream<'a, 'w> =
-        let subscribe = fun (world : 'w) ->
-            let subscriptionKey = makeGuid ()
-            let subscriptionAddress = ntoa<'a> !!(scstring subscriptionKey)
-            let unsubscribe = fun world -> EventWorld.unsubscribe<'w> subscriptionKey world
-            let subscription = fun evt world ->
-                let eventTrace = EventTrace.record "Stream" "stream" evt.Trace
-                let world = EventWorld.publish6<'a, Participant, 'w> evt.Data subscriptionAddress eventTrace evt.Publisher false world
-                (Cascade, world)
-            let world = EventWorld.subscribe5<'a, Participant, 'w> subscriptionKey subscription eventAddress (world.GetNullParticipant ()) world
-            (subscriptionAddress, unsubscribe, world)
-        { Subscribe = subscribe }
 
 [<AutoOpen>]
 module StreamOperators =

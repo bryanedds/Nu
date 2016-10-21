@@ -366,7 +366,9 @@ module GameplayDispatcherModule =
                             | _ -> failwithumf ()
                         updateCharacterByNavigation navigationDescriptor character world
                     do! pass }}
-            let stream = stream (Events.Update ->- character) |> until (Events.Deselect ->- Simulants.Gameplay)
+            let stream =
+                stream (Events.Update ->- character) |>
+                until (stream (Events.Deselect ->- Simulants.Gameplay))
             runAssumingCascade chain stream world |> snd
 
         static let runCharacterAction newActionDescriptor (character : Entity) world =
@@ -382,7 +384,9 @@ module GameplayDispatcherModule =
                         let world = updateCharacterByAction actionDescriptor character world
                         runCharacterReaction actionDescriptor character world
                     do! pass }}
-            let stream = stream (Events.Update ->- character) |> until (Events.Deselect ->- Simulants.Gameplay)
+            let stream =
+                stream (Events.Update ->- character) |>
+                until (stream (Events.Deselect ->- Simulants.Gameplay))
             runAssumingCascade chain stream world |> snd
 
         static let runCharacterNoActivity (character : Entity) world =
@@ -482,7 +486,7 @@ module GameplayDispatcherModule =
                 let stream =
                     stream (Events.Update ->- Simulants.Player) |>
                     sum (stream (Events.Click ->- Simulants.HudHalt)) |>
-                    until (Events.Deselect ->- Simulants.Gameplay)
+                    until (stream (Events.Deselect ->- Simulants.Gameplay))
                 runAssumingCascade chain stream world |> snd
             else world
 
