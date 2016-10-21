@@ -367,8 +367,9 @@ module GameplayDispatcherModule =
                         updateCharacterByNavigation navigationDescriptor character world
                     do! pass }}
             let stream =
-                stream (Events.Update ->- character) |>
-                until (stream (Events.Deselect ->- Simulants.Gameplay))
+                until
+                    (stream (Events.Deselect ->- Simulants.Gameplay))
+                    (stream (Events.Update ->- character))
             runAssumingCascade chain stream world |> snd
 
         static let runCharacterAction newActionDescriptor (character : Entity) world =
@@ -385,8 +386,9 @@ module GameplayDispatcherModule =
                         runCharacterReaction actionDescriptor character world
                     do! pass }}
             let stream =
-                stream (Events.Update ->- character) |>
-                until (stream (Events.Deselect ->- Simulants.Gameplay))
+                until
+                    (stream (Events.Deselect ->- Simulants.Gameplay))
+                    (stream (Events.Update ->- character))
             runAssumingCascade chain stream world |> snd
 
         static let runCharacterNoActivity (character : Entity) world =
@@ -484,9 +486,11 @@ module GameplayDispatcherModule =
                                 do! update ^ cancelNavigation Simulants.Player }}
                     do! update ^ Simulants.HudSaveGame.SetEnabled true }
                 let stream =
-                    stream (Events.Update ->- Simulants.Player) |>
-                    sum (stream (Events.Click ->- Simulants.HudHalt)) |>
-                    until (stream (Events.Deselect ->- Simulants.Gameplay))
+                    until
+                        (stream (Events.Deselect ->- Simulants.Gameplay))
+                        (sum
+                            (stream (Events.Click ->- Simulants.HudHalt))
+                            (stream (Events.Update ->- Simulants.Player)))
                 runAssumingCascade chain stream world |> snd
             else world
 
