@@ -92,27 +92,36 @@ module WorldGameModule =
 
         static member internal registerGame (world : World) : World =
             let dispatcher = Simulants.Game.GetDispatcherNp world
-            let world = dispatcher.Register (Simulants.Game, world)
+            let world = World.withEventContext (fun world -> dispatcher.Register (Simulants.Game, world)) (atooa Simulants.Game.GameAddress) world
             World.choose world
         
         static member internal updateGame world =
-            let dispatcher = Simulants.Game.GetDispatcherNp world
-            let world = dispatcher.Update (Simulants.Game, world)
-            let eventTrace = EventTrace.record "World" "updateGame" EventTrace.empty
-            let world = World.publish7 World.sortSubscriptionsByHierarchy () Events.Update eventTrace Simulants.Game true world
-            World.choose world
+            World.withEventContext (fun world ->
+                let dispatcher = Simulants.Game.GetDispatcherNp world
+                let world = dispatcher.Update (Simulants.Game, world)
+                let eventTrace = EventTrace.record "World" "updateGame" EventTrace.empty
+                let world = World.publish7 World.sortSubscriptionsByHierarchy () Events.Update eventTrace Simulants.Game true world
+                World.choose world)
+                (atooa Simulants.Game.GameAddress)
+                world
 
         static member internal postUpdateGame world =
-            let dispatcher = Simulants.Game.GetDispatcherNp world
-            let world = dispatcher.PostUpdate (Simulants.Game, world)
-            let eventTrace = EventTrace.record "World" "postUpdateGame" EventTrace.empty
-            let world = World.publish7 World.sortSubscriptionsByHierarchy () Events.PostUpdate eventTrace Simulants.Game true world
-            World.choose world
+            World.withEventContext (fun world ->
+                let dispatcher = Simulants.Game.GetDispatcherNp world
+                let world = dispatcher.PostUpdate (Simulants.Game, world)
+                let eventTrace = EventTrace.record "World" "postUpdateGame" EventTrace.empty
+                let world = World.publish7 World.sortSubscriptionsByHierarchy () Events.PostUpdate eventTrace Simulants.Game true world
+                World.choose world)
+                (atooa Simulants.Game.GameAddress)
+                world
 
         static member internal actualizeGame world =
-            let dispatcher = Simulants.Game.GetDispatcherNp world
-            let world = dispatcher.Actualize (Simulants.Game, world)
-            World.choose world
+            World.withEventContext (fun world ->
+                let dispatcher = Simulants.Game.GetDispatcherNp world
+                let world = dispatcher.Actualize (Simulants.Game, world)
+                World.choose world)
+                (atooa Simulants.Game.GameAddress)
+                world
 
         // Get all the entities in the world.
         static member getEntities1 world =
