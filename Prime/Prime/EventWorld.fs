@@ -64,7 +64,7 @@ module EventWorld =
 
     /// Get whether events are being traced.
     let getEventTracing<'w when 'w :> 'w EventWorld> (world : 'w) =
-        getEventSystemBy (EventSystem.getEventTracing<'w>) world
+        getEventSystemBy EventSystem.getEventTracing<'w> world
 
     /// Set whether events are being traced.
     let setEventTracing<'w when 'w :> 'w EventWorld> tracing (world : 'w) =
@@ -72,11 +72,23 @@ module EventWorld =
 
     /// Get the state of the event filter.
     let getEventFilter<'w when 'w :> 'w EventWorld> (world : 'w) =
-        getEventSystemBy (EventSystem.getEventFilter) world
+        getEventSystemBy EventSystem.getEventFilter world
 
     /// Set the state of the event filter.
     let setEventFilter<'w when 'w :> 'w EventWorld> filter (world : 'w) =
         updateEventSystem (EventSystem.setEventFilter filter) world
+
+    /// Get the event context of the world.
+    let getEventContext<'w when 'w :> 'w EventWorld> (world : 'w) =
+        getEventSystemBy EventSystem.getEventContext world
+
+    /// Set the event context of the world.
+    let setEventContext<'w when 'w :> 'w EventWorld> context (world : 'w) =
+        updateEventSystem (EventSystem.setEventContext context) world
+
+    /// Qualify the event context of the world.
+    let qualifyEventContext<'w when 'w :> 'w EventWorld> (address : obj Address) (world : 'w) =
+        getEventSystemBy (EventSystem.qualifyEventContext address) world
 
     let private getEventAddresses1 eventAddress allowWildcard =
         if allowWildcard then
@@ -161,7 +173,11 @@ module EventWorld =
               Subscriber = subscriber :?> 's
               Publisher = publisher :> Participant }
         let callableSubscription = unbox<BoxableSubscription<'w>> subscription
-        callableSubscription evt world
+        let oldEventContext = getEventContext world
+        let world = setEventContext (atooa subscriber.ParticipantAddress) world
+        let (handling, world) = callableSubscription evt world
+        let world = setEventContext oldEventContext world
+        (handling, world)
 
     /// Sort subscriptions using categorization via the 'by' procedure.
     let sortSubscriptionsBy by (subscriptions : SubscriptionEntry list) (world : 'w) =

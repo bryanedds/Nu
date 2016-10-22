@@ -93,27 +93,43 @@ module WorldModule =
             EventWorld.getEventState<'a, World> key world
 
         /// Get whether events are being traced.
-        static member getEventTracing world =
+        static member getEventTracing (world : World) =
             EventWorld.getEventTracing world
 
         /// Set whether events are being traced.
-        static member setEventTracing tracing world =
+        static member setEventTracing tracing (world : World) =
             EventWorld.setEventTracing tracing world
 
         /// Get the state of the event filter.
-        static member getEventFilter world =
+        static member getEventFilter (world : World) =
             EventWorld.getEventFilter world
 
         /// Set the state of the event filter.
-        static member setEventFilter filter world =
+        static member setEventFilter filter (world : World) =
             EventWorld.setEventFilter filter world
+
+        /// Get the context of the event system.
+        static member getEventContext (world : World) =
+            EventWorld.getEventContext world
+
+        /// Set the context of the event system.
+        static member internal withEventContext operation context (world : World) =
+            let oldContext = World.getEventContext world
+            let world = EventWorld.setEventContext context world
+            let world = operation world
+            let world = EventWorld.setEventContext oldContext world
+            world
+
+        /// Qualify the context of the event system.
+        static member qualifyEventContext address (world : World) =
+            EventWorld.qualifyEventContext address world
 
         /// Sort subscriptions using categorization via the 'by' procedure.
         static member sortSubscriptionsBy by (subscriptions : SubscriptionEntry list) (world : World) =
             EventWorld.sortSubscriptionsBy by subscriptions world
 
         /// Sort subscriptions by their place in the world's simulant hierarchy.
-        static member sortSubscriptionsByHierarchy subscriptions world =
+        static member sortSubscriptionsByHierarchy subscriptions (world : World) =
             // OPTIMIZATION: priority boxed up front to decrease GC pressure.
             let priorityBoxed = Constants.Engine.EntityPublishingPriority :> IComparable
             World.sortSubscriptionsBy (fun _ _ -> priorityBoxed) subscriptions world
@@ -454,7 +470,7 @@ module WorldModule =
                 let (entityState, world) =
                     match optEntity with
                     | Some entity ->
-                        let world = facet.Unregister (entity, world)
+                        let world = World.withEventContext (fun world -> facet.Unregister (entity, world)) entity.ObjAddress world
                         let entityState = World.getEntityState entity world
                         (entityState, world)
                     | None -> (entityState, world)
@@ -484,7 +500,7 @@ module WorldModule =
                         let oldWorld = world
                         let world = World.setEntityState entityState entity world
                         let world = World.updateEntityInEntityTree entity oldWorld world
-                        let world = facet.Register (entity, world)
+                        let world = World.withEventContext (fun world -> facet.Register (entity, world)) entity.ObjAddress world
                         Right (World.getEntityState entity world, world)
                     | None -> Right (entityState, world)
                 else let _ = World.choose world in Left ^ "Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Name + "'."
@@ -609,6 +625,8 @@ module WorldModule =
 #if DEBUG
             if not ^ Umap.containsKey entity.EntityAddress world.EntityStates then
                 failwith ^ "Cannot set the state of a non-existent entity '" + scstring entity.EntityAddress + "'"
+            if not ^ World.qualifyEventContext (atooa entity.EntityAddress) world then
+                failwith ^ "Cannot set the state of an entity in an unqualifed event context."
 #endif
             let entityStates = Umap.add entity.EntityAddress entityState world.EntityStates
             World.choose { world with EntityStates = entityStates }
@@ -881,13 +899,16 @@ module WorldModule =
                 // register entity if needed
                 let world =
                     if isNew then
-                        let dispatcher = World.getEntityDispatcherNp entity world : EntityDispatcher
-                        let facets = World.getEntityFacetsNp entity world
-                        let world = dispatcher.Register (entity, world)
-                        let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
-                        let world = World.updateEntityPublishFlags entity world
-                        let eventTrace = EventTrace.record "World" "addEntity" EventTrace.empty
-                        World.publish () (ltoa<unit> [!!"Entity"; !!"Add"; !!"Event"] ->- entity) eventTrace entity world
+                        World.withEventContext (fun world ->
+                            let dispatcher = World.getEntityDispatcherNp entity world : EntityDispatcher
+                            let facets = World.getEntityFacetsNp entity world
+                            let world = dispatcher.Register (entity, world)
+                            let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
+                            let world = World.updateEntityPublishFlags entity world
+                            let eventTrace = EventTrace.record "World" "addEntity" EventTrace.empty
+                            World.publish () (ltoa<unit> [!!"Entity"; !!"Add"; !!"Event"] ->- entity) eventTrace entity world)
+                            entity.ObjAddress
+                            world
                     else world
 
                 // publish change event for every property
@@ -967,12 +988,16 @@ module WorldModule =
             if World.containsEntity entity world then
                 
                 // publish event and unregister entity
-                let eventTrace = EventTrace.record "World" "removeEntity" EventTrace.empty
-                let world = World.publish () (ltoa<unit> [!!"Entity"; !!"Removing"; !!"Event"] ->- entity) eventTrace entity world
-                let dispatcher = World.getEntityDispatcherNp entity world : EntityDispatcher
-                let facets = World.getEntityFacetsNp entity world
-                let world = dispatcher.Unregister (entity, world)
-                let world = List.fold (fun world (facet : Facet) -> facet.Unregister (entity, world)) world facets
+                let world =
+                    World.withEventContext (fun world ->
+                        let eventTrace = EventTrace.record "World" "removeEntity" EventTrace.empty
+                        let world = World.publish () (ltoa<unit> [!!"Entity"; !!"Removing"; !!"Event"] ->- entity) eventTrace entity world
+                        let dispatcher = World.getEntityDispatcherNp entity world : EntityDispatcher
+                        let facets = World.getEntityFacetsNp entity world
+                        let world = dispatcher.Unregister (entity, world)
+                        List.fold (fun world (facet : Facet) -> facet.Unregister (entity, world)) world facets)
+                        entity.ObjAddress
+                        world
 
                 // get old world for entity tree rebuild
                 let oldWorld = world
@@ -1192,6 +1217,8 @@ module WorldModule =
 #if DEBUG
             if not ^ Umap.containsKey group.GroupAddress world.GroupStates then
                 failwith ^ "Cannot set the state of a non-existent group '" + scstring group.GroupAddress + "'"
+            if not ^ World.qualifyEventContext (atooa group.GroupAddress) world then
+                failwith ^ "Cannot set the state of a group in an unqualifed event context."
 #endif
             let groupStates = Umap.add group.GroupAddress groupState world.GroupStates
             World.choose { world with GroupStates = groupStates }
@@ -1389,6 +1416,8 @@ module WorldModule =
 #if DEBUG
             if not ^ Umap.containsKey screen.ScreenAddress world.ScreenStates then
                 failwith ^ "Cannot set the state of a non-existent screen '" + scstring screen.ScreenAddress + "'"
+            if not ^ World.qualifyEventContext (atooa screen.ScreenAddress) world then
+                failwith ^ "Cannot set the state of a screen in an unqualifed event context."
 #endif
             let screenStates = Umap.add screen.ScreenAddress screenState world.ScreenStates
             World.choose { world with ScreenStates = screenStates }
@@ -1604,6 +1633,10 @@ module WorldModule =
             world.GameState
 
         static member private setGameState gameState world =
+#if DEBUG
+            if not ^ World.qualifyEventContext Address.empty world then
+                failwith ^ "Cannot set the state of a game in an unqualifed event context."
+#endif
             World.choose { world with GameState = gameState }
 
         static member private updateGameStateWithoutEvent updater world =
