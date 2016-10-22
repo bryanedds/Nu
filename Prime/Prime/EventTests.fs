@@ -11,7 +11,7 @@ module EventTests =
 
     type NullParticipant () =
         interface Participant with
-            member this.ParticipantAddress = ntoa !!"Null"
+            member this.ParticipantAddress = Address.empty
             member this.GetPublishingPriority _ _ = 0.0f :> IComparable
             end
 

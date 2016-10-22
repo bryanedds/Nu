@@ -218,7 +218,7 @@ module WorldTypes =
         abstract Actualize : Entity * World -> World
         default dispatcher.Actualize (_, world) = world
     
-        /// Get the quick size of an entity (the appropriate user-define size for an entity).
+        /// Get the quick size of an entity (the appropriate user-defined size for an entity).
         abstract GetQuickSize : Entity * World -> Vector2
         default dispatcher.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
 
@@ -627,8 +627,8 @@ module WorldTypes =
     /// The null simulant. You should never encounter this as the user.
     and private NullSimulant () =
         interface Simulant with
-            member this.ParticipantAddress = Address.makeFromName !!"Null"
-            member this.SimulantAddress = Address.makeFromName !!"Null"
+            member this.ParticipantAddress = Address.empty
+            member this.SimulantAddress = Address.empty
             member this.GetPublishingPriority _ _ = 0.0f :> IComparable
             end
     
@@ -760,7 +760,8 @@ module WorldTypes =
     and [<StructuralEquality; NoComparison>] Entity =
         { EntityAddress : Entity Address
           UpdateAddress : unit Address
-          PostUpdateAddress : unit Address }
+          PostUpdateAddress : unit Address
+          ObjAddress : obj Address }
     
         interface Simulant with
             member this.ParticipantAddress = atoa<Entity, Participant> this.EntityAddress
@@ -782,7 +783,8 @@ module WorldTypes =
         static member proxy address =
             { EntityAddress = address
               UpdateAddress = ltoa [!!"Update"; !!"Event"] ->>- address
-              PostUpdateAddress = ltoa [!!"PostUpdate"; !!"Event"] ->>- address }
+              PostUpdateAddress = ltoa [!!"PostUpdate"; !!"Event"] ->>- address
+              ObjAddress = atooa address }
     
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (entity : Entity) = acatf address (atooa entity.EntityAddress)

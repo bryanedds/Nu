@@ -141,30 +141,39 @@ module WorldEntityModule =
     type World with
 
         static member internal updateEntity (entity : Entity) world =
-            let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
-            let facets = entity.GetFacetsNp world
-            let world = dispatcher.Update (entity, world)
-            let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
-            if entity.GetPublishUpdatesNp world then
-                let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
-                World.publish7 World.sortSubscriptionsByHierarchy () entity.UpdateAddress eventTrace Simulants.Game false world
-            else world
+            World.withEventContext (fun world ->
+                let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
+                let facets = entity.GetFacetsNp world
+                let world = dispatcher.Update (entity, world)
+                let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
+                if entity.GetPublishUpdatesNp world then
+                    let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
+                    World.publish7 World.sortSubscriptionsByHierarchy () entity.UpdateAddress eventTrace Simulants.Game false world
+                else world)
+                entity.ObjAddress
+                world
 
         static member internal postUpdateEntity (entity : Entity) world =
-            let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
-            let facets = entity.GetFacetsNp world
-            let world = dispatcher.PostUpdate (entity, world)
-            let world = List.foldBack (fun (facet : Facet) world -> facet.PostUpdate (entity, world)) facets world
-            if entity.GetPublishPostUpdatesNp world then
-                let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
-                World.publish7 World.sortSubscriptionsByHierarchy () entity.PostUpdateAddress eventTrace Simulants.Game false world
-            else world
+            World.withEventContext (fun world ->
+                let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
+                let facets = entity.GetFacetsNp world
+                let world = dispatcher.PostUpdate (entity, world)
+                let world = List.foldBack (fun (facet : Facet) world -> facet.PostUpdate (entity, world)) facets world
+                if entity.GetPublishPostUpdatesNp world then
+                    let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
+                    World.publish7 World.sortSubscriptionsByHierarchy () entity.PostUpdateAddress eventTrace Simulants.Game false world
+                else world)
+                entity.ObjAddress
+                world
 
         static member internal actualizeEntity (entity : Entity) world =
-            let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
-            let facets = entity.GetFacetsNp world
-            let world = dispatcher.Actualize (entity, world)
-            List.foldBack (fun (facet : Facet) world -> facet.Actualize (entity, world)) facets world
+            World.withEventContext (fun world ->
+                let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
+                let facets = entity.GetFacetsNp world
+                let world = dispatcher.Actualize (entity, world)
+                List.foldBack (fun (facet : Facet) world -> facet.Actualize (entity, world)) facets world)
+                entity.ObjAddress
+                world
 
         /// Get all the entities contained by a group.
         static member getEntities group world =
@@ -203,10 +212,13 @@ module WorldEntityModule =
 
         /// Propagate an entity's physics properties to the physics subsystem.
         static member propagateEntityPhysics (entity : Entity) world =
-            let dispatcher = entity.GetDispatcherNp world
-            let facets = entity.GetFacetsNp world
-            let world = dispatcher.PropagatePhysics (entity, world)
-            List.fold (fun world (facet : Facet) -> facet.PropagatePhysics (entity, world)) world facets
+            World.withEventContext (fun world ->
+                let dispatcher = entity.GetDispatcherNp world
+                let facets = entity.GetFacetsNp world
+                let world = dispatcher.PropagatePhysics (entity, world)
+                List.fold (fun world (facet : Facet) -> facet.PropagatePhysics (entity, world)) world facets)
+                entity.ObjAddress
+                world
 
         /// Sort subscriptions by their entity sorting priority.
         static member sortSubscriptionsByEntitySortingPriority subscriptions world =
