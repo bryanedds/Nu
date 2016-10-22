@@ -1303,7 +1303,7 @@ module WorldModule =
                 let world =
                     if isNew then
                         let dispatcher = World.getGroupDispatcherNp group world
-                        let world = dispatcher.Register (group, world)
+                        let world = World.withEventContext (fun world -> dispatcher.Register (group, world)) (atooa group.GroupAddress) world
                         let eventTrace = EventTrace.record "World" "addGroup" EventTrace.empty
                         World.publish () (ltoa<unit> [!!"Group"; !!"Add"; !!"Event"] ->- group) eventTrace group world
                     else world
@@ -1315,7 +1315,7 @@ module WorldModule =
             let world = World.publish () (ltoa<unit> [!!"Group"; !!"Removing"; !!"Event"] ->- group) eventTrace group world
             if World.containsGroup group world then
                 let dispatcher = World.getGroupDispatcherNp group world
-                let world = dispatcher.Unregister (group, world)
+                let world = World.withEventContext (fun world -> dispatcher.Unregister (group, world)) (atooa group.GroupAddress) world
                 let world = removeEntities group world
                 World.removeGroupState group world
             else world
@@ -1550,7 +1550,7 @@ module WorldModule =
                 let world =
                     if isNew then
                         let dispatcher = World.getScreenDispatcherNp screen world
-                        let world = dispatcher.Register (screen, world)
+                        let world = World.withEventContext (fun world -> dispatcher.Register (screen, world)) (atooa screen.ScreenAddress) world
                         let eventTrace = EventTrace.record "World" "addScreen" EventTrace.empty
                         World.publish () (ltoa<unit> [!!"Screen"; !!"Add"; !!"Event"] ->- screen) eventTrace screen world
                     else world
@@ -1562,7 +1562,7 @@ module WorldModule =
             let world = World.publish () (ltoa<unit> [!!"Screen"; !!"Removing"; !!"Event"] ->- screen) eventTrace screen world
             if World.containsScreen screen world then
                 let dispatcher = World.getScreenDispatcherNp screen world
-                let world = dispatcher.Unregister (screen, world)
+                let world = World.withEventContext (fun world -> dispatcher.Unregister (screen, world)) (atooa screen.ScreenAddress) world
                 let world = removeGroups screen world
                 World.removeScreenState screen world
             else world
