@@ -285,12 +285,12 @@ type [<NoComparison>] Script =
 module EnvModule =
 
     /// The execution environment for scripts.
-    type [<NoEquality; NoComparison>] Env<'p, 'w when 'p :> Participant and 'w :> EventWorld<'w>> =
+    type [<NoEquality; NoComparison>] Env<'p, 'g, 'w when 'p :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
         private
             { Rebinding : bool // rebinding should be enabled in Terminal or perhaps when reloading existing scripts.
               TopLevel : Dictionary<string, Scripting.Expr>
-              Streams : Map<obj Address, Prime.Stream<obj, 'w> * ('w -> 'w)>
-              Context : 'p
+              Streams : Map<obj Address, Prime.Stream<obj, 'g, 'w> * ('w -> 'w)>
+              Context : 'p // TODO: get rid of this and use EventContext instead.
               World : 'w }
 
     [<RequireQualifiedAccess>]
@@ -303,34 +303,35 @@ module EnvModule =
               Context = context
               World = chooseWorld world }
 
-        let tryGetBinding name (env : Env<'p, 'w>) =
+        let tryGetBinding name (env : Env<'p, 'g, 'w>) =
             match env.TopLevel.TryGetValue name with
             | (true, binding) -> Some binding
             | (false, _) -> None
 
-        let tryAddBinding isTopLevel name evaled (env : Env<'p, 'w>) =
+        let tryAddBinding isTopLevel name evaled (env : Env<'p, 'g, 'w>) =
             if isTopLevel && (env.Rebinding || not ^ env.TopLevel.ContainsKey name) then
                 env.TopLevel.Add (name, evaled)
                 Some env
             else None
 
-        let tryGetStream streamAddress (env : Env<'p, 'w>) =
+        let tryGetStream streamAddress (env : Env<'p, 'g, 'w>) =
             Map.tryFind streamAddress env.Streams
 
-        let addStream streamAddress address (env : Env<'p, 'w>) =
+        let addStream streamAddress address (env : Env<'p, 'g, 'w>) =
             { env with Streams = Map.add streamAddress address env.Streams }
 
-        let getContext (env : Env<'p, 'w>) =
+        let getContext (env : Env<'p, 'g, 'w>) =
             env.Context
 
-        let getWorld (env : Env<'p, 'w>) =
+        let getWorld (env : Env<'p, 'g, 'w>) =
             env.World
 
-        let setWorld chooseWorld world (env : Env<'p, 'w>) =
+        let setWorld chooseWorld world (env : Env<'p, 'g, 'w>) =
             { env with World = chooseWorld world }
 
-        let updateWorld chooseWorld by (env : Env<'p, 'w>) =
+        let updateWorld chooseWorld by (env : Env<'p, 'g, 'w>) =
             setWorld chooseWorld (by (getWorld env)) env
 
 /// The execution environment for scripts.
-type Env<'p, 'w when 'p :> Participant and 'w :> EventWorld<'w>> = EnvModule.Env<'p, 'w>
+type Env<'p, 'g, 'w when 'p :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
+    EnvModule.Env<'p, 'g, 'w>

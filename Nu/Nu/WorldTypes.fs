@@ -835,11 +835,10 @@ module WorldTypes =
               GroupStates : Umap<Group Address, GroupState>
               EntityStates : Umap<Entity Address, EntityState> }
 
-        interface World EventWorld with
+        interface EventWorld<Game, World> with
             member this.GetLiveness () = AmbientState.getLiveness this.AmbientState
             member this.GetEventSystem () = this.EventSystem
-            member this.GetNullParticipant () = NullSimulant () :> Participant
-            member this.GetGlobalParticipant () = Game.proxy Address.empty :> Participant
+            member this.GetGlobalParticipant () = Game.proxy Address.empty
             member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
             member this.ContainsParticipant participant =
                 match participant with
@@ -850,11 +849,11 @@ module WorldTypes =
                 | _  -> false
             member this.PublishEvent (participant : Participant) publisher eventData eventAddress eventTrace subscription world =
                 match participant with
-                | :? Entity -> EventWorld.publishEvent<'a, 'p, Entity, World> participant publisher eventData eventAddress eventTrace subscription world
-                | :? Group -> EventWorld.publishEvent<'a, 'p, Group, World> participant publisher eventData eventAddress eventTrace subscription world
-                | :? Screen -> EventWorld.publishEvent<'a, 'p, Screen, World> participant publisher eventData eventAddress eventTrace subscription world
-                | :? Game -> EventWorld.publishEvent<'a, 'p, Game, World> participant publisher eventData eventAddress eventTrace subscription world
-                | _ -> EventWorld.publishEvent<'a, 'p, Participant, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Entity -> EventWorld.publishEvent<'a, 'p, Entity, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Group -> EventWorld.publishEvent<'a, 'p, Group, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Screen -> EventWorld.publishEvent<'a, 'p, Screen, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Game -> EventWorld.publishEvent<'a, 'p, Game, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                | _ -> failwithumf ()
 
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
     /// specific values.

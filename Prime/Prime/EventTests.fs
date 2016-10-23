@@ -9,12 +9,6 @@ open Prime.Stream
 open Prime.Chain
 module EventTests =
 
-    type NullParticipant () =
-        interface Participant with
-            member this.ParticipantAddress = Address.empty
-            member this.GetPublishingPriority _ _ = 0.0f :> IComparable
-            end
-
     type [<StructuralEquality; NoComparison>] TestParticipant =
         { TestAddress : TestParticipant Address }
         interface Participant with
@@ -25,17 +19,16 @@ module EventTests =
     type [<ReferenceEquality>] TestWorld =
         { TestState : int
           TestEventSystem : TestWorld EventSystem }
-        interface TestWorld EventWorld with
+        interface EventWorld<TestParticipant, TestWorld> with
             member this.GetLiveness () = Running
             member this.GetEventSystem () = this.TestEventSystem
-            member this.GetNullParticipant () = NullParticipant () :> Participant
-            member this.GetGlobalParticipant () = { TestAddress = Address.empty } :> Participant
+            member this.GetGlobalParticipant () = { TestAddress = Address.empty }
             member this.UpdateEventSystem updater = { this with TestEventSystem = updater this.TestEventSystem }
-            member this.ContainsParticipant _ = true
+            member this.ContainsParticipant participant = participant.GetType () = typeof<TestParticipant>
             member this.PublishEvent (participant : Participant) publisher eventData eventAddress eventTrace subscription world =
                 match participant with
-                | :? TestParticipant -> EventWorld.publishEvent<'a, 'p, TestParticipant, TestWorld> participant publisher eventData eventAddress eventTrace subscription world
-                | _ -> EventWorld.publishEvent<'a, 'p, Participant, TestWorld> participant publisher eventData eventAddress eventTrace subscription world
+                | :? TestParticipant -> EventWorld.publishEvent<'a, 'p, TestParticipant, TestParticipant, TestWorld> participant publisher eventData eventAddress eventTrace subscription world
+                | _ -> failwithumf ()
         static member incTestState this =
             { this with TestState = inc this.TestState }
         static member make eventTracer eventTracing eventFilter =
