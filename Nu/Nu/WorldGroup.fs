@@ -54,20 +54,29 @@ module WorldGroupModule =
             World.removeGroup3 removeEntities group world
 
         static member internal updateGroup (group : Group) world =
-            let dispatcher = group.GetDispatcherNp world
-            let world = dispatcher.Update (group, world)
-            let eventTrace = EventTrace.record "World" "updateGroup" EventTrace.empty
-            World.publish7 World.sortSubscriptionsByHierarchy () (Events.Update ->- group) eventTrace Simulants.Game true world
+            World.withEventContext (fun world ->
+                let dispatcher = group.GetDispatcherNp world
+                let world = dispatcher.Update (group, world)
+                let eventTrace = EventTrace.record "World" "updateGroup" EventTrace.empty
+                World.publish7 World.sortSubscriptionsByHierarchy () (Events.Update ->- group) eventTrace Simulants.Game true world)
+                (atooa group.GroupAddress)
+                world
 
         static member internal postUpdateGroup (group : Group) world =
-            let dispatcher = group.GetDispatcherNp world
-            let world = dispatcher.PostUpdate (group, world)
-            let eventTrace = EventTrace.record "World" "postUpdateGroup" EventTrace.empty
-            World.publish7 World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- group) eventTrace Simulants.Game true world
+            World.withEventContext (fun world ->
+                let dispatcher = group.GetDispatcherNp world
+                let world = dispatcher.PostUpdate (group, world)
+                let eventTrace = EventTrace.record "World" "postUpdateGroup" EventTrace.empty
+                World.publish7 World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- group) eventTrace Simulants.Game true world)
+                (atooa group.GroupAddress)
+                world
 
         static member internal actualizeGroup (group : Group) world =
-            let dispatcher = group.GetDispatcherNp world
-            dispatcher.Actualize (group, world)
+            World.withEventContext (fun world ->
+                let dispatcher = group.GetDispatcherNp world
+                dispatcher.Actualize (group, world))
+                (atooa group.GroupAddress)
+                world
 
         /// Get all the groups in a screen.
         static member getGroups screen world =

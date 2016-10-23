@@ -64,6 +64,7 @@ module EventSystemModule =
         private
             { Subscriptions : SubscriptionEntries
               Unsubscriptions : UnsubscriptionEntries
+              EventContext : obj Address
               EventStates : Umap<Guid, obj>
               EventTracer : string -> unit
               EventTracing : bool
@@ -118,6 +119,28 @@ module EventSystemModule =
         let setEventFilter<'w> filter (eventSystem : 'w EventSystem) =
             { eventSystem with EventFilter = filter }
 
+        /// Get the context of the event system.
+        let getEventContext (eventSystem : 'w EventSystem) =
+            eventSystem.EventContext
+
+        /// Qualify the event context of the world.
+        let qualifyEventContext (address : obj Address) (eventSystem : 'w EventSystem) =
+            let context = getEventContext eventSystem
+            let contextLength = Address.length context
+            let addressLength = Address.length address
+            if contextLength = addressLength then
+                Address.tryTake (contextLength - 1) context =
+                    Address.tryTake (addressLength - 1) address
+            elif contextLength < addressLength then
+                context = Address.take contextLength address
+            elif contextLength > addressLength then
+                address = Address.take addressLength context
+            else false
+
+        /// Set the context of the event system.
+        let setEventContext context (eventSystem : 'w EventSystem) =
+            { eventSystem with EventContext = context }
+
         /// Log an event.
         let logEvent<'w> (address : obj Address) (trace : EventTrace) (eventSystem : 'w EventSystem) =
             if eventSystem.EventTracing then
@@ -142,6 +165,7 @@ module EventSystemModule =
         let make eventTracer eventTracing eventFilter =
             { Subscriptions = Umap.makeEmpty None
               Unsubscriptions = Umap.makeEmpty None
+              EventContext = Address.empty
               EventStates = Umap.makeEmpty None
               EventTracer = eventTracer
               EventTracing = eventTracing

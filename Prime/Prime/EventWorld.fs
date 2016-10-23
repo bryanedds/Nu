@@ -7,12 +7,11 @@ open Prime
 
 /// The context in which all events take place. Effectively a mix-in for the 'w type, where 'w is a type that
 /// represents the client program.
-type EventWorld<'w when 'w :> 'w EventWorld> =
+type EventWorld<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
     interface
         abstract member GetLiveness : unit -> Liveness
         abstract member GetEventSystem : unit -> 'w EventSystem
-        abstract member GetNullParticipant : unit -> Participant
-        abstract member GetGlobalParticipant : unit -> Participant
+        abstract member GetGlobalParticipant : unit -> 'g
         abstract member UpdateEventSystem : ('w EventSystem -> 'w EventSystem) -> 'w
         abstract member ContainsParticipant : Participant -> bool
         abstract member PublishEvent<'a, 'p when 'p :> Participant> : Participant -> 'p -> 'a -> 'a Address -> EventTrace -> obj -> 'w -> Handling * 'w
@@ -22,61 +21,73 @@ type EventWorld<'w when 'w :> 'w EventWorld> =
 module EventWorld =
 
     /// Get the event system.
-    let getEventSystem<'w when 'w :> 'w EventWorld> (world : 'w) =
+    let getEventSystem<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> (world : 'w) =
         world.GetEventSystem ()
 
     /// Get the event system as tranformed via 'by'.
-    let getEventSystemBy<'a, 'w when 'w :> 'w EventWorld> (by : EventSystem<'w> -> 'a) (world : 'w) : 'a =
+    let getEventSystemBy<'a, 'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> (by : 'w EventSystem -> 'a) (world : 'w) : 'a =
         let eventSystem = world.GetEventSystem ()
         by eventSystem
 
     /// Update the event system in the world.
-    let updateEventSystem<'w when 'w :> 'w EventWorld> updater (world : 'w) =
+    let updateEventSystem<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> updater (world : 'w) =
         world.UpdateEventSystem updater
 
     /// Get event subscriptions.
-    let getSubscriptions<'w when 'w :> 'w EventWorld> (world : 'w) =
+    let getSubscriptions<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> (world : 'w) =
         getEventSystemBy EventSystem.getSubscriptions world
 
     /// Get event unsubscriptions.
-    let getUnsubscriptions<'w when 'w :> 'w EventWorld> (world : 'w) =
+    let getUnsubscriptions<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> (world : 'w) =
         getEventSystemBy EventSystem.getUnsubscriptions world
 
     /// Set event subscriptions.
-    let private setSubscriptions<'w when 'w :> 'w EventWorld> subscriptions (world : 'w) =
+    let private setSubscriptions<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> subscriptions (world : 'w) =
         world.UpdateEventSystem (EventSystem.setSubscriptions subscriptions)
 
     /// Set event unsubscriptions.
-    let private setUnsubscriptions<'w when 'w :> 'w EventWorld> unsubscriptions (world : 'w) =
+    let private setUnsubscriptions<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> unsubscriptions (world : 'w) =
         world.UpdateEventSystem (EventSystem.setUnsubscriptions unsubscriptions)
 
     /// Add event state to the world.
-    let addEventState<'a, 'w when 'w :> 'w EventWorld> key (state : 'a) (world : 'w) =
+    let addEventState<'a, 'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> key (state : 'a) (world : 'w) =
         world.UpdateEventSystem (EventSystem.addEventState key state)
 
     /// Remove event state from the world.
-    let removeEventState<'w when 'w :> 'w EventWorld> key (world : 'w) =
+    let removeEventState<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> key (world : 'w) =
         world.UpdateEventSystem (EventSystem.removeEventState key)
 
     /// Get event state from the world.
-    let getEventState<'a, 'w when 'w :> 'w EventWorld> key (world : 'w) : 'a =
+    let getEventState<'a, 'g ,'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> key (world : 'w) : 'a =
         getEventSystemBy (EventSystem.getEventState<'a, 'w> key) world
 
     /// Get whether events are being traced.
-    let getEventTracing<'w when 'w :> 'w EventWorld> (world : 'w) =
-        getEventSystemBy (EventSystem.getEventTracing<'w>) world
+    let getEventTracing<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> (world : 'w) =
+        getEventSystemBy EventSystem.getEventTracing<'w> world
 
     /// Set whether events are being traced.
-    let setEventTracing<'w when 'w :> 'w EventWorld> tracing (world : 'w) =
+    let setEventTracing<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> tracing (world : 'w) =
         updateEventSystem (EventSystem.setEventTracing tracing) world
 
     /// Get the state of the event filter.
-    let getEventFilter<'w when 'w :> 'w EventWorld> (world : 'w) =
-        getEventSystemBy (EventSystem.getEventFilter) world
+    let getEventFilter<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> (world : 'w) =
+        getEventSystemBy EventSystem.getEventFilter world
 
     /// Set the state of the event filter.
-    let setEventFilter<'w when 'w :> 'w EventWorld> filter (world : 'w) =
+    let setEventFilter<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> filter (world : 'w) =
         updateEventSystem (EventSystem.setEventFilter filter) world
+
+    /// Get the event context of the world.
+    let getEventContext<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> (world : 'w) =
+        getEventSystemBy EventSystem.getEventContext world
+
+    /// Set the event context of the world.
+    let setEventContext<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> context (world : 'w) =
+        updateEventSystem (EventSystem.setEventContext context) world
+
+    /// Qualify the event context of the world.
+    let qualifyEventContext<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> (address : obj Address) (world : 'w) =
+        getEventSystemBy (EventSystem.qualifyEventContext address) world
 
     let private getEventAddresses1 eventAddress allowWildcard =
         if allowWildcard then
@@ -105,7 +116,8 @@ module EventWorld =
             "This exception can also crop up when your implementation of EventWorld.PublishEvent doesn't " +
             "correctly specialize its 's and 'w types for EventWorld.publishEvent calls."
 
-    let private boxSubscription<'a, 's, 'w when 's :> Participant and 'w :> 'w EventWorld> (subscription : Subscription<'a, 's, 'w>) =
+    let private boxSubscription<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
+        (subscription : Subscription<'a, 's, 'w>) =
         let boxableSubscription = fun (evtObj : obj) world ->
             match subscription :> obj with
             | :? Subscription<obj, 's, 'w> as subscriptionDynamic ->
@@ -138,20 +150,20 @@ module EventWorld =
         let subList = List.concat subLists
         publishSorter subList world
 
-    let private logEvent<'w when 'w :> 'w EventWorld> eventAddress eventTrace (world : 'w) =
+    let private logEvent<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> eventAddress eventTrace (world : 'w) =
         EventSystem.logEvent<'w> eventAddress eventTrace (getEventSystem world)
 
-    let private pushEventAddress<'w when 'w :> 'w EventWorld> eventAddress (world : 'w) =
+    let private pushEventAddress<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> eventAddress (world : 'w) =
         updateEventSystem (EventSystem.pushEventAddress eventAddress) world
 
-    let private popEventAddress<'w when 'w :> 'w EventWorld> (world : 'w) =
+    let private popEventAddress<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> (world : 'w) =
         updateEventSystem EventSystem.popEventAddress world
 
-    let private getEventAddresses<'w when 'w :> 'w EventWorld> (world : 'w) =
+    let private getEventAddresses<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> (world : 'w) =
         getEventSystemBy EventSystem.getEventAddresses world
 
     /// Publish an event directly.
-    let publishEvent<'a, 'p, 's, 'w when 'p :> Participant and 's :> Participant and 'w :> 'w EventWorld>
+    let publishEvent<'a, 'p, 's, 'g, 'w when 'p :> Participant and 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
         (subscriber : Participant) (publisher : 'p) (eventData : 'a) (eventAddress : 'a Address) eventTrace subscription (world : 'w) =
         let evt =
             { Data = eventData
@@ -161,7 +173,11 @@ module EventWorld =
               Subscriber = subscriber :?> 's
               Publisher = publisher :> Participant }
         let callableSubscription = unbox<BoxableSubscription<'w>> subscription
-        callableSubscription evt world
+        let oldEventContext = getEventContext world
+        let world = setEventContext (atooa subscriber.ParticipantAddress) world
+        let (handling, world) = callableSubscription evt world
+        let world = setEventContext oldEventContext world
+        (handling, world)
 
     /// Sort subscriptions using categorization via the 'by' procedure.
     let sortSubscriptionsBy by (subscriptions : SubscriptionEntry list) (world : 'w) =
@@ -174,7 +190,7 @@ module EventWorld =
         subscriptions
 
     /// Publish an event, using the given publishSorter procedures to arrange the order to which subscriptions are published.
-    let publish7<'a, 'p, 'w when 'p :> Participant and 'w :> 'w EventWorld>
+    let publish7<'a, 'p, 'g, 'w when 'p :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
         (publishSorter : SubscriptionSorter<'w>)
         (eventData : 'a)
         (eventAddress : 'a Address)
@@ -182,7 +198,7 @@ module EventWorld =
         (publisher : 'p)
         allowWildcard
         (world : 'w) =
-        let objEventAddress = atooa eventAddress in logEvent<'w> objEventAddress eventTrace world
+        let objEventAddress = atooa eventAddress in logEvent<'g, 'w> objEventAddress eventTrace world
         let subscriptions = getSubscriptionsSorted publishSorter objEventAddress allowWildcard world
         let (_, world) =
             List.foldWhile
@@ -211,17 +227,17 @@ module EventWorld =
         world
 
     /// Publish an event, specifying whether to allow usage of a wildcard subscription.
-    let publish6<'a, 'p, 'w when 'p :> Participant and 'w :> 'w EventWorld>
+    let publish6<'a, 'p, 'g, 'w when 'p :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
         (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) allowWildcard (world : 'w) =
-        publish7<'a, 'p, 'w> sortSubscriptionsNone eventData eventAddress eventTrace publisher allowWildcard world
+        publish7<'a, 'p, 'g, 'w> sortSubscriptionsNone eventData eventAddress eventTrace publisher allowWildcard world
 
     /// Publish an event with no subscription sorting.
-    let publish<'a, 'p, 'w when 'p :> Participant and 'w :> 'w EventWorld>
+    let publish<'a, 'p, 'g, 'w when 'p :> Participant and 'w :> EventWorld<'g, 'w>>
         (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) (world : 'w) =
-        publish6<'a, 'p, 'w> eventData eventAddress eventTrace publisher true world
+        publish6<'a, 'p, 'g, 'w> eventData eventAddress eventTrace publisher true world
 
     /// Unsubscribe from an event.
-    let unsubscribe<'w when 'w :> 'w EventWorld> subscriptionKey (world : 'w) =
+    let unsubscribe<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> subscriptionKey (world : 'w) =
         let (subscriptions, unsubscriptions) = (getSubscriptions world, getUnsubscriptions world)
         match Umap.tryFind subscriptionKey unsubscriptions with
         | Some (eventAddress, subscriber) ->
@@ -238,7 +254,7 @@ module EventWorld =
                 let unsubscriptions = Umap.remove subscriptionKey unsubscriptions
                 let world = setSubscriptions subscriptions world
                 let world = setUnsubscriptions unsubscriptions world
-                publish
+                publish<_, _, 'g, 'w>
                     eventAddress
                     (ltoa<obj Address> [!!"Unsubscribe"; !!"Event"])
                     (EventTrace.record "EventWorld" "unsubscribe" EventTrace.empty)
@@ -248,7 +264,7 @@ module EventWorld =
         | None -> world
 
     /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
-    let subscribePlus5<'a, 's, 'w when 's :> Participant and 'w :> 'w EventWorld>
+    let subscribePlus5<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
         subscriptionKey (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
         if not ^ Address.isEmpty eventAddress then
             let objEventAddress = atooa eventAddress
@@ -268,43 +284,43 @@ module EventWorld =
                     (EventTrace.record "EventWorld" "subscribePlus5" EventTrace.empty)
                     (world.GetGlobalParticipant ())
                     world
-            (unsubscribe<'w> subscriptionKey, world)
+            (unsubscribe<'g, 'w> subscriptionKey, world)
         else failwith "Event name cannot be empty."
 
     /// Subscribe to an event, and be provided with an unsubscription callback.
-    let subscribePlus<'a, 's, 'w when 's :> Participant and 'w :> 'w EventWorld>
+    let subscribePlus<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
         (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
         subscribePlus5 (makeGuid ()) subscription eventAddress subscriber world
 
     /// Subscribe to an event using the given subscriptionKey.
-    let subscribe5<'a, 's, 'w when 's :> Participant and 'w :> 'w EventWorld>
+    let subscribe5<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
         subscriptionKey (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
         subscribePlus5 subscriptionKey (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) world |> snd
 
     /// Subscribe to an event.
-    let subscribe<'a, 's, 'w when 's :> Participant and 'w :> 'w EventWorld>
+    let subscribe<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
         (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) world =
         subscribe5 (makeGuid ()) subscription eventAddress subscriber world
 
     /// Keep active a subscription for the lifetime of a participant, and be provided with an unsubscription callback.
-    let monitorPlus<'a, 's, 'w when 's :> Participant and 'w :> 'w EventWorld>
+    let monitorPlus<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
         (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
         let subscriberAddress = subscriber.ParticipantAddress
         if not ^ Address.isEmpty subscriberAddress then
             let monitorKey = makeGuid ()
             let removalKey = makeGuid ()
-            let world = subscribe5<'a, 's, 'w> monitorKey subscription eventAddress subscriber world
+            let world = subscribe5<'a, 's, 'g, 'w> monitorKey subscription eventAddress subscriber world
             let unsubscribe = fun (world : 'w) ->
                 let world = unsubscribe removalKey world
                 let world = unsubscribe monitorKey world
                 world
             let subscription' = fun _ eventSystem -> (Cascade, unsubscribe eventSystem)
             let removingEventAddress = ltoa<unit> [!!typeof<'s>.Name; !!"Removing"; !!"Event"] ->>- subscriberAddress
-            let world = subscribe5<unit, 's, 'w> removalKey subscription' removingEventAddress subscriber world
+            let world = subscribe5<unit, 's, 'g, 'w> removalKey subscription' removingEventAddress subscriber world
             (unsubscribe, world)
         else failwith "Cannot monitor events with an anonymous subscriber."
 
     /// Keep active a subscription for the lifetime of a participant.
-    let monitor<'a, 's, 'w when 's :> Participant and 'w :> 'w EventWorld>
+    let monitor<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
         (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
-        monitorPlus<'a, 's, 'w> subscription eventAddress subscriber world |> snd
+        monitorPlus<'a, 's, 'g, 'w> subscription eventAddress subscriber world |> snd
