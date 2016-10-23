@@ -216,6 +216,10 @@ module AddressModule =
         let take<'a, 'b> n (address : 'a Address) =
             makeFromList<'b> ^ List.take n address.Names
 
+        /// Take an address composed of the given number of names of an address.
+        let tryTake<'a, 'b> n (address : 'a Address) =
+            makeFromList<'b> ^ List.tryTake n address.Names
+
         /// Take the last name of an address.
         let last address =
             List.last address.Names

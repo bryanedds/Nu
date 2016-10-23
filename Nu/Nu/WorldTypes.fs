@@ -218,7 +218,7 @@ module WorldTypes =
         abstract Actualize : Entity * World -> World
         default dispatcher.Actualize (_, world) = world
     
-        /// Get the quick size of an entity (the appropriate user-define size for an entity).
+        /// Get the quick size of an entity (the appropriate user-defined size for an entity).
         abstract GetQuickSize : Entity * World -> Vector2
         default dispatcher.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
 
@@ -627,8 +627,8 @@ module WorldTypes =
     /// The null simulant. You should never encounter this as the user.
     and private NullSimulant () =
         interface Simulant with
-            member this.ParticipantAddress = Address.makeFromName !!"Null"
-            member this.SimulantAddress = Address.makeFromName !!"Null"
+            member this.ParticipantAddress = Address.empty
+            member this.SimulantAddress = Address.empty
             member this.GetPublishingPriority _ _ = 0.0f :> IComparable
             end
     
@@ -760,7 +760,8 @@ module WorldTypes =
     and [<StructuralEquality; NoComparison>] Entity =
         { EntityAddress : Entity Address
           UpdateAddress : unit Address
-          PostUpdateAddress : unit Address }
+          PostUpdateAddress : unit Address
+          ObjAddress : obj Address }
     
         interface Simulant with
             member this.ParticipantAddress = atoa<Entity, Participant> this.EntityAddress
@@ -782,7 +783,8 @@ module WorldTypes =
         static member proxy address =
             { EntityAddress = address
               UpdateAddress = ltoa [!!"Update"; !!"Event"] ->>- address
-              PostUpdateAddress = ltoa [!!"PostUpdate"; !!"Event"] ->>- address }
+              PostUpdateAddress = ltoa [!!"PostUpdate"; !!"Event"] ->>- address
+              ObjAddress = atooa address }
     
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (entity : Entity) = acatf address (atooa entity.EntityAddress)
@@ -833,11 +835,10 @@ module WorldTypes =
               GroupStates : Umap<Group Address, GroupState>
               EntityStates : Umap<Entity Address, EntityState> }
 
-        interface World EventWorld with
+        interface EventWorld<Game, World> with
             member this.GetLiveness () = AmbientState.getLiveness this.AmbientState
             member this.GetEventSystem () = this.EventSystem
-            member this.GetNullParticipant () = NullSimulant () :> Participant
-            member this.GetGlobalParticipant () = Game.proxy Address.empty :> Participant
+            member this.GetGlobalParticipant () = Game.proxy Address.empty
             member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
             member this.ContainsParticipant participant =
                 match participant with
@@ -848,11 +849,11 @@ module WorldTypes =
                 | _  -> false
             member this.PublishEvent (participant : Participant) publisher eventData eventAddress eventTrace subscription world =
                 match participant with
-                | :? Entity -> EventWorld.publishEvent<'a, 'p, Entity, World> participant publisher eventData eventAddress eventTrace subscription world
-                | :? Group -> EventWorld.publishEvent<'a, 'p, Group, World> participant publisher eventData eventAddress eventTrace subscription world
-                | :? Screen -> EventWorld.publishEvent<'a, 'p, Screen, World> participant publisher eventData eventAddress eventTrace subscription world
-                | :? Game -> EventWorld.publishEvent<'a, 'p, Game, World> participant publisher eventData eventAddress eventTrace subscription world
-                | _ -> EventWorld.publishEvent<'a, 'p, Participant, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Entity -> EventWorld.publishEvent<'a, 'p, Entity, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Group -> EventWorld.publishEvent<'a, 'p, Group, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Screen -> EventWorld.publishEvent<'a, 'p, Screen, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Game -> EventWorld.publishEvent<'a, 'p, Game, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                | _ -> failwithumf ()
 
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
     /// specific values.
