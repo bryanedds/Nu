@@ -781,7 +781,7 @@ module WorldScriptSystem =
                 // TODO: implement
                 Left (Violation ([!!"Unimplemented"], "Unimplemented feature.", optOrigin))
             | ComputedStream computedStream ->
-                Right (computedStream :?> Prime.Stream<obj, World>, env)
+                Right (computedStream :?> Prime.Stream<obj, Game, World>, env)
 
         and evalExprs exprs env =
             List.foldBack
@@ -943,7 +943,7 @@ module WorldScriptSystem =
             // TODO: implement
             (Unit None, env)
 
-        and eval expr env : Expr * Env<Simulant, World> =
+        and eval expr env : Expr * Env<Simulant, Game, World> =
             match expr with
             | Violation _ -> (expr, env)
             | Unit _ -> (expr, env)

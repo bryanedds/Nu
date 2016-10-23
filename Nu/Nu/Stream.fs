@@ -10,7 +10,7 @@ open global.Nu
 module Stream =
 
     /// Take only one event from a stream per update.
-    let [<DebuggerHidden; DebuggerStepThrough>] noMoreThanOncePerUpdate (stream : Stream<'a, World>) =
+    let [<DebuggerHidden; DebuggerStepThrough>] noMoreThanOncePerUpdate (stream : Stream<'a, Game, World>) =
         stream |>
         trackEvent4
             (fun (a, current) _ world ->

@@ -74,23 +74,23 @@ module WorldModule =
 
         /// Get event subscriptions.
         static member getSubscriptions world =
-            EventWorld.getSubscriptions<World> world
+            EventWorld.getSubscriptions<Game, World> world
 
         /// Get event unsubscriptions.
         static member getUnsubscriptions world =
-            EventWorld.getUnsubscriptions<World> world
+            EventWorld.getUnsubscriptions<Game, World> world
 
         /// Add event state to the world.
         static member addEventState key state world =
-            EventWorld.addEventState<'a, World> key state world
+            EventWorld.addEventState<'a, Game, World> key state world
 
         /// Remove event state from the world.
         static member removeEventState key world =
-            EventWorld.removeEventState<World> key world
+            EventWorld.removeEventState<Game, World> key world
 
         /// Get event state from the world.
         static member getEventState<'a> key world =
-            EventWorld.getEventState<'a, World> key world
+            EventWorld.getEventState<'a, Game, World> key world
 
         /// Get whether events are being traced.
         static member getEventTracing (world : World) =
@@ -140,50 +140,50 @@ module WorldModule =
 
         /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
         static member publish7<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) allowWildcard world =
-            EventWorld.publish7<'a, 'p, World> publishSorter eventData eventAddress eventTrace publisher allowWildcard world
+            EventWorld.publish7<'a, 'p, Game, World> publishSorter eventData eventAddress eventTrace publisher allowWildcard world
 
         /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
         static member publish6<'a, 'p when 'p :> Simulant> (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) allowWildcard world =
-            EventWorld.publish7<'a, 'p, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher allowWildcard world
+            EventWorld.publish7<'a, 'p, Game, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher allowWildcard world
 
         /// Publish an event.
         static member publish<'a, 'p when 'p :> Simulant>
             (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-            EventWorld.publish7<'a, 'p, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher true world
+            EventWorld.publish7<'a, 'p, Game, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher true world
 
         /// Unsubscribe from an event.
         static member unsubscribe subscriptionKey world =
-            EventWorld.unsubscribe<World> subscriptionKey world
+            EventWorld.unsubscribe<Game, World> subscriptionKey world
 
         /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
         static member subscribePlus5<'a, 's when 's :> Simulant>
             subscriptionKey (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
-            EventWorld.subscribePlus5<'a, 's, World> subscriptionKey subscription eventAddress subscriber world
+            EventWorld.subscribePlus5<'a, 's, Game, World> subscriptionKey subscription eventAddress subscriber world
 
         /// Subscribe to an event, and be provided with an unsubscription callback.
         static member subscribePlus<'a, 's when 's :> Simulant>
             (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
-            EventWorld.subscribePlus<'a, 's, World> subscription eventAddress subscriber world
+            EventWorld.subscribePlus<'a, 's, Game, World> subscription eventAddress subscriber world
 
         /// Subscribe to an event using the given subscriptionKey.
         static member subscribe5<'a, 's when 's :> Simulant>
             subscriptionKey (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
-            EventWorld.subscribe5<'a, 's, World> subscriptionKey subscription eventAddress subscriber world
+            EventWorld.subscribe5<'a, 's, Game, World> subscriptionKey subscription eventAddress subscriber world
 
         /// Subscribe to an event.
         static member subscribe<'a, 's when 's :> Simulant>
             (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
-            EventWorld.subscribe<'a, 's, World> subscription eventAddress subscriber world
+            EventWorld.subscribe<'a, 's, Game, World> subscription eventAddress subscriber world
 
         /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
         static member monitorPlus<'a, 's when 's :> Simulant>
             (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
-            EventWorld.monitorPlus<'a, 's, World> subscription eventAddress subscriber world
+            EventWorld.monitorPlus<'a, 's, Game, World> subscription eventAddress subscriber world
 
         /// Keep active a subscription for the lifetime of a simulant.
         static member monitor<'a, 's when 's :> Simulant>
             (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
-            EventWorld.monitor<'a, 's, World> subscription eventAddress subscriber world
+            EventWorld.monitor<'a, 's, Game, World> subscription eventAddress subscriber world
 
         (* Dispatchers *)
 
