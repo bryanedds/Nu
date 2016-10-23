@@ -113,12 +113,18 @@ module WorldModule =
             EventWorld.getEventContext world
 
         /// Set the context of the event system.
+#if DEBUG
         static member internal withEventContext operation context (world : World) =
             let oldContext = World.getEventContext world
             let world = EventWorld.setEventContext context world
             let world = operation world
             let world = EventWorld.setEventContext oldContext world
             world
+#else
+        static member inline internal withEventContext operation _ (world : World) =
+            // NOTE: inlined in debug to hopefully get rid of the lambda
+            operation world
+#endif
 
         /// Qualify the context of the event system.
         static member qualifyEventContext address (world : World) =
