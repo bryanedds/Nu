@@ -149,7 +149,7 @@ module CharacterAnimationFacetModule =
                     { AnimationType = CharacterAnimationFacing
                       Direction = Upward
                       StartTime = 0L }
-             Define? CharacterAnimationSheet Constants.Assets.PlayerImage]
+             Define? CharacterAnimationSheet Assets.PlayerImage]
 
         override facet.Actualize (entity, world) =
             if entity.InView world then

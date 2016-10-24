@@ -6,27 +6,6 @@ open Nu
 module Constants =
 
     [<RequireQualifiedAccess>]
-    module FilePaths =
-
-        let TitleGroup = "Assets/Gui/Title.nugroup"
-        let CreditsGroup = "Assets/Gui/Credits.nugroup"
-        let HudGroup = "Assets/Gui/Hud.nugroup"
-        let SaveFile = "InfinityRpg.sav"
-
-    [<RequireQualifiedAccess>]
-    module Assets =
-
-        let GuiPackageName = "Gui"
-        let GameplayPackageName = "Gameplay"
-        let PlayerImage = { PackageName = GameplayPackageName; AssetName = "Player" }
-        let GoopyImage = { PackageName = GameplayPackageName; AssetName = "Goopy" }
-        let BatsyImage = { PackageName = GameplayPackageName; AssetName = "Batsy" }
-        let ZommieImage = { PackageName = GameplayPackageName; AssetName = "Zommie" }
-        let FieldTileSheetImage = { PackageName = GameplayPackageName; AssetName = "FieldTileSheet" }
-        let HerosVengeanceSong = { PackageName = GameplayPackageName; AssetName = "Hero'sVengeance" }
-        let ButterflyGirlSong = { PackageName = GuiPackageName; AssetName = "ButterflyGirl" }
-
-    [<RequireQualifiedAccess>]
     module Layout =
 
         let TileSizeI = Vector2i 64

@@ -43,18 +43,6 @@ module Constants =
         let [<Literal>] Audio = "Audio"
 
     [<RequireQualifiedAccess>]
-    module Assets =
-
-        let [<Literal>] AssetGraphFilePath = "AssetGraph.nuag"
-        let [<Literal>] OverlayerFilePath = "Overlayer.nuol"
-        let [<Literal>] DefaultPackageName = "Default"
-        let [<Literal>] DefaultImageValue = "[Default Image]"
-        let [<Literal>] DefaultTileMapAssetValue = "[Default TileMap]"
-        let [<Literal>] DefaultFontValue = "[Default Font]"
-        let [<Literal>] DefaultSoundValue = "[Default Sound]"
-        let [<Literal>] DefaultSongValue = "[Default Song]"
-
-    [<RequireQualifiedAccess>]
     module Render =
 
         let [<Literal>] ResolutionXDefault = 960

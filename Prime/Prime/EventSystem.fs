@@ -50,7 +50,6 @@ type internal SubscriptionEntries =
 type internal UnsubscriptionEntries =
     Umap<Guid, obj Address * Participant>
 
-[<RequireQualifiedAccess>]
 module Events =
 
     /// Represents a wildcard in an event.

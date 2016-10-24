@@ -29,7 +29,6 @@ type [<StructuralEquality; NoComparison>] CollisionData =
       Speed : single
       Collidee : Entity }
 
-[<RequireQualifiedAccess>]
 module Events =
 
     let Wildcard = Prime.Events.Wildcard

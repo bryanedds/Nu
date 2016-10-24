@@ -58,7 +58,7 @@ module GameplayDispatcherModule =
 
         static let createField scene rand world =
             let pathEdgesM = [(Vector2i (1, 10), Vector2i (20, 10))]
-            let (fieldMap, rand) = FieldMap.make Constants.Assets.FieldTileSheetImage (Vector2i 22) pathEdgesM rand
+            let (fieldMap, rand) = FieldMap.make Assets.FieldTileSheetImage (Vector2i 22) pathEdgesM rand
             let (field, world) = World.createEntity<FieldDispatcher> None (Some Simulants.Field.EntityName) scene world
             let world = field.SetFieldMapNp fieldMap world
             let world = field.SetSize (World.getEntityQuickSize field world) world
@@ -74,7 +74,7 @@ module GameplayDispatcherModule =
                     let (enemy, world) = World.createEntity<EnemyDispatcher> None None scene world
                     let world = enemy.SetPosition enemyPosition world
                     let world = enemy.SetDepth Constants.Layout.CharacterDepth world
-                    let world = enemy.SetCharacterAnimationSheet Constants.Assets.GoopyImage world
+                    let world = enemy.SetCharacterAnimationSheet Assets.GoopyImage world
                     (enemy :: enemies, rand, world))
                 ([], rand, world)
                 [0 .. enemyCount - 1]
@@ -539,7 +539,7 @@ module GameplayDispatcherModule =
         static let handleLoadGame world =
 
             // get and initialize gameplay screen from read
-            let world = World.readScreenFromFile Constants.FilePaths.SaveFile (Some Simulants.Gameplay.ScreenName) world |> snd
+            let world = World.readScreenFromFile Assets.SaveFilePath (Some Simulants.Gameplay.ScreenName) world |> snd
             let world = Simulants.Gameplay.SetTransitionStateNp IncomingState world
 
             // make rand from gameplay
@@ -549,22 +549,22 @@ module GameplayDispatcherModule =
             __c ^ createField Simulants.Scene rand world
 
         static let handleSelectTitle _ world =
-            let world = World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Constants.Assets.ButterflyGirlSong world
+            let world = World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Assets.ButterflyGirlSong world
             (Cascade, world)
 
         static let handleSelectGameplay _ world =
             let world =
                 // NOTE: doing a File.Exists then loading the file is dangerous since the file can
                 // always be deleted / moved between the two operations!
-                if Simulants.Gameplay.GetShallLoadGame world && File.Exists Constants.FilePaths.SaveFile
+                if Simulants.Gameplay.GetShallLoadGame world && File.Exists Assets.SaveFilePath
                 then handleLoadGame world
                 else handleNewGame world
-            let world = World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Constants.Assets.HerosVengeanceSong world
+            let world = World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Assets.HerosVengeanceSong world
             (Cascade, world)
 
         static let handleClickSaveGame evt world =
             let gameplay = evt.Subscriber
-            World.writeScreenToFile Constants.FilePaths.SaveFile gameplay world
+            World.writeScreenToFile Assets.SaveFilePath gameplay world
             (Cascade, world)
 
         static let handleDeselectGameplay _ world =

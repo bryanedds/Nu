@@ -64,6 +64,7 @@
     <PostBuildEvent>"$(ProjectDir)..\..\Nu\Nu.Pipe\bin\$(ConfigurationName)\Nu.Pipe.exe" "$(ProjectDir)\" "$(TargetDir)\" "$(ProjectDir)refinement" False</PostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="InfinityAssets.fs" />
     <Compile Include="InfinityConstants.fs" />
     <Compile Include="InfinitySimulants.fs" />
     <Compile Include="InfinityMath.fs" />
