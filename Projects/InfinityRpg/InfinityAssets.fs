@@ -3,7 +3,6 @@ open OpenTK
 open Nu
 module Assets =
 
-    let SaveFilePath = "InfinityRpg.sav"
     let GuiPackageName = "Gui"
     let GameplayPackageName = "Gameplay"
     let PlayerImage = { PackageName = GameplayPackageName; AssetName = "Player" }
@@ -16,3 +15,4 @@ module Assets =
     let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
     let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
     let HudGroupFilePath = "Assets/Gui/Hud.nugroup"
+    let SaveFilePath = "InfinityRpg.sav"
