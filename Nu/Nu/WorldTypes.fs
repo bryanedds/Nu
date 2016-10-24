@@ -811,6 +811,7 @@ module WorldTypes =
           GroupDispatchers : Map<string, GroupDispatcher>
           EntityDispatchers : Map<string, EntityDispatcher>
           Facets : Map<string, Facet>
+          UpdateEntityInEntityTree : Entity -> World -> World -> World
           RebuildEntityTree : Screen -> World -> Entity QuadTree }
     
     /// The world, in a functional programming sense. Hosts the game object, the dependencies needed

@@ -50,11 +50,9 @@ type [<CustomEquality; CustomComparison>] EntitySortPriority =
 module WorldModule =
 
     // Mutable clipboard that allows its state to persist beyond undo / redo.
-    let private RefClipboard = ref<obj option> None
+    let mutable private Clipboard : obj option = None
 
     type World with
-
-        (* Debug *)
 
         /// Choose a world to be used for debugging. Call this whenever the most recently constructed
         /// world value is to be discarded in favor of the given world value.
@@ -64,13 +62,17 @@ module WorldModule =
 #endif
             world
 
-        (* EntityTree *)
+    type World with
+
+        /// Update an entity in the entity tree.
+        static member internal updateEntityInEntityTree entity oldWorld world =
+            world.Dispatchers.UpdateEntityInEntityTree entity oldWorld world
 
         /// Rebuild the entity tree if needed.
         static member internal rebuildEntityTree screen world =
             world.Dispatchers.RebuildEntityTree screen world
 
-        (* EventSystem *)
+    type World with
 
         /// Get event subscriptions.
         static member getSubscriptions world =
@@ -191,7 +193,7 @@ module WorldModule =
             (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
             EventWorld.monitor<'a, 's, Game, World> subscription eventAddress subscriber world
 
-        (* Dispatchers *)
+    type World with
 
         /// Get the game dispatchers of the world.
         static member getGameDispatchers world =
@@ -213,7 +215,7 @@ module WorldModule =
         static member getFacets world =
             world.Dispatchers.Facets
 
-        (* Subsystems *)
+    type World with
 
         static member internal getSubsystemMap world =
             Subsystems.getSubsystemMap world.Subsystems
@@ -237,7 +239,7 @@ module WorldModule =
         static member internal clearSubsystemsMessages world =
             World.choose { world with Subsystems = Subsystems.clearSubsystemsMessages world.Subsystems world }
 
-        (* AmbientState *)
+    type World with
 
         static member internal getAmbientState world =
             world.AmbientState
@@ -393,7 +395,7 @@ module WorldModule =
             Map.toValueListBy getTypeName |>
             List.map (fun typeName -> (typeName, OverlayDescriptor.makeVanilla (Some typeName)))
 
-        (* OptEntityCache *)
+    type World with
 
         /// Get the opt entity cache.
         static member internal getOptEntityCache world =
@@ -403,155 +405,13 @@ module WorldModule =
         static member internal setOptEntityCache optEntityCache world =
             World.choose { world with OptEntityCache = optEntityCache }
 
-        (* ScreenDirectory *)
+    type World with
 
         /// Get the screen directory.
         static member internal getScreenDirectory world =
             world.ScreenDirectory
 
-        (* Facet *)
-
-        static member private tryGetFacet facetName world =
-            let facets = World.getFacets world
-            match Map.tryFind facetName facets with
-            | Some facet -> Right facet
-            | None -> Left ^ "Invalid facet name '" + facetName + "'."
-
-        static member private isFacetCompatibleWithEntity entityDispatcherMap facet (entityState : EntityState) =
-            // Note a facet is incompatible with any other facet if it contains any properties that has
-            // the same name but a different type.
-            let facetType = facet.GetType ()
-            let facetPropertyDefinitions = Reflection.getPropertyDefinitions facetType
-            if Reflection.isFacetCompatibleWithDispatcher entityDispatcherMap facet entityState then
-                List.notExists
-                    (fun definition ->
-                        match Xtension.tryGetProperty definition.PropertyName entityState.Xtension with
-                        | Some property -> property.PropertyType <> definition.PropertyType
-                        | None -> false)
-                    facetPropertyDefinitions
-            else false
-
-        static member private getEntityPropertyDefinitionNamesToDetach entityState facetToRemove =
-
-            // get the property definition name counts of the current, complete entity
-            let propertyDefinitions = Reflection.getReflectivePropertyDefinitionMap entityState
-            let propertyDefinitionNameCounts = Reflection.getPropertyDefinitionNameCounts propertyDefinitions
-
-            // get the property definition name counts of the facet to remove
-            let facetType = facetToRemove.GetType ()
-            let facetPropertyDefinitions = Map.singleton facetType.Name ^ Reflection.getPropertyDefinitions facetType
-            let facetPropertyDefinitionNameCounts = Reflection.getPropertyDefinitionNameCounts facetPropertyDefinitions
-
-            // compute the difference of the counts
-            let finalPropertyDefinitionNameCounts =
-                Map.map
-                    (fun propertyName propertyCount ->
-                        match Map.tryFind propertyName facetPropertyDefinitionNameCounts with
-                        | Some facetPropertyCount -> propertyCount - facetPropertyCount
-                        | None -> propertyCount)
-                    propertyDefinitionNameCounts
-
-            // build a set of all property names where the final counts are negative
-            Map.fold
-                (fun propertyNamesToDetach propertyName propertyCount ->
-                    if propertyCount = 0
-                    then Set.add propertyName propertyNamesToDetach
-                    else propertyNamesToDetach)
-                Set.empty
-                finalPropertyDefinitionNameCounts
-
-        /// Get an entity's intrinsic facet names.
-        static member getIntrinsicFacetNames entityState =
-            let intrinsicFacetNames = entityState.DispatcherNp |> getType |> Reflection.getIntrinsicFacetNames
-            Set.ofList intrinsicFacetNames
-
-        /// Get an entity's facet names via reflection.
-        static member getFacetNamesReflectively entityState =
-            let facetNames = List.map getTypeName entityState.FacetsNp
-            Set.ofList facetNames
-
-        static member private tryRemoveFacet facetName entityState optEntity world =
-            match List.tryFind (fun facet -> getTypeName facet = facetName) entityState.FacetsNp with
-            | Some facet ->
-                let (entityState, world) =
-                    match optEntity with
-                    | Some entity ->
-                        let world = World.withEventContext (fun world -> facet.Unregister (entity, world)) entity.ObjAddress world
-                        let entityState = World.getEntityState entity world
-                        (entityState, world)
-                    | None -> (entityState, world)
-                let propertyNames = World.getEntityPropertyDefinitionNamesToDetach entityState facet
-                let entityState = Reflection.detachPropertiesViaNames EntityState.copy propertyNames entityState
-                let entityState = { entityState with FacetNames = Set.remove facetName entityState.FacetNames }
-                let entityState = { entityState with FacetsNp = List.remove ((=) facet) entityState.FacetsNp }
-                match optEntity with
-                | Some entity ->
-                    let oldWorld = world
-                    let world = World.setEntityState entityState entity world
-                    let world = World.updateEntityInEntityTree entity oldWorld world
-                    Right (World.getEntityState entity world, world)
-                | None -> Right (entityState, world)
-            | None -> let _ = World.choose world in Left ^ "Failure to remove facet '" + facetName + "' from entity."
-
-        static member private tryAddFacet facetName (entityState : EntityState) optEntity world =
-            match World.tryGetFacet facetName world with
-            | Right facet ->
-                let entityDispatchers = World.getEntityDispatchers world
-                if World.isFacetCompatibleWithEntity entityDispatchers facet entityState then
-                    let entityState = { entityState with FacetNames = Set.add facetName entityState.FacetNames }
-                    let entityState = { entityState with FacetsNp = facet :: entityState.FacetsNp }
-                    let entityState = Reflection.attachProperties EntityState.copy facet entityState
-                    match optEntity with
-                    | Some entity ->
-                        let oldWorld = world
-                        let world = World.setEntityState entityState entity world
-                        let world = World.updateEntityInEntityTree entity oldWorld world
-                        let world = World.withEventContext (fun world -> facet.Register (entity, world)) entity.ObjAddress world
-                        Right (World.getEntityState entity world, world)
-                    | None -> Right (entityState, world)
-                else let _ = World.choose world in Left ^ "Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Name + "'."
-            | Left error -> Left error
-
-        static member private tryRemoveFacets facetNamesToRemove entityState optEntity world =
-            Set.fold
-                (fun eitherEntityWorld facetName ->
-                    match eitherEntityWorld with
-                    | Right (entityState, world) -> World.tryRemoveFacet facetName entityState optEntity world
-                    | Left _ as left -> left)
-                (Right (entityState, world))
-                facetNamesToRemove
-
-        static member private tryAddFacets facetNamesToAdd entityState optEntity world =
-            Set.fold
-                (fun eitherEntityStateWorld facetName ->
-                    match eitherEntityStateWorld with
-                    | Right (entityState, world) -> World.tryAddFacet facetName entityState optEntity world
-                    | Left _ as left -> left)
-                (Right (entityState, world))
-                facetNamesToAdd
-
-        static member internal trySetFacetNames facetNames entityState optEntity world =
-            let intrinsicFacetNames = World.getIntrinsicFacetNames entityState
-            let extrinsicFacetNames = Set.fold (flip Set.remove) facetNames intrinsicFacetNames
-            let facetNamesToRemove = Set.difference entityState.FacetNames extrinsicFacetNames
-            let facetNamesToAdd = Set.difference extrinsicFacetNames entityState.FacetNames
-            match World.tryRemoveFacets facetNamesToRemove entityState optEntity world with
-            | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
-            | Left _ as left -> left
-
-        static member internal trySynchronizeFacetsToNames oldFacetNames entityState optEntity world =
-            let facetNamesToRemove = Set.difference oldFacetNames entityState.FacetNames
-            let facetNamesToAdd = Set.difference entityState.FacetNames oldFacetNames
-            match World.tryRemoveFacets facetNamesToRemove entityState optEntity world with
-            | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
-            | Left _ as left -> left
-
-        static member internal attachIntrinsicFacetsViaNames entityState world =
-            let entityDispatchers = World.getEntityDispatchers world
-            let facets = World.getFacets world
-            Reflection.attachIntrinsicFacets EntityState.copy entityDispatchers facets entityState.DispatcherNp entityState
-
-        (* SimulantState *)
+    type World with
 
         /// View the member properties of some SimulantState.
         static member internal getMemberProperties (state : SimulantState) =
@@ -575,7 +435,643 @@ module WorldModule =
                 (World.getMemberProperties state)
                 (World.getXProperties state)
 
-        (* Entity *)
+    type World with
+
+        static member private publishGameChange (propertyName : string) oldWorld world =
+            let game = Game.proxy Address.empty
+            let changeEventAddress = ltoa [!!"Game"; !!"Change"; !!propertyName; !!"Event"] ->>- game.GameAddress
+            let eventTrace = EventTrace.record "World" "publishGameChange" EventTrace.empty
+            World.publish { Participant = game; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace game world
+
+        static member private getGameState world =
+            world.GameState
+
+        static member private setGameState gameState world =
+#if DEBUG
+            if not ^ World.qualifyEventContext Address.empty world then
+                failwith ^ "Cannot set the state of a game in an unqualifed event context."
+#endif
+            World.choose { world with GameState = gameState }
+
+        static member private updateGameStateWithoutEvent updater world =
+            let gameState = World.getGameState world
+            let gameState = updater gameState
+            World.setGameState gameState world
+
+        static member private updateGameState updater propertyName world =
+            let oldWorld = world
+            let world = World.updateGameStateWithoutEvent updater world
+            World.publishGameChange propertyName oldWorld world
+
+        static member internal getGameId world = (World.getGameState world).Id
+        static member internal getGameXtension world = (World.getGameState world).Xtension // TODO: try to get rid of this
+        static member internal getGameDispatcherNp world = (World.getGameState world).DispatcherNp
+        static member internal getGameSpecialization world = (World.getGameState world).Specialization
+        static member internal getGameCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
+
+        /// Get the current eye center.
+        static member getEyeCenter world =
+            (World.getGameState world).EyeCenter
+
+        /// Set the current eye center.
+        static member setEyeCenter value world =
+            World.updateGameState (fun groupState -> { groupState with EyeCenter = value }) Property? EyeCenter world
+
+        /// Get the current eye size.
+        static member getEyeSize world =
+            (World.getGameState world).EyeSize
+
+        /// Set the current eye size.
+        static member setEyeSize value world =
+            World.updateGameState (fun groupState -> { groupState with EyeSize = value }) Property? EyeSize world
+
+        /// Get the currently selected screen, if any.
+        static member getOptSelectedScreen world =
+            (World.getGameState world).OptSelectedScreen
+        
+        /// Set the currently selected screen or None. Be careful using this function directly as
+        /// you may be wanting to use the higher-level World.transitionScreen function instead.
+        static member setOptSelectedScreen value world =
+            World.updateGameState (fun groupState -> { groupState with OptSelectedScreen = value }) Property? OptSelectedScreen world
+
+        /// Get the currently selected screen (failing with an exception if there isn't one).
+        static member getSelectedScreen world =
+            Option.get ^ World.getOptSelectedScreen world
+        
+        /// Set the currently selected screen. Be careful using this function directly as you may
+        /// be wanting to use the higher-level World.transitionScreen function instead.
+        static member setSelectedScreen screen world =
+            World.setOptSelectedScreen (Some screen) world
+
+        /// Get the current destination screen if a screen transition is currently underway.
+        static member getOptScreenTransitionDestination world =
+            (World.getGameState world).OptScreenTransitionDestination
+
+        /// Set the current destination screen or None. Be careful using this function as calling
+        /// it is predicated that no screen transition is currently underway.
+        /// TODO: consider asserting such predication here.
+        static member internal setOptScreenTransitionDestination destination world =
+            World.updateGameState (fun gameState -> { gameState with OptScreenTransitionDestination = destination }) Property? OptScreenTransitionDestination world
+
+        /// Get the view of the eye in absolute terms (world space).
+        static member getViewAbsolute world =
+            Math.getViewAbsolute (World.getEyeCenter world) (World.getEyeSize world)
+        
+        /// Get the view of the eye in absolute terms (world space) with translation sliced on
+        /// integers.
+        static member getViewAbsoluteI world =
+            Math.getViewAbsolute (World.getEyeCenter world) (World.getEyeSize world)
+
+        /// The relative view of the eye with original single values. Due to the problems with
+        /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
+        /// coordinates is very, very bad for rendering.
+        static member getViewRelative world =
+            Math.getViewRelative (World.getEyeCenter world) (World.getEyeSize world)
+
+        /// The relative view of the eye with translation sliced on integers. Good for rendering.
+        static member getViewRelativeI world =
+            Math.getViewRelativeI (World.getEyeCenter world) (World.getEyeSize world)
+
+        /// Get the bounds of the eye's sight relative to its position.
+        static member getViewBoundsRelative world =
+            let gameState = World.getGameState world
+            Vector4
+                (gameState.EyeCenter.X - gameState.EyeSize.X * 0.5f,
+                 gameState.EyeCenter.Y - gameState.EyeSize.Y * 0.5f,
+                 gameState.EyeCenter.X + gameState.EyeSize.X * 0.5f,
+                 gameState.EyeCenter.Y + gameState.EyeSize.Y * 0.5f)
+
+        /// Get the bounds of the eye's sight not relative to its position.
+        static member getViewBoundsAbsolute world =
+            let gameState = World.getGameState world
+            Vector4
+                (gameState.EyeSize.X * -0.5f,
+                 gameState.EyeSize.Y * -0.5f,
+                 gameState.EyeSize.X * 0.5f,
+                 gameState.EyeSize.Y * 0.5f)
+
+        /// Get the bounds of the eye's sight.
+        static member getViewBounds viewType world =
+            match viewType with
+            | Relative -> World.getViewBoundsRelative world
+            | Absolute -> World.getViewBoundsAbsolute world
+
+        /// Check that the given bounds is within the eye's sight.
+        static member inView viewType (bounds : Vector4) world =
+            let viewBounds = World.getViewBounds viewType world
+            Math.isBoundsInBounds bounds viewBounds
+
+        /// Transform the given mouse position to screen space.
+        static member mouseToScreen (mousePosition : Vector2) world =
+            let gameState = World.getGameState world
+            let positionScreen =
+                Vector2
+                    (mousePosition.X - gameState.EyeSize.X * 0.5f,
+                     -(mousePosition.Y - gameState.EyeSize.Y * 0.5f)) // negation for right-handedness
+            positionScreen
+
+        /// Transform the given mouse position to world space.
+        static member mouseToWorld viewType mousePosition world =
+            let positionScreen = World.mouseToScreen mousePosition world
+            let view =
+                match viewType with
+                | Relative -> World.getViewRelative world
+                | Absolute -> World.getViewAbsolute world
+            let positionWorld = positionScreen * view
+            positionWorld
+
+        /// Transform the given mouse position to entity space.
+        static member mouseToEntity viewType entityPosition mousePosition world =
+            let mousePositionWorld = World.mouseToWorld viewType mousePosition world
+            entityPosition - mousePositionWorld
+
+        static member internal getGameProperty propertyName world =
+            match propertyName with // NOTE: string match for speed
+            | "Id" -> (World.getGameId world :> obj, typeof<Guid>)
+            | "Xtension" -> (World.getGameXtension world :> obj, typeof<Xtension>)
+            | "DispatcherNp" -> (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
+            | "Specialization" -> (World.getGameSpecialization world :> obj, typeof<string>)
+            | "CreationTimeStampNp" -> (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
+            | "OptSelectedScreen" -> (World.getOptSelectedScreen world :> obj, typeof<Screen option>)
+            | "OptScreenTransitionDestination" -> (World.getOptScreenTransitionDestination world :> obj, typeof<Screen option>)
+            | "EyeCenter" -> (World.getEyeCenter world :> obj, typeof<Vector2>)
+            | "EyeSize" -> (World.getEyeSize world :> obj, typeof<Vector2>)
+            | _ -> GameState.getProperty propertyName (World.getGameState world)
+
+        static member internal setGameProperty propertyName (property : obj * Type) world =
+            match propertyName with // NOTE: string match for speed
+            | "Id" -> failwith "Cannot change group id."
+            | "Xtension" -> failwith "Cannot change group xtension."
+            | "DispatcherNp" -> failwith "Cannot change group dispatcher."
+            | "Specialization" -> failwith "Cannot change group specialization."
+            | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
+            | "OptOptSelectedScreen" -> World.setOptSelectedScreen (property |> fst :?> Screen option) world
+            | "OptScreenTransitionDestination" -> World.setOptScreenTransitionDestination (property |> fst :?> Screen option) world
+            | "EyeCenter" -> World.setEyeCenter (property |> fst :?> Vector2) world
+            | "EyeSize" -> World.setEyeSize (property |> fst :?> Vector2) world
+            | _ -> World.updateGameState (GameState.setProperty propertyName property) propertyName world
+
+        static member internal makeGameState optSpecialization dispatcher =
+            let gameState = GameState.make optSpecialization dispatcher
+            Reflection.attachProperties GameState.copy dispatcher gameState
+
+        static member internal writeGame3 writeScreens gameDescriptor world =
+            let gameState = World.getGameState world
+            let gameDispatcherName = getTypeName gameState.DispatcherNp
+            let gameDescriptor = { gameDescriptor with GameDispatcher = gameDispatcherName }
+            let viewGameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
+            let gameDescriptor = { gameDescriptor with GameProperties = viewGameProperties }
+            writeScreens gameDescriptor world
+
+        static member internal readGame3 readScreens gameDescriptor world =
+
+            // create the dispatcher
+            let dispatcherName = gameDescriptor.GameDispatcher
+            let dispatchers = World.getGameDispatchers world
+            let dispatcher =
+                match Map.tryFind dispatcherName dispatchers with
+                | Some dispatcher -> dispatcher
+                | None ->
+                    Log.info ^ "Could not find GameDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
+                    let dispatcherName = typeof<GameDispatcher>.Name
+                    Map.find dispatcherName dispatchers
+
+            // make the bare game state
+            let gameState = World.makeGameState None dispatcher
+
+            // read the game state's value
+            let gameState = Reflection.readPropertiesToTarget GameState.copy gameDescriptor.GameProperties gameState
+
+            // set the game's state in the world
+            let world = World.setGameState gameState world
+            
+            // read the game's screens
+            let world = readScreens gameDescriptor world |> snd
+            
+            // choose the world
+            World.choose world
+
+        /// View all of the properties of a game.
+        static member viewGameProperties world =
+            let state = World.getGameState world
+            let properties = World.getProperties state
+            Array.ofList properties
+
+    type World with
+
+        static member private screenStateAdder screenState screen world =
+            let screenDirectory =
+                match Address.getNames screen.ScreenAddress with
+                | [screenName] ->
+                    match Umap.tryFind screenName world.ScreenDirectory with
+                    | Some (_, groupDirectory) ->
+                        // NOTE: this is logically a redundant operation...
+                        Umap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
+                    | None ->
+                        let groupDirectory = Umap.makeEmpty None
+                        Umap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
+                | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
+            let screenStates = Umap.add screen.ScreenAddress screenState world.ScreenStates
+            World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
+
+        static member private screenStateRemover screen world =
+            let screenDirectory =
+                match Address.getNames screen.ScreenAddress with
+                | [screenName] -> Umap.remove screenName world.ScreenDirectory
+                | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
+            let screenStates = Umap.remove screen.ScreenAddress world.ScreenStates
+            World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
+
+        static member private screenStateSetter screenState screen world =
+#if DEBUG
+            if not ^ Umap.containsKey screen.ScreenAddress world.ScreenStates then
+                failwith ^ "Cannot set the state of a non-existent screen '" + scstring screen.ScreenAddress + "'"
+            if not ^ World.qualifyEventContext (atooa screen.ScreenAddress) world then
+                failwith ^ "Cannot set the state of a screen in an unqualifed event context."
+#endif
+            let screenStates = Umap.add screen.ScreenAddress screenState world.ScreenStates
+            World.choose { world with ScreenStates = screenStates }
+
+        static member private addScreenState screenState screen world =
+            World.screenStateAdder screenState screen world
+
+        static member private removeScreenState screen world =
+            World.screenStateRemover screen world
+
+        static member private publishScreenChange (propertyName : string) (screen : Screen) oldWorld world =
+            let changeEventAddress = ltoa [!!"Screen"; !!"Change"; !!propertyName; !!"Event"] ->>- screen.ScreenAddress
+            let eventTrace = EventTrace.record "World" "publishScreenChange" EventTrace.empty
+            World.publish { Participant = screen; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace screen world
+
+        static member private getOptScreenState screen world =
+            Umap.tryFind screen.ScreenAddress world.ScreenStates
+
+        static member private getScreenState screen world =
+            match World.getOptScreenState screen world with
+            | Some screenState -> screenState
+            | None -> failwith ^ "Could not find screen with address '" + scstring screen.ScreenAddress + "'."
+
+        static member private setScreenState screenState screen world =
+            World.screenStateSetter screenState screen world
+
+        static member private updateScreenStateWithoutEvent updater screen world =
+            let screenState = World.getScreenState screen world
+            let screenState = updater screenState
+            World.setScreenState screenState screen world
+
+        static member private updateScreenState updater propertyName screen world =
+            let oldWorld = world
+            let world = World.updateScreenStateWithoutEvent updater screen world
+            World.publishScreenChange propertyName screen oldWorld world
+
+        static member private publishScreenChanges screen oldWorld world =
+            let screenState = World.getScreenState screen world
+            let properties = World.getProperties screenState
+            List.fold (fun world (propertyName, _) -> World.publishScreenChange propertyName screen oldWorld world) world properties
+
+        /// Check that the world contains the proxied screen.
+        static member containsScreen screen world =
+            Option.isSome ^ World.getOptScreenState screen world
+
+        static member internal getScreenId screen world = (World.getScreenState screen world).Id
+        static member internal getScreenName screen world = (World.getScreenState screen world).Name
+        static member internal getScreenXtension screen world = (World.getScreenState screen world).Xtension // TODO: try to get rid of this
+        static member internal getScreenDispatcherNp screen world = (World.getScreenState screen world).DispatcherNp
+        static member internal getScreenSpecialization screen world = (World.getScreenState screen world).Specialization
+        static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
+        static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) Property? Persistent screen world
+        static member internal getScreenCreationTimeStampNp screen world = (World.getScreenState screen world).CreationTimeStampNp
+        static member internal getScreenEntityTreeNp screen world = (World.getScreenState screen world).EntityTreeNp
+        static member internal setScreenEntityTreeNp value screen world = World.updateScreenState (fun screenState -> { screenState with EntityTreeNp = value }) Property? EntityTreeNp screen world
+        static member internal getScreenTransitionStateNp screen world = (World.getScreenState screen world).TransitionStateNp
+        static member internal setScreenTransitionStateNp value screen world = World.updateScreenState (fun screenState -> { screenState with TransitionStateNp = value }) Property? TransitionStateNp screen world
+        static member internal getScreenTransitionTicksNp screen world = (World.getScreenState screen world).TransitionTicksNp
+        static member internal setScreenTransitionTicksNp value screen world = World.updateScreenState (fun screenState -> { screenState with TransitionTicksNp = value }) Property? TransitionTicksNp screen world
+        static member internal getScreenIncoming screen world = (World.getScreenState screen world).Incoming
+        static member internal setScreenIncoming value screen world = World.updateScreenState (fun screenState -> { screenState with Incoming = value }) Property? Incoming screen world
+        static member internal getScreenOutgoing screen world = (World.getScreenState screen world).Outgoing
+        static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) Property? Outgoing screen world
+
+        static member internal getScreenProperty propertyName screen world =
+            match propertyName with // NOTE: string match for speed
+            | "Id" -> (World.getScreenId screen world :> obj, typeof<Guid>)
+            | "Name" -> (World.getScreenName screen world :> obj, typeof<Name>)
+            | "Xtension" -> (World.getScreenXtension screen world :> obj, typeof<Xtension>)
+            | "DispatcherNp" -> (World.getScreenDispatcherNp screen world :> obj, typeof<ScreenDispatcher>)
+            | "Specialization" -> (World.getScreenSpecialization screen world :> obj, typeof<string>)
+            | "Persistent" -> (World.getScreenPersistent screen world :> obj, typeof<bool>)
+            | "CreationTimeStampNp" -> (World.getScreenCreationTimeStampNp screen world :> obj, typeof<int64>)
+            | "EntityTreeNp" -> (World.getScreenEntityTreeNp screen world :> obj, typeof<Entity QuadTree MutantCache>)
+            | "TransitionStateNp" -> (World.getScreenTransitionStateNp screen world :> obj, typeof<TransitionState>)
+            | "TransitionTicksNp" -> (World.getScreenTransitionTicksNp screen world :> obj, typeof<int64>)
+            | "Incoming" -> (World.getScreenIncoming screen world :> obj, typeof<Transition>)
+            | "Outgoing" -> (World.getScreenOutgoing screen world :> obj, typeof<Transition>)
+            | _ -> ScreenState.getProperty propertyName (World.getScreenState screen world)
+
+        static member internal setScreenProperty propertyName (property : obj * Type) screen world =
+            match propertyName with // NOTE: string match for speed
+            | "Id" -> failwith "Cannot change screen id."
+            | "Name" -> failwith "Cannot change screen name."
+            | "Xtension" -> failwith "Cannot change group xtension."
+            | "DispatcherNp" -> failwith "Cannot change screen dispatcher."
+            | "Specialization" -> failwith "Cannot change screen specialization."
+            | "Persistent" -> World.setScreenPersistent (property |> fst :?> bool) screen world
+            | "CreationTimeStampNp" -> failwith "Cannot change screen creation time stamp."
+            | "EntityTreeNp" -> failwith "Cannot change screen entity tree."
+            | "TransitionStateNp" -> World.setScreenTransitionStateNp (property |> fst :?> TransitionState) screen world
+            | "TransitionTicksNp" -> World.setScreenTransitionTicksNp (property |> fst :?> int64) screen world
+            | "Incoming" -> World.setScreenIncoming (property |> fst :?> Transition) screen world
+            | "Outgoing" -> World.setScreenOutgoing (property |> fst :?> Transition) screen world
+            | _ -> World.updateScreenState (ScreenState.setProperty propertyName property) propertyName screen world
+
+        static member internal addScreen mayReplace screenState screen world =
+            let isNew = not ^ World.containsScreen screen world
+            if isNew || mayReplace then
+                let oldWorld = world
+                let world = World.addScreenState screenState screen world
+                let world =
+                    if isNew then
+                        let dispatcher = World.getScreenDispatcherNp screen world
+                        let world = World.withEventContext (fun world -> dispatcher.Register (screen, world)) (atooa screen.ScreenAddress) world
+                        let eventTrace = EventTrace.record "World" "addScreen" EventTrace.empty
+                        World.publish () (ltoa<unit> [!!"Screen"; !!"Add"; !!"Event"] ->- screen) eventTrace screen world
+                    else world
+                World.publishScreenChanges screen oldWorld world
+            else failwith ^ "Adding a screen that the world already contains at address '" + scstring screen.ScreenAddress + "'."
+
+        static member internal removeScreen3 removeGroups screen world =
+            let eventTrace = EventTrace.record "World" "removeScreen" EventTrace.empty
+            let world = World.publish () (ltoa<unit> [!!"Screen"; !!"Removing"; !!"Event"] ->- screen) eventTrace screen world
+            if World.containsScreen screen world then
+                let dispatcher = World.getScreenDispatcherNp screen world
+                let world = World.withEventContext (fun world -> dispatcher.Unregister (screen, world)) (atooa screen.ScreenAddress) world
+                let world = removeGroups screen world
+                World.removeScreenState screen world
+            else world
+
+        static member internal writeScreen4 writeGroups screen screenDescriptor world =
+            let screenState = World.getScreenState screen world
+            let screenDispatcherName = getTypeName screenState.DispatcherNp
+            let screenDescriptor = { screenDescriptor with ScreenDispatcher = screenDispatcherName }
+            let getScreenProperties = Reflection.writePropertiesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
+            let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
+            writeGroups screen screenDescriptor world
+
+        static member internal readScreen4 readGroups screenDescriptor optName world =
+            
+            // create the dispatcher
+            let dispatcherName = screenDescriptor.ScreenDispatcher
+            let dispatchers = World.getScreenDispatchers world
+            let dispatcher =
+                match Map.tryFind dispatcherName dispatchers with
+                | Some dispatcher -> dispatcher
+                | None ->
+                    Log.info ^ "Could not find ScreenDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
+                    let dispatcherName = typeof<ScreenDispatcher>.Name
+                    Map.find dispatcherName dispatchers
+
+            // make the bare screen state with name as id
+            let screenState = ScreenState.make None None dispatcher
+
+            // attach the screen state's instrinsic properties from its dispatcher if any
+            let screenState = Reflection.attachProperties ScreenState.copy screenState.DispatcherNp screenState
+
+            // read the screen state's value
+            let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
+
+            // apply the name if one is provided
+            let screenState =
+                match optName with
+                | Some name -> { screenState with Name = name }
+                | None -> screenState
+            
+            // add the screen's state to the world
+            let screen = screenState.Name |> ntoa |> Screen.proxy
+            let screenState =
+                if World.containsScreen screen world
+                then { screenState with EntityTreeNp = World.getScreenEntityTreeNp screen world }
+                else screenState
+            let world = World.addScreen true screenState screen world
+            
+            // read the screen's groups
+            let world = readGroups screenDescriptor screen world |> snd
+            (screen, world)
+
+        /// View all of the properties of a screen.
+        static member viewScreenProperties screen world =
+            let state = World.getScreenState screen world
+            let properties = World.getProperties state
+            Array.ofList properties
+
+    type World with
+
+        static member private groupStateAdder groupState group world =
+            let screenDirectory =
+                match Address.getNames group.GroupAddress with
+                | [screenName; groupName] ->
+                    match Umap.tryFind screenName world.ScreenDirectory with
+                    | Some (screenAddress, groupDirectory) ->
+                        match Umap.tryFind groupName groupDirectory with
+                        | Some (groupAddress, entityDirectory) ->
+                            let groupDirectory = Umap.add groupName (groupAddress, entityDirectory) groupDirectory
+                            Umap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
+                        | None ->
+                            let entityDirectory = Umap.makeEmpty None
+                            let groupDirectory = Umap.add groupName (group.GroupAddress, entityDirectory) groupDirectory
+                            Umap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
+                    | None -> failwith ^ "Cannot add group '" + scstring group.GroupAddress + "' to non-existent screen."
+                | _ -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
+            let groupStates = Umap.add group.GroupAddress groupState world.GroupStates
+            World.choose { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
+
+        static member private groupStateRemover group world =
+            let screenDirectory =
+                match Address.getNames group.GroupAddress with
+                | [screenName; groupName] ->
+                    match Umap.tryFind screenName world.ScreenDirectory with
+                    | Some (screenAddress, groupDirectory) ->
+                        let groupDirectory = Umap.remove groupName groupDirectory
+                        Umap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
+                    | None -> failwith ^ "Cannot remove group '" + scstring group.GroupAddress + "' from non-existent screen."
+                | _ -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
+            let groupStates = Umap.remove group.GroupAddress world.GroupStates
+            World.choose { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
+
+        static member private groupStateSetter groupState group world =
+#if DEBUG
+            if not ^ Umap.containsKey group.GroupAddress world.GroupStates then
+                failwith ^ "Cannot set the state of a non-existent group '" + scstring group.GroupAddress + "'"
+            if not ^ World.qualifyEventContext (atooa group.GroupAddress) world then
+                failwith ^ "Cannot set the state of a group in an unqualifed event context."
+#endif
+            let groupStates = Umap.add group.GroupAddress groupState world.GroupStates
+            World.choose { world with GroupStates = groupStates }
+
+        static member private addGroupState groupState group world =
+            World.groupStateAdder groupState group world
+
+        static member private removeGroupState group world =
+            World.groupStateRemover group world
+
+        static member private publishGroupChange (propertyName : string) (group : Group) oldWorld world =
+            let changeEventAddress = ltoa [!!"Group"; !!"Change"; !!propertyName; !!"Event"] ->>- group.GroupAddress
+            let eventTrace = EventTrace.record "World" "publishGroupChange" EventTrace.empty
+            World.publish { Participant = group; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace group world
+
+        static member private getOptGroupState group world =
+            Umap.tryFind group.GroupAddress world.GroupStates
+
+        static member private getGroupState group world =
+            match World.getOptGroupState group world with
+            | Some groupState -> groupState
+            | None -> failwith ^ "Could not find group with address '" + scstring group.GroupAddress + "'."
+
+        static member private setGroupState groupState group world =
+            World.groupStateSetter groupState group world
+
+        static member private updateGroupStateWithoutEvent updater group world =
+            let groupState = World.getGroupState group world
+            let groupState = updater groupState
+            World.setGroupState groupState group world
+
+        static member private updateGroupState updater propertyName group world =
+            let oldWorld = world
+            let world = World.updateGroupStateWithoutEvent updater group world
+            World.publishGroupChange propertyName group oldWorld world
+
+        static member private publishGroupChanges group oldWorld world =
+            let groupState = World.getGroupState group world
+            let properties = World.getProperties groupState
+            List.fold (fun world (propertyName, _) -> World.publishGroupChange propertyName group oldWorld world) world properties
+
+        /// Check that the world contains a group.
+        static member containsGroup group world =
+            Option.isSome ^ World.getOptGroupState group world
+
+        static member internal getGroupId group world = (World.getGroupState group world).Id
+        static member internal getGroupName group world = (World.getGroupState group world).Name
+        static member internal getGroupXtension group world = (World.getGroupState group world).Xtension // TODO: try to get rid of this
+        static member internal getGroupDispatcherNp group world = (World.getGroupState group world).DispatcherNp
+        static member internal getGroupSpecialization group world = (World.getGroupState group world).Specialization
+        static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
+        static member internal setGroupPersistent value group world = World.updateGroupState (fun groupState -> { groupState with Persistent = value }) Property? Persistent group world
+        static member internal getGroupCreationTimeStampNp group world = (World.getGroupState group world).CreationTimeStampNp
+
+        static member internal getGroupProperty propertyName group world =
+            match propertyName with // NOTE: string match for speed
+            | "Id" -> (World.getGroupId group world :> obj, typeof<Guid>)
+            | "Name" -> (World.getGroupName group world :> obj, typeof<Name>)
+            | "Xtension" -> (World.getGroupXtension group world :> obj, typeof<Xtension>)
+            | "DispatcherNp" -> (World.getGroupDispatcherNp group world :> obj, typeof<GroupDispatcher>)
+            | "Specialization" -> (World.getGroupSpecialization group world :> obj, typeof<string>)
+            | "Persistent" -> (World.getGroupPersistent group world :> obj, typeof<bool>)
+            | "CreationTimeStampNp" -> (World.getGroupCreationTimeStampNp group world :> obj, typeof<int64>)
+            | _ -> GroupState.getProperty propertyName (World.getGroupState group world)
+
+        static member internal setGroupProperty propertyName (property : obj * Type) group world =
+            match propertyName with // NOTE: string match for speed
+            | "Id" -> failwith "Cannot change group id."
+            | "Name" -> failwith "Cannot change group name."
+            | "Xtension" -> failwith "Cannot change group xtension."
+            | "DispatcherNp" -> failwith "Cannot change group dispatcher."
+            | "Specialization" -> failwith "Cannot change group specialization."
+            | "Persistent" -> World.setGroupPersistent (property |> fst :?> bool) group world
+            | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
+            | _ -> World.updateGroupState (GroupState.setProperty propertyName property) propertyName group world
+
+        static member private addGroup mayReplace groupState group world =
+            let isNew = not ^ World.containsGroup group world
+            if isNew || mayReplace then
+                let oldWorld = world
+                let world = World.addGroupState groupState group world
+                let world =
+                    if isNew then
+                        let dispatcher = World.getGroupDispatcherNp group world
+                        let world = World.withEventContext (fun world -> dispatcher.Register (group, world)) (atooa group.GroupAddress) world
+                        let eventTrace = EventTrace.record "World" "addGroup" EventTrace.empty
+                        World.publish () (ltoa<unit> [!!"Group"; !!"Add"; !!"Event"] ->- group) eventTrace group world
+                    else world
+                World.publishGroupChanges group oldWorld world
+            else failwith ^ "Adding a group that the world already contains at address '" + scstring group.GroupAddress + "'."
+
+        static member internal removeGroup3 removeEntities group world =
+            let eventTrace = EventTrace.record "World" "removeGroup" EventTrace.empty
+            let world = World.publish () (ltoa<unit> [!!"Group"; !!"Removing"; !!"Event"] ->- group) eventTrace group world
+            if World.containsGroup group world then
+                let dispatcher = World.getGroupDispatcherNp group world
+                let world = World.withEventContext (fun world -> dispatcher.Unregister (group, world)) (atooa group.GroupAddress) world
+                let world = removeEntities group world
+                World.removeGroupState group world
+            else world
+
+        /// Create a group and add it to the world.
+        static member createGroup5 dispatcherName optSpecialization optName screen world =
+            let dispatchers = World.getGroupDispatchers world
+            let dispatcher =
+                match Map.tryFind dispatcherName dispatchers with
+                | Some dispatcher -> dispatcher
+                | None -> failwith ^ "Could not find a GroupDispatcher named '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
+            let groupState = GroupState.make optSpecialization optName dispatcher
+            let groupState = Reflection.attachProperties GroupState.copy dispatcher groupState
+            let group = screen.ScreenAddress -<<- ntoa<Group> groupState.Name |> Group.proxy
+            let world = World.addGroup false groupState group world
+            (group, world)
+
+        /// Create a group and add it to the world.
+        static member createGroup<'d when 'd :> GroupDispatcher> optSpecialization optName screen world =
+            World.createGroup5 typeof<'d>.Name optSpecialization optName screen world
+
+        static member internal writeGroup4 writeEntities group groupDescriptor world =
+            let groupState = World.getGroupState group world
+            let groupDispatcherName = getTypeName groupState.DispatcherNp
+            let groupDescriptor = { groupDescriptor with GroupDispatcher = groupDispatcherName }
+            let getGroupProperties = Reflection.writePropertiesFromTarget tautology3 groupDescriptor.GroupProperties groupState
+            let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
+            writeEntities group groupDescriptor world
+
+        static member internal readGroup5 readEntities groupDescriptor optName screen world =
+
+            // create the dispatcher
+            let dispatcherName = groupDescriptor.GroupDispatcher
+            let dispatchers = World.getGroupDispatchers world
+            let dispatcher =
+                match Map.tryFind dispatcherName dispatchers with
+                | Some dispatcher -> dispatcher
+                | None ->
+                    Log.info ^ "Could not find GroupDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
+                    let dispatcherName = typeof<GroupDispatcher>.Name
+                    Map.find dispatcherName dispatchers
+
+            // make the bare group state with name as id
+            let groupState = GroupState.make None None dispatcher
+
+            // attach the group state's instrinsic properties from its dispatcher if any
+            let groupState = Reflection.attachProperties GroupState.copy groupState.DispatcherNp groupState
+
+            // read the group state's value
+            let groupState = Reflection.readPropertiesToTarget GroupState.copy groupDescriptor.GroupProperties groupState
+
+            // apply the name if one is provided
+            let groupState =
+                match optName with
+                | Some name -> { groupState with Name = name }
+                | None -> groupState
+
+            // add the group's state to the world
+            let group = screen.ScreenAddress -<<- ntoa<Group> groupState.Name |> Group.proxy
+            let world = World.addGroup true groupState group world
+
+            // read the group's entities
+            let world = readEntities groupDescriptor group world |> snd
+            (group, world)
+
+        /// View all of the properties of a group.
+        static member viewGroupProperties group world =
+            let state = World.getGroupState group world
+            let properties = World.getProperties state
+            Array.ofList properties
+
+    type World with
 
         static member private optEntityStateKeyEquality 
             (entityAddress : Entity Address, world : World)
@@ -761,6 +1257,146 @@ module WorldModule =
                 let world = World.publishEntityChange Property? Rotation entity oldWorld world
                 World.publishEntityChange Property? Depth entity oldWorld world
             else world
+
+        static member private tryGetFacet facetName world =
+            let facets = World.getFacets world
+            match Map.tryFind facetName facets with
+            | Some facet -> Right facet
+            | None -> Left ^ "Invalid facet name '" + facetName + "'."
+
+        static member private isFacetCompatibleWithEntity entityDispatcherMap facet (entityState : EntityState) =
+            // Note a facet is incompatible with any other facet if it contains any properties that has
+            // the same name but a different type.
+            let facetType = facet.GetType ()
+            let facetPropertyDefinitions = Reflection.getPropertyDefinitions facetType
+            if Reflection.isFacetCompatibleWithDispatcher entityDispatcherMap facet entityState then
+                List.notExists
+                    (fun definition ->
+                        match Xtension.tryGetProperty definition.PropertyName entityState.Xtension with
+                        | Some property -> property.PropertyType <> definition.PropertyType
+                        | None -> false)
+                    facetPropertyDefinitions
+            else false
+
+        static member private getEntityPropertyDefinitionNamesToDetach entityState facetToRemove =
+
+            // get the property definition name counts of the current, complete entity
+            let propertyDefinitions = Reflection.getReflectivePropertyDefinitionMap entityState
+            let propertyDefinitionNameCounts = Reflection.getPropertyDefinitionNameCounts propertyDefinitions
+
+            // get the property definition name counts of the facet to remove
+            let facetType = facetToRemove.GetType ()
+            let facetPropertyDefinitions = Map.singleton facetType.Name ^ Reflection.getPropertyDefinitions facetType
+            let facetPropertyDefinitionNameCounts = Reflection.getPropertyDefinitionNameCounts facetPropertyDefinitions
+
+            // compute the difference of the counts
+            let finalPropertyDefinitionNameCounts =
+                Map.map
+                    (fun propertyName propertyCount ->
+                        match Map.tryFind propertyName facetPropertyDefinitionNameCounts with
+                        | Some facetPropertyCount -> propertyCount - facetPropertyCount
+                        | None -> propertyCount)
+                    propertyDefinitionNameCounts
+
+            // build a set of all property names where the final counts are negative
+            Map.fold
+                (fun propertyNamesToDetach propertyName propertyCount ->
+                    if propertyCount = 0
+                    then Set.add propertyName propertyNamesToDetach
+                    else propertyNamesToDetach)
+                Set.empty
+                finalPropertyDefinitionNameCounts
+
+        /// Get an entity's intrinsic facet names.
+        static member getIntrinsicFacetNames entityState =
+            let intrinsicFacetNames = entityState.DispatcherNp |> getType |> Reflection.getIntrinsicFacetNames
+            Set.ofList intrinsicFacetNames
+
+        /// Get an entity's facet names via reflection.
+        static member getFacetNamesReflectively entityState =
+            let facetNames = List.map getTypeName entityState.FacetsNp
+            Set.ofList facetNames
+
+        static member private tryRemoveFacet facetName entityState optEntity world =
+            match List.tryFind (fun facet -> getTypeName facet = facetName) entityState.FacetsNp with
+            | Some facet ->
+                let (entityState, world) =
+                    match optEntity with
+                    | Some entity ->
+                        let world = World.withEventContext (fun world -> facet.Unregister (entity, world)) entity.ObjAddress world
+                        let entityState = World.getEntityState entity world
+                        (entityState, world)
+                    | None -> (entityState, world)
+                let propertyNames = World.getEntityPropertyDefinitionNamesToDetach entityState facet
+                let entityState = Reflection.detachPropertiesViaNames EntityState.copy propertyNames entityState
+                let entityState = { entityState with FacetNames = Set.remove facetName entityState.FacetNames }
+                let entityState = { entityState with FacetsNp = List.remove ((=) facet) entityState.FacetsNp }
+                match optEntity with
+                | Some entity ->
+                    let oldWorld = world
+                    let world = World.setEntityState entityState entity world
+                    let world = World.updateEntityInEntityTree entity oldWorld world
+                    Right (World.getEntityState entity world, world)
+                | None -> Right (entityState, world)
+            | None -> let _ = World.choose world in Left ^ "Failure to remove facet '" + facetName + "' from entity."
+
+        static member private tryAddFacet facetName (entityState : EntityState) optEntity world =
+            match World.tryGetFacet facetName world with
+            | Right facet ->
+                let entityDispatchers = World.getEntityDispatchers world
+                if World.isFacetCompatibleWithEntity entityDispatchers facet entityState then
+                    let entityState = { entityState with FacetNames = Set.add facetName entityState.FacetNames }
+                    let entityState = { entityState with FacetsNp = facet :: entityState.FacetsNp }
+                    let entityState = Reflection.attachProperties EntityState.copy facet entityState
+                    match optEntity with
+                    | Some entity ->
+                        let oldWorld = world
+                        let world = World.setEntityState entityState entity world
+                        let world = World.updateEntityInEntityTree entity oldWorld world
+                        let world = World.withEventContext (fun world -> facet.Register (entity, world)) entity.ObjAddress world
+                        Right (World.getEntityState entity world, world)
+                    | None -> Right (entityState, world)
+                else let _ = World.choose world in Left ^ "Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Name + "'."
+            | Left error -> Left error
+
+        static member private tryRemoveFacets facetNamesToRemove entityState optEntity world =
+            Set.fold
+                (fun eitherEntityWorld facetName ->
+                    match eitherEntityWorld with
+                    | Right (entityState, world) -> World.tryRemoveFacet facetName entityState optEntity world
+                    | Left _ as left -> left)
+                (Right (entityState, world))
+                facetNamesToRemove
+
+        static member private tryAddFacets facetNamesToAdd entityState optEntity world =
+            Set.fold
+                (fun eitherEntityStateWorld facetName ->
+                    match eitherEntityStateWorld with
+                    | Right (entityState, world) -> World.tryAddFacet facetName entityState optEntity world
+                    | Left _ as left -> left)
+                (Right (entityState, world))
+                facetNamesToAdd
+
+        static member internal trySetFacetNames facetNames entityState optEntity world =
+            let intrinsicFacetNames = World.getIntrinsicFacetNames entityState
+            let extrinsicFacetNames = Set.fold (flip Set.remove) facetNames intrinsicFacetNames
+            let facetNamesToRemove = Set.difference entityState.FacetNames extrinsicFacetNames
+            let facetNamesToAdd = Set.difference extrinsicFacetNames entityState.FacetNames
+            match World.tryRemoveFacets facetNamesToRemove entityState optEntity world with
+            | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
+            | Left _ as left -> left
+
+        static member internal trySynchronizeFacetsToNames oldFacetNames entityState optEntity world =
+            let facetNamesToRemove = Set.difference oldFacetNames entityState.FacetNames
+            let facetNamesToAdd = Set.difference entityState.FacetNames oldFacetNames
+            match World.tryRemoveFacets facetNamesToRemove entityState optEntity world with
+            | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
+            | Left _ as left -> left
+
+        static member internal attachIntrinsicFacetsViaNames entityState world =
+            let entityDispatchers = World.getEntityDispatchers world
+            let facets = World.getFacets world
+            Reflection.attachIntrinsicFacets EntityState.copy entityDispatchers facets entityState.DispatcherNp entityState
 
         static member internal applyEntityOverlay oldOverlayer overlayer world entity =
             let entityState = World.getEntityState entity world
@@ -1185,343 +1821,9 @@ module WorldModule =
             let properties = World.getProperties state
             Array.ofList properties
 
-        (* Group *)
+    type World with
 
-        static member private groupStateAdder groupState group world =
-            let screenDirectory =
-                match Address.getNames group.GroupAddress with
-                | [screenName; groupName] ->
-                    match Umap.tryFind screenName world.ScreenDirectory with
-                    | Some (screenAddress, groupDirectory) ->
-                        match Umap.tryFind groupName groupDirectory with
-                        | Some (groupAddress, entityDirectory) ->
-                            let groupDirectory = Umap.add groupName (groupAddress, entityDirectory) groupDirectory
-                            Umap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
-                        | None ->
-                            let entityDirectory = Umap.makeEmpty None
-                            let groupDirectory = Umap.add groupName (group.GroupAddress, entityDirectory) groupDirectory
-                            Umap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
-                    | None -> failwith ^ "Cannot add group '" + scstring group.GroupAddress + "' to non-existent screen."
-                | _ -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
-            let groupStates = Umap.add group.GroupAddress groupState world.GroupStates
-            World.choose { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
-
-        static member private groupStateRemover group world =
-            let screenDirectory =
-                match Address.getNames group.GroupAddress with
-                | [screenName; groupName] ->
-                    match Umap.tryFind screenName world.ScreenDirectory with
-                    | Some (screenAddress, groupDirectory) ->
-                        let groupDirectory = Umap.remove groupName groupDirectory
-                        Umap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
-                    | None -> failwith ^ "Cannot remove group '" + scstring group.GroupAddress + "' from non-existent screen."
-                | _ -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
-            let groupStates = Umap.remove group.GroupAddress world.GroupStates
-            World.choose { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
-
-        static member private groupStateSetter groupState group world =
-#if DEBUG
-            if not ^ Umap.containsKey group.GroupAddress world.GroupStates then
-                failwith ^ "Cannot set the state of a non-existent group '" + scstring group.GroupAddress + "'"
-            if not ^ World.qualifyEventContext (atooa group.GroupAddress) world then
-                failwith ^ "Cannot set the state of a group in an unqualifed event context."
-#endif
-            let groupStates = Umap.add group.GroupAddress groupState world.GroupStates
-            World.choose { world with GroupStates = groupStates }
-
-        static member private addGroupState groupState group world =
-            World.groupStateAdder groupState group world
-
-        static member private removeGroupState group world =
-            World.groupStateRemover group world
-
-        static member private publishGroupChange (propertyName : string) (group : Group) oldWorld world =
-            let changeEventAddress = ltoa [!!"Group"; !!"Change"; !!propertyName; !!"Event"] ->>- group.GroupAddress
-            let eventTrace = EventTrace.record "World" "publishGroupChange" EventTrace.empty
-            World.publish { Participant = group; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace group world
-
-        static member private getOptGroupState group world =
-            Umap.tryFind group.GroupAddress world.GroupStates
-
-        static member private getGroupState group world =
-            match World.getOptGroupState group world with
-            | Some groupState -> groupState
-            | None -> failwith ^ "Could not find group with address '" + scstring group.GroupAddress + "'."
-
-        static member private setGroupState groupState group world =
-            World.groupStateSetter groupState group world
-
-        static member private updateGroupStateWithoutEvent updater group world =
-            let groupState = World.getGroupState group world
-            let groupState = updater groupState
-            World.setGroupState groupState group world
-
-        static member private updateGroupState updater propertyName group world =
-            let oldWorld = world
-            let world = World.updateGroupStateWithoutEvent updater group world
-            World.publishGroupChange propertyName group oldWorld world
-
-        static member private publishGroupChanges group oldWorld world =
-            let groupState = World.getGroupState group world
-            let properties = World.getProperties groupState
-            List.fold (fun world (propertyName, _) -> World.publishGroupChange propertyName group oldWorld world) world properties
-
-        /// Check that the world contains a group.
-        static member containsGroup group world =
-            Option.isSome ^ World.getOptGroupState group world
-
-        static member internal getGroupId group world = (World.getGroupState group world).Id
-        static member internal getGroupName group world = (World.getGroupState group world).Name
-        static member internal getGroupXtension group world = (World.getGroupState group world).Xtension // TODO: try to get rid of this
-        static member internal getGroupDispatcherNp group world = (World.getGroupState group world).DispatcherNp
-        static member internal getGroupSpecialization group world = (World.getGroupState group world).Specialization
-        static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
-        static member internal setGroupPersistent value group world = World.updateGroupState (fun groupState -> { groupState with Persistent = value }) Property? Persistent group world
-        static member internal getGroupCreationTimeStampNp group world = (World.getGroupState group world).CreationTimeStampNp
-
-        static member internal getGroupProperty propertyName group world =
-            match propertyName with // NOTE: string match for speed
-            | "Id" -> (World.getGroupId group world :> obj, typeof<Guid>)
-            | "Name" -> (World.getGroupName group world :> obj, typeof<Name>)
-            | "Xtension" -> (World.getGroupXtension group world :> obj, typeof<Xtension>)
-            | "DispatcherNp" -> (World.getGroupDispatcherNp group world :> obj, typeof<GroupDispatcher>)
-            | "Specialization" -> (World.getGroupSpecialization group world :> obj, typeof<string>)
-            | "Persistent" -> (World.getGroupPersistent group world :> obj, typeof<bool>)
-            | "CreationTimeStampNp" -> (World.getGroupCreationTimeStampNp group world :> obj, typeof<int64>)
-            | _ -> GroupState.getProperty propertyName (World.getGroupState group world)
-
-        static member internal setGroupProperty propertyName (property : obj * Type) group world =
-            match propertyName with // NOTE: string match for speed
-            | "Id" -> failwith "Cannot change group id."
-            | "Name" -> failwith "Cannot change group name."
-            | "Xtension" -> failwith "Cannot change group xtension."
-            | "DispatcherNp" -> failwith "Cannot change group dispatcher."
-            | "Specialization" -> failwith "Cannot change group specialization."
-            | "Persistent" -> World.setGroupPersistent (property |> fst :?> bool) group world
-            | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
-            | _ -> World.updateGroupState (GroupState.setProperty propertyName property) propertyName group world
-
-        static member private addGroup mayReplace groupState group world =
-            let isNew = not ^ World.containsGroup group world
-            if isNew || mayReplace then
-                let oldWorld = world
-                let world = World.addGroupState groupState group world
-                let world =
-                    if isNew then
-                        let dispatcher = World.getGroupDispatcherNp group world
-                        let world = World.withEventContext (fun world -> dispatcher.Register (group, world)) (atooa group.GroupAddress) world
-                        let eventTrace = EventTrace.record "World" "addGroup" EventTrace.empty
-                        World.publish () (ltoa<unit> [!!"Group"; !!"Add"; !!"Event"] ->- group) eventTrace group world
-                    else world
-                World.publishGroupChanges group oldWorld world
-            else failwith ^ "Adding a group that the world already contains at address '" + scstring group.GroupAddress + "'."
-
-        static member internal removeGroup3 removeEntities group world =
-            let eventTrace = EventTrace.record "World" "removeGroup" EventTrace.empty
-            let world = World.publish () (ltoa<unit> [!!"Group"; !!"Removing"; !!"Event"] ->- group) eventTrace group world
-            if World.containsGroup group world then
-                let dispatcher = World.getGroupDispatcherNp group world
-                let world = World.withEventContext (fun world -> dispatcher.Unregister (group, world)) (atooa group.GroupAddress) world
-                let world = removeEntities group world
-                World.removeGroupState group world
-            else world
-
-        /// Create a group and add it to the world.
-        static member createGroup5 dispatcherName optSpecialization optName screen world =
-            let dispatchers = World.getGroupDispatchers world
-            let dispatcher =
-                match Map.tryFind dispatcherName dispatchers with
-                | Some dispatcher -> dispatcher
-                | None -> failwith ^ "Could not find a GroupDispatcher named '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
-            let groupState = GroupState.make optSpecialization optName dispatcher
-            let groupState = Reflection.attachProperties GroupState.copy dispatcher groupState
-            let group = screen.ScreenAddress -<<- ntoa<Group> groupState.Name |> Group.proxy
-            let world = World.addGroup false groupState group world
-            (group, world)
-
-        /// Create a group and add it to the world.
-        static member createGroup<'d when 'd :> GroupDispatcher> optSpecialization optName screen world =
-            World.createGroup5 typeof<'d>.Name optSpecialization optName screen world
-
-        static member internal writeGroup4 writeEntities group groupDescriptor world =
-            let groupState = World.getGroupState group world
-            let groupDispatcherName = getTypeName groupState.DispatcherNp
-            let groupDescriptor = { groupDescriptor with GroupDispatcher = groupDispatcherName }
-            let getGroupProperties = Reflection.writePropertiesFromTarget tautology3 groupDescriptor.GroupProperties groupState
-            let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
-            writeEntities group groupDescriptor world
-
-        static member internal readGroup5 readEntities groupDescriptor optName screen world =
-
-            // create the dispatcher
-            let dispatcherName = groupDescriptor.GroupDispatcher
-            let dispatchers = World.getGroupDispatchers world
-            let dispatcher =
-                match Map.tryFind dispatcherName dispatchers with
-                | Some dispatcher -> dispatcher
-                | None ->
-                    Log.info ^ "Could not find GroupDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
-                    let dispatcherName = typeof<GroupDispatcher>.Name
-                    Map.find dispatcherName dispatchers
-
-            // make the bare group state with name as id
-            let groupState = GroupState.make None None dispatcher
-
-            // attach the group state's instrinsic properties from its dispatcher if any
-            let groupState = Reflection.attachProperties GroupState.copy groupState.DispatcherNp groupState
-
-            // read the group state's value
-            let groupState = Reflection.readPropertiesToTarget GroupState.copy groupDescriptor.GroupProperties groupState
-
-            // apply the name if one is provided
-            let groupState =
-                match optName with
-                | Some name -> { groupState with Name = name }
-                | None -> groupState
-
-            // add the group's state to the world
-            let group = screen.ScreenAddress -<<- ntoa<Group> groupState.Name |> Group.proxy
-            let world = World.addGroup true groupState group world
-
-            // read the group's entities
-            let world = readEntities groupDescriptor group world |> snd
-            (group, world)
-
-        /// View all of the properties of a group.
-        static member viewGroupProperties group world =
-            let state = World.getGroupState group world
-            let properties = World.getProperties state
-            Array.ofList properties
-
-        (* Screen *)
-
-        static member private screenStateAdder screenState screen world =
-            let screenDirectory =
-                match Address.getNames screen.ScreenAddress with
-                | [screenName] ->
-                    match Umap.tryFind screenName world.ScreenDirectory with
-                    | Some (_, groupDirectory) ->
-                        // NOTE: this is logically a redundant operation...
-                        Umap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
-                    | None ->
-                        let groupDirectory = Umap.makeEmpty None
-                        Umap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
-                | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
-            let screenStates = Umap.add screen.ScreenAddress screenState world.ScreenStates
-            World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
-
-        static member private screenStateRemover screen world =
-            let screenDirectory =
-                match Address.getNames screen.ScreenAddress with
-                | [screenName] -> Umap.remove screenName world.ScreenDirectory
-                | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
-            let screenStates = Umap.remove screen.ScreenAddress world.ScreenStates
-            World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
-
-        static member private screenStateSetter screenState screen world =
-#if DEBUG
-            if not ^ Umap.containsKey screen.ScreenAddress world.ScreenStates then
-                failwith ^ "Cannot set the state of a non-existent screen '" + scstring screen.ScreenAddress + "'"
-            if not ^ World.qualifyEventContext (atooa screen.ScreenAddress) world then
-                failwith ^ "Cannot set the state of a screen in an unqualifed event context."
-#endif
-            let screenStates = Umap.add screen.ScreenAddress screenState world.ScreenStates
-            World.choose { world with ScreenStates = screenStates }
-
-        static member private addScreenState screenState screen world =
-            World.screenStateAdder screenState screen world
-
-        static member private removeScreenState screen world =
-            World.screenStateRemover screen world
-
-        static member private publishScreenChange (propertyName : string) (screen : Screen) oldWorld world =
-            let changeEventAddress = ltoa [!!"Screen"; !!"Change"; !!propertyName; !!"Event"] ->>- screen.ScreenAddress
-            let eventTrace = EventTrace.record "World" "publishScreenChange" EventTrace.empty
-            World.publish { Participant = screen; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace screen world
-
-        static member private getOptScreenState screen world =
-            Umap.tryFind screen.ScreenAddress world.ScreenStates
-
-        static member private getScreenState screen world =
-            match World.getOptScreenState screen world with
-            | Some screenState -> screenState
-            | None -> failwith ^ "Could not find screen with address '" + scstring screen.ScreenAddress + "'."
-
-        static member private setScreenState screenState screen world =
-            World.screenStateSetter screenState screen world
-
-        static member private updateScreenStateWithoutEvent updater screen world =
-            let screenState = World.getScreenState screen world
-            let screenState = updater screenState
-            World.setScreenState screenState screen world
-
-        static member private updateScreenState updater propertyName screen world =
-            let oldWorld = world
-            let world = World.updateScreenStateWithoutEvent updater screen world
-            World.publishScreenChange propertyName screen oldWorld world
-
-        static member private publishScreenChanges screen oldWorld world =
-            let screenState = World.getScreenState screen world
-            let properties = World.getProperties screenState
-            List.fold (fun world (propertyName, _) -> World.publishScreenChange propertyName screen oldWorld world) world properties
-
-        /// Check that the world contains the proxied screen.
-        static member containsScreen screen world =
-            Option.isSome ^ World.getOptScreenState screen world
-
-        static member internal getScreenId screen world = (World.getScreenState screen world).Id
-        static member internal getScreenName screen world = (World.getScreenState screen world).Name
-        static member internal getScreenXtension screen world = (World.getScreenState screen world).Xtension // TODO: try to get rid of this
-        static member internal getScreenDispatcherNp screen world = (World.getScreenState screen world).DispatcherNp
-        static member internal getScreenSpecialization screen world = (World.getScreenState screen world).Specialization
-        static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
-        static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) Property? Persistent screen world
-        static member internal getScreenCreationTimeStampNp screen world = (World.getScreenState screen world).CreationTimeStampNp
-        static member internal getScreenEntityTreeNp screen world = (World.getScreenState screen world).EntityTreeNp
-        static member internal setScreenEntityTreeNp value screen world = World.updateScreenState (fun screenState -> { screenState with EntityTreeNp = value }) Property? EntityTreeNp screen world
-        static member internal getScreenTransitionStateNp screen world = (World.getScreenState screen world).TransitionStateNp
-        static member internal setScreenTransitionStateNp value screen world = World.updateScreenState (fun screenState -> { screenState with TransitionStateNp = value }) Property? TransitionStateNp screen world
-        static member internal getScreenTransitionTicksNp screen world = (World.getScreenState screen world).TransitionTicksNp
-        static member internal setScreenTransitionTicksNp value screen world = World.updateScreenState (fun screenState -> { screenState with TransitionTicksNp = value }) Property? TransitionTicksNp screen world
-        static member internal getScreenIncoming screen world = (World.getScreenState screen world).Incoming
-        static member internal setScreenIncoming value screen world = World.updateScreenState (fun screenState -> { screenState with Incoming = value }) Property? Incoming screen world
-        static member internal getScreenOutgoing screen world = (World.getScreenState screen world).Outgoing
-        static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) Property? Outgoing screen world
-
-        static member internal getScreenProperty propertyName screen world =
-            match propertyName with // NOTE: string match for speed
-            | "Id" -> (World.getScreenId screen world :> obj, typeof<Guid>)
-            | "Name" -> (World.getScreenName screen world :> obj, typeof<Name>)
-            | "Xtension" -> (World.getScreenXtension screen world :> obj, typeof<Xtension>)
-            | "DispatcherNp" -> (World.getScreenDispatcherNp screen world :> obj, typeof<ScreenDispatcher>)
-            | "Specialization" -> (World.getScreenSpecialization screen world :> obj, typeof<string>)
-            | "Persistent" -> (World.getScreenPersistent screen world :> obj, typeof<bool>)
-            | "CreationTimeStampNp" -> (World.getScreenCreationTimeStampNp screen world :> obj, typeof<int64>)
-            | "EntityTreeNp" -> (World.getScreenEntityTreeNp screen world :> obj, typeof<Entity QuadTree MutantCache>)
-            | "TransitionStateNp" -> (World.getScreenTransitionStateNp screen world :> obj, typeof<TransitionState>)
-            | "TransitionTicksNp" -> (World.getScreenTransitionTicksNp screen world :> obj, typeof<int64>)
-            | "Incoming" -> (World.getScreenIncoming screen world :> obj, typeof<Transition>)
-            | "Outgoing" -> (World.getScreenOutgoing screen world :> obj, typeof<Transition>)
-            | _ -> ScreenState.getProperty propertyName (World.getScreenState screen world)
-
-        static member internal setScreenProperty propertyName (property : obj * Type) screen world =
-            match propertyName with // NOTE: string match for speed
-            | "Id" -> failwith "Cannot change screen id."
-            | "Name" -> failwith "Cannot change screen name."
-            | "Xtension" -> failwith "Cannot change group xtension."
-            | "DispatcherNp" -> failwith "Cannot change screen dispatcher."
-            | "Specialization" -> failwith "Cannot change screen specialization."
-            | "Persistent" -> World.setScreenPersistent (property |> fst :?> bool) screen world
-            | "CreationTimeStampNp" -> failwith "Cannot change screen creation time stamp."
-            | "EntityTreeNp" -> failwith "Cannot change screen entity tree."
-            | "TransitionStateNp" -> World.setScreenTransitionStateNp (property |> fst :?> TransitionState) screen world
-            | "TransitionTicksNp" -> World.setScreenTransitionTicksNp (property |> fst :?> int64) screen world
-            | "Incoming" -> World.setScreenIncoming (property |> fst :?> Transition) screen world
-            | "Outgoing" -> World.setScreenOutgoing (property |> fst :?> Transition) screen world
-            | _ -> World.updateScreenState (ScreenState.setProperty propertyName property) propertyName screen world
-
-        static member internal updateEntityInEntityTree entity oldWorld world =
-
+        static member internal updateEntityInEntityTreeImpl entity oldWorld world =
             // OPTIMIZATION: attempt to avoid constructing a screen address on each call to decrease address hashing
             // OPTIMIZATION: assumes a valid entity address with List.head on its names
             let screen =
@@ -1548,313 +1850,14 @@ module WorldModule =
             let screenState = { screenState with EntityTreeNp = entityTree }
             World.setScreenState screenState screen world
 
-        static member internal addScreen mayReplace screenState screen world =
-            let isNew = not ^ World.containsScreen screen world
-            if isNew || mayReplace then
-                let oldWorld = world
-                let world = World.addScreenState screenState screen world
-                let world =
-                    if isNew then
-                        let dispatcher = World.getScreenDispatcherNp screen world
-                        let world = World.withEventContext (fun world -> dispatcher.Register (screen, world)) (atooa screen.ScreenAddress) world
-                        let eventTrace = EventTrace.record "World" "addScreen" EventTrace.empty
-                        World.publish () (ltoa<unit> [!!"Screen"; !!"Add"; !!"Event"] ->- screen) eventTrace screen world
-                    else world
-                World.publishScreenChanges screen oldWorld world
-            else failwith ^ "Adding a screen that the world already contains at address '" + scstring screen.ScreenAddress + "'."
-
-        static member internal removeScreen3 removeGroups screen world =
-            let eventTrace = EventTrace.record "World" "removeScreen" EventTrace.empty
-            let world = World.publish () (ltoa<unit> [!!"Screen"; !!"Removing"; !!"Event"] ->- screen) eventTrace screen world
-            if World.containsScreen screen world then
-                let dispatcher = World.getScreenDispatcherNp screen world
-                let world = World.withEventContext (fun world -> dispatcher.Unregister (screen, world)) (atooa screen.ScreenAddress) world
-                let world = removeGroups screen world
-                World.removeScreenState screen world
-            else world
-
-        static member internal writeScreen4 writeGroups screen screenDescriptor world =
-            let screenState = World.getScreenState screen world
-            let screenDispatcherName = getTypeName screenState.DispatcherNp
-            let screenDescriptor = { screenDescriptor with ScreenDispatcher = screenDispatcherName }
-            let getScreenProperties = Reflection.writePropertiesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
-            let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
-            writeGroups screen screenDescriptor world
-
-        static member internal readScreen4 readGroups screenDescriptor optName world =
-            
-            // create the dispatcher
-            let dispatcherName = screenDescriptor.ScreenDispatcher
-            let dispatchers = World.getScreenDispatchers world
-            let dispatcher =
-                match Map.tryFind dispatcherName dispatchers with
-                | Some dispatcher -> dispatcher
-                | None ->
-                    Log.info ^ "Could not find ScreenDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
-                    let dispatcherName = typeof<ScreenDispatcher>.Name
-                    Map.find dispatcherName dispatchers
-
-            // make the bare screen state with name as id
-            let screenState = ScreenState.make None None dispatcher
-
-            // attach the screen state's instrinsic properties from its dispatcher if any
-            let screenState = Reflection.attachProperties ScreenState.copy screenState.DispatcherNp screenState
-
-            // read the screen state's value
-            let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
-
-            // apply the name if one is provided
-            let screenState =
-                match optName with
-                | Some name -> { screenState with Name = name }
-                | None -> screenState
-            
-            // add the screen's state to the world
-            let screen = screenState.Name |> ntoa |> Screen.proxy
-            let screenState =
-                if World.containsScreen screen world
-                then { screenState with EntityTreeNp = World.getScreenEntityTreeNp screen world }
-                else screenState
-            let world = World.addScreen true screenState screen world
-            
-            // read the screen's groups
-            let world = readGroups screenDescriptor screen world |> snd
-            (screen, world)
-
-        /// View all of the properties of a screen.
-        static member viewScreenProperties screen world =
-            let state = World.getScreenState screen world
-            let properties = World.getProperties state
-            Array.ofList properties
-
-        (* Game *)
-
-        static member private publishGameChange (propertyName : string) oldWorld world =
-            let game = Game.proxy Address.empty
-            let changeEventAddress = ltoa [!!"Game"; !!"Change"; !!propertyName; !!"Event"] ->>- game.GameAddress
-            let eventTrace = EventTrace.record "World" "publishGameChange" EventTrace.empty
-            World.publish { Participant = game; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace game world
-
-        static member private getGameState world =
-            world.GameState
-
-        static member private setGameState gameState world =
-#if DEBUG
-            if not ^ World.qualifyEventContext Address.empty world then
-                failwith ^ "Cannot set the state of a game in an unqualifed event context."
-#endif
-            World.choose { world with GameState = gameState }
-
-        static member private updateGameStateWithoutEvent updater world =
-            let gameState = World.getGameState world
-            let gameState = updater gameState
-            World.setGameState gameState world
-
-        static member private updateGameState updater propertyName world =
-            let oldWorld = world
-            let world = World.updateGameStateWithoutEvent updater world
-            World.publishGameChange propertyName oldWorld world
-
-        static member internal getGameId world = (World.getGameState world).Id
-        static member internal getGameXtension world = (World.getGameState world).Xtension // TODO: try to get rid of this
-        static member internal getGameDispatcherNp world = (World.getGameState world).DispatcherNp
-        static member internal getGameSpecialization world = (World.getGameState world).Specialization
-        static member internal getGameCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
-
-        /// Get the current eye center.
-        static member getEyeCenter world =
-            (World.getGameState world).EyeCenter
-
-        /// Set the current eye center.
-        static member setEyeCenter value world =
-            World.updateGameState (fun groupState -> { groupState with EyeCenter = value }) Property? EyeCenter world
-
-        /// Get the current eye size.
-        static member getEyeSize world =
-            (World.getGameState world).EyeSize
-
-        /// Set the current eye size.
-        static member setEyeSize value world =
-            World.updateGameState (fun groupState -> { groupState with EyeSize = value }) Property? EyeSize world
-
-        /// Get the currently selected screen, if any.
-        static member getOptSelectedScreen world =
-            (World.getGameState world).OptSelectedScreen
-        
-        /// Set the currently selected screen or None. Be careful using this function directly as
-        /// you may be wanting to use the higher-level World.transitionScreen function instead.
-        static member setOptSelectedScreen value world =
-            World.updateGameState (fun groupState -> { groupState with OptSelectedScreen = value }) Property? OptSelectedScreen world
-
-        /// Get the currently selected screen (failing with an exception if there isn't one).
-        static member getSelectedScreen world =
-            Option.get ^ World.getOptSelectedScreen world
-        
-        /// Set the currently selected screen. Be careful using this function directly as you may
-        /// be wanting to use the higher-level World.transitionScreen function instead.
-        static member setSelectedScreen screen world =
-            World.setOptSelectedScreen (Some screen) world
-
-        /// Get the current destination screen if a screen transition is currently underway.
-        static member getOptScreenTransitionDestination world =
-            (World.getGameState world).OptScreenTransitionDestination
-
-        /// Set the current destination screen or None. Be careful using this function as calling
-        /// it is predicated that no screen transition is currently underway.
-        /// TODO: consider asserting such predication here.
-        static member internal setOptScreenTransitionDestination destination world =
-            World.updateGameState (fun gameState -> { gameState with OptScreenTransitionDestination = destination }) Property? OptScreenTransitionDestination world
-
-        /// Get the view of the eye in absolute terms (world space).
-        static member getViewAbsolute world =
-            Math.getViewAbsolute (World.getEyeCenter world) (World.getEyeSize world)
-        
-        /// Get the view of the eye in absolute terms (world space) with translation sliced on
-        /// integers.
-        static member getViewAbsoluteI world =
-            Math.getViewAbsolute (World.getEyeCenter world) (World.getEyeSize world)
-
-        /// The relative view of the eye with original single values. Due to the problems with
-        /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
-        /// coordinates is very, very bad for rendering.
-        static member getViewRelative world =
-            Math.getViewRelative (World.getEyeCenter world) (World.getEyeSize world)
-
-        /// The relative view of the eye with translation sliced on integers. Good for rendering.
-        static member getViewRelativeI world =
-            Math.getViewRelativeI (World.getEyeCenter world) (World.getEyeSize world)
-
-        /// Get the bounds of the eye's sight relative to its position.
-        static member getViewBoundsRelative world =
-            let gameState = World.getGameState world
-            Vector4
-                (gameState.EyeCenter.X - gameState.EyeSize.X * 0.5f,
-                 gameState.EyeCenter.Y - gameState.EyeSize.Y * 0.5f,
-                 gameState.EyeCenter.X + gameState.EyeSize.X * 0.5f,
-                 gameState.EyeCenter.Y + gameState.EyeSize.Y * 0.5f)
-
-        /// Get the bounds of the eye's sight not relative to its position.
-        static member getViewBoundsAbsolute world =
-            let gameState = World.getGameState world
-            Vector4
-                (gameState.EyeSize.X * -0.5f,
-                 gameState.EyeSize.Y * -0.5f,
-                 gameState.EyeSize.X * 0.5f,
-                 gameState.EyeSize.Y * 0.5f)
-
-        /// Get the bounds of the eye's sight.
-        static member getViewBounds viewType world =
-            match viewType with
-            | Relative -> World.getViewBoundsRelative world
-            | Absolute -> World.getViewBoundsAbsolute world
-
-        /// Check that the given bounds is within the eye's sight.
-        static member inView viewType (bounds : Vector4) world =
-            let viewBounds = World.getViewBounds viewType world
-            Math.isBoundsInBounds bounds viewBounds
-
-        /// Transform the given mouse position to screen space.
-        static member mouseToScreen (mousePosition : Vector2) world =
-            let gameState = World.getGameState world
-            let positionScreen =
-                Vector2
-                    (mousePosition.X - gameState.EyeSize.X * 0.5f,
-                     -(mousePosition.Y - gameState.EyeSize.Y * 0.5f)) // negation for right-handedness
-            positionScreen
-
-        /// Transform the given mouse position to world space.
-        static member mouseToWorld viewType mousePosition world =
-            let positionScreen = World.mouseToScreen mousePosition world
-            let view =
-                match viewType with
-                | Relative -> World.getViewRelative world
-                | Absolute -> World.getViewAbsolute world
-            let positionWorld = positionScreen * view
-            positionWorld
-
-        /// Transform the given mouse position to entity space.
-        static member mouseToEntity viewType entityPosition mousePosition world =
-            let mousePositionWorld = World.mouseToWorld viewType mousePosition world
-            entityPosition - mousePositionWorld
-
-        static member internal getGameProperty propertyName world =
-            match propertyName with // NOTE: string match for speed
-            | "Id" -> (World.getGameId world :> obj, typeof<Guid>)
-            | "Xtension" -> (World.getGameXtension world :> obj, typeof<Xtension>)
-            | "DispatcherNp" -> (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
-            | "Specialization" -> (World.getGameSpecialization world :> obj, typeof<string>)
-            | "CreationTimeStampNp" -> (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
-            | "OptSelectedScreen" -> (World.getOptSelectedScreen world :> obj, typeof<Screen option>)
-            | "OptScreenTransitionDestination" -> (World.getOptScreenTransitionDestination world :> obj, typeof<Screen option>)
-            | "EyeCenter" -> (World.getEyeCenter world :> obj, typeof<Vector2>)
-            | "EyeSize" -> (World.getEyeSize world :> obj, typeof<Vector2>)
-            | _ -> GameState.getProperty propertyName (World.getGameState world)
-
-        static member internal setGameProperty propertyName (property : obj * Type) world =
-            match propertyName with // NOTE: string match for speed
-            | "Id" -> failwith "Cannot change group id."
-            | "Xtension" -> failwith "Cannot change group xtension."
-            | "DispatcherNp" -> failwith "Cannot change group dispatcher."
-            | "Specialization" -> failwith "Cannot change group specialization."
-            | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
-            | "OptOptSelectedScreen" -> World.setOptSelectedScreen (property |> fst :?> Screen option) world
-            | "OptScreenTransitionDestination" -> World.setOptScreenTransitionDestination (property |> fst :?> Screen option) world
-            | "EyeCenter" -> World.setEyeCenter (property |> fst :?> Vector2) world
-            | "EyeSize" -> World.setEyeSize (property |> fst :?> Vector2) world
-            | _ -> World.updateGameState (GameState.setProperty propertyName property) propertyName world
-
-        static member internal makeGameState optSpecialization dispatcher =
-            let gameState = GameState.make optSpecialization dispatcher
-            Reflection.attachProperties GameState.copy dispatcher gameState
-
-        static member internal writeGame3 writeScreens gameDescriptor world =
-            let gameState = World.getGameState world
-            let gameDispatcherName = getTypeName gameState.DispatcherNp
-            let gameDescriptor = { gameDescriptor with GameDispatcher = gameDispatcherName }
-            let viewGameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
-            let gameDescriptor = { gameDescriptor with GameProperties = viewGameProperties }
-            writeScreens gameDescriptor world
-
-        static member internal readGame3 readScreens gameDescriptor world =
-
-            // create the dispatcher
-            let dispatcherName = gameDescriptor.GameDispatcher
-            let dispatchers = World.getGameDispatchers world
-            let dispatcher =
-                match Map.tryFind dispatcherName dispatchers with
-                | Some dispatcher -> dispatcher
-                | None ->
-                    Log.info ^ "Could not find GameDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
-                    let dispatcherName = typeof<GameDispatcher>.Name
-                    Map.find dispatcherName dispatchers
-
-            // make the bare game state
-            let gameState = World.makeGameState None dispatcher
-
-            // read the game state's value
-            let gameState = Reflection.readPropertiesToTarget GameState.copy gameDescriptor.GameProperties gameState
-
-            // set the game's state in the world
-            let world = World.setGameState gameState world
-            
-            // read the game's screens
-            let world = readScreens gameDescriptor world |> snd
-            
-            // choose the world
-            World.choose world
-
-        /// View all of the properties of a game.
-        static member viewGameProperties world =
-            let state = World.getGameState world
-            let properties = World.getProperties state
-            Array.ofList properties
+    type World with
 
         (* Clipboard *)
         
         /// Copy an entity to the clipboard.
         static member copyToClipboard entity world =
             let entityState = World.getEntityState entity world
-            RefClipboard := Some (entityState :> obj)
+            Clipboard <- Some (entityState :> obj)
 
         /// Cut an entity to the clipboard.
         static member cutToClipboard entity world =
@@ -1863,7 +1866,7 @@ module WorldModule =
 
         /// Paste an entity from the clipboard.
         static member pasteFromClipboard atMouse rightClickPosition positionSnap rotationSnap group world =
-            match !RefClipboard with
+            match Clipboard with
             | Some entityStateObj ->
                 let entityState = entityStateObj :?> EntityState
                 let id = makeGuid ()
@@ -1880,6 +1883,8 @@ module WorldModule =
                 let world = World.addEntity false entityState entity world
                 (Some entity, world)
             | None -> (None, world)
+
+    type World with
 
         (* World *)
 
