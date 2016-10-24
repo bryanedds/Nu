@@ -408,7 +408,7 @@ module Gaia =
     let private trySaveAssetGraph (form : GaiaForm) world =
         let editorState = World.getUserState world
         let assetSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
-        let assetGraphFilePath = Path.Combine (assetSourceDir, Constants.Assets.AssetGraphFilePath)
+        let assetGraphFilePath = Path.Combine (assetSourceDir, Assets.AssetGraphFilePath)
         try let packageDescriptorsStr = form.assetGraphTextBox.Text.TrimEnd () |> scvalue<Map<string, PackageDescriptor>> |> scstring
             let assetGraphKeywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             File.WriteAllText (assetGraphFilePath, Symbol.prettyPrint assetGraphKeywords0 packageDescriptorsStr)
@@ -439,7 +439,7 @@ module Gaia =
     let private trySaveOverlayer (form : GaiaForm) world =
         let editorState = World.getUserState world
         let overlayerSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
-        let overlayerFilePath = Path.Combine (overlayerSourceDir, Constants.Assets.OverlayerFilePath)
+        let overlayerFilePath = Path.Combine (overlayerSourceDir, Assets.OverlayerFilePath)
         try let overlays = scvalue<Overlay list> ^ form.overlayerTextBox.Text.TrimEnd ()
             let overlayerKeywords0 = match typeof<Overlayer>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             File.WriteAllText (overlayerFilePath, Symbol.prettyPrint overlayerKeywords0 (scstring overlays))
