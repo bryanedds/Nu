@@ -646,6 +646,7 @@ module WorldModule2 =
                   GroupDispatchers = World.makeDefaultGroupDispatchers ()
                   EntityDispatchers = World.makeDefaultEntityDispatchers ()
                   Facets = World.makeDefaultFacets ()
+                  UpdateEntityInEntityTree = World.updateEntityInEntityTreeImpl
                   RebuildEntityTree = World.rebuildEntityTreeImpl }
 
             // make the world's subsystems
@@ -729,6 +730,7 @@ module WorldModule2 =
                       GroupDispatchers = Map.addMany pluginGroupDispatchers ^ World.makeDefaultGroupDispatchers ()
                       EntityDispatchers = Map.addMany pluginEntityDispatchers ^ World.makeDefaultEntityDispatchers ()
                       Facets = Map.addMany pluginFacets ^ World.makeDefaultFacets ()
+                      UpdateEntityInEntityTree = World.updateEntityInEntityTreeImpl
                       RebuildEntityTree = World.rebuildEntityTreeImpl }
 
                 // make the world's subsystems
