@@ -320,8 +320,8 @@ module WorldModule2 =
         static member tryReloadOverlays inputDirectory outputDirectory world =
             
             // attempt to reload overlay file
-            let inputOverlayerFilePath = Path.Combine (inputDirectory, Constants.Assets.OverlayerFilePath)
-            let outputOverlayerFilePath = Path.Combine (outputDirectory, Constants.Assets.OverlayerFilePath)
+            let inputOverlayerFilePath = Path.Combine (inputDirectory, Assets.OverlayerFilePath)
+            let outputOverlayerFilePath = Path.Combine (outputDirectory, Assets.OverlayerFilePath)
             try File.Copy (inputOverlayerFilePath, outputOverlayerFilePath, true)
 
                 // cache old overlayer and make new one
@@ -348,11 +348,11 @@ module WorldModule2 =
             
             // attempt to reload asset graph file
             try File.Copy
-                    (Path.Combine (inputDirectory, Constants.Assets.AssetGraphFilePath),
-                     Path.Combine (outputDirectory, Constants.Assets.AssetGraphFilePath), true)
+                    (Path.Combine (inputDirectory, Assets.AssetGraphFilePath),
+                     Path.Combine (outputDirectory, Assets.AssetGraphFilePath), true)
 
                 // attempt to load asset graph
-                match AssetGraph.tryMakeFromFile Constants.Assets.AssetGraphFilePath with
+                match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
                 | Right assetGraph ->
 
                     // build assets reload asset metadata
@@ -697,7 +697,7 @@ module WorldModule2 =
             Nu.init false
 
             // attempt to create asset graph
-            match AssetGraph.tryMakeFromFile Constants.Assets.AssetGraphFilePath with
+            match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
             | Right assetGraph ->
 
                 // make the world's event system
@@ -742,7 +742,7 @@ module WorldModule2 =
                         match SdlDeps.getOptRenderContext sdlDeps with
                         | Some renderContext -> Renderer.make renderContext :> IRenderer
                         | None -> MockRenderer.make () :> IRenderer
-                    let renderer = renderer.EnqueueMessage ^ HintRenderPackageUseMessage { PackageName = Constants.Assets.DefaultPackageName }
+                    let renderer = renderer.EnqueueMessage ^ HintRenderPackageUseMessage { PackageName = Assets.DefaultPackageName }
                     let rendererSubsystem = RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder renderer :> World Subsystem
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
@@ -759,7 +759,7 @@ module WorldModule2 =
 
                 // attempt to make the overlayer
                 let intrinsicOverlays = World.createIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
-                match Overlayer.tryMakeFromFile intrinsicOverlays Constants.Assets.OverlayerFilePath with
+                match Overlayer.tryMakeFromFile intrinsicOverlays Assets.OverlayerFilePath with
                 | Right overlayer ->
             
                     // make the world's ambient state

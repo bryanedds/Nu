@@ -8,7 +8,7 @@ module Program =
         match argv with
         | [|inputDirectory; outputDirectory; refinementDirectory; fullBuildStr|] ->
             let fullBuild = fullBuildStr = scstring true
-            match AssetGraph.tryMakeFromFile Constants.Assets.AssetGraphFilePath with
+            match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
             | Right assetGraph ->
                 AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph
                 Constants.Engine.SuccessExitCode

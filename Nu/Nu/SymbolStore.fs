@@ -31,7 +31,7 @@ module SymbolStoreModule =
 
         /// Try to load a symbol store package with the given name.
         let tryLoadSymbolStorePackage packageName symbolStore =
-            match AssetGraph.tryMakeFromFile Constants.Assets.AssetGraphFilePath with
+            match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
             | Right assetGraph ->
                 match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Symbol) packageName assetGraph with
                 | Right assets ->

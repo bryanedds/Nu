@@ -44,7 +44,7 @@ module BulletModule =
              Define? GravityScale 0.0f
              Define? IsBullet true
              Define? CollisionBody ^ BodyCircle { Radius = 0.5f; Center = Vector2.Zero }
-             Define? StaticImage Constants.Assets.PlayerBulletImage
+             Define? StaticImage Assets.PlayerBulletImage
              Define? Age 0L]
 
         static member IntrinsicFacetNames =
@@ -79,7 +79,7 @@ module EnemyModule =
 
         static let die (enemy : Entity) world =
             let world = World.destroyEntity enemy world
-            World.playSound 1.0f Constants.Assets.ExplosionSound world
+            World.playSound 1.0f Assets.ExplosionSound world
 
         static let handleUpdate evt world =
             let enemy = evt.Subscriber : Entity
@@ -94,7 +94,7 @@ module EnemyModule =
                 let isBullet = collidee.DispatchesAs typeof<BulletDispatcher> world
                 if isBullet then
                     let world = enemy.SetHealth (enemy.GetHealth world - 1) world
-                    let world = World.playSound 1.0f Constants.Assets.HitSound world
+                    let world = World.playSound 1.0f Assets.HitSound world
                     (Cascade, world)
                 else (Cascade, world)
             else (Cascade, world)
@@ -109,7 +109,7 @@ module EnemyModule =
              Define? CelRun 4
              Define? CelSize ^ Vector2 (48.0f, 96.0f)
              Define? AnimationStutter 8L
-             Define? AnimationSheet Constants.Assets.EnemyImage
+             Define? AnimationSheet Assets.EnemyImage
              Define? Health 7]
 
         static member IntrinsicFacetNames =
@@ -151,7 +151,7 @@ module PlayerModule =
 
         static let propelBullet (bullet : Entity) world =
             let world = World.applyBodyLinearImpulse (Vector2 (35.0f, 0.0f)) (bullet.GetPhysicsId world) world
-            World.playSound 1.0f Constants.Assets.ShotSound world
+            World.playSound 1.0f Assets.ShotSound world
 
         static let shootBullet (player : Entity) world =
             let playerTransform = player.GetTransform world
@@ -197,7 +197,7 @@ module PlayerModule =
                 tickTime <= player.GetLastTimeOnGroundNp world + 10L then
                 let world = player.SetLastTimeJumpNp tickTime world
                 let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 18000.0f)) (player.GetPhysicsId world) world
-                let world = World.playSound 1.0f Constants.Assets.JumpSound world
+                let world = World.playSound 1.0f Assets.JumpSound world
                 (Cascade, world)
             else (Cascade, world)
 
@@ -218,7 +218,7 @@ module PlayerModule =
              Define? CelRun 4
              Define? CelSize ^ Vector2 (48.0f, 96.0f)
              Define? AnimationStutter 3L
-             Define? AnimationSheet Constants.Assets.PlayerImage
+             Define? AnimationSheet Assets.PlayerImage
              Define? LastTimeOnGroundNp Int64.MinValue
              Define? LastTimeJumpNp Int64.MinValue]
 
@@ -252,7 +252,7 @@ module PlayerGroupModule =
 
         static let handlePlayerFall _ world =
             if Simulants.Player.HasFallen world && World.isSelectedScreenIdling world then
-                let world = World.playSound 1.0f Constants.Assets.DeathSound world
+                let world = World.playSound 1.0f Assets.DeathSound world
                 let world = World.transitionScreen Simulants.Title world
                 (Cascade, world)
             else (Cascade, world)
@@ -286,7 +286,7 @@ module GameplayScreenModule =
 
         static let createSectionGroups world =
             let random = System.Random ()
-            let sectionFilePaths = List.toArray Constants.FilePaths.Sections
+            let sectionFilePaths = List.toArray Assets.SectionFilePaths
             List.fold
                 (fun world i ->
                     let sectionFilePathIndex = if i = 0 then 0 else random.Next () % sectionFilePaths.Length
@@ -298,12 +298,12 @@ module GameplayScreenModule =
                 [0 .. Constants.BlazeVector.SectionCount - 1]
 
         static let createPlayerGroup world =
-            World.readGroupFromFile Constants.FilePaths.PlayerGroup (Some Simulants.GameplayScene.GroupName) Simulants.Gameplay world |> snd
+            World.readGroupFromFile Assets.PlayerGroupFilePath (Some Simulants.GameplayScene.GroupName) Simulants.Gameplay world |> snd
 
         static let handleStartPlay _ world =
             let world = createPlayerGroup world
             let world = createSectionGroups world
-            let world = World.playSong 0 1.0f Constants.Assets.DeadBlazeSong world
+            let world = World.playSong 0 1.0f Assets.DeadBlazeSong world
             (Cascade, world)
 
         static let handleStoppingPlay _ world =
