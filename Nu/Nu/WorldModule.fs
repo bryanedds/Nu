@@ -1852,8 +1852,6 @@ module WorldModule =
 
     type World with
 
-        (* Clipboard *)
-        
         /// Copy an entity to the clipboard.
         static member copyToClipboard entity world =
             let entityState = World.getEntityState entity world
@@ -1885,8 +1883,6 @@ module WorldModule =
             | None -> (None, world)
 
     type World with
-
-        (* World *)
 
         // Make the world.
         static member internal make eventSystem dispatchers subsystems ambientState optGameSpecialization activeGameDispatcher =
