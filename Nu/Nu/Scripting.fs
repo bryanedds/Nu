@@ -23,16 +23,13 @@ module Scripting =
         // constructed as [variableStream v]
         | VariableStream of string
         // constructed as [eventStream X/Y/Z]
-        // does not allow for entity, group, screen, or game events
         | EventStream of Expr
         // constructed as [propertyStream P] or [propertyStream P ././.]
-        // does not allow for properties of parents or siblings, or for a wildcard in the relation
         | PropertyStream of string * Expr
         // constructed as [propertyStream P ././@ EntityDispatcher] or [propertyStream P ././@ EntityDispatcher Vanilla]
-        // does not allow for properties of parents or siblings
+        // does not allow for wildcards in the relation
         | PropertyStreamMany of string * Expr * Classification
-        // not constructable by user
-        // untyped in order to try to keep things simple
+        // not constructable by user. Weakly-typed to simplify type declarations
         | ComputedStream of obj // actual type is Prime.Stream<'p, 'w when 'p :> Participant and 'w :> EventWorld<'w>>
 
     and [<Syntax(   "pow root sqr sqrt " +
