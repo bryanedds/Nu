@@ -178,11 +178,11 @@ type SymbolicConverter (pointType : Type) =
         // desymbolize string
         elif destType = typeof<string> then
             match symbol with
-            | Atom (str, _) | String (str, _) ->
+            | Atom (str, _) ->
                 if Symbol.isExplicit str
                 then str.Substring (1, str.Length - 2) :> obj
                 else str :> obj
-            | Number (str, _) ->
+            | Number (str, _) | String (str, _) ->
                 str :> obj
             | Quote (_, _) | Symbols (_, _) ->
                 failconv "Expected Symbol, Number, or String for conversion to string." ^ Some symbol
