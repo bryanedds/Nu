@@ -18,8 +18,9 @@ type SubsystemType =
     | RenderType
     | AudioType
 
-/// Represents a subsystem by which additional engine-level subsystems such as AI, optimized
-/// special FX, and the like can be added.
+/// Represents a subsystem for additional engine-level subsystems such as AI, optimized
+/// particles, or efficient level-of-detailed subsystems like mega-swarms and Minecraft blocks,
+/// a la - http://www.dataorienteddesign.com/dodmain/node6.html
 type 'w Subsystem =
     interface
         /// The type of subsystem. Dictates where its processing happens in the game loop.
