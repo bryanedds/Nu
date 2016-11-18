@@ -41,7 +41,7 @@ Thumbs.db
 #####################
 bin/
 obj/
-Refinement/
+refinement/
 
 #########
 # Nuget #
