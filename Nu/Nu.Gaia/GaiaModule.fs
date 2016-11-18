@@ -22,7 +22,7 @@ module Gaia =
     let private DefaultRotationSnap = 5
     let private DefaultCreationDepth = 0.0f
     let private CameraSpeed = 4.0f // NOTE: might be nice to be able to configure this just like entity creation depth in the editor
-    let private RefinementDir = "Refinement"
+    let private RefinementDir = "refinement"
 
     // g'lol'bals!
     let private WorldChangers = WorldChangers ()
