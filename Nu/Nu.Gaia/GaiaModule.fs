@@ -117,7 +117,6 @@ module Gaia =
             if Seq.notExists (fun (group : Group) -> Name.getNameStr group.GroupName = groupTabPage.Name) groups then
                 groupTabPages.RemoveByKey groupTabPage.Name
 
-
     let private setTreeViewSelectionToPropertyGridSelection (form : GaiaForm) =
         match form.propertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
