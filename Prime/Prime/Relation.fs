@@ -57,27 +57,27 @@ module RelationModule =
     /// A relation that can be resolved to an address via projection.
     type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>] 'a Relation =
         private
-            { OptNames : Name option list
+            { NameOpts : Name option list
               TypeCarrier : 'a -> unit }
     
         /// Make a relation from a '/' delimited string where '.' are empty.
         /// NOTE: do not move this function as the RelationConverter's reflection code relies on it being exactly here!
         static member makeFromString<'a> (relationStr : string) =
-            let optNameList = relationStr.Split '/' |> List.ofSeq
-            let optNames = List.map (fun name -> match name with "." -> None | _ -> Some !!name) optNameList
-            { OptNames = optNames; TypeCarrier = fun (_ : 'a) -> () }
+            let nameOptList = relationStr.Split '/' |> List.ofSeq
+            let nameOpts = List.map (fun name -> match name with "." -> None | _ -> Some !!name) nameOptList
+            { NameOpts = nameOpts; TypeCarrier = fun (_ : 'a) -> () }
 
         /// Hash a Relation.
         static member hash (relation : 'a Relation) =
-            List.hash relation.OptNames
+            List.hash relation.NameOpts
                 
         /// Equate Relations.
         static member equals relation relation2 =
-            relation.OptNames = relation2.OptNames
+            relation.NameOpts = relation2.NameOpts
 
         /// Resolve a relationship to an address.
         static member resolve<'a> (address : 'a Address) (relation : 'a Relation) =
-            let names = List.project id (Address.getNames address) relation.OptNames
+            let names = List.project id (Address.getNames address) relation.NameOpts
             Address.makeFromList<'a> names
 
         /// Concatenate two addresses of the same type.
@@ -96,27 +96,27 @@ module RelationModule =
             Relation<'a>.hash this
         
         override this.ToString () =
-            let names = List.map (fun optName -> match optName with Some name -> Name.getNameStr name | None -> ".") this.OptNames
+            let names = List.map (fun nameOpt -> match nameOpt with Some name -> Name.getNameStr name | None -> ".") this.NameOpts
             String.Join ("/", names)
 
     [<RequireQualifiedAccess>]
     module Relation =
 
         /// Make a relation from a list of option names.
-        let makeFromList<'a> optNamesList =
-            { OptNames = optNamesList |> List.ofSeq; TypeCarrier = fun (_ : 'a) -> () }
+        let makeFromList<'a> nameOptsList =
+            { NameOpts = nameOptsList |> List.ofSeq; TypeCarrier = fun (_ : 'a) -> () }
     
         /// Make a relation from a '/' delimited string.
         let makeFromString<'a> relationStr =
             Relation<'a>.makeFromString relationStr
 
         /// Get the optional names of a relation.
-        let getOptNames relation =
-            relation.OptNames
+        let getNameOpts relation =
+            relation.NameOpts
 
         /// Change the type of an address.
         let changeType<'a, 'b> (relation : 'a Relation) =
-            { OptNames = relation.OptNames; TypeCarrier = fun (_ : 'b) -> () }
+            { NameOpts = relation.NameOpts; TypeCarrier = fun (_ : 'b) -> () }
 
 /// A relation that can be resolved to an address via projection.
 type 'a Relation = 'a RelationModule.Relation

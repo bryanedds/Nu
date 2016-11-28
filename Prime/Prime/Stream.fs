@@ -80,8 +80,8 @@ module Stream =
                 let world = unsubscribe world
                 EventWorld.unsubscribe<'g, 'w> subscriptionKey world
             let subscription = fun evt world ->
-                let optState = EventWorld.getEventState stateKey world
-                let state = match optState with Some state -> state | None -> evt.Data
+                let stateOpt = EventWorld.getEventState stateKey world
+                let state = match stateOpt with Some state -> state | None -> evt.Data
                 let (state, tracked) = tracker state evt world
                 let world = EventWorld.addEventState stateKey state world
                 let world =
@@ -523,7 +523,7 @@ module StreamOperators =
         subscribe (fun a world ->
             let world =
                 if world.ContainsParticipant a.Subscriber then
-                    match property.OptSet with
+                    match property.SetOpt with
                     | Some set -> set a.Data world
                     | None -> world // TODO: log info here about property not being set-able?
                 else world

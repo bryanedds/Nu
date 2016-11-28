@@ -160,7 +160,7 @@ module AssetGraphModule =
                     with _ -> Log.info ^ "Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'."
     
         /// Load all the assets from a package descriptor.
-        let private loadAssetsFromPackageDescriptor4 usingRawAssets optAssociation packageName packageDescriptor =
+        let private loadAssetsFromPackageDescriptor4 usingRawAssets associationOpt packageName packageDescriptor =
             let assets =
                 List.fold (fun assetsRev assetDescriptor ->
                     match assetDescriptor with
@@ -187,7 +187,7 @@ module AssetGraphModule =
                         with exn -> Log.info ^ "Invalid directory '" + directory + "'."; [])
                     [] packageDescriptor |>
                 List.rev
-            match optAssociation with
+            match associationOpt with
             | Some association -> List.filter (fun asset -> Set.contains association asset.Associations) assets
             | None -> assets
 
@@ -200,17 +200,17 @@ module AssetGraphModule =
             Map.toKeyList assetGraph.PackageDescriptors
 
         /// Attempt to load all the available assets from a package.
-        let tryLoadAssetsFromPackage usingRawAssets optAssociation packageName assetGraph =
+        let tryLoadAssetsFromPackage usingRawAssets associationOpt packageName assetGraph =
             match Map.tryFind packageName assetGraph.PackageDescriptors with
             | Some packageDescriptor ->
-                let assets = loadAssetsFromPackageDescriptor4 usingRawAssets optAssociation packageName packageDescriptor
+                let assets = loadAssetsFromPackageDescriptor4 usingRawAssets associationOpt packageName packageDescriptor
                 Right assets
             | None -> Left ^ "Could not find package '" + packageName + "' in asset graph."
 
         /// Load all the available assets from an asset graph document.
-        let loadAssets usingRawAssets optAssociation assetGraph =
+        let loadAssets usingRawAssets associationOpt assetGraph =
             Map.fold (fun assetListsRev packageName packageDescriptor ->
-                let assets = loadAssetsFromPackageDescriptor4 usingRawAssets optAssociation packageName packageDescriptor
+                let assets = loadAssetsFromPackageDescriptor4 usingRawAssets associationOpt packageName packageDescriptor
                 assets :: assetListsRev)
                 [] assetGraph.PackageDescriptors |>
             List.rev |>

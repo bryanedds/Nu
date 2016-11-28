@@ -7,7 +7,7 @@ open InfinityRpg
 type InfinityRpgPlugin () =
     inherit NuPlugin ()
 
-    override this.MakeOptGameDispatcher () =
+    override this.MakeGameDispatcherOpt () =
         Some (InfinityDispatcher () :> GameDispatcher)
 
     override this.MakeScreenDispatchers () =

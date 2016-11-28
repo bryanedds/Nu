@@ -21,7 +21,7 @@ module Origin =
     let printStart origin = "[Ln: " + string origin.Start.Line + ", Col: " + string origin.Start.Column + "]"
     let printStop origin = "[Ln: " + string origin.Stop.Line + ", Col: " + string origin.Stop.Column + "]"
     let print origin = "Error found starting at " + printStart origin + " and stopping at " + printStop origin + "."
-    let tryPrint optOrigin = match optOrigin with Some origin -> print origin | None -> "Error origin unknown or not applicable."
+    let tryPrint originOpt = match originOpt with Some origin -> print origin | None -> "Error origin unknown or not applicable."
 
 type Symbol =
     | Atom of string * Origin option
@@ -230,11 +230,11 @@ module Symbol =
     /// Try to get the Origin of the symbol if it has one.
     let tryGetOrigin symbol =
         match symbol with
-        | Atom (_, optOrigin)
-        | Number (_, optOrigin)
-        | String (_, optOrigin)
-        | Quote (_, optOrigin)
-        | Symbols (_, optOrigin) -> optOrigin
+        | Atom (_, originOpt)
+        | Number (_, originOpt)
+        | String (_, originOpt)
+        | Quote (_, originOpt)
+        | Symbols (_, originOpt) -> originOpt
 
     /// Cascade a symbol string into multiple lines with proper tabbing.
     /// TODO: split up this function.
@@ -275,12 +275,12 @@ module Symbol =
         let strPretty = String.Join ("\r\n", linesTrimmed)
         strPretty
 
-type ConversionException (message : string, optSymbol : Symbol option) =
+type ConversionException (message : string, symbolOpt : Symbol option) =
     inherit Exception (message)
-    member this.OptSymbol = optSymbol
+    member this.SymbolOpt = symbolOpt
     override this.ToString () =
         message + "\r\n" +
-        (match optSymbol with Some symbol -> Origin.tryPrint (Symbol.tryGetOrigin symbol) + "\r\n" | _ -> "") +
+        (match symbolOpt with Some symbol -> Origin.tryPrint (Symbol.tryGetOrigin symbol) + "\r\n" | _ -> "") +
         base.ToString ()
 
 [<AutoOpen>]

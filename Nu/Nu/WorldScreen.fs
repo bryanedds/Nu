@@ -115,28 +115,28 @@ module WorldScreenModule =
             World.addTasklet tasklet world
 
         /// Create a screen and add it to the world.
-        static member createScreen4 dispatcherName optSpecialization optName world =
+        static member createScreen4 dispatcherName specializationOpt nameOpt world =
             let dispatchers = World.getScreenDispatchers world
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None -> failwith ^ "Could not find ScreenDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
-            let screenState = ScreenState.make optSpecialization optName dispatcher
+            let screenState = ScreenState.make specializationOpt nameOpt dispatcher
             let screenState = Reflection.attachProperties ScreenState.copy dispatcher screenState
             let screen = ntos screenState.Name
             let world = World.addScreen false screenState screen world
             (screen, world)
 
         /// Create a screen and add it to the world.
-        static member createScreen<'d when 'd :> ScreenDispatcher> optSpecialization optName world =
-            World.createScreen4 typeof<'d>.Name optSpecialization optName world
+        static member createScreen<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt world =
+            World.createScreen4 typeof<'d>.Name specializationOpt nameOpt world
         
         /// Create a screen with a dissolving transition, and add it to the world.
-        static member createDissolveScreen<'d when 'd :> ScreenDispatcher> dissolveData optSpecialization optName world =
-            let optDissolveImage = Some dissolveData.DissolveImage
-            let (screen, world) = World.createScreen<'d> optSpecialization optName world
-            let world = screen.SetIncoming { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; OptDissolveImage = optDissolveImage } world
-            let world = screen.SetOutgoing { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; OptDissolveImage = optDissolveImage } world
+        static member createDissolveScreen<'d when 'd :> ScreenDispatcher> dissolveData specializationOpt nameOpt world =
+            let dissolveImageOpt = Some dissolveData.DissolveImage
+            let (screen, world) = World.createScreen<'d> specializationOpt nameOpt world
+            let world = screen.SetIncoming { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; DissolveImageOpt = dissolveImageOpt } world
+            let world = screen.SetOutgoing { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; DissolveImageOpt = dissolveImageOpt } world
             (screen, world)
 
         /// Write a screen to a screen descriptor.
@@ -165,14 +165,14 @@ module WorldScreenModule =
             File.Move (filePathTmp, filePath)
 
         /// Read a screen from a screen descriptor.
-        static member readScreen screenDescriptor optName world =
-            World.readScreen4 World.readGroups screenDescriptor optName world
+        static member readScreen screenDescriptor nameOpt world =
+            World.readScreen4 World.readGroups screenDescriptor nameOpt world
 
         /// Read a screen from a file.
-        static member readScreenFromFile (filePath : string) optName world =
+        static member readScreenFromFile (filePath : string) nameOpt world =
             let screenDescriptorStr = File.ReadAllText filePath
             let screenDescriptor = scvalue<ScreenDescriptor> screenDescriptorStr
-            World.readScreen screenDescriptor optName world
+            World.readScreen screenDescriptor nameOpt world
 
         /// Read multiple screens from a game descriptor.
         static member readScreens gameDescriptor world =

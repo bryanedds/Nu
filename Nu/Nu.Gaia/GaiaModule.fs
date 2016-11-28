@@ -171,8 +171,8 @@ module Gaia =
 
     let private tryMousePick (form : GaiaForm) mousePosition world =
         let (entities, world) = getPickableEntities world
-        let optPicked = World.tryPickEntity mousePosition entities world
-        match optPicked with
+        let pickedOpt = World.tryPickEntity mousePosition entities world
+        match pickedOpt with
         | Some entity ->
             selectEntity form entity world
             (Some entity, world)
@@ -218,7 +218,7 @@ module Gaia =
                     World.updateUserState (fun editorState ->
                         let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
                         let entityPosition = 
-                            if entity.HasFacet typeof<MountFacet> world && Option.isSome (entity.GetOptParent world)
+                            if entity.HasFacet typeof<MountFacet> world && Option.isSome (entity.GetParentOpt world)
                             then entity.GetPositionLocal world
                             else entity.GetPosition world
                         { editorState with DragEntityState = DragEntityPosition (entityPosition + mousePositionWorld, mousePositionWorld, entity) })
@@ -326,7 +326,7 @@ module Gaia =
                 if isNotNull selectedGridItem.Value || isNullTrueValue ty then
                     let (keywords0, keywords1) =
                         match selectedGridItem.Label with
-                        | "OptOverlayName" ->
+                        | "OverlayNameOpt" ->
                             let overlays = World.getIntrinsicOverlays !RefWorld @ World.getExtrinsicOverlays !RefWorld
                             let overlayNames = List.map (fun overlay -> overlay.OverlayName) overlays
                             (String.Join (" ", overlayNames), "")
@@ -372,7 +372,7 @@ module Gaia =
                         propertyDescriptor.SetValue (entityTds, propertyValue)
                     with
                     | :? ConversionException as exn ->
-                        match exn.OptSymbol with
+                        match exn.SymbolOpt with
                         | Some symbol ->
                             match Symbol.tryGetOrigin symbol with
                             | Some origin ->
@@ -639,8 +639,8 @@ module Gaia =
             let selectedGroup = (World.getUserState world).SelectedGroup
             let (positionSnap, rotationSnap) = getSnaps form
             let editorState = World.getUserState world
-            let (optEntity, world) = World.pasteFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap selectedGroup world
-            match optEntity with
+            let (entityOpt, world) = World.pasteFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap selectedGroup world
+            match entityOpt with
             | Some entity -> selectEntity form entity world; world
             | None -> world
 
@@ -778,7 +778,7 @@ module Gaia =
                 let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                 let entityPositionSnapped = Math.snap2F positionSnap entityPosition
                 let world =
-                    if entity.HasFacet typeof<MountFacet> world && Option.isSome (entity.GetOptParent world)
+                    if entity.HasFacet typeof<MountFacet> world && Option.isSome (entity.GetParentOpt world)
                     then entity.SetPositionLocal entityPositionSnapped world
                     else entity.SetPosition entityPositionSnapped world
                 let world = World.propagateEntityPhysics entity world
@@ -885,8 +885,8 @@ module Gaia =
         Directory.SetCurrentDirectory dirName
         let assembly = Assembly.LoadFrom filePath
         let assemblyTypes = assembly.GetTypes ()
-        let optDispatcherType = Array.tryFind (fun (ty : Type) -> ty.IsSubclassOf typeof<NuPlugin>) assemblyTypes
-        match optDispatcherType with
+        let dispatcherTypeOpt = Array.tryFind (fun (ty : Type) -> ty.IsSubclassOf typeof<NuPlugin>) assemblyTypes
+        match dispatcherTypeOpt with
         | Some ty -> let plugin = Activator.CreateInstance ty :?> NuPlugin in (dirName, plugin)
         | None -> (".", NuPlugin ())
 
@@ -992,8 +992,8 @@ module Gaia =
     /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
     /// function's various requirements.
     let attemptMakeWorld plugin sdlDeps =
-        let eitherWorld = World.attemptMake false None 0L () plugin sdlDeps
-        match eitherWorld with
+        let worldEir = World.attemptMake false None 0L () plugin sdlDeps
+        match worldEir with
         | Right world ->
             let world = World.createScreen None (Some Simulants.EditorScreen.ScreenName) world |> snd
             let world = World.createGroup None (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen world |> snd

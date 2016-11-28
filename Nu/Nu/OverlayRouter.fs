@@ -19,15 +19,15 @@ type Classification =
         Classification.make typeName Constants.Engine.VanillaSpecialization
 
 type OverlayDescriptor =
-    { SpecializedOptOverlayNames : Map<string, string option>
-      VanillaOptOverlayName : string option }
+    { SpecializedOverlayNameOpts : Map<string, string option>
+      VanillaOverlayNameOpt : string option }
 
-    static member make specializedOptOverlayNames vanillavanillaOptOverlayName =
-        { SpecializedOptOverlayNames = specializedOptOverlayNames
-          VanillaOptOverlayName = vanillavanillaOptOverlayName }
+    static member make specializedOverlayNameOpts vanillaOverlayNameOpt =
+        { SpecializedOverlayNameOpts = specializedOverlayNameOpts
+          VanillaOverlayNameOpt = vanillaOverlayNameOpt }
 
-    static member makeVanilla vanillaOptOverlayName =
-        OverlayDescriptor.make Map.empty vanillaOptOverlayName
+    static member makeVanilla vanillaOverlayNameOpt =
+        OverlayDescriptor.make Map.empty vanillaOverlayNameOpt
 
 [<AutoOpen>]
 module OverlayRouterModule =
@@ -41,18 +41,18 @@ module OverlayRouterModule =
     module OverlayRouter =
 
         /// Try to find an optional overlay name for a given classification.
-        let tryFindOptOverlayName classification overlayRouter =
+        let tryFindOverlayNameOpt classification overlayRouter =
             match Map.tryFind classification.TypeName overlayRouter.Routes with
             | Some descriptor ->
-                match Map.tryFind classification.Specialization descriptor.SpecializedOptOverlayNames with
+                match Map.tryFind classification.Specialization descriptor.SpecializedOverlayNameOpts with
                 | Some specialization -> Some specialization
-                | None -> Some descriptor.VanillaOptOverlayName
+                | None -> Some descriptor.VanillaOverlayNameOpt
             | None -> None
     
         /// Find an optional overlay name for a given classification.
-        let findOptOverlayName classification overlayRouter =
-            let optOverlayName = tryFindOptOverlayName classification overlayRouter
-            Option.get optOverlayName
+        let findOverlayNameOpt classification overlayRouter =
+            let overlayNameOpt = tryFindOverlayNameOpt classification overlayRouter
+            Option.get overlayNameOpt
 
         /// Make an OverlayRouter.
         let make userRoutes =

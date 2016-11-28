@@ -31,9 +31,9 @@ module WorldEntityModule =
         member this.Persistent = PropertyTag.make this Property? Persistent this.GetPersistent this.SetPersistent
         member this.GetCreationTimeStampNp world = World.getEntityCreationTimeStampNp this world
         member this.CreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
-        member this.GetOptOverlayName world = World.getEntityOptOverlayName this world
-        member this.SetOptOverlayName value world = World.setEntityOptOverlayName value this world
-        member this.OptOverlayName = PropertyTag.make this Property? OptOverlayName this.GetOptOverlayName this.SetOptOverlayName
+        member this.GetOverlayNameOpt world = World.getEntityOverlayNameOpt this world
+        member this.SetOverlayNameOpt value world = World.setEntityOverlayNameOpt value this world
+        member this.OverlayNameOpt = PropertyTag.make this Property? OverlayNameOpt this.GetOverlayNameOpt this.SetOverlayNameOpt
         member this.GetPosition world = World.getEntityPosition this world
         member this.SetPosition value world = World.setEntityPosition value this world
         member this.Position = PropertyTag.make this Property? Position this.GetPosition this.SetPosition
@@ -296,7 +296,7 @@ module WorldEntityModule =
             World.setEntityProperty propertyName (propertyValue, propertyType) entity world
 
         // TODO: put this in a better place! And of course, document.
-        static member getPropertyDescriptors makePropertyDescriptor optXtension =
+        static member getPropertyDescriptors makePropertyDescriptor xtensionOpt =
             // OPTIMIZATION: seqs used for speed.
             let properties = typeof<EntityState>.GetProperties ()
             let typeConverterAttribute = TypeConverterAttribute (typeof<SymbolicConverter>) // TODO: make this static?
@@ -305,7 +305,7 @@ module WorldEntityModule =
             let properties = Seq.filter (fun (property : PropertyInfo) -> Reflection.isPropertyPersistentByName property.Name) properties
             let propertyDescriptors = Seq.map (fun property -> makePropertyDescriptor (EntityPropertyInfo property, [|typeConverterAttribute|])) properties
             let propertyDescriptors =
-                match optXtension with
+                match xtensionOpt with
                 | Some xtension ->
                     let xPropertyDescriptors =
                         Seq.fold

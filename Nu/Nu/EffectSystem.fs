@@ -109,7 +109,7 @@ module EffectSystemModule =
             | Ratio -> div (value, value2)
             | Set -> value2
 
-        let private evalOptInset (celSize : Vector2i) celRun celCount stutter effectSystem =
+        let private evalInsetOpt (celSize : Vector2i) celRun celCount stutter effectSystem =
             if stutter <> 0L && celRun <> 0 then
                 let cel = int (effectSystem.EffectTime / stutter) % celCount
                 let celI = cel % celRun
@@ -281,7 +281,7 @@ module EffectSystemModule =
                                       Size = slice.Size
                                       Rotation = slice.Rotation
                                       Offset = slice.Offset
-                                      OptInset = None
+                                      InsetOpt = None
                                       Image = image
                                       ViewType = effectSystem.ViewType
                                       Color = slice.Color }}]]
@@ -302,7 +302,7 @@ module EffectSystemModule =
             let slice = evalAspects aspects slice effectSystem
 
             // eval inset
-            let optInset = evalOptInset celSize celRun celCount stutter effectSystem
+            let insetOpt = evalInsetOpt celSize celRun celCount stutter effectSystem
 
             // build animated sprite artifacts
             let animatedSpriteArtifacts =
@@ -317,7 +317,7 @@ module EffectSystemModule =
                                       Size = slice.Size
                                       Rotation = slice.Rotation
                                       Offset = slice.Offset
-                                      OptInset = optInset
+                                      InsetOpt = insetOpt
                                       Image = image
                                       ViewType = effectSystem.ViewType
                                       Color = slice.Color }}]]
@@ -451,7 +451,7 @@ module EffectSystemModule =
 
         let eval effect slice effectSystem =
             let alive =
-                match effect.OptLifetime with
+                match effect.LifetimeOpt with
                 | Some lifetime -> lifetime <= 0L || effectSystem.EffectTime <= lifetime
                 | None -> true
             if alive then
@@ -467,7 +467,7 @@ module EffectSystemModule =
         let combineEffects effects =
             let effectCombined =
                 { EffectName = String.Join ("+", List.map (fun effect -> effect.EffectName) effects)
-                  OptLifetime = None
+                  LifetimeOpt = None
                   Definitions = List.fold (fun definitions effect -> Map.concat definitions effect.Definitions) Map.empty effects
                   Content = Composite (Shift 0.0f, List.map (fun effect -> effect.Content) effects) }
             effectCombined

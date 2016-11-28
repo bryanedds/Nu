@@ -198,7 +198,7 @@ type WalkDescriptor =
 
 type [<StructuralEquality; NoComparison>] NavigationDescriptor =
     { WalkDescriptor : WalkDescriptor
-      OptNavigationPath : NavigationNode list option }
+      NavigationPathOpt : NavigationNode list option }
 
     static member nextPositionM navigationDescriptor =
         WalkDescriptor.nextPositionM navigationDescriptor.WalkDescriptor
@@ -211,11 +211,11 @@ type [<StructuralEquality; NoComparison>] NavigationDescriptor =
 
 type [<StructuralEquality; NoComparison>] ActionDescriptor =
     { ActionTicks : int64 // an arbitrary number to show a hacky action animation
-      ActionOptTargetPositionM : Vector2i option
+      ActionTargetPositionMOpt : Vector2i option
       ActionDataName : string }
 
     static member getActionDirection currentPosition currentDirection actionDescriptor =
-        match actionDescriptor.ActionOptTargetPositionM with
+        match actionDescriptor.ActionTargetPositionMOpt with
         | Some targetPositionM -> targetPositionM - vftovm currentPosition |> vmtod
         | None -> currentDirection
 
@@ -245,7 +245,7 @@ type [<StructuralEquality; NoComparison>] ActivityState =
 
     static member isNavigatingPath activity =
         match activity with
-        | Navigation navigationDescriptor -> Option.isSome navigationDescriptor.OptNavigationPath
+        | Navigation navigationDescriptor -> Option.isSome navigationDescriptor.NavigationPathOpt
         | Action _ | NoActivity -> false
 
 type [<StructuralEquality; NoComparison>] Turn =

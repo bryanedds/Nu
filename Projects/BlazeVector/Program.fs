@@ -11,7 +11,7 @@ type BlazePlugin () =
     inherit NuPlugin ()
 
     // make our game-specific game dispatcher...
-    override this.MakeOptGameDispatcher () =
+    override this.MakeGameDispatcherOpt () =
         Some (BlazeDispatcher () :> GameDispatcher)
 
     // make our game-specific screen dispatchers...

@@ -35,25 +35,25 @@ type [<NoEquality; NoComparison>] PropertyTag<'s, 'a, 'w when 's :> Participant>
     { This : 's
       Name : string
       Get : 'w -> 'a
-      OptSet : ('a -> 'w -> 'w) option }
+      SetOpt : ('a -> 'w -> 'w) option }
 
     member this.Map mapper : PropertyTag<'s, 'a, 'w> =
         { This = this.This
           Name = this.Name
           Get = fun world -> mapper (this.Get world)
-          OptSet = match this.OptSet with Some set -> Some (fun value -> set (mapper value)) | None -> None }
+          SetOpt = match this.SetOpt with Some set -> Some (fun value -> set (mapper value)) | None -> None }
 
     member this.Map2 mapper unmapper : PropertyTag<'s, 'b, 'w> =
         { This = this.This
           Name = this.Name
           Get = fun world -> mapper (this.Get world)
-          OptSet = match this.OptSet with Some set -> Some (fun value -> set (unmapper value)) | None -> None }
+          SetOpt = match this.SetOpt with Some set -> Some (fun value -> set (unmapper value)) | None -> None }
 
     member this.MapOut mapper : PropertyTag<'s, 'b, 'w> =
         { This = this.This
           Name = this.Name
           Get = fun world -> mapper (this.Get world)
-          OptSet = None }
+          SetOpt = None }
 
     member this.Change =
         let changeEventAddress = Address<ParticipantChangeData<'s, 'w>>.ltoa [!!typeof<'s>.Name; !!"Change"; !!this.Name; !!"Event"]
@@ -73,7 +73,7 @@ module PropertyTag =
         property.MapOut mapper
 
     let makeReadOnly this name get =
-        { This = this; Name = name; Get = get; OptSet = None }
+        { This = this; Name = name; Get = get; SetOpt = None }
 
     let make this name get set =
-        { This = this; Name = name; Get = get; OptSet = Some set }
+        { This = this; Name = name; Get = get; SetOpt = Some set }

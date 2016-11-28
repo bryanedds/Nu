@@ -1,2 +1,2 @@
 ﻿[[InfinityButtonDispatcher [ButtonDispatcher]
-  [[OptClickSound [Some [Gui Affirm]]]]]]
+  [[ClickSoundOpt [Some [Gui Affirm]]]]]]

@@ -13,7 +13,7 @@ module MutantCacheModule =
     type [<ReferenceEquality>] 'm MutantCache =
         private
             { CloneMutant : 'm -> 'm
-              mutable OptValidMutant : 'm option }
+              mutable ValidMutantOpt : 'm option }
 
     [<RequireQualifiedAccess>]
     module MutantCache =
@@ -28,12 +28,12 @@ module MutantCacheModule =
             lock GlobalMutantRebuildsLock (fun () -> GlobalMutantRebuilds <- GlobalMutantRebuilds + 1L)
 #endif
             let validMutant = rebuildMutant ()
-            mutantCache.OptValidMutant <- None
-            let mutantCache = { mutantCache with OptValidMutant = Some validMutant }
+            mutantCache.ValidMutantOpt <- None
+            let mutantCache = { mutantCache with ValidMutantOpt = Some validMutant }
             (validMutant, mutantCache)
 
         let private getMutantUncloned rebuildMutant (mutantCache : 'm MutantCache) =
-            match mutantCache.OptValidMutant with
+            match mutantCache.ValidMutantOpt with
             | Some mutant -> (mutant, mutantCache)
             | None -> rebuildCache rebuildMutant mutantCache
 
@@ -60,9 +60,9 @@ module MutantCacheModule =
         /// <param name="mutantCache">The mutant cache.</param>
         let mutateMutant rebuildMutant mutateMutant (mutantCache : 'm MutantCache) =
             let (mutant, mutantCache) = getMutantUncloned rebuildMutant mutantCache
-            mutantCache.OptValidMutant <- None
+            mutantCache.ValidMutantOpt <- None
             let mutant = mutateMutant mutant
-            { mutantCache with OptValidMutant = Some mutant }
+            { mutantCache with ValidMutantOpt = Some mutant }
 
         /// <summary>Make a mutant cache.</summary>
         /// <param name="cloneMutant">
@@ -72,7 +72,7 @@ module MutantCacheModule =
         /// <param name="mutant">The mutant (mutable object / record / whatever) to be cached.</param>
         let make cloneMutant (mutant : 'm) =
             { CloneMutant = cloneMutant
-              OptValidMutant = Some mutant }
+              ValidMutantOpt = Some mutant }
 
 /// Presents a purely-functional interface to a mutable object / record / whatever.
 /// If it is not satisfactorily efficient to run a clone operation on the mutant for every get,

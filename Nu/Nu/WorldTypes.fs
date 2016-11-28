@@ -36,13 +36,13 @@ type TransitionState =
 type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
     { TransitionType : TransitionType
       TransitionLifetime : int64
-      OptDissolveImage : AssetTag option }
+      DissolveImageOpt : AssetTag option }
 
     /// Make a screen transition.
     static member make transitionType =
         { TransitionType = transitionType
           TransitionLifetime = 0L
-          OptDissolveImage = None }
+          DissolveImageOpt = None }
 
 /// Describes the behavior of the screen dissolving algorithm.
 type [<StructuralEquality; NoComparison>] DissolveData =
@@ -75,7 +75,7 @@ type [<StructuralEquality; NoComparison>] TileData =
       Gid : int
       GidPosition : int
       Gid2 : Vector2i
-      OptTileSetTile : TmxTilesetTile option
+      TileSetTileOpt : TmxTilesetTile option
       TilePosition : Vector2i }
 
 [<AutoOpen>]
@@ -296,12 +296,12 @@ module WorldTypes =
           Xtension : Xtension
           DispatcherNp : GameDispatcher
           Specialization : string
-          OptScriptAsset : AssetTag option
-          OptScriptAssetLc : AssetTag option
+          ScriptAssetOpt : AssetTag option
+          ScriptAssetOptLc : AssetTag option
           Script : Script
           CreationTimeStampNp : int64
-          OptSelectedScreen : Screen option
-          OptScreenTransitionDestination : Screen option
+          SelectedScreenOpt : Screen option
+          ScreenTransitionDestinationOpt : Screen option
           EyeCenter : Vector2
           EyeSize : Vector2 }
 
@@ -328,19 +328,19 @@ module WorldTypes =
             { gameState with GameState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } gameState.Xtension }
     
         /// Make a game state value.
-        static member make optSpecialization dispatcher =
+        static member make specializationOpt dispatcher =
             let eyeCenter = Vector2.Zero
             let eyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault)
             { Id = makeGuid ()
               Xtension = Xtension.safe
               DispatcherNp = dispatcher
-              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
-              OptScriptAsset = None
-              OptScriptAssetLc = None
+              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
+              ScriptAssetOpt = None
+              ScriptAssetOptLc = None
               Script = Script.empty
               CreationTimeStampNp = Core.getTimeStamp ()
-              OptSelectedScreen = None
-              OptScreenTransitionDestination = None
+              SelectedScreenOpt = None
+              ScreenTransitionDestinationOpt = None
               EyeCenter = eyeCenter
               EyeSize = eyeSize }
 
@@ -360,8 +360,8 @@ module WorldTypes =
           DispatcherNp : ScreenDispatcher
           Specialization : string
           Persistent : bool
-          OptScriptAsset : AssetTag option
-          OptScriptAssetLc : AssetTag option
+          ScriptAssetOpt : AssetTag option
+          ScriptAssetOptLc : AssetTag option
           Script : Script
           CreationTimeStampNp : int64
           EntityTreeNp : Entity QuadTree MutantCache
@@ -393,17 +393,17 @@ module WorldTypes =
             { screenState with ScreenState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } screenState.Xtension }
     
         /// Make a screen state value.
-        static member make optSpecialization optName dispatcher =
-            let (id, name) = Reflection.deriveIdAndName optName
+        static member make specializationOpt nameOpt dispatcher =
+            let (id, name) = Reflection.deriveIdAndName nameOpt
             let screenState =
                 { Id = id
                   Name = name
                   Xtension = Xtension.safe
                   DispatcherNp = dispatcher
-                  Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
+                  Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
                   Persistent = true
-                  OptScriptAsset = None
-                  OptScriptAssetLc = None
+                  ScriptAssetOpt = None
+                  ScriptAssetOptLc = None
                   Script = Script.empty
                   CreationTimeStampNp = Core.getTimeStamp ()
                   EntityTreeNp = Unchecked.defaultof<Entity QuadTree MutantCache>
@@ -430,8 +430,8 @@ module WorldTypes =
           DispatcherNp : GroupDispatcher
           Specialization : string
           Persistent : bool
-          OptScriptAsset : AssetTag option
-          OptScriptAssetLc : AssetTag option
+          ScriptAssetOpt : AssetTag option
+          ScriptAssetOptLc : AssetTag option
           Script : Script
           CreationTimeStampNp : int64 }
 
@@ -458,16 +458,16 @@ module WorldTypes =
             { groupState with GroupState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } groupState.Xtension }
     
         /// Make a group state value.
-        static member make optSpecialization optName dispatcher =
-            let (id, name) = Reflection.deriveIdAndName optName
+        static member make specializationOpt nameOpt dispatcher =
+            let (id, name) = Reflection.deriveIdAndName nameOpt
             { GroupState.Id = id
               Name = name
               Xtension = Xtension.safe
               DispatcherNp = dispatcher
-              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
+              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
               Persistent = true
-              OptScriptAsset = None
-              OptScriptAssetLc = None
+              ScriptAssetOpt = None
+              ScriptAssetOptLc = None
               Script = Script.empty
               CreationTimeStampNp = Core.getTimeStamp () }
 
@@ -488,7 +488,7 @@ module WorldTypes =
           Specialization : string
           Persistent : bool
           CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
-          OptOverlayName : string option
+          OverlayNameOpt : string option
           Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
@@ -546,16 +546,16 @@ module WorldTypes =
                 Depth = value.Depth }
 
         /// Make an entity state value.
-        static member make optSpecialization optName optOverlayName dispatcher =
-            let (id, name) = Reflection.deriveIdAndName optName
+        static member make specializationOpt nameOpt overlayNameOpt dispatcher =
+            let (id, name) = Reflection.deriveIdAndName nameOpt
             { Id = id
               Name = name
               Xtension = Xtension.safe
               DispatcherNp = dispatcher
-              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
+              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
               Persistent = true
               CreationTimeStampNp = Core.getTimeStamp ()
-              OptOverlayName = optOverlayName
+              OverlayNameOpt = overlayNameOpt
               Position = Vector2.Zero
               Size = Constants.Engine.DefaultEntitySize
               Rotation = 0.0f
@@ -828,7 +828,7 @@ module WorldTypes =
             { EventSystem : World EventSystem
               Dispatchers : Dispatchers
               Subsystems : World Subsystems
-              OptEntityCache : KeyedCache<Entity Address * World, EntityState option>
+              EntityCacheOpt : KeyedCache<Entity Address * World, EntityState option>
               ScreenDirectory : Umap<Name, Screen Address * Umap<Name, Group Address * Umap<Name, Entity Address>>>
               AmbientState : World AmbientState
               GameState : GameState
@@ -865,8 +865,8 @@ module WorldTypes =
         default this.MakeSubsystems () = []
     
         /// Optionally make a user-defined game dispatchers such that Nu can utilize it at run-time.
-        abstract MakeOptGameDispatcher : unit -> GameDispatcher option
-        default this.MakeOptGameDispatcher () = None
+        abstract MakeGameDispatcherOpt : unit -> GameDispatcher option
+        default this.MakeGameDispatcherOpt () = None
     
         /// Make user-defined screen dispatchers such that Nu can utilize them at run-time.
         abstract MakeScreenDispatchers : unit -> ScreenDispatcher list

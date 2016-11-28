@@ -56,8 +56,8 @@ module SdlDepsModule =
     /// The dependencies needed to initialize SDL.
     type [<ReferenceEquality>] SdlDeps =
         private
-            { OptRenderContext : nativeint option
-              OptWindow : nativeint option
+            { RenderContextOpt : nativeint option
+              WindowOpt : nativeint option
               Config : SdlConfig
               Destroy : unit -> unit }
     
@@ -70,18 +70,18 @@ module SdlDepsModule =
     
         /// An empty SdlDeps.
         let empty =
-            { OptRenderContext = None
-              OptWindow = None
+            { RenderContextOpt = None
+              WindowOpt = None
               Config = SdlConfig.defaultConfig
               Destroy = id }
     
-        /// Get an sdlDep's opt render context.
-        let getOptRenderContext sdlDeps =
-            sdlDeps.OptRenderContext
+        /// Get an sdlDep's optional render context.
+        let getRenderContextOpt sdlDeps =
+            sdlDeps.RenderContextOpt
     
-        /// Get an sdlDep's opt window.
-        let getOptWindow sdlDeps =
-            sdlDeps.OptWindow
+        /// Get an sdlDep's optional window.
+        let getWindowOpt sdlDeps =
+            sdlDeps.WindowOpt
     
         /// Get an sdlDep's config.
         let getConfig sdlDeps =
@@ -150,7 +150,7 @@ module SdlDepsModule =
                                     (fun () -> SDL_mixer.Mix_CloseAudio (); destroy ()) with
                                 | Left error -> Left error
                                 | Right ((), destroy) ->
-                                    let sdlDeps = { OptRenderContext = Some renderContext; OptWindow = Some window; Config = sdlConfig; Destroy = destroy }
+                                    let sdlDeps = { RenderContextOpt = Some renderContext; WindowOpt = Some window; Config = sdlConfig; Destroy = destroy }
                                     Right sdlDeps
 
 [<RequireQualifiedAccess>]
@@ -173,7 +173,7 @@ module Sdl =
 
     /// Render the game engine's current frame.
     let render handleRender sdlDeps world =
-        match SdlDeps.getOptRenderContext sdlDeps with
+        match SdlDeps.getRenderContextOpt sdlDeps with
         | Some renderContext ->
             match Constants.Render.ScreenClearing with
             | NoClear -> ()

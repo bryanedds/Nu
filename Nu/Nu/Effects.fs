@@ -163,12 +163,12 @@ module Effects =
             "")>]
 type [<NoEquality; NoComparison>] Effect =
     { EffectName : string
-      OptLifetime : int64 option
+      LifetimeOpt : int64 option
       Definitions : Effects.Definitions
       Content : Effects.Content }
 
     static member empty =
         { EffectName = "Empty"
-          OptLifetime = None
+          LifetimeOpt = None
           Definitions = Map.empty
           Content = Effects.Composite (Effects.Shift 0.0f, []) }

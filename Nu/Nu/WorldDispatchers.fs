@@ -14,9 +14,9 @@ module MountFacetModule =
 
     type Entity with
     
-        member this.GetOptParent world : Entity Relation option = this.Get Property? OptParent world
-        member this.SetOptParent (value : Entity Relation option) world = this.Set Property? OptParent value world
-        member this.OptParent = PropertyTag.make this Property? OptParent this.GetOptParent this.SetOptParent
+        member this.GetParentOpt world : Entity Relation option = this.Get Property? ParentOpt world
+        member this.SetParentOpt (value : Entity Relation option) world = this.Set Property? ParentOpt value world
+        member this.ParentOpt = PropertyTag.make this Property? ParentOpt this.GetParentOpt this.SetParentOpt
         member this.GetPositionLocal world : Vector2 = this.Get Property? PositionLocal world
         member this.SetPositionLocal (value : Vector2) world = this.Set Property? PositionLocal value world
         member this.PositionLocal = PropertyTag.make this Property? PositionLocal this.GetPositionLocal this.SetPositionLocal
@@ -38,7 +38,7 @@ module MountFacetModule =
 
         static let handleLocalPropertyChange evt world =
             let entity = evt.Subscriber : Entity
-            match entity.GetOptParent world with
+            match entity.GetParentOpt world with
             | Some parentRelation ->
                 let parentAddress = Relation.resolve entity.EntityAddress parentRelation
                 let parent = Entity.proxy parentAddress
@@ -61,7 +61,7 @@ module MountFacetModule =
         static let rec handleParentChange evt world =
             let entity = evt.Subscriber : Entity
             let world = (entity.GetMountUnsubscribeNp world) world // NOTE: unsubscribes
-            match entity.GetOptParent world with
+            match entity.GetParentOpt world with
             | Some parentRelation ->
                 let parent = parentRelation |> Relation.resolve entity.EntityAddress |> Entity.proxy
                 let (unsubscribe, world) = World.monitorPlus handleParentPropertyChange parent.Position.Change entity world
@@ -73,7 +73,7 @@ module MountFacetModule =
             | None -> (Cascade, world)
 
         static member PropertyDefinitions =
-            [Define? OptParent (None : Entity Relation option)
+            [Define? ParentOpt (None : Entity Relation option)
              Define? PositionLocal Vector2.Zero
              Define? DepthLocal 0.0f
              Define? VisibleLocal true
@@ -82,7 +82,7 @@ module MountFacetModule =
 
         override facet.Register (entity, world) =
             let world = entity.SetMountUnsubscribeNp id world // ensure unsubscribe function reference doesn't get copied in Gaia...
-            let world = World.monitor handleParentChange entity.OptParent.Change entity world
+            let world = World.monitor handleParentChange entity.ParentOpt.Change entity world
             let world = World.monitorPlus handleLocalPropertyChange entity.PositionLocal.Change entity world |> snd
             let world = World.monitorPlus handleLocalPropertyChange entity.DepthLocal.Change entity world |> snd
             let world = World.monitorPlus handleLocalPropertyChange entity.VisibleLocal.Change entity world |> snd
@@ -103,15 +103,15 @@ module EffectFacetModule =
         member this.GetSelfDestruct world : bool = this.Get Property? SelfDestruct world
         member this.SetSelfDestruct (value : bool) world = this.Set Property? SelfDestruct value world
         member this.SelfDestruct = PropertyTag.make this Property? SelfDestruct this.GetSelfDestruct this.SetSelfDestruct
-        member this.GetOptEffects world : AssetTag list option = this.Get Property? OptEffects world
-        member this.SetOptEffects (value : AssetTag list option) world = this.Set Property? OptEffects value world
-        member this.OptEffects = PropertyTag.make this Property? OptEffects this.GetOptEffects this.SetOptEffects
-        member this.GetOptEffectsLc world : AssetTag list option = this.Get Property? OptEffectsLc world
-        member private this.SetOptEffectsLc (value : AssetTag list option) world = this.Set Property? OptEffectsLc value world
-        member this.OptEffectsLc = PropertyTag.makeReadOnly this Property? OptEffectsLc this.GetOptEffectsLc
-        member this.GetOptEffectStartTime world : int64 option = this.Get Property? OptEffectStartTime world
-        member this.SetOptEffectStartTime (value : int64 option) world = this.Set Property? OptEffectStartTime value world
-        member this.OptEffectStartTime = PropertyTag.make this Property? OptEffectStartTime this.GetOptEffectStartTime this.SetOptEffectStartTime
+        member this.GetEffectsOpt world : AssetTag list option = this.Get Property? EffectsOpt world
+        member this.SetEffectsOpt (value : AssetTag list option) world = this.Set Property? EffectsOpt value world
+        member this.EffectsOpt = PropertyTag.make this Property? EffectsOpt this.GetEffectsOpt this.SetEffectsOpt
+        member this.GetEffectsOptLc world : AssetTag list option = this.Get Property? EffectsOptLc world
+        member private this.SetEffectsOptLc (value : AssetTag list option) world = this.Set Property? EffectsOptLc value world
+        member this.EffectsOptLc = PropertyTag.makeReadOnly this Property? EffectsOptLc this.GetEffectsOptLc
+        member this.GetEffectStartTimeOpt world : int64 option = this.Get Property? EffectStartTimeOpt world
+        member this.SetEffectStartTimeOpt (value : int64 option) world = this.Set Property? EffectStartTimeOpt value world
+        member this.EffectStartTimeOpt = PropertyTag.make this Property? EffectStartTimeOpt this.GetEffectStartTimeOpt this.SetEffectStartTimeOpt
         member this.GetEffectDefinitions world : Effects.Definitions = this.Get Property? EffectDefinitions world
         member this.SetEffectDefinitions (value : Effects.Definitions) world = this.Set Property? EffectDefinitions value world
         member this.EffectDefinitions = PropertyTag.make this Property? EffectDefinitions this.GetEffectDefinitions this.SetEffectDefinitions
@@ -136,7 +136,7 @@ module EffectFacetModule =
         
         /// The start time of the effect, or zero if none.
         member this.GetEffectStartTime world =
-            match this.GetOptEffectStartTime world with
+            match this.GetEffectStartTimeOpt world with
             | Some effectStartTime -> effectStartTime
             | None -> 0L
 
@@ -149,38 +149,38 @@ module EffectFacetModule =
     type EffectFacet () =
         inherit Facet ()
 
-        static let assetTagsToOptEffects assetTags world =
-            let (optSymbols, world) = World.tryFindSymbols assetTags world
-            let optEffects =
+        static let assetTagsToEffectOpts assetTags world =
+            let (symbolOpts, world) = World.tryFindSymbols assetTags world
+            let effectOpts =
                 List.map
-                    (fun optSymbol ->
-                        match optSymbol with
+                    (fun symbolOpt ->
+                        match symbolOpt with
                         | Some symbol ->
                             try let effect = valueize<Effect> symbol in Some effect
                             with exn -> Log.info ^ "Failed to convert symbol '" + scstring symbol + "' to Effect due to: " + scstring exn; None
                         | None -> None)
-                    optSymbols
-            (optEffects, world)
+                    symbolOpts
+            (effectOpts, world)
 
-        static let setEffect optEffects (entity : Entity) world =
-            match optEffects with
+        static let setEffect effectsOpt (entity : Entity) world =
+            match effectsOpt with
             | Some effectAssetTags ->
-                let (effects, world) = assetTagsToOptEffects effectAssetTags world |> mapFst List.definitize
+                let (effects, world) = assetTagsToEffectOpts effectAssetTags world |> mapFst List.definitize
                 let effectCombined = EffectSystem.combineEffects effects
                 entity.SetEffect effectCombined world
             | None -> entity.SetEffect Effect.empty world
 
         static let handleAssetsReload evt world =
             let entity = evt.Subscriber : Entity
-            let optEffects = entity.GetOptEffects world
-            let world = setEffect optEffects entity world
+            let effectsOpt = entity.GetEffectsOpt world
+            let world = setEffect effectsOpt entity world
             (Cascade, world)
 
         static member PropertyDefinitions =
             [Define? SelfDestruct false
-             Define? OptEffects (None : AssetTag list option)
-             Define? OptEffectsLc (None : AssetTag list option)
-             Define? OptEffectStartTime (None : int64 option)
+             Define? EffectsOpt (None : AssetTag list option)
+             Define? EffectsOptLc (None : AssetTag list option)
+             Define? EffectStartTimeOpt (None : int64 option)
              Define? EffectDefinitions (Map.empty : Effects.Definitions)
              Define? Effect Effect.empty
              Define? EffectOffset Vector2.Zero
@@ -233,15 +233,15 @@ module EffectFacetModule =
             
             // update for combined effects changes
             let world =
-                let optEffects = entity.GetOptEffects world
-                if entity.GetOptEffectsLc world <> optEffects
-                then let world = setEffect optEffects entity world in entity.SetOptEffectsLc optEffects world
+                let effectsOpt = entity.GetEffectsOpt world
+                if entity.GetEffectsOptLc world <> effectsOpt
+                then let world = setEffect effectsOpt entity world in entity.SetEffectsOptLc effectsOpt world
                 else world
 
             // update for self-destruction
             let world =
                 let effect = entity.GetEffect world
-                match (entity.GetSelfDestruct world, effect.OptLifetime) with
+                match (entity.GetSelfDestruct world, effect.LifetimeOpt) with
                 | (true, Some lifetime) -> if entity.GetEffectTime world > lifetime then World.destroyEntity entity world else world
                 | (_, _) -> world
 
@@ -249,8 +249,8 @@ module EffectFacetModule =
             world
 
         override facet.Register (entity, world) =
-            let effectStartTime = Option.getOrDefault (World.getTickTime world) (entity.GetOptEffectStartTime world)
-            let world = entity.SetOptEffectStartTime (Some effectStartTime) world
+            let effectStartTime = Option.getOrDefault (World.getTickTime world) (entity.GetEffectStartTimeOpt world)
+            let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
             World.monitor handleAssetsReload Events.AssetsReload entity world
 
 [<AutoOpen>]
@@ -397,7 +397,7 @@ module StaticSpriteFacetModule =
                                       Rotation = entity.GetRotation world
                                       Offset = Vector2.Zero
                                       ViewType = entity.GetViewType world
-                                      OptInset = None
+                                      InsetOpt = None
                                       Image = entity.GetStaticImage world
                                       Color = Vector4.One }}])
                     world
@@ -432,7 +432,7 @@ module AnimatedSpriteFacetModule =
     type AnimatedSpriteFacet () =
         inherit Facet ()
 
-        static let getOptSpriteInset (entity : Entity) world =
+        static let getSpriteInsetOpt (entity : Entity) world =
             let celCount = entity.GetCelCount world
             let celRun = entity.GetCelRun world
             if celCount <> 0 && celRun <> 0 then
@@ -467,7 +467,7 @@ module AnimatedSpriteFacetModule =
                                       Rotation = entity.GetRotation world
                                       Offset = Vector2.Zero
                                       ViewType = entity.GetViewType world
-                                      OptInset = getOptSpriteInset entity world
+                                      InsetOpt = getSpriteInsetOpt entity world
                                       Image = entity.GetAnimationSheet world
                                       Color = Vector4.One }}])
                     world
@@ -532,9 +532,9 @@ module ButtonDispatcherModule =
         member this.GetDownImage world : AssetTag = this.Get Property? DownImage world
         member this.SetDownImage (value : AssetTag) world = this.Set Property? DownImage value world
         member this.DownImage = PropertyTag.make this Property? DownImage this.GetDownImage this.SetDownImage
-        member this.GetOptClickSound world : AssetTag option = this.Get Property? OptClickSound world
-        member this.SetOptClickSound (value : AssetTag option) world = this.Set Property? OptClickSound value world
-        member this.OptClickSound = PropertyTag.make this Property? OptClickSound this.GetOptClickSound this.SetOptClickSound
+        member this.GetClickSoundOpt world : AssetTag option = this.Get Property? ClickSoundOpt world
+        member this.SetClickSoundOpt (value : AssetTag option) world = this.Set Property? ClickSoundOpt value world
+        member this.ClickSoundOpt = PropertyTag.make this Property? ClickSoundOpt this.GetClickSoundOpt this.SetClickSoundOpt
 
     type ButtonDispatcher () =
         inherit GuiDispatcher ()
@@ -570,7 +570,7 @@ module ButtonDispatcherModule =
                         let eventTrace = EventTrace.record4 "ButtonDispatcher" "handleMouseLeftUp" "Click" EventTrace.empty
                         let world = World.publish () (Events.Click ->- button) eventTrace button world
                         let world =
-                            match button.GetOptClickSound world with
+                            match button.GetClickSoundOpt world with
                             | Some clickSound -> World.playSound 1.0f clickSound world
                             | None -> world
                         (Resolve, world)
@@ -583,7 +583,7 @@ module ButtonDispatcherModule =
              Define? Down false
              Define? UpImage { PackageName = Assets.DefaultPackageName; AssetName = "Image" }
              Define? DownImage { PackageName = Assets.DefaultPackageName; AssetName = "Image2" }
-             Define? OptClickSound ^ Some { PackageName = Assets.DefaultPackageName; AssetName = "Sound" }]
+             Define? ClickSoundOpt ^ Some { PackageName = Assets.DefaultPackageName; AssetName = "Sound" }]
 
         override dispatcher.Register (button, world) =
             world |>
@@ -604,7 +604,7 @@ module ButtonDispatcherModule =
                                       Rotation = 0.0f
                                       Offset = Vector2.Zero
                                       ViewType = Absolute
-                                      OptInset = None
+                                      InsetOpt = None
                                       Image = if button.GetDown world then button.GetDownImage world else button.GetUpImage world
                                       Color = if button.GetEnabled world then Vector4.One else button.GetDisabledColor world }}])
                     world
@@ -645,7 +645,7 @@ module LabelDispatcherModule =
                                       Rotation = 0.0f
                                       Offset = Vector2.Zero
                                       ViewType = Absolute
-                                      OptInset = None
+                                      InsetOpt = None
                                       Image = label.GetLabelImage world
                                       Color = if label.GetEnabled world then Vector4.One else label.GetDisabledColor world }}])
                     world
@@ -713,7 +713,7 @@ module TextDispatcherModule =
                                       Rotation = 0.0f
                                       Offset = Vector2.Zero
                                       ViewType = Absolute
-                                      OptInset = None
+                                      InsetOpt = None
                                       Image = text.GetBackgroundImage world
                                       Color = if text.GetEnabled world then Vector4.One else text.GetDisabledColor world }}])
                     world
@@ -741,9 +741,9 @@ module ToggleDispatcherModule =
         member this.GetOnImage world : AssetTag = this.Get Property? OnImage world
         member this.SetOnImage (value : AssetTag) world = this.Set Property? OnImage value world
         member this.OnImage = PropertyTag.make this Property? OnImage this.GetOnImage this.SetOnImage
-        member this.GetOptToggleSound world : AssetTag option = this.Get Property? OptToggleSound world
-        member this.SetOptToggleSound (value : AssetTag option) world = this.Set Property? OptToggleSound value world
-        member this.OptToggleSound = PropertyTag.make this Property? OptToggleSound this.GetOptToggleSound this.SetOptToggleSound
+        member this.GetToggleSoundOpt world : AssetTag option = this.Get Property? ToggleSoundOpt world
+        member this.SetToggleSoundOpt (value : AssetTag option) world = this.Set Property? ToggleSoundOpt value world
+        member this.ToggleSoundOpt = PropertyTag.make this Property? ToggleSoundOpt this.GetToggleSoundOpt this.SetToggleSoundOpt
 
     type ToggleDispatcher () =
         inherit GuiDispatcher ()
@@ -777,7 +777,7 @@ module ToggleDispatcherModule =
                         let eventTrace = EventTrace.record "ToggleDispatcher" "handleMouseLeftDown" EventTrace.empty
                         let world = World.publish () (eventAddress ->- toggle) eventTrace toggle world
                         let world =
-                            match toggle.GetOptToggleSound world with
+                            match toggle.GetToggleSoundOpt world with
                             | Some toggleSound -> World.playSound 1.0f toggleSound world
                             | None -> world
                         (Resolve, world)
@@ -791,7 +791,7 @@ module ToggleDispatcherModule =
              Define? Pressed false
              Define? OffImage { PackageName = Assets.DefaultPackageName; AssetName = "Image" }
              Define? OnImage { PackageName = Assets.DefaultPackageName; AssetName = "Image2" }
-             Define? OptToggleSound ^ Some { PackageName = Assets.DefaultPackageName; AssetName = "Sound" }]
+             Define? ToggleSoundOpt ^ Some { PackageName = Assets.DefaultPackageName; AssetName = "Sound" }]
 
         override dispatcher.Register (toggle, world) =
             world |>
@@ -812,7 +812,7 @@ module ToggleDispatcherModule =
                                       Rotation = 0.0f
                                       Offset = Vector2.Zero
                                       ViewType = Absolute
-                                      OptInset = None
+                                      InsetOpt = None
                                       Image = if toggle.GetOn world || toggle.GetPressed world then toggle.GetOnImage world else toggle.GetOffImage world
                                       Color = if toggle.GetEnabled world then Vector4.One else toggle.GetDisabledColor world }}])
                     world
@@ -927,7 +927,7 @@ module FillBarDispatcherModule =
                                       Rotation = 0.0f
                                       Offset = Vector2.Zero
                                       ViewType = Absolute
-                                      OptInset = None
+                                      InsetOpt = None
                                       Image = fillBar.GetBorderImage world
                                       Color = fillBarColor }}
                          LayerableDescriptor
@@ -940,7 +940,7 @@ module FillBarDispatcherModule =
                                       Rotation = 0.0f
                                       Offset = Vector2.Zero
                                       ViewType = Absolute
-                                      OptInset = None
+                                      InsetOpt = None
                                       Image = fillBar.GetFillImage world
                                       Color = fillBarColor }}])
                     world
@@ -1033,9 +1033,9 @@ module TileMapDispatcherModule =
             let tileMapSizeF = Vector2 (single tileMapSize.X, single tileMapSize.Y)
             let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
             let tileSetSize =
-                let optTileSetWidth = tileSet.Image.Width
-                let optTileSetHeight = tileSet.Image.Height
-                Vector2i (optTileSetWidth.Value / tileSize.X, optTileSetHeight.Value / tileSize.Y)
+                let tileSetWidthOpt = tileSet.Image.Width
+                let tileSetHeightOpt = tileSet.Image.Height
+                Vector2i (tileSetWidthOpt.Value / tileSize.X, tileSetHeightOpt.Value / tileSize.Y)
             { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileMapSize = tileMapSize; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
 
         static member makeTileData (tm : Entity) tmd (tl : TmxLayer) tileIndex world =
@@ -1051,8 +1051,8 @@ module TileMapDispatcherModule =
                 Vector2i
                     (int tileMapPosition.X + tmd.TileSize.X * i,
                      int tileMapPosition.Y - tmd.TileSize.Y * (j + 1)) // subtraction for right-handedness
-            let optTileSetTile = Seq.tryFind (fun (item : TmxTilesetTile) -> tile.Gid - 1 = item.Id) tmd.TileSet.Tiles
-            { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile }
+            let tileSetTileOpt = Seq.tryFind (fun (item : TmxTilesetTile) -> tile.Gid - 1 = item.Id) tmd.TileSet.Tiles
+            { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; TileSetTileOpt = tileSetTileOpt }
 
     type TileMapDispatcher () =
         inherit EntityDispatcher ()
@@ -1085,7 +1085,7 @@ module TileMapDispatcherModule =
 
         let getTileBodyProperties tm tmd (tl : TmxLayer) tli ti world =
             let td = Entity.makeTileData tm tmd tl ti world
-            match td.OptTileSetTile with
+            match td.TileSetTileOpt with
             | Some tileSetTile ->
                 match tileSetTile.Properties.TryGetValue Constants.Physics.CollisionProperty with
                 | (true, cexpr) ->
@@ -1125,7 +1125,7 @@ module TileMapDispatcherModule =
             Seq.foldi
                 (fun tileIndex physicsIds _ ->
                     let tileData = Entity.makeTileData tileMap tileMapData tileLayer tileIndex world
-                    match tileData.OptTileSetTile with
+                    match tileData.TileSetTileOpt with
                     | Some tileSetTile ->
                         if tileSetTile.Properties.ContainsKey Constants.Physics.CollisionProperty then
                             let physicsId = { SourceId = tileMap.GetId world; BodyId = makeGuidFromInts tileLayerIndex tileIndex }

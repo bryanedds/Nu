@@ -15,7 +15,7 @@ module internal QuadNodeModule =
             { Depth : int
               Bounds : Vector4
               Children : 'e QuadNode array
-              OptElements : 'e HashSet option }
+              ElementsOpt : 'e HashSet option }
 
     [<RequireQualifiedAccess>]
     module internal QuadNode =
@@ -30,7 +30,7 @@ module internal QuadNodeModule =
 
         let rec internal tryAddElement bounds element node =
             if Math.isBoundsInBounds bounds node.Bounds then
-                match node.OptElements with
+                match node.ElementsOpt with
                 | Some elements -> elements.Add element
                 | None ->
                     // OPTIMIZATION: imperative to avoid creating a lambda each call
@@ -42,7 +42,7 @@ module internal QuadNodeModule =
 
         let rec internal tryRemoveElement bounds element node =
             if Math.isBoundsInBounds bounds node.Bounds then
-                match node.OptElements with
+                match node.ElementsOpt with
                 | Some elements -> elements.Remove element
                 | None ->
                     // OPTIMIZATION: imperative to avoid creating a lambda each call
@@ -54,14 +54,14 @@ module internal QuadNodeModule =
 
         let rec internal getElementsNearPoint position node =
             if Math.isPointInBounds position node.Bounds then
-                match node.OptElements with
+                match node.ElementsOpt with
                 | Some elements -> elements :> _ seq
                 | None -> Seq.map (fun child -> getElementsNearPoint position child) node.Children |> Seq.concat
             else Seq.empty
 
         let rec internal getElementsNearBounds bounds node =
             if Math.isBoundsInBounds bounds node.Bounds then
-                match node.OptElements with
+                match node.ElementsOpt with
                 | Some elements -> elements :> _ seq
                 | None -> Seq.map (fun child -> getElementsNearBounds bounds child) node.Children |> Seq.concat
             else Seq.empty
@@ -75,7 +75,7 @@ module internal QuadNodeModule =
               Children = Array.map clone node.Children
               // NOTE: it is inefficient to shallow-clone a HashSet like this, but sadly, .NET does not provide a proper
               // Clone method! #ARGH!
-              OptElements = Option.map (fun elements -> HashSet (elements, HashIdentity.Structural)) node.OptElements }
+              ElementsOpt = Option.map (fun elements -> HashSet (elements, HashIdentity.Structural)) node.ElementsOpt }
 
         let rec internal make<'e when 'e : equality> depth (bounds : Vector4) =
             if depth < 1 then failwith "Invalid depth for QuadNode. Expected depth >= 1."
@@ -91,7 +91,7 @@ module internal QuadNodeModule =
             { Depth = depth
               Bounds = bounds
               Children = (children : 'e QuadNode array)
-              OptElements = match depth with 1 -> Some ^ HashSet HashIdentity.Structural | _ -> None }
+              ElementsOpt = match depth with 1 -> Some ^ HashSet HashIdentity.Structural | _ -> None }
 
 [<AutoOpen>]
 module QuadTreeModule =

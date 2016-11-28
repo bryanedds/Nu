@@ -25,8 +25,8 @@ module UsetModule =
     [<RequireQualifiedAccess>]
     module Uset =
 
-        let makeEmpty<'a when 'a : comparison> optBloatFactor =
-            { RefSet = ref ^ Tset.makeEmpty<'a> optBloatFactor }
+        let makeEmpty<'a when 'a : comparison> bloatFactorOpt =
+            { RefSet = ref ^ Tset.makeEmpty<'a> bloatFactorOpt }
 
         let add value set =
             { RefSet = ref ^ Tset.add value !set.RefSet }

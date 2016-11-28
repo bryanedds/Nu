@@ -40,11 +40,11 @@ module XtensionModule =
         /// Get the default value of an instance of type 'a taking into account XDefaultValue decorations.
         static member private getDefaultValue () : 'a =
             let defaultPropertyType = typeof<'a>
-            let optDefaultValueAttribute =
+            let defaultValueAttributeOpt =
                 defaultPropertyType.GetCustomAttributes (typeof<XDefaultValueAttribute>, true) |>
                 Seq.map (fun attr -> attr :?> XDefaultValueAttribute) |>
                 Seq.tryHead
-            match optDefaultValueAttribute with
+            match defaultValueAttributeOpt with
             | Some defaultValueAttribute ->
                 match defaultValueAttribute.DefaultValue with
                 | :? 'a as defaultValue -> defaultValue
