@@ -140,14 +140,14 @@ module WorldGroupModule =
             File.Move (filePathTmp, filePath)
 
         /// Read a group from a group descriptor.
-        static member readGroup groupDescriptor optName screen world =
-            World.readGroup5 World.readEntities groupDescriptor optName screen world
+        static member readGroup groupDescriptor nameOpt screen world =
+            World.readGroup5 World.readEntities groupDescriptor nameOpt screen world
 
         /// Read a group from a file.
-        static member readGroupFromFile (filePath : string) optName screen world =
+        static member readGroupFromFile (filePath : string) nameOpt screen world =
             let groupDescriptorStr = File.ReadAllText filePath
             let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
-            World.readGroup groupDescriptor optName screen world
+            World.readGroup groupDescriptor nameOpt screen world
 
         /// Read multiple groups from a screen descriptor.
         static member readGroups screenDescriptor screen world =

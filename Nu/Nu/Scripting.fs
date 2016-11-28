@@ -107,42 +107,42 @@ module Scripting =
         // constructed as [handle stream]
         | Handle of Stream * Guid * Origin option
 
-        static member getOptOrigin term =
+        static member getOriginOpt term =
             match term with
-            | Violation (_, _, optOrigin)
-            | Unit optOrigin
-            | Bool (_, optOrigin)
-            | Int (_, optOrigin)
-            | Int64 (_, optOrigin)
-            | Single (_, optOrigin)
-            | Double (_, optOrigin)
-            | Vector2 (_, optOrigin)
-            | String (_, optOrigin)
-            | Keyword (_, optOrigin)
-            | Option (_, optOrigin)
-            | Tuple (_, optOrigin)
-            | List (_, optOrigin)
-            | Phrase (_, optOrigin)
-            | Stream (_, optOrigin)
-            | Binding (_, optOrigin)
-            | Apply (_, optOrigin)
-            | Quote (_, optOrigin)
-            | Let (_, _, optOrigin)
-            | LetMany (_, optOrigin)
-            | Fun (_, _, _, optOrigin)
-            | If (_, _, _, optOrigin)
-            | Cond (_, optOrigin)
-            | Try (_, _, optOrigin)
-            | Break (_, optOrigin)
-            | Get (_, optOrigin)
-            | GetFrom (_, _, optOrigin)
-            | Set (_, _, optOrigin)
-            | SetTo (_, _, _, optOrigin)
-            | Define (_, _, optOrigin)
-            | Variable (_, _, optOrigin)
-            | Equate (_, _, _, _, optOrigin)
-            | EquateMany (_, _, _, _, _, optOrigin)
-            | Handle (_, _, optOrigin) -> optOrigin
+            | Violation (_, _, originOpt)
+            | Unit originOpt
+            | Bool (_, originOpt)
+            | Int (_, originOpt)
+            | Int64 (_, originOpt)
+            | Single (_, originOpt)
+            | Double (_, originOpt)
+            | Vector2 (_, originOpt)
+            | String (_, originOpt)
+            | Keyword (_, originOpt)
+            | Option (_, originOpt)
+            | Tuple (_, originOpt)
+            | List (_, originOpt)
+            | Phrase (_, originOpt)
+            | Stream (_, originOpt)
+            | Binding (_, originOpt)
+            | Apply (_, originOpt)
+            | Quote (_, originOpt)
+            | Let (_, _, originOpt)
+            | LetMany (_, originOpt)
+            | Fun (_, _, _, originOpt)
+            | If (_, _, _, originOpt)
+            | Cond (_, originOpt)
+            | Try (_, _, originOpt)
+            | Break (_, originOpt)
+            | Get (_, originOpt)
+            | GetFrom (_, _, originOpt)
+            | Set (_, _, originOpt)
+            | SetTo (_, _, _, originOpt)
+            | Define (_, _, originOpt)
+            | Variable (_, _, originOpt)
+            | Equate (_, _, _, _, originOpt)
+            | EquateMany (_, _, _, _, _, originOpt)
+            | Handle (_, _, originOpt) -> originOpt
 
     /// Converts Expr types.
     and ExprConverter () =
@@ -166,33 +166,33 @@ module Scripting =
             match source with
             | :? Symbol as symbol ->
                 match symbol with
-                | Prime.Atom (str, optOrigin) ->
+                | Prime.Atom (str, originOpt) ->
                     match str with
-                    | "none" -> Option (None, optOrigin) :> obj
-                    | "empty" -> List (List.empty, optOrigin) :> obj
+                    | "none" -> Option (None, originOpt) :> obj
+                    | "empty" -> List (List.empty, originOpt) :> obj
                     | _ ->
                         let firstChar = str.[0]
                         if firstChar = '.' || Char.IsUpper firstChar
-                        then Keyword (str, optOrigin) :> obj
-                        else Binding (str, optOrigin) :> obj
-                | Prime.Number (str, optOrigin) ->
+                        then Keyword (str, originOpt) :> obj
+                        else Binding (str, originOpt) :> obj
+                | Prime.Number (str, originOpt) ->
                     match Int32.TryParse str with
-                    | (true, int) -> Int (int, optOrigin) :> obj
+                    | (true, int) -> Int (int, originOpt) :> obj
                     | (false, _) ->
                         match Int64.TryParse str with
-                        | (true, int64) -> Int64 (int64, optOrigin) :> obj
+                        | (true, int64) -> Int64 (int64, originOpt) :> obj
                         | (false, _) ->
                             if str.EndsWith "f" || str.EndsWith "F" then
                                 match Single.TryParse str with
-                                | (true, single) -> Single (single, optOrigin) :> obj
-                                | (false, _) -> Violation ([!!"InvalidNumberForm"], "Unexpected number parse failure.", optOrigin) :> obj
+                                | (true, single) -> Single (single, originOpt) :> obj
+                                | (false, _) -> Violation ([!!"InvalidNumberForm"], "Unexpected number parse failure.", originOpt) :> obj
                             else
                                 match Double.TryParse str with
-                                | (true, double) -> Double (double, optOrigin) :> obj
-                                | (false, _) -> Violation ([!!"InvalidNumberForm"], "Unexpected number parse failure.", optOrigin) :> obj
-                | Prime.String (str, optOrigin) -> String (str, optOrigin) :> obj
-                | Prime.Quote (str, optOrigin) -> Quote (str, optOrigin) :> obj
-                | Prime.Symbols (symbols, optOrigin) ->
+                                | (true, double) -> Double (double, originOpt) :> obj
+                                | (false, _) -> Violation ([!!"InvalidNumberForm"], "Unexpected number parse failure.", originOpt) :> obj
+                | Prime.String (str, originOpt) -> String (str, originOpt) :> obj
+                | Prime.Quote (str, originOpt) -> Quote (str, originOpt) :> obj
+                | Prime.Symbols (symbols, originOpt) ->
                     match symbols with
                     | Atom (name, _) :: tail ->
                         match name with
@@ -200,25 +200,25 @@ module Scripting =
                             match tail with
                             | [Prime.Atom (tagStr, _)]
                             | [Prime.String (tagStr, _)] ->
-                                try let tagName = !!tagStr in Violation (Name.split [|'/'|] tagName, "User-defined error.", optOrigin) :> obj
-                                with exn -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", optOrigin) :> obj
+                                try let tagName = !!tagStr in Violation (Name.split [|'/'|] tagName, "User-defined error.", originOpt) :> obj
+                                with exn -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
                             | [Prime.Atom (tagStr, _); Prime.String (errorMsg, _)]
                             | [Prime.String (tagStr, _); Prime.String (errorMsg, _)] ->
-                                try let tagName = !!tagStr in Violation (Name.split [|'/'|] tagName, errorMsg, optOrigin) :> obj
-                                with exn -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", optOrigin) :> obj
-                            | _ -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Requires 1 tag.", optOrigin) :> obj
+                                try let tagName = !!tagStr in Violation (Name.split [|'/'|] tagName, errorMsg, originOpt) :> obj
+                                with exn -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
+                            | _ -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Requires 1 tag.", originOpt) :> obj
                         | "let" ->
                             match tail with
-                            | [Prime.Atom (name, _); body] -> Let (name, symbolToExpr body, optOrigin) :> obj
-                            | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. Requires 1 name and 1 body.", optOrigin) :> obj
+                            | [Prime.Atom (name, _); body] -> Let (name, symbolToExpr body, originOpt) :> obj
+                            | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. Requires 1 name and 1 body.", originOpt) :> obj
                         | "if" ->
                             match tail with
-                            | [condition; consequent; alternative] -> If (symbolToExpr condition, symbolToExpr consequent, symbolToExpr alternative, optOrigin) :> obj
-                            | _ -> Violation ([!!"InvalidIfForm"], "Invalid if form. Requires 3 arguments.", optOrigin) :> obj
+                            | [condition; consequent; alternative] -> If (symbolToExpr condition, symbolToExpr consequent, symbolToExpr alternative, originOpt) :> obj
+                            | _ -> Violation ([!!"InvalidIfForm"], "Invalid if form. Requires 3 arguments.", originOpt) :> obj
                         | "try" ->
                             match tail with
                             | [body; Prime.Symbols (handlers, _)] ->
-                                let eirHandlers =
+                                let handlerEirs =
                                     List.mapi
                                         (fun i handler ->
                                             match handler with
@@ -227,43 +227,43 @@ module Scripting =
                                             | _ ->
                                                 Left ("Invalid try handler form for handler #" + scstring (inc i) + ". Requires 1 path and 1 body."))
                                         handlers
-                                let (errors, handlers) = Either.split eirHandlers
+                                let (errors, handlers) = Either.split handlerEirs
                                 match errors with
-                                | [] -> Try (symbolToExpr body, List.map (mapSnd symbolToExpr) handlers, optOrigin) :> obj
-                                | error :: _ -> Violation ([!!"InvalidTryForm"], error, optOrigin) :> obj
-                            | _ -> Violation ([!!"InvalidTryForm"], "Invalid try form. Requires 1 body and a handler list.", optOrigin) :> obj
+                                | [] -> Try (symbolToExpr body, List.map (mapSnd symbolToExpr) handlers, originOpt) :> obj
+                                | error :: _ -> Violation ([!!"InvalidTryForm"], error, originOpt) :> obj
+                            | _ -> Violation ([!!"InvalidTryForm"], "Invalid try form. Requires 1 body and a handler list.", originOpt) :> obj
                         | "break" ->
-                            let content = symbolToExpr (Symbols (tail, optOrigin))
-                            Break (content, optOrigin) :> obj
+                            let content = symbolToExpr (Symbols (tail, originOpt))
+                            Break (content, originOpt) :> obj
                         | "get" ->
                             match tail with
-                            | Prime.Atom (nameStr, optOrigin) :: tail2
-                            | Prime.String (nameStr, optOrigin) :: tail2 ->
+                            | Prime.Atom (nameStr, originOpt) :: tail2
+                            | Prime.String (nameStr, originOpt) :: tail2 ->
                                 match tail2 with
-                                | [] -> Get (nameStr, optOrigin) :> obj
-                                | [relation] -> GetFrom (nameStr, symbolToExpr relation, optOrigin) :> obj
-                                | _ -> Violation ([!!"InvalidGetForm"], "Invalid get form. Requires a name and an optional relation expression.", optOrigin) :> obj
-                            | _ -> Violation ([!!"InvalidGetForm"], "Invalid get form. Requires a name and an optional relation expression.", optOrigin) :> obj
+                                | [] -> Get (nameStr, originOpt) :> obj
+                                | [relation] -> GetFrom (nameStr, symbolToExpr relation, originOpt) :> obj
+                                | _ -> Violation ([!!"InvalidGetForm"], "Invalid get form. Requires a name and an optional relation expression.", originOpt) :> obj
+                            | _ -> Violation ([!!"InvalidGetForm"], "Invalid get form. Requires a name and an optional relation expression.", originOpt) :> obj
                         | "set" ->
                             match tail with
-                            | Prime.Atom (nameStr, optOrigin) :: value :: tail2
-                            | Prime.String (nameStr, optOrigin) :: value :: tail2 ->
+                            | Prime.Atom (nameStr, originOpt) :: value :: tail2
+                            | Prime.String (nameStr, originOpt) :: value :: tail2 ->
                                 match tail2 with
-                                | [] -> Set (nameStr, symbolToExpr value, optOrigin) :> obj
-                                | [relation] -> SetTo (nameStr, symbolToExpr value, symbolToExpr relation, optOrigin) :> obj
-                                | _ -> Violation ([!!"InvalidSetForm"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", optOrigin) :> obj
-                            | _ -> Violation ([!!"InvalidSetForm"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", optOrigin) :> obj
+                                | [] -> Set (nameStr, symbolToExpr value, originOpt) :> obj
+                                | [relation] -> SetTo (nameStr, symbolToExpr value, symbolToExpr relation, originOpt) :> obj
+                                | _ -> Violation ([!!"InvalidSetForm"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", originOpt) :> obj
+                            | _ -> Violation ([!!"InvalidSetForm"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", originOpt) :> obj
                         | "variableStream" ->
                             match tail with
-                            | [Prime.Atom (nameStr, optOrigin)]
-                            | [Prime.String (nameStr, optOrigin)] -> Stream (VariableStream nameStr, optOrigin) :> obj
-                            | _ -> Violation ([!!"InvalidVariableStreamForm"], "Invalid variable stream form. Requires a name.", optOrigin) :> obj
+                            | [Prime.Atom (nameStr, originOpt)]
+                            | [Prime.String (nameStr, originOpt)] -> Stream (VariableStream nameStr, originOpt) :> obj
+                            | _ -> Violation ([!!"InvalidVariableStreamForm"], "Invalid variable stream form. Requires a name.", originOpt) :> obj
                         | "eventStream" ->
                             match tail with
-                            | [relation] -> Stream (EventStream (symbolToExpr relation), optOrigin) :> obj
-                            | _ -> Violation ([!!"InvalidEventStreamForm"], "Invalid event stream form. Requires a relation expression.", optOrigin) :> obj
-                        | _ -> Apply (List.map symbolToExpr symbols, optOrigin) :> obj
-                    | _ -> Apply (List.map symbolToExpr symbols, optOrigin) :> obj
+                            | [relation] -> Stream (EventStream (symbolToExpr relation), originOpt) :> obj
+                            | _ -> Violation ([!!"InvalidEventStreamForm"], "Invalid event stream form. Requires a relation expression.", originOpt) :> obj
+                        | _ -> Apply (List.map symbolToExpr symbols, originOpt) :> obj
+                    | _ -> Apply (List.map symbolToExpr symbols, originOpt) :> obj
             | :? Expr -> source
             | _ -> failconv "Invalid ExprConverter conversion from source." None
 

@@ -70,7 +70,7 @@ module WorldModule2 =
         /// Try to query that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
         static member tryGetIsSelectedScreenIdling world =
-            match World.getOptSelectedScreen world with
+            match World.getSelectedScreenOpt world with
             | Some selectedScreen -> Some ^ selectedScreen.IsIdling world
             | None -> None
 
@@ -114,7 +114,7 @@ module WorldModule2 =
         /// Select the given screen without transitioning, even if another transition is taking place.
         static member selectScreen screen world =
             let world =
-                match World.getOptSelectedScreen world with
+                match World.getSelectedScreenOpt world with
                 | Some selectedScreen ->
                     let eventTrace = EventTrace.record4 "World" "selectScreen" "Deselect" EventTrace.empty
                     World.publish () (Events.Deselect ->- selectedScreen) eventTrace selectedScreen world
@@ -126,19 +126,19 @@ module WorldModule2 =
 
         /// Try to transition to the given screen if no other transition is in progress.
         static member tryTransitionScreen destination world =
-            match World.getOptSelectedScreen world with
+            match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
                 if World.containsScreen selectedScreen world then
                     let subscriptionKey = makeGuid ()
                     let subscription = fun (_ : Event<unit, Screen>) world ->
-                        match World.getOptScreenTransitionDestination world with
+                        match World.getScreenTransitionDestinationOpt world with
                         | Some destination ->
                             let world = World.unsubscribe subscriptionKey world
-                            let world = World.setOptScreenTransitionDestination None world
+                            let world = World.setScreenTransitionDestinationOpt None world
                             let world = World.selectScreen destination world
                             (Cascade, world)
-                        | None -> failwith "No valid OptScreenTransitionDestination during screen transition!"
-                    let world = World.setOptScreenTransitionDestination (Some destination) world
+                        | None -> failwith "No valid ScreenTransitionDestinationOpt during screen transition!"
+                    let world = World.setScreenTransitionDestinationOpt (Some destination) world
                     let world = World.setScreenTransitionState OutgoingState selectedScreen world
                     let world = World.subscribe5<unit, Screen> subscriptionKey subscription (Events.OutgoingFinish ->- selectedScreen) selectedScreen world
                     Some world
@@ -244,7 +244,7 @@ module WorldModule2 =
                 let world = World.subscribe5 SplashScreenUpdateKey subscription evt.Address evt.Subscriber world
                 (Cascade, world)
             else
-                match World.getOptSelectedScreen world with
+                match World.getSelectedScreenOpt world with
                 | Some selectedScreen ->
                     if World.containsScreen selectedScreen world then
                         let world = World.setScreenTransitionState OutgoingState selectedScreen world
@@ -261,15 +261,15 @@ module WorldModule2 =
             (Resolve, world)
 
         /// Create a dissolve screen whose contents is loaded from the given group file.
-        static member createDissolveScreenFromGroupFile<'d when 'd :> ScreenDispatcher> optSpecialization optName dissolveData groupFilePath world =
-            let (dissolveScreen, world) = World.createDissolveScreen<'d> dissolveData optSpecialization optName world
+        static member createDissolveScreenFromGroupFile<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt dissolveData groupFilePath world =
+            let (dissolveScreen, world) = World.createDissolveScreen<'d> dissolveData specializationOpt nameOpt world
             let world = World.readGroupFromFile groupFilePath None dissolveScreen world |> snd
             (dissolveScreen, world)
 
         /// Create a splash screen that transitions to the given destination upon completion.
-        static member createSplashScreen<'d when 'd :> ScreenDispatcher> optSpecialization optName splashData destination world =
+        static member createSplashScreen<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt splashData destination world =
             let cameraEyeSize = World.getEyeSize world
-            let (splashScreen, world) = World.createDissolveScreen<'d> splashData.DissolveData optSpecialization optName world
+            let (splashScreen, world) = World.createDissolveScreen<'d> splashData.DissolveData specializationOpt nameOpt world
             let (splashGroup, world) = World.createGroup<GroupDispatcher> None (Some !!"SplashGroup") splashScreen world
             let (splashLabel, world) = World.createEntity<LabelDispatcher> None (Some !!"SplashLabel") splashGroup world
             let world =
@@ -481,7 +481,7 @@ module WorldModule2 =
         static member private updateSimulants world =
             
             // check for existence of screen; otherwise just operate on game
-            match World.getOptSelectedScreen world with
+            match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
             
                 // gather simulants. Note that we do not re-discover simulants during the update process because the
@@ -510,7 +510,7 @@ module WorldModule2 =
                world
 
         static member private actualizeScreenTransition (_ : Vector2) (eyeSize : Vector2) (screen : Screen) transition world =
-            match transition.OptDissolveImage with
+            match transition.DissolveImageOpt with
             | Some dissolveImage ->
                 let progress = single (screen.GetTransitionTicksNp world) / single transition.TransitionLifetime
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
@@ -529,7 +529,7 @@ module WorldModule2 =
                                       Rotation = 0.0f
                                       Offset = Vector2.Zero
                                       ViewType = Absolute
-                                      OptInset = None
+                                      InsetOpt = None
                                       Image = dissolveImage
                                       Color = color }}])
                     world
@@ -537,7 +537,7 @@ module WorldModule2 =
 
         static member private actualizeSimulants world =
             let world = World.actualizeGame world
-            match World.getOptSelectedScreen world with
+            match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
                 let world = World.actualizeScreen selectedScreen world
                 let world =
@@ -670,8 +670,8 @@ module WorldModule2 =
             // make and choose the world for debugging
             let world = World.make eventSystem dispatchers subsystems ambientState None activeGameDispatcher
 
-            // initialize OptEntityCache after the fact due to back reference
-            let world = World.setOptEntityCache (KeyedCache.make (Address.empty<Entity>, world) None) world
+            // initialize entity cache after the fact due to back reference
+            let world = World.setEntityCacheOpt (KeyedCache.make (Address.empty<Entity>, world) None) world
 
             // subscribe to subscribe and unsubscribe events
             let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
@@ -690,7 +690,7 @@ module WorldModule2 =
 
         /// Try to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member attemptMake preferPluginGameDispatcher optGameSpecialization tickRate userState (plugin : NuPlugin) sdlDeps =
+        static member attemptMake preferPluginGameDispatcher gameSpecializationOpt tickRate userState (plugin : NuPlugin) sdlDeps =
 
             // ensure game engine is initialized
             // TODO: parameterize hard-coded boolean
@@ -712,13 +712,13 @@ module WorldModule2 =
                 let pluginEntityDispatchers = plugin.MakeEntityDispatchers () |> List.map World.pairWithName
                 let pluginGroupDispatchers = plugin.MakeGroupDispatchers () |> List.map World.pairWithName
                 let pluginScreenDispatchers = plugin.MakeScreenDispatchers () |> List.map World.pairWithName
-                let pluginOptGameDispatcher = plugin.MakeOptGameDispatcher ()
+                let pluginGameDispatcherOpt = plugin.MakeGameDispatcherOpt ()
 
                 // infer the active game dispatcher
                 let defaultGameDispatcher = GameDispatcher ()
                 let activeGameDispatcher =
                     if preferPluginGameDispatcher then
-                        match pluginOptGameDispatcher with
+                        match pluginGameDispatcherOpt with
                         | Some gameDispatcher -> gameDispatcher
                         | None -> defaultGameDispatcher
                     else defaultGameDispatcher
@@ -739,7 +739,7 @@ module WorldModule2 =
                     let physicsEngine = PhysicsEngine.make Constants.Physics.Gravity
                     let physicsEngineSubsystem = PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder physicsEngine :> World Subsystem
                     let renderer =
-                        match SdlDeps.getOptRenderContext sdlDeps with
+                        match SdlDeps.getRenderContextOpt sdlDeps with
                         | Some renderContext -> Renderer.make renderContext :> IRenderer
                         | None -> MockRenderer.make () :> IRenderer
                     let renderer = renderer.EnqueueMessage ^ HintRenderPackageUseMessage { PackageName = Assets.DefaultPackageName }
@@ -772,10 +772,10 @@ module WorldModule2 =
                         AmbientState.make tickRate assetMetadataMap overlayRouter overlayer SymbolStore.empty userState
 
                     // make and choose the world for debugging
-                    let world = World.make eventSystem dispatchers subsystems ambientState optGameSpecialization activeGameDispatcher
+                    let world = World.make eventSystem dispatchers subsystems ambientState gameSpecializationOpt activeGameDispatcher
 
-                    // initialize OptEntityCache after the fact due to back reference
-                    let world = World.setOptEntityCache (KeyedCache.make (Address.empty<Entity>, world) None) world
+                    // initialize entity cache after the fact due to back reference
+                    let world = World.setEntityCacheOpt (KeyedCache.make (Address.empty<Entity>, world) None) world
 
                     // subscribe to subscribe and unsubscribe events
                     let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world

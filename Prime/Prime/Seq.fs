@@ -79,12 +79,12 @@ let project projector (seq_ : 'a seq) (seq2 : 'b option seq) =
 /// Implement a fold while folder results in Some.
 let foldWhile folder (state : 's) (seq : 't seq) =
     let mutable lastState = state
-    let mutable optState = Some lastState
+    let mutable stateOpt = Some lastState
     use mutable enr = seq.GetEnumerator ()
-    while optState.IsSome && enr.MoveNext () do
-        lastState <- optState.Value
-        optState <- folder lastState enr.Current
-    match optState with
+    while stateOpt.IsSome && enr.MoveNext () do
+        lastState <- stateOpt.Value
+        stateOpt <- folder lastState enr.Current
+    match stateOpt with
     | Some state -> state
     | None -> lastState
 
@@ -92,13 +92,13 @@ let foldWhile folder (state : 's) (seq : 't seq) =
 let foldUntil folder (state : 's) (seq : 't seq) =
     let mutable isFirst = true // no do while necessitates this flag
     let mutable lastState = state
-    let mutable optState = Some lastState
+    let mutable stateOpt = Some lastState
     use mutable enr = seq.GetEnumerator ()
-    while (isFirst || optState.IsNone) && enr.MoveNext () do
+    while (isFirst || stateOpt.IsNone) && enr.MoveNext () do
         isFirst <- false
-        lastState <- optState.Value
-        optState <- folder lastState enr.Current
-    match optState with
+        lastState <- stateOpt.Value
+        stateOpt <- folder lastState enr.Current
+    match stateOpt with
     | Some state -> state
     | None -> lastState
 

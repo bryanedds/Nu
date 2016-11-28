@@ -32,22 +32,22 @@ module VsyncModule =
     module Vsync =
     
         /// Configures whether to use synchronized processing.
-        let mutable private OptSync = None
+        let mutable private SyncOpt = None
     
         /// Initialize Vsync to use synchronized or asynchronous processing.
         let init sync =
-            match OptSync with
+            match SyncOpt with
             | Some _ -> Log.debug "Cannot init Vsync.sync once it's been set. Consider calling init earlier in your program."
-            | None -> OptSync <- Some sync
+            | None -> SyncOpt <- Some sync
     
         /// Query whether Vsync is using synchronized or asynchronous processing.
         let isSync () =
-            match OptSync with
+            match SyncOpt with
             | Some sync -> sync
             | None ->
                 Log.debug "Sync not set manually before first invocation; automatically setting to true."
                 let result = true
-                OptSync <- Some result
+                SyncOpt <- Some result
                 result
     
         let [<DebuggerHidden; DebuggerStepThrough>] private Extract v =

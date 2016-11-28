@@ -53,7 +53,7 @@ module GameplayDispatcherModule =
         static let makeAttackTurn targetPositionM =
             ActionTurn
                 { ActionTicks = 0L
-                  ActionOptTargetPositionM = Some targetPositionM
+                  ActionTargetPositionMOpt = Some targetPositionM
                   ActionDataName = Constants.InfinityRpg.AttackName }
 
         static let createField scene rand world =
@@ -112,13 +112,13 @@ module GameplayDispatcherModule =
             let nodes = OccupationMap.makeNavigationNodes occupationMap
             let goalNode = Map.find (vftovm touchPosition) nodes
             let currentNode = Map.find (vftovm ^ character.GetPosition world) nodes
-            let optNavigationPath =
+            let navigationPathOpt =
                 AStar.FindPath (
                     currentNode,
                     goalNode,
                     (fun n n2 -> if n2.PositionM.Y <> n.PositionM.Y then 2.0f else 1.0f), // prefer horizontal walk to vertical for predictability
                     (fun n -> 0.0f))
-            match optNavigationPath with
+            match navigationPathOpt with
             | null -> None
             | navigationPath -> Some (navigationPath |> List.ofSeq |> List.rev |> List.tail)
 
@@ -130,7 +130,7 @@ module GameplayDispatcherModule =
                 match character.GetActivityState world with
                 | Action _ as action -> action
                 | NoActivity -> NoActivity
-                | Navigation navDescriptor -> Navigation { navDescriptor with OptNavigationPath = None }
+                | Navigation navDescriptor -> Navigation { navDescriptor with NavigationPathOpt = None }
             character.SetActivityState characterActivity world
 
         static let anyTurnsInProgress2 (player : Entity) enemies world =
@@ -153,13 +153,13 @@ module GameplayDispatcherModule =
         static let updateCharacterByWalkState walkState navigationDescriptor (character : Entity) world =
             match walkState with
             | WalkFinished ->
-                match navigationDescriptor.OptNavigationPath with
+                match navigationDescriptor.NavigationPathOpt with
                 | Some [] -> failwith "NavigationPath should never be empty here."
                 | Some (_ :: []) -> character.SetActivityState NoActivity world
                 | Some (currentNode :: navigationPath) ->
                     let walkDirection = vmtod ^ (List.head navigationPath).PositionM - currentNode.PositionM
                     let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = vftovm ^ character.GetPosition world }
-                    let navigationDescriptor = { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
+                    let navigationDescriptor = { WalkDescriptor = walkDescriptor; NavigationPathOpt = Some navigationPath }
                     character.SetActivityState (Navigation navigationDescriptor) world
                 | None -> character.SetActivityState NoActivity world
             | WalkContinuing -> world
@@ -189,7 +189,7 @@ module GameplayDispatcherModule =
                 let openDirections = OccupationMap.getOpenDirectionsAtPositionM (vftovm ^ character.GetPosition world) occupationMap
                 if Set.contains direction openDirections then
                     let walkDescriptor = { WalkDirection = direction; WalkOriginM = vftovm ^ character.GetPosition world }
-                    NavigationTurn { WalkDescriptor = walkDescriptor; OptNavigationPath = None }
+                    NavigationTurn { WalkDescriptor = walkDescriptor; NavigationPathOpt = None }
                 else
                     let targetPosition = character.GetPosition world + dtovf direction
                     if Seq.exists (fun (opponent : Entity) -> opponent.GetPosition world = targetPosition) opponents
@@ -206,7 +206,7 @@ module GameplayDispatcherModule =
                         let characterPositionM = vftovm ^ character.GetPosition world
                         let walkDirection = vmtod ^ (List.head navigationPath).PositionM - characterPositionM
                         let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = characterPositionM }
-                        NavigationTurn { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
+                        NavigationTurn { WalkDescriptor = walkDescriptor; NavigationPathOpt = Some navigationPath }
                 | None ->
                     let targetPosition = touchPosition |> vftovm |> vmtovf
                     if Math.arePositionsAdjacent targetPosition ^ character.GetPosition world then
@@ -260,7 +260,7 @@ module GameplayDispatcherModule =
                 match determineCharacterTurnFromTouch touchPositionW occupationMapWithAdjacentEnemies Simulants.Player enemies world with
                 | ActionTurn _ as actionTurn -> actionTurn
                 | NavigationTurn navigationDescriptor as navigationTurn ->
-                    let headNavigationNode = navigationDescriptor.OptNavigationPath |> Option.get |> List.head
+                    let headNavigationNode = navigationDescriptor.NavigationPathOpt |> Option.get |> List.head
                     let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters fieldMap.FieldTiles enemyPositions
                     if Map.find headNavigationNode.PositionM occupationMapWithEnemies then CancelTurn
                     else navigationTurn
@@ -426,7 +426,7 @@ module GameplayDispatcherModule =
                 OccupationMap.makeFromFieldTilesAndCharactersAndDesiredTurn fieldMap.FieldTiles enemyPositions playerTurn
 
             // determine player activity
-            let optNewPlayerActivity =
+            let newPlayerActivityOpt =
                 match playerTurn with
                 | ActionTurn actionDescriptor -> Some ^ Action actionDescriptor
                 | NavigationTurn navigationDescriptor -> Some ^ Navigation navigationDescriptor
@@ -435,13 +435,13 @@ module GameplayDispatcherModule =
 
             // run player activity
             let world =
-                match optNewPlayerActivity with
+                match newPlayerActivityOpt with
                 | Some newPlayerActivity -> runCharacterActivity newPlayerActivity Simulants.Player world
                 | None -> world
 
             // determine (and set) enemy desired turns if applicable
             let world =
-                match optNewPlayerActivity with
+                match newPlayerActivityOpt with
                 | Some (Action _)
                 | Some (Navigation _) ->
                     let rand = Rand.makeFromSeedState ^ Simulants.Gameplay.GetOngoingRandState world

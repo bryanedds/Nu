@@ -24,12 +24,12 @@ module WorldGameModule =
         member this.Classification = PropertyTag.makeReadOnly this Property? Classification this.GetClassification
         member this.GetCreationTimeStampNp world = World.getGameCreationTimeStampNp world
         member this.CreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
-        member this.GetOptSelectedScreen world = World.getOptSelectedScreen world
-        member this.SetOptSelectedScreen value world = World.setOptSelectedScreen value world
-        member this.OptSelectedScreen = PropertyTag.makeReadOnly this Property? OptSelectedScreen this.GetOptSelectedScreen
-        member this.GetOptScreenTransitionDestination world = World.getOptScreenTransitionDestination world
-        member this.SetOptScreenTransitionDestination value world = World.setOptScreenTransitionDestination value world
-        member this.OptScreenTransitionDestination = PropertyTag.makeReadOnly this Property? OptScreenTransitionDestination this.GetOptScreenTransitionDestination
+        member this.GetSelectedScreenOpt world = World.getSelectedScreenOpt world
+        member this.SetSelectedScreenOpt value world = World.setSelectedScreenOpt value world
+        member this.SelectedScreenOpt = PropertyTag.makeReadOnly this Property? SelectedScreenOpt this.GetSelectedScreenOpt
+        member this.GetScreenTransitionDestinationOpt world = World.getScreenTransitionDestinationOpt world
+        member this.SetScreenTransitionDestinationOpt value world = World.setScreenTransitionDestinationOpt value world
+        member this.ScreenTransitionDestinationOpt = PropertyTag.makeReadOnly this Property? ScreenTransitionDestinationOpt this.GetScreenTransitionDestinationOpt
         member this.GetEyeCenter world = World.getEyeCenter world
         member this.SetEyeCenter value world = World.setEyeCenter value world
         member this.EyeCenter = PropertyTag.makeReadOnly this Property? EyeCenter this.GetEyeCenter
@@ -138,20 +138,20 @@ module WorldGameModule =
         /// Determine if an entity is selected by being in a group of the currently selected screeen.
         static member isEntitySelected entity world =
             let screenName = Address.head entity.EntityAddress
-            match World.getOptSelectedScreen world with
+            match World.getSelectedScreenOpt world with
             | Some selectedScreen -> screenName = Address.getName selectedScreen.ScreenAddress
             | None -> false
 
         /// Determine if a group is selected by being in the currently selected screeen.
         static member isGroupSelected group world =
             let screenName = Address.head group.GroupAddress
-            match World.getOptSelectedScreen world with
+            match World.getSelectedScreenOpt world with
             | Some selectedScreen -> screenName = Address.getName selectedScreen.ScreenAddress
             | None -> false
 
         /// Determine if a screen is the currently selected screeen.
         static member isScreenSelected screen world =
-            World.getOptSelectedScreen world = Some screen
+            World.getSelectedScreenOpt world = Some screen
 
         /// Determine if a simulant is contained by, or is the same as, the currently selected screen.
         /// Game is always considered 'selected' as well.
@@ -159,7 +159,7 @@ module WorldGameModule =
             match Address.getNames simulant.SimulantAddress with
             | [] -> true
             | screenName :: _ ->
-                match World.getOptSelectedScreen world with
+                match World.getSelectedScreenOpt world with
                 | Some screen -> Address.getName screen.ScreenAddress = screenName
                 | None -> false
 

@@ -72,22 +72,22 @@ module TlistModule =
             oldList.Tlist <- list
             list
 
-        let private makeFromTempList optBloatFactor (tempList : 'a List) =
+        let private makeFromTempList bloatFactorOpt (tempList : 'a List) =
             let list =
                 { Tlist = Unchecked.defaultof<'a Tlist>
                   ImpList = tempList
                   ImpListOrigin = List<'a> tempList
                   Logs = []
                   LogsLength = 0
-                  BloatFactor = Option.getOrDefault 1 optBloatFactor }
+                  BloatFactor = Option.getOrDefault 1 bloatFactorOpt }
             list.Tlist <- list
             list
 
-        let makeFromSeq optBloatFactor (items : 'a seq) =
-            makeFromTempList optBloatFactor (List<'a> items)
+        let makeFromSeq bloatFactorOpt (items : 'a seq) =
+            makeFromTempList bloatFactorOpt (List<'a> items)
 
-        let makeEmpty<'a> optBloatFactor =
-            makeFromSeq optBloatFactor (List<'a> ())
+        let makeEmpty<'a> bloatFactorOpt =
+            makeFromSeq bloatFactorOpt (List<'a> ())
 
         let singleton item =
             makeFromSeq None (Seq.singleton item)

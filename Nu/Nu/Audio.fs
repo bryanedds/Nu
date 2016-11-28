@@ -62,8 +62,8 @@ module AudioPlayerModule =
             { AudioContext : unit // audio context, interestingly, is global. Good luck encapsulating that!
               AudioPackageMap : AudioAsset PackageMap
               AudioMessages : AudioMessage Ulist
-              OptCurrentSong : PlaySongMessage option
-              OptNextPlaySong : PlaySongMessage option }
+              CurrentSongOpt : PlaySongMessage option
+              NextPlaySongOpt : PlaySongMessage option }
     
         static member private haltSound () =
             SDL_mixer.Mix_HaltMusic () |> ignore
@@ -74,15 +74,15 @@ module AudioPlayerModule =
         static member private tryLoadAudioAsset2 (asset : Asset) =
             match Path.GetExtension asset.FilePath with
             | ".wav" ->
-                let optWav = SDL_mixer.Mix_LoadWAV asset.FilePath
-                if optWav <> IntPtr.Zero then Some (asset.AssetTag.AssetName, WavAsset optWav)
+                let wavOpt = SDL_mixer.Mix_LoadWAV asset.FilePath
+                if wavOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, WavAsset wavOpt)
                 else
                     let errorMsg = SDL.SDL_GetError ()
                     Log.trace ^ "Could not load wav '" + asset.FilePath + "' due to '" + errorMsg + "'."
                     None
             | ".ogg" ->
-                let optOgg = SDL_mixer.Mix_LoadMUS asset.FilePath
-                if optOgg <> IntPtr.Zero then Some (asset.AssetTag.AssetName, OggAsset optOgg)
+                let oggOpt = SDL_mixer.Mix_LoadMUS asset.FilePath
+                if oggOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, OggAsset oggOpt)
                 else
                     let errorMsg = SDL.SDL_GetError ()
                     Log.trace ^ "Could not load ogg '" + asset.FilePath + "' due to '" + errorMsg + "'."
@@ -94,10 +94,10 @@ module AudioPlayerModule =
             | Right assetGraph ->
                 match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Audio) packageName assetGraph with
                 | Right assets ->
-                    let optAudioAssets = List.map AudioPlayer.tryLoadAudioAsset2 assets
-                    let audioAssets = List.definitize optAudioAssets
-                    let optAudioAssetMap = Map.tryFind packageName audioPlayer.AudioPackageMap
-                    match optAudioAssetMap with
+                    let audioAssetOpts = List.map AudioPlayer.tryLoadAudioAsset2 assets
+                    let audioAssets = List.definitize audioAssetOpts
+                    let audioAssetMapOpt = Map.tryFind packageName audioPlayer.AudioPackageMap
+                    match audioAssetMapOpt with
                     | Some audioAssetMap ->
                         let audioAssetMap = Map.addMany audioAssets audioAssetMap
                         { audioPlayer with AudioPackageMap = Map.add packageName audioAssetMap audioPlayer.AudioPackageMap }
@@ -112,25 +112,25 @@ module AudioPlayerModule =
                 audioPlayer
     
         static member private tryLoadAudioAsset (assetTag : AssetTag) audioPlayer =
-            let (optAssetMap, audioPlayer) =
+            let (assetMapOpt, audioPlayer) =
                 match Map.tryFind assetTag.PackageName audioPlayer.AudioPackageMap with
                 | Some _ -> (Map.tryFind assetTag.PackageName audioPlayer.AudioPackageMap, audioPlayer)
                 | None ->
                     Log.info ^ "Loading audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
                     let audioPlayer = AudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
                     (Map.tryFind assetTag.PackageName audioPlayer.AudioPackageMap, audioPlayer)
-            (Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap, audioPlayer)
+            (Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) assetMapOpt, audioPlayer)
     
         static member private playSong playSongMessage audioPlayer =
             let song = playSongMessage.Song
-            let (optAudioAsset, audioPlayer) = AudioPlayer.tryLoadAudioAsset song audioPlayer
-            match optAudioAsset with
+            let (audioAssetOpt, audioPlayer) = AudioPlayer.tryLoadAudioAsset song audioPlayer
+            match audioAssetOpt with
             | Some (WavAsset _) -> Log.info ^ "Cannot play wav file as song '" + scstring song + "'."
             | Some (OggAsset oggAsset) ->
                 SDL_mixer.Mix_VolumeMusic (int ^ playSongMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME) |> ignore
                 SDL_mixer.Mix_FadeInMusic (oggAsset, -1, 256) |> ignore // Mix_PlayMusic seems to somtimes cause audio 'popping' when starting a song, so a fade is used instead... |> ignore
             | None -> Log.info ^ "PlaySongMessage failed due to unloadable assets for '" + scstring song + "'."
-            { audioPlayer with OptCurrentSong = Some playSongMessage }
+            { audioPlayer with CurrentSongOpt = Some playSongMessage }
     
         static member private handleHintAudioPackageUse (hintPackageUse : HintAudioPackageUseMessage) audioPlayer =
             AudioPlayer.tryLoadAudioPackage hintPackageUse.PackageName audioPlayer
@@ -151,8 +151,8 @@ module AudioPlayerModule =
     
         static member private handlePlaySound playSoundMessage audioPlayer =
             let sound = playSoundMessage.Sound
-            let (optAudioAsset, audioPlayer) = AudioPlayer.tryLoadAudioAsset sound audioPlayer
-            match optAudioAsset with
+            let (audioAssetOpt, audioPlayer) = AudioPlayer.tryLoadAudioAsset sound audioPlayer
+            match audioAssetOpt with
             | Some (WavAsset wavAsset) ->
                 SDL_mixer.Mix_VolumeChunk (wavAsset, int ^ playSoundMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME) |> ignore
                 SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0) |> ignore
@@ -162,13 +162,13 @@ module AudioPlayerModule =
     
         static member private handlePlaySong playSongMessage audioPlayer =
             if SDL_mixer.Mix_PlayingMusic () = 1 then
-                if audioPlayer.OptCurrentSong <> Some playSongMessage then
+                if audioPlayer.CurrentSongOpt <> Some playSongMessage then
                     if  playSongMessage.TimeToFadeOutSongMs <> 0 &&
                         not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
                         SDL_mixer.Mix_FadeOutMusic playSongMessage.TimeToFadeOutSongMs |> ignore
                     else
                         SDL_mixer.Mix_HaltMusic () |> ignore
-                    { audioPlayer with OptNextPlaySong = Some playSongMessage }
+                    { audioPlayer with NextPlaySongOpt = Some playSongMessage }
                 else audioPlayer
             else AudioPlayer.playSong playSongMessage audioPlayer
     
@@ -208,14 +208,14 @@ module AudioPlayerModule =
     
         static member private tryUpdateCurrentSong audioPlayer =
             if SDL_mixer.Mix_PlayingMusic () = 1 then audioPlayer
-            else { audioPlayer with OptCurrentSong = None }
+            else { audioPlayer with CurrentSongOpt = None }
     
         static member private tryUpdateNextSong audioPlayer =
-            match audioPlayer.OptNextPlaySong with
+            match audioPlayer.NextPlaySongOpt with
             | Some nextPlaySong ->
                 if SDL_mixer.Mix_PlayingMusic () = 0 then
                     let audioPlayer = AudioPlayer.handlePlaySong nextPlaySong audioPlayer
-                    { audioPlayer with OptNextPlaySong = None }
+                    { audioPlayer with NextPlaySongOpt = None }
                 else audioPlayer
             | None -> audioPlayer
     
@@ -232,8 +232,8 @@ module AudioPlayerModule =
                 { AudioContext = ()
                   AudioPackageMap = Map.empty
                   AudioMessages = Ulist.makeEmpty None
-                  OptCurrentSong = None
-                  OptNextPlaySong = None }
+                  CurrentSongOpt = None
+                  NextPlaySongOpt = None }
             audioPlayer
     
         interface IAudioPlayer with

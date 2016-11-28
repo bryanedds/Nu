@@ -397,13 +397,13 @@ module WorldModule =
 
     type World with
 
-        /// Get the opt entity cache.
-        static member internal getOptEntityCache world =
-            world.OptEntityCache
+        /// Get the optional entity cache.
+        static member internal getEntityCacheOpt world =
+            world.EntityCacheOpt
 
-        /// Set the opt entity cache.
-        static member internal setOptEntityCache optEntityCache world =
-            World.choose { world with OptEntityCache = optEntityCache }
+        /// Set the optional entity cache.
+        static member internal setEntityCacheOpt entityCacheOpt world =
+            World.choose { world with EntityCacheOpt = entityCacheOpt }
 
     type World with
 
@@ -486,32 +486,32 @@ module WorldModule =
             World.updateGameState (fun groupState -> { groupState with EyeSize = value }) Property? EyeSize world
 
         /// Get the currently selected screen, if any.
-        static member getOptSelectedScreen world =
-            (World.getGameState world).OptSelectedScreen
+        static member getSelectedScreenOpt world =
+            (World.getGameState world).SelectedScreenOpt
         
         /// Set the currently selected screen or None. Be careful using this function directly as
         /// you may be wanting to use the higher-level World.transitionScreen function instead.
-        static member setOptSelectedScreen value world =
-            World.updateGameState (fun groupState -> { groupState with OptSelectedScreen = value }) Property? OptSelectedScreen world
+        static member setSelectedScreenOpt value world =
+            World.updateGameState (fun groupState -> { groupState with SelectedScreenOpt = value }) Property? SelectedScreenOpt world
 
         /// Get the currently selected screen (failing with an exception if there isn't one).
         static member getSelectedScreen world =
-            Option.get ^ World.getOptSelectedScreen world
+            Option.get ^ World.getSelectedScreenOpt world
         
         /// Set the currently selected screen. Be careful using this function directly as you may
         /// be wanting to use the higher-level World.transitionScreen function instead.
         static member setSelectedScreen screen world =
-            World.setOptSelectedScreen (Some screen) world
+            World.setSelectedScreenOpt (Some screen) world
 
         /// Get the current destination screen if a screen transition is currently underway.
-        static member getOptScreenTransitionDestination world =
-            (World.getGameState world).OptScreenTransitionDestination
+        static member getScreenTransitionDestinationOpt world =
+            (World.getGameState world).ScreenTransitionDestinationOpt
 
         /// Set the current destination screen or None. Be careful using this function as calling
         /// it is predicated that no screen transition is currently underway.
         /// TODO: consider asserting such predication here.
-        static member internal setOptScreenTransitionDestination destination world =
-            World.updateGameState (fun gameState -> { gameState with OptScreenTransitionDestination = destination }) Property? OptScreenTransitionDestination world
+        static member internal setScreenTransitionDestinationOpt destination world =
+            World.updateGameState (fun gameState -> { gameState with ScreenTransitionDestinationOpt = destination }) Property? ScreenTransitionDestinationOpt world
 
         /// Get the view of the eye in absolute terms (world space).
         static member getViewAbsolute world =
@@ -592,8 +592,8 @@ module WorldModule =
             | "DispatcherNp" -> (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
             | "Specialization" -> (World.getGameSpecialization world :> obj, typeof<string>)
             | "CreationTimeStampNp" -> (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
-            | "OptSelectedScreen" -> (World.getOptSelectedScreen world :> obj, typeof<Screen option>)
-            | "OptScreenTransitionDestination" -> (World.getOptScreenTransitionDestination world :> obj, typeof<Screen option>)
+            | "SelectedScreenOpt" -> (World.getSelectedScreenOpt world :> obj, typeof<Screen option>)
+            | "ScreenTransitionDestinationOpt" -> (World.getScreenTransitionDestinationOpt world :> obj, typeof<Screen option>)
             | "EyeCenter" -> (World.getEyeCenter world :> obj, typeof<Vector2>)
             | "EyeSize" -> (World.getEyeSize world :> obj, typeof<Vector2>)
             | _ -> GameState.getProperty propertyName (World.getGameState world)
@@ -605,14 +605,14 @@ module WorldModule =
             | "DispatcherNp" -> failwith "Cannot change group dispatcher."
             | "Specialization" -> failwith "Cannot change group specialization."
             | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
-            | "OptOptSelectedScreen" -> World.setOptSelectedScreen (property |> fst :?> Screen option) world
-            | "OptScreenTransitionDestination" -> World.setOptScreenTransitionDestination (property |> fst :?> Screen option) world
+            | "SelectedScreenOpt" -> World.setSelectedScreenOpt (property |> fst :?> Screen option) world
+            | "ScreenTransitionDestinationOpt" -> World.setScreenTransitionDestinationOpt (property |> fst :?> Screen option) world
             | "EyeCenter" -> World.setEyeCenter (property |> fst :?> Vector2) world
             | "EyeSize" -> World.setEyeSize (property |> fst :?> Vector2) world
             | _ -> World.updateGameState (GameState.setProperty propertyName property) propertyName world
 
-        static member internal makeGameState optSpecialization dispatcher =
-            let gameState = GameState.make optSpecialization dispatcher
+        static member internal makeGameState specializationOpt dispatcher =
+            let gameState = GameState.make specializationOpt dispatcher
             Reflection.attachProperties GameState.copy dispatcher gameState
 
         static member internal writeGame3 writeScreens gameDescriptor world =
@@ -703,11 +703,11 @@ module WorldModule =
             let eventTrace = EventTrace.record "World" "publishScreenChange" EventTrace.empty
             World.publish { Participant = screen; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace screen world
 
-        static member private getOptScreenState screen world =
+        static member private getScreenStateOpt screen world =
             Umap.tryFind screen.ScreenAddress world.ScreenStates
 
         static member private getScreenState screen world =
-            match World.getOptScreenState screen world with
+            match World.getScreenStateOpt screen world with
             | Some screenState -> screenState
             | None -> failwith ^ "Could not find screen with address '" + scstring screen.ScreenAddress + "'."
 
@@ -731,7 +731,7 @@ module WorldModule =
 
         /// Check that the world contains the proxied screen.
         static member containsScreen screen world =
-            Option.isSome ^ World.getOptScreenState screen world
+            Option.isSome ^ World.getScreenStateOpt screen world
 
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
@@ -817,7 +817,7 @@ module WorldModule =
             let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
             writeGroups screen screenDescriptor world
 
-        static member internal readScreen4 readGroups screenDescriptor optName world =
+        static member internal readScreen4 readGroups screenDescriptor nameOpt world =
             
             // create the dispatcher
             let dispatcherName = screenDescriptor.ScreenDispatcher
@@ -841,7 +841,7 @@ module WorldModule =
 
             // apply the name if one is provided
             let screenState =
-                match optName with
+                match nameOpt with
                 | Some name -> { screenState with Name = name }
                 | None -> screenState
             
@@ -918,11 +918,11 @@ module WorldModule =
             let eventTrace = EventTrace.record "World" "publishGroupChange" EventTrace.empty
             World.publish { Participant = group; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace group world
 
-        static member private getOptGroupState group world =
+        static member private getGroupStateOpt group world =
             Umap.tryFind group.GroupAddress world.GroupStates
 
         static member private getGroupState group world =
-            match World.getOptGroupState group world with
+            match World.getGroupStateOpt group world with
             | Some groupState -> groupState
             | None -> failwith ^ "Could not find group with address '" + scstring group.GroupAddress + "'."
 
@@ -946,7 +946,7 @@ module WorldModule =
 
         /// Check that the world contains a group.
         static member containsGroup group world =
-            Option.isSome ^ World.getOptGroupState group world
+            Option.isSome ^ World.getGroupStateOpt group world
 
         static member internal getGroupId group world = (World.getGroupState group world).Id
         static member internal getGroupName group world = (World.getGroupState group world).Name
@@ -1005,21 +1005,21 @@ module WorldModule =
             else world
 
         /// Create a group and add it to the world.
-        static member createGroup5 dispatcherName optSpecialization optName screen world =
+        static member createGroup5 dispatcherName specializationOpt nameOpt screen world =
             let dispatchers = World.getGroupDispatchers world
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None -> failwith ^ "Could not find a GroupDispatcher named '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
-            let groupState = GroupState.make optSpecialization optName dispatcher
+            let groupState = GroupState.make specializationOpt nameOpt dispatcher
             let groupState = Reflection.attachProperties GroupState.copy dispatcher groupState
             let group = screen.ScreenAddress -<<- ntoa<Group> groupState.Name |> Group.proxy
             let world = World.addGroup false groupState group world
             (group, world)
 
         /// Create a group and add it to the world.
-        static member createGroup<'d when 'd :> GroupDispatcher> optSpecialization optName screen world =
-            World.createGroup5 typeof<'d>.Name optSpecialization optName screen world
+        static member createGroup<'d when 'd :> GroupDispatcher> specializationOpt nameOpt screen world =
+            World.createGroup5 typeof<'d>.Name specializationOpt nameOpt screen world
 
         static member internal writeGroup4 writeEntities group groupDescriptor world =
             let groupState = World.getGroupState group world
@@ -1029,7 +1029,7 @@ module WorldModule =
             let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
             writeEntities group groupDescriptor world
 
-        static member internal readGroup5 readEntities groupDescriptor optName screen world =
+        static member internal readGroup5 readEntities groupDescriptor nameOpt screen world =
 
             // create the dispatcher
             let dispatcherName = groupDescriptor.GroupDispatcher
@@ -1053,7 +1053,7 @@ module WorldModule =
 
             // apply the name if one is provided
             let groupState =
-                match optName with
+                match nameOpt with
                 | Some name -> { groupState with Name = name }
                 | None -> groupState
 
@@ -1073,21 +1073,21 @@ module WorldModule =
 
     type World with
 
-        static member private optEntityStateKeyEquality 
+        static member private entityStateKeyEquality 
             (entityAddress : Entity Address, world : World)
             (entityAddress2 : Entity Address, world2 : World) =
             refEq entityAddress entityAddress2 && refEq world world2
 
-        static member private optEntityGetFreshKeyAndValue entity world =
-            let optEntityState = Umap.tryFind entity.EntityAddress ^ world.EntityStates
-            ((entity.EntityAddress, world), optEntityState)
+        static member private entityGetFreshKeyAndValue entity world =
+            let entityStateOpt = Umap.tryFind entity.EntityAddress ^ world.EntityStates
+            ((entity.EntityAddress, world), entityStateOpt)
 
-        static member private optEntityStateFinder entity world =
+        static member private entityStateFinder entity world =
             KeyedCache.getValue
-                World.optEntityStateKeyEquality
-                (fun () -> World.optEntityGetFreshKeyAndValue entity world)
+                World.entityStateKeyEquality
+                (fun () -> World.entityGetFreshKeyAndValue entity world)
                 (entity.EntityAddress, world)
-                (World.getOptEntityCache world)
+                (World.getEntityCacheOpt world)
 
         static member private entityStateAdder entityState entity world =
             let screenDirectory =
@@ -1150,11 +1150,11 @@ module WorldModule =
                 World.publish { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity world
             else world
 
-        static member private getOptEntityState entity world =
-            World.optEntityStateFinder entity world
+        static member private getEntityStateOpt entity world =
+            World.entityStateFinder entity world
 
         static member private getEntityState entity world =
-            match World.getOptEntityState entity world with
+            match World.getEntityStateOpt entity world with
             | Some entityState -> entityState
             | None -> failwith ^ "Could not find entity with address '" + scstring entity.EntityAddress + "'."
 
@@ -1186,7 +1186,7 @@ module WorldModule =
 
         /// Check that the world contains an entity.
         static member containsEntity entity world =
-            Option.isSome ^ World.getOptEntityState entity world
+            Option.isSome ^ World.getEntityStateOpt entity world
 
         static member private getEntityStateBoundsMax entityState =
             // TODO: get up off yer arse and write an algorithm for tight-fitting bounds...
@@ -1215,8 +1215,8 @@ module WorldModule =
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> { entityState with Persistent = value }) Property? Persistent entity world
         static member internal getEntityCreationTimeStampNp entity world = (World.getEntityState entity world).CreationTimeStampNp
-        static member internal getEntityOptOverlayName entity world = (World.getEntityState entity world).OptOverlayName
-        static member internal setEntityOptOverlayName value entity world = World.updateEntityState (fun entityState -> { entityState with OptOverlayName = value }) Property? OptOverlayName entity world
+        static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
+        static member internal setEntityOverlayNameOpt value entity world = World.updateEntityState (fun entityState -> { entityState with OverlayNameOpt = value }) Property? OverlayNameOpt entity world
         static member internal getEntityPosition entity world = (World.getEntityState entity world).Position
         static member internal setEntityPosition value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with EntityState.Position = value }) Property? Position entity world
         static member internal getEntitySize entity world = (World.getEntityState entity world).Size
@@ -1317,11 +1317,11 @@ module WorldModule =
             let facetNames = List.map getTypeName entityState.FacetsNp
             Set.ofList facetNames
 
-        static member private tryRemoveFacet facetName entityState optEntity world =
+        static member private tryRemoveFacet facetName entityState entityOpt world =
             match List.tryFind (fun facet -> getTypeName facet = facetName) entityState.FacetsNp with
             | Some facet ->
                 let (entityState, world) =
-                    match optEntity with
+                    match entityOpt with
                     | Some entity ->
                         let world = World.withEventContext (fun world -> facet.Unregister (entity, world)) entity.ObjAddress world
                         let entityState = World.getEntityState entity world
@@ -1331,7 +1331,7 @@ module WorldModule =
                 let entityState = Reflection.detachPropertiesViaNames EntityState.copy propertyNames entityState
                 let entityState = { entityState with FacetNames = Set.remove facetName entityState.FacetNames }
                 let entityState = { entityState with FacetsNp = List.remove ((=) facet) entityState.FacetsNp }
-                match optEntity with
+                match entityOpt with
                 | Some entity ->
                     let oldWorld = world
                     let world = World.setEntityState entityState entity world
@@ -1340,7 +1340,7 @@ module WorldModule =
                 | None -> Right (entityState, world)
             | None -> let _ = World.choose world in Left ^ "Failure to remove facet '" + facetName + "' from entity."
 
-        static member private tryAddFacet facetName (entityState : EntityState) optEntity world =
+        static member private tryAddFacet facetName (entityState : EntityState) entityOpt world =
             match World.tryGetFacet facetName world with
             | Right facet ->
                 let entityDispatchers = World.getEntityDispatchers world
@@ -1348,7 +1348,7 @@ module WorldModule =
                     let entityState = { entityState with FacetNames = Set.add facetName entityState.FacetNames }
                     let entityState = { entityState with FacetsNp = facet :: entityState.FacetsNp }
                     let entityState = Reflection.attachProperties EntityState.copy facet entityState
-                    match optEntity with
+                    match entityOpt with
                     | Some entity ->
                         let oldWorld = world
                         let world = World.setEntityState entityState entity world
@@ -1359,38 +1359,38 @@ module WorldModule =
                 else let _ = World.choose world in Left ^ "Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Name + "'."
             | Left error -> Left error
 
-        static member private tryRemoveFacets facetNamesToRemove entityState optEntity world =
+        static member private tryRemoveFacets facetNamesToRemove entityState entityOpt world =
             Set.fold
                 (fun eitherEntityWorld facetName ->
                     match eitherEntityWorld with
-                    | Right (entityState, world) -> World.tryRemoveFacet facetName entityState optEntity world
+                    | Right (entityState, world) -> World.tryRemoveFacet facetName entityState entityOpt world
                     | Left _ as left -> left)
                 (Right (entityState, world))
                 facetNamesToRemove
 
-        static member private tryAddFacets facetNamesToAdd entityState optEntity world =
+        static member private tryAddFacets facetNamesToAdd entityState entityOpt world =
             Set.fold
                 (fun eitherEntityStateWorld facetName ->
                     match eitherEntityStateWorld with
-                    | Right (entityState, world) -> World.tryAddFacet facetName entityState optEntity world
+                    | Right (entityState, world) -> World.tryAddFacet facetName entityState entityOpt world
                     | Left _ as left -> left)
                 (Right (entityState, world))
                 facetNamesToAdd
 
-        static member internal trySetFacetNames facetNames entityState optEntity world =
+        static member internal trySetFacetNames facetNames entityState entityOpt world =
             let intrinsicFacetNames = World.getIntrinsicFacetNames entityState
             let extrinsicFacetNames = Set.fold (flip Set.remove) facetNames intrinsicFacetNames
             let facetNamesToRemove = Set.difference entityState.FacetNames extrinsicFacetNames
             let facetNamesToAdd = Set.difference extrinsicFacetNames entityState.FacetNames
-            match World.tryRemoveFacets facetNamesToRemove entityState optEntity world with
-            | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
+            match World.tryRemoveFacets facetNamesToRemove entityState entityOpt world with
+            | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState entityOpt world
             | Left _ as left -> left
 
-        static member internal trySynchronizeFacetsToNames oldFacetNames entityState optEntity world =
+        static member internal trySynchronizeFacetsToNames oldFacetNames entityState entityOpt world =
             let facetNamesToRemove = Set.difference oldFacetNames entityState.FacetNames
             let facetNamesToAdd = Set.difference entityState.FacetNames oldFacetNames
-            match World.tryRemoveFacets facetNamesToRemove entityState optEntity world with
-            | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState optEntity world
+            match World.tryRemoveFacets facetNamesToRemove entityState entityOpt world with
+            | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState entityOpt world
             | Left _ as left -> left
 
         static member internal attachIntrinsicFacetsViaNames entityState world =
@@ -1400,7 +1400,7 @@ module WorldModule =
 
         static member internal applyEntityOverlay oldOverlayer overlayer world entity =
             let entityState = World.getEntityState entity world
-            match entityState.OptOverlayName with
+            match entityState.OverlayNameOpt with
             | Some overlayName ->
                 let oldFacetNames = entityState.FacetNames
                 let entityState = Overlayer.applyOverlayToFacetNames EntityState.copy overlayName overlayName entityState oldOverlayer overlayer
@@ -1423,7 +1423,7 @@ module WorldModule =
             | "Persistent" -> (World.getEntityPersistent entity world :> obj, typeof<bool>)
             | "Specialization" -> (World.getEntitySpecialization entity world :> obj, typeof<string>)
             | "CreationTimeStampNp" -> (World.getEntityCreationTimeStampNp entity world :> obj, typeof<int64>)
-            | "OptOverlayName" -> (World.getEntityOptOverlayName entity world :> obj, typeof<string option>)
+            | "OverlayNameOpt" -> (World.getEntityOverlayNameOpt entity world :> obj, typeof<string option>)
             | "Position" -> (World.getEntityPosition entity world :> obj, typeof<Vector2>)
             | "Size" -> (World.getEntitySize entity world :> obj, typeof<Vector2>)
             | "Rotation" -> (World.getEntityRotation entity world :> obj, typeof<single>)
@@ -1564,7 +1564,7 @@ module WorldModule =
         static member destroyEntityImmediate entity world = World.removeEntity entity world
 
         /// Create an entity and add it to the world.
-        static member createEntity5 dispatcherName optSpecialization optName group world =
+        static member createEntity5 dispatcherName specializationOpt nameOpt group world =
 
             // grab overlay dependencies
             let overlayer = World.getOverlayer world
@@ -1578,18 +1578,18 @@ module WorldModule =
                 | None -> failwith ^ "Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
 
             // try to compute the routed overlay name
-            let classification = Classification.make dispatcherName ^ Option.getOrDefault Constants.Engine.VanillaSpecialization optSpecialization
-            let optOverlayName = OverlayRouter.findOptOverlayName classification overlayRouter
+            let classification = Classification.make dispatcherName ^ Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
+            let overlayNameOpt = OverlayRouter.findOverlayNameOpt classification overlayRouter
 
             // make the bare entity state (with name as id if none is provided)
-            let entityState = EntityState.make optSpecialization optName optOverlayName dispatcher
+            let entityState = EntityState.make specializationOpt nameOpt overlayNameOpt dispatcher
 
             // attach the entity state's intrinsic facets and their properties
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
 
             // apply the entity state's overlay to its facet names
             let entityState =
-                match optOverlayName with
+                match overlayNameOpt with
                 | Some routedOverlayName ->
 
                     // apply overlay to facets
@@ -1606,7 +1606,7 @@ module WorldModule =
 
             // apply the entity state's overlay
             let entityState =
-                match entityState.OptOverlayName with
+                match entityState.OverlayNameOpt with
                 | Some overlayName ->
                     // OPTIMIZATION: apply overlay only when it will change something
                     if dispatcherName <> overlayName then
@@ -1621,8 +1621,8 @@ module WorldModule =
             (entity, world)
 
         /// Create an entity and add it to the world.
-        static member createEntity<'d when 'd :> EntityDispatcher> optSpecialization optName group world =
-            World.createEntity5 typeof<'d>.Name optSpecialization optName group world
+        static member createEntity<'d when 'd :> EntityDispatcher> specializationOpt nameOpt group world =
+            World.createEntity5 typeof<'d>.Name specializationOpt nameOpt group world
 
         static member private removeEntity entity world =
             
@@ -1668,7 +1668,7 @@ module WorldModule =
             else world
 
         /// Read an entity from an entity descriptor.
-        static member readEntity entityDescriptor optName group world =
+        static member readEntity entityDescriptor nameOpt group world =
 
             // grab overlay dependencies
             let overlayer = World.getOverlayer world
@@ -1691,18 +1691,18 @@ module WorldModule =
 
             // try to compute the routed overlay name
             let classification = Classification.makeVanilla dispatcherName
-            let optOverlayName = OverlayRouter.findOptOverlayName classification overlayRouter
+            let overlayNameOpt = OverlayRouter.findOverlayNameOpt classification overlayRouter
 
             // make the bare entity state with name as id
-            let entityState = EntityState.make None None optOverlayName dispatcher
+            let entityState = EntityState.make None None overlayNameOpt dispatcher
 
             // attach the entity state's intrinsic facets and their properties
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
 
             // read the entity state's overlay and apply it to its facet names if applicable
-            let entityState = Reflection.tryReadOptOverlayNameToTarget EntityState.copy entityDescriptor.EntityProperties entityState
+            let entityState = Reflection.tryReadOverlayNameOptToTarget EntityState.copy entityDescriptor.EntityProperties entityState
             let entityState =
-                match (optOverlayName, entityState.OptOverlayName) with
+                match (overlayNameOpt, entityState.OverlayNameOpt) with
                 | (Some routedOverlayName, Some overlayName) -> Overlayer.applyOverlayToFacetNames EntityState.copy routedOverlayName overlayName entityState overlayer overlayer
                 | (_, _) -> entityState
 
@@ -1720,7 +1720,7 @@ module WorldModule =
 
             // attempt to apply the entity state's overlay
             let entityState =
-                match entityState.OptOverlayName with
+                match entityState.OverlayNameOpt with
                 | Some overlayName ->
                     // OPTIMIZATION: applying overlay only when it will change something
                     if dispatcherName <> overlayName then
@@ -1734,7 +1734,7 @@ module WorldModule =
 
             // apply the name if one is provided
             let entityState =
-                match optName with
+                match nameOpt with
                 | Some name -> { entityState with Name = name }
                 | None -> entityState
 
@@ -1749,11 +1749,11 @@ module WorldModule =
             let entityDispatcherName = getTypeName entityState.DispatcherNp
             let entityDescriptor = { entityDescriptor with EntityDispatcher = entityDispatcherName }
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
-                if propertyName = "OptOverlayName" && propertyType = typeof<string option> then
+                if propertyName = "OverlayNameOpt" && propertyType = typeof<string option> then
                     let overlayRouter = World.getOverlayRouter world
                     let classification = Classification.make entityDispatcherName entityState.Specialization
-                    let defaultOptOverlayName = OverlayRouter.findOptOverlayName classification overlayRouter
-                    defaultOptOverlayName <> (propertyValue :?> string option)
+                    let defaultOverlayNameOpt = OverlayRouter.findOverlayNameOpt classification overlayRouter
+                    defaultOverlayNameOpt <> (propertyValue :?> string option)
                 else
                     let overlayer = World.getOverlayer world
                     let facetNames = World.getFacetNamesReflectively entityState
@@ -1763,28 +1763,28 @@ module WorldModule =
 
         /// Reassign an entity's identity and / or group. Note that since this destroys the reassigned entity
         /// immediately, you should not call this inside an event handler that involves the reassigned entity itself.
-        static member reassignEntityImmediate entity optName group world =
+        static member reassignEntityImmediate entity nameOpt group world =
             let entityState = World.getEntityState entity world
             let world = World.removeEntity entity world
-            let (id, name) = Reflection.deriveIdAndName optName
+            let (id, name) = Reflection.deriveIdAndName nameOpt
             let entityState = { entityState with Id = id; Name = name }
             let transmutedEntity = group.GroupAddress -<<- ntoa<Entity> name |> Entity.proxy
             let world = World.addEntity false entityState transmutedEntity world
             (transmutedEntity, world)
 
         /// Reassign an entity's identity and / or group.
-        static member reassignEntity entity optName group world =
+        static member reassignEntity entity nameOpt group world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
-                  Command = { Execute = fun world -> World.reassignEntityImmediate entity optName group world |> snd }}
+                  Command = { Execute = fun world -> World.reassignEntityImmediate entity nameOpt group world |> snd }}
             World.addTasklet tasklet world
 
         /// Try to set an entity's optional overlay name.
-        static member trySetEntityOptOverlayName optOverlayName entity world =
+        static member trySetEntityOverlayNameOpt overlayNameOpt entity world =
             let oldEntityState = World.getEntityState entity world
-            let oldOptOverlayName = oldEntityState.OptOverlayName
-            let entityState = { oldEntityState with OptOverlayName = optOverlayName }
-            match (oldOptOverlayName, optOverlayName) with
+            let oldOverlayNameOpt = oldEntityState.OverlayNameOpt
+            let entityState = { oldEntityState with OverlayNameOpt = overlayNameOpt }
+            match (oldOverlayNameOpt, overlayNameOpt) with
             | (Some oldOverlayName, Some overlayName) ->
                 let overlayer = World.getOverlayer world
                 let (entityState, world) =
@@ -1827,7 +1827,7 @@ module WorldModule =
             // OPTIMIZATION: attempt to avoid constructing a screen address on each call to decrease address hashing
             // OPTIMIZATION: assumes a valid entity address with List.head on its names
             let screen =
-                match (World.getGameState world).OptSelectedScreen with
+                match (World.getGameState world).SelectedScreenOpt with
                 | Some screen when Address.getName screen.ScreenAddress = List.head ^ Address.getNames entity.EntityAddress -> screen
                 | Some _ | None -> entity.EntityAddress |> Address.getNames |> List.head |> ntoa<Screen> |> Screen.proxy
 
@@ -1885,13 +1885,13 @@ module WorldModule =
     type World with
 
         // Make the world.
-        static member internal make eventSystem dispatchers subsystems ambientState optGameSpecialization activeGameDispatcher =
-            let gameState = GameState.make optGameSpecialization activeGameDispatcher
+        static member internal make eventSystem dispatchers subsystems ambientState gameSpecializationOpt activeGameDispatcher =
+            let gameState = GameState.make gameSpecializationOpt activeGameDispatcher
             let world =
                 { EventSystem = eventSystem
                   Dispatchers = dispatchers
                   Subsystems = subsystems
-                  OptEntityCache = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
+                  EntityCacheOpt = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
                   ScreenDirectory = Umap.makeEmpty None
                   AmbientState = ambientState
                   GameState = gameState

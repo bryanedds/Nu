@@ -47,7 +47,7 @@ module Log =
         if bl then trace message
 
     /// Initialize logging.
-    let init (optFileName : string option) =
+    let init (fileNameOpt : string option) =
 
         // init only once
         if not Initialized then
@@ -60,7 +60,7 @@ module Log =
                 Trace.Listeners
 #endif
             listeners.Add (new TextWriterTraceListener (Console.Out)) |> ignore
-            match optFileName with
+            match fileNameOpt with
             | Some fileName -> listeners.Add (new TextWriterTraceListener (fileName)) |> ignore
             | None -> ()
 

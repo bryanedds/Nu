@@ -109,8 +109,8 @@ and EntityPropertyDescriptor (property, attributes) =
                 let entity = entityTds.DescribedEntity
                 let world =
                     match propertyName with
-                    | "OptOverlayName" ->
-                        match World.trySetEntityOptOverlayName (value :?> string option) entity world with
+                    | "OverlayNameOpt" ->
+                        match World.trySetEntityOverlayNameOpt (value :?> string option) entity world with
                         | Right world -> world
                         | Left error -> Log.trace error; world
                     | _ -> EntityPropertyValue.setValue property value entity world
@@ -124,16 +124,16 @@ and EntityPropertyDescriptor (property, attributes) =
         entityTds.RefWorld := changer !entityTds.RefWorld
         entityTds.WorldChangers.Add changer |> ignore
 
-and EntityTypeDescriptor (optSource : obj) =
+and EntityTypeDescriptor (sourceOpt : obj) =
     inherit CustomTypeDescriptor ()
 
     override this.GetProperties () =
-        let optXtension =
-            match optSource with
+        let xtensionOpt =
+            match sourceOpt with
             | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity.GetXtension !source.RefWorld)
             | _ -> None
         let makePropertyDescriptor = fun (epv, tcas) -> (EntityPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
-        let propertyDescriptors = EntityPropertyValue.getPropertyDescriptors makePropertyDescriptor optXtension
+        let propertyDescriptors = EntityPropertyValue.getPropertyDescriptors makePropertyDescriptor xtensionOpt
         PropertyDescriptorCollection (Array.ofList propertyDescriptors)
 
     override this.GetProperties _ =
@@ -141,4 +141,4 @@ and EntityTypeDescriptor (optSource : obj) =
 
 and EntityTypeDescriptorProvider () =
     inherit TypeDescriptionProvider ()
-    override this.GetTypeDescriptor (_, optSource) = EntityTypeDescriptor optSource :> ICustomTypeDescriptor
+    override this.GetTypeDescriptor (_, sourceOpt) = EntityTypeDescriptor sourceOpt :> ICustomTypeDescriptor

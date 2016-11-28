@@ -45,20 +45,20 @@ module OverlayerModule =
             match tryFindPropertySymbol overlayName propertyName overlayer with
             | Some propertySymbol -> 
                 let targetType = target.GetType ()
-                let optProperty = targetType.GetProperty propertyName
-                let optXtension =
+                let propertyOpt = targetType.GetProperty propertyName
+                let xtensionOpt =
                     match targetType.GetProperty "Xtension" with
                     | null -> None
                     | xtensionProperty ->
                         match xtensionProperty.GetValue target with
                         | :? Xtension as xtension -> Some xtension
                         | _ -> None
-                let optPropertyValue =
-                    match (optProperty, optXtension) with
+                let propertyValueOpt =
+                    match (propertyOpt, xtensionOpt) with
                     | (null, None) -> None
                     | (null, Some xtension) -> Some (Xtension.getProperty propertyName xtension).PropertyValue
                     | (targetProperty, _) -> Some ^ targetProperty.GetValue target
-                match optPropertyValue with
+                match propertyValueOpt with
                 | Some propertyValue ->
                     let converter = SymbolicConverter propertyType
                     if converter.CanConvertFrom typeof<Symbol> then
@@ -74,12 +74,12 @@ module OverlayerModule =
 
         let private isPropertyOverlaid5 facetNames propertyName propertyType target overlayer =
             let targetType = target.GetType ()
-            match targetType.GetProperty "OptOverlayName" with
+            match targetType.GetProperty "OverlayNameOpt" with
             | null -> false
-            | optOverlayNameProperty ->
-                match optOverlayNameProperty.GetValue target with
-                | :? (string option) as optOverlayName ->
-                    match optOverlayName with
+            | overlayNameOptProperty ->
+                match overlayNameOptProperty.GetValue target with
+                | :? (string option) as overlayNameOpt ->
+                    match overlayNameOpt with
                     | Some overlayName -> isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer
                     | None -> false
                 | _ -> false
@@ -111,10 +111,10 @@ module OverlayerModule =
                 match xtensionProperty.GetValue target with
                 | :? Xtension as xtension ->
                     let nodes =
-                        Seq.foldBack (fun (xPropertyName, xProperty) optNodes ->
+                        Seq.foldBack (fun (xPropertyName, xProperty) nodeOpts ->
                             match tryFindPropertySymbol newOverlayName xPropertyName newOverlayer with
-                            | Some xPropertySymbol -> (xPropertyName, xProperty.PropertyType, xPropertySymbol) :: optNodes
-                            | None -> optNodes)
+                            | Some xPropertySymbol -> (xPropertyName, xProperty.PropertyType, xPropertySymbol) :: nodeOpts
+                            | None -> nodeOpts)
                             (Xtension.toSeq xtension)
                             []
                     let xtension =

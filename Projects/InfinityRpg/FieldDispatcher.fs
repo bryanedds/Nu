@@ -22,7 +22,7 @@ module FieldDispatcherModule =
         static let DefaultPathEdgesM = [(Vector2i (1, 1), Vector2i (2, 2))]
         static let DefaultFieldMap = fst ^ FieldMap.make Assets.FieldTileSheetImage DefaultSizeM DefaultPathEdgesM DefaultRand
 
-        static let getOptTileInset (tileSheetPositionM : Vector2i) =
+        static let getTileInsetOpt (tileSheetPositionM : Vector2i) =
             let tileOffset = vmtovf tileSheetPositionM
             let tileInset =
                 Vector4
@@ -50,14 +50,14 @@ module FieldDispatcherModule =
                     Map.foldBack
                         (fun tilePositionM tile sprites ->
                             let tilePosition = vmtovf tilePositionM // NOTE: field position assumed at origin
-                            let optTileInset = getOptTileInset tile.TileSheetPositionM
+                            let tileInsetOpt = getTileInsetOpt tile.TileSheetPositionM
                             let sprite =
                                 { Position = tilePosition
                                   Size = Constants.Layout.TileSize
                                   Rotation = 0.0f // NOTE: rotation assumed zero
                                   Offset = Vector2.Zero
                                   ViewType = Relative // NOTE: ViewType assumed relative
-                                  OptInset = optTileInset
+                                  InsetOpt = tileInsetOpt
                                   Image = fieldMap.FieldTileSheet
                                   Color = Vector4.One }
                             sprite :: sprites)

@@ -41,13 +41,13 @@ What people often don't understand is that good code standards aren't designed t
 -   introducing local bindings to potentially-interesting intermediate results,
 -   avoiding unnecessary laziness and asynchronicity (but since async being strewn throughout code is rarely avoidable, consider using the [*Vsync computation expression*](https://gist.github.com/bryanedds/45ef1193b79e06000a9a) instead!)
 
-14) Prefix option bindings as well as bindings to potentially null values with `opt`.
+14) Suffix option bindings as well as bindings to potentially null values with `opt`.
 
-15) Prefix choice bindings with `chc`.
+15) Suffix choice bindings with `chc`.
 
-16) Prefix functions that return an option or potential null with `try`, or another such indicator like `getOpt`.
+16) Prefix functions that return an option or potential null with `try`.
 
-17) Prefix functions that return a choice with `attempt`, or another such indicator like `getChc`.
+17) Prefix functions that return a choice with `attempt`.
 
 18) Place constants and literals in a submodule inside a Constants module, in a place that is commonly accessible.
 

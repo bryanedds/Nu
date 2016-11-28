@@ -25,11 +25,11 @@ module UmapModule =
     [<RequireQualifiedAccess>]
     module Umap =
 
-        let makeFromSeq<'k, 'v when 'k : comparison> optBloatFactor entries =
-            { RefMap = ref ^ Tmap.makeFromSeq<'k, 'v> optBloatFactor entries }
+        let makeFromSeq<'k, 'v when 'k : comparison> bloatFactorOpt entries =
+            { RefMap = ref ^ Tmap.makeFromSeq<'k, 'v> bloatFactorOpt entries }
 
-        let makeEmpty<'k, 'v when 'k : comparison> optBloatFactor =
-            { RefMap = ref ^ Tmap.makeEmpty<'k, 'v> optBloatFactor }
+        let makeEmpty<'k, 'v when 'k : comparison> bloatFactorOpt =
+            { RefMap = ref ^ Tmap.makeEmpty<'k, 'v> bloatFactorOpt }
 
         let add key value map =
             { RefMap = ref ^ Tmap.add key value !map.RefMap }
@@ -54,9 +54,9 @@ module UmapModule =
             not ^ isEmpty map
 
         let tryFind key map =
-            let (optValue, tmap) = Tmap.tryFind key !map.RefMap
+            let (valueOpt, tmap) = Tmap.tryFind key !map.RefMap
             map.RefMap := tmap
-            optValue
+            valueOpt
 
         let find key map =
             let kvp = Tmap.findNoAlloc key !map.RefMap

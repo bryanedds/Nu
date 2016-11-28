@@ -106,19 +106,19 @@ module Metadata =
 
     /// Try to get the metadata of the given asset.
     let tryGetMetadata (assetTag : AssetTag) assetMetadataMap =
-        let optPackage = Umap.tryFind assetTag.PackageName assetMetadataMap
-        match optPackage with
+        let packageOpt = Umap.tryFind assetTag.PackageName assetMetadataMap
+        match packageOpt with
         | Some package ->
-            let optAsset = Umap.tryFind assetTag.AssetName package
-            match optAsset with
+            let assetOpt = Umap.tryFind assetTag.AssetName package
+            match assetOpt with
             | Some _ as asset -> asset
             | None -> None
         | None -> None
 
     /// Try to get the texture metadata of the given asset.
     let tryGetTextureSize assetTag assetMetadataMap =
-        let optAsset = tryGetMetadata assetTag assetMetadataMap
-        match optAsset with
+        let assetOpt = tryGetMetadata assetTag assetMetadataMap
+        match assetOpt with
         | Some (TextureMetadata size) -> Some size
         | None -> None
         | _ -> None
@@ -139,8 +139,8 @@ module Metadata =
 
     /// Try to get the tile map metadata of the given asset.
     let tryGetTileMapMetadata assetTag assetMetadataMap =
-        let optAsset = tryGetMetadata assetTag assetMetadataMap
-        match optAsset with
+        let assetOpt = tryGetMetadata assetTag assetMetadataMap
+        match assetOpt with
         | Some (TileMapMetadata (filePath, images, tmxMap)) -> Some (filePath, images, tmxMap)
         | None -> None
         | _ -> None

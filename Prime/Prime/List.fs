@@ -24,16 +24,16 @@ let inline flipCons tail head =
     head :: tail
 
 /// Partition a list.
-let partitionPlus fnOptU list =
-    let rec subpartitionPlus fnOptU list left right =
+let partitionPlus fnUOpt list =
+    let rec subpartitionPlus fnUOpt list left right =
         match list with
         | [] -> (left, right)
         | head :: tail ->
-            let optU = fnOptU head
-            match optU with
-            | Some u -> subpartitionPlus fnOptU tail (u :: left) right
-            | None -> subpartitionPlus fnOptU tail left (head :: right)
-    subpartitionPlus fnOptU list [] []
+            let uOpt = fnUOpt head
+            match uOpt with
+            | Some u -> subpartitionPlus fnUOpt tail (u :: left) right
+            | None -> subpartitionPlus fnUOpt tail left (head :: right)
+    subpartitionPlus fnUOpt list [] []
 
 /// Check that a list has at least n items.
 let rec hasAtLeast n (list : 'a list) =
@@ -207,8 +207,8 @@ let joinList sep list =
 
 /// Take items until an item satisfies a predicate, taking also that element.
 let takeTillInclusive pred list =
-    let optIndex = List.tryFindIndex pred list
-    match optIndex with
+    let indexOpt = List.tryFindIndex pred list
+    match indexOpt with
     | Some index ->
         let incIndex = index + 1
         if hasAtLeast incIndex list then List.take incIndex list

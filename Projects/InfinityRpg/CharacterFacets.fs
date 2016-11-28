@@ -96,7 +96,7 @@ module CharacterAnimationFacetModule =
     type CharacterAnimationFacet () =
         inherit Facet ()
         
-        static let getOptSpriteInset (entity : Entity) world =
+        static let getSpriteInsetOpt (entity : Entity) world =
             let animationState = entity.GetCharacterAnimationState world
             let animationFrames =
                 match animationState.AnimationType with
@@ -165,7 +165,7 @@ module CharacterAnimationFacetModule =
                                       Rotation = entity.GetRotation world
                                       Offset = Vector2.Zero
                                       ViewType = entity.GetViewType world
-                                      OptInset = getOptSpriteInset entity world
+                                      InsetOpt = getSpriteInsetOpt entity world
                                       Image = entity.GetCharacterAnimationSheet world
                                       Color = Vector4.One }}])
                     world

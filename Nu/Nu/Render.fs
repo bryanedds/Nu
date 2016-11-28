@@ -18,7 +18,7 @@ type [<StructuralEquality; NoComparison>] SpriteDescriptor =
       Rotation : single
       Offset : Vector2
       ViewType : ViewType
-      OptInset : Vector4 option
+      InsetOpt : Vector4 option
       Image : AssetTag
       Color : Vector4 }
 
@@ -122,8 +122,8 @@ module RendererModule =
             match Path.GetExtension asset.FilePath with
             | ".bmp"
             | ".png" ->
-                let optTexture = SDL_image.IMG_LoadTexture (renderContext, asset.FilePath)
-                if optTexture <> IntPtr.Zero then Some (asset.AssetTag.AssetName, TextureAsset optTexture)
+                let textureOpt = SDL_image.IMG_LoadTexture (renderContext, asset.FilePath)
+                if textureOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, TextureAsset textureOpt)
                 else
                     let errorMsg = SDL.SDL_GetError ()
                     Log.trace ^ "Could not load texture '" + asset.FilePath + "' due to '" + errorMsg + "'."
@@ -135,8 +135,8 @@ module RendererModule =
                     let fontSizeText = fileFirstName.Substring(fileFirstNameLength - 3, 3)
                     match Int32.TryParse fontSizeText with
                     | (true, fontSize) ->
-                        let optFont = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
-                        if optFont <> IntPtr.Zero then Some (asset.AssetTag.AssetName, FontAsset (optFont, fontSize))
+                        let fontOpt = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
+                        if fontOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, FontAsset (fontOpt, fontSize))
                         else Log.trace ^ "Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."; None
                     | (false, _) -> Log.trace ^ "Could not load font due to file name being too short: '" + asset.FilePath + "'."; None
                 else Log.trace ^ "Could not load font '" + asset.FilePath + "'."; None
@@ -147,10 +147,10 @@ module RendererModule =
             | Right assetGraph ->
                 match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Render) packageName assetGraph with
                 | Right assets ->
-                    let optRenderAssets = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
-                    let renderAssets = List.definitize optRenderAssets
-                    let optRenderAssetMap = Map.tryFind packageName renderer.RenderPackageMap
-                    match optRenderAssetMap with
+                    let renderAssetOpts = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
+                    let renderAssets = List.definitize renderAssetOpts
+                    let renderAssetMapOpt = Map.tryFind packageName renderer.RenderPackageMap
+                    match renderAssetMapOpt with
                     | Some renderAssetMap ->
                         let renderAssetMap = Map.addMany renderAssets renderAssetMap
                         { renderer with RenderPackageMap = Map.add packageName renderAssetMap renderer.RenderPackageMap }
@@ -165,14 +165,14 @@ module RendererModule =
                 renderer
 
         static member private tryLoadRenderAsset (assetTag : AssetTag) renderer =
-            let (optAssetMap, renderer) =
+            let (assetMapOpt, renderer) =
                 match Map.tryFind assetTag.PackageName renderer.RenderPackageMap with
                 | Some _ -> (Map.tryFind assetTag.PackageName renderer.RenderPackageMap, renderer)
                 | None ->
                     Log.info ^ "Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
                     let renderer = Renderer.tryLoadRenderPackage assetTag.PackageName renderer
                     (Map.tryFind assetTag.PackageName renderer.RenderPackageMap, renderer)
-            (Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap, renderer)
+            (Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) assetMapOpt, renderer)
 
         static member private handleHintRenderPackageUse (hintPackageUse : HintRenderPackageUseMessage) renderer =
             Renderer.tryLoadRenderPackage hintPackageUse.PackageName renderer
@@ -216,14 +216,14 @@ module RendererModule =
             let sizeView = sprite.Size * view.ExtractScaleMatrix ()
             let color = sprite.Color
             let image = sprite.Image
-            let (optRenderAsset, renderer) = Renderer.tryLoadRenderAsset image renderer
-            match optRenderAsset with
+            let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset image renderer
+            match renderAssetOpt with
             | Some renderAsset ->
                 match renderAsset with
                 | TextureAsset texture ->
                     let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
                     let mutable sourceRect = SDL.SDL_Rect ()
-                    match sprite.OptInset with
+                    match sprite.InsetOpt with
                     | Some inset ->
                         sourceRect.x <- int inset.X
                         sourceRect.y <- int inset.Y
@@ -282,9 +282,9 @@ module RendererModule =
             let tileSize = descriptor.TileSize
             let tileSet = descriptor.TileSet
             let tileSetImage = descriptor.TileSetImage
-            let tileSetWidth = let optTileSetWidth = tileSet.Image.Width in optTileSetWidth.Value
-            let (optRenderAsset, renderer) = Renderer.tryLoadRenderAsset tileSetImage renderer
-            match optRenderAsset with
+            let tileSetWidth = let tileSetWidthOpt = tileSet.Image.Width in tileSetWidthOpt.Value
+            let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset tileSetImage renderer
+            match renderAssetOpt with
             | Some renderAsset ->
                 match renderAsset with
                 | TextureAsset texture ->
@@ -346,8 +346,8 @@ module RendererModule =
             let text = String.textualize descriptor.Text
             let color = descriptor.Color
             let font = descriptor.Font
-            let (optRenderAsset, renderer) = Renderer.tryLoadRenderAsset font renderer
-            match optRenderAsset with
+            let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset font renderer
+            match renderAssetOpt with
             | Some renderAsset ->
                 match renderAsset with
                 | FontAsset (font, _) ->

@@ -29,7 +29,7 @@ type [<NoEquality; NoComparison>] PropertyDefinition =
     /// Validate a property definition.
     static member validate propertyDefinition =
         if propertyDefinition.PropertyName = "FacetNames" then failwith "FacetNames cannot be an intrinsic property."
-        if propertyDefinition.PropertyName = "OptOverlayName" then failwith "OptOverlayName cannot be an intrinsic property."
+        if propertyDefinition.PropertyName = "OverlayNameOpt" then failwith "OverlayNameOpt cannot be an intrinsic property."
         if Array.exists (fun gta -> gta = typeof<obj>) propertyDefinition.PropertyType.GenericTypeArguments then
             failwith ^
                 "Generic property definition lacking type information for property '" + propertyDefinition.PropertyName + "'. " +
@@ -91,15 +91,15 @@ module Reflection =
 
     /// Derive a simulant name from an optional name.
     /// TODO: see if we can improve the name of this function.
-    let deriveName optName id =
-        match optName with
+    let deriveName nameOpt id =
+        match nameOpt with
         | Some name -> name
         | None -> !!(scstring<Guid> id)
 
     /// Derive a simulant id and name from an optional name.
-    let deriveIdAndName optName =
+    let deriveIdAndName nameOpt =
         let id = makeGuid ()
-        let name = deriveName optName id
+        let name = deriveName nameOpt id
         (id, name)
 
     /// Is a property with the given name persistent?
@@ -182,17 +182,17 @@ module Reflection =
     /// Get all the reflective property containers of a target, including dispatcher and / or facets.
     let getReflectivePropertyContainers (target : 'a) =
         let targetType = target.GetType ()
-        let optDispatcher =
+        let dispatcherOpt =
             match targetType.GetProperty "DispatcherNp" with
             | null -> None
             | dispatcherNpProperty -> Some ^ objectify ^ dispatcherNpProperty.GetValue target
-        let optFacets =
+        let facetsOpt =
             match targetType.GetProperty "FacetsNp" with
             | null -> None
             | facetsNpProperty ->
                 let facets = facetsNpProperty.GetValue target :?> IEnumerable |> enumerable<obj> |> List.ofSeq
                 Some facets
-        match (optDispatcher, optFacets) with
+        match (dispatcherOpt, facetsOpt) with
         | (Some dispatcher, Some facets) -> dispatcher :: facets
         | (Some dispatcher, None) -> [dispatcher]
         | (None, Some facets) -> facets
@@ -269,24 +269,24 @@ module Reflection =
                 Log.debug "Target does not support xtensions due to Xtension property having unexpected type."
                 target
 
-    /// Try to read just the target's OptOverlayName from property descriptors.
-    let tryReadOptOverlayNameToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
+    /// Try to read just the target's OverlayNameOpt from property descriptors.
+    let tryReadOverlayNameOptToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
         let target = copyTarget target
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
-        let optOptOverlayNameProperty =
+        let overlayNameOptPropertyOpt =
             Array.tryFind
                 (fun (property : PropertyInfo) ->
-                    property.Name = "OptOverlayName" &&
+                    property.Name = "OverlayNameOpt" &&
                     property.PropertyType = typeof<string option> &&
                     property.CanWrite)
                 targetProperties
-        match optOptOverlayNameProperty with
-        | Some optOverlayNameProperty ->
-            match Map.tryFind optOverlayNameProperty.Name propertyDescriptors with
-            | Some optOverlayNameSymbol ->
-                let optOverlayName = valueize<string option> optOverlayNameSymbol
-                optOverlayNameProperty.SetValue (target, optOverlayName)
+        match overlayNameOptPropertyOpt with
+        | Some overlayNameOptProperty ->
+            match Map.tryFind overlayNameOptProperty.Name propertyDescriptors with
+            | Some overlayNameOptSymbol ->
+                let overlayNameOpt = valueize<string option> overlayNameOptSymbol
+                overlayNameOptProperty.SetValue (target, overlayNameOpt)
                 target
             | None -> target
         | None -> target
@@ -310,18 +310,18 @@ module Reflection =
             target
         | None -> target
 
-    /// Read all of a target's member properties from property descriptors (except OptOverlayName and FacetNames).
+    /// Read all of a target's member properties from property descriptors (except OverlayNameOpt and FacetNames).
     let readMemberPropertiesToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
         let target = copyTarget target
         let properties = (target.GetType ()).GetPropertiesWritable ()
         for property in properties do
             if  property.Name <> "FacetNames" &&
-                property.Name <> "OptOverlayName" &&
+                property.Name <> "OverlayNameOpt" &&
                 isPropertyPersistentByName property.Name then
                 tryReadMemberProperty propertyDescriptors property target
         target
 
-    /// Read all of a target's property values from property descriptors (except OptOverlayName and FacetNames).
+    /// Read all of a target's property values from property descriptors (except OverlayNameOpt and FacetNames).
     let readPropertiesToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
         let target = readMemberPropertiesToTarget copyTarget propertyDescriptors target
         readXtension copyTarget propertyDescriptors target

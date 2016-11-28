@@ -35,10 +35,10 @@ module SymbolStoreModule =
             | Right assetGraph ->
                 match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Symbol) packageName assetGraph with
                 | Right assets ->
-                    let optSymbols = List.map (tryLoadSymbol2 packageName) assets
-                    let symbols = List.definitize optSymbols
-                    let optSymbolMap = Map.tryFind packageName symbolStore.SymbolStorePackageMap
-                    match optSymbolMap with
+                    let symbolOpts = List.map (tryLoadSymbol2 packageName) assets
+                    let symbols = List.definitize symbolOpts
+                    let symbolMapOpt = Map.tryFind packageName symbolStore.SymbolStorePackageMap
+                    match symbolMapOpt with
                     | Some symbolMap ->
                         let symbolMap = Map.addMany symbols symbolMap
                         let symbolStore = { symbolStore with SymbolStorePackageMap = Map.add packageName symbolMap symbolStore.SymbolStorePackageMap }
@@ -55,7 +55,7 @@ module SymbolStoreModule =
                 symbolStore
     
         let private tryLoadSymbol (assetTag : AssetTag) symbolStore =
-            let (optAssetMap, symbolStore) =
+            let (assetMapOpt, symbolStore) =
                 match Map.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap with
                 | Some _ -> (Map.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap, symbolStore)
                 | None ->
@@ -63,7 +63,7 @@ module SymbolStoreModule =
                     let symbolStore = tryLoadSymbolStorePackage assetTag.PackageName symbolStore
                     let symbolMap = Map.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap
                     (symbolMap, symbolStore)
-            (Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap, symbolStore)
+            (Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) assetMapOpt, symbolStore)
     
         /// Unload a symbolStore package with the given name.
         let unloadSymbolStorePackage packageName symbolStore =
@@ -76,11 +76,11 @@ module SymbolStoreModule =
         /// Try to find the symbols with the given asset tags.
         let tryFindSymbols assetTags world =
             List.foldBack
-                (fun assetTag (optSymbols, world) ->
-                    let (optSymbol, world) = tryFindSymbol assetTag world
-                    match optSymbol with
-                    | Some symbol -> (Some symbol :: optSymbols, world)
-                    | None -> (None :: optSymbols, world))
+                (fun assetTag (symbolOpts, world) ->
+                    let (symbolOpt, world) = tryFindSymbol assetTag world
+                    match symbolOpt with
+                    | Some symbol -> (Some symbol :: symbolOpts, world)
+                    | None -> (None :: symbolOpts, world))
                 assetTags
                 ([], world)
     

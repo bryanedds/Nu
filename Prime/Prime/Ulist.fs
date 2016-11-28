@@ -30,11 +30,11 @@ module UlistModule =
     [<RequireQualifiedAccess>]
     module Ulist =
 
-        let makeFromSeq optBloatFactor items =
-            { RefList = ref ^ Tlist.makeFromSeq optBloatFactor items }
+        let makeFromSeq bloatFactorOpt items =
+            { RefList = ref ^ Tlist.makeFromSeq bloatFactorOpt items }
 
-        let makeEmpty<'a> optBloatFactor =
-            { RefList = ref ^ Tlist.makeEmpty<'a> optBloatFactor }
+        let makeEmpty<'a> bloatFactorOpt =
+            { RefList = ref ^ Tlist.makeEmpty<'a> bloatFactorOpt }
 
         let singleton item =
             { RefList = ref ^ Tlist.singleton item }
