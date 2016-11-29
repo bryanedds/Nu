@@ -159,8 +159,8 @@ let result =
 12) Handle the intentional case first when matching / if'ing -
 
 ```
-    let fn optValue =
-        match optValue with
+    let fn valueOpt =
+        match valueOpt with
         | Some value -> // do what we actually intended to do in this function
         | None -> // handle the missing case
 ```
