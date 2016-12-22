@@ -45,6 +45,7 @@ module WorldModule2 =
                  ToggleDispatcher () :> EntityDispatcher
                  FeelerDispatcher () :> EntityDispatcher
                  FillBarDispatcher () :> EntityDispatcher
+                 EffectDispatcher () :> EntityDispatcher
                  BlockDispatcher () :> EntityDispatcher
                  BoxDispatcher () :> EntityDispatcher
                  TopViewCharacterDispatcher () :> EntityDispatcher

@@ -24,16 +24,17 @@ module Constants =
         let [<Literal>] DefaultScreenName = "Screen"
         let [<Literal>] DefaultGroupName = "Group"
         let [<Literal>] DefaultEntityName = "Entity"
+        let [<Literal>] DefaultEffectName = "Effect"
         let [<Literal>] GamePublishingPriority = Single.MaxValue
-        let ScreenPublishingPriority = GamePublishingPriority * 0.5f
-        let GroupPublishingPriority = ScreenPublishingPriority * 0.5f
-        let EntityPublishingPriority = GroupPublishingPriority * 0.5f
-        let DefaultEntitySize = Vector2 64.0f
-        let EntityTreeDepth = 9
-        let EntityTreeSize = Vector2 (single ^ Math.Pow (2.0, 18.0))
-        let EntityTreeBounds = Vector4 (EntityTreeSize.X * -0.5f, EntityTreeSize.Y * -0.5f, EntityTreeSize.X * 0.5f, EntityTreeSize.Y * 0.5f)
-        let VanillaSpecialization = "Vanilla"
-        let InvalidId = Guid.Empty
+        let (*Literal*) ScreenPublishingPriority = GamePublishingPriority * 0.5f
+        let (*Literal*) GroupPublishingPriority = ScreenPublishingPriority * 0.5f
+        let (*Literal*) EntityPublishingPriority = GroupPublishingPriority * 0.5f
+        let (*Literal*) DefaultEntitySize = Vector2 64.0f
+        let (*Literal*) EntityTreeDepth = 9
+        let (*Literal*) EntityTreeSize = Vector2 (single ^ Math.Pow (2.0, 18.0))
+        let (*Literal*) EntityTreeBounds = Vector4 (EntityTreeSize.X * -0.5f, EntityTreeSize.Y * -0.5f, EntityTreeSize.X * 0.5f, EntityTreeSize.Y * 0.5f)
+        let (*Literal*) VanillaSpecialization = "Vanilla"
+        let (*Literal*) InvalidId = Guid.Empty
 
     [<RequireQualifiedAccess>]
     module Associations =
@@ -47,9 +48,9 @@ module Constants =
 
         let [<Literal>] ResolutionXDefault = 960
         let [<Literal>] ResolutionYDefault = 544
-        let ResolutionX = Core.getResolutionOrDefault true ResolutionXDefault
-        let ResolutionY = Core.getResolutionOrDefault false ResolutionYDefault
-        let ScreenClearing = ColorClear (255uy, 255uy, 255uy)
+        let (*Literal*) ResolutionX = Core.getResolutionOrDefault true ResolutionXDefault
+        let (*Literal*) ResolutionY = Core.getResolutionOrDefault false ResolutionYDefault
+        let (*Literal*) ScreenClearing = ColorClear (255uy, 255uy, 255uy)
 
     [<RequireQualifiedAccess>]
     module Audio =
@@ -61,11 +62,11 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Physics =
 
-        let PhysicsStepRate = 1.0f / single Engine.DesiredFps
+        let (*Literal*) PhysicsStepRate = 1.0f / single Engine.DesiredFps
         let [<Literal>] PhysicsToPixelRatio = 64.0f
-        let PixelToPhysicsRatio = 1.0f / PhysicsToPixelRatio
+        let (*Literal*) PixelToPhysicsRatio = 1.0f / PhysicsToPixelRatio
         let [<Literal>] NormalDensity = 10.0f // NOTE: this seems to be a stable density for Farseer
-        let Gravity = Vector2 (0.0f, -9.80665f) * PhysicsToPixelRatio
+        let (*Literal*) Gravity = Vector2 (0.0f, -9.80665f) * PhysicsToPixelRatio
         let [<Literal>] CollisionProperty = "C"
 
     [<RequireQualifiedAccess>]
@@ -77,6 +78,6 @@ module Constants =
     module Math =
 
         let [<Literal>] RadiansToDegrees = 57.2957795
-        let DegreesToRadians = 1.0 / RadiansToDegrees
-        let RadiansToDegreesF = single RadiansToDegrees
-        let DegreesToRadiansF = single DegreesToRadians
+        let (*Literal*) DegreesToRadians = 1.0 / RadiansToDegrees
+        let (*Literal*) RadiansToDegreesF = single RadiansToDegrees
+        let (*Literal*) DegreesToRadiansF = single DegreesToRadians

@@ -183,7 +183,7 @@ module EffectFacetModule =
              Define? EffectStartTimeOpt (None : int64 option)
              Define? EffectDefinitions (Map.empty : Effects.Definitions)
              Define? Effect Effect.empty
-             Define? EffectOffset Vector2.Zero
+             Define? EffectOffset ^ Vector2 0.5f
              Define? EffectHistoryMax Constants.Effects.DefaultEffectHistoryMax
              Define? EffectHistoryNp Deque.empty<Effects.Slice>
              Define? EffectPhysicsShapesNp ()
@@ -950,6 +950,18 @@ module FillBarDispatcherModule =
             match Metadata.tryGetTextureSizeAsVector2 (fillBar.GetBorderImage world) (World.getAssetMetadataMap world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
+
+[<AutoOpen>]
+module EffectDispatcherModule =
+
+    type EffectDispatcher () =
+        inherit EntityDispatcher ()
+
+        static member PropertyDefinitions =
+            [Define? Effect ^ scvalue<Effect> "[Effect None [] [Composite [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]"]
+
+        static member IntrinsicFacetNames =
+            [typeof<EffectFacet>.Name]
 
 [<AutoOpen>]
 module BlockDispatcherModule =
