@@ -52,7 +52,7 @@ type ValueDefinition =
     /// Some magic syntax for composing value properties.
     static member (?) (_, propertyName) =
         fun (value : 'v) ->
-            PropertyDefinition.makeValidated propertyName typeof<'v> ^ DefineExpr value
+            PropertyDefinition.makeValidated propertyName typeof<'v> (DefineExpr value)
 
 /// In tandem with the variable literal, grants a nice syntax to define variable properties.
 type VariableDefinition =
@@ -61,7 +61,7 @@ type VariableDefinition =
     /// Some magic syntax for composing variable properties.
     static member (?) (_, propertyName) =
         fun (variable : unit -> 'v) ->
-            PropertyDefinition.makeValidated propertyName typeof<'v> ^ VariableExpr (fun () -> variable () :> obj)
+            PropertyDefinition.makeValidated propertyName typeof<'v> (VariableExpr (fun () -> variable () :> obj))
 
 /// In tandem with the property literal, grants a nice syntax to denote properties.
 type PropertyDescriptor =
@@ -266,7 +266,7 @@ module Reflection =
                 xtensionProperty.SetValue (target, xtension)
                 target
             | _ ->
-                Log.debug "Target does not support xtensions due to Xtension property having unexpected type."
+                Log.debug "Target does not support Xtensions due to Xtension property having unexpected type."
                 target
 
     /// Try to read just the target's OverlayNameOpt from property descriptors.

@@ -168,7 +168,7 @@ type [<NoEquality; NoComparison>] Effect =
       Content : Effects.Content }
 
     static member empty =
-        { EffectName = "Empty"
+        { EffectName = Constants.Engine.DefaultEffectName
           LifetimeOpt = None
           Definitions = Map.empty
           Content = Effects.Composite (Effects.Shift 0.0f, []) }
