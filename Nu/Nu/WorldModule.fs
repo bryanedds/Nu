@@ -632,7 +632,7 @@ module WorldModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.info ^ "Could not find GameDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
+                    Log.info ^ "Could not find GameDispatcher '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
                     let dispatcherName = typeof<GameDispatcher>.Name
                     Map.find dispatcherName dispatchers
 
@@ -826,7 +826,7 @@ module WorldModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.info ^ "Could not find ScreenDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
+                    Log.info ^ "Could not find ScreenDispatcher '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
                     let dispatcherName = typeof<ScreenDispatcher>.Name
                     Map.find dispatcherName dispatchers
 
@@ -1010,7 +1010,7 @@ module WorldModule =
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
-                | None -> failwith ^ "Could not find a GroupDispatcher named '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
+                | None -> failwith ^ "Could not find a GroupDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
             let groupState = GroupState.make specializationOpt nameOpt dispatcher
             let groupState = Reflection.attachProperties GroupState.copy dispatcher groupState
             let group = screen.ScreenAddress -<<- ntoa<Group> groupState.Name |> Group.proxy
@@ -1038,7 +1038,7 @@ module WorldModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.info ^ "Could not find GroupDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
+                    Log.info ^ "Could not find GroupDispatcher '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
                     let dispatcherName = typeof<GroupDispatcher>.Name
                     Map.find dispatcherName dispatchers
 
@@ -1575,7 +1575,7 @@ module WorldModule =
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
-                | None -> failwith ^ "Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
+                | None -> failwith ^ "Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
 
             // try to compute the routed overlay name
             let classification = Classification.make dispatcherName ^ Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
@@ -1686,7 +1686,7 @@ module WorldModule =
                     let dispatcher =
                         match Map.tryFind dispatcherName dispatchers with
                         | Some dispatcher -> dispatcher
-                        | None -> failwith ^ "Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
+                        | None -> failwith ^ "Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
                     (dispatcherName, dispatcher)
 
             // try to compute the routed overlay name
@@ -1824,7 +1824,7 @@ module WorldModule =
     type World with
 
         static member internal updateEntityInEntityTreeImpl entity oldWorld world =
-            // OPTIMIZATION: attempt to avoid constructing a screen address on each call to decrease address hashing
+            // OPTIMIZATION: attempts to avoid constructing a screen address on each call to decrease address hashing
             // OPTIMIZATION: assumes a valid entity address with List.head on its names
             let screen =
                 match (World.getGameState world).SelectedScreenOpt with

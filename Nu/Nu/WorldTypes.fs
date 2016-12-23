@@ -86,7 +86,8 @@ module WorldTypes =
         { OldWorldWithOldState : World }
 
     /// Generalized interface tag for dispatchers.
-    and Dispatcher = interface end
+    and Dispatcher =
+        interface end
 
     /// Generalized interface tag for simulant dispatchers.
     and SimulantDispatcher =
