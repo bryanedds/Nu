@@ -24,7 +24,7 @@ module Gaia =
     let private CameraSpeed = 4.0f // NOTE: might be nice to be able to configure this just like entity creation depth in the editor
     let private RefinementDir = "refinement"
 
-    // g'lol'bals!
+    // unfortunate globals!
     let private WorldChangers = WorldChangers ()
     let private RefWorld = ref Unchecked.defaultof<World>
 
