@@ -21,12 +21,12 @@ module Assets =
     let PlayerImage = { PackageName = GameplayPackageName; AssetName = "Player" }
 
     // the file paths from which various simulants are loaded
-    let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
-    let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
-    let GameplayGroupFilePath = "Assets/Gui/Gameplay.nugroup"
-    let PlayerGroupFilePath = "Assets/Gameplay/Player.nugroup"
-    let Section0FilePath = "Assets/Gameplay/Section0.nugroup"
-    let Section1FilePath = "Assets/Gameplay/Section1.nugroup"
-    let Section2FilePath = "Assets/Gameplay/Section2.nugroup"
-    let Section3FilePath = "Assets/Gameplay/Section3.nugroup"
+    let TitleLayerFilePath = "Assets/Gui/Title.nulyr"
+    let CreditsLayerFilePath = "Assets/Gui/Credits.nulyr"
+    let GameplayLayerFilePath = "Assets/Gui/Gameplay.nulyr"
+    let PlayerLayerFilePath = "Assets/Gameplay/Player.nulyr"
+    let Section0FilePath = "Assets/Gameplay/Section0.nulyr"
+    let Section1FilePath = "Assets/Gameplay/Section1.nulyr"
+    let Section2FilePath = "Assets/Gameplay/Section2.nulyr"
+    let Section3FilePath = "Assets/Gameplay/Section3.nulyr"
     let SectionFilePaths = [Section0FilePath; Section1FilePath; Section2FilePath; Section3FilePath]

@@ -175,18 +175,18 @@ module WorldEntityModule =
                 entity.ObjAddress
                 world
 
-        /// Get all the entities contained by a group.
-        static member getEntities group world =
-            match Address.getNames group.GroupAddress with
-            | [screenName; groupName] ->
+        /// Get all the entities contained by a layer.
+        static member getEntities layer world =
+            match Address.getNames layer.LayerAddress with
+            | [screenName; layerName] ->
                 match Umap.tryFind screenName ^ World.getScreenDirectory world with
-                | Some (_, groupDirectory) ->
-                    match Umap.tryFind groupName groupDirectory with
+                | Some (_, layerDirectory) ->
+                    match Umap.tryFind layerName layerDirectory with
                     | Some (_, entityDirectory) ->
                         Umap.fold (fun state _ entityAddress -> Entity.proxy entityAddress :: state) [] entityDirectory :> _ seq
-                    | None -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
-                | None -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
-            | _ -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
+                    | None -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
+                | None -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
+            | _ -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
 
         /// Destroy an entity in the world at the end of the current update.
         static member destroyEntity entity world =
@@ -252,21 +252,21 @@ module WorldEntityModule =
                     picked)
                 entitiesSorted
 
-        /// Write multiple entities to a group descriptor.
-        static member writeEntities entities groupDescriptor world =
+        /// Write multiple entities to a layer descriptor.
+        static member writeEntities entities layerDescriptor world =
             entities |>
             Seq.sortBy (fun (entity : Entity) -> entity.GetCreationTimeStampNp world) |>
             Seq.filter (fun (entity : Entity) -> entity.GetPersistent world) |>
-            Seq.fold (fun entityDescriptors entity -> World.writeEntity entity EntityDescriptor.empty world :: entityDescriptors) groupDescriptor.Entities |>
-            fun entityDescriptors -> { groupDescriptor with Entities = entityDescriptors }
+            Seq.fold (fun entityDescriptors entity -> World.writeEntity entity EntityDescriptor.empty world :: entityDescriptors) layerDescriptor.Entities |>
+            fun entityDescriptors -> { layerDescriptor with Entities = entityDescriptors }
 
-        /// Read multiple entities from a group descriptor.
-        static member readEntities groupDescriptor group world =
+        /// Read multiple entities from a layer descriptor.
+        static member readEntities layerDescriptor layer world =
             List.foldBack
                 (fun entityDescriptor (entities, world) ->
-                    let (entity, world) = World.readEntity entityDescriptor None group world
+                    let (entity, world) = World.readEntity entityDescriptor None layer world
                     (entity :: entities, world))
-                    groupDescriptor.Entities
+                    layerDescriptor.Entities
                     ([], world)
 
     /// Represents the property value of an entity as accessible via reflection.

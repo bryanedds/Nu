@@ -1,4 +1,4 @@
-[PlayerGroupDispatcher
+[PlayerLayerDispatcher
  [[Name Group]
   [PublishChanges True]
   [Persistent True]]

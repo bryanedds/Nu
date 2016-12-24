@@ -8,160 +8,160 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module WorldGroupModule =
+module WorldLayerModule =
 
-    type Group with
+    type Layer with
     
-        member this.GetId world = World.getGroupId this world
+        member this.GetId world = World.getLayerId this world
         member this.Id = PropertyTag.makeReadOnly this Property? Id this.GetId
-        member this.GetName world = World.getGroupName this world
+        member this.GetName world = World.getLayerName this world
         member this.Name = PropertyTag.makeReadOnly this Property? Name this.GetName
-        member this.GetXtension world = World.getGroupXtension this world
+        member this.GetXtension world = World.getLayerXtension this world
         member this.Xtension = PropertyTag.makeReadOnly this Property? Xtension this.GetXtension
-        member this.GetDispatcherNp world = World.getGroupDispatcherNp this world
+        member this.GetDispatcherNp world = World.getLayerDispatcherNp this world
         member this.DispatcherNp = PropertyTag.makeReadOnly this Property? DispatcherNp this.GetDispatcherNp
-        member this.GetSpecialization world = World.getGroupSpecialization this world
+        member this.GetSpecialization world = World.getLayerSpecialization this world
         member this.Specialization = PropertyTag.makeReadOnly this Property? Specialization this.GetSpecialization
         member this.GetClassification world = Classification.make (getTypeName ^ this.GetDispatcherNp world) (this.GetSpecialization world)
         member this.Classification = PropertyTag.makeReadOnly this Property? Classification this.GetClassification
-        member this.GetPersistent world = World.getGroupPersistent this world
-        member this.SetPersistent value world = World.setGroupPersistent value this world
+        member this.GetPersistent world = World.getLayerPersistent this world
+        member this.SetPersistent value world = World.setLayerPersistent value this world
         member this.Persistent = PropertyTag.makeReadOnly this Property? Persistent this.GetPersistent
-        member this.GetCreationTimeStampNp world = World.getGroupCreationTimeStampNp this world
+        member this.GetCreationTimeStampNp world = World.getLayerCreationTimeStampNp this world
         member this.CreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
 
         /// Get a property value and type.
-        member this.GetProperty propertyName world = World.getGroupProperty propertyName this world
+        member this.GetProperty propertyName world = World.getLayerProperty propertyName this world
 
         /// Set a property value with explicit type.
-        member this.SetProperty propertyName property world = World.setGroupProperty propertyName property this world
+        member this.SetProperty propertyName property world = World.setLayerProperty propertyName property this world
 
         /// Get a property value.
-        member this.Get<'a> propertyName world : 'a = World.getGroupProperty propertyName this world |> fst :?> 'a
+        member this.Get<'a> propertyName world : 'a = World.getLayerProperty propertyName this world |> fst :?> 'a
 
         /// Set a property value.
-        member this.Set<'a> propertyName (value : 'a) world = World.setGroupProperty propertyName (value :> obj, typeof<'a>) this world
+        member this.Set<'a> propertyName (value : 'a) world = World.setLayerProperty propertyName (value :> obj, typeof<'a>) this world
 
-        /// Check that a group dispatches in the same manner as the dispatcher with the target type.
+        /// Check that a layer dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world = Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
 
     type World with
 
-        static member private removeGroup group world =
-            let removeEntities group world =
-                let entities = World.getEntities group world
+        static member private removeLayer layer world =
+            let removeEntities layer world =
+                let entities = World.getEntities layer world
                 World.destroyEntitiesImmediate entities world
-            World.removeGroup3 removeEntities group world
+            World.removeLayer3 removeEntities layer world
 
-        static member internal updateGroup (group : Group) world =
+        static member internal updateLayer (layer : Layer) world =
             World.withEventContext (fun world ->
-                let dispatcher = group.GetDispatcherNp world
-                let world = dispatcher.Update (group, world)
-                let eventTrace = EventTrace.record "World" "updateGroup" EventTrace.empty
-                World.publish7 World.sortSubscriptionsByHierarchy () (Events.Update ->- group) eventTrace Simulants.Game true world)
-                (atooa group.GroupAddress)
+                let dispatcher = layer.GetDispatcherNp world
+                let world = dispatcher.Update (layer, world)
+                let eventTrace = EventTrace.record "World" "updateLayer" EventTrace.empty
+                World.publish7 World.sortSubscriptionsByHierarchy () (Events.Update ->- layer) eventTrace Simulants.Game true world)
+                (atooa layer.LayerAddress)
                 world
 
-        static member internal postUpdateGroup (group : Group) world =
+        static member internal postUpdateLayer (layer : Layer) world =
             World.withEventContext (fun world ->
-                let dispatcher = group.GetDispatcherNp world
-                let world = dispatcher.PostUpdate (group, world)
-                let eventTrace = EventTrace.record "World" "postUpdateGroup" EventTrace.empty
-                World.publish7 World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- group) eventTrace Simulants.Game true world)
-                (atooa group.GroupAddress)
+                let dispatcher = layer.GetDispatcherNp world
+                let world = dispatcher.PostUpdate (layer, world)
+                let eventTrace = EventTrace.record "World" "postUpdateLayer" EventTrace.empty
+                World.publish7 World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- layer) eventTrace Simulants.Game true world)
+                (atooa layer.LayerAddress)
                 world
 
-        static member internal actualizeGroup (group : Group) world =
+        static member internal actualizeLayer (layer : Layer) world =
             World.withEventContext (fun world ->
-                let dispatcher = group.GetDispatcherNp world
-                dispatcher.Actualize (group, world))
-                (atooa group.GroupAddress)
+                let dispatcher = layer.GetDispatcherNp world
+                dispatcher.Actualize (layer, world))
+                (atooa layer.LayerAddress)
                 world
 
-        /// Get all the groups in a screen.
-        static member getGroups screen world =
+        /// Get all the layers in a screen.
+        static member getLayers screen world =
             match Address.getNames screen.ScreenAddress with
             | [screenName] ->
                 match Umap.tryFind screenName ^ World.getScreenDirectory world with
-                | Some (_, groupDirectory) ->
-                    Umap.fold (fun state _ (groupAddress, _) -> Group.proxy groupAddress :: state) [] groupDirectory :> _ seq
+                | Some (_, layerDirectory) ->
+                    Umap.fold (fun state _ (layerAddress, _) -> Layer.proxy layerAddress :: state) [] layerDirectory :> _ seq
                 | None -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
             | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
 
-        /// Destroy a group in the world immediately. Can be dangerous if existing in-flight publishing depends on the
-        /// group's existence. Consider using World.destroyGroup instead.
-        static member destroyGroupImmediate group world = World.removeGroup group world
+        /// Destroy a layer in the world immediately. Can be dangerous if existing in-flight publishing depends on the
+        /// layer's existence. Consider using World.destroyLayer instead.
+        static member destroyLayerImmediate layer world = World.removeLayer layer world
 
-        /// Destroy a group in the world at the end of the current update.
-        static member destroyGroup group world =
+        /// Destroy a layer in the world at the end of the current update.
+        static member destroyLayer layer world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
-                  Command = { Execute = fun world -> World.destroyGroupImmediate group world }}
+                  Command = { Execute = fun world -> World.destroyLayerImmediate layer world }}
             World.addTasklet tasklet world
             
-        /// Destroy multiple groups in the world immediately. Can be dangerous if existing in-flight publishing depends
-        /// on any of the groups' existences. Consider using World.destroyGroups instead.
-        static member destroyGroupsImmediate groups world =
+        /// Destroy multiple layers in the world immediately. Can be dangerous if existing in-flight publishing depends
+        /// on any of the layers' existences. Consider using World.destroyLayers instead.
+        static member destroyLayersImmediate layers world =
             List.foldBack
-                (fun group world -> World.destroyGroupImmediate group world)
-                (List.ofSeq groups)
+                (fun layer world -> World.destroyLayerImmediate layer world)
+                (List.ofSeq layers)
                 world
 
-        /// Destroy multiple groups from the world at the end of the current update.
-        static member destroyGroups groups world =
+        /// Destroy multiple layers from the world at the end of the current update.
+        static member destroyLayers layers world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
-                  Command = { Execute = fun world -> World.destroyGroupsImmediate groups world }}
+                  Command = { Execute = fun world -> World.destroyLayersImmediate layers world }}
             World.addTasklet tasklet world
 
-        /// Write a group to a group descriptor.
-        static member writeGroup group groupDescriptor world =
-            let writeEntities group groupDescriptor world =
-                let entities = World.getEntities group world
-                World.writeEntities entities groupDescriptor world
-            World.writeGroup4 writeEntities group groupDescriptor world
+        /// Write a layer to a layer descriptor.
+        static member writeLayer layer layerDescriptor world =
+            let writeEntities layer layerDescriptor world =
+                let entities = World.getEntities layer world
+                World.writeEntities entities layerDescriptor world
+            World.writeLayer4 writeEntities layer layerDescriptor world
 
-        /// Write multiple groups to a screen descriptor.
-        static member writeGroups groups screenDescriptor world =
-            groups |>
-            Seq.sortBy (fun (group : Group) -> group.GetCreationTimeStampNp world) |>
-            Seq.filter (fun (group : Group) -> group.GetPersistent world) |>
-            Seq.fold (fun groupDescriptors group -> World.writeGroup group GroupDescriptor.empty world :: groupDescriptors) screenDescriptor.Groups |>
-            fun groupDescriptors -> { screenDescriptor with Groups = groupDescriptors }
+        /// Write multiple layers to a screen descriptor.
+        static member writeLayers layers screenDescriptor world =
+            layers |>
+            Seq.sortBy (fun (layer : Layer) -> layer.GetCreationTimeStampNp world) |>
+            Seq.filter (fun (layer : Layer) -> layer.GetPersistent world) |>
+            Seq.fold (fun layerDescriptors layer -> World.writeLayer layer LayerDescriptor.empty world :: layerDescriptors) screenDescriptor.Layers |>
+            fun layerDescriptors -> { screenDescriptor with Layers = layerDescriptors }
 
-        /// Write a group to a file.
-        static member writeGroupToFile (filePath : string) group world =
+        /// Write a layer to a file.
+        static member writeLayerToFile (filePath : string) layer world =
             let filePathTmp = filePath + ".tmp"
-            let groupDescriptor = World.writeGroup group GroupDescriptor.empty world
-            let groupDescriptorStr = scstring groupDescriptor
-            let groupDescriptorPretty = Symbol.prettyPrint String.Empty groupDescriptorStr
-            File.WriteAllText (filePathTmp, groupDescriptorPretty)
+            let layerDescriptor = World.writeLayer layer LayerDescriptor.empty world
+            let layerDescriptorStr = scstring layerDescriptor
+            let layerDescriptorPretty = Symbol.prettyPrint String.Empty layerDescriptorStr
+            File.WriteAllText (filePathTmp, layerDescriptorPretty)
             File.Delete filePath
             File.Move (filePathTmp, filePath)
 
-        /// Read a group from a group descriptor.
-        static member readGroup groupDescriptor nameOpt screen world =
-            World.readGroup5 World.readEntities groupDescriptor nameOpt screen world
+        /// Read a layer from a layer descriptor.
+        static member readLayer layerDescriptor nameOpt screen world =
+            World.readLayer5 World.readEntities layerDescriptor nameOpt screen world
 
-        /// Read a group from a file.
-        static member readGroupFromFile (filePath : string) nameOpt screen world =
-            let groupDescriptorStr = File.ReadAllText filePath
-            let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
-            World.readGroup groupDescriptor nameOpt screen world
+        /// Read a layer from a file.
+        static member readLayerFromFile (filePath : string) nameOpt screen world =
+            let layerDescriptorStr = File.ReadAllText filePath
+            let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
+            World.readLayer layerDescriptor nameOpt screen world
 
-        /// Read multiple groups from a screen descriptor.
-        static member readGroups screenDescriptor screen world =
+        /// Read multiple layers from a screen descriptor.
+        static member readLayers screenDescriptor screen world =
             List.foldBack
-                (fun groupDescriptor (groups, world) ->
-                    let (group, world) = World.readGroup groupDescriptor None screen world
-                    (group :: groups, world))
-                screenDescriptor.Groups
+                (fun layerDescriptor (layers, world) ->
+                    let (layer, world) = World.readLayer layerDescriptor None screen world
+                    (layer :: layers, world))
+                screenDescriptor.Layers
                 ([], world)
 
 namespace Debug
 open Nu
-type Group =
+type Layer =
 
-    /// Provides a full view of all the properties of a group. Useful for debugging such
+    /// Provides a full view of all the properties of a layer. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
-    static member view group world = World.viewGroupProperties group world
+    static member view layer world = World.viewLayerProperties layer world

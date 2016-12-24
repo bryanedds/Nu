@@ -37,10 +37,10 @@ module Gaia =
             world
 
     let private getPickableEntities world =
-        let selectedGroup = (World.getUserState world).SelectedGroup
+        let selectedLayer = (World.getUserState world).SelectedLayer
         let (entities, world) = World.getEntitiesNearView Simulants.EditorScreen world
-        let entitiesInGroup = List.filter (fun entity -> etog entity = selectedGroup) entities
-        (entitiesInGroup, world)
+        let entitiesInLayer = List.filter (fun entity -> etol entity = selectedLayer) entities
+        (entitiesInLayer, world)
 
     let private getSnaps (form : GaiaForm) =
         let positionSnap = snd ^ Int32.TryParse form.positionSnapTextBox.Text
@@ -91,31 +91,31 @@ module Gaia =
             form.createEntityComboBox.Items.Add dispatcherKvp.Key |> ignore
         form.createEntityComboBox.SelectedIndex <- 0
 
-    let private populateTreeViewGroups (form : GaiaForm) world =
+    let private populateTreeViewLayers (form : GaiaForm) world =
         for dispatcherKvp in World.getEntityDispatchers world do
-            let treeGroup = TreeNode dispatcherKvp.Key
-            treeGroup.Name <- treeGroup.Text
-            form.treeView.Nodes.Add treeGroup |> ignore
+            let treeNode = TreeNode dispatcherKvp.Key
+            treeNode.Name <- treeNode.Text
+            form.treeView.Nodes.Add treeNode |> ignore
 
     let private populateTreeViewNodes (form : GaiaForm) world =
-        let selectedGroup = (World.getUserState world).SelectedGroup
-        for entity in World.getEntities selectedGroup world do
+        let selectedLayer = (World.getUserState world).SelectedLayer
+        for entity in World.getEntities selectedLayer world do
             addTreeViewNode form entity world
 
-    let private populateGroupTabs (form : GaiaForm) world =
+    let private populateLayerTabs (form : GaiaForm) world =
 
-        // add groups imperatively to preserve existing group tabs 
-        let groups = World.getGroups Simulants.EditorScreen world
-        let groupTabPages = form.groupTabs.TabPages
-        for group in groups do
-            let groupNameStr = Name.getNameStr group.GroupName
-            if not ^ groupTabPages.ContainsKey groupNameStr then
-                groupTabPages.Add (groupNameStr, groupNameStr)
+        // add layers imperatively to preserve existing layer tabs 
+        let layers = World.getLayers Simulants.EditorScreen world
+        let layerTabPages = form.layerTabs.TabPages
+        for layer in layers do
+            let layerNameStr = Name.getNameStr layer.LayerName
+            if not ^ layerTabPages.ContainsKey layerNameStr then
+                layerTabPages.Add (layerNameStr, layerNameStr)
     
-        // remove groups imperatively to preserve existing group tabs 
-        for groupTabPage in groupTabPages do
-            if Seq.notExists (fun (group : Group) -> Name.getNameStr group.GroupName = groupTabPage.Name) groups then
-                groupTabPages.RemoveByKey groupTabPage.Name
+        // remove layers imperatively to preserve existing layer tabs 
+        for layerTabPage in layerTabPages do
+            if Seq.notExists (fun (layer : Layer) -> Name.getNameStr layer.LayerName = layerTabPage.Name) layers then
+                layerTabPages.RemoveByKey layerTabPage.Name
 
     let private setTreeViewSelectionToPropertyGridSelection (form : GaiaForm) =
         match form.propertyGrid.SelectedObject with
@@ -150,19 +150,19 @@ module Gaia =
     let private refreshTreeView (form : GaiaForm) world =
         let treeState = getExpansionState form.treeView
         clearTreeViewNodes form
-        populateTreeViewGroups form world
+        populateTreeViewLayers form world
         populateTreeViewNodes form world
         restoreExpansionState form.treeView treeState
         setTreeViewSelectionToPropertyGridSelection form
 
-    let private refreshGroupTabs (form : GaiaForm) world =
-        populateGroupTabs form world
+    let private refreshLayerTabs (form : GaiaForm) world =
+        populateLayerTabs form world
 
     let private refreshFormOnUndoRedo (form : GaiaForm) world =
         form.tickingButton.Checked <- false
         refreshPropertyGrid form world
         refreshTreeView form world
-        refreshGroupTabs form world
+        refreshLayerTabs form world
 
     let private canEditWithMouse (form : GaiaForm) world =
         World.isTicking world &&
@@ -253,36 +253,36 @@ module Gaia =
         | DragCameraNone -> (Resolve, world)
 
     let private subscribeToEntityEvents form world =
-        let selectedGroup = (World.getUserState world).SelectedGroup
+        let selectedLayer = (World.getUserState world).SelectedLayer
         world |>
-            World.subscribe5 Constants.SubscriptionKeys.AddEntity (handleNuEntityAdd form) (Events.EntityAdd ->- selectedGroup ->- Events.Wildcard) Simulants.Game |>
-            World.subscribe5 Constants.SubscriptionKeys.RemovingEntity (handleNuEntityRemoving form) (Events.EntityRemoving ->- selectedGroup ->- Events.Wildcard) Simulants.Game
+            World.subscribe5 Constants.SubscriptionKeys.AddEntity (handleNuEntityAdd form) (Events.EntityAdd ->- selectedLayer ->- Events.Wildcard) Simulants.Game |>
+            World.subscribe5 Constants.SubscriptionKeys.RemovingEntity (handleNuEntityRemoving form) (Events.EntityRemoving ->- selectedLayer ->- Events.Wildcard) Simulants.Game
 
     let private unsubscribeFromEntityEvents world =
         world |>
             World.unsubscribe Constants.SubscriptionKeys.AddEntity |>
             World.unsubscribe Constants.SubscriptionKeys.RemovingEntity
 
-    let private trySaveSelectedGroup filePath world =
-        let selectedGroup = (World.getUserState world).SelectedGroup
-        try World.writeGroupToFile filePath selectedGroup world
+    let private trySaveSelectedLayer filePath world =
+        let selectedLayer = (World.getUserState world).SelectedLayer
+        try World.writeLayerToFile filePath selectedLayer world
         with exn ->
             ignore ^ World.choose world
             ignore ^ MessageBox.Show ("Could not save file due to: " + scstring exn, "File save error", MessageBoxButtons.OK, MessageBoxIcon.Error)
 
-    let private tryLoadSelectedGroup (form : GaiaForm) filePath world =
+    let private tryLoadSelectedLayer (form : GaiaForm) filePath world =
 
-        try // destroy current group
-            let selectedGroup = (World.getUserState world).SelectedGroup
+        try // destroy current layer
+            let selectedLayer = (World.getUserState world).SelectedLayer
             let world = unsubscribeFromEntityEvents world
-            let world = World.destroyGroupImmediate selectedGroup world
+            let world = World.destroyLayerImmediate selectedLayer world
 
-            // load and add group, updating tab and selected group in the process
-            let (group, world) = World.readGroupFromFile filePath None Simulants.EditorScreen world
-            let groupNameStr = Name.getNameStr (group.GetName world)
-            form.groupTabs.SelectedTab.Text <- groupNameStr
-            form.groupTabs.SelectedTab.Name <- groupNameStr
-            let world = World.updateUserState (fun editorState -> { editorState with SelectedGroup = group }) world
+            // load and add layer, updating tab and selected layer in the process
+            let (layer, world) = World.readLayerFromFile filePath None Simulants.EditorScreen world
+            let layerNameStr = Name.getNameStr (layer.GetName world)
+            form.layerTabs.SelectedTab.Text <- layerNameStr
+            form.layerTabs.SelectedTab.Name <- layerNameStr
+            let world = World.updateUserState (fun editorState -> { editorState with SelectedLayer = layer }) world
             let world = subscribeToEntityEvents form world
 
             // refresh tree view
@@ -476,8 +476,8 @@ module Gaia =
     let private handleFormCreateEntity atMouse (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             try let world = pushPastWorld world world
-                let selectedGroup = (World.getUserState world).SelectedGroup
-                let (entity, world) = World.createEntity5 form.createEntityComboBox.Text (Some form.specializationTextBox.Text) None selectedGroup world
+                let selectedLayer = (World.getUserState world).SelectedLayer
+                let (entity, world) = World.createEntity5 form.createEntityComboBox.Text (Some form.specializationTextBox.Text) None selectedLayer world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
                 let entityPosition =
@@ -511,38 +511,38 @@ module Gaia =
             | _ -> world
 
     let private handleFormNew (form : GaiaForm) (_ : EventArgs) =
-        use groupCreationForm = new GroupCreationForm ()
-        groupCreationForm.StartPosition <- FormStartPosition.CenterParent
-        groupCreationForm.dispatcherTextBox.Text <- typeof<GroupDispatcher>.Name
-        groupCreationForm.specializationTextBox.Text <- Constants.Engine.VanillaSpecialization
-        groupCreationForm.okButton.Click.Add ^ fun _ ->
+        use layerCreationForm = new LayerCreationForm ()
+        layerCreationForm.StartPosition <- FormStartPosition.CenterParent
+        layerCreationForm.dispatcherTextBox.Text <- typeof<LayerDispatcher>.Name
+        layerCreationForm.specializationTextBox.Text <- Constants.Engine.VanillaSpecialization
+        layerCreationForm.okButton.Click.Add ^ fun _ ->
             addWorldChanger ^ fun world ->
                 let world = pushPastWorld world world
-                let groupNameStr = groupCreationForm.nameTextBox.Text
-                let groupName = !!groupNameStr
-                let groupDispatcher = groupCreationForm.dispatcherTextBox.Text
-                let groupSpecialization = groupCreationForm.specializationTextBox.Text
-                try if Name.length groupName = 0 then failwith "Group name cannot be empty in Gaia due to WinForms limitations."
-                    let world = World.createGroup5 groupDispatcher (Some groupSpecialization) (Some groupName) Simulants.EditorScreen world |> snd
-                    refreshGroupTabs form world
-                    form.groupTabs.SelectTab (form.groupTabs.TabPages.IndexOfKey groupNameStr)
+                let layerNameStr = layerCreationForm.nameTextBox.Text
+                let layerName = !!layerNameStr
+                let layerDispatcher = layerCreationForm.dispatcherTextBox.Text
+                let layerSpecialization = layerCreationForm.specializationTextBox.Text
+                try if Name.length layerName = 0 then failwith "Layer name cannot be empty in Gaia due to WinForms limitations."
+                    let world = World.createLayer5 layerDispatcher (Some layerSpecialization) (Some layerName) Simulants.EditorScreen world |> snd
+                    refreshLayerTabs form world
+                    form.layerTabs.SelectTab (form.layerTabs.TabPages.IndexOfKey layerNameStr)
                     world
                 with exn ->
                     let world = World.choose world
-                    ignore ^ MessageBox.Show ("Could not create group due to: " + scstring exn, "Group creation error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    ignore ^ MessageBox.Show ("Could not create layer due to: " + scstring exn, "Layer creation error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                     world
-            groupCreationForm.Close ()
-        groupCreationForm.cancelButton.Click.Add (fun _ -> groupCreationForm.Close ())
-        groupCreationForm.ShowDialog form |> ignore
+            layerCreationForm.Close ()
+        layerCreationForm.cancelButton.Click.Add (fun _ -> layerCreationForm.Close ())
+        layerCreationForm.ShowDialog form |> ignore
 
     let private handleFormSave (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            let groupNameStr = Name.getNameStr (World.getUserState world).SelectedGroup.GroupName
-            form.saveFileDialog.Title <- "Save '" + groupNameStr + "' As"
+            let layerNameStr = Name.getNameStr (World.getUserState world).SelectedLayer.LayerName
+            form.saveFileDialog.Title <- "Save '" + layerNameStr + "' As"
             form.saveFileDialog.FileName <- String.Empty
             let saveFileResult = form.saveFileDialog.ShowDialog form
             match saveFileResult with
-            | DialogResult.OK -> trySaveSelectedGroup form.saveFileDialog.FileName world; world
+            | DialogResult.OK -> trySaveSelectedLayer form.saveFileDialog.FileName world; world
             | _ -> world
 
     let private handleFormOpen (form : GaiaForm) (_ : EventArgs) =
@@ -552,23 +552,23 @@ module Gaia =
             match openFileResult with
             | DialogResult.OK ->
                 let world = pushPastWorld world world
-                let world = tryLoadSelectedGroup form form.openFileDialog.FileName world
+                let world = tryLoadSelectedLayer form form.openFileDialog.FileName world
                 deselectEntity form world
                 world
             | _ -> world
 
     let private handleFormClose (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            match form.groupTabs.TabPages.Count with
+            match form.layerTabs.TabPages.Count with
             | 1 ->
-                ignore ^ MessageBox.Show ("Cannot destroy only remaining group.", "Group destruction error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                ignore ^ MessageBox.Show ("Cannot destroy only remaining layer.", "Layer destruction error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 world
             | _ ->
                 let world = pushPastWorld world world
-                let group = (World.getUserState world).SelectedGroup
-                let world = World.destroyGroupImmediate group world
+                let layer = (World.getUserState world).SelectedLayer
+                let world = World.destroyLayerImmediate layer world
                 deselectEntity form world
-                form.groupTabs.TabPages.RemoveByKey ^ Name.getNameStr group.GroupName
+                form.layerTabs.TabPages.RemoveByKey ^ Name.getNameStr layer.LayerName
                 world
 
     let private handleFormUndo (form : GaiaForm) (_ : EventArgs) =
@@ -577,8 +577,8 @@ module Gaia =
             | [] -> world
             | pastWorld :: pastWorlds ->
                 let futureWorld = world
-                let selectedGroup = (World.getUserState world).SelectedGroup
-                let world = World.continueHack selectedGroup pastWorld
+                let selectedLayer = (World.getUserState world).SelectedLayer
+                let world = World.continueHack selectedLayer pastWorld
                 let world =
                     World.updateUserState (fun editorState ->
                         { editorState with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: (World.getUserState futureWorld).FutureWorlds })
@@ -593,8 +593,8 @@ module Gaia =
             | [] -> world
             | futureWorld :: futureWorlds ->
                 let pastWorld = world
-                let selectedGroup = (World.getUserState world).SelectedGroup
-                let world = World.continueHack selectedGroup futureWorld
+                let selectedLayer = (World.getUserState world).SelectedLayer
+                let world = World.continueHack selectedLayer futureWorld
                 let world =
                     World.updateUserState (fun editorState ->
                         { editorState with PastWorlds = pastWorld :: (World.getUserState pastWorld).PastWorlds; FutureWorlds = futureWorlds })
@@ -635,10 +635,10 @@ module Gaia =
     let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             let world = pushPastWorld world world
-            let selectedGroup = (World.getUserState world).SelectedGroup
+            let selectedLayer = (World.getUserState world).SelectedLayer
             let (positionSnap, rotationSnap) = getSnaps form
             let editorState = World.getUserState world
-            let (entityOpt, world) = World.pasteFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap selectedGroup world
+            let (entityOpt, world) = World.pasteFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap selectedLayer world
             match entityOpt with
             | Some entity -> selectEntity form entity world; world
             | None -> world
@@ -672,7 +672,7 @@ module Gaia =
                 ignore ^ MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 world
 
-    let private handleFormGroupTabDeselected (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormLayerTabDeselected (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             let world = unsubscribeFromEntityEvents world
             deselectEntity form world
@@ -680,13 +680,13 @@ module Gaia =
             refreshTreeView form world
             world
 
-    let private handleFormGroupTabSelected (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormLayerTabSelected (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             let world =
                 World.updateUserState (fun editorState ->
-                    let groupTabs = form.groupTabs
-                    let groupTab = groupTabs.SelectedTab
-                    { editorState with SelectedGroup = stog Simulants.EditorScreen !!groupTab.Text })
+                    let layerTabs = form.layerTabs
+                    let layerTab = layerTabs.SelectedTab
+                    { editorState with SelectedLayer = stol Simulants.EditorScreen !!layerTab.Text })
                     world
             let world = subscribeToEntityEvents form world
             refreshPropertyGrid form world
@@ -840,7 +840,7 @@ module Gaia =
         match World.getUserState world : obj with
         | :? unit ->
             if World.getSelectedScreen world = Simulants.EditorScreen then
-                if World.getGroups Simulants.EditorScreen world |> Seq.isEmpty |> not then
+                if World.getLayers Simulants.EditorScreen world |> Seq.isEmpty |> not then
                     let world = flip World.updateUserState world (fun _ ->
                         { TargetDir = targetDir
                           RightClickPosition = Vector2.Zero
@@ -848,14 +848,14 @@ module Gaia =
                           DragCameraState = DragCameraNone
                           PastWorlds = []
                           FutureWorlds = []
-                          SelectedGroup = Simulants.DefaultEditorGroup })
+                          SelectedLayer = Simulants.DefaultEditorLayer })
                     let world = World.subscribe (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game world
                     let world = World.subscribe (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game world
                     let world = World.subscribe (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game world
                     let world = World.subscribe (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world
                     let world = World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world
                     subscribeToEntityEvents form world
-                else failwith ^ "Cannot attach Gaia to a world with no groups inside the '" + scstring Simulants.EditorScreen + "' screen."
+                else failwith ^ "Cannot attach Gaia to a world with no layers inside the '" + scstring Simulants.EditorScreen + "' screen."
             else failwith ^ "Cannot attach Gaia to a world with a screen selected other than '" + scstring Simulants.EditorScreen + "'."
         | :? EditorState -> world // NOTE: conclude world is already attached
         | _ -> failwith "Cannot attach Gaia to a world that has a user state of a type other than unit or EditorState."
@@ -864,8 +864,8 @@ module Gaia =
         let world = World.choose !RefWorld
         let world = attachToWorld targetDir form world
         populateCreateComboBox form world
-        populateTreeViewGroups form world
-        populateGroupTabs form world
+        populateTreeViewLayers form world
+        populateLayerTabs form world
         form.tickingButton.CheckState <- CheckState.Unchecked
         let world =
             World.runWithoutCleanUp
@@ -963,8 +963,8 @@ module Gaia =
         form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form)
         form.resetCameraButton.Click.Add (handleFormResetCamera form)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
-        form.groupTabs.Deselected.Add (handleFormGroupTabDeselected form)
-        form.groupTabs.Selected.Add (handleFormGroupTabSelected form)
+        form.layerTabs.Deselected.Add (handleFormLayerTabDeselected form)
+        form.layerTabs.Selected.Add (handleFormLayerTabSelected form)
         form.rolloutTabControl.SelectedIndexChanged.Add (handleRolloutTabSelectedIndexChanged form)
         form.createEntityComboBox.SelectedIndexChanged.Add (handleCreateEntityComboBoxSelectedIndexChanged form)
         form.Closing.Add (handleFormClosing form)
@@ -995,7 +995,7 @@ module Gaia =
         match worldEir with
         | Right world ->
             let world = World.createScreen None (Some Simulants.EditorScreen.ScreenName) world |> snd
-            let world = World.createGroup None (Some Simulants.DefaultEditorGroup.GroupName) Simulants.EditorScreen world |> snd
+            let world = World.createLayer None (Some Simulants.DefaultEditorLayer.LayerName) Simulants.EditorScreen world |> snd
             let world = World.setSelectedScreen Simulants.EditorScreen world
             Right world
         | Left error -> Left error

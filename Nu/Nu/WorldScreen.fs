@@ -66,10 +66,10 @@ module WorldScreenModule =
     type World with
 
         static member private removeScreen screen world =
-            let removeGroups screen world =
-                let groups = World.getGroups screen world
-                World.destroyGroupsImmediate groups world
-            World.removeScreen3 removeGroups screen world
+            let removeLayers screen world =
+                let layers = World.getLayers screen world
+                World.destroyLayersImmediate layers world
+            World.removeScreen3 removeLayers screen world
 
         static member internal updateScreen (screen : Screen) world =
             World.withEventContext (fun world ->
@@ -141,10 +141,10 @@ module WorldScreenModule =
 
         /// Write a screen to a screen descriptor.
         static member writeScreen screen screenDescriptor world =
-            let writeGroups screen screenDescriptor world =
-                let groups = World.getGroups screen world
-                World.writeGroups groups screenDescriptor world
-            World.writeScreen4 writeGroups screen screenDescriptor world
+            let writeLayers screen screenDescriptor world =
+                let layers = World.getLayers screen world
+                World.writeLayers layers screenDescriptor world
+            World.writeScreen4 writeLayers screen screenDescriptor world
 
         /// Write multiple screens to a game descriptor.
         static member writeScreens screens gameDescriptor world =
@@ -166,7 +166,7 @@ module WorldScreenModule =
 
         /// Read a screen from a screen descriptor.
         static member readScreen screenDescriptor nameOpt world =
-            World.readScreen4 World.readGroups screenDescriptor nameOpt world
+            World.readScreen4 World.readLayers screenDescriptor nameOpt world
 
         /// Read a screen from a file.
         static member readScreenFromFile (filePath : string) nameOpt world =

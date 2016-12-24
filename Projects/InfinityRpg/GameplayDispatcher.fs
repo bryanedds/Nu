@@ -520,8 +520,8 @@ module GameplayDispatcherModule =
             let world = Simulants.Gameplay.SetContentRandState contentSeedState world
             let world = Simulants.Gameplay.SetOngoingRandState ongoingSeedState world
 
-            // make scene group
-            let (scene, world) = World.createGroup None (Some Simulants.Scene.GroupName) Simulants.Gameplay world
+            // make scene layer
+            let (scene, world) = World.createLayer None (Some Simulants.Scene.LayerName) Simulants.Gameplay world
 
             // make rand from gameplay
             let rand = Rand.makeFromSeedState ^ Simulants.Gameplay.GetContentRandState world
@@ -568,7 +568,7 @@ module GameplayDispatcherModule =
             (Cascade, world)
 
         static let handleDeselectGameplay _ world =
-            let world = World.destroyGroup Simulants.Scene world
+            let world = World.destroyLayer Simulants.Scene world
             (Cascade, world)
 
         static member PropertyDefinitions =

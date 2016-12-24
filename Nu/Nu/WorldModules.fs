@@ -15,17 +15,17 @@ module SimulantOperators =
     /// Convert a name to a screen's proxy.
     let ntos screenName = Screen.proxy ^ ntoa screenName
 
-    /// Convert a group's proxy to an entity's by appending the entity's name at the end.
-    let gtoe (group : Group) entityName = Entity.proxy ^ atoa<Group, Entity> group.GroupAddress ->- ntoa entityName
+    /// Convert a layer's proxy to an entity's by appending the entity's name at the end.
+    let ltoe (layer : Layer) entityName = Entity.proxy ^ atoa<Layer, Entity> layer.LayerAddress ->- ntoa entityName
 
-    /// Convert a screen's proxy to a group's by appending the group's name at the end.
-    let stog (screen : Screen) groupName = Group.proxy ^ atoa<Screen, Group> screen.ScreenAddress ->- ntoa groupName
+    /// Convert a screen's proxy to a layer's by appending the layer's name at the end.
+    let stol (screen : Screen) layerName = Layer.proxy ^ atoa<Screen, Layer> screen.ScreenAddress ->- ntoa layerName
 
-    /// Convert an entity's proxy to a group's by removing the entity's name from the end.
-    let etog (entity : Entity) = !< entity
+    /// Convert an entity's proxy to a layer's by removing the entity's name from the end.
+    let etol (entity : Entity) = !< entity
 
-    /// Convert a group's proxy to a screen's by removing the group's name from the end.
-    let gtos group = Screen.proxy ^ Address.take<Group, Screen> 1 group.GroupAddress
+    /// Convert a layer's proxy to a screen's by removing the layer's name from the end.
+    let ltos layer = Screen.proxy ^ Address.take<Layer, Screen> 1 layer.LayerAddress
 
 module Simulants =
 
@@ -35,11 +35,11 @@ module Simulants =
     /// The default screen - may or may not exist.
     let DefaultScreen = !> Constants.Engine.DefaultScreenName
     
-    /// The default group - may or may not exist.
-    let DefaultGroup = DefaultScreen => Constants.Engine.DefaultGroupName
+    /// The default layer - may or may not exist.
+    let DefaultLayer = DefaultScreen => Constants.Engine.DefaultLayerName
     
     /// The default entity - may or may not exist.
-    let DefaultEntity = DefaultGroup => Constants.Engine.DefaultEntityName
+    let DefaultEntity = DefaultLayer => Constants.Engine.DefaultEntityName
 
 module Descriptors =
 
@@ -49,16 +49,16 @@ module Descriptors =
           GameProperties = Map.ofSeq properties
           Screens = List.ofSeq screens }
 
-    /// Describe a screen with the given properties values and contained groups.
-    let Screen<'d when 'd :> ScreenDispatcher> properties groups =
+    /// Describe a screen with the given properties values and contained layers.
+    let Screen<'d when 'd :> ScreenDispatcher> properties layers =
         { ScreenDispatcher = typeof<'d>.Name
           ScreenProperties = Map.ofSeq properties
-          Groups = List.ofSeq groups }
+          Layers = List.ofSeq layers }
 
-    /// Describe a group with the given properties values and contained entities.
-    let Group<'d when 'd :> GroupDispatcher> properties entities =
-        { GroupDispatcher = typeof<'d>.Name
-          GroupProperties = Map.ofSeq properties
+    /// Describe a layer with the given properties values and contained entities.
+    let Layer<'d when 'd :> LayerDispatcher> properties entities =
+        { LayerDispatcher = typeof<'d>.Name
+          LayerProperties = Map.ofSeq properties
           Entities = List.ofSeq entities }
 
     /// Describe an entity with the given properties values.
