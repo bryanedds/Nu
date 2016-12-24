@@ -168,7 +168,7 @@ module EffectFacetModule =
                 let (effects, world) = assetTagsToEffectOpts effectAssetTags world |> mapFst List.definitize
                 let effectCombined = EffectSystem.combineEffects effects
                 entity.SetEffect effectCombined world
-            | None -> entity.SetEffect Effect.empty world
+            | None -> world
 
         static let handleAssetsReload evt world =
             let entity = evt.Subscriber : Entity
