@@ -9,4 +9,4 @@ open Nu.Gaia
 module Simulants =
 
     let EditorScreen = !> Constants.Engine.DefaultScreenName
-    let DefaultEditorGroup = EditorScreen => Constants.Engine.DefaultGroupName
+    let DefaultEditorLayer = EditorScreen => Constants.Engine.DefaultLayerName

@@ -31,7 +31,7 @@ type EditorState =
       DragCameraState : DragCameraState
       PastWorlds : World list
       FutureWorlds : World list
-      SelectedGroup : Group }
+      SelectedLayer : Layer }
 
 type [<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>] EntityTypeDescriptorSource =
     { DescribedEntity : Entity
@@ -88,7 +88,7 @@ and EntityPropertyDescriptor (property, attributes) =
             | "Name" ->
                 let name = value :?> Name
                 let entity = entityTds.DescribedEntity
-                let world = World.reassignEntity entity (Some name) (etog entity) world
+                let world = World.reassignEntity entity (Some name) (etol entity) world
                 entityTds.RefWorld := world // must be set for property grid
                 world
 

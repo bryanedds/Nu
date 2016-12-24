@@ -27,7 +27,7 @@ module BlazeDispatcherModule =
         static let createTitleScreen world =
 
             // this creates a dissolve screen from the specified file with the given parameters
-            let world = World.createDissolveScreenFromGroupFile None (Some Simulants.Title.ScreenName) Constants.BlazeVector.DissolveData Assets.TitleGroupFilePath world |> snd
+            let world = World.createDissolveScreenFromLayerFile None (Some Simulants.Title.ScreenName) Constants.BlazeVector.DissolveData Assets.TitleLayerFilePath world |> snd
 
             // this subscribes to the event that is raised when the Title screen is selected for
             // display and interaction, and handles the event by playing the song "Machinery".
@@ -51,12 +51,12 @@ module BlazeDispatcherModule =
 
         // pretty much the same as above, but for the Credits screen
         static let createCreditsScreen world =
-            let world = World.createDissolveScreenFromGroupFile None (Some Simulants.Credits.ScreenName) Constants.BlazeVector.DissolveData Assets.CreditsGroupFilePath world |> snd
+            let world = World.createDissolveScreenFromLayerFile None (Some Simulants.Credits.ScreenName) Constants.BlazeVector.DissolveData Assets.CreditsLayerFilePath world |> snd
             World.subscribe (World.handleAsScreenTransition Simulants.Title) (Events.Click ->- Simulants.CreditsBack) Simulants.Game world
 
         // and so on.
         static let createGameplayScreen world =
-            let world = World.createDissolveScreenFromGroupFile<GameplayScreenDispatcher> None (Some Simulants.Gameplay.ScreenName) Constants.BlazeVector.DissolveData Assets.GameplayGroupFilePath world |> snd
+            let world = World.createDissolveScreenFromLayerFile<GameplayScreenDispatcher> None (Some Simulants.Gameplay.ScreenName) Constants.BlazeVector.DissolveData Assets.GameplayLayerFilePath world |> snd
             World.subscribe (World.handleAsScreenTransition Simulants.Title) (Events.Click ->- Simulants.GameplayBack) Simulants.Game world
 
         // game registration is where the game's high-level logic is set up!

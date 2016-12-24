@@ -1,4 +1,4 @@
-[GroupDispatcher
+[LayerDispatcher
  [[Name Hud]
   [Persistent True]]
  [[ButtonDispatcher

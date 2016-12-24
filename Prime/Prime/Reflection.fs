@@ -204,14 +204,14 @@ module TypeExtension =
 
         /// Get all the properties that are signalled to be preferred by the 'preference' predicate.
         member this.GetPropertiesByPreference preference =
-            let propertiesGrouped =
+            let propertiesLayered =
                 Seq.groupBy
                     (fun (property : PropertyInfo) -> property.Name)
                     (this.GetProperties ())
             let propertieOpts =
                 Seq.map
                     (fun (_, properties) -> Type.GetPropertyByPreference (preference, properties))
-                    propertiesGrouped
+                    propertiesLayered
             Seq.filter isNotNull propertieOpts
 
         /// Get all the properties, preferring those that can be written to if there is a name clash.

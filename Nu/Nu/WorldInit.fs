@@ -40,7 +40,7 @@ module Nu =
 #if DEBUG
             Debug.World.viewGame <- fun world -> Debug.Game.view (world :?> World)
             Debug.World.viewScreen <- fun screen world -> Debug.Screen.view (screen :?> Screen) (world :?> World)
-            Debug.World.viewGroup <- fun group world -> Debug.Group.view (group :?> Group) (world :?> World)
+            Debug.World.viewLayer <- fun layer world -> Debug.Layer.view (layer :?> Layer) (world :?> World)
             Debug.World.viewEntity <- fun entity world -> Debug.Entity.view (entity :?> Entity) (world :?> World)
 #endif
 

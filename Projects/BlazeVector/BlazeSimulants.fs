@@ -11,13 +11,13 @@ module Simulants =
     // same as above, but for the title screen
     let Title = !> "Title"
 
-    // this is the group that is loaded into the title screen that contains all of its gui
-    // entities. You'll notice that the group is built from a combination of the title screen's
+    // this is the layer that is loaded into the title screen that contains all of its gui
+    // entities. You'll notice that the layer is built from a combination of the title screen's
     // proxy as well as its own personal name as found in its originating document,
-    // 'Assets/Gui/Title.nugroup'.
+    // 'Assets/Gui/Title.nulyr'.
     let TitleGui = Title => "Gui"
 
-    // this is like the above, but for the play button found in the above group
+    // this is like the above, but for the play button found in the above layer
     let TitlePlay = TitleGui => "Play"
     
     // and so on for the title screens credits and exit buttons.

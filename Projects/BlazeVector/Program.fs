@@ -18,9 +18,9 @@ type BlazePlugin () =
     override this.MakeScreenDispatchers () =
         [GameplayScreenDispatcher () :> ScreenDispatcher]
 
-    // make our game-specific group dispatchers...
-    override this.MakeGroupDispatchers () =
-        [PlayerGroupDispatcher () :> GroupDispatcher]
+    // make our game-specific layer dispatchers...
+    override this.MakeLayerDispatchers () =
+        [PlayerLayerDispatcher () :> LayerDispatcher]
 
     // make our game-specific entity dispatchers...
     override this.MakeEntityDispatchers () =

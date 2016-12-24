@@ -234,10 +234,10 @@ module PlayerModule =
                 World.monitor handleJumpByKeyboardKey Events.KeyboardKeyDown player
 
 [<AutoOpen>]
-module PlayerGroupModule =
+module PlayerLayerModule =
 
-    type PlayerGroupDispatcher () =
-        inherit GroupDispatcher ()
+    type PlayerLayerDispatcher () =
+        inherit LayerDispatcher ()
 
         static let adjustCamera world =
             let playerPosition = Simulants.Player.GetPosition world
@@ -257,10 +257,10 @@ module PlayerGroupModule =
                 (Cascade, world)
             else (Cascade, world)
 
-        override dispatcher.Register (group, world) =
+        override dispatcher.Register (layer, world) =
             world |>
-                World.monitor handleAdjustCamera (Events.Update ->- group) group |>
-                World.monitor handlePlayerFall (Events.Update ->- group) group
+                World.monitor handleAdjustCamera (Events.Update ->- layer) layer |>
+                World.monitor handlePlayerFall (Events.Update ->- layer) layer
 
 [<AutoOpen>]
 module GameplayScreenModule =
@@ -280,11 +280,11 @@ module GameplayScreenModule =
                 entities
 
         static let createSectionFromFile filePath sectionName xShift world =
-            let (section, world) = World.readGroupFromFile filePath (Some sectionName) Simulants.Gameplay world
+            let (section, world) = World.readLayerFromFile filePath (Some sectionName) Simulants.Gameplay world
             let sectionEntities = World.getEntities section world
             shiftEntities xShift sectionEntities world
 
-        static let createSectionGroups world =
+        static let createSectionLayers world =
             let random = System.Random ()
             let sectionFilePaths = List.toArray Assets.SectionFilePaths
             List.fold
@@ -297,12 +297,12 @@ module GameplayScreenModule =
                 world
                 [0 .. Constants.BlazeVector.SectionCount - 1]
 
-        static let createPlayerGroup world =
-            World.readGroupFromFile Assets.PlayerGroupFilePath (Some Simulants.GameplayScene.GroupName) Simulants.Gameplay world |> snd
+        static let createPlayerLayer world =
+            World.readLayerFromFile Assets.PlayerLayerFilePath (Some Simulants.GameplayScene.LayerName) Simulants.Gameplay world |> snd
 
         static let handleStartPlay _ world =
-            let world = createPlayerGroup world
-            let world = createSectionGroups world
+            let world = createPlayerLayer world
+            let world = createSectionLayers world
             let world = World.playSong 0 1.0f Assets.DeadBlazeSong world
             (Cascade, world)
 
@@ -313,9 +313,9 @@ module GameplayScreenModule =
         static let handleStopPlay evt world =
             let screen = evt.Subscriber : Screen
             let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield !!(SectionNameStr + scstring i)]
-            let groupNames = Simulants.GameplayScene.GroupName :: sectionNames
-            let groups = List.map (fun groupName -> screen => groupName) groupNames
-            let world = World.destroyGroups groups world
+            let layerNames = Simulants.GameplayScene.LayerName :: sectionNames
+            let layers = List.map (fun layerName -> screen => layerName) layerNames
+            let world = World.destroyLayers layers world
             (Cascade, world)
 
         override dispatcher.Register (screen, world) =

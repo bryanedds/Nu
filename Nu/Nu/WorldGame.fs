@@ -85,7 +85,7 @@ module WorldGameModule =
         /// Transform the given mouse position to entity space.
         member this.MouseToEntity viewType entityPosition mousePosition world = World.mouseToEntity viewType entityPosition mousePosition world
 
-        /// Check that a group dispatches in the same manner as the dispatcher with the target type.
+        /// Check that a layer dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world = Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
 
     type World with
@@ -125,26 +125,26 @@ module WorldGameModule =
 
         // Get all the entities in the world.
         static member getEntities1 world =
-            World.getGroups1 world |>
-            Seq.map (fun group -> World.getEntities group world) |>
+            World.getLayers1 world |>
+            Seq.map (fun layer -> World.getEntities layer world) |>
             Seq.concat
 
-        // Get all the groups in the world.
-        static member getGroups1 world =
+        // Get all the layers in the world.
+        static member getLayers1 world =
             World.getScreens world |>
-            Seq.map (fun screen -> World.getGroups screen world) |>
+            Seq.map (fun screen -> World.getLayers screen world) |>
             Seq.concat
 
-        /// Determine if an entity is selected by being in a group of the currently selected screeen.
+        /// Determine if an entity is selected by being in a layer of the currently selected screeen.
         static member isEntitySelected entity world =
             let screenName = Address.head entity.EntityAddress
             match World.getSelectedScreenOpt world with
             | Some selectedScreen -> screenName = Address.getName selectedScreen.ScreenAddress
             | None -> false
 
-        /// Determine if a group is selected by being in the currently selected screeen.
-        static member isGroupSelected group world =
-            let screenName = Address.head group.GroupAddress
+        /// Determine if a layer is selected by being in the currently selected screeen.
+        static member isLayerSelected layer world =
+            let screenName = Address.head layer.LayerAddress
             match World.getSelectedScreenOpt world with
             | Some selectedScreen -> screenName = Address.getName selectedScreen.ScreenAddress
             | None -> false

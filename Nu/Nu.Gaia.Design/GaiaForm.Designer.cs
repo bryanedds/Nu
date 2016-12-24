@@ -36,7 +36,7 @@
             this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator10 = new System.Windows.Forms.ToolStripSeparator();
-            this.clearGroupToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.clearLayerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.closeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -51,7 +51,7 @@
             this.createToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.deleteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem5 = new System.Windows.Forms.ToolStripSeparator();
-            this.changeGroupNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.changeLayerNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.createContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.deleteContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -71,7 +71,7 @@
             this.propertyRefreshButton = new System.Windows.Forms.Button();
             this.propertyDescriptionTextBox = new System.Windows.Forms.TextBox();
             this.propertyValueTextBox = new Nu.Gaia.Design.SymbolicTextBox();
-            this.groupScriptTabPage = new System.Windows.Forms.TabPage();
+            this.layerScriptTabPage = new System.Windows.Forms.TabPage();
             this.terminal = new System.Windows.Forms.SplitContainer();
             this.terminalInputTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.splitContainer10 = new System.Windows.Forms.SplitContainer();
@@ -129,7 +129,7 @@
             this.tickingButton = new System.Windows.Forms.ToolStripButton();
             this.resetTickTime = new System.Windows.Forms.ToolStripButton();
             this.editWhileInteractiveCheckBox = new System.Windows.Forms.ToolStripButton();
-            this.groupTabs = new System.Windows.Forms.TabControl();
+            this.layerTabs = new System.Windows.Forms.TabControl();
             this.tabPage = new System.Windows.Forms.TabPage();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.menuStrip.SuspendLayout();
@@ -152,7 +152,7 @@
             this.splitContainer5.Panel1.SuspendLayout();
             this.splitContainer5.Panel2.SuspendLayout();
             this.splitContainer5.SuspendLayout();
-            this.groupScriptTabPage.SuspendLayout();
+            this.layerScriptTabPage.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.terminal)).BeginInit();
             this.terminal.Panel1.SuspendLayout();
             this.terminal.Panel2.SuspendLayout();
@@ -181,7 +181,7 @@
             this.splitContainer3.Panel2.SuspendLayout();
             this.splitContainer3.SuspendLayout();
             this.toolStrip.SuspendLayout();
-            this.groupTabs.SuspendLayout();
+            this.layerTabs.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
             this.splitContainer2.Panel1.SuspendLayout();
             this.splitContainer2.Panel2.SuspendLayout();
@@ -208,7 +208,7 @@
             this.openToolStripMenuItem,
             this.saveToolStripMenuItem,
             this.toolStripSeparator10,
-            this.clearGroupToolStripMenuItem,
+            this.clearLayerToolStripMenuItem,
             this.closeToolStripMenuItem,
             this.toolStripMenuItem1,
             this.exitToolStripMenuItem});
@@ -221,39 +221,39 @@
             this.newToolStripMenuItem.Name = "newToolStripMenuItem";
             this.newToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
             this.newToolStripMenuItem.Size = new System.Drawing.Size(207, 24);
-            this.newToolStripMenuItem.Text = "&New Group";
+            this.newToolStripMenuItem.Text = "&New Layer";
             // 
             // openToolStripMenuItem
             // 
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
             this.openToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
             this.openToolStripMenuItem.Size = new System.Drawing.Size(207, 24);
-            this.openToolStripMenuItem.Text = "&Open Group";
+            this.openToolStripMenuItem.Text = "&Open Layer";
             // 
             // saveToolStripMenuItem
             // 
             this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
             this.saveToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
             this.saveToolStripMenuItem.Size = new System.Drawing.Size(207, 24);
-            this.saveToolStripMenuItem.Text = "&Save Group";
+            this.saveToolStripMenuItem.Text = "&Save Layer";
             // 
             // toolStripSeparator10
             // 
             this.toolStripSeparator10.Name = "toolStripSeparator10";
             this.toolStripSeparator10.Size = new System.Drawing.Size(204, 6);
             // 
-            // clearGroupToolStripMenuItem
+            // clearLayerToolStripMenuItem
             // 
-            this.clearGroupToolStripMenuItem.Enabled = false;
-            this.clearGroupToolStripMenuItem.Name = "clearGroupToolStripMenuItem";
-            this.clearGroupToolStripMenuItem.Size = new System.Drawing.Size(207, 24);
-            this.clearGroupToolStripMenuItem.Text = "C&lear Group";
+            this.clearLayerToolStripMenuItem.Enabled = false;
+            this.clearLayerToolStripMenuItem.Name = "clearLayerToolStripMenuItem";
+            this.clearLayerToolStripMenuItem.Size = new System.Drawing.Size(207, 24);
+            this.clearLayerToolStripMenuItem.Text = "C&lear Layer";
             // 
             // closeToolStripMenuItem
             // 
             this.closeToolStripMenuItem.Name = "closeToolStripMenuItem";
             this.closeToolStripMenuItem.Size = new System.Drawing.Size(207, 24);
-            this.closeToolStripMenuItem.Text = "&Close Group";
+            this.closeToolStripMenuItem.Text = "&Close Layer";
             // 
             // toolStripMenuItem1
             // 
@@ -279,7 +279,7 @@
             this.createToolStripMenuItem,
             this.deleteToolStripMenuItem,
             this.toolStripMenuItem5,
-            this.changeGroupNameToolStripMenuItem});
+            this.changeLayerNameToolStripMenuItem});
             this.editToolStripMenuItem.Name = "editToolStripMenuItem";
             this.editToolStripMenuItem.Size = new System.Drawing.Size(44, 23);
             this.editToolStripMenuItem.Text = "&Edit";
@@ -348,12 +348,12 @@
             this.toolStripMenuItem5.Name = "toolStripMenuItem5";
             this.toolStripMenuItem5.Size = new System.Drawing.Size(205, 6);
             // 
-            // changeGroupNameToolStripMenuItem
+            // changeLayerNameToolStripMenuItem
             // 
-            this.changeGroupNameToolStripMenuItem.Enabled = false;
-            this.changeGroupNameToolStripMenuItem.Name = "changeGroupNameToolStripMenuItem";
-            this.changeGroupNameToolStripMenuItem.Size = new System.Drawing.Size(208, 24);
-            this.changeGroupNameToolStripMenuItem.Text = "Change Group Name";
+            this.changeLayerNameToolStripMenuItem.Enabled = false;
+            this.changeLayerNameToolStripMenuItem.Name = "changeLayerNameToolStripMenuItem";
+            this.changeLayerNameToolStripMenuItem.Size = new System.Drawing.Size(208, 24);
+            this.changeLayerNameToolStripMenuItem.Text = "Change Layer Name";
             // 
             // contextMenuStrip
             // 
@@ -454,7 +454,7 @@
             // rolloutTabControl
             // 
             this.rolloutTabControl.Controls.Add(this.propertyTabPage);
-            this.rolloutTabControl.Controls.Add(this.groupScriptTabPage);
+            this.rolloutTabControl.Controls.Add(this.layerScriptTabPage);
             this.rolloutTabControl.Controls.Add(this.assetGraphTabPage);
             this.rolloutTabControl.Controls.Add(this.overlayerTabPage);
             this.rolloutTabControl.Controls.Add(this.eventTracingTabPage);
@@ -568,15 +568,15 @@
             this.propertyValueTextBox.TabIndex = 0;
             this.propertyValueTextBox.UseTabs = false;
             // 
-            // groupScriptTabPage
+            // layerScriptTabPage
             // 
-            this.groupScriptTabPage.Controls.Add(this.terminal);
-            this.groupScriptTabPage.Location = new System.Drawing.Point(4, 22);
-            this.groupScriptTabPage.Name = "groupScriptTabPage";
-            this.groupScriptTabPage.Size = new System.Drawing.Size(974, 226);
-            this.groupScriptTabPage.TabIndex = 4;
-            this.groupScriptTabPage.Text = "Group Script";
-            this.groupScriptTabPage.UseVisualStyleBackColor = true;
+            this.layerScriptTabPage.Controls.Add(this.terminal);
+            this.layerScriptTabPage.Location = new System.Drawing.Point(4, 22);
+            this.layerScriptTabPage.Name = "layerScriptTabPage";
+            this.layerScriptTabPage.Size = new System.Drawing.Size(974, 226);
+            this.layerScriptTabPage.TabIndex = 4;
+            this.layerScriptTabPage.Text = "Layer Script";
+            this.layerScriptTabPage.UseVisualStyleBackColor = true;
             // 
             // terminal
             // 
@@ -902,13 +902,13 @@
             // 
             // openFileDialog
             // 
-            this.openFileDialog.DefaultExt = "nugroup";
-            this.openFileDialog.Filter = "Nu Groups|*.nugroup|All files|*.*";
+            this.openFileDialog.DefaultExt = "nulyr";
+            this.openFileDialog.Filter = "Nu Layers|*.nulyr|All files|*.*";
             // 
             // saveFileDialog
             // 
-            this.saveFileDialog.DefaultExt = "nugroup";
-            this.saveFileDialog.Filter = "Nu Groups|*.nugroup|All files|*.*";
+            this.saveFileDialog.DefaultExt = "nulyr";
+            this.saveFileDialog.Filter = "Nu Layers|*.nulyr|All files|*.*";
             // 
             // toolStrip
             // 
@@ -1159,15 +1159,15 @@
             this.editWhileInteractiveCheckBox.Size = new System.Drawing.Size(72, 22);
             this.editWhileInteractiveCheckBox.Text = "(Edit While)";
             // 
-            // groupTabs
+            // layerTabs
             // 
-            this.groupTabs.Controls.Add(this.tabPage);
-            this.groupTabs.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.groupTabs.Location = new System.Drawing.Point(0, 0);
-            this.groupTabs.Name = "groupTabs";
-            this.groupTabs.SelectedIndex = 0;
-            this.groupTabs.Size = new System.Drawing.Size(1276, 25);
-            this.groupTabs.TabIndex = 4;
+            this.layerTabs.Controls.Add(this.tabPage);
+            this.layerTabs.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.layerTabs.Location = new System.Drawing.Point(0, 0);
+            this.layerTabs.Name = "layerTabs";
+            this.layerTabs.SelectedIndex = 0;
+            this.layerTabs.Size = new System.Drawing.Size(1276, 25);
+            this.layerTabs.TabIndex = 4;
             // 
             // tabPage
             // 
@@ -1187,7 +1187,7 @@
             // 
             // splitContainer2.Panel1
             // 
-            this.splitContainer2.Panel1.Controls.Add(this.groupTabs);
+            this.splitContainer2.Panel1.Controls.Add(this.layerTabs);
             // 
             // splitContainer2.Panel2
             // 
@@ -1231,7 +1231,7 @@
             this.splitContainer5.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer5)).EndInit();
             this.splitContainer5.ResumeLayout(false);
-            this.groupScriptTabPage.ResumeLayout(false);
+            this.layerScriptTabPage.ResumeLayout(false);
             this.terminal.Panel1.ResumeLayout(false);
             this.terminal.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.terminal)).EndInit();
@@ -1262,7 +1262,7 @@
             this.splitContainer3.ResumeLayout(false);
             this.toolStrip.ResumeLayout(false);
             this.toolStrip.PerformLayout();
-            this.groupTabs.ResumeLayout(false);
+            this.layerTabs.ResumeLayout(false);
             this.splitContainer2.Panel1.ResumeLayout(false);
             this.splitContainer2.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
@@ -1333,10 +1333,10 @@
         public System.Windows.Forms.ToolStripButton createDepthPlusButton;
         public System.Windows.Forms.ToolStripButton createDepthMinusButton;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem5;
-        private System.Windows.Forms.ToolStripMenuItem changeGroupNameToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem changeLayerNameToolStripMenuItem;
         private System.Windows.Forms.TabPage tabPage;
         private System.Windows.Forms.SplitContainer splitContainer2;
-        public System.Windows.Forms.TabControl groupTabs;
+        public System.Windows.Forms.TabControl layerTabs;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator10;
         public System.Windows.Forms.ToolStripMenuItem closeToolStripMenuItem;
         private System.Windows.Forms.SplitContainer splitContainer4;
@@ -1363,8 +1363,8 @@
         public System.Windows.Forms.Button saveOverlayerButton;
         public SymbolicTextBox overlayerTextBox;
         public System.Windows.Forms.TabPage assetGraphTabPage;
-        private System.Windows.Forms.ToolStripMenuItem clearGroupToolStripMenuItem;
-        private System.Windows.Forms.TabPage groupScriptTabPage;
+        private System.Windows.Forms.ToolStripMenuItem clearLayerToolStripMenuItem;
+        private System.Windows.Forms.TabPage layerScriptTabPage;
         public SymbolicTextBox terminalInputTextBox;
         public SymbolicTextBox terminalOutputTextBox1;
         private System.Windows.Forms.SplitContainer splitContainer10;

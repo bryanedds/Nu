@@ -12,7 +12,7 @@ module Assets =
     let FieldTileSheetImage = { PackageName = GameplayPackageName; AssetName = "FieldTileSheet" }
     let HerosVengeanceSong = { PackageName = GameplayPackageName; AssetName = "Hero'sVengeance" }
     let ButterflyGirlSong = { PackageName = GuiPackageName; AssetName = "ButterflyGirl" }
-    let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
-    let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
-    let HudGroupFilePath = "Assets/Gui/Hud.nugroup"
+    let TitleLayerFilePath = "Assets/Gui/Title.nulyr"
+    let CreditsLayerFilePath = "Assets/Gui/Credits.nulyr"
+    let HudLayerFilePath = "Assets/Gui/Hud.nulyr"
     let SaveFilePath = "InfinityRpg.sav"

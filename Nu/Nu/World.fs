@@ -31,8 +31,8 @@ module WorldModule2 =
         static member private makeDefaultScreenDispatchers () =
             Map.ofList [World.pairWithName ^ ScreenDispatcher ()]
 
-        static member private makeDefaultGroupDispatchers () =
-            Map.ofList [World.pairWithName ^ GroupDispatcher ()]
+        static member private makeDefaultLayerDispatchers () =
+            Map.ofList [World.pairWithName ^ LayerDispatcher ()]
 
         static member private makeDefaultEntityDispatchers () =
             // TODO: see if we can reflectively generate these
@@ -62,7 +62,7 @@ module WorldModule2 =
 
         static member internal rebuildEntityTreeImpl screen world =
             let tree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
-            let entities = screen |> flip World.getGroups world |> Seq.map (flip World.getEntities world) |> Seq.concat
+            let entities = screen |> flip World.getLayers world |> Seq.map (flip World.getEntities world) |> Seq.concat
             for entity in entities do
                 let entityMaxBounds = World.getEntityBoundsMax entity world
                 QuadTree.addElement (entity.GetOmnipresent world || entity.GetViewType world = Absolute) entityMaxBounds entity tree
@@ -261,18 +261,18 @@ module WorldModule2 =
             let world = World.subscribe5 SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update ->- splashScreen) evt.Subscriber world
             (Resolve, world)
 
-        /// Create a dissolve screen whose contents is loaded from the given group file.
-        static member createDissolveScreenFromGroupFile<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt dissolveData groupFilePath world =
+        /// Create a dissolve screen whose contents is loaded from the given layer file.
+        static member createDissolveScreenFromLayerFile<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt dissolveData layerFilePath world =
             let (dissolveScreen, world) = World.createDissolveScreen<'d> dissolveData specializationOpt nameOpt world
-            let world = World.readGroupFromFile groupFilePath None dissolveScreen world |> snd
+            let world = World.readLayerFromFile layerFilePath None dissolveScreen world |> snd
             (dissolveScreen, world)
 
         /// Create a splash screen that transitions to the given destination upon completion.
         static member createSplashScreen<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt splashData destination world =
             let cameraEyeSize = World.getEyeSize world
             let (splashScreen, world) = World.createDissolveScreen<'d> splashData.DissolveData specializationOpt nameOpt world
-            let (splashGroup, world) = World.createGroup<GroupDispatcher> None (Some !!"SplashGroup") splashScreen world
-            let (splashLabel, world) = World.createEntity<LabelDispatcher> None (Some !!"SplashLabel") splashGroup world
+            let (splashLayer, world) = World.createLayer<LayerDispatcher> None (Some !!"SplashLayer") splashScreen world
+            let (splashLabel, world) = World.createEntity<LabelDispatcher> None (Some !!"SplashLabel") splashLayer world
             let world =
                 world |>
                 splashLabel.SetSize cameraEyeSize |>
@@ -372,14 +372,14 @@ module WorldModule2 =
 
         /// A hack for the physics subsystem that allows an old world value to displace the current
         /// one and have its physics values propagated to the imperative physics subsystem.
-        static member continueHack group world =
+        static member continueHack layer world =
             // NOTE: since messages may be invalid upon continuing a world (especially physics
             // messages), all messages are eliminated. If this poses an issue, the editor will have
             // to instead store past / future worlds only once their current frame has been
             // processed.
             let world = World.clearSubsystemsMessages world
             let world = World.addPhysicsMessage RebuildPhysicsHackMessage world
-            let entities = World.getEntities group world
+            let entities = World.getEntities layer world
             Seq.fold (flip World.propagateEntityPhysics) world entities
 
         static member private processSubsystems subsystemType world =
@@ -487,20 +487,20 @@ module WorldModule2 =
             
                 // gather simulants. Note that we do not re-discover simulants during the update process because the
                 // engine is defined to discourage the removal of simulants in the middle of a frame.
-                let groups = World.getGroups selectedScreen world
+                let layers = World.getLayers selectedScreen world
                 let (entities, world) = World.getEntitiesNearView selectedScreen world
 
                 // update simulants
                 let world = World.updateGame world
                 let world = World.updateScreen selectedScreen world
                 let world = World.updateScreenTransition selectedScreen world
-                let world = Seq.fold (fun world group -> World.updateGroup group world) world groups
+                let world = Seq.fold (fun world layer -> World.updateLayer layer world) world layers
                 let world = List.fold (fun world entity -> World.updateEntity entity world) world entities
 
                 // post-update simulants
                 let world = World.postUpdateGame world
                 let world = World.postUpdateScreen selectedScreen world
-                let world = Seq.fold (fun world group -> World.postUpdateGroup group world) world groups
+                let world = Seq.fold (fun world layer -> World.postUpdateLayer layer world) world layers
                 let world = List.fold (fun world entity -> World.postUpdateEntity entity world) world entities
                 world
             
@@ -546,8 +546,8 @@ module WorldModule2 =
                     | IncomingState -> World.actualizeScreenTransition (World.getEyeCenter world) (World.getEyeSize world) selectedScreen (selectedScreen.GetIncoming world) world
                     | OutgoingState -> World.actualizeScreenTransition (World.getEyeCenter world) (World.getEyeSize world) selectedScreen (selectedScreen.GetOutgoing world) world
                     | IdlingState -> world
-                let groups = World.getGroups selectedScreen world
-                let world = Seq.fold (fun world group -> World.actualizeGroup group world) world groups
+                let layers = World.getLayers selectedScreen world
+                let world = Seq.fold (fun world layer -> World.actualizeLayer layer world) world layers
                 let (entities, world) = World.getEntitiesNearView selectedScreen world
                 List.fold (fun world entity -> World.actualizeEntity entity world) world entities
             | None -> world
@@ -644,7 +644,7 @@ module WorldModule2 =
             let dispatchers =
                 { GameDispatchers = World.makeDefaultGameDispatchers ()
                   ScreenDispatchers = World.makeDefaultScreenDispatchers ()
-                  GroupDispatchers = World.makeDefaultGroupDispatchers ()
+                  LayerDispatchers = World.makeDefaultLayerDispatchers ()
                   EntityDispatchers = World.makeDefaultEntityDispatchers ()
                   Facets = World.makeDefaultFacets ()
                   UpdateEntityInEntityTree = World.updateEntityInEntityTreeImpl
@@ -681,12 +681,12 @@ module WorldModule2 =
             // finally, register the game
             World.registerGame world
 
-        /// Make a default world with a default screen, group, and entity, such as for testing.
+        /// Make a default world with a default screen, layer, and entity, such as for testing.
         static member makeDefault () =
             let world = World.makeEmpty ()
             let world = World.createScreen None (Some Simulants.DefaultScreen.ScreenName) world |> snd
-            let world = World.createGroup None (Some Simulants.DefaultGroup.GroupName) Simulants.DefaultScreen world |> snd
-            let world = World.createEntity None (Some Simulants.DefaultEntity.EntityName) Simulants.DefaultGroup world |> snd
+            let world = World.createLayer None (Some Simulants.DefaultLayer.LayerName) Simulants.DefaultScreen world |> snd
+            let world = World.createEntity None (Some Simulants.DefaultEntity.EntityName) Simulants.DefaultLayer world |> snd
             world
 
         /// Try to make the world, returning either a Right World on success, or a Left string
@@ -711,7 +711,7 @@ module WorldModule2 =
                 // make plug-in dispatchers
                 let pluginFacets = plugin.MakeFacets () |> List.map World.pairWithName
                 let pluginEntityDispatchers = plugin.MakeEntityDispatchers () |> List.map World.pairWithName
-                let pluginGroupDispatchers = plugin.MakeGroupDispatchers () |> List.map World.pairWithName
+                let pluginLayerDispatchers = plugin.MakeLayerDispatchers () |> List.map World.pairWithName
                 let pluginScreenDispatchers = plugin.MakeScreenDispatchers () |> List.map World.pairWithName
                 let pluginGameDispatcherOpt = plugin.MakeGameDispatcherOpt ()
 
@@ -728,7 +728,7 @@ module WorldModule2 =
                 let dispatchers =
                     { GameDispatchers = Map.addMany [World.pairWithName activeGameDispatcher] ^ World.makeDefaultGameDispatchers ()
                       ScreenDispatchers = Map.addMany pluginScreenDispatchers ^ World.makeDefaultScreenDispatchers ()
-                      GroupDispatchers = Map.addMany pluginGroupDispatchers ^ World.makeDefaultGroupDispatchers ()
+                      LayerDispatchers = Map.addMany pluginLayerDispatchers ^ World.makeDefaultLayerDispatchers ()
                       EntityDispatchers = Map.addMany pluginEntityDispatchers ^ World.makeDefaultEntityDispatchers ()
                       Facets = Map.addMany pluginFacets ^ World.makeDefaultFacets ()
                       UpdateEntityInEntityTree = World.updateEntityInEntityTreeImpl

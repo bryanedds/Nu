@@ -203,9 +203,9 @@ module WorldModule =
         static member getScreenDispatchers world =
             world.Dispatchers.ScreenDispatchers
 
-        /// Get the group dispatchers of the world.
-        static member getGroupDispatchers world =
-            world.Dispatchers.GroupDispatchers
+        /// Get the layer dispatchers of the world.
+        static member getLayerDispatchers world =
+            world.Dispatchers.LayerDispatchers
 
         /// Get the entity dispatchers of the world.
         static member getEntityDispatchers world =
@@ -475,7 +475,7 @@ module WorldModule =
 
         /// Set the current eye center.
         static member setEyeCenter value world =
-            World.updateGameState (fun groupState -> { groupState with EyeCenter = value }) Property? EyeCenter world
+            World.updateGameState (fun layerState -> { layerState with EyeCenter = value }) Property? EyeCenter world
 
         /// Get the current eye size.
         static member getEyeSize world =
@@ -483,7 +483,7 @@ module WorldModule =
 
         /// Set the current eye size.
         static member setEyeSize value world =
-            World.updateGameState (fun groupState -> { groupState with EyeSize = value }) Property? EyeSize world
+            World.updateGameState (fun layerState -> { layerState with EyeSize = value }) Property? EyeSize world
 
         /// Get the currently selected screen, if any.
         static member getSelectedScreenOpt world =
@@ -492,7 +492,7 @@ module WorldModule =
         /// Set the currently selected screen or None. Be careful using this function directly as
         /// you may be wanting to use the higher-level World.transitionScreen function instead.
         static member setSelectedScreenOpt value world =
-            World.updateGameState (fun groupState -> { groupState with SelectedScreenOpt = value }) Property? SelectedScreenOpt world
+            World.updateGameState (fun layerState -> { layerState with SelectedScreenOpt = value }) Property? SelectedScreenOpt world
 
         /// Get the currently selected screen (failing with an exception if there isn't one).
         static member getSelectedScreen world =
@@ -600,11 +600,11 @@ module WorldModule =
 
         static member internal setGameProperty propertyName (property : obj * Type) world =
             match propertyName with // NOTE: string match for speed
-            | "Id" -> failwith "Cannot change group id."
-            | "Xtension" -> failwith "Cannot change group xtension."
-            | "DispatcherNp" -> failwith "Cannot change group dispatcher."
-            | "Specialization" -> failwith "Cannot change group specialization."
-            | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
+            | "Id" -> failwith "Cannot change layer id."
+            | "Xtension" -> failwith "Cannot change layer xtension."
+            | "DispatcherNp" -> failwith "Cannot change layer dispatcher."
+            | "Specialization" -> failwith "Cannot change layer specialization."
+            | "CreationTimeStampNp" -> failwith "Cannot change layer creation time stamp."
             | "SelectedScreenOpt" -> World.setSelectedScreenOpt (property |> fst :?> Screen option) world
             | "ScreenTransitionDestinationOpt" -> World.setScreenTransitionDestinationOpt (property |> fst :?> Screen option) world
             | "EyeCenter" -> World.setEyeCenter (property |> fst :?> Vector2) world
@@ -664,12 +664,12 @@ module WorldModule =
                 match Address.getNames screen.ScreenAddress with
                 | [screenName] ->
                     match Umap.tryFind screenName world.ScreenDirectory with
-                    | Some (_, groupDirectory) ->
+                    | Some (_, layerDirectory) ->
                         // NOTE: this is logically a redundant operation...
-                        Umap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
+                        Umap.add screenName (screen.ScreenAddress, layerDirectory) world.ScreenDirectory
                     | None ->
-                        let groupDirectory = Umap.makeEmpty None
-                        Umap.add screenName (screen.ScreenAddress, groupDirectory) world.ScreenDirectory
+                        let layerDirectory = Umap.makeEmpty None
+                        Umap.add screenName (screen.ScreenAddress, layerDirectory) world.ScreenDirectory
                 | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
             let screenStates = Umap.add screen.ScreenAddress screenState world.ScreenStates
             World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
@@ -772,7 +772,7 @@ module WorldModule =
             match propertyName with // NOTE: string match for speed
             | "Id" -> failwith "Cannot change screen id."
             | "Name" -> failwith "Cannot change screen name."
-            | "Xtension" -> failwith "Cannot change group xtension."
+            | "Xtension" -> failwith "Cannot change layer xtension."
             | "DispatcherNp" -> failwith "Cannot change screen dispatcher."
             | "Specialization" -> failwith "Cannot change screen specialization."
             | "Persistent" -> World.setScreenPersistent (property |> fst :?> bool) screen world
@@ -799,25 +799,25 @@ module WorldModule =
                 World.publishScreenChanges screen oldWorld world
             else failwith ^ "Adding a screen that the world already contains at address '" + scstring screen.ScreenAddress + "'."
 
-        static member internal removeScreen3 removeGroups screen world =
+        static member internal removeScreen3 removeLayers screen world =
             let eventTrace = EventTrace.record "World" "removeScreen" EventTrace.empty
             let world = World.publish () (ltoa<unit> [!!"Screen"; !!"Removing"; !!"Event"] ->- screen) eventTrace screen world
             if World.containsScreen screen world then
                 let dispatcher = World.getScreenDispatcherNp screen world
                 let world = World.withEventContext (fun world -> dispatcher.Unregister (screen, world)) (atooa screen.ScreenAddress) world
-                let world = removeGroups screen world
+                let world = removeLayers screen world
                 World.removeScreenState screen world
             else world
 
-        static member internal writeScreen4 writeGroups screen screenDescriptor world =
+        static member internal writeScreen4 writeLayers screen screenDescriptor world =
             let screenState = World.getScreenState screen world
             let screenDispatcherName = getTypeName screenState.DispatcherNp
             let screenDescriptor = { screenDescriptor with ScreenDispatcher = screenDispatcherName }
             let getScreenProperties = Reflection.writePropertiesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
             let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
-            writeGroups screen screenDescriptor world
+            writeLayers screen screenDescriptor world
 
-        static member internal readScreen4 readGroups screenDescriptor nameOpt world =
+        static member internal readScreen4 readLayers screenDescriptor nameOpt world =
             
             // create the dispatcher
             let dispatcherName = screenDescriptor.ScreenDispatcher
@@ -853,8 +853,8 @@ module WorldModule =
                 else screenState
             let world = World.addScreen true screenState screen world
             
-            // read the screen's groups
-            let world = readGroups screenDescriptor screen world |> snd
+            // read the screen's layers
+            let world = readLayers screenDescriptor screen world |> snd
             (screen, world)
 
         /// View all of the properties of a screen.
@@ -865,209 +865,209 @@ module WorldModule =
 
     type World with
 
-        static member private groupStateAdder groupState group world =
+        static member private layerStateAdder layerState layer world =
             let screenDirectory =
-                match Address.getNames group.GroupAddress with
-                | [screenName; groupName] ->
+                match Address.getNames layer.LayerAddress with
+                | [screenName; layerName] ->
                     match Umap.tryFind screenName world.ScreenDirectory with
-                    | Some (screenAddress, groupDirectory) ->
-                        match Umap.tryFind groupName groupDirectory with
-                        | Some (groupAddress, entityDirectory) ->
-                            let groupDirectory = Umap.add groupName (groupAddress, entityDirectory) groupDirectory
-                            Umap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
+                    | Some (screenAddress, layerDirectory) ->
+                        match Umap.tryFind layerName layerDirectory with
+                        | Some (layerAddress, entityDirectory) ->
+                            let layerDirectory = Umap.add layerName (layerAddress, entityDirectory) layerDirectory
+                            Umap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
                         | None ->
                             let entityDirectory = Umap.makeEmpty None
-                            let groupDirectory = Umap.add groupName (group.GroupAddress, entityDirectory) groupDirectory
-                            Umap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
-                    | None -> failwith ^ "Cannot add group '" + scstring group.GroupAddress + "' to non-existent screen."
-                | _ -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
-            let groupStates = Umap.add group.GroupAddress groupState world.GroupStates
-            World.choose { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
+                            let layerDirectory = Umap.add layerName (layer.LayerAddress, entityDirectory) layerDirectory
+                            Umap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
+                    | None -> failwith ^ "Cannot add layer '" + scstring layer.LayerAddress + "' to non-existent screen."
+                | _ -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
+            let layerStates = Umap.add layer.LayerAddress layerState world.LayerStates
+            World.choose { world with ScreenDirectory = screenDirectory; LayerStates = layerStates }
 
-        static member private groupStateRemover group world =
+        static member private layerStateRemover layer world =
             let screenDirectory =
-                match Address.getNames group.GroupAddress with
-                | [screenName; groupName] ->
+                match Address.getNames layer.LayerAddress with
+                | [screenName; layerName] ->
                     match Umap.tryFind screenName world.ScreenDirectory with
-                    | Some (screenAddress, groupDirectory) ->
-                        let groupDirectory = Umap.remove groupName groupDirectory
-                        Umap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
-                    | None -> failwith ^ "Cannot remove group '" + scstring group.GroupAddress + "' from non-existent screen."
-                | _ -> failwith ^ "Invalid group address '" + scstring group.GroupAddress + "'."
-            let groupStates = Umap.remove group.GroupAddress world.GroupStates
-            World.choose { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
+                    | Some (screenAddress, layerDirectory) ->
+                        let layerDirectory = Umap.remove layerName layerDirectory
+                        Umap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
+                    | None -> failwith ^ "Cannot remove layer '" + scstring layer.LayerAddress + "' from non-existent screen."
+                | _ -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
+            let layerStates = Umap.remove layer.LayerAddress world.LayerStates
+            World.choose { world with ScreenDirectory = screenDirectory; LayerStates = layerStates }
 
-        static member private groupStateSetter groupState group world =
+        static member private layerStateSetter layerState layer world =
 #if DEBUG
-            if not ^ Umap.containsKey group.GroupAddress world.GroupStates then
-                failwith ^ "Cannot set the state of a non-existent group '" + scstring group.GroupAddress + "'"
-            if not ^ World.qualifyEventContext (atooa group.GroupAddress) world then
-                failwith ^ "Cannot set the state of a group in an unqualifed event context."
+            if not ^ Umap.containsKey layer.LayerAddress world.LayerStates then
+                failwith ^ "Cannot set the state of a non-existent layer '" + scstring layer.LayerAddress + "'"
+            if not ^ World.qualifyEventContext (atooa layer.LayerAddress) world then
+                failwith ^ "Cannot set the state of a layer in an unqualifed event context."
 #endif
-            let groupStates = Umap.add group.GroupAddress groupState world.GroupStates
-            World.choose { world with GroupStates = groupStates }
+            let layerStates = Umap.add layer.LayerAddress layerState world.LayerStates
+            World.choose { world with LayerStates = layerStates }
 
-        static member private addGroupState groupState group world =
-            World.groupStateAdder groupState group world
+        static member private addLayerState layerState layer world =
+            World.layerStateAdder layerState layer world
 
-        static member private removeGroupState group world =
-            World.groupStateRemover group world
+        static member private removeLayerState layer world =
+            World.layerStateRemover layer world
 
-        static member private publishGroupChange (propertyName : string) (group : Group) oldWorld world =
-            let changeEventAddress = ltoa [!!"Group"; !!"Change"; !!propertyName; !!"Event"] ->>- group.GroupAddress
-            let eventTrace = EventTrace.record "World" "publishGroupChange" EventTrace.empty
-            World.publish { Participant = group; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace group world
+        static member private publishLayerChange (propertyName : string) (layer : Layer) oldWorld world =
+            let changeEventAddress = ltoa [!!"Layer"; !!"Change"; !!propertyName; !!"Event"] ->>- layer.LayerAddress
+            let eventTrace = EventTrace.record "World" "publishLayerChange" EventTrace.empty
+            World.publish { Participant = layer; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace layer world
 
-        static member private getGroupStateOpt group world =
-            Umap.tryFind group.GroupAddress world.GroupStates
+        static member private getLayerStateOpt layer world =
+            Umap.tryFind layer.LayerAddress world.LayerStates
 
-        static member private getGroupState group world =
-            match World.getGroupStateOpt group world with
-            | Some groupState -> groupState
-            | None -> failwith ^ "Could not find group with address '" + scstring group.GroupAddress + "'."
+        static member private getLayerState layer world =
+            match World.getLayerStateOpt layer world with
+            | Some layerState -> layerState
+            | None -> failwith ^ "Could not find layer with address '" + scstring layer.LayerAddress + "'."
 
-        static member private setGroupState groupState group world =
-            World.groupStateSetter groupState group world
+        static member private setLayerState layerState layer world =
+            World.layerStateSetter layerState layer world
 
-        static member private updateGroupStateWithoutEvent updater group world =
-            let groupState = World.getGroupState group world
-            let groupState = updater groupState
-            World.setGroupState groupState group world
+        static member private updateLayerStateWithoutEvent updater layer world =
+            let layerState = World.getLayerState layer world
+            let layerState = updater layerState
+            World.setLayerState layerState layer world
 
-        static member private updateGroupState updater propertyName group world =
+        static member private updateLayerState updater propertyName layer world =
             let oldWorld = world
-            let world = World.updateGroupStateWithoutEvent updater group world
-            World.publishGroupChange propertyName group oldWorld world
+            let world = World.updateLayerStateWithoutEvent updater layer world
+            World.publishLayerChange propertyName layer oldWorld world
 
-        static member private publishGroupChanges group oldWorld world =
-            let groupState = World.getGroupState group world
-            let properties = World.getProperties groupState
-            List.fold (fun world (propertyName, _) -> World.publishGroupChange propertyName group oldWorld world) world properties
+        static member private publishLayerChanges layer oldWorld world =
+            let layerState = World.getLayerState layer world
+            let properties = World.getProperties layerState
+            List.fold (fun world (propertyName, _) -> World.publishLayerChange propertyName layer oldWorld world) world properties
 
-        /// Check that the world contains a group.
-        static member containsGroup group world =
-            Option.isSome ^ World.getGroupStateOpt group world
+        /// Check that the world contains a layer.
+        static member containsLayer layer world =
+            Option.isSome ^ World.getLayerStateOpt layer world
 
-        static member internal getGroupId group world = (World.getGroupState group world).Id
-        static member internal getGroupName group world = (World.getGroupState group world).Name
-        static member internal getGroupXtension group world = (World.getGroupState group world).Xtension // TODO: try to get rid of this
-        static member internal getGroupDispatcherNp group world = (World.getGroupState group world).DispatcherNp
-        static member internal getGroupSpecialization group world = (World.getGroupState group world).Specialization
-        static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
-        static member internal setGroupPersistent value group world = World.updateGroupState (fun groupState -> { groupState with Persistent = value }) Property? Persistent group world
-        static member internal getGroupCreationTimeStampNp group world = (World.getGroupState group world).CreationTimeStampNp
+        static member internal getLayerId layer world = (World.getLayerState layer world).Id
+        static member internal getLayerName layer world = (World.getLayerState layer world).Name
+        static member internal getLayerXtension layer world = (World.getLayerState layer world).Xtension // TODO: try to get rid of this
+        static member internal getLayerDispatcherNp layer world = (World.getLayerState layer world).DispatcherNp
+        static member internal getLayerSpecialization layer world = (World.getLayerState layer world).Specialization
+        static member internal getLayerPersistent layer world = (World.getLayerState layer world).Persistent
+        static member internal setLayerPersistent value layer world = World.updateLayerState (fun layerState -> { layerState with Persistent = value }) Property? Persistent layer world
+        static member internal getLayerCreationTimeStampNp layer world = (World.getLayerState layer world).CreationTimeStampNp
 
-        static member internal getGroupProperty propertyName group world =
+        static member internal getLayerProperty propertyName layer world =
             match propertyName with // NOTE: string match for speed
-            | "Id" -> (World.getGroupId group world :> obj, typeof<Guid>)
-            | "Name" -> (World.getGroupName group world :> obj, typeof<Name>)
-            | "Xtension" -> (World.getGroupXtension group world :> obj, typeof<Xtension>)
-            | "DispatcherNp" -> (World.getGroupDispatcherNp group world :> obj, typeof<GroupDispatcher>)
-            | "Specialization" -> (World.getGroupSpecialization group world :> obj, typeof<string>)
-            | "Persistent" -> (World.getGroupPersistent group world :> obj, typeof<bool>)
-            | "CreationTimeStampNp" -> (World.getGroupCreationTimeStampNp group world :> obj, typeof<int64>)
-            | _ -> GroupState.getProperty propertyName (World.getGroupState group world)
+            | "Id" -> (World.getLayerId layer world :> obj, typeof<Guid>)
+            | "Name" -> (World.getLayerName layer world :> obj, typeof<Name>)
+            | "Xtension" -> (World.getLayerXtension layer world :> obj, typeof<Xtension>)
+            | "DispatcherNp" -> (World.getLayerDispatcherNp layer world :> obj, typeof<LayerDispatcher>)
+            | "Specialization" -> (World.getLayerSpecialization layer world :> obj, typeof<string>)
+            | "Persistent" -> (World.getLayerPersistent layer world :> obj, typeof<bool>)
+            | "CreationTimeStampNp" -> (World.getLayerCreationTimeStampNp layer world :> obj, typeof<int64>)
+            | _ -> LayerState.getProperty propertyName (World.getLayerState layer world)
 
-        static member internal setGroupProperty propertyName (property : obj * Type) group world =
+        static member internal setLayerProperty propertyName (property : obj * Type) layer world =
             match propertyName with // NOTE: string match for speed
-            | "Id" -> failwith "Cannot change group id."
-            | "Name" -> failwith "Cannot change group name."
-            | "Xtension" -> failwith "Cannot change group xtension."
-            | "DispatcherNp" -> failwith "Cannot change group dispatcher."
-            | "Specialization" -> failwith "Cannot change group specialization."
-            | "Persistent" -> World.setGroupPersistent (property |> fst :?> bool) group world
-            | "CreationTimeStampNp" -> failwith "Cannot change group creation time stamp."
-            | _ -> World.updateGroupState (GroupState.setProperty propertyName property) propertyName group world
+            | "Id" -> failwith "Cannot change layer id."
+            | "Name" -> failwith "Cannot change layer name."
+            | "Xtension" -> failwith "Cannot change layer xtension."
+            | "DispatcherNp" -> failwith "Cannot change layer dispatcher."
+            | "Specialization" -> failwith "Cannot change layer specialization."
+            | "Persistent" -> World.setLayerPersistent (property |> fst :?> bool) layer world
+            | "CreationTimeStampNp" -> failwith "Cannot change layer creation time stamp."
+            | _ -> World.updateLayerState (LayerState.setProperty propertyName property) propertyName layer world
 
-        static member private addGroup mayReplace groupState group world =
-            let isNew = not ^ World.containsGroup group world
+        static member private addLayer mayReplace layerState layer world =
+            let isNew = not ^ World.containsLayer layer world
             if isNew || mayReplace then
                 let oldWorld = world
-                let world = World.addGroupState groupState group world
+                let world = World.addLayerState layerState layer world
                 let world =
                     if isNew then
-                        let dispatcher = World.getGroupDispatcherNp group world
-                        let world = World.withEventContext (fun world -> dispatcher.Register (group, world)) (atooa group.GroupAddress) world
-                        let eventTrace = EventTrace.record "World" "addGroup" EventTrace.empty
-                        World.publish () (ltoa<unit> [!!"Group"; !!"Add"; !!"Event"] ->- group) eventTrace group world
+                        let dispatcher = World.getLayerDispatcherNp layer world
+                        let world = World.withEventContext (fun world -> dispatcher.Register (layer, world)) (atooa layer.LayerAddress) world
+                        let eventTrace = EventTrace.record "World" "addLayer" EventTrace.empty
+                        World.publish () (ltoa<unit> [!!"Layer"; !!"Add"; !!"Event"] ->- layer) eventTrace layer world
                     else world
-                World.publishGroupChanges group oldWorld world
-            else failwith ^ "Adding a group that the world already contains at address '" + scstring group.GroupAddress + "'."
+                World.publishLayerChanges layer oldWorld world
+            else failwith ^ "Adding a layer that the world already contains at address '" + scstring layer.LayerAddress + "'."
 
-        static member internal removeGroup3 removeEntities group world =
-            let eventTrace = EventTrace.record "World" "removeGroup" EventTrace.empty
-            let world = World.publish () (ltoa<unit> [!!"Group"; !!"Removing"; !!"Event"] ->- group) eventTrace group world
-            if World.containsGroup group world then
-                let dispatcher = World.getGroupDispatcherNp group world
-                let world = World.withEventContext (fun world -> dispatcher.Unregister (group, world)) (atooa group.GroupAddress) world
-                let world = removeEntities group world
-                World.removeGroupState group world
+        static member internal removeLayer3 removeEntities layer world =
+            let eventTrace = EventTrace.record "World" "removeLayer" EventTrace.empty
+            let world = World.publish () (ltoa<unit> [!!"Layer"; !!"Removing"; !!"Event"] ->- layer) eventTrace layer world
+            if World.containsLayer layer world then
+                let dispatcher = World.getLayerDispatcherNp layer world
+                let world = World.withEventContext (fun world -> dispatcher.Unregister (layer, world)) (atooa layer.LayerAddress) world
+                let world = removeEntities layer world
+                World.removeLayerState layer world
             else world
 
-        /// Create a group and add it to the world.
-        static member createGroup5 dispatcherName specializationOpt nameOpt screen world =
-            let dispatchers = World.getGroupDispatchers world
+        /// Create a layer and add it to the world.
+        static member createLayer5 dispatcherName specializationOpt nameOpt screen world =
+            let dispatchers = World.getLayerDispatchers world
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
-                | None -> failwith ^ "Could not find a GroupDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
-            let groupState = GroupState.make specializationOpt nameOpt dispatcher
-            let groupState = Reflection.attachProperties GroupState.copy dispatcher groupState
-            let group = screen.ScreenAddress -<<- ntoa<Group> groupState.Name |> Group.proxy
-            let world = World.addGroup false groupState group world
-            (group, world)
+                | None -> failwith ^ "Could not find a LayerDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
+            let layerState = LayerState.make specializationOpt nameOpt dispatcher
+            let layerState = Reflection.attachProperties LayerState.copy dispatcher layerState
+            let layer = screen.ScreenAddress -<<- ntoa<Layer> layerState.Name |> Layer.proxy
+            let world = World.addLayer false layerState layer world
+            (layer, world)
 
-        /// Create a group and add it to the world.
-        static member createGroup<'d when 'd :> GroupDispatcher> specializationOpt nameOpt screen world =
-            World.createGroup5 typeof<'d>.Name specializationOpt nameOpt screen world
+        /// Create a layer and add it to the world.
+        static member createLayer<'d when 'd :> LayerDispatcher> specializationOpt nameOpt screen world =
+            World.createLayer5 typeof<'d>.Name specializationOpt nameOpt screen world
 
-        static member internal writeGroup4 writeEntities group groupDescriptor world =
-            let groupState = World.getGroupState group world
-            let groupDispatcherName = getTypeName groupState.DispatcherNp
-            let groupDescriptor = { groupDescriptor with GroupDispatcher = groupDispatcherName }
-            let getGroupProperties = Reflection.writePropertiesFromTarget tautology3 groupDescriptor.GroupProperties groupState
-            let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
-            writeEntities group groupDescriptor world
+        static member internal writeLayer4 writeEntities layer layerDescriptor world =
+            let layerState = World.getLayerState layer world
+            let layerDispatcherName = getTypeName layerState.DispatcherNp
+            let layerDescriptor = { layerDescriptor with LayerDispatcher = layerDispatcherName }
+            let getLayerProperties = Reflection.writePropertiesFromTarget tautology3 layerDescriptor.LayerProperties layerState
+            let layerDescriptor = { layerDescriptor with LayerProperties = getLayerProperties }
+            writeEntities layer layerDescriptor world
 
-        static member internal readGroup5 readEntities groupDescriptor nameOpt screen world =
+        static member internal readLayer5 readEntities layerDescriptor nameOpt screen world =
 
             // create the dispatcher
-            let dispatcherName = groupDescriptor.GroupDispatcher
-            let dispatchers = World.getGroupDispatchers world
+            let dispatcherName = layerDescriptor.LayerDispatcher
+            let dispatchers = World.getLayerDispatchers world
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.info ^ "Could not find GroupDispatcher '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
-                    let dispatcherName = typeof<GroupDispatcher>.Name
+                    Log.info ^ "Could not find LayerDispatcher '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
+                    let dispatcherName = typeof<LayerDispatcher>.Name
                     Map.find dispatcherName dispatchers
 
-            // make the bare group state with name as id
-            let groupState = GroupState.make None None dispatcher
+            // make the bare layer state with name as id
+            let layerState = LayerState.make None None dispatcher
 
-            // attach the group state's instrinsic properties from its dispatcher if any
-            let groupState = Reflection.attachProperties GroupState.copy groupState.DispatcherNp groupState
+            // attach the layer state's instrinsic properties from its dispatcher if any
+            let layerState = Reflection.attachProperties LayerState.copy layerState.DispatcherNp layerState
 
-            // read the group state's value
-            let groupState = Reflection.readPropertiesToTarget GroupState.copy groupDescriptor.GroupProperties groupState
+            // read the layer state's value
+            let layerState = Reflection.readPropertiesToTarget LayerState.copy layerDescriptor.LayerProperties layerState
 
             // apply the name if one is provided
-            let groupState =
+            let layerState =
                 match nameOpt with
-                | Some name -> { groupState with Name = name }
-                | None -> groupState
+                | Some name -> { layerState with Name = name }
+                | None -> layerState
 
-            // add the group's state to the world
-            let group = screen.ScreenAddress -<<- ntoa<Group> groupState.Name |> Group.proxy
-            let world = World.addGroup true groupState group world
+            // add the layer's state to the world
+            let layer = screen.ScreenAddress -<<- ntoa<Layer> layerState.Name |> Layer.proxy
+            let world = World.addLayer true layerState layer world
 
-            // read the group's entities
-            let world = readEntities groupDescriptor group world |> snd
-            (group, world)
+            // read the layer's entities
+            let world = readEntities layerDescriptor layer world |> snd
+            (layer, world)
 
-        /// View all of the properties of a group.
-        static member viewGroupProperties group world =
-            let state = World.getGroupState group world
+        /// View all of the properties of a layer.
+        static member viewLayerProperties layer world =
+            let state = World.getLayerState layer world
             let properties = World.getProperties state
             Array.ofList properties
 
@@ -1092,15 +1092,15 @@ module WorldModule =
         static member private entityStateAdder entityState entity world =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
-                | [screenName; groupName; entityName] ->
+                | [screenName; layerName; entityName] ->
                     match Umap.tryFind screenName world.ScreenDirectory with
-                    | Some (screenAddress, groupDirectory) ->
-                        match Umap.tryFind groupName groupDirectory with
-                        | Some (groupAddress, entityDirectory) ->
+                    | Some (screenAddress, layerDirectory) ->
+                        match Umap.tryFind layerName layerDirectory with
+                        | Some (layerAddress, entityDirectory) ->
                             let entityDirectory = Umap.add entityName entity.EntityAddress entityDirectory
-                            let groupDirectory = Umap.add groupName (groupAddress, entityDirectory) groupDirectory
-                            Umap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
-                        | None -> failwith ^ "Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent group."
+                            let layerDirectory = Umap.add layerName (layerAddress, entityDirectory) layerDirectory
+                            Umap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
+                        | None -> failwith ^ "Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent layer."
                     | None -> failwith ^ "Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent screen."
                 | _ -> failwith ^ "Invalid entity address '" + scstring entity.EntityAddress + "'."
             let entityStates = Umap.add entity.EntityAddress entityState world.EntityStates
@@ -1109,15 +1109,15 @@ module WorldModule =
         static member private entityStateRemover entity world =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
-                | [screenName; groupName; entityName] ->
+                | [screenName; layerName; entityName] ->
                     match Umap.tryFind screenName world.ScreenDirectory with
-                    | Some (screenAddress, groupDirectory) ->
-                        match Umap.tryFind groupName groupDirectory with
-                        | Some (groupAddress, entityDirectory) ->
+                    | Some (screenAddress, layerDirectory) ->
+                        match Umap.tryFind layerName layerDirectory with
+                        | Some (layerAddress, entityDirectory) ->
                             let entityDirectory = Umap.remove entityName entityDirectory
-                            let groupDirectory = Umap.add groupName (groupAddress, entityDirectory) groupDirectory
-                            Umap.add screenName (screenAddress, groupDirectory) world.ScreenDirectory
-                        | None -> failwith ^ "Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent group."
+                            let layerDirectory = Umap.add layerName (layerAddress, entityDirectory) layerDirectory
+                            Umap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
+                        | None -> failwith ^ "Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent layer."
                     | None -> failwith ^ "Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent screen."
                 | _ -> failwith ^ "Invalid entity address '" + scstring entity.EntityAddress + "'."
             let entityStates = Umap.remove entity.EntityAddress world.EntityStates
@@ -1444,7 +1444,7 @@ module WorldModule =
             match propertyName with // NOTE: string match for speed
             | "Id" -> failwith "Cannot change entity id."
             | "Name" -> failwith "Cannot change entity name."
-            | "Xtension" -> failwith "Cannot change group xtension."
+            | "Xtension" -> failwith "Cannot change layer xtension."
             | "DispatcherNp" -> failwith "Cannot change entity dispatcher."
             | "Specialization" -> failwith "Cannot change entity specialization."
             | "Persistent" -> World.setEntityPersistent (property |> fst :?> bool) entity world
@@ -1564,7 +1564,7 @@ module WorldModule =
         static member destroyEntityImmediate entity world = World.removeEntity entity world
 
         /// Create an entity and add it to the world.
-        static member createEntity5 dispatcherName specializationOpt nameOpt group world =
+        static member createEntity5 dispatcherName specializationOpt nameOpt layer world =
 
             // grab overlay dependencies
             let overlayer = World.getOverlayer world
@@ -1616,13 +1616,13 @@ module WorldModule =
                 | None -> entityState
 
             // add entity's state to world
-            let entity = group.GroupAddress -<<- ntoa<Entity> entityState.Name |> Entity.proxy
+            let entity = layer.LayerAddress -<<- ntoa<Entity> entityState.Name |> Entity.proxy
             let world = World.addEntity false entityState entity world
             (entity, world)
 
         /// Create an entity and add it to the world.
-        static member createEntity<'d when 'd :> EntityDispatcher> specializationOpt nameOpt group world =
-            World.createEntity5 typeof<'d>.Name specializationOpt nameOpt group world
+        static member createEntity<'d when 'd :> EntityDispatcher> specializationOpt nameOpt layer world =
+            World.createEntity5 typeof<'d>.Name specializationOpt nameOpt layer world
 
         static member private removeEntity entity world =
             
@@ -1668,7 +1668,7 @@ module WorldModule =
             else world
 
         /// Read an entity from an entity descriptor.
-        static member readEntity entityDescriptor nameOpt group world =
+        static member readEntity entityDescriptor nameOpt layer world =
 
             // grab overlay dependencies
             let overlayer = World.getOverlayer world
@@ -1739,7 +1739,7 @@ module WorldModule =
                 | None -> entityState
 
             // add entity state to the world
-            let entity = group.GroupAddress -<<- ntoa<Entity> entityState.Name |> Entity.proxy
+            let entity = layer.LayerAddress -<<- ntoa<Entity> entityState.Name |> Entity.proxy
             let world = World.addEntity true entityState entity world
             (entity, world)
 
@@ -1761,22 +1761,22 @@ module WorldModule =
             let getEntityProperties = Reflection.writePropertiesFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
             { entityDescriptor with EntityProperties = getEntityProperties }
 
-        /// Reassign an entity's identity and / or group. Note that since this destroys the reassigned entity
+        /// Reassign an entity's identity and / or layer. Note that since this destroys the reassigned entity
         /// immediately, you should not call this inside an event handler that involves the reassigned entity itself.
-        static member reassignEntityImmediate entity nameOpt group world =
+        static member reassignEntityImmediate entity nameOpt layer world =
             let entityState = World.getEntityState entity world
             let world = World.removeEntity entity world
             let (id, name) = Reflection.deriveIdAndName nameOpt
             let entityState = { entityState with Id = id; Name = name }
-            let transmutedEntity = group.GroupAddress -<<- ntoa<Entity> name |> Entity.proxy
+            let transmutedEntity = layer.LayerAddress -<<- ntoa<Entity> name |> Entity.proxy
             let world = World.addEntity false entityState transmutedEntity world
             (transmutedEntity, world)
 
-        /// Reassign an entity's identity and / or group.
-        static member reassignEntity entity nameOpt group world =
+        /// Reassign an entity's identity and / or layer.
+        static member reassignEntity entity nameOpt layer world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
-                  Command = { Execute = fun world -> World.reassignEntityImmediate entity nameOpt group world |> snd }}
+                  Command = { Execute = fun world -> World.reassignEntityImmediate entity nameOpt layer world |> snd }}
             World.addTasklet tasklet world
 
         /// Try to set an entity's optional overlay name.
@@ -1863,7 +1863,7 @@ module WorldModule =
             World.destroyEntityImmediate entity world
 
         /// Paste an entity from the clipboard.
-        static member pasteFromClipboard atMouse rightClickPosition positionSnap rotationSnap group world =
+        static member pasteFromClipboard atMouse rightClickPosition positionSnap rotationSnap layer world =
             match Clipboard with
             | Some entityStateObj ->
                 let entityState = entityStateObj :?> EntityState
@@ -1877,7 +1877,7 @@ module WorldModule =
                 let transform = { EntityState.getTransform entityState with Position = position }
                 let transform = Math.snapTransform positionSnap rotationSnap transform
                 let entityState = EntityState.setTransform transform entityState
-                let entity = group.GroupAddress -<<- ntoa<Entity> name |> Entity.proxy
+                let entity = layer.LayerAddress -<<- ntoa<Entity> name |> Entity.proxy
                 let world = World.addEntity false entityState entity world
                 (Some entity, world)
             | None -> (None, world)
@@ -1896,6 +1896,6 @@ module WorldModule =
                   AmbientState = ambientState
                   GameState = gameState
                   ScreenStates = Umap.makeEmpty None
-                  GroupStates = Umap.makeEmpty None
+                  LayerStates = Umap.makeEmpty None
                   EntityStates = Umap.makeEmpty None }
             World.choose world
