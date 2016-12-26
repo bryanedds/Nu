@@ -29,6 +29,9 @@ module WorldLayerModule =
         member this.Persistent = PropertyTag.makeReadOnly this Property? Persistent this.GetPersistent
         member this.GetCreationTimeStampNp world = World.getLayerCreationTimeStampNp this world
         member this.CreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
+        member this.GetDepth world = World.getLayerDepth this world
+        member this.SetDepth value world = World.setLayerDepth value this world
+        member this.Depth = PropertyTag.makeReadOnly this Property? Depth this.GetDepth
 
         /// Get a property value and type.
         member this.GetProperty propertyName world = World.getLayerProperty propertyName this world

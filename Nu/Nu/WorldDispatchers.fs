@@ -199,7 +199,7 @@ module EffectFacetModule =
                     { Effects.Position = entity.GetPosition world + Vector2.Multiply (entity.GetSize world, entity.GetEffectOffset world)
                       Effects.Size = entity.GetSize world
                       Effects.Rotation = entity.GetRotation world
-                      Effects.Depth = entity.GetDepth world
+                      Effects.Depth = entity.GetDepthLayered world
                       Effects.Offset = Vector2 0.5f
                       Effects.Color = Vector4.One
                       Effects.Enabled = true
@@ -388,7 +388,7 @@ module StaticSpriteFacetModule =
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
-                            { Depth = entity.GetDepth world
+                            { Depth = entity.GetDepthLayered world
                               PositionY = (entity.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
@@ -458,7 +458,7 @@ module AnimatedSpriteFacetModule =
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
-                            { Depth = entity.GetDepth world
+                            { Depth = entity.GetDepthLayered world
                               PositionY = (entity.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
@@ -595,7 +595,7 @@ module ButtonDispatcherModule =
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
-                            { Depth = button.GetDepth world
+                            { Depth = button.GetDepthLayered world
                               PositionY = (button.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
@@ -636,7 +636,7 @@ module LabelDispatcherModule =
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
-                            { Depth = label.GetDepth world
+                            { Depth = label.GetDepthLayered world
                               PositionY = (label.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
@@ -693,7 +693,7 @@ module TextDispatcherModule =
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
-                            { Depth = text.GetDepth world
+                            { Depth = text.GetDepthLayered world
                               PositionY = (text.GetPosition world).Y
                               LayeredDescriptor =
                                 TextDescriptor
@@ -704,7 +704,7 @@ module TextDispatcherModule =
                                       Font = text.GetTextFont world
                                       Color = text.GetTextColor world }}
                          LayerableDescriptor
-                            { Depth = text.GetDepth world
+                            { Depth = text.GetDepthLayered world
                               PositionY = (text.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
@@ -803,7 +803,7 @@ module ToggleDispatcherModule =
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
-                            { Depth = toggle.GetDepth world
+                            { Depth = toggle.GetDepthLayered world
                               PositionY = (toggle.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
@@ -918,7 +918,7 @@ module FillBarDispatcherModule =
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
-                            { Depth = fillBar.GetDepth world
+                            { Depth = fillBar.GetDepthLayered world
                               PositionY = (fillBar.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
@@ -931,7 +931,7 @@ module FillBarDispatcherModule =
                                       Image = fillBar.GetBorderImage world
                                       Color = fillBarColor }}
                          LayerableDescriptor
-                            { Depth = fillBar.GetDepth world
+                            { Depth = fillBar.GetDepthLayered world
                               PositionY = (fillBar.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
@@ -1189,7 +1189,7 @@ module TileMapDispatcherModule =
                     let viewType = tileMap.GetViewType world
                     List.foldi
                         (fun i world (layer : TmxLayer) ->
-                            let depth = tileMap.GetDepth world + single i * 2.0f // MAGIC_VALUE: assumption
+                            let depth = tileMap.GetDepthLayered world + single i * 2.0f // MAGIC_VALUE: assumption
                             let parallaxTranslation =
                                 match viewType with
                                 | Absolute -> Vector2.Zero

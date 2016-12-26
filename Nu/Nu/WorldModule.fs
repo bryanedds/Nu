@@ -956,6 +956,8 @@ module WorldModule =
         static member internal getLayerPersistent layer world = (World.getLayerState layer world).Persistent
         static member internal setLayerPersistent value layer world = World.updateLayerState (fun layerState -> { layerState with Persistent = value }) Property? Persistent layer world
         static member internal getLayerCreationTimeStampNp layer world = (World.getLayerState layer world).CreationTimeStampNp
+        static member internal getLayerDepth layer world = (World.getLayerState layer world).Depth
+        static member internal setLayerDepth value layer world = World.updateLayerState (fun layerState -> { layerState with Depth = value }) Property? Depth layer world
 
         static member internal getLayerProperty propertyName layer world =
             match propertyName with // NOTE: string match for speed
@@ -966,6 +968,7 @@ module WorldModule =
             | "Specialization" -> (World.getLayerSpecialization layer world :> obj, typeof<string>)
             | "Persistent" -> (World.getLayerPersistent layer world :> obj, typeof<bool>)
             | "CreationTimeStampNp" -> (World.getLayerCreationTimeStampNp layer world :> obj, typeof<int64>)
+            | "Depth" -> (World.getLayerDepth layer world :> obj, typeof<single>)
             | _ -> LayerState.getProperty propertyName (World.getLayerState layer world)
 
         static member internal setLayerProperty propertyName (property : obj * Type) layer world =
