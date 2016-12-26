@@ -88,7 +88,7 @@
     <Compile Include="WorldModules.fs" />
     <Compile Include="WorldEvents.fs" />
     <Compile Include="WorldEntity.fs" />
-    <Compile Include="WorldGroup.fs" />
+    <Compile Include="WorldLayer.fs" />
     <Compile Include="WorldScreen.fs" />
     <Compile Include="WorldGame.fs" />
     <Compile Include="WorldInput.fs" />
