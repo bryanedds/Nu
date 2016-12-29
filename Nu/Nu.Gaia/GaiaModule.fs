@@ -561,7 +561,7 @@ module Gaia =
         addWorldChanger ^ fun world ->
             match form.layerTabs.TabPages.Count with
             | 1 ->
-                ignore ^ MessageBox.Show ("Cannot destroy only remaining layer.", "Layer destruction error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                ignore ^ MessageBox.Show ("Cannot destroy the only remaining layer.", "Layer destruction error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 world
             | _ ->
                 let world = pushPastWorld world world

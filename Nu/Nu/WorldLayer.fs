@@ -32,6 +32,9 @@ module WorldLayerModule =
         member this.GetDepth world = World.getLayerDepth this world
         member this.SetDepth value world = World.setLayerDepth value this world
         member this.Depth = PropertyTag.makeReadOnly this Property? Depth this.GetDepth
+        member this.GetVisible world = World.getLayerVisible this world
+        member this.SetVisible value world = World.setLayerVisible value this world
+        member this.Visible = PropertyTag.makeReadOnly this Property? Visible this.GetVisible
 
         /// Get a property value and type.
         member this.GetProperty propertyName world = World.getLayerProperty propertyName this world

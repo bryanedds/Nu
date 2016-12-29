@@ -190,7 +190,7 @@ module EffectFacetModule =
              Define? EffectTagsNp (Map.empty : EffectTags)]
 
         override facet.Actualize (entity, world) =
-            if entity.GetVisible world && entity.InView world then
+            if entity.GetVisibleLayered world && entity.InView world then
                 let world = entity.SetEffectTagsNp Map.empty world
                 let effect = entity.GetEffect world
                 let effectTime = entity.GetEffectTime world
@@ -384,7 +384,7 @@ module StaticSpriteFacetModule =
             [Define? StaticImage { PackageName = Assets.DefaultPackageName; AssetName = "Image3" }]
 
         override facet.Actualize (entity, world) =
-            if entity.GetVisible world && entity.InView world then
+            if entity.GetVisibleLayered world && entity.InView world then
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
@@ -454,7 +454,7 @@ module AnimatedSpriteFacetModule =
              Define? AnimationSheet { PackageName = Assets.DefaultPackageName; AssetName = "Image7" }]
 
         override facet.Actualize (entity, world) =
-            if entity.GetVisible world && entity.InView world then
+            if entity.GetVisibleLayered world && entity.InView world then
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
@@ -495,7 +495,7 @@ module GuiDispatcherModule =
             let gui = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             let handling =
-                if World.isEntitySelected gui world && gui.GetVisible world then
+                if World.isEntitySelected gui world && gui.GetVisibleLayered world then
                     let mousePositionWorld = World.mouseToWorld (gui.GetViewType world) data.Position world
                     if data.Down &&
                        gui.GetSwallowMouseLeft world &&
@@ -544,7 +544,7 @@ module ButtonDispatcherModule =
             let data = evt.Data : MouseButtonData
             if World.isEntitySelected button world then
                 let mousePositionWorld = World.mouseToWorld (button.GetViewType world) data.Position world
-                if  button.GetVisible world &&
+                if  button.GetVisibleLayered world &&
                     Math.isPointInBounds mousePositionWorld (button.GetBounds world) then
                     if button.GetEnabled world then
                         let world = button.SetDown true world
@@ -562,7 +562,7 @@ module ButtonDispatcherModule =
                 let wasDown = button.GetDown world
                 let world = button.SetDown false world
                 let mousePositionWorld = World.mouseToWorld (button.GetViewType world) data.Position world
-                if  button.GetVisible world &&
+                if  button.GetVisibleLayered world &&
                     Math.isPointInBounds mousePositionWorld (button.GetBounds world) then
                     if button.GetEnabled world && wasDown then
                         let eventTrace = EventTrace.record4 "ButtonDispatcher" "handleMouseLeftUp" "Up" EventTrace.empty
@@ -591,7 +591,7 @@ module ButtonDispatcherModule =
                 World.monitor handleMouseLeftUp Events.MouseLeftUp button
 
         override dispatcher.Actualize (button, world) =
-            if button.GetVisible world then
+            if button.GetVisibleLayered world then
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
@@ -632,7 +632,7 @@ module LabelDispatcherModule =
              Define? LabelImage { PackageName = Assets.DefaultPackageName; AssetName = "Image4" }]
 
         override dispatcher.Actualize (label, world) =
-            if label.GetVisible world then
+            if label.GetVisibleLayered world then
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
@@ -689,7 +689,7 @@ module TextDispatcherModule =
              Define? BackgroundImage { PackageName = Assets.DefaultPackageName; AssetName = "Image4" }]
 
         override dispatcher.Actualize (text, world) =
-            if text.GetVisible world then
+            if text.GetVisibleLayered world then
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
@@ -753,7 +753,7 @@ module ToggleDispatcherModule =
             let data = evt.Data : MouseButtonData
             if World.isEntitySelected toggle world then
                 let mousePositionWorld = World.mouseToWorld (toggle.GetViewType world) data.Position world
-                if  toggle.GetVisible world &&
+                if  toggle.GetVisibleLayered world &&
                     Math.isPointInBounds mousePositionWorld (toggle.GetBounds world) then
                     if toggle.GetEnabled world then
                         let world = toggle.SetPressed true world
@@ -769,7 +769,7 @@ module ToggleDispatcherModule =
                 let wasPressed = toggle.GetPressed world
                 let world = toggle.SetPressed false world
                 let mousePositionWorld = World.mouseToWorld (toggle.GetViewType world) data.Position world
-                if  toggle.GetVisible world &&
+                if  toggle.GetVisibleLayered world &&
                     Math.isPointInBounds mousePositionWorld (toggle.GetBounds world) then
                     if toggle.GetEnabled world && wasPressed then
                         let world = toggle.SetOn (not ^ toggle.GetOn world) world
@@ -799,7 +799,7 @@ module ToggleDispatcherModule =
                 World.monitor handleMouseLeftUp Events.MouseLeftUp toggle
 
         override dispatcher.Actualize (toggle, world) =
-            if toggle.GetVisible world then
+            if toggle.GetVisibleLayered world then
                 World.addRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
@@ -840,7 +840,7 @@ module FeelerDispatcherModule =
             let data = evt.Data : MouseButtonData
             if World.isEntitySelected feeler world then
                 let mousePositionWorld = World.mouseToWorld (feeler.GetViewType world) data.Position world
-                if  feeler.GetVisible world &&
+                if  feeler.GetVisibleLayered world &&
                     Math.isPointInBounds mousePositionWorld (feeler.GetBounds world) then
                     if feeler.GetEnabled world then
                         let world = feeler.SetTouched true world
@@ -854,7 +854,7 @@ module FeelerDispatcherModule =
         let handleMouseLeftUp evt world =
             let feeler = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if World.isEntitySelected feeler world && feeler.GetVisible world then
+            if World.isEntitySelected feeler world && feeler.GetVisibleLayered world then
                 if feeler.GetEnabled world then
                     let world = feeler.SetTouched false world
                     let eventTrace = EventTrace.record "FeelerDispatcher" "handleMouseLeftDown" EventTrace.empty
@@ -912,7 +912,7 @@ module FillBarDispatcherModule =
              Define? BorderImage { PackageName = Assets.DefaultPackageName; AssetName = "Image10" }]
 
         override dispatcher.Actualize (fillBar, world) =
-            if fillBar.GetVisible world then
+            if fillBar.GetVisibleLayered world then
                 let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar world
                 let fillBarColor = if fillBar.GetEnabled world then Vector4.One else fillBar.GetDisabledColor world
                 World.addRenderMessage
