@@ -7,7 +7,7 @@ open System.Collections
 open System.Collections.Generic
 open Prime
 
-/// A hash-key-value triple, implemented with a struct for efficiency.
+/// A hash-value pair, implemented with a struct for efficiency.
 type internal 'a Hv =
     struct
         new (h, v) = { H = h; V = v }

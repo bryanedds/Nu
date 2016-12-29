@@ -153,7 +153,8 @@ module WorldTypes =
         static member PropertyDefinitions =
             [Define? Specialization Constants.Engine.VanillaSpecialization
              Define? Persistent true
-             Define? Depth 0.0f]
+             Define? Depth 0.0f
+             Define? Visible true]
     
         /// Register a layer when adding it to a screen.
         abstract Register : Layer * World -> World
@@ -436,7 +437,8 @@ module WorldTypes =
           ScriptAssetOptLc : AssetTag option
           Script : Script
           CreationTimeStampNp : int64
-          Depth : single }
+          Depth : single
+          Visible : bool }
 
         /// Get a dynamic property and its type information.
         static member getProperty propertyName layerState =
@@ -473,7 +475,8 @@ module WorldTypes =
               ScriptAssetOptLc = None
               Script = Script.empty
               CreationTimeStampNp = Core.getTimeStamp ()
-              Depth = 0.0f }
+              Depth = 0.0f
+              Visible = true }
 
         /// Copy a layer such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
