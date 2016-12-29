@@ -59,12 +59,12 @@ module SetTests =
 
     [<Property>]
     let hsetsEqSetsAfterSteps (initialSet : Set<int>) (actions : SetAction<int>[]) =
-        let testSet = HSet.ofSeq ^ Set.toSeq initialSet
+        let testSet = HSet.ofSeq initialSet
         let eq (hset : HSet<_>) (fsset : Set<_>) = Set.ofSeq hset = fsset
         eqSetsAfterSteps initialSet testSet actions HSet.add HSet.remove HSet.fold (+) eq
 
     [<Property>]
     let usetsEqSetsAfterSteps (initialSet : Set<int>) (actions : SetAction<int>[]) =
-        let testSet = USet.ofSeq ^ Set.toSeq initialSet
+        let testSet = USet.ofSeq initialSet
         let eq (uset : USet<_>) (fsset : Set<_>) = Set.ofSeq uset = fsset
         eqSetsAfterSteps initialSet testSet actions USet.add USet.remove USet.fold (+) eq
