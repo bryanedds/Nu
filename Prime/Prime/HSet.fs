@@ -146,7 +146,7 @@ module HSetModule =
         let empty =
             Nil
 
-    /// A very fast persistent hash set.
+    /// A fast persistent hash set.
     /// Works in effectively constant-time for look-ups and updates.
     type [<NoComparison>] HSet<'a when 'a : comparison> =
         private

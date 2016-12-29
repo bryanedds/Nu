@@ -8,7 +8,7 @@ open FsCheck.Xunit
 open Prime
 module MapTests =
 
-    type MapAction<'k, 'v> = 
+    type MapAction<'k, 'v> =
         | SetKey of 'k * 'v
         | RemoveRandom
         | FoldCombine of 'v

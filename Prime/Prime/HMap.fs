@@ -157,7 +157,7 @@ module HMapModule =
         let empty =
             Nil
 
-    /// A very fast persistent hash map.
+    /// A fast persistent hash map.
     /// Works in effectively constant-time for look-ups and updates.
     type [<NoComparison>] HMap<'k, 'v when 'k : comparison> =
         private
