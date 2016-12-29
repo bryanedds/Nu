@@ -410,12 +410,12 @@ module WorldModule2 =
             elif tickTime > tasklet.ScheduledTime then
                 Log.debug ^ "Tasklet leak found for time '" + scstring tickTime + "'."
                 (taskletsNotRun, world)
-            else (Ulist.add tasklet taskletsNotRun, world)
+            else (UList.add tasklet taskletsNotRun, world)
 
         static member private processTasklets world =
             let tasklets = World.getTasklets world
             let world = World.clearTasklets world
-            let (taskletsNotRun, world) = Ulist.fold World.processTasklet (Ulist.makeEmpty None, world) tasklets
+            let (taskletsNotRun, world) = UList.fold World.processTasklet (UList.makeEmpty None, world) tasklets
             World.restoreTasklets taskletsNotRun world
 
         /// Process an input event from SDL and ultimately publish any related game events.
@@ -663,7 +663,7 @@ module WorldModule2 =
             let ambientState =
                 let overlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
                 let overlayRouter = OverlayRouter.make overlayRoutes
-                AmbientState.make 1L (Umap.makeEmpty None) overlayRouter Overlayer.empty SymbolStore.empty userState
+                AmbientState.make 1L (UMap.makeEmpty None) overlayRouter Overlayer.empty SymbolStore.empty userState
 
             // select the first game dispatcher as active
             let activeGameDispatcher = dispatchers.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value

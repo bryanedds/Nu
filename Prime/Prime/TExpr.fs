@@ -4,17 +4,17 @@
 namespace Prime
 open System
 
-type Texpr<'a, 'env> = 'env -> 'a * 'env
+type TExpr<'a, 'env> = 'env -> 'a * 'env
 
-type TexprBuilder<'env> () =
+type TExprBuilder<'env> () =
 
-    member inline this.Bind (expr : Texpr<'a, 'env>, lift : 'a -> Texpr<'b, 'env>) : Texpr<'b, 'env> =
+    member inline this.Bind (expr : TExpr<'a, 'env>, lift : 'a -> TExpr<'b, 'env>) : TExpr<'b, 'env> =
         fun env ->
             let (result, env') = expr env
             let expr' = lift result
             expr' env'
 
-    member inline this.Return (value : 'a) : Texpr<'a, 'env> =
+    member inline this.Return (value : 'a) : TExpr<'a, 'env> =
         fun expr ->
             (value, expr)
 
@@ -27,12 +27,12 @@ type TexprBuilder<'env> () =
     member this.Combine (l, r) =
         this.Bind (l, fun () -> r)
         
-    member this.TryWith (body : Texpr<'a, 'expr>, handler : exn -> Texpr<'a, 'expr>) : Texpr<'a, 'expr> =
+    member this.TryWith (body : TExpr<'a, 'expr>, handler : exn -> TExpr<'a, 'expr>) : TExpr<'a, 'expr> =
         fun env ->
             try body env
             with exn -> handler exn env
 
-    member this.TryFinally (body : Texpr<'a, 'expr>, compensation) : Texpr<'a,'expr> =
+    member this.TryFinally (body : TExpr<'a, 'expr>, compensation) : TExpr<'a,'expr> =
         fun env ->
             try body env
             finally compensation()

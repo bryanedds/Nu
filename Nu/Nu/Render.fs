@@ -103,7 +103,7 @@ module RendererModule =
         private
             { RenderContext : nativeint
               RenderPackageMap : RenderAsset PackageMap
-              RenderMessages : RenderMessage Ulist
+              RenderMessages : RenderMessage UList
               RenderDescriptors : RenderDescriptor list }
 
         static member private sortDescriptors (LayerableDescriptor left) (LayerableDescriptor right) =
@@ -201,7 +201,7 @@ module RendererModule =
             | ReloadRenderAssetsMessage -> Renderer.handleReloadRenderAssets renderer
 
         static member private handleRenderMessages renderMessages renderer =
-            Ulist.fold Renderer.handleRenderMessage renderer renderMessages
+            UList.fold Renderer.handleRenderMessage renderer renderMessages
 
         static member private renderSprite
             (viewAbsolute : Matrix3)
@@ -420,24 +420,24 @@ module RendererModule =
             let renderer =
                 { RenderContext = renderContext
                   RenderPackageMap = Map.empty
-                  RenderMessages = Ulist.makeEmpty None
+                  RenderMessages = UList.makeEmpty None
                   RenderDescriptors = [] }
             renderer
 
         interface IRenderer with
 
             member renderer.ClearMessages () =
-                let renderer = { renderer with RenderMessages = Ulist.makeEmpty None }
+                let renderer = { renderer with RenderMessages = UList.makeEmpty None }
                 renderer :> IRenderer
 
             member renderer.EnqueueMessage renderMessage =
-                let renderMessages = Ulist.add renderMessage renderer.RenderMessages
+                let renderMessages = UList.add renderMessage renderer.RenderMessages
                 let renderer = { renderer with RenderMessages = renderMessages }
                 renderer :> IRenderer
 
             member renderer.Render eyeCenter eyeSize =
                 let renderMessages = renderer.RenderMessages
-                let renderer = { renderer with RenderMessages = Ulist.makeEmpty None }
+                let renderer = { renderer with RenderMessages = UList.makeEmpty None }
                 let renderer = Renderer.handleRenderMessages renderMessages renderer
                 let renderDescriptors = renderer.RenderDescriptors
                 let renderer = { renderer with RenderDescriptors = [] }

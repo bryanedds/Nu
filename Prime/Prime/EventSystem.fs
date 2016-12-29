@@ -33,7 +33,7 @@ type SubscriptionEntry =
     Guid * Participant * obj
 
 /// Abstracts over a subscription sorting procedure.
-/// TODO: for efficiency, consider using Ulist rather than list.
+/// TODO: for efficiency, consider using UList rather than list.
 type 'w SubscriptionSorter =
     SubscriptionEntry list -> 'w -> SubscriptionEntry list
 
@@ -42,13 +42,13 @@ type internal 'w BoxableSubscription =
     obj -> 'w -> Handling * 'w
 
 /// A map of event subscriptions.
-/// TODO: for efficiency, consider using Ulist rather than list.
+/// TODO: for efficiency, consider using UList rather than list.
 type internal SubscriptionEntries =
-    Umap<obj Address, SubscriptionEntry list>
+    UMap<obj Address, SubscriptionEntry list>
 
 /// A map of subscription keys to unsubscription data.
 type internal UnsubscriptionEntries =
-    Umap<Guid, obj Address * Participant>
+    UMap<Guid, obj Address * Participant>
 
 module Events =
 
@@ -64,7 +64,7 @@ module EventSystemModule =
             { Subscriptions : SubscriptionEntries
               Unsubscriptions : UnsubscriptionEntries
               EventContext : obj Address
-              EventStates : Umap<Guid, obj>
+              EventStates : UMap<Guid, obj>
               EventTracer : string -> unit
               EventTracing : bool
               EventFilter : EventFilter.Filter
@@ -75,11 +75,11 @@ module EventSystemModule =
 
         /// Add event state.
         let addEventState<'a, 'w> key (state : 'a) (eventSystem : 'w EventSystem) =
-            { eventSystem with EventStates = Umap.add key (state :> obj) eventSystem.EventStates }
+            { eventSystem with EventStates = UMap.add key (state :> obj) eventSystem.EventStates }
 
         /// Remove event state.
         let removeEventState<'w> key (eventSystem : 'w EventSystem) =
-            { eventSystem with EventStates = Umap.remove key eventSystem.EventStates }
+            { eventSystem with EventStates = UMap.remove key eventSystem.EventStates }
 
         /// Get subscriptions.
         let getSubscriptions<'w> (eventSystem : 'w EventSystem) =
@@ -99,7 +99,7 @@ module EventSystemModule =
 
         /// Get event state.
         let getEventState<'a, 'w> key (eventSystem : 'w EventSystem) =
-            let state = Umap.find key eventSystem.EventStates
+            let state = UMap.find key eventSystem.EventStates
             state :?> 'a
 
         /// Get whether events are being traced.
@@ -162,10 +162,10 @@ module EventSystemModule =
 
         /// Make an event system.
         let make eventTracer eventTracing eventFilter =
-            { Subscriptions = Umap.makeEmpty None
-              Unsubscriptions = Umap.makeEmpty None
+            { Subscriptions = UMap.makeEmpty None
+              Unsubscriptions = UMap.makeEmpty None
               EventContext = Address.empty
-              EventStates = Umap.makeEmpty None
+              EventStates = UMap.makeEmpty None
               EventTracer = eventTracer
               EventTracing = eventTracing
               EventFilter = eventFilter

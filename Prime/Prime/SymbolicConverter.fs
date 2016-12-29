@@ -104,8 +104,8 @@ type SymbolicConverter (pointType : Type) =
                 let symbols = List.map (toSymbol itemType) items
                 Symbols (symbols, None)
 
-            // symbolize Vmap
-            elif sourceType.Name = typedefof<Vmap<_, _>>.Name then
+            // symbolize HMap
+            elif sourceType.Name = typedefof<HMap<_, _>>.Name then
                 let gargs = sourceType.GetGenericArguments ()
                 let itemType = typedefof<Tuple<_, _>>.MakeGenericType [|gargs.[0]; gargs.[1]|]
                 let items = Reflection.objToObjList source
@@ -247,8 +247,8 @@ type SymbolicConverter (pointType : Type) =
                     | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
                         failconv "Expected Symbols for conversion to Map." ^ Some symbol
 
-                // desymbolize Vmap
-                elif destType.Name = typedefof<Vmap<_, _>>.Name then
+                // desymbolize HMap
+                elif destType.Name = typedefof<HMap<_, _>>.Name then
                     match symbol with
                     | Symbols (symbols, _) ->
                         let gargs = destType.GetGenericArguments ()
@@ -256,10 +256,10 @@ type SymbolicConverter (pointType : Type) =
                         | [|fstType; sndType|] ->
                             let pairType = typedefof<Tuple<_, _>>.MakeGenericType [|fstType; sndType|]
                             let pairList = List.map (fromSymbol pairType) symbols
-                            Reflection.pairsToVmap destType pairList
+                            Reflection.pairsToHMap destType pairList
                         | _ -> failwithumf ()
                     | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
-                        failconv "Expected Symbols for conversion to Vmap." ^ Some symbol
+                        failconv "Expected Symbols for conversion to HMap." ^ Some symbol
                     
                 // desymbolize SymbolicCompression
                 elif destType.Name = typedefof<SymbolicCompression<_, _>>.Name then

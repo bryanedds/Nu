@@ -88,9 +88,9 @@ module WorldLayerModule =
         static member getLayers screen world =
             match Address.getNames screen.ScreenAddress with
             | [screenName] ->
-                match Umap.tryFind screenName ^ World.getScreenDirectory world with
+                match UMap.tryFind screenName ^ World.getScreenDirectory world with
                 | Some (_, layerDirectory) ->
-                    Umap.fold (fun state _ (layerAddress, _) -> Layer.proxy layerAddress :: state) [] layerDirectory :> _ seq
+                    UMap.fold (fun state _ (layerAddress, _) -> Layer.proxy layerAddress :: state) [] layerDirectory :> _ seq
                 | None -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
             | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
 

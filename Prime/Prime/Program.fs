@@ -51,8 +51,8 @@ module Program =
         runTimings (fun () -> list |> List.rev |> List.sort |> List.map (fun x -> x * 13) |> List.filter (fun x -> x % 2 = 0)) "F# List Compute"
 
         // run list timings
-        let ulist = Ulist.ofSeq [|0 .. 10000000|]
-        runTimings (fun () -> ulist |> Ulist.rev |> Ulist.sort |> Ulist.map (fun x -> x * 13) |> Ulist.filter (fun x -> x % 2 = 0)) "Ulist Compute"
+        let ulist = UList.ofSeq [|0 .. 10000000|]
+        runTimings (fun () -> ulist |> UList.rev |> UList.sort |> UList.map (fun x -> x * 13) |> UList.filter (fun x -> x % 2 = 0)) "UList Compute"
         
         // run map timings
         runMapTimings
@@ -60,23 +60,23 @@ module Program =
             (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Map.find k map) entries)
             "F# Map"
         
-        // run vmap timings
+        // run hmap timings
         runMapTimings
-            (fun entries -> Array.fold (fun map (k, v) -> Vmap.add k v map) (Vmap.makeEmpty ()) entries)
-            (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Vmap.find k map) entries)
-            "Vmap"
+            (fun entries -> Array.fold (fun map (k, v) -> HMap.add k v map) (HMap.makeEmpty ()) entries)
+            (fun entries map -> Array.iter (fun (k, _) -> ignore ^ HMap.find k map) entries)
+            "HMap"
         
         // run tmap timings with computation expressions
         runMapTimings
-            (fun entries -> Array.fold (fun map (k, v) -> Tmap.add k v map) (Tmap.makeEmpty None) entries)
-            (fun entries map -> entries |> Array.iter (fun (k, _) -> ignore ^ Tmap.find k map))
-            "Tmap"
+            (fun entries -> Array.fold (fun map (k, v) -> TMap.add k v map) (TMap.makeEmpty None) entries)
+            (fun entries map -> entries |> Array.iter (fun (k, _) -> ignore ^ TMap.find k map))
+            "TMap"
         
         // run umap timings without computation expressions
         runMapTimings
-            (fun entries -> Array.fold (fun map (k, v) -> Umap.add k v map) (Umap.makeEmpty None) entries)
-            (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Umap.find k map) entries)
-            "Umap"
+            (fun entries -> Array.fold (fun map (k, v) -> UMap.add k v map) (UMap.makeEmpty None) entries)
+            (fun entries map -> Array.iter (fun (k, _) -> ignore ^ UMap.find k map) entries)
+            "UMap"
         
         // run dictionary timings
         let dic = Dictionary<string, string * string> ()

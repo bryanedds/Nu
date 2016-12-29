@@ -663,33 +663,33 @@ module WorldModule =
             let screenDirectory =
                 match Address.getNames screen.ScreenAddress with
                 | [screenName] ->
-                    match Umap.tryFind screenName world.ScreenDirectory with
+                    match UMap.tryFind screenName world.ScreenDirectory with
                     | Some (_, layerDirectory) ->
                         // NOTE: this is logically a redundant operation...
-                        Umap.add screenName (screen.ScreenAddress, layerDirectory) world.ScreenDirectory
+                        UMap.add screenName (screen.ScreenAddress, layerDirectory) world.ScreenDirectory
                     | None ->
-                        let layerDirectory = Umap.makeEmpty None
-                        Umap.add screenName (screen.ScreenAddress, layerDirectory) world.ScreenDirectory
+                        let layerDirectory = UMap.makeEmpty None
+                        UMap.add screenName (screen.ScreenAddress, layerDirectory) world.ScreenDirectory
                 | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
-            let screenStates = Umap.add screen.ScreenAddress screenState world.ScreenStates
+            let screenStates = UMap.add screen.ScreenAddress screenState world.ScreenStates
             World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
 
         static member private screenStateRemover screen world =
             let screenDirectory =
                 match Address.getNames screen.ScreenAddress with
-                | [screenName] -> Umap.remove screenName world.ScreenDirectory
+                | [screenName] -> UMap.remove screenName world.ScreenDirectory
                 | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
-            let screenStates = Umap.remove screen.ScreenAddress world.ScreenStates
+            let screenStates = UMap.remove screen.ScreenAddress world.ScreenStates
             World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
 
         static member private screenStateSetter screenState screen world =
 #if DEBUG
-            if not ^ Umap.containsKey screen.ScreenAddress world.ScreenStates then
+            if not ^ UMap.containsKey screen.ScreenAddress world.ScreenStates then
                 failwith ^ "Cannot set the state of a non-existent screen '" + scstring screen.ScreenAddress + "'"
             if not ^ World.qualifyEventContext (atooa screen.ScreenAddress) world then
                 failwith ^ "Cannot set the state of a screen in an unqualifed event context."
 #endif
-            let screenStates = Umap.add screen.ScreenAddress screenState world.ScreenStates
+            let screenStates = UMap.add screen.ScreenAddress screenState world.ScreenStates
             World.choose { world with ScreenStates = screenStates }
 
         static member private addScreenState screenState screen world =
@@ -704,7 +704,7 @@ module WorldModule =
             World.publish { Participant = screen; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace screen world
 
         static member private getScreenStateOpt screen world =
-            Umap.tryFind screen.ScreenAddress world.ScreenStates
+            UMap.tryFind screen.ScreenAddress world.ScreenStates
 
         static member private getScreenState screen world =
             match World.getScreenStateOpt screen world with
@@ -869,42 +869,42 @@ module WorldModule =
             let screenDirectory =
                 match Address.getNames layer.LayerAddress with
                 | [screenName; layerName] ->
-                    match Umap.tryFind screenName world.ScreenDirectory with
+                    match UMap.tryFind screenName world.ScreenDirectory with
                     | Some (screenAddress, layerDirectory) ->
-                        match Umap.tryFind layerName layerDirectory with
+                        match UMap.tryFind layerName layerDirectory with
                         | Some (layerAddress, entityDirectory) ->
-                            let layerDirectory = Umap.add layerName (layerAddress, entityDirectory) layerDirectory
-                            Umap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
+                            let layerDirectory = UMap.add layerName (layerAddress, entityDirectory) layerDirectory
+                            UMap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
                         | None ->
-                            let entityDirectory = Umap.makeEmpty None
-                            let layerDirectory = Umap.add layerName (layer.LayerAddress, entityDirectory) layerDirectory
-                            Umap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
+                            let entityDirectory = UMap.makeEmpty None
+                            let layerDirectory = UMap.add layerName (layer.LayerAddress, entityDirectory) layerDirectory
+                            UMap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
                     | None -> failwith ^ "Cannot add layer '" + scstring layer.LayerAddress + "' to non-existent screen."
                 | _ -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
-            let layerStates = Umap.add layer.LayerAddress layerState world.LayerStates
+            let layerStates = UMap.add layer.LayerAddress layerState world.LayerStates
             World.choose { world with ScreenDirectory = screenDirectory; LayerStates = layerStates }
 
         static member private layerStateRemover layer world =
             let screenDirectory =
                 match Address.getNames layer.LayerAddress with
                 | [screenName; layerName] ->
-                    match Umap.tryFind screenName world.ScreenDirectory with
+                    match UMap.tryFind screenName world.ScreenDirectory with
                     | Some (screenAddress, layerDirectory) ->
-                        let layerDirectory = Umap.remove layerName layerDirectory
-                        Umap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
+                        let layerDirectory = UMap.remove layerName layerDirectory
+                        UMap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
                     | None -> failwith ^ "Cannot remove layer '" + scstring layer.LayerAddress + "' from non-existent screen."
                 | _ -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
-            let layerStates = Umap.remove layer.LayerAddress world.LayerStates
+            let layerStates = UMap.remove layer.LayerAddress world.LayerStates
             World.choose { world with ScreenDirectory = screenDirectory; LayerStates = layerStates }
 
         static member private layerStateSetter layerState layer world =
 #if DEBUG
-            if not ^ Umap.containsKey layer.LayerAddress world.LayerStates then
+            if not ^ UMap.containsKey layer.LayerAddress world.LayerStates then
                 failwith ^ "Cannot set the state of a non-existent layer '" + scstring layer.LayerAddress + "'"
             if not ^ World.qualifyEventContext (atooa layer.LayerAddress) world then
                 failwith ^ "Cannot set the state of a layer in an unqualifed event context."
 #endif
-            let layerStates = Umap.add layer.LayerAddress layerState world.LayerStates
+            let layerStates = UMap.add layer.LayerAddress layerState world.LayerStates
             World.choose { world with LayerStates = layerStates }
 
         static member private addLayerState layerState layer world =
@@ -919,7 +919,7 @@ module WorldModule =
             World.publish { Participant = layer; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace layer world
 
         static member private getLayerStateOpt layer world =
-            Umap.tryFind layer.LayerAddress world.LayerStates
+            UMap.tryFind layer.LayerAddress world.LayerStates
 
         static member private getLayerState layer world =
             match World.getLayerStateOpt layer world with
@@ -1086,7 +1086,7 @@ module WorldModule =
             refEq entityAddress entityAddress2 && refEq world world2
 
         static member private entityGetFreshKeyAndValue entity world =
-            let entityStateOpt = Umap.tryFind entity.EntityAddress ^ world.EntityStates
+            let entityStateOpt = UMap.tryFind entity.EntityAddress ^ world.EntityStates
             ((entity.EntityAddress, world), entityStateOpt)
 
         static member private entityStateFinder entity world =
@@ -1100,44 +1100,44 @@ module WorldModule =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
                 | [screenName; layerName; entityName] ->
-                    match Umap.tryFind screenName world.ScreenDirectory with
+                    match UMap.tryFind screenName world.ScreenDirectory with
                     | Some (screenAddress, layerDirectory) ->
-                        match Umap.tryFind layerName layerDirectory with
+                        match UMap.tryFind layerName layerDirectory with
                         | Some (layerAddress, entityDirectory) ->
-                            let entityDirectory = Umap.add entityName entity.EntityAddress entityDirectory
-                            let layerDirectory = Umap.add layerName (layerAddress, entityDirectory) layerDirectory
-                            Umap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
+                            let entityDirectory = UMap.add entityName entity.EntityAddress entityDirectory
+                            let layerDirectory = UMap.add layerName (layerAddress, entityDirectory) layerDirectory
+                            UMap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
                         | None -> failwith ^ "Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent layer."
                     | None -> failwith ^ "Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent screen."
                 | _ -> failwith ^ "Invalid entity address '" + scstring entity.EntityAddress + "'."
-            let entityStates = Umap.add entity.EntityAddress entityState world.EntityStates
+            let entityStates = UMap.add entity.EntityAddress entityState world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
         static member private entityStateRemover entity world =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
                 | [screenName; layerName; entityName] ->
-                    match Umap.tryFind screenName world.ScreenDirectory with
+                    match UMap.tryFind screenName world.ScreenDirectory with
                     | Some (screenAddress, layerDirectory) ->
-                        match Umap.tryFind layerName layerDirectory with
+                        match UMap.tryFind layerName layerDirectory with
                         | Some (layerAddress, entityDirectory) ->
-                            let entityDirectory = Umap.remove entityName entityDirectory
-                            let layerDirectory = Umap.add layerName (layerAddress, entityDirectory) layerDirectory
-                            Umap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
+                            let entityDirectory = UMap.remove entityName entityDirectory
+                            let layerDirectory = UMap.add layerName (layerAddress, entityDirectory) layerDirectory
+                            UMap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
                         | None -> failwith ^ "Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent layer."
                     | None -> failwith ^ "Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent screen."
                 | _ -> failwith ^ "Invalid entity address '" + scstring entity.EntityAddress + "'."
-            let entityStates = Umap.remove entity.EntityAddress world.EntityStates
+            let entityStates = UMap.remove entity.EntityAddress world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
         static member private entityStateSetter entityState entity world =
 #if DEBUG
-            if not ^ Umap.containsKey entity.EntityAddress world.EntityStates then
+            if not ^ UMap.containsKey entity.EntityAddress world.EntityStates then
                 failwith ^ "Cannot set the state of a non-existent entity '" + scstring entity.EntityAddress + "'"
             if not ^ World.qualifyEventContext (atooa entity.EntityAddress) world then
                 failwith ^ "Cannot set the state of an entity in an unqualifed event context."
 #endif
-            let entityStates = Umap.add entity.EntityAddress entityState world.EntityStates
+            let entityStates = UMap.add entity.EntityAddress entityState world.EntityStates
             World.choose { world with EntityStates = entityStates }
 
         static member private addEntityState entityState entity world =
@@ -1498,7 +1498,7 @@ module WorldModule =
 
         static member private updateEntityPublishEventFlag setFlag entity eventAddress world =
             let publishUpdates =
-                match Umap.tryFind eventAddress ^ World.getSubscriptions world with
+                match UMap.tryFind eventAddress ^ World.getSubscriptions world with
                 | Some [] -> failwithumf () // NOTE: event system is defined to clean up all empty subscription entries
                 | Some (_ :: _) -> true
                 | None -> false
@@ -1899,10 +1899,10 @@ module WorldModule =
                   Dispatchers = dispatchers
                   Subsystems = subsystems
                   EntityCacheOpt = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
-                  ScreenDirectory = Umap.makeEmpty None
+                  ScreenDirectory = UMap.makeEmpty None
                   AmbientState = ambientState
                   GameState = gameState
-                  ScreenStates = Umap.makeEmpty None
-                  LayerStates = Umap.makeEmpty None
-                  EntityStates = Umap.makeEmpty None }
+                  ScreenStates = UMap.makeEmpty None
+                  LayerStates = UMap.makeEmpty None
+                  EntityStates = UMap.makeEmpty None }
             World.choose world

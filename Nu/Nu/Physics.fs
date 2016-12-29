@@ -231,7 +231,7 @@ module PhysicsEngineModule =
         private
             { PhysicsContext : Dynamics.World
               Bodies : BodyDictionary
-              PhysicsMessages : PhysicsMessage Ulist
+              PhysicsMessages : PhysicsMessage UList
               IntegrationMessages : IntegrationMessage List
               mutable RebuildingHack : bool }
     
@@ -476,7 +476,7 @@ module PhysicsEngineModule =
             let physicsEngine =
                 { PhysicsContext = FarseerPhysics.Dynamics.World (PhysicsEngine.toPhysicsV2 gravity)
                   Bodies = BodyDictionary (HashIdentity.FromFunctions PhysicsId.hash PhysicsId.equals)
-                  PhysicsMessages = Ulist.makeEmpty None
+                  PhysicsMessages = UList.makeEmpty None
                   IntegrationMessages = List<IntegrationMessage> ()
                   RebuildingHack = false }
             physicsEngine :> IPhysicsEngine
@@ -524,17 +524,17 @@ module PhysicsEngineModule =
                 not ^ List.isEmpty groundNormals
     
             member physicsEngine.ClearMessages () =
-                let physicsEngine = { physicsEngine with PhysicsMessages = Ulist.makeEmpty None }
+                let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty None }
                 physicsEngine :> IPhysicsEngine
     
             member physicsEngine.EnqueueMessage physicsMessage =
-                let physicsMessages = Ulist.add physicsMessage physicsEngine.PhysicsMessages
+                let physicsMessages = UList.add physicsMessage physicsEngine.PhysicsMessages
                 let physicsEngine = { physicsEngine with PhysicsMessages = physicsMessages }
                 physicsEngine :> IPhysicsEngine
     
             member physicsEngine.Integrate tickRate =
                 let physicsMessages = physicsEngine.PhysicsMessages
-                let physicsEngine = { physicsEngine with PhysicsMessages = Ulist.makeEmpty None }
+                let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty None }
                 PhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
                 let physicsStepAmount = Constants.Physics.PhysicsStepRate * single tickRate
                 physicsEngine.PhysicsContext.Step physicsStepAmount

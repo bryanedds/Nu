@@ -80,8 +80,8 @@ module Reflection =
     let pairsToMap mapType objs =
         pairsToMapping "Microsoft.FSharp.Collections.MapModule" mapType objs
 
-    let pairsToVmap vmapType objs =
-        pairsToMapping "Microsoft.FSharp.Collections.VmapModule" vmapType objs
+    let pairsToHMap hmapType objs =
+        pairsToMapping "Microsoft.FSharp.Collections.HMapModule" hmapType objs
 
 module Type =
 
@@ -131,7 +131,7 @@ module TypeExtension =
             elif this.Name = typedefof<_ list>.Name then Reflection.objsToList this []
             elif this.Name = typedefof<_ Set>.Name then Reflection.objsToSet this Set.empty
             elif this.Name = typedefof<Map<_, _>>.Name then Reflection.pairsToMap this Map.empty
-            elif this.Name = typedefof<Vmap<_, _>>.Name then Reflection.pairsToVmap this (Vmap.makeEmpty ())
+            elif this.Name = typedefof<HMap<_, _>>.Name then Reflection.pairsToHMap this (HMap.makeEmpty ())
             elif FSharpType.IsUnion this then
                 let unionCases = FSharpType.GetUnionCases this
                 if (unionCases.[0].GetFields ()).Length = 0

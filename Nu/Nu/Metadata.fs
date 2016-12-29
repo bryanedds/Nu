@@ -23,7 +23,7 @@ type [<StructuralEquality; NoComparison>] AssetMetadata =
 
 /// A map of asset names to asset metadata.
 /// TODO: consider turning this, combined with the functions in the Metadata module, into an ADT.
-type AssetMetadataMap = Umap<string, Umap<string, AssetMetadata>>
+type AssetMetadataMap = UMap<string, UMap<string, AssetMetadata>>
 
 /// Thrown when a tile set property is not found.
 exception TileSetPropertyNotFoundException of string
@@ -84,18 +84,18 @@ module Metadata =
     let private tryGenerateAssetMetadataSubmap packageName assetGraph =
         match AssetGraph.tryLoadAssetsFromPackage true None packageName assetGraph with
         | Right assets ->
-            let submap = assets |> Seq.map generateAssetMetadata |> Umap.ofSeq
+            let submap = assets |> Seq.map generateAssetMetadata |> UMap.ofSeq
             (packageName, submap)
         | Left error ->
             Log.info ^ "Could not load asset metadata for package '" + packageName + "' due to: " + error
-            (packageName, Umap.makeEmpty None)
+            (packageName, UMap.makeEmpty None)
 
     let private generateAssetMetadataMap2 packageNames assetGraph =
         List.fold
             (fun assetMetadataMap packageName ->
                 let (packageName, submap) = tryGenerateAssetMetadataSubmap packageName assetGraph
-                Umap.add packageName submap assetMetadataMap)
-            (Umap.makeEmpty None)
+                UMap.add packageName submap assetMetadataMap)
+            (UMap.makeEmpty None)
             packageNames
 
     /// Generate an asset metadata map from the given asset graph.
@@ -106,10 +106,10 @@ module Metadata =
 
     /// Try to get the metadata of the given asset.
     let tryGetMetadata (assetTag : AssetTag) assetMetadataMap =
-        let packageOpt = Umap.tryFind assetTag.PackageName assetMetadataMap
+        let packageOpt = UMap.tryFind assetTag.PackageName assetMetadataMap
         match packageOpt with
         | Some package ->
-            let assetOpt = Umap.tryFind assetTag.AssetName package
+            let assetOpt = UMap.tryFind assetTag.AssetName package
             match assetOpt with
             | Some _ as asset -> asset
             | None -> None

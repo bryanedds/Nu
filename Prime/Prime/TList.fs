@@ -6,35 +6,35 @@ open System
 open System.Collections.Generic
 
 [<AutoOpen>]
-module TlistModule =
+module TListModule =
 
     type [<NoEquality; NoComparison>] private 'a Log =
         | Add of 'a
         | Remove of 'a
         | Set of int * 'a
 
-    type [<NoEquality; NoComparison>] 'a Tlist =
+    type [<NoEquality; NoComparison>] 'a TList =
         private
-            { mutable Tlist : 'a Tlist
+            { mutable TList : 'a TList
               ImpList : 'a List
               ImpListOrigin : 'a List
               Logs : 'a Log list
               LogsLength : int
               BloatFactor : int }
 
-        static member (>>.) (list : 'a2 Tlist, builder : Texpr<unit, 'a2 Tlist>) =
+        static member (>>.) (list : 'a2 TList, builder : TExpr<unit, 'a2 TList>) =
             (snd ^ builder list)
 
-        static member (.>>) (list : 'a2 Tlist, builder : Texpr<'a2, 'a2 Tlist>) =
+        static member (.>>) (list : 'a2 TList, builder : TExpr<'a2, 'a2 TList>) =
             (fst ^ builder list)
 
-        static member (.>>.) (list : 'a2 Tlist, builder : Texpr<'a2, 'a2 Tlist>) =
+        static member (.>>.) (list : 'a2 TList, builder : TExpr<'a2, 'a2 TList>) =
             builder list
 
-    let tlist<'a> = TexprBuilder<'a Tlist> ()
+    let tlist<'a> = TExprBuilder<'a TList> ()
 
     [<RequireQualifiedAccess>]
-    module Tlist =
+    module TList =
 
         let private commit list =
             let oldList = list
@@ -47,20 +47,20 @@ module TlistModule =
                 list.Logs ()
             let impList = List<'a> impListOrigin
             let list = { list with ImpList = impList; ImpListOrigin = impListOrigin; Logs = []; LogsLength = 0 }
-            list.Tlist <- list
-            oldList.Tlist <- list
+            list.TList <- list
+            oldList.TList <- list
             list
 
         let private compress list =
             let oldList = list
             let impListOrigin = List<'a> list.ImpList
             let list = { list with ImpListOrigin = impListOrigin; Logs = []; LogsLength = 0 }
-            list.Tlist <- list
-            oldList.Tlist <- list
+            list.TList <- list
+            oldList.TList <- list
             list
 
         let private validate list =
-            match obj.ReferenceEquals (list.Tlist, list) with
+            match obj.ReferenceEquals (list.TList, list) with
             | true -> if list.LogsLength > list.ImpList.Count * list.BloatFactor then compress list else list
             | false -> commit list
 
@@ -68,19 +68,19 @@ module TlistModule =
             let oldList = list
             let list = validate list
             let list = updater list
-            list.Tlist <- list
-            oldList.Tlist <- list
+            list.TList <- list
+            oldList.TList <- list
             list
 
         let private makeFromTempList bloatFactorOpt (tempList : 'a List) =
             let list =
-                { Tlist = Unchecked.defaultof<'a Tlist>
+                { TList = Unchecked.defaultof<'a TList>
                   ImpList = tempList
                   ImpListOrigin = List<'a> tempList
                   Logs = []
                   LogsLength = 0
                   BloatFactor = Option.getOrDefault 1 bloatFactorOpt }
-            list.Tlist <- list
+            list.TList <- list
             list
 
         let makeFromSeq bloatFactorOpt (items : 'a seq) =
@@ -134,7 +134,7 @@ module TlistModule =
             let list = validate list
             (list.ImpList.Contains value, list)
 
-        /// Convert a Tlist to a seq. Note that entire list is iterated eagerly since the underlying .NET List could
+        /// Convert a TList to a seq. Note that entire list is iterated eagerly since the underlying .NET List could
         /// otherwise opaquely change during iteration.
         let toSeq list =
             let list = validate list
@@ -149,7 +149,7 @@ module TlistModule =
             let result = Seq.fold folder state seq
             (result, list)
 
-        let map (mapper : 'a -> 'b) (list : 'a Tlist) =
+        let map (mapper : 'a -> 'b) (list : 'a TList) =
             // OPTIMIZATION: elides building of avoidable transactions.
             let list = validate list
             let impList = list.ImpList
@@ -225,4 +225,4 @@ module TlistModule =
         let removeMany values list =
             Seq.fold (flip remove) list values
 
-type 'a Tlist = 'a TlistModule.Tlist
+type 'a TList = 'a TListModule.TList

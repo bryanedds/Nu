@@ -6,34 +6,34 @@ open System
 open System.Collections.Generic
 
 [<AutoOpen>]
-module TmapModule =
+module TMapModule =
 
     type private Log<'k, 'v when 'k : comparison> =
         | Add of 'k * 'v
         | Remove of 'k
 
-    type [<NoEquality; NoComparison>] Tmap<'k, 'v when 'k : comparison> =
+    type [<NoEquality; NoComparison>] TMap<'k, 'v when 'k : comparison> =
         private
-            { mutable Tmap : Tmap<'k, 'v>
+            { mutable TMap : TMap<'k, 'v>
               Dict : Dictionary<'k, 'v>
               DictOrigin : Dictionary<'k, 'v>
               Logs : Log<'k, 'v> list
               LogsLength : int
               BloatFactor : int }
 
-        static member (>>.) (map : Tmap<'k2, 'v2>, builder : Texpr<unit, Tmap<'k2, 'v2>>) =
+        static member (>>.) (map : TMap<'k2, 'v2>, builder : TExpr<unit, TMap<'k2, 'v2>>) =
             (snd ^ builder map)
 
-        static member (.>>) (map : Tmap<'k2, 'v2>, builder : Texpr<'v2, Tmap<'k2, 'v2>>) =
+        static member (.>>) (map : TMap<'k2, 'v2>, builder : TExpr<'v2, TMap<'k2, 'v2>>) =
             (fst ^ builder map)
 
-        static member (.>>.) (map : Tmap<'k2, 'v2>, builder : Texpr<'v2, Tmap<'k2, 'v2>>) =
+        static member (.>>.) (map : TMap<'k2, 'v2>, builder : TExpr<'v2, TMap<'k2, 'v2>>) =
             builder map
 
-    let tmap<'k, 'v when 'k : comparison> = TexprBuilder<Tmap<'k, 'v>> ()
+    let tmap<'k, 'v when 'k : comparison> = TExprBuilder<TMap<'k, 'v>> ()
 
     [<RequireQualifiedAccess>]
-    module Tmap =
+    module TMap =
 
         let private commit map =
             let oldMap = map
@@ -45,20 +45,20 @@ module TmapModule =
                 map.Logs ()
             let dict = Dictionary<'k, 'v> (dictOrigin, HashIdentity.Structural)
             let map = { map with Dict = dict; DictOrigin = dictOrigin; Logs = []; LogsLength = 0 }
-            map.Tmap <- map
-            oldMap.Tmap <- map
+            map.TMap <- map
+            oldMap.TMap <- map
             map
 
         let private compress map =
             let oldMap = map
             let dictOrigin = Dictionary<'k, 'v> (map.Dict, HashIdentity.Structural)
             let map = { map with DictOrigin = dictOrigin; Logs = []; LogsLength = 0 }
-            map.Tmap <- map
-            oldMap.Tmap <- map
+            map.TMap <- map
+            oldMap.TMap <- map
             map
 
         let private validate map =
-            match obj.ReferenceEquals (map.Tmap, map) with
+            match obj.ReferenceEquals (map.TMap, map) with
             | true -> if map.LogsLength > map.Dict.Count * map.BloatFactor then compress map else map
             | false -> commit map 
 
@@ -66,19 +66,19 @@ module TmapModule =
             let oldMap = map
             let map = validate map
             let map = updater map
-            map.Tmap <- map
-            oldMap.Tmap <- map
+            map.TMap <- map
+            oldMap.TMap <- map
             map
 
         let makeFromSeq<'k, 'v when 'k : comparison> optBloatFactor entries =
             let map =
-                { Tmap = Unchecked.defaultof<Tmap<'k, 'v>>
+                { TMap = Unchecked.defaultof<TMap<'k, 'v>>
                   Dict = dictPlus entries
                   DictOrigin = dictPlus entries
                   Logs = []
                   LogsLength = 0
                   BloatFactor = Option.getOrDefault 1 optBloatFactor }
-            map.Tmap <- map
+            map.TMap <- map
             map
 
         let makeEmpty<'k, 'v when 'k : comparison> optBloatFactor =
@@ -137,7 +137,7 @@ module TmapModule =
             | (Some _, map) -> (true, map)
             | (None, map) -> (false, map)
 
-        /// Convert a Tmap to a seq. Note that entire map is iterated eagerly since the underlying
+        /// Convert a TMap to a seq. Note that entire map is iterated eagerly since the underlying
         /// Dictionary could otherwise opaquely change during iteration.
         let toSeq map =
             let map = validate map
@@ -168,4 +168,4 @@ module TmapModule =
                 (makeEmpty ^ Some map.BloatFactor)
                 map
 
-type Tmap<'k, 'v when 'k : comparison> = TmapModule.Tmap<'k, 'v>
+type TMap<'k, 'v when 'k : comparison> = TMapModule.TMap<'k, 'v>
