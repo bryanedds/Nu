@@ -25,7 +25,7 @@ module AmbientStateModule =
               TickTime : int64
               UpdateCount : int64
               Liveness : Liveness
-              Tasklets : 'w Tasklet Ulist
+              Tasklets : 'w Tasklet UList
               AssetMetadataMap : AssetMetadataMap
               Overlayer : Overlayer
               OverlayRouter : OverlayRouter
@@ -85,19 +85,19 @@ module AmbientStateModule =
 
         /// Clear the tasklets from future processing.
         let clearTasklets state =
-            { state with Tasklets = Ulist.makeEmpty None }
+            { state with Tasklets = UList.makeEmpty None }
 
         /// Restore the given tasklets from future processing.
         let restoreTasklets tasklets state =
-            { state with Tasklets = Ulist.ofSeq ^ Seq.append (state.Tasklets :> _ seq) (tasklets :> _ seq) }
+            { state with Tasklets = UList.ofSeq ^ Seq.append (state.Tasklets :> _ seq) (tasklets :> _ seq) }
 
         /// Add a tasklet to be executed at the scheduled time.
         let addTasklet tasklet state =
-            { state with Tasklets = Ulist.add tasklet state.Tasklets }
+            { state with Tasklets = UList.add tasklet state.Tasklets }
 
         /// Add multiple tasklets to be executed at the scheduled times.
         let addTasklets tasklets state =
-            { state with Tasklets = Ulist.ofSeq ^ Seq.append (tasklets :> _ seq) (state.Tasklets :> _ seq) }
+            { state with Tasklets = UList.ofSeq ^ Seq.append (tasklets :> _ seq) (state.Tasklets :> _ seq) }
 
         /// Get the asset metadata map.
         let getAssetMetadataMap state =
@@ -152,7 +152,7 @@ module AmbientStateModule =
               TickTime = 0L
               UpdateCount = 0L
               Liveness = Running
-              Tasklets = Ulist.makeEmpty None
+              Tasklets = UList.makeEmpty None
               AssetMetadataMap = assetMetadataMap
               OverlayRouter = overlayRouter
               Overlayer = overlayer

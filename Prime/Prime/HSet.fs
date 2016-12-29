@@ -16,22 +16,22 @@ type internal 'a Hv =
         end
 
 [<AutoOpen>]
-module VsetModule =
+module HSetModule =
 
     /// TODO: there's an F# issue where UseNullAsTrueValue does not work on unions with 4 or more cases
     /// https://github.com/Microsoft/visualfsharp/issues/711 . Once resolved, should use it and be able
     /// to make arrays with Array.zeroCreate alone without also copying over the empty array.
-    type [<NoComparison>] private Vnode<'a when 'a : comparison> =
+    type [<NoComparison>] private HNode<'a when 'a : comparison> =
         | Nil
         | Singleton of 'a Hv
-        | Multiple of 'a Vnode array
+        | Multiple of 'a HNode array
         | Clash of 'a Set
 
     [<RequireQualifiedAccess>]
-    module private Vnode =
+    module private HNode =
     
         /// OPTIMIZATION: Array.Clone () is not used since it's been profiled to be slower
-        let inline cloneArray (arr : 'a Vnode array) : 'a Vnode array =
+        let inline cloneArray (arr : 'a HNode array) : 'a HNode array =
             let arr' = Array.zeroCreate 32  // NOTE: there's an unecessary check against the size here, but that's the only inefficiency
                                             // TODO: use Array.zeroCreateUnchecked if / when it becomes available
             Array.Copy (arr, 0, arr', 0, 32) // param checks are inefficient, but hopefully there's at least a memcpy underneath...
@@ -62,7 +62,7 @@ module VsetModule =
                 | Clash clashSet -> yield! Set.toSeq clashSet }
     
         /// OPTIMIZATION: Requires an empty array to use the source of new array clones in order to avoid Array.create.
-        let rec add (hv : 'a Hv) (earr : 'a Vnode array) (dep : int) (node : 'a Vnode) : 'a Vnode =
+        let rec add (hv : 'a Hv) (earr : 'a HNode array) (dep : int) (node : 'a HNode) : 'a HNode =
     
             // lower than max depth, non-clashing
             if dep < 8 then
@@ -122,7 +122,7 @@ module VsetModule =
                 | Multiple _ -> failwithumf () // should never hit here
                 | Clash clashSet -> Clash ^ Set.add hv.V clashSet
     
-        let rec remove (h : int) (v : 'a) (dep : int) (node : 'a Vnode) : 'a Vnode =
+        let rec remove (h : int) (v : 'a) (dep : int) (node : 'a HNode) : 'a HNode =
             match node with
             | Nil -> node
             | Singleton hv -> if hv.V == v then Nil else node
@@ -136,7 +136,7 @@ module VsetModule =
                 let clashSet = Set.remove v clashSet
                 if Set.isEmpty clashSet then Nil else Clash clashSet
 
-        let rec contains (h : int) (v : 'a) (dep : int) (node : 'a Vnode) =
+        let rec contains (h : int) (v : 'a) (dep : int) (node : 'a HNode) =
             match node with
             | Nil -> false
             | Singleton hv -> hv.V == v
@@ -148,86 +148,86 @@ module VsetModule =
 
     /// A very fast persistent hash set.
     /// Works in effectively constant-time for look-ups and updates.
-    type [<NoComparison>] Vset<'a when 'a : comparison> =
+    type [<NoComparison>] HSet<'a when 'a : comparison> =
         private
-            { Node : 'a Vnode
-              EmptyArray : 'a Vnode array }
+            { Node : 'a HNode
+              EmptyArray : 'a HNode array }
     
         interface 'a IEnumerable with
-            member this.GetEnumerator () = (Vnode.toSeq this.Node).GetEnumerator ()
+            member this.GetEnumerator () = (HNode.toSeq this.Node).GetEnumerator ()
     
         interface IEnumerable with
-            member this.GetEnumerator () = (Vnode.toSeq this.Node).GetEnumerator () :> IEnumerator
+            member this.GetEnumerator () = (HNode.toSeq this.Node).GetEnumerator () :> IEnumerator
 
     [<RequireQualifiedAccess>]
-    module Vset =
+    module HSet =
     
-        /// Create an empty Vset.
+        /// Create an empty HSet.
         let makeEmpty () =
-            { Node = Vnode.empty
-              EmptyArray = Array.create 32 Vnode.empty }
+            { Node = HNode.empty
+              EmptyArray = Array.create 32 HNode.empty }
     
-        /// Check that a Vset is empty.
+        /// Check that a HSet is empty.
         let isEmpty set =
-            Vnode.isEmpty set.Node
+            HNode.isEmpty set.Node
     
-        /// Check that a Vset is empty.
+        /// Check that a HSet is empty.
         let notEmpty set =
-            not ^ Vnode.isEmpty set.Node
+            not ^ HNode.isEmpty set.Node
     
-        /// Add a value with the key to a Vset.
+        /// Add a value with the key to a HSet.
         let add (value : 'a) set =
             let hv = Hv (value.GetHashCode (), value)
-            let node = Vnode.add hv set.EmptyArray 0 set.Node
+            let node = HNode.add hv set.EmptyArray 0 set.Node
             { set with Node = node }
     
-        /// Add a list of values with associated keys to a Vset.
+        /// Add a list of values with associated keys to a HSet.
         let addMany entries set =
             Seq.fold (fun set (value : 'a) -> add value set) set entries
     
-        /// Remove a value with the given key from a Vset.
+        /// Remove a value with the given key from a HSet.
         let remove (value : 'a) set =
             let h = value.GetHashCode ()
-            { set with Vset.Node = Vnode.remove h value 0 set.Node }
+            { set with HSet.Node = HNode.remove h value 0 set.Node }
     
-        /// Remove all values with the given keys from a Vset.
+        /// Remove all values with the given keys from a HSet.
         let removeMany keys set =
             Seq.fold (fun set (value : 'a) -> remove value set) set keys
     
-        /// Check that a Vset contains a value.
+        /// Check that a HSet contains a value.
         let contains value set =
             let h = value.GetHashCode ()
-            Vnode.contains h value 0 set.Node
+            HNode.contains h value 0 set.Node
             
-        /// Combine the contents of two Vsets.
+        /// Combine the contents of two HSets.
         let concat set set2 =
             Seq.fold (fun set value -> add value set) set set2
     
-        /// Fold over a Vset.
-        let fold folder state (set : 'a Vset) =
-            Vnode.fold folder state set.Node
+        /// Fold over a HSet.
+        let fold folder state (set : 'a HSet) =
+            HNode.fold folder state set.Node
     
-        /// Map over a Vset.
-        let map mapper (set : 'a Vset) =
+        /// Map over a HSet.
+        let map mapper (set : 'a HSet) =
             fold
                 (fun state value -> add (mapper value) state)
                 (makeEmpty ())
                 set
     
-        /// Filter a Vset.
-        let filter pred (set : 'a Vset) =
+        /// Filter a HSet.
+        let filter pred (set : 'a HSet) =
             fold
                 (fun state value -> if pred value then add value state else state)
                 (makeEmpty ())
                 set
     
-        /// Convert a Vset to a sequence of pairs of keys and values.
+        /// Convert a HSet to a sequence of pairs of keys and values.
         /// NOTE: This function seems to profile as being very slow. I don't know if it's the seq / yields syntax or what.
         /// Don't use it unless you need its laziness or if performance won't be affected significantly.
-        let toSeq (set : 'a Vset) =
+        let toSeq (set : 'a HSet) =
             set :> 'a IEnumerable
     
-        /// Convert a sequence of keys and values to a Vset.
+        /// Convert a sequence of keys and values to a HSet.
         let ofSeq pairs =
             Seq.fold
                 (fun set value -> add value set)
@@ -236,4 +236,4 @@ module VsetModule =
 
 /// A very fast persistent hash set.
 /// Works in effectively constant-time for look-ups and updates.
-type Vset<'a when 'a : comparison> = 'a VsetModule.Vset
+type HSet<'a when 'a : comparison> = 'a HSetModule.HSet

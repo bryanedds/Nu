@@ -836,12 +836,12 @@ module WorldTypes =
               Dispatchers : Dispatchers
               Subsystems : World Subsystems
               EntityCacheOpt : KeyedCache<Entity Address * World, EntityState option>
-              ScreenDirectory : Umap<Name, Screen Address * Umap<Name, Layer Address * Umap<Name, Entity Address>>>
+              ScreenDirectory : UMap<Name, Screen Address * UMap<Name, Layer Address * UMap<Name, Entity Address>>>
               AmbientState : World AmbientState
               GameState : GameState
-              ScreenStates : Umap<Screen Address, ScreenState>
-              LayerStates : Umap<Layer Address, LayerState>
-              EntityStates : Umap<Entity Address, EntityState> }
+              ScreenStates : UMap<Screen Address, ScreenState>
+              LayerStates : UMap<Layer Address, LayerState>
+              EntityStates : UMap<Entity Address, EntityState> }
 
         interface EventWorld<Game, World> with
             member this.GetLiveness () = AmbientState.getLiveness this.AmbientState
@@ -850,9 +850,9 @@ module WorldTypes =
             member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
             member this.ContainsParticipant participant =
                 match participant with
-                | :? Entity as entity -> Umap.containsKey entity.EntityAddress this.EntityStates
-                | :? Layer as layer -> Umap.containsKey layer.LayerAddress this.LayerStates
-                | :? Screen as screen -> Umap.containsKey screen.ScreenAddress this.ScreenStates
+                | :? Entity as entity -> UMap.containsKey entity.EntityAddress this.EntityStates
+                | :? Layer as layer -> UMap.containsKey layer.LayerAddress this.LayerStates
+                | :? Screen as screen -> UMap.containsKey screen.ScreenAddress this.ScreenStates
                 | :? Game -> true
                 | _  -> false
             member this.PublishEvent (participant : Participant) publisher eventData eventAddress eventTrace subscription world =

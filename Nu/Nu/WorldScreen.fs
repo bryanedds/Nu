@@ -98,7 +98,7 @@ module WorldScreenModule =
 
         /// Get all the world's screens.
         static member getScreens world =
-            Umap.fold
+            UMap.fold
                 (fun state _ (screenAddress, _) -> Screen.proxy screenAddress :: state)
                 [] (World.getScreenDirectory world) :> _ seq
 

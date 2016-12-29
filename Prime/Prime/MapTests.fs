@@ -56,13 +56,13 @@ module MapTests =
         List.forall2 eq testMaps fsmaps
 
     [<Property>]
-    let vmapsEqualFsmapsAfterSteps (initialMap : Map<int, string>) (actions : MapAction<int, string>[]) =
-        let testMap = Vmap.ofSeq ^ Map.toSeq initialMap
-        let eq (vmap : Vmap<_,_>) (fsmap : Map<_,_>) = Map.ofSeq vmap = fsmap
-        eqMapsAfterSteps initialMap testMap actions Vmap.add Vmap.remove Vmap.fold (+) eq
+    let hmapsEqualFsmapsAfterSteps (initialMap : Map<int, string>) (actions : MapAction<int, string>[]) =
+        let testMap = HMap.ofSeq ^ Map.toSeq initialMap
+        let eq (hmap : HMap<_,_>) (fsmap : Map<_,_>) = Map.ofSeq hmap = fsmap
+        eqMapsAfterSteps initialMap testMap actions HMap.add HMap.remove HMap.fold (+) eq
 
     [<Property>]
     let umapsEqualFsmapsAfterSteps (initialMap : Map<int, string>) (actions : MapAction<int, string>[]) =
-        let testMap = Umap.ofSeq ^ Map.toSeq initialMap
-        let eq (umap : Umap<_,_>) (fsmap : Map<_,_>) = Map.ofSeq umap = fsmap
-        eqMapsAfterSteps initialMap testMap actions Umap.add Umap.remove Umap.fold (+) eq
+        let testMap = UMap.ofSeq ^ Map.toSeq initialMap
+        let eq (umap : UMap<_,_>) (fsmap : Map<_,_>) = Map.ofSeq umap = fsmap
+        eqMapsAfterSteps initialMap testMap actions UMap.add UMap.remove UMap.fold (+) eq

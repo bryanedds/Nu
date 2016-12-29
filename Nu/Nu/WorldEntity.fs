@@ -183,11 +183,11 @@ module WorldEntityModule =
         static member getEntities layer world =
             match Address.getNames layer.LayerAddress with
             | [screenName; layerName] ->
-                match Umap.tryFind screenName ^ World.getScreenDirectory world with
+                match UMap.tryFind screenName ^ World.getScreenDirectory world with
                 | Some (_, layerDirectory) ->
-                    match Umap.tryFind layerName layerDirectory with
+                    match UMap.tryFind layerName layerDirectory with
                     | Some (_, entityDirectory) ->
-                        Umap.fold (fun state _ entityAddress -> Entity.proxy entityAddress :: state) [] entityDirectory :> _ seq
+                        UMap.fold (fun state _ entityAddress -> Entity.proxy entityAddress :: state) [] entityDirectory :> _ seq
                     | None -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
                 | None -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
             | _ -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."

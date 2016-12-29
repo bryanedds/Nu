@@ -61,7 +61,7 @@ module AudioPlayerModule =
         private
             { AudioContext : unit // audio context, interestingly, is global. Good luck encapsulating that!
               AudioPackageMap : AudioAsset PackageMap
-              AudioMessages : AudioMessage Ulist
+              AudioMessages : AudioMessage UList
               CurrentSongOpt : PlaySongMessage option
               NextPlaySongOpt : PlaySongMessage option }
     
@@ -204,7 +204,7 @@ module AudioPlayerModule =
             | ReloadAudioAssetsMessage -> AudioPlayer.handleReloadAudioAssets audioPlayer
     
         static member private handleAudioMessages audioMessages audioPlayer =
-            Ulist.fold AudioPlayer.handleAudioMessage audioPlayer audioMessages
+            UList.fold AudioPlayer.handleAudioMessage audioPlayer audioMessages
     
         static member private tryUpdateCurrentSong audioPlayer =
             if SDL_mixer.Mix_PlayingMusic () = 1 then audioPlayer
@@ -231,7 +231,7 @@ module AudioPlayerModule =
             let audioPlayer =
                 { AudioContext = ()
                   AudioPackageMap = Map.empty
-                  AudioMessages = Ulist.makeEmpty None
+                  AudioMessages = UList.makeEmpty None
                   CurrentSongOpt = None
                   NextPlaySongOpt = None }
             audioPlayer
@@ -239,17 +239,17 @@ module AudioPlayerModule =
         interface IAudioPlayer with
     
             member audioPlayer.ClearMessages () =
-                let audioPlayer = { audioPlayer with AudioMessages = Ulist.makeEmpty None }
+                let audioPlayer = { audioPlayer with AudioMessages = UList.makeEmpty None }
                 audioPlayer :> IAudioPlayer
     
             member audioPlayer.EnqueueMessage audioMessage =
-                let audioMessages = Ulist.add audioMessage audioPlayer.AudioMessages
+                let audioMessages = UList.add audioMessage audioPlayer.AudioMessages
                 let audioPlayer = { audioPlayer with AudioMessages = audioMessages }
                 audioPlayer :> IAudioPlayer
     
             member audioPlayer.Play () =
                 let audioMessages = audioPlayer.AudioMessages
-                let audioPlayer = { audioPlayer with AudioMessages = Ulist.makeEmpty None }
+                let audioPlayer = { audioPlayer with AudioMessages = UList.makeEmpty None }
                 let audioPlayer = AudioPlayer.handleAudioMessages audioMessages audioPlayer
                 let audioPlayer = AudioPlayer.updateAudioPlayer audioPlayer
                 audioPlayer :> IAudioPlayer

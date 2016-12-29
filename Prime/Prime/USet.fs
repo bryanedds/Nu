@@ -6,15 +6,15 @@ open System.Collections
 open System.Collections.Generic
 
 [<AutoOpen>]
-module UsetModule =
+module USetModule =
 
-    type [<NoEquality; NoComparison>] Uset<'a when 'a : comparison> =
+    type [<NoEquality; NoComparison>] USet<'a when 'a : comparison> =
         private
-            { RefSet : 'a Tset ref }
+            { RefSet : 'a TSet ref }
     
         interface IEnumerable<'a> with
             member this.GetEnumerator () =
-                let (seq, tset) = Tset.toSeq !this.RefSet
+                let (seq, tset) = TSet.toSeq !this.RefSet
                 this.RefSet := tset
                 seq.GetEnumerator ()
     
@@ -23,27 +23,27 @@ module UsetModule =
                 (this :> IEnumerable<'a>).GetEnumerator () :> IEnumerator
 
     [<RequireQualifiedAccess>]
-    module Uset =
+    module USet =
 
         let makeEmpty<'a when 'a : comparison> bloatFactorOpt =
-            { RefSet = ref ^ Tset.makeEmpty<'a> bloatFactorOpt }
+            { RefSet = ref ^ TSet.makeEmpty<'a> bloatFactorOpt }
 
         let add value set =
-            { RefSet = ref ^ Tset.add value !set.RefSet }
+            { RefSet = ref ^ TSet.add value !set.RefSet }
 
         let remove value set =
-            { RefSet = ref ^ Tset.remove value !set.RefSet }
+            { RefSet = ref ^ TSet.remove value !set.RefSet }
     
         /// Add all the given values to the set.
         let addMany values set =
-            { RefSet = ref ^ Tset.addMany values !set.RefSet }
+            { RefSet = ref ^ TSet.addMany values !set.RefSet }
     
         /// Remove all the given values from the set.
         let removeMany values set =
-            { RefSet = ref ^ Tset.removeMany values !set.RefSet }
+            { RefSet = ref ^ TSet.removeMany values !set.RefSet }
 
         let isEmpty set =
-            let (result, tset) = Tset.isEmpty !set.RefSet
+            let (result, tset) = TSet.isEmpty !set.RefSet
             set.RefSet := tset
             result
 
@@ -51,29 +51,29 @@ module UsetModule =
             not ^ isEmpty set
 
         let contains value set =
-            let (result, tset) = Tset.contains value !set.RefSet
+            let (result, tset) = TSet.contains value !set.RefSet
             set.RefSet := tset
             result
 
         let ofSeq items =
-            { RefSet = ref ^ Tset.ofSeq items }
+            { RefSet = ref ^ TSet.ofSeq items }
 
-        let toSeq (set : _ Uset) =
+        let toSeq (set : _ USet) =
             set :> _ seq
 
         let fold folder state set =
-            let (result, tset) = Tset.fold folder state !set.RefSet
+            let (result, tset) = TSet.fold folder state !set.RefSet
             set.RefSet := tset
             result
 
         let map mapper set =
-            let (result, tset) = Tset.map mapper !set.RefSet
+            let (result, tset) = TSet.map mapper !set.RefSet
             set.RefSet := tset
             { RefSet = ref result }
 
         let filter pred set =
-            let (result, tset) = Tset.filter pred !set.RefSet
+            let (result, tset) = TSet.filter pred !set.RefSet
             set.RefSet := tset
             { RefSet = ref result }
 
-type Uset<'a when 'a : comparison> = UsetModule.Uset<'a>
+type USet<'a when 'a : comparison> = USetModule.USet<'a>

@@ -6,15 +6,15 @@ open System.Collections
 open System.Collections.Generic
 
 [<AutoOpen>]
-module UmapModule =
+module UMapModule =
 
-    type [<NoEquality; NoComparison>] Umap<'k, 'v when 'k : comparison> =
+    type [<NoEquality; NoComparison>] UMap<'k, 'v when 'k : comparison> =
         private
-            { RefMap : Tmap<'k, 'v> ref }
+            { RefMap : TMap<'k, 'v> ref }
     
         interface IEnumerable<'k * 'v> with
             member this.GetEnumerator () =
-                let (seq, tmap) = Tmap.toSeq !this.RefMap
+                let (seq, tmap) = TMap.toSeq !this.RefMap
                 this.RefMap := tmap
                 seq.GetEnumerator ()
     
@@ -23,30 +23,30 @@ module UmapModule =
                 (this :> IEnumerable<'k * 'v>).GetEnumerator () :> IEnumerator
 
     [<RequireQualifiedAccess>]
-    module Umap =
+    module UMap =
 
         let makeFromSeq<'k, 'v when 'k : comparison> bloatFactorOpt entries =
-            { RefMap = ref ^ Tmap.makeFromSeq<'k, 'v> bloatFactorOpt entries }
+            { RefMap = ref ^ TMap.makeFromSeq<'k, 'v> bloatFactorOpt entries }
 
         let makeEmpty<'k, 'v when 'k : comparison> bloatFactorOpt =
-            { RefMap = ref ^ Tmap.makeEmpty<'k, 'v> bloatFactorOpt }
+            { RefMap = ref ^ TMap.makeEmpty<'k, 'v> bloatFactorOpt }
 
         let add key value map =
-            { RefMap = ref ^ Tmap.add key value !map.RefMap }
+            { RefMap = ref ^ TMap.add key value !map.RefMap }
 
         let remove key map =
-            { RefMap = ref ^ Tmap.remove key !map.RefMap }
+            { RefMap = ref ^ TMap.remove key !map.RefMap }
     
         /// Add all the given entries to the map.
         let addMany entries map =
-            { RefMap = ref ^ Tmap.addMany entries !map.RefMap }
+            { RefMap = ref ^ TMap.addMany entries !map.RefMap }
     
         /// Remove all values with the given keys from the map.
         let removeMany keys map =
-            { RefMap = ref ^ Tmap.removeMany keys !map.RefMap }
+            { RefMap = ref ^ TMap.removeMany keys !map.RefMap }
 
         let isEmpty map =
-            let (result, tmap) = Tmap.isEmpty !map.RefMap
+            let (result, tmap) = TMap.isEmpty !map.RefMap
             map.RefMap := tmap
             result
 
@@ -54,39 +54,39 @@ module UmapModule =
             not ^ isEmpty map
 
         let tryFind key map =
-            let (valueOpt, tmap) = Tmap.tryFind key !map.RefMap
+            let (valueOpt, tmap) = TMap.tryFind key !map.RefMap
             map.RefMap := tmap
             valueOpt
 
         let find key map =
-            let kvp = Tmap.findNoAlloc key !map.RefMap
+            let kvp = TMap.findNoAlloc key !map.RefMap
             map.RefMap := kvp.Value
             kvp.Key
 
         let containsKey key map =
-            let (result, tmap) = Tmap.containsKey key !map.RefMap
+            let (result, tmap) = TMap.containsKey key !map.RefMap
             map.RefMap := tmap
             result
     
         let ofSeq pairs =
-            { RefMap = ref ^ Tmap.ofSeq pairs }
+            { RefMap = ref ^ TMap.ofSeq pairs }
 
-        let toSeq (map : Umap<_, _>) =
+        let toSeq (map : UMap<_, _>) =
             map :> _ seq
 
         let fold folder state map =
-            let (result, tmap) = Tmap.fold folder state !map.RefMap
+            let (result, tmap) = TMap.fold folder state !map.RefMap
             map.RefMap := tmap
             result
 
         let map mapper map =
-            let (result, tmap) = Tmap.map mapper !map.RefMap
+            let (result, tmap) = TMap.map mapper !map.RefMap
             map.RefMap := tmap
             { RefMap = ref result }
 
         let filter pred map =
-            let (result, tmap) = Tmap.filter pred !map.RefMap
+            let (result, tmap) = TMap.filter pred !map.RefMap
             map.RefMap := tmap
             { RefMap = ref result }
 
-type Umap<'k, 'v when 'k : comparison> = UmapModule.Umap<'k, 'v>
+type UMap<'k, 'v when 'k : comparison> = UMapModule.UMap<'k, 'v>

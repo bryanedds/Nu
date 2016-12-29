@@ -6,34 +6,34 @@ open System
 open System.Collections.Generic
 
 [<AutoOpen>]
-module TsetModule =
+module TSetModule =
 
     type private Log<'a when 'a : comparison> =
         | Add of 'a
         | Remove of 'a
 
-    type [<NoEquality; NoComparison>] Tset<'a when 'a : comparison> =
+    type [<NoEquality; NoComparison>] TSet<'a when 'a : comparison> =
         private
-            { mutable Tset : 'a Tset
+            { mutable TSet : 'a TSet
               HashSet : 'a HashSet
               HashSetOrigin : 'a HashSet
               Logs : 'a Log list
               LogsLength : int
               BloatFactor : int }
 
-        static member (>>.) (set : 'a2 Tset, builder : Texpr<unit, 'a2 Tset>) =
+        static member (>>.) (set : 'a2 TSet, builder : TExpr<unit, 'a2 TSet>) =
             (snd ^ builder set)
 
-        static member (.>>) (set : 'a2 Tset, builder : Texpr<'a2, 'a2 Tset>) =
+        static member (.>>) (set : 'a2 TSet, builder : TExpr<'a2, 'a2 TSet>) =
             (fst ^ builder set)
 
-        static member (.>>.) (set : 'a2 Tset, builder : Texpr<'a2, 'a2 Tset>) =
+        static member (.>>.) (set : 'a2 TSet, builder : TExpr<'a2, 'a2 TSet>) =
             builder set
 
-    let tset<'a when 'a : comparison> = TexprBuilder<'a Tset> ()
+    let tset<'a when 'a : comparison> = TExprBuilder<'a TSet> ()
 
     [<RequireQualifiedAccess>]
-    module Tset =
+    module TSet =
 
         let private commit set =
             let oldSet = set
@@ -45,20 +45,20 @@ module TsetModule =
                 set.Logs ()
             let hashSet = HashSet<'a> (hashSetOrigin, HashIdentity.Structural)
             let set = { set with HashSet = hashSet; HashSetOrigin = hashSetOrigin; Logs = []; LogsLength = 0 }
-            set.Tset <- set
-            oldSet.Tset <- set
+            set.TSet <- set
+            oldSet.TSet <- set
             set
 
         let private compress set =
             let oldSet = set
             let hashSetOrigin = HashSet<'a> (set.HashSet, HashIdentity.Structural)
             let set = { set with HashSetOrigin = hashSetOrigin; Logs = []; LogsLength = 0 }
-            set.Tset <- set
-            oldSet.Tset <- set
+            set.TSet <- set
+            oldSet.TSet <- set
             set
 
         let private validate set =
-            match obj.ReferenceEquals (set.Tset, set) with
+            match obj.ReferenceEquals (set.TSet, set) with
             | true -> if set.LogsLength > set.HashSet.Count * set.BloatFactor then compress set else set
             | false -> commit set
 
@@ -66,19 +66,19 @@ module TsetModule =
             let oldSet = set
             let set = validate set
             let set = updater set
-            set.Tset <- set
-            oldSet.Tset <- set
+            set.TSet <- set
+            oldSet.TSet <- set
             set
 
         let makeFromSeq<'a when 'a : comparison> optBloatFactor items =
             let set =
-                { Tset = Unchecked.defaultof<'a Tset>
+                { TSet = Unchecked.defaultof<'a TSet>
                   HashSet = hashPlus items
                   HashSetOrigin = hashPlus items
                   Logs = []
                   LogsLength = 0
                   BloatFactor = Option.getOrDefault 1 optBloatFactor }
-            set.Tset <- set
+            set.TSet <- set
             set
 
         let makeEmpty<'a when 'a : comparison> optBloatFactor =
@@ -122,7 +122,7 @@ module TsetModule =
             let set = validate set
             (set.HashSet.Contains value, set)
 
-        /// Convert a Tset to a seq. Note that entire set is iterated eagerly since the underlying HashMap could
+        /// Convert a TSet to a seq. Note that entire set is iterated eagerly since the underlying HashMap could
         /// otherwise opaquely change during iteration.
         let toSeq set =
             let set = validate set
@@ -152,4 +152,4 @@ module TsetModule =
                 (makeEmpty ^ Some set.BloatFactor)
                 set
 
-type Tset<'a when 'a : comparison> = TsetModule.Tset<'a>
+type TSet<'a when 'a : comparison> = TSetModule.TSet<'a>
