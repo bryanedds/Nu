@@ -85,6 +85,44 @@ module WorldTypes =
     type [<StructuralEquality; NoComparison>] AmbientChangeData = 
         { OldWorldWithOldState : World }
 
+    /// Describes the information needed to sort simulants.
+    /// OPTIMIZATION: implemented as a struct and carries related entity to avoid GC pressure.
+    /// TODO: see if there's a better file to place this in.
+    and [<CustomEquality; CustomComparison>] SortPriority =
+        { SortDepth : single
+          SortPositionY : single
+          SortTarget : Simulant }
+
+        static member equals left right =
+            left.SortDepth = right.SortDepth &&
+            left.SortPositionY = right.SortPositionY &&
+            left.SortTarget = right.SortTarget
+
+        static member compare left right =
+            if left.SortDepth < right.SortDepth then 1
+            elif left.SortDepth > right.SortDepth then -1
+            elif left.SortPositionY < right.SortPositionY then -1
+            elif left.SortPositionY > right.SortPositionY then 1
+            else 0
+
+        override this.GetHashCode () =
+            this.SortDepth.GetHashCode () ^^^ (this.SortPositionY.GetHashCode () * 13)
+
+        override this.Equals that =
+            match that with
+            | :? SortPriority as that -> SortPriority.equals this that
+            | _ -> failwithumf ()
+
+        interface IComparable<SortPriority> with
+            member this.CompareTo that =
+                SortPriority.compare this that
+
+        interface IComparable with
+            member this.CompareTo that =
+                match that with
+                | :? SortPriority as that -> (this :> IComparable<SortPriority>).CompareTo that
+                | _ -> failwithumf ()
+
     /// Generalized interface tag for dispatchers.
     and Dispatcher =
         interface end
@@ -631,12 +669,11 @@ module WorldTypes =
             { EntityDispatcher = String.Empty
               EntityProperties = Map.empty }
 
-    /// The null simulant. You should never encounter this as the user.
-    and private NullSimulant () =
+    /// The null simulant.
+    and NullSimulant () =
         interface Simulant with
             member this.ParticipantAddress = Address.empty
             member this.SimulantAddress = Address.empty
-            member this.GetPublishingPriority _ _ = 0.0f :> IComparable
             end
     
     /// The game type that hosts the various screens used to navigate through a game.
@@ -646,7 +683,6 @@ module WorldTypes =
         interface Simulant with
             member this.ParticipantAddress = atoa<Game, Participant> this.GameAddress
             member this.SimulantAddress = atoa<Game, Simulant> this.GameAddress
-            member this.GetPublishingPriority _ _ = Constants.Engine.GamePublishingPriority :> IComparable
             end
     
         /// View as address string.
@@ -679,7 +715,6 @@ module WorldTypes =
         interface Simulant with
             member this.ParticipantAddress = atoa<Screen, Participant> this.ScreenAddress
             member this.SimulantAddress = atoa<Screen, Simulant> this.ScreenAddress
-            member this.GetPublishingPriority _ _ = Constants.Engine.ScreenPublishingPriority :> IComparable
             end
     
         /// View as address string.
@@ -723,7 +758,6 @@ module WorldTypes =
         interface Simulant with
             member this.ParticipantAddress = atoa<Layer, Participant> this.LayerAddress
             member this.SimulantAddress = atoa<Layer, Simulant> this.LayerAddress
-            member this.GetPublishingPriority _ _ = Constants.Engine.LayerPublishingPriority :> IComparable
             end
     
         /// View as address string.
@@ -773,7 +807,6 @@ module WorldTypes =
         interface Simulant with
             member this.ParticipantAddress = atoa<Entity, Participant> this.EntityAddress
             member this.SimulantAddress = atoa<Entity, Simulant> this.EntityAddress
-            member this.GetPublishingPriority getSpecialPublishingPriority world = getSpecialPublishingPriority this world
             end
     
         /// View as address string.
