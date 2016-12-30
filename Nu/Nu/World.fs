@@ -68,6 +68,20 @@ module WorldModule2 =
                 QuadTree.addElement (entity.GetOmnipresent world || entity.GetViewType world = Absolute) entityMaxBounds entity tree
             tree
 
+        /// Sort subscriptions by their depth priority.
+        static member sortSubscriptionsByDepth subscriptions world =
+            World.sortSubscriptionsBy
+                (fun (participant : Participant) _ ->
+                    let priority =
+                        match participant with
+                        | :? Layer as layer -> { SortDepth = layer.GetDepth world; SortPositionY = 0.0f; SortTarget = layer }
+                        | :? Entity as entity -> { SortDepth = entity.GetDepthLayered world; SortPositionY = (entity.GetPosition world).Y; SortTarget = entity }
+                        | :? Simulant as simulant -> { SortDepth = Constants.Engine.NullSortPriority; SortPositionY = 0.0f; SortTarget = simulant }
+                        | _ -> failwithumf ()
+                    priority :> IComparable)
+                subscriptions
+                world
+
         /// Try to query that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
         static member tryGetIsSelectedScreenIdling world =
@@ -429,10 +443,10 @@ module WorldModule2 =
                     let world =
                         if World.isMouseButtonDown MouseLeft world then
                             let eventTrace = EventTrace.record4 "World" "processInput" "MouseDrag" EventTrace.empty
-                            World.publish7 World.sortSubscriptionsByEntitySortingPriority { MouseMoveData.Position = mousePosition } Events.MouseDrag eventTrace Simulants.Game true world
+                            World.publish7 World.sortSubscriptionsByDepth { MouseMoveData.Position = mousePosition } Events.MouseDrag eventTrace Simulants.Game true world
                         else world
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseMove" EventTrace.empty
-                    World.publish7 World.sortSubscriptionsByEntitySortingPriority { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game true world
+                    World.publish7 World.sortSubscriptionsByDepth { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
@@ -440,9 +454,9 @@ module WorldModule2 =
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonDown" EventTrace.empty
-                    let world = World.publish7 World.sortSubscriptionsByEntitySortingPriority eventData mouseButtonDownEvent eventTrace Simulants.Game true world
+                    let world = World.publish7 World.sortSubscriptionsByDepth eventData mouseButtonDownEvent eventTrace Simulants.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publish7 World.sortSubscriptionsByEntitySortingPriority eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
+                    World.publish7 World.sortSubscriptionsByDepth eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
@@ -450,9 +464,9 @@ module WorldModule2 =
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonUp" EventTrace.empty
-                    let world = World.publish7 World.sortSubscriptionsByEntitySortingPriority eventData mouseButtonUpEvent eventTrace Simulants.Game true world
+                    let world = World.publish7 World.sortSubscriptionsByDepth eventData mouseButtonUpEvent eventTrace Simulants.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publish7 World.sortSubscriptionsByEntitySortingPriority eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
+                    World.publish7 World.sortSubscriptionsByDepth eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
