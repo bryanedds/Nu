@@ -38,6 +38,7 @@ module BulletModule =
 
         static member PropertyDefinitions =
             [Define? Size ^ Vector2 (20.0f, 20.0f)
+             Define? Omnipresent true
              Define? Density 0.25f
              Define? Restitution 0.5f
              Define? LinearDamping 0.0f
@@ -144,6 +145,7 @@ module PlayerModule =
         static let createBullet (playerTransform : Transform) world =
             let (bullet, world) = World.createEntity<BulletDispatcher> None None Simulants.GameplayScene world
             let bulletPosition = playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)
+            Console.WriteLine (scstring bulletPosition)
             let world = bullet.SetPosition bulletPosition world
             let world = bullet.SetDepth playerTransform.Depth world
             let world = World.propagateEntityPhysics bullet world
