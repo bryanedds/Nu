@@ -9,7 +9,6 @@ open Prime
 type Participant =
     interface
         abstract member ParticipantAddress : Participant Address
-        abstract member GetPublishingPriority : (Participant -> 'w -> IComparable) -> 'w -> IComparable
         end
 
 /// Operators for the Participant type.

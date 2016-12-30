@@ -129,13 +129,13 @@ module EventWorld =
         box boxableSubscription
 
     let getSortableSubscriptions
-        (getSpecialPublishingPriority : Participant -> 'w -> IComparable)
+        (getSortPriority : Participant -> 'w -> IComparable)
         (subscriptions : SubscriptionEntry list)
         (world : 'w) :
         (IComparable * SubscriptionEntry) list =
         List.foldBack
             (fun (key, participant : Participant, subscription) subscriptions ->
-                let priority = participant.GetPublishingPriority getSpecialPublishingPriority world
+                let priority = getSortPriority participant world
                 let subscription = (priority, (key, participant, subscription))
                 subscription :: subscriptions)
             subscriptions

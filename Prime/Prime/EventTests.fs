@@ -13,7 +13,6 @@ module EventTests =
         { TestAddress : TestParticipant Address }
         interface Participant with
             member this.ParticipantAddress = atoa<TestParticipant, Participant> this.TestAddress
-            member this.GetPublishingPriority _ _ = 0.0f :> IComparable
             end
 
     type [<ReferenceEquality>] TestWorld =
