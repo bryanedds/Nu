@@ -220,25 +220,15 @@ module WorldEntityModule =
                 entity.ObjAddress
                 world
 
-        /// Sort subscriptions by their entity sorting priority.
-        static member sortSubscriptionsByEntitySortingPriority subscriptions world =
-            World.sortSubscriptionsBy
-                (fun (participant : Participant) world ->
-                    match participant with
-                    | :? Entity as entity -> World.getEntitySortingPriority entity world :> IComparable
-                    | _ -> failwithumf ())
-                subscriptions
-                world
-
         /// TODO: document!
         static member sortEntities entities world =
             // OPTIMIZATION: using arrays for speed
             entities |>
             Array.rev |>
             Array.map (fun entity -> World.getEntitySortingPriority entity world) |>
-            Seq.sortWith EntitySortPriority.compare |> // Seq.sort is stable, unlike Array.sort...
+            Seq.sortWith SortPriority.compare |> // Seq.sort is stable, unlike Array.sort...
             Array.ofSeq |>
-            Array.map (fun p -> p.TargetEntity)
+            Array.map (fun p -> p.SortTarget :?> Entity)
 
         /// TODO: document!
         static member tryPickEntity position entities world =
