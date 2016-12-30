@@ -74,9 +74,10 @@ module WorldModule2 =
                 (fun (participant : Participant) _ ->
                     let priority =
                         match participant with
+                        | :? Game as game -> { SortDepth = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = game }
+                        | :? Screen as screen -> { SortDepth = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen }
                         | :? Layer as layer -> { SortDepth = layer.GetDepth world; SortPositionY = 0.0f; SortTarget = layer }
                         | :? Entity as entity -> { SortDepth = entity.GetDepthLayered world; SortPositionY = (entity.GetPosition world).Y; SortTarget = entity }
-                        | :? Simulant as simulant -> { SortDepth = Constants.Engine.NullSortPriority; SortPositionY = 0.0f; SortTarget = simulant }
                         | _ -> failwithumf ()
                     priority :> IComparable)
                 subscriptions

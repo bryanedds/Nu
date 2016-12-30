@@ -670,7 +670,7 @@ module WorldTypes =
               EntityProperties = Map.empty }
 
     /// The null simulant.
-    and NullSimulant () =
+    and private NullSimulant () =
         interface Simulant with
             member this.ParticipantAddress = Address.empty
             member this.SimulantAddress = Address.empty
