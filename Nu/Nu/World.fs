@@ -76,7 +76,7 @@ module WorldModule2 =
                         match participant with
                         | :? Game as game -> { SortDepth = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = game }
                         | :? Screen as screen -> { SortDepth = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen }
-                        | :? Layer as layer -> { SortDepth = layer.GetDepth world; SortPositionY = 0.0f; SortTarget = layer }
+                        | :? Layer as layer -> { SortDepth = Constants.Engine.LayerSortPriority + layer.GetDepth world; SortPositionY = 0.0f; SortTarget = layer }
                         | :? Entity as entity -> { SortDepth = entity.GetDepthLayered world; SortPositionY = (entity.GetPosition world).Y; SortTarget = entity }
                         | _ -> failwithumf ()
                     priority :> IComparable)
