@@ -510,13 +510,13 @@ module WorldModule2 =
                 let world = World.updateScreen selectedScreen world
                 let world = World.updateScreenTransition selectedScreen world
                 let world = Seq.fold (fun world layer -> World.updateLayer layer world) world layers
-                let world = List.fold (fun world entity -> World.updateEntity entity world) world entities
+                let world = Seq.fold (fun world entity -> World.updateEntity entity world) world entities
 
                 // post-update simulants
                 let world = World.postUpdateGame world
                 let world = World.postUpdateScreen selectedScreen world
                 let world = Seq.fold (fun world layer -> World.postUpdateLayer layer world) world layers
-                let world = List.fold (fun world entity -> World.postUpdateEntity entity world) world entities
+                let world = Seq.fold (fun world entity -> World.postUpdateEntity entity world) world entities
                 world
             
             // no screen; just operate on the game
@@ -564,7 +564,7 @@ module WorldModule2 =
                 let layers = World.getLayers selectedScreen world
                 let world = Seq.fold (fun world layer -> World.actualizeLayer layer world) world layers
                 let (entities, world) = World.getEntitiesNearView selectedScreen world
-                List.fold (fun world entity -> World.actualizeEntity entity world) world entities
+                Seq.fold (fun world entity -> World.actualizeEntity entity world) world entities
             | None -> world
 
         static member private processUpdate handleUpdate world =

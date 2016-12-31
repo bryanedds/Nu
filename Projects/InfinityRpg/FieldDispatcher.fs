@@ -1,5 +1,6 @@
 ﻿namespace InfinityRpg
 open System
+open System.Collections.Generic
 open OpenTK
 open Prime
 open Nu
@@ -68,7 +69,7 @@ module FieldDispatcherModule =
                         [LayerableDescriptor
                             { Depth = field.GetDepth world
                               PositionY = (field.GetPosition world).Y
-                              LayeredDescriptor = SpritesDescriptor sprites }])
+                              LayeredDescriptor = SpritesDescriptor (List<SpriteDescriptor> sprites) }])
                     world
             else world
 

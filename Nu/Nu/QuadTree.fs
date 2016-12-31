@@ -128,11 +128,11 @@ module QuadTreeModule =
     
         let getElementsNearPoint position tree =
             let otherElements = QuadNode.getElementsNearPoint position tree.Node
-            otherElements |> Seq.distinct |> Seq.append tree.OmnipresentElements |> Seq.toList
+            otherElements |> Seq.distinct |> Seq.append tree.OmnipresentElements |> List<'e>
     
         let getElementsNearBounds bounds tree =
             let otherElements = QuadNode.getElementsNearBounds bounds tree.Node
-            otherElements |> Seq.distinct |> Seq.append tree.OmnipresentElements |> Seq.toList
+            otherElements |> Seq.distinct |> Seq.append tree.OmnipresentElements |> List<'e>
     
         let getDepth tree =
             QuadNode.getDepth tree.Node
