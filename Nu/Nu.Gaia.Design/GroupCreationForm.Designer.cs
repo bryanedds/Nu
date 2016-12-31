@@ -36,11 +36,13 @@
             this.label2 = new System.Windows.Forms.Label();
             this.specializationTextBox = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
+            this.depthTextBox = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // okButton
             // 
-            this.okButton.Location = new System.Drawing.Point(209, 132);
+            this.okButton.Location = new System.Drawing.Point(209, 166);
             this.okButton.Name = "okButton";
             this.okButton.Size = new System.Drawing.Size(75, 23);
             this.okButton.TabIndex = 3;
@@ -50,7 +52,7 @@
             // cancelButton
             // 
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancelButton.Location = new System.Drawing.Point(290, 132);
+            this.cancelButton.Location = new System.Drawing.Point(290, 166);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(75, 23);
             this.cancelButton.TabIndex = 4;
@@ -105,13 +107,31 @@
             this.label3.TabIndex = 3;
             this.label3.Text = "Specialization:";
             // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(22, 133);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(39, 13);
+            this.label4.TabIndex = 5;
+            this.label4.Text = "Depth:";
+            // 
+            // depthTextBox
+            // 
+            this.depthTextBox.Location = new System.Drawing.Point(103, 130);
+            this.depthTextBox.Name = "depthTextBox";
+            this.depthTextBox.Size = new System.Drawing.Size(262, 20);
+            this.depthTextBox.TabIndex = 6;
+            // 
             // LayerCreationForm
             // 
             this.AcceptButton = this.okButton;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.cancelButton;
-            this.ClientSize = new System.Drawing.Size(377, 171);
+            this.ClientSize = new System.Drawing.Size(377, 206);
+            this.Controls.Add(this.depthTextBox);
+            this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.specializationTextBox);
@@ -137,5 +157,7 @@
         private System.Windows.Forms.Label label2;
         public System.Windows.Forms.TextBox specializationTextBox;
         private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label label4;
+        public System.Windows.Forms.TextBox depthTextBox;
     }
 }
