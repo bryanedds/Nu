@@ -677,15 +677,21 @@ module WorldTypes =
             end
     
     /// The game type that hosts the various screens used to navigate through a game.
-    and [<StructuralEquality; NoComparison>] Game =
+    and [<CustomEquality; NoComparison>] Game =
         { GameAddress : Game Address }
     
         interface Simulant with
             member this.ParticipantAddress = atoa<Game, Participant> this.GameAddress
             member this.SimulantAddress = atoa<Game, Simulant> this.GameAddress
             end
-    
-        /// View as address string.
+
+        override this.Equals that =
+            match that with
+            | :? Game as that -> this.GameAddress == that.GameAddress
+            | _ -> failwithumf ()
+
+        override this.GetHashCode () = this.GameAddress.GetHashCode ()
+
         override this.ToString () = scstring this.GameAddress
     
         /// Get the latest value of a game's properties.
@@ -699,7 +705,7 @@ module WorldTypes =
         static member acatf<'a> (address : 'a Address) (game : Game) = acatf address (atooa game.GameAddress)
         
         /// Concatenate two addresses, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (entity : Entity) = acatff address entity.EntityAddress
+        static member acatff<'a> (address : 'a Address) (game : Game) = acatff address game.GameAddress
     
         /// Concatenate two addresses, taking the type of first address.
         static member (->-) (address, game) = Game.acatf address game
@@ -709,15 +715,21 @@ module WorldTypes =
     
     /// The screen type that allows transitioning to and from other screens, and also hosts the
     /// currently interactive layers of entities.
-    and [<StructuralEquality; NoComparison>] Screen =
+    and [<CustomEquality; NoComparison>] Screen =
         { ScreenAddress : Screen Address }
     
         interface Simulant with
             member this.ParticipantAddress = atoa<Screen, Participant> this.ScreenAddress
             member this.SimulantAddress = atoa<Screen, Simulant> this.ScreenAddress
             end
+
+        override this.Equals that =
+            match that with
+            | :? Screen as that -> this.ScreenAddress == that.ScreenAddress
+            | _ -> failwithumf ()
+
+        override this.GetHashCode () = this.ScreenAddress.GetHashCode ()
     
-        /// View as address string.
         override this.ToString () = scstring this.ScreenAddress
     
         /// Get the name of a screen proxy.
@@ -734,7 +746,7 @@ module WorldTypes =
         static member acatf<'a> (address : 'a Address) (screen : Screen) = acatf address (atooa screen.ScreenAddress)
         
         /// Concatenate two addresses, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (screen : Entity) = acatff address screen.EntityAddress
+        static member acatff<'a> (address : 'a Address) (screen : Screen) = acatff address screen.ScreenAddress
     
         /// Concatenate two addresses, taking the type of first address.
         static member (->-) (address, screen) = Screen.acatf address screen
@@ -752,15 +764,21 @@ module WorldTypes =
         static member (=>) (screen : Screen, layerNameStr) = screen => !!layerNameStr
     
     /// Forms a logical layer of entities.
-    and [<StructuralEquality; NoComparison>] Layer =
+    and [<CustomEquality; NoComparison>] Layer =
         { LayerAddress : Layer Address }
     
         interface Simulant with
             member this.ParticipantAddress = atoa<Layer, Participant> this.LayerAddress
             member this.SimulantAddress = atoa<Layer, Simulant> this.LayerAddress
             end
+
+        override this.Equals that =
+            match that with
+            | :? Layer as that -> this.LayerAddress == that.LayerAddress
+            | _ -> failwithumf ()
+
+        override this.GetHashCode () = this.LayerAddress.GetHashCode ()
     
-        /// View as address string.
         override this.ToString () = scstring this.LayerAddress
     
         /// Get the name of a layer proxy.
@@ -777,7 +795,7 @@ module WorldTypes =
         static member acatf<'a> (address : 'a Address) (layer : Layer) = acatf address (atooa layer.LayerAddress)
         
         /// Concatenate two addresses, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (layer : Entity) = acatff address layer.EntityAddress
+        static member acatff<'a> (address : 'a Address) (layer : Layer) = acatff address layer.LayerAddress
     
         /// Convert a layer's proxy to its screen's.
         static member (!<) layer = Screen.proxy ^ Address.allButLast layer.LayerAddress
@@ -798,7 +816,7 @@ module WorldTypes =
     /// to implement things like buttons, characters, blocks, and things of that sort.
     /// OPTIMIZATION: Includes pre-constructed entity change and update event addresses to avoid
     /// reconstructing new ones for each entity every frame.
-    and [<StructuralEquality; NoComparison>] Entity =
+    and [<CustomEquality; NoComparison>] Entity =
         { EntityAddress : Entity Address
           UpdateAddress : unit Address
           PostUpdateAddress : unit Address
@@ -808,8 +826,14 @@ module WorldTypes =
             member this.ParticipantAddress = atoa<Entity, Participant> this.EntityAddress
             member this.SimulantAddress = atoa<Entity, Simulant> this.EntityAddress
             end
+
+        override this.Equals that =
+            match that with
+            | :? Entity as that -> this.EntityAddress == that.EntityAddress
+            | _ -> failwithumf ()
+
+        override this.GetHashCode () = this.EntityAddress.GetHashCode ()
     
-        /// View as address string.
         override this.ToString () = scstring this.EntityAddress
     
         /// Get the name of an entity proxy.
