@@ -8,9 +8,10 @@ open OpenTK
 open System
 open System.IO
 open System.Collections
+open System.ComponentModel
+open System.Linq
 open System.Reflection
 open System.Windows.Forms
-open System.ComponentModel
 open Prime
 open Nu
 
@@ -39,7 +40,7 @@ module Gaia =
     let private getPickableEntities world =
         let selectedLayer = (World.getUserState world).SelectedLayer
         let (entities, world) = World.getEntitiesNearView Simulants.EditorScreen world
-        let entitiesInLayer = List.filter (fun entity -> etol entity = selectedLayer) entities
+        let entitiesInLayer = Enumerable.ToList (Enumerable.Where (entities, fun entity -> etol entity = selectedLayer))
         (entitiesInLayer, world)
 
     let private getSnaps (form : GaiaForm) =

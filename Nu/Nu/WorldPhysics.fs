@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open Prime
 open Nu
 
@@ -68,8 +69,8 @@ module WorldPhysicsModule =
                 (integrationMessages :> obj, { this with PhysicsEngine = physicsEngine } :> World Subsystem, world)
     
             member this.ApplyResult (integrationMessages, world) =
-                let integrationMessages = integrationMessages :?> IntegrationMessage list
-                List.fold PhysicsEngineSubsystem.handleIntegrationMessage world integrationMessages
+                let integrationMessages = integrationMessages :?> IntegrationMessage List
+                Seq.fold PhysicsEngineSubsystem.handleIntegrationMessage world integrationMessages
     
             member this.CleanUp world = (this :> World Subsystem, world)
     

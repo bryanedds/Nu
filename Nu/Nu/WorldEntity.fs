@@ -226,8 +226,9 @@ module WorldEntityModule =
 
         /// TODO: document!
         static member sortEntities entities world =
-            // OPTIMIZATION: using arrays for speed
+            /// OPTIMIZATION: using arrays for speed
             entities |>
+            Array.ofSeq |>
             Array.rev |>
             Array.map (fun entity -> World.getEntitySortingPriority entity world) |>
             Seq.sortWith SortPriority.compare |> // Seq.sort is stable, unlike Array.sort...
@@ -236,8 +237,7 @@ module WorldEntityModule =
 
         /// TODO: document!
         static member tryPickEntity position entities world =
-            // OPTIMIZATION: using arrays for speed
-            let entities = Array.ofList entities
+            /// OPTIMIZATION: using arrays for speed
             let entitiesSorted = World.sortEntities entities world
             Array.tryFind
                 (fun (entity : Entity) ->

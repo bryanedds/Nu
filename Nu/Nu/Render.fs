@@ -47,7 +47,7 @@ type [<StructuralEquality; NoComparison>] TextDescriptor =
 /// Describes how to render a layered 'thing' to the rendering system.
 type [<StructuralEquality; NoComparison>] LayeredDescriptor =
     | SpriteDescriptor of SpriteDescriptor
-    | SpritesDescriptor of SpriteDescriptor list
+    | SpritesDescriptor of SpriteDescriptor List
     | TileLayerDescriptor of TileLayerDescriptor
     | TextDescriptor of TextDescriptor
 
@@ -260,7 +260,7 @@ module RendererModule =
             | None -> Log.info ^ "SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'."; renderer
 
         static member private renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer =
-            List.fold
+            Seq.fold
                 (fun renderer sprite -> Renderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer)
                 renderer
                 sprites

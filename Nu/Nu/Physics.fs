@@ -221,7 +221,7 @@ type IPhysicsEngine =
     /// Enqueue a message from an external source.
     abstract EnqueueMessage : PhysicsMessage -> IPhysicsEngine
     /// Integrate the physics system one frame.
-    abstract Integrate : int64 -> IntegrationMessage list * IPhysicsEngine
+    abstract Integrate : int64 -> IntegrationMessage List * IPhysicsEngine
 
 [<AutoOpen>]
 module PhysicsEngineModule =
@@ -539,7 +539,7 @@ module PhysicsEngineModule =
                 let physicsStepAmount = Constants.Physics.PhysicsStepRate * single tickRate
                 physicsEngine.PhysicsContext.Step physicsStepAmount
                 PhysicsEngine.createTransformMessages physicsEngine
-                let messages = List.ofSeq physicsEngine.IntegrationMessages
+                let messages = List<IntegrationMessage> physicsEngine.IntegrationMessages
                 physicsEngine.IntegrationMessages.Clear ()
                 (messages, physicsEngine :> IPhysicsEngine)
 
@@ -585,4 +585,4 @@ type MockPhysicsEngine =
         member physicsEngine.IsBodyOnGround _ = failwith "No bodies in MockPhysicsEngine"
         member physicsEngine.ClearMessages () = physicsEngine :> IPhysicsEngine
         member physicsEngine.EnqueueMessage _ = physicsEngine :> IPhysicsEngine
-        member physicsEngine.Integrate _ = ([], physicsEngine :> IPhysicsEngine)
+        member physicsEngine.Integrate _ = (List<IntegrationMessage> (), physicsEngine :> IPhysicsEngine)
