@@ -687,7 +687,7 @@ module WorldTypes =
 
         override this.Equals that =
             match that with
-            | :? Game as that -> this.GameAddress == that.GameAddress
+            | :? Game as that -> this.GameAddress.Equals that.GameAddress
             | _ -> failwithumf ()
 
         override this.GetHashCode () = this.GameAddress.GetHashCode ()
@@ -725,7 +725,7 @@ module WorldTypes =
 
         override this.Equals that =
             match that with
-            | :? Screen as that -> this.ScreenAddress == that.ScreenAddress
+            | :? Screen as that -> this.ScreenAddress.Equals that.ScreenAddress
             | _ -> failwithumf ()
 
         override this.GetHashCode () = this.ScreenAddress.GetHashCode ()
@@ -774,7 +774,7 @@ module WorldTypes =
 
         override this.Equals that =
             match that with
-            | :? Layer as that -> this.LayerAddress == that.LayerAddress
+            | :? Layer as that -> this.LayerAddress.Equals that.LayerAddress
             | _ -> failwithumf ()
 
         override this.GetHashCode () = this.LayerAddress.GetHashCode ()
@@ -829,7 +829,7 @@ module WorldTypes =
 
         override this.Equals that =
             match that with
-            | :? Entity as that -> this.EntityAddress == that.EntityAddress
+            | :? Entity as that -> this.EntityAddress.Equals that.EntityAddress
             | _ -> failwithumf ()
 
         override this.GetHashCode () = this.EntityAddress.GetHashCode ()
