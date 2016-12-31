@@ -59,6 +59,7 @@ module AddressModule =
     type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
         private
             { Names : Name list
+              AddressStr : string
               HashCode : int // OPTIMIZATION: hash cached for speed
               TypeCarrier : 'a -> unit }
     
@@ -66,7 +67,8 @@ module AddressModule =
         /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
         static member makeFromString<'a> (addressStr : string) =
             let names = addressStr.Split '/' |> List.ofArray |> List.map Name.make
-            { Names = names; HashCode = Name.hashNames names; TypeCarrier = fun (_ : 'a) -> () }
+            let hashCode = addressStr.GetHashCode ()
+            { Names = names; AddressStr = addressStr; HashCode = hashCode; TypeCarrier = fun (_ : 'a) -> () }
 
         /// Hash an Address.
         static member hash (address : 'a Address) =
@@ -75,19 +77,21 @@ module AddressModule =
         /// Equate Addresses.
         static member equals address address2 =
             address.HashCode = address2.HashCode && // OPTIMIZATION: first check hash equality
-            Name.equateNames address.Names address2.Names
+            address.AddressStr = address2.AddressStr
 
         /// Compare Addresses.
         static member compare address address2 =
-            Name.compareNames address.Names address2.Names
+            address.AddressStr.CompareTo address2.AddressStr
 
         /// Convert a string into an address.
         static member stoa<'a> str =
             Address<'a>.makeFromString<'a> str
 
         /// Convert a names list into an address.
-        static member ltoa<'a> (names : _ list) =
-            { Names = names; HashCode = Name.hashNames names; TypeCarrier = fun (_ : 'a) -> () }
+        static member ltoa<'a> (names : Name list) =
+            let addressStr = String.Join ("/", names)
+            let hashCode = addressStr.GetHashCode ()
+            { Names = names; AddressStr = addressStr; HashCode = hashCode; TypeCarrier = fun (_ : 'a) -> () }
 
         /// Convert a single name into an address.
         static member ntoa<'a> name : 'a Address =
@@ -99,11 +103,11 @@ module AddressModule =
 
         /// Convert an address of type 'a to an address of type 'b.
         static member atoa<'a, 'b> (address : 'a Address) =
-            { Names = address.Names; HashCode = address.HashCode; TypeCarrier = fun (_ : 'b) -> () }
+            { Names = address.Names; AddressStr = address.AddressStr; HashCode = address.HashCode; TypeCarrier = fun (_ : 'b) -> () }
 
         /// Convert any address to an obj Address.
         static member atooa<'a> (address : 'a Address) =
-            { Names = address.Names; HashCode = address.HashCode; TypeCarrier = fun (_ : obj) -> () }
+            { Names = address.Names; AddressStr = address.AddressStr; HashCode = address.HashCode; TypeCarrier = fun (_ : obj) -> () }
 
         /// Concatenate two addresses of the same type.
         static member acat<'a> (address : 'a Address) (address2 : 'a Address) : 'a Address=
@@ -163,14 +167,14 @@ module AddressModule =
             Address<'a>.hash this
         
         override this.ToString () =
-            Address.atos<'a> this
+            this.AddressStr
 
     [<RequireQualifiedAccess>]
     module Address =
 
         /// The empty address.
         let empty<'a> =
-            { Names = []; HashCode = 0; TypeCarrier = fun (_ : 'a) -> () }
+            { Names = []; AddressStr = String.Empty; HashCode = String.Empty.GetHashCode (); TypeCarrier = fun (_ : 'a) -> () }
 
         /// Make an address from a list of names.
         let makeFromList<'a> names : 'a Address =
