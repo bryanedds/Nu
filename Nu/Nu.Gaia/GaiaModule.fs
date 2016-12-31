@@ -516,6 +516,7 @@ module Gaia =
         layerCreationForm.StartPosition <- FormStartPosition.CenterParent
         layerCreationForm.dispatcherTextBox.Text <- typeof<LayerDispatcher>.Name
         layerCreationForm.specializationTextBox.Text <- Constants.Engine.VanillaSpecialization
+        layerCreationForm.depthTextBox.Text <- scstring 0.0f
         layerCreationForm.okButton.Click.Add ^ fun _ ->
             addWorldChanger ^ fun world ->
                 let world = pushPastWorld world world
@@ -524,7 +525,9 @@ module Gaia =
                 let layerDispatcher = layerCreationForm.dispatcherTextBox.Text
                 let layerSpecialization = layerCreationForm.specializationTextBox.Text
                 try if Name.length layerName = 0 then failwith "Layer name cannot be empty in Gaia due to WinForms limitations."
-                    let world = World.createLayer5 layerDispatcher (Some layerSpecialization) (Some layerName) Simulants.EditorScreen world |> snd
+                    let layerDepth = Single.Parse layerCreationForm.depthTextBox.Text
+                    let (layer, world) = World.createLayer5 layerDispatcher (Some layerSpecialization) (Some layerName) Simulants.EditorScreen world
+                    let world = layer.SetDepth layerDepth world
                     refreshLayerTabs form world
                     form.layerTabs.SelectTab (form.layerTabs.TabPages.IndexOfKey layerNameStr)
                     world
@@ -570,7 +573,11 @@ module Gaia =
                 let world = World.destroyLayerImmediate layer world
                 deselectEntity form world
                 form.layerTabs.TabPages.RemoveByKey ^ Name.getNameStr layer.LayerName
-                world
+                World.updateUserState (fun editorState ->
+                    let layerTabs = form.layerTabs
+                    let layerTab = layerTabs.SelectedTab
+                    { editorState with SelectedLayer = stol Simulants.EditorScreen !!layerTab.Text })
+                    world
 
     let private handleFormUndo (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
