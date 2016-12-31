@@ -57,7 +57,7 @@ module OverlayerModule =
                     match (propertyOpt, xtensionOpt) with
                     | (null, None) -> None
                     | (null, Some xtension) -> Some (Xtension.getProperty propertyName xtension).PropertyValue
-                    | (targetProperty, _) -> Some ^ targetProperty.GetValue target
+                    | (targetProperty, _) -> Some (targetProperty.GetValue target)
                 match propertyValueOpt with
                 | Some propertyValue ->
                     let converter = SymbolicConverter propertyType
