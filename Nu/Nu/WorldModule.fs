@@ -713,7 +713,7 @@ module WorldModule =
         static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) Property? Persistent screen world
         static member internal getScreenCreationTimeStampNp screen world = (World.getScreenState screen world).CreationTimeStampNp
         static member internal getScreenEntityTreeNp screen world = (World.getScreenState screen world).EntityTreeNp
-        static member internal setScreenEntityTreeNp value screen world = World.updateScreenState (fun screenState -> { screenState with EntityTreeNp = value }) Property? EntityTreeNp screen world
+        static member internal setScreenEntityTreeNpNoEvent value screen world = World.updateScreenStateWithoutEvent (fun screenState -> { screenState with EntityTreeNp = value }) screen world
         static member internal getScreenTransitionStateNp screen world = (World.getScreenState screen world).TransitionStateNp
         static member internal setScreenTransitionStateNp value screen world = World.updateScreenState (fun screenState -> { screenState with TransitionStateNp = value }) Property? TransitionStateNp screen world
         static member internal getScreenTransitionTicksNp screen world = (World.getScreenState screen world).TransitionTicksNp
@@ -1514,7 +1514,7 @@ module WorldModule =
                             QuadTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
                             entityTree)
                         screenState.EntityTreeNp
-                let world = World.setScreenEntityTreeNp entityTree screen world
+                let world = World.setScreenEntityTreeNpNoEvent entityTree screen world
 
                 // register entity if needed
                 let world =

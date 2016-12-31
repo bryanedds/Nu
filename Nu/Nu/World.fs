@@ -490,7 +490,7 @@ module WorldModule2 =
         static member getEntitiesNearView selectedScreen world =
             let viewBounds = World.getViewBoundsRelative world
             let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTreeNp world)
-            let world = selectedScreen.SetEntityTreeNp entityTree world
+            let world = selectedScreen.SetEntityTreeNpNoEvent entityTree world
             let entities = QuadTree.getElementsNearBounds viewBounds quadTree
             (entities, world)
 
