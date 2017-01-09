@@ -17,8 +17,8 @@ type [<StructuralEquality; NoComparison>] XPropertyDescriptor =
 
 /// An Xtension property.
 type [<StructuralEquality; NoComparison>] XProperty =
-    { PropertyValue : obj
-      PropertyType : Type }
+    { mutable PropertyValue : obj
+      mutable PropertyType : Type }
 
 /// A map of XProperties.
 /// NOTE: Xtension uses UMap because it's slightly faster when used in the Nu game engine, but
@@ -34,6 +34,7 @@ module XtensionModule =
     type [<NoEquality; NoComparison>] Xtension =
         private
             { Properties : XProperties
+              Imperative : bool
               CanDefault : bool
               Sealed : bool }
 
@@ -84,22 +85,25 @@ module XtensionModule =
         /// Example:
         ///     let xtn = xtn.Position <- Vector2 (4.0, 5.0).
         static member (?<-) (xtension, propertyName, value : 'a) =
-            let property =
                 match UMap.tryFind propertyName xtension.Properties with
                 | Some property ->
                     if xtension.Sealed && property.PropertyType <> typeof<'a> then failwith "Cannot change the type of a sealed Xtension's property."
-                    { property with PropertyValue = value :> obj }
+                    if xtension.Imperative then property.PropertyValue <- value :> obj; xtension
+                    else
+                        let property = { property with PropertyValue = value :> obj }
+                        let properties = UMap.add propertyName property xtension.Properties
+                        { xtension with Properties = properties }
                 | None ->
                     if xtension.Sealed then failwith "Cannot add property to a sealed Xtension."
-                    { PropertyValue = value :> obj; PropertyType = typeof<'a> }
-            let properties = UMap.add propertyName property xtension.Properties
-            { xtension with Properties = properties }
+                    let property = { PropertyValue = value :> obj; PropertyType = typeof<'a> }
+                    let properties = UMap.add propertyName property xtension.Properties
+                    { xtension with Properties = properties }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module Xtension =
     
         /// Make an extension with custom safety.
-        let make properties canDefault isSealed = { Properties = properties; CanDefault = canDefault; Sealed = isSealed }
+        let make properties canDefault isSealed = { Properties = properties; Imperative = false; CanDefault = canDefault; Sealed = isSealed }
     
         /// An Xtension that can default and isn't sealed.
         let empty = make (UMap.makeEmpty None) true false
@@ -109,6 +113,12 @@ module XtensionModule =
     
         /// An Xtension that cannot default and isn't sealed.
         let mixed = make (UMap.makeEmpty None) false false
+
+        /// Whether the extension uses mutation.
+        let getImperative xtension = xtension.Imperative
+
+        /// Whether the extension uses mutation.
+        let setImperative imperative xtension = { xtension with Imperative = imperative }
     
         /// Get a property from an xtension.
         let getProperty name xtension = UMap.find name xtension.Properties
@@ -117,7 +127,15 @@ module XtensionModule =
         let tryGetProperty name xtension = UMap.tryFind name xtension.Properties
     
         /// Set a property on an Xtension.
-        let setProperty name property xtension = { xtension with Properties = UMap.add name property xtension.Properties }
+        let setProperty name property xtension =
+            match UMap.tryFind name xtension.Properties with
+            | Some property ->
+                if xtension.Imperative then
+                    property.PropertyValue <- property.PropertyValue
+                    property.PropertyType <- property.PropertyType
+                    xtension
+                else { xtension with Properties = UMap.add name property xtension.Properties }
+            | None -> { xtension with Properties = UMap.add name property xtension.Properties }
     
         /// Attach a property to an Xtension.
         let attachProperty name property xtension = { xtension with Properties = UMap.add name property xtension.Properties }

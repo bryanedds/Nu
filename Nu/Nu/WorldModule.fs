@@ -1139,19 +1139,20 @@ module WorldModule =
         static member private setEntityState entityState entity world =
             World.entityStateSetter entityState entity world
 
-        static member private updateEntityStateWithoutEvent updater entity world =
+        static member private updateEntityStateWithoutEvent updater mutability entity world =
             let entityState = World.getEntityState entity world
             let entityState = updater entityState
-            World.setEntityState entityState entity world
+            if mutability && Xtension.getImperative entityState.Xtension then world
+            else World.setEntityState entityState entity world
 
-        static member private updateEntityState updater propertyName entity world =
+        static member private updateEntityState updater mutability propertyName entity world =
             let oldWorld = world
-            let world = World.updateEntityStateWithoutEvent updater entity world
+            let world = World.updateEntityStateWithoutEvent updater mutability entity world
             World.publishEntityChange propertyName entity oldWorld world
 
-        static member private updateEntityStatePlus updater propertyName entity world =
+        static member private updateEntityStatePlus updater mutability propertyName entity world =
             let oldWorld = world
-            let world = World.updateEntityStateWithoutEvent updater entity world
+            let world = World.updateEntityStateWithoutEvent updater mutability entity world
             let world = World.updateEntityInEntityTree entity oldWorld world
             World.publishEntityChange propertyName entity oldWorld world
 
@@ -1185,40 +1186,43 @@ module WorldModule =
                 let newSize = newSizeOver2 * 2.0f
                 Vector4 (newPosition.X, newPosition.Y, newPosition.X + newSize.X, newPosition.Y + newSize.Y)
 
+        // NOTE: Wouldn't macros be nice?
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
         static member internal getEntityXtension entity world = (World.getEntityState entity world).Xtension // TODO: try to get rid of this
         static member internal getEntityDispatcherNp entity world = (World.getEntityState entity world).DispatcherNp
         static member internal getEntitySpecialization entity world = (World.getEntityState entity world).Specialization
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
-        static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> { entityState with Persistent = value }) Property? Persistent entity world
+        static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> { entityState with Persistent = value }) false Property? Persistent entity world
         static member internal getEntityCreationTimeStampNp entity world = (World.getEntityState entity world).CreationTimeStampNp
+        static member internal getEntityImperative entity world = Xtension.getImperative (World.getEntityState entity world).Xtension
+        static member internal setEntityImperative value entity world = World.updateEntityState (fun entityState -> { entityState with Xtension = Xtension.setImperative value entityState.Xtension }) false Property? Imperative entity world
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
-        static member internal setEntityOverlayNameOpt value entity world = World.updateEntityState (fun entityState -> { entityState with OverlayNameOpt = value }) Property? OverlayNameOpt entity world
+        static member internal setEntityOverlayNameOpt value entity world = World.updateEntityState (fun entityState -> { entityState with OverlayNameOpt = value }) false Property? OverlayNameOpt entity world
         static member internal getEntityPosition entity world = (World.getEntityState entity world).Position
-        static member internal setEntityPosition value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with EntityState.Position = value }) Property? Position entity world
+        static member internal setEntityPosition value entity world = World.updateEntityStatePlus (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Position <- value; entityState else { entityState with EntityState.Position = value }) true Property? Position entity world
         static member internal getEntitySize entity world = (World.getEntityState entity world).Size
-        static member internal setEntitySize value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with Size = value }) Property? Size entity world
+        static member internal setEntitySize value entity world = World.updateEntityStatePlus (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Size <- value; entityState else { entityState with EntityState.Size = value }) true Property? Size entity world
         static member internal getEntityRotation entity world = (World.getEntityState entity world).Rotation
-        static member internal setEntityRotation value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with Rotation = value }) Property? Rotation entity world
+        static member internal setEntityRotation value entity world = World.updateEntityStatePlus (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Rotation <- value; entityState else { entityState with EntityState.Rotation = value }) true Property? Rotation entity world
         static member internal getEntityDepth entity world = (World.getEntityState entity world).Depth
-        static member internal setEntityDepth value entity world = World.updateEntityState (fun entityState -> { entityState with Depth = value }) Property? Depth entity world
+        static member internal setEntityDepth value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Depth <- value; entityState else { entityState with EntityState.Depth = value }) true Property? Depth entity world
         static member internal getEntityOverflow entity world = (World.getEntityState entity world).Overflow
-        static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with Overflow = value }) Property? Overflow entity world
+        static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Overflow <- value; entityState else { entityState with EntityState.Overflow = value }) true Property? Overflow entity world
         static member internal getEntityViewType entity world = (World.getEntityState entity world).ViewType
-        static member internal setEntityViewType value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with ViewType = value }) Property? ViewType entity world
+        static member internal setEntityViewType value entity world = World.updateEntityStatePlus (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.ViewType <- value; entityState else { entityState with EntityState.ViewType = value }) true Property? ViewType entity world
         static member internal getEntityVisible entity world = (World.getEntityState entity world).Visible
-        static member internal setEntityVisible value entity world = World.updateEntityState (fun entityState -> { entityState with Visible = value }) Property? Visible entity world
+        static member internal setEntityVisible value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Visible <- value; entityState else { entityState with EntityState.Visible = value }) true Property? Visible entity world
         static member internal getEntityEnabled entity world = (World.getEntityState entity world).Enabled
-        static member internal setEntityEnabled value entity world = World.updateEntityState (fun entityState -> { entityState with Enabled = value }) Property? Enabled entity world
+        static member internal setEntityEnabled value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Enabled <- value; entityState else { entityState with EntityState.Enabled = value }) true Property? Enabled entity world
         static member internal getEntityOmnipresent entity world = (World.getEntityState entity world).Omnipresent
-        static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> { entityState with Omnipresent = value }) Property? Omnipresent entity world
+        static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Omnipresent <- value; entityState else { entityState with EntityState.Omnipresent = value }) true Property? Omnipresent entity world
         static member internal getEntityPublishChanges entity world = (World.getEntityState entity world).PublishChanges
-        static member internal setEntityPublishChanges value entity world = World.updateEntityState (fun entityState -> { entityState with PublishChanges = value }) Property? PublishChanges entity world
+        static member internal setEntityPublishChanges value entity world = World.updateEntityState (fun entityState -> { entityState with PublishChanges = value }) false Property? PublishChanges entity world
         static member internal getEntityPublishUpdatesNp entity world = (World.getEntityState entity world).PublishUpdatesNp
-        static member internal setEntityPublishUpdatesNp value entity world = World.updateEntityState (fun entityState -> { entityState with PublishUpdatesNp = value }) Property? PublishUpdatesNp entity world
+        static member internal setEntityPublishUpdatesNp value entity world = World.updateEntityState (fun entityState -> { entityState with PublishUpdatesNp = value }) false Property? PublishUpdatesNp entity world
         static member internal getEntityPublishPostUpdatesNp entity world = (World.getEntityState entity world).PublishPostUpdatesNp
-        static member internal setEntityPublishPostUpdatesNp value entity world = World.updateEntityState (fun entityState -> { entityState with PublishPostUpdatesNp = value }) Property? PublishPostUpdatesNp entity world
+        static member internal setEntityPublishPostUpdatesNp value entity world = World.updateEntityState (fun entityState -> { entityState with PublishPostUpdatesNp = value }) false Property? PublishPostUpdatesNp entity world
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
         static member internal getEntityFacetsNp entity world = (World.getEntityState entity world).FacetsNp
 
@@ -1227,7 +1231,7 @@ module WorldModule =
         
         static member internal setEntityTransform value entity world =
             let oldWorld = world
-            let world = World.updateEntityStateWithoutEvent (EntityState.setTransform value) entity world
+            let world = World.updateEntityStateWithoutEvent (EntityState.setTransform value) true entity world
             let world = World.updateEntityInEntityTree entity oldWorld world
             if World.shouldPublishEntityChange entity world then
                 let world = World.publishEntityChange Property? Position entity oldWorld world
@@ -1401,6 +1405,7 @@ module WorldModule =
             | "Persistent" -> (World.getEntityPersistent entity world :> obj, typeof<bool>)
             | "Specialization" -> (World.getEntitySpecialization entity world :> obj, typeof<string>)
             | "CreationTimeStampNp" -> (World.getEntityCreationTimeStampNp entity world :> obj, typeof<int64>)
+            | "Imperative" -> (World.getEntityImperative entity world :> obj, typeof<bool>)
             | "OverlayNameOpt" -> (World.getEntityOverlayNameOpt entity world :> obj, typeof<string option>)
             | "Position" -> (World.getEntityPosition entity world :> obj, typeof<Vector2>)
             | "Size" -> (World.getEntitySize entity world :> obj, typeof<Vector2>)
@@ -1427,6 +1432,7 @@ module WorldModule =
             | "Specialization" -> failwith "Cannot change entity specialization."
             | "Persistent" -> World.setEntityPersistent (property |> fst :?> bool) entity world
             | "CreationTimeStampNp" -> failwith "Cannot change entity creation time stamp."
+            | "Imperative" -> World.setEntityImperative (property |> fst :?> bool) entity world
             | "Position" -> World.setEntityPosition (property |> fst :?> Vector2) entity world
             | "Size" -> World.setEntitySize (property |> fst :?> Vector2) entity world
             | "Rotation" -> World.setEntityRotation (property |> fst :?> single) entity world
@@ -1441,7 +1447,7 @@ module WorldModule =
             | "PublishPostUpdatesNp" -> failwith "Cannot change entity post-publish updates."
             | "FacetNames" -> failwith "Cannot change entity facet names with a property setter."
             | "FacetsNp" -> failwith "Cannot change entity facets with a property setter."
-            | _ -> World.updateEntityState (EntityState.setProperty propertyName property) propertyName entity world
+            | _ -> World.updateEntityState (EntityState.setProperty propertyName property) true propertyName entity world
 
         /// Get the maxima bounds of the entity as determined by size, position, rotation, and overflow.
         static member getEntityBoundsMax entity world =

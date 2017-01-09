@@ -222,6 +222,7 @@ module WorldTypes =
         static member PropertyDefinitions =
             [Define? Specialization Constants.Engine.VanillaSpecialization
              Define? Persistent true
+             Define? Imperative false
              Define? Position Vector2.Zero
              Define? Size Constants.Engine.DefaultEntitySize
              Define? Rotation 0.0f
@@ -534,15 +535,15 @@ module WorldTypes =
           Persistent : bool
           CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
           OverlayNameOpt : string option
-          Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-          Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-          Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
-          Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
-          Overflow : Vector2
-          ViewType : ViewType
-          Visible : bool
-          Enabled : bool
-          Omnipresent : bool
+          mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
+          mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
+          mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
+          mutable Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
+          mutable Overflow : Vector2
+          mutable ViewType : ViewType
+          mutable Visible : bool
+          mutable Enabled : bool
+          mutable Omnipresent : bool
           PublishChanges : bool
           PublishUpdatesNp : bool
           PublishPostUpdatesNp : bool
@@ -557,7 +558,9 @@ module WorldTypes =
         /// Set a dynamic property with explicit type information.
         static member setProperty propertyName property entityState =
             let xProperty = { PropertyValue = fst property; PropertyType = snd property }
-            { entityState with EntityState.Xtension = Xtension.setProperty propertyName xProperty entityState.Xtension }
+            let xtension = Xtension.setProperty propertyName xProperty entityState.Xtension
+            if Xtension.getImperative entityState.Xtension then entityState
+            else { entityState with EntityState.Xtension = xtension }
 
         /// The dynamic look-up operator.
         static member get propertyName entityState : 'a =
@@ -584,11 +587,18 @@ module WorldTypes =
 
         /// Set an entity state's transform.
         static member setTransform (value : Transform) (this : EntityState) =
-            { this with
-                Position = value.Position
-                Size = value.Size
-                Rotation = value.Rotation
-                Depth = value.Depth }
+            if Xtension.getImperative this.Xtension then
+                this.Position <- value.Position
+                this.Size <- value.Size
+                this.Rotation <- value.Rotation
+                this.Depth <- value.Depth
+                this
+            else
+                { this with
+                    Position = value.Position
+                    Size = value.Size
+                    Rotation = value.Rotation
+                    Depth = value.Depth }
 
         /// Make an entity state value.
         static member make specializationOpt nameOpt overlayNameOpt dispatcher =
