@@ -732,7 +732,7 @@ module WorldModule =
             | "Specialization" -> (World.getScreenSpecialization screen world :> obj, typeof<string>)
             | "Persistent" -> (World.getScreenPersistent screen world :> obj, typeof<bool>)
             | "CreationTimeStampNp" -> (World.getScreenCreationTimeStampNp screen world :> obj, typeof<int64>)
-            | "EntityTreeNp" -> (World.getScreenEntityTreeNp screen world :> obj, typeof<Entity QuadTree MutantCache>)
+            | "EntityTreeNp" -> (World.getScreenEntityTreeNp screen world :> obj, typeof<Entity SpatialTree MutantCache>)
             | "TransitionStateNp" -> (World.getScreenTransitionStateNp screen world :> obj, typeof<TransitionState>)
             | "TransitionTicksNp" -> (World.getScreenTransitionTicksNp screen world :> obj, typeof<int64>)
             | "Incoming" -> (World.getScreenIncoming screen world :> obj, typeof<Transition>)
@@ -1444,7 +1444,7 @@ module WorldModule =
             | "Omnipresent" -> World.setEntityOmnipresent (property |> fst :?> bool) entity world
             | "PublishChanges" -> World.setEntityPublishChanges (property |> fst :?> bool) entity world
             | "PublishUpdatesNp" -> failwith "Cannot change entity publish updates."
-            | "PublishPostUpdatesNp" -> failwith "Cannot change entity post-publish updates."
+            | "PublishPostUpdatesNp" -> failwith "Cannot change entity publish post-updates."
             | "FacetNames" -> failwith "Cannot change entity facet names with a property setter."
             | "FacetsNp" -> failwith "Cannot change entity facets with a property setter."
             | _ -> World.updateEntityState (EntityState.setProperty propertyName property) true propertyName entity world
@@ -1517,7 +1517,7 @@ module WorldModule =
                         (fun entityTree ->
                             let entityState = World.getEntityState entity world
                             let entityMaxBounds = World.getEntityStateBoundsMax entityState
-                            QuadTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
+                            SpatialTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
                             entityTree)
                         screenState.EntityTreeNp
                 let world = World.setScreenEntityTreeNpNoEvent entityTree screen world
@@ -1639,7 +1639,7 @@ module WorldModule =
                         (fun entityTree ->
                             let entityState = World.getEntityState entity oldWorld
                             let entityMaxBounds = World.getEntityStateBoundsMax entityState
-                            QuadTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
+                            SpatialTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
                             entityTree)
                         screenState.EntityTreeNp
                 let screenState = { screenState with EntityTreeNp = entityTree }
@@ -1825,7 +1825,7 @@ module WorldModule =
                         let oldEntityBoundsMax = World.getEntityStateBoundsMax oldEntityState
                         let entityState = World.getEntityState entity world
                         let entityBoundsMax = World.getEntityStateBoundsMax entityState
-                        QuadTree.updateElement
+                        SpatialTree.updateElement
                             (oldEntityState.Omnipresent || oldEntityState.ViewType = Absolute) oldEntityBoundsMax
                             (entityState.Omnipresent || entityState.ViewType = Absolute) entityBoundsMax
                             entity entityTree

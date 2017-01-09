@@ -61,11 +61,11 @@ module WorldModule2 =
                  (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
 
         static member internal rebuildEntityTreeImpl screen world =
-            let tree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
+            let tree = SpatialTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
             let entities = screen |> flip World.getLayers world |> Seq.map (flip World.getEntities world) |> Seq.concat
             for entity in entities do
                 let entityMaxBounds = World.getEntityBoundsMax entity world
-                QuadTree.addElement (entity.GetOmnipresent world || entity.GetViewType world = Absolute) entityMaxBounds entity tree
+                SpatialTree.addElement (entity.GetOmnipresent world || entity.GetViewType world = Absolute) entityMaxBounds entity tree
             tree
 
         /// Sort subscriptions by their depth priority.
@@ -489,9 +489,9 @@ module WorldModule2 =
 
         static member getEntitiesNearView selectedScreen world =
             let viewBounds = World.getViewBoundsRelative world
-            let (quadTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTreeNp world)
+            let (spatialTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTreeNp world)
             let world = selectedScreen.SetEntityTreeNpNoEvent entityTree world
-            let entities = QuadTree.getElementsNearBounds viewBounds quadTree
+            let entities = SpatialTree.getElementsNearBounds viewBounds spatialTree
             (entities, world)
 
         static member private updateSimulants world =

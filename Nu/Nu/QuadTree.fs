@@ -8,25 +8,17 @@ open OpenTK
 open Prime
 
 [<AutoOpen>]
-module internal QuadNodeModule =
+module internal SpatialNodeModule =
 
-    type [<NoEquality; NoComparison>] QuadNode<'e when 'e : equality> =
+    type [<NoEquality; NoComparison>] SpatialNode<'e when 'e : equality> =
         private
             { Depth : int
               Bounds : Vector4
-              Children : 'e QuadNode array
+              Children : 'e SpatialNode array
               ElementsOpt : 'e HashSet option }
 
     [<RequireQualifiedAccess>]
-    module internal QuadNode =
-
-        let private makeChildPosition i position (childSize : Vector2) =
-            match i with
-            | 0 -> position
-            | 1 -> position + Vector2 (childSize.X, 0.0f)
-            | 2 -> position + Vector2 (0.0f, childSize.Y)
-            | 3 -> position + childSize
-            | _ -> failwithumf ()
+    module internal SpatialNode =
 
         let rec internal tryAddElement bounds element node =
             if Math.isBoundsInBounds bounds node.Bounds then
@@ -78,45 +70,45 @@ module internal QuadNodeModule =
               ElementsOpt = Option.map (fun elements -> HashSet (elements, HashIdentity.Structural)) node.ElementsOpt }
 
         let rec internal make<'e when 'e : equality> depth (bounds : Vector4) =
-            if depth < 1 then failwith "Invalid depth for QuadNode. Expected depth >= 1."
+            if depth < 1 then failwith "Invalid depth for SpatialNode. Expected depth of at least 1."
             let children =
                 if depth > 1 then 
-                    [|for i in 0 .. 3 do
+                    [|for i in 0 .. 15 do
                         let childDepth = depth - 1
-                        let childSize = Vector2 (bounds.Z - bounds.X, bounds.W - bounds.Y) * 0.5f
-                        let childPosition = makeChildPosition i bounds.Xy childSize
+                        let childSize = Vector2 (bounds.Z - bounds.X, bounds.W - bounds.Y) * 0.25f
+                        let childPosition = bounds.Xy + Vector2 (childSize.X * single (i % 4), childSize.Y * single (i / 4))
                         let childBounds = Vector4 (childPosition.X, childPosition.Y, childPosition.X + childSize.X, childPosition.Y + childSize.Y)
                         yield make<'e> childDepth childBounds|]
                 else [||]
             { Depth = depth
               Bounds = bounds
-              Children = (children : 'e QuadNode array)
+              Children = (children : 'e SpatialNode array)
               ElementsOpt = match depth with 1 -> Some ^ HashSet HashIdentity.Structural | _ -> None }
 
 [<AutoOpen>]
-module QuadTreeModule =
+module SpatialTreeModule =
 
-    /// A spatial structure that organizes elements by recurring 2-dimensional quads.
-    type [<NoEquality; NoComparison>] QuadTree<'e when 'e : equality> =
+    /// A spatial structure that organizes elements on a 2D plane.
+    type [<NoEquality; NoComparison>] SpatialTree<'e when 'e : equality> =
         private
-            { Node : 'e QuadNode
+            { Node : 'e SpatialNode
               OmnipresentElements : 'e HashSet }
 
     [<RequireQualifiedAccess>]
-    module QuadTree =
+    module SpatialTree =
     
         let addElement omnipresence bounds element tree =
             if omnipresence then 
                 tree.OmnipresentElements.Add element |> ignore
-            elif not ^ QuadNode.tryAddElement bounds element tree.Node then
-                Log.info "Element is outside of quad tree's containment area or is being added redundantly."
+            elif not ^ SpatialNode.tryAddElement bounds element tree.Node then
+                Log.info "Element is outside of spatial tree's containment area or is being added redundantly."
                 tree.OmnipresentElements.Add element |> ignore
     
         let removeElement omnipresence bounds element tree =
             if omnipresence then
                 tree.OmnipresentElements.Remove element |> ignore
-            elif not ^ QuadNode.tryRemoveElement bounds element tree.Node then
-                Log.info "Element is outside of quad tree's containment area or is not present for removal."
+            elif not ^ SpatialNode.tryRemoveElement bounds element tree.Node then
+                Log.info "Element is outside of spatial tree's containment area or is not present for removal."
                 tree.OmnipresentElements.Remove element |> ignore
     
         let updateElement
@@ -127,23 +119,23 @@ module QuadTreeModule =
             addElement newOmnipresence newBounds element tree
     
         let getElementsNearPoint position tree =
-            let otherElements = QuadNode.getElementsNearPoint position tree.Node
-            otherElements |> Seq.distinct |> Seq.append tree.OmnipresentElements |> List<'e>
+            let otherElements = SpatialNode.getElementsNearPoint position tree.Node
+            otherElements |> Seq.append tree.OmnipresentElements |> Seq.distinct |> List<'e>
     
         let getElementsNearBounds bounds tree =
-            let otherElements = QuadNode.getElementsNearBounds bounds tree.Node
-            otherElements |> Seq.distinct |> Seq.append tree.OmnipresentElements |> List<'e>
+            let otherElements = SpatialNode.getElementsNearBounds bounds tree.Node
+            otherElements |> Seq.append tree.OmnipresentElements |> Seq.distinct |> List<'e>
     
         let getDepth tree =
-            QuadNode.getDepth tree.Node
+            SpatialNode.getDepth tree.Node
     
         let clone tree =
-            { Node = QuadNode.clone tree.Node
+            { Node = SpatialNode.clone tree.Node
               OmnipresentElements = HashSet (tree.OmnipresentElements, HashIdentity.Structural) }
     
         let make<'e when 'e : equality> depth bounds =
-            { Node = QuadNode.make<'e> depth bounds
+            { Node = SpatialNode.make<'e> depth bounds
               OmnipresentElements = HashSet HashIdentity.Structural }
 
-/// A spatial structure that organizes elements by recurring 2-dimensional quads.
-type QuadTree<'e when 'e : equality> = QuadTreeModule.QuadTree<'e>
+/// A spatial structure that organizes elements on a 2D plane.
+type SpatialTree<'e when 'e : equality> = SpatialTreeModule.SpatialTree<'e>
