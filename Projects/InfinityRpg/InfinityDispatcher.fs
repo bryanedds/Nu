@@ -16,6 +16,14 @@ type InfinityDispatcher () =
         let world = World.subscribe (World.handleAsScreenTransition Simulants.Credits) (Events.Click ->- Simulants.TitleCredits) Simulants.Game world
         let world = World.subscribe (handleAsScreenTransitionToGameplay false) (Events.Click ->- Simulants.TitleNewGame) Simulants.Game world
         let world = World.subscribe (handleAsScreenTransitionToGameplay true) (Events.Click ->- Simulants.TitleLoadGame) Simulants.Game world
+        let world =
+            List.fold
+                (fun world i ->
+                    let (entity, world) = World.createEntity None (i |> scstring |> (fun s -> "X" + s ) |> Name.make |> Some) Simulants.TitleGui world
+                    let world = entity.SetPublishChanges false world
+                    entity.SetImperative true world)
+                world
+                [0 .. 5000]
         World.subscribe World.handleAsExit (Events.Click ->- Simulants.TitleExit) Simulants.Game world
 
     static let createCredits world =

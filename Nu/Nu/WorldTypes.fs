@@ -568,7 +568,9 @@ module WorldTypes =
 
         /// The dynamic assignment operator.
         static member set propertyName (value : 'a) entityState =
-            { entityState with EntityState.Xtension = Xtension.(?<-) (entityState.Xtension, propertyName, value) }
+            let xtension = Xtension.(?<-) (entityState.Xtension, propertyName, value)
+            if Xtension.getImperative entityState.Xtension then entityState
+            else { entityState with EntityState.Xtension = xtension }
 
         /// Attach a dynamic property.
         static member attachProperty name value entityState =
