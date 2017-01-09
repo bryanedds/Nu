@@ -406,7 +406,7 @@ module WorldTypes =
           ScriptAssetOptLc : AssetTag option
           Script : Script
           CreationTimeStampNp : int64
-          EntityTreeNp : Entity QuadTree MutantCache
+          EntityTreeNp : Entity SpatialTree MutantCache
           TransitionStateNp : TransitionState
           TransitionTicksNp : int64
           Incoming : Transition
@@ -448,13 +448,13 @@ module WorldTypes =
                   ScriptAssetOptLc = None
                   Script = Script.empty
                   CreationTimeStampNp = Core.getTimeStamp ()
-                  EntityTreeNp = Unchecked.defaultof<Entity QuadTree MutantCache>
+                  EntityTreeNp = Unchecked.defaultof<Entity SpatialTree MutantCache>
                   TransitionStateNp = IdlingState
                   TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
                   Incoming = Transition.make Incoming
                   Outgoing = Transition.make Outgoing }
-            let quadTree = QuadTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
-            { screenState with EntityTreeNp = MutantCache.make Operators.id quadTree }
+            let spatialTree = SpatialTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
+            { screenState with EntityTreeNp = MutantCache.make Operators.id spatialTree }
 
         /// Copy a screen such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
@@ -888,7 +888,7 @@ module WorldTypes =
           EntityDispatchers : Map<string, EntityDispatcher>
           Facets : Map<string, Facet>
           UpdateEntityInEntityTree : Entity -> World -> World -> World
-          RebuildEntityTree : Screen -> World -> Entity QuadTree }
+          RebuildEntityTree : Screen -> World -> Entity SpatialTree }
     
     /// The world, in a functional programming sense. Hosts the game object, the dependencies needed
     /// to implement a game, messages to by consumed by the various engine sub-systems, and general

@@ -23,7 +23,7 @@ type InfinityDispatcher () =
                     let world = entity.SetPublishChanges false world
                     entity.SetImperative true world)
                 world
-                [0 .. 5000]
+                [0 .. 6000]
         World.subscribe World.handleAsExit (Events.Click ->- Simulants.TitleExit) Simulants.Game world
 
     static let createCredits world =
