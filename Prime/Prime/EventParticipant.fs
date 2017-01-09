@@ -6,6 +6,7 @@ open System
 open Prime
 
 /// A participant in the event system.
+/// TODO: consider renaming this to 'Identity', and the proxy functions in Nu to 'identify'.
 type Participant =
     interface
         abstract member ParticipantAddress : Participant Address
