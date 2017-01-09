@@ -85,19 +85,19 @@ module XtensionModule =
         /// Example:
         ///     let xtn = xtn.Position <- Vector2 (4.0, 5.0).
         static member (?<-) (xtension, propertyName, value : 'a) =
-                match UMap.tryFind propertyName xtension.Properties with
-                | Some property ->
-                    if xtension.Sealed && property.PropertyType <> typeof<'a> then failwith "Cannot change the type of a sealed Xtension's property."
-                    if xtension.Imperative then property.PropertyValue <- value :> obj; xtension
-                    else
-                        let property = { property with PropertyValue = value :> obj }
-                        let properties = UMap.add propertyName property xtension.Properties
-                        { xtension with Properties = properties }
-                | None ->
-                    if xtension.Sealed then failwith "Cannot add property to a sealed Xtension."
-                    let property = { PropertyValue = value :> obj; PropertyType = typeof<'a> }
+            match UMap.tryFind propertyName xtension.Properties with
+            | Some property ->
+                if xtension.Sealed && property.PropertyType <> typeof<'a> then failwith "Cannot change the type of a sealed Xtension's property."
+                if xtension.Imperative then property.PropertyValue <- value :> obj; xtension
+                else
+                    let property = { property with PropertyValue = value :> obj }
                     let properties = UMap.add propertyName property xtension.Properties
                     { xtension with Properties = properties }
+            | None ->
+                if xtension.Sealed then failwith "Cannot add property to a sealed Xtension."
+                let property = { PropertyValue = value :> obj; PropertyType = typeof<'a> }
+                let properties = UMap.add propertyName property xtension.Properties
+                { xtension with Properties = properties }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module Xtension =
@@ -129,10 +129,10 @@ module XtensionModule =
         /// Set a property on an Xtension.
         let setProperty name property xtension =
             match UMap.tryFind name xtension.Properties with
-            | Some property ->
+            | Some property' ->
                 if xtension.Imperative then
-                    property.PropertyValue <- property.PropertyValue
-                    property.PropertyType <- property.PropertyType
+                    property'.PropertyValue <- property.PropertyValue
+                    property'.PropertyType <- property.PropertyType
                     xtension
                 else { xtension with Properties = UMap.add name property xtension.Properties }
             | None -> { xtension with Properties = UMap.add name property xtension.Properties }
