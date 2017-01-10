@@ -685,10 +685,7 @@ module WorldModule2 =
 
             // make and choose the world for debugging
             let world = World.make eventSystem dispatchers subsystems ambientState None activeGameDispatcher
-
-            // initialize entity cache after the fact due to back reference
-            let world = World.setEntityCacheOpt (KeyedCache.make (Address.empty<Entity>, world) None) world
-
+            
             // subscribe to subscribe and unsubscribe events
             let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
             let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Simulants.Game world
@@ -789,9 +786,6 @@ module WorldModule2 =
 
                     // make and choose the world for debugging
                     let world = World.make eventSystem dispatchers subsystems ambientState gameSpecializationOpt activeGameDispatcher
-
-                    // initialize entity cache after the fact due to back reference
-                    let world = World.setEntityCacheOpt (KeyedCache.make (Address.empty<Entity>, world) None) world
 
                     // subscribe to subscribe and unsubscribe events
                     let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world

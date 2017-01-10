@@ -96,7 +96,8 @@ module WorldLayerModule =
 
         /// Destroy a layer in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// layer's existence. Consider using World.destroyLayer instead.
-        static member destroyLayerImmediate layer world = World.removeLayer layer world
+        static member destroyLayerImmediate layer world =
+            World.removeLayer layer world
 
         /// Destroy a layer in the world at the end of the current update.
         static member destroyLayer layer world =
