@@ -368,13 +368,17 @@ module WorldModule =
 
     type World with
 
-        /// Get the optional entity cache.
-        static member internal getEntityCacheOpt world =
-            world.EntityCacheOpt
+        /// Get the optional cached screen.
+        static member internal getScreenCachedOpt world =
+            world.ScreenCachedOpt
 
-        /// Set the optional entity cache.
-        static member internal setEntityCacheOpt entityCacheOpt world =
-            World.choose { world with EntityCacheOpt = entityCacheOpt }
+        /// Get the optional cached layer.
+        static member internal getLayerCachedOpt world =
+            world.LayerCachedOpt
+
+        /// Get the optional cached entity.
+        static member internal getEntityCachedOpt world =
+            world.EntityCachedOpt
 
     type World with
 
@@ -630,6 +634,22 @@ module WorldModule =
 
     type World with
 
+        static member private screenStateKeyEquality
+            (screenAddress : Screen Address, screenStates : UMap<Screen Address, ScreenState>)
+            (screenAddress2 : Screen Address, screenStates2 : UMap<Screen Address, ScreenState>) =
+            refEq screenAddress screenAddress2 && refEq screenStates screenStates2
+
+        static member private screenGetFreshKeyAndValue screen world =
+            let screenStateOpt = UMap.tryFind screen.ScreenAddress ^ world.ScreenStates
+            ((screen.ScreenAddress, world.ScreenStates), screenStateOpt)
+
+        static member private screenStateFinder screen world =
+            KeyedCache.getValue
+                World.screenStateKeyEquality
+                (fun () -> World.screenGetFreshKeyAndValue screen world)
+                (screen.ScreenAddress, world.ScreenStates)
+                (World.getScreenCachedOpt world)
+
         static member private screenStateAdder screenState screen world =
             let screenDirectory =
                 match Address.getNames screen.ScreenAddress with
@@ -675,7 +695,7 @@ module WorldModule =
             World.publish { Participant = screen; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace screen world
 
         static member private getScreenStateOpt screen world =
-            UMap.tryFind screen.ScreenAddress world.ScreenStates
+             World.screenStateFinder screen world
 
         static member private getScreenState screen world =
             match World.getScreenStateOpt screen world with
@@ -836,6 +856,22 @@ module WorldModule =
 
     type World with
 
+        static member private layerStateKeyEquality
+            (layerAddress : Layer Address, layerStates : UMap<Layer Address, LayerState>)
+            (layerAddress2 : Layer Address, layerStates2 : UMap<Layer Address, LayerState>) =
+            refEq layerAddress layerAddress2 && refEq layerStates layerStates2
+
+        static member private layerGetFreshKeyAndValue layer world =
+            let layerStateOpt = UMap.tryFind layer.LayerAddress ^ world.LayerStates
+            ((layer.LayerAddress, world.LayerStates), layerStateOpt)
+
+        static member private layerStateFinder layer world =
+            KeyedCache.getValue
+                World.layerStateKeyEquality
+                (fun () -> World.layerGetFreshKeyAndValue layer world)
+                (layer.LayerAddress, world.LayerStates)
+                (World.getLayerCachedOpt world)
+
         static member private layerStateAdder layerState layer world =
             let screenDirectory =
                 match Address.getNames layer.LayerAddress with
@@ -890,7 +926,7 @@ module WorldModule =
             World.publish { Participant = layer; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace layer world
 
         static member private getLayerStateOpt layer world =
-            UMap.tryFind layer.LayerAddress world.LayerStates
+            World.layerStateFinder layer world
 
         static member private getLayerState layer world =
             match World.getLayerStateOpt layer world with
@@ -1051,21 +1087,21 @@ module WorldModule =
 
     type World with
 
-        static member private entityStateKeyEquality 
-            (entityAddress : Entity Address, world : World)
-            (entityAddress2 : Entity Address, world2 : World) =
-            refEq entityAddress entityAddress2 && refEq world world2
+        static member private entityStateKeyEquality
+            (entityAddress : Entity Address, entityStates : UMap<Entity Address, EntityState>)
+            (entityAddress2 : Entity Address, entityStates2 : UMap<Entity Address, EntityState>) =
+            refEq entityAddress entityAddress2 && refEq entityStates entityStates2
 
         static member private entityGetFreshKeyAndValue entity world =
             let entityStateOpt = UMap.tryFind entity.EntityAddress ^ world.EntityStates
-            ((entity.EntityAddress, world), entityStateOpt)
+            ((entity.EntityAddress, world.EntityStates), entityStateOpt)
 
         static member private entityStateFinder entity world =
             KeyedCache.getValue
                 World.entityStateKeyEquality
                 (fun () -> World.entityGetFreshKeyAndValue entity world)
-                (entity.EntityAddress, world)
-                (World.getEntityCacheOpt world)
+                (entity.EntityAddress, world.EntityStates)
+                (World.getEntityCachedOpt world)
 
         static member private entityStateAdder entityState entity world =
             let screenDirectory =
@@ -1545,7 +1581,8 @@ module WorldModule =
 
         /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight publishing depends on
         /// the entity's existence. Consider using World.destroyEntity instead.
-        static member destroyEntityImmediate entity world = World.removeEntity entity world
+        static member destroyEntityImmediate entity world =
+            World.removeEntity entity world
 
         /// Create an entity and add it to the world.
         static member createEntity5 dispatcherName specializationOpt nameOpt layer world =
@@ -1871,15 +1908,20 @@ module WorldModule =
         // Make the world.
         static member internal make eventSystem dispatchers subsystems ambientState gameSpecializationOpt activeGameDispatcher =
             let gameState = GameState.make gameSpecializationOpt activeGameDispatcher
+            let screenStates = UMap.makeEmpty None
+            let layerStates = UMap.makeEmpty None
+            let entityStates = UMap.makeEmpty None
             let world =
                 { EventSystem = eventSystem
                   Dispatchers = dispatchers
                   Subsystems = subsystems
-                  EntityCacheOpt = Unchecked.defaultof<KeyedCache<Entity Address * World, EntityState option>>
+                  ScreenCachedOpt = KeyedCache.make (Address.empty<Screen>, screenStates) None
+                  LayerCachedOpt = KeyedCache.make (Address.empty<Layer>, layerStates) None
+                  EntityCachedOpt = KeyedCache.make (Address.empty<Entity>, entityStates) None
                   ScreenDirectory = UMap.makeEmpty None
                   AmbientState = ambientState
                   GameState = gameState
-                  ScreenStates = UMap.makeEmpty None
-                  LayerStates = UMap.makeEmpty None
-                  EntityStates = UMap.makeEmpty None }
+                  ScreenStates = screenStates
+                  LayerStates = layerStates
+                  EntityStates = entityStates }
             World.choose world
