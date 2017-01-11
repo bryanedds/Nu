@@ -302,7 +302,7 @@ module RendererModule =
                                      -(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
                             let tileBounds = Math.makeBounds tilePosition tileSize
                             let viewBounds = Math.makeBounds Vector2.Zero eyeSize
-                            if Math.isBoundsInBoundsExclusive tileBounds viewBounds then
+                            if Math.isBoundsIntersectingBounds tileBounds viewBounds then
                                 let gid = tiles.[n].Gid - tileSet.FirstGid
                                 let gidPosition = gid * tileSourceSize.X
                                 let tileSourcePosition =

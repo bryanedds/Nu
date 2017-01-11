@@ -23,16 +23,16 @@ module internal SpatialNodeModule =
         let internal atPoint point node =
             Math.isPointInBounds point node.Bounds
 
-        let internal inBoundsInclusive bounds node =
-            Math.isBoundsInBoundsInclusive bounds node.Bounds
+        let internal inBounds bounds node =
+            Math.isBoundsInBounds bounds node.Bounds
 
-        let internal inBoundsExclusive bounds node =
-            Math.isBoundsInBoundsExclusive bounds node.Bounds
+        let internal intersectingBounds bounds node =
+            Math.isBoundsIntersectingBounds bounds node.Bounds
 
         let rec internal addElement bounds element node =
             let nodes =
                 node.Children |>
-                Seq.filter (fun node -> inBoundsInclusive bounds node) |>
+                Seq.filter (fun node -> inBounds bounds node) |>
                 Array.ofSeq
             match nodes.Length with
             | 0 -> node.Elements.Add element |> ignore
@@ -42,7 +42,7 @@ module internal SpatialNodeModule =
         let rec internal removeElement bounds element node =
             let nodes =
                 node.Children |>
-                Seq.filter (fun node -> inBoundsInclusive bounds node) |>
+                Seq.filter (fun node -> inBounds bounds node) |>
                 Array.ofSeq
             match nodes.Length with
             | 0 -> node.Elements.Remove element |> ignore
@@ -58,7 +58,7 @@ module internal SpatialNodeModule =
         let rec internal getElementsInBounds bounds node (list : 'e List) =
             for element in node.Elements do list.Add element
             for child in node.Children do
-                if inBoundsExclusive bounds child then
+                if intersectingBounds bounds child then
                     getElementsInBounds bounds child list
 
         let internal getDepth node =
@@ -104,7 +104,7 @@ module SpatialTreeModule =
         let addElement omnipresence bounds element tree =
             if omnipresence then 
                 tree.OmnipresentElements.Add element |> ignore
-            elif not ^ SpatialNode.inBoundsInclusive bounds tree.Node then
+            elif not ^ SpatialNode.inBounds bounds tree.Node then
                 Log.info "Element is outside of spatial tree's containment area or is being added redundantly."
                 tree.OmnipresentElements.Add element |> ignore
             else SpatialNode.addElement bounds element tree.Node
@@ -112,7 +112,7 @@ module SpatialTreeModule =
         let removeElement omnipresence bounds element tree =
             if omnipresence then 
                 tree.OmnipresentElements.Remove element |> ignore
-            elif not ^ SpatialNode.inBoundsInclusive bounds tree.Node then
+            elif not ^ SpatialNode.inBounds bounds tree.Node then
                 Log.info "Element is outside of spatial tree's containment area or is not present for removal."
                 tree.OmnipresentElements.Remove element |> ignore
             else SpatialNode.removeElement bounds element tree.Node
