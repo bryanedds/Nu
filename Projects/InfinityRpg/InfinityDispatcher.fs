@@ -19,7 +19,7 @@ type InfinityDispatcher () =
         let world =
             List.fold
                 (fun world _ -> World.createEntity<ImperativeEntityDispatcher> None None Simulants.TitleGui world |> snd)
-                world [0 .. 15000]
+                world [0 .. 18000]
         World.subscribe World.handleAsExit (Events.Click ->- Simulants.TitleExit) Simulants.Game world
 
     static let createCredits world =
