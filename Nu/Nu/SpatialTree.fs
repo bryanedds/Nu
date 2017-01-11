@@ -15,48 +15,51 @@ module internal SpatialNodeModule =
             { Depth : int
               Bounds : Vector4
               Children : 'e SpatialNode array
-              ElementsOpt : 'e HashSet option }
+              Elements : 'e HashSet }
 
     [<RequireQualifiedAccess>]
     module internal SpatialNode =
 
-        let rec internal tryAddElement bounds element node =
-            if Math.isBoundsInBounds bounds node.Bounds then
-                match node.ElementsOpt with
-                | Some elements -> elements.Add element
-                | None ->
-                    // OPTIMIZATION: imperative to avoid creating a lambda each call
-                    let mutable result = false
-                    for child in node.Children do
-                        result <- tryAddElement bounds element child || result
-                    result
-            else false
+        let internal atPoint point node =
+            Math.isPointInBounds point node.Bounds
 
-        let rec internal tryRemoveElement bounds element node =
-            if Math.isBoundsInBounds bounds node.Bounds then
-                match node.ElementsOpt with
-                | Some elements -> elements.Remove element
-                | None ->
-                    // OPTIMIZATION: imperative to avoid creating a lambda each call
-                    let mutable result = false
-                    for child in node.Children do
-                        result <- tryRemoveElement bounds element child || result
-                    result
-            else false
+        let internal inBoundsInclusive bounds node =
+            Math.isBoundsInBoundsInclusive bounds node.Bounds
 
-        let rec internal getElementsNearPoint position node =
-            if Math.isPointInBounds position node.Bounds then
-                match node.ElementsOpt with
-                | Some elements -> elements :> _ seq
-                | None -> Seq.map (fun child -> getElementsNearPoint position child) node.Children |> Seq.concat
-            else Seq.empty
+        let internal inBoundsExclusive bounds node =
+            Math.isBoundsInBoundsExclusive bounds node.Bounds
 
-        let rec internal getElementsNearBounds bounds node =
-            if Math.isBoundsInBounds bounds node.Bounds then
-                match node.ElementsOpt with
-                | Some elements -> elements :> _ seq
-                | None -> Seq.map (fun child -> getElementsNearBounds bounds child) node.Children |> Seq.concat
-            else Seq.empty
+        let rec internal addElement bounds element node =
+            let nodes =
+                node.Children |>
+                Seq.filter (fun node -> inBoundsInclusive bounds node) |>
+                Array.ofSeq
+            match nodes.Length with
+            | 0 -> node.Elements.Add element |> ignore
+            | 1 -> let child = nodes.[0] in addElement bounds element child
+            | _ -> failwithumf ()
+
+        let rec internal removeElement bounds element node =
+            let nodes =
+                node.Children |>
+                Seq.filter (fun node -> inBoundsInclusive bounds node) |>
+                Array.ofSeq
+            match nodes.Length with
+            | 0 -> node.Elements.Remove element |> ignore
+            | 1 -> let child = nodes.[0] in removeElement bounds element child
+            | _ -> failwithumf ()
+
+        let rec internal getElementsAtPoint point node (list : 'e List) =
+            for element in node.Elements do list.Add element
+            for child in node.Children do
+                if atPoint point child then
+                    getElementsAtPoint point child list
+
+        let rec internal getElementsInBounds bounds node (list : 'e List) =
+            for element in node.Elements do list.Add element
+            for child in node.Children do
+                if inBoundsExclusive bounds child then
+                    getElementsInBounds bounds child list
 
         let internal getDepth node =
             node.Depth
@@ -67,7 +70,7 @@ module internal SpatialNodeModule =
               Children = Array.map clone node.Children
               // NOTE: it is inefficient to shallow-clone a HashSet like this, but sadly, .NET does not provide a proper
               // Clone method! #ARGH!
-              ElementsOpt = Option.map (fun elements -> HashSet (elements, HashIdentity.Structural)) node.ElementsOpt }
+              Elements = HashSet (node.Elements, HashIdentity.Structural) }
 
         let rec internal make<'e when 'e : equality> granularity depth (bounds : Vector4) =
             if granularity < 2 then failwith "Invalid granularity for SpatialNode. Expected value of at least 2."
@@ -84,7 +87,7 @@ module internal SpatialNodeModule =
             { Depth = depth
               Bounds = bounds
               Children = (children : 'e SpatialNode array)
-              ElementsOpt = match depth with 1 -> Some ^ HashSet HashIdentity.Structural | _ -> None }
+              Elements = HashSet HashIdentity.Structural }
 
 [<AutoOpen>]
 module SpatialTreeModule =
@@ -101,16 +104,18 @@ module SpatialTreeModule =
         let addElement omnipresence bounds element tree =
             if omnipresence then 
                 tree.OmnipresentElements.Add element |> ignore
-            elif not ^ SpatialNode.tryAddElement bounds element tree.Node then
+            elif not ^ SpatialNode.inBoundsInclusive bounds tree.Node then
                 Log.info "Element is outside of spatial tree's containment area or is being added redundantly."
                 tree.OmnipresentElements.Add element |> ignore
-    
+            else SpatialNode.addElement bounds element tree.Node
+
         let removeElement omnipresence bounds element tree =
-            if omnipresence then
+            if omnipresence then 
                 tree.OmnipresentElements.Remove element |> ignore
-            elif not ^ SpatialNode.tryRemoveElement bounds element tree.Node then
+            elif not ^ SpatialNode.inBoundsInclusive bounds tree.Node then
                 Log.info "Element is outside of spatial tree's containment area or is not present for removal."
                 tree.OmnipresentElements.Remove element |> ignore
+            else SpatialNode.removeElement bounds element tree.Node
     
         let updateElement
             oldOmnipresence oldBounds
@@ -119,13 +124,17 @@ module SpatialTreeModule =
             removeElement oldOmnipresence oldBounds element tree
             addElement newOmnipresence newBounds element tree
     
-        let getElementsNearPoint position tree =
-            let otherElements = SpatialNode.getElementsNearPoint position tree.Node
-            otherElements |> Seq.append tree.OmnipresentElements |> Seq.distinct |> List<'e>
+        let getElementsAtPoint point tree =
+            let list = List ()
+            SpatialNode.getElementsAtPoint point tree.Node list
+            for element in tree.OmnipresentElements do list.Add element
+            list
     
-        let getElementsNearBounds bounds tree =
-            let otherElements = SpatialNode.getElementsNearBounds bounds tree.Node
-            otherElements |> Seq.append tree.OmnipresentElements |> Seq.distinct |> List<'e>
+        let getElementsInBounds bounds tree =
+            let list = List ()
+            SpatialNode.getElementsInBounds bounds tree.Node list
+            for element in tree.OmnipresentElements do list.Add element
+            list
     
         let getDepth tree =
             SpatialNode.getDepth tree.Node

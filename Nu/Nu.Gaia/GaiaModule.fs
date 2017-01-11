@@ -39,7 +39,7 @@ module Gaia =
 
     let private getPickableEntities world =
         let selectedLayer = (World.getUserState world).SelectedLayer
-        let (entities, world) = World.getEntitiesNearView Simulants.EditorScreen world
+        let (entities, world) = World.getEntitiesInView Simulants.EditorScreen world
         let entitiesInLayer = Enumerable.ToList (Enumerable.Where (entities, fun entity -> etol entity = selectedLayer))
         (entitiesInLayer, world)
 

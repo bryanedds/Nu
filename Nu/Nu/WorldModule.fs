@@ -534,7 +534,7 @@ module WorldModule =
         /// Check that the given bounds is within the eye's sight.
         static member inView viewType (bounds : Vector4) world =
             let viewBounds = World.getViewBounds viewType world
-            Math.isBoundsInBounds bounds viewBounds
+            Math.isBoundsInBoundsExclusive bounds viewBounds
 
         /// Transform the given mouse position to screen space.
         static member mouseToScreen (mousePosition : Vector2) world =

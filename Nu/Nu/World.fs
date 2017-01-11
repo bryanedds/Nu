@@ -488,11 +488,11 @@ module WorldModule2 =
                 | _ -> world
             (World.getLiveness world, world)
 
-        static member getEntitiesNearView selectedScreen world =
+        static member getEntitiesInView selectedScreen world =
             let viewBounds = World.getViewBoundsRelative world
             let (spatialTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTreeNp world)
             let world = selectedScreen.SetEntityTreeNpNoEvent entityTree world
-            let entities = SpatialTree.getElementsNearBounds viewBounds spatialTree
+            let entities = SpatialTree.getElementsInBounds viewBounds spatialTree
             (entities, world)
 
         static member private updateSimulants world =
@@ -504,7 +504,7 @@ module WorldModule2 =
                 // gather simulants. Note that we do not re-discover simulants during the update process because the
                 // engine is defined to discourage the removal of simulants in the middle of a frame.
                 let layers = World.getLayers selectedScreen world
-                let (entities, world) = World.getEntitiesNearView selectedScreen world
+                let (entities, world) = World.getEntitiesInView selectedScreen world
 
                 // update simulants
                 let world = World.updateGame world
@@ -564,7 +564,7 @@ module WorldModule2 =
                     | IdlingState -> world
                 let layers = World.getLayers selectedScreen world
                 let world = Seq.fold (fun world layer -> World.actualizeLayer layer world) world layers
-                let (entities, world) = World.getEntitiesNearView selectedScreen world
+                let (entities, world) = World.getEntitiesInView selectedScreen world
                 Seq.fold (fun world entity -> World.actualizeEntity entity world) world entities
             | None -> world
 
