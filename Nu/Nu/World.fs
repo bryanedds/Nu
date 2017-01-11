@@ -62,7 +62,7 @@ module WorldModule2 =
                  (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
 
         static member internal rebuildEntityTreeImpl screen world =
-            let tree = SpatialTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
+            let tree = SpatialTree.make Constants.Engine.EntityTreeGranularity Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
             let entities = screen |> flip World.getLayers world |> Seq.map (flip World.getEntities world) |> Seq.concat
             for entity in entities do
                 let entityMaxBounds = World.getEntityBoundsMax entity world
