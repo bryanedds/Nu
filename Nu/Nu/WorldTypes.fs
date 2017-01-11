@@ -129,7 +129,7 @@ module WorldTypes =
 
     /// Generalized interface tag for dispatchers.
     and Dispatcher () =
-        member this.Imperative () =
+        member this.GetImperative () =
             this :> obj :? Imperative
 
     /// Generalized interface tag for simulant dispatchers.
@@ -609,7 +609,7 @@ module WorldTypes =
             let (id, name) = Reflection.deriveIdAndName nameOpt
             { Id = id
               Name = name
-              Xtension = Xtension.setImperative (dispatcher.Imperative ()) Xtension.safe
+              Xtension = Xtension.setImperative (dispatcher.GetImperative ()) Xtension.safe
               DispatcherNp = dispatcher
               Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
               Persistent = true
