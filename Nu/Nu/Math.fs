@@ -207,7 +207,14 @@ module Math =
         point.Y <= bounds.W
 
     /// Queries that a bounds is within the given bounds.
-    let isBoundsInBounds (bounds : Vector4) (bounds2 : Vector4) =
+    let isBoundsInBoundsInclusive (bounds : Vector4) (bounds2 : Vector4) =
+        bounds.X >= bounds2.X &&
+        bounds.Z <= bounds2.Z &&
+        bounds.Y >= bounds2.Y &&
+        bounds.W <= bounds2.W
+
+    /// Queries that a bounds is within the given bounds.
+    let isBoundsInBoundsExclusive (bounds : Vector4) (bounds2 : Vector4) =
         bounds.X < bounds2.Z &&
         bounds.Z > bounds2.X &&
         bounds.Y < bounds2.W &&
