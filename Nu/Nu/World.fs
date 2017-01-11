@@ -38,6 +38,8 @@ module WorldModule2 =
             // TODO: see if we can reflectively generate these
             Map.ofListBy World.pairWithName ^
                 [EntityDispatcher ()
+                 ImperativeEntityDispatcher () :> EntityDispatcher
+                 EffectDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
                  ButtonDispatcher () :> EntityDispatcher
                  LabelDispatcher () :> EntityDispatcher
@@ -45,7 +47,6 @@ module WorldModule2 =
                  ToggleDispatcher () :> EntityDispatcher
                  FeelerDispatcher () :> EntityDispatcher
                  FillBarDispatcher () :> EntityDispatcher
-                 EffectDispatcher () :> EntityDispatcher
                  BlockDispatcher () :> EntityDispatcher
                  BoxDispatcher () :> EntityDispatcher
                  TopViewCharacterDispatcher () :> EntityDispatcher

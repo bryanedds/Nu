@@ -32,8 +32,7 @@ module WorldEntityModule =
         member this.GetCreationTimeStampNp world = World.getEntityCreationTimeStampNp this world
         member this.CreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
         member this.GetImperative world = World.getEntityImperative this world
-        member this.SetImperative value world = World.setEntityImperative value this world
-        member this.Imperative = PropertyTag.make this Property? Imperative this.GetImperative this.SetImperative
+        member this.Imperative = PropertyTag.makeReadOnly this Property? Imperative this.GetImperative
         member this.GetOverlayNameOpt world = World.getEntityOverlayNameOpt this world
         member this.SetOverlayNameOpt value world = World.setEntityOverlayNameOpt value this world
         member this.OverlayNameOpt = PropertyTag.make this Property? OverlayNameOpt this.GetOverlayNameOpt this.SetOverlayNameOpt
@@ -149,10 +148,8 @@ module WorldEntityModule =
 
         static member internal updateEntity (entity : Entity) world =
             World.withEventContext (fun world ->
-                let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
-                let facets = entity.GetFacetsNp world
-                let world = dispatcher.Update (entity, world)
-                let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
+                let world = (entity.GetDispatcherNp world).Update (entity, world)
+                let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) (entity.GetFacetsNp world) world
                 if entity.GetPublishUpdatesNp world then
                     let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
                     World.publish7 World.sortSubscriptionsByHierarchy () entity.UpdateAddress eventTrace Simulants.Game false world
@@ -162,10 +159,8 @@ module WorldEntityModule =
 
         static member internal postUpdateEntity (entity : Entity) world =
             World.withEventContext (fun world ->
-                let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
-                let facets = entity.GetFacetsNp world
-                let world = dispatcher.PostUpdate (entity, world)
-                let world = List.foldBack (fun (facet : Facet) world -> facet.PostUpdate (entity, world)) facets world
+                let world = (entity.GetDispatcherNp world).PostUpdate (entity, world)
+                let world = List.foldBack (fun (facet : Facet) world -> facet.PostUpdate (entity, world)) (entity.GetFacetsNp world) world
                 if entity.GetPublishPostUpdatesNp world then
                     let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
                     World.publish7 World.sortSubscriptionsByHierarchy () entity.PostUpdateAddress eventTrace Simulants.Game false world
@@ -175,10 +170,8 @@ module WorldEntityModule =
 
         static member internal actualizeEntity (entity : Entity) world =
             World.withEventContext (fun world ->
-                let dispatcher = entity.GetDispatcherNp world : EntityDispatcher
-                let facets = entity.GetFacetsNp world
-                let world = dispatcher.Actualize (entity, world)
-                List.foldBack (fun (facet : Facet) world -> facet.Actualize (entity, world)) facets world)
+                let world = (entity.GetDispatcherNp world).Actualize (entity, world)
+                List.foldBack (fun (facet : Facet) world -> facet.Actualize (entity, world)) (entity.GetFacetsNp world) world)
                 entity.ObjAddress
                 world
 
