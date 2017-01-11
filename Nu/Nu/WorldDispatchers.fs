@@ -477,6 +477,25 @@ module AnimatedSpriteFacetModule =
             entity.GetCelSize world
 
 [<AutoOpen>]
+module ImperativeEntityDispatcherModule =
+
+    type ImperativeEntityDispatcher () =
+        inherit EntityDispatcher ()
+        interface Imperative
+
+[<AutoOpen>]
+module EffectDispatcherModule =
+
+    type EffectDispatcher () =
+        inherit EntityDispatcher ()
+
+        static member PropertyDefinitions =
+            [Define? Effect ^ scvalue<Effect> "[Effect None [] [Composite [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]"]
+
+        static member IntrinsicFacetNames =
+            [typeof<EffectFacet>.Name]
+
+[<AutoOpen>]
 module GuiDispatcherModule =
 
     type Entity with
@@ -950,18 +969,6 @@ module FillBarDispatcherModule =
             match Metadata.tryGetTextureSizeAsVector2 (fillBar.GetBorderImage world) (World.getAssetMetadataMap world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
-
-[<AutoOpen>]
-module EffectDispatcherModule =
-
-    type EffectDispatcher () =
-        inherit EntityDispatcher ()
-
-        static member PropertyDefinitions =
-            [Define? Effect ^ scvalue<Effect> "[Effect None [] [Composite [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]"]
-
-        static member IntrinsicFacetNames =
-            [typeof<EffectFacet>.Name]
 
 [<AutoOpen>]
 module BlockDispatcherModule =

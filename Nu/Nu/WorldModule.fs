@@ -640,7 +640,7 @@ module WorldModule =
             refEq screenAddress screenAddress2 && refEq screenStates screenStates2
 
         static member private screenGetFreshKeyAndValue screen world =
-            let screenStateOpt = UMap.tryFind screen.ScreenAddress ^ world.ScreenStates
+            let screenStateOpt = UMap.tryFind screen.ScreenAddress world.ScreenStates
             ((screen.ScreenAddress, world.ScreenStates), screenStateOpt)
 
         static member private screenStateFinder screen world =
@@ -862,7 +862,7 @@ module WorldModule =
             refEq layerAddress layerAddress2 && refEq layerStates layerStates2
 
         static member private layerGetFreshKeyAndValue layer world =
-            let layerStateOpt = UMap.tryFind layer.LayerAddress ^ world.LayerStates
+            let layerStateOpt = UMap.tryFind layer.LayerAddress world.LayerStates
             ((layer.LayerAddress, world.LayerStates), layerStateOpt)
 
         static member private layerStateFinder layer world =
@@ -1093,15 +1093,26 @@ module WorldModule =
             refEq entityAddress entityAddress2 && refEq entityStates entityStates2
 
         static member private entityGetFreshKeyAndValue entity world =
-            let entityStateOpt = UMap.tryFind entity.EntityAddress ^ world.EntityStates
+            let entityStateOpt = UMap.tryFind entity.EntityAddress world.EntityStates
             ((entity.EntityAddress, world.EntityStates), entityStateOpt)
 
         static member private entityStateFinder entity world =
-            KeyedCache.getValue
-                World.entityStateKeyEquality
-                (fun () -> World.entityGetFreshKeyAndValue entity world)
-                (entity.EntityAddress, world.EntityStates)
-                (World.getEntityCachedOpt world)
+            match entity.EntityStateOpt with
+            | None ->
+                let entityStateOpt =
+                    KeyedCache.getValue
+                        World.entityStateKeyEquality
+                        (fun () -> World.entityGetFreshKeyAndValue entity world)
+                        (entity.EntityAddress, world.EntityStates)
+                        (World.getEntityCachedOpt world)
+                match entityStateOpt with
+                | Some entityState ->
+                    if  entity.Cachable &&
+                        Xtension.getImperative entityState.Xtension then
+                        entity.EntityStateOpt <- entityStateOpt
+                    entityStateOpt
+                | None -> None
+            | entityStateOpt -> entityStateOpt
 
         static member private entityStateAdder entityState entity world =
             let screenDirectory =
@@ -1229,12 +1240,11 @@ module WorldModule =
         static member internal getEntityDispatcherNp entity world = (World.getEntityState entity world).DispatcherNp
         static member internal getEntitySpecialization entity world = (World.getEntityState entity world).Specialization
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
-        static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> { entityState with Persistent = value }) false Property? Persistent entity world
+        static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Persistent <- value; entityState else { entityState with Persistent = value }) false Property? Persistent entity world
         static member internal getEntityCreationTimeStampNp entity world = (World.getEntityState entity world).CreationTimeStampNp
         static member internal getEntityImperative entity world = Xtension.getImperative (World.getEntityState entity world).Xtension
-        static member internal setEntityImperative value entity world = World.updateEntityState (fun entityState -> { entityState with Xtension = Xtension.setImperative value entityState.Xtension }) false Property? Imperative entity world
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
-        static member internal setEntityOverlayNameOpt value entity world = World.updateEntityState (fun entityState -> { entityState with OverlayNameOpt = value }) false Property? OverlayNameOpt entity world
+        static member internal setEntityOverlayNameOpt value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.OverlayNameOpt <- value; entityState else { entityState with OverlayNameOpt = value }) false Property? OverlayNameOpt entity world
         static member internal getEntityPosition entity world = (World.getEntityState entity world).Position
         static member internal setEntityPosition value entity world = World.updateEntityStatePlus (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Position <- value; entityState else { entityState with EntityState.Position = value }) true Property? Position entity world
         static member internal getEntitySize entity world = (World.getEntityState entity world).Size
@@ -1254,11 +1264,11 @@ module WorldModule =
         static member internal getEntityOmnipresent entity world = (World.getEntityState entity world).Omnipresent
         static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Omnipresent <- value; entityState else { entityState with EntityState.Omnipresent = value }) true Property? Omnipresent entity world
         static member internal getEntityPublishChanges entity world = (World.getEntityState entity world).PublishChanges
-        static member internal setEntityPublishChanges value entity world = World.updateEntityState (fun entityState -> { entityState with PublishChanges = value }) false Property? PublishChanges entity world
+        static member internal setEntityPublishChanges value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.PublishChanges <- value; entityState else { entityState with PublishChanges = value }) false Property? PublishChanges entity world
         static member internal getEntityPublishUpdatesNp entity world = (World.getEntityState entity world).PublishUpdatesNp
-        static member internal setEntityPublishUpdatesNp value entity world = World.updateEntityState (fun entityState -> { entityState with PublishUpdatesNp = value }) false Property? PublishUpdatesNp entity world
+        static member internal setEntityPublishUpdatesNp value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.PublishUpdatesNp <- value; entityState else { entityState with PublishUpdatesNp = value }) false Property? PublishUpdatesNp entity world
         static member internal getEntityPublishPostUpdatesNp entity world = (World.getEntityState entity world).PublishPostUpdatesNp
-        static member internal setEntityPublishPostUpdatesNp value entity world = World.updateEntityState (fun entityState -> { entityState with PublishPostUpdatesNp = value }) false Property? PublishPostUpdatesNp entity world
+        static member internal setEntityPublishPostUpdatesNp value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.PublishPostUpdatesNp <- value; entityState else { entityState with PublishPostUpdatesNp = value }) false Property? PublishPostUpdatesNp entity world
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
         static member internal getEntityFacetsNp entity world = (World.getEntityState entity world).FacetsNp
 
@@ -1347,8 +1357,14 @@ module WorldModule =
                     | None -> (entityState, world)
                 let propertyNames = World.getEntityPropertyDefinitionNamesToDetach entityState facet
                 let entityState = Reflection.detachPropertiesViaNames EntityState.copy propertyNames entityState
-                let entityState = { entityState with FacetNames = Set.remove facetName entityState.FacetNames }
-                let entityState = { entityState with FacetsNp = List.remove ((=) facet) entityState.FacetsNp }
+                let entityState =
+                    let facetNames = Set.remove facetName entityState.FacetNames
+                    let facets = List.remove ((=) facet) entityState.FacetsNp
+                    if Xtension.getImperative entityState.Xtension then
+                        entityState.FacetNames <- facetNames
+                        entityState.FacetsNp <- facets
+                        entityState
+                    else { entityState with FacetNames = facetNames; FacetsNp = facets }
                 match entityOpt with
                 | Some entity ->
                     let oldWorld = world
@@ -1363,8 +1379,14 @@ module WorldModule =
             | Right facet ->
                 let entityDispatchers = World.getEntityDispatchers world
                 if World.isFacetCompatibleWithEntity entityDispatchers facet entityState then
-                    let entityState = { entityState with FacetNames = Set.add facetName entityState.FacetNames }
-                    let entityState = { entityState with FacetsNp = facet :: entityState.FacetsNp }
+                    let entityState =
+                        let facetNames = Set.add facetName entityState.FacetNames
+                        let facets = facet :: entityState.FacetsNp
+                        if Xtension.getImperative entityState.Xtension then
+                            entityState.FacetNames <- facetNames
+                            entityState.FacetsNp <- facets
+                            entityState
+                        else { entityState with FacetNames = facetNames; FacetsNp = facets }
                     let entityState = Reflection.attachProperties EntityState.copy facet entityState
                     match entityOpt with
                     | Some entity ->
@@ -1468,7 +1490,6 @@ module WorldModule =
             | "Specialization" -> failwith "Cannot change entity specialization."
             | "Persistent" -> World.setEntityPersistent (property |> fst :?> bool) entity world
             | "CreationTimeStampNp" -> failwith "Cannot change entity creation time stamp."
-            | "Imperative" -> World.setEntityImperative (property |> fst :?> bool) entity world
             | "Position" -> World.setEntityPosition (property |> fst :?> Vector2) entity world
             | "Size" -> World.setEntitySize (property |> fst :?> Vector2) entity world
             | "Rotation" -> World.setEntityRotation (property |> fst :?> single) entity world
@@ -1804,7 +1825,10 @@ module WorldModule =
         static member trySetEntityOverlayNameOpt overlayNameOpt entity world =
             let oldEntityState = World.getEntityState entity world
             let oldOverlayNameOpt = oldEntityState.OverlayNameOpt
-            let entityState = { oldEntityState with OverlayNameOpt = overlayNameOpt }
+            let entityState =
+                if Xtension.getImperative oldEntityState.Xtension
+                then oldEntityState.OverlayNameOpt <- overlayNameOpt; oldEntityState
+                else { oldEntityState with OverlayNameOpt = overlayNameOpt }
             match (oldOverlayNameOpt, overlayNameOpt) with
             | (Some oldOverlayName, Some overlayName) ->
                 let overlayer = World.getOverlayer world

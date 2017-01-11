@@ -123,16 +123,22 @@ module WorldTypes =
                 | :? SortPriority as that -> (this :> IComparable<SortPriority>).CompareTo that
                 | _ -> failwithumf ()
 
-    /// Generalized interface tag for dispatchers.
-    and Dispatcher =
+    /// Signifies a dispatcher is intended to be imperative.
+    and Imperative =
         interface end
 
+    /// Generalized interface tag for dispatchers.
+    and Dispatcher () =
+        member this.Imperative () =
+            this :> obj :? Imperative
+
     /// Generalized interface tag for simulant dispatchers.
-    and SimulantDispatcher =
-        inherit Dispatcher
+    and SimulantDispatcher () =
+        inherit Dispatcher ()
     
     /// The default dispatcher for games.
     and GameDispatcher () =
+        inherit SimulantDispatcher ()
     
         static member PropertyDefinitions =
             [Define? Specialization Constants.Engine.VanillaSpecialization]
@@ -153,11 +159,10 @@ module WorldTypes =
         /// Actualize a game.
         abstract Actualize : Game * World -> World
         default dispatcher.Actualize (_, world) = world
-
-        interface SimulantDispatcher
     
     /// The default dispatcher for screens.
     and ScreenDispatcher () =
+        inherit SimulantDispatcher ()
     
         static member PropertyDefinitions =
             [Define? Specialization Constants.Engine.VanillaSpecialization
@@ -182,11 +187,10 @@ module WorldTypes =
         /// Actualize a screen.
         abstract Actualize : Screen * World -> World
         default dispatcher.Actualize (_, world) = world
-
-        interface SimulantDispatcher
     
     /// The default dispatcher for layers.
     and LayerDispatcher () =
+        inherit SimulantDispatcher ()
     
         static member PropertyDefinitions =
             [Define? Specialization Constants.Engine.VanillaSpecialization
@@ -213,16 +217,14 @@ module WorldTypes =
         /// Actualize a layer.
         abstract Actualize : Layer * World -> World
         default dispatcher.Actualize (_, world) = world
-
-        interface SimulantDispatcher
     
     /// The default dispatcher for entities.
     and EntityDispatcher () =
+        inherit SimulantDispatcher ()
     
         static member PropertyDefinitions =
             [Define? Specialization Constants.Engine.VanillaSpecialization
              Define? Persistent true
-             Define? Imperative false
              Define? Position Vector2.Zero
              Define? Size Constants.Engine.DefaultEntitySize
              Define? Rotation 0.0f
@@ -264,8 +266,6 @@ module WorldTypes =
         abstract GetQuickSize : Entity * World -> Vector2
         default dispatcher.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
 
-        interface SimulantDispatcher
-    
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
     
@@ -304,8 +304,6 @@ module WorldTypes =
         /// Participate in getting the priority with which an entity is picked in the editor.
         abstract GetQuickSize : Entity * World -> Vector2
         default facet.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
-
-        interface Dispatcher
 
     /// A simulant in the world.
     and Simulant =
@@ -529,12 +527,12 @@ module WorldTypes =
     and [<CLIMutable; NoEquality; NoComparison>] EntityState =
         { Id : Guid
           Name : Name
-          Xtension : Xtension
+          mutable Xtension : Xtension
           DispatcherNp : EntityDispatcher
           Specialization : string
-          Persistent : bool
+          mutable Persistent : bool
           CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
-          OverlayNameOpt : string option
+          mutable OverlayNameOpt : string option
           mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
@@ -544,11 +542,11 @@ module WorldTypes =
           mutable Visible : bool
           mutable Enabled : bool
           mutable Omnipresent : bool
-          PublishChanges : bool
-          PublishUpdatesNp : bool
-          PublishPostUpdatesNp : bool
-          FacetNames : string Set
-          FacetsNp : Facet list }
+          mutable PublishChanges : bool
+          mutable PublishUpdatesNp : bool
+          mutable PublishPostUpdatesNp : bool
+          mutable FacetNames : string Set
+          mutable FacetsNp : Facet list }
 
         /// Get a dynamic property and its type information.
         static member getProperty propertyName entityState =
@@ -574,11 +572,15 @@ module WorldTypes =
 
         /// Attach a dynamic property.
         static member attachProperty name value entityState =
-            { entityState with EntityState.Xtension = Xtension.attachProperty name value entityState.Xtension }
+            let xtension = Xtension.attachProperty name value entityState.Xtension
+            if Xtension.getImperative entityState.Xtension then entityState.Xtension <- xtension; entityState
+            else { entityState with EntityState.Xtension = xtension }
 
         /// Detach a dynamic property.
         static member detachProperty name entityState =
-            { entityState with EntityState.Xtension = Xtension.detachProperty name entityState.Xtension }
+            let xtension = Xtension.detachProperty name entityState.Xtension
+            if Xtension.getImperative entityState.Xtension then entityState.Xtension <- xtension; entityState
+            else { entityState with EntityState.Xtension = xtension }
     
         /// Get an entity state's transform.
         static member getTransform this =
@@ -603,11 +605,11 @@ module WorldTypes =
                     Depth = value.Depth }
 
         /// Make an entity state value.
-        static member make specializationOpt nameOpt overlayNameOpt dispatcher =
+        static member make specializationOpt nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
             let (id, name) = Reflection.deriveIdAndName nameOpt
             { Id = id
               Name = name
-              Xtension = Xtension.safe
+              Xtension = Xtension.setImperative (dispatcher.Imperative ()) Xtension.safe
               DispatcherNp = dispatcher
               Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
               Persistent = true
@@ -630,7 +632,8 @@ module WorldTypes =
 
         /// Copy an entity such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
-            { this with EntityState.Id = this.Id }
+            if Xtension.getImperative this.Xtension then this
+            else { this with EntityState.Id = this.Id }
 
         interface SimulantState with
             member this.GetXtension () = this.Xtension
@@ -829,10 +832,12 @@ module WorldTypes =
     /// OPTIMIZATION: Includes pre-constructed entity change and update event addresses to avoid
     /// reconstructing new ones for each entity every frame.
     and [<CustomEquality; NoComparison>] Entity =
-        { EntityAddress : Entity Address
+        { mutable EntityStateOpt : EntityState option
+          EntityAddress : Entity Address
           UpdateAddress : unit Address
           PostUpdateAddress : unit Address
-          ObjAddress : obj Address }
+          ObjAddress : obj Address
+          Cachable : bool }
     
         interface Simulant with
             member this.ParticipantAddress = atoa<Entity, Participant> this.EntityAddress
@@ -857,10 +862,21 @@ module WorldTypes =
     
         /// Create an Entity proxy from an address.
         static member proxy address =
-            { EntityAddress = address
+            let cachable =
+                let nameStr = address |> Address.getName |> Name.getNameStr
+                if nameStr.Length >= 36 then
+                    let last36 = nameStr.Substring (nameStr.Length - 36, 36)
+                    last36.[8] = '-' &&
+                    last36.[13] = '-' &&
+                    last36.[18] = '-' &&
+                    last36.[23] = '-'
+                 else false
+            { EntityStateOpt = None
+              EntityAddress = address
               UpdateAddress = ltoa [!!"Update"; !!"Event"] ->>- address
               PostUpdateAddress = ltoa [!!"PostUpdate"; !!"Event"] ->>- address
-              ObjAddress = atooa address }
+              ObjAddress = atooa address
+              Cachable = cachable }
     
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (entity : Entity) = acatf address (atooa entity.EntityAddress)
