@@ -451,7 +451,7 @@ module WorldTypes =
                   TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
                   Incoming = Transition.make Incoming
                   Outgoing = Transition.make Outgoing }
-            let spatialTree = SpatialTree.make Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
+            let spatialTree = SpatialTree.make Constants.Engine.EntityTreeGranularity Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
             { screenState with EntityTreeNp = MutantCache.make Operators.id spatialTree }
 
         /// Copy a screen such as when, say, you need it to be mutated with reflection but you need to preserve persistence.

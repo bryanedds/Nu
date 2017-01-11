@@ -69,16 +69,17 @@ module internal SpatialNodeModule =
               // Clone method! #ARGH!
               ElementsOpt = Option.map (fun elements -> HashSet (elements, HashIdentity.Structural)) node.ElementsOpt }
 
-        let rec internal make<'e when 'e : equality> depth (bounds : Vector4) =
-            if depth < 1 then failwith "Invalid depth for SpatialNode. Expected depth of at least 1."
+        let rec internal make<'e when 'e : equality> granularity depth (bounds : Vector4) =
+            if granularity < 2 then failwith "Invalid granularity for SpatialNode. Expected value of at least 2."
+            if depth < 1 then failwith "Invalid depth for SpatialNode. Expected value of at least 1."
             let children =
                 if depth > 1 then 
-                    [|for i in 0 .. 15 do
+                    [|for i in 0 .. granularity * granularity - 1 do
                         let childDepth = depth - 1
-                        let childSize = Vector2 (bounds.Z - bounds.X, bounds.W - bounds.Y) * 0.25f
-                        let childPosition = bounds.Xy + Vector2 (childSize.X * single (i % 4), childSize.Y * single (i / 4))
+                        let childSize = Vector2 (bounds.Z - bounds.X, bounds.W - bounds.Y) / single granularity
+                        let childPosition = bounds.Xy + Vector2 (childSize.X * single (i % granularity), childSize.Y * single (i / granularity))
                         let childBounds = Vector4 (childPosition.X, childPosition.Y, childPosition.X + childSize.X, childPosition.Y + childSize.Y)
-                        yield make<'e> childDepth childBounds|]
+                        yield make<'e> granularity childDepth childBounds|]
                 else [||]
             { Depth = depth
               Bounds = bounds
@@ -133,8 +134,8 @@ module SpatialTreeModule =
             { Node = SpatialNode.clone tree.Node
               OmnipresentElements = HashSet (tree.OmnipresentElements, HashIdentity.Structural) }
     
-        let make<'e when 'e : equality> depth bounds =
-            { Node = SpatialNode.make<'e> depth bounds
+        let make<'e when 'e : equality> granularity depth bounds =
+            { Node = SpatialNode.make<'e> granularity depth bounds
               OmnipresentElements = HashSet HashIdentity.Structural }
 
 /// A spatial structure that organizes elements on a 2D plane.
