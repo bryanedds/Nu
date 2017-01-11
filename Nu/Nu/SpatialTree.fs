@@ -125,15 +125,13 @@ module SpatialTreeModule =
             addElement newOmnipresence newBounds element tree
     
         let getElementsAtPoint point tree =
-            let list = List ()
+            let list = List tree.OmnipresentElements
             SpatialNode.getElementsAtPoint point tree.Node list
-            for element in tree.OmnipresentElements do list.Add element
             list
     
         let getElementsInBounds bounds tree =
-            let list = List ()
+            let list = List tree.OmnipresentElements
             SpatialNode.getElementsInBounds bounds tree.Node list
-            for element in tree.OmnipresentElements do list.Add element
             list
     
         let getDepth tree =
