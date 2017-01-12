@@ -416,7 +416,7 @@ module WorldModule =
             let game = Game.proxy Address.empty
             let changeEventAddress = ltoa [!!"Game"; !!"Change"; !!propertyName; !!"Event"] ->>- game.GameAddress
             let eventTrace = EventTrace.record "World" "publishGameChange" EventTrace.empty
-            World.publish { Participant = game; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace game world
+            World.publish6 { Participant = game; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace game false world
 
         static member private getGameState world =
             world.GameState
@@ -695,7 +695,7 @@ module WorldModule =
         static member private publishScreenChange (propertyName : string) (screen : Screen) oldWorld world =
             let changeEventAddress = ltoa [!!"Screen"; !!"Change"; !!propertyName; !!"Event"] ->>- screen.ScreenAddress
             let eventTrace = EventTrace.record "World" "publishScreenChange" EventTrace.empty
-            World.publish { Participant = screen; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace screen world
+            World.publish6 { Participant = screen; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace screen false world
 
         static member private getScreenStateOpt screen world =
              World.screenStateFinder screen world
@@ -929,7 +929,7 @@ module WorldModule =
         static member private publishLayerChange (propertyName : string) (layer : Layer) oldWorld world =
             let changeEventAddress = ltoa [!!"Layer"; !!"Change"; !!propertyName; !!"Event"] ->>- layer.LayerAddress
             let eventTrace = EventTrace.record "World" "publishLayerChange" EventTrace.empty
-            World.publish { Participant = layer; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace layer world
+            World.publish6 { Participant = layer; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace layer false world
 
         static member private getLayerStateOpt layer world =
             World.layerStateFinder layer world
@@ -1179,7 +1179,7 @@ module WorldModule =
             if World.shouldPublishEntityChange entity world then
                 let changeEventAddress = ltoa [!!"Entity"; !!"Change"; !!propertyName; !!"Event"] ->>- entity.EntityAddress
                 let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
-                World.publish { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity world
+                World.publish6 { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity false world
             else world
 
         static member private getEntityStateOpt entity world =
@@ -1710,6 +1710,9 @@ module WorldModule =
                         screenState.EntityTreeNp
                 let screenState = { screenState with EntityTreeNp = entityTree }
                 let world = World.setScreenState screenState screen world
+
+                // remove cached entity event addresses
+                EventWorld.cleanEventAddressCache entity.EntityAddress
 
                 // remove the entity from the world
                 World.removeEntityState entity world

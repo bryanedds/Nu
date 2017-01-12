@@ -47,5 +47,8 @@ module Nu =
             // init Vsync with incoming parameter
             Vsync.init sync
 
+            // init event world caching
+            EventWorld.setEventAddressCaching true
+
             // mark init flag
             Initialized <- true

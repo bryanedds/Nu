@@ -3,6 +3,7 @@
 
 namespace Prime
 open System
+open System.Collections.Generic
 open Prime
 
 /// The context in which all events take place. Effectively a mix-in for the 'w type, where 'w is a type that
@@ -19,6 +20,10 @@ type EventWorld<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
 
 [<RequireQualifiedAccess>]
 module EventWorld =
+
+    let mutable EventAddressCaching = false
+    let EventAddressCache = Dictionary<obj, obj> ()
+    let EventAddressListCache = Dictionary<obj Address, obj List> ()
 
     /// Get the event system.
     let getEventSystem<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> (world : 'w) =
@@ -89,24 +94,54 @@ module EventWorld =
     let qualifyEventContext<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> (address : obj Address) (world : 'w) =
         getEventSystemBy (EventSystem.qualifyEventContext address) world
 
-    let private getEventAddresses1 eventAddress allowWildcard =
+    let setEventAddressCaching caching =
+        if not caching then
+            EventAddressCache.Clear ()
+            EventAddressListCache.Clear ()
+        EventAddressCaching <- caching
+
+    let cleanEventAddressCache (eventTarget : 'a Address) =
+        if EventAddressCaching then
+            let eventTargetOa = atooa eventTarget
+            match EventAddressListCache.TryGetValue eventTargetOa with
+            | (true, entries) ->
+                for entry in entries do EventAddressCache.Remove entry |> ignore
+                EventAddressListCache.Remove eventTargetOa |> ignore
+            | (false, _) -> ()
+        else ()
+
+    // NOTE: event addresses are ordered from general to specific. This is so a generalized subscriber can preempt
+    // any specific subscribers. Whether this is the best order is open for discussion.
+    let private getEventAddresses1 (eventAddress : 'a Address) =
+        // OPTIMIZATION: imperative for speed
+        let eventAddressNames = eventAddress |> Address.getNames |> Array.ofList
+        Seq.foldi (fun index eventAddresses _ ->
+            let index = eventAddressNames.Length - index - 1
+            let eventAddressNamesAny = Array.zeroCreate eventAddressNames.Length // TODO: use Array.zeroCreateUnchecked if / when it becomes available
+            Array.Copy (eventAddressNames, 0, eventAddressNamesAny, 0, eventAddressNames.Length)
+            eventAddressNamesAny.[index] <- Address.head Events.Wildcard
+            let eventAddressAny = eventAddressNamesAny |> List.ofArray |> Address.ltoa
+            eventAddressAny :: eventAddresses)
+            [eventAddress]
+            eventAddressNames
+
+    let private getEventAddresses2 (eventAddress : 'a Address) allowWildcard =
         if allowWildcard then
-            // OPTIMIZATION: imperative for speed
-            // TODO: see if we can make this faster and / or produce less garbage.
-            // NOTE: event addresses are ordered from general to specific. This is so a generalized subscriber can preempt
-            // any specific subscribers. Whether this is the best order is open for discussion.
-            let eventAddressNames = eventAddress |> Address.getNames |> Array.ofList
-            let eventAddresses =
-                Seq.foldi (fun index eventAddresses _ ->
-                    let index = eventAddressNames.Length - index - 1
-                    let eventAddressNamesAny = Array.zeroCreate eventAddressNames.Length // TODO: use Array.zeroCreateUnchecked if / when it becomes available
-                    Array.Copy (eventAddressNames, 0, eventAddressNamesAny, 0, eventAddressNames.Length)
-                    eventAddressNamesAny.[index] <- Address.head Events.Wildcard
-                    let eventAddressAny = eventAddressNamesAny |> List.ofArray |> Address.ltoa
-                    eventAddressAny :: eventAddresses)
-                    [eventAddress]
-                    eventAddressNames
-            eventAddresses
+            if EventAddressCaching then
+                match EventAddressCache.TryGetValue eventAddress with
+                | (false, _) ->
+                    let eventAddressNames = Address.getNames eventAddress
+                    let eventAddresses = getEventAddresses1 eventAddress
+                    let eventTargetIndex = List.findIndex (fun name -> Name.getNameStr name = "Event") eventAddressNames + 1
+                    if eventTargetIndex < List.length eventAddressNames then
+                        let eventTarget = eventAddressNames |> List.skip eventTargetIndex |> Address.makeFromList
+                        match EventAddressListCache.TryGetValue eventTarget with
+                        | (false, _) -> EventAddressListCache.Add (eventTarget, List [eventAddress :> obj]) |> ignore
+                        | (true, list) -> list.Add eventAddress
+                        EventAddressCache.Add (eventAddress, eventAddresses)
+                    eventAddresses
+                | (true, eventAddressesObj) -> eventAddressesObj :?> 'a Address list
+            else getEventAddresses1 eventAddress
         else [eventAddress]
 
     let debugSubscriptionTypeMismatch () =
@@ -144,7 +179,7 @@ module EventWorld =
     let private getSubscriptionsSorted (publishSorter : SubscriptionSorter<'w>) eventAddress allowWildcard (world : 'w) =
         let eventSystem = getEventSystem world
         let subscriptions = EventSystem.getSubscriptions eventSystem
-        let eventAddresses = getEventAddresses1 eventAddress allowWildcard
+        let eventAddresses = getEventAddresses2 eventAddress allowWildcard
         let subListOpts = List.map (fun eventAddress -> UMap.tryFind eventAddress subscriptions) eventAddresses
         let subLists = List.definitize subListOpts
         let subList = List.concat subLists
