@@ -1103,7 +1103,7 @@ module WorldModule =
             let entityStateOpt = UMap.tryFind entity.EntityAddress world.EntityStates
             ((entity.EntityAddress, world.EntityStates), entityStateOpt)
 
-        static member private entityStateFinder entity world =
+        static member private entityStateNullableFinder entity world =
             match entity.EntityStateOpt with
             | None ->
                 let entityStateOpt =
@@ -1117,9 +1117,9 @@ module WorldModule =
                     if  entityState.Cachable &&
                         Xtension.getImperative entityState.Xtension then
                         entity.EntityStateOpt <- entityStateOpt
-                    entityStateOpt
-                | None -> None
-            | entityStateOpt -> entityStateOpt
+                    entityState
+                | None -> Unchecked.defaultof<EntityState>
+            | Some entityState -> entityState
 
         static member private entityStateAdder entityState entity world =
             let screenDirectory =
@@ -1177,12 +1177,17 @@ module WorldModule =
             World.publish6 { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity false world
 
         static member private getEntityStateOpt entity world =
-            World.entityStateFinder entity world
+            let entityState = World.entityStateNullableFinder entity world
+            if refEq entityState Unchecked.defaultof<EntityState> then None else Some entityState
 
         static member private getEntityState entity world =
+#if DEBUG
             match World.getEntityStateOpt entity world with
             | Some entityState -> entityState
             | None -> failwith ^ "Could not find entity with address '" + scstring entity.EntityAddress + "'."
+#else
+            World.entityStateNullableFinder entity world
+#endif
 
         static member private setEntityState entityState entity world =
             World.entityStateSetter entityState entity world
