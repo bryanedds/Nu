@@ -585,7 +585,7 @@ module Gaia =
             | [] -> world
             | pastWorld :: pastWorlds ->
                 let futureWorld = world
-                let selectedLayer = (World.getUserState world).SelectedLayer
+                let selectedLayer = (World.getUserState pastWorld).SelectedLayer
                 let world = World.continueHack selectedLayer pastWorld
                 let world =
                     World.updateUserState (fun editorState ->
@@ -601,7 +601,7 @@ module Gaia =
             | [] -> world
             | futureWorld :: futureWorlds ->
                 let pastWorld = world
-                let selectedLayer = (World.getUserState world).SelectedLayer
+                let selectedLayer = (World.getUserState futureWorld).SelectedLayer
                 let world = World.continueHack selectedLayer futureWorld
                 let world =
                     World.updateUserState (fun editorState ->
