@@ -24,7 +24,7 @@ module Program =
     collision bodies| s-expr DSL    | Gaia
     effect system   | s-expr DSL    | Gaia & Aether (TBA)
     mind(TBA)       | s-expr DSL    | Gaia & Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
-    vsrl script(WIP)| s-expr DSL    | Visual Studio & Gaia
+    script lang(WIP)| s-expr DSL    | Visual Studio & Gaia
     interactions    | F# (chains)   | Visual Studio
     subsystems      | F#            | Visual Studio
     dispatchers     | F#            | Visual Studio

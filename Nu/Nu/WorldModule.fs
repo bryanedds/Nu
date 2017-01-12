@@ -968,7 +968,6 @@ module WorldModule =
         static member internal getLayerVisible layer world = (World.getLayerState layer world).Visible
         static member internal setLayerVisible value layer world = World.updateLayerState (fun layerState -> { layerState with Visible = value }) Property? Visible layer world
 
-
         static member internal getLayerProperty propertyName layer world =
             match propertyName with // NOTE: string match for speed
             | "Id" -> (World.getLayerId layer world :> obj, typeof<Guid>)

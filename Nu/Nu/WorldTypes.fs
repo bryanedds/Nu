@@ -123,22 +123,21 @@ module WorldTypes =
                 | :? SortPriority as that -> (this :> IComparable<SortPriority>).CompareTo that
                 | _ -> failwithumf ()
 
-    /// Signifies a dispatcher is intended to be imperative.
-    and Imperative =
-        interface end
+    /// Signifies at run-time that a type has imperative semantics.
+    and Imperative = interface end
 
     /// Generalized interface tag for dispatchers.
-    and Dispatcher () =
-        member this.GetImperative () =
-            this :> obj :? Imperative
+    and Dispatcher = interface end
 
     /// Generalized interface tag for simulant dispatchers.
-    and SimulantDispatcher () =
-        inherit Dispatcher ()
+    and SimulantDispatcher =
+        interface
+            inherit Dispatcher
+            end
     
     /// The default dispatcher for games.
     and GameDispatcher () =
-        inherit SimulantDispatcher ()
+        interface SimulantDispatcher
     
         static member PropertyDefinitions =
             [Define? Specialization Constants.Engine.VanillaSpecialization]
@@ -162,7 +161,7 @@ module WorldTypes =
     
     /// The default dispatcher for screens.
     and ScreenDispatcher () =
-        inherit SimulantDispatcher ()
+        interface SimulantDispatcher
     
         static member PropertyDefinitions =
             [Define? Specialization Constants.Engine.VanillaSpecialization
@@ -190,7 +189,7 @@ module WorldTypes =
     
     /// The default dispatcher for layers.
     and LayerDispatcher () =
-        inherit SimulantDispatcher ()
+        interface SimulantDispatcher
     
         static member PropertyDefinitions =
             [Define? Specialization Constants.Engine.VanillaSpecialization
@@ -220,7 +219,7 @@ module WorldTypes =
     
     /// The default dispatcher for entities.
     and EntityDispatcher () =
-        inherit SimulantDispatcher ()
+        interface SimulantDispatcher
     
         static member PropertyDefinitions =
             [Define? Specialization Constants.Engine.VanillaSpecialization
@@ -237,6 +236,9 @@ module WorldTypes =
              Define? PublishChanges true
              Define? PublishUpdatesNp false
              Define? PublishPostUpdatesNp false]
+
+        /// Determine that this dispatcher has imperative semantics.
+        member this.GetImperative () = this :> obj :? Imperative
     
         /// Register an entity when adding it to a layer.
         abstract Register : Entity * World -> World

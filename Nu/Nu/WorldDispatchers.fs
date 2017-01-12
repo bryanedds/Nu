@@ -477,9 +477,9 @@ module AnimatedSpriteFacetModule =
             entity.GetCelSize world
 
 [<AutoOpen>]
-module ImperativeEntityDispatcherModule =
+module ImperativeDispatcherModule =
 
-    type ImperativeEntityDispatcher () =
+    type ImperativeDispatcher () =
         inherit EntityDispatcher ()
         interface Imperative
 
