@@ -94,12 +94,16 @@ module EventWorld =
     let qualifyEventContext<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> (address : obj Address) (world : 'w) =
         getEventSystemBy (EventSystem.qualifyEventContext address) world
 
+    /// Set whether event addresses are cached internally.
+    /// If you enable caching, be sure to use EventWorld.cleanEventAddressCache to keep the cache from expanding
+    /// indefinitely.
     let setEventAddressCaching caching =
         if not caching then
             EventAddressCache.Clear ()
             EventAddressListCache.Clear ()
         EventAddressCaching <- caching
 
+    /// Remove from the event address cache all addresses belonging to the given target.
     let cleanEventAddressCache (eventTarget : 'a Address) =
         if EventAddressCaching then
             let eventTargetOa = atooa eventTarget
