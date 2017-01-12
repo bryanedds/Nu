@@ -1104,8 +1104,8 @@ module WorldModule =
             ((entity.EntityAddress, world.EntityStates), entityStateOpt)
 
         static member private entityStateNullableFinder entity world =
-            match entity.EntityStateOpt with
-            | None ->
+            let entityStateOpt = entity.EntityStateOpt
+            if refEq entityStateOpt Unchecked.defaultof<EntityState> then
                 let entityStateOpt =
                     KeyedCache.getValue
                         World.entityStateKeyEquality
@@ -1116,10 +1116,13 @@ module WorldModule =
                 | Some entityState ->
                     if  entityState.Cachable &&
                         Xtension.getImperative entityState.Xtension then
-                        entity.EntityStateOpt <- entityStateOpt
+                        entity.EntityStateOpt <-
+                            match entityStateOpt with
+                            | None -> Unchecked.defaultof<EntityState>
+                            | Some entityState -> entityState
                     entityState
                 | None -> Unchecked.defaultof<EntityState>
-            | Some entityState -> entityState
+            else entityStateOpt
 
         static member private entityStateAdder entityState entity world =
             let screenDirectory =
