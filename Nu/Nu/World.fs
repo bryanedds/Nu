@@ -301,7 +301,8 @@ module WorldModule2 =
         static member private handleSubscribeAndUnsubscribe event world =
             // here we need to update the event publish flags for entities based on whether there are subscriptions to
             // these events. These flags exists solely for efficiency reasons. We also look for subscription patterns
-            // that these optimization do not support, and warn the developer if they are invoked.
+            // that these optimization do not support, and warn the developer if they are invoked. Additionally, we
+            // warn if the user attempts to subscribe to a Change event with a wildcard as doing so is not supported.
             let eventAddress = event.Data
             let eventNames = Address.getNames eventAddress
             let world =
@@ -321,6 +322,15 @@ module WorldModule2 =
                                 "Subscribing to entity post-update events with a wildcard is not supported. " +
                                 "This will cause a bug where some entity post-update events are not published."
                         World.updateEntityPublishPostUpdateFlag entity world
+                    | _ -> world
+                | eventFirstName :: _ :: _ :: _ ->
+                    match Name.getNameStr eventFirstName with
+                    | "Change" ->
+                        if List.contains (Address.head Events.Wildcard) eventNames then
+                            Log.debug ^
+                                "Subscribing to change events with a wildcard is not supported. " +
+                                "This will cause a bug where some change events are not published."
+                        world
                     | _ -> world
                 | _ -> world
             (Cascade, world)
