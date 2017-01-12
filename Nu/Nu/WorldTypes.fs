@@ -834,7 +834,7 @@ module WorldTypes =
     /// OPTIMIZATION: Includes pre-constructed entity change and update event addresses to avoid
     /// reconstructing new ones for each entity every frame.
     and [<CustomEquality; NoComparison>] Entity =
-        { mutable EntityStateOpt : EntityState option
+        { mutable EntityStateOpt : EntityState
           EntityAddress : Entity Address
           UpdateAddress : unit Address
           PostUpdateAddress : unit Address
@@ -863,7 +863,7 @@ module WorldTypes =
     
         /// Create an Entity proxy from an address.
         static member proxy address =
-            { EntityStateOpt = None
+            { EntityStateOpt = Unchecked.defaultof<EntityState>
               EntityAddress = address
               UpdateAddress = ltoa [!!"Update"; !!"Event"] ->>- address
               PostUpdateAddress = ltoa [!!"PostUpdate"; !!"Event"] ->>- address
