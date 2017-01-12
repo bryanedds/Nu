@@ -1105,8 +1105,7 @@ module WorldModule =
 
         static member private entityStateFinder entity world =
             let entityStateOpt = entity.EntityStateOpt
-            match entityStateOpt :> obj with
-            | null ->
+            if isNull ^ box entityStateOpt then
                 let entityStateOpt =
                     KeyedCache.getValue
                         World.entityStateKeyEquality
@@ -1123,7 +1122,7 @@ module WorldModule =
                             | Some entityState -> entityState
                     entityState
                 | None -> Unchecked.defaultof<EntityState>
-            | _ -> entityStateOpt
+            else entityStateOpt
 
         static member private entityStateAdder entityState entity world =
             let screenDirectory =
@@ -1182,9 +1181,8 @@ module WorldModule =
 
         static member private getEntityStateOpt entity world =
             let entityStateOpt = World.entityStateFinder entity world
-            match entityStateOpt :> obj with
-            | null -> None
-            | _ -> Some entityStateOpt
+            if isNull ^ box entityStateOpt then None
+            else Some entityStateOpt
 
         static member private getEntityState entity world =
 #if DEBUG
