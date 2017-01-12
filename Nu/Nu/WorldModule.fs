@@ -443,6 +443,7 @@ module WorldModule =
         static member internal getGameDispatcherNp world = (World.getGameState world).DispatcherNp
         static member internal getGameSpecialization world = (World.getGameState world).Specialization
         static member internal getGameCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
+        static member internal getGameImperative world = Xtension.getImperative (World.getGameState world).Xtension
 
         /// Get the current eye center.
         static member getEyeCenter world =
@@ -567,6 +568,7 @@ module WorldModule =
             | "DispatcherNp" -> (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
             | "Specialization" -> (World.getGameSpecialization world :> obj, typeof<string>)
             | "CreationTimeStampNp" -> (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
+            | "Imperative" -> (World.getGameImperative world :> obj, typeof<bool>)
             | "SelectedScreenOpt" -> (World.getSelectedScreenOpt world :> obj, typeof<Screen option>)
             | "ScreenTransitionDestinationOpt" -> (World.getScreenTransitionDestinationOpt world :> obj, typeof<Screen option>)
             | "EyeCenter" -> (World.getEyeCenter world :> obj, typeof<Vector2>)
@@ -575,11 +577,12 @@ module WorldModule =
 
         static member internal setGameProperty propertyName (property : obj * Type) world =
             match propertyName with // NOTE: string match for speed
-            | "Id" -> failwith "Cannot change layer id."
-            | "Xtension" -> failwith "Cannot change layer xtension."
-            | "DispatcherNp" -> failwith "Cannot change layer dispatcher."
-            | "Specialization" -> failwith "Cannot change layer specialization."
-            | "CreationTimeStampNp" -> failwith "Cannot change layer creation time stamp."
+            | "Id" -> failwith "Cannot change game id."
+            | "Xtension" -> failwith "Cannot change game xtension."
+            | "DispatcherNp" -> failwith "Cannot change game dispatcher."
+            | "Specialization" -> failwith "Cannot change game specialization."
+            | "CreationTimeStampNp" -> failwith "Cannot change game creation time stamp."
+            | "Imperative" -> failwith "Cannot change game imperative."
             | "SelectedScreenOpt" -> World.setSelectedScreenOpt (property |> fst :?> Screen option) world
             | "ScreenTransitionDestinationOpt" -> World.setScreenTransitionDestinationOpt (property |> fst :?> Screen option) world
             | "EyeCenter" -> World.setEyeCenter (property |> fst :?> Vector2) world
@@ -732,6 +735,7 @@ module WorldModule =
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
         static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) Property? Persistent screen world
         static member internal getScreenCreationTimeStampNp screen world = (World.getScreenState screen world).CreationTimeStampNp
+        static member internal getScreenImperative screen world = Xtension.getImperative (World.getScreenState screen world).Xtension
         static member internal getScreenEntityTreeNp screen world = (World.getScreenState screen world).EntityTreeNp
         static member internal setScreenEntityTreeNpNoEvent value screen world = World.updateScreenStateWithoutEvent (fun screenState -> { screenState with EntityTreeNp = value }) screen world
         static member internal getScreenTransitionStateNp screen world = (World.getScreenState screen world).TransitionStateNp
@@ -752,6 +756,7 @@ module WorldModule =
             | "Specialization" -> (World.getScreenSpecialization screen world :> obj, typeof<string>)
             | "Persistent" -> (World.getScreenPersistent screen world :> obj, typeof<bool>)
             | "CreationTimeStampNp" -> (World.getScreenCreationTimeStampNp screen world :> obj, typeof<int64>)
+            | "Imperative" -> (World.getScreenImperative screen world :> obj, typeof<bool>)
             | "EntityTreeNp" -> (World.getScreenEntityTreeNp screen world :> obj, typeof<Entity SpatialTree MutantCache>)
             | "TransitionStateNp" -> (World.getScreenTransitionStateNp screen world :> obj, typeof<TransitionState>)
             | "TransitionTicksNp" -> (World.getScreenTransitionTicksNp screen world :> obj, typeof<int64>)
@@ -768,6 +773,7 @@ module WorldModule =
             | "Specialization" -> failwith "Cannot change screen specialization."
             | "Persistent" -> World.setScreenPersistent (property |> fst :?> bool) screen world
             | "CreationTimeStampNp" -> failwith "Cannot change screen creation time stamp."
+            | "Imperative" -> failwith "Cannot change screen imperative."
             | "EntityTreeNp" -> failwith "Cannot change screen entity tree."
             | "TransitionStateNp" -> World.setScreenTransitionStateNp (property |> fst :?> TransitionState) screen world
             | "TransitionTicksNp" -> World.setScreenTransitionTicksNp (property |> fst :?> int64) screen world
@@ -963,6 +969,7 @@ module WorldModule =
         static member internal getLayerPersistent layer world = (World.getLayerState layer world).Persistent
         static member internal setLayerPersistent value layer world = World.updateLayerState (fun layerState -> { layerState with Persistent = value }) Property? Persistent layer world
         static member internal getLayerCreationTimeStampNp layer world = (World.getLayerState layer world).CreationTimeStampNp
+        static member internal getLayerImperative layer world = Xtension.getImperative (World.getLayerState layer world).Xtension
         static member internal getLayerDepth layer world = (World.getLayerState layer world).Depth
         static member internal setLayerDepth value layer world = World.updateLayerState (fun layerState -> { layerState with Depth = value }) Property? Depth layer world
         static member internal getLayerVisible layer world = (World.getLayerState layer world).Visible
@@ -990,6 +997,7 @@ module WorldModule =
             | "Specialization" -> failwith "Cannot change layer specialization."
             | "Persistent" -> World.setLayerPersistent (property |> fst :?> bool) layer world
             | "CreationTimeStampNp" -> failwith "Cannot change layer creation time stamp."
+            | "Imperative" -> failwith "Cannot change layer imperative."
             | _ -> World.updateLayerState (LayerState.setProperty propertyName property) propertyName layer world
 
         static member private addLayer mayReplace layerState layer world =
@@ -1489,6 +1497,7 @@ module WorldModule =
             | "Specialization" -> failwith "Cannot change entity specialization."
             | "Persistent" -> World.setEntityPersistent (property |> fst :?> bool) entity world
             | "CreationTimeStampNp" -> failwith "Cannot change entity creation time stamp."
+            | "Imperative" -> failwith "Cannot change entity imperative."
             | "Position" -> World.setEntityPosition (property |> fst :?> Vector2) entity world
             | "Size" -> World.setEntitySize (property |> fst :?> Vector2) entity world
             | "Rotation" -> World.setEntityRotation (property |> fst :?> single) entity world

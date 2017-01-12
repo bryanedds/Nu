@@ -130,14 +130,15 @@ module WorldTypes =
     and Dispatcher = interface end
 
     /// Generalized interface tag for simulant dispatchers.
-    and SimulantDispatcher =
-        interface
-            inherit Dispatcher
-            end
+    and SimulantDispatcher () =
+        interface Dispatcher
+
+        /// Determine that this dispatcher has imperative semantics.
+        member this.GetImperative () = this :> obj :? Imperative
     
     /// The default dispatcher for games.
     and GameDispatcher () =
-        interface SimulantDispatcher
+        inherit SimulantDispatcher ()
     
         static member PropertyDefinitions =
             [Define? Specialization Constants.Engine.VanillaSpecialization]
@@ -161,7 +162,7 @@ module WorldTypes =
     
     /// The default dispatcher for screens.
     and ScreenDispatcher () =
-        interface SimulantDispatcher
+        inherit SimulantDispatcher ()
     
         static member PropertyDefinitions =
             [Define? Specialization Constants.Engine.VanillaSpecialization
@@ -189,7 +190,7 @@ module WorldTypes =
     
     /// The default dispatcher for layers.
     and LayerDispatcher () =
-        interface SimulantDispatcher
+        inherit SimulantDispatcher ()
     
         static member PropertyDefinitions =
             [Define? Specialization Constants.Engine.VanillaSpecialization
@@ -219,7 +220,7 @@ module WorldTypes =
     
     /// The default dispatcher for entities.
     and EntityDispatcher () =
-        interface SimulantDispatcher
+        inherit SimulantDispatcher ()
     
         static member PropertyDefinitions =
             [Define? Specialization Constants.Engine.VanillaSpecialization
@@ -236,9 +237,6 @@ module WorldTypes =
              Define? PublishChanges true
              Define? PublishUpdatesNp false
              Define? PublishPostUpdatesNp false]
-
-        /// Determine that this dispatcher has imperative semantics.
-        member this.GetImperative () = this :> obj :? Imperative
     
         /// Register an entity when adding it to a layer.
         abstract Register : Entity * World -> World
@@ -370,11 +368,11 @@ module WorldTypes =
             { gameState with GameState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } gameState.Xtension }
     
         /// Make a game state value.
-        static member make specializationOpt dispatcher =
+        static member make specializationOpt (dispatcher : GameDispatcher) =
             let eyeCenter = Vector2.Zero
             let eyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault)
             { Id = makeGuid ()
-              Xtension = Xtension.safe
+              Xtension = Xtension.setImperative (dispatcher.GetImperative ()) Xtension.safe
               DispatcherNp = dispatcher
               Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
               ScriptAssetOpt = None
@@ -435,12 +433,12 @@ module WorldTypes =
             { screenState with ScreenState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } screenState.Xtension }
     
         /// Make a screen state value.
-        static member make specializationOpt nameOpt dispatcher =
+        static member make specializationOpt nameOpt (dispatcher : ScreenDispatcher) =
             let (id, name) = Reflection.deriveIdAndName nameOpt
             let screenState =
                 { Id = id
                   Name = name
-                  Xtension = Xtension.safe
+                  Xtension = Xtension.setImperative (dispatcher.GetImperative ()) Xtension.safe
                   DispatcherNp = dispatcher
                   Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
                   Persistent = true
@@ -502,11 +500,11 @@ module WorldTypes =
             { layerState with LayerState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } layerState.Xtension }
     
         /// Make a layer state value.
-        static member make specializationOpt nameOpt dispatcher =
+        static member make specializationOpt nameOpt (dispatcher : LayerDispatcher) =
             let (id, name) = Reflection.deriveIdAndName nameOpt
             { LayerState.Id = id
               Name = name
-              Xtension = Xtension.safe
+              Xtension = Xtension.setImperative (dispatcher.GetImperative ()) Xtension.safe
               DispatcherNp = dispatcher
               Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
               Persistent = true
