@@ -66,8 +66,7 @@ module AddressModule =
         /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
         static member makeFromString<'a> (addressStr : string) =
             let names = addressStr.Split '/' |> List.ofArray |> List.map Name.make
-            let hashCode = addressStr.GetHashCode ()
-            { Names = names; HashCode = hashCode; TypeCarrier = fun (_ : 'a) -> () }
+            { Names = names; HashCode = Name.hashNames names; TypeCarrier = fun (_ : 'a) -> () }
 
         /// Hash an Address.
         static member hash (address : 'a Address) =
@@ -75,8 +74,9 @@ module AddressModule =
 
         /// Equate Addresses.
         static member equals address address2 =
-            address.HashCode = address2.HashCode && // OPTIMIZATION: first check hash equality
-            Name.equateNames address.Names address2.Names
+            let hashesSame = address.HashCode = address2.HashCode // OPTIMIZATION: first check hash equality
+            let namesSame = Name.equateNames address.Names address2.Names
+            hashesSame && namesSame
 
         /// Compare Addresses.
         static member compare address address2 =
@@ -171,7 +171,7 @@ module AddressModule =
 
         /// The empty address.
         let empty<'a> =
-            { Names = []; HashCode = String.Empty.GetHashCode (); TypeCarrier = fun (_ : 'a) -> () }
+            { Names = []; HashCode = Name.hashNames []; TypeCarrier = fun (_ : 'a) -> () }
 
         /// Make an address from a list of names.
         let makeFromList<'a> names : 'a Address =
