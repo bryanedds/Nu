@@ -1114,7 +1114,7 @@ module WorldModule =
                         (World.getEntityCachedOpt world)
                 match entityStateOpt with
                 | Some entityState ->
-                    if  entity.Cachable &&
+                    if  entityState.Cachable &&
                         Xtension.getImperative entityState.Xtension then
                         entity.EntityStateOpt <- entityStateOpt
                     entityStateOpt
@@ -1171,16 +1171,10 @@ module WorldModule =
         static member private removeEntityState entity world =
             World.entityStateRemover entity world
 
-        static member private shouldPublishEntityChange entity world =
-            let entityState = World.getEntityState entity world
-            entityState.PublishChanges
-
-        static member private publishEntityChange propertyName entity oldWorld world =
-            if World.shouldPublishEntityChange entity world then
-                let changeEventAddress = ltoa [!!"Entity"; !!"Change"; !!propertyName; !!"Event"] ->>- entity.EntityAddress
-                let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
-                World.publish6 { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity false world
-            else world
+        static member private publishEntityChangeX propertyName entity oldWorld world =
+            let changeEventAddress = ltoa [!!"Entity"; !!"Change"; !!propertyName; !!"Event"] ->>- entity.EntityAddress
+            let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
+            World.publish6 { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity false world
 
         static member private getEntityStateOpt entity world =
             World.entityStateFinder entity world
@@ -1193,28 +1187,39 @@ module WorldModule =
         static member private setEntityState entityState entity world =
             World.entityStateSetter entityState entity world
 
+        static member private updateEntityStateInternal updater mutability entityState entity world =
+            let entityState = updater entityState
+            if mutability && Xtension.getImperative entityState.Xtension then (entityState, world)
+            else (entityState, World.setEntityState entityState entity world)
+
         static member private updateEntityStateWithoutEvent updater mutability entity world =
             let entityState = World.getEntityState entity world
-            let entityState = updater entityState
-            if mutability && Xtension.getImperative entityState.Xtension then world
-            else World.setEntityState entityState entity world
+            let (_, world) = World.updateEntityStateInternal updater mutability entityState entity world
+            world
 
         static member private updateEntityState updater mutability propertyName entity world =
             let oldWorld = world
-            let world = World.updateEntityStateWithoutEvent updater mutability entity world
-            World.publishEntityChange propertyName entity oldWorld world
+            let entityState = World.getEntityState entity world
+            let (entityState, world) = World.updateEntityStateInternal updater mutability entityState entity world
+            if entityState.PublishChanges then World.publishEntityChangeX propertyName entity oldWorld world
+            else world
 
         static member private updateEntityStatePlus updater mutability propertyName entity world =
             let oldWorld = world
-            let world = World.updateEntityStateWithoutEvent updater mutability entity world
+            let entityState = World.getEntityState entity world
+            let (entityState, world) = World.updateEntityStateInternal updater mutability entityState entity world
             let world = World.updateEntityInEntityTree entity oldWorld world
-            World.publishEntityChange propertyName entity oldWorld world
+            if entityState.PublishChanges then World.publishEntityChangeX propertyName entity oldWorld world
+            else world
 
-        static member private publishEntityChanges entity oldWorld world =
-            if World.shouldPublishEntityChange entity world then
-                let entityState = World.getEntityState entity world
-                let properties = World.getProperties entityState
-                List.fold (fun world (propertyName, _) -> World.publishEntityChange propertyName entity oldWorld world) world properties
+        static member private publishEntityChangesX entity oldWorld world =
+            let entityState = World.getEntityState entity world
+            let properties = World.getProperties entityState
+            if entityState.PublishChanges then
+                List.fold
+                    (fun world (propertyName, _) -> World.publishEntityChangeX propertyName entity oldWorld world)
+                    world
+                    properties
             else world
 
         /// Check that the world contains an entity.
@@ -1286,11 +1291,11 @@ module WorldModule =
             let oldWorld = world
             let world = World.updateEntityStateWithoutEvent (EntityState.setTransform value) true entity world
             let world = World.updateEntityInEntityTree entity oldWorld world
-            if World.shouldPublishEntityChange entity world then
-                let world = World.publishEntityChange Property? Position entity oldWorld world
-                let world = World.publishEntityChange Property? Size entity oldWorld world
-                let world = World.publishEntityChange Property? Rotation entity oldWorld world
-                World.publishEntityChange Property? Depth entity oldWorld world
+            if World.getEntityPublishChanges entity world then
+                let world = World.publishEntityChangeX Property? Position entity oldWorld world
+                let world = World.publishEntityChangeX Property? Size entity oldWorld world
+                let world = World.publishEntityChangeX Property? Rotation entity oldWorld world
+                World.publishEntityChangeX Property? Depth entity oldWorld world
             else world
 
         static member private tryGetFacet facetName world =
@@ -1602,8 +1607,10 @@ module WorldModule =
                             world
                     else world
 
-                // publish change event for every property
-                World.publishEntityChanges entity oldWorld world
+                // publish change event for every property if needed
+                if World.getEntityPublishChanges entity world
+                then World.publishEntityChangesX entity oldWorld world
+                else world
 
             // handle failure
             else failwith ^ "Adding an entity that the world already contains at address '" + scstring entity.EntityAddress + "'."
@@ -1853,7 +1860,10 @@ module WorldModule =
                 let oldWorld = world
                 let world = World.setEntityState entityState entity world
                 let world = World.updateEntityInEntityTree entity oldWorld world
-                let world = World.publishEntityChanges entity oldWorld world
+                let world =
+                    if World.getEntityPublishChanges entity world
+                    then World.publishEntityChangesX entity oldWorld world
+                    else world
                 Right world
             | (_, _) ->
                 World.choose world |> ignore
@@ -1867,7 +1877,10 @@ module WorldModule =
                 let oldWorld = world
                 let world = World.setEntityState entityState entity world
                 let world = World.updateEntityInEntityTree entity oldWorld world
-                let world = World.publishEntityChanges entity oldWorld world
+                let world =
+                    if World.getEntityPublishChanges entity world
+                    then World.publishEntityChangesX entity oldWorld world
+                    else world
                 Right world
             | Left error -> Left error
 

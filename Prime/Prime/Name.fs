@@ -124,6 +124,14 @@ module NameModule =
         /// Get the length of a name.
         let length name =
             name.NameStr.Length
+
+        /// Check that a name ends with a Guid.
+        let endsWithGuid name =
+            if length name >= 36 then
+                let nameStr = getNameStr name
+                let last36 = nameStr.Substring (nameStr.Length - 36, 36)
+                Guid.TryParse last36 |> fst
+            else false
     
         /// Join a list of names by a separator string.
         let join sep names =

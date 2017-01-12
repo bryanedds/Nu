@@ -532,6 +532,7 @@ module WorldTypes =
           Specialization : string
           mutable Persistent : bool
           CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
+          Cachable : bool
           mutable OverlayNameOpt : string option
           mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
@@ -614,6 +615,7 @@ module WorldTypes =
               Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
               Persistent = true
               CreationTimeStampNp = Core.getTimeStamp ()
+              Cachable = Name.endsWithGuid name
               OverlayNameOpt = overlayNameOpt
               Position = Vector2.Zero
               Size = Constants.Engine.DefaultEntitySize
@@ -836,8 +838,7 @@ module WorldTypes =
           EntityAddress : Entity Address
           UpdateAddress : unit Address
           PostUpdateAddress : unit Address
-          ObjAddress : obj Address
-          Cachable : bool }
+          ObjAddress : obj Address }
     
         interface Simulant with
             member this.ParticipantAddress = atoa<Entity, Participant> this.EntityAddress
@@ -862,21 +863,11 @@ module WorldTypes =
     
         /// Create an Entity proxy from an address.
         static member proxy address =
-            let cachable =
-                let nameStr = address |> Address.getName |> Name.getNameStr
-                if nameStr.Length >= 36 then
-                    let last36 = nameStr.Substring (nameStr.Length - 36, 36)
-                    last36.[8] = '-' &&
-                    last36.[13] = '-' &&
-                    last36.[18] = '-' &&
-                    last36.[23] = '-'
-                 else false
             { EntityStateOpt = None
               EntityAddress = address
               UpdateAddress = ltoa [!!"Update"; !!"Event"] ->>- address
               PostUpdateAddress = ltoa [!!"PostUpdate"; !!"Event"] ->>- address
-              ObjAddress = atooa address
-              Cachable = cachable }
+              ObjAddress = atooa address }
     
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (entity : Entity) = acatf address (atooa entity.EntityAddress)
