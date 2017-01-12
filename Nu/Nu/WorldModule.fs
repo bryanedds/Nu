@@ -1103,9 +1103,10 @@ module WorldModule =
             let entityStateOpt = UMap.tryFind entity.EntityAddress world.EntityStates
             ((entity.EntityAddress, world.EntityStates), entityStateOpt)
 
-        static member private entityStateNullableFinder entity world =
+        static member private entityStateFinder entity world =
             let entityStateOpt = entity.EntityStateOpt
-            if refEq entityStateOpt Unchecked.defaultof<EntityState> then
+            match entityStateOpt :> obj with
+            | null ->
                 let entityStateOpt =
                     KeyedCache.getValue
                         World.entityStateKeyEquality
@@ -1122,7 +1123,7 @@ module WorldModule =
                             | Some entityState -> entityState
                     entityState
                 | None -> Unchecked.defaultof<EntityState>
-            else entityStateOpt
+            | _ -> entityStateOpt
 
         static member private entityStateAdder entityState entity world =
             let screenDirectory =
@@ -1180,8 +1181,10 @@ module WorldModule =
             World.publish6 { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity false world
 
         static member private getEntityStateOpt entity world =
-            let entityState = World.entityStateNullableFinder entity world
-            if refEq entityState Unchecked.defaultof<EntityState> then None else Some entityState
+            let entityStateOpt = World.entityStateFinder entity world
+            match entityStateOpt :> obj with
+            | null -> None
+            | _ -> Some entityStateOpt
 
         static member private getEntityState entity world =
 #if DEBUG
@@ -1189,7 +1192,7 @@ module WorldModule =
             | Some entityState -> entityState
             | None -> failwith ^ "Could not find entity with address '" + scstring entity.EntityAddress + "'."
 #else
-            World.entityStateNullableFinder entity world
+            World.entityStateFinder entity world
 #endif
 
         static member private setEntityState entityState entity world =
