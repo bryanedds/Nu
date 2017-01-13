@@ -34,9 +34,9 @@ module XtensionModule =
     type [<NoEquality; NoComparison>] Xtension =
         private
             { Properties : XProperties
-              Imperative : bool
               CanDefault : bool
-              Sealed : bool }
+              Sealed : bool
+              Imperative : bool }
 
         /// Get the default value of an instance of type 'a taking into account XDefaultValue decorations.
         static member private getDefaultValue () : 'a =
@@ -102,17 +102,24 @@ module XtensionModule =
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module Xtension =
     
-        /// Make an extension with custom safety.
-        let make properties canDefault isSealed = { Properties = properties; Imperative = false; CanDefault = canDefault; Sealed = isSealed }
+        /// Make an extension.
+        let make properties canDefault isSealed imperative =
+            { Properties = properties
+              CanDefault = canDefault
+              Sealed = isSealed
+              Imperative = imperative }
     
-        /// An Xtension that can default and isn't sealed.
-        let empty = make (UMap.makeEmpty None) true false
+        /// An Xtension that cannot default, is sealed, and is imperative.
+        let makeImperative () = make (UMap.makeEmpty None) false true true
     
-        /// An Xtension that cannot default and is sealed.
-        let safe = make (UMap.makeEmpty None) false true
+        /// An Xtension that can default, isn't sealed, and isn't imperative.
+        let empty = make (UMap.makeEmpty None) true false false
     
-        /// An Xtension that cannot default and isn't sealed.
-        let mixed = make (UMap.makeEmpty None) false false
+        /// An Xtension that cannot default, is sealed, and isn't imperative.
+        let safe = make (UMap.makeEmpty None) false true false
+    
+        /// An Xtension that cannot default, isn't sealed, and isn't imperative.
+        let mixed = make (UMap.makeEmpty None) false false false
 
         /// Whether the extension uses mutation.
         let getImperative xtension = xtension.Imperative

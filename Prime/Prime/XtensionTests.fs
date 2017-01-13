@@ -26,12 +26,12 @@ module XtensionTests =
 
     let [<Fact>] cantAddPropertyWhenSealed () =
         let xtn = Xtension.safe
-        Assert.Throws<Exception> (fun () -> (xtn?TestProperty <- 0) |> ignore)
+        Assert.Throws<Exception> (fun () -> ignore (xtn?TestProperty <- 0))
 
     let [<Fact>] cantAccessNonexistentProperty () =
         let xtn = Xtension.mixed
         let xtn = xtn?TestProperty <- 5
-        Assert.Throws<Exception> (fun () -> xtn?TetProperty |> ignore)
+        Assert.Throws<Exception> (fun () -> ignore xtn?TetProperty)
 
     let [<Fact>] missingPropertyReturnsDefault () =
         let xtn = Xtension.empty
