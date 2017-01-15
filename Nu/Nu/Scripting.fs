@@ -43,7 +43,7 @@ module Scripting =
                      "some none isNone isSome map " +
                      // TODO: "either isLeft isRight left right " +
                      "tuple unit fst snd thd fth fif nth " +
-                     "list head tail cons isEmpty notEmpty fold filter product sum contains " + // empty list is just [list]
+                     "list head tail cons empty isEmpty notEmpty fold filter product sum contains " + // [list] is empty list
                      // TODO: "ring add remove " +
                      // TODO: "table tryFind find " +
                      "nix " + // the empty phrase
@@ -220,10 +220,6 @@ module Scripting =
                             match tail with
                             | [Prime.Atom (name, _); body] -> Let (name, this.SymbolToExpr body, originOpt) :> obj
                             | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. Requires 1 name and 1 body.", originOpt) :> obj
-                        //| "v2" ->
-                        //    match tail with
-                        //    | [x; y] -> Expr.Vector2 (symbolToExpr x, symbolToExpr y, originOpt) :> obj
-                        //    | _ -> Violation ([!!"InvalidV2Form"], "Invalid v2 form. Requires 2 arguments.", originOpt) :> obj
                         | "if" ->
                             match tail with
                             | [condition; consequent; alternative] -> If (this.SymbolToExpr condition, this.SymbolToExpr consequent, this.SymbolToExpr alternative, originOpt) :> obj
