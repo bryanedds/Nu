@@ -22,6 +22,15 @@ module WorldGameModule =
         member this.Specialization = PropertyTag.makeReadOnly this Property? Specialization this.GetSpecialization
         member this.GetClassification world = Classification.make (getTypeName ^ this.GetDispatcherNp world) (this.GetSpecialization world)
         member this.Classification = PropertyTag.makeReadOnly this Property? Classification this.GetClassification
+        member this.GetScriptAssetOpt world = World.getGameScriptAssetOpt world
+        member this.SetScriptAssetOpt value world = World.setGameScriptAssetOpt value world
+        member this.ScriptAssetOpt = PropertyTag.make this Property? ScriptAssetOpt this.GetScriptAssetOpt this.SetScriptAssetOpt
+        member this.GetScriptAssetOptLc world = World.getGameScriptAssetOptLc world
+        member internal this.SetScriptAssetOptLc value world = World.setGameScriptAssetOptLc value world
+        member this.ScriptAssetOptLc = PropertyTag.makeReadOnly this Property? ScriptAssetOptLc this.GetScriptAssetOptLc
+        member this.GetScript world = World.getGameScript world
+        member this.SetScript value world = World.setGameScript value world
+        member this.Script = PropertyTag.make this Property? Script this.GetScript this.SetScript
         member this.GetCreationTimeStampNp world = World.getGameCreationTimeStampNp world
         member this.CreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
         member this.GetImperative world = World.getGameImperative world
@@ -92,6 +101,16 @@ module WorldGameModule =
 
     type World with
 
+        static member assetTagToScriptOpt assetTag world =
+            let (symbolOpt, world) = World.tryFindSymbol assetTag world
+            let scriptOpt =
+                match symbolOpt with
+                | Some symbol ->
+                    try let script = valueize<Script> symbol in Some script
+                    with exn -> Log.info ^ "Failed to convert symbol '" + scstring symbol + "' to Script due to: " + scstring exn; None
+                | None -> None
+            (scriptOpt, world)
+
         static member internal registerGame (world : World) : World =
             let dispatcher = Simulants.Game.GetDispatcherNp world
             let world = World.withEventContext (fun world -> dispatcher.Register (Simulants.Game, world)) (atooa Simulants.Game.GameAddress) world
@@ -99,8 +118,27 @@ module WorldGameModule =
         
         static member internal updateGame world =
             World.withEventContext (fun world ->
+
+                // update for script asset changes
+                let game = Simulants.Game
+                let scriptAssetOpt = game.GetScriptAssetOpt world
+                let world =
+                    if game.GetScriptAssetOptLc world <> scriptAssetOpt then
+                        let world =
+                            match scriptAssetOpt with
+                            | Some scriptAsset ->
+                                match World.assetTagToScriptOpt scriptAsset world with
+                                | (Some script, world) -> game.SetScript script world
+                                | (None, world) -> world
+                            | None -> world
+                        game.SetScriptAssetOptLc scriptAssetOpt world
+                    else world
+
+                // update via dispatcher
                 let dispatcher = Simulants.Game.GetDispatcherNp world
                 let world = dispatcher.Update (Simulants.Game, world)
+
+                // publish update event
                 let eventTrace = EventTrace.record "World" "updateGame" EventTrace.empty
                 let world = World.publish7 World.sortSubscriptionsByHierarchy () Events.Update eventTrace Simulants.Game true world
                 World.choose world)
@@ -109,8 +147,12 @@ module WorldGameModule =
 
         static member internal postUpdateGame world =
             World.withEventContext (fun world ->
+                
+                // post-update via dispatcher
                 let dispatcher = Simulants.Game.GetDispatcherNp world
                 let world = dispatcher.PostUpdate (Simulants.Game, world)
+
+                // publish post-update event
                 let eventTrace = EventTrace.record "World" "postUpdateGame" EventTrace.empty
                 let world = World.publish7 World.sortSubscriptionsByHierarchy () Events.PostUpdate eventTrace Simulants.Game true world
                 World.choose world)

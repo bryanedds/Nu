@@ -442,6 +442,12 @@ module WorldModule =
         static member internal getGameXtension world = (World.getGameState world).Xtension // TODO: try to get rid of this
         static member internal getGameDispatcherNp world = (World.getGameState world).DispatcherNp
         static member internal getGameSpecialization world = (World.getGameState world).Specialization
+        static member internal getGameScriptAssetOpt world = (World.getGameState world).ScriptAssetOpt
+        static member internal setGameScriptAssetOpt value world = World.updateGameState (fun gameState -> { gameState with ScriptAssetOpt = value }) Property? ScriptAssetOpt world
+        static member internal getGameScriptAssetOptLc world = (World.getGameState world).ScriptAssetOptLc
+        static member internal setGameScriptAssetOptLc value world = World.updateGameState (fun gameState -> { gameState with ScriptAssetOptLc = value }) Property? ScriptAssetOptLc world
+        static member internal getGameScript world = (World.getGameState world).Script
+        static member internal setGameScript value world = World.updateGameState (fun gameState -> { gameState with Script = value }) Property? Script world
         static member internal getGameCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
         static member internal getGameImperative world = Xtension.getImperative (World.getGameState world).Xtension
 
@@ -567,6 +573,9 @@ module WorldModule =
             | "Xtension" -> (World.getGameXtension world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
             | "Specialization" -> (World.getGameSpecialization world :> obj, typeof<string>)
+            | "ScriptAssetOpt" -> (World.getGameScriptAssetOpt world :> obj, typeof<AssetTag option>)
+            | "ScriptAssetOptLc" -> (World.getGameScriptAssetOptLc world :> obj, typeof<AssetTag option>)
+            | "Script" -> (World.getGameScript world :> obj, typeof<Script>)
             | "CreationTimeStampNp" -> (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
             | "Imperative" -> (World.getGameImperative world :> obj, typeof<bool>)
             | "SelectedScreenOpt" -> (World.getSelectedScreenOpt world :> obj, typeof<Screen option>)
@@ -581,6 +590,9 @@ module WorldModule =
             | "Xtension" -> failwith "Cannot change game xtension."
             | "DispatcherNp" -> failwith "Cannot change game dispatcher."
             | "Specialization" -> failwith "Cannot change game specialization."
+            | "ScriptAssetOpt" -> failwith "Cannot change game script asset dynamically."
+            | "ScriptAssetOptLc" -> failwith "Cannot change game script asset lc dynamically."
+            | "Script" -> failwith "Cannot change game script dynamically."
             | "CreationTimeStampNp" -> failwith "Cannot change game creation time stamp."
             | "Imperative" -> failwith "Cannot change game imperative."
             | "SelectedScreenOpt" -> World.setSelectedScreenOpt (property |> fst :?> Screen option) world
