@@ -835,6 +835,33 @@ module WorldScriptSystem =
                     | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), env)
                 | [] -> (Unit originOpt, env)
 
+        //and evalLet4 letRecord headBinding tailBindings env =
+        //    let env =
+        //        match headBinding with
+        //        | LetVariable (name, body) ->
+        //            let bodyValue = evalExprDropEnv body env
+        //            appendProceduralVariable (AddToNewFrame letRecord.LetBindingCount) name None bodyValue env
+        //        | LetFunction (name, args, argCount, body, optConstraints, pre, post, emptyUnification) ->
+        //            appendProceduralFunction (AddToNewFrame letRecord.LetBindingCount) name args argCount body optConstraints None pre post emptyUnification letRecord.LetOptPositions env
+        //    let mutable start = 1
+        //    for binding in tailBindings do
+        //        match binding with
+        //        | LetVariable (name, body) ->
+        //            let bodyValue = evalExprDropEnv body env
+        //            ignore (appendProceduralVariable (AddToHeadFrame start) name None bodyValue env)
+        //        | LetFunction (name, args, argCount, body, optConstraints, pre, post, emptyUnification) ->
+        //            ignore (appendProceduralFunction (AddToHeadFrame start) name args argCount body optConstraints None pre post emptyUnification letRecord.LetOptPositions env)
+        //        start <- start + 1
+        //    evalExpr letRecord.LetBody env
+        //
+        ///// NOTE: this function is rather imperative and may have tricky operational implications. Use caution when modifying!
+        //and evalLet letRecord env =
+        //    match letRecord.LetBindings with
+        //    | [] -> makeEvalViolation ":v/eval/malformedLetOperation" "Let operation must have at least 1 binding." env
+        //    | headBinding :: tailBindings ->
+        //        let result = evalLet4 letRecord headBinding tailBindings env
+        //        makeEvalResult result.Value env
+
         and evalIf condition consequent alternative originOpt env =
             let oldEnv = env
             let (evaled, env) = eval condition env
@@ -953,7 +980,7 @@ module WorldScriptSystem =
 
         and evalDefine name expr originOpt env =
             let (evaled, env) = eval expr env
-            match Env.tryAddBinding true name evaled env with
+            match Env.tryAddBinding true name (ValueBinding evaled) env with
             | Some env -> (Unit originOpt, env)
             | None -> (Violation ([!!"InvalidDefinition"], "Definition '" + name + "' could not be created due to having the same name as another top-level binding.", originOpt), env)
 
