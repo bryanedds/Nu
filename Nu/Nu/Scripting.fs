@@ -276,12 +276,14 @@ module Scripting =
 type [<NoComparison>] Script =
     { Constants : (Name * Scripting.Expr) list
       Streams : (Name * Guid * Scripting.Stream * Scripting.Expr) list
-      Equalities : (Name * Guid * Scripting.Stream) list }
+      Equalities : (Name * Guid * Scripting.Stream) list
+      Initialize : Scripting.Expr }
 
     static member empty =
         { Constants = []
           Streams = []
-          Equalities = [] }
+          Equalities = []
+          Initialize = Scripting.Unit (None) }
 
 [<AutoOpen>]
 module EnvModule =
