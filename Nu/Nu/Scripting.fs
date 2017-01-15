@@ -276,6 +276,12 @@ module Scripting =
             | :? Expr -> source
             | _ -> failconv "Invalid ExprConverter conversion from source." None
 
+    let UnitValue = Unit None
+    let TrueValue = Bool (true, None)
+    let FalseValue = Bool (false, None)
+    let EmptyStringValue = String (String.Empty, None)
+    let ZeroIntValue = Int (0, None)
+
 /// Dynamically drives behavior for simulants.
 type [<NoComparison>] Script =
     { Constants : (Name * Scripting.Expr) list
@@ -292,24 +298,52 @@ type [<NoComparison>] Script =
 [<AutoOpen>]
 module EnvModule =
 
+    /// The manner in which bindings are added to a frame.
+    type AddType =
+        | AddToNewFrame of Size : int
+        | AddToHeadFrame of Offset : int
+
+    type [<NoEquality; NoComparison>] Binding =
+        | ValueBinding of Scripting.Expr
+        | DynamicBinding of int
+
+    type [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue); NoEquality; NoComparison>]
+        CachedBinding =
+        | CEUncached
+        | CEDeclaration of Binding
+        | CEProcedural of int * int
+
     /// The execution environment for scripts.
     type [<NoEquality; NoComparison>] Env<'p, 'g, 'w when 'p :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
         private
             { Rebinding : bool // rebinding should be enabled in Terminal or perhaps when reloading existing scripts.
-              TopLevel : Dictionary<string, Scripting.Expr>
+              TopLevel : Dictionary<string, Binding>
+              Frames : (string * Binding) array list
               Streams : Map<obj Address, Prime.Stream<obj, 'g, 'w> * ('w -> 'w)>
               Context : 'p // TODO: get rid of this and use EventContext instead.
               World : 'w }
 
     [<RequireQualifiedAccess>]
     module Env =
+    
+        /// A bottom value for an binding in a procedural frame.
+        /// Should ever exist ONLY in an uninitialized procedural frame!
+        let BottomValue = Scripting.Violation ([!!"BottomAccess"], "Accessed a bottom value.", None)
+
+        /// A bottom binding for a procedural frame.
+        /// Should ever exist ONLY in an uninitialized procedural frame!
+        let BottomBinding = (String.Empty, ValueBinding BottomValue)
 
         let make chooseWorld rebinding topLevel (context : 'p) (world : 'w) =
             { Rebinding = rebinding
               TopLevel = topLevel
+              Frames = []
               Streams = Map.empty
               Context = context
               World = chooseWorld world }
+
+        let getRebinding (env : Env<'p, 'g, 'w>) =
+            env.Rebinding
 
         let tryGetBinding name (env : Env<'p, 'g, 'w>) =
             match env.TopLevel.TryGetValue name with
@@ -321,6 +355,9 @@ module EnvModule =
                 env.TopLevel.Add (name, evaled)
                 Some env
             else None
+
+        let addFrame frame (env : Env<'p, 'g, 'w>) =
+            { env with Frames = frame :: env.Frames }
 
         let tryGetStream streamAddress (env : Env<'p, 'g, 'w>) =
             Map.tryFind streamAddress env.Streams
@@ -339,6 +376,64 @@ module EnvModule =
 
         let updateWorld chooseWorld by (env : Env<'p, 'g, 'w>) =
             setWorld chooseWorld (by (getWorld env)) env
+
+        let makeFrame size =
+            Array.create size BottomBinding
+
+        let tryAddDeclarationBinding name binding env =
+            tryAddBinding true name binding env
+
+        let addProceduralBinding appendType name binding env =
+            match appendType with
+            | AddToNewFrame size ->
+                let frame = makeFrame size
+                frame.[0] <- (name, binding)
+                addFrame frame env
+            | AddToHeadFrame offset ->
+                match env.Frames with
+                | frame :: _ ->
+                    frame.[offset] <- (name, binding)
+                    env
+                | [] -> failwithumf ()
+
+        let tryAddDeclarationBindings bindings env =
+            let topLevel = env.TopLevel
+            if env.Rebinding then 
+                for (name, value) in bindings do ignore (topLevel.ForceAdd (name, value))
+                Some env
+            else
+                let existences = Seq.map (fun (key, _) -> topLevel.ContainsKey key) bindings
+                if Seq.exists id existences then None
+                else
+                    for binding in bindings do topLevel.Add binding
+                    Some env
+
+        let addProceduralBindings appendType bindings env =
+            match appendType with
+            | AddToNewFrame size ->
+                let frame = makeFrame size
+                let mutable index = 0
+                for binding in bindings do
+                    frame.[index] <- binding
+                    index <- index + 1
+                addFrame frame env
+            | AddToHeadFrame start ->
+                match env.Frames with
+                | frame :: _ ->
+                    let mutable index = start
+                    for binding in bindings do
+                        frame.[index] <- binding
+                        index <- index + 1
+                    env
+                | [] -> failwithumf ()
+
+        let tryAddDeclarationVariable name value env =
+            let binding = ValueBinding value
+            tryAddDeclarationBinding name binding env
+
+        let addProceduralVariable appendType name value env =
+            let binding = ValueBinding value
+            addProceduralBinding appendType name binding env
 
 /// The execution environment for scripts.
 type Env<'p, 'g, 'w when 'p :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
