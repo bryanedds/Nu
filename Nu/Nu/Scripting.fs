@@ -160,8 +160,10 @@ module Scripting =
             destType = typeof<Symbol> ||
             destType = typeof<Expr>
 
-        override this.ConvertTo (_, _, _, _) =
-            failwith "Not yet implemented."
+        override this.ConvertTo (_, _, source, destType) =
+            if destType = typeof<Symbol> then Symbols ([], None) :> obj
+            elif destType = typeof<Expr> then source
+            else failconv "Invalid ExprConverter conversion to source." None
 
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Symbol> ||
