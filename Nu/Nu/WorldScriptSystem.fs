@@ -47,6 +47,7 @@ module WorldScriptSystem =
              (typeof<double>.Name, (fun (value : obj) _ originOpt -> match value with :? double as double -> Some (Double (double, originOpt)) | _ -> None))
              (typeof<Vector2>.Name, (fun (value : obj) _ originOpt -> match value with :? Vector2 as vector2 -> Some (Vector2 (vector2, originOpt)) | _ -> None))
              (typedefof<_ list>.Name, (fun value ty originOpt -> tryImportList value ty originOpt))] |>
+             // TODO: remaining importers
             dictPlus
 
         and private tryImportEventData evt originOpt =
@@ -78,6 +79,7 @@ module WorldScriptSystem =
              (typeof<double>.Name, (fun evaled _ -> match evaled with Double (value, _) -> value :> obj |> Some | _ -> None))
              (typeof<Vector2>.Name, (fun evaled _ -> match evaled with Vector2 (value, _) -> value :> obj |> Some | _ -> None))
              (typedefof<_ list>.Name, tryExportList)] |>
+             // TODO: remaining exporters
             dictPlus
 
         type [<NoEquality; NoComparison>] UnaryFns =
@@ -807,7 +809,7 @@ module WorldScriptSystem =
                         (Phrase (map, originOpt), env)
                     | Binding (name, originOpt) ->
                         match Env.tryGetBinding name env with
-                        | Some binding -> evalFn binding args env
+                        | Some binding -> evalFun binding args env
                         | None -> evalIntrinsic originOpt name args env
                     | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), env)
                 | [] -> (Unit originOpt, env)
@@ -939,7 +941,7 @@ module WorldScriptSystem =
             | Right (stream, env) -> (Unit originOpt, addStream name stream originOpt env)
             | Left violation -> (violation, env)
 
-        and evalFn _ _ env =
+        and evalFun _ _ env =
             // TODO: implement
             (Unit None, env)
 
@@ -974,6 +976,8 @@ module WorldScriptSystem =
             | GetFrom (name, expr, originOpt) -> evalGet name (Some expr) originOpt env
             | Set (name, expr, originOpt) -> evalSet name expr None originOpt env
             | SetTo (name, expr, expr2, originOpt) -> evalSet name expr2 (Some expr) originOpt env
+            | Do (_, originOpt) -> (Violation ([!!"Unimplemented"], "Unimplemented feature.", originOpt), env) // TODO
+            | DoMany (_, originOpt) -> (Violation ([!!"Unimplemented"], "Unimplemented feature.", originOpt), env) // TODO
             | Define (name, expr, originOpt) -> evalDefine name expr originOpt env
             | Variable (name, stream, originOpt) -> evalVariable name stream originOpt env
             | Equate (_, _, _, _, originOpt) -> (Unit originOpt, env)

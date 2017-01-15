@@ -32,26 +32,27 @@ module Scripting =
         // not constructable by user. Weakly-typed to simplify type declarations
         | ComputedStream of obj // actual type is Prime.Stream<'p, 'w when 'p :> Participant and 'w :> EventWorld<'w>>
 
-    and [<Syntax(   "pow root sqr sqrt " +
-                    "floor ceiling truncate round exp log " +
-                    "sin cos tan asin acos atan " +
-                    "length normal " +
-                    "cross dot " +
-                    "violation bool int int64 single double string " +
-                    "nil " + // the empty keyword
-                    "xOf yOf xAs yAs " + // vector operations
-                    "some none isNone isSome map " +
-                    // TODO: "either isLeft isRight left right " +
-                    "tuple unit fst snd thd fth fif nth " +
-                    "list head tail cons isEmpty notEmpty fold filter product sum contains " + // empty list is just [list]
-                    // TODO: "ring add remove " +
-                    // TODO: "table tryFind find " +
-                    "nix " + // the empty phrase
-                    "let fun if cond try break get set " +
-                    "variableStream eventStream propertyStream " +
-                    "define variable equate handle " +
-                    "tickRate tickTime updateCount",
-                    "");
+    and [<Syntax    ("pow root sqr sqrt " +
+                     "floor ceiling truncate round exp log " +
+                     "sin cos tan asin acos atan " +
+                     "length normal " +
+                     "cross dot " +
+                     "violation bool int int64 single double string " +
+                     "nil " + // the empty keyword
+                     "v2 xOf yOf xAs yAs " + // vector operations
+                     "some none isNone isSome map " +
+                     // TODO: "either isLeft isRight left right " +
+                     "tuple unit fst snd thd fth fif nth " +
+                     "list head tail cons isEmpty notEmpty fold filter product sum contains " + // empty list is just [list]
+                     // TODO: "ring add remove " +
+                     // TODO: "table tryFind find " +
+                     "nix " + // the empty phrase
+                     "let fun if cond try break get set do " +
+                     "variableStream eventStream propertyStream " +
+                     "define variable equate handle " +
+                     // TODO?: "onRegister onUnregister onUpdate onPostUpdate onActualize" +
+                     "tickRate tickTime updateCount",
+                     "");
           TypeConverter (typeof<ExprConverter>);
           NoComparison>]
         Expr =
@@ -66,13 +67,13 @@ module Scripting =
         | Double of double * Origin option
         | Vector2 of Vector2 * Origin option
         | String of string * Origin option
-        | Keyword of string * Origin option
+        | Keyword of string * Origin option // constructed as any identifier starting with an uppercase letter
 
         (* Primitive Data Structures *)
         | Option of Expr option * Origin option
         | Tuple of Map<int, Expr> * Origin option
         | List of Expr list * Origin option
-        | Phrase of Map<int, Expr> * Origin option
+        | Phrase of Map<int, Expr> * Origin option // constructed as [CapitalizedIdentifier ...]
         | Stream of Stream * Origin option
 
         (* Special Forms *)
@@ -90,6 +91,8 @@ module Scripting =
         | GetFrom of string * Expr * Origin option
         | Set of string * Expr * Origin option
         | SetTo of string * Expr * Expr * Origin option
+        | Do of Command * Origin option
+        | DoMany of Command list * Origin option
 
         (* Special Declarations - only work at the top level, and always return unit. *)
         // accessible anywhere
@@ -138,6 +141,8 @@ module Scripting =
             | GetFrom (_, _, originOpt)
             | Set (_, _, originOpt)
             | SetTo (_, _, _, originOpt)
+            | Do (_, originOpt)
+            | DoMany (_, originOpt)
             | Define (_, _, originOpt)
             | Variable (_, _, originOpt)
             | Equate (_, _, _, _, originOpt)
