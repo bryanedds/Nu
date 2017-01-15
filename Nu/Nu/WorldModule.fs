@@ -11,8 +11,11 @@ open Nu
 [<AutoOpen>]
 module WorldModule =
 
-    // Mutable clipboard that allows its state to persist beyond undo / redo.
+    /// Mutable clipboard that allows its state to persist beyond undo / redo.
     let mutable private Clipboard : obj option = None
+
+    /// Reach-around for evaluating scripts.
+    let mutable internal evalGameScript = Unchecked.defaultof<World -> World>
 
     type World with
 
@@ -447,7 +450,7 @@ module WorldModule =
         static member internal getGameScriptAssetOptLc world = (World.getGameState world).ScriptAssetOptLc
         static member internal setGameScriptAssetOptLc value world = World.updateGameState (fun gameState -> { gameState with ScriptAssetOptLc = value }) Property? ScriptAssetOptLc world
         static member internal getGameScript world = (World.getGameState world).Script
-        static member internal setGameScript value world = World.updateGameState (fun gameState -> { gameState with Script = value }) Property? Script world
+        static member internal setGameScript value world = let world = World.updateGameState (fun gameState -> { gameState with Script = value }) Property? Script world in evalGameScript world
         static member internal getGameCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
         static member internal getGameImperative world = Xtension.getImperative (World.getGameState world).Xtension
 

@@ -984,5 +984,8 @@ module WorldScriptSystem =
             | EquateMany (_, _, _, _, _, originOpt) -> (Unit originOpt, env)
             | Handle (_, _, originOpt) -> (Unit originOpt, env)
 
+        let run _ env =
+            Env.getWorld env
+
 /// An abstract data type for executing scripts.
 type ScriptSystem = WorldScriptSystem.ScriptSystem
