@@ -40,8 +40,8 @@ module Nu =
             WorldModule.evalGameScript <- fun world ->
                 let game = Simulants.Game
                 let script = game.GetScript world
-                let env = Env.make World.choose false (dictPlus []) game world
-                ScriptSystem.run script env
+                let env = Env.make World.choose false (dictPlus []) (game :> Simulant) world
+                Env.getWorld ^ snd ^ ScriptSystem.run script env
 #if DEBUG
             Debug.World.viewGame <- fun world -> Debug.Game.view (world :?> World)
             Debug.World.viewScreen <- fun screen world -> Debug.Screen.view (screen :?> Screen) (world :?> World)

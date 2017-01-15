@@ -110,7 +110,12 @@ module Symbol =
             let! stop = getPosition
             do! skipWhitespaces
             let origin = Some { Start = start; Stop = stop }
-            return Number (number.String, origin) }
+            let suffix =
+                (if number.SuffixChar1 <> (char)65535 then string number.SuffixChar1 else "") + 
+                (if number.SuffixChar2 <> (char)65535 then string number.SuffixChar2 else "") + 
+                (if number.SuffixChar3 <> (char)65535 then string number.SuffixChar3 else "") + 
+                (if number.SuffixChar4 <> (char)65535 then string number.SuffixChar4 else "")
+            return Number (number.String + suffix, origin) }
 
     let readString =
         parse {
