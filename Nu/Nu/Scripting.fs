@@ -161,7 +161,7 @@ module Scripting =
             destType = typeof<Expr>
 
         override this.ConvertTo (_, _, source, destType) =
-            if destType = typeof<Symbol> then Symbols ([], None) :> obj
+            if destType = typeof<Symbol> then Symbols ([], None) :> obj // TODO: implement
             elif destType = typeof<Expr> then source
             else failconv "Invalid ExprConverter conversion to source." None
 
