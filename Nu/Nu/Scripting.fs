@@ -50,7 +50,7 @@ module Scripting =
                      "let fun if cond try break get set do " +
                      "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
-                     // TODO?: "onRegister onUnregister onUpdate onPostUpdate onActualize" +
+                     // TODO?: "onInit onRegister onUnregister onUpdate onPostUpdate onActualize" +
                      "tickRate tickTime updateCount",
                      "");
           TypeConverter (typeof<ExprConverter>);
@@ -153,8 +153,8 @@ module Scripting =
     and ExprConverter () =
         inherit TypeConverter ()
 
-        static let symbolToExpr symbol =
-            SymbolicDescriptor.convertTo (symbol, typeof<Expr>) :?> Expr
+        member this.SymbolToExpr symbol =
+            this.ConvertFrom symbol :?> Expr
 
         override this.CanConvertTo (_, destType) =
             destType = typeof<Symbol> ||
@@ -182,19 +182,21 @@ module Scripting =
                         else Binding (str, originOpt) :> obj
                 | Prime.Number (str, originOpt) ->
                     match Int32.TryParse str with
-                    | (true, int) -> Int (int, originOpt) :> obj
                     | (false, _) ->
                         match Int64.TryParse str with
-                        | (true, int64) -> Int64 (int64, originOpt) :> obj
                         | (false, _) ->
                             if str.EndsWith "f" || str.EndsWith "F" then
+                                let str = str.Substring(0, str.Length - 1)
                                 match Single.TryParse str with
                                 | (true, single) -> Single (single, originOpt) :> obj
                                 | (false, _) -> Violation ([!!"InvalidNumberForm"], "Unexpected number parse failure.", originOpt) :> obj
                             else
-                                match Double.TryParse str with
+                                let str = if str.EndsWith "d" || str.EndsWith "D" then str.Substring(0, str.Length - 1) else str
+                                match Double.TryParse (str, Globalization.NumberStyles.Float, Globalization.CultureInfo.CurrentCulture) with
                                 | (true, double) -> Double (double, originOpt) :> obj
                                 | (false, _) -> Violation ([!!"InvalidNumberForm"], "Unexpected number parse failure.", originOpt) :> obj
+                        | (true, int64) -> Int64 (int64, originOpt) :> obj
+                    | (true, int) -> Int (int, originOpt) :> obj
                 | Prime.String (str, originOpt) -> String (str, originOpt) :> obj
                 | Prime.Quote (str, originOpt) -> Quote (str, originOpt) :> obj
                 | Prime.Symbols (symbols, originOpt) ->
@@ -214,11 +216,15 @@ module Scripting =
                             | _ -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Requires 1 tag.", originOpt) :> obj
                         | "let" ->
                             match tail with
-                            | [Prime.Atom (name, _); body] -> Let (name, symbolToExpr body, originOpt) :> obj
+                            | [Prime.Atom (name, _); body] -> Let (name, this.SymbolToExpr body, originOpt) :> obj
                             | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. Requires 1 name and 1 body.", originOpt) :> obj
+                        //| "v2" ->
+                        //    match tail with
+                        //    | [x; y] -> Expr.Vector2 (symbolToExpr x, symbolToExpr y, originOpt) :> obj
+                        //    | _ -> Violation ([!!"InvalidV2Form"], "Invalid v2 form. Requires 2 arguments.", originOpt) :> obj
                         | "if" ->
                             match tail with
-                            | [condition; consequent; alternative] -> If (symbolToExpr condition, symbolToExpr consequent, symbolToExpr alternative, originOpt) :> obj
+                            | [condition; consequent; alternative] -> If (this.SymbolToExpr condition, this.SymbolToExpr consequent, this.SymbolToExpr alternative, originOpt) :> obj
                             | _ -> Violation ([!!"InvalidIfForm"], "Invalid if form. Requires 3 arguments.", originOpt) :> obj
                         | "try" ->
                             match tail with
@@ -234,11 +240,11 @@ module Scripting =
                                         handlers
                                 let (errors, handlers) = Either.split handlerEirs
                                 match errors with
-                                | [] -> Try (symbolToExpr body, List.map (mapSnd symbolToExpr) handlers, originOpt) :> obj
+                                | [] -> Try (this.SymbolToExpr body, List.map (mapSnd this.SymbolToExpr) handlers, originOpt) :> obj
                                 | error :: _ -> Violation ([!!"InvalidTryForm"], error, originOpt) :> obj
                             | _ -> Violation ([!!"InvalidTryForm"], "Invalid try form. Requires 1 body and a handler list.", originOpt) :> obj
                         | "break" ->
-                            let content = symbolToExpr (Symbols (tail, originOpt))
+                            let content = this.SymbolToExpr (Symbols (tail, originOpt))
                             Break (content, originOpt) :> obj
                         | "get" ->
                             match tail with
@@ -246,7 +252,7 @@ module Scripting =
                             | Prime.String (nameStr, originOpt) :: tail2 ->
                                 match tail2 with
                                 | [] -> Get (nameStr, originOpt) :> obj
-                                | [relation] -> GetFrom (nameStr, symbolToExpr relation, originOpt) :> obj
+                                | [relation] -> GetFrom (nameStr, this.SymbolToExpr relation, originOpt) :> obj
                                 | _ -> Violation ([!!"InvalidGetForm"], "Invalid get form. Requires a name and an optional relation expression.", originOpt) :> obj
                             | _ -> Violation ([!!"InvalidGetForm"], "Invalid get form. Requires a name and an optional relation expression.", originOpt) :> obj
                         | "set" ->
@@ -254,8 +260,8 @@ module Scripting =
                             | Prime.Atom (nameStr, originOpt) :: value :: tail2
                             | Prime.String (nameStr, originOpt) :: value :: tail2 ->
                                 match tail2 with
-                                | [] -> Set (nameStr, symbolToExpr value, originOpt) :> obj
-                                | [relation] -> SetTo (nameStr, symbolToExpr value, symbolToExpr relation, originOpt) :> obj
+                                | [] -> Set (nameStr, this.SymbolToExpr value, originOpt) :> obj
+                                | [relation] -> SetTo (nameStr, this.SymbolToExpr value, this.SymbolToExpr relation, originOpt) :> obj
                                 | _ -> Violation ([!!"InvalidSetForm"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", originOpt) :> obj
                             | _ -> Violation ([!!"InvalidSetForm"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", originOpt) :> obj
                         | "variableStream" ->
@@ -265,10 +271,10 @@ module Scripting =
                             | _ -> Violation ([!!"InvalidVariableStreamForm"], "Invalid variable stream form. Requires a name.", originOpt) :> obj
                         | "eventStream" ->
                             match tail with
-                            | [relation] -> Stream (EventStream (symbolToExpr relation), originOpt) :> obj
+                            | [relation] -> Stream (EventStream (this.SymbolToExpr relation), originOpt) :> obj
                             | _ -> Violation ([!!"InvalidEventStreamForm"], "Invalid event stream form. Requires a relation expression.", originOpt) :> obj
-                        | _ -> Apply (List.map symbolToExpr symbols, originOpt) :> obj
-                    | _ -> Apply (List.map symbolToExpr symbols, originOpt) :> obj
+                        | _ -> Apply (List.map this.SymbolToExpr symbols, originOpt) :> obj
+                    | _ -> Apply (List.map this.SymbolToExpr symbols, originOpt) :> obj
             | :? Expr -> source
             | _ -> failconv "Invalid ExprConverter conversion from source." None
 
@@ -277,13 +283,13 @@ type [<NoComparison>] Script =
     { Constants : (Name * Scripting.Expr) list
       Streams : (Name * Guid * Scripting.Stream * Scripting.Expr) list
       Equalities : (Name * Guid * Scripting.Stream) list
-      Initialize : Scripting.Expr }
+      OnInit : Scripting.Expr }
 
     static member empty =
         { Constants = []
           Streams = []
           Equalities = []
-          Initialize = Scripting.Unit (None) }
+          OnInit = Scripting.Unit (None) }
 
 [<AutoOpen>]
 module EnvModule =

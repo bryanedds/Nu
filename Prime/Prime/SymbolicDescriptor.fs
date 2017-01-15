@@ -17,8 +17,8 @@ module SymbolicDescriptor =
         (SymbolicConverter destType).CanConvertFrom sourceType
 
     /// Convert a value to the given type using its assigned type converter.
-    let convertTo (source : obj, destType) =
-        (SymbolicConverter ^ getType source).ConvertTo (source, destType)
+    let convertTo (source : obj) sourceType destType =
+        (SymbolicConverter sourceType).ConvertTo (source, destType)
 
     /// Convert a value from given type using its assigned type converter.
     let convertFrom source destType =

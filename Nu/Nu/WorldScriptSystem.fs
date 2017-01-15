@@ -584,40 +584,44 @@ module WorldScriptSystem =
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!(String.capitalize fnName)], "Cannot apply a bool function to a non-bool value.", combine (Expr.getOriginOpt evaledLeft) (Expr.getOriginOpt evaledRight)), env)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Binary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
 
-        let evalUnary fnOptOrigin fnName (fns : UnaryFns) evaledArgs env =
+        let evalUnaryInner fnName (fns : UnaryFns) evaledArg env =
+            match evaledArg with
+            | Bool (boolValue, originOpt) -> ((fns.Bool boolValue originOpt), env)
+            | Int (intValue, originOpt) -> ((fns.Int intValue originOpt), env)
+            | Int64 (int64Value, originOpt) -> ((fns.Int64 int64Value originOpt), env)
+            | Single (singleValue, originOpt) -> ((fns.Single singleValue originOpt), env)
+            | Double (doubleValue, originOpt) -> ((fns.Double doubleValue originOpt), env)
+            | Vector2 (vector2Value, originOpt) -> ((fns.Vector2 vector2Value originOpt), env)
+            | String (stringValue, originOpt) -> ((fns.String stringValue originOpt), env)
+            | Tuple (tupleValue, originOpt) -> ((fns.Tuple tupleValue originOpt), env)
+            | List (listValue, originOpt) -> ((fns.List listValue originOpt), env)
+            | Phrase (phraseValue, originOpt) -> ((fns.Phrase phraseValue originOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentType"; !!"Unary"; !!(String.capitalize fnName)], "Cannot apply an unary function on an incompatible value.", Expr.getOriginOpt evaledArg), env)
+
+        let evalUnary fnOptOrigin fnName fns evaledArgs env =
             match evaledArgs with
-            | [evaled] ->
-                match evaled with
-                | Bool (boolValue, originOpt) -> ((fns.Bool boolValue originOpt), env)
-                | Int (intValue, originOpt) -> ((fns.Int intValue originOpt), env)
-                | Int64 (int64Value, originOpt) -> ((fns.Int64 int64Value originOpt), env)
-                | Single (singleValue, originOpt) -> ((fns.Single singleValue originOpt), env)
-                | Double (doubleValue, originOpt) -> ((fns.Double doubleValue originOpt), env)
-                | Vector2 (vector2Value, originOpt) -> ((fns.Vector2 vector2Value originOpt), env)
-                | String (stringValue, originOpt) -> ((fns.String stringValue originOpt), env)
-                | Tuple (tupleValue, originOpt) -> ((fns.Tuple tupleValue originOpt), env)
-                | List (listValue, originOpt) -> ((fns.List listValue originOpt), env)
-                | Phrase (phraseValue, originOpt) -> ((fns.Phrase phraseValue originOpt), env)
-                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Unary"; !!(String.capitalize fnName)], "Cannot apply an unary function on an incompatible value.", Expr.getOriginOpt evaled), env)
+            | [evaledArg] -> evalUnaryInner fnName fns evaledArg env
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Unary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOptOrigin), env)
 
-        let evalBinary fnOptOrigin fnName (fns : BinaryFns) evaledArgs env =
+        let evalBinaryInner fnName (fns : BinaryFns) evaledLeft evaledRight env =
+            match (evaledLeft, evaledRight) with
+            | (Bool (boolLeft, originLeftOpt), Bool (boolRight, originRightOpt)) -> ((fns.Bool boolLeft boolRight (combine originLeftOpt originRightOpt)), env)
+            | (Int (intLeft, originLeftOpt), Int (intRight, originRightOpt)) -> ((fns.Int intLeft intRight (combine originLeftOpt originRightOpt)), env)
+            | (Int64 (int64Left, originLeftOpt), Int64 (int64Right, originRightOpt)) -> ((fns.Int64 int64Left int64Right (combine originLeftOpt originRightOpt)), env)
+            | (Single (singleLeft, originLeftOpt), Single (singleRight, originRightOpt)) -> ((fns.Single singleLeft singleRight (combine originLeftOpt originRightOpt)), env)
+            | (Double (doubleLeft, originLeftOpt), Double (doubleRight, originRightOpt)) -> ((fns.Double doubleLeft doubleRight (combine originLeftOpt originRightOpt)), env)
+            | (Vector2 (vector2Left, originLeftOpt), Vector2 (vector2Right, originRightOpt)) -> ((fns.Vector2 vector2Left vector2Right (combine originLeftOpt originRightOpt)), env)
+            | (String (stringLeft, originLeftOpt), String (stringRight, originRightOpt)) -> ((fns.String stringLeft stringRight (combine originLeftOpt originRightOpt)), env)
+            | (Tuple (tupleLeft, originLeftOpt), Tuple (tupleRight, originRightOpt)) -> ((fns.Tuple tupleLeft tupleRight (combine originLeftOpt originRightOpt)), env)
+            | (List (listLeft, originLeftOpt), List (listRight, originRightOpt)) -> ((fns.List listLeft listRight (combine originLeftOpt originRightOpt)), env)
+            | (Phrase (phraseLeft, originLeftOpt), Phrase (phraseRight, originRightOpt)) -> ((fns.Phrase phraseLeft phraseRight (combine originLeftOpt originRightOpt)), env)
+            | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!(String.capitalize fnName)], "Cannot apply a binary function on unlike or incompatible values.", combine (Expr.getOriginOpt evaledLeft) (Expr.getOriginOpt evaledRight)), env)
+
+        let evalBinary fnOptOrigin fnName fns evaledArgs env =
             match evaledArgs with
-            | [evaledLeft; evaledRight] ->
-                match (evaledLeft, evaledRight) with
-                | (Bool (boolLeft, originLeftOpt), Bool (boolRight, originRightOpt)) -> ((fns.Bool boolLeft boolRight (combine originLeftOpt originRightOpt)), env)
-                | (Int (intLeft, originLeftOpt), Int (intRight, originRightOpt)) -> ((fns.Int intLeft intRight (combine originLeftOpt originRightOpt)), env)
-                | (Int64 (int64Left, originLeftOpt), Int64 (int64Right, originRightOpt)) -> ((fns.Int64 int64Left int64Right (combine originLeftOpt originRightOpt)), env)
-                | (Single (singleLeft, originLeftOpt), Single (singleRight, originRightOpt)) -> ((fns.Single singleLeft singleRight (combine originLeftOpt originRightOpt)), env)
-                | (Double (doubleLeft, originLeftOpt), Double (doubleRight, originRightOpt)) -> ((fns.Double doubleLeft doubleRight (combine originLeftOpt originRightOpt)), env)
-                | (Vector2 (vector2Left, originLeftOpt), Vector2 (vector2Right, originRightOpt)) -> ((fns.Vector2 vector2Left vector2Right (combine originLeftOpt originRightOpt)), env)
-                | (String (stringLeft, originLeftOpt), String (stringRight, originRightOpt)) -> ((fns.String stringLeft stringRight (combine originLeftOpt originRightOpt)), env)
-                | (Tuple (tupleLeft, originLeftOpt), Tuple (tupleRight, originRightOpt)) -> ((fns.Tuple tupleLeft tupleRight (combine originLeftOpt originRightOpt)), env)
-                | (List (listLeft, originLeftOpt), List (listRight, originRightOpt)) -> ((fns.List listLeft listRight (combine originLeftOpt originRightOpt)), env)
-                | (Phrase (phraseLeft, originLeftOpt), Phrase (phraseRight, originRightOpt)) -> ((fns.Phrase phraseLeft phraseRight (combine originLeftOpt originRightOpt)), env)
-                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!(String.capitalize fnName)], "Cannot apply a binary function on unlike or incompatible values.", combine (Expr.getOriginOpt evaledLeft) (Expr.getOriginOpt evaledRight)), env)
+            | [evaledLeft; evaledRight] -> evalBinaryInner fnName fns evaledLeft evaledRight env                
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Binary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
-        
+
         let evalSome fnOptOrigin fnName args env =
             match args with
             | [evaled] -> (Option (Some evaled, fnOptOrigin), env)
@@ -679,8 +683,20 @@ module WorldScriptSystem =
                 | Int (int, _) -> evalNth5 fnOptOrigin fnName int [foot] env
                 | _ -> (Violation ([!!"InvalidNthArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Application of " + fnName + " requires an int for the first argument.", fnOptOrigin), env)
             | _ ->  (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
+        
+        let rec evalV2 fnOptOrigin fnName args env =
+            match args with
+            | [argX; argY] ->
+                let (evaledX, env) = eval argX env
+                let (evaledY, env) = eval argY env
+                match (evaledX, evaledY) with
+                | (Single (x, _), Single (y, _)) -> (Vector2 (OpenTK.Vector2 (x, y), fnOptOrigin), env)
+                | (Violation _ as violation, _) -> (violation, env)
+                | (_, (Violation _ as violation)) -> (violation, env)
+                | (_, _) -> (Violation ([!!"InvalidArgumentType"; !!"V2"; !!(String.capitalize fnName)], "Application of " + fnName + " requires a single for the both arguments.", fnOptOrigin), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"V2"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
 
-        let rec evalIntrinsic originOpt name args env =
+        and evalIntrinsic originOpt name args env =
             match name with
             | "!"  -> evalBoolUnary originOpt name not args env
             | "&"  -> evalBoolBinary originOpt name (&&) args env
@@ -722,6 +738,11 @@ module WorldScriptSystem =
             | "single" -> evalUnary originOpt name SingleFns args env
             | "double" -> evalUnary originOpt name DoubleFns args env
             | "string" -> evalUnary originOpt name StringFns args env
+            | "v2" -> evalV2 originOpt name args env
+            //| "xOf" -> evalNOf
+            //| "yOf" -> evalNOf
+            //| "xAs" -> evalNAs
+            //| "yAs" -> evalNas
             | "some" -> evalSome originOpt name args env
             | "isSome" -> evalIsSome originOpt name args env
             | "head" -> evalHead originOpt name args env
@@ -984,8 +1005,15 @@ module WorldScriptSystem =
             | EquateMany (_, _, _, _, _, originOpt) -> (Unit originOpt, env)
             | Handle (_, _, originOpt) -> (Unit originOpt, env)
 
-        let run _ env =
-            Env.getWorld env
+        let run script env =
+            match eval script.OnInit env with
+            | (Violation (names, error, optOrigin) as onInitResult, env) ->
+                Log.debug ^
+                    "Unexpected violation:" + (names |> Name.join "" |> Name.getNameStr) +
+                    "\nin script onInit due to:" + error +
+                    "\nat: " + scstring optOrigin + "'."
+                ([onInitResult], env)
+            | (onInitResult, env) -> ([onInitResult], env)
 
 /// An abstract data type for executing scripts.
 type ScriptSystem = WorldScriptSystem.ScriptSystem
