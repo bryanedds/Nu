@@ -14,7 +14,7 @@ module WorldModule =
     /// Mutable clipboard that allows its state to persist beyond undo / redo.
     let mutable private Clipboard : obj option = None
 
-    /// Reach-around for evaluating scripts.
+    /// F# reach-around for evaluating scripts.
     let mutable internal evalGameScript = Unchecked.defaultof<World -> World>
 
     type World with
@@ -619,7 +619,17 @@ module WorldModule =
             | "ScreenTransitionDestinationOpt" -> (true, World.setScreenTransitionDestinationOpt (property |> fst :?> Screen option) world)
             | "EyeCenter" -> (true, World.setEyeCenter (property |> fst :?> Vector2) world)
             | "EyeSize" -> (true, World.setEyeSize (property |> fst :?> Vector2) world)
-            | _ -> (true, World.updateGameState (GameState.setProperty propertyName property) propertyName world)
+            | _ ->
+                // HACK: needed to mutate a flag to get the success state out of an updateGameState callback...
+                let mutable success = false
+                let world =
+                    World.updateGameState (fun gameState ->
+                        let (successInner, gameState) = GameState.trySetProperty propertyName property gameState
+                        success <- successInner
+                        gameState)
+                        propertyName
+                        world
+                (success, world)
 
         static member internal setGameProperty propertyName (property : obj * Type) world =
             match propertyName with // OPTIMIZATION: string match for speed
@@ -848,7 +858,18 @@ module WorldModule =
                 | "TransitionTicksNp" -> (true, World.setScreenTransitionTicksNp (property |> fst :?> int64) screen world)
                 | "Incoming" -> (true, World.setScreenIncoming (property |> fst :?> Transition) screen world)
                 | "Outgoing" -> (true, World.setScreenOutgoing (property |> fst :?> Transition) screen world)
-                | _ -> (true, World.updateScreenState (ScreenState.setProperty propertyName property) propertyName screen world)
+                | _ ->
+                    // HACK: needed to mutate a flag to get the success state out of an updateScreenState callback...
+                    let mutable success = false
+                    let world =
+                        World.updateScreenState (fun screenState ->
+                            let (successInner, screenState) = ScreenState.trySetProperty propertyName property screenState
+                            success <- successInner
+                            screenState)
+                            propertyName
+                            screen
+                            world
+                    (success, world)
             else (false, world)
 
         static member internal setScreenProperty propertyName (property : obj * Type) screen world =
@@ -1101,7 +1122,18 @@ module WorldModule =
                 | "Persistent" -> (true, World.setLayerPersistent (property |> fst :?> bool) layer world)
                 | "CreationTimeStampNp" -> (false, world)
                 | "Imperative" -> (false, world)
-                | _ -> (true, World.updateLayerState (LayerState.setProperty propertyName property) propertyName layer world)
+                | _ ->
+                    // HACK: needed to mutate a flag to get the success state out of an updateLayerState callback...
+                    let mutable success = false
+                    let world =
+                        World.updateLayerState (fun layerState ->
+                            let (successInner, layerState) = LayerState.trySetProperty propertyName property layerState
+                            success <- successInner
+                            layerState)
+                            propertyName
+                            layer
+                            world
+                    (success, world)
             else (false, world)
 
         static member internal setLayerProperty propertyName (property : obj * Type) layer world =
@@ -1672,7 +1704,19 @@ module WorldModule =
                 | "PublishPostUpdatesNp" -> (false, world)
                 | "FacetNames" -> (false, world)
                 | "FacetsNp" -> (false, world)
-                | _ -> (true, World.updateEntityState (EntityState.setProperty propertyName property) true propertyName entity world)
+                | _ ->
+                    // HACK: needed to mutate a flag to get the success state out of an updateEntityState callback...
+                    let mutable success = false
+                    let world =
+                        World.updateEntityState (fun entityState ->
+                            let (successInner, entityState) = EntityState.trySetProperty propertyName property entityState
+                            success <- successInner
+                            entityState)
+                            true
+                            propertyName
+                            entity
+                            world
+                    (success, world)
             else (false, world)
 
         static member internal setEntityProperty propertyName (property : obj * Type) entity world =
@@ -2074,6 +2118,9 @@ module WorldModule =
 
     type World with
 
+        static member containsSimulant (simulant : Simulant) (world : World) =
+            (world :> EventWorld<Game, World>).ContainsParticipant simulant
+
         static member tryProxySimulant address =
             match Address.getNames address with
             | [] -> Some (Game.proxy Address.empty :> Simulant)
@@ -2081,14 +2128,6 @@ module WorldModule =
             | [_; _] -> Some (Layer.proxy (Address.changeType<Simulant, Layer> address) :> Simulant)
             | [_; _; _] -> Some (Entity.proxy (Address.changeType<Simulant, Entity> address) :> Simulant)
             | _ -> None
-
-        static member containsSimulant (simulant : Simulant) world =
-            match simulant with
-            | :? Game -> true
-            | :? Screen as screen -> World.containsScreen screen world
-            | :? Layer as layer -> World.containsLayer layer world
-            | :? Entity as entity -> World.containsEntity entity world
-            | _ -> failwithumf ()
 
         static member tryGetSimulantProperty name (simulant : Simulant) world =
             match simulant with

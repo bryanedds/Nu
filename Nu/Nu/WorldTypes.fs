@@ -356,6 +356,13 @@ module WorldTypes =
             let xProperty = Xtension.getProperty propertyName gameState.Xtension
             (xProperty.PropertyValue, xProperty.PropertyType)
 
+        /// Try to set a dynamic property with explicit type information.
+        static member trySetProperty propertyName property gameState =
+            let xProperty = { PropertyValue = fst property; PropertyType = snd property }
+            match Xtension.trySetProperty propertyName xProperty gameState.Xtension with
+            | (true, xtension) -> (true, { gameState with Xtension = xtension })
+            | (false, _) -> (false, gameState)
+
         /// Set a dynamic property with explicit type information.
         static member setProperty propertyName property gameState =
             let xProperty = { PropertyValue = fst property; PropertyType = snd property }
@@ -426,6 +433,13 @@ module WorldTypes =
             match Xtension.tryGetProperty propertyName screenState.Xtension with
             | Some xProperty -> Some (xProperty.PropertyValue, xProperty.PropertyType)
             | None -> None
+
+        /// Try to set a dynamic property with explicit type information.
+        static member trySetProperty propertyName property screenState =
+            let xProperty = { PropertyValue = fst property; PropertyType = snd property }
+            match Xtension.trySetProperty propertyName xProperty screenState.Xtension with
+            | (true, xtension) -> (true, { screenState with Xtension = xtension })
+            | (false, _) -> (false, screenState)
 
         /// Set a dynamic property with explicit type information.
         static member setProperty propertyName property screenState =
@@ -499,6 +513,13 @@ module WorldTypes =
         static member getProperty propertyName layerState =
             let xProperty = Xtension.getProperty propertyName layerState.Xtension
             (xProperty.PropertyValue, xProperty.PropertyType)
+
+        /// Try to set a dynamic property with explicit type information.
+        static member trySetProperty propertyName property layerState =
+            let xProperty = { PropertyValue = fst property; PropertyType = snd property }
+            match Xtension.trySetProperty propertyName xProperty layerState.Xtension with
+            | (true, xtension) -> (true, { layerState with Xtension = xtension })
+            | (false, _) -> (false, layerState)
 
         /// Set a dynamic property with explicit type information.
         static member setProperty propertyName property layerState =
@@ -577,6 +598,13 @@ module WorldTypes =
         static member getProperty propertyName entityState =
             let xProperty = Xtension.getProperty propertyName entityState.Xtension
             (xProperty.PropertyValue, xProperty.PropertyType)
+
+        /// Try to set a dynamic property with explicit type information.
+        static member trySetProperty propertyName property entityState =
+            let xProperty = { PropertyValue = fst property; PropertyType = snd property }
+            match Xtension.trySetProperty propertyName xProperty entityState.Xtension with
+            | (true, xtension) -> (true, { entityState with Xtension = xtension })
+            | (false, _) -> (false, entityState)
 
         /// Set a dynamic property with explicit type information.
         static member setProperty propertyName property entityState =

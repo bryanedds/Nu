@@ -81,14 +81,20 @@ module WorldEntityModule =
         member this.GetFacetsNp world = World.getEntityFacetsNp this world
         member this.FacetsNp = PropertyTag.makeReadOnly this Property? FacetsNp this.GetFacetsNp
 
+        /// Try to get a property value and type.
+        member this.TryGetProperty propertyName world = World.tryGetEntityProperty propertyName this world
+
         /// Get a property value and type.
         member this.GetProperty propertyName world = World.getEntityProperty propertyName this world
 
-        /// Set a property value with explicit type.
-        member this.SetProperty propertyName property world = World.setEntityProperty propertyName property this world
-
         /// Get a property value.
         member this.Get<'a> propertyName world : 'a = World.getEntityProperty propertyName this world |> fst :?> 'a
+
+        /// Try to set a property value with explicit type.
+        member this.TrySetProperty propertyName property world = World.trySetEntityProperty propertyName property this world
+
+        /// Set a property value with explicit type.
+        member this.SetProperty propertyName property world = World.setEntityProperty propertyName property this world
 
         /// Set a property value.
         member this.Set<'a> propertyName (value : 'a) world = World.setEntityProperty propertyName (value :> obj, typeof<'a>) this world
