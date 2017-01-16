@@ -696,67 +696,6 @@ module WorldScriptSystem =
                 | (_, _) -> (Violation ([!!"InvalidArgumentType"; !!"V2"; !!(String.capitalize fnName)], "Application of " + fnName + " requires a single for the both arguments.", fnOptOrigin), env)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"V2"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
 
-        and Intrinsics =
-           ["!"
-            "&"
-            "|"
-            "="
-            "<>"
-            "<"
-            ">"
-            "<="
-            ">="
-            "+"
-            "-"
-            "*"
-            "/"
-            "%"
-            "pow"
-            "root"
-            "sqr"
-            "sqrt"
-            "floor"
-            "ceiling" 
-            "truncate"
-            "round"
-            "exp"
-            "log"
-            "sin"
-            "cos"
-            "tan"
-            "asin"
-            "acos"
-            "atan"
-            "length"
-            "normal"
-            "cross"
-            "dot"
-            "bool"
-            "int"
-            "int64"
-            "single"
-            "double"
-            "string"
-            "v2"
-            //"xOf"
-            //"yOf"
-            //"xAs"
-            //"yAs"
-            "some"
-            "isSome"
-            "head"
-            "tail"
-            "cons"
-            "isEmpty" 
-            "fst"
-            "snd"
-            "thd"
-            "fth"
-            "fif"
-            "nth"
-            "product"] |>
-            HashSet
-
         and evalIntrinsic originOpt name args env =
             match name with
             | "!" -> evalBoolUnary originOpt name not args env
@@ -820,7 +759,66 @@ module WorldScriptSystem =
             | _ -> (Violation ([!!"InvalidFunctionTargetBinding"], "Cannot apply a non-existent binding.", originOpt), env)
 
         and isIntrinsic name =
-            Intrinsics.Contains name
+            match name with
+            | "!" -> true
+            | "&" -> true
+            | "|" -> true
+            | "=" -> true
+            | "<>" -> true
+            | "<" -> true
+            | ">" -> true
+            | "<=" -> true
+            | ">=" -> true
+            | "+" -> true
+            | "-" -> true
+            | "*" -> true
+            | "/" -> true
+            | "%" -> true
+            | "pow" -> true
+            | "root" -> true
+            | "sqr" -> true
+            | "sqrt" -> true
+            | "floor" -> true
+            | "ceiling"  -> true
+            | "truncate" -> true
+            | "round" -> true
+            | "exp" -> true
+            | "log" -> true
+            | "sin" -> true
+            | "cos" -> true
+            | "tan" -> true
+            | "asin" -> true
+            | "acos" -> true
+            | "atan" -> true
+            | "length" -> true
+            | "normal" -> true
+            | "cross" -> true
+            | "dot" -> true
+            | "bool" -> true
+            | "int" -> true
+            | "int64" -> true
+            | "single" -> true
+            | "double" -> true
+            | "string" -> true
+            | "v2" -> true
+            //| "xOf" -> true
+            //| "yOf" -> true
+            //| "xAs" -> true
+            //| "yAs" -> true
+            | "some" -> true
+            | "isSome" -> true
+            | "head" -> true
+            | "tail" -> true
+            | "cons" -> true
+            | "isEmpty" -> true
+            | "fst" -> true
+            | "snd" -> true
+            | "thd" -> true
+            | "fth" -> true
+            | "fif" -> true
+            | "nth" -> true
+            | "product" -> true
+            | _ -> false
 
         and evalProduct originOpt name args env =
             match args with
