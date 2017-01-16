@@ -19,6 +19,11 @@ module Scripting =
         { CommandName : string
           CommandArgs : Expr list }
 
+    and [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue); NoComparison>] CachedBinding =
+        | UncachedBinding
+        | DeclarationBinding of Expr
+        | ProceduralBinding of int * int
+
     and [<NoComparison>] LetBinding =
         | LetVariable of string * Expr
         | LetFunction of string * string list * Expr
@@ -81,7 +86,7 @@ module Scripting =
         | Stream of Stream * Origin option
 
         (* Special Forms *)
-        | Binding of string * Origin option
+        | Binding of string * CachedBinding ref * Origin option
         | Apply of Expr list * Origin option
         | Quote of string * Origin option
         | Let of LetBinding * Expr * Origin option
@@ -131,7 +136,7 @@ module Scripting =
             | List (_, originOpt)
             | Phrase (_, originOpt)
             | Stream (_, originOpt)
-            | Binding (_, originOpt)
+            | Binding (_, _, originOpt)
             | Apply (_, originOpt)
             | Quote (_, originOpt)
             | Let (_, _, originOpt)
@@ -160,7 +165,7 @@ module Scripting =
         member this.SymbolToExpr symbol =
             this.ConvertFrom symbol :?> Expr
 
-        member this.SymbolToLetBindingOpt bindingSymbols =
+        member this.SymbolsToLetBindingOpt bindingSymbols =
             match bindingSymbols with
             | [Atom (bindingName, _); bindingBody] ->
                 let binding = LetVariable (bindingName, this.SymbolToExpr bindingBody)
@@ -199,7 +204,7 @@ module Scripting =
                         let firstChar = str.[0]
                         if firstChar = '.' || Char.IsUpper firstChar
                         then Keyword (str, originOpt) :> obj
-                        else Binding (str, originOpt) :> obj
+                        else Binding (str, ref UncachedBinding, originOpt) :> obj
                 | Prime.Number (str, originOpt) ->
                     match Int32.TryParse str with
                     | (false, _) ->
@@ -236,30 +241,27 @@ module Scripting =
                             | _ -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Requires 1 tag.", originOpt) :> obj
                         | "let" ->
                             match tail with
-                            | [bindings; body] ->
-                                match bindings with
-                                | Symbols (symbols, originOpt) ->
-                                    match symbols with
-                                    | [binding] ->
-                                        match binding with
-                                        | Symbols (bindingSymbols, originOpt) ->
-                                            match this.SymbolToLetBindingOpt bindingSymbols with
-                                            | Some binding -> Let (binding, this.SymbolToExpr body, originOpt) :> obj
-                                            | None -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
-                                        | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
-                                    | bindings ->
-                                        let (bindings, bindingErrors) = List.split (function Symbols ([_; _], _) -> true | _ -> false) bindings
-                                        if List.isEmpty bindingErrors then
-                                            let bindings = List.map (function Symbols ([_; _] as binding, _) -> binding | _ -> failwithumf ()) bindings
-                                            let bindingOpts = List.map this.SymbolToLetBindingOpt bindings
-                                            let (bindingOpts, bindingErrors) = List.split Option.isSome bindingOpts
-                                            if List.isEmpty bindingErrors then
-                                                let bindings = List.definitize bindingOpts
-                                                LetMany (bindings, this.SymbolToExpr body, originOpt) :> obj
-                                            else Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
-                                        else Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                            | [] -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                            | [_] -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                            | [binding; body] ->
+                                match binding with
+                                | Symbols (bindingSymbols, originOpt) ->
+                                    match this.SymbolsToLetBindingOpt bindingSymbols with
+                                    | Some binding -> Let (binding, this.SymbolToExpr body, originOpt) :> obj
+                                    | None -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
                                 | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
-                            | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                            | bindingsAndBody ->
+                                let (bindings, body) = (List.allButLast bindingsAndBody, List.last bindingsAndBody)
+                                let (bindings, bindingErrors) = List.split (function Symbols ([_; _], _) -> true | _ -> false) bindings
+                                if List.isEmpty bindingErrors then
+                                    let bindings = List.map (function Symbols ([_; _] as binding, _) -> binding | _ -> failwithumf ()) bindings
+                                    let bindingOpts = List.map this.SymbolsToLetBindingOpt bindings
+                                    let (bindingOpts, bindingErrors) = List.split Option.isSome bindingOpts
+                                    if List.isEmpty bindingErrors then
+                                        let bindings = List.definitize bindingOpts
+                                        LetMany (bindings, this.SymbolToExpr body, originOpt) :> obj
+                                    else Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                                else Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
                         | "if" ->
                             match tail with
                             | [condition; consequent; alternative] -> If (this.SymbolToExpr condition, this.SymbolToExpr consequent, this.SymbolToExpr alternative, originOpt) :> obj
@@ -338,27 +340,20 @@ type [<NoComparison>] Script =
 [<AutoOpen>]
 module EnvModule =
 
+    type Frame = (string * Scripting.Expr) array
+
     /// The manner in which bindings are added to a frame.
     type AddType =
         | AddToNewFrame of Size : int
         | AddToHeadFrame of Offset : int
 
-    type [<NoEquality; NoComparison>] Binding =
-        | ValueBinding of Scripting.Expr
-        | DynamicBinding of int
-
-    type [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue); NoEquality; NoComparison>]
-        CachedBinding =
-        | UncachedBinding
-        | DeclarationBinding of Binding
-        | ProceduralBinding of int * int
-
     /// The execution environment for scripts.
+    /// TODO: better encapsulation for Env operations.
     type [<NoEquality; NoComparison>] Env<'p, 'g, 'w when 'p :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
         private
             { Rebinding : bool // rebinding should be enabled in Terminal or perhaps when reloading existing scripts.
-              TopLevel : Dictionary<string, Binding>
-              Frames : (string * Binding) array list
+              TopLevel : Dictionary<string, Scripting.Expr>
+              Frames : Frame list
               Streams : Map<obj Address, Prime.Stream<obj, 'g, 'w> * ('w -> 'w)>
               Context : 'p // TODO: get rid of this and use EventContext instead.
               World : 'w }
@@ -372,7 +367,7 @@ module EnvModule =
 
         /// A bottom binding for a procedural frame.
         /// Should ever exist ONLY in an uninitialized procedural frame!
-        let BottomBinding = (String.Empty, ValueBinding BottomValue)
+        let BottomBinding = (String.Empty, BottomValue)
 
         let make chooseWorld rebinding topLevel (context : 'p) (world : 'w) =
             { Rebinding = rebinding
@@ -384,20 +379,6 @@ module EnvModule =
 
         let getRebinding (env : Env<'p, 'g, 'w>) =
             env.Rebinding
-
-        let tryGetBinding name (env : Env<'p, 'g, 'w>) =
-            match env.TopLevel.TryGetValue name with
-            | (true, binding) -> Some binding
-            | (false, _) -> None
-
-        let tryAddBinding isTopLevel name evaled (env : Env<'p, 'g, 'w>) =
-            if isTopLevel && (env.Rebinding || not ^ env.TopLevel.ContainsKey name) then
-                env.TopLevel.Add (name, evaled)
-                Some env
-            else None
-
-        let addFrame frame (env : Env<'p, 'g, 'w>) =
-            { env with Frames = frame :: env.Frames }
 
         let tryGetStream streamAddress (env : Env<'p, 'g, 'w>) =
             Map.tryFind streamAddress env.Streams
@@ -419,6 +400,15 @@ module EnvModule =
 
         let makeFrame size =
             Array.create size BottomBinding
+
+        let addFrame frame (env : Env<'p, 'g, 'w>) =
+            { env with Frames = frame :: env.Frames }
+
+        let tryAddBinding isTopLevel name evaled (env : Env<'p, 'g, 'w>) =
+            if isTopLevel && (env.Rebinding || not ^ env.TopLevel.ContainsKey name) then
+                env.TopLevel.Add (name, evaled)
+                Some env
+            else None
 
         let tryAddDeclarationBinding name binding env =
             tryAddBinding true name binding env
@@ -466,17 +456,53 @@ module EnvModule =
                     env
                 | [] -> failwithumf ()
 
-        let tryAddDeclarationVariable name value env =
-            let binding = ValueBinding value
-            tryAddDeclarationBinding name binding env
-
-        let addProceduralVariable appendType name value env =
-            let binding = ValueBinding value
-            addProceduralBinding appendType name binding env
-
         let addProceduralFunction _ _ _ _ env =
             // TODO: implement
             env
+
+        let tryGetDeclarationBinding name (env : Env<'p, 'g, 'w>) =
+            match env.TopLevel.TryGetValue name with
+            | (true, binding) -> Some binding
+            | (false, _) -> None
+
+        let tryGetProceduralBinding name env =
+            let refOffset = ref -1
+            let refOptIndex = ref None
+            let optBinding =
+                List.tryFindPlus
+                    (fun (frame : Frame) ->
+                        refOffset := !refOffset + 1
+                        refOptIndex := Array.tryFindIndexRev (fun (bindingName, _) -> name.Equals bindingName) frame // OPTIMIZATION: faster than (=) here
+                        match !refOptIndex with
+                        | Some index -> Some frame.[index]
+                        | None -> None)
+                    env.Frames
+            match optBinding with
+            | Some (_, binding) -> Some (binding, !refOffset, (!refOptIndex).Value)
+            | None -> None
+
+        let tryGetBinding name cachedBinding env =
+            match !cachedBinding with
+            | Scripting.UncachedBinding ->
+                match tryGetProceduralBinding name env with
+                | Some (binding, offset, index) ->
+                    let newCachedBinding = Scripting.ProceduralBinding (offset, index)
+                    cachedBinding := newCachedBinding
+                    Some binding
+                | None ->
+                    match tryGetDeclarationBinding name env with
+                    | Some binding ->
+                        if not env.Rebinding then
+                            let newCachedBinding = Scripting.DeclarationBinding binding
+                            cachedBinding := newCachedBinding
+                        Some binding
+                    | None -> None
+            | Scripting.DeclarationBinding binding ->
+                Some binding
+            | Scripting.ProceduralBinding (offset, index) ->
+                let frame = (List.skip offset env.Frames).Head
+                let (_, binding) = frame.[index]
+                Some binding
 
 /// The execution environment for scripts.
 type Env<'p, 'g, 'w when 'p :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>> =

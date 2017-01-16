@@ -696,22 +696,83 @@ module WorldScriptSystem =
                 | (_, _) -> (Violation ([!!"InvalidArgumentType"; !!"V2"; !!(String.capitalize fnName)], "Application of " + fnName + " requires a single for the both arguments.", fnOptOrigin), env)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"V2"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
 
+        and Intrinsics =
+           ["!"
+            "&"
+            "|"
+            "="
+            "<>"
+            "<"
+            ">"
+            "<="
+            ">="
+            "+"
+            "-"
+            "*"
+            "/"
+            "%"
+            "pow"
+            "root"
+            "sqr"
+            "sqrt"
+            "floor"
+            "ceiling" 
+            "truncate"
+            "round"
+            "exp"
+            "log"
+            "sin"
+            "cos"
+            "tan"
+            "asin"
+            "acos"
+            "atan"
+            "length"
+            "normal"
+            "cross"
+            "dot"
+            "bool"
+            "int"
+            "int64"
+            "single"
+            "double"
+            "string"
+            "v2"
+            //"xOf"
+            //"yOf"
+            //"xAs"
+            //"yAs"
+            "some"
+            "isSome"
+            "head"
+            "tail"
+            "cons"
+            "isEmpty" 
+            "fst"
+            "snd"
+            "thd"
+            "fth"
+            "fif"
+            "nth"
+            "product"] |>
+            HashSet
+
         and evalIntrinsic originOpt name args env =
             match name with
-            | "!"  -> evalBoolUnary originOpt name not args env
-            | "&"  -> evalBoolBinary originOpt name (&&) args env
-            | "|"  -> evalBoolBinary originOpt name (||) args env
-            | "="  -> evalBinary originOpt name EqFns args env
+            | "!" -> evalBoolUnary originOpt name not args env
+            | "&" -> evalBoolBinary originOpt name (&&) args env
+            | "|" -> evalBoolBinary originOpt name (||) args env
+            | "=" -> evalBinary originOpt name EqFns args env
             | "<>" -> evalBinary originOpt name NotEqFns args env
-            | "<"  -> evalBinary originOpt name LtFns args env
-            | ">"  -> evalBinary originOpt name GtFns args env
+            | "<" -> evalBinary originOpt name LtFns args env
+            | ">" -> evalBinary originOpt name GtFns args env
             | "<=" -> evalBinary originOpt name LtEqFns args env
             | ">=" -> evalBinary originOpt name GtEqFns args env
-            | "+"  -> evalBinary originOpt name AddFns args env
-            | "-"  -> evalBinary originOpt name SubFns args env
-            | "*"  -> evalBinary originOpt name MulFns args env
-            | "/"  -> evalBinary originOpt name DivFns args env
-            | "%"  -> evalBinary originOpt name ModFns args env
+            | "+" -> evalBinary originOpt name AddFns args env
+            | "-" -> evalBinary originOpt name SubFns args env
+            | "*" -> evalBinary originOpt name MulFns args env
+            | "/" -> evalBinary originOpt name DivFns args env
+            | "%" -> evalBinary originOpt name ModFns args env
             | "pow" -> evalBinary originOpt name PowFns args env
             | "root" -> evalBinary originOpt name RootFns args env
             | "sqr" -> evalUnary originOpt name SqrFns args env
@@ -757,6 +818,9 @@ module WorldScriptSystem =
             | "nth" -> evalNth originOpt name args env
             | "product" -> evalProduct originOpt name args env
             | _ -> (Violation ([!!"InvalidFunctionTargetBinding"], "Cannot apply a non-existent binding.", originOpt), env)
+
+        and isIntrinsic name =
+            Intrinsics.Contains name
 
         and evalProduct originOpt name args env =
             match args with
@@ -807,14 +871,23 @@ module WorldScriptSystem =
                 Right (computedStream :?> Prime.Stream<obj, Game, World>, env)
 
         and evalExprs exprs env =
-            List.foldBack
-                (fun expr (violations, evaleds, env) ->
-                    let (evaled, env) = eval expr env
-                    match evaled with
-                    | Violation _ as violation -> (violation :: violations, evaleds, env)
-                    | evaled -> (violations, evaled :: evaleds, env))
-                exprs
-                ([], [], env)
+            let (violations, evaleds, env) =
+                List.fold
+                    (fun (violations, evaleds, env) expr ->
+                        let (evaled, env) = eval expr env
+                        match evaled with
+                        | Violation _ as violation -> (violation :: violations, evaleds, env)
+                        | evaled -> (violations, evaled :: evaleds, env))
+                    ([], [], env)
+                    exprs
+            (violations, List.rev evaleds, env)
+
+        and evalBinding expr name cachedBinding originOpt env =
+            match Env.tryGetBinding name cachedBinding env with
+            | None ->
+                if isIntrinsic name then (expr, env)
+                else (Violation ([!!"NonexistentBinding"], "Non-existent binding '" + name + "' ", originOpt), env)
+            | Some binding -> (binding, env)
 
         and evalApply exprs originOpt env =
             let oldEnv = env
@@ -828,8 +901,8 @@ module WorldScriptSystem =
                     | Keyword (name, originOpt) ->
                         let map = String (name, originOpt) :: args |> List.indexed |> Map.ofList
                         (Phrase (map, originOpt), env)
-                    | Binding (name, originOpt) ->
-                        match Env.tryGetBinding name env with
+                    | Binding (name, cachedBinding, originOpt) ->
+                        match Env.tryGetBinding name cachedBinding env with
                         | Some binding -> evalFun binding args env
                         | None -> evalIntrinsic originOpt name args env
                     | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), env)
@@ -840,7 +913,7 @@ module WorldScriptSystem =
                 match binding with
                 | LetVariable (name, body) ->
                     let bodyValue = evalDropEnv body env
-                    Env.addProceduralVariable (AddToNewFrame 1) name bodyValue env
+                    Env.addProceduralBinding (AddToNewFrame 1) name bodyValue env
                 | LetFunction (name, args, body) ->
                     Env.addProceduralFunction (AddToNewFrame 1) name args body env
             eval body env
@@ -850,7 +923,7 @@ module WorldScriptSystem =
                 match bindingsHead with
                 | LetVariable (name, body) ->
                     let bodyValue = evalDropEnv body env
-                    Env.addProceduralVariable (AddToNewFrame bindingsCount) name bodyValue env
+                    Env.addProceduralBinding (AddToNewFrame bindingsCount) name bodyValue env
                 | LetFunction (name, args, body) ->
                     Env.addProceduralFunction (AddToNewFrame bindingsCount) name args body env
             let mutable start = 1
@@ -858,23 +931,23 @@ module WorldScriptSystem =
                 match binding with
                 | LetVariable (name, body) ->
                     let bodyValue = evalDropEnv body env
-                    Env.addProceduralVariable (AddToHeadFrame start) name bodyValue env |> ignore
+                    Env.addProceduralBinding (AddToHeadFrame start) name bodyValue env |> ignore
                 | LetFunction (name, args, body) ->
                     Env.addProceduralFunction (AddToHeadFrame start) name args body env |> ignore
                 start <- start + 1
             eval body env
         
         and evalLet binding body originOpt env =
-            let result = evalLet4 binding body originOpt env
-            (fst result, env)
+            let (evaled, _) = evalLet4 binding body originOpt env
+            (evaled, env)
         
         and evalLetMany bindings body originOpt env =
             match bindings with
             | [] -> (Violation ([!!"MalformedLetOperation"], "Let operation must have at least 1 binding.", originOpt), env)
             | bindingsHead :: bindingsTail ->
                 let bindingsCount = List.length bindingsTail + 1
-                let result = evalLetMany4 bindingsHead bindingsTail bindingsCount body env
-                (fst result, env)
+                let (evaled, _) = evalLetMany4 bindingsHead bindingsTail bindingsCount body env
+                (evaled, env)
 
         and evalIf condition consequent alternative originOpt env =
             let oldEnv = env
@@ -994,7 +1067,7 @@ module WorldScriptSystem =
 
         and evalDefine name expr originOpt env =
             let (evaled, env) = eval expr env
-            match Env.tryAddBinding true name (ValueBinding evaled) env with
+            match Env.tryAddBinding true name evaled env with
             | Some env -> (Unit originOpt, env)
             | None -> (Violation ([!!"InvalidDefinition"], "Definition '" + name + "' could not be created due to having the same name as another top-level binding.", originOpt), env)
 
@@ -1024,7 +1097,7 @@ module WorldScriptSystem =
             | List _ -> (expr, env)
             | Phrase _ -> (expr, env)
             | Stream _ -> (expr, env)
-            | Binding _ -> (expr, env)
+            | Binding (name, cachedBinding, originOpt) as expr -> evalBinding expr name cachedBinding originOpt env
             | Apply (exprs, originOpt) -> evalApply exprs originOpt env
             | Quote _  -> (expr, env)
             | Let (binding, body, originOpt) -> evalLet binding body originOpt env
