@@ -11,21 +11,21 @@ open Nu.Simulants
 open OpenTK
 module ScriptingTests =
 
-    let [<Fact>] oneAndOneIsTwo () =
+    let eval exprStr =
         let world = World.makeEmpty ()
         let env = Env.make World.choose false (dictPlus []) (Game :> Simulant) world
-        let expr = scvalue<Scripting.Expr> "[+ 1 1]"
-        match ScriptSystem.eval expr env with
-        | (Scripting.Int (result, _), _) -> Assert.Equal (2, result)
-        | (_, _) -> Assert.False true
+        let expr = scvalue<Scripting.Expr> exprStr
+        ScriptSystem.eval expr env |> fst
+
+    let [<Fact>] oneAndOneIsTwo () =
+        match eval "[+ 1 1]" with
+        | Scripting.Int (result, _) -> Assert.Equal (2, result)
+        | _ -> Assert.True false
 
     let [<Fact>] oneAndOneAndOneAndOneIsFour () =
-        let world = World.makeEmpty ()
-        let env = Env.make World.choose false (dictPlus []) (Game :> Simulant) world
-        let expr = scvalue<Scripting.Expr> "[+ [+ 1 1] [+ 1 1]]"
-        match ScriptSystem.eval expr env with
-        | (Scripting.Int (result, _), _) -> Assert.Equal (4, result)
-        | (_, _) -> Assert.False true
+        match eval "[+ [+ 1 1] [+ 1 1]]" with
+        | Scripting.Int (result, _) -> Assert.Equal (4, result)
+        | _ -> Assert.True false
 
     let [<Fact>] setEyeCenterFromGameScriptWorks () =
         let world = World.makeEmpty ()
