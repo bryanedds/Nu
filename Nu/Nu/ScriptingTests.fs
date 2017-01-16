@@ -22,7 +22,7 @@ module ScriptingTests =
         | Scripting.Int (result, _) -> Assert.Equal (2, result)
         | _ -> Assert.True false
 
-    let [<Fact>] oneAndOneAndOneAndOneIsFour () =
+    let [<Fact>] nestedApplicationWorks () =
         match eval "[+ [+ 1 1] [+ 1 1]]" with
         | Scripting.Int (result, _) -> Assert.Equal (4, result)
         | _ -> Assert.True false
