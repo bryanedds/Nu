@@ -19,14 +19,9 @@ module Scripting =
         { CommandName : string
           CommandArgs : Expr list }
 
-    /// A function or lambda argument.
-    and [<NoComparison>] Arg =
-        { ArgName : string
-          ArgExpr : Expr }
-
     and [<NoComparison>] LetBinding =
         | LetVariable of string * Expr
-        | LetFunction of string * Arg list * Expr
+        | LetFunction of string * string list * Expr
 
     and [<NoComparison>] Stream =
         // constructed as [variableStream v]
@@ -165,6 +160,20 @@ module Scripting =
         member this.SymbolToExpr symbol =
             this.ConvertFrom symbol :?> Expr
 
+        member this.SymbolToLetBindingOpt bindingSymbols =
+            match bindingSymbols with
+            | [Atom (bindingName, _); bindingBody] ->
+                let binding = LetVariable (bindingName, this.SymbolToExpr bindingBody)
+                Some binding
+            | [Atom (bindingName, _); Symbols (bindingArgs, _); bindingBody] ->
+                let (bindingArgs, bindingErrors) = List.split (function Atom _ -> true | _ -> false) bindingArgs
+                if List.isEmpty bindingErrors then
+                    let bindingArgs = List.map (function Atom (arg, _) -> arg | _ -> failwithumf ()) bindingArgs
+                    let binding = LetFunction (bindingName, bindingArgs, this.SymbolToExpr bindingBody)
+                    Some binding
+                else None
+            | _ -> None
+
         override this.CanConvertTo (_, destType) =
             destType = typeof<Symbol> ||
             destType = typeof<Expr>
@@ -225,10 +234,22 @@ module Scripting =
                                 try let tagName = !!tagStr in Violation (Name.split [|'/'|] tagName, errorMsg, originOpt) :> obj
                                 with exn -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
                             | _ -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Requires 1 tag.", originOpt) :> obj
-                        //| "let" ->
-                        //    match tail with
-                        //    | [Prime.Atom (name, _); body] -> Let (name, this.SymbolToExpr body, originOpt) :> obj
-                        //    | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. Requires 1 name and 1 body.", originOpt) :> obj
+                        | "let" ->
+                            match tail with
+                            | [bindings; body] ->
+                                match bindings with
+                                | Symbols (symbols, originOpt) ->
+                                    match symbols with
+                                    | [binding] ->
+                                        match binding with
+                                        | Symbols (bindingSymbols, originOpt) ->
+                                            match this.SymbolToLetBindingOpt bindingSymbols with
+                                            | Some binding -> Let (binding, this.SymbolToExpr body, originOpt) :> obj
+                                            | None -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                                        | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                                    | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                                | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                            | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
                         | "if" ->
                             match tail with
                             | [condition; consequent; alternative] -> If (this.SymbolToExpr condition, this.SymbolToExpr consequent, this.SymbolToExpr alternative, originOpt) :> obj
