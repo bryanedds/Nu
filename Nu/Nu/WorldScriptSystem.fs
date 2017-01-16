@@ -894,15 +894,15 @@ module WorldScriptSystem =
             | Violation _ as violation :: _ -> (violation, oldEnv)
             | _ ->
                 match evaleds with
-                | fn :: args ->
-                    match fn with
+                | head :: tail ->
+                    match head with
                     | Keyword (name, originOpt) ->
-                        let map = String (name, originOpt) :: args |> List.indexed |> Map.ofList
+                        let map = String (name, originOpt) :: tail |> List.indexed |> Map.ofList
                         (Phrase (map, originOpt), env)
                     | Binding (name, cachedBinding, originOpt) ->
                         match Env.tryGetBinding name cachedBinding env with
-                        | Some binding -> evalFun binding args env
-                        | None -> evalIntrinsic originOpt name args env
+                        | Some binding -> evalFun binding tail env
+                        | None -> evalIntrinsic originOpt name tail env
                     | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), env)
                 | [] -> (Unit originOpt, env)
 
@@ -980,39 +980,32 @@ module WorldScriptSystem =
 
         and evalGet propertyName relationExprOpt originOpt env =
             let context = Env.getContext env
-            let addressAndEnvEir =
+            let simulantAndEnvEir =
                 match relationExprOpt with
                 | Some relationExpr ->
                     let (evaledExpr, env) = eval relationExpr env
                     match evaledExpr with
-                    | String (str, originOpt)
-                    | Keyword (str, originOpt) ->
-                        ignore originOpt
+                    | String (str, _)
+                    | Keyword (str, _) ->
                         let relation = Relation.makeFromString str
                         let address = Relation.resolve context.SimulantAddress relation
-                        Right (address, env)
+                        match World.tryProxySimulant address with
+                        | Some simulant -> Right (simulant, env)
+                        | None -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must have 0 to 3 parts.", originOpt))
                     | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or a keyword.", originOpt))
-                | None -> Right (context.SimulantAddress, env)
-            match addressAndEnvEir with
-            | Right (address, env) ->
+                | None -> Right (context, env)
+            match simulantAndEnvEir with
+            | Right (simulant, env) ->
                 let world = Env.getWorld env
-                let propertyValueAndTypeEir =
-                    // TODO: these proxy operations are going to be slow; Find a way to optimize.
-                    match Address.getNames address with
-                    | [] -> Right (Simulants.Game.GetProperty propertyName world)
-                    | [_] -> let screen = Screen.proxy (Address.changeType<Simulant, Screen> address) in Right (screen.GetProperty propertyName world)
-                    | [_; _] -> let layer = Layer.proxy (Address.changeType<Simulant, Layer> address) in Right (layer.GetProperty propertyName world)
-                    | [_; _; _] -> let entity = Entity.proxy (Address.changeType<Simulant, Entity> address) in Right (entity.GetProperty propertyName world)
-                    | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation can have no more than 3 parts.", originOpt))
-                match propertyValueAndTypeEir with
-                | Right (propertyValue, propertyType) ->
+                match World.tryGetSimulantProperty propertyName simulant world with
+                | Some (propertyValue, propertyType) ->
                     match Importers.TryGetValue propertyType.Name with
                     | (true, tryImport) ->
                         match tryImport propertyValue propertyType originOpt with
                         | Some propertyValue -> (propertyValue, env)
                         | None -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting environment.", originOpt), env)
                     | (false, _) -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting environment.", originOpt), env)
-                | Left violation -> (violation, env)
+                | None -> (Violation ([!!"InvalidProperty"], "Simulant or property value could not be found.", originOpt), env)
             | Left violation -> (violation, env)
 
         and evalSet propertyName propertyValueExpr relationExprOpt originOpt env =
@@ -1022,9 +1015,8 @@ module WorldScriptSystem =
                 | Some relationExpr ->
                     let (evaledExpr, env) = eval relationExpr env
                     match evaledExpr with
-                    | String (str, originOpt)
-                    | Keyword (str, originOpt) ->
-                        ignore originOpt
+                    | String (str, _)
+                    | Keyword (str, _) ->
                         let relation = Relation.makeFromString str
                         let address = Relation.resolve context.SimulantAddress relation
                         Right (address, env)

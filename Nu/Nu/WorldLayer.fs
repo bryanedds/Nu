@@ -38,14 +38,20 @@ module WorldLayerModule =
         member this.SetVisible value world = World.setLayerVisible value this world
         member this.Visible = PropertyTag.makeReadOnly this Property? Visible this.GetVisible
 
+        /// Try to get a property value and type.
+        member this.TryGetProperty propertyName world = World.tryGetLayerProperty propertyName this world
+
         /// Get a property value and type.
         member this.GetProperty propertyName world = World.getLayerProperty propertyName this world
 
-        /// Set a property value with explicit type.
-        member this.SetProperty propertyName property world = World.setLayerProperty propertyName property this world
-
         /// Get a property value.
         member this.Get<'a> propertyName world : 'a = World.getLayerProperty propertyName this world |> fst :?> 'a
+
+        /// Try to set a property value with explicit type.
+        member this.TrySetProperty propertyName property world = World.trySetLayerProperty propertyName property this world
+
+        /// Set a property value with explicit type.
+        member this.SetProperty propertyName property world = World.setLayerProperty propertyName property this world
 
         /// Set a property value.
         member this.Set<'a> propertyName (value : 'a) world = World.setLayerProperty propertyName (value :> obj, typeof<'a>) this world

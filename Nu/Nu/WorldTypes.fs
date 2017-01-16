@@ -345,6 +345,12 @@ module WorldTypes =
           EyeCenter : Vector2
           EyeSize : Vector2 }
 
+        /// Try to get a dynamic property and its type information.
+        static member tryGetProperty propertyName gameState =
+            match Xtension.tryGetProperty propertyName gameState.Xtension with
+            | Some xProperty -> Some (xProperty.PropertyValue, xProperty.PropertyType)
+            | None -> None
+
         /// Get a dynamic property and its type information.
         static member getProperty propertyName gameState =
             let xProperty = Xtension.getProperty propertyName gameState.Xtension
@@ -415,6 +421,12 @@ module WorldTypes =
             let xProperty = Xtension.getProperty propertyName screenState.Xtension
             (xProperty.PropertyValue, xProperty.PropertyType)
 
+        /// Try to get a dynamic property and its type information.
+        static member tryGetProperty propertyName screenState =
+            match Xtension.tryGetProperty propertyName screenState.Xtension with
+            | Some xProperty -> Some (xProperty.PropertyValue, xProperty.PropertyType)
+            | None -> None
+
         /// Set a dynamic property with explicit type information.
         static member setProperty propertyName property screenState =
             let xProperty = { PropertyValue = fst property; PropertyType = snd property }
@@ -476,6 +488,12 @@ module WorldTypes =
           CreationTimeStampNp : int64
           Depth : single
           Visible : bool }
+
+        /// Try to get a dynamic property and its type information.
+        static member tryGetProperty propertyName layerState =
+            match Xtension.tryGetProperty propertyName layerState.Xtension with
+            | Some xProperty -> Some (xProperty.PropertyValue, xProperty.PropertyType)
+            | None -> None
 
         /// Get a dynamic property and its type information.
         static member getProperty propertyName layerState =
@@ -548,6 +566,12 @@ module WorldTypes =
           mutable PublishPostUpdatesNp : bool
           mutable FacetNames : string Set
           mutable FacetsNp : Facet list }
+
+        /// Try to get a dynamic property and its type information.
+        static member tryGetProperty propertyName entityState =
+            match Xtension.tryGetProperty propertyName entityState.Xtension with
+            | Some xProperty -> Some (xProperty.PropertyValue, xProperty.PropertyType)
+            | None -> None
 
         /// Get a dynamic property and its type information.
         static member getProperty propertyName entityState =
