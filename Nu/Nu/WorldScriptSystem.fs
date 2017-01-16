@@ -991,7 +991,7 @@ module WorldScriptSystem =
                         let address = Relation.resolve context.SimulantAddress relation
                         match World.tryProxySimulant address with
                         | Some simulant -> Right (simulant, env)
-                        | None -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must have 0 to 3 parts.", originOpt))
+                        | None -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must have 0 to 3 names.", originOpt))
                     | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or a keyword.", originOpt))
                 | None -> Right (context, env)
             match simulantAndEnvEir with
@@ -1010,7 +1010,7 @@ module WorldScriptSystem =
 
         and evalSet propertyName propertyValueExpr relationExprOpt originOpt env =
             let context = Env.getContext env
-            let addressAndEnvEir =
+            let simulantAndEnvEir =
                 match relationExprOpt with
                 | Some relationExpr ->
                     let (evaledExpr, env) = eval relationExpr env
@@ -1019,43 +1019,29 @@ module WorldScriptSystem =
                     | Keyword (str, _) ->
                         let relation = Relation.makeFromString str
                         let address = Relation.resolve context.SimulantAddress relation
-                        Right (address, env)
+                        match World.tryProxySimulant address with
+                        | Some simulant -> Right (simulant, env)
+                        | None -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must have 0 to 3 parts.", originOpt))
                     | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or a keyword.", originOpt))
-                | None -> Right (context.SimulantAddress, env)
+                | None -> Right (context, env)
             let (propertyValue, env) = eval propertyValueExpr env
-            match addressAndEnvEir with
-            | Right (address, env) ->
+            match simulantAndEnvEir with
+            | Right (simulant, env) ->
                 let world = Env.getWorld env
-                let propertyTypeEir =
-                    // TODO: these proxy operations are going to be slow; Find a way to optimize.
-                    match Address.getNames address with
-                    | [] -> Right (Simulants.Game.GetProperty propertyName world |> snd)
-                    | [_] -> let screen = Screen.proxy (Address.changeType<Simulant, Screen> address) in Right (screen.GetProperty propertyName world |> snd)
-                    | [_; _] -> let layer = Layer.proxy (Address.changeType<Simulant, Layer> address) in Right (layer.GetProperty propertyName world |> snd)
-                    | [_; _; _] -> let entity = Entity.proxy (Address.changeType<Simulant, Entity> address) in Right (entity.GetProperty propertyName world |> snd)
-                    | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation can have no more than 3 parts.", originOpt))
-                match propertyTypeEir with
-                | Right propertyType ->
+                match World.tryGetSimulantProperty propertyName simulant world with
+                | Some (_, propertyType) ->
                     match Exporters.TryGetValue propertyType.Name with
                     | (true, tryExport) ->
                         match tryExport propertyValue propertyType with
                         | Some propertyValue ->
-                            let worldEir =
-                                // TODO: these proxy operations are going to be slow; Find a way to optimize.
-                                match Address.getNames address with
-                                | [] -> Right (Simulants.Game.Set propertyName propertyValue world)
-                                | [_] -> let screen = Screen.proxy (Address.changeType<Simulant, Screen> address) in Right (screen.Set propertyName propertyValue world)
-                                | [_; _] -> let layer = Layer.proxy (Address.changeType<Simulant, Layer> address) in Right (layer.Set propertyName propertyValue world)
-                                | [_; _; _] -> let entity = Entity.proxy (Address.changeType<Simulant, Entity> address) in Right (entity.Set propertyName propertyValue world)
-                                | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation can have no more than 3 parts.", originOpt))
-                            match worldEir with
-                            | Right world ->
+                            match World.trySetSimulantProperty propertyName (propertyValue, propertyType) simulant world with
+                            | (true, world) ->
                                 let env = Env.setWorld World.choose world env
                                 (Unit originOpt, env)
-                            | Left violation -> (violation, env)
+                            | (false, _) -> (Violation ([!!"InvalidProperty"], "Property value could not be set.", originOpt), env)
                         | None -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be exported into simulant property.", originOpt), env)
                     | (false, _) -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be exported into simulant property.", originOpt), env)
-                | Left violation -> (violation, env)
+                | None -> (Violation ([!!"InvalidProperty"], "Property value could not be set.", originOpt), env)
             | Left violation -> (violation, env)
 
         and evalDefine name expr originOpt env =
