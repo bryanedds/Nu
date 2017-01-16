@@ -134,16 +134,25 @@ module XtensionModule =
         let getProperty name xtension = UMap.find name xtension.Properties
     
         /// Set a property on an Xtension.
-        let setProperty name property xtension =
+        let trySetProperty name property xtension =
             match UMap.tryFind name xtension.Properties with
             | Some property' ->
                 if xtension.Imperative then
                     property'.PropertyValue <- property.PropertyValue
                     property'.PropertyType <- property.PropertyType
-                    xtension
-                else { xtension with Properties = UMap.add name property xtension.Properties }
-            | None -> { xtension with Properties = UMap.add name property xtension.Properties }
+                    (true, xtension)
+                else (true, { xtension with Properties = UMap.add name property xtension.Properties })
+            | None ->
+                if not xtension.Sealed
+                then (true, { xtension with Properties = UMap.add name property xtension.Properties })
+                else (false, xtension)
     
+        /// Set a property on an Xtension.
+        let setProperty name property xtension =
+            match trySetProperty name property xtension with
+            | (true, xtension) -> xtension
+            | (false, _) -> failwith "Cannot add property to a sealed Xtension."
+
         /// Attach a property to an Xtension.
         let attachProperty name property xtension = { xtension with Properties = UMap.add name property xtension.Properties }
     
