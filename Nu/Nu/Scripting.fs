@@ -19,6 +19,15 @@ module Scripting =
         { CommandName : string
           CommandArgs : Expr list }
 
+    /// A function or lambda argument.
+    and [<NoComparison>] Arg =
+        { ArgName : string
+          ArgExpr : Expr }
+
+    and [<NoComparison>] LetBinding =
+        | LetVariable of string * Expr
+        | LetFunction of string * Arg list * Expr
+
     and [<NoComparison>] Stream =
         // constructed as [variableStream v]
         | VariableStream of string
@@ -80,8 +89,8 @@ module Scripting =
         | Binding of string * Origin option
         | Apply of Expr list * Origin option
         | Quote of string * Origin option
-        | Let of string * Expr * Origin option
-        | LetMany of (string * Expr) list * Origin option
+        | Let of LetBinding * Expr * Origin option
+        | LetMany of LetBinding list * Expr * Origin option
         | Fun of string list * Expr * int * Origin option
         | If of Expr * Expr * Expr * Origin option
         | Cond of (Expr * Expr) list * Origin option
@@ -131,7 +140,7 @@ module Scripting =
             | Apply (_, originOpt)
             | Quote (_, originOpt)
             | Let (_, _, originOpt)
-            | LetMany (_, originOpt)
+            | LetMany (_, _, originOpt)
             | Fun (_, _, _, originOpt)
             | If (_, _, _, originOpt)
             | Cond (_, originOpt)
@@ -216,10 +225,10 @@ module Scripting =
                                 try let tagName = !!tagStr in Violation (Name.split [|'/'|] tagName, errorMsg, originOpt) :> obj
                                 with exn -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
                             | _ -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Requires 1 tag.", originOpt) :> obj
-                        | "let" ->
-                            match tail with
-                            | [Prime.Atom (name, _); body] -> Let (name, this.SymbolToExpr body, originOpt) :> obj
-                            | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. Requires 1 name and 1 body.", originOpt) :> obj
+                        //| "let" ->
+                        //    match tail with
+                        //    | [Prime.Atom (name, _); body] -> Let (name, this.SymbolToExpr body, originOpt) :> obj
+                        //    | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. Requires 1 name and 1 body.", originOpt) :> obj
                         | "if" ->
                             match tail with
                             | [condition; consequent; alternative] -> If (this.SymbolToExpr condition, this.SymbolToExpr consequent, this.SymbolToExpr alternative, originOpt) :> obj
@@ -309,9 +318,9 @@ module EnvModule =
 
     type [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue); NoEquality; NoComparison>]
         CachedBinding =
-        | CEUncached
-        | CEDeclaration of Binding
-        | CEProcedural of int * int
+        | UncachedBinding
+        | DeclarationBinding of Binding
+        | ProceduralBinding of int * int
 
     /// The execution environment for scripts.
     type [<NoEquality; NoComparison>] Env<'p, 'g, 'w when 'p :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
@@ -397,16 +406,15 @@ module EnvModule =
                 | [] -> failwithumf ()
 
         let tryAddDeclarationBindings bindings env =
-            let topLevel = env.TopLevel
-            if env.Rebinding then 
-                for (name, value) in bindings do ignore (topLevel.ForceAdd (name, value))
-                Some env
-            else
-                let existences = Seq.map (fun (key, _) -> topLevel.ContainsKey key) bindings
-                if Seq.exists id existences then None
-                else
-                    for binding in bindings do topLevel.Add binding
+            if not env.Rebinding then 
+                let existences = Seq.map (fun (key, _) -> env.TopLevel.ContainsKey key) bindings
+                if Seq.notExists id existences then
+                    for binding in bindings do env.TopLevel.Add binding
                     Some env
+                else None
+            else
+                for (name, value) in bindings do env.TopLevel.ForceAdd (name, value) |> ignore
+                Some env
 
         let addProceduralBindings appendType bindings env =
             match appendType with
@@ -434,6 +442,10 @@ module EnvModule =
         let addProceduralVariable appendType name value env =
             let binding = ValueBinding value
             addProceduralBinding appendType name binding env
+
+        let addProceduralFunction _ _ _ _ env =
+            // TODO: implement
+            env
 
 /// The execution environment for scripts.
 type Env<'p, 'g, 'w when 'p :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
