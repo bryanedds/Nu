@@ -835,32 +835,46 @@ module WorldScriptSystem =
                     | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), env)
                 | [] -> (Unit originOpt, env)
 
-        //and evalLet4 letRecord headBinding tailBindings env =
-        //    let env =
-        //        match headBinding with
-        //        | LetVariable (name, body) ->
-        //            let bodyValue = evalExprDropEnv body env
-        //            appendProceduralVariable (AddToNewFrame letRecord.LetBindingCount) name None bodyValue env
-        //        | LetFunction (name, args, argCount, body, optConstraints, pre, post, emptyUnification) ->
-        //            appendProceduralFunction (AddToNewFrame letRecord.LetBindingCount) name args argCount body optConstraints None pre post emptyUnification letRecord.LetOptPositions env
-        //    let mutable start = 1
-        //    for binding in tailBindings do
-        //        match binding with
-        //        | LetVariable (name, body) ->
-        //            let bodyValue = evalExprDropEnv body env
-        //            ignore (appendProceduralVariable (AddToHeadFrame start) name None bodyValue env)
-        //        | LetFunction (name, args, argCount, body, optConstraints, pre, post, emptyUnification) ->
-        //            ignore (appendProceduralFunction (AddToHeadFrame start) name args argCount body optConstraints None pre post emptyUnification letRecord.LetOptPositions env)
-        //        start <- start + 1
-        //    evalExpr letRecord.LetBody env
-        //
-        ///// NOTE: this function is rather imperative and may have tricky operational implications. Use caution when modifying!
-        //and evalLet letRecord env =
-        //    match letRecord.LetBindings with
-        //    | [] -> makeEvalViolation ":v/eval/malformedLetOperation" "Let operation must have at least 1 binding." env
-        //    | headBinding :: tailBindings ->
-        //        let result = evalLet4 letRecord headBinding tailBindings env
-        //        makeEvalResult result.Value env
+        and evalLet4 binding body (_ : Origin option) env =
+            let env =
+                match binding with
+                | LetVariable (name, body) ->
+                    let bodyValue = evalDropEnv body env
+                    Env.addProceduralVariable (AddToNewFrame 1) name bodyValue env
+                | LetFunction (name, args, body) ->
+                    Env.addProceduralFunction (AddToNewFrame 1) name args body env
+            eval body env
+
+        and evalLetMany4 bindingsHead bindingsTail bindingsCount body env =
+            let env =
+                match bindingsHead with
+                | LetVariable (name, body) ->
+                    let bodyValue = evalDropEnv body env
+                    Env.addProceduralVariable (AddToNewFrame bindingsCount) name bodyValue env
+                | LetFunction (name, args, body) ->
+                    Env.addProceduralFunction (AddToNewFrame bindingsCount) name args body env
+            let mutable start = 1
+            for binding in bindingsTail do
+                match binding with
+                | LetVariable (name, body) ->
+                    let bodyValue = evalDropEnv body env
+                    Env.addProceduralVariable (AddToHeadFrame start) name bodyValue env |> ignore
+                | LetFunction (name, args, body) ->
+                    Env.addProceduralFunction (AddToHeadFrame start) name args body env |> ignore
+                start <- start + 1
+            eval body env
+        
+        and evalLet binding body originOpt env =
+            let result = evalLet4 binding body originOpt env
+            (fst result, env)
+        
+        and evalLetMany bindings body originOpt env =
+            match bindings with
+            | [] -> (Violation ([!!"MalformedLetOperation"], "Let operation must have at least 1 binding.", originOpt), env)
+            | bindingsHead :: bindingsTail ->
+                let bindingsCount = List.length bindingsTail + 1
+                let result = evalLetMany4 bindingsHead bindingsTail bindingsCount body env
+                (fst result, env)
 
         and evalIf condition consequent alternative originOpt env =
             let oldEnv = env
@@ -1013,8 +1027,8 @@ module WorldScriptSystem =
             | Binding _ -> (expr, env)
             | Apply (exprs, originOpt) -> evalApply exprs originOpt env
             | Quote _  -> (expr, env)
-            | Let _ -> (expr, env)
-            | LetMany _ -> (expr, env)
+            | Let (binding, body, originOpt) -> evalLet binding body originOpt env
+            | LetMany (bindings, body, originOpt) -> evalLetMany bindings body originOpt env
             | Fun _ -> (expr, env)
             | If (condition, consequent, alternative, originOpt) -> evalIf condition consequent alternative originOpt env
             | Cond (exprPairs, originOpt) -> evalCond exprPairs originOpt env
@@ -1031,6 +1045,9 @@ module WorldScriptSystem =
             | Equate (_, _, _, _, originOpt) -> (Unit originOpt, env)
             | EquateMany (_, _, _, _, _, originOpt) -> (Unit originOpt, env)
             | Handle (_, _, originOpt) -> (Unit originOpt, env)
+
+        and evalDropEnv expr env =
+            eval expr env |> fst
 
         let run script env =
             match eval script.OnInit env with
