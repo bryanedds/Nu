@@ -9,6 +9,7 @@ open Prime
 open Nu
 open Nu.Scripting
 #nowarn "21"
+#nowarn "22"
 #nowarn "40"
 
 [<AutoOpen>]
@@ -568,7 +569,7 @@ module WorldScriptSystem =
                 (unsubscribe, env)
             Env.addStream streamAddress (stream, unsubscribe) env
 
-        let evalBoolUnary fnOptOrigin fnName fn evaledArgs env =
+        let evalBoolUnary fn fnOptOrigin fnName evaledArgs env =
             match evaledArgs with
             | [evaled] ->
                 match evaled with
@@ -576,7 +577,7 @@ module WorldScriptSystem =
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Unary"; !!(String.capitalize fnName)], "Cannot apply a bool function to a non-bool value.", Expr.getOriginOpt evaled), env)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Unary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOptOrigin), env)
 
-        let evalBoolBinary fnOptOrigin fnName fn evaledArgs env =
+        let evalBoolBinary fn fnOptOrigin fnName evaledArgs env =
             match evaledArgs with
             | [evaledLeft; evaledRight] ->
                 match (evaledLeft, evaledRight) with
@@ -584,7 +585,7 @@ module WorldScriptSystem =
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!(String.capitalize fnName)], "Cannot apply a bool function to a non-bool value.", combine (Expr.getOriginOpt evaledLeft) (Expr.getOriginOpt evaledRight)), env)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Binary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
 
-        let evalUnaryInner fnName (fns : UnaryFns) evaledArg env =
+        let evalUnaryInner (fns : UnaryFns) fnName evaledArg env =
             match evaledArg with
             | Bool (boolValue, originOpt) -> ((fns.Bool boolValue originOpt), env)
             | Int (intValue, originOpt) -> ((fns.Int intValue originOpt), env)
@@ -598,12 +599,12 @@ module WorldScriptSystem =
             | Phrase (phraseValue, originOpt) -> ((fns.Phrase phraseValue originOpt), env)
             | _ -> (Violation ([!!"InvalidArgumentType"; !!"Unary"; !!(String.capitalize fnName)], "Cannot apply an unary function on an incompatible value.", Expr.getOriginOpt evaledArg), env)
 
-        let evalUnary fnOptOrigin fnName fns evaledArgs env =
+        let evalUnary fns fnOptOrigin fnName evaledArgs env =
             match evaledArgs with
-            | [evaledArg] -> evalUnaryInner fnName fns evaledArg env
+            | [evaledArg] -> evalUnaryInner fns fnName evaledArg env
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Unary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOptOrigin), env)
 
-        let evalBinaryInner fnName (fns : BinaryFns) evaledLeft evaledRight env =
+        let evalBinaryInner (fns : BinaryFns) fnName evaledLeft evaledRight env =
             match (evaledLeft, evaledRight) with
             | (Bool (boolLeft, originLeftOpt), Bool (boolRight, originRightOpt)) -> ((fns.Bool boolLeft boolRight (combine originLeftOpt originRightOpt)), env)
             | (Int (intLeft, originLeftOpt), Int (intRight, originRightOpt)) -> ((fns.Int intLeft intRight (combine originLeftOpt originRightOpt)), env)
@@ -617,9 +618,9 @@ module WorldScriptSystem =
             | (Phrase (phraseLeft, originLeftOpt), Phrase (phraseRight, originRightOpt)) -> ((fns.Phrase phraseLeft phraseRight (combine originLeftOpt originRightOpt)), env)
             | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!(String.capitalize fnName)], "Cannot apply a binary function on unlike or incompatible values.", combine (Expr.getOriginOpt evaledLeft) (Expr.getOriginOpt evaledRight)), env)
 
-        let evalBinary fnOptOrigin fnName fns evaledArgs env =
+        let evalBinary fns fnOptOrigin fnName evaledArgs env =
             match evaledArgs with
-            | [evaledLeft; evaledRight] -> evalBinaryInner fnName fns evaledLeft evaledRight env                
+            | [evaledLeft; evaledRight] -> evalBinaryInner fns fnName evaledLeft evaledRight env                
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Binary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
 
         let evalSome fnOptOrigin fnName args env =
@@ -663,7 +664,7 @@ module WorldScriptSystem =
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOptOrigin), env)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOptOrigin), env)
     
-        let evalNth5 fnOptOrigin fnName index args env =
+        let evalNth5 index fnOptOrigin fnName args env =
             match args with
             | [Tuple (evaleds, originOpt)] | [Phrase (evaleds, originOpt)] ->
                 match Map.tryFind index evaleds with
@@ -680,7 +681,7 @@ module WorldScriptSystem =
             match args with
             | [head; foot] ->
                 match head with
-                | Int (int, _) -> evalNth5 fnOptOrigin fnName int [foot] env
+                | Int (int, _) -> evalNth5 int fnOptOrigin fnName [foot] env
                 | _ -> (Violation ([!!"InvalidNthArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Application of " + fnName + " requires an int for the first argument.", fnOptOrigin), env)
             | _ ->  (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
         
@@ -696,129 +697,74 @@ module WorldScriptSystem =
                 | (_, _) -> (Violation ([!!"InvalidArgumentType"; !!"V2"; !!(String.capitalize fnName)], "Application of " + fnName + " requires a single for the both arguments.", fnOptOrigin), env)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"V2"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
 
-        and isIntrinsic name =
-            match name with
-            | "!" -> true
-            | "&" -> true
-            | "|" -> true
-            | "=" -> true
-            | "<>" -> true
-            | "<" -> true
-            | ">" -> true
-            | "<=" -> true
-            | ">=" -> true
-            | "+" -> true
-            | "-" -> true
-            | "*" -> true
-            | "/" -> true
-            | "%" -> true
-            | "pow" -> true
-            | "root" -> true
-            | "sqr" -> true
-            | "sqrt" -> true
-            | "floor" -> true
-            | "ceiling"  -> true
-            | "truncate" -> true
-            | "round" -> true
-            | "exp" -> true
-            | "log" -> true
-            | "sin" -> true
-            | "cos" -> true
-            | "tan" -> true
-            | "asin" -> true
-            | "acos" -> true
-            | "atan" -> true
-            | "length" -> true
-            | "normal" -> true
-            | "cross" -> true
-            | "dot" -> true
-            | "bool" -> true
-            | "int" -> true
-            | "int64" -> true
-            | "single" -> true
-            | "double" -> true
-            | "string" -> true
-            | "v2" -> true
-            //| "xOf" -> true
-            //| "yOf" -> true
-            //| "xAs" -> true
-            //| "yAs" -> true
-            | "some" -> true
-            | "isSome" -> true
-            | "head" -> true
-            | "tail" -> true
-            | "cons" -> true
-            | "isEmpty" -> true
-            | "fst" -> true
-            | "snd" -> true
-            | "thd" -> true
-            | "fth" -> true
-            | "fif" -> true
-            | "nth" -> true
-            | "product" -> true
-            | _ -> false
+        and Intrinsics =
+            dictPlus
+                [("!", evalBoolUnary not)
+                 ("&", evalBoolBinary (&&))
+                 ("|", evalBoolBinary (||))
+                 ("=", evalBinary EqFns)
+                 ("<>", evalBinary NotEqFns)
+                 ("<", evalBinary LtFns)
+                 (">", evalBinary GtFns)
+                 ("<=", evalBinary LtEqFns)
+                 (">=", evalBinary GtEqFns)
+                 ("+", evalBinary AddFns)
+                 ("-", evalBinary SubFns)
+                 ("*", evalBinary MulFns)
+                 ("/", evalBinary DivFns)
+                 ("%", evalBinary ModFns)
+                 ("pow", evalBinary PowFns)
+                 ("root", evalBinary RootFns)
+                 ("sqr", evalUnary SqrFns)
+                 ("sqrt", evalUnary SqrtFns)
+                 ("floor", evalUnary FloorFns)
+                 ("ceiling", evalUnary CeilingFns)
+                 ("truncate", evalUnary TruncateFns)
+                 ("round", evalUnary RoundFns)
+                 ("exp", evalUnary ExpFns)
+                 ("log", evalUnary LogFns)
+                 ("sin", evalUnary SinFns)
+                 ("cos", evalUnary CosFns)
+                 ("tan", evalUnary TanFns)
+                 ("asin", evalUnary AsinFns)
+                 ("acos", evalUnary AcosFns)
+                 ("atan", evalUnary AtanFns)
+                 ("length", evalUnary LengthFns)
+                 ("normal", evalUnary NormalFns)
+                 ("cross", evalBinary CrossFns)
+                 ("dot", evalBinary DotFns)
+                 ("bool", evalUnary BoolFns)
+                 ("int", evalUnary IntFns)
+                 ("int64", evalUnary Int64Fns)
+                 ("single", evalUnary SingleFns)
+                 ("double", evalUnary DoubleFns)
+                 ("string", evalUnary StringFns)
+                 ("v2", evalV2)
+                 //("xOf", evalNOf 0)
+                 //("yOf", evalNOf 1)
+                 //("xAs", evalNAs 0)
+                 //("yAs", evalNas 1)
+                 ("some", evalSome)
+                 ("isSome", evalIsSome)
+                 ("head", evalHead)
+                 ("tail", evalTail)
+                 ("cons", evalCons)
+                 ("isEmpty", evalIsEmpty)
+                 ("fst", evalNth5 0)
+                 ("snd", evalNth5 1)
+                 ("thd", evalNth5 2)
+                 ("fth", evalNth5 3)
+                 ("fif", evalNth5 4)
+                 ("nth", evalNth)
+                 ("product", evalProduct)]
 
         and evalIntrinsic originOpt name args env =
-            match name with
-            | "!" -> evalBoolUnary originOpt name not args env
-            | "&" -> evalBoolBinary originOpt name (&&) args env
-            | "|" -> evalBoolBinary originOpt name (||) args env
-            | "=" -> evalBinary originOpt name EqFns args env
-            | "<>" -> evalBinary originOpt name NotEqFns args env
-            | "<" -> evalBinary originOpt name LtFns args env
-            | ">" -> evalBinary originOpt name GtFns args env
-            | "<=" -> evalBinary originOpt name LtEqFns args env
-            | ">=" -> evalBinary originOpt name GtEqFns args env
-            | "+" -> evalBinary originOpt name AddFns args env
-            | "-" -> evalBinary originOpt name SubFns args env
-            | "*" -> evalBinary originOpt name MulFns args env
-            | "/" -> evalBinary originOpt name DivFns args env
-            | "%" -> evalBinary originOpt name ModFns args env
-            | "pow" -> evalBinary originOpt name PowFns args env
-            | "root" -> evalBinary originOpt name RootFns args env
-            | "sqr" -> evalUnary originOpt name SqrFns args env
-            | "sqrt" -> evalUnary originOpt name SqrtFns args env
-            | "floor" -> evalUnary originOpt name FloorFns args env
-            | "ceiling" -> evalUnary originOpt name CeilingFns args env
-            | "truncate" -> evalUnary originOpt name TruncateFns args env
-            | "round" -> evalUnary originOpt name RoundFns args env
-            | "exp" -> evalUnary originOpt name ExpFns args env
-            | "log" -> evalUnary originOpt name LogFns args env
-            | "sin" -> evalUnary originOpt name SinFns args env
-            | "cos" -> evalUnary originOpt name CosFns args env
-            | "tan" -> evalUnary originOpt name TanFns args env
-            | "asin" -> evalUnary originOpt name AsinFns args env
-            | "acos" -> evalUnary originOpt name AcosFns args env
-            | "atan" -> evalUnary originOpt name AtanFns args env
-            | "length" -> evalUnary originOpt name LengthFns args env
-            | "normal" -> evalUnary originOpt name NormalFns args env
-            | "cross" -> evalBinary originOpt name CrossFns args env
-            | "dot" -> evalBinary originOpt name DotFns args env
-            | "bool" -> evalUnary originOpt name BoolFns args env
-            | "int" -> evalUnary originOpt name IntFns args env
-            | "int64" -> evalUnary originOpt name Int64Fns args env
-            | "single" -> evalUnary originOpt name SingleFns args env
-            | "double" -> evalUnary originOpt name DoubleFns args env
-            | "string" -> evalUnary originOpt name StringFns args env
-            | "v2" -> evalV2 originOpt name args env
-            //| "xOf" -> evalNOf
-            //| "yOf" -> evalNOf
-            //| "xAs" -> evalNAs
-            //| "yAs" -> evalNas
-            | "some" -> evalSome originOpt name args env
-            | "isSome" -> evalIsSome originOpt name args env
-            | "head" -> evalHead originOpt name args env
-            | "tail" -> evalTail originOpt name args env
-            | "cons" -> evalCons originOpt name args env
-            | "isEmpty" -> evalIsEmpty originOpt name args env
-            | "fst" -> evalNth5 originOpt name 0 args env
-            | "snd" -> evalNth5 originOpt name 1 args env
-            | "thd" -> evalNth5 originOpt name 2 args env
-            | "fth" -> evalNth5 originOpt name 3 args env
-            | "fif" -> evalNth5 originOpt name 4 args env
-            | "nth" -> evalNth originOpt name args env
-            | "product" -> evalProduct originOpt name args env
-            | _ -> (Violation ([!!"InvalidFunctionTargetBinding"], "Cannot apply a non-existent binding.", originOpt), env)
+            match Intrinsics.TryGetValue name with
+            | (true, intrinsic) -> intrinsic originOpt name args env
+            | (false, _) -> (Violation ([!!"InvalidFunctionTargetBinding"], "Cannot apply a non-existent binding.", originOpt), env)
+
+        and isIntrinsic name =
+            Intrinsics.ContainsKey name
 
         and evalProduct originOpt name args env =
             match args with
@@ -1028,6 +974,7 @@ module WorldScriptSystem =
             match simulantAndEnvEir with
             | Right (simulant, env) ->
                 let world = Env.getWorld env
+                // NOTE: this sucks, having to get the property before setting it just to find out its type...
                 match World.tryGetSimulantProperty propertyName simulant world with
                 | Some (_, propertyType) ->
                     match Exporters.TryGetValue propertyType.Name with
