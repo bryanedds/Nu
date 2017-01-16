@@ -247,7 +247,17 @@ module Scripting =
                                             | Some binding -> Let (binding, this.SymbolToExpr body, originOpt) :> obj
                                             | None -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
                                         | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
-                                    | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                                    | bindings ->
+                                        let (bindings, bindingErrors) = List.split (function Symbols ([_; _], _) -> true | _ -> false) bindings
+                                        if List.isEmpty bindingErrors then
+                                            let bindings = List.map (function Symbols ([_; _] as binding, _) -> binding | _ -> failwithumf ()) bindings
+                                            let bindingOpts = List.map this.SymbolToLetBindingOpt bindings
+                                            let (bindingOpts, bindingErrors) = List.split Option.isSome bindingOpts
+                                            if List.isEmpty bindingErrors then
+                                                let bindings = List.definitize bindingOpts
+                                                LetMany (bindings, this.SymbolToExpr body, originOpt) :> obj
+                                            else Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                                        else Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
                                 | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
                             | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
                         | "if" ->
