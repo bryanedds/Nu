@@ -165,7 +165,7 @@ module EventWorld =
             | _ ->
                 let evt = try evtObj :?> Event<'a, 's> with exn -> debugSubscriptionTypeMismatch (); reraise ()
                 subscription evt world
-        box boxableSubscription
+        boxableSubscription :> obj
 
     let getSortableSubscriptions
         (getSortPriority : Participant -> 'w -> IComparable)

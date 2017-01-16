@@ -570,8 +570,25 @@ module WorldModule =
             let mousePositionWorld = World.mouseToWorld viewType mousePosition world
             entityPosition - mousePositionWorld
 
+        static member internal tryGetGameProperty propertyName world =
+            match propertyName with // OPTIMIZATION: string match for speed
+            | "Id" -> Some (World.getGameId world :> obj, typeof<Guid>)
+            | "Xtension" -> Some (World.getGameXtension world :> obj, typeof<Xtension>)
+            | "DispatcherNp" -> Some (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
+            | "Specialization" -> Some (World.getGameSpecialization world :> obj, typeof<string>)
+            | "ScriptAssetOpt" -> Some (World.getGameScriptAssetOpt world :> obj, typeof<AssetTag option>)
+            | "ScriptAssetOptLc" -> Some (World.getGameScriptAssetOptLc world :> obj, typeof<AssetTag option>)
+            | "Script" -> Some (World.getGameScript world :> obj, typeof<Script>)
+            | "CreationTimeStampNp" -> Some (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
+            | "Imperative" -> Some (World.getGameImperative world :> obj, typeof<bool>)
+            | "SelectedScreenOpt" -> Some (World.getSelectedScreenOpt world :> obj, typeof<Screen option>)
+            | "ScreenTransitionDestinationOpt" -> Some (World.getScreenTransitionDestinationOpt world :> obj, typeof<Screen option>)
+            | "EyeCenter" -> Some (World.getEyeCenter world :> obj, typeof<Vector2>)
+            | "EyeSize" -> Some (World.getEyeSize world :> obj, typeof<Vector2>)
+            | _ -> GameState.tryGetProperty propertyName (World.getGameState world)
+
         static member internal getGameProperty propertyName world =
-            match propertyName with // NOTE: string match for speed
+            match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> (World.getGameId world :> obj, typeof<Guid>)
             | "Xtension" -> (World.getGameXtension world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
@@ -587,8 +604,25 @@ module WorldModule =
             | "EyeSize" -> (World.getEyeSize world :> obj, typeof<Vector2>)
             | _ -> GameState.getProperty propertyName (World.getGameState world)
 
+        static member internal trySetGameProperty propertyName (property : obj * Type) world =
+            match propertyName with // OPTIMIZATION: string match for speed
+            | "Id" -> (false, world)
+            | "Xtension" -> (false, world)
+            | "DispatcherNp" -> (false, world)
+            | "Specialization" -> (false, world)
+            | "ScriptAssetOpt" -> (false, world)
+            | "ScriptAssetOptLc" -> (false, world)
+            | "Script" -> (false, world)
+            | "CreationTimeStampNp" -> (false, world)
+            | "Imperative" -> (false, world)
+            | "SelectedScreenOpt" -> (true, World.setSelectedScreenOpt (property |> fst :?> Screen option) world)
+            | "ScreenTransitionDestinationOpt" -> (true, World.setScreenTransitionDestinationOpt (property |> fst :?> Screen option) world)
+            | "EyeCenter" -> (true, World.setEyeCenter (property |> fst :?> Vector2) world)
+            | "EyeSize" -> (true, World.setEyeSize (property |> fst :?> Vector2) world)
+            | _ -> (true, World.updateGameState (GameState.setProperty propertyName property) propertyName world)
+
         static member internal setGameProperty propertyName (property : obj * Type) world =
-            match propertyName with // NOTE: string match for speed
+            match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> failwith "Cannot change game id."
             | "Xtension" -> failwith "Cannot change game xtension."
             | "DispatcherNp" -> failwith "Cannot change game dispatcher."
@@ -762,8 +796,27 @@ module WorldModule =
         static member internal getScreenOutgoing screen world = (World.getScreenState screen world).Outgoing
         static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) Property? Outgoing screen world
 
+        static member internal tryGetScreenProperty propertyName screen world =
+            if World.containsScreen screen world then
+                match propertyName with // OPTIMIZATION: string match for speed
+                | "Id" -> Some (World.getScreenId screen world :> obj, typeof<Guid>)
+                | "Name" -> Some (World.getScreenName screen world :> obj, typeof<Name>)
+                | "Xtension" -> Some (World.getScreenXtension screen world :> obj, typeof<Xtension>)
+                | "DispatcherNp" -> Some (World.getScreenDispatcherNp screen world :> obj, typeof<ScreenDispatcher>)
+                | "Specialization" -> Some (World.getScreenSpecialization screen world :> obj, typeof<string>)
+                | "Persistent" -> Some (World.getScreenPersistent screen world :> obj, typeof<bool>)
+                | "CreationTimeStampNp" -> Some (World.getScreenCreationTimeStampNp screen world :> obj, typeof<int64>)
+                | "Imperative" -> Some (World.getScreenImperative screen world :> obj, typeof<bool>)
+                | "EntityTreeNp" -> Some (World.getScreenEntityTreeNp screen world :> obj, typeof<Entity SpatialTree MutantCache>)
+                | "TransitionStateNp" -> Some (World.getScreenTransitionStateNp screen world :> obj, typeof<TransitionState>)
+                | "TransitionTicksNp" -> Some (World.getScreenTransitionTicksNp screen world :> obj, typeof<int64>)
+                | "Incoming" -> Some (World.getScreenIncoming screen world :> obj, typeof<Transition>)
+                | "Outgoing" -> Some (World.getScreenOutgoing screen world :> obj, typeof<Transition>)
+                | _ -> ScreenState.tryGetProperty propertyName (World.getScreenState screen world)
+            else None
+
         static member internal getScreenProperty propertyName screen world =
-            match propertyName with // NOTE: string match for speed
+            match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> (World.getScreenId screen world :> obj, typeof<Guid>)
             | "Name" -> (World.getScreenName screen world :> obj, typeof<Name>)
             | "Xtension" -> (World.getScreenXtension screen world :> obj, typeof<Xtension>)
@@ -779,8 +832,27 @@ module WorldModule =
             | "Outgoing" -> (World.getScreenOutgoing screen world :> obj, typeof<Transition>)
             | _ -> ScreenState.getProperty propertyName (World.getScreenState screen world)
 
+        static member internal trySetScreenProperty propertyName (property : obj * Type) screen world =
+            if World.containsScreen screen world then
+                match propertyName with // OPTIMIZATION: string match for speed
+                | "Id" -> (false, world)
+                | "Name" -> (false, world)
+                | "Xtension" -> (false, world)
+                | "DispatcherNp" -> (false, world)
+                | "Specialization" -> (false, world)
+                | "Persistent" -> (true, World.setScreenPersistent (property |> fst :?> bool) screen world)
+                | "CreationTimeStampNp" -> (false, world)
+                | "Imperative" -> (false, world)
+                | "EntityTreeNp" -> (false, world)
+                | "TransitionStateNp" -> (true, World.setScreenTransitionStateNp (property |> fst :?> TransitionState) screen world)
+                | "TransitionTicksNp" -> (true, World.setScreenTransitionTicksNp (property |> fst :?> int64) screen world)
+                | "Incoming" -> (true, World.setScreenIncoming (property |> fst :?> Transition) screen world)
+                | "Outgoing" -> (true, World.setScreenOutgoing (property |> fst :?> Transition) screen world)
+                | _ -> (true, World.updateScreenState (ScreenState.setProperty propertyName property) propertyName screen world)
+            else (false, world)
+
         static member internal setScreenProperty propertyName (property : obj * Type) screen world =
-            match propertyName with // NOTE: string match for speed
+            match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> failwith "Cannot change screen id."
             | "Name" -> failwith "Cannot change screen name."
             | "Xtension" -> failwith "Cannot change layer xtension."
@@ -990,8 +1062,23 @@ module WorldModule =
         static member internal getLayerVisible layer world = (World.getLayerState layer world).Visible
         static member internal setLayerVisible value layer world = World.updateLayerState (fun layerState -> { layerState with Visible = value }) Property? Visible layer world
 
+        static member internal tryGetLayerProperty propertyName layer world =
+            if World.containsLayer layer world then
+                match propertyName with // OPTIMIZATION: string match for speed
+                | "Id" -> Some (World.getLayerId layer world :> obj, typeof<Guid>)
+                | "Name" -> Some (World.getLayerName layer world :> obj, typeof<Name>)
+                | "Xtension" -> Some (World.getLayerXtension layer world :> obj, typeof<Xtension>)
+                | "DispatcherNp" -> Some (World.getLayerDispatcherNp layer world :> obj, typeof<LayerDispatcher>)
+                | "Specialization" -> Some (World.getLayerSpecialization layer world :> obj, typeof<string>)
+                | "Persistent" -> Some (World.getLayerPersistent layer world :> obj, typeof<bool>)
+                | "CreationTimeStampNp" -> Some (World.getLayerCreationTimeStampNp layer world :> obj, typeof<int64>)
+                | "Depth" -> Some (World.getLayerDepth layer world :> obj, typeof<single>)
+                | "Visible" -> Some (World.getLayerVisible layer world :> obj, typeof<single>)
+                | _ -> LayerState.tryGetProperty propertyName (World.getLayerState layer world)
+            else None
+
         static member internal getLayerProperty propertyName layer world =
-            match propertyName with // NOTE: string match for speed
+            match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> (World.getLayerId layer world :> obj, typeof<Guid>)
             | "Name" -> (World.getLayerName layer world :> obj, typeof<Name>)
             | "Xtension" -> (World.getLayerXtension layer world :> obj, typeof<Xtension>)
@@ -1003,8 +1090,22 @@ module WorldModule =
             | "Visible" -> (World.getLayerVisible layer world :> obj, typeof<single>)
             | _ -> LayerState.getProperty propertyName (World.getLayerState layer world)
 
+        static member internal trySetLayerProperty propertyName (property : obj * Type) layer world =
+            if World.containsLayer layer world then
+                match propertyName with // OPTIMIZATION: string match for speed
+                | "Id" -> (false, world)
+                | "Name" -> (false, world)
+                | "Xtension" -> (false, world)
+                | "DispatcherNp" -> (false, world)
+                | "Specialization" -> (false, world)
+                | "Persistent" -> (true, World.setLayerPersistent (property |> fst :?> bool) layer world)
+                | "CreationTimeStampNp" -> (false, world)
+                | "Imperative" -> (false, world)
+                | _ -> (true, World.updateLayerState (LayerState.setProperty propertyName property) propertyName layer world)
+            else (false, world)
+
         static member internal setLayerProperty propertyName (property : obj * Type) layer world =
-            match propertyName with // NOTE: string match for speed
+            match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> failwith "Cannot change layer id."
             | "Name" -> failwith "Cannot change layer name."
             | "Xtension" -> failwith "Cannot change layer xtension."
@@ -1120,7 +1221,7 @@ module WorldModule =
 
         static member private entityStateFinder entity world =
             let entityStateOpt = entity.EntityStateOpt
-            if isNull ^ box entityStateOpt then
+            if isNull (entityStateOpt :> obj) then
                 let entityStateOpt =
                     KeyedCache.getValue
                         World.entityStateKeyEquality
@@ -1196,7 +1297,7 @@ module WorldModule =
 
         static member private getEntityStateOpt entity world =
             let entityStateOpt = World.entityStateFinder entity world
-            if isNull ^ box entityStateOpt then None
+            if isNull (entityStateOpt :> obj) then None
             else Some entityStateOpt
 
         static member private getEntityState entity world =
@@ -1490,8 +1591,37 @@ module WorldModule =
                 | Left error -> Log.info ^ "There was an issue in applying a reloaded overlay: " + error; world
             | None -> world
 
+        static member internal tryGetEntityProperty propertyName entity world =
+            if World.containsEntity entity world then
+                match propertyName with // OPTIMIZATION: string match for speed
+                | "Id" -> Some (World.getEntityId entity world :> obj, typeof<Guid>)
+                | "Name" -> Some (World.getEntityName entity world :> obj, typeof<Name>)
+                | "Xtension" -> Some (World.getEntityXtension entity world :> obj, typeof<Xtension>)
+                | "DispatcherNp" -> Some (World.getEntityDispatcherNp entity world :> obj, typeof<EntityDispatcher>)
+                | "Persistent" -> Some (World.getEntityPersistent entity world :> obj, typeof<bool>)
+                | "Specialization" -> Some (World.getEntitySpecialization entity world :> obj, typeof<string>)
+                | "CreationTimeStampNp" -> Some (World.getEntityCreationTimeStampNp entity world :> obj, typeof<int64>)
+                | "Imperative" -> Some (World.getEntityImperative entity world :> obj, typeof<bool>)
+                | "OverlayNameOpt" -> Some (World.getEntityOverlayNameOpt entity world :> obj, typeof<string option>)
+                | "Position" -> Some (World.getEntityPosition entity world :> obj, typeof<Vector2>)
+                | "Size" -> Some (World.getEntitySize entity world :> obj, typeof<Vector2>)
+                | "Rotation" -> Some (World.getEntityRotation entity world :> obj, typeof<single>)
+                | "Depth" -> Some (World.getEntityDepth entity world :> obj, typeof<single>)
+                | "Overflow" -> Some (World.getEntityOverflow entity world :> obj, typeof<Vector2>)
+                | "ViewType" -> Some (World.getEntityViewType entity world :> obj, typeof<ViewType>)
+                | "Visible" -> Some (World.getEntityVisible entity world :> obj, typeof<bool>)
+                | "Enabled" -> Some (World.getEntityEnabled entity world :> obj, typeof<bool>)
+                | "Omnipresent" -> Some (World.getEntityOmnipresent entity world :> obj, typeof<bool>)
+                | "PublishChanges" -> Some (World.getEntityPublishChanges entity world :> obj, typeof<bool>)
+                | "PublishUpdatesNp" -> Some (World.getEntityPublishUpdatesNp entity world :> obj, typeof<bool>)
+                | "PublishPostUpdatesNp" -> Some (World.getEntityPublishPostUpdatesNp entity world :> obj, typeof<bool>)
+                | "FacetNames" -> Some (World.getEntityFacetNames entity world :> obj, typeof<string Set>)
+                | "FacetsNp" -> Some (World.getEntityFacetsNp entity world :> obj, typeof<Facet list>)
+                | _ -> EntityState.tryGetProperty propertyName (World.getEntityState entity world)
+            else None
+
         static member internal getEntityProperty propertyName entity world =
-            match propertyName with // NOTE: string match for speed
+            match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> (World.getEntityId entity world :> obj, typeof<Guid>)
             | "Name" -> (World.getEntityName entity world :> obj, typeof<Name>)
             | "Xtension" -> (World.getEntityXtension entity world :> obj, typeof<Xtension>)
@@ -1517,8 +1647,36 @@ module WorldModule =
             | "FacetsNp" -> (World.getEntityFacetsNp entity world :> obj, typeof<Facet list>)
             | _ -> EntityState.getProperty propertyName (World.getEntityState entity world)
 
+        static member internal trySetEntityProperty propertyName (property : obj * Type) entity world =
+            if World.containsEntity entity world then
+                match propertyName with // OPTIMIZATION: string match for speed
+                | "Id" -> (false, world)
+                | "Name" -> (false, world)
+                | "Xtension" -> (false, world)
+                | "DispatcherNp" -> (false, world)
+                | "Specialization" -> (false, world)
+                | "Persistent" -> (true, World.setEntityPersistent (property |> fst :?> bool) entity world)
+                | "CreationTimeStampNp" -> (false, world)
+                | "Imperative" -> (false, world)
+                | "Position" -> (true, World.setEntityPosition (property |> fst :?> Vector2) entity world)
+                | "Size" -> (true, World.setEntitySize (property |> fst :?> Vector2) entity world)
+                | "Rotation" -> (true, World.setEntityRotation (property |> fst :?> single) entity world)
+                | "Depth" -> (true, World.setEntityDepth (property |> fst :?> single) entity world)
+                | "Overflow" -> (true, World.setEntityOverflow (property |> fst :?> Vector2) entity world)
+                | "ViewType" -> (true, World.setEntityViewType (property |> fst :?> ViewType) entity world)
+                | "Visible" -> (true, World.setEntityVisible (property |> fst :?> bool) entity world)
+                | "Enabled" -> (true, World.setEntityEnabled (property |> fst :?> bool) entity world)
+                | "Omnipresent" -> (true, World.setEntityOmnipresent (property |> fst :?> bool) entity world)
+                | "PublishChanges" -> (true, World.setEntityPublishChanges (property |> fst :?> bool) entity world)
+                | "PublishUpdatesNp" -> (false, world)
+                | "PublishPostUpdatesNp" -> (false, world)
+                | "FacetNames" -> (false, world)
+                | "FacetsNp" -> (false, world)
+                | _ -> (true, World.updateEntityState (EntityState.setProperty propertyName property) true propertyName entity world)
+            else (false, world)
+
         static member internal setEntityProperty propertyName (property : obj * Type) entity world =
-            match propertyName with // NOTE: string match for speed
+            match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> failwith "Cannot change entity id."
             | "Name" -> failwith "Cannot change entity name."
             | "Xtension" -> failwith "Cannot change layer xtension."
@@ -1913,6 +2071,56 @@ module WorldModule =
             let state = World.getEntityState entity world
             let properties = World.getProperties state
             Array.ofList properties
+
+    type World with
+
+        static member tryProxySimulant address =
+            match Address.getNames address with
+            | [] -> Some (Game.proxy Address.empty :> Simulant)
+            | [_] -> Some (Screen.proxy (Address.changeType<Simulant, Screen> address) :> Simulant)
+            | [_; _] -> Some (Layer.proxy (Address.changeType<Simulant, Layer> address) :> Simulant)
+            | [_; _; _] -> Some (Entity.proxy (Address.changeType<Simulant, Entity> address) :> Simulant)
+            | _ -> None
+
+        static member containsSimulant (simulant : Simulant) world =
+            match simulant with
+            | :? Game -> true
+            | :? Screen as screen -> World.containsScreen screen world
+            | :? Layer as layer -> World.containsLayer layer world
+            | :? Entity as entity -> World.containsEntity entity world
+            | _ -> failwithumf ()
+
+        static member tryGetSimulantProperty name (simulant : Simulant) world =
+            match simulant with
+            | :? Game -> World.tryGetGameProperty name world
+            | :? Screen as screen -> World.tryGetScreenProperty name screen world
+            | :? Layer as layer -> World.tryGetLayerProperty name layer world
+            | :? Entity as entity -> World.tryGetEntityProperty name entity world
+            | _ -> None
+
+        static member getSimulantProperty name (simulant : Simulant) world =
+            match simulant with
+            | :? Game -> World.getGameProperty name world
+            | :? Screen as screen -> World.getScreenProperty name screen world
+            | :? Layer as layer -> World.getLayerProperty name layer world
+            | :? Entity as entity -> World.getEntityProperty name entity world
+            | _ -> failwithumf ()
+
+        static member trySetSimulantProperty name property (simulant : Simulant) world =
+            match simulant with
+            | :? Game -> World.trySetGameProperty name property world
+            | :? Screen as screen -> World.trySetScreenProperty name property screen world
+            | :? Layer as layer -> World.trySetLayerProperty name property layer world
+            | :? Entity as entity -> World.trySetEntityProperty name property entity world
+            | _ -> (false, world)
+
+        static member setSimulantProperty name property (simulant : Simulant) world =
+            match simulant with
+            | :? Game -> World.setGameProperty name property world
+            | :? Screen as screen -> World.setScreenProperty name property screen world
+            | :? Layer as layer -> World.setLayerProperty name property layer world
+            | :? Entity as entity -> World.setEntityProperty name property entity world
+            | _ -> failwithumf ()
 
     type World with
 

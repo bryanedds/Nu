@@ -47,14 +47,20 @@ module WorldScreenModule =
         member this.SetOutgoing value world = World.setScreenOutgoing value this world
         member this.Outgoing = PropertyTag.makeReadOnly this Property? Outgoing this.GetOutgoing
 
+        /// Try to get a property value and type.
+        member this.TryGetProperty propertyName world = World.tryGetScreenProperty propertyName this world
+
         /// Get a property value and type.
         member this.GetProperty propertyName world = World.getScreenProperty propertyName this world
 
-        /// Set a property value with explicit type.
-        member this.SetProperty propertyName property world = World.setScreenProperty propertyName property this world
-
         /// Get a property value.
         member this.Get<'a> propertyName world : 'a = World.getScreenProperty propertyName this world |> fst :?> 'a
+
+        /// Try to set a property value with explicit type.
+        member this.TrySetProperty propertyName property world = World.trySetScreenProperty propertyName property this world
+
+        /// Set a property value with explicit type.
+        member this.SetProperty propertyName property world = World.setScreenProperty propertyName property this world
 
         /// Set a property value.
         member this.Set<'a> propertyName (value : 'a) world = World.setScreenProperty propertyName (value :> obj, typeof<'a>) this world

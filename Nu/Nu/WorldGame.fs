@@ -48,14 +48,20 @@ module WorldGameModule =
         member this.SetEyeSize value world = World.setEyeSize value world
         member this.EyeSize = PropertyTag.makeReadOnly this Property? EyeSize this.GetEyeSize
 
+        /// Try to get a property value and type.
+        member this.TryGetProperty propertyName world = World.tryGetGameProperty propertyName world
+
         /// Get a property value and type.
         member this.GetProperty propertyName world = World.getGameProperty propertyName world
 
-        /// Set a property value with explicit type.
-        member this.SetProperty propertyName property world = World.setGameProperty propertyName property world
-
         /// Get a property value.
         member this.Get<'a> propertyName world : 'a = World.getGameProperty propertyName world |> fst :?> 'a
+
+        /// Try to set a property value with explicit type.
+        member this.TrySetProperty propertyName property world = World.trySetGameProperty propertyName property world
+
+        /// Set a property value with explicit type.
+        member this.SetProperty propertyName property world = World.setGameProperty propertyName property world
 
         /// Set a property value.
         member this.Set<'a> propertyName (value : 'a) world = World.setGameProperty propertyName (value :> obj, typeof<'a>) world
