@@ -485,10 +485,6 @@ module EnvModule =
             match !cachedBinding with
             | Scripting.UncachedBinding ->
                 match tryGetProceduralBinding name env with
-                | Some (binding, offset, index) ->
-                    let newCachedBinding = Scripting.ProceduralBinding (offset, index)
-                    cachedBinding := newCachedBinding
-                    Some binding
                 | None ->
                     match tryGetDeclarationBinding name env with
                     | Some binding ->
@@ -497,6 +493,10 @@ module EnvModule =
                             cachedBinding := newCachedBinding
                         Some binding
                     | None -> None
+                | Some (binding, offset, index) ->
+                    let newCachedBinding = Scripting.ProceduralBinding (offset, index)
+                    cachedBinding := newCachedBinding
+                    Some binding
             | Scripting.DeclarationBinding binding ->
                 Some binding
             | Scripting.ProceduralBinding (offset, index) ->

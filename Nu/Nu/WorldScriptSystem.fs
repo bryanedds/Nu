@@ -696,68 +696,6 @@ module WorldScriptSystem =
                 | (_, _) -> (Violation ([!!"InvalidArgumentType"; !!"V2"; !!(String.capitalize fnName)], "Application of " + fnName + " requires a single for the both arguments.", fnOptOrigin), env)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"V2"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
 
-        and evalIntrinsic originOpt name args env =
-            match name with
-            | "!" -> evalBoolUnary originOpt name not args env
-            | "&" -> evalBoolBinary originOpt name (&&) args env
-            | "|" -> evalBoolBinary originOpt name (||) args env
-            | "=" -> evalBinary originOpt name EqFns args env
-            | "<>" -> evalBinary originOpt name NotEqFns args env
-            | "<" -> evalBinary originOpt name LtFns args env
-            | ">" -> evalBinary originOpt name GtFns args env
-            | "<=" -> evalBinary originOpt name LtEqFns args env
-            | ">=" -> evalBinary originOpt name GtEqFns args env
-            | "+" -> evalBinary originOpt name AddFns args env
-            | "-" -> evalBinary originOpt name SubFns args env
-            | "*" -> evalBinary originOpt name MulFns args env
-            | "/" -> evalBinary originOpt name DivFns args env
-            | "%" -> evalBinary originOpt name ModFns args env
-            | "pow" -> evalBinary originOpt name PowFns args env
-            | "root" -> evalBinary originOpt name RootFns args env
-            | "sqr" -> evalUnary originOpt name SqrFns args env
-            | "sqrt" -> evalUnary originOpt name SqrtFns args env
-            | "floor" -> evalUnary originOpt name FloorFns args env
-            | "ceiling" -> evalUnary originOpt name CeilingFns args env
-            | "truncate" -> evalUnary originOpt name TruncateFns args env
-            | "round" -> evalUnary originOpt name RoundFns args env
-            | "exp" -> evalUnary originOpt name ExpFns args env
-            | "log" -> evalUnary originOpt name LogFns args env
-            | "sin" -> evalUnary originOpt name SinFns args env
-            | "cos" -> evalUnary originOpt name CosFns args env
-            | "tan" -> evalUnary originOpt name TanFns args env
-            | "asin" -> evalUnary originOpt name AsinFns args env
-            | "acos" -> evalUnary originOpt name AcosFns args env
-            | "atan" -> evalUnary originOpt name AtanFns args env
-            | "length" -> evalUnary originOpt name LengthFns args env
-            | "normal" -> evalUnary originOpt name NormalFns args env
-            | "cross" -> evalBinary originOpt name CrossFns args env
-            | "dot" -> evalBinary originOpt name DotFns args env
-            | "bool" -> evalUnary originOpt name BoolFns args env
-            | "int" -> evalUnary originOpt name IntFns args env
-            | "int64" -> evalUnary originOpt name Int64Fns args env
-            | "single" -> evalUnary originOpt name SingleFns args env
-            | "double" -> evalUnary originOpt name DoubleFns args env
-            | "string" -> evalUnary originOpt name StringFns args env
-            | "v2" -> evalV2 originOpt name args env
-            //| "xOf" -> evalNOf
-            //| "yOf" -> evalNOf
-            //| "xAs" -> evalNAs
-            //| "yAs" -> evalNas
-            | "some" -> evalSome originOpt name args env
-            | "isSome" -> evalIsSome originOpt name args env
-            | "head" -> evalHead originOpt name args env
-            | "tail" -> evalTail originOpt name args env
-            | "cons" -> evalCons originOpt name args env
-            | "isEmpty" -> evalIsEmpty originOpt name args env
-            | "fst" -> evalNth5 originOpt name 0 args env
-            | "snd" -> evalNth5 originOpt name 1 args env
-            | "thd" -> evalNth5 originOpt name 2 args env
-            | "fth" -> evalNth5 originOpt name 3 args env
-            | "fif" -> evalNth5 originOpt name 4 args env
-            | "nth" -> evalNth originOpt name args env
-            | "product" -> evalProduct originOpt name args env
-            | _ -> (Violation ([!!"InvalidFunctionTargetBinding"], "Cannot apply a non-existent binding.", originOpt), env)
-
         and isIntrinsic name =
             match name with
             | "!" -> true
@@ -819,6 +757,68 @@ module WorldScriptSystem =
             | "nth" -> true
             | "product" -> true
             | _ -> false
+
+        and evalIntrinsic originOpt name args env =
+            match name with
+            | "!" -> evalBoolUnary originOpt name not args env
+            | "&" -> evalBoolBinary originOpt name (&&) args env
+            | "|" -> evalBoolBinary originOpt name (||) args env
+            | "=" -> evalBinary originOpt name EqFns args env
+            | "<>" -> evalBinary originOpt name NotEqFns args env
+            | "<" -> evalBinary originOpt name LtFns args env
+            | ">" -> evalBinary originOpt name GtFns args env
+            | "<=" -> evalBinary originOpt name LtEqFns args env
+            | ">=" -> evalBinary originOpt name GtEqFns args env
+            | "+" -> evalBinary originOpt name AddFns args env
+            | "-" -> evalBinary originOpt name SubFns args env
+            | "*" -> evalBinary originOpt name MulFns args env
+            | "/" -> evalBinary originOpt name DivFns args env
+            | "%" -> evalBinary originOpt name ModFns args env
+            | "pow" -> evalBinary originOpt name PowFns args env
+            | "root" -> evalBinary originOpt name RootFns args env
+            | "sqr" -> evalUnary originOpt name SqrFns args env
+            | "sqrt" -> evalUnary originOpt name SqrtFns args env
+            | "floor" -> evalUnary originOpt name FloorFns args env
+            | "ceiling" -> evalUnary originOpt name CeilingFns args env
+            | "truncate" -> evalUnary originOpt name TruncateFns args env
+            | "round" -> evalUnary originOpt name RoundFns args env
+            | "exp" -> evalUnary originOpt name ExpFns args env
+            | "log" -> evalUnary originOpt name LogFns args env
+            | "sin" -> evalUnary originOpt name SinFns args env
+            | "cos" -> evalUnary originOpt name CosFns args env
+            | "tan" -> evalUnary originOpt name TanFns args env
+            | "asin" -> evalUnary originOpt name AsinFns args env
+            | "acos" -> evalUnary originOpt name AcosFns args env
+            | "atan" -> evalUnary originOpt name AtanFns args env
+            | "length" -> evalUnary originOpt name LengthFns args env
+            | "normal" -> evalUnary originOpt name NormalFns args env
+            | "cross" -> evalBinary originOpt name CrossFns args env
+            | "dot" -> evalBinary originOpt name DotFns args env
+            | "bool" -> evalUnary originOpt name BoolFns args env
+            | "int" -> evalUnary originOpt name IntFns args env
+            | "int64" -> evalUnary originOpt name Int64Fns args env
+            | "single" -> evalUnary originOpt name SingleFns args env
+            | "double" -> evalUnary originOpt name DoubleFns args env
+            | "string" -> evalUnary originOpt name StringFns args env
+            | "v2" -> evalV2 originOpt name args env
+            //| "xOf" -> evalNOf
+            //| "yOf" -> evalNOf
+            //| "xAs" -> evalNAs
+            //| "yAs" -> evalNas
+            | "some" -> evalSome originOpt name args env
+            | "isSome" -> evalIsSome originOpt name args env
+            | "head" -> evalHead originOpt name args env
+            | "tail" -> evalTail originOpt name args env
+            | "cons" -> evalCons originOpt name args env
+            | "isEmpty" -> evalIsEmpty originOpt name args env
+            | "fst" -> evalNth5 originOpt name 0 args env
+            | "snd" -> evalNth5 originOpt name 1 args env
+            | "thd" -> evalNth5 originOpt name 2 args env
+            | "fth" -> evalNth5 originOpt name 3 args env
+            | "fif" -> evalNth5 originOpt name 4 args env
+            | "nth" -> evalNth originOpt name args env
+            | "product" -> evalProduct originOpt name args env
+            | _ -> (Violation ([!!"InvalidFunctionTargetBinding"], "Cannot apply a non-existent binding.", originOpt), env)
 
         and evalProduct originOpt name args env =
             match args with
@@ -997,6 +997,7 @@ module WorldScriptSystem =
             | Right (address, env) ->
                 let world = Env.getWorld env
                 let propertyValueAndTypeEir =
+                    // TODO: these proxy operations are going to be slow; Find a way to optimize.
                     match Address.getNames address with
                     | [] -> Right (Simulants.Game.GetProperty propertyName world)
                     | [_] -> let screen = Screen.proxy (Address.changeType<Simulant, Screen> address) in Right (screen.GetProperty propertyName world)
@@ -1034,6 +1035,7 @@ module WorldScriptSystem =
             | Right (address, env) ->
                 let world = Env.getWorld env
                 let propertyTypeEir =
+                    // TODO: these proxy operations are going to be slow; Find a way to optimize.
                     match Address.getNames address with
                     | [] -> Right (Simulants.Game.GetProperty propertyName world |> snd)
                     | [_] -> let screen = Screen.proxy (Address.changeType<Simulant, Screen> address) in Right (screen.GetProperty propertyName world |> snd)
@@ -1047,6 +1049,7 @@ module WorldScriptSystem =
                         match tryExport propertyValue propertyType with
                         | Some propertyValue ->
                             let worldEir =
+                                // TODO: these proxy operations are going to be slow; Find a way to optimize.
                                 match Address.getNames address with
                                 | [] -> Right (Simulants.Game.Set propertyName propertyValue world)
                                 | [_] -> let screen = Screen.proxy (Address.changeType<Simulant, Screen> address) in Right (screen.Set propertyName propertyValue world)
