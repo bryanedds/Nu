@@ -847,7 +847,18 @@ module WorldScriptSystem =
                         (Phrase (map, originOpt), env)
                     | Binding (name, cachedBinding, originOpt) ->
                         match Env.tryGetBinding name cachedBinding env with
-                        | Some binding -> evalFun binding tail env
+                        | Some body ->
+                            match body with
+                            | Violation _ as v -> (v, env)
+                            | Fun (pars, parCount, body, originOpt) ->
+                                let args = tail
+                                if List.hasExactly parCount args then
+                                    let bindings = List.map2 (fun par arg -> (par, arg)) pars args
+                                    let env = Env.addProceduralBindings (AddToNewFrame parCount) bindings env
+                                    let (evaled, _) = eval body env
+                                    (evaled, env)
+                                else (Violation ([!!"MalformedLambdaInvocation"], "Wrong number of arguments.", originOpt), env)
+                            | _ -> (Violation ([!!"InvalidOperation"], "Invalid operation.", originOpt), env)
                         | None -> evalIntrinsic originOpt name tail env
                     | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), env)
                 | [] -> (Unit originOpt, env)
@@ -1001,10 +1012,6 @@ module WorldScriptSystem =
             match evalStream name stream originOpt env with
             | Right (stream, env) -> (Unit originOpt, addStream name stream originOpt env)
             | Left violation -> (violation, env)
-
-        and evalFun _ _ env =
-            // TODO: implement
-            (Unit None, env)
 
         and eval expr env : Expr * Env<Simulant, Game, World> =
             match expr with
