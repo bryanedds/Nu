@@ -42,8 +42,18 @@ module ScriptingTests =
         | Scripting.Int (result, _) -> Assert.Equal (2, result)
         | _ -> Assert.True false
 
+    let [<Fact>] letManyWorks () =
+        match eval "[let [x 1] [y 2] [+ x y]]" with
+        | Scripting.Int (result, _) -> Assert.Equal (3, result)
+        | _ -> Assert.True false
+
     let [<Fact>] letFWorks () =
         match eval "[let [f [x] x] [f 1]]" with
+        | Scripting.Int (result, _) -> Assert.Equal (1, result)
+        | _ -> Assert.True false
+
+    let [<Fact>] letFunWorks () =
+        match eval "[let [f [fun [x] x]] [f 1]]" with
         | Scripting.Int (result, _) -> Assert.Equal (1, result)
         | _ -> Assert.True false
 

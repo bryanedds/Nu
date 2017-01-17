@@ -844,21 +844,25 @@ module WorldScriptSystem =
                     match head with
                     | Keyword (name, originOpt) ->
                         let map = String (name, originOpt) :: tail |> List.indexed |> Map.ofList
-                        (Phrase (map, originOpt), env)
+                        (Phrase (map, originOpt), oldEnv)
                     | Binding (name, _, originOpt) ->
                         // NOTE: logically must be intrinsic if eval operation was monomorphic
-                        evalIntrinsic originOpt name tail env
-                    | Fun (pars, parCount, body, originOpt) ->
+                        let (evaled, _) = evalIntrinsic originOpt name tail env
+                        (evaled, oldEnv)
+                    | Fun (pars, parsCount, body, _, envOpt, originOpt) ->
+                        let env =
+                            match envOpt with
+                            | Some env -> env :?> Env<_, _, _>
+                            | None -> env
                         let args = tail
-                        if List.hasExactly parCount args then
+                        if List.hasExactly parsCount args then
                             let bindings = List.map2 (fun par arg -> (par, arg)) pars args
-                            let env = Env.addProceduralBindings (AddToNewFrame parCount) bindings env
+                            let env = Env.addProceduralBindings (AddToNewFrame parsCount) bindings env
                             let (evaled, _) = eval body env
-                            (evaled, env)
-                        else (Violation ([!!"MalformedLambdaInvocation"], "Wrong number of arguments.", originOpt), env)
-                        
-                    | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), env)
-                | [] -> (Unit originOpt, env)
+                            (evaled, oldEnv)
+                        else (Violation ([!!"MalformedLambdaInvocation"], "Wrong number of arguments.", originOpt), oldEnv)                        
+                    | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), oldEnv)
+                | [] -> (Unit originOpt, oldEnv)
 
         and evalLet4 binding body originOpt env =
             let env =
@@ -867,7 +871,7 @@ module WorldScriptSystem =
                     let evaled = evalDropEnv body env
                     Env.addProceduralBinding (AddToNewFrame 1) name evaled env
                 | LetFunction (name, args, body) ->
-                    let fn = Fun (args, List.length args, body, originOpt)
+                    let fn = Fun (args, List.length args, body, true, Some (env :> obj), originOpt)
                     Env.addProceduralBinding (AddToNewFrame 1) name fn env
             eval body env
 
@@ -878,7 +882,7 @@ module WorldScriptSystem =
                     let bodyValue = evalDropEnv body env
                     Env.addProceduralBinding (AddToNewFrame bindingsCount) name bodyValue env
                 | LetFunction (name, args, body) ->
-                    let fn = Fun (args, List.length args, body, originOpt)
+                    let fn = Fun (args, List.length args, body, true, Some (env :> obj), originOpt)
                     Env.addProceduralBinding (AddToNewFrame bindingsCount) name fn env
             let mutable start = 1
             for binding in bindingsTail do
@@ -887,7 +891,7 @@ module WorldScriptSystem =
                     let bodyValue = evalDropEnv body env
                     Env.addProceduralBinding (AddToHeadFrame start) name bodyValue env |> ignore
                 | LetFunction (name, args, body) ->
-                    let fn = Fun (args, List.length args, body, originOpt)
+                    let fn = Fun (args, List.length args, body, true, Some (env :> obj), originOpt)
                     Env.addProceduralBinding (AddToHeadFrame start) name fn env |> ignore
                 start <- start + 1
             eval body env
@@ -903,6 +907,13 @@ module WorldScriptSystem =
                 let bindingsCount = List.length bindingsTail + 1
                 let (evaled, _) = evalLetMany4 bindingsHead bindingsTail bindingsCount body originOpt env
                 (evaled, env)
+
+        and evalFun fn pars parsCount body envPushed envOpt originOpt env =
+            if not envPushed then
+                match envOpt with
+                | Some env as envOpt -> (Fun (pars, parsCount, body, true, envOpt, originOpt), env :?> Env<_, _, _>)
+                | None -> (Fun (pars, parsCount, body, true, Some (env :> obj), originOpt), env)
+            else (fn, env)
 
         and evalIf condition consequent alternative originOpt env =
             let oldEnv = env
@@ -1035,7 +1046,7 @@ module WorldScriptSystem =
             | Quote _  -> (expr, env)
             | Let (binding, body, originOpt) -> evalLet binding body originOpt env
             | LetMany (bindings, body, originOpt) -> evalLetMany bindings body originOpt env
-            | Fun _ -> (expr, env)
+            | Fun (pars, parsCount, body, envPushed, envOpt, originOpt) as fn -> evalFun fn pars parsCount body envPushed envOpt originOpt env
             | If (condition, consequent, alternative, originOpt) -> evalIf condition consequent alternative originOpt env
             | Cond (exprPairs, originOpt) -> evalCond exprPairs originOpt env
             | Try (body, handlers, originOpt) -> evalTry body handlers originOpt env

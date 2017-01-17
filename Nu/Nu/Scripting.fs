@@ -91,7 +91,7 @@ module Scripting =
         | Quote of string * Origin option
         | Let of LetBinding * Expr * Origin option
         | LetMany of LetBinding list * Expr * Origin option
-        | Fun of string list * int * Expr * Origin option
+        | Fun of string list * int * Expr * bool * obj option * Origin option
         | If of Expr * Expr * Expr * Origin option
         | Cond of (Expr * Expr) list * Origin option
         | Try of Expr * (Name list * Expr) list * Origin option
@@ -141,7 +141,7 @@ module Scripting =
             | Quote (_, originOpt)
             | Let (_, _, originOpt)
             | LetMany (_, _, originOpt)
-            | Fun (_, _, _, originOpt)
+            | Fun (_, _, _, _, _, originOpt)
             | If (_, _, _, originOpt)
             | Cond (_, originOpt)
             | Try (_, _, originOpt)
@@ -269,7 +269,7 @@ module Scripting =
                                 | Symbols (args, originOpt) ->
                                     if List.notExists (function Atom _ -> false | _ -> true) args then
                                         let args = List.map (function Atom (arg, _) -> arg | _ -> failwithumf ()) args
-                                        Fun (args, List.length args, this.SymbolToExpr body, originOpt) :> obj
+                                        Fun (args, List.length args, this.SymbolToExpr body, false, None, originOpt) :> obj
                                     else Violation ([!!"InvalidFunForm"], "Invalid fun form. TODO: more info.", originOpt) :> obj
                                 | _ -> Violation ([!!"InvalidFunForm"], "Invalid fun form. TODO: more info.", originOpt) :> obj
                             | _ -> Violation ([!!"InvalidFunForm"], "Invalid fun form. TODO: more info.", originOpt) :> obj
