@@ -22,6 +22,11 @@ module ScriptingTests =
         | Scripting.Keyword (result, _) -> Assert.Equal ("Keyword", result)
         | _ -> Assert.True false
 
+    let [<Fact>] keyphraseConstructionWorks () =
+        match eval "[Keyphrase 0]" with
+        | Scripting.Keyphrase (_, _) -> Assert.True true // TODO: better assertion here
+        | _ -> Assert.True false
+
     let [<Fact>] plusWorks () =
         match eval "[+ 1 1]" with
         | Scripting.Int (result, _) -> Assert.Equal (2, result)
