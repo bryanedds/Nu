@@ -31,9 +31,6 @@ module Operators =
     /// No matter what you pass it, it evaluates to false.
     let absurdity2 _ _ = false
 
-    /// Convert any value to an obj.
-    let objectify x = x :> obj
-
     /// Curry up two values.
     let inline curry f x y = f (x, y)
 

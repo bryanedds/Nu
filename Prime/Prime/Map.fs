@@ -79,10 +79,6 @@ module Map =
     let toValueListBy by map =
         toListBy (by << snd) map
     
-    /// Convert any map value to an obj.
-    let objectify _ x =
-        objectify x
-    
     /// Combine the contents of two maps, taking an item from the second map in the case of a key
     /// conflict.
     let concat map map2 =

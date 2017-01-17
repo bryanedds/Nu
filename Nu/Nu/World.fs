@@ -338,7 +338,7 @@ module WorldModule2 =
         static member private createIntrinsicOverlays facets entityDispatchers =
             let requiresFacetNames = fun sourceType -> sourceType = typeof<EntityDispatcher>
             let facets = Map.toValueListBy (fun facet -> facet :> obj) facets
-            let entityDispatchers = Map.toValueListBy objectify entityDispatchers
+            let entityDispatchers = Map.toValueListBy box entityDispatchers
             let sources = facets @ entityDispatchers
             let sourceTypes = List.map (fun source -> source.GetType ()) sources
             Reflection.createIntrinsicOverlays requiresFacetNames sourceTypes
