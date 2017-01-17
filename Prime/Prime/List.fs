@@ -263,6 +263,10 @@ let toHashSet list =
 let foldWhile folder (state : 's) (list : 't list) =
     Seq.foldWhile folder state ^ List.toSeq list
 
+/// Implement a fold while folder results in Right.
+let foldWhileRight folder (state : 's) (list : 't list) =
+    Seq.foldWhileRight folder state ^ List.toSeq list
+
 /// Implement a fold until folder results in Nome.
 let foldUntil folder (state : 's) (list : 't list) =
     Seq.foldUntil folder state ^ List.toSeq list

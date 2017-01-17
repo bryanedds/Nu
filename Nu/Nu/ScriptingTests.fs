@@ -67,6 +67,11 @@ module ScriptingTests =
         | Scripting.Int (result, _) -> Assert.Equal (1, result)
         | _ -> Assert.True false
 
+    let [<Fact>] doWorks () =
+        match eval "[do [+ 1 1] [+ 2 2]]" with
+        | Scripting.Int (result, _) -> Assert.Equal (4, result)
+        | _ -> Assert.True false
+
     let [<Fact>] setEyeCenterFromGameScriptWorks () =
         let world = World.makeEmpty ()
         let onInit = scvalue<Scripting.Expr> "[set EyeCenter [v2 10f 10f]]"
