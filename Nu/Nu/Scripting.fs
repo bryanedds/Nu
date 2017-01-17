@@ -91,7 +91,7 @@ module Scripting =
         | Quote of string * Origin option
         | Let of LetBinding * Expr * Origin option
         | LetMany of LetBinding list * Expr * Origin option
-        | Fun of string list * Expr * int * Origin option
+        | Fun of string list * int * Expr * Origin option
         | If of Expr * Expr * Expr * Origin option
         | Cond of (Expr * Expr) list * Origin option
         | Try of Expr * (Name list * Expr) list * Origin option
@@ -262,6 +262,17 @@ module Scripting =
                                         LetMany (bindings, this.SymbolToExpr body, originOpt) :> obj
                                     else Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
                                 else Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                        | "fun" ->
+                            match tail with
+                            | [args; body] ->
+                                match args with
+                                | Symbols (args, originOpt) ->
+                                    if List.notExists (function Atom _ -> false | _ -> true) args then
+                                        let args = List.map (function Atom (arg, _) -> arg | _ -> failwithumf ()) args
+                                        Fun (args, List.length args, this.SymbolToExpr body, originOpt) :> obj
+                                    else Violation ([!!"InvalidFunForm"], "Invalid fun form. TODO: more info.", originOpt) :> obj
+                                | _ -> Violation ([!!"InvalidFunForm"], "Invalid fun form. TODO: more info.", originOpt) :> obj
+                            | _ -> Violation ([!!"InvalidFunForm"], "Invalid fun form. TODO: more info.", originOpt) :> obj
                         | "if" ->
                             match tail with
                             | [condition; consequent; alternative] -> If (this.SymbolToExpr condition, this.SymbolToExpr consequent, this.SymbolToExpr alternative, originOpt) :> obj
