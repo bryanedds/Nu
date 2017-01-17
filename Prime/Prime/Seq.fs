@@ -88,6 +88,16 @@ let foldWhile folder (state : 's) (seq : 't seq) =
     | Some state -> state
     | None -> lastState
 
+/// Implement a fold while folder results in Right.
+let foldWhileRight folder (state : 's) (seq : 't seq) =
+    let mutable lastState = state
+    let mutable stateEir = Right lastState
+    use mutable enr = seq.GetEnumerator ()
+    while Either.isRight stateEir && enr.MoveNext () do
+        lastState <- Either.getRightValue stateEir
+        stateEir <- folder lastState enr.Current
+    stateEir
+
 /// Implement a fold until folder results in Some.
 let foldUntil folder (state : 's) (seq : 't seq) =
     let mutable isFirst = true // no do while necessitates this flag

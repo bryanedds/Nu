@@ -88,20 +88,20 @@ module Scripting =
         (* Special Forms *)
         | Binding of string * CachedBinding ref * Origin option
         | Apply of Expr list * Origin option
-        | Quote of string * Origin option
         | Let of LetBinding * Expr * Origin option
         | LetMany of LetBinding list * Expr * Origin option
         | Fun of string list * int * Expr * bool * obj option * Origin option
         | If of Expr * Expr * Expr * Origin option
         | Cond of (Expr * Expr) list * Origin option
         | Try of Expr * (Name list * Expr) list * Origin option
+        | Do of Expr list * Origin option
         | Break of Expr * Origin option
         | Get of string * Origin option
         | GetFrom of string * Expr * Origin option
         | Set of string * Expr * Origin option
         | SetTo of string * Expr * Expr * Origin option
-        | Do of Command * Origin option
-        | DoMany of Command list * Origin option
+        | Run of Command * Origin option
+        | Quote of string * Origin option
 
         (* Special Declarations - only work at the top level, and always return unit. *)
         // accessible anywhere
@@ -138,20 +138,20 @@ module Scripting =
             | Stream (_, originOpt)
             | Binding (_, _, originOpt)
             | Apply (_, originOpt)
-            | Quote (_, originOpt)
             | Let (_, _, originOpt)
             | LetMany (_, _, originOpt)
             | Fun (_, _, _, _, _, originOpt)
             | If (_, _, _, originOpt)
             | Cond (_, originOpt)
             | Try (_, _, originOpt)
+            | Do (_, originOpt)
             | Break (_, originOpt)
             | Get (_, originOpt)
             | GetFrom (_, _, originOpt)
             | Set (_, _, originOpt)
             | SetTo (_, _, _, originOpt)
-            | Do (_, originOpt)
-            | DoMany (_, originOpt)
+            | Run (_, originOpt)
+            | Quote (_, originOpt)
             | Define (_, _, originOpt)
             | Variable (_, _, originOpt)
             | Equate (_, _, _, _, originOpt)
@@ -277,6 +277,9 @@ module Scripting =
                             match tail with
                             | [condition; consequent; alternative] -> If (this.SymbolToExpr condition, this.SymbolToExpr consequent, this.SymbolToExpr alternative, originOpt) :> obj
                             | _ -> Violation ([!!"InvalidIfForm"], "Invalid if form. Requires 3 arguments.", originOpt) :> obj
+                        | "cond" ->
+                            // TODO: implement
+                            failwithumf ()
                         | "try" ->
                             match tail with
                             | [body; Prime.Symbols (handlers, _)] ->
@@ -294,6 +297,9 @@ module Scripting =
                                 | [] -> Try (this.SymbolToExpr body, List.map (mapSnd this.SymbolToExpr) handlers, originOpt) :> obj
                                 | error :: _ -> Violation ([!!"InvalidTryForm"], error, originOpt) :> obj
                             | _ -> Violation ([!!"InvalidTryForm"], "Invalid try form. Requires 1 body and a handler list.", originOpt) :> obj
+                        | "do" ->
+                            // TODO: implement
+                            failwithumf ()
                         | "break" ->
                             let content = this.SymbolToExpr (Symbols (tail, originOpt))
                             Break (content, originOpt) :> obj

@@ -943,9 +943,23 @@ module WorldScriptSystem =
                 List.foldUntil (fun (_, env) (handlerCategories, handlerBody) ->
                     let categoriesTrunc = List.truncate (List.length handlerCategories) categories
                     if categoriesTrunc = handlerCategories then Some (eval handlerBody env) else None)
-                    ((Unit originOpt, oldEnv))
+                    (Unit originOpt, oldEnv)
                     handlers
             | _ -> (evaled, env)
+
+        and evalDo exprs originOpt env =
+            let evaledEir =
+                List.foldWhileRight (fun (_, env) expr ->
+                    let oldEnv = env
+                    let (evaled, env) = eval expr env
+                    match evaled with
+                    | Violation _ as violation -> Left (violation, oldEnv)
+                    | _ -> Right (evaled, env))
+                    (Unit originOpt, env)
+                    exprs
+            match evaledEir with
+            | Right evaled -> evaled
+            | Left error -> error
 
         and evalBreak expr env =
             // TODO: write all env bindings to console
@@ -1049,20 +1063,20 @@ module WorldScriptSystem =
             | Stream _ -> (expr, env)
             | Binding (name, cachedBinding, originOpt) as expr -> evalBinding expr name cachedBinding originOpt env
             | Apply (exprs, originOpt) -> evalApply exprs originOpt env
-            | Quote _  -> (expr, env)
             | Let (binding, body, originOpt) -> evalLet binding body originOpt env
             | LetMany (bindings, body, originOpt) -> evalLetMany bindings body originOpt env
             | Fun (pars, parsCount, body, envPushed, envOpt, originOpt) as fn -> evalFun fn pars parsCount body envPushed envOpt originOpt env
             | If (condition, consequent, alternative, originOpt) -> evalIf condition consequent alternative originOpt env
             | Cond (exprPairs, originOpt) -> evalCond exprPairs originOpt env
             | Try (body, handlers, originOpt) -> evalTry body handlers originOpt env
+            | Do (exprs, originOpt) -> evalDo exprs originOpt env
             | Break (expr, _) -> evalBreak expr env
             | Get (name, originOpt) -> evalGet name None originOpt env
             | GetFrom (name, expr, originOpt) -> evalGet name (Some expr) originOpt env
             | Set (name, expr, originOpt) -> evalSet name expr None originOpt env
             | SetTo (name, expr, expr2, originOpt) -> evalSet name expr2 (Some expr) originOpt env
-            | Do (_, originOpt) -> (Violation ([!!"Unimplemented"], "Unimplemented feature.", originOpt), env) // TODO
-            | DoMany (_, originOpt) -> (Violation ([!!"Unimplemented"], "Unimplemented feature.", originOpt), env) // TODO
+            | Run (_, originOpt) -> (Violation ([!!"Unimplemented"], "Unimplemented feature.", originOpt), env) // TODO
+            | Quote _  -> (expr, env)
             | Define (name, expr, originOpt) -> evalDefine name expr originOpt env
             | Variable (name, stream, originOpt) -> evalVariable name stream originOpt env
             | Equate (_, _, _, _, originOpt) -> (Unit originOpt, env)
