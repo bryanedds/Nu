@@ -467,10 +467,6 @@ module EnvModule =
                     env
                 | [] -> failwithumf ()
 
-        let addProceduralFunction _ _ _ _ env =
-            // TODO: implement
-            env
-
         let tryGetDeclarationBinding name (env : Env<'p, 'g, 'w>) =
             match env.TopLevel.TryGetValue name with
             | (true, binding) -> Some binding
