@@ -759,13 +759,13 @@ module WorldScriptSystem =
                  ("nth", evalNth)
                  ("product", evalProduct)]
 
+        and isIntrinsic name =
+            Intrinsics.ContainsKey name
+
         and evalIntrinsic originOpt name args env =
             match Intrinsics.TryGetValue name with
             | (true, intrinsic) -> intrinsic originOpt name args env
             | (false, _) -> (Violation ([!!"InvalidFunctionTargetBinding"], "Cannot apply a non-existent binding.", originOpt), env)
-
-        and isIntrinsic name =
-            Intrinsics.ContainsKey name
 
         and evalProduct originOpt name args env =
             match args with
@@ -815,18 +815,6 @@ module WorldScriptSystem =
             | ComputedStream computedStream ->
                 Right (computedStream :?> Prime.Stream<obj, Game, World>, env)
 
-        and evalExprs exprs env =
-            let (violations, evaleds, env) =
-                List.fold
-                    (fun (violations, evaleds, env) expr ->
-                        let (evaled, env) = eval expr env
-                        match evaled with
-                        | Violation _ as violation -> (violation :: violations, evaleds, env)
-                        | evaled -> (violations, evaled :: evaleds, env))
-                    ([], [], env)
-                    exprs
-            (violations, List.rev evaleds, env)
-
         and evalBinding expr name cachedBinding originOpt env =
             match Env.tryGetBinding name cachedBinding env with
             | None ->
@@ -836,10 +824,8 @@ module WorldScriptSystem =
 
         and evalApply exprs originOpt env =
             let oldEnv = env
-            let (violations, evaleds, env) = evalExprs exprs env
-            match violations with
-            | Violation _ as violation :: _ -> (violation, oldEnv)
-            | _ ->
+            match evalMany exprs env with
+            | Right (evaleds, _) ->
                 match evaleds with
                 | head :: tail ->
                     match head with
@@ -864,6 +850,7 @@ module WorldScriptSystem =
                         else (Violation ([!!"MalformedLambdaInvocation"], "Wrong number of arguments.", originOpt), oldEnv)                        
                     | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), oldEnv)
                 | [] -> (Unit originOpt, oldEnv)
+            | Left (violation, _) -> (violation, oldEnv)
 
         and evalLet4 binding body originOpt env =
             let env =
@@ -1082,6 +1069,20 @@ module WorldScriptSystem =
             | Equate (_, _, _, _, originOpt) -> (Unit originOpt, env)
             | EquateMany (_, _, _, _, _, originOpt) -> (Unit originOpt, env)
             | Handle (_, _, originOpt) -> (Unit originOpt, env)
+
+        and evalMany exprs env =
+            let eir =
+                List.foldWhileRight
+                    (fun (evaleds, env) expr ->
+                        let (evaled, env) = eval expr env
+                        match evaled with
+                        | Violation _ as violation -> Left (violation, env)
+                        | evaled -> Right (evaled :: evaleds, env))
+                    ([], env)
+                    exprs
+            match eir with
+            | Right (evaleds, env) -> Right (List.rev evaleds, env)
+            | Left _ as left -> left
 
         and evalDropEnv expr env =
             eval expr env |> fst
