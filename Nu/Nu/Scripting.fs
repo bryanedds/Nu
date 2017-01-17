@@ -76,13 +76,13 @@ module Scripting =
         | Double of double * Origin option
         | Vector2 of Vector2 * Origin option
         | String of string * Origin option
-        | Keyword of string * Origin option // constructed as any identifier starting with an uppercase letter
+        | Keyword of string * Origin option
 
         (* Primitive Data Structures *)
         | Option of Expr option * Origin option
         | Tuple of Map<int, Expr> * Origin option
         | List of Expr list * Origin option
-        | Keyphrase of Map<int, Expr> * Origin option // constructed as [CapitalizedIdentifier ...]
+        | Keyphrase of Map<int, Expr> * Origin option
         | Stream of Stream * Origin option
 
         (* Special Forms *)
@@ -298,8 +298,11 @@ module Scripting =
                                 | error :: _ -> Violation ([!!"InvalidTryForm"], error, originOpt) :> obj
                             | _ -> Violation ([!!"InvalidTryForm"], "Invalid try form. Requires 1 body and a handler list.", originOpt) :> obj
                         | "do" ->
-                            // TODO: implement
-                            failwithumf ()
+                            match tail with
+                            | [] -> Violation ([!!"InvalidTryForm"], "Invalid do form. Requires 1 or more sub-expressions.", originOpt) :> obj
+                            | exprs ->
+                                let exprs = List.map this.SymbolToExpr exprs
+                                Do (exprs, originOpt) :> obj
                         | "break" ->
                             let content = this.SymbolToExpr (Symbols (tail, originOpt))
                             Break (content, originOpt) :> obj
