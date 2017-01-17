@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Diagnostics
 open OpenTK
 open Prime
 open Nu
@@ -946,6 +947,11 @@ module WorldScriptSystem =
                     handlers
             | _ -> (evaled, env)
 
+        and evalBreak expr env =
+            // TODO: write all env bindings to console
+            Debugger.Break ()
+            eval expr env
+
         and evalGet propertyName relationExprOpt originOpt env =
             let context = Env.getContext env
             let simulantAndEnvEir =
@@ -1050,7 +1056,7 @@ module WorldScriptSystem =
             | If (condition, consequent, alternative, originOpt) -> evalIf condition consequent alternative originOpt env
             | Cond (exprPairs, originOpt) -> evalCond exprPairs originOpt env
             | Try (body, handlers, originOpt) -> evalTry body handlers originOpt env
-            | Break (expr, _) -> (expr, env)
+            | Break (expr, _) -> evalBreak expr env
             | Get (name, originOpt) -> evalGet name None originOpt env
             | GetFrom (name, expr, originOpt) -> evalGet name (Some expr) originOpt env
             | Set (name, expr, originOpt) -> evalSet name expr None originOpt env
