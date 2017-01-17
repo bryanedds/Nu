@@ -17,19 +17,24 @@ module ScriptingTests =
         let expr = scvalue<Scripting.Expr> exprStr
         ScriptSystem.eval expr env |> fst
 
-    let [<Fact>] oneAndOneIsTwo () =
-        match eval "[+ 1 1]" with
-        | Scripting.Int (result, _) -> Assert.Equal (2, result)
+    let [<Fact>] keywordConstructionWorks () =
+        match eval "Keyword" with
+        | Scripting.Keyword (result, _) -> Assert.Equal ("Keyword", result)
         | _ -> Assert.True false
 
-    let [<Fact>] nestedApplicationWorks () =
-        match eval "[+ [+ 1 1] [+ 1 1]]" with
-        | Scripting.Int (result, _) -> Assert.Equal (4, result)
+    let [<Fact>] plusWorks () =
+        match eval "[+ 1 1]" with
+        | Scripting.Int (result, _) -> Assert.Equal (2, result)
         | _ -> Assert.True false
 
     let [<Fact>] equalityWorks () =
         match eval "[= 1 1]" with
         | Scripting.Bool (result, _) -> Assert.True result
+        | _ -> Assert.True false
+
+    let [<Fact>] nestedApplicationWorks () =
+        match eval "[+ [+ 1 1] [+ 1 1]]" with
+        | Scripting.Int (result, _) -> Assert.Equal (4, result)
         | _ -> Assert.True false
 
     let [<Fact>] conditionalsWork () =
