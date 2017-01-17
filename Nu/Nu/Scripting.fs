@@ -55,7 +55,7 @@ module Scripting =
                      "list head tail cons empty isEmpty notEmpty fold filter product sum contains " + // [list] is empty list
                      // TODO: "ring add remove " +
                      // TODO: "table tryFind find " +
-                     "nix " + // the empty phrase
+                     "nix " + // the empty keyphrase
                      "let fun if cond try break get set do " +
                      "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
@@ -82,7 +82,7 @@ module Scripting =
         | Option of Expr option * Origin option
         | Tuple of Map<int, Expr> * Origin option
         | List of Expr list * Origin option
-        | Phrase of Map<int, Expr> * Origin option // constructed as [CapitalizedIdentifier ...]
+        | Keyphrase of Map<int, Expr> * Origin option // constructed as [CapitalizedIdentifier ...]
         | Stream of Stream * Origin option
 
         (* Special Forms *)
@@ -134,7 +134,7 @@ module Scripting =
             | Option (_, originOpt)
             | Tuple (_, originOpt)
             | List (_, originOpt)
-            | Phrase (_, originOpt)
+            | Keyphrase (_, originOpt)
             | Stream (_, originOpt)
             | Binding (_, _, originOpt)
             | Apply (_, originOpt)
