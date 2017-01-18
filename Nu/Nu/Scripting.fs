@@ -243,6 +243,9 @@ module Scripting =
                                 try let tagName = !!tagStr in Violation (Name.split [|'/'|] tagName, errorMsg, originOpt) :> obj
                                 with exn -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
                             | _ -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Requires 1 tag.", originOpt) :> obj
+                        | "some" -> failwithumf ()
+                        | "list" -> failwithumf ()
+                        | "tuple" -> failwithumf ()
                         | "let" ->
                             match tail with
                             | [] -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj

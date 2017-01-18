@@ -667,7 +667,11 @@ module WorldScriptSystem =
     
         let evalNth5 index fnOptOrigin fnName args env =
             match args with
-            | [Tuple (evaleds, originOpt)] | [Keyphrase (evaleds, originOpt)] ->
+            | [Tuple (evaleds, originOpt)] ->
+                match Map.tryFind index evaleds with
+                | Some _ as evaledOpt -> (Option (evaledOpt, originOpt), env)
+                | None -> (Option (None, originOpt), env)
+            | [Keyphrase (evaleds, originOpt)] ->
                 match Map.tryFind index evaleds with
                 | Some _ as evaledOpt -> (Option (evaledOpt, originOpt), env)
                 | None -> (Option (None, originOpt), env)
