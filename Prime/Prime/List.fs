@@ -264,12 +264,16 @@ let foldWhile folder (state : 's) (list : 't list) =
     Seq.foldWhile folder state ^ List.toSeq list
 
 /// Implement a fold while folder results in Right.
-let foldWhileRight folder (state : 's) (list : 't list) =
+let foldWhileRight folder (state : Either<_, _>) (list : 't list) =
     Seq.foldWhileRight folder state ^ List.toSeq list
 
 /// Implement a fold until folder results in Nome.
 let foldUntil folder (state : 's) (list : 't list) =
     Seq.foldUntil folder state ^ List.toSeq list
+
+/// Implement a fold until folder results in Right.
+let foldUntilRight folder (state : Either<_, _>) (list : 't list) =
+    Seq.foldUntilRight folder state ^ List.toSeq list
 
 /// Check that a predicate passes for NO items in a list.
 let notExists pred (list : 't list) =

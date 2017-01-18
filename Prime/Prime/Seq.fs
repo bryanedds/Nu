@@ -89,14 +89,12 @@ let foldWhile folder (state : 's) (seq : 't seq) =
     | None -> lastState
 
 /// Implement a fold while folder results in Right.
-let foldWhileRight folder (state : 's) (seq : 't seq) =
-    let mutable lastState = state
-    let mutable stateEir = Right lastState
+let foldWhileRight folder (state : Either<_, _>) (seq : 't seq) =
+    let mutable state = state // make mutable
     use mutable enr = seq.GetEnumerator ()
-    while Either.isRight stateEir && enr.MoveNext () do
-        lastState <- Either.getRightValue stateEir
-        stateEir <- folder lastState enr.Current
-    stateEir
+    while Either.isRight state && enr.MoveNext () do
+        state <- folder (Either.getRightValue state) enr.Current
+    state
 
 /// Implement a fold until folder results in Some.
 let foldUntil folder (state : 's) (seq : 't seq) =
@@ -111,6 +109,14 @@ let foldUntil folder (state : 's) (seq : 't seq) =
     match stateOpt with
     | Some state -> state
     | None -> lastState
+
+/// Implement a fold until folder results in Right.
+let foldUntilRight folder (state : Either<_, _>) (seq : 't seq) =
+    let mutable state = state // make mutable
+    use mutable enr = seq.GetEnumerator ()
+    while Either.isLeft state && enr.MoveNext () do
+        state <- folder (Either.getLeftValue state) enr.Current
+    state
 
 /// Check that a predicate passes for NO items in a sequence.
 let rec notExists pred seq =

@@ -92,7 +92,7 @@ module Scripting =
         | LetMany of LetBinding list * Expr * Origin option
         | Fun of string list * int * Expr * bool * obj option * Origin option
         | If of Expr * Expr * Expr * Origin option
-        | Match of Expr * Expr list * Origin option
+        | Match of Expr * (Expr * Expr) list * Origin option
         | Select of (Expr * Expr) list * Origin option
         | Try of Expr * (Name list * Expr) list * Origin option
         | Do of Expr list * Origin option
@@ -269,7 +269,7 @@ module Scripting =
                             | [args; body] ->
                                 match args with
                                 | Symbols (args, originOpt) ->
-                                    if List.notExists (function Atom _ -> false | _ -> true) args then
+                                    if List.forall (function Atom _ -> true | _ -> false) args then
                                         let args = List.map (function Atom (arg, _) -> arg | _ -> failwithumf ()) args
                                         Fun (args, List.length args, this.SymbolToExpr body, false, None, originOpt) :> obj
                                     else Violation ([!!"InvalidFunForm"], "Invalid fun form. TODO: more info.", originOpt) :> obj
@@ -280,8 +280,15 @@ module Scripting =
                             | [condition; consequent; alternative] -> If (this.SymbolToExpr condition, this.SymbolToExpr consequent, this.SymbolToExpr alternative, originOpt) :> obj
                             | _ -> Violation ([!!"InvalidIfForm"], "Invalid if form. Requires 3 arguments.", originOpt) :> obj
                         | "match" ->
-                            // TODO: implement
-                            failwithumf ()
+                            match tail with
+                            | [input; Symbols (cases, originOpt)] ->
+                                let input = this.SymbolToExpr input
+                                if List.forall (function Symbols (symbols, _) when List.hasExactly 2 symbols -> true | _ -> false) cases then
+                                    let cases = List.map (function Symbols ([condition; consequent], _) -> (condition, consequent) | _ -> failwithumf ()) cases
+                                    let cases = List.map (fun (condition, consequent) -> (this.SymbolToExpr condition, this.SymbolToExpr consequent)) cases
+                                    Match (input, cases, originOpt) :> obj
+                                else Violation ([!!"InvalidMatchForm"], "Invalid match form. Requires 1 or more cases.", originOpt) :> obj
+                            | _ -> Violation ([!!"InvalidMatchForm"], "Invalid match form. Requires 1 input and 1 or more cases.", originOpt) :> obj
                         | "select" ->
                             // TODO: implement
                             failwithumf ()
@@ -304,9 +311,9 @@ module Scripting =
                             | _ -> Violation ([!!"InvalidTryForm"], "Invalid try form. Requires 1 body and a handler list.", originOpt) :> obj
                         | "do" ->
                             match tail with
-                            | [] -> Violation ([!!"InvalidTryForm"], "Invalid do form. Requires 1 or more sub-expressions.", originOpt) :> obj
-                            | exprs ->
-                                let exprs = List.map this.SymbolToExpr exprs
+                            | [] -> Violation ([!!"InvalidDoForm"], "Invalid do form. Requires 1 or more sub-expressions.", originOpt) :> obj
+                            | symbols ->
+                                let exprs = List.map this.SymbolToExpr symbols
                                 Do (exprs, originOpt) :> obj
                         | "break" ->
                             let content = this.SymbolToExpr (Symbols (tail, originOpt))
