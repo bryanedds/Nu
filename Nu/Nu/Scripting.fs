@@ -200,6 +200,8 @@ module Scripting =
                 match symbol with
                 | Prime.Atom (str, originOpt) ->
                     match str with
+                    | "true" -> Bool (true, originOpt) :> obj
+                    | "false" -> Bool (false, originOpt) :> obj
                     | "none" -> Option (None, originOpt) :> obj
                     | "empty" -> List (List.empty, originOpt) :> obj
                     | _ ->
@@ -290,8 +292,12 @@ module Scripting =
                                 else Violation ([!!"InvalidMatchForm"], "Invalid match form. Requires 1 or more cases.", originOpt) :> obj
                             | _ -> Violation ([!!"InvalidMatchForm"], "Invalid match form. Requires 1 input and 1 or more cases.", originOpt) :> obj
                         | "select" ->
-                            // TODO: implement
-                            failwithumf ()
+                            let cases = tail
+                            if List.forall (function Symbols (symbols, _) when List.hasExactly 2 symbols -> true | _ -> false) cases then
+                                let cases = List.map (function Symbols ([condition; consequent], _) -> (condition, consequent) | _ -> failwithumf ()) cases
+                                let cases = List.map (fun (condition, consequent) -> (this.SymbolToExpr condition, this.SymbolToExpr consequent)) cases
+                                Select (cases, originOpt) :> obj
+                            else Violation ([!!"InvalidSelectForm"], "Invalid select form. Requires 1 or more cases.", originOpt) :> obj
                         | "try" ->
                             match tail with
                             | [body; Prime.Symbols (handlers, _)] ->

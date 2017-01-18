@@ -57,6 +57,16 @@ module ScriptingTests =
         | Scripting.Violation (_, _, _) -> Assert.True true
         | _ -> Assert.True false
 
+    let [<Fact>] selectWorks () =
+        match eval "[select [false 0] [true 1]]" with
+        | Scripting.Int (result, _) -> Assert.Equal (1, result)
+        | _ -> Assert.True false
+
+    let [<Fact>] selectFailureWorks () =
+        match eval "[select [false 0] [false 1]]" with
+        | Scripting.Violation (_, _, _) -> Assert.True true
+        | _ -> Assert.True false
+
     let [<Fact>] letWorks () =
         match eval "[let [x 1] [+ x x]]" with
         | Scripting.Int (result, _) -> Assert.Equal (2, result)
