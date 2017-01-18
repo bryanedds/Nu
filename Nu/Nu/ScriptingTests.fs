@@ -42,9 +42,19 @@ module ScriptingTests =
         | Scripting.Int (result, _) -> Assert.Equal (4, result)
         | _ -> Assert.True false
 
-    let [<Fact>] conditionalsWork () =
+    let [<Fact>] conditionalWorks () =
         match eval "[if [= 1 1] 1 0]" with
         | Scripting.Int (result, _) -> Assert.Equal (1, result)
+        | _ -> Assert.True false
+
+    let [<Fact>] matchWorks () =
+        match eval "[match 1 [0 0] [1 2]]" with
+        | Scripting.Int (result, _) -> Assert.Equal (2, result)
+        | _ -> Assert.True false
+
+    let [<Fact>] matchFailureWorks () =
+        match eval "[match 2 [0 0] [1 2]]" with
+        | Scripting.Violation (_, _, _) -> Assert.True true
         | _ -> Assert.True false
 
     let [<Fact>] letWorks () =
