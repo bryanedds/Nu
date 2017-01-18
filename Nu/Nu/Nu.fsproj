@@ -101,6 +101,7 @@
     <Compile Include="World.fs" />
     <Compile Include="Stream.fs" />
     <Compile Include="ReflectionTests.fs" />
+    <Compile Include="SpatialTreeTests.fs" />
     <Compile Include="EffectTests.fs" />
     <Compile Include="WorldTests.fs" />
     <Compile Include="ScriptingTests.fs" />

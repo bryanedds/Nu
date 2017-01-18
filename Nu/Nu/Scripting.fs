@@ -92,7 +92,8 @@ module Scripting =
         | LetMany of LetBinding list * Expr * Origin option
         | Fun of string list * int * Expr * bool * obj option * Origin option
         | If of Expr * Expr * Expr * Origin option
-        | Cond of (Expr * Expr) list * Origin option
+        | Match of Expr * Expr list * Origin option
+        | Select of (Expr * Expr) list * Origin option
         | Try of Expr * (Name list * Expr) list * Origin option
         | Do of Expr list * Origin option
         | Break of Expr * Origin option
@@ -142,7 +143,8 @@ module Scripting =
             | LetMany (_, _, originOpt)
             | Fun (_, _, _, _, _, originOpt)
             | If (_, _, _, originOpt)
-            | Cond (_, originOpt)
+            | Match (_, _, originOpt)
+            | Select (_, originOpt)
             | Try (_, _, originOpt)
             | Do (_, originOpt)
             | Break (_, originOpt)
@@ -277,7 +279,10 @@ module Scripting =
                             match tail with
                             | [condition; consequent; alternative] -> If (this.SymbolToExpr condition, this.SymbolToExpr consequent, this.SymbolToExpr alternative, originOpt) :> obj
                             | _ -> Violation ([!!"InvalidIfForm"], "Invalid if form. Requires 3 arguments.", originOpt) :> obj
-                        | "cond" ->
+                        | "match" ->
+                            // TODO: implement
+                            failwithumf ()
+                        | "select" ->
                             // TODO: implement
                             failwithumf ()
                         | "try" ->
