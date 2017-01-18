@@ -911,27 +911,50 @@ module WorldScriptSystem =
             | Bool (bool, _) -> if bool then eval consequent env else eval alternative env
             | _ -> (Violation ([!!"InvalidIfCondition"], "Must provide an expression that evaluates to a bool in an if condition.", originOpt), env)
 
+        and evalMatch input (cases : (Expr * Expr) list) originOpt env =
+            let (input, env) = eval input env
+            let eir =
+                List.foldUntilRight (fun env (condition, consequent) ->
+                    let (evaledInput, env) = eval condition env
+                    match evalBinaryInner EqFns "match" input evaledInput env with
+                    | (Violation _, _) -> Right (evaledInput, env)
+                    | (Bool (true, _), env) -> Right (eval consequent env)
+                    | (Bool (false, _), _) -> Left env
+                    | _ -> failwithumf ())
+                    (Left env)
+                    cases
+            match eir with
+            | Right (evaled, env) -> (evaled, env)
+            | Left env -> (Violation ([!!"InexhaustiveMatch"], "A match expression failed to meet any of its cases.", originOpt), env)
+
         and evalSelect exprPairs originOpt env =
-            List.foldUntil
-                (fun (_, env) (condition, consequent) ->
+            let eir =
+                List.foldUntilRight (fun env (condition, consequent) ->
                     let (evaled, env) = eval condition env
                     match evaled with
-                    | Violation _ -> Some (evaled, env)
-                    | Bool (bool, _) -> if bool then Some (eval consequent env) else None
-                    | _ -> Some ((Violation ([!!"InvalidSelectCondition"], "Must provide an expression that evaluates to a bool in a case condition.", originOpt), env)))
-                (Unit originOpt, env)
-                exprPairs
+                    | Violation _ -> Right (evaled, env)
+                    | Bool (bool, _) -> if bool then Right (eval consequent env) else Left env
+                    | _ -> Right ((Violation ([!!"InvalidSelectCondition"], "Must provide an expression that evaluates to a bool in a case condition.", originOpt), env)))
+                    (Left env)
+                    exprPairs
+            match eir with
+            | Right (evaled, env) -> (evaled, env)
+            | Left env -> (Violation ([!!"InexhaustiveSelect"], "A select expression failed to meet any of its cases.", originOpt), env)
 
         and evalTry body handlers _ env =
             let oldEnv = env
             let (evaled, env) = eval body env
             match evaled with
-            | Violation (categories, _, originOpt) ->
-                List.foldUntil (fun (_, env) (handlerCategories, handlerBody) ->
-                    let categoriesTrunc = List.truncate (List.length handlerCategories) categories
-                    if categoriesTrunc = handlerCategories then Some (eval handlerBody env) else None)
-                    (Unit originOpt, oldEnv)
-                    handlers
+            | Violation (categories, _, _) ->
+                let eir =
+                    List.foldUntilRight (fun env (handlerCategories, handlerBody) ->
+                        let categoriesTrunc = List.truncate (List.length handlerCategories) categories
+                        if categoriesTrunc = handlerCategories then Right (eval handlerBody env) else Left env)
+                        (Left oldEnv)
+                        handlers
+                match eir with
+                | Right (evaled, env) -> (evaled, env)
+                | Left env -> (evaled, env)
             | _ -> (evaled, env)
 
         and evalDo exprs originOpt env =
@@ -942,7 +965,7 @@ module WorldScriptSystem =
                     match evaled with
                     | Violation _ as violation -> Left (violation, oldEnv)
                     | _ -> Right (evaled, env))
-                    (Unit originOpt, env)
+                    (Right (Unit originOpt, env))
                     exprs
             match evaledEir with
             | Right evaled -> evaled
@@ -1054,7 +1077,7 @@ module WorldScriptSystem =
             | LetMany (bindings, body, originOpt) -> evalLetMany bindings body originOpt env
             | Fun (pars, parsCount, body, envPushed, envOpt, originOpt) as fn -> evalFun fn pars parsCount body envPushed envOpt originOpt env
             | If (condition, consequent, alternative, originOpt) -> evalIf condition consequent alternative originOpt env
-            | Match _ -> (expr, env) // TODO: implement
+            | Match (input, cases, originOpt) -> evalMatch input cases originOpt env
             | Select (exprPairs, originOpt) -> evalSelect exprPairs originOpt env
             | Try (body, handlers, originOpt) -> evalTry body handlers originOpt env
             | Do (exprs, originOpt) -> evalDo exprs originOpt env
@@ -1079,7 +1102,7 @@ module WorldScriptSystem =
                         match evaled with
                         | Violation _ as violation -> Left (violation, env)
                         | evaled -> Right (evaled :: evaleds, env))
-                    ([], env)
+                    (Right ([], env))
                     exprs
             match eir with
             | Right (evaleds, env) -> Right (List.rev evaleds, env)
