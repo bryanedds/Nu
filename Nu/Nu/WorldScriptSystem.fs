@@ -911,15 +911,15 @@ module WorldScriptSystem =
             | Bool (bool, _) -> if bool then eval consequent env else eval alternative env
             | _ -> (Violation ([!!"InvalidIfCondition"], "Must provide an expression that evaluates to a bool in an if condition.", originOpt), env)
 
-        and evalCond exprPairs originOpt env =
+        and evalSelect exprPairs originOpt env =
             List.foldUntil
                 (fun (_, env) (condition, consequent) ->
                     let (evaled, env) = eval condition env
                     match evaled with
                     | Violation _ -> Some (evaled, env)
                     | Bool (bool, _) -> if bool then Some (eval consequent env) else None
-                    | _ -> Some ((Violation ([!!"InvalidCondCondition"], "Must provide an expression that evaluates to a bool in a case condition.", originOpt), env)))
-                ((Unit originOpt, env))
+                    | _ -> Some ((Violation ([!!"InvalidSelectCondition"], "Must provide an expression that evaluates to a bool in a case condition.", originOpt), env)))
+                (Unit originOpt, env)
                 exprPairs
 
         and evalTry body handlers _ env =
@@ -1054,7 +1054,8 @@ module WorldScriptSystem =
             | LetMany (bindings, body, originOpt) -> evalLetMany bindings body originOpt env
             | Fun (pars, parsCount, body, envPushed, envOpt, originOpt) as fn -> evalFun fn pars parsCount body envPushed envOpt originOpt env
             | If (condition, consequent, alternative, originOpt) -> evalIf condition consequent alternative originOpt env
-            | Cond (exprPairs, originOpt) -> evalCond exprPairs originOpt env
+            | Match _ -> (expr, env) // TODO: implement
+            | Select (exprPairs, originOpt) -> evalSelect exprPairs originOpt env
             | Try (body, handlers, originOpt) -> evalTry body handlers originOpt env
             | Do (exprs, originOpt) -> evalDo exprs originOpt env
             | Break (expr, _) -> evalBreak expr env
