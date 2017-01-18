@@ -281,7 +281,7 @@ module Scripting =
                             | _ -> Violation ([!!"InvalidIfForm"], "Invalid if form. Requires 3 arguments.", originOpt) :> obj
                         | "match" ->
                             match tail with
-                            | [input; Symbols (cases, originOpt)] ->
+                            | input :: cases ->
                                 let input = this.SymbolToExpr input
                                 if List.forall (function Symbols (symbols, _) when List.hasExactly 2 symbols -> true | _ -> false) cases then
                                     let cases = List.map (function Symbols ([condition; consequent], _) -> (condition, consequent) | _ -> failwithumf ()) cases
