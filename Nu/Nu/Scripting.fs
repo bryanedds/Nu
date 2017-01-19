@@ -85,7 +85,7 @@ module Scripting =
         | Option of Expr option * Origin option
         | List of Expr list * Origin option
         | Ring of Set<Expr> * Origin option
-        | Table of Map<string, Expr> * Origin option
+        | Table of Map<Expr, Expr> * Origin option
         | Stream of Stream * Origin option
 
         (* Special Forms *)

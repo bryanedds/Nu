@@ -627,9 +627,6 @@ module WorldScriptSystem =
         let evalTuple fnOriginOpt _ evaledArgs env =
             (Tuple (evaledArgs |> List.indexed |> Map.ofList, fnOriginOpt), env)
             
-        let evalList fnOriginOpt _ evaledArgs env =
-            (List (evaledArgs, fnOriginOpt), env)
-            
         let evalSome fnOriginOpt fnName evaledArgs env =
             match evaledArgs with
             | [evaledArg] -> (Option (Some evaledArg, fnOriginOpt), env)
@@ -640,6 +637,9 @@ module WorldScriptSystem =
             | [Option (evaled, originOpt)] -> (Bool (Option.isSome evaled, originOpt), env)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), env)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
+            
+        let evalList fnOriginOpt _ evaledArgs env =
+            (List (evaledArgs, fnOriginOpt), env)
     
         let evalHead fnOriginOpt fnName evaledArgs env =
             match evaledArgs with
@@ -670,6 +670,14 @@ module WorldScriptSystem =
             | [List (evaleds, originOpt)] -> (Bool (List.isEmpty evaleds, originOpt), env)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), env)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
+            
+        let evalRing fnOriginOpt _ evaledArgs env =
+            (Ring (Set.ofList evaledArgs, fnOriginOpt), env)
+            
+        let evalTable fnOriginOpt _ evaledArgs env =
+            (Ring (Set.ofList evaledArgs, fnOriginOpt), env)
+            //if List.forall (function )
+            //(Table (Map.ofList evaledArgs, fnOriginOpt), env)
     
         let evalNth5 index fnOriginOpt fnName evaledArgs env =
             match evaledArgs with
@@ -747,18 +755,21 @@ module WorldScriptSystem =
                  ("double", evalUnary DoubleFns)
                  ("string", evalUnary StringFns)
                  ("v2", evalV2)
-                 //("xOf", evalNOf 0)
-                 //("yOf", evalNOf 1)
-                 //("xAs", evalNAs 0)
-                 //("yAs", evalNas 1)
+                 //("xOf", evalNOf 0) TODO
+                 //("yOf", evalNOf 1) TODO
+                 //("xAs", evalNAs 0) TODO
+                 //("yAs", evalNas 1) TODO
                  ("tuple", evalTuple)
-                 ("list", evalList)
                  ("some", evalSome)
                  ("isSome", evalIsSome)
+                 ("list", evalList)
                  ("head", evalHead)
                  ("tail", evalTail)
                  ("cons", evalCons)
                  ("isEmpty", evalIsEmpty)
+                 ("ring", evalRing)
+                 ("table", evalTable)
+                 // TODO: move these above the list functions
                  ("fst", evalNth5 0)
                  ("snd", evalNth5 1)
                  ("thd", evalNth5 2)
