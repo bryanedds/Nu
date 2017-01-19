@@ -59,7 +59,7 @@ module Scripting =
                      "let fun if cond try break get set do " +
                      "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
-                     // TODO?: "onInit onRegister onUnregister onUpdate onPostUpdate onActualize" +
+                     // TODO?: "onRegister onUnregister onUpdate onPostUpdate onActualize" +
                      "tickRate tickTime updateCount",
                      "");
           TypeConverter (typeof<ExprConverter>);
