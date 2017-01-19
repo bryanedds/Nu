@@ -52,7 +52,7 @@ module Scripting =
                      "some none isNone isSome map " +
                      // TODO: "either isLeft isRight left right " +
                      "tuple unit fst snd thd fth fif nth " +
-                     "list head tail cons empty isEmpty notEmpty fold filter product sum contains " + // [list] is empty list
+                     "list head tail cons empty isEmpty notEmpty fold filter product sum contains " +
                      // TODO: "ring add remove " +
                      // TODO: "table tryFind find " +
                      "nix " + // the empty keyphrase
@@ -367,13 +367,15 @@ type [<NoComparison>] Script =
     { Constants : (Name * Scripting.Expr) list
       Streams : (Name * Guid * Scripting.Stream * Scripting.Expr) list
       Equalities : (Name * Guid * Scripting.Stream) list
-      OnInit : Scripting.Expr }
+      OnRegister : Scripting.Expr
+      OnUnregister : Scripting.Expr }
 
     static member empty =
         { Constants = []
           Streams = []
           Equalities = []
-          OnInit = Scripting.Unit (None) }
+          OnRegister = Scripting.UnitValue
+          OnUnregister = Scripting.UnitValue }
 
 [<AutoOpen>]
 module EnvModule =
