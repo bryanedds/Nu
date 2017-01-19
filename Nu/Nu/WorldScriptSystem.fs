@@ -1077,6 +1077,8 @@ module WorldScriptSystem =
             | Keyphrase _ -> (expr, env)
             | Option _ -> (expr, env)
             | List _ -> (expr, env)
+            | Ring _ -> (expr, env)
+            | Table _ -> (expr, env)
             | Stream _ -> (expr, env)
             | Binding (name, cachedBinding, originOpt) as expr -> evalBinding expr name cachedBinding originOpt env
             | Apply (exprs, originOpt) -> evalApply exprs originOpt env
