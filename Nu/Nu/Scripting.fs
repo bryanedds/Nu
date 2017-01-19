@@ -63,7 +63,8 @@ module Scripting =
                      "tickRate tickTime updateCount",
                      "");
           TypeConverter (typeof<ExprConverter>);
-          NoComparison>]
+          CustomEquality;
+          CustomComparison>]
         Expr =
 
         (* Primitive Value Types *)
@@ -83,6 +84,8 @@ module Scripting =
         | Keyphrase of Expr * Map<int, Expr> * Origin option
         | Option of Expr option * Origin option
         | List of Expr list * Origin option
+        | Ring of Set<Expr> * Origin option
+        | Table of Map<string, Expr> * Origin option
         | Stream of Stream * Origin option
 
         (* Special Forms *)
@@ -136,6 +139,8 @@ module Scripting =
             | Keyphrase (_, _, originOpt)
             | Option (_, originOpt)
             | List (_, originOpt)
+            | Ring (_, originOpt)
+            | Table (_, originOpt)
             | Stream (_, originOpt)
             | Binding (_, _, originOpt)
             | Apply (_, originOpt)
@@ -159,6 +164,82 @@ module Scripting =
             | Equate (_, _, _, _, originOpt)
             | EquateMany (_, _, _, _, _, originOpt)
             | Handle (_, _, originOpt) -> originOpt
+
+        static member equals left right =
+            match (left, right) with
+            | (Violation (leftNames, leftError, _), Violation (rightNames, rightError, _)) -> (leftNames, leftError) = (rightNames, rightError)
+            | (Unit _, Unit _) -> true
+            | (Bool (left, _), Bool (right, _)) -> left = right
+            | (Int (left, _), Int (right, _)) -> left = right
+            | (Int64 (left, _), Int64 (right, _)) -> left = right
+            | (Single (left, _), Single (right, _)) -> left = right
+            | (Double (left, _), Double (right, _)) -> left = right
+            | (Vector2 (left, _), Vector2 (right, _)) -> left = right
+            | (String (left, _), String (right, _)) -> left = right
+            | (Keyword (left, _), Keyword (right, _)) -> left = right
+            | (Tuple (left, _), Tuple (right, _)) -> left = right
+            | (Keyphrase (leftKeyword, leftExprs, _), Keyphrase (rightKeyword, rightExprs, _)) -> (leftKeyword, leftExprs) = (rightKeyword, rightExprs)
+            | (Option (left, _), Option (right, _)) -> left = right
+            | (List (left, _), List (right, _)) -> left = right
+            | (Ring (left, _), Ring (right, _)) -> left = right
+            | (Table (left, _), Table (right, _)) -> left = right
+            | (_, _) -> false
+
+        static member compare left right =
+            match (left, right) with
+            | (Violation (leftNames, leftError, _), Violation (rightNames, rightError, _)) -> compare (leftNames, leftError) (rightNames, rightError)
+            | (Unit _, Unit _) -> 0
+            | (Bool (left, _), Bool (right, _)) -> compare left right
+            | (Int (left, _), Int (right, _)) -> compare left right
+            | (Int64 (left, _), Int64 (right, _)) -> compare left right
+            | (Single (left, _), Single (right, _)) -> compare left right
+            | (Double (left, _), Double (right, _)) -> compare left right
+            | (Vector2 (left, _), Vector2 (right, _)) -> compare (left.X, left.Y) (right.X, right.Y) // TODO: comparison for OpenTK.Vector2!
+            | (String (left, _), String (right, _)) -> compare left right
+            | (Keyword (left, _), Keyword (right, _)) -> compare left right
+            | (Tuple (left, _), Tuple (right, _)) -> compare left right
+            | (Keyphrase (leftKeyword, leftExprs, _), Keyphrase (rightKeyword, rightExprs, _)) -> compare (leftKeyword, leftExprs) (rightKeyword, rightExprs)
+            | (Option (left, _), Option (right, _)) -> compare left right
+            | (List (left, _), List (right, _)) -> compare left right
+            | (Ring (left, _), Ring (right, _)) -> compare left right
+            | (Table (left, _), Table (right, _)) -> compare left right
+            | (_, _) -> -1
+
+        // TODO: check if we can trust the hash function to be efficient on value types...
+        override this.GetHashCode () =
+            match this with
+            | Violation (names, error, _) -> hash names ^^^ hash error
+            | Unit _ -> 0
+            | Bool (value, _) -> hash value
+            | Int (value, _) -> hash value
+            | Int64 (value, _) -> hash value
+            | Single (value, _) -> hash value
+            | Double (value, _) -> hash value
+            | Vector2 (value, _) -> hash value
+            | String (value, _) -> hash value
+            | Keyword (value, _) -> hash value
+            | Tuple (value, _) -> hash value
+            | Keyphrase (valueKeyword, valueExprs, _) -> hash (valueKeyword, valueExprs)
+            | Option (value, _) -> hash value
+            | List (value, _) -> hash value
+            | Ring (value, _) -> hash value
+            | Table (value, _) -> hash value
+            | _ -> -1
+
+        override this.Equals that =
+            match that with
+            | :? Expr as that -> Expr.equals this that
+            | _ -> failwithumf ()
+
+        interface IComparable<Expr> with
+            member this.CompareTo that =
+                Expr.compare this that
+
+        interface IComparable with
+            member this.CompareTo that =
+                match that with
+                | :? Expr as that -> (this :> IComparable<Expr>).CompareTo that
+                | _ -> failwithumf ()
 
     /// Converts Expr types.
     and ExprConverter () =
