@@ -443,21 +443,6 @@ module Scripting =
     let EmptyStringValue = String (String.Empty, None)
     let ZeroIntValue = Int (0, None)
 
-/// Dynamically drives behavior for simulants.
-type [<NoComparison>] Script =
-    { Constants : (Name * Scripting.Expr) list
-      Streams : (Name * Guid * Scripting.Stream * Scripting.Expr) list
-      Equalities : (Name * Guid * Scripting.Stream) list
-      OnRegister : Scripting.Expr
-      OnUnregister : Scripting.Expr }
-
-    static member empty =
-        { Constants = []
-          Streams = []
-          Equalities = []
-          OnRegister = Scripting.UnitValue
-          OnUnregister = Scripting.UnitValue }
-
 [<AutoOpen>]
 module EnvModule =
 
@@ -484,98 +469,17 @@ module EnvModule =
     
         /// A bottom value for an binding in a procedural frame.
         /// Should ever exist ONLY in an uninitialized procedural frame!
-        let BottomValue = Scripting.Violation ([!!"BottomAccess"], "Accessed a bottom value.", None)
+        let private BottomValue = Scripting.Violation ([!!"BottomAccess"], "Accessed a bottom value.", None)
 
         /// A bottom binding for a procedural frame.
         /// Should ever exist ONLY in an uninitialized procedural frame!
-        let BottomBinding = (String.Empty, BottomValue)
+        let private BottomBinding = (String.Empty, BottomValue)
 
-        let make chooseWorld rebinding topLevel (context : 'p) (world : 'w) =
-            { Rebinding = rebinding
-              TopLevel = topLevel
-              Frames = []
-              Streams = Map.empty
-              Context = context
-              World = chooseWorld world }
-
-        let getRebinding (env : Env<'p, 'g, 'w>) =
-            env.Rebinding
-
-        let tryGetStream streamAddress (env : Env<'p, 'g, 'w>) =
-            Map.tryFind streamAddress env.Streams
-
-        let addStream streamAddress address (env : Env<'p, 'g, 'w>) =
-            { env with Streams = Map.add streamAddress address env.Streams }
-
-        let getContext (env : Env<'p, 'g, 'w>) =
-            env.Context
-
-        let getWorld (env : Env<'p, 'g, 'w>) =
-            env.World
-
-        let setWorld chooseWorld world (env : Env<'p, 'g, 'w>) =
-            { env with World = chooseWorld world }
-
-        let updateWorld chooseWorld by (env : Env<'p, 'g, 'w>) =
-            setWorld chooseWorld (by (getWorld env)) env
-
-        let makeFrame size =
+        let private makeFrame size =
             Array.create size BottomBinding
 
-        let addFrame frame (env : Env<'p, 'g, 'w>) =
+        let private addFrame frame (env : Env<'p, 'g, 'w>) =
             { env with Frames = frame :: env.Frames }
-
-        let tryAddBinding isTopLevel name evaled (env : Env<'p, 'g, 'w>) =
-            if isTopLevel && (env.Rebinding || not ^ env.TopLevel.ContainsKey name) then
-                env.TopLevel.Add (name, evaled)
-                Some env
-            else None
-
-        let tryAddDeclarationBinding name binding env =
-            tryAddBinding true name binding env
-
-        let addProceduralBinding appendType name binding env =
-            match appendType with
-            | AddToNewFrame size ->
-                let frame = makeFrame size
-                frame.[0] <- (name, binding)
-                addFrame frame env
-            | AddToHeadFrame offset ->
-                match env.Frames with
-                | frame :: _ ->
-                    frame.[offset] <- (name, binding)
-                    env
-                | [] -> failwithumf ()
-
-        let tryAddDeclarationBindings bindings env =
-            if not env.Rebinding then 
-                let existences = Seq.map (fun (key, _) -> env.TopLevel.ContainsKey key) bindings
-                if Seq.notExists id existences then
-                    for binding in bindings do env.TopLevel.Add binding
-                    Some env
-                else None
-            else
-                for (name, value) in bindings do env.TopLevel.ForceAdd (name, value) |> ignore
-                Some env
-
-        let addProceduralBindings appendType bindings env =
-            match appendType with
-            | AddToNewFrame size ->
-                let frame = makeFrame size
-                let mutable index = 0
-                for binding in bindings do
-                    frame.[index] <- binding
-                    index <- index + 1
-                addFrame frame env
-            | AddToHeadFrame start ->
-                match env.Frames with
-                | frame :: _ ->
-                    let mutable index = start
-                    for binding in bindings do
-                        frame.[index] <- binding
-                        index <- index + 1
-                    env
-                | [] -> failwithumf ()
 
         let tryGetDeclarationBinding name (env : Env<'p, 'g, 'w>) =
             match env.TopLevel.TryGetValue name with
@@ -621,6 +525,102 @@ module EnvModule =
                 let (_, binding) = frame.[index]
                 Some binding
 
+        let tryAddDeclarationBinding name value env =
+            if (env.Rebinding || not ^ env.TopLevel.ContainsKey name) then
+                env.TopLevel.Add (name, value)
+                Some env
+            else None
+
+        let tryAddDeclarationBindings bindings env =
+            if not env.Rebinding then 
+                let existences = Seq.map (fun (key, _) -> env.TopLevel.ContainsKey key) bindings
+                if Seq.notExists id existences then
+                    for binding in bindings do env.TopLevel.Add binding
+                    Some env
+                else None
+            else
+                for (name, value) in bindings do env.TopLevel.ForceAdd (name, value) |> ignore
+                Some env
+
+        let tryGetStream streamAddress (env : Env<'p, 'g, 'w>) =
+            Map.tryFind streamAddress env.Streams
+
+        let addProceduralBinding appendType name value env =
+            match appendType with
+            | AddToNewFrame size ->
+                let frame = makeFrame size
+                frame.[0] <- (name, value)
+                addFrame frame env
+            | AddToHeadFrame offset ->
+                match env.Frames with
+                | frame :: _ ->
+                    frame.[offset] <- (name, value)
+                    env
+                | [] -> failwithumf ()
+
+        let addProceduralBindings appendType bindings env =
+            match appendType with
+            | AddToNewFrame size ->
+                let frame = makeFrame size
+                let mutable index = 0
+                for binding in bindings do
+                    frame.[index] <- binding
+                    index <- index + 1
+                addFrame frame env
+            | AddToHeadFrame start ->
+                match env.Frames with
+                | frame :: _ ->
+                    let mutable index = start
+                    for binding in bindings do
+                        frame.[index] <- binding
+                        index <- index + 1
+                    env
+                | [] -> failwithumf ()
+
+        let addStream streamAddress address (env : Env<'p, 'g, 'w>) =
+            { env with Streams = Map.add streamAddress address env.Streams }
+
+        let getContext (env : Env<'p, 'g, 'w>) =
+            env.Context
+
+        let getWorld (env : Env<'p, 'g, 'w>) =
+            env.World
+
+        let setWorld chooseWorld world (env : Env<'p, 'g, 'w>) =
+            { env with World = chooseWorld world }
+
+        let updateWorld chooseWorld by (env : Env<'p, 'g, 'w>) =
+            setWorld chooseWorld (by (getWorld env)) env
+
+        let make chooseWorld rebinding topLevel (context : 'p) (world : 'w) =
+            { Rebinding = rebinding
+              TopLevel = topLevel
+              Frames = []
+              Streams = Map.empty
+              Context = context
+              World = chooseWorld world }
+
+[<AutoOpen>]
+module ScriptModule =
+
+    /// Dynamically drives behavior for simulants.
+    type [<NoComparison>] Script =
+        { Constants : (Name * Scripting.Expr) list
+          Streams : (Name * Guid * Scripting.Stream * Scripting.Expr) list
+          Equalities : (Name * Guid * Scripting.Stream) list
+          OnRegister : Scripting.Expr
+          OnUnregister : Scripting.Expr }
+    
+        static member empty =
+            { Constants = []
+              Streams = []
+              Equalities = []
+              OnRegister = Scripting.UnitValue
+              OnUnregister = Scripting.UnitValue }
+
 /// The execution environment for scripts.
 type Env<'p, 'g, 'w when 'p :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
     EnvModule.Env<'p, 'g, 'w>
+
+/// Dynamically drives behavior for simulants.
+type Script = ScriptModule.Script
