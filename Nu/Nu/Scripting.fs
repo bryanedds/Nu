@@ -47,12 +47,11 @@ module Scripting =
                      "length normal " +
                      "cross dot " +
                      "violation bool int int64 single double string " +
-                     "nil " + // the empty keyword
+                     "nil nix " + // the empty keyword / keyphrase
                      "v2 xOf yOf xAs yAs " + // vector operations
+                     "pair tuple unit fst snd thd fth fif nth " +
                      "some none isNone isSome map " +
                      // TODO: "either isLeft isRight left right " +
-                     "pair tuple unit fst snd thd fth fif nth " +
-                     "nix " + // the empty keyphrase
                      "list head tail cons empty isEmpty notEmpty fold filter product sum contains " +
                      "ring add remove " +
                      "table tryFind find " +
