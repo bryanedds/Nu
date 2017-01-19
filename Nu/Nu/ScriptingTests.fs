@@ -37,11 +37,6 @@ module ScriptingTests =
         | Scripting.Int (result, _) -> Assert.Equal (4, result)
         | _ -> Assert.True false
 
-    let [<Fact>] listsWork () =
-        match eval "[fst [list 1]]" with
-        | Scripting.Int (result, _) -> Assert.Equal (1, result)
-        | _ -> Assert.True false
-
     let [<Fact>] tuplesWork () =
         match eval "[fst [tuple 1]]" with
         | Scripting.Int (result, _) -> Assert.Equal (1, result)
@@ -50,6 +45,16 @@ module ScriptingTests =
     let [<Fact>] keyphrasesWork () =
         match eval "[fst [K 1]]" with
         | Scripting.Int (result, _) -> Assert.Equal (1, result)
+        | _ -> Assert.True false
+
+    let [<Fact>] listsWork () =
+        match eval "[fst [list 1]]" with
+        | Scripting.Int (result, _) -> Assert.Equal (1, result)
+        | _ -> Assert.True false
+
+    let [<Fact>] outOfRangeWorks () =
+        match eval "[fst empty]" with
+        | Scripting.Violation _ -> Assert.True true
         | _ -> Assert.True false
 
     let [<Fact>] conditionalWorks () =
