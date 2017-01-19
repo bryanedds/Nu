@@ -623,9 +623,42 @@ module WorldScriptSystem =
             match evaledArgs with
             | [evaledLeft; evaledRight] -> evalBinaryInner fns fnName evaledLeft evaledRight env                
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Binary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), env)
+        
+        let evalV2 fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
+            | [Single (x, _); Single (y, _)] -> (Vector2 (OpenTK.Vector2 (x, y), fnOriginOpt), env)
+            | [Violation _ as violation; _] -> (violation, env)
+            | [_; Violation _ as violation] -> (violation, env)
+            | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"V2"; !!(String.capitalize fnName)], "Application of " + fnName + " requires a single for the both arguments.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"V2"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), env)
 
         let evalTuple fnOriginOpt _ evaledArgs env =
             (Tuple (evaledArgs |> List.indexed |> Map.ofList, fnOriginOpt), env)
+    
+        let evalNth5 index fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
+            | [Tuple (evaleds, originOpt)] ->
+                match Map.tryFind index evaleds with
+                | Some evaled -> (evaled, env)
+                | None -> (Violation ([!!"OutOfRange"], "Tuple does not contain element at index " + string index + ".", originOpt), env)
+            | [Keyphrase (_, evaleds, originOpt)] ->
+                match Map.tryFind index evaleds with
+                | Some evaled -> (evaled, env)
+                | None -> (Violation ([!!"OutOfRange"], "Keyphrase does not contain element at index " + string index + ".", originOpt), env)
+            | [List (evaleds, originOpt)] ->
+                match List.tryFindAt index evaleds with
+                | Some evaled -> (evaled, env)
+                | None -> (Violation ([!!"OutOfRange"], "List does not contain element at index " + string index + ".", originOpt), env)
+            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-sequence.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
+        
+        let evalNth fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
+            | [head; foot] ->
+                match head with
+                | Int (int, _) -> evalNth5 int fnOriginOpt fnName [foot] env
+                | _ -> (Violation ([!!"InvalidNthArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Application of " + fnName + " requires an int for the first argument.", fnOriginOpt), env)
+            | _ ->  (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), env)
             
         let evalSome fnOriginOpt fnName evaledArgs env =
             match evaledArgs with
@@ -678,41 +711,8 @@ module WorldScriptSystem =
             (Ring (Set.ofList evaledArgs, fnOriginOpt), env)
             //if List.forall (function List ([evaledFst; evaledSnd], _) -> true | _ -> false) evaledArgs then 
             //(Table (Map.ofList evaledArgs, fnOriginOpt), env)
-    
-        let evalNth5 index fnOriginOpt fnName evaledArgs env =
-            match evaledArgs with
-            | [Tuple (evaleds, originOpt)] ->
-                match Map.tryFind index evaleds with
-                | Some evaled -> (evaled, env)
-                | None -> (Violation ([!!"OutOfRange"], "Tuple does not contain element at index " + string index + ".", originOpt), env)
-            | [Keyphrase (_, evaleds, originOpt)] ->
-                match Map.tryFind index evaleds with
-                | Some evaled -> (evaled, env)
-                | None -> (Violation ([!!"OutOfRange"], "Keyphrase does not contain element at index " + string index + ".", originOpt), env)
-            | [List (evaleds, originOpt)] ->
-                match List.tryFindAt index evaleds with
-                | Some evaled -> (evaled, env)
-                | None -> (Violation ([!!"OutOfRange"], "List does not contain element at index " + string index + ".", originOpt), env)
-            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-sequence.", fnOriginOpt), env)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
-        
-        let evalNth fnOriginOpt fnName evaledArgs env =
-            match evaledArgs with
-            | [head; foot] ->
-                match head with
-                | Int (int, _) -> evalNth5 int fnOriginOpt fnName [foot] env
-                | _ -> (Violation ([!!"InvalidNthArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Application of " + fnName + " requires an int for the first argument.", fnOriginOpt), env)
-            | _ ->  (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), env)
-        
-        let rec evalV2 fnOriginOpt fnName evaledArgs env =
-            match evaledArgs with
-            | [Single (x, _); Single (y, _)] -> (Vector2 (OpenTK.Vector2 (x, y), fnOriginOpt), env)
-            | [Violation _ as violation; _] -> (violation, env)
-            | [_; Violation _ as violation] -> (violation, env)
-            | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"V2"; !!(String.capitalize fnName)], "Application of " + fnName + " requires a single for the both arguments.", fnOriginOpt), env)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"V2"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), env)
 
-        and Intrinsics =
+        let rec Intrinsics =
             dictPlus
                 [("!", evalBoolUnary not)
                  ("&", evalBoolBinary (&&))
@@ -760,6 +760,12 @@ module WorldScriptSystem =
                  //("xAs", evalNAs 0) TODO
                  //("yAs", evalNas 1) TODO
                  ("tuple", evalTuple)
+                 ("fst", evalNth5 0)
+                 ("snd", evalNth5 1)
+                 ("thd", evalNth5 2)
+                 ("fth", evalNth5 3)
+                 ("fif", evalNth5 4)
+                 ("nth", evalNth)
                  ("some", evalSome)
                  ("isSome", evalIsSome)
                  ("list", evalList)
@@ -769,13 +775,6 @@ module WorldScriptSystem =
                  ("isEmpty", evalIsEmpty)
                  ("ring", evalRing)
                  ("table", evalTable)
-                 // TODO: move these above the list functions
-                 ("fst", evalNth5 0)
-                 ("snd", evalNth5 1)
-                 ("thd", evalNth5 2)
-                 ("fth", evalNth5 3)
-                 ("fif", evalNth5 4)
-                 ("nth", evalNth)
                  ("product", evalProduct)]
 
         and isIntrinsic name =
@@ -1063,7 +1062,7 @@ module WorldScriptSystem =
 
         and evalDefine name expr originOpt env =
             let (evaled, env) = eval expr env
-            match Env.tryAddBinding true name evaled env with
+            match Env.tryAddDeclarationBinding name evaled env with
             | Some env -> (Unit originOpt, env)
             | None -> (Violation ([!!"InvalidDefinition"], "Definition '" + name + "' could not be created due to having the same name as another top-level binding.", originOpt), env)
 
