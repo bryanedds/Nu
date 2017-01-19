@@ -82,7 +82,7 @@ module Scripting =
         | Option of Expr option * Origin option
         | Tuple of Map<int, Expr> * Origin option
         | List of Expr list * Origin option
-        | Keyphrase of Map<int, Expr> * Origin option
+        | Keyphrase of Expr * Map<int, Expr> * Origin option
         | Stream of Stream * Origin option
 
         (* Special Forms *)
@@ -135,7 +135,7 @@ module Scripting =
             | Option (_, originOpt)
             | Tuple (_, originOpt)
             | List (_, originOpt)
-            | Keyphrase (_, originOpt)
+            | Keyphrase (_, _, originOpt)
             | Stream (_, originOpt)
             | Binding (_, _, originOpt)
             | Apply (_, originOpt)
@@ -243,9 +243,6 @@ module Scripting =
                                 try let tagName = !!tagStr in Violation (Name.split [|'/'|] tagName, errorMsg, originOpt) :> obj
                                 with exn -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
                             | _ -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Requires 1 tag.", originOpt) :> obj
-                        | "some" -> failwithumf ()
-                        | "list" -> failwithumf ()
-                        | "tuple" -> failwithumf ()
                         | "let" ->
                             match tail with
                             | [] -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj

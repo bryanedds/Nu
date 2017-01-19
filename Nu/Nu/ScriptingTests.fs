@@ -17,14 +17,9 @@ module ScriptingTests =
         let expr = scvalue<Scripting.Expr> exprStr
         ScriptSystem.eval expr env |> fst
 
-    let [<Fact>] keywordConstructionWorks () =
+    let [<Fact>] keywordsWork () =
         match eval "Keyword" with
         | Scripting.Keyword (result, _) -> Assert.Equal ("Keyword", result)
-        | _ -> Assert.True false
-
-    let [<Fact>] keyphraseConstructionWorks () =
-        match eval "[Keyphrase 0]" with
-        | Scripting.Keyphrase (_, _) -> Assert.True true // TODO: better assertion here
         | _ -> Assert.True false
 
     let [<Fact>] plusWorks () =
@@ -40,6 +35,21 @@ module ScriptingTests =
     let [<Fact>] nestedApplicationWorks () =
         match eval "[+ [+ 1 1] [+ 1 1]]" with
         | Scripting.Int (result, _) -> Assert.Equal (4, result)
+        | _ -> Assert.True false
+
+    let [<Fact>] listsWork () =
+        match eval "[fst [list 1]]" with
+        | Scripting.Int (result, _) -> Assert.Equal (1, result)
+        | _ -> Assert.True false
+
+    let [<Fact>] tuplesWork () =
+        match eval "[fst [tuple 1]]" with
+        | Scripting.Int (result, _) -> Assert.Equal (1, result)
+        | _ -> Assert.True false
+
+    let [<Fact>] keyphrasesWork () =
+        match eval "[fst [K 1]]" with
+        | Scripting.Int (result, _) -> Assert.Equal (1, result)
         | _ -> Assert.True false
 
     let [<Fact>] conditionalWorks () =
