@@ -570,21 +570,21 @@ module WorldScriptSystem =
                 (unsubscribe, env)
             Env.addStream streamAddress (stream, unsubscribe) env
 
-        let evalBoolUnary fn fnOptOrigin fnName evaledArgs env =
+        let evalBoolUnary fn fnOriginOpt fnName evaledArgs env =
             match evaledArgs with
             | [evaled] ->
                 match evaled with
                 | Bool (bool, originOpt) -> (Bool (fn bool, originOpt), env)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Unary"; !!(String.capitalize fnName)], "Cannot apply a bool function to a non-bool value.", Expr.getOriginOpt evaled), env)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Unary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOptOrigin), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Unary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
 
-        let evalBoolBinary fn fnOptOrigin fnName evaledArgs env =
+        let evalBoolBinary fn fnOriginOpt fnName evaledArgs env =
             match evaledArgs with
             | [evaledLeft; evaledRight] ->
                 match (evaledLeft, evaledRight) with
                 | (Bool (boolLeft, originLeftOpt), Bool (boolRight, originRightOpt)) -> (Bool (fn boolLeft boolRight, combine originLeftOpt originRightOpt), env)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!(String.capitalize fnName)], "Cannot apply a bool function to a non-bool value.", combine (Expr.getOriginOpt evaledLeft) (Expr.getOriginOpt evaledRight)), env)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Binary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Binary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), env)
 
         let evalUnaryInner (fns : UnaryFns) fnName evaledArg env =
             match evaledArg with
@@ -597,13 +597,13 @@ module WorldScriptSystem =
             | String (stringValue, originOpt) -> ((fns.String stringValue originOpt), env)
             | Tuple (tupleValue, originOpt) -> ((fns.Tuple tupleValue originOpt), env)
             | List (listValue, originOpt) -> ((fns.List listValue originOpt), env)
-            | Keyphrase (phraseValue, originOpt) -> ((fns.Keyphrase phraseValue originOpt), env)
+            | Keyphrase (_, phraseValue, originOpt) -> ((fns.Keyphrase phraseValue originOpt), env)
             | _ -> (Violation ([!!"InvalidArgumentType"; !!"Unary"; !!(String.capitalize fnName)], "Cannot apply an unary function on an incompatible value.", Expr.getOriginOpt evaledArg), env)
 
-        let evalUnary fns fnOptOrigin fnName evaledArgs env =
+        let evalUnary fns fnOriginOpt fnName evaledArgs env =
             match evaledArgs with
             | [evaledArg] -> evalUnaryInner fns fnName evaledArg env
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Unary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOptOrigin), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Unary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
 
         let evalBinaryInner (fns : BinaryFns) fnName evaledLeft evaledRight env =
             match (evaledLeft, evaledRight) with
@@ -616,91 +616,93 @@ module WorldScriptSystem =
             | (String (stringLeft, originLeftOpt), String (stringRight, originRightOpt)) -> ((fns.String stringLeft stringRight (combine originLeftOpt originRightOpt)), env)
             | (Tuple (tupleLeft, originLeftOpt), Tuple (tupleRight, originRightOpt)) -> ((fns.Tuple tupleLeft tupleRight (combine originLeftOpt originRightOpt)), env)
             | (List (listLeft, originLeftOpt), List (listRight, originRightOpt)) -> ((fns.List listLeft listRight (combine originLeftOpt originRightOpt)), env)
-            | (Keyphrase (phraseLeft, originLeftOpt), Keyphrase (phraseRight, originRightOpt)) -> ((fns.Keyphrase phraseLeft phraseRight (combine originLeftOpt originRightOpt)), env)
+            | (Keyphrase (_, phraseLeft, originLeftOpt), Keyphrase (_, phraseRight, originRightOpt)) -> ((fns.Keyphrase phraseLeft phraseRight (combine originLeftOpt originRightOpt)), env)
             | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!(String.capitalize fnName)], "Cannot apply a binary function on unlike or incompatible values.", combine (Expr.getOriginOpt evaledLeft) (Expr.getOriginOpt evaledRight)), env)
 
-        let evalBinary fns fnOptOrigin fnName evaledArgs env =
+        let evalBinary fns fnOriginOpt fnName evaledArgs env =
             match evaledArgs with
             | [evaledLeft; evaledRight] -> evalBinaryInner fns fnName evaledLeft evaledRight env                
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Binary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Binary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), env)
+            
+        let evalList fnOriginOpt _ evaledArgs env =
+            (List (evaledArgs, fnOriginOpt), env)
+            
+        let evalTuple fnOriginOpt _ evaledArgs env =
+            (Tuple (evaledArgs |> List.indexed |> Map.ofList, fnOriginOpt), env)
 
-        let evalSome fnOptOrigin fnName args env =
-            match args with
-            | [evaled] -> (Option (Some evaled, fnOptOrigin), env)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Option"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOptOrigin), env)
+        let evalSome fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
+            | [evaledArg] -> (Option (Some evaledArg, fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Option"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
     
-        let evalIsSome fnOptOrigin fnName args env =
-            match args with
+        let evalIsSome fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
             | [Option (evaled, originOpt)] -> (Bool (Option.isSome evaled, originOpt), env)
-            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOptOrigin), env)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOptOrigin), env)
+            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
     
-        let evalHead fnOptOrigin fnName args env =
-            match args with
-            | [List (evaleds, _)] ->
-                match evaleds with
+        let evalHead fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
+            | [List (evaledArgs, _)] ->
+                match evaledArgs with
                 | evaledHead :: _ -> (evaledHead, env)
-                | _ -> (Violation ([!!"InvalidArgumentValue"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a list with no members.", fnOptOrigin), env)
-            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOptOrigin), env)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOptOrigin), env)
+                | _ -> (Violation ([!!"InvalidArgumentValue"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a list with no members.", fnOriginOpt), env)
+            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
     
-        let evalTail fnOptOrigin fnName args env =
-            match args with
+        let evalTail fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
             | [List (evaleds, originOpt)] ->
                 match evaleds with
                 | _ :: evaledTail -> (List (evaledTail, originOpt), env)
-                | _ -> (Violation ([!!"InvalidArgumentValue"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a list with no members.", fnOptOrigin), env)
-            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOptOrigin), env)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOptOrigin), env)
+                | _ -> (Violation ([!!"InvalidArgumentValue"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a list with no members.", fnOriginOpt), env)
+            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
     
-        let evalCons fnOptOrigin fnName args env =
-            match args with
+        let evalCons fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
             | [evaled; List (evaleds, originOpt)] -> (List (evaled :: evaleds, originOpt), env)
-            | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOptOrigin), env)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOptOrigin), env)
+            | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
     
-        let evalIsEmpty fnOptOrigin fnName args env =
-            match args with
+        let evalIsEmpty fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
             | [List (evaleds, originOpt)] -> (Bool (List.isEmpty evaleds, originOpt), env)
-            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOptOrigin), env)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOptOrigin), env)
+            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
     
-        let evalNth5 index fnOptOrigin fnName args env =
-            match args with
+        let evalNth5 index fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
             | [Tuple (evaleds, originOpt)] ->
                 match Map.tryFind index evaleds with
-                | Some _ as evaledOpt -> (Option (evaledOpt, originOpt), env)
-                | None -> (Option (None, originOpt), env)
-            | [Keyphrase (evaleds, originOpt)] ->
+                | Some evaled -> (evaled, env)
+                | None -> (Violation ([!!"OutOfRange"], "Tuple does not contain element at index " + string index + ".", originOpt), env)
+            | [Keyphrase (_, evaleds, originOpt)] ->
                 match Map.tryFind index evaleds with
-                | Some _ as evaledOpt -> (Option (evaledOpt, originOpt), env)
-                | None -> (Option (None, originOpt), env)
+                | Some evaled -> (evaled, env)
+                | None -> (Violation ([!!"OutOfRange"], "Keyphrase does not contain element at index " + string index + ".", originOpt), env)
             | [List (evaleds, originOpt)] ->
                 match List.tryFindAt index evaleds with
-                | Some _ as evaledOpt -> (Option (evaledOpt, originOpt), env)
-                | None -> (Option (None, originOpt), env)
-            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-sequence.", fnOptOrigin), env)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOptOrigin), env)
+                | Some evaled -> (evaled, env)
+                | None -> (Violation ([!!"OutOfRange"], "List does not contain element at index " + string index + ".", originOpt), env)
+            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-sequence.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
         
-        let evalNth fnOptOrigin fnName args env =
-            match args with
+        let evalNth fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
             | [head; foot] ->
                 match head with
-                | Int (int, _) -> evalNth5 int fnOptOrigin fnName [foot] env
-                | _ -> (Violation ([!!"InvalidNthArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Application of " + fnName + " requires an int for the first argument.", fnOptOrigin), env)
-            | _ ->  (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
+                | Int (int, _) -> evalNth5 int fnOriginOpt fnName [foot] env
+                | _ -> (Violation ([!!"InvalidNthArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Application of " + fnName + " requires an int for the first argument.", fnOriginOpt), env)
+            | _ ->  (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), env)
         
-        let rec evalV2 fnOptOrigin fnName args env =
-            match args with
-            | [argX; argY] ->
-                let (evaledX, env) = eval argX env
-                let (evaledY, env) = eval argY env
-                match (evaledX, evaledY) with
-                | (Single (x, _), Single (y, _)) -> (Vector2 (OpenTK.Vector2 (x, y), fnOptOrigin), env)
-                | (Violation _ as violation, _) -> (violation, env)
-                | (_, (Violation _ as violation)) -> (violation, env)
-                | (_, _) -> (Violation ([!!"InvalidArgumentType"; !!"V2"; !!(String.capitalize fnName)], "Application of " + fnName + " requires a single for the both arguments.", fnOptOrigin), env)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"V2"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOptOrigin), env)
+        let rec evalV2 fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
+            | [Single (x, _); Single (y, _)] -> (Vector2 (OpenTK.Vector2 (x, y), fnOriginOpt), env)
+            | [Violation _ as violation; _] -> (violation, env)
+            | [_; Violation _ as violation] -> (violation, env)
+            | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"V2"; !!(String.capitalize fnName)], "Application of " + fnName + " requires a single for the both arguments.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"V2"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), env)
 
         and Intrinsics =
             dictPlus
@@ -749,6 +751,8 @@ module WorldScriptSystem =
                  //("yOf", evalNOf 1)
                  //("xAs", evalNAs 0)
                  //("yAs", evalNas 1)
+                 ("tuple", evalTuple)
+                 ("list", evalList)
                  ("some", evalSome)
                  ("isSome", evalIsSome)
                  ("head", evalHead)
@@ -766,13 +770,13 @@ module WorldScriptSystem =
         and isIntrinsic name =
             Intrinsics.ContainsKey name
 
-        and evalIntrinsic originOpt name args env =
+        and evalIntrinsic originOpt name evaledArgs env =
             match Intrinsics.TryGetValue name with
-            | (true, intrinsic) -> intrinsic originOpt name args env
+            | (true, intrinsic) -> intrinsic originOpt name evaledArgs env
             | (false, _) -> (Violation ([!!"InvalidFunctionTargetBinding"], "Cannot apply a non-existent binding.", originOpt), env)
 
-        and evalProduct originOpt name args env =
-            match args with
+        and evalProduct originOpt name evaledArgs env =
+            match evaledArgs with
             | [Stream (streamLeft, originLeftOpt); Stream (streamRight, originRightOpt)] ->
                 match evalStream name streamLeft originLeftOpt env with
                 | Right (streamLeft, env) ->
@@ -831,23 +835,22 @@ module WorldScriptSystem =
             match evalMany exprs env with
             | Right (evaleds, _) ->
                 match evaleds with
-                | head :: tail ->
-                    match head with
-                    | Keyword (name, originOpt) ->
-                        let map = String (name, originOpt) :: tail |> List.indexed |> Map.ofList
-                        (Keyphrase (map, originOpt), oldEnv)
+                | evaledHead :: evaledTail ->
+                    match evaledHead with
+                    | Keyword (_, originOpt) as keyword ->
+                        let map = evaledTail |> List.indexed |> Map.ofList
+                        (Keyphrase (keyword, map, originOpt), oldEnv)
                     | Binding (name, _, originOpt) ->
-                        // NOTE: logically must be intrinsic if eval operation was monomorphic
-                        let (evaled, _) = evalIntrinsic originOpt name tail env
+                        let (evaled, _) = evalIntrinsic originOpt name evaledTail env
                         (evaled, oldEnv)
                     | Fun (pars, parsCount, body, _, envOpt, originOpt) ->
                         let env =
                             match envOpt with
                             | Some env -> env :?> Env<_, _, _>
                             | None -> env
-                        let args = tail
-                        if List.hasExactly parsCount args then
-                            let bindings = List.map2 (fun par arg -> (par, arg)) pars args
+                        let evaledArgs = evaledTail
+                        if List.hasExactly parsCount evaledArgs then
+                            let bindings = List.map2 (fun par evaledArg -> (par, evaledArg)) pars evaledArgs
                             let env = Env.addProceduralBindings (AddToNewFrame parsCount) bindings env
                             let (evaled, _) = eval body env
                             (evaled, oldEnv)
@@ -1108,9 +1111,7 @@ module WorldScriptSystem =
                         | evaled -> Right (evaled :: evaleds, env))
                     (Right ([], env))
                     exprs
-            match eir with
-            | Right (evaleds, env) -> Right (List.rev evaleds, env)
-            | Left _ as left -> left
+            Either.mapRight (mapFst List.rev) eir
 
         and evalDropEnv expr env =
             eval expr env |> fst
