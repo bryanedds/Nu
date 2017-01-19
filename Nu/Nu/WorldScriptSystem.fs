@@ -94,7 +94,9 @@ module WorldScriptSystem =
               String : string -> Origin option -> Expr
               Tuple : Map<int, Expr> -> Origin option -> Expr
               Keyphrase : Map<int, Expr> -> Origin option -> Expr
-              List : Expr list -> Origin option -> Expr }
+              List : Expr list -> Origin option -> Expr
+              Ring : Expr Set -> Origin option -> Expr
+              Table : Map<Expr, Expr> -> Origin option -> Expr }
 
         let SqrFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a bool.", originOpt)
@@ -106,7 +108,9 @@ module WorldScriptSystem =
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a list.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a table.", originOpt) }
 
         let SqrtFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqrt"], "Cannot square root a bool.", originOpt)
@@ -118,7 +122,9 @@ module WorldScriptSystem =
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqrt"], "Cannot square root a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqrt"], "Cannot square root a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqrt"], "Cannot square root a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqrt"], "Cannot square root a list.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqrt"], "Cannot square root a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqrt"], "Cannot square root a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqtr"], "Cannot square root a table.", originOpt) }
 
         let FloorFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a bool.", originOpt)
@@ -130,7 +136,9 @@ module WorldScriptSystem =
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a list.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a table.", originOpt) }
 
         let CeilingFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a bool.", originOpt)
@@ -142,7 +150,9 @@ module WorldScriptSystem =
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a list.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a table.", originOpt) }
 
         let TruncateFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a bool.", originOpt)
@@ -154,7 +164,9 @@ module WorldScriptSystem =
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a list.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a table.", originOpt) }
 
         let ExpFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a bool.", originOpt)
@@ -166,7 +178,9 @@ module WorldScriptSystem =
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a list.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a table.", originOpt) }
 
         let RoundFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a bool.", originOpt)
@@ -178,7 +192,9 @@ module WorldScriptSystem =
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a list.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a table.", originOpt) }
 
         let LogFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a bool.", originOpt)
@@ -190,7 +206,9 @@ module WorldScriptSystem =
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a list.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a table.", originOpt) }
 
         let SinFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a bool.", originOpt)
@@ -202,7 +220,9 @@ module WorldScriptSystem =
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a list.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a table.", originOpt) }
 
         let CosFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a bool.", originOpt)
@@ -214,7 +234,9 @@ module WorldScriptSystem =
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a list.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a table.", originOpt) }
 
         let TanFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a bool.", originOpt)
@@ -226,7 +248,9 @@ module WorldScriptSystem =
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a list.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a table.", originOpt) }
 
         let AsinFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a bool.", originOpt)
@@ -238,7 +262,9 @@ module WorldScriptSystem =
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a list.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a table.", originOpt) }
 
         let AcosFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a bool.", originOpt)
@@ -250,7 +276,9 @@ module WorldScriptSystem =
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a list.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a table.", originOpt) }
 
         let AtanFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a bool.", originOpt)
@@ -262,7 +290,9 @@ module WorldScriptSystem =
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a list.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a table.", originOpt) }
 
         let LengthFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"length"], "Cannot get length of a bool.", originOpt)
@@ -274,7 +304,9 @@ module WorldScriptSystem =
               String = fun value originOpt -> Int (value.Length, originOpt)
               Tuple = fun value originOpt -> Int (Array.length ^ Map.toArray value, originOpt)
               Keyphrase = fun value originOpt -> Int (Array.length ^ Map.toArray value, originOpt)
-              List = fun value originOpt -> Int (List.length value, originOpt) }
+              List = fun value originOpt -> Int (List.length value, originOpt)
+              Ring = fun value originOpt -> Int (value.Count, originOpt)
+              Table = fun value originOpt -> Int (value.Count, originOpt) }
 
         let NormalFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a bool.", originOpt)
@@ -286,7 +318,9 @@ module WorldScriptSystem =
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a list.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a table.", originOpt) }
 
         let BoolFns =
             { Bool = fun value originOpt -> Bool (value, originOpt)
@@ -298,7 +332,9 @@ module WorldScriptSystem =
               String = fun value originOpt -> Bool (scvalue value, originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a bool to a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a bool to a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a list to a bool.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a list to a bool.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a ring to a bool.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a table to a bool.", originOpt) }
 
         let IntFns =
             { Bool = fun value originOpt -> Int ((if value then 1 else 0), originOpt)
@@ -310,7 +346,9 @@ module WorldScriptSystem =
               String = fun value originOpt -> Int (scvalue value, originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert an int to a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert an int to a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert a list to an int.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert a list to an int.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert a ring to an int.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert a table to an int.", originOpt) }
 
         let Int64Fns =
             { Bool = fun value originOpt -> Int64 ((if value then 1L else 0L), originOpt)
@@ -322,7 +360,9 @@ module WorldScriptSystem =
               String = fun value originOpt -> Int64 (scvalue value, originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert an int64 to a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert an int64 to a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert a list to a 64-bit int.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert a list to a 64-bit int.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert a ring to a 64-bit int.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert a table to a 64-bit int.", originOpt) }
 
         let SingleFns =
             { Bool = fun value originOpt -> Single ((if value then 1.0f else 0.0f), originOpt)
@@ -334,7 +374,9 @@ module WorldScriptSystem =
               String = fun value originOpt -> Single (scvalue value, originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a single to a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a single to a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a list to a single.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a list to a single.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a ring to a single.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a table to a single.", originOpt) }
 
         let DoubleFns =
             { Bool = fun value originOpt -> Double ((if value then 1.0 else 0.0), originOpt)
@@ -346,7 +388,9 @@ module WorldScriptSystem =
               String = fun value originOpt -> Double (scvalue value, originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a double to a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a double to a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a list to a double.", originOpt) }
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a list to a double.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a ring to a double.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a table to a double.", originOpt) }
 
         let StringFns =
             { Bool = fun value originOpt -> String (scstring value, originOpt)
@@ -358,7 +402,9 @@ module WorldScriptSystem =
               String = fun value originOpt -> String (value, originOpt)
               Tuple = fun value originOpt -> String (scstring value, originOpt)
               Keyphrase = fun value originOpt -> String (scstring value, originOpt)
-              List = fun value originOpt -> String (scstring value, originOpt) }
+              List = fun value originOpt -> String (scstring value, originOpt)
+              Ring = fun value originOpt -> String (scstring value, originOpt)
+              Table = fun value originOpt -> String (scstring value, originOpt) }
 
         type [<NoEquality; NoComparison>] BinaryFns =
             { Bool : bool -> bool -> Origin option -> Expr
@@ -368,9 +414,11 @@ module WorldScriptSystem =
               Double : double -> double -> Origin option -> Expr
               Vector2 : Vector2 -> Vector2 -> Origin option -> Expr
               String : string -> string -> Origin option -> Expr
-              List : Expr list -> Expr list -> Origin option -> Expr
+              Tuple : Map<int, Expr> -> Map<int, Expr> -> Origin option -> Expr
               Keyphrase : Map<int, Expr> -> Map<int, Expr> -> Origin option -> Expr
-              Tuple : Map<int, Expr> -> Map<int, Expr> -> Origin option -> Expr }
+              List : Expr list -> Expr list -> Origin option -> Expr
+              Ring : Expr Set -> Expr Set -> Origin option -> Expr
+              Table : Map<Expr, Expr> -> Map<Expr, Expr> -> Origin option -> Expr }
 
         let EqFns =
             { Bool = fun left right originOpt -> Bool ((left = right), originOpt)
@@ -382,7 +430,9 @@ module WorldScriptSystem =
               String = fun left right originOpt -> Bool ((left = right), originOpt)
               Tuple = fun left right originOpt -> Bool ((left = right), originOpt)
               Keyphrase = fun left right originOpt -> Bool ((left = right), originOpt)
-              List = fun left right originOpt -> Bool ((left = right), originOpt) }
+              List = fun left right originOpt -> Bool ((left = right), originOpt)
+              Ring = fun left right originOpt -> Bool ((left = right), originOpt)
+              Table = fun left right originOpt -> Bool ((left = right), originOpt) }
 
         let NotEqFns =
             { Bool = fun left right originOpt -> Bool ((left <> right), originOpt)
@@ -394,7 +444,9 @@ module WorldScriptSystem =
               String = fun left right originOpt -> Bool ((left <> right), originOpt)
               Tuple = fun left right originOpt -> Bool ((left <> right), originOpt)
               Keyphrase = fun left right originOpt -> Bool ((left <> right), originOpt)
-              List = fun left right originOpt -> Bool ((left <> right), originOpt) }
+              List = fun left right originOpt -> Bool ((left <> right), originOpt)
+              Ring = fun left right originOpt -> Bool ((left <> right), originOpt)
+              Table = fun left right originOpt -> Bool ((left <> right), originOpt) }
 
         let LtFns =
             { Bool = fun left right originOpt -> Bool ((left < right), originOpt)
@@ -404,9 +456,11 @@ module WorldScriptSystem =
               Double = fun left right originOpt -> Bool ((left < right), originOpt)
               Vector2 = fun left right originOpt -> Bool ((left.LengthSquared < right.LengthSquared), originOpt)
               String = fun left right originOpt -> Bool ((left < right), originOpt)
-              Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Comparison"; !!"Lt"], "Cannot compare tuples.", originOpt)
-              Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Comparison"; !!"Lt"], "Cannot compare phrases.", originOpt)
-              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Comparison"; !!"Lt"], "Cannot compare lists.", originOpt) }
+              Tuple = fun left right originOpt -> Bool ((left < right), originOpt)
+              Keyphrase = fun left right originOpt -> Bool ((left < right), originOpt)
+              List = fun left right originOpt -> Bool ((left < right), originOpt)
+              Ring = fun left right originOpt -> Bool ((left < right), originOpt)
+              Table = fun left right originOpt -> Bool ((left < right), originOpt) }
 
         let GtFns =
             { Bool = fun left right originOpt -> Bool ((left > right), originOpt)
@@ -416,9 +470,11 @@ module WorldScriptSystem =
               Double = fun left right originOpt -> Bool ((left > right), originOpt)
               Vector2 = fun left right originOpt -> Bool ((left.LengthSquared > right.LengthSquared), originOpt)
               String = fun left right originOpt -> Bool ((left > right), originOpt)
-              Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Comparison"; !!"Gt"], "Cannot compare tuples.", originOpt)
-              Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Comparison"; !!"Gt"], "Cannot compare phrases.", originOpt)
-              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Comparison"; !!"Gt"], "Cannot compare lists.", originOpt) }
+              Tuple = fun left right originOpt -> Bool ((left > right), originOpt)
+              Keyphrase = fun left right originOpt -> Bool ((left > right), originOpt)
+              List = fun left right originOpt -> Bool ((left > right), originOpt)
+              Ring = fun left right originOpt -> Bool ((left > right), originOpt)
+              Table = fun left right originOpt -> Bool ((left > right), originOpt) }
 
         let LtEqFns =
             { Bool = fun left right originOpt -> Bool ((left <= right), originOpt)
@@ -428,9 +484,11 @@ module WorldScriptSystem =
               Double = fun left right originOpt -> Bool ((left <= right), originOpt)
               Vector2 = fun left right originOpt -> Bool ((left.LengthSquared <= right.LengthSquared), originOpt)
               String = fun left right originOpt -> Bool ((left <= right), originOpt)
-              Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Comparison"; !!"LtEq"], "Cannot compare tuples.", originOpt)
-              Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Comparison"; !!"LtEq"], "Cannot compare phrases.", originOpt)
-              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Comparison"; !!"LtEq"], "Cannot compare lists.", originOpt) }
+              Tuple = fun left right originOpt -> Bool ((left <= right), originOpt)
+              Keyphrase = fun left right originOpt -> Bool ((left <= right), originOpt)
+              List = fun left right originOpt -> Bool ((left <= right), originOpt)
+              Ring = fun left right originOpt -> Bool ((left <= right), originOpt)
+              Table = fun left right originOpt -> Bool ((left <= right), originOpt) }
 
         let GtEqFns =
             { Bool = fun left right originOpt -> Bool ((left >= right), originOpt)
@@ -440,9 +498,11 @@ module WorldScriptSystem =
               Double = fun left right originOpt -> Bool ((left >= right), originOpt)
               Vector2 = fun left right originOpt -> Bool ((left.LengthSquared >= right.LengthSquared), originOpt)
               String = fun left right originOpt -> Bool ((left >= right), originOpt)
-              Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Comparison"; !!"GtEq"], "Cannot compare tuples.", originOpt)
-              Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Comparison"; !!"GtEq"], "Cannot compare phrases.", originOpt)
-              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Comparison"; !!"GtEq"], "Cannot compare lists.", originOpt) }
+              Tuple = fun left right originOpt -> Bool ((left >= right), originOpt)
+              Keyphrase = fun left right originOpt -> Bool ((left >= right), originOpt)
+              List = fun left right originOpt -> Bool ((left >= right), originOpt)
+              Ring = fun left right originOpt -> Bool ((left >= right), originOpt)
+              Table = fun left right originOpt -> Bool ((left >= right), originOpt) }
 
         let AddFns =
             { Bool = fun left right originOpt -> Bool ((if left && right then false elif left then true elif right then true else false), originOpt)
@@ -454,7 +514,9 @@ module WorldScriptSystem =
               String = fun left right originOpt -> String ((left + right), originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Add"], "Cannot add tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Add"], "Cannot add phrases.", originOpt)
-              List = fun left right originOpt -> List ((left @ right), originOpt) }
+              List = fun left right originOpt -> List ((left @ right), originOpt)
+              Ring = fun left right originOpt -> Ring ((Set.union left right), originOpt)
+              Table = fun left right originOpt -> Table ((left @@ right), originOpt) }
 
         let SubFns =
             { Bool = fun left right originOpt -> Bool ((if left && right then false elif left then true elif right then true else false), originOpt)
@@ -466,7 +528,9 @@ module WorldScriptSystem =
               String = fun left right originOpt -> String (left.Replace (right, String.Empty), originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Sub"], "Cannot subtract tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Sub"], "Cannot subtract phrases.", originOpt)
-              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Sub"], "Cannot subtract lists.", originOpt) }
+              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Sub"], "Cannot subtract lists.", originOpt)
+              Ring = fun left right originOpt -> Ring (Set.difference left right, originOpt)
+              Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Sub"], "Cannot subtract tables.", originOpt) }
 
         let MulFns =
             { Bool = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply bools.", originOpt)
@@ -478,7 +542,9 @@ module WorldScriptSystem =
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply phrases.", originOpt)
-              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply lists.", originOpt) }
+              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply lists.", originOpt)
+              Ring = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply rings.", originOpt)
+              Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply tables.", originOpt) }
 
         let DivFns =
             { Bool = fun left right originOpt -> if right = false then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Div"], "Cannot divide by a false bool.", originOpt) else Bool ((if left && right then true else false), originOpt)
@@ -490,7 +556,9 @@ module WorldScriptSystem =
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide phrases.", originOpt)
-              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide lists.", originOpt) }
+              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide lists.", originOpt)
+              Ring = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide rings.", originOpt)
+              Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide tables.", originOpt) }
 
         let ModFns =
             { Bool = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate bools.", originOpt)
@@ -502,7 +570,9 @@ module WorldScriptSystem =
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate phrases.", originOpt)
-              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate lists.", originOpt) }
+              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate lists.", originOpt)
+              Ring = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate rings.", originOpt)
+              Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate tables.", originOpt) }
 
         let PowFns =
             { Bool = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power bools.", originOpt)
@@ -514,7 +584,9 @@ module WorldScriptSystem =
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power phrases.", originOpt)
-              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power lists.", originOpt) }
+              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power lists.", originOpt)
+              Ring = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power rings.", originOpt)
+              Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power tables.", originOpt) }
 
         let RootFns =
             { Bool = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root bools.", originOpt)
@@ -526,7 +598,9 @@ module WorldScriptSystem =
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root phrases.", originOpt)
-              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root lists.", originOpt) }
+              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root lists.", originOpt)
+              Ring = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root rings.", originOpt)
+              Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root tables.", originOpt) }
 
         let CrossFns =
             { Bool = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply bools.", originOpt)
@@ -538,7 +612,9 @@ module WorldScriptSystem =
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiple phrases.", originOpt)
-              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply lists.", originOpt) }
+              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply lists.", originOpt)
+              Ring = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply rings.", originOpt)
+              Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply tables.", originOpt) }
 
         let DotFns =
             { Bool = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply bools.", originOpt)
@@ -550,7 +626,9 @@ module WorldScriptSystem =
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply phrases.", originOpt)
-              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply lists.", originOpt) }
+              List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply lists.", originOpt)
+              Ring = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply rings.", originOpt)
+              Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply tables.", originOpt) }
 
         let combine originLeftOpt originRightOpt =
             match (originLeftOpt, originRightOpt) with
@@ -632,6 +710,11 @@ module WorldScriptSystem =
             | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"V2"; !!(String.capitalize fnName)], "Application of " + fnName + " requires a single for the both arguments.", fnOriginOpt), env)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"V2"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), env)
 
+        let evalPair fnOriginOpt (_ : string) evaledArgs env =
+            match evaledArgs with
+            | [_; _] -> (Tuple (evaledArgs |> List.indexed |> Map.ofList, fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Pair"], "Incorrect number of arguments for creation of a pair; 2 arguments required.", fnOriginOpt), env)
+
         let evalTuple fnOriginOpt _ evaledArgs env =
             (Tuple (evaledArgs |> List.indexed |> Map.ofList, fnOriginOpt), env)
     
@@ -704,13 +787,55 @@ module WorldScriptSystem =
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), env)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
             
-        let evalRing fnOriginOpt _ evaledArgs env =
+        let evalRing fnOriginOpt (_ : string) evaledArgs env =
             (Ring (Set.ofList evaledArgs, fnOriginOpt), env)
-            
-        let evalTable fnOriginOpt _ evaledArgs env =
-            (Ring (Set.ofList evaledArgs, fnOriginOpt), env)
-            //if List.forall (function List ([evaledFst; evaledSnd], _) -> true | _ -> false) evaledArgs then 
-            //(Table (Map.ofList evaledArgs, fnOriginOpt), env)
+
+        let evalAdd fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
+            | [value; container] ->
+                match container with
+                | Ring (set, originOpt) -> (Ring (Set.add value set, originOpt), env)
+                | Table (map, originOpt) ->
+                    match value with
+                    | Tuple (map', _) when map'.Count = 2 -> (Table (Map.add (Map.find 0 map') (Map.find 1 map') map, originOpt), env)
+                    | _ -> (Violation ([!!"InvalidEntry"; !!"Table"; !!(String.capitalize fnName)], "Table entry must consist of a pair.", fnOriginOpt), env)
+                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Incorrect type of argument for application of '" + fnName + "'; target must be a container.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
+
+        let evalRemove fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
+            | [value; container] ->
+                match container with
+                | Ring (set, originOpt) -> (Ring (Set.remove value set, originOpt), env)
+                | Table (map, originOpt) -> (Table (Map.remove value map, originOpt), env)
+                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Incorrect type of argument for application of '" + fnName + "'; target must be a container.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
+
+        let evalTryFind fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
+            | [key; container] ->
+                match container with
+                | Table (map, _) -> (Option (Map.tryFind key map, fnOriginOpt), env)
+                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Incorrect type of argument for application of '" + fnName + "'; target must be a container.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
+
+        let evalFind fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
+            | [key; container] ->
+                match container with
+                | Table (map, _) ->
+                    match Map.tryFind key map with
+                    | Some value -> (value, env)
+                    | None -> (Violation ([!!"InvalidKey"; !!"Table"; !!(String.capitalize fnName)], "Key not found in table.", fnOriginOpt), env)
+                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Incorrect type of argument for application of '" + fnName + "'; target must be a container.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
+
+        let evalTable fnOriginOpt fnName evaledArgs env =
+            if List.forall (function Tuple (map, _) when map.Count = 2 -> true | _ -> false) evaledArgs then
+                let evaledPairs = List.map (function List ([evaledFst; evaledSnd], _) -> (evaledFst, evaledSnd) | _ -> failwithumf ()) evaledArgs
+                let evaledMap = Map.ofList evaledPairs
+                (Table (evaledMap, fnOriginOpt), env)
+            else (Violation ([!!"InvalidEntries"; !!"Table"; !!(String.capitalize fnName)], "Table entries must consist of 1 or more pairs.", fnOriginOpt), env)
 
         let rec Intrinsics =
             dictPlus
@@ -759,6 +884,7 @@ module WorldScriptSystem =
                  //("yOf", evalNOf 1) TODO
                  //("xAs", evalNAs 0) TODO
                  //("yAs", evalNas 1) TODO
+                 ("pair", evalTuple)
                  ("tuple", evalTuple)
                  ("fst", evalNth5 0)
                  ("snd", evalNth5 1)
@@ -774,6 +900,8 @@ module WorldScriptSystem =
                  ("cons", evalCons)
                  ("isEmpty", evalIsEmpty)
                  ("ring", evalRing)
+                 ("add", evalAdd)
+                 ("remove", evalRemove)
                  ("table", evalTable)
                  ("product", evalProduct)]
 

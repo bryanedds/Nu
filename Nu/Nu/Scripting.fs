@@ -51,15 +51,15 @@ module Scripting =
                      "v2 xOf yOf xAs yAs " + // vector operations
                      "some none isNone isSome map " +
                      // TODO: "either isLeft isRight left right " +
-                     "tuple unit fst snd thd fth fif nth " +
+                     "pair tuple unit fst snd thd fth fif nth " +
                      "nix " + // the empty keyphrase
                      "list head tail cons empty isEmpty notEmpty fold filter product sum contains " +
-                     // TODO: "ring add remove " +
-                     // TODO: "table tryFind find " +
+                     "ring add remove " +
+                     "table tryFind find " +
                      "let fun if cond try break get set do " +
                      "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
-                     // TODO?: "onRegister onUnregister onUpdate onPostUpdate onActualize" +
+                     "onRegister onUnregister " + // TODO: "onUpdate onPostUpdate onActualize" +
                      "tickRate tickTime updateCount",
                      "");
           TypeConverter (typeof<ExprConverter>);
@@ -366,7 +366,7 @@ module Scripting =
                             match tail with
                             | input :: cases ->
                                 let input = this.SymbolToExpr input
-                                if List.forall (function Symbols (symbols, _) when List.hasExactly 2 symbols -> true | _ -> false) cases then
+                                if List.forall (function Symbols ([_; _], _) -> true | _ -> false) cases then
                                     let cases = List.map (function Symbols ([condition; consequent], _) -> (condition, consequent) | _ -> failwithumf ()) cases
                                     let cases = List.map (fun (condition, consequent) -> (this.SymbolToExpr condition, this.SymbolToExpr consequent)) cases
                                     Match (input, cases, originOpt) :> obj
@@ -374,7 +374,7 @@ module Scripting =
                             | _ -> Violation ([!!"InvalidMatchForm"], "Invalid match form. Requires 1 input and 1 or more cases.", originOpt) :> obj
                         | "select" ->
                             let cases = tail
-                            if List.forall (function Symbols (symbols, _) when List.hasExactly 2 symbols -> true | _ -> false) cases then
+                            if List.forall (function Symbols ([_; _], _) -> true | _ -> false) cases then
                                 let cases = List.map (function Symbols ([condition; consequent], _) -> (condition, consequent) | _ -> failwithumf ()) cases
                                 let cases = List.map (fun (condition, consequent) -> (this.SymbolToExpr condition, this.SymbolToExpr consequent)) cases
                                 Select (cases, originOpt) :> obj
