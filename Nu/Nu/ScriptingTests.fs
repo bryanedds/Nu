@@ -47,13 +47,13 @@ module ScriptingTests =
         | Scripting.Int (result, _) -> Assert.Equal (1, result)
         | _ -> Assert.True false
 
-    let [<Fact>] keyphrasesWork () =
-        match eval "[fst [K 1]]" with
+    let [<Fact>] listsWork () =
+        match eval "[fst [list 1]]" with
         | Scripting.Int (result, _) -> Assert.Equal (1, result)
         | _ -> Assert.True false
 
-    let [<Fact>] listsWork () =
-        match eval "[fst [list 1]]" with
+    let [<Fact>] keyphrasesWork () =
+        match eval "[fst [K 1]]" with
         | Scripting.Int (result, _) -> Assert.Equal (1, result)
         | _ -> Assert.True false
 
