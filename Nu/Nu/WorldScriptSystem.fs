@@ -676,7 +676,7 @@ module WorldScriptSystem =
             
         let evalTable fnOriginOpt _ evaledArgs env =
             (Ring (Set.ofList evaledArgs, fnOriginOpt), env)
-            //if List.forall (function )
+            //if List.forall (function List ([evaledFst; evaledSnd], _) -> true | _ -> false) evaledArgs then 
             //(Table (Map.ofList evaledArgs, fnOriginOpt), env)
     
         let evalNth5 index fnOriginOpt fnName evaledArgs env =
