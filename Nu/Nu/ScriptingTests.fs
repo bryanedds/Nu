@@ -37,6 +37,11 @@ module ScriptingTests =
         | Scripting.Int (result, _) -> Assert.Equal (4, result)
         | _ -> Assert.True false
 
+    let [<Fact>] optionsWork () =
+        match eval "[isSome [some 1]]" with
+        | Scripting.Bool (result, _) -> Assert.True result
+        | _ -> Assert.True false
+
     let [<Fact>] tuplesWork () =
         match eval "[fst [tuple 1]]" with
         | Scripting.Int (result, _) -> Assert.Equal (1, result)
