@@ -36,16 +36,16 @@ module WorldScreenModule =
         member this.EntityTreeNp = PropertyTag.makeReadOnly this Property? EntityTreeNp this.GetEntityTreeNp
         member this.GetTransitionStateNp world = World.getScreenTransitionStateNp this world
         member this.SetTransitionStateNp value world = World.setScreenTransitionStateNp value this world
-        member this.TransitionStateNp = PropertyTag.makeReadOnly this Property? TransitionStateNp this.GetTransitionStateNp
+        member this.TransitionStateNp = PropertyTag.make this Property? TransitionStateNp this.GetTransitionStateNp this.SetTransitionStateNp
         member this.GetTransitionTicksNp world = World.getScreenTransitionTicksNp this world
         member this.SetTransitionTicksNp value world = World.setScreenTransitionTicksNp value this world
-        member this.TransitionTicksNp = PropertyTag.makeReadOnly this Property? TransitionTicksNp this.GetTransitionTicksNp
+        member this.TransitionTicksNp = PropertyTag.make this Property? TransitionTicksNp this.GetTransitionTicksNp this.SetTransitionTicksNp
         member this.GetIncoming world = World.getScreenIncoming this world
         member this.SetIncoming value world = World.setScreenIncoming value this world
-        member this.Incoming = PropertyTag.makeReadOnly this Property? Incoming this.GetIncoming
+        member this.Incoming = PropertyTag.make this Property? Incoming this.GetIncoming this.SetIncoming
         member this.GetOutgoing world = World.getScreenOutgoing this world
         member this.SetOutgoing value world = World.setScreenOutgoing value this world
-        member this.Outgoing = PropertyTag.makeReadOnly this Property? Outgoing this.GetOutgoing
+        member this.Outgoing = PropertyTag.make this Property? Outgoing this.GetOutgoing this.SetOutgoing
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetScreenProperty propertyName this world
