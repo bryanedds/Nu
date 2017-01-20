@@ -1322,12 +1322,14 @@ module WorldScriptSystem =
             | Handle (_, _, originOpt) -> (Unit originOpt, env)
 
         and evalMany exprs env =
-            List.fold
-                (fun (evaleds, env) expr ->
-                    let (evaled, env) = eval expr env
-                    (evaled :: evaleds, env))
-                ([], env)
-                exprs
+            let (evaledsRev, env) =
+                List.fold
+                    (fun (evaleds, env) expr ->
+                        let (evaled, env) = eval expr env
+                        (evaled :: evaleds, env))
+                    ([], env)
+                    exprs
+            (List.rev evaledsRev, env)
 
         and evalDropEnv expr env =
             eval expr env |> fst
