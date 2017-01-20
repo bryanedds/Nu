@@ -22,17 +22,14 @@ module WorldGameModule =
         member this.Specialization = PropertyTag.makeReadOnly this Property? Specialization this.GetSpecialization
         member this.GetClassification world = Classification.make (getTypeName ^ this.GetDispatcherNp world) (this.GetSpecialization world)
         member this.Classification = PropertyTag.makeReadOnly this Property? Classification this.GetClassification
-        member this.GetScriptAssetOpt world = World.getGameScriptAssetOpt world
-        member this.SetScriptAssetOpt value world = World.setGameScriptAssetOpt value world
-        member this.ScriptAssetOpt = PropertyTag.make this Property? ScriptAssetOpt this.GetScriptAssetOpt this.SetScriptAssetOpt
-        member this.GetScriptAssetOptLc world = World.getGameScriptAssetOptLc world
-        member internal this.SetScriptAssetOptLc value world = World.setGameScriptAssetOptLc value world
-        member this.ScriptAssetOptLc = PropertyTag.makeReadOnly this Property? ScriptAssetOptLc this.GetScriptAssetOptLc
+        member this.GetCreationTimeStampNp world = World.getGameCreationTimeStampNp world
+        member this.CreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
+        member this.GetScriptOpt world = World.getGameScriptOpt world
+        member this.SetScriptOpt value world = World.setGameScriptOpt value world
+        member this.ScriptOpt = PropertyTag.make this Property? ScriptOpt this.GetScriptOpt this.SetScriptOpt
         member this.GetScript world = World.getGameScript world
         member this.SetScript value world = World.setGameScript value world
         member this.Script = PropertyTag.make this Property? Script this.GetScript this.SetScript
-        member this.GetCreationTimeStampNp world = World.getGameCreationTimeStampNp world
-        member this.CreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
         member this.GetImperative world = World.getGameImperative world
         member this.Imperative = PropertyTag.makeReadOnly this Property? Imperative this.GetImperative
         member this.GetSelectedScreenOpt world = World.getSelectedScreenOpt world
@@ -107,38 +104,24 @@ module WorldGameModule =
 
     type World with
 
-        static member assetTagToScriptOpt assetTag world =
-            let (symbolOpt, world) = World.tryFindSymbol assetTag world
-            let scriptOpt =
-                match symbolOpt with
-                | Some symbol ->
-                    try let script = valueize<Script> symbol in Some script
-                    with exn -> Log.info ^ "Failed to convert symbol '" + scstring symbol + "' to Script due to: " + scstring exn; None
-                | None -> None
-            (scriptOpt, world)
+        static member gameScriptOptChanged evt world =
+            let game = evt.Subscriber : Game
+            match game.GetScriptOpt world with
+            | Some script ->
+                match World.assetTagToScriptOpt script world with
+                | (Some script, world) -> (Cascade, game.SetScript script world)
+                | (None, world) -> (Cascade, world)
+            | None -> (Cascade, world)
 
         static member internal registerGame (world : World) : World =
-            let dispatcher = Simulants.Game.GetDispatcherNp world
-            let world = World.withEventContext (fun world -> dispatcher.Register (Simulants.Game, world)) (atooa Simulants.Game.GameAddress) world
+            let game = Simulants.Game
+            let dispatcher = game.GetDispatcherNp world
+            let world = World.subscribe World.gameScriptOptChanged (Events.GameChange Property? ScriptOptPa) game world
+            let world = World.withEventContext (fun world -> dispatcher.Register (Simulants.Game, world)) (atooa game.GameAddress) world
             World.choose world
         
         static member internal updateGame world =
             World.withEventContext (fun world ->
-
-                // update for script asset changes
-                let game = Simulants.Game
-                let scriptAssetOpt = game.GetScriptAssetOpt world
-                let world =
-                    if game.GetScriptAssetOptLc world <> scriptAssetOpt then
-                        let world =
-                            match scriptAssetOpt with
-                            | Some scriptAsset ->
-                                match World.assetTagToScriptOpt scriptAsset world with
-                                | (Some script, world) -> game.SetScript script world
-                                | (None, world) -> world
-                            | None -> world
-                        game.SetScriptAssetOptLc scriptAssetOpt world
-                    else world
 
                 // update via dispatcher
                 let dispatcher = Simulants.Game.GetDispatcherNp world

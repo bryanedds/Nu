@@ -103,12 +103,9 @@ module EffectFacetModule =
         member this.GetSelfDestruct world : bool = this.Get Property? SelfDestruct world
         member this.SetSelfDestruct (value : bool) world = this.Set Property? SelfDestruct value world
         member this.SelfDestruct = PropertyTag.make this Property? SelfDestruct this.GetSelfDestruct this.SetSelfDestruct
-        member this.GetEffectsOpt world : AssetTag list option = this.Get Property? EffectsOpt world
-        member this.SetEffectsOpt (value : AssetTag list option) world = this.Set Property? EffectsOpt value world
-        member this.EffectsOpt = PropertyTag.make this Property? EffectsOpt this.GetEffectsOpt this.SetEffectsOpt
-        member this.GetEffectsOptLc world : AssetTag list option = this.Get Property? EffectsOptLc world
-        member private this.SetEffectsOptLc (value : AssetTag list option) world = this.Set Property? EffectsOptLc value world
-        member this.EffectsOptLc = PropertyTag.makeReadOnly this Property? EffectsOptLc this.GetEffectsOptLc
+        member this.GetEffectsOptPa world : AssetTag list option = this.Get Property? EffectsOptPa world
+        member this.SetEffectsOptPa (value : AssetTag list option) world = this.Set Property? EffectsOptPa value world
+        member this.EffectsOptPa = PropertyTag.make this Property? EffectsOptPa this.GetEffectsOptPa this.SetEffectsOptPa
         member this.GetEffectStartTimeOpt world : int64 option = this.Get Property? EffectStartTimeOpt world
         member this.SetEffectStartTimeOpt (value : int64 option) world = this.Set Property? EffectStartTimeOpt value world
         member this.EffectStartTimeOpt = PropertyTag.make this Property? EffectStartTimeOpt this.GetEffectStartTimeOpt this.SetEffectStartTimeOpt
@@ -170,16 +167,21 @@ module EffectFacetModule =
                 entity.SetEffect effectCombined world
             | None -> world
 
+        static let effectsOptChanged evt world =
+            let entity = evt.Subscriber : Entity
+            let effectsOpt = entity.GetEffectsOptPa world
+            let world = setEffect effectsOpt entity world
+            (Cascade, world)
+
         static let handleAssetsReload evt world =
             let entity = evt.Subscriber : Entity
-            let effectsOpt = entity.GetEffectsOpt world
+            let effectsOpt = entity.GetEffectsOptPa world
             let world = setEffect effectsOpt entity world
             (Cascade, world)
 
         static member PropertyDefinitions =
             [Define? SelfDestruct false
-             Define? EffectsOpt (None : AssetTag list option)
-             Define? EffectsOptLc (None : AssetTag list option)
+             Define? EffectsOptPa (None : AssetTag list option)
              Define? EffectStartTimeOpt (None : int64 option)
              Define? EffectDefinitions (Map.empty : Effects.Definitions)
              Define? Effect Effect.empty
@@ -230,27 +232,15 @@ module EffectFacetModule =
             else world
 
         override facet.Update (entity, world) =
-            
-            // update for combined effects changes
-            let world =
-                let effectsOpt = entity.GetEffectsOpt world
-                if entity.GetEffectsOptLc world <> effectsOpt
-                then let world = setEffect effectsOpt entity world in entity.SetEffectsOptLc effectsOpt world
-                else world
-
-            // update for self-destruction
-            let world =
-                let effect = entity.GetEffect world
-                match (entity.GetSelfDestruct world, effect.LifetimeOpt) with
-                | (true, Some lifetime) -> if entity.GetEffectTime world > lifetime then World.destroyEntity entity world else world
-                | (_, _) -> world
-
-            // fin
-            world
+            let effect = entity.GetEffect world
+            match (entity.GetSelfDestruct world, effect.LifetimeOpt) with
+            | (true, Some lifetime) -> if entity.GetEffectTime world > lifetime then World.destroyEntity entity world else world
+            | (_, _) -> world
 
         override facet.Register (entity, world) =
             let effectStartTime = Option.getOrDefault (World.getTickTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
+            let world = World.monitor effectsOptChanged (entity.GetChangeEvent Property? EffectsOptPa) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world
 
 [<AutoOpen>]
