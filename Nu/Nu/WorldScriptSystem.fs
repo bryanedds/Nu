@@ -969,7 +969,7 @@ module WorldScriptSystem =
                  ("some", evalSome)
                  ("isNone", evalIsNone)
                  ("isSome", evalIsSome)
-                 //("contains", evalContains)
+                 //("contains", evalContains) TODO
                  ("map", evalMap evalApply)
                  ("list", evalList)
                  ("head", evalHead)
@@ -977,7 +977,7 @@ module WorldScriptSystem =
                  ("cons", evalCons)
                  ("isEmpty", evalIsEmpty)
                  ("notEmpty", evalNotEmpty)
-                 //("filter", evalFilter evalApply)
+                 //("filter", evalFilter evalApply) TODO
                  ("fold", evalFold evalApply)
                  ("reduce", evalReduce evalApply)
                  ("ring", evalRing)
