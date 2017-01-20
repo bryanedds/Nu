@@ -336,10 +336,9 @@ module WorldTypes =
           Xtension : Xtension
           DispatcherNp : GameDispatcher
           Specialization : string
-          ScriptAssetOpt : AssetTag option
-          ScriptAssetOptLc : AssetTag option
-          Script : Script
           CreationTimeStampNp : int64
+          ScriptOpt : AssetTag option
+          Script : Script
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
           EyeCenter : Vector2
@@ -388,10 +387,9 @@ module WorldTypes =
               Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.safe
               DispatcherNp = dispatcher
               Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
-              ScriptAssetOpt = None
-              ScriptAssetOptLc = None
-              Script = Script.empty
               CreationTimeStampNp = Core.getTimeStamp ()
+              ScriptOpt = None
+              Script = Script.empty
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
               EyeCenter = eyeCenter
@@ -413,10 +411,9 @@ module WorldTypes =
           DispatcherNp : ScreenDispatcher
           Specialization : string
           Persistent : bool
-          ScriptAssetOpt : AssetTag option
-          ScriptAssetOptLc : AssetTag option
-          Script : Script
           CreationTimeStampNp : int64
+          ScriptOpt : AssetTag option
+          Script : Script
           EntityTreeNp : Entity SpatialTree MutantCache
           TransitionStateNp : TransitionState
           TransitionTicksNp : int64
@@ -468,10 +465,9 @@ module WorldTypes =
                   DispatcherNp = dispatcher
                   Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
                   Persistent = true
-                  ScriptAssetOpt = None
-                  ScriptAssetOptLc = None
-                  Script = Script.empty
                   CreationTimeStampNp = Core.getTimeStamp ()
+                  ScriptOpt = None
+                  Script = Script.empty
                   EntityTreeNp = Unchecked.defaultof<Entity SpatialTree MutantCache>
                   TransitionStateNp = IdlingState
                   TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
@@ -496,10 +492,9 @@ module WorldTypes =
           DispatcherNp : LayerDispatcher
           Specialization : string
           Persistent : bool
-          ScriptAssetOpt : AssetTag option
-          ScriptAssetOptLc : AssetTag option
-          Script : Script
           CreationTimeStampNp : int64
+          ScriptOpt : AssetTag option
+          Script : Script
           Depth : single
           Visible : bool }
 
@@ -547,10 +542,9 @@ module WorldTypes =
               DispatcherNp = dispatcher
               Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
               Persistent = true
-              ScriptAssetOpt = None
-              ScriptAssetOptLc = None
-              Script = Script.empty
               CreationTimeStampNp = Core.getTimeStamp ()
+              ScriptOpt = None
+              Script = Script.empty
               Depth = 0.0f
               Visible = true }
 

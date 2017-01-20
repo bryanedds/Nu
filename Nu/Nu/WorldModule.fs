@@ -445,13 +445,11 @@ module WorldModule =
         static member internal getGameXtension world = (World.getGameState world).Xtension // TODO: try to get rid of this
         static member internal getGameDispatcherNp world = (World.getGameState world).DispatcherNp
         static member internal getGameSpecialization world = (World.getGameState world).Specialization
-        static member internal getGameScriptAssetOpt world = (World.getGameState world).ScriptAssetOpt
-        static member internal setGameScriptAssetOpt value world = World.updateGameState (fun gameState -> { gameState with ScriptAssetOpt = value }) Property? ScriptAssetOpt world
-        static member internal getGameScriptAssetOptLc world = (World.getGameState world).ScriptAssetOptLc
-        static member internal setGameScriptAssetOptLc value world = World.updateGameState (fun gameState -> { gameState with ScriptAssetOptLc = value }) Property? ScriptAssetOptLc world
+        static member internal getGameCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
+        static member internal getGameScriptOpt world = (World.getGameState world).ScriptOpt
+        static member internal setGameScriptOpt value world = World.updateGameState (fun gameState -> { gameState with ScriptOpt = value }) Property? ScriptOpt world
         static member internal getGameScript world = (World.getGameState world).Script
         static member internal setGameScript value world = let world = World.updateGameState (fun gameState -> { gameState with Script = value }) Property? Script world in evalGameScript world
-        static member internal getGameCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
         static member internal getGameImperative world = Xtension.getImperative (World.getGameState world).Xtension
 
         /// Get the current eye center.
@@ -576,10 +574,9 @@ module WorldModule =
             | "Xtension" -> Some (World.getGameXtension world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> Some (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
             | "Specialization" -> Some (World.getGameSpecialization world :> obj, typeof<string>)
-            | "ScriptAssetOpt" -> Some (World.getGameScriptAssetOpt world :> obj, typeof<AssetTag option>)
-            | "ScriptAssetOptLc" -> Some (World.getGameScriptAssetOptLc world :> obj, typeof<AssetTag option>)
-            | "Script" -> Some (World.getGameScript world :> obj, typeof<Script>)
             | "CreationTimeStampNp" -> Some (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
+            | "ScriptOpt" -> Some (World.getGameScriptOpt world :> obj, typeof<AssetTag option>)
+            | "Script" -> Some (World.getGameScript world :> obj, typeof<Script>)
             | "Imperative" -> Some (World.getGameImperative world :> obj, typeof<bool>)
             | "SelectedScreenOpt" -> Some (World.getSelectedScreenOpt world :> obj, typeof<Screen option>)
             | "ScreenTransitionDestinationOpt" -> Some (World.getScreenTransitionDestinationOpt world :> obj, typeof<Screen option>)
@@ -593,10 +590,9 @@ module WorldModule =
             | "Xtension" -> (World.getGameXtension world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
             | "Specialization" -> (World.getGameSpecialization world :> obj, typeof<string>)
-            | "ScriptAssetOpt" -> (World.getGameScriptAssetOpt world :> obj, typeof<AssetTag option>)
-            | "ScriptAssetOptLc" -> (World.getGameScriptAssetOptLc world :> obj, typeof<AssetTag option>)
-            | "Script" -> (World.getGameScript world :> obj, typeof<Script>)
             | "CreationTimeStampNp" -> (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
+            | "ScriptOpt" -> (World.getGameScriptOpt world :> obj, typeof<AssetTag option>)
+            | "Script" -> (World.getGameScript world :> obj, typeof<Script>)
             | "Imperative" -> (World.getGameImperative world :> obj, typeof<bool>)
             | "SelectedScreenOpt" -> (World.getSelectedScreenOpt world :> obj, typeof<Screen option>)
             | "ScreenTransitionDestinationOpt" -> (World.getScreenTransitionDestinationOpt world :> obj, typeof<Screen option>)
@@ -610,10 +606,9 @@ module WorldModule =
             | "Xtension" -> (false, world)
             | "DispatcherNp" -> (false, world)
             | "Specialization" -> (false, world)
-            | "ScriptAssetOpt" -> (false, world)
-            | "ScriptAssetOptLc" -> (false, world)
-            | "Script" -> (false, world)
             | "CreationTimeStampNp" -> (false, world)
+            | "ScriptOpt" -> (false, world)
+            | "Script" -> (false, world)
             | "Imperative" -> (false, world)
             | "SelectedScreenOpt" -> (true, World.setSelectedScreenOpt (property |> fst :?> Screen option) world)
             | "ScreenTransitionDestinationOpt" -> (true, World.setScreenTransitionDestinationOpt (property |> fst :?> Screen option) world)
@@ -637,10 +632,9 @@ module WorldModule =
             | "Xtension" -> failwith "Cannot change game xtension."
             | "DispatcherNp" -> failwith "Cannot change game dispatcher."
             | "Specialization" -> failwith "Cannot change game specialization."
-            | "ScriptAssetOpt" -> failwith "Cannot change game script asset dynamically."
-            | "ScriptAssetOptLc" -> failwith "Cannot change game script asset lc dynamically."
-            | "Script" -> failwith "Cannot change game script dynamically."
             | "CreationTimeStampNp" -> failwith "Cannot change game creation time stamp."
+            | "ScriptOpt" -> failwith "Cannot change game script dynamically."
+            | "Script" -> failwith "Cannot change game script dynamically."
             | "Imperative" -> failwith "Cannot change game imperative."
             | "SelectedScreenOpt" -> World.setSelectedScreenOpt (property |> fst :?> Screen option) world
             | "ScreenTransitionDestinationOpt" -> World.setScreenTransitionDestinationOpt (property |> fst :?> Screen option) world
@@ -1322,7 +1316,7 @@ module WorldModule =
         static member private removeEntityState entity world =
             World.entityStateRemover entity world
 
-        static member private publishEntityChangeX propertyName entity oldWorld world =
+        static member private publishEntityChange propertyName entity oldWorld world =
             let changeEventAddress = ltoa [!!"Entity"; !!"Change"; !!propertyName; !!"Event"] ->>- entity.EntityAddress
             let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
             World.publish6 { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity false world
@@ -1354,27 +1348,27 @@ module WorldModule =
             let (_, world) = World.updateEntityStateInternal updater mutability entityState entity world
             world
 
-        static member private updateEntityState updater mutability propertyName entity world =
+        static member private updateEntityState updater mutability (propertyName : string) entity world =
             let oldWorld = world
             let entityState = World.getEntityState entity world
             let (entityState, world) = World.updateEntityStateInternal updater mutability entityState entity world
-            if entityState.PublishChanges then World.publishEntityChangeX propertyName entity oldWorld world
+            if entityState.PublishChanges || propertyName.EndsWith "Pa" then World.publishEntityChange propertyName entity oldWorld world
             else world
 
-        static member private updateEntityStatePlus updater mutability propertyName entity world =
+        static member private updateEntityStatePlus updater mutability (propertyName : string) entity world =
             let oldWorld = world
             let entityState = World.getEntityState entity world
             let (entityState, world) = World.updateEntityStateInternal updater mutability entityState entity world
             let world = World.updateEntityInEntityTree entity oldWorld world
-            if entityState.PublishChanges then World.publishEntityChangeX propertyName entity oldWorld world
+            if entityState.PublishChanges || propertyName.EndsWith "Pa" then World.publishEntityChange propertyName entity oldWorld world
             else world
 
-        static member private publishEntityChangesX entity oldWorld world =
+        static member private publishEntityChanges entity oldWorld world =
             let entityState = World.getEntityState entity world
             let properties = World.getProperties entityState
             if entityState.PublishChanges then
                 List.fold
-                    (fun world (propertyName, _) -> World.publishEntityChangeX propertyName entity oldWorld world)
+                    (fun world (propertyName, _) -> World.publishEntityChange propertyName entity oldWorld world)
                     world
                     properties
             else world
@@ -1449,10 +1443,10 @@ module WorldModule =
             let world = World.updateEntityStateWithoutEvent (EntityState.setTransform value) true entity world
             let world = World.updateEntityInEntityTree entity oldWorld world
             if World.getEntityPublishChanges entity world then
-                let world = World.publishEntityChangeX Property? Position entity oldWorld world
-                let world = World.publishEntityChangeX Property? Size entity oldWorld world
-                let world = World.publishEntityChangeX Property? Rotation entity oldWorld world
-                World.publishEntityChangeX Property? Depth entity oldWorld world
+                let world = World.publishEntityChange Property? Position entity oldWorld world
+                let world = World.publishEntityChange Property? Size entity oldWorld world
+                let world = World.publishEntityChange Property? Rotation entity oldWorld world
+                World.publishEntityChange Property? Depth entity oldWorld world
             else world
 
         static member private tryGetFacet facetName world =
@@ -1835,7 +1829,7 @@ module WorldModule =
 
                 // publish change event for every property if needed
                 if World.getEntityPublishChanges entity world
-                then World.publishEntityChangesX entity oldWorld world
+                then World.publishEntityChanges entity oldWorld world
                 else world
 
             // handle failure
@@ -2088,7 +2082,7 @@ module WorldModule =
                 let world = World.updateEntityInEntityTree entity oldWorld world
                 let world =
                     if World.getEntityPublishChanges entity world
-                    then World.publishEntityChangesX entity oldWorld world
+                    then World.publishEntityChanges entity oldWorld world
                     else world
                 Right world
             | (_, _) ->
@@ -2105,7 +2099,7 @@ module WorldModule =
                 let world = World.updateEntityInEntityTree entity oldWorld world
                 let world =
                     if World.getEntityPublishChanges entity world
-                    then World.publishEntityChangesX entity oldWorld world
+                    then World.publishEntityChanges entity oldWorld world
                     else world
                 Right world
             | Left error -> Left error
@@ -2223,6 +2217,18 @@ module WorldModule =
             | None -> (None, world)
 
     type World with
+
+        // Try to convert an asset tag to a script.
+        // TODO: put this somewhere else?
+        static member assetTagToScriptOpt assetTag world =
+            let (symbolOpt, world) = World.tryFindSymbol assetTag world
+            let scriptOpt =
+                match symbolOpt with
+                | Some symbol ->
+                    try let script = valueize<Script> symbol in Some script
+                    with exn -> Log.info ^ "Failed to convert symbol '" + scstring symbol + "' to Script due to: " + scstring exn; None
+                | None -> None
+            (scriptOpt, world)
 
         // Make the world.
         static member internal make eventSystem dispatchers subsystems ambientState gameSpecializationOpt activeGameDispatcher =
