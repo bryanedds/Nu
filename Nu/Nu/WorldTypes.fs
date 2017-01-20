@@ -141,8 +141,13 @@ module WorldTypes =
         inherit SimulantDispatcher ()
     
         static member PropertyDefinitions =
-            [Define? Specialization Constants.Engine.VanillaSpecialization]
-    
+            [Define? Specialization Constants.Engine.VanillaSpecialization
+             Define? OnRegister Scripting.UnitValue
+             Define? OnUnregister Scripting.UnitValue
+             Define? OnUpdate Scripting.UnitValue
+             Define? OnPostUpdate Scripting.UnitValue
+             Define? OnActualize Scripting.UnitValue]
+
         /// Register a game when adding it to the world. Note that there is no corresponding
         /// Unregister method due to the inability to remove a game from the world.
         abstract Register : Game * World -> World
@@ -565,7 +570,7 @@ module WorldTypes =
           Specialization : string
           mutable Persistent : bool
           CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
-          Cachable : bool
+          CachableNp : bool
           mutable OverlayNameOpt : string option
           mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
@@ -661,7 +666,7 @@ module WorldTypes =
               Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
               Persistent = true
               CreationTimeStampNp = Core.getTimeStamp ()
-              Cachable = Name.endsWithGuid name
+              CachableNp = Name.endsWithGuid name
               OverlayNameOpt = overlayNameOpt
               Position = Vector2.Zero
               Size = Constants.Engine.DefaultEntitySize

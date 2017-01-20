@@ -1256,7 +1256,7 @@ module WorldModule =
                         (World.getEntityCachedOpt world)
                 match entityStateOpt with
                 | Some entityState ->
-                    if  entityState.Cachable &&
+                    if  entityState.CachableNp &&
                         Xtension.getImperative entityState.Xtension then
                         entity.EntityStateOpt <-
                             match entityStateOpt with
@@ -1405,6 +1405,7 @@ module WorldModule =
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Persistent <- value; entityState else { entityState with Persistent = value }) false Property? Persistent entity world
         static member internal getEntityCreationTimeStampNp entity world = (World.getEntityState entity world).CreationTimeStampNp
+        static member internal getEntityCachableNp entity world = (World.getEntityState entity world).CachableNp
         static member internal getEntityImperative entity world = Xtension.getImperative (World.getEntityState entity world).Xtension
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
         static member internal setEntityOverlayNameOpt value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.OverlayNameOpt <- value; entityState else { entityState with OverlayNameOpt = value }) false Property? OverlayNameOpt entity world
@@ -1627,6 +1628,7 @@ module WorldModule =
                 | "Persistent" -> Some (World.getEntityPersistent entity world :> obj, typeof<bool>)
                 | "Specialization" -> Some (World.getEntitySpecialization entity world :> obj, typeof<string>)
                 | "CreationTimeStampNp" -> Some (World.getEntityCreationTimeStampNp entity world :> obj, typeof<int64>)
+                | "CachableNp" -> Some (World.getEntityCachableNp entity world :> obj, typeof<bool>)
                 | "Imperative" -> Some (World.getEntityImperative entity world :> obj, typeof<bool>)
                 | "OverlayNameOpt" -> Some (World.getEntityOverlayNameOpt entity world :> obj, typeof<string option>)
                 | "Position" -> Some (World.getEntityPosition entity world :> obj, typeof<Vector2>)
@@ -1655,6 +1657,7 @@ module WorldModule =
             | "Persistent" -> (World.getEntityPersistent entity world :> obj, typeof<bool>)
             | "Specialization" -> (World.getEntitySpecialization entity world :> obj, typeof<string>)
             | "CreationTimeStampNp" -> (World.getEntityCreationTimeStampNp entity world :> obj, typeof<int64>)
+            | "CachableNp" -> (World.getEntityCachableNp entity world :> obj, typeof<bool>)
             | "Imperative" -> (World.getEntityImperative entity world :> obj, typeof<bool>)
             | "OverlayNameOpt" -> (World.getEntityOverlayNameOpt entity world :> obj, typeof<string option>)
             | "Position" -> (World.getEntityPosition entity world :> obj, typeof<Vector2>)
@@ -1683,6 +1686,7 @@ module WorldModule =
                 | "Specialization" -> (false, world)
                 | "Persistent" -> (true, World.setEntityPersistent (property |> fst :?> bool) entity world)
                 | "CreationTimeStampNp" -> (false, world)
+                | "CachableNp" -> (false, world)
                 | "Imperative" -> (false, world)
                 | "Position" -> (true, World.setEntityPosition (property |> fst :?> Vector2) entity world)
                 | "Size" -> (true, World.setEntitySize (property |> fst :?> Vector2) entity world)
@@ -1722,6 +1726,7 @@ module WorldModule =
             | "Specialization" -> failwith "Cannot change entity specialization."
             | "Persistent" -> World.setEntityPersistent (property |> fst :?> bool) entity world
             | "CreationTimeStampNp" -> failwith "Cannot change entity creation time stamp."
+            | "CachableNp" -> failwith "Cannot change entity cachable."
             | "Imperative" -> failwith "Cannot change entity imperative."
             | "Position" -> World.setEntityPosition (property |> fst :?> Vector2) entity world
             | "Size" -> World.setEntitySize (property |> fst :?> Vector2) entity world

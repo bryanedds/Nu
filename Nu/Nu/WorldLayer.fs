@@ -26,17 +26,17 @@ module WorldLayerModule =
         member this.Classification = PropertyTag.makeReadOnly this Property? Classification this.GetClassification
         member this.GetPersistent world = World.getLayerPersistent this world
         member this.SetPersistent value world = World.setLayerPersistent value this world
-        member this.Persistent = PropertyTag.makeReadOnly this Property? Persistent this.GetPersistent
+        member this.Persistent = PropertyTag.make this Property? Persistent this.GetPersistent this.SetPersistent
         member this.GetCreationTimeStampNp world = World.getLayerCreationTimeStampNp this world
         member this.CreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
         member this.GetImperative world = World.getLayerImperative this world
         member this.Imperative = PropertyTag.makeReadOnly this Property? Imperative this.GetImperative
         member this.GetDepth world = World.getLayerDepth this world
         member this.SetDepth value world = World.setLayerDepth value this world
-        member this.Depth = PropertyTag.makeReadOnly this Property? Depth this.GetDepth
+        member this.Depth = PropertyTag.make this Property? Depth this.GetDepth this.SetDepth
         member this.GetVisible world = World.getLayerVisible this world
         member this.SetVisible value world = World.setLayerVisible value this world
-        member this.Visible = PropertyTag.makeReadOnly this Property? Visible this.GetVisible
+        member this.Visible = PropertyTag.make this Property? Visible this.GetVisible this.SetVisible
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetLayerProperty propertyName this world
