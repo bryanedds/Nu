@@ -50,12 +50,12 @@ module Scripting =
                      "nil nix " + // the empty keyword / keyphrase
                      "v2 xOf yOf xAs yAs " + // vector operations
                      "pair tuple unit fst snd thd fth fif nth " +
-                     "some none isNone isSome map " +
+                     "some none isNone isSome contains map " +
                      // TODO: "either isLeft isRight left right " +
-                     "list head tail cons empty isEmpty notEmpty fold filter product sum contains " +
+                     "list head tail cons empty isEmpty notEmpty filter fold reduce " +
                      "ring add remove " +
                      "table tryFind find " +
-                     "let fun if cond try break get set do " +
+                     "let fun if cond try break get set run do " +
                      "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
                      "onRegister onUnregister " + // TODO: "onUpdate onPostUpdate onActualize" +
@@ -98,12 +98,12 @@ module Scripting =
         | Select of (Expr * Expr) list * Origin option
         | Try of Expr * (Name list * Expr) list * Origin option
         | Do of Expr list * Origin option
+        | Run of Command * Origin option
         | Break of Expr * Origin option
         | Get of string * Origin option
         | GetFrom of string * Expr * Origin option
         | Set of string * Expr * Origin option
         | SetTo of string * Expr * Expr * Origin option
-        | Run of Command * Origin option
         | Quote of string * Origin option
 
         (* Special Declarations - only work at the top level, and always return unit. *)
@@ -151,12 +151,12 @@ module Scripting =
             | Select (_, originOpt)
             | Try (_, _, originOpt)
             | Do (_, originOpt)
+            | Run (_, originOpt)
             | Break (_, originOpt)
             | Get (_, originOpt)
             | GetFrom (_, _, originOpt)
             | Set (_, _, originOpt)
             | SetTo (_, _, _, originOpt)
-            | Run (_, originOpt)
             | Quote (_, originOpt)
             | Define (_, _, originOpt)
             | Variable (_, _, originOpt)
@@ -465,14 +465,9 @@ module EnvModule =
 
     [<RequireQualifiedAccess>]
     module Env =
-    
-        /// A bottom value for an binding in a procedural frame.
-        /// Should ever exist ONLY in an uninitialized procedural frame!
-        let private BottomValue = Scripting.Violation ([!!"BottomAccess"], "Accessed a bottom value.", None)
 
-        /// A bottom binding for a procedural frame.
-        /// Should ever exist ONLY in an uninitialized procedural frame!
-        let private BottomBinding = (String.Empty, BottomValue)
+        let private BottomBinding =
+            (String.Empty, Scripting.Violation ([!!"BottomAccess"], "Accessed a bottom value.", None))
 
         let private makeFrame size =
             Array.create size BottomBinding

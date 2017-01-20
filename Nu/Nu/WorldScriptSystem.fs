@@ -748,11 +748,53 @@ module WorldScriptSystem =
             | [evaledArg] -> (Option (Some evaledArg, fnOriginOpt), env)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Option"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
     
+        let evalIsNone fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
+            | [Option (evaled, originOpt)] -> (Bool (Option.isNone evaled, originOpt), env)
+            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Option"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-option.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Option"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
+    
         let evalIsSome fnOriginOpt fnName evaledArgs env =
             match evaledArgs with
             | [Option (evaled, originOpt)] -> (Bool (Option.isSome evaled, originOpt), env)
-            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), env)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
+            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Option"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-option.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Option"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
+    
+        let evalMap evalApply fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
+            | [_; Option (opt, _) as option] ->
+                match opt with
+                | Some value -> evalApply [value] fnOriginOpt env
+                | None -> (option, env)
+            | [_; List (list, _)] ->
+                let (list, env) =
+                    List.fold (fun (elems, env) current ->
+                        let (elem, env) = evalApply [current] fnOriginOpt env
+                        (elem :: elems, env))
+                        ([], env)
+                        list
+                (List (List.rev list, fnOriginOpt), env)
+            | [_; Ring (set, _)] ->
+                let (set, env) =
+                    Set.fold (fun (elems, env) current ->
+                        let (elem, env) = evalApply [current] fnOriginOpt env
+                        (Set.add elem elems, env))
+                        (Set.empty, env)
+                        set
+                (Ring (set, fnOriginOpt), env)
+            | [_; Table (map, _)] ->
+                let (map, env) =
+                    Map.fold (fun (elems, env) currentKey currentValue ->
+                        let current = Tuple ([currentKey; currentValue] |> List.indexed |> Map.ofList, fnOriginOpt)
+                        let (elem, env) = evalApply [current] fnOriginOpt env
+                        match elem with
+                        | Tuple (elems', _) when elems'.Count = 2 -> ((Map.add (Map.find 0 elems') (Map.find 1 elems') elems), env)
+                        | _ -> (elems, env))
+                        (Map.empty, env)
+                        map
+                (Table (map, fnOriginOpt), env)
+            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Functor"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-functor.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Functor"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
             
         let evalList fnOriginOpt _ evaledArgs env =
             (List (evaledArgs, fnOriginOpt), env)
@@ -783,8 +825,40 @@ module WorldScriptSystem =
     
         let evalIsEmpty fnOriginOpt fnName evaledArgs env =
             match evaledArgs with
-            | [List (evaleds, originOpt)] -> (Bool (List.isEmpty evaleds, originOpt), env)
-            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), env)
+            | [List (list, originOpt)] -> (Bool (List.isEmpty list, originOpt), env)
+            | [Ring (set, originOpt)] -> (Bool (Set.isEmpty set, originOpt), env)
+            | [Table (map, originOpt)] -> (Bool (Map.isEmpty map, originOpt), env)
+            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
+    
+        let evalNotEmpty fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
+            | [List (evaleds, originOpt)] -> (Bool (not ^ List.isEmpty evaleds, originOpt), env)
+            | [Ring (set, originOpt)] -> (Bool (not ^ Set.isEmpty set, originOpt), env)
+            | [Table (map, originOpt)] -> (Bool (not ^ Map.isEmpty map, originOpt), env)
+            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
+    
+        let evalFold evalApply fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
+            | [_; state; List (list, _)] -> List.fold (fun (acc, env) current -> evalApply [acc; current] fnOriginOpt env) (state, env) list
+            | [_; state; Ring (set, _)] -> Set.fold (fun (acc, env) current -> evalApply [acc; current] fnOriginOpt env) (state, env) set
+            | [_; state; Table (map, _)] ->
+                Map.fold (fun (acc, env) currentKey currentValue ->
+                    let current = Tuple ([currentKey; currentValue] |> List.indexed |> Map.ofList, fnOriginOpt)
+                    evalApply [acc; current] fnOriginOpt env)
+                    (state, env)
+                    map
+            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), env)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
+    
+        let evalReduce evalApply fnOriginOpt fnName evaledArgs env =
+            match evaledArgs with
+            | [_; List (list, _)] ->
+                match list with
+                | head :: tail -> List.fold (fun (acc, env) current -> evalApply [acc; current] fnOriginOpt env) (head, env) tail
+                | _ -> (Violation ([!!"InvalidArgument"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to an empty list.", fnOriginOpt), env)
+            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), env)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), env)
             
         let evalRing fnOriginOpt (_ : string) evaledArgs env =
@@ -893,16 +967,25 @@ module WorldScriptSystem =
                  ("fif", evalNth5 4)
                  ("nth", evalNth)
                  ("some", evalSome)
+                 ("isNone", evalIsNone)
                  ("isSome", evalIsSome)
+                 //("contains", evalContains)
+                 ("map", evalMap evalApply)
                  ("list", evalList)
                  ("head", evalHead)
                  ("tail", evalTail)
                  ("cons", evalCons)
                  ("isEmpty", evalIsEmpty)
+                 ("notEmpty", evalNotEmpty)
+                 //("filter", evalFilter evalApply)
+                 ("fold", evalFold evalApply)
+                 ("reduce", evalReduce evalApply)
                  ("ring", evalRing)
                  ("add", evalAdd)
                  ("remove", evalRemove)
                  ("table", evalTable)
+                 ("tryFind", evalTryFind)
+                 ("find", evalFind)
                  ("product", evalProduct)]
 
         and isIntrinsic name =
@@ -971,31 +1054,28 @@ module WorldScriptSystem =
         and evalApply exprs originOpt env =
             let oldEnv = env
             match evalMany exprs env with
-            | Right (evaleds, _) ->
-                match evaleds with
-                | evaledHead :: evaledTail ->
-                    match evaledHead with
-                    | Keyword (_, originOpt) as keyword ->
-                        let map = evaledTail |> List.indexed |> Map.ofList
-                        (Keyphrase (keyword, map, originOpt), oldEnv)
-                    | Binding (name, _, originOpt) ->
-                        let (evaled, _) = evalIntrinsic originOpt name evaledTail env
+            | (evaledHead :: evaledTail, env) ->
+                match evaledHead with
+                | Keyword (_, originOpt) as keyword ->
+                    let map = evaledTail |> List.indexed |> Map.ofList
+                    (Keyphrase (keyword, map, originOpt), oldEnv)
+                | Binding (name, _, originOpt) ->
+                    let (evaled, _) = evalIntrinsic originOpt name evaledTail env
+                    (evaled, oldEnv)
+                | Fun (pars, parsCount, body, _, envOpt, originOpt) ->
+                    let env =
+                        match envOpt with
+                        | Some env -> env :?> Env<_, _, _>
+                        | None -> env
+                    let evaledArgs = evaledTail
+                    if List.hasExactly parsCount evaledArgs then
+                        let bindings = List.map2 (fun par evaledArg -> (par, evaledArg)) pars evaledArgs
+                        let env = Env.addProceduralBindings (AddToNewFrame parsCount) bindings env
+                        let (evaled, _) = eval body env
                         (evaled, oldEnv)
-                    | Fun (pars, parsCount, body, _, envOpt, originOpt) ->
-                        let env =
-                            match envOpt with
-                            | Some env -> env :?> Env<_, _, _>
-                            | None -> env
-                        let evaledArgs = evaledTail
-                        if List.hasExactly parsCount evaledArgs then
-                            let bindings = List.map2 (fun par evaledArg -> (par, evaledArg)) pars evaledArgs
-                            let env = Env.addProceduralBindings (AddToNewFrame parsCount) bindings env
-                            let (evaled, _) = eval body env
-                            (evaled, oldEnv)
-                        else (Violation ([!!"MalformedLambdaInvocation"], "Wrong number of arguments.", originOpt), oldEnv)                        
-                    | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), oldEnv)
-                | [] -> (Unit originOpt, oldEnv)
-            | Left (violation, _) -> (violation, oldEnv)
+                    else (Violation ([!!"MalformedLambdaInvocation"], "Wrong number of arguments.", originOpt), oldEnv)                        
+                | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), oldEnv)
+            | ([], _) -> (Unit originOpt, oldEnv)
 
         and evalLet4 binding body originOpt env =
             let env =
@@ -1228,12 +1308,12 @@ module WorldScriptSystem =
             | Select (exprPairs, originOpt) -> evalSelect exprPairs originOpt env
             | Try (body, handlers, originOpt) -> evalTry body handlers originOpt env
             | Do (exprs, originOpt) -> evalDo exprs originOpt env
+            | Run (_, originOpt) -> (Violation ([!!"Unimplemented"], "Unimplemented feature.", originOpt), env) // TODO
             | Break (expr, _) -> evalBreak expr env
             | Get (name, originOpt) -> evalGet name None originOpt env
             | GetFrom (name, expr, originOpt) -> evalGet name (Some expr) originOpt env
             | Set (name, expr, originOpt) -> evalSet name expr None originOpt env
             | SetTo (name, expr, expr2, originOpt) -> evalSet name expr2 (Some expr) originOpt env
-            | Run (_, originOpt) -> (Violation ([!!"Unimplemented"], "Unimplemented feature.", originOpt), env) // TODO
             | Quote _  -> (expr, env)
             | Define (name, expr, originOpt) -> evalDefine name expr originOpt env
             | Variable (name, stream, originOpt) -> evalVariable name stream originOpt env
@@ -1242,16 +1322,12 @@ module WorldScriptSystem =
             | Handle (_, _, originOpt) -> (Unit originOpt, env)
 
         and evalMany exprs env =
-            let eir =
-                List.foldWhileRight
-                    (fun (evaleds, env) expr ->
-                        let (evaled, env) = eval expr env
-                        match evaled with
-                        | Violation _ as violation -> Left (violation, env)
-                        | evaled -> Right (evaled :: evaleds, env))
-                    (Right ([], env))
-                    exprs
-            Either.mapRight (mapFst List.rev) eir
+            List.fold
+                (fun (evaleds, env) expr ->
+                    let (evaled, env) = eval expr env
+                    (evaled :: evaleds, env))
+                ([], env)
+                exprs
 
         and evalDropEnv expr env =
             eval expr env |> fst

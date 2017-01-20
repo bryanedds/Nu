@@ -1,0 +1,74 @@
+     100 files     141 text files.
+classified 141 filesDuplicate file check 141 files (116 known unique)Unique:      100 files                                               120 unique files.                              
+Counting:  100      97 files ignored.
+
+http://cloc.sourceforge.net v 1.60  T=0.21 s (302.1 files/s, 36254.6 lines/s)
+--------------------------------------------------------------------------------------------------------------------------
+File                                                                                   blank        comment           code
+--------------------------------------------------------------------------------------------------------------------------
+..\Prime\Prime\Stream.fs                                                                  73              0            459
+..\Prime\Prime\SymbolicConverter.fs                                                       45              0            340
+..\Prime\Prime\EventWorld.fs                                                              46              0            319
+..\Prime\Prime\List.fs                                                                    55              0            276
+..\Prime\Prime\Symbol.fs                                                                  28              0            266
+..\Prime\Prime\HMap.fs                                                                    50              0            213
+..\Prime\Prime\Address.fs                                                                 65              0            212
+..\Prime\Prime\Vsync.fs                                                                   38              0            209
+..\Prime\Prime\HSet.fs                                                                    46              0            193
+..\Prime\Prime\TList.fs                                                                   39              0            189
+..\Prime\Prime\Reflection.fs                                                              34              0            185
+..\Prime\Prime\EventTests.fs                                                              25              0            175
+..\Prime\Prime\Name.fs                                                                    32              0            155
+..\Prime\Prime\ListTests.fs                                                               27              0            143
+..\Prime\Prime\Xtension.fs                                                                34              0            142
+..\Prime\Prime\EventSystem.fs                                                             35              0            140
+..\Prime\Prime\TMap.fs                                                                    32              0            139
+..\Prime\Prime\Chain.fs                                                                   32              0            139
+..\Prime\Prime\Operators.fs                                                               40              0            138
+..\Prime\Prime\TSet.fs                                                                    29              0            126
+..\Prime\Prime.Dependencies\xunit.gui\HTML.xslt                                            6              0            120
+..\Prime\Prime\Seq.fs                                                                     18              0            118
+..\Prime\Prime.Dependencies\xunit.gui\NUnitXml.xslt                                        8              0            113
+..\Prime\Prime\Either.fs                                                                  21              0            106
+..\Prime\Prime\Relation.fs                                                                23              0             99
+..\Prime\Prime\UList.fs                                                                   31              0             95
+..\Prime\Prime\Rand.fs                                                                    20              0             85
+..\Prime\Prime\SymbolTests.fs                                                             24              0             82
+..\Prime\Prime\String.fs                                                                  11              0             82
+..\Prime\Prime\Program.fs                                                                 14              0             75
+..\Prime\Prime\Map.fs                                                                     20              0             72
+..\Prime\Prime\UMap.fs                                                                    23              0             69
+..\Prime\Prime\Triple.fs                                                                  22              0             67
+..\Prime\Prime\SetTests.fs                                                                 8              0             62
+..\Prime\Prime\EventFilter.fs                                                              9              0             62
+..\Prime\Prime\EventParticipant.fs                                                        17              0             62
+..\Prime\Prime\MapTests.fs                                                                 8              0             60
+..\Prime\Prime\USet.fs                                                                    20              0             59
+..\Prime\Prime\Log.fs                                                                     15              0             57
+..\Prime\Prime\Dictionary.fs                                                              12              0             55
+..\Prime\Prime\MutantCache.fs                                                             10              0             54
+..\Prime\Prime\TExpr.fs                                                                   14              0             41
+..\Prime\Prime\KeyedCache.fs                                                               7              0             39
+..\Prime\Prime\XtensionTests.fs                                                           10              0             36
+..\Prime\Prime\AssemblyInfo.fs                                                             6              0             35
+..\Prime\Prime\RandTests.fs                                                                6              0             27
+..\Prime\Prime\EventTrace.fs                                                               9              0             26
+..\Prime\Prime\SymbolicOperators.fs                                                        6              0             25
+..\Prime\Prime\Generics.fs                                                                12              0             25
+..\Prime\Prime\HashSet.fs                                                                  8              0             25
+..\Prime\Prime\Pair.fs                                                                     9              0             22
+..\Prime\Prime\SymbolicDescriptor.fs                                                       6              0             19
+..\Prime\Prime.Dependencies\xunit.gui\xunit.console.exe.config                             3              0             18
+..\Prime\Prime.Dependencies\xunit.gui\xunit.console.x86.exe.config                         3              0             18
+..\Prime\Prime.Dependencies\xunit.gui\xunit.console.clr4.exe.config                        3              0             18
+..\Prime\Prime.Dependencies\xunit.gui\xunit.console.clr4.x86.exe.config                    3              0             18
+..\Prime\Prime\Set.fs                                                                      4              0             17
+..\Prime\Prime\Array.fs                                                                    3              0             16
+..\Prime\Prime\Option.fs                                                                   4              0             16
+..\Prime\Prime\AddressTests.fs                                                             3              0             14
+..\Prime\Prime\bin\Release\Prime.exe.config                                                0              0             14
+..\Prime\Prime\Prime\bin\Debug\Prime.exe.config                                            0              0             12
+..\Prime\Prime\packages.config                                                             0              0              4
+--------------------------------------------------------------------------------------------------------------------------
+SUM:                                                                                    1264              0           6297
+--------------------------------------------------------------------------------------------------------------------------
