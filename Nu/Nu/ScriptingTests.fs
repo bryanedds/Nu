@@ -115,6 +115,5 @@ module ScriptingTests =
     let [<Fact>] setEyeCenterFromGameScriptWorks () =
         let world = World.makeEmpty ()
         let onRegister = scvalue<Scripting.Expr> "[set EyeCenter [v2 10f 10f]]"
-        let script = { Script.empty with OnRegister = onRegister }
-        let world = Game.SetScript script world
+        let world = Game.SetOnRegister onRegister world
         Assert.Equal (Vector2 (10.0f, 10.0f), Game.GetEyeCenter world)

@@ -44,20 +44,20 @@ module WorldGameModule =
         member this.GetEyeSize world = World.getEyeSize world
         member this.SetEyeSize value world = World.setEyeSize value world
         member this.EyeSize = PropertyTag.make this Property? EyeSize this.GetEyeSize this.SetEyeSize
-        member this.GetOnRegister world = World.getGameProperty Property? OnRegister world
-        member this.SetOnRegister value world = World.setGameProperty Property? OnRegister value world
+        member this.GetOnRegister world = World.getGameProperty Property? OnRegister world |> fst :?> Scripting.Expr
+        member this.SetOnRegister value world = World.setGameProperty Property? OnRegister (value :> obj, typeof<Scripting.Expr>) world
         member this.OnRegister = PropertyTag.make this Property? OnRegister this.GetOnRegister this.SetOnRegister
-        member this.GetOnUnregister world = World.getGameProperty Property? OnUnregister world
-        member this.SetOnUnregister value world = World.setGameProperty Property? OnUnregister value world
+        member this.GetOnUnregister world = World.getGameProperty Property? OnUnregister world |> fst :?> Scripting.Expr
+        member this.SetOnUnregister value world = World.setGameProperty Property? OnUnregister (value :> obj, typeof<Scripting.Expr>) world
         member this.OnUnregister = PropertyTag.make this Property? OnUnregister this.GetOnUnregister this.SetOnUnregister
-        member this.GetOnUpdate world = World.getGameProperty Property? OnUpdate world
-        member this.SetOnUpdate value world = World.setGameProperty Property? OnUpdate value world
+        member this.GetOnUpdate world = World.getGameProperty Property? OnUpdate world |> fst :?> Scripting.Expr
+        member this.SetOnUpdate value world = World.setGameProperty Property? OnUpdate (value :> obj, typeof<Scripting.Expr>) world
         member this.OnUpdate = PropertyTag.make this Property? OnUpdate this.GetOnUpdate this.SetOnUpdate
-        member this.GetOnPostUpdate world = World.getGameProperty Property? OnPostUpdate world
-        member this.SetOnPostUpdate value world = World.setGameProperty Property? OnPostUpdate value world
+        member this.GetOnPostUpdate world = World.getGameProperty Property? OnPostUpdate world |> fst :?> Scripting.Expr
+        member this.SetOnPostUpdate value world = World.setGameProperty Property? OnPostUpdate (value :> obj, typeof<Scripting.Expr>) world
         member this.OnPostUpdate = PropertyTag.make this Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate
-        member this.GetOnActualize world = World.getGameProperty Property? OnActualize world
-        member this.SetOnActualize value world = World.setGameProperty Property? OnActualize value world
+        member this.GetOnActualize world = World.getGameProperty Property? OnActualize world |> fst :?> Scripting.Expr
+        member this.SetOnActualize value world = World.setGameProperty Property? OnActualize (value :> obj, typeof<Scripting.Expr>) world
         member this.OnActualize = PropertyTag.make this Property? OnActualize this.GetOnActualize this.SetOnActualize
 
         /// Try to get a property value and type.
@@ -128,7 +128,7 @@ module WorldGameModule =
                 | (None, world) -> (Cascade, world)
             | None -> (Cascade, world)
 
-        static member internal registerGame (world : World) : World =
+        static member internal registerGame world =
             let game = Simulants.Game
             let dispatcher = game.GetDispatcherNp world
             //let world = World.subscribe World.gameOnRegisterChanged (Events.GameChange Property? OnRegister) game world
@@ -139,7 +139,13 @@ module WorldGameModule =
             let world = World.subscribe World.gameScriptOptChanged (Events.GameChange Property? ScriptOpt) game world
             let world = World.withEventContext (fun world -> dispatcher.Register (Simulants.Game, world)) (atooa game.GameAddress) world
             World.choose world
-        
+
+        static member internal unregisterGame world =
+            let game = Simulants.Game
+            let dispatcher = game.GetDispatcherNp world
+            let world = World.withEventContext (fun world -> dispatcher.Unregister (Simulants.Game, world)) (atooa game.GameAddress) world
+            World.choose world
+
         static member internal updateGame world =
             World.withEventContext (fun world ->
 

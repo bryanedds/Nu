@@ -58,7 +58,6 @@ module Scripting =
                      "let fun if cond try break get set run do " +
                      "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
-                     "onRegister onUnregister " + // TODO: "onUpdate onPostUpdate onActualize" +
                      "tickRate tickTime updateCount",
                      "");
           TypeConverter (typeof<ExprConverter>);
@@ -601,16 +600,12 @@ module ScriptModule =
     type [<NoComparison>] Script =
         { Constants : (Name * Scripting.Expr) list
           Streams : (Name * Guid * Scripting.Stream * Scripting.Expr) list
-          Equalities : (Name * Guid * Scripting.Stream) list
-          OnRegister : Scripting.Expr
-          OnUnregister : Scripting.Expr }
+          Equalities : (Name * Guid * Scripting.Stream) list }
     
         static member empty =
             { Constants = []
               Streams = []
-              Equalities = []
-              OnRegister = Scripting.UnitValue
-              OnUnregister = Scripting.UnitValue }
+              Equalities = [] }
 
 /// The execution environment for scripts.
 type Env<'p, 'g, 'w when 'p :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
