@@ -37,11 +37,11 @@ module Nu =
             Math.init ()
 
             // init F# reach-arounds
-            WorldModule.evalGameScript <- fun world ->
-                let game = Simulants.Game
-                let script = game.GetScript world
-                let env = Env.make World.choose false (dictPlus []) (game :> Simulant) world
-                Env.getWorld ^ snd ^ ScriptSystem.run script env
+            WorldModule.eval <- fun expr (script : Script) simulant world ->
+                ignore script // TODO: utilize script bindings
+                let env = Env.make World.choose false (dictPlus []) simulant world
+                let (_, env) = ScriptSystem.run expr env
+                Env.getWorld env
 #if DEBUG
             Debug.World.viewGame <- fun world -> Debug.Game.view (world :?> World)
             Debug.World.viewScreen <- fun screen world -> Debug.Screen.view (screen :?> Screen) (world :?> World)

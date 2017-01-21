@@ -117,6 +117,13 @@ module WorldGameModule =
 
     type World with
 
+        static member gameOnRegisterChanged evt world =
+            let game = evt.Subscriber : Game
+            let script = game.GetScript world
+            let world = World.eval (game.GetOnUnregister world) script game world
+            let world = World.eval (game.GetOnRegister world) script game world
+            (Cascade, world)
+
         static member gameScriptOptChanged evt world =
             let game = evt.Subscriber : Game
             match game.GetScriptOpt world with
@@ -129,11 +136,7 @@ module WorldGameModule =
         static member internal registerGame world =
             let game = Simulants.Game
             let dispatcher = game.GetDispatcherNp world
-            //let world = World.subscribe World.gameOnRegisterChanged (Events.GameChange Property? OnRegister) game world
-            //let world = World.subscribe World.gameOnUnregisterChanged (Events.GameChange Property? OnUnregister) game world
-            //let world = World.subscribe World.gameOnUpdateChanged (Events.GameChange Property? OnUpdate) game world
-            //let world = World.subscribe World.gameOnPostUpdateChanged (Events.GameChange Property? OnPostUpdate) game world
-            //let world = World.subscribe World.gameOnActualizeChanged (Events.GameChange Property? OnActualize) game world
+            let world = World.subscribe World.gameOnRegisterChanged (Events.GameChange Property? OnRegister) game world
             let world = World.subscribe World.gameScriptOptChanged (Events.GameChange Property? ScriptOpt) game world
             let world = World.withEventContext (fun world -> dispatcher.Register (Simulants.Game, world)) (atooa game.GameAddress) world
             World.choose world

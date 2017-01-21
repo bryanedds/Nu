@@ -1334,18 +1334,15 @@ module WorldScriptSystem =
         and evalDropEnv expr env =
             eval expr env |> fst
 
-        let runExpr exprName expr env =
+        let run expr env =
             match eval expr env with
             | (Violation (names, error, optOrigin) as evaled, env) ->
                 Log.debug ^
                     "Unexpected violation:" + (names |> Name.join "" |> Name.getNameStr) +
-                    "\nin script " + exprName + " due to:" + error +
+                    "\ndue to:" + error +
                     "\nat: " + scstring optOrigin + "'."
                 (evaled, env)
             | (evaled, env) -> (evaled, env)
-
-        let run (_ : Script) env =
-            (UnitValue, env)
 
 /// An abstract data type for executing scripts.
 type ScriptSystem = WorldScriptSystem.ScriptSystem
