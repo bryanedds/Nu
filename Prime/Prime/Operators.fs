@@ -165,6 +165,15 @@ module Operators =
         let fileName = frame.GetFileName ()
         failwithf "Unexpected match failure in '%s' on line %i in file %s." meth.Name line fileName
 
+    /// Fail with an unexpected match failure.
+    let failwithnie () =
+        let stackTrace = StackTrace ()
+        let frame = stackTrace.GetFrame 1
+        let meth = frame.GetMethod ()
+        let line = frame.GetFileLineNumber ()
+        let fileName = frame.GetFileName ()
+        raise (NotImplementedException (sprintf "Not implemented exception in '%s' on line %i in file %s." meth.Name line fileName))
+
     /// As close as we can get to F# implicits.
     let inline implicit arg = (^a : (static member op_Implicit : ^b -> ^a) arg)
 

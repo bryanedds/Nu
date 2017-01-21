@@ -1231,7 +1231,7 @@ module WorldScriptSystem =
                 | None -> (Violation ([!!"InvalidProperty"], "Simulant or property value could not be found.", originOpt), env)
             | Left violation -> (violation, env)
 
-        and evalSet propertyName propertyValueExpr relationExprOpt originOpt env =
+        and evalSet propertyName relationExprOpt propertyValueExpr originOpt env =
             let context = Env.getContext env
             let simulantAndEnvEir =
                 match relationExprOpt with
@@ -1312,8 +1312,8 @@ module WorldScriptSystem =
             | Break (expr, _) -> evalBreak expr env
             | Get (name, originOpt) -> evalGet name None originOpt env
             | GetFrom (name, expr, originOpt) -> evalGet name (Some expr) originOpt env
-            | Set (name, expr, originOpt) -> evalSet name expr None originOpt env
-            | SetTo (name, expr, expr2, originOpt) -> evalSet name expr2 (Some expr) originOpt env
+            | Set (name, expr, originOpt) -> evalSet name None expr originOpt env
+            | SetTo (name, expr, expr2, originOpt) -> evalSet name (Some expr) expr2 originOpt env
             | Quote _  -> (expr, env)
             | Define (name, expr, originOpt) -> evalDefine name expr originOpt env
             | Variable (name, stream, originOpt) -> evalVariable name stream originOpt env
