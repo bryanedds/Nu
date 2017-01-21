@@ -28,7 +28,7 @@ module Scripting =
         | LetVariable of string * Expr
         | LetFunction of string * string list * Expr
 
-    and [<NoComparison>] Stream =
+    and [<CustomEquality; NoComparison>] Stream =
         // constructed as [variableStream v]
         | VariableStream of string
         // constructed as [eventStream X/Y/Z]
@@ -40,6 +40,23 @@ module Scripting =
         | PropertyStreamMany of string * Expr * Classification
         // not constructable by user. Weakly-typed to simplify type declarations
         | ComputedStream of obj // actual type is Prime.Stream<'p, 'w when 'p :> Participant and 'w :> EventWorld<'w>>
+        
+        static member equals left right =
+            match (left, right) with
+            | (VariableStream left, VariableStream right) -> left = right
+            | (EventStream left, EventStream right) -> left = right
+            | (PropertyStream (leftPropertyName, leftTarget), PropertyStream (rightPropertyName, rightTarget)) -> (leftPropertyName, leftTarget) = (rightPropertyName, rightTarget)
+            | (PropertyStreamMany (leftPropertyName, leftTarget, leftClassn), PropertyStreamMany (rightPropertyName, rightTarget, rightClassn)) -> (leftPropertyName, leftTarget, leftClassn) = (rightPropertyName, rightTarget, rightClassn)
+            | (_, _) -> false
+
+        // TODO: check if we can trust the hash function to be efficient on value types...
+        override this.GetHashCode () =
+            failwithnie ()
+
+        override this.Equals that =
+            match that with
+            | :? Stream as that -> Stream.equals this that
+            | _ -> failwithumf ()
 
     and [<Syntax    ("pow root sqr sqrt " +
                      "floor ceiling truncate round exp log " +
@@ -180,7 +197,29 @@ module Scripting =
             | (Option (left, _), Option (right, _)) -> left = right
             | (List (left, _), List (right, _)) -> left = right
             | (Ring (left, _), Ring (right, _)) -> left = right
-            | (Table (left, _), Table (right, _)) -> left = right
+            | (Stream (left, _), Stream (right, _)) -> left = right
+            | (Binding (left, _, _), Binding (right, _, _)) -> left = right
+            | (Apply (left, _), Apply (right, _)) -> left = right
+            | (Let (leftBinding, leftBody, _), Let (rightBinding, rightBody, _)) -> (leftBinding, leftBody) = (rightBinding, rightBody)
+            | (LetMany (leftBindings, leftBody, _), LetMany (rightBindings, rightBody, _)) -> (leftBindings, leftBody) = (rightBindings, rightBody)
+            | (Fun (leftPars, _, leftBody, _, _, _), Fun (rightPars, _, rightBody, _, _, _)) -> (leftPars, leftBody) = (rightPars, rightBody)
+            | (If (leftConditional, leftConsequent, leftAlternative, _), If (rightConditional, rightConsequent, rightAlternative, _)) -> (leftConditional, leftConsequent, leftAlternative) = (rightConditional, rightConsequent, rightAlternative)
+            | (Match (leftInput, leftCases, _), Match (rightInput, rightCases, _)) -> (leftInput, leftCases) = (rightInput, rightCases)
+            | (Select (left, _), Select (right, _)) -> left = right
+            | (Try (leftInput, leftCases, _), Try (rightInput, rightCases, _)) -> (leftInput, leftCases) = (rightInput, rightCases)
+            | (Do (left, _), Do (right, _)) -> left = right
+            | (Run (left, _), Run (right, _)) -> left = right
+            | (Break (left, _), Break (right, _)) -> left = right
+            | (Get (left, _), Get (right, _)) -> left = right
+            | (GetFrom (leftPropertyName, leftTarget, _), GetFrom (rightPropertyName, rightTarget, _)) -> (leftPropertyName, leftTarget) = (rightPropertyName, rightTarget)
+            | (Set (leftPropertyName, leftInput, _), Set (rightPropertyName, rightInput, _)) -> (leftPropertyName, leftInput) = (rightPropertyName, rightInput)
+            | (SetTo (leftPropertyName, leftTarget, leftInput, _), SetTo (rightPropertyName, rightTarget, rightInput, _)) -> (leftPropertyName, leftTarget, leftInput) = (rightPropertyName, rightTarget, rightInput)
+            | (Quote (left, _), Quote (right, _)) -> left = right
+            | (Define (leftName, leftValue, _), Define (rightName, rightValue, _)) -> (leftName, leftValue) = (rightName, rightValue)
+            | (Variable (leftName, leftStream, _), Variable (rightName, rightStream, _)) -> (leftName, leftStream) = (rightName, rightStream)
+            | (Equate (leftName, leftTarget, leftStream, _, _), Equate (rightName, rightTarget, rightStream, _, _)) -> (leftName, leftTarget, leftStream) = (rightName, rightTarget, rightStream)
+            | (EquateMany (leftName, leftTarget, leftClassn, leftStream, _, _), EquateMany (rightName, rightTarget, rightClassn, rightStream, _, _)) -> (leftName, leftTarget, leftClassn, leftStream) = (rightName, rightTarget, rightClassn, rightStream)
+            | (Handle (leftStream, _, _), Handle (rightStream, _, _)) -> leftStream = rightStream
             | (_, _) -> false
 
         static member compare left right =
