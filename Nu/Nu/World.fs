@@ -608,6 +608,7 @@ module WorldModule2 =
             World.incrementUpdateCount world
 
         static member private cleanUp world =
+            let world = World.unregisterGame world
             World.cleanUpSubsystems world |> ignore
 
         /// TODO: document!

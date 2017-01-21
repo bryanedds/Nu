@@ -1344,13 +1344,8 @@ module WorldScriptSystem =
                 (evaled, env)
             | (evaled, env) -> (evaled, env)
 
-        let run script env =
-            match runExpr "OnUnregister" script.OnUnregister env with
-            | (Violation _ as evaled, env) -> ([evaled], env)
-            | (evaled, env) ->
-                match runExpr "OnRegister" script.OnRegister env with
-                | (Violation _ as evaled', env) -> ([evaled; evaled'], env)
-                | (evaled', env) -> ([evaled; evaled'], env)
+        let run (_ : Script) env =
+            (UnitValue, env)
 
 /// An abstract data type for executing scripts.
 type ScriptSystem = WorldScriptSystem.ScriptSystem

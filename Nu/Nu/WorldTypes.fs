@@ -148,11 +148,14 @@ module WorldTypes =
              Define? OnPostUpdate Scripting.UnitValue
              Define? OnActualize Scripting.UnitValue]
 
-        /// Register a game when adding it to the world. Note that there is no corresponding
-        /// Unregister method due to the inability to remove a game from the world.
+        /// Register a game when adding it to the world.
         abstract Register : Game * World -> World
         default dispatcher.Register (_, world) = world
-    
+
+        /// Unregister a game when finished with the world.
+        abstract Unregister : Game * World -> World
+        default dispatcher.Unregister (_, world) = world
+
         /// Update a game.
         abstract Update : Game * World -> World
         default dispatcher.Update (_, world) = world
