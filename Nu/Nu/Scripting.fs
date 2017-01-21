@@ -66,60 +66,60 @@ module Scripting =
         Expr =
 
         (* Primitive Value Types *)
-        | Violation of Name list * string * Origin option
-        | Unit of Origin option // constructed as []
-        | Bool of bool * Origin option
-        | Int of int * Origin option
-        | Int64 of int64 * Origin option
-        | Single of single * Origin option
-        | Double of double * Origin option
-        | Vector2 of Vector2 * Origin option
-        | String of string * Origin option
-        | Keyword of string * Origin option
+        | Violation of Name list * string * SymbolOrigin option
+        | Unit of SymbolOrigin option // constructed as []
+        | Bool of bool * SymbolOrigin option
+        | Int of int * SymbolOrigin option
+        | Int64 of int64 * SymbolOrigin option
+        | Single of single * SymbolOrigin option
+        | Double of double * SymbolOrigin option
+        | Vector2 of Vector2 * SymbolOrigin option
+        | String of string * SymbolOrigin option
+        | Keyword of string * SymbolOrigin option
 
         (* Primitive Data Structures *)
-        | Tuple of Map<int, Expr> * Origin option
-        | Keyphrase of Expr * Map<int, Expr> * Origin option
-        | Option of Expr option * Origin option
-        | List of Expr list * Origin option
-        | Ring of Set<Expr> * Origin option
-        | Table of Map<Expr, Expr> * Origin option
-        | Stream of Stream * Origin option
+        | Tuple of Map<int, Expr> * SymbolOrigin option
+        | Keyphrase of Expr * Map<int, Expr> * SymbolOrigin option
+        | Option of Expr option * SymbolOrigin option
+        | List of Expr list * SymbolOrigin option
+        | Ring of Set<Expr> * SymbolOrigin option
+        | Table of Map<Expr, Expr> * SymbolOrigin option
+        | Stream of Stream * SymbolOrigin option
 
         (* Special Forms *)
-        | Binding of string * CachedBinding ref * Origin option
-        | Apply of Expr list * Origin option
-        | Let of LetBinding * Expr * Origin option
-        | LetMany of LetBinding list * Expr * Origin option
-        | Fun of string list * int * Expr * bool * obj option * Origin option
-        | If of Expr * Expr * Expr * Origin option
-        | Match of Expr * (Expr * Expr) list * Origin option
-        | Select of (Expr * Expr) list * Origin option
-        | Try of Expr * (Name list * Expr) list * Origin option
-        | Do of Expr list * Origin option
-        | Run of Command * Origin option
-        | Break of Expr * Origin option
-        | Get of string * Origin option
-        | GetFrom of string * Expr * Origin option
-        | Set of string * Expr * Origin option
-        | SetTo of string * Expr * Expr * Origin option
-        | Quote of string * Origin option
+        | Binding of string * CachedBinding ref * SymbolOrigin option
+        | Apply of Expr list * SymbolOrigin option
+        | Let of LetBinding * Expr * SymbolOrigin option
+        | LetMany of LetBinding list * Expr * SymbolOrigin option
+        | Fun of string list * int * Expr * bool * obj option * SymbolOrigin option
+        | If of Expr * Expr * Expr * SymbolOrigin option
+        | Match of Expr * (Expr * Expr) list * SymbolOrigin option
+        | Select of (Expr * Expr) list * SymbolOrigin option
+        | Try of Expr * (Name list * Expr) list * SymbolOrigin option
+        | Do of Expr list * SymbolOrigin option
+        | Run of Command * SymbolOrigin option
+        | Break of Expr * SymbolOrigin option
+        | Get of string * SymbolOrigin option
+        | GetFrom of string * Expr * SymbolOrigin option
+        | Set of string * Expr * SymbolOrigin option
+        | SetTo of string * Expr * Expr * SymbolOrigin option
+        | Quote of string * SymbolOrigin option
 
         (* Special Declarations - only work at the top level, and always return unit. *)
         // accessible anywhere
         // constructed as [define c 0]
-        | Define of string * Expr * Origin option
+        | Define of string * Expr * SymbolOrigin option
         // only accessible by variables and equations
         // constructed as [variable v stream]
-        | Variable of string * Stream * Origin option
+        | Variable of string * Stream * SymbolOrigin option
         // constructed as [equate Density stream] or [equate Density ././Player stream]
         // does not allow for relations to parents or siblings, or for a wildcard in the relation
-        | Equate of string * obj Relation * Stream * Guid * Origin option
+        | Equate of string * obj Relation * Stream * Guid * SymbolOrigin option
         // constructed as [equate Density ././@ BoxDispatcher stream] or [equate Density ././@ BoxDispatcher Vanilla stream]
         // does not allow for relations to parents or siblings
-        | EquateMany of string * obj Relation * Classification * Stream * Guid * Origin option
+        | EquateMany of string * obj Relation * Classification * Stream * Guid * SymbolOrigin option
         // constructed as [handle stream]
-        | Handle of Stream * Guid * Origin option
+        | Handle of Stream * Guid * SymbolOrigin option
 
         static member getOriginOpt term =
             match term with

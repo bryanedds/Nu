@@ -40,7 +40,7 @@ module WorldScriptSystem =
             | (true, tryImportFn) -> tryImportFn value ty originOpt
             | (false, _) -> None
 
-        and private Importers : Dictionary<string, obj -> Type -> Origin option -> Expr option> =
+        and private Importers : Dictionary<string, obj -> Type -> SymbolOrigin option -> Expr option> =
             [(typeof<Expr>.Name, (fun (value : obj) _ _ -> Some (value :?> Expr)))
              (typeof<bool>.Name, (fun (value : obj) _ originOpt -> match value with :? bool as bool -> Some (Bool (bool, originOpt)) | _ -> None))
              (typeof<int>.Name, (fun (value : obj) _ originOpt -> match value with :? int as int -> Some (Int (int, originOpt)) | _ -> None))
@@ -85,18 +85,18 @@ module WorldScriptSystem =
             dictPlus
 
         type [<NoEquality; NoComparison>] UnaryFns =
-            { Bool : bool -> Origin option -> Expr
-              Int : int -> Origin option -> Expr
-              Int64 : int64 -> Origin option -> Expr
-              Single : single -> Origin option -> Expr
-              Double : double -> Origin option -> Expr
-              Vector2 : Vector2 -> Origin option -> Expr
-              String : string -> Origin option -> Expr
-              Tuple : Map<int, Expr> -> Origin option -> Expr
-              Keyphrase : Map<int, Expr> -> Origin option -> Expr
-              List : Expr list -> Origin option -> Expr
-              Ring : Expr Set -> Origin option -> Expr
-              Table : Map<Expr, Expr> -> Origin option -> Expr }
+            { Bool : bool -> SymbolOrigin option -> Expr
+              Int : int -> SymbolOrigin option -> Expr
+              Int64 : int64 -> SymbolOrigin option -> Expr
+              Single : single -> SymbolOrigin option -> Expr
+              Double : double -> SymbolOrigin option -> Expr
+              Vector2 : Vector2 -> SymbolOrigin option -> Expr
+              String : string -> SymbolOrigin option -> Expr
+              Tuple : Map<int, Expr> -> SymbolOrigin option -> Expr
+              Keyphrase : Map<int, Expr> -> SymbolOrigin option -> Expr
+              List : Expr list -> SymbolOrigin option -> Expr
+              Ring : Expr Set -> SymbolOrigin option -> Expr
+              Table : Map<Expr, Expr> -> SymbolOrigin option -> Expr }
 
         let SqrFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a bool.", originOpt)
@@ -407,18 +407,18 @@ module WorldScriptSystem =
               Table = fun value originOpt -> String (scstring value, originOpt) }
 
         type [<NoEquality; NoComparison>] BinaryFns =
-            { Bool : bool -> bool -> Origin option -> Expr
-              Int : int -> int -> Origin option -> Expr
-              Int64 : int64 -> int64 -> Origin option -> Expr
-              Single : single -> single -> Origin option -> Expr
-              Double : double -> double -> Origin option -> Expr
-              Vector2 : Vector2 -> Vector2 -> Origin option -> Expr
-              String : string -> string -> Origin option -> Expr
-              Tuple : Map<int, Expr> -> Map<int, Expr> -> Origin option -> Expr
-              Keyphrase : Map<int, Expr> -> Map<int, Expr> -> Origin option -> Expr
-              List : Expr list -> Expr list -> Origin option -> Expr
-              Ring : Expr Set -> Expr Set -> Origin option -> Expr
-              Table : Map<Expr, Expr> -> Map<Expr, Expr> -> Origin option -> Expr }
+            { Bool : bool -> bool -> SymbolOrigin option -> Expr
+              Int : int -> int -> SymbolOrigin option -> Expr
+              Int64 : int64 -> int64 -> SymbolOrigin option -> Expr
+              Single : single -> single -> SymbolOrigin option -> Expr
+              Double : double -> double -> SymbolOrigin option -> Expr
+              Vector2 : Vector2 -> Vector2 -> SymbolOrigin option -> Expr
+              String : string -> string -> SymbolOrigin option -> Expr
+              Tuple : Map<int, Expr> -> Map<int, Expr> -> SymbolOrigin option -> Expr
+              Keyphrase : Map<int, Expr> -> Map<int, Expr> -> SymbolOrigin option -> Expr
+              List : Expr list -> Expr list -> SymbolOrigin option -> Expr
+              Ring : Expr Set -> Expr Set -> SymbolOrigin option -> Expr
+              Table : Map<Expr, Expr> -> Map<Expr, Expr> -> SymbolOrigin option -> Expr }
 
         let EqFns =
             { Bool = fun left right originOpt -> Bool ((left = right), originOpt)
@@ -632,7 +632,7 @@ module WorldScriptSystem =
 
         let combine originLeftOpt originRightOpt =
             match (originLeftOpt, originRightOpt) with
-            | (Some originLeft, Some originRight) -> Some { Start = originLeft.Start; Stop = originRight.Stop }
+            | (Some originLeft, Some originRight) -> Some { Source = originLeft.Source; Start = originLeft.Start; Stop = originRight.Stop }
             | (_, _) -> None
 
         let addStream name stream originOpt env =

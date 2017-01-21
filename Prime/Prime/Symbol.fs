@@ -11,8 +11,16 @@ type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>] SyntaxAttribu
     member this.Keywords0 = keywords0
     member this.Keywords1 = keywords1
 
-type Origin =
-    { Start : Position
+type SymbolSource =
+    { FileNameOpt : string option
+      Text : string }
+
+type SymbolState =
+    { SymbolSource : SymbolSource }
+
+type SymbolOrigin =
+    { Source : SymbolSource
+      Start : Position
       Stop : Position }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -24,11 +32,11 @@ module Origin =
     let tryPrint originOpt = match originOpt with Some origin -> print origin | None -> "Error origin unknown or not applicable."
 
 type Symbol =
-    | Atom of string * Origin option
-    | Number of string * Origin option
-    | String of string * Origin option
-    | Quote of string * Origin option
-    | Symbols of Symbol list * Origin option
+    | Atom of string * SymbolOrigin option
+    | Number of string * SymbolOrigin option
+    | String of string * SymbolOrigin option
+    | Quote of string * SymbolOrigin option
+    | Symbols of Symbol list * SymbolOrigin option
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Symbol =
@@ -89,27 +97,29 @@ module Symbol =
              (attempt (openString >>. skipWhitespaces >>. readStringChars .>> closeString .>> skipWhitespaces)) <|>
              (readAtomChars .>> skipWhitespaces))
 
-    let (readSymbol : Parser<Symbol, unit>, private refReadSymbol : Parser<Symbol, unit> ref) =
+    let (readSymbol : Parser<Symbol, SymbolState>, private refReadSymbol : Parser<Symbol, SymbolState> ref) =
         createParserForwardedToRef ()
 
     let readAtom =
         parse {
+            let! userState = getUserState
             let! start = getPosition
             let! chars = readAtomChars
             let! stop = getPosition
             do! skipWhitespaces
             let str = chars |> String.implode |> fun str -> str.TrimEnd ()
-            let origin = Some { Start = start; Stop = stop }
+            let origin = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
             return Atom (str, origin) }
 
     let readNumber =
         parse {
+            let! userState = getUserState
             let! start = getPosition
             let! number = numberLiteral NumberFormat "number"
             do! followedByWhitespaceOrStructureCharOrAtEof
             let! stop = getPosition
             do! skipWhitespaces
-            let origin = Some { Start = start; Stop = stop }
+            let origin = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
             let suffix =
                 (if number.SuffixChar1 <> (char)65535 then string number.SuffixChar1 else "") + 
                 (if number.SuffixChar2 <> (char)65535 then string number.SuffixChar2 else "") + 
@@ -119,6 +129,7 @@ module Symbol =
 
     let readString =
         parse {
+            let! userState = getUserState
             let! start = getPosition
             do! openString
             do! skipWhitespaces
@@ -127,11 +138,12 @@ module Symbol =
             let! stop = getPosition
             do! skipWhitespaces
             let str = escaped |> String.implode
-            let origin = Some { Start = start; Stop = stop }
+            let origin = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
             return String (str, origin) }
 
     let readQuote =
         parse {
+            let! userState = getUserState
             let! start = getPosition
             do! openQuote
             do! skipWhitespaces
@@ -140,11 +152,12 @@ module Symbol =
             let! stop = getPosition
             do! skipWhitespaces
             let str = quoteChars |> String.implode
-            let origin = Some { Start = start; Stop = stop }
+            let origin = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
             return Quote (str, origin) }
 
     let readSymbols =
         parse {
+            let! userState = getUserState
             let! start = getPosition
             do! openSymbols
             do! skipWhitespaces
@@ -152,7 +165,7 @@ module Symbol =
             do! closeSymbols
             let! stop = getPosition
             do! skipWhitespaces
-            let origin = Some { Start = start; Stop = stop }
+            let origin = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
             return Symbols (symbols, origin) }
 
     do refReadSymbol :=
@@ -201,7 +214,8 @@ module Symbol =
     ///
     /// ...and so on.
     let fromString str =
-        match run (skipWhitespaces >>. readSymbol) str with
+        let symbolState = { SymbolSource = { FileNameOpt = None; Text = str }}
+        match runParserOnString (skipWhitespaces >>. readSymbol) symbolState String.Empty str with
         | Success (value, _, _) -> value
         | Failure (error, _, _) -> failwith error
 
