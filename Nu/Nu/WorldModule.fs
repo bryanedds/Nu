@@ -14,8 +14,9 @@ module WorldModule =
     /// Mutable clipboard that allows its state to persist beyond undo / redo.
     let mutable private Clipboard : obj option = None
 
-    /// F# reach-around for evaluating scripts.
-    let mutable internal evalGameScript = Unchecked.defaultof<World -> World>
+    /// F# reach-around for evaluating script expressions.
+    let mutable internal eval : Scripting.Expr -> Script -> Simulant -> World -> World =
+        Unchecked.defaultof<Scripting.Expr -> Script -> Simulant -> World -> World>
 
     type World with
 
@@ -448,7 +449,7 @@ module WorldModule =
         static member internal getGameScriptOpt world = (World.getGameState world).ScriptOpt
         static member internal setGameScriptOpt value world = World.updateGameState (fun gameState -> { gameState with ScriptOpt = value }) Property? ScriptOpt world
         static member internal getGameScript world = (World.getGameState world).Script
-        static member internal setGameScript value world = let world = World.updateGameState (fun gameState -> { gameState with Script = value }) Property? Script world in evalGameScript world
+        static member internal setGameScript value world = World.updateGameState (fun gameState -> { gameState with Script = value }) Property? Script world
         static member internal getGameImperative world = Xtension.getImperative (World.getGameState world).Xtension
 
         /// Get the current eye center.
@@ -600,7 +601,6 @@ module WorldModule =
         static member internal trySetGameProperty propertyName (property : obj * Type) world =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> (false, world)
-            | "Xtension" -> (false, world)
             | "DispatcherNp" -> (false, world)
             | "Specialization" -> (false, world)
             | "CreationTimeStampNp" -> (false, world)
@@ -626,7 +626,6 @@ module WorldModule =
         static member internal setGameProperty propertyName (property : obj * Type) world =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> failwith "Cannot change game id."
-            | "Xtension" -> failwith "Cannot change game xtension."
             | "DispatcherNp" -> failwith "Cannot change game dispatcher."
             | "Specialization" -> failwith "Cannot change game specialization."
             | "CreationTimeStampNp" -> failwith "Cannot change game creation time stamp."
@@ -835,7 +834,6 @@ module WorldModule =
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> (false, world)
                 | "Name" -> (false, world)
-                | "Xtension" -> (false, world)
                 | "DispatcherNp" -> (false, world)
                 | "Specialization" -> (false, world)
                 | "Persistent" -> (true, World.setScreenPersistent (property |> fst :?> bool) screen world)
@@ -864,7 +862,6 @@ module WorldModule =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> failwith "Cannot change screen id."
             | "Name" -> failwith "Cannot change screen name."
-            | "Xtension" -> failwith "Cannot change layer xtension."
             | "DispatcherNp" -> failwith "Cannot change screen dispatcher."
             | "Specialization" -> failwith "Cannot change screen specialization."
             | "Persistent" -> World.setScreenPersistent (property |> fst :?> bool) screen world
@@ -1101,7 +1098,6 @@ module WorldModule =
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> (false, world)
                 | "Name" -> (false, world)
-                | "Xtension" -> (false, world)
                 | "DispatcherNp" -> (false, world)
                 | "Specialization" -> (false, world)
                 | "Persistent" -> (true, World.setLayerPersistent (property |> fst :?> bool) layer world)
@@ -1125,7 +1121,6 @@ module WorldModule =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> failwith "Cannot change layer id."
             | "Name" -> failwith "Cannot change layer name."
-            | "Xtension" -> failwith "Cannot change layer xtension."
             | "DispatcherNp" -> failwith "Cannot change layer dispatcher."
             | "Specialization" -> failwith "Cannot change layer specialization."
             | "Persistent" -> World.setLayerPersistent (property |> fst :?> bool) layer world
@@ -1673,7 +1668,6 @@ module WorldModule =
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> (false, world)
                 | "Name" -> (false, world)
-                | "Xtension" -> (false, world)
                 | "DispatcherNp" -> (false, world)
                 | "Specialization" -> (false, world)
                 | "Persistent" -> (true, World.setEntityPersistent (property |> fst :?> bool) entity world)
@@ -1713,7 +1707,6 @@ module WorldModule =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> failwith "Cannot change entity id."
             | "Name" -> failwith "Cannot change entity name."
-            | "Xtension" -> failwith "Cannot change layer xtension."
             | "DispatcherNp" -> failwith "Cannot change entity dispatcher."
             | "Specialization" -> failwith "Cannot change entity specialization."
             | "Persistent" -> World.setEntityPersistent (property |> fst :?> bool) entity world
@@ -2214,6 +2207,9 @@ module WorldModule =
             | None -> (None, world)
 
     type World with
+
+        static member eval expr script simulant world =
+            eval expr script simulant world
 
         // Try to convert an asset tag to a script.
         // TODO: put this somewhere else?
