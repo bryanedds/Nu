@@ -14,8 +14,6 @@ module WorldGameModule =
 
         member this.GetId world = World.getGameId world
         member this.Id = PropertyTag.makeReadOnly this Property? Id this.GetId
-        member this.GetXtension world = World.getGameXtension world
-        member this.Xtension = PropertyTag.makeReadOnly this Property? Xtension this.GetXtension
         member this.GetDispatcherNp world = World.getGameDispatcherNp world
         member this.DispatcherNp = PropertyTag.makeReadOnly this Property? DispatcherNp this.GetDispatcherNp
         member this.GetSpecialization world = World.getGameSpecialization world
