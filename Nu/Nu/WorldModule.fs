@@ -442,7 +442,6 @@ module WorldModule =
             World.publishGameChange propertyName oldWorld world
 
         static member internal getGameId world = (World.getGameState world).Id
-        static member internal getGameXtension world = (World.getGameState world).Xtension // TODO: try to get rid of this
         static member internal getGameDispatcherNp world = (World.getGameState world).DispatcherNp
         static member internal getGameSpecialization world = (World.getGameState world).Specialization
         static member internal getGameCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
@@ -571,7 +570,6 @@ module WorldModule =
         static member internal tryGetGameProperty propertyName world =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> Some (World.getGameId world :> obj, typeof<Guid>)
-            | "Xtension" -> Some (World.getGameXtension world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> Some (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
             | "Specialization" -> Some (World.getGameSpecialization world :> obj, typeof<string>)
             | "CreationTimeStampNp" -> Some (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
@@ -587,7 +585,6 @@ module WorldModule =
         static member internal getGameProperty propertyName world =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> (World.getGameId world :> obj, typeof<Guid>)
-            | "Xtension" -> (World.getGameXtension world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
             | "Specialization" -> (World.getGameSpecialization world :> obj, typeof<string>)
             | "CreationTimeStampNp" -> (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
@@ -782,7 +779,6 @@ module WorldModule =
 
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
-        static member internal getScreenXtension screen world = (World.getScreenState screen world).Xtension // TODO: try to get rid of this
         static member internal getScreenDispatcherNp screen world = (World.getScreenState screen world).DispatcherNp
         static member internal getScreenSpecialization screen world = (World.getScreenState screen world).Specialization
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
@@ -805,7 +801,6 @@ module WorldModule =
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> Some (World.getScreenId screen world :> obj, typeof<Guid>)
                 | "Name" -> Some (World.getScreenName screen world :> obj, typeof<Name>)
-                | "Xtension" -> Some (World.getScreenXtension screen world :> obj, typeof<Xtension>)
                 | "DispatcherNp" -> Some (World.getScreenDispatcherNp screen world :> obj, typeof<ScreenDispatcher>)
                 | "Specialization" -> Some (World.getScreenSpecialization screen world :> obj, typeof<string>)
                 | "Persistent" -> Some (World.getScreenPersistent screen world :> obj, typeof<bool>)
@@ -823,7 +818,6 @@ module WorldModule =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> (World.getScreenId screen world :> obj, typeof<Guid>)
             | "Name" -> (World.getScreenName screen world :> obj, typeof<Name>)
-            | "Xtension" -> (World.getScreenXtension screen world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getScreenDispatcherNp screen world :> obj, typeof<ScreenDispatcher>)
             | "Specialization" -> (World.getScreenSpecialization screen world :> obj, typeof<string>)
             | "Persistent" -> (World.getScreenPersistent screen world :> obj, typeof<bool>)
@@ -1065,7 +1059,6 @@ module WorldModule =
 
         static member internal getLayerId layer world = (World.getLayerState layer world).Id
         static member internal getLayerName layer world = (World.getLayerState layer world).Name
-        static member internal getLayerXtension layer world = (World.getLayerState layer world).Xtension // TODO: try to get rid of this
         static member internal getLayerDispatcherNp layer world = (World.getLayerState layer world).DispatcherNp
         static member internal getLayerSpecialization layer world = (World.getLayerState layer world).Specialization
         static member internal getLayerPersistent layer world = (World.getLayerState layer world).Persistent
@@ -1082,7 +1075,6 @@ module WorldModule =
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> Some (World.getLayerId layer world :> obj, typeof<Guid>)
                 | "Name" -> Some (World.getLayerName layer world :> obj, typeof<Name>)
-                | "Xtension" -> Some (World.getLayerXtension layer world :> obj, typeof<Xtension>)
                 | "DispatcherNp" -> Some (World.getLayerDispatcherNp layer world :> obj, typeof<LayerDispatcher>)
                 | "Specialization" -> Some (World.getLayerSpecialization layer world :> obj, typeof<string>)
                 | "Persistent" -> Some (World.getLayerPersistent layer world :> obj, typeof<bool>)
@@ -1096,7 +1088,6 @@ module WorldModule =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> (World.getLayerId layer world :> obj, typeof<Guid>)
             | "Name" -> (World.getLayerName layer world :> obj, typeof<Name>)
-            | "Xtension" -> (World.getLayerXtension layer world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getLayerDispatcherNp layer world :> obj, typeof<LayerDispatcher>)
             | "Specialization" -> (World.getLayerSpecialization layer world :> obj, typeof<string>)
             | "Persistent" -> (World.getLayerPersistent layer world :> obj, typeof<bool>)
@@ -1335,6 +1326,10 @@ module WorldModule =
             World.entityStateFinder entity world
 #endif
 
+        static member internal getEntityXtensionProperties entity world =
+            let entityState = World.getEntityState entity world
+            entityState.Xtension |> Xtension.toSeq |> Seq.toList
+
         static member private setEntityState entityState entity world =
             World.entityStateSetter entityState entity world
 
@@ -1399,7 +1394,6 @@ module WorldModule =
         // NOTE: Wouldn't macros be nice?
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
-        static member internal getEntityXtension entity world = (World.getEntityState entity world).Xtension // TODO: try to get rid of this
         static member internal getEntityDispatcherNp entity world = (World.getEntityState entity world).DispatcherNp
         static member internal getEntitySpecialization entity world = (World.getEntityState entity world).Specialization
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
@@ -1623,7 +1617,6 @@ module WorldModule =
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> Some (World.getEntityId entity world :> obj, typeof<Guid>)
                 | "Name" -> Some (World.getEntityName entity world :> obj, typeof<Name>)
-                | "Xtension" -> Some (World.getEntityXtension entity world :> obj, typeof<Xtension>)
                 | "DispatcherNp" -> Some (World.getEntityDispatcherNp entity world :> obj, typeof<EntityDispatcher>)
                 | "Persistent" -> Some (World.getEntityPersistent entity world :> obj, typeof<bool>)
                 | "Specialization" -> Some (World.getEntitySpecialization entity world :> obj, typeof<string>)
@@ -1652,7 +1645,6 @@ module WorldModule =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> (World.getEntityId entity world :> obj, typeof<Guid>)
             | "Name" -> (World.getEntityName entity world :> obj, typeof<Name>)
-            | "Xtension" -> (World.getEntityXtension entity world :> obj, typeof<Xtension>)
             | "DispatcherNp" -> (World.getEntityDispatcherNp entity world :> obj, typeof<EntityDispatcher>)
             | "Persistent" -> (World.getEntityPersistent entity world :> obj, typeof<bool>)
             | "Specialization" -> (World.getEntitySpecialization entity world :> obj, typeof<string>)

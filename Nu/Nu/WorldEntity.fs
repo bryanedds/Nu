@@ -18,8 +18,6 @@ module WorldEntityModule =
         member this.Id = PropertyTag.makeReadOnly this Property? Id this.GetId
         member this.GetName world = World.getEntityName this world
         member this.Name = PropertyTag.makeReadOnly this Property? Name this.GetName
-        member this.GetXtension world = World.getEntityXtension this world
-        member this.Xtension = PropertyTag.makeReadOnly this Property? Xtension this.GetXtension
         member this.GetDispatcherNp world = World.getEntityDispatcherNp this world
         member this.DispatcherNp = PropertyTag.makeReadOnly this Property? DispatcherNp this.GetDispatcherNp
         member this.GetSpecialization world = World.getEntitySpecialization this world
@@ -294,7 +292,7 @@ module WorldEntityModule =
             World.setEntityProperty propertyName (propertyValue, propertyType) entity world
 
         // TODO: put this in a better place! And of course, document.
-        static member getPropertyDescriptors makePropertyDescriptor xtensionOpt =
+        static member getPropertyDescriptors makePropertyDescriptor contextOpt =
             // OPTIMIZATION: seqs used for speed.
             let properties = typeof<EntityState>.GetProperties ()
             let typeConverterAttribute = TypeConverterAttribute (typeof<SymbolicConverter>) // TODO: make this static?
@@ -303,8 +301,9 @@ module WorldEntityModule =
             let properties = Seq.filter (fun (property : PropertyInfo) -> Reflection.isPropertyPersistentByName property.Name) properties
             let propertyDescriptors = Seq.map (fun property -> makePropertyDescriptor (EntityPropertyInfo property, [|typeConverterAttribute|])) properties
             let propertyDescriptors =
-                match xtensionOpt with
-                | Some xtension ->
+                match contextOpt with
+                | Some (entity, world) ->
+                    let xProperties = World.getEntityXtensionProperties entity world
                     let xPropertyDescriptors =
                         Seq.fold
                             (fun xPropertyDescriptors (xPropertyName, xProperty : XProperty) ->
@@ -315,7 +314,7 @@ module WorldEntityModule =
                                     xPropertyDescriptor :: xPropertyDescriptors
                                 else xPropertyDescriptors)
                             []
-                            (Xtension.toSeq xtension)
+                            xProperties
                     Seq.append xPropertyDescriptors propertyDescriptors
                 | None -> propertyDescriptors
             List.ofSeq propertyDescriptors

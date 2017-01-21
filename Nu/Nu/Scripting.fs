@@ -39,7 +39,7 @@ module Scripting =
         // does not allow for wildcards in the relation
         | PropertyStreamMany of string * Expr * Classification
         // not constructable by user. Weakly-typed to simplify type declarations
-        | ComputedStream of obj // actual type is Prime.Stream<'p, 'w when 'p :> Participant and 'w :> EventWorld<'w>>
+        | ComputedStream of obj // actual type is Prime.Stream<'p, 'w when 'p :> Participant and 'w :> 'w EventWorld>
         
         static member equals left right =
             match (left, right) with
