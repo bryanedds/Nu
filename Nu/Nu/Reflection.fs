@@ -87,7 +87,7 @@ module ReflectionModule =
 module Reflection =
 
     let private PropertyDefinitionsCache =
-        Dictionary<Type, PropertyDefinition list> () // wonder if HashIdentity.Reference would work?
+        Dictionary<Type, PropertyDefinition list> HashIdentity.Reference
 
     /// Derive a simulant name from an optional name.
     /// TODO: see if we can improve the name of this function.
