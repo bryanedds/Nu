@@ -118,8 +118,8 @@ module WorldGameModule =
     type World with
 
         static member private gameOnRegisterChanged _ world =
-            //let world = World.registerGame world
-            //let world = World.unregisterGame world
+            let world = World.registerGame world
+            let world = World.unregisterGame world
             (Cascade, world)
 
         static member private gameScriptOptChanged evt world =

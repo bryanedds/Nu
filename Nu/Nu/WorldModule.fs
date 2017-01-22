@@ -598,6 +598,11 @@ module WorldModule =
             | "Imperative" -> Some (World.getGameImperative world :> obj, typeof<bool>)
             | "ScriptOpt" -> Some (World.getGameScriptOpt world :> obj, typeof<AssetTag option>)
             | "Script" -> Some (World.getGameScript world :> obj, typeof<Script>)
+            | "OnRegister" -> Some (World.getGameOnRegister world :> obj, typeof<Scripting.Expr>)
+            | "OnUnregister" -> Some (World.getGameOnUnregister world :> obj, typeof<Scripting.Expr>)
+            | "OnUpdate" -> Some (World.getGameOnUpdate world :> obj, typeof<Scripting.Expr>)
+            | "OnPostUpdate" -> Some (World.getGameOnPostUpdate world :> obj, typeof<Scripting.Expr>)
+            | "OnActualize" -> Some (World.getGameOnActualize world :> obj, typeof<Scripting.Expr>)
             | "SelectedScreenOpt" -> Some (World.getSelectedScreenOpt world :> obj, typeof<Screen option>)
             | "ScreenTransitionDestinationOpt" -> Some (World.getScreenTransitionDestinationOpt world :> obj, typeof<Screen option>)
             | "EyeCenter" -> Some (World.getEyeCenter world :> obj, typeof<Vector2>)
@@ -613,6 +618,11 @@ module WorldModule =
             | "Imperative" -> (World.getGameImperative world :> obj, typeof<bool>)
             | "ScriptOpt" -> (World.getGameScriptOpt world :> obj, typeof<AssetTag option>)
             | "Script" -> (World.getGameScript world :> obj, typeof<Script>)
+            | "OnRegister" -> (World.getGameOnRegister world :> obj, typeof<Scripting.Expr>)
+            | "OnUnregister" -> (World.getGameOnUnregister world :> obj, typeof<Scripting.Expr>)
+            | "OnUpdate" -> (World.getGameOnUpdate world :> obj, typeof<Scripting.Expr>)
+            | "OnPostUpdate" -> (World.getGameOnPostUpdate world :> obj, typeof<Scripting.Expr>)
+            | "OnActualize" -> (World.getGameOnActualize world :> obj, typeof<Scripting.Expr>)
             | "SelectedScreenOpt" -> (World.getSelectedScreenOpt world :> obj, typeof<Screen option>)
             | "ScreenTransitionDestinationOpt" -> (World.getScreenTransitionDestinationOpt world :> obj, typeof<Screen option>)
             | "EyeCenter" -> (World.getEyeCenter world :> obj, typeof<Vector2>)
@@ -628,6 +638,11 @@ module WorldModule =
             | "Imperative" -> (false, world)
             | "ScriptOpt" -> (false, world)
             | "Script" -> (false, world)
+            | "OnRegister" -> (false, world)
+            | "OnUnregister" -> (false, world)
+            | "OnUpdate" -> (false, world)
+            | "OnPostUpdate" -> (false, world)
+            | "OnActualize" -> (false, world)
             | "SelectedScreenOpt" -> (true, World.setSelectedScreenOpt (property |> fst :?> Screen option) world)
             | "ScreenTransitionDestinationOpt" -> (true, World.setScreenTransitionDestinationOpt (property |> fst :?> Screen option) world)
             | "EyeCenter" -> (true, World.setEyeCenter (property |> fst :?> Vector2) world)
@@ -646,13 +661,18 @@ module WorldModule =
 
         static member internal setGameProperty propertyName (property : obj * Type) world =
             match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> failwith "Cannot change game id."
-            | "DispatcherNp" -> failwith "Cannot change game dispatcher."
-            | "Specialization" -> failwith "Cannot change game specialization."
-            | "CreationTimeStampNp" -> failwith "Cannot change game creation time stamp."
-            | "Imperative" -> failwith "Cannot change game imperative."
-            | "ScriptOpt" -> failwith "Cannot change game script dynamically."
-            | "Script" -> failwith "Cannot change game script dynamically."
+            | "Id" -> failwith ^ "Cannot change game " + propertyName + "."
+            | "DispatcherNp" -> failwith ^ "Cannot change game " + propertyName + "."
+            | "Specialization" -> failwith ^ "Cannot change game " + propertyName + "."
+            | "CreationTimeStampNp" -> failwith ^ "Cannot change game " + propertyName + "."
+            | "Imperative" -> failwith ^ "Cannot change game " + propertyName + "."
+            | "ScriptOpt" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
+            | "Script" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
+            | "OnRegister" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
+            | "OnUnregister" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
+            | "OnUpdate" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
+            | "OnPostUpdate" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
+            | "OnActualize" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
             | "SelectedScreenOpt" -> World.setSelectedScreenOpt (property |> fst :?> Screen option) world
             | "ScreenTransitionDestinationOpt" -> World.setScreenTransitionDestinationOpt (property |> fst :?> Screen option) world
             | "EyeCenter" -> World.setEyeCenter (property |> fst :?> Vector2) world
@@ -788,11 +808,6 @@ module WorldModule =
             let world = World.updateScreenStateWithoutEvent updater screen world
             World.publishScreenChange propertyName screen oldWorld world
 
-        static member private publishScreenChanges screen oldWorld world =
-            let screenState = World.getScreenState screen world
-            let properties = World.getProperties screenState
-            List.fold (fun world (propertyName, _) -> World.publishScreenChange propertyName screen oldWorld world) world properties
-
         /// Check that the world contains the proxied screen.
         static member containsScreen screen world =
             Option.isSome ^ World.getScreenStateOpt screen world
@@ -840,6 +855,13 @@ module WorldModule =
                 | "Persistent" -> Some (World.getScreenPersistent screen world :> obj, typeof<bool>)
                 | "CreationTimeStampNp" -> Some (World.getScreenCreationTimeStampNp screen world :> obj, typeof<int64>)
                 | "Imperative" -> Some (World.getScreenImperative screen world :> obj, typeof<bool>)
+                | "ScriptOpt" -> Some (World.getScreenScriptOpt screen world :> obj, typeof<AssetTag option>)
+                | "Script" -> Some (World.getScreenScript screen world :> obj, typeof<Script>)
+                | "OnRegister" -> Some (World.getScreenOnRegister screen world :> obj, typeof<Scripting.Expr>)
+                | "OnUnregister" -> Some (World.getScreenOnUnregister screen world :> obj, typeof<Scripting.Expr>)
+                | "OnUpdate" -> Some (World.getScreenOnUpdate screen world :> obj, typeof<Scripting.Expr>)
+                | "OnPostUpdate" -> Some (World.getScreenOnPostUpdate screen world :> obj, typeof<Scripting.Expr>)
+                | "OnActualize" -> Some (World.getScreenOnActualize screen world :> obj, typeof<Scripting.Expr>)
                 | "EntityTreeNp" -> Some (World.getScreenEntityTreeNp screen world :> obj, typeof<Entity SpatialTree MutantCache>)
                 | "TransitionStateNp" -> Some (World.getScreenTransitionStateNp screen world :> obj, typeof<TransitionState>)
                 | "TransitionTicksNp" -> Some (World.getScreenTransitionTicksNp screen world :> obj, typeof<int64>)
@@ -857,6 +879,13 @@ module WorldModule =
             | "Persistent" -> (World.getScreenPersistent screen world :> obj, typeof<bool>)
             | "CreationTimeStampNp" -> (World.getScreenCreationTimeStampNp screen world :> obj, typeof<int64>)
             | "Imperative" -> (World.getScreenImperative screen world :> obj, typeof<bool>)
+            | "ScriptOpt" -> (World.getScreenScriptOpt screen world :> obj, typeof<AssetTag option>)
+            | "Script" -> (World.getScreenScript screen world :> obj, typeof<Script>)
+            | "OnRegister" -> (World.getScreenOnRegister screen world :> obj, typeof<Scripting.Expr>)
+            | "OnUnregister" -> (World.getScreenOnUnregister screen world :> obj, typeof<Scripting.Expr>)
+            | "OnUpdate" -> (World.getScreenOnUpdate screen world :> obj, typeof<Scripting.Expr>)
+            | "OnPostUpdate" -> (World.getScreenOnPostUpdate screen world :> obj, typeof<Scripting.Expr>)
+            | "OnActualize" -> (World.getScreenOnActualize screen world :> obj, typeof<Scripting.Expr>)
             | "EntityTreeNp" -> (World.getScreenEntityTreeNp screen world :> obj, typeof<Entity SpatialTree MutantCache>)
             | "TransitionStateNp" -> (World.getScreenTransitionStateNp screen world :> obj, typeof<TransitionState>)
             | "TransitionTicksNp" -> (World.getScreenTransitionTicksNp screen world :> obj, typeof<int64>)
@@ -874,6 +903,13 @@ module WorldModule =
                 | "Persistent" -> (true, World.setScreenPersistent (property |> fst :?> bool) screen world)
                 | "CreationTimeStampNp" -> (false, world)
                 | "Imperative" -> (false, world)
+                | "ScriptOpt" -> (false, world)
+                | "Script" -> (false, world)
+                | "OnRegister" -> (false, world)
+                | "OnUnregister" -> (false, world)
+                | "OnUpdate" -> (false, world)
+                | "OnPostUpdate" -> (false, world)
+                | "OnActualize" -> (false, world)
                 | "EntityTreeNp" -> (false, world)
                 | "TransitionStateNp" -> (true, World.setScreenTransitionStateNp (property |> fst :?> TransitionState) screen world)
                 | "TransitionTicksNp" -> (true, World.setScreenTransitionTicksNp (property |> fst :?> int64) screen world)
@@ -895,14 +931,21 @@ module WorldModule =
 
         static member internal setScreenProperty propertyName (property : obj * Type) screen world =
             match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> failwith "Cannot change screen id."
-            | "Name" -> failwith "Cannot change screen name."
-            | "DispatcherNp" -> failwith "Cannot change screen dispatcher."
-            | "Specialization" -> failwith "Cannot change screen specialization."
+            | "Id" -> failwith ^ "Cannot change screen " + propertyName + "."
+            | "Name" -> failwith ^ "Cannot change screen " + propertyName + "."
+            | "DispatcherNp" -> failwith ^ "Cannot change screen " + propertyName + "."
+            | "Specialization" -> failwith ^ "Cannot change screen " + propertyName + "."
             | "Persistent" -> World.setScreenPersistent (property |> fst :?> bool) screen world
-            | "CreationTimeStampNp" -> failwith "Cannot change screen creation time stamp."
-            | "Imperative" -> failwith "Cannot change screen imperative."
-            | "EntityTreeNp" -> failwith "Cannot change screen entity tree."
+            | "CreationTimeStampNp" -> failwith ^ "Cannot change screen " + propertyName + "."
+            | "Imperative" -> failwith ^ "Cannot change screen " + propertyName + "."
+            | "ScriptOpt" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
+            | "Script" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
+            | "OnRegister" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
+            | "OnUnregister" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
+            | "OnUpdate" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
+            | "OnPostUpdate" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
+            | "OnActualize" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
+            | "EntityTreeNp" -> failwith ^ "Cannot change screen entity tree."
             | "TransitionStateNp" -> World.setScreenTransitionStateNp (property |> fst :?> TransitionState) screen world
             | "TransitionTicksNp" -> World.setScreenTransitionTicksNp (property |> fst :?> int64) screen world
             | "Incoming" -> World.setScreenIncoming (property |> fst :?> Transition) screen world
@@ -910,9 +953,9 @@ module WorldModule =
             | _ -> World.updateScreenState (ScreenState.setProperty propertyName property) propertyName screen world
 
         static member private screenOnRegisterChanged evt world =
-            let _ = evt.Subscriber : Screen
-            //let world = World.registerScreen screen world
-            //let world = World.unregisterScreen screen world
+            let screen = evt.Subscriber : Screen
+            let world = World.registerScreen screen world
+            let world = World.unregisterScreen screen world
             (Cascade, world)
 
         static member private screenScriptOptChanged evt world =
@@ -953,10 +996,8 @@ module WorldModule =
         static member internal addScreen mayReplace screenState screen world =
             let isNew = not ^ World.containsScreen screen world
             if isNew || mayReplace then
-                let oldWorld = world
                 let world = World.addScreenState screenState screen world
-                let world = if isNew then World.registerScreen screen world else world
-                World.publishScreenChanges screen oldWorld world
+                if isNew then World.registerScreen screen world else world
             else failwith ^ "Adding a screen that the world already contains at address '" + scstring screen.ScreenAddress + "'."
 
         static member internal removeScreen3 removeLayers screen world =
@@ -1112,11 +1153,6 @@ module WorldModule =
             let world = World.updateLayerStateWithoutEvent updater layer world
             World.publishLayerChange propertyName layer oldWorld world
 
-        static member private publishLayerChanges layer oldWorld world =
-            let layerState = World.getLayerState layer world
-            let properties = World.getProperties layerState
-            List.fold (fun world (propertyName, _) -> World.publishLayerChange propertyName layer oldWorld world) world properties
-
         /// Check that the world contains a layer.
         static member containsLayer layer world =
             Option.isSome ^ World.getLayerStateOpt layer world
@@ -1157,6 +1193,14 @@ module WorldModule =
                 | "Specialization" -> Some (World.getLayerSpecialization layer world :> obj, typeof<string>)
                 | "Persistent" -> Some (World.getLayerPersistent layer world :> obj, typeof<bool>)
                 | "CreationTimeStampNp" -> Some (World.getLayerCreationTimeStampNp layer world :> obj, typeof<int64>)
+                | "Imperative" -> Some (World.getLayerImperative layer world :> obj, typeof<bool>)
+                | "ScriptOpt" -> Some (World.getLayerScriptOpt layer world :> obj, typeof<AssetTag option>)
+                | "Script" -> Some (World.getLayerScript layer world :> obj, typeof<Script>)
+                | "OnRegister" -> Some (World.getLayerOnRegister layer world :> obj, typeof<Scripting.Expr>)
+                | "OnUnregister" -> Some (World.getLayerOnUnregister layer world :> obj, typeof<Scripting.Expr>)
+                | "OnUpdate" -> Some (World.getLayerOnUpdate layer world :> obj, typeof<Scripting.Expr>)
+                | "OnPostUpdate" -> Some (World.getLayerOnPostUpdate layer world :> obj, typeof<Scripting.Expr>)
+                | "OnActualize" -> Some (World.getLayerOnActualize layer world :> obj, typeof<Scripting.Expr>)
                 | "Depth" -> Some (World.getLayerDepth layer world :> obj, typeof<single>)
                 | "Visible" -> Some (World.getLayerVisible layer world :> obj, typeof<single>)
                 | _ -> LayerState.tryGetProperty propertyName (World.getLayerState layer world)
@@ -1170,6 +1214,14 @@ module WorldModule =
             | "Specialization" -> (World.getLayerSpecialization layer world :> obj, typeof<string>)
             | "Persistent" -> (World.getLayerPersistent layer world :> obj, typeof<bool>)
             | "CreationTimeStampNp" -> (World.getLayerCreationTimeStampNp layer world :> obj, typeof<int64>)
+            | "Imperative" -> (World.getLayerImperative layer world :> obj, typeof<bool>)
+            | "ScriptOpt" -> (World.getLayerScriptOpt layer world :> obj, typeof<AssetTag option>)
+            | "Script" -> (World.getLayerScript layer world :> obj, typeof<Script>)
+            | "OnRegister" -> (World.getLayerOnRegister layer world :> obj, typeof<Scripting.Expr>)
+            | "OnUnregister" -> (World.getLayerOnUnregister layer world :> obj, typeof<Scripting.Expr>)
+            | "OnUpdate" -> (World.getLayerOnUpdate layer world :> obj, typeof<Scripting.Expr>)
+            | "OnPostUpdate" -> (World.getLayerOnPostUpdate layer world :> obj, typeof<Scripting.Expr>)
+            | "OnActualize" -> (World.getLayerOnActualize layer world :> obj, typeof<Scripting.Expr>)
             | "Depth" -> (World.getLayerDepth layer world :> obj, typeof<single>)
             | "Visible" -> (World.getLayerVisible layer world :> obj, typeof<single>)
             | _ -> LayerState.getProperty propertyName (World.getLayerState layer world)
@@ -1184,6 +1236,13 @@ module WorldModule =
                 | "Persistent" -> (true, World.setLayerPersistent (property |> fst :?> bool) layer world)
                 | "CreationTimeStampNp" -> (false, world)
                 | "Imperative" -> (false, world)
+                | "ScriptOpt" -> (false, world)
+                | "Script" -> (false, world)
+                | "OnRegister" -> (false, world)
+                | "OnUnregister" -> (false, world)
+                | "OnUpdate" -> (false, world)
+                | "OnPostUpdate" -> (false, world)
+                | "OnActualize" -> (false, world)
                 | _ ->
                     // HACK: needed to mutate a flag to get the success state out of an updateLayerState callback...
                     let mutable success = false
@@ -1200,19 +1259,26 @@ module WorldModule =
 
         static member internal setLayerProperty propertyName (property : obj * Type) layer world =
             match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> failwith "Cannot change layer id."
-            | "Name" -> failwith "Cannot change layer name."
-            | "DispatcherNp" -> failwith "Cannot change layer dispatcher."
-            | "Specialization" -> failwith "Cannot change layer specialization."
+            | "Id" -> failwith ^ "Cannot change layer " + propertyName + "."
+            | "Name" -> failwith ^ "Cannot change layer " + propertyName + "."
+            | "DispatcherNp" -> failwith ^ "Cannot change layer " + propertyName + "."
+            | "Specialization" -> failwith ^ "Cannot change layer " + propertyName + "."
             | "Persistent" -> World.setLayerPersistent (property |> fst :?> bool) layer world
-            | "CreationTimeStampNp" -> failwith "Cannot change layer creation time stamp."
-            | "Imperative" -> failwith "Cannot change layer imperative."
+            | "CreationTimeStampNp" -> failwith ^ "Cannot change layer " + propertyName + "."
+            | "Imperative" -> failwith ^ "Cannot change layer " + propertyName + "."
+            | "ScriptOpt" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
+            | "Script" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
+            | "OnRegister" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
+            | "OnUnregister" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
+            | "OnUpdate" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
+            | "OnPostUpdate" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
+            | "OnActualize" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
             | _ -> World.updateLayerState (LayerState.setProperty propertyName property) propertyName layer world
 
         static member private layerOnRegisterChanged evt world =
-            let _ = evt.Subscriber : Layer
-            //let world = World.registerLayer layer world
-            //let world = World.unregisterLayer layer world
+            let layer = evt.Subscriber : Layer
+            let world = World.registerLayer layer world
+            let world = World.unregisterLayer layer world
             (Cascade, world)
 
         static member private layerScriptOptChanged evt world =
@@ -1253,10 +1319,8 @@ module WorldModule =
         static member private addLayer mayReplace layerState layer world =
             let isNew = not ^ World.containsLayer layer world
             if isNew || mayReplace then
-                let oldWorld = world
                 let world = World.addLayerState layerState layer world
-                let world = if isNew then World.registerLayer layer world else world
-                World.publishLayerChanges layer oldWorld world
+                if isNew then World.registerLayer layer world else world
             else failwith ^ "Adding a layer that the world already contains at address '" + scstring layer.LayerAddress + "'."
 
         static member internal removeLayer3 removeEntities layer world =
@@ -1469,11 +1533,8 @@ module WorldModule =
         static member private publishEntityChanges entity oldWorld world =
             let entityState = World.getEntityState entity world
             let properties = World.getProperties entityState
-            if entityState.PublishChanges then
-                List.fold
-                    (fun world (propertyName, _) -> World.publishEntityChange propertyName entity oldWorld world)
-                    world
-                    properties
+            if entityState.PublishChanges
+            then List.fold (fun world (propertyName, _) -> World.publishEntityChange propertyName entity oldWorld world) world properties
             else world
 
         /// Check that the world contains an entity.
@@ -1818,14 +1879,14 @@ module WorldModule =
 
         static member internal setEntityProperty propertyName (property : obj * Type) entity world =
             match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> failwith "Cannot change entity id."
-            | "Name" -> failwith "Cannot change entity name."
-            | "DispatcherNp" -> failwith "Cannot change entity dispatcher."
-            | "Specialization" -> failwith "Cannot change entity specialization."
+            | "Id" -> failwith ^ "Cannot change entity " + propertyName + "."
+            | "Name" -> failwith ^ "Cannot change entity " + propertyName + "."
+            | "DispatcherNp" -> failwith ^ "Cannot change entity " + propertyName + "."
+            | "Specialization" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "Persistent" -> World.setEntityPersistent (property |> fst :?> bool) entity world
-            | "CreationTimeStampNp" -> failwith "Cannot change entity creation time stamp."
-            | "Imperative" -> failwith "Cannot change entity imperative."
-            | "CachableNp" -> failwith "Cannot change entity cachable."
+            | "CreationTimeStampNp" -> failwith ^ "Cannot change entity " + propertyName + "."
+            | "Imperative" -> failwith ^ "Cannot change entity " + propertyName + "."
+            | "CachableNp" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "Position" -> World.setEntityPosition (property |> fst :?> Vector2) entity world
             | "Size" -> World.setEntitySize (property |> fst :?> Vector2) entity world
             | "Rotation" -> World.setEntityRotation (property |> fst :?> single) entity world
@@ -1836,10 +1897,10 @@ module WorldModule =
             | "Enabled" -> World.setEntityEnabled (property |> fst :?> bool) entity world
             | "Omnipresent" -> World.setEntityOmnipresent (property |> fst :?> bool) entity world
             | "PublishChanges" -> World.setEntityPublishChanges (property |> fst :?> bool) entity world
-            | "PublishUpdatesNp" -> failwith "Cannot change entity publish updates."
-            | "PublishPostUpdatesNp" -> failwith "Cannot change entity publish post-updates."
-            | "FacetNames" -> failwith "Cannot change entity facet names with a property setter."
-            | "FacetsNp" -> failwith "Cannot change entity facets with a property setter."
+            | "PublishUpdatesNp" -> failwith ^ "Cannot change entity " + propertyName + "."
+            | "PublishPostUpdatesNp" -> failwith ^ "Cannot change entity " + propertyName + "."
+            | "FacetNames" -> failwith ^ "Cannot change entity " + propertyName + " dynamically."
+            | "FacetsNp" -> failwith ^ "Cannot change entity " + propertyName + ". dynamically"
             | _ -> World.updateEntityState (EntityState.setProperty propertyName property) true propertyName entity world
 
         /// Get the maxima bounds of the entity as determined by size, position, rotation, and overflow.
@@ -1916,23 +1977,17 @@ module WorldModule =
                 let world = World.setScreenEntityTreeNpNoEvent entityTree screen world
 
                 // register entity if needed
-                let world =
-                    if isNew then
-                        World.withEventContext (fun world ->
-                            let dispatcher = World.getEntityDispatcherNp entity world : EntityDispatcher
-                            let facets = World.getEntityFacetsNp entity world
-                            let world = dispatcher.Register (entity, world)
-                            let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
-                            let world = World.updateEntityPublishFlags entity world
-                            let eventTrace = EventTrace.record "World" "addEntity" EventTrace.empty
-                            World.publish () (ltoa<unit> [!!"Entity"; !!"Register"; !!"Event"] ->- entity) eventTrace entity world)
-                            entity.ObjAddress
-                            world
-                    else world
-
-                // publish change event for every property if needed
-                if World.getEntityPublishChanges entity world
-                then World.publishEntityChanges entity oldWorld world
+                if isNew then
+                    World.withEventContext (fun world ->
+                        let dispatcher = World.getEntityDispatcherNp entity world : EntityDispatcher
+                        let facets = World.getEntityFacetsNp entity world
+                        let world = dispatcher.Register (entity, world)
+                        let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
+                        let world = World.updateEntityPublishFlags entity world
+                        let eventTrace = EventTrace.record "World" "addEntity" EventTrace.empty
+                        World.publish () (ltoa<unit> [!!"Entity"; !!"Register"; !!"Event"] ->- entity) eventTrace entity world)
+                        entity.ObjAddress
+                        world
                 else world
 
             // handle failure
