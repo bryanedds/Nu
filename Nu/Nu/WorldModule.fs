@@ -910,9 +910,9 @@ module WorldModule =
             | _ -> World.updateScreenState (ScreenState.setProperty propertyName property) propertyName screen world
 
         static member private screenOnRegisterChanged evt world =
-            let screen = evt.Subscriber : Screen
-            let world = World.registerScreen screen world
-            let world = World.unregisterScreen screen world
+            let _ = evt.Subscriber : Screen
+            //let world = World.registerScreen screen world
+            //let world = World.unregisterScreen screen world
             (Cascade, world)
 
         static member private screenScriptOptChanged evt world =
@@ -1210,9 +1210,9 @@ module WorldModule =
             | _ -> World.updateLayerState (LayerState.setProperty propertyName property) propertyName layer world
 
         static member private layerOnRegisterChanged evt world =
-            let layer = evt.Subscriber : Layer
-            let world = World.registerLayer layer world
-            let world = World.unregisterLayer layer world
+            let _ = evt.Subscriber : Layer
+            //let world = World.registerLayer layer world
+            //let world = World.unregisterLayer layer world
             (Cascade, world)
 
         static member private layerScriptOptChanged evt world =
