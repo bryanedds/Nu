@@ -63,7 +63,8 @@ module EventSystemModule =
         private
             { Subscriptions : SubscriptionEntries
               Unsubscriptions : UnsubscriptionEntries
-              EventContext : obj Address
+              GlobalParticipant : Participant
+              EventContext : Participant
               EventStates : UMap<Guid, obj>
               EventTracer : string -> unit
               EventTracing : bool
@@ -122,18 +123,23 @@ module EventSystemModule =
         let getEventContext (eventSystem : 'w EventSystem) =
             eventSystem.EventContext
 
+        /// Get the global participant of the event system.
+        let getGlobalPariticipant (eventSystem : 'w EventSystem) =
+            eventSystem.GlobalParticipant
+
         /// Qualify the event context of the world.
         let qualifyEventContext (address : obj Address) (eventSystem : 'w EventSystem) =
             let context = getEventContext eventSystem
-            let contextLength = Address.length context
+            let contextAddress = context.ParticipantAddress
+            let contextAddressLength = Address.length contextAddress
             let addressLength = Address.length address
-            if contextLength = addressLength then
-                Address.tryTake (contextLength - 1) context =
+            if contextAddressLength = addressLength then
+                Address.tryTake (contextAddressLength - 1) contextAddress =
                     Address.tryTake (addressLength - 1) address
-            elif contextLength < addressLength then
-                context = Address.take contextLength address
-            elif contextLength > addressLength then
-                address = Address.take addressLength context
+            elif contextAddressLength < addressLength then
+                contextAddress = Address.take contextAddressLength address
+            elif contextAddressLength > addressLength then
+                address = Address.take addressLength contextAddress
             else false
 
         /// Set the context of the event system.
@@ -161,10 +167,11 @@ module EventSystemModule =
             eventSystem.EventAddresses
 
         /// Make an event system.
-        let make eventTracer eventTracing eventFilter =
+        let make eventTracer eventTracing eventFilter globalParticipant =
             { Subscriptions = UMap.makeEmpty None
               Unsubscriptions = UMap.makeEmpty None
-              EventContext = Address.empty
+              GlobalParticipant = globalParticipant
+              EventContext = globalParticipant
               EventStates = UMap.makeEmpty None
               EventTracer = eventTracer
               EventTracing = eventTracing

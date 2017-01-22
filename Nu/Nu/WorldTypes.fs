@@ -328,7 +328,8 @@ module WorldTypes =
           Specialization : string
           CreationTimeStampNp : int64
           ScriptOpt : AssetTag option
-          Script : Script
+          Script : Scripting.Expr list
+          ScriptFramesNp : Scripting.Frame list
           OnRegister : Scripting.Expr
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
@@ -384,7 +385,8 @@ module WorldTypes =
               Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
               CreationTimeStampNp = Core.getTimeStamp ()
               ScriptOpt = None
-              Script = Script.empty
+              Script = []
+              ScriptFramesNp = []
               OnRegister = Scripting.UnitValue
               OnUnregister = Scripting.UnitValue
               OnUpdate = Scripting.UnitValue
@@ -413,7 +415,8 @@ module WorldTypes =
           Persistent : bool
           CreationTimeStampNp : int64
           ScriptOpt : AssetTag option
-          Script : Script
+          Script : Scripting.Expr list
+          ScriptFramesNp : Scripting.Frame list
           OnRegister : Scripting.Expr
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
@@ -472,7 +475,8 @@ module WorldTypes =
                   Persistent = true
                   CreationTimeStampNp = Core.getTimeStamp ()
                   ScriptOpt = None
-                  Script = Script.empty
+                  Script = []
+                  ScriptFramesNp = []
                   OnRegister = Scripting.UnitValue
                   OnUnregister = Scripting.UnitValue
                   OnUpdate = Scripting.UnitValue
@@ -503,8 +507,9 @@ module WorldTypes =
           Specialization : string
           Persistent : bool
           CreationTimeStampNp : int64
+          ScriptFramesNp : Scripting.Frame list
           ScriptOpt : AssetTag option
-          Script : Script
+          Script : Scripting.Expr list
           OnRegister : Scripting.Expr
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
@@ -559,7 +564,8 @@ module WorldTypes =
               Persistent = true
               CreationTimeStampNp = Core.getTimeStamp ()
               ScriptOpt = None
-              Script = Script.empty
+              Script = []
+              ScriptFramesNp = []
               OnRegister = Scripting.UnitValue
               OnUnregister = Scripting.UnitValue
               OnUpdate = Scripting.UnitValue
@@ -903,8 +909,7 @@ module WorldTypes =
         { mutable EntityStateOpt : EntityState
           EntityAddress : Entity Address
           UpdateAddress : unit Address
-          PostUpdateAddress : unit Address
-          ObjAddress : obj Address }
+          PostUpdateAddress : unit Address }
     
         interface Simulant with
             member this.ParticipantAddress = atoa<Entity, Participant> this.EntityAddress
@@ -932,8 +937,7 @@ module WorldTypes =
             { EntityStateOpt = Unchecked.defaultof<EntityState>
               EntityAddress = address
               UpdateAddress = ltoa [!!"Update"; !!"Event"] ->>- address
-              PostUpdateAddress = ltoa [!!"PostUpdate"; !!"Event"] ->>- address
-              ObjAddress = atooa address }
+              PostUpdateAddress = ltoa [!!"PostUpdate"; !!"Event"] ->>- address }
     
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (entity : Entity) = acatf address (atooa entity.EntityAddress)
@@ -977,6 +981,8 @@ module WorldTypes =
             { EventSystem : World EventSystem
               Dispatchers : Dispatchers
               Subsystems : World Subsystems
+              ScriptEnv : Scripting.Env
+              ScriptContext : Simulant
               ScreenCachedOpt : KeyedCache<Screen Address * UMap<Screen Address, ScreenState>, ScreenState option>
               LayerCachedOpt : KeyedCache<Layer Address * UMap<Layer Address, LayerState>, LayerState option>
               EntityCachedOpt : KeyedCache<Entity Address * UMap<Entity Address, EntityState>, EntityState option>
@@ -990,7 +996,6 @@ module WorldTypes =
         interface EventWorld<Game, World> with
             member this.GetLiveness () = AmbientState.getLiveness this.AmbientState
             member this.GetEventSystem () = this.EventSystem
-            member this.GetGlobalParticipant () = Game.proxy Address.empty
             member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
             member this.ContainsParticipant participant =
                 match participant with

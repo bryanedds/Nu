@@ -13,15 +13,16 @@ module SymbolStoreModule =
     /// Provides references to Symbols that are loaded from files.
     type [<ReferenceEquality>] SymbolStore =
         private
-            { SymbolStorePackageMap : Symbol PackageMap }
+            { SymbolStorePackageMap : (bool * Symbol) PackageMap }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module SymbolStore =
 
-        let private tryLoadSymbol2 packageName (asset : Asset) =
+        let private tryLoadSymbol3 implicitDelimiters packageName (asset : Asset) =
             try let text = File.ReadAllText asset.FilePath
+                let text = if implicitDelimiters then Symbol.OpenSymbolsStr + text + Symbol.CloseSymbolsStr else text
                 try let symbol = Symbol.fromString text
-                    Some (asset.AssetTag.AssetName, symbol)
+                    Some (asset.AssetTag.AssetName, (implicitDelimiters, symbol))
                 with exn ->
                     Log.info ^ "Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn
                     None
@@ -30,12 +31,12 @@ module SymbolStoreModule =
                 None
 
         /// Try to load a symbol store package with the given name.
-        let tryLoadSymbolStorePackage packageName symbolStore =
+        let tryLoadSymbolStorePackage implicitDelimiters packageName symbolStore =
             match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
             | Right assetGraph ->
                 match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Symbol) packageName assetGraph with
                 | Right assets ->
-                    let symbolOpts = List.map (tryLoadSymbol2 packageName) assets
+                    let symbolOpts = List.map (tryLoadSymbol3 implicitDelimiters packageName) assets
                     let symbols = List.definitize symbolOpts
                     let symbolMapOpt = Map.tryFind packageName symbolStore.SymbolStorePackageMap
                     match symbolMapOpt with
@@ -54,30 +55,35 @@ module SymbolStoreModule =
                 Log.info ^ "Symbol store package load failed due to unloadable asset graph due to: '" + error
                 symbolStore
     
-        let private tryLoadSymbol (assetTag : AssetTag) symbolStore =
+        let private tryLoadSymbol implicitDelimiters (assetTag : AssetTag) symbolStore =
             let (assetMapOpt, symbolStore) =
                 match Map.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap with
                 | Some _ -> (Map.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap, symbolStore)
                 | None ->
                     Log.info ^ "Loading symbol store package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
-                    let symbolStore = tryLoadSymbolStorePackage assetTag.PackageName symbolStore
+                    let symbolStore = tryLoadSymbolStorePackage implicitDelimiters assetTag.PackageName symbolStore
                     let symbolMap = Map.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap
                     (symbolMap, symbolStore)
-            (Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) assetMapOpt, symbolStore)
+            match assetMapOpt with
+            | Some assetMap ->
+                match Map.tryFind assetTag.AssetName assetMap with
+                | Some (_, asset) -> (Some asset, symbolStore)
+                | None -> (None, symbolStore)
+            | None -> (None, symbolStore)
     
         /// Unload a symbolStore package with the given name.
         let unloadSymbolStorePackage packageName symbolStore =
             { symbolStore with SymbolStorePackageMap = Map.remove packageName symbolStore.SymbolStorePackageMap }
     
         /// Try to find a symbol with the given asset tag.
-        let tryFindSymbol assetTag symbolStore =
-            tryLoadSymbol assetTag symbolStore
+        let tryFindSymbol implicitDelimiters assetTag symbolStore =
+            tryLoadSymbol implicitDelimiters assetTag symbolStore
             
         /// Try to find the symbols with the given asset tags.
-        let tryFindSymbols assetTags world =
+        let tryFindSymbols implicitDelimiters assetTags world =
             List.foldBack
                 (fun assetTag (symbolOpts, world) ->
-                    let (symbolOpt, world) = tryFindSymbol assetTag world
+                    let (symbolOpt, world) = tryFindSymbol implicitDelimiters assetTag world
                     match symbolOpt with
                     | Some symbol -> (Some symbol :: symbolOpts, world)
                     | None -> (None :: symbolOpts, world))
@@ -88,10 +94,14 @@ module SymbolStoreModule =
         let reloadSymbols symbolStore =
             let oldPackageMap = symbolStore.SymbolStorePackageMap
             let symbolStore = { symbolStore with SymbolStorePackageMap = Map.empty }
-            List.fold
-                (fun symbolStore packageName -> tryLoadSymbolStorePackage packageName symbolStore)
+            Map.fold (fun (symbolStore : SymbolStore) packageName package ->
+                Map.fold (fun (symbolStore : SymbolStore) assetName (implicitDelimiters, _) ->
+                    let assetTag = { PackageName = packageName; AssetName = assetName }
+                    tryLoadSymbol implicitDelimiters assetTag symbolStore |> snd)
+                    symbolStore
+                    package)
                 symbolStore
-                (Map.toKeyList oldPackageMap)
+                oldPackageMap
     
         /// The empty symbolStore.
         let empty =

@@ -453,172 +453,145 @@ module Scripting =
             | :? Expr -> source
             | _ -> failconv "Invalid ExprConverter conversion from source." None
 
+    /// The unit value in scripting.
     let UnitValue = Unit None
+
+    /// The true value in scripting.
     let TrueValue = Bool (true, None)
+    
+    /// The false value in scripting.
     let FalseValue = Bool (false, None)
-    let EmptyStringValue = String (String.Empty, None)
-    let ZeroIntValue = Int (0, None)
-
-[<AutoOpen>]
-module EnvModule =
-
-    type Frame = (string * Scripting.Expr) array
-
+    
+    /// A bindings frame in a scripging environment.
+    type Frame = (string * Expr) array
+    
     /// The manner in which bindings are added to a frame.
     type AddType =
         | AddToNewFrame of Size : int
         | AddToHeadFrame of Offset : int
 
-    /// The execution environment for scripts.
-    /// TODO: better encapsulation for Env operations.
-    type [<NoEquality; NoComparison>] Env<'p, 'g, 'w when 'p :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
-        private
-            { Rebinding : bool // rebinding should be enabled in Terminal or perhaps when reloading existing scripts.
-              TopLevel : Dictionary<string, Scripting.Expr>
-              Frames : Frame list
-              Streams : Map<obj Address, Prime.Stream<obj, 'g, 'w> * ('w -> 'w)>
-              Context : 'p // TODO: get rid of this and use EventContext instead.
-              World : 'w }
-
-    [<RequireQualifiedAccess>]
-    module Env =
-
-        let private BottomBinding =
-            (String.Empty, Scripting.Violation ([!!"BottomAccess"], "Accessed a bottom value.", None))
-
-        let private makeFrame size =
-            Array.create size BottomBinding
-
-        let private addFrame frame (env : Env<'p, 'g, 'w>) =
-            { env with Frames = frame :: env.Frames }
-
-        let tryGetDeclarationBinding name (env : Env<'p, 'g, 'w>) =
-            match env.TopLevel.TryGetValue name with
-            | (true, binding) -> Some binding
-            | (false, _) -> None
-
-        let tryGetProceduralBinding name env =
-            let refOffset = ref -1
-            let refOptIndex = ref None
-            let optBinding =
-                List.tryFindPlus
-                    (fun (frame : Frame) ->
-                        refOffset := !refOffset + 1
-                        refOptIndex := Array.tryFindIndexRev (fun (bindingName, _) -> name.Equals bindingName) frame // OPTIMIZATION: faster than (=) here
-                        match !refOptIndex with
-                        | Some index -> Some frame.[index]
-                        | None -> None)
-                    env.Frames
-            match optBinding with
-            | Some (_, binding) -> Some (binding, !refOffset, (!refOptIndex).Value)
-            | None -> None
-
-        let tryGetBinding name cachedBinding env =
-            match !cachedBinding with
-            | Scripting.UncachedBinding ->
-                match tryGetProceduralBinding name env with
-                | None ->
-                    match tryGetDeclarationBinding name env with
-                    | Some binding ->
-                        if not env.Rebinding then
-                            let newCachedBinding = Scripting.DeclarationBinding binding
-                            cachedBinding := newCachedBinding
+    [<AutoOpen>]
+    module EnvModule =
+    
+        /// The execution environment for scripts.
+        type [<NoEquality; NoComparison>] Env =
+            private
+                { Rebinding : bool // rebinding should be enabled in Terminal or perhaps when reloading existing scripts.
+                  TopLevel : Dictionary<string, Expr>
+                  Frames : Frame list }
+    
+        [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+        module Env =
+    
+            let private BottomBinding =
+                (String.Empty, Violation ([!!"BottomAccess"], "Accessed a bottom value.", None))
+    
+            let private makeFrame size =
+                Array.create size BottomBinding
+    
+            let private addFrame frame env =
+                { env with Frames = frame :: env.Frames }
+    
+            let tryGetDeclarationBinding name env =
+                match env.TopLevel.TryGetValue name with
+                | (true, binding) -> Some binding
+                | (false, _) -> None
+    
+            let tryGetProceduralBinding name env =
+                let refOffset = ref -1
+                let refOptIndex = ref None
+                let optBinding =
+                    List.tryFindPlus
+                        (fun (frame : Frame) ->
+                            refOffset := !refOffset + 1
+                            refOptIndex := Array.tryFindIndexRev (fun (bindingName, _) -> name.Equals bindingName) frame // OPTIMIZATION: faster than (=) here
+                            match !refOptIndex with
+                            | Some index -> Some frame.[index]
+                            | None -> None)
+                        env.Frames
+                match optBinding with
+                | Some (_, binding) -> Some (binding, !refOffset, (!refOptIndex).Value)
+                | None -> None
+    
+            let tryGetBinding name cachedBinding env =
+                match !cachedBinding with
+                | UncachedBinding ->
+                    match tryGetProceduralBinding name env with
+                    | None ->
+                        match tryGetDeclarationBinding name env with
+                        | Some binding ->
+                            if not env.Rebinding then
+                                let newCachedBinding = DeclarationBinding binding
+                                cachedBinding := newCachedBinding
+                            Some binding
+                        | None -> None
+                    | Some (binding, offset, index) ->
+                        let newCachedBinding = ProceduralBinding (offset, index)
+                        cachedBinding := newCachedBinding
                         Some binding
-                    | None -> None
-                | Some (binding, offset, index) ->
-                    let newCachedBinding = Scripting.ProceduralBinding (offset, index)
-                    cachedBinding := newCachedBinding
+                | DeclarationBinding binding ->
                     Some binding
-            | Scripting.DeclarationBinding binding ->
-                Some binding
-            | Scripting.ProceduralBinding (offset, index) ->
-                let frame = (List.skip offset env.Frames).Head
-                let (_, binding) = frame.[index]
-                Some binding
-
-        let tryAddDeclarationBinding name value env =
-            if (env.Rebinding || not ^ env.TopLevel.ContainsKey name) then
-                env.TopLevel.Add (name, value)
-                Some env
-            else None
-
-        let tryAddDeclarationBindings bindings env =
-            if not env.Rebinding then 
-                let existences = Seq.map (fun (key, _) -> env.TopLevel.ContainsKey key) bindings
-                if Seq.notExists id existences then
-                    for binding in bindings do env.TopLevel.Add binding
+                | ProceduralBinding (offset, index) ->
+                    let frame = (List.skip offset env.Frames).Head
+                    let (_, binding) = frame.[index]
+                    Some binding
+    
+            let tryAddDeclarationBinding name value env =
+                if (env.Rebinding || not ^ env.TopLevel.ContainsKey name) then
+                    env.TopLevel.Add (name, value)
                     Some env
                 else None
-            else
-                for (name, value) in bindings do env.TopLevel.ForceAdd (name, value) |> ignore
-                Some env
-
-        let tryGetStream streamAddress (env : Env<'p, 'g, 'w>) =
-            Map.tryFind streamAddress env.Streams
-
-        let addProceduralBinding appendType name value env =
-            match appendType with
-            | AddToNewFrame size ->
-                let frame = makeFrame size
-                frame.[0] <- (name, value)
-                addFrame frame env
-            | AddToHeadFrame offset ->
-                match env.Frames with
-                | frame :: _ ->
-                    frame.[offset] <- (name, value)
-                    env
-                | [] -> failwithumf ()
-
-        let addProceduralBindings appendType bindings env =
-            match appendType with
-            | AddToNewFrame size ->
-                let frame = makeFrame size
-                let mutable index = 0
-                for binding in bindings do
-                    frame.[index] <- binding
-                    index <- index + 1
-                addFrame frame env
-            | AddToHeadFrame start ->
-                match env.Frames with
-                | frame :: _ ->
-                    let mutable index = start
+    
+            let tryAddDeclarationBindings bindings env =
+                if not env.Rebinding then 
+                    let existences = Seq.map (fun (key, _) -> env.TopLevel.ContainsKey key) bindings
+                    if Seq.notExists id existences then
+                        for binding in bindings do env.TopLevel.Add binding
+                        Some env
+                    else None
+                else
+                    for (name, value) in bindings do env.TopLevel.ForceAdd (name, value) |> ignore
+                    Some env
+    
+            let addProceduralBinding appendType name value env =
+                match appendType with
+                | AddToNewFrame size ->
+                    let frame = makeFrame size
+                    frame.[0] <- (name, value)
+                    addFrame frame env
+                | AddToHeadFrame offset ->
+                    match env.Frames with
+                    | frame :: _ ->
+                        frame.[offset] <- (name, value)
+                        env
+                    | [] -> failwithumf ()
+    
+            let addProceduralBindings appendType bindings env =
+                match appendType with
+                | AddToNewFrame size ->
+                    let frame = makeFrame size
+                    let mutable index = 0
                     for binding in bindings do
                         frame.[index] <- binding
                         index <- index + 1
-                    env
-                | [] -> failwithumf ()
+                    addFrame frame env
+                | AddToHeadFrame start ->
+                    match env.Frames with
+                    | frame :: _ ->
+                        let mutable index = start
+                        for binding in bindings do
+                            frame.[index] <- binding
+                            index <- index + 1
+                        env
+                    | [] -> failwithumf ()
+    
+            let make rebinding topLevel frames =
+                { Rebinding = rebinding
+                  TopLevel = topLevel
+                  Frames = frames }
 
-        let addStream streamAddress address (env : Env<'p, 'g, 'w>) =
-            { env with Streams = Map.add streamAddress address env.Streams }
+    /// The execution environment for scripts.
+    type Env = EnvModule.Env
 
-        let getContext (env : Env<'p, 'g, 'w>) =
-            env.Context
-
-        let getWorld (env : Env<'p, 'g, 'w>) =
-            env.World
-
-        let setWorld chooseWorld world (env : Env<'p, 'g, 'w>) =
-            { env with World = chooseWorld world }
-
-        let updateWorld chooseWorld by (env : Env<'p, 'g, 'w>) =
-            setWorld chooseWorld (by (getWorld env)) env
-
-        let make chooseWorld rebinding topLevel (context : 'p) (world : 'w) =
-            { Rebinding = rebinding
-              TopLevel = topLevel
-              Frames = []
-              Streams = Map.empty
-              Context = context
-              World = chooseWorld world }
-
-/// The execution environment for scripts.
-type Env<'p, 'g, 'w when
-    'p :> Participant and
-    'g :> Participant and
-    'w :> EventWorld<'g, 'w>> =
-    EnvModule.Env<'p, 'g, 'w>
-
-/// Dynamically drives behavior for simulants.
-type [<NoComparison>] Script =
-    { Exprs : Scripting.Expr list }
-    static member empty = { Exprs = [] }
+    /// Attempting to expose Env module contents as well, but does not seem to work...
+    module Env = EnvModule.Env

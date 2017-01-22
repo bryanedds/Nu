@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.IO
 open SDL2
 open OpenTK
@@ -665,7 +666,7 @@ module WorldModule2 =
                 let eventTracer = Log.remark "Event"
                 let eventTracing = Core.getEventTracing ()
                 let eventFilter = Core.getEventFilter ()
-                EventSystem.make eventTracer eventTracing eventFilter
+                EventSystem.make eventTracer eventTracing eventFilter Simulants.Game
 
             // make the world's dispatchers
             let dispatchers =
@@ -686,6 +687,10 @@ module WorldModule2 =
                          (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockAudioPlayer.make ()) :> World Subsystem)]
                 Subsystems.make subsystemMap
 
+            // make the world's script environment
+            // TODO: parameterize hard-coded boolean
+            let scriptEnv = Scripting.EnvModule.Env.make false (Dictionary<string, Scripting.Expr> HashIdentity.Structural) []
+
             // make the world's ambient state
             let ambientState =
                 let overlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
@@ -696,7 +701,7 @@ module WorldModule2 =
             let activeGameDispatcher = dispatchers.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
 
             // make and choose the world for debugging
-            let world = World.make eventSystem dispatchers subsystems ambientState None activeGameDispatcher
+            let world = World.make eventSystem dispatchers subsystems scriptEnv ambientState None activeGameDispatcher
             
             // subscribe to subscribe and unsubscribe events
             let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
@@ -730,7 +735,7 @@ module WorldModule2 =
                     let eventTracer = Log.remark "Event"
                     let eventTracing = Core.getEventTracing ()
                     let eventFilter = Core.getEventFilter ()
-                    EventSystem.make eventTracer eventTracing eventFilter
+                    EventSystem.make eventTracer eventTracing eventFilter Simulants.Game
 
                 // make plug-in dispatchers
                 let pluginFacets = plugin.MakeFacets () |> List.map World.pairWithName
@@ -782,6 +787,10 @@ module WorldModule2 =
                     let subsystemMap = Map.addMany userSubsystems defaultSubsystemMap
                     Subsystems.make subsystemMap
 
+                // make the world's script environment
+                // TODO: parameterize hard-coded boolean
+                let scriptEnv = Scripting.EnvModule.Env.make false (Dictionary<string, Scripting.Expr> HashIdentity.Structural) []
+
                 // attempt to make the overlayer
                 let intrinsicOverlays = World.createIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
                 match Overlayer.tryMakeFromFile intrinsicOverlays Assets.OverlayerFilePath with
@@ -797,7 +806,7 @@ module WorldModule2 =
                         AmbientState.make tickRate assetMetadataMap overlayRouter overlayer SymbolStore.empty userState
 
                     // make and choose the world for debugging
-                    let world = World.make eventSystem dispatchers subsystems ambientState gameSpecializationOpt activeGameDispatcher
+                    let world = World.make eventSystem dispatchers subsystems scriptEnv ambientState gameSpecializationOpt activeGameDispatcher
 
                     // subscribe to subscribe and unsubscribe events
                     let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
