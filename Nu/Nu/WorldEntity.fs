@@ -160,7 +160,7 @@ module WorldEntityModule =
                     let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
                     World.publish7 World.sortSubscriptionsByHierarchy () entity.UpdateAddress eventTrace Simulants.Game false world
                 else world)
-                entity.ObjAddress
+                entity
                 world
 
         static member internal postUpdateEntity (entity : Entity) world =
@@ -171,14 +171,14 @@ module WorldEntityModule =
                     let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
                     World.publish7 World.sortSubscriptionsByHierarchy () entity.PostUpdateAddress eventTrace Simulants.Game false world
                 else world)
-                entity.ObjAddress
+                entity
                 world
 
         static member internal actualizeEntity (entity : Entity) world =
             World.withEventContext (fun world ->
                 let world = (entity.GetDispatcherNp world).Actualize (entity, world)
                 List.foldBack (fun (facet : Facet) world -> facet.Actualize (entity, world)) (entity.GetFacetsNp world) world)
-                entity.ObjAddress
+                entity
                 world
 
         /// Get all the entities contained by a layer.
@@ -223,7 +223,7 @@ module WorldEntityModule =
                 let facets = entity.GetFacetsNp world
                 let world = dispatcher.PropagatePhysics (entity, world)
                 List.fold (fun world (facet : Facet) -> facet.PropagatePhysics (entity, world)) world facets)
-                entity.ObjAddress
+                entity
                 world
 
         /// TODO: document!

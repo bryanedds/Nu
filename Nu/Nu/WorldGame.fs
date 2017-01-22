@@ -139,8 +139,8 @@ module WorldGameModule =
                 World.withEventContext (fun world ->
                     let dispatcher = game.GetDispatcherNp world
                     let world = dispatcher.Register (game, world)
-                    World.eval (game.GetOnUnregister world) (game.GetScript world) game world)
-                    (atooa game.GameAddress)
+                    World.eval (game.GetOnUnregister world) game world |> snd)
+                    game
                     world
             World.choose world
 
@@ -149,9 +149,9 @@ module WorldGameModule =
             let world =
                 World.withEventContext (fun world ->
                     let dispatcher = game.GetDispatcherNp world
-                    let world = World.eval (game.GetOnRegister world) (game.GetScript world) game world
+                    let world = World.eval (game.GetOnRegister world) game world |> snd
                     dispatcher.Unregister (game, world))
-                    (atooa game.GameAddress)
+                    game
                     world
             World.choose world
 
@@ -166,7 +166,7 @@ module WorldGameModule =
                 let eventTrace = EventTrace.record "World" "updateGame" EventTrace.empty
                 let world = World.publish7 World.sortSubscriptionsByHierarchy () Events.Update eventTrace Simulants.Game true world
                 World.choose world)
-                (atooa Simulants.Game.GameAddress)
+                Simulants.Game
                 world
 
         static member internal postUpdateGame world =
@@ -180,7 +180,7 @@ module WorldGameModule =
                 let eventTrace = EventTrace.record "World" "postUpdateGame" EventTrace.empty
                 let world = World.publish7 World.sortSubscriptionsByHierarchy () Events.PostUpdate eventTrace Simulants.Game true world
                 World.choose world)
-                (atooa Simulants.Game.GameAddress)
+                Simulants.Game
                 world
 
         static member internal actualizeGame world =
@@ -188,7 +188,7 @@ module WorldGameModule =
                 let dispatcher = Simulants.Game.GetDispatcherNp world
                 let world = dispatcher.Actualize (Simulants.Game, world)
                 World.choose world)
-                (atooa Simulants.Game.GameAddress)
+                Simulants.Game
                 world
 
         // Get all the entities in the world.

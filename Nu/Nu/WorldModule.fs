@@ -15,8 +15,8 @@ module WorldModule =
     let mutable private Clipboard : obj option = None
 
     /// F# reach-around for evaluating script expressions.
-    let mutable internal eval : Scripting.Expr -> Script -> Simulant -> World -> World =
-        Unchecked.defaultof<Scripting.Expr -> Script -> Simulant -> World -> World>
+    let mutable internal eval : Scripting.Expr -> Simulant -> World -> Scripting.Expr * World =
+        Unchecked.defaultof<Scripting.Expr -> Simulant -> World -> Scripting.Expr * World>
 
     type World with
 
@@ -331,24 +331,24 @@ module WorldModule =
             World.updateAmbientState (AmbientState.updateSymbolStore updater) world
 
         /// Try to load a symbol store package with the given name.
-        static member tryLoadSymbolStorePackage packageName world =
-            World.updateSymbolStore (SymbolStore.tryLoadSymbolStorePackage packageName) world
+        static member tryLoadSymbolStorePackage implicitDlimiters packageName world =
+            World.updateSymbolStore (SymbolStore.tryLoadSymbolStorePackage implicitDlimiters packageName) world
 
         /// Unload a symbol store package with the given name.
         static member unloadSymbolStorePackage packageName world =
             World.updateSymbolStore (SymbolStore.unloadSymbolStorePackage packageName) world
 
         /// Try to find a symbol with the given asset tag.
-        static member tryFindSymbol assetTag world =
+        static member tryFindSymbol implicitDlimiters assetTag world =
             let symbolStore = World.getSymbolStore world
-            let (symbol, symbolStore) = SymbolStore.tryFindSymbol assetTag symbolStore
+            let (symbol, symbolStore) = SymbolStore.tryFindSymbol implicitDlimiters assetTag symbolStore
             let world = World.setSymbolStore symbolStore world
             (symbol, world)
 
         /// Try to find symbols with the given asset tags.
-        static member tryFindSymbols assetTags world =
+        static member tryFindSymbols implicitDlimiters assetTags world =
             let symbolStore = World.getSymbolStore world
-            let (symbol, symbolStore) = SymbolStore.tryFindSymbols assetTags symbolStore
+            let (symbol, symbolStore) = SymbolStore.tryFindSymbols implicitDlimiters assetTags symbolStore
             let world = World.setSymbolStore symbolStore world
             (symbol, world)
 
@@ -451,6 +451,8 @@ module WorldModule =
         static member internal setGameScriptOpt value world = World.updateGameState (fun gameState -> { gameState with ScriptOpt = value }) Property? ScriptOpt world
         static member internal getGameScript world = (World.getGameState world).Script
         static member internal setGameScript value world = World.updateGameState (fun gameState -> { gameState with Script = value }) Property? Script world
+        static member internal getGameScriptFramesNp world = (World.getGameState world).ScriptFramesNp
+        static member internal setGameScriptFramesNp value world = World.updateGameState (fun gameState -> { gameState with ScriptFramesNp = value }) Property? ScriptFramesNp world
         static member internal getGameOnRegister world = (World.getGameState world).OnRegister
         static member internal setGameOnRegister value world = World.updateGameState (fun gameState -> { gameState with OnRegister = value }) Property? OnRegister world
         static member internal getGameOnUnregister world = (World.getGameState world).OnUnregister
@@ -580,11 +582,11 @@ module WorldModule =
 
         /// Try to convert an asset tag to a script.
         static member assetTagToScriptOpt assetTag world =
-            let (symbolOpt, world) = World.tryFindSymbol assetTag world
+            let (symbolOpt, world) = World.tryFindSymbol true assetTag world
             let scriptOpt =
                 match symbolOpt with
                 | Some symbol ->
-                    try let script = valueize<Script> symbol in Some script
+                    try let script = valueize<Scripting.Expr list> symbol in Some script
                     with exn -> Log.info ^ "Failed to convert symbol '" + scstring symbol + "' to Script due to: " + scstring exn; None
                 | None -> None
             (scriptOpt, world)
@@ -597,7 +599,8 @@ module WorldModule =
             | "CreationTimeStampNp" -> Some (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
             | "Imperative" -> Some (World.getGameImperative world :> obj, typeof<bool>)
             | "ScriptOpt" -> Some (World.getGameScriptOpt world :> obj, typeof<AssetTag option>)
-            | "Script" -> Some (World.getGameScript world :> obj, typeof<Script>)
+            | "Script" -> Some (World.getGameScript world :> obj, typeof<Scripting.Expr list>)
+            | "ScriptFramesNp" -> Some (World.getGameScript world :> obj, typeof<Scripting.Frame list>)
             | "OnRegister" -> Some (World.getGameOnRegister world :> obj, typeof<Scripting.Expr>)
             | "OnUnregister" -> Some (World.getGameOnUnregister world :> obj, typeof<Scripting.Expr>)
             | "OnUpdate" -> Some (World.getGameOnUpdate world :> obj, typeof<Scripting.Expr>)
@@ -617,7 +620,7 @@ module WorldModule =
             | "CreationTimeStampNp" -> (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
             | "Imperative" -> (World.getGameImperative world :> obj, typeof<bool>)
             | "ScriptOpt" -> (World.getGameScriptOpt world :> obj, typeof<AssetTag option>)
-            | "Script" -> (World.getGameScript world :> obj, typeof<Script>)
+            | "Script" -> (World.getGameScript world :> obj, typeof<Scripting.Expr list>)
             | "OnRegister" -> (World.getGameOnRegister world :> obj, typeof<Scripting.Expr>)
             | "OnUnregister" -> (World.getGameOnUnregister world :> obj, typeof<Scripting.Expr>)
             | "OnUpdate" -> (World.getGameOnUpdate world :> obj, typeof<Scripting.Expr>)
@@ -638,6 +641,7 @@ module WorldModule =
             | "Imperative" -> (false, world)
             | "ScriptOpt" -> (false, world)
             | "Script" -> (false, world)
+            | "ScriptFramesNp" -> (false, world)
             | "OnRegister" -> (false, world)
             | "OnUnregister" -> (false, world)
             | "OnUpdate" -> (false, world)
@@ -668,6 +672,7 @@ module WorldModule =
             | "Imperative" -> failwith ^ "Cannot change game " + propertyName + "."
             | "ScriptOpt" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
             | "Script" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
+            | "ScriptFramesNp" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
             | "OnRegister" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
             | "OnUnregister" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
             | "OnUpdate" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
@@ -678,10 +683,6 @@ module WorldModule =
             | "EyeCenter" -> World.setEyeCenter (property |> fst :?> Vector2) world
             | "EyeSize" -> World.setEyeSize (property |> fst :?> Vector2) world
             | _ -> World.updateGameState (GameState.setProperty propertyName property) propertyName world
-
-        static member internal makeGameState specializationOpt dispatcher =
-            let gameState = GameState.make specializationOpt dispatcher
-            Reflection.attachProperties GameState.copy dispatcher gameState
 
         static member internal writeGame3 writeScreens gameDescriptor world =
             let gameState = World.getGameState world
@@ -704,10 +705,9 @@ module WorldModule =
                     let dispatcherName = typeof<GameDispatcher>.Name
                     Map.find dispatcherName dispatchers
 
-            // make the bare game state
-            let gameState = World.makeGameState None dispatcher
-
-            // read the game state's value
+            // make the game state and populate its properties
+            let gameState = GameState.make None dispatcher
+            let gameState = Reflection.attachProperties GameState.copy dispatcher gameState
             let gameState = Reflection.readPropertiesToTarget GameState.copy gameDescriptor.GameProperties gameState
 
             // set the game's state in the world
@@ -821,19 +821,21 @@ module WorldModule =
         static member internal getScreenCreationTimeStampNp screen world = (World.getScreenState screen world).CreationTimeStampNp
         static member internal getScreenImperative screen world = Xtension.getImperative (World.getScreenState screen world).Xtension
         static member internal getScreenScriptOpt screen world = (World.getScreenState screen world).ScriptOpt
-        static member internal setScreenScriptOpt value screen world = World.updateScreenState (fun gameState -> { gameState with ScriptOpt = value }) Property? ScriptOpt screen world
+        static member internal setScreenScriptOpt value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptOpt = value }) Property? ScriptOpt screen world
         static member internal getScreenScript screen world = (World.getScreenState screen world).Script
-        static member internal setScreenScript value screen world = World.updateScreenState (fun gameState -> { gameState with Script = value }) Property? Script screen world
+        static member internal setScreenScript value screen world = World.updateScreenState (fun screenState -> { screenState with Script = value }) Property? Script screen world
+        static member internal getScreenScriptFramesNp screen world = (World.getScreenState screen world).ScriptFramesNp
+        static member internal setScreenScriptFramesNp value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptFramesNp = value }) Property? ScriptFramesNp screen world
         static member internal getScreenOnRegister screen world = (World.getScreenState screen world).OnRegister
-        static member internal setScreenOnRegister value screen world = World.updateScreenState (fun gameState -> { gameState with OnRegister = value }) Property? OnRegister screen world
+        static member internal setScreenOnRegister value screen world = World.updateScreenState (fun screenState -> { screenState with OnRegister = value }) Property? OnRegister screen world
         static member internal getScreenOnUnregister screen world = (World.getScreenState screen world).OnUnregister
-        static member internal setScreenOnUnregister value screen world = World.updateScreenState (fun gameState -> { gameState with OnUnregister = value }) Property? OnUnregister screen world
+        static member internal setScreenOnUnregister value screen world = World.updateScreenState (fun screenState -> { screenState with OnUnregister = value }) Property? OnUnregister screen world
         static member internal getScreenOnUpdate screen world = (World.getScreenState screen world).OnUpdate
-        static member internal setScreenOnUpdate value screen world = World.updateScreenState (fun gameState -> { gameState with OnUpdate = value }) Property? OnUpdate screen world
+        static member internal setScreenOnUpdate value screen world = World.updateScreenState (fun screenState -> { screenState with OnUpdate = value }) Property? OnUpdate screen world
         static member internal getScreenOnPostUpdate screen world = (World.getScreenState screen world).OnPostUpdate
-        static member internal setScreenOnPostUpdate value screen world = World.updateScreenState (fun gameState -> { gameState with OnPostUpdate = value }) Property? OnPostUpdate screen world
+        static member internal setScreenOnPostUpdate value screen world = World.updateScreenState (fun screenState -> { screenState with OnPostUpdate = value }) Property? OnPostUpdate screen world
         static member internal getScreenOnActualize screen world = (World.getScreenState screen world).OnActualize
-        static member internal setScreenOnActualize value screen world = World.updateScreenState (fun gameState -> { gameState with OnActualize = value }) Property? OnActualize screen world
+        static member internal setScreenOnActualize value screen world = World.updateScreenState (fun screenState -> { screenState with OnActualize = value }) Property? OnActualize screen world
         static member internal getScreenEntityTreeNp screen world = (World.getScreenState screen world).EntityTreeNp
         static member internal setScreenEntityTreeNpNoEvent value screen world = World.updateScreenStateWithoutEvent (fun screenState -> { screenState with EntityTreeNp = value }) screen world
         static member internal getScreenTransitionStateNp screen world = (World.getScreenState screen world).TransitionStateNp
@@ -856,7 +858,8 @@ module WorldModule =
                 | "CreationTimeStampNp" -> Some (World.getScreenCreationTimeStampNp screen world :> obj, typeof<int64>)
                 | "Imperative" -> Some (World.getScreenImperative screen world :> obj, typeof<bool>)
                 | "ScriptOpt" -> Some (World.getScreenScriptOpt screen world :> obj, typeof<AssetTag option>)
-                | "Script" -> Some (World.getScreenScript screen world :> obj, typeof<Script>)
+                | "Script" -> Some (World.getScreenScript screen world :> obj, typeof<Scripting.Expr list>)
+                | "ScriptFramesNp" -> Some (World.getScreenScriptFramesNp screen world :> obj, typeof<Scripting.Frame list>)
                 | "OnRegister" -> Some (World.getScreenOnRegister screen world :> obj, typeof<Scripting.Expr>)
                 | "OnUnregister" -> Some (World.getScreenOnUnregister screen world :> obj, typeof<Scripting.Expr>)
                 | "OnUpdate" -> Some (World.getScreenOnUpdate screen world :> obj, typeof<Scripting.Expr>)
@@ -880,7 +883,8 @@ module WorldModule =
             | "CreationTimeStampNp" -> (World.getScreenCreationTimeStampNp screen world :> obj, typeof<int64>)
             | "Imperative" -> (World.getScreenImperative screen world :> obj, typeof<bool>)
             | "ScriptOpt" -> (World.getScreenScriptOpt screen world :> obj, typeof<AssetTag option>)
-            | "Script" -> (World.getScreenScript screen world :> obj, typeof<Script>)
+            | "Script" -> (World.getScreenScript screen world :> obj, typeof<Scripting.Expr list>)
+            | "ScriptFramesNp" -> (World.getScreenScriptFramesNp screen world :> obj, typeof<Scripting.Frame list>)
             | "OnRegister" -> (World.getScreenOnRegister screen world :> obj, typeof<Scripting.Expr>)
             | "OnUnregister" -> (World.getScreenOnUnregister screen world :> obj, typeof<Scripting.Expr>)
             | "OnUpdate" -> (World.getScreenOnUpdate screen world :> obj, typeof<Scripting.Expr>)
@@ -905,6 +909,7 @@ module WorldModule =
                 | "Imperative" -> (false, world)
                 | "ScriptOpt" -> (false, world)
                 | "Script" -> (false, world)
+                | "ScriptFramesNp" -> (false, world)
                 | "OnRegister" -> (false, world)
                 | "OnUnregister" -> (false, world)
                 | "OnUpdate" -> (false, world)
@@ -940,6 +945,7 @@ module WorldModule =
             | "Imperative" -> failwith ^ "Cannot change screen " + propertyName + "."
             | "ScriptOpt" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
             | "Script" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
+            | "ScriptFramesNp" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
             | "OnRegister" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
             | "OnUnregister" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
             | "OnUpdate" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
@@ -976,20 +982,20 @@ module WorldModule =
                     let world = dispatcher.Register (screen, world)
                     let eventTrace = EventTrace.record "World" "registerScreen" EventTrace.empty
                     let world = World.publish () (ltoa<unit> [!!"Screen"; !!"Register"; !!"Event"] ->- screen) eventTrace screen world
-                    eval (World.getScreenOnUnregister screen world) (World.getScreenScript screen world) screen world)
-                    (atooa screen.ScreenAddress)
+                    eval (World.getScreenOnUnregister screen world) screen world |> snd)
+                    screen
                     world
             World.choose world
 
         static member internal unregisterScreen screen world =
             let world =
                 World.withEventContext (fun world ->
-                    let world = eval (World.getScreenOnRegister screen world) (World.getScreenScript screen world) screen world
+                    let world = eval (World.getScreenOnRegister screen world) screen world |> snd
                     let dispatcher = World.getScreenDispatcherNp screen world
                     let eventTrace = EventTrace.record "World" "unregisterScreen" EventTrace.empty
                     let world = World.publish () (ltoa<unit> [!!"Screen"; !!"Unregistering"; !!"Event"] ->- screen) eventTrace screen world
                     dispatcher.Unregister (screen, world))
-                    (atooa screen.ScreenAddress)
+                    screen
                     world
             World.choose world
 
@@ -1028,13 +1034,9 @@ module WorldModule =
                     let dispatcherName = typeof<ScreenDispatcher>.Name
                     Map.find dispatcherName dispatchers
 
-            // make the bare screen state with name as id
+            // make the screen state and populate its properties
             let screenState = ScreenState.make None None dispatcher
-
-            // attach the screen state's instrinsic properties from its dispatcher if any
             let screenState = Reflection.attachProperties ScreenState.copy screenState.DispatcherNp screenState
-
-            // read the screen state's value
             let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
 
             // apply the name if one is provided
@@ -1042,7 +1044,7 @@ module WorldModule =
                 match nameOpt with
                 | Some name -> { screenState with Name = name }
                 | None -> screenState
-            
+
             // add the screen's state to the world
             let screen = screenState.Name |> ntoa |> Screen.proxy
             let screenState =
@@ -1166,19 +1168,21 @@ module WorldModule =
         static member internal getLayerCreationTimeStampNp layer world = (World.getLayerState layer world).CreationTimeStampNp
         static member internal getLayerImperative layer world = Xtension.getImperative (World.getLayerState layer world).Xtension
         static member internal getLayerScriptOpt layer world = (World.getLayerState layer world).ScriptOpt
-        static member internal setLayerScriptOpt value layer world = World.updateLayerState (fun gameState -> { gameState with ScriptOpt = value }) Property? ScriptOpt layer world
+        static member internal setLayerScriptOpt value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptOpt = value }) Property? ScriptOpt layer world
         static member internal getLayerScript layer world = (World.getLayerState layer world).Script
-        static member internal setLayerScript value layer world = World.updateLayerState (fun gameState -> { gameState with Script = value }) Property? Script layer world
+        static member internal setLayerScript value layer world = World.updateLayerState (fun layerState -> { layerState with Script = value }) Property? Script layer world
+        static member internal getLayerScriptFramesNp layer world = (World.getLayerState layer world).ScriptFramesNp
+        static member internal setLayerScriptFramesNp value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptFramesNp = value }) Property? ScriptFramesNp layer world
         static member internal getLayerOnRegister layer world = (World.getLayerState layer world).OnRegister
-        static member internal setLayerOnRegister value layer world = World.updateLayerState (fun gameState -> { gameState with OnRegister = value }) Property? OnRegister layer world
+        static member internal setLayerOnRegister value layer world = World.updateLayerState (fun layerState -> { layerState with OnRegister = value }) Property? OnRegister layer world
         static member internal getLayerOnUnregister layer world = (World.getLayerState layer world).OnUnregister
-        static member internal setLayerOnUnregister value layer world = World.updateLayerState (fun gameState -> { gameState with OnUnregister = value }) Property? OnUnregister layer world
+        static member internal setLayerOnUnregister value layer world = World.updateLayerState (fun layerState -> { layerState with OnUnregister = value }) Property? OnUnregister layer world
         static member internal getLayerOnUpdate layer world = (World.getLayerState layer world).OnUpdate
-        static member internal setLayerOnUpdate value layer world = World.updateLayerState (fun gameState -> { gameState with OnUpdate = value }) Property? OnUpdate layer world
+        static member internal setLayerOnUpdate value layer world = World.updateLayerState (fun layerState -> { layerState with OnUpdate = value }) Property? OnUpdate layer world
         static member internal getLayerOnPostUpdate layer world = (World.getLayerState layer world).OnPostUpdate
-        static member internal setLayerOnPostUpdate value layer world = World.updateLayerState (fun gameState -> { gameState with OnPostUpdate = value }) Property? OnPostUpdate layer world
+        static member internal setLayerOnPostUpdate value layer world = World.updateLayerState (fun layerState -> { layerState with OnPostUpdate = value }) Property? OnPostUpdate layer world
         static member internal getLayerOnActualize layer world = (World.getLayerState layer world).OnActualize
-        static member internal setLayerOnActualize value layer world = World.updateLayerState (fun gameState -> { gameState with OnActualize = value }) Property? OnActualize layer world
+        static member internal setLayerOnActualize value layer world = World.updateLayerState (fun layerState -> { layerState with OnActualize = value }) Property? OnActualize layer world
         static member internal getLayerDepth layer world = (World.getLayerState layer world).Depth
         static member internal setLayerDepth value layer world = World.updateLayerState (fun layerState -> { layerState with Depth = value }) Property? Depth layer world
         static member internal getLayerVisible layer world = (World.getLayerState layer world).Visible
@@ -1195,7 +1199,8 @@ module WorldModule =
                 | "CreationTimeStampNp" -> Some (World.getLayerCreationTimeStampNp layer world :> obj, typeof<int64>)
                 | "Imperative" -> Some (World.getLayerImperative layer world :> obj, typeof<bool>)
                 | "ScriptOpt" -> Some (World.getLayerScriptOpt layer world :> obj, typeof<AssetTag option>)
-                | "Script" -> Some (World.getLayerScript layer world :> obj, typeof<Script>)
+                | "Script" -> Some (World.getLayerScript layer world :> obj, typeof<Scripting.Expr list>)
+                | "ScriptFramesNp" -> Some (World.getLayerScript layer world :> obj, typeof<Scripting.Frame list>)
                 | "OnRegister" -> Some (World.getLayerOnRegister layer world :> obj, typeof<Scripting.Expr>)
                 | "OnUnregister" -> Some (World.getLayerOnUnregister layer world :> obj, typeof<Scripting.Expr>)
                 | "OnUpdate" -> Some (World.getLayerOnUpdate layer world :> obj, typeof<Scripting.Expr>)
@@ -1216,7 +1221,8 @@ module WorldModule =
             | "CreationTimeStampNp" -> (World.getLayerCreationTimeStampNp layer world :> obj, typeof<int64>)
             | "Imperative" -> (World.getLayerImperative layer world :> obj, typeof<bool>)
             | "ScriptOpt" -> (World.getLayerScriptOpt layer world :> obj, typeof<AssetTag option>)
-            | "Script" -> (World.getLayerScript layer world :> obj, typeof<Script>)
+            | "Script" -> (World.getLayerScript layer world :> obj, typeof<Scripting.Expr list>)
+            | "ScriptFramesNp" -> (World.getLayerScript layer world :> obj, typeof<Scripting.Frame list>)
             | "OnRegister" -> (World.getLayerOnRegister layer world :> obj, typeof<Scripting.Expr>)
             | "OnUnregister" -> (World.getLayerOnUnregister layer world :> obj, typeof<Scripting.Expr>)
             | "OnUpdate" -> (World.getLayerOnUpdate layer world :> obj, typeof<Scripting.Expr>)
@@ -1238,6 +1244,7 @@ module WorldModule =
                 | "Imperative" -> (false, world)
                 | "ScriptOpt" -> (false, world)
                 | "Script" -> (false, world)
+                | "ScriptFramesNp" -> (false, world)
                 | "OnRegister" -> (false, world)
                 | "OnUnregister" -> (false, world)
                 | "OnUpdate" -> (false, world)
@@ -1268,6 +1275,7 @@ module WorldModule =
             | "Imperative" -> failwith ^ "Cannot change layer " + propertyName + "."
             | "ScriptOpt" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
             | "Script" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
+            | "ScriptFramesNp" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
             | "OnRegister" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
             | "OnUnregister" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
             | "OnUpdate" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
@@ -1299,20 +1307,20 @@ module WorldModule =
                     let world = dispatcher.Register (layer, world)
                     let eventTrace = EventTrace.record "World" "registerLayer" EventTrace.empty
                     let world = World.publish () (ltoa<unit> [!!"Layer"; !!"Register"; !!"Event"] ->- layer) eventTrace layer world
-                    eval (World.getLayerOnUnregister layer world) (World.getLayerScript layer world) layer world)
-                    (atooa layer.LayerAddress)
+                    eval (World.getLayerOnUnregister layer world) layer world |> snd)
+                    layer
                     world
             World.choose world
 
         static member internal unregisterLayer layer world =
             let world =
                 World.withEventContext (fun world ->
-                    let world = eval (World.getLayerOnRegister layer world) (World.getLayerScript layer world) layer world
+                    let world = eval (World.getLayerOnRegister layer world) layer world |> snd
                     let dispatcher = World.getLayerDispatcherNp layer world
                     let eventTrace = EventTrace.record "World" "unregisterLayer" EventTrace.empty
                     let world = World.publish () (ltoa<unit> [!!"Layer"; !!"Unregistering"; !!"Event"] ->- layer) eventTrace layer world
                     dispatcher.Unregister (layer, world))
-                    (atooa layer.LayerAddress)
+                    layer
                     world
             World.choose world
 
@@ -1368,13 +1376,9 @@ module WorldModule =
                     let dispatcherName = typeof<LayerDispatcher>.Name
                     Map.find dispatcherName dispatchers
 
-            // make the bare layer state with name as id
+            // make the layer state and populate its properties
             let layerState = LayerState.make None None dispatcher
-
-            // attach the layer state's instrinsic properties from its dispatcher if any
             let layerState = Reflection.attachProperties LayerState.copy layerState.DispatcherNp layerState
-
-            // read the layer state's value
             let layerState = Reflection.readPropertiesToTarget LayerState.copy layerDescriptor.LayerProperties layerState
 
             // apply the name if one is provided
@@ -1678,7 +1682,7 @@ module WorldModule =
                 let (entityState, world) =
                     match entityOpt with
                     | Some entity ->
-                        let world = World.withEventContext (fun world -> facet.Unregister (entity, world)) entity.ObjAddress world
+                        let world = World.withEventContext (fun world -> facet.Unregister (entity, world)) entity world
                         let entityState = World.getEntityState entity world
                         (entityState, world)
                     | None -> (entityState, world)
@@ -1720,7 +1724,7 @@ module WorldModule =
                         let oldWorld = world
                         let world = World.setEntityState entityState entity world
                         let world = World.updateEntityInEntityTree entity oldWorld world
-                        let world = World.withEventContext (fun world -> facet.Register (entity, world)) entity.ObjAddress world
+                        let world = World.withEventContext (fun world -> facet.Register (entity, world)) entity world
                         Right (World.getEntityState entity world, world)
                     | None -> Right (entityState, world)
                 else let _ = World.choose world in Left ^ "Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Name + "'."
@@ -1986,7 +1990,7 @@ module WorldModule =
                         let world = World.updateEntityPublishFlags entity world
                         let eventTrace = EventTrace.record "World" "addEntity" EventTrace.empty
                         World.publish () (ltoa<unit> [!!"Entity"; !!"Register"; !!"Event"] ->- entity) eventTrace entity world)
-                        entity.ObjAddress
+                        entity
                         world
                 else world
 
@@ -2073,7 +2077,7 @@ module WorldModule =
                         let facets = World.getEntityFacetsNp entity world
                         let world = dispatcher.Unregister (entity, world)
                         List.fold (fun world (facet : Facet) -> facet.Unregister (entity, world)) world facets)
-                        entity.ObjAddress
+                        entity
                         world
 
                 // get old world for entity tree rebuild
@@ -2376,14 +2380,42 @@ module WorldModule =
 
     type World with
 
+        /// Get the context of the script system.
+        static member getScriptContext (world : World) =
+            world.ScriptContext
+
+        /// Get the context of the script system.
+        static member setScriptContext context (world : World) =
+            { world with ScriptContext = context }
+
+        static member getScriptEnv world =
+            world.ScriptEnv
+
+        static member getScriptEnvBy by world =
+            by world.ScriptEnv
+
+        static member private setScriptEnv env world =
+            World.choose { world with ScriptEnv = env }
+
+        static member updateScriptEnv updater world =
+            let env = World.getScriptEnv world
+            let env = updater env
+            World.setScriptEnv env world
+
+        static member tryUpdateScriptEnv tryUpdater world =
+            let env = World.getScriptEnv world
+            match tryUpdater env with
+            | Some env -> Some ^ World.setScriptEnv env world
+            | None -> None
+
         /// Evaluate an expression within the context of the given script and simulant.
-        static member eval expr script simulant world =
-            eval expr script simulant world
+        static member eval expr simulant world =
+            eval expr simulant world
 
     type World with
 
         /// Make the world.
-        static member internal make eventSystem dispatchers subsystems ambientState gameSpecializationOpt activeGameDispatcher =
+        static member internal make eventSystem dispatchers subsystems scriptEnv ambientState gameSpecializationOpt activeGameDispatcher =
             let gameState = GameState.make gameSpecializationOpt activeGameDispatcher
             let screenStates = UMap.makeEmpty None
             let layerStates = UMap.makeEmpty None
@@ -2392,6 +2424,8 @@ module WorldModule =
                 { EventSystem = eventSystem
                   Dispatchers = dispatchers
                   Subsystems = subsystems
+                  ScriptEnv = scriptEnv
+                  ScriptContext = Game.proxy Address.empty
                   ScreenCachedOpt = KeyedCache.make (Address.empty<Screen>, screenStates) None
                   LayerCachedOpt = KeyedCache.make (Address.empty<Layer>, layerStates) None
                   EntityCachedOpt = KeyedCache.make (Address.empty<Entity>, entityStates) None

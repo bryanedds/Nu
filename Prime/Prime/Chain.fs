@@ -136,7 +136,8 @@ module Chain =
     let [<DebuggerHidden; DebuggerStepThrough>] run (m : Chain<unit, 'a, 'g, 'w>) (world : 'w) : 'w =
         run2 m world |> fst
 
-    let private run4 handling (chain : Chain<Event<'a, 'g>, unit, 'g, 'w>) (stream : Stream<'a, 'g, 'w>) world =
+    let private run4 handling (chain : Chain<Event<'a, 'g>, unit, 'g, 'w>) (stream : Stream<'a, 'g, 'w>) (world : 'w) =
+        let globalParticipant = world.GetEventSystem () |> EventSystem.getGlobalPariticipant :?> 'g
         let stateKey = makeGuid ()
         let subscriptionKey = makeGuid ()
         let world = EventWorld.addEventState stateKey (fun (_ : Event<'a, 'g>) -> chain) world
@@ -155,7 +156,7 @@ module Chain =
             let world = advance evt world
             (handling, world)
         let world = advance Unchecked.defaultof<Event<'a, 'g>> world
-        let world = EventWorld.subscribe5<'a, 'g, 'g, 'w> subscriptionKey subscription eventAddress (world.GetGlobalParticipant ()) world
+        let world = EventWorld.subscribe5<'a, 'g, 'g, 'w> subscriptionKey subscription eventAddress globalParticipant world
         (unsubscribe, world)
 
     /// Run a chain over Nu's event system.

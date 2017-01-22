@@ -92,7 +92,7 @@ module WorldLayerModule =
                 let world = dispatcher.Update (layer, world)
                 let eventTrace = EventTrace.record "World" "updateLayer" EventTrace.empty
                 World.publish7 World.sortSubscriptionsByHierarchy () (Events.Update ->- layer) eventTrace Simulants.Game true world)
-                (atooa layer.LayerAddress)
+                layer
                 world
 
         static member internal postUpdateLayer (layer : Layer) world =
@@ -101,14 +101,14 @@ module WorldLayerModule =
                 let world = dispatcher.PostUpdate (layer, world)
                 let eventTrace = EventTrace.record "World" "postUpdateLayer" EventTrace.empty
                 World.publish7 World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- layer) eventTrace Simulants.Game true world)
-                (atooa layer.LayerAddress)
+                layer
                 world
 
         static member internal actualizeLayer (layer : Layer) world =
             World.withEventContext (fun world ->
                 let dispatcher = layer.GetDispatcherNp world
                 dispatcher.Actualize (layer, world))
-                (atooa layer.LayerAddress)
+                layer
                 world
 
         /// Get all the layers in a screen.

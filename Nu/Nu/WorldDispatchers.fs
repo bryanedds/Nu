@@ -147,7 +147,7 @@ module EffectFacetModule =
         inherit Facet ()
 
         static let assetTagsToEffectOpts assetTags world =
-            let (symbolOpts, world) = World.tryFindSymbols assetTags world
+            let (symbolOpts, world) = World.tryFindSymbols true assetTags world
             let effectOpts =
                 List.map
                     (fun symbolOpt ->

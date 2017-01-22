@@ -12,7 +12,6 @@ type EventWorld<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
     interface
         abstract member GetLiveness : unit -> Liveness
         abstract member GetEventSystem : unit -> 'w EventSystem
-        abstract member GetGlobalParticipant : unit -> 'g
         abstract member UpdateEventSystem : ('w EventSystem -> 'w EventSystem) -> 'w
         abstract member ContainsParticipant : Participant -> bool
         abstract member PublishEvent<'a, 'p when 'p :> Participant> : Participant -> 'p -> 'a -> 'a Address -> EventTrace -> obj -> 'w -> Handling * 'w
@@ -213,7 +212,7 @@ module EventWorld =
               Publisher = publisher :> Participant }
         let callableSubscription = unbox<BoxableSubscription<'w>> subscription
         let oldEventContext = getEventContext world
-        let world = setEventContext (atooa subscriber.ParticipantAddress) world
+        let world = setEventContext subscriber world
         let (handling, world) = callableSubscription evt world
         let world = setEventContext oldEventContext world
         (handling, world)
@@ -297,7 +296,7 @@ module EventWorld =
                     eventAddress
                     (ltoa<obj Address> [!!"Unsubscribe"; !!"Event"])
                     (EventTrace.record "EventWorld" "unsubscribe" EventTrace.empty)
-                    (world.GetGlobalParticipant ())
+                    (EventSystem.getGlobalPariticipant (world.GetEventSystem ()))
                     world
             | None -> world
         | None -> world
@@ -321,7 +320,7 @@ module EventWorld =
                     objEventAddress
                     (ltoa<obj Address> [!!"Subscribe"; !!"Event"])
                     (EventTrace.record "EventWorld" "subscribePlus5" EventTrace.empty)
-                    (world.GetGlobalParticipant ())
+                    (EventSystem.getGlobalPariticipant (world.GetEventSystem ()))
                     world
             (unsubscribe<'g, 'w> subscriptionKey, world)
         else failwith "Event name cannot be empty."
