@@ -22,14 +22,29 @@ module WorldGameModule =
         member this.Classification = PropertyTag.makeReadOnly this Property? Classification this.GetClassification
         member this.GetCreationTimeStampNp world = World.getGameCreationTimeStampNp world
         member this.CreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
+        member this.GetImperative world = World.getGameImperative world
+        member this.Imperative = PropertyTag.makeReadOnly this Property? Imperative this.GetImperative
         member this.GetScriptOpt world = World.getGameScriptOpt world
         member this.SetScriptOpt value world = World.setGameScriptOpt value world
         member this.ScriptOpt = PropertyTag.make this Property? ScriptOpt this.GetScriptOpt this.SetScriptOpt
         member this.GetScript world = World.getGameScript world
         member this.SetScript value world = World.setGameScript value world
         member this.Script = PropertyTag.make this Property? Script this.GetScript this.SetScript
-        member this.GetImperative world = World.getGameImperative world
-        member this.Imperative = PropertyTag.makeReadOnly this Property? Imperative this.GetImperative
+        member this.GetOnRegister world = World.getGameOnRegister world
+        member this.SetOnRegister value world = World.setGameOnRegister value world
+        member this.OnRegister = PropertyTag.make this Property? OnRegister this.GetOnRegister this.SetOnRegister
+        member this.GetOnUnregister world = World.getGameOnUnregister world
+        member this.SetOnUnregister value world = World.setGameOnUnregister value world
+        member this.OnUnregister = PropertyTag.make this Property? OnUnregister this.GetOnUnregister this.SetOnUnregister
+        member this.GetOnUpdate world = World.getGameOnUpdate world
+        member this.SetOnUpdate value world = World.setGameOnUpdate value world
+        member this.OnUpdate = PropertyTag.make this Property? OnUpdate this.GetOnUpdate this.SetOnUpdate
+        member this.GetOnPostUpdate world = World.getGameOnPostUpdate world
+        member this.SetOnPostUpdate value world = World.setGameOnPostUpdate value world
+        member this.OnPostUpdate = PropertyTag.make this Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate
+        member this.GetOnActualize world = World.getGameOnActualize world
+        member this.SetOnActualize value world = World.setGameOnActualize value world
+        member this.OnActualize = PropertyTag.make this Property? OnActualize this.GetOnActualize this.SetOnActualize
         member this.GetSelectedScreenOpt world = World.getSelectedScreenOpt world
         member this.SetSelectedScreenOpt value world = World.setSelectedScreenOpt value world
         member this.SelectedScreenOpt = PropertyTag.make this Property? SelectedScreenOpt this.GetSelectedScreenOpt this.SetSelectedScreenOpt
@@ -42,21 +57,6 @@ module WorldGameModule =
         member this.GetEyeSize world = World.getEyeSize world
         member this.SetEyeSize value world = World.setEyeSize value world
         member this.EyeSize = PropertyTag.make this Property? EyeSize this.GetEyeSize this.SetEyeSize
-        member this.GetOnRegister world = World.getGameProperty Property? OnRegister world |> fst :?> Scripting.Expr
-        member this.SetOnRegister value world = World.setGameProperty Property? OnRegister (value :> obj, typeof<Scripting.Expr>) world
-        member this.OnRegister = PropertyTag.make this Property? OnRegister this.GetOnRegister this.SetOnRegister
-        member this.GetOnUnregister world = World.getGameProperty Property? OnUnregister world |> fst :?> Scripting.Expr
-        member this.SetOnUnregister value world = World.setGameProperty Property? OnUnregister (value :> obj, typeof<Scripting.Expr>) world
-        member this.OnUnregister = PropertyTag.make this Property? OnUnregister this.GetOnUnregister this.SetOnUnregister
-        member this.GetOnUpdate world = World.getGameProperty Property? OnUpdate world |> fst :?> Scripting.Expr
-        member this.SetOnUpdate value world = World.setGameProperty Property? OnUpdate (value :> obj, typeof<Scripting.Expr>) world
-        member this.OnUpdate = PropertyTag.make this Property? OnUpdate this.GetOnUpdate this.SetOnUpdate
-        member this.GetOnPostUpdate world = World.getGameProperty Property? OnPostUpdate world |> fst :?> Scripting.Expr
-        member this.SetOnPostUpdate value world = World.setGameProperty Property? OnPostUpdate (value :> obj, typeof<Scripting.Expr>) world
-        member this.OnPostUpdate = PropertyTag.make this Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate
-        member this.GetOnActualize world = World.getGameProperty Property? OnActualize world |> fst :?> Scripting.Expr
-        member this.SetOnActualize value world = World.setGameProperty Property? OnActualize (value :> obj, typeof<Scripting.Expr>) world
-        member this.OnActualize = PropertyTag.make this Property? OnActualize this.GetOnActualize this.SetOnActualize
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetGameProperty propertyName world
@@ -117,14 +117,13 @@ module WorldGameModule =
 
     type World with
 
-        static member gameOnRegisterChanged evt world =
-            let game = evt.Subscriber : Game
-            let script = game.GetScript world
-            let world = World.eval (game.GetOnUnregister world) script game world
-            let world = World.eval (game.GetOnRegister world) script game world
+        static member private gameOnRegisterChanged _ world =
+            // TODO: make monitor work with game's life cycle
+            let world = World.registerGame world
+            let world = World.unregisterGame world
             (Cascade, world)
 
-        static member gameScriptOptChanged evt world =
+        static member private gameScriptOptChanged evt world =
             let game = evt.Subscriber : Game
             match game.GetScriptOpt world with
             | Some script ->
@@ -138,13 +137,15 @@ module WorldGameModule =
             let dispatcher = game.GetDispatcherNp world
             let world = World.subscribe World.gameOnRegisterChanged (Events.GameChange Property? OnRegister) game world
             let world = World.subscribe World.gameScriptOptChanged (Events.GameChange Property? ScriptOpt) game world
-            let world = World.withEventContext (fun world -> dispatcher.Register (Simulants.Game, world)) (atooa game.GameAddress) world
+            let world = World.withEventContext (fun world -> dispatcher.Register (game, world)) (atooa game.GameAddress) world
+            let world = World.eval (game.GetOnUnregister world) (game.GetScript world) game world
             World.choose world
 
         static member internal unregisterGame world =
             let game = Simulants.Game
             let dispatcher = game.GetDispatcherNp world
-            let world = World.withEventContext (fun world -> dispatcher.Unregister (Simulants.Game, world)) (atooa game.GameAddress) world
+            let world = World.eval (game.GetOnRegister world) (game.GetScript world) game world
+            let world = World.withEventContext (fun world -> dispatcher.Unregister (game, world)) (atooa game.GameAddress) world
             World.choose world
 
         static member internal updateGame world =

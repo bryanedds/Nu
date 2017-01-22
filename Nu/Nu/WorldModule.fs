@@ -446,11 +446,21 @@ module WorldModule =
         static member internal getGameDispatcherNp world = (World.getGameState world).DispatcherNp
         static member internal getGameSpecialization world = (World.getGameState world).Specialization
         static member internal getGameCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
+        static member internal getGameImperative world = Xtension.getImperative (World.getGameState world).Xtension
         static member internal getGameScriptOpt world = (World.getGameState world).ScriptOpt
         static member internal setGameScriptOpt value world = World.updateGameState (fun gameState -> { gameState with ScriptOpt = value }) Property? ScriptOpt world
         static member internal getGameScript world = (World.getGameState world).Script
         static member internal setGameScript value world = World.updateGameState (fun gameState -> { gameState with Script = value }) Property? Script world
-        static member internal getGameImperative world = Xtension.getImperative (World.getGameState world).Xtension
+        static member internal getGameOnRegister world = (World.getGameState world).OnRegister
+        static member internal setGameOnRegister value world = World.updateGameState (fun gameState -> { gameState with OnRegister = value }) Property? OnRegister world
+        static member internal getGameOnUnregister world = (World.getGameState world).OnUnregister
+        static member internal setGameOnUnregister value world = World.updateGameState (fun gameState -> { gameState with OnUnregister = value }) Property? OnUnregister world
+        static member internal getGameOnUpdate world = (World.getGameState world).OnUpdate
+        static member internal setGameOnUpdate value world = World.updateGameState (fun gameState -> { gameState with OnUpdate = value }) Property? OnUpdate world
+        static member internal getGameOnPostUpdate world = (World.getGameState world).OnPostUpdate
+        static member internal setGameOnPostUpdate value world = World.updateGameState (fun gameState -> { gameState with OnPostUpdate = value }) Property? OnPostUpdate world
+        static member internal getGameOnActualize world = (World.getGameState world).OnActualize
+        static member internal setGameOnActualize value world = World.updateGameState (fun gameState -> { gameState with OnActualize = value }) Property? OnActualize world
 
         /// Get the current eye center.
         static member getEyeCenter world =
@@ -574,9 +584,9 @@ module WorldModule =
             | "DispatcherNp" -> Some (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
             | "Specialization" -> Some (World.getGameSpecialization world :> obj, typeof<string>)
             | "CreationTimeStampNp" -> Some (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
+            | "Imperative" -> Some (World.getGameImperative world :> obj, typeof<bool>)
             | "ScriptOpt" -> Some (World.getGameScriptOpt world :> obj, typeof<AssetTag option>)
             | "Script" -> Some (World.getGameScript world :> obj, typeof<Script>)
-            | "Imperative" -> Some (World.getGameImperative world :> obj, typeof<bool>)
             | "SelectedScreenOpt" -> Some (World.getSelectedScreenOpt world :> obj, typeof<Screen option>)
             | "ScreenTransitionDestinationOpt" -> Some (World.getScreenTransitionDestinationOpt world :> obj, typeof<Screen option>)
             | "EyeCenter" -> Some (World.getEyeCenter world :> obj, typeof<Vector2>)
@@ -589,9 +599,9 @@ module WorldModule =
             | "DispatcherNp" -> (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
             | "Specialization" -> (World.getGameSpecialization world :> obj, typeof<string>)
             | "CreationTimeStampNp" -> (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
+            | "Imperative" -> (World.getGameImperative world :> obj, typeof<bool>)
             | "ScriptOpt" -> (World.getGameScriptOpt world :> obj, typeof<AssetTag option>)
             | "Script" -> (World.getGameScript world :> obj, typeof<Script>)
-            | "Imperative" -> (World.getGameImperative world :> obj, typeof<bool>)
             | "SelectedScreenOpt" -> (World.getSelectedScreenOpt world :> obj, typeof<Screen option>)
             | "ScreenTransitionDestinationOpt" -> (World.getScreenTransitionDestinationOpt world :> obj, typeof<Screen option>)
             | "EyeCenter" -> (World.getEyeCenter world :> obj, typeof<Vector2>)
@@ -604,9 +614,9 @@ module WorldModule =
             | "DispatcherNp" -> (false, world)
             | "Specialization" -> (false, world)
             | "CreationTimeStampNp" -> (false, world)
+            | "Imperative" -> (false, world)
             | "ScriptOpt" -> (false, world)
             | "Script" -> (false, world)
-            | "Imperative" -> (false, world)
             | "SelectedScreenOpt" -> (true, World.setSelectedScreenOpt (property |> fst :?> Screen option) world)
             | "ScreenTransitionDestinationOpt" -> (true, World.setScreenTransitionDestinationOpt (property |> fst :?> Screen option) world)
             | "EyeCenter" -> (true, World.setEyeCenter (property |> fst :?> Vector2) world)
@@ -629,9 +639,9 @@ module WorldModule =
             | "DispatcherNp" -> failwith "Cannot change game dispatcher."
             | "Specialization" -> failwith "Cannot change game specialization."
             | "CreationTimeStampNp" -> failwith "Cannot change game creation time stamp."
+            | "Imperative" -> failwith "Cannot change game imperative."
             | "ScriptOpt" -> failwith "Cannot change game script dynamically."
             | "Script" -> failwith "Cannot change game script dynamically."
-            | "Imperative" -> failwith "Cannot change game imperative."
             | "SelectedScreenOpt" -> World.setSelectedScreenOpt (property |> fst :?> Screen option) world
             | "ScreenTransitionDestinationOpt" -> World.setScreenTransitionDestinationOpt (property |> fst :?> Screen option) world
             | "EyeCenter" -> World.setEyeCenter (property |> fst :?> Vector2) world
@@ -784,6 +794,20 @@ module WorldModule =
         static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) Property? Persistent screen world
         static member internal getScreenCreationTimeStampNp screen world = (World.getScreenState screen world).CreationTimeStampNp
         static member internal getScreenImperative screen world = Xtension.getImperative (World.getScreenState screen world).Xtension
+        static member internal getScreenScriptOpt screen world = (World.getScreenState screen world).ScriptOpt
+        static member internal setScreenScriptOpt value screen world = World.updateScreenState (fun gameState -> { gameState with ScriptOpt = value }) Property? ScriptOpt screen world
+        static member internal getScreenScript screen world = (World.getScreenState screen world).Script
+        static member internal setScreenScript value screen world = World.updateScreenState (fun gameState -> { gameState with Script = value }) Property? Script screen world
+        static member internal getScreenOnRegister screen world = (World.getScreenState screen world).OnRegister
+        static member internal setScreenOnRegister value screen world = World.updateScreenState (fun gameState -> { gameState with OnRegister = value }) Property? OnRegister screen world
+        static member internal getScreenOnUnregister screen world = (World.getScreenState screen world).OnUnregister
+        static member internal setScreenOnUnregister value screen world = World.updateScreenState (fun gameState -> { gameState with OnUnregister = value }) Property? OnUnregister screen world
+        static member internal getScreenOnUpdate screen world = (World.getScreenState screen world).OnUpdate
+        static member internal setScreenOnUpdate value screen world = World.updateScreenState (fun gameState -> { gameState with OnUpdate = value }) Property? OnUpdate screen world
+        static member internal getScreenOnPostUpdate screen world = (World.getScreenState screen world).OnPostUpdate
+        static member internal setScreenOnPostUpdate value screen world = World.updateScreenState (fun gameState -> { gameState with OnPostUpdate = value }) Property? OnPostUpdate screen world
+        static member internal getScreenOnActualize screen world = (World.getScreenState screen world).OnActualize
+        static member internal setScreenOnActualize value screen world = World.updateScreenState (fun gameState -> { gameState with OnActualize = value }) Property? OnActualize screen world
         static member internal getScreenEntityTreeNp screen world = (World.getScreenState screen world).EntityTreeNp
         static member internal setScreenEntityTreeNpNoEvent value screen world = World.updateScreenStateWithoutEvent (fun screenState -> { screenState with EntityTreeNp = value }) screen world
         static member internal getScreenTransitionStateNp screen world = (World.getScreenState screen world).TransitionStateNp
@@ -1062,6 +1086,20 @@ module WorldModule =
         static member internal setLayerPersistent value layer world = World.updateLayerState (fun layerState -> { layerState with Persistent = value }) Property? Persistent layer world
         static member internal getLayerCreationTimeStampNp layer world = (World.getLayerState layer world).CreationTimeStampNp
         static member internal getLayerImperative layer world = Xtension.getImperative (World.getLayerState layer world).Xtension
+        static member internal getLayerScriptOpt layer world = (World.getLayerState layer world).ScriptOpt
+        static member internal setLayerScriptOpt value layer world = World.updateLayerState (fun gameState -> { gameState with ScriptOpt = value }) Property? ScriptOpt layer world
+        static member internal getLayerScript layer world = (World.getLayerState layer world).Script
+        static member internal setLayerScript value layer world = World.updateLayerState (fun gameState -> { gameState with Script = value }) Property? Script layer world
+        static member internal getLayerOnRegister layer world = (World.getLayerState layer world).OnRegister
+        static member internal setLayerOnRegister value layer world = World.updateLayerState (fun gameState -> { gameState with OnRegister = value }) Property? OnRegister layer world
+        static member internal getLayerOnUnregister layer world = (World.getLayerState layer world).OnUnregister
+        static member internal setLayerOnUnregister value layer world = World.updateLayerState (fun gameState -> { gameState with OnUnregister = value }) Property? OnUnregister layer world
+        static member internal getLayerOnUpdate layer world = (World.getLayerState layer world).OnUpdate
+        static member internal setLayerOnUpdate value layer world = World.updateLayerState (fun gameState -> { gameState with OnUpdate = value }) Property? OnUpdate layer world
+        static member internal getLayerOnPostUpdate layer world = (World.getLayerState layer world).OnPostUpdate
+        static member internal setLayerOnPostUpdate value layer world = World.updateLayerState (fun gameState -> { gameState with OnPostUpdate = value }) Property? OnPostUpdate layer world
+        static member internal getLayerOnActualize layer world = (World.getLayerState layer world).OnActualize
+        static member internal setLayerOnActualize value layer world = World.updateLayerState (fun gameState -> { gameState with OnActualize = value }) Property? OnActualize layer world
         static member internal getLayerDepth layer world = (World.getLayerState layer world).Depth
         static member internal setLayerDepth value layer world = World.updateLayerState (fun layerState -> { layerState with Depth = value }) Property? Depth layer world
         static member internal getLayerVisible layer world = (World.getLayerState layer world).Visible
@@ -1394,8 +1432,8 @@ module WorldModule =
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Persistent <- value; entityState else { entityState with Persistent = value }) false Property? Persistent entity world
         static member internal getEntityCreationTimeStampNp entity world = (World.getEntityState entity world).CreationTimeStampNp
-        static member internal getEntityCachableNp entity world = (World.getEntityState entity world).CachableNp
         static member internal getEntityImperative entity world = Xtension.getImperative (World.getEntityState entity world).Xtension
+        static member internal getEntityCachableNp entity world = (World.getEntityState entity world).CachableNp
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
         static member internal setEntityOverlayNameOpt value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.OverlayNameOpt <- value; entityState else { entityState with OverlayNameOpt = value }) false Property? OverlayNameOpt entity world
         static member internal getEntityPosition entity world = (World.getEntityState entity world).Position
@@ -1616,8 +1654,8 @@ module WorldModule =
                 | "Persistent" -> Some (World.getEntityPersistent entity world :> obj, typeof<bool>)
                 | "Specialization" -> Some (World.getEntitySpecialization entity world :> obj, typeof<string>)
                 | "CreationTimeStampNp" -> Some (World.getEntityCreationTimeStampNp entity world :> obj, typeof<int64>)
-                | "CachableNp" -> Some (World.getEntityCachableNp entity world :> obj, typeof<bool>)
                 | "Imperative" -> Some (World.getEntityImperative entity world :> obj, typeof<bool>)
+                | "CachableNp" -> Some (World.getEntityCachableNp entity world :> obj, typeof<bool>)
                 | "OverlayNameOpt" -> Some (World.getEntityOverlayNameOpt entity world :> obj, typeof<string option>)
                 | "Position" -> Some (World.getEntityPosition entity world :> obj, typeof<Vector2>)
                 | "Size" -> Some (World.getEntitySize entity world :> obj, typeof<Vector2>)
@@ -1644,8 +1682,8 @@ module WorldModule =
             | "Persistent" -> (World.getEntityPersistent entity world :> obj, typeof<bool>)
             | "Specialization" -> (World.getEntitySpecialization entity world :> obj, typeof<string>)
             | "CreationTimeStampNp" -> (World.getEntityCreationTimeStampNp entity world :> obj, typeof<int64>)
-            | "CachableNp" -> (World.getEntityCachableNp entity world :> obj, typeof<bool>)
             | "Imperative" -> (World.getEntityImperative entity world :> obj, typeof<bool>)
+            | "CachableNp" -> (World.getEntityCachableNp entity world :> obj, typeof<bool>)
             | "OverlayNameOpt" -> (World.getEntityOverlayNameOpt entity world :> obj, typeof<string option>)
             | "Position" -> (World.getEntityPosition entity world :> obj, typeof<Vector2>)
             | "Size" -> (World.getEntitySize entity world :> obj, typeof<Vector2>)
@@ -1672,8 +1710,8 @@ module WorldModule =
                 | "Specialization" -> (false, world)
                 | "Persistent" -> (true, World.setEntityPersistent (property |> fst :?> bool) entity world)
                 | "CreationTimeStampNp" -> (false, world)
-                | "CachableNp" -> (false, world)
                 | "Imperative" -> (false, world)
+                | "CachableNp" -> (false, world)
                 | "Position" -> (true, World.setEntityPosition (property |> fst :?> Vector2) entity world)
                 | "Size" -> (true, World.setEntitySize (property |> fst :?> Vector2) entity world)
                 | "Rotation" -> (true, World.setEntityRotation (property |> fst :?> single) entity world)
@@ -1711,8 +1749,8 @@ module WorldModule =
             | "Specialization" -> failwith "Cannot change entity specialization."
             | "Persistent" -> World.setEntityPersistent (property |> fst :?> bool) entity world
             | "CreationTimeStampNp" -> failwith "Cannot change entity creation time stamp."
-            | "CachableNp" -> failwith "Cannot change entity cachable."
             | "Imperative" -> failwith "Cannot change entity imperative."
+            | "CachableNp" -> failwith "Cannot change entity cachable."
             | "Position" -> World.setEntityPosition (property |> fst :?> Vector2) entity world
             | "Size" -> World.setEntitySize (property |> fst :?> Vector2) entity world
             | "Rotation" -> World.setEntityRotation (property |> fst :?> single) entity world
@@ -2208,11 +2246,12 @@ module WorldModule =
 
     type World with
 
+        /// Evaluate an expression within the context of the given script and simulant.
         static member eval expr script simulant world =
             eval expr script simulant world
 
-        // Try to convert an asset tag to a script.
-        // TODO: put this somewhere else?
+        /// Try to convert an asset tag to a script.
+        /// TODO: put this somewhere else?
         static member assetTagToScriptOpt assetTag world =
             let (symbolOpt, world) = World.tryFindSymbol assetTag world
             let scriptOpt =
@@ -2223,7 +2262,7 @@ module WorldModule =
                 | None -> None
             (scriptOpt, world)
 
-        // Make the world.
+        /// Make the world.
         static member internal make eventSystem dispatchers subsystems ambientState gameSpecializationOpt activeGameDispatcher =
             let gameState = GameState.make gameSpecializationOpt activeGameDispatcher
             let screenStates = UMap.makeEmpty None

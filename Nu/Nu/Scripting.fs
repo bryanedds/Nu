@@ -122,21 +122,8 @@ module Scripting =
         | SetTo of string * Expr * Expr * SymbolOrigin option
         | Quote of string * SymbolOrigin option
 
-        (* Special Declarations - only work at the top level, and always return unit. *)
-        // accessible anywhere
-        // constructed as [define c 0]
-        | Define of string * Expr * SymbolOrigin option
-        // only accessible by variables and equations
-        // constructed as [variable v stream]
-        | Variable of string * Stream * SymbolOrigin option
-        // constructed as [equate Density stream] or [equate Density ././Player stream]
-        // does not allow for relations to parents or siblings, or for a wildcard in the relation
-        | Equate of string * obj Relation * Stream * Guid * SymbolOrigin option
-        // constructed as [equate Density ././@ BoxDispatcher stream] or [equate Density ././@ BoxDispatcher Vanilla stream]
-        // does not allow for relations to parents or siblings
-        | EquateMany of string * obj Relation * Classification * Stream * Guid * SymbolOrigin option
-        // constructed as [handle stream]
-        | Handle of Stream * Guid * SymbolOrigin option
+        (* Declarations - only work at the top level. *)
+        | Define of string * Expr * SymbolOrigin option // constructed as [define c 0]
 
         static member getOriginOpt term =
             match term with
@@ -174,11 +161,7 @@ module Scripting =
             | Set (_, _, originOpt)
             | SetTo (_, _, _, originOpt)
             | Quote (_, originOpt)
-            | Define (_, _, originOpt)
-            | Variable (_, _, originOpt)
-            | Equate (_, _, _, _, originOpt)
-            | EquateMany (_, _, _, _, _, originOpt)
-            | Handle (_, _, originOpt) -> originOpt
+            | Define (_, _, originOpt) -> originOpt
 
         static member equals left right =
             match (left, right) with
@@ -216,10 +199,6 @@ module Scripting =
             | (SetTo (leftPropertyName, leftTarget, leftInput, _), SetTo (rightPropertyName, rightTarget, rightInput, _)) -> (leftPropertyName, leftTarget, leftInput) = (rightPropertyName, rightTarget, rightInput)
             | (Quote (left, _), Quote (right, _)) -> left = right
             | (Define (leftName, leftValue, _), Define (rightName, rightValue, _)) -> (leftName, leftValue) = (rightName, rightValue)
-            | (Variable (leftName, leftStream, _), Variable (rightName, rightStream, _)) -> (leftName, leftStream) = (rightName, rightStream)
-            | (Equate (leftName, leftTarget, leftStream, _, _), Equate (rightName, rightTarget, rightStream, _, _)) -> (leftName, leftTarget, leftStream) = (rightName, rightTarget, rightStream)
-            | (EquateMany (leftName, leftTarget, leftClassn, leftStream, _, _), EquateMany (rightName, rightTarget, rightClassn, rightStream, _, _)) -> (leftName, leftTarget, leftClassn, leftStream) = (rightName, rightTarget, rightClassn, rightStream)
-            | (Handle (leftStream, _, _), Handle (rightStream, _, _)) -> leftStream = rightStream
             | (_, _) -> false
 
         static member compare left right =
@@ -632,23 +611,14 @@ module EnvModule =
               Context = context
               World = chooseWorld world }
 
-[<AutoOpen>]
-module ScriptModule =
-
-    /// Dynamically drives behavior for simulants.
-    type [<NoComparison>] Script =
-        { Constants : (Name * Scripting.Expr) list
-          Streams : (Name * Guid * Scripting.Stream * Scripting.Expr) list
-          Equalities : (Name * Guid * Scripting.Stream) list }
-    
-        static member empty =
-            { Constants = []
-              Streams = []
-              Equalities = [] }
-
 /// The execution environment for scripts.
-type Env<'p, 'g, 'w when 'p :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
+type Env<'p, 'g, 'w when
+    'p :> Participant and
+    'g :> Participant and
+    'w :> EventWorld<'g, 'w>> =
     EnvModule.Env<'p, 'g, 'w>
 
 /// Dynamically drives behavior for simulants.
-type Script = ScriptModule.Script
+type [<NoComparison>] Script =
+    { Exprs : Scripting.Expr list }
+    static member empty = { Exprs = [] }

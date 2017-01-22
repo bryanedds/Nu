@@ -1274,11 +1274,6 @@ module WorldScriptSystem =
             | Some env -> (Unit originOpt, env)
             | None -> (Violation ([!!"InvalidDefinition"], "Definition '" + name + "' could not be created due to having the same name as another top-level binding.", originOpt), env)
 
-        and evalVariable name stream originOpt env =
-            match evalStream name stream originOpt env with
-            | Right (stream, env) -> (Unit originOpt, addStream name stream originOpt env)
-            | Left violation -> (violation, env)
-
         and eval expr env : Expr * Env<Simulant, Game, World> =
             match expr with
             | Violation _ -> (expr, env)
@@ -1316,10 +1311,6 @@ module WorldScriptSystem =
             | SetTo (name, expr, expr2, originOpt) -> evalSet name (Some expr) expr2 originOpt env
             | Quote _  -> (expr, env)
             | Define (name, expr, originOpt) -> evalDefine name expr originOpt env
-            | Variable (name, stream, originOpt) -> evalVariable name stream originOpt env
-            | Equate (_, _, _, _, originOpt) -> (Unit originOpt, env)
-            | EquateMany (_, _, _, _, _, originOpt) -> (Unit originOpt, env)
-            | Handle (_, _, originOpt) -> (Unit originOpt, env)
 
         and evalMany exprs env =
             let (evaledsRev, env) =

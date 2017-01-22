@@ -139,14 +139,6 @@ module WorldTypes =
     /// The default dispatcher for games.
     and GameDispatcher () =
         inherit SimulantDispatcher ()
-    
-        static member PropertyDefinitions =
-            [Define? Specialization Constants.Engine.VanillaSpecialization
-             Define? OnRegister Scripting.UnitValue
-             Define? OnUnregister Scripting.UnitValue
-             Define? OnUpdate Scripting.UnitValue
-             Define? OnPostUpdate Scripting.UnitValue
-             Define? OnActualize Scripting.UnitValue]
 
         /// Register a game when adding it to the world.
         abstract Register : Game * World -> World
@@ -172,10 +164,6 @@ module WorldTypes =
     and ScreenDispatcher () =
         inherit SimulantDispatcher ()
     
-        static member PropertyDefinitions =
-            [Define? Specialization Constants.Engine.VanillaSpecialization
-             Define? Persistent true]
-    
         /// Register a screen when adding it to the world.
         abstract Register : Screen * World -> World
         default dispatcher.Register (_, world) = world
@@ -199,12 +187,6 @@ module WorldTypes =
     /// The default dispatcher for layers.
     and LayerDispatcher () =
         inherit SimulantDispatcher ()
-    
-        static member PropertyDefinitions =
-            [Define? Specialization Constants.Engine.VanillaSpecialization
-             Define? Persistent true
-             Define? Depth 0.0f
-             Define? Visible true]
     
         /// Register a layer when adding it to a screen.
         abstract Register : Layer * World -> World
@@ -347,6 +329,11 @@ module WorldTypes =
           CreationTimeStampNp : int64
           ScriptOpt : AssetTag option
           Script : Script
+          OnRegister : Scripting.Expr
+          OnUnregister : Scripting.Expr
+          OnUpdate : Scripting.Expr
+          OnPostUpdate : Scripting.Expr
+          OnActualize : Scripting.Expr
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
           EyeCenter : Vector2
@@ -398,6 +385,11 @@ module WorldTypes =
               CreationTimeStampNp = Core.getTimeStamp ()
               ScriptOpt = None
               Script = Script.empty
+              OnRegister = Scripting.UnitValue
+              OnUnregister = Scripting.UnitValue
+              OnUpdate = Scripting.UnitValue
+              OnPostUpdate = Scripting.UnitValue
+              OnActualize = Scripting.UnitValue
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
               EyeCenter = eyeCenter
@@ -422,6 +414,11 @@ module WorldTypes =
           CreationTimeStampNp : int64
           ScriptOpt : AssetTag option
           Script : Script
+          OnRegister : Scripting.Expr
+          OnUnregister : Scripting.Expr
+          OnUpdate : Scripting.Expr
+          OnPostUpdate : Scripting.Expr
+          OnActualize : Scripting.Expr
           EntityTreeNp : Entity SpatialTree MutantCache
           TransitionStateNp : TransitionState
           TransitionTicksNp : int64
@@ -476,6 +473,11 @@ module WorldTypes =
                   CreationTimeStampNp = Core.getTimeStamp ()
                   ScriptOpt = None
                   Script = Script.empty
+                  OnRegister = Scripting.UnitValue
+                  OnUnregister = Scripting.UnitValue
+                  OnUpdate = Scripting.UnitValue
+                  OnPostUpdate = Scripting.UnitValue
+                  OnActualize = Scripting.UnitValue
                   EntityTreeNp = Unchecked.defaultof<Entity SpatialTree MutantCache>
                   TransitionStateNp = IdlingState
                   TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
@@ -503,6 +505,11 @@ module WorldTypes =
           CreationTimeStampNp : int64
           ScriptOpt : AssetTag option
           Script : Script
+          OnRegister : Scripting.Expr
+          OnUnregister : Scripting.Expr
+          OnUpdate : Scripting.Expr
+          OnPostUpdate : Scripting.Expr
+          OnActualize : Scripting.Expr
           Depth : single
           Visible : bool }
 
@@ -553,6 +560,11 @@ module WorldTypes =
               CreationTimeStampNp = Core.getTimeStamp ()
               ScriptOpt = None
               Script = Script.empty
+              OnRegister = Scripting.UnitValue
+              OnUnregister = Scripting.UnitValue
+              OnUpdate = Scripting.UnitValue
+              OnPostUpdate = Scripting.UnitValue
+              OnActualize = Scripting.UnitValue
               Depth = 0.0f
               Visible = true }
 
