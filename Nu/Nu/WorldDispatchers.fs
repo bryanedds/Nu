@@ -243,6 +243,13 @@ module EffectFacetModule =
             let world = World.monitor effectsOptChanged (entity.GetChangeEvent Property? EffectsOptPa) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world
 
+// TODO: ScriptFacet
+//             Define? OnRegister Scripting.UnitValue
+//             Define? OnUnregister Scripting.UnitValue
+//             Define? OnUpdate Scripting.UnitValue
+//             Define? OnPostUpdate Scripting.UnitValue
+//             Define? OnActualize Scripting.UnitValue
+
 [<AutoOpen>]
 module RigidBodyFacetModule =
 

@@ -37,7 +37,7 @@ module Nu =
             Math.init ()
 
             // init F# reach-arounds
-            WorldModule.eval <- fun expr (script : Script) simulant world ->
+            WorldModule.eval <- fun expr script simulant world ->
                 ignore script // TODO: utilize script bindings
                 let env = Env.make World.choose false (dictPlus []) simulant world
                 let (_, env) = ScriptSystem.run expr env
