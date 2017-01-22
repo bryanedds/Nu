@@ -134,18 +134,26 @@ module WorldGameModule =
 
         static member internal registerGame world =
             let game = Simulants.Game
-            let dispatcher = game.GetDispatcherNp world
             let world = World.subscribe World.gameOnRegisterChanged (Events.GameChange Property? OnRegister) game world
             let world = World.subscribe World.gameScriptOptChanged (Events.GameChange Property? ScriptOpt) game world
-            let world = World.withEventContext (fun world -> dispatcher.Register (game, world)) (atooa game.GameAddress) world
-            let world = World.eval (game.GetOnUnregister world) (game.GetScript world) game world
+            let world =
+                World.withEventContext (fun world ->
+                    let dispatcher = game.GetDispatcherNp world
+                    let world = dispatcher.Register (game, world)
+                    World.eval (game.GetOnUnregister world) (game.GetScript world) game world)
+                    (atooa game.GameAddress)
+                    world
             World.choose world
 
         static member internal unregisterGame world =
             let game = Simulants.Game
-            let dispatcher = game.GetDispatcherNp world
-            let world = World.eval (game.GetOnRegister world) (game.GetScript world) game world
-            let world = World.withEventContext (fun world -> dispatcher.Unregister (game, world)) (atooa game.GameAddress) world
+            let world =
+                World.withEventContext (fun world ->
+                    let dispatcher = game.GetDispatcherNp world
+                    let world = World.eval (game.GetOnRegister world) (game.GetScript world) game world
+                    dispatcher.Unregister (game, world))
+                    (atooa game.GameAddress)
+                    world
             World.choose world
 
         static member internal updateGame world =

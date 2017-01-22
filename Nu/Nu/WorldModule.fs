@@ -578,6 +578,17 @@ module WorldModule =
             let mousePositionWorld = World.mouseToWorld viewType mousePosition world
             entityPosition - mousePositionWorld
 
+        /// Try to convert an asset tag to a script.
+        static member assetTagToScriptOpt assetTag world =
+            let (symbolOpt, world) = World.tryFindSymbol assetTag world
+            let scriptOpt =
+                match symbolOpt with
+                | Some symbol ->
+                    try let script = valueize<Script> symbol in Some script
+                    with exn -> Log.info ^ "Failed to convert symbol '" + scstring symbol + "' to Script due to: " + scstring exn; None
+                | None -> None
+            (scriptOpt, world)
+
         static member internal tryGetGameProperty propertyName world =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> Some (World.getGameId world :> obj, typeof<Guid>)
@@ -898,27 +909,59 @@ module WorldModule =
             | "Outgoing" -> World.setScreenOutgoing (property |> fst :?> Transition) screen world
             | _ -> World.updateScreenState (ScreenState.setProperty propertyName property) propertyName screen world
 
+        static member private screenOnRegisterChanged evt world =
+            let screen = evt.Subscriber : Screen
+            let world = World.registerScreen screen world
+            let world = World.unregisterScreen screen world
+            (Cascade, world)
+
+        static member private screenScriptOptChanged evt world =
+            let screen = evt.Subscriber : Screen
+            match World.getScreenScriptOpt screen world with
+            | Some script ->
+                match World.assetTagToScriptOpt script world with
+                | (Some script, world) -> (Cascade, World.setScreenScript script screen world)
+                | (None, world) -> (Cascade, world)
+            | None -> (Cascade, world)
+
+        static member internal registerScreen screen world =
+            let world = World.monitor World.screenOnRegisterChanged (ltoa<ParticipantChangeData<Screen, World>> [!!"Screen"; !!"Change"; !!(Property? OnRegister); !!"Event"] ->- screen) screen world
+            let world = World.monitor World.screenScriptOptChanged (ltoa<ParticipantChangeData<Screen, World>> [!!"Screen"; !!"Change"; !!(Property? ScriptOpt); !!"Event"] ->- screen) screen world
+            let world =
+                World.withEventContext (fun world ->
+                    let dispatcher = World.getScreenDispatcherNp screen world
+                    let world = dispatcher.Register (screen, world)
+                    let eventTrace = EventTrace.record "World" "registerScreen" EventTrace.empty
+                    let world = World.publish () (ltoa<unit> [!!"Screen"; !!"Register"; !!"Event"] ->- screen) eventTrace screen world
+                    eval (World.getScreenOnUnregister screen world) (World.getScreenScript screen world) screen world)
+                    (atooa screen.ScreenAddress)
+                    world
+            World.choose world
+
+        static member internal unregisterScreen screen world =
+            let world =
+                World.withEventContext (fun world ->
+                    let world = eval (World.getScreenOnRegister screen world) (World.getScreenScript screen world) screen world
+                    let dispatcher = World.getScreenDispatcherNp screen world
+                    let eventTrace = EventTrace.record "World" "unregisterScreen" EventTrace.empty
+                    let world = World.publish () (ltoa<unit> [!!"Screen"; !!"Unregistering"; !!"Event"] ->- screen) eventTrace screen world
+                    dispatcher.Unregister (screen, world))
+                    (atooa screen.ScreenAddress)
+                    world
+            World.choose world
+
         static member internal addScreen mayReplace screenState screen world =
             let isNew = not ^ World.containsScreen screen world
             if isNew || mayReplace then
                 let oldWorld = world
                 let world = World.addScreenState screenState screen world
-                let world =
-                    if isNew then
-                        let dispatcher = World.getScreenDispatcherNp screen world
-                        let world = World.withEventContext (fun world -> dispatcher.Register (screen, world)) (atooa screen.ScreenAddress) world
-                        let eventTrace = EventTrace.record "World" "addScreen" EventTrace.empty
-                        World.publish () (ltoa<unit> [!!"Screen"; !!"Add"; !!"Event"] ->- screen) eventTrace screen world
-                    else world
+                let world = if isNew then World.registerScreen screen world else world
                 World.publishScreenChanges screen oldWorld world
             else failwith ^ "Adding a screen that the world already contains at address '" + scstring screen.ScreenAddress + "'."
 
         static member internal removeScreen3 removeLayers screen world =
-            let eventTrace = EventTrace.record "World" "removeScreen" EventTrace.empty
-            let world = World.publish () (ltoa<unit> [!!"Screen"; !!"Removing"; !!"Event"] ->- screen) eventTrace screen world
             if World.containsScreen screen world then
-                let dispatcher = World.getScreenDispatcherNp screen world
-                let world = World.withEventContext (fun world -> dispatcher.Unregister (screen, world)) (atooa screen.ScreenAddress) world
+                let world = World.unregisterScreen screen world
                 let world = removeLayers screen world
                 World.removeScreenState screen world
             else world
@@ -1166,27 +1209,59 @@ module WorldModule =
             | "Imperative" -> failwith "Cannot change layer imperative."
             | _ -> World.updateLayerState (LayerState.setProperty propertyName property) propertyName layer world
 
+        static member private layerOnRegisterChanged evt world =
+            let layer = evt.Subscriber : Layer
+            let world = World.registerLayer layer world
+            let world = World.unregisterLayer layer world
+            (Cascade, world)
+
+        static member private layerScriptOptChanged evt world =
+            let layer = evt.Subscriber : Layer
+            match World.getLayerScriptOpt layer world with
+            | Some script ->
+                match World.assetTagToScriptOpt script world with
+                | (Some script, world) -> (Cascade, World.setLayerScript script layer world)
+                | (None, world) -> (Cascade, world)
+            | None -> (Cascade, world)
+
+        static member internal registerLayer layer world =
+            let world = World.monitor World.layerOnRegisterChanged (ltoa<ParticipantChangeData<Layer, World>> [!!"Layer"; !!"Change"; !!(Property? OnRegister); !!"Event"] ->- layer) layer world
+            let world = World.monitor World.layerScriptOptChanged (ltoa<ParticipantChangeData<Layer, World>> [!!"Layer"; !!"Change"; !!(Property? ScriptOpt); !!"Event"] ->- layer) layer world
+            let world =
+                World.withEventContext (fun world ->
+                    let dispatcher = World.getLayerDispatcherNp layer world
+                    let world = dispatcher.Register (layer, world)
+                    let eventTrace = EventTrace.record "World" "registerLayer" EventTrace.empty
+                    let world = World.publish () (ltoa<unit> [!!"Layer"; !!"Register"; !!"Event"] ->- layer) eventTrace layer world
+                    eval (World.getLayerOnUnregister layer world) (World.getLayerScript layer world) layer world)
+                    (atooa layer.LayerAddress)
+                    world
+            World.choose world
+
+        static member internal unregisterLayer layer world =
+            let world =
+                World.withEventContext (fun world ->
+                    let world = eval (World.getLayerOnRegister layer world) (World.getLayerScript layer world) layer world
+                    let dispatcher = World.getLayerDispatcherNp layer world
+                    let eventTrace = EventTrace.record "World" "unregisterLayer" EventTrace.empty
+                    let world = World.publish () (ltoa<unit> [!!"Layer"; !!"Unregistering"; !!"Event"] ->- layer) eventTrace layer world
+                    dispatcher.Unregister (layer, world))
+                    (atooa layer.LayerAddress)
+                    world
+            World.choose world
+
         static member private addLayer mayReplace layerState layer world =
             let isNew = not ^ World.containsLayer layer world
             if isNew || mayReplace then
                 let oldWorld = world
                 let world = World.addLayerState layerState layer world
-                let world =
-                    if isNew then
-                        let dispatcher = World.getLayerDispatcherNp layer world
-                        let world = World.withEventContext (fun world -> dispatcher.Register (layer, world)) (atooa layer.LayerAddress) world
-                        let eventTrace = EventTrace.record "World" "addLayer" EventTrace.empty
-                        World.publish () (ltoa<unit> [!!"Layer"; !!"Add"; !!"Event"] ->- layer) eventTrace layer world
-                    else world
+                let world = if isNew then World.registerLayer layer world else world
                 World.publishLayerChanges layer oldWorld world
             else failwith ^ "Adding a layer that the world already contains at address '" + scstring layer.LayerAddress + "'."
 
         static member internal removeLayer3 removeEntities layer world =
-            let eventTrace = EventTrace.record "World" "removeLayer" EventTrace.empty
-            let world = World.publish () (ltoa<unit> [!!"Layer"; !!"Removing"; !!"Event"] ->- layer) eventTrace layer world
             if World.containsLayer layer world then
-                let dispatcher = World.getLayerDispatcherNp layer world
-                let world = World.withEventContext (fun world -> dispatcher.Unregister (layer, world)) (atooa layer.LayerAddress) world
+                let world = World.unregisterLayer layer world
                 let world = removeEntities layer world
                 World.removeLayerState layer world
             else world
@@ -1850,7 +1925,7 @@ module WorldModule =
                             let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
                             let world = World.updateEntityPublishFlags entity world
                             let eventTrace = EventTrace.record "World" "addEntity" EventTrace.empty
-                            World.publish () (ltoa<unit> [!!"Entity"; !!"Add"; !!"Event"] ->- entity) eventTrace entity world)
+                            World.publish () (ltoa<unit> [!!"Entity"; !!"Register"; !!"Event"] ->- entity) eventTrace entity world)
                             entity.ObjAddress
                             world
                     else world
@@ -1938,7 +2013,7 @@ module WorldModule =
                 let world =
                     World.withEventContext (fun world ->
                         let eventTrace = EventTrace.record "World" "removeEntity" EventTrace.empty
-                        let world = World.publish () (ltoa<unit> [!!"Entity"; !!"Removing"; !!"Event"] ->- entity) eventTrace entity world
+                        let world = World.publish () (ltoa<unit> [!!"Entity"; !!"Unregistering"; !!"Event"] ->- entity) eventTrace entity world
                         let dispatcher = World.getEntityDispatcherNp entity world : EntityDispatcher
                         let facets = World.getEntityFacetsNp entity world
                         let world = dispatcher.Unregister (entity, world)
@@ -2250,17 +2325,7 @@ module WorldModule =
         static member eval expr script simulant world =
             eval expr script simulant world
 
-        /// Try to convert an asset tag to a script.
-        /// TODO: put this somewhere else?
-        static member assetTagToScriptOpt assetTag world =
-            let (symbolOpt, world) = World.tryFindSymbol assetTag world
-            let scriptOpt =
-                match symbolOpt with
-                | Some symbol ->
-                    try let script = valueize<Script> symbol in Some script
-                    with exn -> Log.info ^ "Failed to convert symbol '" + scstring symbol + "' to Script due to: " + scstring exn; None
-                | None -> None
-            (scriptOpt, world)
+    type World with
 
         /// Make the world.
         static member internal make eventSystem dispatchers subsystems ambientState gameSpecializationOpt activeGameDispatcher =

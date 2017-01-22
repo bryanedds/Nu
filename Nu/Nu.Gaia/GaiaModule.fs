@@ -178,13 +178,13 @@ module Gaia =
             (Some entity, world)
         | None -> (None, world)
 
-    let private handleNuEntityAdd (form : GaiaForm) evt world =
+    let private handleNuEntityRegister (form : GaiaForm) evt world =
         let entity = Entity.proxy ^ atoa evt.Publisher.ParticipantAddress
         addTreeViewNode form entity world
         selectEntity form entity world
         (Cascade, world)
 
-    let private handleNuEntityRemoving (form : GaiaForm) evt world =
+    let private handleNuEntityUnregistering (form : GaiaForm) evt world =
         match form.treeView.Nodes.Find (scstring evt.Publisher.ParticipantAddress, true) with
         | [||] -> () // when changing an entity name, entity will be removed twice - once from winforms, once from world
         | treeNodes -> form.treeView.Nodes.Remove treeNodes.[0]
@@ -197,7 +197,7 @@ module Gaia =
                 (Cascade, world)
             else (Cascade, world)
         | _ ->
-            Log.trace "Unexpected match failure in Nu.Gaia.Program.handleNuEntityRemoving (probably a bug in Gaia or Nu)."
+            Log.trace "Unexpected match failure in Nu.Gaia.Gaia.handleNuEntityUnregistering (probably a bug in Gaia or Nu)."
             (Cascade, world)
 
     let private handleNuMouseRightDown (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
@@ -256,13 +256,13 @@ module Gaia =
     let private subscribeToEntityEvents form world =
         let selectedLayer = (World.getUserState world).SelectedLayer
         world |>
-            World.subscribe5 Constants.SubscriptionKeys.AddEntity (handleNuEntityAdd form) (Events.EntityAdd ->- selectedLayer ->- Events.Wildcard) Simulants.Game |>
-            World.subscribe5 Constants.SubscriptionKeys.RemovingEntity (handleNuEntityRemoving form) (Events.EntityRemoving ->- selectedLayer ->- Events.Wildcard) Simulants.Game
+            World.subscribe5 Constants.SubscriptionKeys.RegisterEntity (handleNuEntityRegister form) (Events.EntityRegister ->- selectedLayer ->- Events.Wildcard) Simulants.Game |>
+            World.subscribe5 Constants.SubscriptionKeys.UnregisteringEntity (handleNuEntityUnregistering form) (Events.EntityUnregistering ->- selectedLayer ->- Events.Wildcard) Simulants.Game
 
     let private unsubscribeFromEntityEvents world =
         world |>
-            World.unsubscribe Constants.SubscriptionKeys.AddEntity |>
-            World.unsubscribe Constants.SubscriptionKeys.RemovingEntity
+            World.unsubscribe Constants.SubscriptionKeys.RegisterEntity |>
+            World.unsubscribe Constants.SubscriptionKeys.UnregisteringEntity
 
     let private trySaveSelectedLayer filePath world =
         let selectedLayer = (World.getUserState world).SelectedLayer

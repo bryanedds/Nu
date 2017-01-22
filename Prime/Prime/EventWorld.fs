@@ -341,7 +341,7 @@ module EventWorld =
         (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) world =
         subscribe5 (makeGuid ()) subscription eventAddress subscriber world
 
-    /// Keep active a subscription for the lifetime of a participant, and be provided with an unsubscription callback.
+    /// Keep active a subscription for the life span of a participant, and be provided with an unsubscription callback.
     let monitorPlus<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
         (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
         let subscriberAddress = subscriber.ParticipantAddress
@@ -354,12 +354,12 @@ module EventWorld =
                 let world = unsubscribe monitorKey world
                 world
             let subscription' = fun _ eventSystem -> (Cascade, unsubscribe eventSystem)
-            let removingEventAddress = ltoa<unit> [!!typeof<'s>.Name; !!"Removing"; !!"Event"] ->>- subscriberAddress
+            let removingEventAddress = ltoa<unit> [!!typeof<'s>.Name; !!"Unregistering"; !!"Event"] ->>- subscriberAddress
             let world = subscribe5<unit, 's, 'g, 'w> removalKey subscription' removingEventAddress subscriber world
             (unsubscribe, world)
         else failwith "Cannot monitor events with an anonymous subscriber."
 
-    /// Keep active a subscription for the lifetime of a participant.
+    /// Keep active a subscription for the life span of a participant.
     let monitor<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
         (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
         monitorPlus<'a, 's, 'g, 'w> subscription eventAddress subscriber world |> snd
