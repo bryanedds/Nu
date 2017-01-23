@@ -210,7 +210,7 @@ module Scripting =
             | (Int64 left, Int64 right) -> compare left right
             | (Single left, Single right) -> compare left right
             | (Double left, Double right) -> compare left right
-            | (Vector2 left, Vector2 right) -> compare (left.X, left.Y) (right.X, right.Y) // TODO: comparison for OpenTK.Vector2!
+            | (Vector2 left, Vector2 right) -> compare (left.X, left.Y) (right.X, right.Y) // TODO: intrinsic comparison for OpenTK.Vector2!
             | (String left, String right) -> compare left right
             | (Keyword left, Keyword right) -> compare left right
             | (Tuple left, Tuple right) -> compare left right
@@ -219,7 +219,7 @@ module Scripting =
             | (List left, List right) -> compare left right
             | (Ring left, Ring right) -> compare left right
             | (Table left, Table right) -> compare left right
-            | (_, _) -> -1
+            | (_, _) -> -1 // TODO: ensure this won't break the used sorting algorithms
 
         // TODO: check if we can trust the hash function to be efficient on value types...
         override this.GetHashCode () =
@@ -333,7 +333,7 @@ module Scripting =
                             match tail with
                             | [Prime.Atom (tagStr, _)]
                             | [Prime.String (tagStr, _)] ->
-                                try let tagName = !!tagStr in Violation (Name.split [|'/'|] tagName, "User-defined error.", originOpt) :> obj
+                                try let tagName = !!tagStr in Violation (Name.split [|'/'|] tagName, "User-defined violation.", originOpt) :> obj
                                 with exn -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
                             | [Prime.Atom (tagStr, _); Prime.String (errorMsg, _)]
                             | [Prime.String (tagStr, _); Prime.String (errorMsg, _)] ->
@@ -346,7 +346,7 @@ module Scripting =
                             | [_] -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
                             | [binding; body] ->
                                 match binding with
-                                | Symbols (bindingSymbols, originOpt) ->
+                                | Symbols (bindingSymbols, _) ->
                                     match this.SymbolsToLetBindingOpt bindingSymbols with
                                     | Some binding -> Let (binding, this.SymbolToExpr body, originOpt) :> obj
                                     | None -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
@@ -367,7 +367,7 @@ module Scripting =
                             match tail with
                             | [args; body] ->
                                 match args with
-                                | Symbols (args, originOpt) ->
+                                | Symbols (args, _) ->
                                     if List.forall (function Atom _ -> true | _ -> false) args then
                                         let args = List.map (function Atom (arg, _) -> arg | _ -> failwithumf ()) args
                                         Fun (args, List.length args, this.SymbolToExpr body, false, None, originOpt) :> obj
@@ -423,8 +423,8 @@ module Scripting =
                             Break (content, originOpt) :> obj
                         | "get" ->
                             match tail with
-                            | Prime.Atom (nameStr, originOpt) :: tail2
-                            | Prime.String (nameStr, originOpt) :: tail2 ->
+                            | Prime.Atom (nameStr, _) :: tail2
+                            | Prime.String (nameStr, _) :: tail2 ->
                                 match tail2 with
                                 | [] -> Get (nameStr, originOpt) :> obj
                                 | [relation] -> GetFrom (nameStr, this.SymbolToExpr relation, originOpt) :> obj
@@ -432,8 +432,8 @@ module Scripting =
                             | _ -> Violation ([!!"InvalidGetForm"], "Invalid get form. Requires a name and an optional relation expression.", originOpt) :> obj
                         | "set" ->
                             match tail with
-                            | Prime.Atom (nameStr, originOpt) :: value :: tail2
-                            | Prime.String (nameStr, originOpt) :: value :: tail2 ->
+                            | Prime.Atom (nameStr, _) :: value :: tail2
+                            | Prime.String (nameStr, _) :: value :: tail2 ->
                                 match tail2 with
                                 | [] -> Set (nameStr, this.SymbolToExpr value, originOpt) :> obj
                                 | [relation] -> SetTo (nameStr, this.SymbolToExpr value, this.SymbolToExpr relation, originOpt) :> obj
@@ -441,8 +441,8 @@ module Scripting =
                             | _ -> Violation ([!!"InvalidSetForm"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", originOpt) :> obj
                         | "variableStream" ->
                             match tail with
-                            | [Prime.Atom (nameStr, originOpt)]
-                            | [Prime.String (nameStr, originOpt)] -> Stream (VariableStream nameStr, originOpt) :> obj
+                            | [Prime.Atom (nameStr, _)]
+                            | [Prime.String (nameStr, _)] -> Stream (VariableStream nameStr, originOpt) :> obj
                             | _ -> Violation ([!!"InvalidVariableStreamForm"], "Invalid variable stream form. Requires a name.", originOpt) :> obj
                         | "eventStream" ->
                             match tail with
