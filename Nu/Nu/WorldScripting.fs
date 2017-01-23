@@ -978,7 +978,7 @@ module WorldScripting =
                  //("xOf", evalNOf 0) TODO
                  //("yOf", evalNOf 1) TODO
                  //("xAs", evalNAs 0) TODO
-                 //("yAs", evalNas 1) TODO
+                 //("yAs", evalNAs 1) TODO
                  ("pair", evalTuple)
                  ("tuple", evalTuple)
                  ("fst", evalNth5 0)
@@ -1017,6 +1017,7 @@ module WorldScripting =
             | (true, intrinsic) -> intrinsic originOpt name evaledArgs world
             | (false, _) -> (Violation ([!!"InvalidFunctionTargetBinding"], "Cannot apply a non-existent binding.", originOpt), world)
 
+        // TODO: ensure these origins are sensible
         and evalProduct originOpt name evaledArgs world =
             match evaledArgs with
             | [Stream (streamLeft, originLeftOpt); Stream (streamRight, originRightOpt)] ->
@@ -1060,8 +1061,7 @@ module WorldScripting =
                     with exn -> Left (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidPropertyStreamRelation"], "Variable '" + name + "' could not be created due to invalid property stream relation '" + propertyRelationStr + "'.", originOpt))
                 | _ -> Left (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidPropertyStreamRelation"], "Variable '" + name + "' could not be created due to invalid property stream relation. Relation must be either a string or a keyword", originOpt))
             | PropertyStreamMany _ ->
-                // TODO: implement
-                Left (Violation ([!!"Unimplemented"], "Unimplemented feature.", originOpt))
+                Left (Violation ([!!"Unimplemented"], "Unimplemented feature.", originOpt)) // TODO: implement
             | ComputedStream computedStream ->
                 Right (computedStream :?> Prime.Stream<obj, Game, World>, world)
 
@@ -1077,11 +1077,11 @@ module WorldScripting =
             | (evaledHead :: evaledTail, world) ->
                 match evaledHead with
                 | Keyword _ as keyword ->
-                    let map = evaledTail |> List.indexed |> Map.ofList
-                    (Keyphrase (keyword, map), world)
+                    let keyphrase = Keyphrase (keyword, evaledTail |> List.indexed |> Map.ofList)
+                    (keyphrase, world)
                 | Binding (name, _, originOpt) ->
-                    let (evaled, _) = evalIntrinsic originOpt name evaledTail world
-                    (evaled, world)
+                    // NOTE: we can infer we have an intrinsic when evaluation leads here
+                    evalIntrinsic originOpt name evaledTail world
                 | Fun (pars, parsCount, body, _, framesOpt, originOpt) ->
                     let (framesCurrentOpt, world) =
                         match framesOpt with
@@ -1099,7 +1099,9 @@ module WorldScripting =
                             (evaled, World.removeProceduralBindings world)
                         else (Violation ([!!"MalformedLambdaInvocation"], "Wrong number of arguments.", originOpt), world)
                     match framesCurrentOpt with
-                    | Some framesCurrent -> (evaled, World.setProceduralFrames framesCurrent world)
+                    | Some framesCurrent ->
+                        let world = World.setProceduralFrames framesCurrent world
+                        (evaled, world)
                     | None -> (evaled, world)
                 | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), world)
             | ([], _) -> (Unit, world)
@@ -1127,31 +1129,30 @@ module WorldScripting =
                     let frames = World.getProceduralFrames world :> obj
                     let fn = Fun (args, List.length args, body, true, Some frames, originOpt)
                     World.addProceduralBinding (AddToNewFrame bindingsCount) name fn world
-            let mutable start = 1
-            for binding in bindingsTail do
-                match binding with
-                | LetVariable (name, body) ->
-                    let bodyValue = evalDropEnv body world
-                    World.addProceduralBinding (AddToHeadFrame start) name bodyValue world |> ignore
-                | LetFunction (name, args, body) ->
-                    let frames = World.getProceduralFrames world :> obj
-                    let fn = Fun (args, List.length args, body, true, Some frames, originOpt)
-                    World.addProceduralBinding (AddToHeadFrame start) name fn world |> ignore
-                start <- start + 1
+            let world =
+                List.foldi (fun i world binding ->
+                    match binding with
+                    | LetVariable (name, body) ->
+                        let bodyValue = evalDropEnv body world
+                        World.addProceduralBinding (AddToHeadFrame ^ inc i) name bodyValue world
+                    | LetFunction (name, args, body) ->
+                        let frames = World.getProceduralFrames world :> obj
+                        let fn = Fun (args, List.length args, body, true, Some frames, originOpt)
+                        World.addProceduralBinding (AddToHeadFrame ^ inc i) name fn world)
+                    world
+                    bindingsTail
             let (evaled, world) = eval body world
             (evaled, World.removeProceduralBindings world)
         
         and evalLet binding body originOpt world =
-            let (evaled, _) = evalLet4 binding body originOpt world
-            (evaled, world)
+            evalLet4 binding body originOpt world
         
         and evalLetMany bindings body originOpt world =
             match bindings with
-            | [] -> (Violation ([!!"MalformedLetOperation"], "Let operation must have at least 1 binding.", originOpt), world)
             | bindingsHead :: bindingsTail ->
                 let bindingsCount = List.length bindingsTail + 1
-                let (evaled, _) = evalLetMany4 bindingsHead bindingsTail bindingsCount body originOpt world
-                (evaled, world)
+                evalLetMany4 bindingsHead bindingsTail bindingsCount body originOpt world
+            | [] -> (Violation ([!!"MalformedLetOperation"], "Let operation must have at least 1 binding.", originOpt), world)
 
         and evalFun fn pars parsCount body framesPushed framesOpt originOpt world =
             if not framesPushed then
@@ -1162,69 +1163,63 @@ module WorldScripting =
             else (fn, world)
 
         and evalIf condition consequent alternative originOpt world =
-            let (evaled, world) = eval condition world
-            match evaled with
-            | Violation _ -> (evaled, world)
-            | Bool bool -> if bool then eval consequent world else eval alternative world
-            | _ -> (Violation ([!!"InvalidIfCondition"], "Must provide an expression that evaluates to a bool in an if condition.", originOpt), world)
+            match eval condition world with
+            | (Violation _ as evaled, world) -> (evaled, world)
+            | (Bool bool, world) -> if bool then eval consequent world else eval alternative world
+            | (_, world) -> (Violation ([!!"InvalidIfCondition"], "Must provide an expression that evaluates to a bool in an if condition.", originOpt), world)
 
         and evalMatch input (cases : (Expr * Expr) list) originOpt world =
             let (input, world) = eval input world
-            let eir =
+            let resultEir =
                 List.foldUntilRight (fun world (condition, consequent) ->
                     let (evaledInput, world) = eval condition world
                     match evalBinaryInner EqFns originOpt "match" input evaledInput world with
-                    | (Violation _, _) -> Right (evaledInput, world)
+                    | (Violation _, world) -> Right (evaledInput, world)
                     | (Bool true, world) -> Right (eval consequent world)
-                    | (Bool false, _) -> Left world
+                    | (Bool false, world) -> Left world
                     | _ -> failwithumf ())
                     (Left world)
                     cases
-            match eir with
-            | Right (evaled, world) -> (evaled, world)
+            match resultEir with
+            | Right success -> success
             | Left world -> (Violation ([!!"InexhaustiveMatch"], "A match expression failed to meet any of its cases.", originOpt), world)
 
         and evalSelect exprPairs originOpt world =
-            let eir =
+            let resultEir =
                 List.foldUntilRight (fun world (condition, consequent) ->
-                    let (evaled, world) = eval condition world
-                    match evaled with
-                    | Violation _ -> Right (evaled, world)
-                    | Bool bool -> if bool then Right (eval consequent world) else Left world
-                    | _ -> Right ((Violation ([!!"InvalidSelectCondition"], "Must provide an expression that evaluates to a bool in a case condition.", originOpt), world)))
+                    match eval condition world with
+                    | (Violation _ as evaled, world) -> Right (evaled, world)
+                    | (Bool bool, world) -> if bool then Right (eval consequent world) else Left world
+                    | (_, world) -> Right ((Violation ([!!"InvalidSelectCondition"], "Must provide an expression that evaluates to a bool in a case condition.", originOpt), world)))
                     (Left world)
                     exprPairs
-            match eir with
-            | Right (evaled, world) -> (evaled, world)
+            match resultEir with
+            | Right success -> success
             | Left world -> (Violation ([!!"InexhaustiveSelect"], "A select expression failed to meet any of its cases.", originOpt), world)
 
         and evalTry body handlers _ world =
-            let (evaled, world) = eval body world
-            match evaled with
-            | Violation (categories, _, _) ->
-                let eir =
+            match eval body world with
+            | (Violation (categories, _, _) as evaled, world) ->
+                let resultEir =
                     List.foldUntilRight (fun world (handlerCategories, handlerBody) ->
                         let categoriesTrunc = List.truncate (List.length handlerCategories) categories
                         if categoriesTrunc = handlerCategories then Right (eval handlerBody world) else Left world)
                         (Left world)
                         handlers
-                match eir with
-                | Right (evaled, world) -> (evaled, world)
+                match resultEir with
+                | Right success -> success
                 | Left world -> (evaled, world)
-            | _ -> (evaled, world)
+            | success -> success
 
         and evalDo exprs _ world =
             let evaledEir =
                 List.foldWhileRight (fun (_, world) expr ->
-                    let (evaled, world) = eval expr world
-                    match evaled with
-                    | Violation _ as violation -> Left (violation, world)
-                    | _ -> Right (evaled, world))
+                    match eval expr world with
+                    | (Violation _, _) as error -> Left error
+                    | success -> Right success)
                     (Right (Unit, world))
                     exprs
-            match evaledEir with
-            | Right evaled -> evaled
-            | Left error -> error
+            Either.amb evaledEir
 
         and evalBreak expr world =
             // TODO: write all world bindings to console
@@ -1236,16 +1231,15 @@ module WorldScripting =
             let simulantAndEnvEir =
                 match relationExprOpt with
                 | Some relationExpr ->
-                    let (evaledExpr, world) = eval relationExpr world
-                    match evaledExpr with
-                    | String str
-                    | Keyword str ->
+                    match eval relationExpr world with
+                    | (String str, world)
+                    | (Keyword str, world) ->
                         let relation = Relation.makeFromString str
                         let address = Relation.resolve context.SimulantAddress relation
                         match World.tryProxySimulant address with
                         | Some simulant -> Right (simulant, world)
-                        | None -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must have 0 to 3 names.", originOpt))
-                    | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or a keyword.", originOpt))
+                        | None -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must have 0 to 3 names.", originOpt), world)
+                    | (_, world) -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or a keyword.", originOpt), world)
                 | None -> Right (context, world)
             match simulantAndEnvEir with
             | Right (simulant, world) ->
@@ -1258,25 +1252,23 @@ module WorldScripting =
                         | None -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting worldironment.", originOpt), world)
                     | (false, _) -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting worldironment.", originOpt), world)
                 | None -> (Violation ([!!"InvalidProperty"], "Simulant or property value could not be found.", originOpt), world)
-            | Left violation -> (violation, world)
+            | Left error -> error
 
         and evalSet propertyName relationExprOpt propertyValueExpr originOpt world =
             let context = World.getScriptContext world
             let simulantAndEnvEir =
                 match relationExprOpt with
                 | Some relationExpr ->
-                    let (evaledExpr, world) = eval relationExpr world
-                    match evaledExpr with
-                    | String str
-                    | Keyword str ->
+                    match eval relationExpr world with
+                    | (String str, world)
+                    | (Keyword str, world) ->
                         let relation = Relation.makeFromString str
                         let address = Relation.resolve context.SimulantAddress relation
                         match World.tryProxySimulant address with
                         | Some simulant -> Right (simulant, world)
-                        | None -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must have 0 to 3 parts.", originOpt))
-                    | _ -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or a keyword.", originOpt))
+                        | None -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must have 0 to 3 parts.", originOpt), world)
+                    | (_, world) -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or a keyword.", originOpt), world)
                 | None -> Right (context, world)
-            let (propertyValue, world) = eval propertyValueExpr world
             match simulantAndEnvEir with
             | Right (simulant, world) ->
                 // NOTE: this sucks, having to get the property before setting it just to find out its type...
@@ -1284,15 +1276,16 @@ module WorldScripting =
                 | Some (_, propertyType) ->
                     match Exporters.TryGetValue propertyType.Name with
                     | (true, tryExport) ->
+                        let (propertyValue, world) = eval propertyValueExpr world
                         match tryExport propertyValue propertyType with
                         | Some propertyValue ->
                             match World.trySetSimulantProperty propertyName (propertyValue, propertyType) simulant world with
                             | (true, world) -> (Unit, world)
-                            | (false, _) -> (Violation ([!!"InvalidProperty"], "Property value could not be set.", originOpt), world)
+                            | (false, world) -> (Violation ([!!"InvalidProperty"], "Property value could not be set.", originOpt), world)
                         | None -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be exported into simulant property.", originOpt), world)
                     | (false, _) -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be exported into simulant property.", originOpt), world)
                 | None -> (Violation ([!!"InvalidProperty"], "Property value could not be set.", originOpt), world)
-            | Left violation -> (violation, world)
+            | Left error -> error
 
         and evalDefine name expr originOpt world =
             let (evaled, world) = eval expr world
@@ -1335,7 +1328,7 @@ module WorldScripting =
             | GetFrom (name, expr, originOpt) -> evalGet name (Some expr) originOpt world
             | Set (name, expr, originOpt) -> evalSet name None expr originOpt world
             | SetTo (name, expr, expr2, originOpt) -> evalSet name (Some expr) expr2 originOpt world
-            | Quote _  -> (expr, world)
+            | Quote (_, originOpt) -> (Violation ([!!"Unimplemented"], "Unimplemented feature.", originOpt), world) // TODO
             | Define (name, expr, originOpt) -> evalDefine name expr originOpt world
 
         and evalMany exprs world =
