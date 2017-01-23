@@ -462,8 +462,11 @@ module Scripting =
     /// The false value in scripting.
     let FalseValue = Bool (false, None)
     
-    /// A bindings frame in a scripging environment.
-    type Frame = (string * Expr) array
+    /// A declaration bindings frame in a scripting environment.
+    type DeclarationFrame = Dictionary<string, Expr>
+    
+    /// A declaration bindings frame in a scripting environment.
+    type ProceduralFrame = (string * Expr) array
     
     /// The manner in which bindings are added to a frame.
     type AddType =
@@ -476,45 +479,59 @@ module Scripting =
         /// The execution environment for scripts.
         type [<NoEquality; NoComparison>] Env =
             private
-                { Rebinding : bool // rebinding should be enabled in Terminal or perhaps when reloading existing scripts.
-                  TopLevel : Dictionary<string, Expr>
-                  Frames : Frame list }
+                { Rebinding : bool
+                  LocalDeclaration : bool
+                  GlobalFrame : DeclarationFrame
+                  LocalFrame : DeclarationFrame
+                  ProceduralFrames : ProceduralFrame list }
     
         [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
         module Env =
     
             let private BottomBinding =
                 (String.Empty, Violation ([!!"BottomAccess"], "Accessed a bottom value.", None))
-    
-            let private makeFrame size =
+
+            let getLocalDeclaration env =
+                env.LocalDeclaration
+
+            let setLocalDeclaration localDeclaration env =
+                { env with LocalDeclaration = localDeclaration }
+
+            let getLocalFrame env =
+                env.LocalFrame
+
+            let setLocalFrame localFrame env =
+                { env with LocalFrame = localFrame }
+
+            let resetLocalFrame env =
+                { env with LocalFrame = DeclarationFrame HashIdentity.Structural }
+
+            let private makeProceduralFrame size =
                 Array.create size BottomBinding
-    
-            let private addFrame frame env =
-                { env with Frames = frame :: env.Frames }
 
-            let getFrames env =
-                env.Frames
+            let private addProceduralFrame frame env =
+                { env with ProceduralFrames = frame :: env.ProceduralFrames }
 
-            let setFrames frames env =
-                { env with Frames = frames }
-    
             let tryGetDeclarationBinding name env =
-                match env.TopLevel.TryGetValue name with
-                | (true, binding) -> Some binding
-                | (false, _) -> None
+                match env.LocalFrame.TryGetValue name with
+                | (true, value) -> Some value
+                | (false, _) ->
+                    match env.GlobalFrame.TryGetValue name with
+                    | (true, value) -> Some value
+                    | (false, _) -> None
     
             let tryGetProceduralBinding name env =
                 let refOffset = ref -1
                 let refOptIndex = ref None
                 let optBinding =
                     List.tryFindPlus
-                        (fun (frame : Frame) ->
+                        (fun frame ->
                             refOffset := !refOffset + 1
                             refOptIndex := Array.tryFindIndexRev (fun (bindingName, _) -> name.Equals bindingName) frame // OPTIMIZATION: faster than (=) here
                             match !refOptIndex with
                             | Some index -> Some frame.[index]
                             | None -> None)
-                        env.Frames
+                        env.ProceduralFrames
                 match optBinding with
                 | Some (_, binding) -> Some (binding, !refOffset, (!refOptIndex).Value)
                 | None -> None
@@ -538,35 +555,29 @@ module Scripting =
                 | DeclarationBinding binding ->
                     Some binding
                 | ProceduralBinding (offset, index) ->
-                    let frame = (List.skip offset env.Frames).Head
+                    let frame = (List.skip offset env.ProceduralFrames).Head
                     let (_, binding) = frame.[index]
                     Some binding
+
+            let private addDeclarationBinding name value env =
+                if env.LocalDeclaration
+                then env.LocalFrame.ForceAdd (name, value)
+                else env.GlobalFrame.ForceAdd (name, value)
     
             let tryAddDeclarationBinding name value env =
-                if (env.Rebinding || not ^ env.TopLevel.ContainsKey name) then
-                    env.TopLevel.Add (name, value)
+                if (env.Rebinding || not ^ env.LocalFrame.ContainsKey name) then
+                    addDeclarationBinding name value env
                     Some env
                 else None
-    
-            let tryAddDeclarationBindings bindings env =
-                if not env.Rebinding then 
-                    let existences = Seq.map (fun (key, _) -> env.TopLevel.ContainsKey key) bindings
-                    if Seq.notExists id existences then
-                        for binding in bindings do env.TopLevel.Add binding
-                        Some env
-                    else None
-                else
-                    for (name, value) in bindings do env.TopLevel.ForceAdd (name, value) |> ignore
-                    Some env
     
             let addProceduralBinding appendType name value env =
                 match appendType with
                 | AddToNewFrame size ->
-                    let frame = makeFrame size
+                    let frame = makeProceduralFrame size
                     frame.[0] <- (name, value)
-                    addFrame frame env
+                    addProceduralFrame frame env
                 | AddToHeadFrame offset ->
-                    match env.Frames with
+                    match env.ProceduralFrames with
                     | frame :: _ ->
                         frame.[offset] <- (name, value)
                         env
@@ -575,14 +586,14 @@ module Scripting =
             let addProceduralBindings appendType bindings env =
                 match appendType with
                 | AddToNewFrame size ->
-                    let frame = makeFrame size
+                    let frame = makeProceduralFrame size
                     let mutable index = 0
                     for binding in bindings do
                         frame.[index] <- binding
                         index <- index + 1
-                    addFrame frame env
+                    addProceduralFrame frame env
                 | AddToHeadFrame start ->
-                    match env.Frames with
+                    match env.ProceduralFrames with
                     | frame :: _ ->
                         let mutable index = start
                         for binding in bindings do
@@ -591,10 +602,12 @@ module Scripting =
                         env
                     | [] -> failwithumf ()
     
-            let make rebinding topLevel frames =
+            let make rebinding =
                 { Rebinding = rebinding
-                  TopLevel = topLevel
-                  Frames = frames }
+                  LocalDeclaration = false
+                  GlobalFrame = DeclarationFrame HashIdentity.Structural
+                  LocalFrame = DeclarationFrame HashIdentity.Structural
+                  ProceduralFrames = [] }
 
     /// The execution environment for scripts.
     type Env = EnvModule.Env

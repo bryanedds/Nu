@@ -18,6 +18,21 @@ module WorldScripting =
 
     type World with
 
+        static member getLocalDeclaration world =
+            World.getScriptEnvBy Scripting.EnvModule.Env.getLocalDeclaration world
+
+        static member setLocalDeclaration localDeclaration world =
+            World.updateScriptEnv (Scripting.EnvModule.Env.setLocalDeclaration localDeclaration) world
+
+        static member getLocalFrame world =
+            World.getScriptEnvBy Scripting.EnvModule.Env.getLocalFrame world
+
+        static member setLocalFrame localFrame world =
+            World.updateScriptEnv (Scripting.EnvModule.Env.setLocalFrame localFrame) world
+
+        static member resetLocalFrame world =
+            World.updateScriptEnv Scripting.EnvModule.Env.resetLocalFrame world
+
         static member tryGetDeclarationBinding name world =
             World.getScriptEnvBy (Scripting.EnvModule.Env.tryGetDeclarationBinding name) world
 
@@ -29,9 +44,6 @@ module WorldScripting =
 
         static member tryAddDeclarationBinding name value world =
             World.tryUpdateScriptEnv (Scripting.EnvModule.Env.tryAddDeclarationBinding name value) world
-
-        static member tryAddDeclarationBindings bindings world =
-            World.tryUpdateScriptEnv (EnvModule.Env.tryAddDeclarationBindings bindings) world
 
         static member addProceduralBinding appendType name value world =
             World.updateScriptEnv (EnvModule.Env.addProceduralBinding appendType name value) world
