@@ -491,6 +491,12 @@ module Scripting =
     
             let private addFrame frame env =
                 { env with Frames = frame :: env.Frames }
+
+            let getFrames env =
+                env.Frames
+
+            let setFrames frames env =
+                { env with Frames = frames }
     
             let tryGetDeclarationBinding name env =
                 match env.TopLevel.TryGetValue name with
